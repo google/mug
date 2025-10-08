@@ -365,7 +365,7 @@ public sealed interface RegexPattern
   }
 
   /** Represents a predefined character class like {@code \d} or {@code \w}. */
-  public enum PredefinedCharClass implements RegexPattern, CharSetElement {
+  enum PredefinedCharClass implements RegexPattern, CharSetElement {
     ANY_CHAR("."),
     DIGIT("\\d"),
     NON_DIGIT("\\D"),
@@ -447,7 +447,7 @@ public sealed interface RegexPattern
   }
 
   /** Represents a character property, like {@code \p{Lower}} or {@code \P{Lower}}. */
-  public sealed interface CharacterProperty extends CharSetElement, RegexPattern
+  sealed interface CharacterProperty extends CharSetElement, RegexPattern
       permits PosixCharClass, UnicodeProperty {
     String propertyName();
 
@@ -465,7 +465,7 @@ public sealed interface RegexPattern
   }
 
   /** Represents a POSIX character class inside a CharacterSet: e.g. \p{Lower} */
-  public enum PosixCharClass implements CharacterProperty {
+  enum PosixCharClass implements CharacterProperty {
     LOWER("Lower", "lower"),
     UPPER("Upper", "upper"),
     ASCII("ASCII", "ASCII"),
@@ -509,7 +509,7 @@ public sealed interface RegexPattern
   }
 
   /** Represents a Unicode property class: e.g. \p{Nd} */
-  public record UnicodeProperty(String propertyName) implements CharacterProperty {
+  record UnicodeProperty(String propertyName) implements CharacterProperty {
     @Override
     public String toString() {
       return "\\p{" + propertyName + "}";
@@ -587,7 +587,7 @@ public sealed interface RegexPattern
    * @throws Parser.ParseException if the regex pattern is malformed
    * @throws IllegalArgumentException if the regex pattern is invalid
    */
-  public static RegexPattern parse(String regex) {
+  static RegexPattern parse(String regex) {
     return after(prefix("(?x)"))
         .from(regex)
         .map(p -> RegexParsers.pattern().parseSkipping(RegexParsers.FREE_SPACES, p))
