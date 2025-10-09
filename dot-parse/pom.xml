@@ -5,8 +5,8 @@
     <artifactId>mug-root</artifactId>
     <version>9.3-SNAPSHOT</version>
   </parent>
-  <artifactId>mug-parsers</artifactId>
-  <name>Parser Combinators</name>
+  <artifactId>dot-parse</artifactId>
+  <name>Compact Parser Combinators</name>
   
   <build>
     <pluginManagement>

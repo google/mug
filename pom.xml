@@ -55,7 +55,7 @@
     <module>mug-spanner</module>
     <module>mug-concurrent24</module>
     <module>mug-safesql-java16tests</module>
-    <module>mug-parsers</module>
+    <module>dot-parse</module>
   </modules>
   <distributionManagement>
     <snapshotRepository>
@@ -269,7 +269,7 @@
           <version>3.6.3</version>
           <configuration>
             <source>24</source>
-            <sourcepath>mug/src/main/java;mug-safesql/src/main/java;;mug-parsers/src/main/java;mug-guava/src/main/java;mug-spanner/src/main/java;mug-protobuf/src/main/java;mug-bigquery/src/main/java;mug-concurrent24/src/main/java;</sourcepath>
+            <sourcepath>mug/src/main/java;mug-safesql/src/main/java;dot-parse/src/main/java;mug-guava/src/main/java;mug-spanner/src/main/java;mug-protobuf/src/main/java;mug-bigquery/src/main/java;mug-concurrent24/src/main/java;</sourcepath>
             <includeDependencySources>true</includeDependencySources>
             <additionalDependencies>
               <additionalDependency>
