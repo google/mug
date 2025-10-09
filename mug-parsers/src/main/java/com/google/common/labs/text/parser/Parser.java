@@ -43,11 +43,12 @@ import com.google.mu.util.Substring;
  * (infinite loop or StackOverFlowError caused by accidental zero-consumption rule in the context of
  * many() or recursive grammar) is made impossible by requiring all parsers to consume at least one
  * character. Optional suffix is achieved through using the built-in combinators such as {@link
- * #optionallyFollowedBy} and {@link #postfix}; or you can use the {@link #zeroOrMore}, {@link
- * #zeroOrMoreDelimitedBy}, {@link #orElse} and {@link #optional} fluent chains.
+ * #optionallyFollowedBy optionallyFollowedBy()} and {@link #postfix postfix()}; or you can use the
+ * @link #zeroOrMore zeroOrMore()}, {@link #zeroOrMoreDelimitedBy zeroOrMoreDelimitedBy()},
+ * {@link #orElse orElse()} and {@link #optional optional()} fluent chains.
  *
- * <p>For simplicity, {@link #or} and {@link #anyOf} will always backtrack upon failure. But it's
- * more efficient to factor out common left prefix. For example instead of {@code
+ * <p>For simplicity, {@link #or or()} and {@link #anyOf anyOf()} will always backtrack upon failure.
+ * But it's more efficient to factor out common left prefix. For example instead of {@code
  * anyOf(expr.followedBy(";"), expr)}, use {@code expr.optionallyFollowedBy(";"))} instead.
  *
  * <p>WARNING: do not use this class to parse user-provided input, or in performance critical hot
