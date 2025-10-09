@@ -571,8 +571,8 @@ public abstract class Parser<T> {
 
   /**
    * Returns an equivalent parser that suppresses character skipping that's otherwise applied if
-   * {@link #parseSkipping} or {@link #parseToStreamSkipping} are called. For example quoted string
-   * literals should not skip whitespaces.
+   * {@link #parseSkipping parseSkipping()} or {@link #parseToStreamSkipping parseToStreamSkipping()}
+   * are called. For example quoted string literals should not skip whitespaces.
    */
   public static <T> Parser<T> literally(Parser<T> parser) {
     requireNonNull(parser);
@@ -587,7 +587,8 @@ public abstract class Parser<T> {
 
   /**
    * Specifies that the optional (or zero-or-more) {@code rule} should be matched literally even if
-   * {@link Parser#parseSkipping} or {@link Parser#parseToStreamSkipping} is called.
+   * {@link Parser#parseSkipping parseSkipping()} or {@link Parser#parseToStreamSkipping
+   * parseToStreamSkipping()} is called.
    */
   public static <T> Parser<T>.OrEmpty literally(Parser<T>.OrEmpty rule) {
     return rule.literally();
