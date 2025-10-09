@@ -41,6 +41,7 @@ import java.time.temporal.TemporalQuery;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -120,9 +121,8 @@ public final class DateTimeFormats {
   private static final CharPredicate DELIMITER = anyOf(" ,;");
 
   /** Punctuation chars, such as '/', ':', '-' are essential part of the pattern syntax. */
-  private static final CharPredicate PUNCTUATION = DIGIT.or(ALPHA).or(DELIMITER).not();
   private static final Substring.RepeatingPattern TOKENIZER =
-      Stream.of(consecutive(DIGIT), consecutive(ALPHA), first(PUNCTUATION))
+      Stream.of(consecutive(DIGIT), consecutive(ALPHA), first(DateTimeFormats::isSeparator))
           .collect(firstOccurrence())
           .repeatedly();
   private static final Substring.RepeatingPattern PLACEHOLDERS =
@@ -166,6 +166,15 @@ public final class DateTimeFormats {
       .add(forExample("2011-12-3"), "yyyy-MM-d")
       .add(forExample("2011/12/03"), "yyyy/MM/dd")
       .add(forExample("2011/12/3"), "yyyy/MM/d")
+      .add(forExample("2011年2月1日"), "yyyy年M月d日")
+      .add(forExample("2011年12月1日"), "yyyy年MM月d日")
+      .add(forExample("2011年2月10日"), "yyyy年M月dd日")
+      .add(forExample("2011年12月11日"), "yyyy年MM月dd日")
+      .add(forExample("2011年"), "yyyy年")
+      .add(forExample("2月"), "M月")
+      .add(forExample("12月"), "MM月")
+      .add(forExample("3日"), "d日")
+      .add(forExample("13日"), "dd日")
       .add(forExample("Jan 11 2011"), "LLL dd yyyy")
       .add(forExample("Jan 1 2011"), "LLL d yyyy")
       .add(forExample("11 Jan 2011"), "dd LLL yyyy")
@@ -201,6 +210,19 @@ public final class DateTimeFormats {
           .add(forExample("10:15:30.1234567"), "HH:mm:ss.SSSSSSS")
           .add(forExample("10:15:30.12345678"), "HH:mm:ss.SSSSSSSS")
           .add(forExample("10:15:30.123456789"), "HH:mm:ss.SSSSSSSSS")
+          .add(forExample("10点"), "HH点")
+          .add(forExample("1点"), "H点")
+          .add(forExample("10时"), "HH时")
+          .add(forExample("1时"), "H时")
+          .add(forExample("15分"), "mm分")
+          .add(forExample("5分"), "m分")
+          .add(forExample("13秒"), "ss秒")
+          .add(forExample("3秒"), "s秒")
+          .add(forExample("上午"), "a")
+          .add(forExample("下午2点"), "ah点")
+          .add(forExample("下午2时"), "ah时")
+          .add(forExample("下午2:10:10"), "ah:mm:ss")
+          .add(forExample("下午2:10"), "ah:mm")
           .add(forExample("1 AM"), "h a")
           .add(forExample("1AM"), "ha")
           .add(forExample("10 AM"), "HH a")
@@ -229,8 +251,10 @@ public final class DateTimeFormats {
           .add(forExample("GMT-12"), "O")
           .add(forExample("GMT+08:00"), "OOOO")
           .add(forExample("GMT-08:00"), "OOOO")
-          .add(forExample("Fri"), "E")
+          .add(forExample("Fri"), "EEE")
           .add(forExample("Friday"), "EEEE")
+          .add(forExample("周一"), "EEE")
+          .add(forExample("星期一"), "EEEE")
           .add(forExample("Jan"), "LLL")
           .add(forExample("January"), "LLLL")
           .add(forExample("PM"), "a")
@@ -277,7 +301,7 @@ public final class DateTimeFormats {
                   return DateTimeFormatter.ofPattern(pattern);
                 }
                 pattern = inferDateTimePattern(example, signature);
-                DateTimeFormatter fmt = DateTimeFormatter.ofPattern(pattern);
+                DateTimeFormatter fmt = inferLocaleIfNeeded(DateTimeFormatter.ofPattern(pattern), signature);
                 fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
                 return fmt;
               } catch (DateTimeParseException e) {
@@ -292,8 +316,14 @@ public final class DateTimeFormats {
     return lookup(RFC_1123_FORMATTERS, signature)
         .orElseGet(() -> lookup(ISO_DATE_FORMATTERS, signature)
         .orElseGet(() -> lookup(ISO_DATE_TIME_FORMATTERS, forExample(removeNanosecondsPart(dateTimeString)))
-        .orElseGet(() -> DateTimeFormatter.ofPattern(inferDateTimePattern(dateTimeString, signature)))))
+        .orElseGet(() -> inferDateTimeFormatter(dateTimeString, signature))))
         .parse(dateTimeString, query);
+  }
+
+  private static DateTimeFormatter inferLocaleIfNeeded(DateTimeFormatter fmt, List<?> signature) {
+    return signature.contains(Token.XINGQI) || signature.contains(Token.ZHOU) || signature.contains(Token.WU)
+        ? fmt.withLocale(Locale.CHINA)
+        : fmt;
   }
 
   /**
@@ -367,6 +397,11 @@ public final class DateTimeFormats {
 
   static String inferDateTimePattern(String example) {
     return inferDateTimePattern(example, forExample(example));
+  }
+
+  private static DateTimeFormatter inferDateTimeFormatter(String example, List<?> signature) {
+    return inferLocaleIfNeeded(
+        DateTimeFormatter.ofPattern(inferDateTimePattern(example, signature)), signature);
   }
 
   private static String inferDateTimePattern(String example, List<?> signature) {
@@ -454,19 +489,31 @@ public final class DateTimeFormats {
         .orElse(example);
   }
 
+  private static boolean isSeparator(char c) {
+    int type = Character.getType(c);
+    return Character.isWhitespace(c) ||
+        type == Character.INITIAL_QUOTE_PUNCTUATION ||
+        type == Character.FINAL_QUOTE_PUNCTUATION ||
+        type == Character.DASH_PUNCTUATION ||
+        type == Character.START_PUNCTUATION ||
+        type == Character.END_PUNCTUATION ||
+        type == Character.CONNECTOR_PUNCTUATION ||
+        type == Character.OTHER_PUNCTUATION;
+}
+
   private static final class LocalDateRule {
     private static final PrefixSearchTable<Object, List<LocalDateRule>> RESOLUTION_TABLE =
         PrefixSearchTable.<Object, List<LocalDateRule>>builder()
             .add(
                 forExample("10-30-2014"),
-                asList(LocalDateRule.monthFirst("MM-dd-yyyy"), LocalDateRule.dayFirst("dd-MM-yyyy")))
-            .add(forExample("1-30-2014"), asList(LocalDateRule.monthFirst("M-dd-yyyy")))
-            .add(forExample("30-1-2014"), asList(LocalDateRule.dayFirst("dd-M-yyyy")))
+                asList(monthFirst("MM-dd-yyyy"), dayFirst("dd-MM-yyyy")))
+            .add(forExample("1-30-2014"), asList(monthFirst("M-dd-yyyy")))
+            .add(forExample("30-1-2014"), asList(dayFirst("dd-M-yyyy")))
             .add(
                 forExample("10/30/2014"),
-                asList(LocalDateRule.monthFirst("MM/dd/yyyy"), LocalDateRule.dayFirst("dd/MM/yyyy")))
-            .add(forExample("1/30/2014"), asList(LocalDateRule.monthFirst("M/dd/yyyy")))
-            .add(forExample("30/1/2014"), asList(LocalDateRule.dayFirst("dd/M/yyyy")))
+                asList(monthFirst("MM/dd/yyyy"), dayFirst("dd/MM/yyyy")))
+            .add(forExample("1/30/2014"), asList(monthFirst("M/dd/yyyy")))
+            .add(forExample("30/1/2014"), asList(dayFirst("dd/M/yyyy")))
             .build();
 
     static BiOptional<List<Object>, String> resolve(List<?> signature) {
@@ -509,6 +556,7 @@ public final class DateTimeFormats {
           && likelyDayOfMonth(numericParts.get(1).digits);
     }
 
+
     private static List<Numeric> filterNumeric(List<?> signature) {
       return signature.stream()
               .filter(part -> part instanceof Numeric)
@@ -550,10 +598,18 @@ public final class DateTimeFormats {
     }
   }
 
+  /**
+   * Words listed for the same token enum are considered equivalent. That is, you can use "Fri"
+   * in the example pattern and it will match "Mon" (but won't match "Monday" as it belongs to
+   * a different token enum.
+   */
   private enum Token {
     WEEKDAY_ABBREVIATION("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
-    WEEKDAY("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
-    WEEKDAY_CODES("E", "EEEE"),
+    WEEKDAY(
+        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
+    XINGQI("星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"),
+    ZHOU("周一", "周二", "周三", "周四", "周五", "周六", "周日"),
+    WEEKDAY_CODES("E", "EE", "EEE", "EEEE"),
     MONTH_ABBREVIATION("Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
     MONTH(
         "January",
@@ -568,13 +624,14 @@ public final class DateTimeFormats {
         "October",
         "November",
         "December"),
-    MONTH_CODES("L", "LLL", "LLLL"),
+    MONTH_CODES("L", "LL", "LLL", "LLLL"),
     YEAR_CODES("yyyy", "YYYY"),
     DAY_CODES("dd", "d"),
     HOUR_CODES("HH", "hh"),
     MINUTE_CODES("mm"),
     SECOND_CODES("ss"),
     AM_PM("AM", "PM"),
+    WU("上午", "下午"),
     AD_BC("AD", "BC"),
     GENERIC_ZONE_NAME(
         "AT", "BT", "CT", "DT", "ET", "FT", "GT", "HT", "IT", "JT", "KT", "LT", "MT", "NT", "OT",
@@ -634,6 +691,13 @@ public final class DateTimeFormats {
         "US",
         "Universal",
         "Zulu"),
+    NIAN("年"),
+    YUE("月"),
+    RI("日"),
+    SHI("时"),
+    DIAN("点"),
+    FEN("分"),
+    MIAO("秒"),
     WORD;
 
     static final Map<String, Token> ALL =

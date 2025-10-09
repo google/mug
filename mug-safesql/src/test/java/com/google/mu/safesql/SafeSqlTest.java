@@ -164,6 +164,7 @@ public class SafeSqlTest {
   }
 
   @Test
+  @SuppressWarnings("StringFormatArgsCheck")
   public void guardOperator_missingQuestionMark() {
     Optional<Integer> id = Optional.empty();
     IllegalArgumentException thrown =
@@ -1229,6 +1230,7 @@ public class SafeSqlTest {
   }
 
   @Test
+  @SuppressWarnings("StringFormatArgsCheck")
   public void cannotUseSafeQueryAsSubquery() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,

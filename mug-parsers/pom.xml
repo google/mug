@@ -1,15 +1,13 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
     <version>9.3-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>mug</artifactId>
-  <packaging>jar</packaging>
-
-  <name>core</name>
+  <artifactId>mug-parsers</artifactId>
+  <name>Parser Combinators</name>
+  
   <build>
     <pluginManagement>
       <plugins>
@@ -25,30 +23,8 @@
             <waitUntil>published</waitUntil>
           </configuration>
         </plugin>
-        <plugin>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <configuration>
-            <annotationProcessorPaths>
-              <path>
-                <groupId>com.google.errorprone</groupId>
-                <artifactId>error_prone_core</artifactId>
-                <version>${error_prone.version}</version>
-              </path>
-              <path>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>mug-errorprone</artifactId>
-                <version>9.2</version>
-              </path>
-            <!-- Other annotation processors go here.
-            If 'annotationProcessorPaths' is set, processors will no longer be
-            discovered on the regular -classpath; see also 'Using Error Prone
-            together with other annotation processors' below. -->
-            </annotationProcessorPaths>
-          </configuration>
-        </plugin>
       </plugins>
     </pluginManagement>
-
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -56,53 +32,57 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>com.google.mu</Automatic-Module-Name>
+              <Automatic-Module-Name>com.google.common.labs.regex</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <release>21</release>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+      </plugin>
     </plugins>
   </build>
-
   <dependencies>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>mug</artifactId>
+      <version>${project.version}</version>
     </dependency>
-
     <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
+      <groupId>com.google.errorprone</groupId>
+      <artifactId>error_prone_annotations</artifactId>
+      <version>${error_prone_annotations.version}</version>
     </dependency>
 
     <dependency>
       <groupId>com.google.truth</groupId>
       <artifactId>truth</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>com.google.truth.extensions</groupId>
       <artifactId>truth-java8-extension</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>com.google.testparameterinjector</groupId>
       <artifactId>test-parameter-injector</artifactId>
+      <scope>test</scope>
     </dependency>
-
+    
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava-testlib</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

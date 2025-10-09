@@ -16,6 +16,8 @@
     <error_prone.version>2.40.0</error_prone.version>
     <error_prone_annotations.version>2.40.0</error_prone_annotations.version>
     <maven_compiler_plugin.version>3.14.0</maven_compiler_plugin.version>
+    <maven.compiler.source>8</maven.compiler.source>
+    <maven.compiler.target>8</maven.compiler.target>
   </properties>
 
   <licenses>
@@ -52,6 +54,8 @@
     <module>mug-safesql</module>
     <module>mug-spanner</module>
     <module>mug-concurrent24</module>
+    <module>mug-safesql-java16tests</module>
+    <module>mug-parsers</module>
   </modules>
   <distributionManagement>
     <snapshotRepository>
@@ -168,6 +172,7 @@
           <artifactId>maven-release-plugin</artifactId>
           <version>3.0.0-M1</version>
           <configuration>
+            <arguments>-pl !mug-safesql-java16tests</arguments>
             <autoVersionSubmodules>true</autoVersionSubmodules>
             <useReleaseProfile>false</useReleaseProfile>
             <releaseProfiles>release</releaseProfiles>
@@ -179,8 +184,8 @@
           <version>${maven_compiler_plugin.version}</version>
           <configuration>
             <fork>true</fork>
-            <source>8</source>
-            <target>8</target>
+            <source>${maven.compiler.source}</source>
+            <target>${maven.compiler.target}</target>
             <encoding>UTF-8</encoding>
             <compilerArgs>
               <arg>-XDcompilePolicy=simple</arg>
@@ -263,7 +268,7 @@
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>3.6.3</version>
           <configuration>
-            <sourcepath>mug/src/main/java;mug-safesql/src/main/java;mug-guava/src/main/java;mug-spanner/src/main/java;mug-protobuf/src/main/java;mug-bigquery/src/main/java;mug-concurrent24/src/main/java;</sourcepath>
+            <sourcepath>mug/src/main/java;mug-safesql/src/main/java;;mug-parsers/src/main/java;mug-guava/src/main/java;mug-spanner/src/main/java;mug-protobuf/src/main/java;mug-bigquery/src/main/java;mug-concurrent24/src/main/java;</sourcepath>
             <includeDependencySources>true</includeDependencySources>
             <additionalDependencies>
               <additionalDependency>
@@ -322,8 +327,8 @@
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
         </configuration>
       </plugin>
   
