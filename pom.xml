@@ -268,7 +268,7 @@
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>3.6.3</version>
           <configuration>
-            <sourcepath>mug/src/main/java;mug-safesql/src/main/java;mug-guava/src/main/java;mug-spanner/src/main/java;mug-protobuf/src/main/java;mug-bigquery/src/main/java;mug-concurrent24/src/main/java;</sourcepath>
+            <sourcepath>mug/src/main/java;mug-safesql/src/main/java;;mug-parsers/src/main/java;mug-guava/src/main/java;mug-spanner/src/main/java;mug-protobuf/src/main/java;mug-bigquery/src/main/java;mug-concurrent24/src/main/java;</sourcepath>
             <includeDependencySources>true</includeDependencySources>
             <additionalDependencies>
               <additionalDependency>
