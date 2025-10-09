@@ -24,7 +24,10 @@ import com.google.mu.util.stream.Iteration.Continuation;
 /**
  * Similar to {@link Iteration}, but is used to iteratively {@link #generate generate()} pairs into
  * a lazy {@link BiStream}.
+ *
+ * @deprecated too niche
  */
+@Deprecated
 public class BiIteration<L, R> {
   private final Iteration<Map.Entry<L, R>> iteration = new Iteration<>();
 
