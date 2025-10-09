@@ -953,5 +953,7 @@ public abstract class Parser<T> {
       throw new IllegalStateException(String.format(message, args));
     }
   }
+
+  Parser() {}
 }
 

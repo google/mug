@@ -38,19 +38,19 @@ import com.google.mu.util.stream.BiStream;
  * <p>For example:
  *
  * <pre>{@code
- * import static com.google.common.labs.text.Csv.CSV;
+ * import static com.google.common.labs.csv.Csv.CSV;
  *
- * List<ImmutableList<String>> rows =
+ * List<List<String>> rows =
  *     // skip(1) to skip the header row.
- *     CSV.parse(input, toImmutableList()).skip(1).toList();
+ *     CSV.parse(input, toUnmodifiableList()).skip(1).toList();
  * }</pre>
  *
  * <p>Or, if the order and the number of fields are known at compile-time, you could directly
  * combine them to build objects of your choice:
  *
  * <pre>{@code
- * import com.google.common.labs.collect.EvenMoreCollectors.combining;
- * import static com.google.common.labs.text.Csv.CSV;
+ * import com.google.mu.util.stream.MoreCollectors.combining;
+ * import static com.google.common.labs.csv.Csv.CSV;
  *
  * List<Result> results =
  *     // assuming no header row
@@ -120,7 +120,7 @@ public final class Csv {
   }
 
   /**
-   * Parses {@code csv} string lazily, returning each row in an {@link ImmutableMap} keyed by the
+   * Parses {@code csv} string lazily, returning each row in a {@link Map} keyed by the
    * field names in the header row. The first non-empty row is expected to be the header row.
    */
   public Stream<Map<String, String>> parseToMaps(String csv) {
