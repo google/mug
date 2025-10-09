@@ -240,6 +240,12 @@ public abstract class Parser<T> {
   /**
    * Starts a fluent chain for matching consecutive {@code charsToMatch} zero or more times. If no
    * such character is found, empty string is the result.
+   *
+   * <p>For example if you need to parse a quoted literal that's allowed to be empty:
+   *
+   * <pre>{@code
+   * zeroOrMore(c -> c != '\'', "quoted").between("'", "'")
+   * }</pre>
    */
   public static Parser<String>.OrEmpty zeroOrMore(CharPredicate charsToMatch, String name) {
     return consecutive(charsToMatch, name).orElse("");
