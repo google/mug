@@ -17,13 +17,11 @@ package com.google.common.labs.text.parser;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.stream;
-import static java.util.Comparator.comparingInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -173,19 +171,20 @@ public abstract class Parser<T> {
             @Override
             MatchResult<T> skipAndMatch(
                 Parser<?> skip, String input, int start, ErrorContext context) {
-              List<MatchResult.Failure<?>> failures = new ArrayList<>();
+              MatchResult.Failure<?> farthestFailure = null;
               for (Parser<? extends T> parser : parsers) {
                 switch (parser.skipAndMatch(skip, input, start, context)) {
                   case MatchResult.Success(int head, int tail, T value) -> {
                     return new MatchResult.Success<>(head, tail, value);
                   }
-                  case MatchResult.Failure<?> failure -> failures.add(failure);
+                  case MatchResult.Failure<?> failure -> {
+                    if (farthestFailure == null || farthestFailure.at() < failure.at()) {
+                      farthestFailure = failure;
+                    }
+                  }
                 }
               }
-              return failures.stream()
-                  .max(comparingInt(MatchResult.Failure<?>::at))
-                  .get()
-                  .safeCast();
+              return farthestFailure.safeCast();
             }
           };
         });
@@ -867,8 +866,9 @@ public abstract class Parser<T> {
 
     /** Represents a partial parse result with a value and the [start, end) range of the match. */
     record Failure<V>(int at, String message, List<?> args) implements MatchResult<V> {
+      @SuppressWarnings("unchecked")
       <X> Failure<X> safeCast() {
-        return new Failure<>(at, message, args);
+        return (Failure<X>) this;
       }
 
       ParseException toException(String input) {
