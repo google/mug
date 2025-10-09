@@ -538,7 +538,7 @@ public sealed interface RegexPattern
     }
   }
 
-  /** Represents a lookaround assertion: (?=...), (?!...), (?<=...), (?<!...). */
+  /** Represents a lookaround assertion: {@code (?=...)}, {@code (?!...)}, {@code (?<=...)}, {@code (?<!...)}. */
   sealed interface Lookaround extends RegexPattern
       permits Lookaround.Lookahead,
           Lookaround.NegativeLookahead,
