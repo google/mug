@@ -12,7 +12,7 @@ import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.labs.text.parser.Parser;
+import com.google.common.labs.parse.Parser;
 
 @RunWith(JUnit4.class)
 public final class CsvTest {

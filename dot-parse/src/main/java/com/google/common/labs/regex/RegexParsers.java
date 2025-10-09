@@ -14,7 +14,7 @@
  *****************************************************************************/
 package com.google.common.labs.regex;
 
-import static com.google.common.labs.text.parser.Parser.literally;
+import static com.google.common.labs.parse.Parser.literally;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static java.util.Arrays.stream;
@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
+import com.google.common.labs.parse.Parser;
 import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.CharRange;
 import com.google.common.labs.regex.RegexPattern.Group;
@@ -31,7 +32,6 @@ import com.google.common.labs.regex.RegexPattern.LiteralChar;
 import com.google.common.labs.regex.RegexPattern.Lookaround;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
-import com.google.common.labs.text.parser.Parser;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.stream.MoreCollectors;
 
