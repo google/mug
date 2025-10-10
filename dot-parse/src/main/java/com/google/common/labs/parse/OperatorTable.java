@@ -217,8 +217,8 @@ public final class OperatorTable<T> {
             }
             Deque<T> operands = new ArrayDeque<>();
             operands.push(left);
-            for (Rhs<T> rhs : rights) {
-              operands.push(rhs.value());
+            for (var right : rights) {
+              operands.push(right.value());
             }
             T result = operands.pop();
             for (var right : rights.reversed()) {
