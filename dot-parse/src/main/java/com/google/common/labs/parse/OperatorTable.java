@@ -215,7 +215,7 @@ public final class OperatorTable<T> {
             if (rights.isEmpty()) {
               return left;
             }
-            Deque<T> operands = new ArrayDeque<>();
+            Deque<T> operands = new ArrayDeque<>(rights.size() + 1);
             operands.push(left);
             for (var right : rights) {
               operands.push(right.value());
