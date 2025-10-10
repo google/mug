@@ -49,7 +49,7 @@ public class MapParserExample {
         sequence(word.followedBy(":"), anyOf(word, listParser, lazy), Both::of)
             .zeroOrMoreDelimitedBy(",")
             .between("{", "}")
-            .map(entries -> BiStream.from(entries.stream()).toMap());
+            .map(kvs -> BiStream.from(kvs.stream()).toMap());
     return lazy.delegateTo(mapParser).parseSkipping(Character::isWhitespace, input);
   }
 }
