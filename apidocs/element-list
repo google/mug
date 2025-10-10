@@ -1,6 +1,6 @@
 com.google.common.labs.csv
+com.google.common.labs.parse
 com.google.common.labs.regex
-com.google.common.labs.text.parser
 com.google.guava.labs.base
 com.google.guava.labs.collect
 com.google.guava.labs.safesql
