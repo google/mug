@@ -18,9 +18,7 @@ import static com.google.common.labs.parse.Parser.string;
 import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.requireNonNull;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -215,16 +213,11 @@ public final class OperatorTable<T> {
             if (rights.isEmpty()) {
               return left;
             }
-            Deque<T> operands = new ArrayDeque<>(rights.size() + 1);
-            operands.push(left);
-            for (var right : rights) {
-              operands.push(right.value());
+            T result = rights.getLast().value();
+            for (int i = rights.size() - 1; i > 0; i--) {
+              result = rights.get(i).op().apply(rights.get(i - 1).value(), result);
             }
-            T result = operands.pop();
-            for (var right : rights.reversed()) {
-              result = right.op().apply(operands.pop(), result);
-            }
-            return result;
+            return rights.get(0).op().apply(left, result);
           });
     }
 
