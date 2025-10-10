@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.common.labs.text.parser;
+package com.google.common.labs.parse;
 
-import static com.google.common.labs.text.parser.Parser.string;
+import static com.google.common.labs.parse.Parser.string;
 import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.requireNonNull;
 

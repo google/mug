@@ -15,7 +15,7 @@
 package com.google.common.labs.csv;
 
 
-import static com.google.common.labs.text.parser.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.mu.util.CharPredicate.is;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.joining;
@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
-import com.google.common.labs.text.parser.Parser;
+import com.google.common.labs.parse.Parser;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.stream.BiStream;
 

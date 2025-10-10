@@ -1,6 +1,6 @@
-package com.google.common.labs.text.parser;
+package com.google.common.labs.parse;
 
-import static com.google.common.labs.text.parser.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.CharPredicate.range;
 import static org.junit.Assert.assertThrows;

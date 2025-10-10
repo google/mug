@@ -1,13 +1,13 @@
-package com.google.common.labs.text.parser;
+package com.google.common.labs.parse;
 
-import static com.google.common.labs.text.parser.Parser.anyOf;
-import static com.google.common.labs.text.parser.Parser.consecutive;
-import static com.google.common.labs.text.parser.Parser.literally;
-import static com.google.common.labs.text.parser.Parser.sequence;
-import static com.google.common.labs.text.parser.Parser.single;
-import static com.google.common.labs.text.parser.Parser.string;
-import static com.google.common.labs.text.parser.Parser.zeroOrMore;
-import static com.google.common.labs.text.parser.Parser.MatchResult.Failure.sourcePosition;
+import static com.google.common.labs.parse.Parser.anyOf;
+import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.literally;
+import static com.google.common.labs.parse.Parser.sequence;
+import static com.google.common.labs.parse.Parser.single;
+import static com.google.common.labs.parse.Parser.string;
+import static com.google.common.labs.parse.Parser.zeroOrMore;
+import static com.google.common.labs.parse.Parser.MatchResult.Failure.sourcePosition;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.CharPredicate.is;
@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.common.labs.text.parser.Parser.ParseException;
+import com.google.common.labs.parse.Parser.ParseException;
 import com.google.common.testing.NullPointerTester;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.mu.util.CharPredicate;
