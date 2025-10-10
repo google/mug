@@ -1,6 +1,8 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Parser.anyOf;
+import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.truth.Truth.assertThat;
 
@@ -36,11 +38,11 @@ public class MapParserExample {
   }
 
   static Map<String, ?> parse(String input) {
-    Parser<String> word = Parser.consecutive(CharPredicate.WORD, "key");
+    Parser<String> word = consecutive(CharPredicate.WORD, "key");
     Parser.Lazy<Map<String, ?>> lazy = new Parser.Lazy<>();
     Parser<List<String>> listParser = word.zeroOrMoreDelimitedBy(",").between("[", "]");
     Parser<?> valueParser = anyOf(word, listParser, lazy);
-    Parser<Map<String, ?>> mapParser = Parser.sequence(word, string(":").then(valueParser), Map::entry)
+    Parser<Map<String, ?>> mapParser = sequence(word, string(":").then(valueParser), Map::entry)
         .zeroOrMoreDelimitedBy(",")
         .between("{", "}")
         .map(entries -> BiStream.from(entries, Map.Entry::getKey, Map.Entry::getValue).toMap());
