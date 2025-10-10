@@ -3,7 +3,6 @@ package com.google.common.labs.parse;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.sequence;
-import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.util.List;
@@ -42,11 +41,11 @@ public class MapParserExample {
     Parser<String> word = consecutive(CharPredicate.WORD, "key");
     Parser.Lazy<Map<String, ?>> lazy = new Parser.Lazy<>();
     Parser<List<String>> listParser = word.zeroOrMoreDelimitedBy(",").between("[", "]");
-    Parser<?> valueParser = anyOf(word, listParser, lazy);
-    Parser<Map<String, ?>> mapParser = sequence(word, string(":").then(valueParser), Both::of)
-        .zeroOrMoreDelimitedBy(",")
-        .between("{", "}")
-        .map(entries -> BiStream.from(entries.stream()).toMap());
+    Parser<Map<String, ?>> mapParser =
+        sequence(word.followedBy(":"), anyOf(word, listParser, lazy), Both::of)
+            .zeroOrMoreDelimitedBy(",")
+            .between("{", "}")
+            .map(entries -> BiStream.from(entries.stream()).toMap());
     return lazy.delegateTo(mapParser).parseSkipping(Character::isWhitespace, input);
   }
 }
