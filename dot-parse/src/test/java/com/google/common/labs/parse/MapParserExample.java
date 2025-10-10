@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.mu.util.Both;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.stream.BiStream;
 
@@ -42,10 +43,10 @@ public class MapParserExample {
     Parser.Lazy<Map<String, ?>> lazy = new Parser.Lazy<>();
     Parser<List<String>> listParser = word.zeroOrMoreDelimitedBy(",").between("[", "]");
     Parser<?> valueParser = anyOf(word, listParser, lazy);
-    Parser<Map<String, ?>> mapParser = sequence(word, string(":").then(valueParser), Map::entry)
+    Parser<Map<String, ?>> mapParser = sequence(word, string(":").then(valueParser), Both::of)
         .zeroOrMoreDelimitedBy(",")
         .between("{", "}")
-        .map(entries -> BiStream.from(entries, Map.Entry::getKey, Map.Entry::getValue).toMap());
+        .map(entries -> BiStream.from(entries.stream()).toMap());
     return lazy.delegateTo(mapParser).parseSkipping(Character::isWhitespace, input);
   }
 }
