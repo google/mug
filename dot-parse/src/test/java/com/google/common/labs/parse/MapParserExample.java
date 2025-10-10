@@ -37,7 +37,7 @@ public class MapParserExample {
   @Test public void testWithNestedMap() {
     assertThat(parse("{k1 : v1, k2 : {k21 : v21, k22 : v22}}"))
         .isEqualTo(Map.of("k1", "v1", "k2", Map.of("k21", "v21", "k22", "v22")));
-    assertThat(parse("{k1 : v1, k2 : {}}"))
+    assertThat(parse("{k1 : v1, k2 : { }}"))
         .isEqualTo(Map.of("k1", "v1", "k2", Map.of()));
   }
 
