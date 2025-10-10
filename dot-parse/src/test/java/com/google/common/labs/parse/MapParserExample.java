@@ -42,7 +42,7 @@ public class MapParserExample {
   }
 
   static Map<String, ?> parse(String input) {
-    Parser<String> word = consecutive(CharPredicate.WORD, "key");
+    Parser<String> word = consecutive(CharPredicate.WORD, "word");
     Parser.Lazy<Map<String, ?>> lazy = new Parser.Lazy<>();
     Parser<List<String>> listParser = word.zeroOrMoreDelimitedBy(",").between("[", "]");
     Parser<Map<String, ?>> mapParser =
