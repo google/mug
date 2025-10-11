@@ -839,8 +839,8 @@ public abstract class Parser<T> {
      *
      * <p>{@code parser.optional().failIfEmpty()} is equivalent to {@code parser}.
      *
-     * <p>Useful when multiple optional parsers are chained together and none of the chained
-     * parsers end up matching anything.
+     * <p>Useful when multiple optional parsers are chained together with any of them successfully
+     * consuming some input.
      */
     public Parser<T> failIfEmpty() {
       return Parser.this;
