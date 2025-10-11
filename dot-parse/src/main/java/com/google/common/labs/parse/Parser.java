@@ -743,7 +743,7 @@ public abstract class Parser<T> {
    * grammar rule follows a regular consuming {@code Parser}.
    *
    * <p>The following is a simplified example of parsing a CSV line: a comma-separated list of
-   * fields with an optional trailing newline. The field values can be empty, empty line results in
+   * fields with an optional trailing newline. The field values can be empty; empty line results in
    * empty list {@code []}, not {@code [""]}:
    *
    * <pre>{@code
