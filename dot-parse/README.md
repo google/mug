@@ -95,7 +95,7 @@ static Map<String, ?> parseMap(String input) {
   // consecutive(WORD, "key") greedy-consumes ≥1 word char; label "key" only shows up in errors.
   Parser<String> key = consecutive(WORD, "key");
 
-  // value := '…' (single-quoted; no escaping shown here)
+  // value := '...' (single-quoted; no escaping shown here)
   // zeroOrMore(predicate) returns an OrEmpty — by itself it may succeed empty.
   // The *between("'", "'")* frame is what enforces consumption: the quotes themselves
   // must match and consume, turning the whole production into a progress-making success.
