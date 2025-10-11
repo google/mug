@@ -788,7 +788,7 @@ public abstract class Parser<T> {
     /**
      * The current optional parser repeated at least once, delimited by {@code delimiter}. If empty,
      * the result is a singleton list with the default value (e.g. from {@code orElse()}). For
-     * example, {@code consecutive(WORD).orElse("").delimitedBy(",")} will {@link #parse} input
+     * example, {@code consecutive(WORD).orElse("").delimitedBy(",")} will {@link #parse parse} input
      * {@code ",a,"} as {@code List.of("", "a", "")}; and parse input {@code ""} as {@code
      * List.of("")}.
      *
