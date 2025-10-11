@@ -797,7 +797,8 @@ public abstract class Parser<T> {
     private <S, R> Parser<R>.OrEmpty before(
         Parser<S>.OrEmpty suffix, BiFunction<? super T, ? super S, ? extends R> combine) {
       return anyOf(
-          sequence(nonEmpty(), suffix, combine), sequence(this, suffix.nonEmpty(), combine))
+          sequence(nonEmpty(), suffix, combine),
+          suffix.nonEmpty().map(v2 -> combine.apply(computeDefaultValue(), v2)))
       .new OrEmpty(() -> combine.apply(computeDefaultValue(), suffix.computeDefaultValue()));
     }
 
