@@ -769,6 +769,11 @@ public abstract class Parser<T> {
       return prefix.then(followedBy(suffix));
     }
 
+    /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
+    public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
+      return sequence(this, suffix, (a, b) -> b);
+    }
+
     /**
      * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
      *
@@ -781,6 +786,21 @@ public abstract class Parser<T> {
       return followedBy(string(suffix));
     }
 
+    /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
+    public <S> Parser<T>.OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
+      return sequence(this, suffix, (a, b) -> a);
+    }
+
+    /**
+     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
+     *
+     * <p>Not public because {@code lazy.delegateTo(zeroOrMore().before(lazy))} could potentially
+     * introduce a left recursion.
+     */
+    Parser<T> followedBy(Parser<?> suffix) {
+      return sequence(this, suffix, (a, b) -> a);
+    }
+
     /**
      * The current optional parser repeated at least once, delimited by {@code delimiter}. If
      * parsing an element fails, the default value (e.g. from {@code orElse()}) is collected
@@ -789,7 +809,7 @@ public abstract class Parser<T> {
      * <p>Note that it's different from {@link Parser#zeroOrMoreDelimitedBy}, which may produce
      * empty list, but each element is guaranteed to be non-empty.
      */
-    public <R> Parser<R>.OrEmpty delimitedBy(String delimiter, Collector<T, ?, R> collector) {
+    public <R> Parser<R>.OrEmpty delimitedBy(String delimiter, Collector<? super T, ?, R> collector) {
       return sequence(
           this,
           string(delimiter).then(this).zeroOrMore(toCollection(ArrayDeque::new)),
@@ -814,13 +834,15 @@ public abstract class Parser<T> {
     }
 
     /**
-     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
+     * Returns the otherwise equivalent parser that will reject empty match.
      *
-     * <p>Not public because {@code lazy.delegateTo(zeroOrMore().before(lazy))} could potentially
-     * introduce a left recursion.
+     * <p>{@code parser.optional().failIfEmpty()} is equivalent to {@code parser}.
+     *
+     * <p>Useful when multiple optional parsers are chained together and none of the chained
+     * parsers end up matching anything.
      */
-    Parser<T> followedBy(Parser<?> suffix) {
-      return sequence(this, suffix, (v1, v2) -> v1);
+    public Parser<T> failIfEmpty() {
+      return Parser.this;
     }
 
     /**
@@ -829,10 +851,6 @@ public abstract class Parser<T> {
      */
     public T parse(String input) {
       return input.isEmpty() ? computeDefaultValue() : failIfEmpty().parse(input);
-    }
-
-    Parser<T> failIfEmpty() {
-      return Parser.this;
     }
 
     T computeDefaultValue() {
