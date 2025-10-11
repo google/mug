@@ -464,7 +464,7 @@ public class ParserTest {
     Parser<List<String>>.OrEmpty parser =
         consecutive(ALPHANUMERIC, "word").orElse("").delimitedBy(",");
     assertThat(parser.parse("foo,bar")).containsExactly("foo", "bar").inOrder();
-    assertThat(parser.failIfEmpty().parse("foo,bar")).containsExactly("foo", "bar").inOrder();
+    assertThat(parser.notEmpty().parse("foo,bar")).containsExactly("foo", "bar").inOrder();
   }
 
   @Test
@@ -474,7 +474,7 @@ public class ParserTest {
             .orElse("")
             .delimitedBy(",");
     assertThat(parser.parse("foo")).containsExactly("foo");
-    assertThat(parser.failIfEmpty().parse("foo")).containsExactly("foo");
+    assertThat(parser.notEmpty().parse("foo")).containsExactly("foo");
   }
 
   @Test
@@ -484,7 +484,7 @@ public class ParserTest {
             .orElse("")
             .delimitedBy(",");
     assertThat(parser.parse("foo,")).containsExactly("foo", "").inOrder();
-    assertThat(parser.failIfEmpty().parse("foo,")).containsExactly("foo", "").inOrder();
+    assertThat(parser.notEmpty().parse("foo,")).containsExactly("foo", "").inOrder();
   }
 
   @Test
@@ -494,7 +494,7 @@ public class ParserTest {
             .orElse("")
             .delimitedBy(",");
     assertThat(parser.parse(",bar")).containsExactly("", "bar").inOrder();
-    assertThat(parser.failIfEmpty().parse(",bar")).containsExactly("", "bar").inOrder();
+    assertThat(parser.notEmpty().parse(",bar")).containsExactly("", "bar").inOrder();
   }
 
   @Test
@@ -504,7 +504,7 @@ public class ParserTest {
             .orElse("")
             .delimitedBy(",");
     assertThat(parser.parse(",foo,bar,,")).containsExactly("", "foo", "bar", "", "").inOrder();
-    assertThat(parser.failIfEmpty().parse(",foo,bar,,"))
+    assertThat(parser.notEmpty().parse(",foo,bar,,"))
         .containsExactly("", "foo", "bar", "", "")
         .inOrder();
   }
@@ -516,7 +516,7 @@ public class ParserTest {
             .orElse("")
             .delimitedBy(",");
     assertThat(parser.parse(",,,")).containsExactly("", "", "", "");
-    assertThat(parser.failIfEmpty().parse(",,,")).containsExactly("", "", "", "");
+    assertThat(parser.notEmpty().parse(",,,")).containsExactly("", "", "", "");
   }
 
   @Test
@@ -526,7 +526,7 @@ public class ParserTest {
             .orElse("")
             .delimitedBy(",");
     assertThat(parser.parse("")).containsExactly("").inOrder();
-    assertThrows(ParseException.class, () -> parser.failIfEmpty().parse(""));
+    assertThrows(ParseException.class, () -> parser.notEmpty().parse(""));
   }
 
   @Test
@@ -1596,58 +1596,58 @@ public class ParserTest {
   }
 
   @Test
-  public void failIfEmpty_twoOptionalParsers_firstOptionalParserFails() {
+  public void notEmpty_twoOptionalParsers_firstOptionalParserFails() {
     var numbers =
         consecutive(DIGIT, "number")
             .orElse("")
             .delimitedBy(",")
             .followedBy(string(".").optional())
-            .failIfEmpty();
+            .notEmpty();
     assertThat(numbers.parse(".")).containsExactly("");
   }
 
   @Test
-  public void failIfEmpty_twoOptionalParsers_secondOptionalParserFails() {
+  public void notEmpty_twoOptionalParsers_secondOptionalParserFails() {
     var numbers =
         consecutive(DIGIT, "number")
             .orElse("")
             .delimitedBy(",")
             .followedBy(string(".").optional())
-            .failIfEmpty();
+            .notEmpty();
     assertThat(numbers.parse(",123,,")).containsExactly("", "123", "", "").inOrder();
   }
 
   @Test
-  public void failIfEmpty_twoOptionalParsers_bothOptionalParsersMatch() {
+  public void notEmpty_twoOptionalParsers_bothOptionalParsersMatch() {
     var numbers =
         consecutive(DIGIT, "number")
             .orElse("")
             .delimitedBy(",")
             .followedBy(string(".").optional())
-            .failIfEmpty();
+            .notEmpty();
     assertThat(numbers.parse(",123,,456.")).containsExactly("", "123", "", "456").inOrder();
   }
 
   @Test
-  public void failIfEmpty_twoOptionalParsers_bothFail_firstErrorIsFarther() {
+  public void notEmpty_twoOptionalParsers_bothFail_firstErrorIsFarther() {
     var numbers =
         consecutive(DIGIT, "number")
             .orElse("")
             .delimitedBy(",")
             .followedBy(string(".").optional())
-            .failIfEmpty();
+            .notEmpty();
     ParseException thrown = assertThrows(ParseException.class, () -> numbers.parse("123,a."));
     assertThat(thrown).hasMessageThat().contains("1:5: a");
   }
 
   @Test
-  public void failIfEmpty_twoOptionalParsers_bothFail_secondErrorIsFarther() {
+  public void notEmpty_twoOptionalParsers_bothFail_secondErrorIsFarther() {
     var numbers =
         consecutive(DIGIT, "number")
             .orElse("")
             .delimitedBy(",")
             .followedBy(string("abc,1").followedBy("!").optional())
-            .failIfEmpty();
+            .notEmpty();
     ParseException thrown = assertThrows(ParseException.class, () -> numbers.parse("abc,1."));
     assertThat(thrown).hasMessageThat().contains("1:6: expecting `!`");
   }
