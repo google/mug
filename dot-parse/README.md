@@ -101,10 +101,8 @@ static Map<String, ?> parseMap(String input) {
   // must match and consume, turning the whole production into a progress-making success.
   // literally(...) disables global skipping *inside* the quotes.
   Parser<String> value =
-      literally(
-          zeroOrMore(c -> c != '\'', "value")          // body: may be empty (OrEmpty)
-              .between("'", "'")                       // frame: guarantees net consumption on success
-      );
+      literally(zeroOrMore(c -> c != '\'', "value")）  // body: may be empty (OrEmpty)
+          .between("'", "'")                           // frame: guarantees net consumption on success
 
   // values := '[' value (',' value)* ']'
   // zeroOrMoreDelimitedBy returns empty on 0 items; again, the [ ] frame is what ensures progress.
