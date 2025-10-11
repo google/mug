@@ -74,7 +74,7 @@ int v = calculator()
 
 ---
 
-## Example 2 — Parser a `Map<String, ?>`
+## Example 2 — Parse a `Map<String, ?>`
 
 Let's try a more realistic example: parse a tiny JSON-ish subset.
 
