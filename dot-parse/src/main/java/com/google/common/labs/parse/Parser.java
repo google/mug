@@ -135,7 +135,26 @@ public abstract class Parser<T> {
       Parser<A> left,
       Parser<B>.OrEmpty right,
       BiFunction<? super A, ? super B, ? extends C> combiner) {
-    return right.after(requireNonNull(left), requireNonNull(combiner));
+    requireNonNull(left);
+    requireNonNull(right);
+    requireNonNull(combiner);
+    return new Parser<C>() {
+      @Override
+      MatchResult<C> skipAndMatch(
+          Parser<?> skip, String input, int start, ErrorContext context) {
+        return switch (left.skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success(int prefixBegin, int prefixEnd, A v1) ->
+              switch (right.failIfEmpty().skipAndMatch(skip, input, prefixEnd, context)) {
+                case MatchResult.Success(int suffixBegin, int suffixEnd, B v2) ->
+                    new MatchResult.Success<>(prefixBegin, suffixEnd, combiner.apply(v1, v2));
+                case MatchResult.Failure<?> failure ->
+                    new MatchResult.Success<>(
+                        prefixBegin, prefixEnd, combiner.apply(v1, right.computeDefaultValue()));
+              };
+          case MatchResult.Failure<?> failure -> failure.safeCast();
+        };
+      }
+    };
   }
 
   /**
@@ -611,7 +630,7 @@ public abstract class Parser<T> {
    * parseToStreamSkipping()} is called.
    */
   public static <T> Parser<T>.OrEmpty literally(Parser<T>.OrEmpty rule) {
-    return rule.literally();
+    return literally(rule.failIfEmpty()).new OrEmpty(rule::computeDefaultValue);
   }
 
   private Parser<T> skipping(Parser<?> patternToSkip) {
@@ -805,31 +824,6 @@ public abstract class Parser<T> {
     }
 
     /**
-     * The current optional (or zero-or-more) parser must be follow non-empty {@code prefix}, and
-     * then use the given {@code combine} function to combine the results.
-     */
-    private <P, R> Parser<R> after(
-        Parser<P> prefix, BiFunction<? super P, ? super T, ? extends R> combine) {
-      return new Parser<R>() {
-        @Override
-        MatchResult<R> skipAndMatch(
-            Parser<?> skip, String input, int start, ErrorContext context) {
-          return switch (prefix.skipAndMatch(skip, input, start, context)) {
-            case MatchResult.Success(int prefixBegin, int prefixEnd, P v1) ->
-                switch (failIfEmpty().skipAndMatch(skip, input, prefixEnd, context)) {
-                  case MatchResult.Success(int suffixBegin, int suffixEnd, T v2) ->
-                      new MatchResult.Success<>(prefixBegin, suffixEnd, combine.apply(v1, v2));
-                  case MatchResult.Failure<?> failure ->
-                      new MatchResult.Success<>(
-                          prefixBegin, prefixEnd, combine.apply(v1, computeDefaultValue()));
-                };
-            case MatchResult.Failure<?> failure -> failure.safeCast();
-          };
-        }
-      };
-    }
-
-    /**
      * Parses the entire input string and returns the result; if input is empty, returns the default
      * empty value.
      */
@@ -837,15 +831,11 @@ public abstract class Parser<T> {
       return input.isEmpty() ? computeDefaultValue() : failIfEmpty().parse(input);
     }
 
-    private Parser<T>.OrEmpty literally() {
-      return Parser.literally(failIfEmpty()).new OrEmpty(defaultSupplier);
-    }
-
-    private Parser<T> failIfEmpty() {
+    Parser<T> failIfEmpty() {
       return Parser.this;
     }
 
-    private T computeDefaultValue() {
+    T computeDefaultValue() {
       return defaultSupplier.get();
     }
   }
