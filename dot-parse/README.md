@@ -191,20 +191,20 @@ The combined parser succeeds but consumes zero characters. Then `zeroOrMore()` l
 Mug's Dot Parse library uses the type system to prevent you from ever falling into this trap. The bug becomes a compile-time error.
 
 When you write `row.orElse(EMPTY_ROW)`, you don't get back a first-class Parser.
-It returns a special `Parser<Row>.OrEmpty` type that doesn't have dangerous methods like `followedBy()` or `zeroOrMore()`.
+It returns a special `Parser<Row>.OrEmpty` type that doesn't have dangerous methods like `zeroOrMore()`.
 The compiler stops you cold.
 
-This forces you to explicitly define each different cases with no ambiguity:
+This forces you to define the grammar rule to be always consuming:
 
 ```java {.good}
 // This is the only way the types let you write it
-Parser<List<Row>>.OrEmpty parser = anyOf(                       ✅
-    row.followedBy(newline),        // A row with its newline
-    newline.thenReturn(EMPTY_ROW),  // An empty row
-    row                             // A row at the end of the file
-).zeroOrMore();
+Parser<List<Row>>.OrEmpty parser =
+    row.orElse(EMPTY_ROW)                // Row can be empty
+        .followedBy(newline.optional())  // Trailing new line can be optional
+        .notEmpty()                      // But you gotta have at least one
+        .zeroOrMore();                   // Then it's safe in a loop
 ```
-Every option in `anyOf()` is guaranteed to consume input. If your code compiles, `zeroOrMore()` can never loop infinitely.
+If your code compiles, `zeroOrMore()` can never loop infinitely.
 
 Similarly, you can never run into **accidental left recursion** (which causes `StackOverflowError`).
 
