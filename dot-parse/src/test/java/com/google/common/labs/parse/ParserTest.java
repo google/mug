@@ -464,6 +464,7 @@ public class ParserTest {
     Parser<List<String>>.OrEmpty parser =
         consecutive(ALPHANUMERIC, "word").orElse("").delimitedBy(",");
     assertThat(parser.parse("foo,bar")).containsExactly("foo", "bar").inOrder();
+    assertThat(parser.failIfEmpty().parse("foo,bar")).containsExactly("foo", "bar").inOrder();
   }
 
   @Test
@@ -472,7 +473,8 @@ public class ParserTest {
         consecutive(ALPHANUMERIC, "word")
             .orElse("")
             .delimitedBy(",");
-    assertThat(parser.parse("foo")).containsExactly("foo").inOrder();
+    assertThat(parser.parse("foo")).containsExactly("foo");
+    assertThat(parser.failIfEmpty().parse("foo")).containsExactly("foo");
   }
 
   @Test
@@ -482,6 +484,7 @@ public class ParserTest {
             .orElse("")
             .delimitedBy(",");
     assertThat(parser.parse("foo,")).containsExactly("foo", "").inOrder();
+    assertThat(parser.failIfEmpty().parse("foo,")).containsExactly("foo", "").inOrder();
   }
 
   @Test
@@ -491,6 +494,7 @@ public class ParserTest {
             .orElse("")
             .delimitedBy(",");
     assertThat(parser.parse(",bar")).containsExactly("", "bar").inOrder();
+    assertThat(parser.failIfEmpty().parse(",bar")).containsExactly("", "bar").inOrder();
   }
 
   @Test
@@ -500,6 +504,9 @@ public class ParserTest {
             .orElse("")
             .delimitedBy(",");
     assertThat(parser.parse(",foo,bar,,")).containsExactly("", "foo", "bar", "", "").inOrder();
+    assertThat(parser.failIfEmpty().parse(",foo,bar,,"))
+        .containsExactly("", "foo", "bar", "", "")
+        .inOrder();
   }
 
   @Test
@@ -508,7 +515,8 @@ public class ParserTest {
         consecutive(ALPHANUMERIC, "word")
             .orElse("")
             .delimitedBy(",");
-    assertThat(parser.parse(",,,")).containsExactly("", "", "", "").inOrder();
+    assertThat(parser.parse(",,,")).containsExactly("", "", "", "");
+    assertThat(parser.failIfEmpty().parse(",,,")).containsExactly("", "", "", "");
   }
 
   @Test
@@ -518,6 +526,7 @@ public class ParserTest {
             .orElse("")
             .delimitedBy(",");
     assertThat(parser.parse("")).containsExactly("").inOrder();
+    assertThrows(ParseException.class, () -> parser.failIfEmpty().parse(""));
   }
 
   @Test
