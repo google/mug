@@ -747,7 +747,7 @@ public abstract class Parser<T> {
    * empty list {@code []}, not {@code [""]}:
    *
    * <pre>{@code
-   * Parser<String> field = consecutive(noneOf(",\n");
+   * Parser<String> field = consecutive(noneOf(",\n"));
    * Parser<?> newline = string("\n");
    * Parser<List<String>> csvRow =
    *     anyOf(
