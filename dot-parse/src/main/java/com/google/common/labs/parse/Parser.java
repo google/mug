@@ -742,6 +742,23 @@ public abstract class Parser<T> {
    * Parser#followedBy(Parser.OrEmpty)} methods can be used to specify that a {@code Parser.OrEmpty}
    * grammar rule follows a regular consuming {@code Parser}.
    *
+   * <p>The following is a simplified example of parsing a CSV line: a comma-separated list of
+   * fields with an optional trailing newline. The field values can be empty, empty line results in
+   * empty list {@code []}, not {@code [""]}:
+   *
+   * <pre>{@code
+   * Parser<String> field = consecutive(noneOf(",\n");
+   * Parser<?> newline = string("\n");
+   * Parser<List<String>> csvRow =
+   *     anyOf(
+   *         newline.thenReturn(List.of()),          // empty line -> []
+   *         field
+   *             .orElse("")                         // empty field is ok
+   *             .delimitedBy(",")                   // comma-separated
+   *             .followedBy(newline.optional())     // optional trailing newline
+   *             .notEmpty());                       // fail if the line is completely empty
+   * }</pre>
+   *
    * <p>In addition, the {@link #parse} convenience method is provided to parse potentially-empty
    * input in this one stop shop without having to remember to check for emptiness, because this
    * class already knows the default value to use when the input is empty.
