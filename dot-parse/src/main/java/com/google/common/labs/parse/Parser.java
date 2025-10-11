@@ -756,7 +756,7 @@ public abstract class Parser<T> {
    *             .orElse("")                         // empty field is ok
    *             .delimitedBy(",")                   // comma-separated
    *             .followedBy(newline.optional())     // optional trailing newline
-   *             .notEmpty());                       // fail if the line completely empty
+   *             .notEmpty());                       // fail if the line is completely empty
    * }</pre>
    *
    * <p>In addition, the {@link #parse} convenience method is provided to parse potentially-empty
