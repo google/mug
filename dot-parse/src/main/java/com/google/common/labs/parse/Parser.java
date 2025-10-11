@@ -834,7 +834,8 @@ public abstract class Parser<T> {
     }
 
     /**
-     * Returns the otherwise equivalent parser that will reject empty match.
+     * Returns the otherwise equivalent {@code Parser} that will fail instead of returning the
+     * default value upon a mismatch.
      *
      * <p>{@code parser.optional().failIfEmpty()} is equivalent to {@code parser}.
      *
