@@ -135,7 +135,7 @@ public final class BoundedConcurrency {
    * downstream exceptions, but is unable to interrupt or join when an <em>upstream</em> exception
    * is thrown. {@code concurrently()} will always interrupt and join. As a result, actions in the
    * virtual threads <em>happens-before</em> actions after the collector returns or throws.
-   * <li>{@code mapConcurrent()} promises encounter-order. If an input element takes
+   * <li>{@code mapConcurrent()} strictly adheres to encounter-order. If an input element takes
    * a long time or forever to process, it can potentially block or halt the program
    * when there are more than {@code maxConcurrency} elements following it, even if
    * {@code maxConcurrency - 1} virtual threads have already completed with the long-running task
