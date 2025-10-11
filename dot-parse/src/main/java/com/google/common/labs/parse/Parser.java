@@ -147,7 +147,10 @@ public abstract class Parser<T> {
       Parser<A>.OrEmpty left,
       Parser<B>.OrEmpty right,
       BiFunction<? super A, ? super B, ? extends C> combiner) {
-    return left.<B, C>before(right, combiner);
+    return anyOf(
+        sequence(left.nonEmpty(), right, combiner),
+        right.nonEmpty().map(v2 -> combiner.apply(left.computeDefaultValue(), v2)))
+    .new OrEmpty(() -> combiner.apply(left.computeDefaultValue(), right.computeDefaultValue()));
   }
 
   /**
@@ -159,7 +162,9 @@ public abstract class Parser<T> {
       Parser<A>.OrEmpty left,
       Parser<B> right,
       BiFunction<? super A, ? super B, ? extends C> combiner) {
-    return left.before(right, requireNonNull(combiner));
+    return anyOf(
+        sequence(left.nonEmpty(), right, combiner),
+        right.map(v2 -> combiner.apply(left.computeDefaultValue(), v2)));
   }
 
   /** Matches if any of the given {@code parsers} match. */
@@ -794,14 +799,6 @@ public abstract class Parser<T> {
       return delimitedBy(delimiter, toUnmodifiableList());
     }
 
-    private <S, R> Parser<R>.OrEmpty before(
-        Parser<S>.OrEmpty suffix, BiFunction<? super T, ? super S, ? extends R> combine) {
-      return anyOf(
-          sequence(nonEmpty(), suffix, combine),
-          suffix.nonEmpty().map(v2 -> combine.apply(computeDefaultValue(), v2)))
-      .new OrEmpty(() -> combine.apply(computeDefaultValue(), suffix.computeDefaultValue()));
-    }
-
     /**
      * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
      *
@@ -809,14 +806,7 @@ public abstract class Parser<T> {
      * introduce a left recursion.
      */
     Parser<T> followedBy(Parser<?> suffix) {
-      return before(suffix, (v1, v2) -> v1);
-    }
-
-    private <S, R> Parser<R> before(
-        Parser<S> suffix, BiFunction<? super T, ? super S, ? extends R> combine) {
-      return anyOf(
-          sequence(nonEmpty(), suffix, combine),
-          suffix.map(v2 -> combine.apply(computeDefaultValue(), v2)));
+      return sequence(this, suffix, (v1, v2) -> v1);
     }
 
     /**
