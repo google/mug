@@ -117,7 +117,7 @@ public final class Csv {
                 .orElse("")
                 .delimitedBy(String.valueOf(delim), rowCollector)
                 .followedBy(NEW_LINE.orElse(null))
-                .failIfEmpty());
+                .notEmpty());
     return allowsComments
         ? Parser.anyOf(COMMENT.thenReturn(null), line).parseToStream(csv).filter(Objects::nonNull)
         : line.parseToStream(csv);

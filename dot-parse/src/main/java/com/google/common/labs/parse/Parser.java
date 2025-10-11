@@ -144,7 +144,7 @@ public abstract class Parser<T> {
           Parser<?> skip, String input, int start, ErrorContext context) {
         return switch (left.skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success(int prefixBegin, int prefixEnd, A v1) ->
-              switch (right.failIfEmpty().skipAndMatch(skip, input, prefixEnd, context)) {
+              switch (right.notEmpty().skipAndMatch(skip, input, prefixEnd, context)) {
                 case MatchResult.Success(int suffixBegin, int suffixEnd, B v2) ->
                     new MatchResult.Success<>(prefixBegin, suffixEnd, combiner.apply(v1, v2));
                 case MatchResult.Failure<?> failure ->
@@ -167,8 +167,8 @@ public abstract class Parser<T> {
       Parser<B>.OrEmpty right,
       BiFunction<? super A, ? super B, ? extends C> combiner) {
     return anyOf(
-        sequence(left.failIfEmpty(), right, combiner),
-        right.failIfEmpty().map(v2 -> combiner.apply(left.computeDefaultValue(), v2)))
+        sequence(left.notEmpty(), right, combiner),
+        right.notEmpty().map(v2 -> combiner.apply(left.computeDefaultValue(), v2)))
     .new OrEmpty(() -> combiner.apply(left.computeDefaultValue(), right.computeDefaultValue()));
   }
 
@@ -182,7 +182,7 @@ public abstract class Parser<T> {
       Parser<B> right,
       BiFunction<? super A, ? super B, ? extends C> combiner) {
     return anyOf(
-        sequence(left.failIfEmpty(), right, combiner),
+        sequence(left.notEmpty(), right, combiner),
         right.map(v2 -> combiner.apply(left.computeDefaultValue(), v2)));
   }
 
@@ -630,7 +630,7 @@ public abstract class Parser<T> {
    * parseToStreamSkipping()} is called.
    */
   public static <T> Parser<T>.OrEmpty literally(Parser<T>.OrEmpty rule) {
-    return literally(rule.failIfEmpty()).new OrEmpty(rule::computeDefaultValue);
+    return literally(rule.notEmpty()).new OrEmpty(rule::computeDefaultValue);
   }
 
   private Parser<T> skipping(Parser<?> patternToSkip) {
@@ -835,14 +835,14 @@ public abstract class Parser<T> {
 
     /**
      * Returns the otherwise equivalent {@code Parser} that will fail instead of returning the
-     * default value upon a mismatch.
+     * default value if empty.
      *
      * <p>{@code parser.optional().failIfEmpty()} is equivalent to {@code parser}.
      *
      * <p>Useful when multiple optional parsers are chained together with any of them successfully
      * consuming some input.
      */
-    public Parser<T> failIfEmpty() {
+    public Parser<T> notEmpty() {
       return Parser.this;
     }
 
@@ -851,7 +851,7 @@ public abstract class Parser<T> {
      * empty value.
      */
     public T parse(String input) {
-      return input.isEmpty() ? computeDefaultValue() : failIfEmpty().parse(input);
+      return input.isEmpty() ? computeDefaultValue() : notEmpty().parse(input);
     }
 
     T computeDefaultValue() {
