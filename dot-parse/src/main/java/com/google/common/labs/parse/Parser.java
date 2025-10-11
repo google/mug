@@ -723,10 +723,10 @@ public abstract class Parser<T> {
    * combined together with a non-empty prefix, suffix or both, which will be specified by methods
    * of this class.
    *
-   * <p>Besides {@link #between} and {@link #before before()}, the {@link
+   * <p>Besides {@link #between between()} and {@link #followedBy(String) followedBy()}, the {@link
    * Parser#sequence(Parser, Parser.OrEmpty, BiFunction) sequence()} and {@link
-   * Parser#followedBy(Parser.OrEmpty)} methods can be used to specify that a
-   * {@code Parser.OrEmpty} grammar rule follows a regular consuming {@code Parser}.
+   * Parser#followedBy(Parser.OrEmpty)} methods can be used to specify that a {@code Parser.OrEmpty}
+   * grammar rule follows a regular consuming {@code Parser}.
    *
    * <p>In addition, the {@link #parse} convenience method is provided to parse potentially-empty
    * input in this one stop shop without having to remember to check for emptiness, because this
