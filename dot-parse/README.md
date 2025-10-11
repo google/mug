@@ -201,7 +201,7 @@ This forces you to define the grammar rule to be always consuming:
 Parser<List<Row>>.OrEmpty parser =
     row.orElse(EMPTY_ROW)                // Row can be empty
         .followedBy(newline.optional())  // Trailing new line can be optional
-        .notEmpty()                      // But you gotta have at least one
+        .notEmpty()                      // But you gotta have at least one  ✅
         .zeroOrMore();                   // It's a Parser again, and safe in a loop
 ```
 If your code compiles, `zeroOrMore()` can never loop infinitely.
