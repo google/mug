@@ -2,7 +2,7 @@
 
 Small, safe-by-construction parser combinators for Java.
 
-- **Extremely small footprint:** ~**720 LOC** end-to-end — roughly **1/6 jparsec**.
+- **Extremely small footprint:** ~**800 LOC** end-to-end — roughly **1/6 jparsec**.
 - **Small API, low learning curve:** a handful of primitives; you can read the code and “just write the grammar”.
 - **Safe by construction:** free of two classic footguns (spin loops from `many/optional`, and sneaky left recursion).
 
@@ -210,7 +210,7 @@ Similarly, you can never run into **accidental left recursion** (which causes `S
 
 ## Footprint
 
-- About **720 lines of Java** (including `OperatorTable`).  
+- About **800 lines of Java** (including `OperatorTable`).  
 - Besides Mug core, no other dependencies.
 
 ---

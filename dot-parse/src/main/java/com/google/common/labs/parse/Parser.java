@@ -487,29 +487,24 @@ public abstract class Parser<T> {
     return sequence(this, next, (unused, value) -> value);
   }
 
-  /**
-   * Ensures that the pattern represented by this parser must be followed by {@code next} string.
-   */
-  public final Parser<T> followedBy(String next) {
-    return followedBy(string(next));
+  /** If this parser matches, continue to match {@code suffix}. */
+  public final Parser<T> followedBy(String suffix) {
+    return followedBy(string(suffix));
   }
 
-  /** If this parser matches, applies the given parser on the remaining input. */
-  public final Parser<T> followedBy(Parser<?> next) {
-    return sequence(this, next, (value, unused) -> value);
+  /** If this parser matches, continue to match {@code suffix}. */
+  public final Parser<T> followedBy(Parser<?> suffix) {
+    return sequence(this, suffix, (value, unused) -> value);
   }
 
-  /**
-   * If this parser matches, applies the given optional (or zero-or-more) parser on the remaining
-   * input.
-   */
-  public final <X> Parser<T> followedBy(Parser<X>.OrEmpty next) {
-    return sequence(this, next, (value, unused) -> value);
+  /** If this parser matches, continue to match the optional {@code suffix}. */
+  public final <X> Parser<T> followedBy(Parser<X>.OrEmpty suffix) {
+    return sequence(this, suffix, (value, unused) -> value);
   }
 
   /** Returns an equivalent parser except it allows {@code suffix} if present. */
   public final Parser<T> optionallyFollowedBy(String suffix) {
-    return sequence(this, string(suffix).orElse(null), (value, unused) -> value);
+    return followedBy(string(suffix).orElse(null));
   }
 
   /**
