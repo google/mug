@@ -704,10 +704,10 @@ public abstract class Parser<T> {
    * combined together with a non-empty prefix, suffix or both, which will be specified by methods
    * of this class.
    *
-   * <p>Besides {@code between()} and {@link #before before()}, the {@link
-   * Parser#sequence(Parser, OrEmpty, BiFunction) sequence()} and {@link Parser#followedBy(OrEmpty)}
-   * methods can be used to specify that an {@code OrEmpty} grammar rule follows a regular consuming
-   * {@code Parser}.
+   * <p>Besides {@link #between} and {@link #before before()}, the {@link
+   * Parser#sequence(Parser, Parser.OrEmpty, BiFunction) sequence()} and {@link
+   * Parser#followedBy(Parser.OrEmpty)} methods can be used to specify that a
+   * {@code Parser.OrEmpty} grammar rule follows a regular consuming {@code Parser}.
    *
    * <p>In addition, the {@link #parse} convenience method is provided to parse potentially-empty
    * input in this one stop shop without having to remember to check for emptiness, because this
@@ -740,8 +740,9 @@ public abstract class Parser<T> {
      * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
      *
      * <p>Note that there is no {@code after()}, but you can use {@link
-     * Parser#sequence(Parser, OrEmpty, BiFunction) sequence()} and {@link Parser#followedBy(OrEmpty)}
-     * to specify that an {@code OrEmpty} grammar rule follows a regular consuming {@code Parser}.
+     * Parser#sequence(Parser, Parser.OrEmpty, BiFunction) sequence()} and {@link
+     * Parser#followedBy(Parser.OrEmpty)} to specify that a {@code Parser.OrEmpty} grammar rule
+     * follows a regular consuming {@code Parser}.
      */
     public Parser<T> before(String suffix) {
       return before(string(suffix));
