@@ -112,7 +112,7 @@ public final class Csv {
     Parser<String> unquoted = consecutive(UNRESERVED_CHAR.and(is(delim).not()), "unquoted field");
     Parser<R> line =
         Parser.anyOf(
-            NEW_LINE.map(unused -> finisher.apply(supplier.get())),
+            NEW_LINE.map(unused -> finisher.apply(supplier.get())),  // empty line => [], not [""]
             QUOTED.or(unquoted)
                 .orElse("")
                 .delimitedBy(String.valueOf(delim), rowCollector)
