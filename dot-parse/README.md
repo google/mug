@@ -179,8 +179,8 @@ You're like: "easy, I'll just replace `delimitedBy()` with `zeroOrMore()`, and m
 
 ```java
 Parser<List<Row>> csv = row.orElse(EMPTY_ROW)
-    .followedBy(newline.optional())        💣
-    .zeroOrMore();
+    .followedBy(newline.optional())  💣
+    .zeroOrMore();                   💣
 ```
 
 And you run `parse(input)`. The program hangs!
@@ -192,11 +192,11 @@ The combined parser succeeds but consumes zero characters. Then `zeroOrMore()` l
 ️
 Mug's Dot Parse library uses the type system to prevent you from ever falling into this trap. The bug becomes a compile-time error.
 
-When you write `row.orElse(EMPTY_ROW)`, you don't get back a generic Parser.
-You get a special `Parser<Row>.OrEmpty` type that doesn't have dangerous methods like `followedBy()` or `zeroOrMore()`.
+When you write `row.orElse(EMPTY_ROW)`, you don't get back a first-class Parser.
+It returns a special `Parser<Row>.OrEmpty` type that doesn't have dangerous methods like `followedBy()` or `zeroOrMore()`.
 The compiler stops you cold.
 
-This forces you to explicitly define what a successful step forward looks like:
+This forces you to explicitly define each different cases with no ambiguity:
 
 ```java {.good}
 // This is the only way the types let you write it
