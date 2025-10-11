@@ -148,8 +148,8 @@ public abstract class Parser<T> {
       Parser<B>.OrEmpty right,
       BiFunction<? super A, ? super B, ? extends C> combiner) {
     return anyOf(
-        sequence(left.nonEmpty(), right, combiner),
-        right.nonEmpty().map(v2 -> combiner.apply(left.computeDefaultValue(), v2)))
+        sequence(left.failIfEmpty(), right, combiner),
+        right.failIfEmpty().map(v2 -> combiner.apply(left.computeDefaultValue(), v2)))
     .new OrEmpty(() -> combiner.apply(left.computeDefaultValue(), right.computeDefaultValue()));
   }
 
@@ -163,7 +163,7 @@ public abstract class Parser<T> {
       Parser<B> right,
       BiFunction<? super A, ? super B, ? extends C> combiner) {
     return anyOf(
-        sequence(left.nonEmpty(), right, combiner),
+        sequence(left.failIfEmpty(), right, combiner),
         right.map(v2 -> combiner.apply(left.computeDefaultValue(), v2)));
   }
 
@@ -821,7 +821,7 @@ public abstract class Parser<T> {
             Parser<?> skip, String input, int start, ErrorContext context) {
           return switch (prefix.skipAndMatch(skip, input, start, context)) {
             case MatchResult.Success(int prefixBegin, int prefixEnd, P v1) ->
-                switch (nonEmpty().skipAndMatch(skip, input, prefixEnd, context)) {
+                switch (failIfEmpty().skipAndMatch(skip, input, prefixEnd, context)) {
                   case MatchResult.Success(int suffixBegin, int suffixEnd, T v2) ->
                       new MatchResult.Success<>(prefixBegin, suffixEnd, combine.apply(v1, v2));
                   case MatchResult.Failure<?> failure ->
@@ -839,14 +839,14 @@ public abstract class Parser<T> {
      * empty value.
      */
     public T parse(String input) {
-      return input.isEmpty() ? computeDefaultValue() : nonEmpty().parse(input);
+      return input.isEmpty() ? computeDefaultValue() : failIfEmpty().parse(input);
     }
 
     private Parser<T>.OrEmpty literally() {
-      return Parser.literally(nonEmpty()).new OrEmpty(defaultSupplier);
+      return Parser.literally(failIfEmpty()).new OrEmpty(defaultSupplier);
     }
 
-    private Parser<T> nonEmpty() {
+    private Parser<T> failIfEmpty() {
       return Parser.this;
     }
 
