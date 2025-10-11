@@ -420,6 +420,107 @@ public class ParserTest {
   }
 
   @Test
+  public void sequence_bothOrEmpty_bothSucceed() {
+    Parser<String>.OrEmpty parser =
+        sequence(
+            string("a").orElse("default-a"),
+            string("b").orElse("default-b"),
+            (a, b) -> a + ":" + b);
+    assertThat(parser.parse("ab")).isEqualTo("a:b");
+  }
+
+  @Test
+  public void sequence_bothOrEmpty_leftIsEmpty() {
+    Parser<String>.OrEmpty parser =
+        sequence(
+            string("a").orElse("default-a"),
+            string("b").orElse("default-b"),
+            (a, b) -> a + ":" + b);
+    assertThat(parser.parse("b")).isEqualTo("default-a:b");
+  }
+
+  @Test
+  public void sequence_bothOrEmpty_rightIsEmpty() {
+    Parser<String>.OrEmpty parser =
+        sequence(
+            string("a").orElse("default-a"),
+            string("b").orElse("default-b"),
+            (a, b) -> a + ":" + b);
+    assertThat(parser.parse("a")).isEqualTo("a:default-b");
+  }
+
+  @Test
+  public void sequence_bothOrEmpty_bothEmpty() {
+    Parser<String>.OrEmpty parser =
+        sequence(
+            string("a").orElse("default-a"),
+            string("b").orElse("default-b"),
+            (a, b) -> a + ":" + b);
+    assertThat(parser.parse("")).isEqualTo("default-a:default-b");
+  }
+
+  @Test
+  public void orEmpty_delimitedBy_bothSides() {
+    Parser<List<String>>.OrEmpty parser =
+        consecutive(ALPHANUMERIC, "word").orElse("").delimitedBy(",");
+    assertThat(parser.parse("foo,bar")).containsExactly("foo", "bar").inOrder();
+  }
+
+  @Test
+  public void orEmpty_delimitedBy_single() {
+    Parser<List<String>>.OrEmpty parser =
+        consecutive(ALPHANUMERIC, "word")
+            .orElse("")
+            .delimitedBy(",");
+    assertThat(parser.parse("foo")).containsExactly("foo").inOrder();
+  }
+
+  @Test
+  public void orEmpty_delimitedBy_trailingEmpty() {
+    Parser<List<String>>.OrEmpty parser =
+        consecutive(ALPHANUMERIC, "word")
+            .orElse("")
+            .delimitedBy(",");
+    assertThat(parser.parse("foo,")).containsExactly("foo", "").inOrder();
+  }
+
+  @Test
+  public void orEmpty_delimitedBy_leadingEmpty() {
+    Parser<List<String>>.OrEmpty parser =
+        consecutive(ALPHANUMERIC, "word")
+            .orElse("")
+            .delimitedBy(",");
+    assertThat(parser.parse(",bar")).containsExactly("", "bar").inOrder();
+  }
+
+  @Test
+  public void orEmpty_delimitedBy_kitchenSink() {
+    Parser<List<String>>.OrEmpty parser =
+        consecutive(ALPHANUMERIC, "word")
+            .orElse("")
+            .delimitedBy(",");
+    assertThat(parser.parse(",foo,bar,,")).containsExactly("", "foo", "bar", "", "").inOrder();
+  }
+
+  @Test
+  public void orEmpty_delimitedBy_allEmpty() {
+    Parser<List<String>>.OrEmpty parser =
+        consecutive(ALPHANUMERIC, "word")
+            .orElse("")
+            .delimitedBy(",");
+    assertThat(parser.parse(",,,")).containsExactly("", "", "", "").inOrder();
+  }
+
+  @Test
+  public void orEmpty_delimitedBy_emptyInput() {
+    Parser<List<String>>.OrEmpty parser =
+        consecutive(ALPHANUMERIC, "word")
+            .orElse("")
+            .delimitedBy(",");
+    assertThat(parser.parse("")).containsExactly("").inOrder();
+  }
+
+  @Test
   public void or_success() {
     Parser<String> parser = string("foo").or(string("bar"));
     assertThat(parser.parse("foo")).isEqualTo("foo");
@@ -549,22 +650,22 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMore_before_zeroMatch() {
-    Parser<List<String>> parser = string("a").zeroOrMore().before(";");
+  public void zeroOrMore_followedBy_zeroMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMore().followedBy(";");
     assertThat(parser.parse(";")).isEmpty();
     assertThat(parser.parseToStream(";")).containsExactly(List.of());
   }
 
   @Test
-  public void zeroOrMore_before_oneMatch() {
-    Parser<List<String>> parser = string("a").zeroOrMore().before(";");
+  public void zeroOrMore_followedBy_oneMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMore().followedBy(";");
     assertThat(parser.parse("a;")).containsExactly("a");
     assertThat(parser.parseToStream("a;")).containsExactly(List.of("a"));
   }
 
   @Test
-  public void zeroOrMore_before_multipleMatches() {
-    Parser<List<String>> parser = string("a").zeroOrMore().before(";");
+  public void zeroOrMore_followedBy_multipleMatches() {
+    Parser<List<String>> parser = string("a").zeroOrMore().followedBy(";");
     assertThat(parser.parse("aa;")).containsExactly("a", "a").inOrder();
     assertThat(parser.parseToStream("aa;")).containsExactly(List.of("a", "a"));
     assertThat(parser.parse("aaa;")).containsExactly("a", "a", "a").inOrder();
@@ -598,22 +699,22 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMore_beforeParser_zeroMatch() {
-    Parser<List<String>> parser = string("a").zeroOrMore().before(string(";"));
+  public void zeroOrMore_followedByParser_zeroMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMore().followedBy(string(";"));
     assertThat(parser.parse(";")).isEmpty();
     assertThat(parser.parseToStream(";")).containsExactly(List.of());
   }
 
   @Test
-  public void zeroOrMore_beforeParser_oneMatch() {
-    Parser<List<String>> parser = string("a").zeroOrMore().before(string(";"));
+  public void zeroOrMore_followedByParser_oneMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMore().followedBy(string(";"));
     assertThat(parser.parse("a;")).containsExactly("a");
     assertThat(parser.parseToStream("a;")).containsExactly(List.of("a"));
   }
 
   @Test
-  public void zeroOrMore_beforeParser_multipleMatches() {
-    Parser<List<String>> parser = string("a").zeroOrMore().before(string(";"));
+  public void zeroOrMore_followedByParser_multipleMatches() {
+    Parser<List<String>> parser = string("a").zeroOrMore().followedBy(string(";"));
     assertThat(parser.parse("aa;")).containsExactly("a", "a").inOrder();
     assertThat(parser.parseToStream("aa;")).containsExactly(List.of("a", "a"));
     assertThat(parser.parse("aaa;")).containsExactly("a", "a", "a").inOrder();
@@ -666,22 +767,22 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMoreDelimitedBy_before_zeroMatch() {
-    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").before(";");
+  public void zeroOrMoreDelimitedBy_followedBy_zeroMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").followedBy(";");
     assertThat(parser.parse(";")).isEmpty();
     assertThat(parser.parseToStream(";")).containsExactly(List.of());
   }
 
   @Test
-  public void zeroOrMoreDelimitedBy_before_oneMatch() {
-    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").before(";");
+  public void zeroOrMoreDelimitedBy_followedBy_oneMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").followedBy(";");
     assertThat(parser.parse("a;")).containsExactly("a");
     assertThat(parser.parseToStream("a;")).containsExactly(List.of("a"));
   }
 
   @Test
-  public void zeroOrMoreDelimitedBy_before_multipleMatches() {
-    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").before(";");
+  public void zeroOrMoreDelimitedBy_followedBy_multipleMatches() {
+    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").followedBy(";");
     assertThat(parser.parse("a,a;")).containsExactly("a", "a").inOrder();
     assertThat(parser.parseToStream("a,a;")).containsExactly(List.of("a", "a"));
     assertThat(parser.parse("a,a,a;")).containsExactly("a", "a", "a").inOrder();
@@ -715,25 +816,25 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMoreDelimitedBy_beforeParser_zeroMatch() {
+  public void zeroOrMoreDelimitedBy_followedByParser_zeroMatch() {
     Parser<List<String>> parser =
-        string("a").zeroOrMoreDelimitedBy(",").before(string(";"));
+        string("a").zeroOrMoreDelimitedBy(",").followedBy(string(";"));
     assertThat(parser.parse(";")).isEmpty();
     assertThat(parser.parseToStream(";")).containsExactly(List.of());
   }
 
   @Test
-  public void zeroOrMoreDelimitedBy_beforeParser_oneMatch() {
+  public void zeroOrMoreDelimitedBy_followedByParser_oneMatch() {
     Parser<List<String>> parser =
-        string("a").zeroOrMoreDelimitedBy(",").before(string(";"));
+        string("a").zeroOrMoreDelimitedBy(",").followedBy(string(";"));
     assertThat(parser.parse("a;")).containsExactly("a");
     assertThat(parser.parseToStream("a;")).containsExactly(List.of("a"));
   }
 
   @Test
-  public void zeroOrMoreDelimitedBy_beforeParser_multipleMatches() {
+  public void zeroOrMoreDelimitedBy_followedByParser_multipleMatches() {
     Parser<List<String>> parser =
-        string("a").zeroOrMoreDelimitedBy(",").before(string(";"));
+        string("a").zeroOrMoreDelimitedBy(",").followedBy(string(";"));
     assertThat(parser.parse("a,a;")).containsExactly("a", "a").inOrder();
     assertThat(parser.parseToStream("a,a;")).containsExactly(List.of("a", "a"));
     assertThat(parser.parse("a,a,a;")).containsExactly("a", "a", "a").inOrder();
@@ -781,15 +882,15 @@ public class ParserTest {
   }
 
   @Test
-  public void optional_before_zeroMatch() {
-    Parser<Optional<String>> parser = string("a").optional().before(";");
+  public void optional_followedBy_zeroMatch() {
+    Parser<Optional<String>> parser = string("a").optional().followedBy(";");
     assertThat(parser.parse(";")).isEmpty();
     assertThat(parser.parseToStream(";")).containsExactly(Optional.empty());
   }
 
   @Test
-  public void optional_before_oneMatch() {
-    Parser<Optional<String>> parser = string("a").optional().before(";");
+  public void optional_followedBy_oneMatch() {
+    Parser<Optional<String>> parser = string("a").optional().followedBy(";");
     assertThat(parser.parse("a;")).hasValue("a");
     assertThat(parser.parseToStream("a;")).containsExactly(Optional.of("a"));
   }
@@ -809,15 +910,15 @@ public class ParserTest {
   }
 
   @Test
-  public void optional_beforeParser_zeroMatch() {
-    Parser<Optional<String>> parser = string("a").optional().before(string(";"));
+  public void optional_followedByParser_zeroMatch() {
+    Parser<Optional<String>> parser = string("a").optional().followedBy(string(";"));
     assertThat(parser.parse(";")).isEmpty();
     assertThat(parser.parseToStream(";")).containsExactly(Optional.empty());
   }
 
   @Test
-  public void optional_beforeParser_oneMatch() {
-    Parser<Optional<String>> parser = string("a").optional().before(string(";"));
+  public void optional_followedByParser_oneMatch() {
+    Parser<Optional<String>> parser = string("a").optional().followedBy(string(";"));
     assertThat(parser.parse("a;")).hasValue("a");
     assertThat(parser.parseToStream("a;")).containsExactly(Optional.of("a"));
   }
@@ -852,15 +953,15 @@ public class ParserTest {
   }
 
   @Test
-  public void orElse_before_zeroMatch() {
-    Parser<String> parser = string("a").orElse("default").before(";");
+  public void orElse_followedBy_zeroMatch() {
+    Parser<String> parser = string("a").orElse("default").followedBy(";");
     assertThat(parser.parse(";")).isEqualTo("default");
     assertThat(parser.parseToStream(";")).containsExactly("default");
   }
 
   @Test
-  public void orElse_before_oneMatch() {
-    Parser<String> parser = string("a").orElse("default").before(";");
+  public void orElse_followedBy_oneMatch() {
+    Parser<String> parser = string("a").orElse("default").followedBy(";");
     assertThat(parser.parse("a;")).isEqualTo("a");
     assertThat(parser.parseToStream("a;")).containsExactly("a");
   }
@@ -880,15 +981,15 @@ public class ParserTest {
   }
 
   @Test
-  public void orElse_beforeParser_zeroMatch() {
-    Parser<String> parser = string("a").orElse("default").before(string(";"));
+  public void orElse_followedByParser_zeroMatch() {
+    Parser<String> parser = string("a").orElse("default").followedBy(string(";"));
     assertThat(parser.parse(";")).isEqualTo("default");
     assertThat(parser.parseToStream(";")).containsExactly("default");
   }
 
   @Test
-  public void orElse_beforeParser_oneMatch() {
-    Parser<String> parser = string("a").orElse("default").before(string(";"));
+  public void orElse_followedByParser_oneMatch() {
+    Parser<String> parser = string("a").orElse("default").followedBy(string(";"));
     assertThat(parser.parse("a;")).isEqualTo("a");
     assertThat(parser.parseToStream("a;")).containsExactly("a");
   }
