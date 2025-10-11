@@ -179,11 +179,11 @@ You're like: "easy, I'll just replace `delimitedBy()` with `zeroOrMore()`, and m
 
 ```java
 Parser<List<Row>> csv = row.orElse(EMPTY_ROW)
-    .followedBy(newline.optional()) 💣
+    .followedBy(newline.optional())        💣
     .zeroOrMore();
 ```
 
-And you run `parse(input)`. But the program hangs!
+And you run `parse(input)`. The program hangs!
 
 At the end of the file, `row.orElse()` succeeds (by finding nothing) and `newline.optional()` also succeeds (by finding nothing).
 The combined parser succeeds but consumes zero characters. Then `zeroOrMore()` loop sees this success and happily tries again on the exact same spot... forever.
