@@ -1587,6 +1587,63 @@ public class ParserTest {
   }
 
   @Test
+  public void failIfEmpty_twoOptionalParsers_firstOptionalParserFails() {
+    var numbers =
+        consecutive(DIGIT, "number")
+            .orElse("")
+            .delimitedBy(",")
+            .followedBy(string(".").optional())
+            .failIfEmpty();
+    assertThat(numbers.parse(".")).containsExactly("");
+  }
+
+  @Test
+  public void failIfEmpty_twoOptionalParsers_secondOptionalParserFails() {
+    var numbers =
+        consecutive(DIGIT, "number")
+            .orElse("")
+            .delimitedBy(",")
+            .followedBy(string(".").optional())
+            .failIfEmpty();
+    assertThat(numbers.parse(",123,,")).containsExactly("", "123", "", "").inOrder();
+  }
+
+  @Test
+  public void failIfEmpty_twoOptionalParsers_bothOptionalParsersMatch() {
+    var numbers =
+        consecutive(DIGIT, "number")
+            .orElse("")
+            .delimitedBy(",")
+            .followedBy(string(".").optional())
+            .failIfEmpty();
+    assertThat(numbers.parse(",123,,456.")).containsExactly("", "123", "", "456").inOrder();
+  }
+
+  @Test
+  public void failIfEmpty_twoOptionalParsers_bothFail_firstErrorIsFarther() {
+    var numbers =
+        consecutive(DIGIT, "number")
+            .orElse("")
+            .delimitedBy(",")
+            .followedBy(string(".").optional())
+            .failIfEmpty();
+    ParseException thrown = assertThrows(ParseException.class, () -> numbers.parse("123,a."));
+    assertThat(thrown).hasMessageThat().contains("1:5: a");
+  }
+
+  @Test
+  public void failIfEmpty_twoOptionalParsers_bothFail_secondErrorIsFarther() {
+    var numbers =
+        consecutive(DIGIT, "number")
+            .orElse("")
+            .delimitedBy(",")
+            .followedBy(string("abc,1").followedBy("!").optional())
+            .failIfEmpty();
+    ParseException thrown = assertThrows(ParseException.class, () -> numbers.parse("abc,1."));
+    assertThat(thrown).hasMessageThat().contains("1:6: expecting `!`");
+  }
+
+  @Test
   public void skipping_anyOfWithLiterally() {
     Parser<String> parser = anyOf(string("foo"), literally(consecutive(DIGIT, "digit")));
     assertThat(parser.parseSkipping(Character::isWhitespace, " foo")).isEqualTo("foo");

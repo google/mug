@@ -111,9 +111,13 @@ public final class Csv {
     var finisher = rowCollector.finisher();
     Parser<String> unquoted = consecutive(UNRESERVED_CHAR.and(is(delim).not()), "unquoted field");
     Parser<R> line =
-        csv(QUOTED.or(unquoted), rowCollector)
-            .optionallyFollowedBy(NEW_LINE.thenReturn(identity()))
-            .or(NEW_LINE.map(unused -> finisher.apply(supplier.get())));
+        Parser.anyOf(
+            NEW_LINE.map(unused -> finisher.apply(supplier.get())),
+            QUOTED.or(unquoted)
+                .orElse("")
+                .delimitedBy(String.valueOf(delim), rowCollector)
+                .followedBy(NEW_LINE.orElse(null))
+                .failIfEmpty());
     return allowsComments
         ? Parser.anyOf(COMMENT.thenReturn(null), line).parseToStream(csv).filter(Objects::nonNull)
         : line.parseToStream(csv);
@@ -130,41 +134,6 @@ public final class Csv {
         .peek(values -> fieldNames.compareAndSet(null, values))
         .skip(1)
         .map(values -> BiStream.zip(fieldNames.get(), values).toMap());
-  }
-
-  /**
-   * Given the {@code field} grammar, returns a parser that recognizes a CSV row with the fields
-   * delimited by comma, while allowing empty fields. That is: "," should result in two empty
-   * fields, and "foo,," results in one field "foo" followed by two empty fields.
-   *
-   * <p>As always, completely empty string isn't a valid row hence will not show up in the result
-   * stream. The {@link #parse} method will only recognize empty strings terminated by newline as
-   * empty rows.
-   */
-  private <A, R> Parser<R> csv(Parser<String> field, Collector<? super String, A, R> rowCollector) {
-    var supplier = rowCollector.supplier();
-    var accumulator = rowCollector.accumulator();
-    var finisher = rowCollector.finisher();
-    return Parser.anyOf(field, Parser.string(String.valueOf(delim)).thenReturn(this))
-        .atLeastOnce()
-        .map(
-            values -> {
-              A buffer = supplier.get();
-              for (int i = 0; i < values.size(); i++) {
-                if (values.get(i) instanceof String str) {
-                  accumulator.accept(buffer, str);
-                  continue;
-                }
-                if (i == 0 || values.get(i - 1) == this) {
-                  // starts with comma, or between two commas
-                  accumulator.accept(buffer, "");
-                }
-                if (i >= values.size() - 1) { // ends with comma, add the trailing empty
-                  accumulator.accept(buffer, "");
-                }
-              }
-              return finisher.apply(buffer);
-            });
   }
 
   @Override

@@ -135,7 +135,26 @@ public abstract class Parser<T> {
       Parser<A> left,
       Parser<B>.OrEmpty right,
       BiFunction<? super A, ? super B, ? extends C> combiner) {
-    return right.after(requireNonNull(left), requireNonNull(combiner));
+    requireNonNull(left);
+    requireNonNull(right);
+    requireNonNull(combiner);
+    return new Parser<C>() {
+      @Override
+      MatchResult<C> skipAndMatch(
+          Parser<?> skip, String input, int start, ErrorContext context) {
+        return switch (left.skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success(int prefixBegin, int prefixEnd, A v1) ->
+              switch (right.failIfEmpty().skipAndMatch(skip, input, prefixEnd, context)) {
+                case MatchResult.Success(int suffixBegin, int suffixEnd, B v2) ->
+                    new MatchResult.Success<>(prefixBegin, suffixEnd, combiner.apply(v1, v2));
+                case MatchResult.Failure<?> failure ->
+                    new MatchResult.Success<>(
+                        prefixBegin, prefixEnd, combiner.apply(v1, right.computeDefaultValue()));
+              };
+          case MatchResult.Failure<?> failure -> failure.safeCast();
+        };
+      }
+    };
   }
 
   /**
@@ -611,7 +630,7 @@ public abstract class Parser<T> {
    * parseToStreamSkipping()} is called.
    */
   public static <T> Parser<T>.OrEmpty literally(Parser<T>.OrEmpty rule) {
-    return rule.literally();
+    return literally(rule.failIfEmpty()).new OrEmpty(rule::computeDefaultValue);
   }
 
   private Parser<T> skipping(Parser<?> patternToSkip) {
@@ -750,6 +769,11 @@ public abstract class Parser<T> {
       return prefix.then(followedBy(suffix));
     }
 
+    /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
+    public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
+      return sequence(this, suffix, (a, b) -> b);
+    }
+
     /**
      * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
      *
@@ -762,6 +786,21 @@ public abstract class Parser<T> {
       return followedBy(string(suffix));
     }
 
+    /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
+    public <S> Parser<T>.OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
+      return sequence(this, suffix, (a, b) -> a);
+    }
+
+    /**
+     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
+     *
+     * <p>Not public because {@code lazy.delegateTo(zeroOrMore().before(lazy))} could potentially
+     * introduce a left recursion.
+     */
+    Parser<T> followedBy(Parser<?> suffix) {
+      return sequence(this, suffix, (a, b) -> a);
+    }
+
     /**
      * The current optional parser repeated at least once, delimited by {@code delimiter}. If
      * parsing an element fails, the default value (e.g. from {@code orElse()}) is collected
@@ -770,7 +809,7 @@ public abstract class Parser<T> {
      * <p>Note that it's different from {@link Parser#zeroOrMoreDelimitedBy}, which may produce
      * empty list, but each element is guaranteed to be non-empty.
      */
-    public <R> Parser<R>.OrEmpty delimitedBy(String delimiter, Collector<T, ?, R> collector) {
+    public <R> Parser<R>.OrEmpty delimitedBy(String delimiter, Collector<? super T, ?, R> collector) {
       return sequence(
           this,
           string(delimiter).then(this).zeroOrMore(toCollection(ArrayDeque::new)),
@@ -795,38 +834,15 @@ public abstract class Parser<T> {
     }
 
     /**
-     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
+     * Returns the otherwise equivalent parser that will reject empty match.
      *
-     * <p>Not public because {@code lazy.delegateTo(zeroOrMore().before(lazy))} could potentially
-     * introduce a left recursion.
+     * <p>{@code parser.optional().failIfEmpty()} is equivalent to {@code parser}.
+     *
+     * <p>Useful when multiple optional parsers are chained together and none of the chained
+     * parsers end up matching anything.
      */
-    Parser<T> followedBy(Parser<?> suffix) {
-      return sequence(this, suffix, (v1, v2) -> v1);
-    }
-
-    /**
-     * The current optional (or zero-or-more) parser must be follow non-empty {@code prefix}, and
-     * then use the given {@code combine} function to combine the results.
-     */
-    private <P, R> Parser<R> after(
-        Parser<P> prefix, BiFunction<? super P, ? super T, ? extends R> combine) {
-      return new Parser<R>() {
-        @Override
-        MatchResult<R> skipAndMatch(
-            Parser<?> skip, String input, int start, ErrorContext context) {
-          return switch (prefix.skipAndMatch(skip, input, start, context)) {
-            case MatchResult.Success(int prefixBegin, int prefixEnd, P v1) ->
-                switch (failIfEmpty().skipAndMatch(skip, input, prefixEnd, context)) {
-                  case MatchResult.Success(int suffixBegin, int suffixEnd, T v2) ->
-                      new MatchResult.Success<>(prefixBegin, suffixEnd, combine.apply(v1, v2));
-                  case MatchResult.Failure<?> failure ->
-                      new MatchResult.Success<>(
-                          prefixBegin, prefixEnd, combine.apply(v1, computeDefaultValue()));
-                };
-            case MatchResult.Failure<?> failure -> failure.safeCast();
-          };
-        }
-      };
+    public Parser<T> failIfEmpty() {
+      return Parser.this;
     }
 
     /**
@@ -837,15 +853,7 @@ public abstract class Parser<T> {
       return input.isEmpty() ? computeDefaultValue() : failIfEmpty().parse(input);
     }
 
-    private Parser<T>.OrEmpty literally() {
-      return Parser.literally(failIfEmpty()).new OrEmpty(defaultSupplier);
-    }
-
-    private Parser<T> failIfEmpty() {
-      return Parser.this;
-    }
-
-    private T computeDefaultValue() {
+    T computeDefaultValue() {
       return defaultSupplier.get();
     }
   }
