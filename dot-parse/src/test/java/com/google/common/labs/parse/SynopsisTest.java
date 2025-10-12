@@ -39,6 +39,7 @@ public class SynopsisTest {
   @Test
   public void toString_shortNonWhitespace_inMiddle_atEnd() {
     assertThat(new Synopsis("bar foo", 4).toString()).isEqualTo("[foo]");
+    assertThat(new Synopsis("bar foo", 3).toString()).isEqualTo("[ foo]");
   }
 
   @Test
