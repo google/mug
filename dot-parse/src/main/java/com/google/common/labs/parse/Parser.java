@@ -716,11 +716,7 @@ public abstract class Parser<T> {
     switch (result) {
       case MatchResult.Success(int head, int tail, T value) -> {
         if (tail != input.length()) {
-          throw new ParseException(
-              "unmatched input at "
-                  + MatchResult.Failure.sourcePosition(input, tail)
-                  + ": "
-                  + input.substring(tail));
+          throw context.report(context.expecting("EOF", tail));
         }
         return value;
       }
@@ -1010,11 +1006,7 @@ public abstract class Parser<T> {
     }
 
     <V> MatchResult.Failure<V> expecting(String name, int at) {
-      return failAt(
-          at,
-          "expecting `%s`, encountered `%s`.",
-          name,
-          at == input.length() ? "EOF" : input.charAt(at));
+      return failAt(at, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
     }
 
     <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
@@ -1049,6 +1041,22 @@ public abstract class Parser<T> {
     @Override
     public String toString() {
       return input.substring(begin, end);
+    }
+  }
+
+  record Snippet(String input, int at) {
+    @Override
+    public String toString() {
+      if (at >= input.length()) {
+        return "<EOF>";
+      }
+      String snippet =
+          Substring.upToIncluding(Substring.consecutive(c -> !Character.isWhitespace(c)))
+              .limit(50)
+              .in(input, at)
+              .map(Substring.Match::toString)
+              .orElse(input.substring(at, at + 1));
+      return "[" + (at + snippet.length() < input.length() ? snippet + "..." : snippet) + "]";
     }
   }
 

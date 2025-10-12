@@ -12,9 +12,12 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.noneOf;
+import static com.google.mu.util.CharPredicate.range;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.junit.Assert.assertThrows;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -147,7 +150,7 @@ public class ParserTest {
     Parser<String> parser =
         Parser.consecutive(DIGIT, "number").flatMap(number -> string("=" + number));
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("123=123???"));
-    assertThat(thrown).hasMessageThat().contains("at 1:8: ???");
+    assertThat(thrown).hasMessageThat().contains("at 1:8: expecting <EOF>, encountered [???]");
     assertThrows(ParseException.class, () -> parser.parseToStream("123=123???").toList());
   }
 
@@ -255,7 +258,7 @@ public class ParserTest {
         string("123").map(Integer::parseInt).optionallyFollowedBy("++", n -> n + 1);
     Parser.ParseException thrown =
         assertThrows(Parser.ParseException.class, () -> parser.parse("123+"));
-    assertThat(thrown).hasMessageThat().contains("at 1:4: +");
+    assertThat(thrown).hasMessageThat().contains("at 1:4: expecting <EOF>, encountered [+]");
     assertThrows(ParseException.class, () -> parser.parseToStream("123+").toList());
   }
 
@@ -265,7 +268,7 @@ public class ParserTest {
         string("123").map(Integer::parseInt).optionallyFollowedBy("++", n -> n + 1);
     Parser.ParseException thrown =
         assertThrows(Parser.ParseException.class, () -> parser.parse("abc"));
-    assertThat(thrown).hasMessageThat().contains("at 1:1: expecting `123`, encountered `a`.");
+    assertThat(thrown).hasMessageThat().contains("at 1:1: expecting <123>, encountered [abc]");
     assertThrows(ParseException.class, () -> parser.parseToStream("abc").toList());
   }
 
@@ -309,14 +312,14 @@ public class ParserTest {
   public void expecting_eof() {
     Parser<String> parser = string("f");
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse(""));
-    assertThat(thrown).hasMessageThat().contains("expecting `f`, encountered `EOF`");
+    assertThat(thrown).hasMessageThat().contains("expecting <f>, encountered <EOF>");
   }
 
   @Test
   public void expecting_differentChar() {
     Parser<String> parser = string("foo");
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("bar"));
-    assertThat(thrown).hasMessageThat().contains("expecting `foo`, encountered `b`");
+    assertThat(thrown).hasMessageThat().contains("expecting <foo>, encountered [bar]");
   }
 
   @Test
@@ -325,7 +328,7 @@ public class ParserTest {
     ParseException thrown =
         assertThrows(
             ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "(1 + \n( 2 + 3)"));
-    assertThat(thrown).hasMessageThat().contains("at 2:9: expecting `)`, encountered `EOF`.");
+    assertThat(thrown).hasMessageThat().contains("at 2:9: expecting <)>, encountered <EOF>.");
   }
 
   @Test
@@ -334,7 +337,7 @@ public class ParserTest {
     ParseException thrown =
         assertThrows(
             ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "(1 + \n( 2 ? 3)"));
-    assertThat(thrown).hasMessageThat().contains("at 2:5: expecting `)`, encountered `?`.");
+    assertThat(thrown).hasMessageThat().contains("at 2:5: expecting <)>, encountered [?...]");
   }
 
   @Test
@@ -470,9 +473,7 @@ public class ParserTest {
   @Test
   public void orEmpty_delimitedBy_single() {
     Parser<List<String>>.OrEmpty parser =
-        consecutive(ALPHANUMERIC, "word")
-            .orElse("")
-            .delimitedBy(",");
+        consecutive(ALPHANUMERIC, "word").orElse("").delimitedBy(",");
     assertThat(parser.parse("foo")).containsExactly("foo");
     assertThat(parser.notEmpty().parse("foo")).containsExactly("foo");
   }
@@ -480,9 +481,7 @@ public class ParserTest {
   @Test
   public void orEmpty_delimitedBy_trailingEmpty() {
     Parser<List<String>>.OrEmpty parser =
-        consecutive(ALPHANUMERIC, "word")
-            .orElse("")
-            .delimitedBy(",");
+        consecutive(ALPHANUMERIC, "word").orElse("").delimitedBy(",");
     assertThat(parser.parse("foo,")).containsExactly("foo", "").inOrder();
     assertThat(parser.notEmpty().parse("foo,")).containsExactly("foo", "").inOrder();
   }
@@ -490,9 +489,7 @@ public class ParserTest {
   @Test
   public void orEmpty_delimitedBy_leadingEmpty() {
     Parser<List<String>>.OrEmpty parser =
-        consecutive(ALPHANUMERIC, "word")
-            .orElse("")
-            .delimitedBy(",");
+        consecutive(ALPHANUMERIC, "word").orElse("").delimitedBy(",");
     assertThat(parser.parse(",bar")).containsExactly("", "bar").inOrder();
     assertThat(parser.notEmpty().parse(",bar")).containsExactly("", "bar").inOrder();
   }
@@ -500,9 +497,7 @@ public class ParserTest {
   @Test
   public void orEmpty_delimitedBy_kitchenSink() {
     Parser<List<String>>.OrEmpty parser =
-        consecutive(ALPHANUMERIC, "word")
-            .orElse("")
-            .delimitedBy(",");
+        consecutive(ALPHANUMERIC, "word").orElse("").delimitedBy(",");
     assertThat(parser.parse(",foo,bar,,")).containsExactly("", "foo", "bar", "", "").inOrder();
     assertThat(parser.notEmpty().parse(",foo,bar,,"))
         .containsExactly("", "foo", "bar", "", "")
@@ -512,9 +507,7 @@ public class ParserTest {
   @Test
   public void orEmpty_delimitedBy_allEmpty() {
     Parser<List<String>>.OrEmpty parser =
-        consecutive(ALPHANUMERIC, "word")
-            .orElse("")
-            .delimitedBy(",");
+        consecutive(ALPHANUMERIC, "word").orElse("").delimitedBy(",");
     assertThat(parser.parse(",,,")).containsExactly("", "", "", "");
     assertThat(parser.notEmpty().parse(",,,")).containsExactly("", "", "", "");
   }
@@ -522,10 +515,8 @@ public class ParserTest {
   @Test
   public void orEmpty_delimitedBy_emptyInput() {
     Parser<List<String>>.OrEmpty parser =
-        consecutive(ALPHANUMERIC, "word")
-            .orElse("")
-            .delimitedBy(",");
-    assertThat(parser.parse("")).containsExactly("").inOrder();
+        consecutive(ALPHANUMERIC, "word").orElse("").delimitedBy(",");
+    assertThat(parser.parse("")).containsExactly("");
     assertThrows(ParseException.class, () -> parser.notEmpty().parse(""));
   }
 
@@ -611,7 +602,7 @@ public class ParserTest {
     assertThat(parser.parseToStream("")).isEmpty();
 
     Parser<List<String>> parser2 =
-        consecutive(CharPredicate.range('0', '9'), "digit").atLeastOnce();
+        consecutive(DIGIT, "digit").atLeastOnce();
     assertThat(parser2.parse("1230")).containsExactly("1230");
     assertThat(parser2.parseToStream("1230")).containsExactly(List.of("1230"));
     assertThat(parser2.parseToStream("")).isEmpty();
@@ -1455,7 +1446,7 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMore_CharPredicate_matchesZeroTimes() {
+  public void zeroOrMore_charMatcher_matchesZeroTimes() {
     Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
     assertThat(parser.parse("[]")).isEmpty();
     assertThat(parser.parseToStream("[]")).containsExactly("");
@@ -1464,7 +1455,7 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMore_CharPredicate_matchesOneTime() {
+  public void zeroOrMore_charMatcher_matchesOneTime() {
     Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
     assertThat(parser.parse("[1]")).isEqualTo("1");
     assertThat(parser.parseToStream("[1]")).containsExactly("1");
@@ -1473,7 +1464,7 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMore_CharPredicate_matchesMultipleTimes() {
+  public void zeroOrMore_charMatcher_matchesMultipleTimes() {
     Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
     assertThat(parser.parse("[123]")).isEqualTo("123");
     assertThat(parser.parseToStream("[123]")).containsExactly("123");
@@ -1637,7 +1628,8 @@ public class ParserTest {
             .followedBy(string(".").optional())
             .notEmpty();
     ParseException thrown = assertThrows(ParseException.class, () -> numbers.parse("123,a."));
-    assertThat(thrown).hasMessageThat().contains("1:5: a");
+    assertThat(thrown).hasMessageThat().contains("at 1:5");
+    assertThat(thrown).hasMessageThat().contains(" encountered [a.]");
   }
 
   @Test
@@ -1649,7 +1641,7 @@ public class ParserTest {
             .followedBy(string("abc,1").followedBy("!").optional())
             .notEmpty();
     ParseException thrown = assertThrows(ParseException.class, () -> numbers.parse("abc,1."));
-    assertThat(thrown).hasMessageThat().contains("1:6: expecting `!`");
+    assertThat(thrown).hasMessageThat().contains("at 1:6: expecting <!>, encountered [.]");
   }
 
   @Test
@@ -1657,15 +1649,15 @@ public class ParserTest {
     Parser<String> parser =
         consecutive(DIGIT, "number").expecting(s -> s.length() > 1, "long number");
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("abc"));
-    assertThat(e).hasMessageThat().contains("expecting `number`, encountered `a`");
+    assertThat(e).hasMessageThat().contains("expecting <number>, encountered [abc]");
   }
 
   @Test
   public void expecting_predicateFails() {
-    Parser<String> parser =
-        consecutive(DIGIT, "number").expecting(s -> s.length() > 1, "long number");
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("1"));
-    assertThat(e).hasMessageThat().contains("expecting `long number`, encountered `1`");
+    Parser<?> parser =
+        consecutive(DIGIT, "number").expecting(s -> s.length() > 3, "long number").delimitedBy(",");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("1234,5"));
+    assertThat(e).hasMessageThat().contains("at 1:6: expecting <long number>, encountered [5]");
   }
 
   @Test
@@ -1721,7 +1713,7 @@ public class ParserTest {
 
   private static Parser<Integer> simpleCalculator() {
     Parser.Lazy<Integer> lazy = new Parser.Lazy<>();
-    Parser<Integer> num = Parser.single(CharPredicate.range('0', '9'), "digit").map(c -> c - '0');
+    Parser<Integer> num = Parser.single(DIGIT, "digit").map(c -> c - '0');
     Parser<Integer> atomic = lazy.between("(", ")").or(num);
     Parser<Integer> expr =
         atomic.delimitedBy("+").map(nums -> nums.stream().mapToInt(n -> n).sum());
@@ -1798,7 +1790,7 @@ public class ParserTest {
     record Placeholder(String name, Format format) {}
 
     static class Builder {
-      private final Stream.Builder<Placeholder> placeholders = Stream.builder();
+      private final List<Placeholder> placeholders = new ArrayList<>();
       private final StringBuilder template = new StringBuilder();
 
       @CanIgnoreReturnValue
@@ -1817,21 +1809,19 @@ public class ParserTest {
       @CanIgnoreReturnValue
       Builder addAll(Builder that) {
         template.append(that.template);
-        for (Placeholder placeholder : that.placeholders.build().toList()) {
-          placeholders.add(placeholder);
-        }
+        placeholders.addAll(that.placeholders);
         return this;
       }
 
       Format build() {
-        return new Format(template.toString(), placeholders.build().toList());
+        return new Format(template.toString(), placeholders.stream().collect(toUnmodifiableList()));
       }
     }
 
     static Format parse(String format) {
       Parser.Lazy<Format> lazy = new Parser.Lazy<>();
       Parser<String> placeholderName =
-          consecutive(CharPredicate.range('a', 'z'), "placeholder name");
+          consecutive(range('a', 'z'), "placeholder name");
       Parser<Placeholder> placeholder =
           Parser.sequence(placeholderName.followedBy("="), lazy, Placeholder::new)
               .between("{", "}");
@@ -1840,7 +1830,7 @@ public class ParserTest {
                   placeholder,
                   Parser.string("{{").thenReturn("{"), // escape {
                   Parser.string("}}").thenReturn("}"), // escape }
-                  Parser.consecutive(CharPredicate.noneOf("{}"), "literal text"))
+                  Parser.consecutive(noneOf("{}"), "literal text"))
               .atLeastOnce(
                   Collector.of(
                       Format.Builder::new,
