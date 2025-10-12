@@ -1006,7 +1006,7 @@ public abstract class Parser<T> {
     }
 
     <V> MatchResult.Failure<V> expecting(String name, int at) {
-      return failAt(at, "expecting <%s>, encountered %s.", name, new Synopsis(input, at));
+      return failAt(at, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
     }
 
     <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
@@ -1044,16 +1044,17 @@ public abstract class Parser<T> {
     }
   }
 
-  record Synopsis(String input, int at) {
+  record Snippet(String input, int at) {
     @Override
     public String toString() {
       if (at >= input.length()) {
         return "<EOF>";
       }
       String synopsis =
-          Substring.consecutive(c -> !Character.isWhitespace(c))
+          Substring.upToIncluding(Substring.consecutive(c -> !Character.isWhitespace(c)))
+              .limit(50)
               .in(input, at)
-              .map(m -> input.substring(at, Math.min(at + 50, m.index() + m.length())))
+              .map(Substring.Match::toString)
               .orElse(input.substring(at, at + 1));
       return "[" + (at + synopsis.length() < input.length() ? synopsis + "..." : synopsis) + "]";
     }
