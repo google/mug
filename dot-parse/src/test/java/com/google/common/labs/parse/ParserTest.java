@@ -1023,7 +1023,7 @@ public class ParserTest {
 
   @Test
   public void delimitedBy_success() {
-    Parser<List<String>> parser = string("a").delimitedBy(",");
+    Parser<List<String>> parser = string("a").atLeastOnceDelimitedBy(",");
     assertThat(parser.parse("a")).containsExactly("a");
     assertThat(parser.parseToStream("a")).containsExactly(List.of("a"));
     assertThat(parser.parse("a,a")).containsExactly("a", "a").inOrder();
@@ -1037,14 +1037,14 @@ public class ParserTest {
 
   @Test
   public void delimitedBy_failure_withLeftover() {
-    Parser<List<String>> parser = string("a").delimitedBy(",");
+    Parser<List<String>> parser = string("a").atLeastOnceDelimitedBy(",");
     assertThrows(ParseException.class, () -> parser.parse("aa"));
     assertThrows(ParseException.class, () -> parser.parse("a,ab"));
   }
 
   @Test
   public void delimitedBy_failure() {
-    Parser<List<String>> parser = string("a").delimitedBy(",");
+    Parser<List<String>> parser = string("a").atLeastOnceDelimitedBy(",");
     assertThrows(ParseException.class, () -> parser.parse(""));
     assertThrows(ParseException.class, () -> parser.parse("b"));
     assertThrows(ParseException.class, () -> parser.parseToStream("b").toList());
@@ -1060,7 +1060,7 @@ public class ParserTest {
 
   @Test
   public void delimitedBy_cannotBeEmpty() {
-    assertThrows(IllegalArgumentException.class, () -> string("a").delimitedBy(""));
+    assertThrows(IllegalArgumentException.class, () -> string("a").atLeastOnceDelimitedBy(""));
   }
 
   @Test
@@ -1365,7 +1365,7 @@ public class ParserTest {
   @Test
   public void skipping_propagatesThroughDelimitedBy() {
     Parser<String> word = consecutive(ALPHANUMERIC, "word");
-    Parser<List<String>> parser = word.delimitedBy(",");
+    Parser<List<String>> parser = word.atLeastOnceDelimitedBy(",");
     assertThat(parser.parseSkipping(Character::isWhitespace, "foo,bar"))
         .containsExactly("foo", "bar")
         .inOrder();
@@ -1535,7 +1535,7 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " 123"));
     assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " 123 "));
 
-    Parser<List<String>> numbers = literally(consecutive(DIGIT, "digit")).delimitedBy(",");
+    Parser<List<String>> numbers = literally(consecutive(DIGIT, "digit")).atLeastOnceDelimitedBy(",");
     assertThat(numbers.parseToStreamSkipping(Character::isWhitespace, "1,23"))
         .containsExactly(List.of("1", "23"));
     assertThrows(
@@ -1655,7 +1655,7 @@ public class ParserTest {
   @Test
   public void expecting_predicateFails() {
     Parser<?> parser =
-        consecutive(DIGIT, "number").expecting(s -> s.length() > 3, "long number").delimitedBy(",");
+        consecutive(DIGIT, "number").expecting(s -> s.length() > 3, "long number").atLeastOnceDelimitedBy(",");
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("1234,5"));
     assertThat(e).hasMessageThat().contains("at 1:6: expecting <long number>, encountered [5]");
   }
@@ -1716,7 +1716,7 @@ public class ParserTest {
     Parser<Integer> num = Parser.single(DIGIT, "digit").map(c -> c - '0');
     Parser<Integer> atomic = lazy.between("(", ")").or(num);
     Parser<Integer> expr =
-        atomic.delimitedBy("+").map(nums -> nums.stream().mapToInt(n -> n).sum());
+        atomic.atLeastOnceDelimitedBy("+").map(nums -> nums.stream().mapToInt(n -> n).sum());
     return lazy.delegateTo(expr);
   }
 
@@ -1867,7 +1867,7 @@ public class ParserTest {
                           name.map(PathElement.Literal::new),
                           string("**").thenReturn(new PathElement.SubpathWildcard()),
                           string("*").thenReturn(new PathElement.PathElementWildcard()))
-                      .delimitedBy("/")
+                      .atLeastOnceDelimitedBy("/")
                       .map(ResourceNamePattern::new),
                   PathElement.Subpath::new)
               .between("{", "}");
@@ -1875,7 +1875,7 @@ public class ParserTest {
               name.map(PathElement.Literal::new),
               name.between("{", "}").map(PathElement.Placeholder::new),
               subpath)
-          .delimitedBy("/")
+          .atLeastOnceDelimitedBy("/")
           .map(ResourceNamePattern::new)
           .optionallyFollowedBy(revision.map(v -> pattern -> pattern.withRevision(v)))
           .parse(path);
