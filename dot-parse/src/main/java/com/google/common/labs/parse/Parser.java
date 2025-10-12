@@ -842,9 +842,10 @@ public abstract class Parser<T> {
     }
 
     /**
-     * The current optional parser repeated at least once, delimited by {@code delimiter}. If
-     * parsing an element fails, the default value (e.g. from {@code orElse()}) is collected
-     * instead.
+     * The current optional parser repeated and delimited by {@code delimiter}. Since this is an
+     * optional parser, at least one value is guaranteed to be collected by the provided {@code
+     * collector}, even if match failed. That is, on match failure, the default value (e.g. from
+     * {@code orElse()}) will be used.
      *
      * <p>Note that it's different from {@link Parser#zeroOrMoreDelimitedBy}, which may produce
      * empty list, but each element is guaranteed to be non-empty.
@@ -860,8 +861,8 @@ public abstract class Parser<T> {
     }
 
     /**
-     * The current optional parser repeated at least once, delimited by {@code delimiter}. If empty,
-     * the result is a singleton list with the default value (e.g. from {@code orElse()}). For
+     * The current optional parser repeated and delimited by {@code delimiter}. Since this is an
+     * optional parser, at least one element is guaranteed to be returned, even if match failed. For
      * example, {@code consecutive(WORD).orElse("").delimitedBy(",")} will {@link #parse parse}
      * input {@code ",a,"} as {@code List.of("", "a", "")}; and parse empty input {@code ""} as
      * {@code List.of("")}.
