@@ -68,7 +68,7 @@ final class RegexParsers {
             ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))));
     Parser<RegexPattern> sequence =
         atomic.postfix(quantifier()).atLeastOnce(RegexPattern.inSequence());
-    return lazy.delegateTo(sequence.delimitedBy("|", RegexPattern.asAlternation()));
+    return lazy.delegateTo(sequence.atLeastOnceDelimitedBy("|", RegexPattern.asAlternation()));
   }
 
   private static Parser<Quantifier> quantifier() {

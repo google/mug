@@ -351,7 +351,7 @@ public abstract class Parser<T> {
    */
   public final <A, R> Parser<R>.OrEmpty zeroOrMoreDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
-    return this.<A, R>delimitedBy(delimiter, collector).new OrEmpty(emptyValueSupplier(collector));
+    return this.<A, R>atLeastOnceDelimitedBy(delimiter, collector).new OrEmpty(emptyValueSupplier(collector));
   }
 
   /**
@@ -361,11 +361,11 @@ public abstract class Parser<T> {
    *
    * <pre>{@code
    * Parser.anyOf(string("a"), string("b"), string("c"))
-   *     .delimitedBy("|")
+   *     .atLeastOnceDelimitedBy("|")
    * }</pre>
    */
-  public final Parser<List<T>> delimitedBy(String delimiter) {
-    return delimitedBy(delimiter, toUnmodifiableList());
+  public final Parser<List<T>> atLeastOnceDelimitedBy(String delimiter) {
+    return atLeastOnceDelimitedBy(delimiter, toUnmodifiableList());
   }
 
   /**
@@ -375,10 +375,10 @@ public abstract class Parser<T> {
    *
    * <pre>{@code
    * Parser.anyOf(string("a"), string("b"), string("c"))
-   *     .delimitedBy("|", RegexPattern.asAlternation())
+   *     .atLeastOnceDelimitedBy("|", RegexPattern.asAlternation())
    * }</pre>
    */
-  public final <A, R> Parser<R> delimitedBy(
+  public final <A, R> Parser<R> atLeastOnceDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
     checkArgument(delimiter.length() > 0, "delimiter cannot be empty");
     requireNonNull(collector);
@@ -910,7 +910,8 @@ public abstract class Parser<T> {
    * Parser<Integer> num = Parser.single(CharPredicate.inRange('0', '9')).map(c -> c - '0');
    * Parser<Integer> atomic = lazy.between("(", ")").or(num);
    * Parser<Integer> expr =
-   *     atomic.delimitedBy("+").map(nums -> nums.stream().mapToInt(n -> n).sum());
+   *     atomic.atLeastOnceDelimitedBy("+")
+   *         .map(nums -> nums.stream().mapToInt(n -> n).sum());
    * return lazy.delegateTo(expr);
    * }</pre>
    */
