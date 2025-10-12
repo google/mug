@@ -123,7 +123,7 @@ public final class CsvTest {
         assertThrows(
             Parser.ParseException.class,
             () -> CSV.parse(secondRowInvalid, toUnmodifiableList()).toList());
-    assertThat(thrown).hasMessageThat().contains("expecting `\"`");
+    assertThat(thrown).hasMessageThat().contains("expecting <\">, encountered <EOF>");
   }
 
   @Test
