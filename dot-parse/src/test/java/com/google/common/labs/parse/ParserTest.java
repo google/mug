@@ -1662,10 +1662,10 @@ public class ParserTest {
 
   @Test
   public void expecting_predicateFails() {
-    Parser<String> parser =
-        consecutive(DIGIT, "number").expecting(s -> s.length() > 1, "long number");
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("1"));
-    assertThat(e).hasMessageThat().contains("expecting `long number`, encountered `1`");
+    Parser<?> parser =
+        consecutive(DIGIT, "number").expecting(s -> s.length() > 3, "long number").delimitedBy(",");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("1234,5"));
+    assertThat(e).hasMessageThat().contains("1:6: expecting `long number`, encountered `5`");
   }
 
   @Test
