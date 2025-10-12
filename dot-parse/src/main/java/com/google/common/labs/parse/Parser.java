@@ -1050,13 +1050,13 @@ public abstract class Parser<T> {
       if (at >= input.length()) {
         return "<EOF>";
       }
-      String synopsis =
+      String snippet =
           Substring.upToIncluding(Substring.consecutive(c -> !Character.isWhitespace(c)))
               .limit(50)
               .in(input, at)
               .map(Substring.Match::toString)
               .orElse(input.substring(at, at + 1));
-      return "[" + (at + synopsis.length() < input.length() ? synopsis + "..." : synopsis) + "]";
+      return "[" + (at + snippet.length() < input.length() ? snippet + "..." : snippet) + "]";
     }
   }
 
