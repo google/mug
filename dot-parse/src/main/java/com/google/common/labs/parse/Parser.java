@@ -355,7 +355,7 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a parser that matches the current parser repeatedly, delimited by the given delimiter.
+   * Returns a parser that matches the current parser at least once, delimited by the given delimiter.
    *
    * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use:
    *
@@ -369,7 +369,7 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a parser that matches the current parser repeatedly, delimited by the given delimiter.
+   * Returns a parser that matches the current parser at least once, delimited by the given delimiter.
    *
    * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use:
    *
