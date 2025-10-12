@@ -144,7 +144,7 @@ Map<String, Object> m = parseMap(
 
 ---
 
-## No Traps!
+## No Trap!
 
 ### The Infinite Loop (in many combinator libraries)
 

@@ -436,7 +436,7 @@ public class ParserTest {
             string("a").orElse("default-a"),
             string("b").orElse("default-b"),
             (a, b) -> a + ":" + b);
-    assertThat(parser.parse("b")).isEqualTo("default-a:b");
+    assertThat(parser.notEmpty().parse("b")).isEqualTo("default-a:b");
   }
 
   @Test
@@ -446,7 +446,7 @@ public class ParserTest {
             string("a").orElse("default-a"),
             string("b").orElse("default-b"),
             (a, b) -> a + ":" + b);
-    assertThat(parser.parse("a")).isEqualTo("a:default-b");
+    assertThat(parser.notEmpty().parse("a")).isEqualTo("a:default-b");
   }
 
   @Test
@@ -456,7 +456,7 @@ public class ParserTest {
             string("a").orElse("default-a"),
             string("b").orElse("default-b"),
             (a, b) -> a + ":" + b);
-    assertThat(parser.parse("")).isEqualTo("default-a:default-b");
+    assertThrows(ParseException.class, () -> parser.notEmpty().parse(""));
   }
 
   @Test
@@ -1650,6 +1650,29 @@ public class ParserTest {
             .notEmpty();
     ParseException thrown = assertThrows(ParseException.class, () -> numbers.parse("abc,1."));
     assertThat(thrown).hasMessageThat().contains("1:6: expecting `!`");
+  }
+
+  @Test
+  public void expecting_primaryParserFails() {
+    Parser<String> parser =
+        consecutive(DIGIT, "number").expecting(s -> s.length() > 1, "long number");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("abc"));
+    assertThat(e).hasMessageThat().contains("expecting `number`, encountered `a`");
+  }
+
+  @Test
+  public void expecting_predicateFails() {
+    Parser<String> parser =
+        consecutive(DIGIT, "number").expecting(s -> s.length() > 1, "long number");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("1"));
+    assertThat(e).hasMessageThat().contains("expecting `long number`, encountered `1`");
+  }
+
+  @Test
+  public void expecting_succeeds() {
+    Parser<String> parser =
+        consecutive(DIGIT, "number").expecting(s -> s.length() > 1, "long number");
+    assertThat(parser.parse("123")).isEqualTo("123");
   }
 
   @Test
