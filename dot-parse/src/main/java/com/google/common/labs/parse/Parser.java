@@ -277,6 +277,60 @@ public abstract class Parser<T> {
   }
 
   /**
+   * Returns a parser that matches the current parser at least once, delimited by the given delimiter.
+   *
+   * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use:
+   *
+   * <pre>{@code
+   * Parser.anyOf(string("a"), string("b"), string("c"))
+   *     .atLeastOnceDelimitedBy("|")
+   * }</pre>
+   */
+  public final Parser<List<T>> atLeastOnceDelimitedBy(String delimiter) {
+    return atLeastOnceDelimitedBy(delimiter, toUnmodifiableList());
+  }
+
+  /**
+   * Returns a parser that matches the current parser at least once, delimited by the given delimiter.
+   *
+   * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use:
+   *
+   * <pre>{@code
+   * Parser.anyOf(string("a"), string("b"), string("c"))
+   *     .atLeastOnceDelimitedBy("|", RegexPattern.asAlternation())
+   * }</pre>
+   */
+  public final <A, R> Parser<R> atLeastOnceDelimitedBy(
+      String delimiter, Collector<? super T, A, ? extends R> collector) {
+    checkArgument(delimiter.length() > 0, "delimiter cannot be empty");
+    requireNonNull(collector);
+    Parser<T> self = this;
+    return new Parser<>() {
+      @Override
+      MatchResult<R> skipAndMatch(
+          Parser<?> skip, String input, int start, ErrorContext context) {
+        A buffer = collector.supplier().get();
+        var accumulator = collector.accumulator();
+        for (int from = start; ; ) {
+          switch (self.skipAndMatch(skip, input, from, context)) {
+            case MatchResult.Success(int head, int tail, T value) -> {
+              accumulator.accept(buffer, value);
+              tail = skipIfAny(skip, input, tail);
+              if (!input.startsWith(delimiter, tail)) {
+                return new MatchResult.Success<>(start, tail, collector.finisher().apply(buffer));
+              }
+              from = tail + delimiter.length();
+            }
+            case MatchResult.Failure<?> failure -> {
+              return failure.safeCast();
+            }
+          }
+        }
+      }
+    };
+  }
+
+  /**
    * Starts a fluent chain for matching consecutive {@code charsToMatch} zero or more times. If no
    * such character is found, empty string is the result.
    *
@@ -352,60 +406,6 @@ public abstract class Parser<T> {
   public final <A, R> Parser<R>.OrEmpty zeroOrMoreDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
     return this.<A, R>atLeastOnceDelimitedBy(delimiter, collector).new OrEmpty(emptyValueSupplier(collector));
-  }
-
-  /**
-   * Returns a parser that matches the current parser at least once, delimited by the given delimiter.
-   *
-   * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use:
-   *
-   * <pre>{@code
-   * Parser.anyOf(string("a"), string("b"), string("c"))
-   *     .atLeastOnceDelimitedBy("|")
-   * }</pre>
-   */
-  public final Parser<List<T>> atLeastOnceDelimitedBy(String delimiter) {
-    return atLeastOnceDelimitedBy(delimiter, toUnmodifiableList());
-  }
-
-  /**
-   * Returns a parser that matches the current parser at least once, delimited by the given delimiter.
-   *
-   * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use:
-   *
-   * <pre>{@code
-   * Parser.anyOf(string("a"), string("b"), string("c"))
-   *     .atLeastOnceDelimitedBy("|", RegexPattern.asAlternation())
-   * }</pre>
-   */
-  public final <A, R> Parser<R> atLeastOnceDelimitedBy(
-      String delimiter, Collector<? super T, A, ? extends R> collector) {
-    checkArgument(delimiter.length() > 0, "delimiter cannot be empty");
-    requireNonNull(collector);
-    Parser<T> self = this;
-    return new Parser<>() {
-      @Override
-      MatchResult<R> skipAndMatch(
-          Parser<?> skip, String input, int start, ErrorContext context) {
-        A buffer = collector.supplier().get();
-        var accumulator = collector.accumulator();
-        for (int from = start; ; ) {
-          switch (self.skipAndMatch(skip, input, from, context)) {
-            case MatchResult.Success(int head, int tail, T value) -> {
-              accumulator.accept(buffer, value);
-              tail = skipIfAny(skip, input, tail);
-              if (!input.startsWith(delimiter, tail)) {
-                return new MatchResult.Success<>(start, tail, collector.finisher().apply(buffer));
-              }
-              from = tail + delimiter.length();
-            }
-            case MatchResult.Failure<?> failure -> {
-              return failure.safeCast();
-            }
-          }
-        }
-      }
-    };
   }
 
   /**
