@@ -13,7 +13,7 @@ Small, safe-by-construction parser combinators for Java.
 - **Primitives:** `string("if")`, `consecutive(Character::isWhitespace)`, `single(range('0', '9'))`
 - **Compose:** `.thenReturn(true)`, `.followedBy("else")`, `.between("[", "]")`, `.map(Literal::new)`
 - **Alternative:** `p1.or(p2)`, `anyOf(p1, p2)`
-- **Sequence:** `then()`, `sequence()`, `atLeastOnce()`, `delimitedBy()`
+- **Sequence:** `then()`, `sequence()`, `atLeastOnce()`, `atLeastOnceDelimitedBy()`
 - **Optional:** `optionallyFollowedBy()`, `orElse(defaultValue)`, `zeroOrMore()`, `zeroOrMoreDelimitedBy(",")`
 - **Operator Precedence:** `OperatorTable<T>` (`prefix()`, `leftAssociative()`, `build()`, etc.)
 - **Recursive:** `Parser.Lazy<T>`
