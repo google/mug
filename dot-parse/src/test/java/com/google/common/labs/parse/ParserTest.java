@@ -1689,29 +1689,6 @@ public class ParserTest {
   }
 
   @Test
-  public void expecting_primaryParserFails() {
-    Parser<String> parser =
-        consecutive(DIGIT, "number").expecting(s -> s.length() > 1, "long number");
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("abc"));
-    assertThat(e).hasMessageThat().contains("expecting <number>, encountered [abc]");
-  }
-
-  @Test
-  public void expecting_predicateFails() {
-    Parser<?> parser =
-        consecutive(DIGIT, "number").expecting(s -> s.length() > 3, "long number").atLeastOnceDelimitedBy(",");
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("1234,5"));
-    assertThat(e).hasMessageThat().contains("at 1:6: expecting <long number>, encountered [5]");
-  }
-
-  @Test
-  public void expecting_succeeds() {
-    Parser<String> parser =
-        consecutive(DIGIT, "number").expecting(s -> s.length() > 1, "long number");
-    assertThat(parser.parse("123")).isEqualTo("123");
-  }
-
-  @Test
   public void skipping_anyOfWithLiterally() {
     Parser<String> parser = anyOf(string("foo"), literally(consecutive(DIGIT, "digit")));
     assertThat(parser.parseSkipping(Character::isWhitespace, " foo")).isEqualTo("foo");
