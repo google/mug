@@ -302,32 +302,14 @@ public abstract class Parser<T> {
    */
   public final <A, R> Parser<R> atLeastOnceDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
-    checkArgument(delimiter.length() > 0, "delimiter cannot be empty");
     requireNonNull(collector);
-    Parser<T> self = this;
-    return new Parser<>() {
-      @Override
-      MatchResult<R> skipAndMatch(
-          Parser<?> skip, String input, int start, ErrorContext context) {
-        A buffer = collector.supplier().get();
-        var accumulator = collector.accumulator();
-        for (int from = start; ; ) {
-          switch (self.skipAndMatch(skip, input, from, context)) {
-            case MatchResult.Success(int head, int tail, T value) -> {
-              accumulator.accept(buffer, value);
-              tail = skipIfAny(skip, input, tail);
-              if (!input.startsWith(delimiter, tail)) {
-                return new MatchResult.Success<>(start, tail, collector.finisher().apply(buffer));
-              }
-              from = tail + delimiter.length();
-            }
-            case MatchResult.Failure<?> failure -> {
-              return failure.safeCast();
-            }
-          }
-        }
-      }
-    };
+    return sequence(
+        this,
+        string(delimiter).then(this).zeroOrMore(toCollection(ArrayDeque::new)),
+        (first, deque) -> {
+          deque.addFirst(first);
+          return deque.stream().collect(collector);
+        });
   }
 
   /**
@@ -405,7 +387,8 @@ public abstract class Parser<T> {
    */
   public final <A, R> Parser<R>.OrEmpty zeroOrMoreDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
-    return this.<A, R>atLeastOnceDelimitedBy(delimiter, collector).new OrEmpty(emptyValueSupplier(collector));
+    return this.<A, R>atLeastOnceDelimitedBy(delimiter, collector)
+        .new OrEmpty(emptyValueSupplier(collector));
   }
 
   /**
