@@ -23,7 +23,6 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -119,7 +118,7 @@ public final class Csv {
                 .followedBy(NEW_LINE.orElse(null))
                 .notEmpty());
     return allowsComments
-        ? Parser.anyOf(COMMENT.thenReturn(null), line).parseToStream(csv).filter(Objects::nonNull)
+        ? line.parseToStreamSkipping(COMMENT, csv)
         : line.parseToStream(csv);
   }
 

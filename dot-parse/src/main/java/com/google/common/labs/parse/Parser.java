@@ -69,7 +69,7 @@ public abstract class Parser<T> {
         if (input.length() > start && matcher.test(input.charAt(start))) {
           return new MatchResult.Success<>(start, start + 1, input.charAt(start));
         }
-        return context.expecting(name, start);
+        return context.expecting(name, start, start);
       }
     };
   }
@@ -90,7 +90,7 @@ public abstract class Parser<T> {
         for (; end < input.length() && matcher.test(input.charAt(end)); end++) {}
         return end > start
             ? new MatchResult.Success<>(start, end, new Source(input, start, end))
-            : context.expecting(name, end);
+            : context.expecting(name, start, end);
       }
     };
   }
@@ -105,7 +105,7 @@ public abstract class Parser<T> {
         if (input.startsWith(value, start)) {
           return new MatchResult.Success<>(start, start + value.length(), value);
         }
-        return context.expecting(value, start);
+        return context.expecting(value, start, start);
       }
     };
   }
@@ -538,7 +538,7 @@ public abstract class Parser<T> {
             ErrorContext lookaheadContext = new ErrorContext(input);
             yield switch (suffix.skipAndMatch(skip, input, success.tail(), lookaheadContext)) {
               case MatchResult.Success<?> followed ->
-                  lookaheadContext.failAt(success.tail(), "unexpected `%s`", name);
+                  lookaheadContext.failAt(start, success.tail(), "unexpected `%s`", name);
               default -> success;
             };
           }
@@ -640,6 +640,12 @@ public abstract class Parser<T> {
    * atomic matches.
    */
   public final Stream<T> parseToStreamSkipping(Parser<?> skip, String input) {
+    // If the entire input is skippable, nothing to parse, whether the parser is literally() or not.
+    if (skip.atLeastOnce(counting()).match(input, 0, new ErrorContext(input))
+            instanceof MatchResult.Success<?> success
+        && success.tail() == input.length()) {
+      return Stream.empty();
+    }
     return skipping(skip).parseToStream(input);
   }
 
@@ -660,7 +666,7 @@ public abstract class Parser<T> {
     switch (result) {
       case MatchResult.Success(int head, int tail, T value) -> {
         if (tail != input.length()) {
-          throw context.report(context.expecting("EOF", tail));
+          throw context.report(context.expecting("EOF", head, tail));
         }
         return value;
       }
@@ -916,7 +922,7 @@ public abstract class Parser<T> {
     record Success<V>(int head, int tail, V value) implements MatchResult<V> {}
 
     /** Represents a partial parse result with a value and the [start, end) range of the match. */
-    record Failure<V>(int at, String message, List<?> args) implements MatchResult<V> {
+    record Failure<V>(int start, int at, String message, List<?> args) implements MatchResult<V> {
       @SuppressWarnings("unchecked")
       <X> Failure<X> safeCast() {
         return (Failure<X>) this;
@@ -949,13 +955,13 @@ public abstract class Parser<T> {
       this.input = input;
     }
 
-    <V> MatchResult.Failure<V> expecting(String name, int at) {
-      return failAt(at, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
+    <V> MatchResult.Failure<V> expecting(String name, int start, int at) {
+      return failAt(start, at, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
     }
 
-    <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
+    <V> MatchResult.Failure<V> failAt(int start, int at, String message, Object... args) {
       var failure = new MatchResult.Failure<V>(
-          at, message, stream(args).collect(toUnmodifiableList()));
+          start, at, message, stream(args).collect(toUnmodifiableList()));
       if (farthestFailure == null || failure.at() > farthestFailure.at()) {
         farthestFailure = failure;
       }
