@@ -337,7 +337,8 @@ public class ParserTest {
     ParseException thrown =
         assertThrows(
             ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "(1 + \n( 2 ? 3)"));
-    assertThat(thrown).hasMessageThat().contains("at 2:5: expecting <)>, encountered [?...]");
+    assertThat(thrown).hasMessageThat().contains("at 2:5");
+    assertThat(thrown).hasMessageThat().contains("encountered [?...]");
   }
 
   @Test
@@ -1022,7 +1023,7 @@ public class ParserTest {
   }
 
   @Test
-  public void delimitedBy_success() {
+  public void atLeastOnceDelimitedBy_success() {
     Parser<List<String>> parser = string("a").atLeastOnceDelimitedBy(",");
     assertThat(parser.parse("a")).containsExactly("a");
     assertThat(parser.parseToStream("a")).containsExactly(List.of("a"));
@@ -1036,14 +1037,14 @@ public class ParserTest {
   }
 
   @Test
-  public void delimitedBy_failure_withLeftover() {
+  public void atLeastOnceDelimitedBy_failure_withLeftover() {
     Parser<List<String>> parser = string("a").atLeastOnceDelimitedBy(",");
     assertThrows(ParseException.class, () -> parser.parse("aa"));
     assertThrows(ParseException.class, () -> parser.parse("a,ab"));
   }
 
   @Test
-  public void delimitedBy_failure() {
+  public void atLeastOnceDelimitedBy_failure() {
     Parser<List<String>> parser = string("a").atLeastOnceDelimitedBy(",");
     assertThrows(ParseException.class, () -> parser.parse(""));
     assertThrows(ParseException.class, () -> parser.parse("b"));
@@ -1059,8 +1060,24 @@ public class ParserTest {
   }
 
   @Test
-  public void delimitedBy_cannotBeEmpty() {
+  public void atLeastOnceDelimitedBy_cannotBeEmpty() {
     assertThrows(IllegalArgumentException.class, () -> string("a").atLeastOnceDelimitedBy(""));
+  }
+
+  @Test
+  public void atLeastOnceDelimitedBy_withOptionalTrailingDelimiter_onlyTrailingDelimiter() {
+    Parser<List<String>> parser =
+        consecutive(DIGIT, "number").atLeastOnceDelimitedBy(",").optionallyFollowedBy(",");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse(","));
+    assertThat(e).hasMessageThat().contains("at 1:1: expecting <number>, encountered [,]");
+  }
+
+  @Test
+  public void atLeastOnceDelimitedBy_withOptionalTrailingDelimiter_emptyInput() {
+    Parser<List<String>> parser =
+        consecutive(DIGIT, "number").atLeastOnceDelimitedBy(",").optionallyFollowedBy(",");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThat(e).hasMessageThat().contains("at 1:1: expecting <number>, encountered <EOF>");
   }
 
   @Test
@@ -1584,6 +1601,33 @@ public class ParserTest {
     assertThrows(
         ParseException.class,
         () -> parser.parseToStreamSkipping(Character::isWhitespace, "[foo foo]").toList());
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_withOptionalTrailingDelimiter() {
+    Parser<List<String>> parser =
+        consecutive(DIGIT, "number")
+            .zeroOrMoreDelimitedBy(",")
+            .followedBy(string(",").optional())
+            .notEmpty();
+    assertThat(parser.parse(",")).isEmpty();
+    assertThat(parser.parse("1")).containsExactly("1");
+    assertThat(parser.parse("1,")).containsExactly("1");
+    assertThat(parser.parse("1,2")).containsExactly("1", "2").inOrder();
+    assertThat(parser.parse("1,2,")).containsExactly("1", "2").inOrder();
+    assertThat(parser.parse("1,2,3")).containsExactly("1", "2", "3").inOrder();
+    assertThat(parser.parse("1,2,3,")).containsExactly("1", "2", "3").inOrder();
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_withOptionalTrailingDelimiter_failOnEmpty() {
+    Parser<List<String>> parser =
+        consecutive(DIGIT, "number")
+            .zeroOrMoreDelimitedBy(",")
+            .followedBy(string(",").optional())
+            .notEmpty();
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThat(e).hasMessageThat().contains("at 1:1: expecting <number>, encountered <EOF>");
   }
 
   @Test

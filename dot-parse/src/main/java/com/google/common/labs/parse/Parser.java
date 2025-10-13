@@ -64,8 +64,7 @@ public abstract class Parser<T> {
     requireNonNull(matcher);
     requireNonNull(name);
     return new Parser<>() {
-      @Override
-      MatchResult<Character> skipAndMatch(
+      @Override MatchResult<Character> skipAndMatch(
           Parser<?> skip, String input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         if (input.length() > start && matcher.test(input.charAt(start))) {
@@ -85,8 +84,7 @@ public abstract class Parser<T> {
     requireNonNull(matcher);
     requireNonNull(name);
     return new Parser<>() {
-      @Override
-      MatchResult<Source> skipAndMatch(
+      @Override MatchResult<Source> skipAndMatch(
           Parser<?> skip, String input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         int end = start;
@@ -102,8 +100,7 @@ public abstract class Parser<T> {
   public static Parser<String> string(String value) {
     checkArgument(value.length() > 0, "value cannot be empty");
     return new Parser<>() {
-      @Override
-      MatchResult<String> skipAndMatch(
+      @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, String input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         if (input.startsWith(value, start)) {
@@ -140,8 +137,7 @@ public abstract class Parser<T> {
     requireNonNull(right);
     requireNonNull(combiner);
     return new Parser<C>() {
-      @Override
-      MatchResult<C> skipAndMatch(
+      @Override MatchResult<C> skipAndMatch(
           Parser<?> skip, String input, int start, ErrorContext context) {
         return switch (left.skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success(int prefixBegin, int prefixEnd, A v1) ->
@@ -208,8 +204,7 @@ public abstract class Parser<T> {
             return parser;
           }
           return new Parser<T>() {
-            @Override
-            MatchResult<T> skipAndMatch(
+            @Override MatchResult<T> skipAndMatch(
                 Parser<?> skip, String input, int start, ErrorContext context) {
               MatchResult.Failure<?> farthestFailure = null;
               for (Parser<? extends T> parser : parsers) {
@@ -248,8 +243,7 @@ public abstract class Parser<T> {
     requireNonNull(collector);
     Parser<T> self = this;
     return new Parser<>() {
-      @Override
-      MatchResult<R> skipAndMatch(
+      @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, String input, int start, ErrorContext context) {
         A buffer = collector.supplier().get();
         var accumulator = collector.accumulator();
@@ -302,32 +296,14 @@ public abstract class Parser<T> {
    */
   public final <A, R> Parser<R> atLeastOnceDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
-    checkArgument(delimiter.length() > 0, "delimiter cannot be empty");
     requireNonNull(collector);
-    Parser<T> self = this;
-    return new Parser<>() {
-      @Override
-      MatchResult<R> skipAndMatch(
-          Parser<?> skip, String input, int start, ErrorContext context) {
-        A buffer = collector.supplier().get();
-        var accumulator = collector.accumulator();
-        for (int from = start; ; ) {
-          switch (self.skipAndMatch(skip, input, from, context)) {
-            case MatchResult.Success(int head, int tail, T value) -> {
-              accumulator.accept(buffer, value);
-              tail = skipIfAny(skip, input, tail);
-              if (!input.startsWith(delimiter, tail)) {
-                return new MatchResult.Success<>(start, tail, collector.finisher().apply(buffer));
-              }
-              from = tail + delimiter.length();
-            }
-            case MatchResult.Failure<?> failure -> {
-              return failure.safeCast();
-            }
-          }
-        }
-      }
-    };
+    return sequence(
+        this,
+        string(delimiter).then(this).zeroOrMore(toCollection(ArrayDeque::new)),
+        (first, deque) -> {
+          deque.addFirst(first);
+          return deque.stream().collect(collector);
+        });
   }
 
   /**
@@ -405,7 +381,8 @@ public abstract class Parser<T> {
    */
   public final <A, R> Parser<R>.OrEmpty zeroOrMoreDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
-    return this.<A, R>atLeastOnceDelimitedBy(delimiter, collector).new OrEmpty(emptyValueSupplier(collector));
+    return this.<A, R>atLeastOnceDelimitedBy(delimiter, collector)
+        .new OrEmpty(emptyValueSupplier(collector));
   }
 
   /**
@@ -453,8 +430,7 @@ public abstract class Parser<T> {
     requireNonNull(f);
     Parser<T> self = this;
     return new Parser<>() {
-      @Override
-      MatchResult<R> skipAndMatch(
+      @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, String input, int start, ErrorContext context) {
         return switch (self.skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success(int head, int tail, T value) ->
@@ -472,8 +448,7 @@ public abstract class Parser<T> {
     requireNonNull(f);
     Parser<T> self = this;
     return new Parser<>() {
-      @Override
-      MatchResult<R> skipAndMatch(
+      @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, String input, int start, ErrorContext context) {
         return switch (self.skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success(int head, int tail, T value) ->
@@ -557,8 +532,7 @@ public abstract class Parser<T> {
     requireNonNull(name);
     Parser<T> self = this;
     return new Parser<>() {
-      @Override
-      MatchResult<T> skipAndMatch(
+      @Override MatchResult<T> skipAndMatch(
           Parser<?> skip, String input, int start, ErrorContext context) {
         return switch (self.skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<T> success -> {
@@ -622,8 +596,7 @@ public abstract class Parser<T> {
     requireNonNull(name);
     Parser<T> self = this;
     return new Parser<>() {
-      @Override
-      MatchResult<T> skipAndMatch(
+      @Override MatchResult<T> skipAndMatch(
            Parser<?> skip, String input, int start, ErrorContext context) {
         var result = self.skipAndMatch(skip, input, start, context);
         return switch (result) {
@@ -643,8 +616,7 @@ public abstract class Parser<T> {
   public static <T> Parser<T> literally(Parser<T> parser) {
     requireNonNull(parser);
     return new Parser<T>() {
-      @Override
-      MatchResult<T> skipAndMatch(
+      @Override MatchResult<T> skipAndMatch(
           Parser<?> ignored, String input, int start, ErrorContext context) {
         return parser.skipAndMatch(null, input, start, context);
       }
@@ -664,14 +636,12 @@ public abstract class Parser<T> {
     Parser<?> skip = patternToSkip.atLeastOnce(counting());
     Parser<T> self = this;
     return new Parser<T>() {
-      @Override
-      MatchResult<T> skipAndMatch(
+      @Override MatchResult<T> skipAndMatch(
           Parser<?> ignored, String input, int start, ErrorContext context) {
         return self.skipAndMatch(skip, input, start, context);
       }
 
-      @Override
-      MatchResult<T> match(String input, int start, ErrorContext context) {
+      @Override MatchResult<T> match(String input, int start, ErrorContext context) {
         return switch (super.match(input, start, context)) {
           case MatchResult.Success(int head, int tail, T value) ->
               new MatchResult.Success<>(head, skipIfAny(skip, input, tail), value);
@@ -920,8 +890,7 @@ public abstract class Parser<T> {
     private static final String DO_NOT_DELEGATE_TO_LAZY_PARSER = "Do not delegate to a Lazy parser";
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
 
-    @Override
-    MatchResult<T> skipAndMatch(
+    @Override MatchResult<T> skipAndMatch(
         Parser<?> skip, String input, int start, ErrorContext context) {
       Parser<T> p = ref.get();
       checkState(p != null, "delegateTo() should have been called before parse()");
@@ -947,8 +916,7 @@ public abstract class Parser<T> {
   /**
    * Matches the input string starting at the given position.
    *
-   * @return a {@link MatchResult} containing the parsed value and the [start, end) range of the
-   *     match.
+   * @return a MatchResult containing the parsed value and the [start, end) range of the match.
    */
   MatchResult<T> match(String input, int start, ErrorContext context) {
     return skipAndMatch(null, input, start, context);
@@ -1012,7 +980,8 @@ public abstract class Parser<T> {
     }
 
     <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
-      var failure = new MatchResult.Failure<V>(at, message, stream(args).collect(toUnmodifiableList()));
+      var failure = new MatchResult.Failure<V>(
+          at, message, stream(args).collect(toUnmodifiableList()));
       if (farthestFailure == null || failure.at() > farthestFailure.at()) {
         farthestFailure = failure;
       }
@@ -1040,15 +1009,13 @@ public abstract class Parser<T> {
   }
 
   private record Source(String input, int begin, int end) {
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return input.substring(begin, end);
     }
   }
 
   record Snippet(String input, int at) {
-    @Override
-    public String toString() {
+    @Override public String toString() {
       if (at >= input.length()) {
         return "<EOF>";
       }
@@ -1061,7 +1028,6 @@ public abstract class Parser<T> {
       return "[" + (at + snippet.length() < input.length() ? snippet + "..." : snippet) + "]";
     }
   }
-
 
   private static void checkArgument(boolean condition, String message, Object... args) {
     if (!condition) {
@@ -1077,4 +1043,3 @@ public abstract class Parser<T> {
 
   Parser() {}
 }
-
