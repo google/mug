@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
@@ -581,31 +580,6 @@ public abstract class Parser<T> {
    */
   public final Parser<Optional<T>>.OrEmpty optional() {
     return map(Optional::ofNullable).new OrEmpty(Optional::empty);
-  }
-
-  /**
-   * Returns an equivalent parser that fails if the parser result doesn't satisfy the given {@code
-   * predicate}. For example, you could use it to implement a parser for keywords:
-   *
-   * <pre>{@code
-   * consecutive(ALPHA, "word").expecting(SUPPORTED_KEYWORDS::contains, "keyword")
-   * }</pre>
-   */
-  public final Parser<T> expecting(Predicate<? super T> predicate, String name) {
-    requireNonNull(predicate);
-    requireNonNull(name);
-    Parser<T> self = this;
-    return new Parser<>() {
-      @Override MatchResult<T> skipAndMatch(
-           Parser<?> skip, String input, int start, ErrorContext context) {
-        var result = self.skipAndMatch(skip, input, start, context);
-        return switch (result) {
-          case MatchResult.Success<T> success when !predicate.test(success.value()) ->
-              context.expecting(name, success.head());
-          default -> result;
-        };
-      }
-    };
   }
 
   /**
