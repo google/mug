@@ -916,8 +916,7 @@ public abstract class Parser<T> {
   /**
    * Matches the input string starting at the given position.
    *
-   * @return a {@link MatchResult} containing the parsed value and the [start, end) range of the
-   *     match.
+   * @return a MatchResult containing the parsed value and the [start, end) range of the match.
    */
   MatchResult<T> match(String input, int start, ErrorContext context) {
     return skipAndMatch(null, input, start, context);
