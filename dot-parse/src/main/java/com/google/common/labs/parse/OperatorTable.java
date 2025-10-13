@@ -176,36 +176,31 @@ public final class OperatorTable<T> {
   }
 
   private static final class Prefix<T> extends Unary<T> {
-    @Override
-    public Parser<T> makeExpressionParser(Parser<T> operand) {
+    @Override public Parser<T> makeExpressionParser(Parser<T> operand) {
       return operand.prefix(opParser());
     }
   }
 
   private static final class Postfix<T> extends Unary<T> {
-    @Override
-    public Parser<T> makeExpressionParser(Parser<T> operand) {
+    @Override public Parser<T> makeExpressionParser(Parser<T> operand) {
       return operand.postfix(opParser());
     }
   }
 
   private static final class Infixl<T> extends Binary<T> {
-    @Override
-    public Parser<T> makeExpressionParser(Parser<T> operand) {
+    @Override public Parser<T> makeExpressionParser(Parser<T> operand) {
       return operand.postfix(opWithRightHandSide(operand));
     }
   }
 
   private static final class Infixn<T> extends Binary<T> {
-    @Override
-    public Parser<T> makeExpressionParser(Parser<T> operand) {
+    @Override public Parser<T> makeExpressionParser(Parser<T> operand) {
       return operand.optionallyFollowedBy(opWithRightHandSide(operand));
     }
   }
 
   private static final class Infixr<T> extends Binary<T> {
-    @Override
-    public Parser<T> makeExpressionParser(Parser<T> operand) {
+    @Override public Parser<T> makeExpressionParser(Parser<T> operand) {
       return Parser.sequence(
           operand,
           Parser.sequence(opParser(), operand, Rhs::new).zeroOrMore(),
