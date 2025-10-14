@@ -588,9 +588,10 @@ public sealed interface RegexPattern
    * @throws IllegalArgumentException if the regex pattern is invalid
    */
   static RegexPattern parse(String regex) {
+    Parser<RegexPattern>.OrEmpty parser = RegexParsers.pattern().orElse(new Literal(""));
     return after(prefix("(?x)"))
         .from(regex)
-        .map(p -> RegexParsers.pattern().parseSkipping(RegexParsers.FREE_SPACES, p))
-        .orElseGet(() -> RegexParsers.pattern().orElse(new Literal("")).parse(regex));
+        .map(p -> parser.parseSkipping(RegexParsers.FREE_SPACES, p))
+        .orElseGet(() -> parser.parse(regex));
   }
 }

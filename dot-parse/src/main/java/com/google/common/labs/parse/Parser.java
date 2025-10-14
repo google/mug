@@ -641,12 +641,7 @@ public abstract class Parser<T> {
    */
   public final Stream<T> parseToStreamSkipping(Parser<?> skip, String input) {
     // If the entire input is skippable, nothing to parse, whether the parser is literally() or not.
-    if (skip.atLeastOnce(counting()).match(input, 0, new ErrorContext(input))
-            instanceof MatchResult.Success<?> success
-        && success.tail() == input.length()) {
-      return Stream.empty();
-    }
-    return skipping(skip).parseToStream(input);
+    return skip.canConsume(input) ? Stream.empty() : skipping(skip).parseToStream(input);
   }
 
   /** Parses {@code input} to a lazy stream while {@code charsToSkip} around atomic matches. */
@@ -759,38 +754,6 @@ public abstract class Parser<T> {
       return prefix.then(followedBy(suffix));
     }
 
-    /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
-    public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
-      return sequence(this, suffix, (a, b) -> b);
-    }
-
-    /**
-     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
-     *
-     * <p>Note that there is no {@code after()}, but you can use {@link
-     * Parser#sequence(Parser, Parser.OrEmpty, BiFunction) sequence()} and {@link
-     * Parser#followedBy(Parser.OrEmpty)} to specify that a {@code Parser.OrEmpty} grammar rule
-     * follows a regular consuming {@code Parser}.
-     */
-    public Parser<T> followedBy(String suffix) {
-      return followedBy(string(suffix));
-    }
-
-    /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
-    public <S> Parser<T>.OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
-      return sequence(this, suffix, (a, b) -> a);
-    }
-
-    /**
-     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
-     *
-     * <p>Not public because {@code lazy.delegateTo(zeroOrMore().before(lazy))} could potentially
-     * introduce a left recursion.
-     */
-    Parser<T> followedBy(Parser<?> suffix) {
-      return sequence(this, suffix, (a, b) -> a);
-    }
-
     /**
      * The current optional parser repeated and delimited by {@code delimiter}. Since this is an
      * optional parser, at least one value is guaranteed to be collected by the provided {@code
@@ -824,6 +787,38 @@ public abstract class Parser<T> {
       return delimitedBy(delimiter, toUnmodifiableList());
     }
 
+    /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
+    public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
+      return sequence(this, suffix, (a, b) -> b);
+    }
+
+    /**
+     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
+     *
+     * <p>Note that there is no {@code after()}, but you can use {@link
+     * Parser#sequence(Parser, Parser.OrEmpty, BiFunction) sequence()} and {@link
+     * Parser#followedBy(Parser.OrEmpty)} to specify that a {@code Parser.OrEmpty} grammar rule
+     * follows a regular consuming {@code Parser}.
+     */
+    public Parser<T> followedBy(String suffix) {
+      return followedBy(string(suffix));
+    }
+
+    /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
+    public <S> Parser<T>.OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
+      return sequence(this, suffix, (a, b) -> a);
+    }
+
+    /**
+     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
+     *
+     * <p>Not public because {@code lazy.delegateTo(zeroOrMore().before(lazy))} could potentially
+     * introduce a left recursion.
+     */
+    Parser<T> followedBy(Parser<?> suffix) {
+      return sequence(this, suffix, (a, b) -> a);
+    }
+
     /**
      * Returns the otherwise equivalent {@code Parser} that will fail instead of returning the
      * default value if empty.
@@ -843,6 +838,24 @@ public abstract class Parser<T> {
      */
     public T parse(String input) {
       return input.isEmpty() ? computeDefaultValue() : notEmpty().parse(input);
+    }
+
+    /**
+     * Parses the entire input string, ignoring patterns matched by {@code skip}, and returns the
+     * result; if input is empty, returns the default empty value.
+     */
+    public T parseSkipping(Parser<?> skip, String input) {
+      return skip.canConsume(input)
+          ? computeDefaultValue()
+          : notEmpty().skipping(skip).parse(input);
+    }
+
+    /**
+     * Parses the entire input string, ignoring {@code charactersToSkip}, and returns the result; if
+     * input is empty, returns the default empty value.
+     */
+    public T parseSkipping(CharPredicate charactersToSkip, String input) {
+      return parseSkipping(skipConsecutive(charactersToSkip, "skipped"), input);
     }
 
     T computeDefaultValue() {
@@ -913,6 +926,13 @@ public abstract class Parser<T> {
       case MatchResult.Success<?> success -> success.tail();
       case MatchResult.Failure<?> failure -> start;
     };
+  }
+
+  private boolean canConsume(String input) {
+    return input.isEmpty()
+        || atLeastOnce(counting()).match(input, 0, new ErrorContext(input))
+                instanceof MatchResult.Success<?> success
+            && success.tail() == input.length();
   }
 
   sealed interface MatchResult<V> permits MatchResult.Success, MatchResult.Failure {

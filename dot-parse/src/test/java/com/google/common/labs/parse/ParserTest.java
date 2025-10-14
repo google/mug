@@ -522,6 +522,51 @@ public class ParserTest {
   }
 
   @Test
+  public void orEmpty_parseSkipping_emptyInput() {
+    Parser<String>.OrEmpty parser = string("foo").orElse("bar");
+    assertThat(parser.parseSkipping(Character::isWhitespace, "")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), "")).isEqualTo("bar");
+  }
+
+  @Test
+  public void orEmpty_parseSkipping_inputWithSingleSkip() {
+    Parser<String>.OrEmpty parser = string("foo").orElse("bar");
+    assertThat(parser.parseSkipping(Character::isWhitespace, " ")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), " ")).isEqualTo("bar");
+  }
+
+  @Test
+  public void orEmpty_parseSkipping_inputWithMultipleSkips() {
+    Parser<String>.OrEmpty parser = string("foo").orElse("bar");
+    assertThat(parser.parseSkipping(Character::isWhitespace, "   ")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), "   ")).isEqualTo("bar");
+  }
+
+  @Test
+  public void orEmpty_parseSkipping_inputWithSkipsAndValue() {
+    Parser<String>.OrEmpty parser = string("foo").orElse("bar");
+    assertThat(parser.parseSkipping(Character::isWhitespace, " foo ")).isEqualTo("foo");
+    assertThat(parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), " foo ")).isEqualTo("foo");
+  }
+
+  @Test
+  public void orEmpty_parseSkipping_invalidInputWithoutSkips() {
+    Parser<String>.OrEmpty parser = string("foo").orElse("bar");
+    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "fo"));
+    assertThrows(
+        ParseException.class, () -> parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), "fo"));
+  }
+
+  @Test
+  public void orEmpty_parseSkipping_invalidInputWithSkips() {
+    Parser<String>.OrEmpty parser = string("foo").orElse("bar");
+    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " fo "));
+    assertThrows(
+        ParseException.class,
+        () -> parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), " fo "));
+  }
+
+  @Test
   public void or_success() {
     Parser<String> parser = string("foo").or(string("bar"));
     assertThat(parser.parse("foo")).isEqualTo("foo");
