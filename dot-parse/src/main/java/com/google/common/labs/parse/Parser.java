@@ -718,7 +718,7 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Lazily and iteratively matches {@code input}, until the input is exhausted or parsing failed.
+   * Lazily and iteratively matches {@code input}, until the input is exhausted or matching failed.
    * This allows quick probing without fully parsing it.
    */
   public final Stream<T> probe(String input) {
@@ -741,7 +741,7 @@ public abstract class Parser<T> {
 
   /**
    * Lazily and iteratively matches {@code input}, skipping {code charsToSkip}, until the input is
-   * exhausted or parsing failed. This allows quick probing without fully parsing it.
+   * exhausted or matching failed. This allows quick probing without fully parsing it.
    */
   public final Stream<T> probeSkipping(CharPredicate charsToSkip, String input) {
     return probeSkipping(skipConsecutive(charsToSkip, "skipped"), input);
@@ -749,7 +749,7 @@ public abstract class Parser<T> {
 
   /**
    * Lazily and iteratively matches {@code input}, skipping patterns to {code skip}, until the
-   * input is exhausted or parsing failed. This allows quick probing without fully parsing it.
+   * input is exhausted or matching failed. This allows quick probing without fully parsing it.
    */
   public final Stream<T> probeSkipping(Parser<?> skip, String input) {
     return skipping(skip).probe(input);
