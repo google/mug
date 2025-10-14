@@ -1968,6 +1968,89 @@ public class ParserTest {
   }
 
   @Test
+  public void probe_emptyInput_returnsEmpty() {
+    assertThat(string("foo").probe("")).isEmpty();
+  }
+
+  @Test
+  public void probe_singleMatch_returnsValue() {
+    assertThat(string("foo").probe("foo")).containsExactly("foo");
+  }
+
+  @Test
+  public void probe_multipleMatches_returnsValue() {
+    assertThat(string("foo").probe("foofoo")).containsExactly("foo", "foo");
+  }
+
+  @Test
+  public void probe_prefixMatch_returnsValue() {
+    assertThat(string("foo").probe("foobar")).containsExactly("foo");
+  }
+
+  @Test
+  public void probe_noMatch_returnsEmpty() {
+    assertThat(string("foo").probe("bar")).isEmpty();
+  }
+
+  @Test
+  public void probeSkippingCharMatcher_emptyInput_returnsEmpty() {
+    assertThat(string("foo").probeSkipping(Character::isWhitespace, " ")).isEmpty();
+  }
+
+  @Test
+  public void probeSkippingCharMatcher_singleMatch_returnsValue() {
+    assertThat(string("foo").probeSkipping(Character::isWhitespace, " foo ")).containsExactly("foo");
+  }
+
+  @Test
+  public void probeSkippingCharMatcher_multipleMatches_returnsValues() {
+    assertThat(consecutive(DIGIT, "digit").probeSkipping(Character::isWhitespace, " 123  456 "))
+        .containsExactly("123", "456")
+        .inOrder();
+  }
+
+  @Test
+  public void probeSkippingCharMatcher_prefixMatchWithSkipping_returnsValue() {
+    assertThat(string("foo").probeSkipping(Character::isWhitespace, " foobar ")).containsExactly("foo");
+  }
+
+  @Test
+  public void probeSkippingCharMatcher_noMatch_returnsEmpty() {
+    assertThat(string("foo").probeSkipping(Character::isWhitespace, "bar")).isEmpty();
+  }
+
+  @Test
+  public void probeSkippingParser_emptyInput_returnsEmpty() {
+    assertThat(string("foo").probeSkipping(consecutive(Character::isWhitespace, "skip"), "\n\n ")).isEmpty();
+  }
+
+  @Test
+  public void probeSkippingParser_singleMatch_returnsValue() {
+    assertThat(string("foo").probeSkipping(consecutive(Character::isWhitespace, "skip"), " \n foo "))
+        .containsExactly("foo");
+  }
+
+  @Test
+  public void probeSkippingParser_multipleMatches_returnsValues() {
+    assertThat(
+            consecutive(ALPHANUMERIC, "word")
+                .probeSkipping(consecutive(Character::isWhitespace, "skip"), " \n foo 123"))
+        .containsExactly("foo", "123")
+        .inOrder();
+  }
+
+  @Test
+  public void probeSkippingParser_prefixMatchWithSkipping_returnsValue() {
+    assertThat(string("foo").probeSkipping(consecutive(Character::isWhitespace, "skip"), " foobar "))
+        .containsExactly("foo");
+  }
+
+  @Test
+  public void probeSkippingParser_noMatch_returnsEmpty() {
+    assertThat(string("foo").probeSkipping(consecutive(Character::isWhitespace, "skip"), "bar")).isEmpty();
+  }
+
+  @Test
   public void testNestedPlaceholderGrammar() {
     assertThat(Format.parse("a{b=xy{foo=bar}z}d{e=f}{{not a placeholder}}"))
         .isEqualTo(

@@ -718,6 +718,44 @@ public abstract class Parser<T> {
   }
 
   /**
+   * Iteratively matches {@code input}, until the input is exhausted or parsing failed. This allows
+   * quick probing without fully parsing it.
+   */
+  public final Stream<T> probe(String input) {
+    requireNonNull(input);
+    class Cursor {
+      private int index = 0;
+
+      MatchResult.Success<T> nextOrNull() {
+        return switch (match(input, index, new ErrorContext(input))) {
+          case MatchResult.Success<T> success -> {
+            index = success.tail();
+            yield success;
+          }
+          case MatchResult.Failure<?> failure -> null;
+        };
+      }
+    }
+    return whileNotNull(new Cursor()::nextOrNull).map(MatchResult.Success::value);
+  }
+
+  /**
+   * Iteratively matches {@code input}, skipping {code charsToSkip}, until the input is exhausted or
+   * parsing failed. This allows quick probing without fully parsing it.
+   */
+  public final Stream<T> probeSkipping(CharPredicate charsToSkip, String input) {
+    return probeSkipping(skipConsecutive(charsToSkip, "skipped"), input);
+  }
+
+  /**
+   * Iteratively matches {@code input}, skipping patterns to {code skip}, until the input is
+   * exhausted or parsing failed. This allows quick probing without fully parsing it.
+   */
+  public final Stream<T> probeSkipping(Parser<?> skip, String input) {
+    return skipping(skip).probe(input);
+  }
+
+  /**
    * Facilitates a fluent chain for matching the current parser optionally. This is needed because
    * we require all parsers to match at least one character. So optionality is only legal when
    * combined together with a non-empty prefix, suffix or both, which will be specified by methods
