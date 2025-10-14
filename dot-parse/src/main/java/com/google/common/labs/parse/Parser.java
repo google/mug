@@ -549,6 +549,14 @@ public abstract class Parser<T> {
   }
 
   /**
+   * A form of negative lookahead such that the match is rejected if <em>immediately</em> followed
+   * by (no skippable characters in between) a character that matches {@code matcher}.
+   */
+  public final Parser<T> notImmediatelyFollowedBy(CharPredicate predicate, String name) {
+    return notFollowedBy(literally(single(predicate, name)), name);
+  }
+
+  /**
    * Starts a fluent chain for matching the current parser optionally. {@code defaultValue} will be
    * the result in case the current parser doesn't match.
    *

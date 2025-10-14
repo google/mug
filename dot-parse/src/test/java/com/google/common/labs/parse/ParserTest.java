@@ -309,6 +309,32 @@ public class ParserTest {
   }
 
   @Test
+  public void notImmediatelyFollowedBy_selfFailsToMatch() {
+    assertThrows(ParseException.class, () -> string("a").notImmediatelyFollowedBy(is('b'), "b").parse("c"));
+  }
+
+  @Test
+  public void notImmediatelyFollowedBy_suffixFollows() {
+    assertThrows(ParseException.class, () -> string("a").notImmediatelyFollowedBy(is('b'), "b").parse("ab"));
+  }
+
+  @Test
+  public void notImmediatelyFollowedBy_suffixDoesNotFollow() {
+    assertThat(string("a").notImmediatelyFollowedBy(is('b'), "b").parse("a")).isEqualTo("a");
+    assertThrows(ParseException.class, () -> string("a").notImmediatelyFollowedBy(is('b'), "b").parse("ac"));
+  }
+
+  @Test
+  public void notImmediatelyFollowedBy_suffixDoesNotLiterallyFollow() {
+    assertThat(
+            string("a")
+                .notImmediatelyFollowedBy(is('b'), "b")
+                .followedBy("b")
+                .parseSkipping(Character::isWhitespace, "a b"))
+        .isEqualTo("a");
+  }
+
+  @Test
   public void expecting_eof() {
     Parser<String> parser = string("f");
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse(""));
