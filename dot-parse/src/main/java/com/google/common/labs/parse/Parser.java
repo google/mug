@@ -424,9 +424,9 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a parser that matches the current parser <em>immediately</em>enclosed between {@code
-   * prefix} and {@code suffix} (no skippable characters as specified by {@link #parseSkipping} in
-   * between).
+   * Returns a parser that matches the current parser <em>immediately</em> enclosed between {@code
+   * prefix} and {@code suffix} (no skippable characters as specified by {@link #parseSkipping
+   * parseSkipping()} in between).
    */
   public final Parser<T> immediatelyBetween(String prefix, String suffix) {
     return string(prefix).then(literally(followedBy(suffix)));
@@ -558,8 +558,8 @@ public abstract class Parser<T> {
 
   /**
    * A form of negative lookahead such that the match is rejected if <em>immediately</em> followed
-   * by (no skippable characters as specified by {@link #parseSkipping} in between) a character that
-   * matches {@code matcher}. Useful for parsing keywords such as {@code
+   * by (no skippable characters as specified by {@link #parseSkipping parseSkipping()} in between)
+   * a character that matches {@code predicate}. Useful for parsing keywords such as {@code
    * string("if").notImmediatelyFollowedBy(IDENTIFIER_CHAR, "identifier char")}.
    */
   public final Parser<T> notImmediatelyFollowedBy(CharPredicate predicate, String name) {
@@ -775,8 +775,8 @@ public abstract class Parser<T> {
     /**
      * The current optional (or zero-or-more) parser must be <em>immediately</em> enclosed between
      * non-empty {@code prefix} and {@code suffix} (no skippable characters as specified by {@link
-     * #parseSkipping} in between). Useful for matching a literal string, such as {@code
-     * zeroOrMore(isNot('"')).immediatelyBetween("\"", "\"")}.
+     * #parseSkipping parseSkipping()} in between). Useful for matching a literal string, such as
+     * {@code zeroOrMore(isNot('"')).immediatelyBetween("\"", "\"")}.
      */
     public final Parser<T> immediatelyBetween(String prefix, String suffix) {
       return string(prefix).then(literally(followedBy(suffix)));
