@@ -1189,6 +1189,114 @@ public class ParserTest {
   }
 
   @Test
+  public void orEmpty_immediatelyBetween_success() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.parse("[foo]")).isEqualTo("foo");
+  }
+
+  @Test
+  public void orEmpty_immediatelyBetween_emptyContent() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.parse("[]")).isEqualTo("");
+  }
+
+  @Test
+  public void orEmpty_immediatelyBetween_prefixMismatch_throws() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThrows(ParseException.class, () -> parser.parse("foo]"));
+  }
+
+  @Test
+  public void orEmpty_immediatelyBetween_suffixMismatch_throws() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThrows(ParseException.class, () -> parser.parse("[foo"));
+  }
+
+  @Test
+  public void orEmpty_immediatelyBetween_withSkipping_aroundQuotes() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.parseSkipping(Character::isWhitespace, " [foo] ")).isEqualTo("foo");
+  }
+
+  @Test
+  public void orEmpty_immediatelyBetween_withSkipping_spacesInsideQuotes() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.parseSkipping(Character::isWhitespace, " [ foo ] ")).isEqualTo(" foo ");
+  }
+
+  @Test
+  public void orEmpty_immediatelyBetween_withSkipping_spaceFollowingPrefixNotIgnored() {
+    Parser<String> parser = zeroOrMore(noneOf("[ ]"), "content").immediatelyBetween("[", "]");
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " [ foo] "));
+    assertThat(thrown).hasMessageThat().contains("1:3");
+    assertThat(thrown).hasMessageThat().contains("encountered [ foo]...");
+  }
+
+  @Test
+  public void orEmpty_immediatelyBetween_withSkipping_spacePrecedingSuffixNotIgnored() {
+    Parser<String> parser = zeroOrMore(noneOf("[ ]"), "content").immediatelyBetween("[", "]");
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " [foo ] "));
+    assertThat(thrown).hasMessageThat().contains("1:6");
+    assertThat(thrown).hasMessageThat().contains("encountered [ ]...");
+  }
+
+  @Test
+  public void parser_immediatelyBetween_success() {
+    Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.parse("[foo]")).isEqualTo("foo");
+  }
+
+  @Test
+  public void parser_immediatelyBetween_mainParserFails_throws() {
+    Parser<String> parser = consecutive(ALPHANUMERIC, "content").immediatelyBetween("[", "]");
+    assertThrows(ParseException.class, () -> parser.parse("[!123]"));
+  }
+
+  @Test
+  public void parser_immediatelyBetween_prefixMismatch_throws() {
+    Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThrows(ParseException.class, () -> parser.parse("foo]"));
+  }
+
+  @Test
+  public void parser_immediatelyBetween_suffixMismatch_throws() {
+    Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThrows(ParseException.class, () -> parser.parse("[foo"));
+  }
+
+  @Test
+  public void parser_immediatelyBetween_withSkipping_aroundQuotes() {
+    Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.parseSkipping(Character::isWhitespace, " [foo] ")).isEqualTo("foo");
+  }
+
+  @Test
+  public void parser_immediatelyBetween_withSkipping_spacesInsideQuotes() {
+    Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.parseSkipping(Character::isWhitespace, " [ foo ] ")).isEqualTo(" foo ");
+  }
+
+  @Test
+  public void parser_immediatelyBetween_withSkipping_spaceFollowingPrefixNotIgnored() {
+    Parser<String> parser = consecutive(noneOf("[ ]"), "content").immediatelyBetween("[", "]");
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " [ foo] "));
+    assertThat(thrown).hasMessageThat().contains("1:3");
+    assertThat(thrown).hasMessageThat().contains("encountered [ foo]...");
+  }
+
+  @Test
+  public void parser_immediatelyBetween_withSkipping_spacePrecedingSuffixNotIgnored() {
+    Parser<String> parser = consecutive(noneOf("[ ]"), "content").immediatelyBetween("[", "]");
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " [foo ] "));
+    assertThat(thrown).hasMessageThat().contains("1:6");
+    assertThat(thrown).hasMessageThat().contains("encountered [ ]...");
+  }
+
+  @Test
   public void single_success() {
     Parser<Character> parser = single(DIGIT, "digit");
     assertThat(parser.parse("1")).isEqualTo('1');
