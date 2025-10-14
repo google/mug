@@ -123,8 +123,8 @@ final class RegexParsers {
             range,
             literalCharOrDash.map(LiteralChar::new));
     return Parser.anyOf(
-        literally(element.atLeastOnce()).between("[^", "]").map(RegexPattern::noneOf),
-        literally(element.atLeastOnce()).between("[", "]").map(RegexPattern::anyOf));
+        literally(element.atLeastOnce()).immediatelyBetween("[^", "]").map(RegexPattern::noneOf),
+        literally(element.atLeastOnce()).immediatelyBetween("[", "]").map(RegexPattern::anyOf));
   }
 
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {

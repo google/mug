@@ -409,19 +409,27 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a parser that matches the current parser immediately enclosed between {@code open} and
-   * {@code close}, which are non-empty string delimiters.
+   * Returns a parser that matches the current parser enclosed between {@code prefix} and
+   * {@code suffix}, which are non-empty string delimiters.
    */
-  public final Parser<T> between(String open, String close) {
-    return between(string(open), string(close));
+  public final Parser<T> between(String prefix, String suffix) {
+    return between(string(prefix), string(suffix));
   }
 
   /**
-   * Returns a parser that matches the current parser immediately enclosed between {@code open} and
-   * {@code close}.
+   * Returns a parser that matches the current parser enclosed between {@code prefix} and {@code suffix}.
    */
-  public final Parser<T> between(Parser<?> open, Parser<?> close) {
-    return open.then(this).followedBy(close);
+  public final Parser<T> between(Parser<?> prefix, Parser<?> suffix) {
+    return prefix.then(followedBy(suffix));
+  }
+
+  /**
+   * Returns a parser that matches the current parser <em>immediately</em>enclosed between {@code
+   * prefix} and {@code suffix} (no skippable characters as specified by {@link #parseSkipping} in
+   * between).
+   */
+  public final Parser<T> immediatelyBetween(String prefix, String suffix) {
+    return string(prefix).then(literally(followedBy(suffix)));
   }
 
   /** If this parser matches, returns the result of applying the given function to the match. */
@@ -546,6 +554,16 @@ public abstract class Parser<T> {
         };
       }
     };
+  }
+
+  /**
+   * A form of negative lookahead such that the match is rejected if <em>immediately</em> followed
+   * by (no skippable characters as specified by {@link #parseSkipping} in between) a character that
+   * matches {@code matcher}. Useful for parsing keywords such as {@code
+   * string("if").notImmediatelyFollowedBy(IDENTIFIER_CHAR, "identifier char")}.
+   */
+  public final Parser<T> notImmediatelyFollowedBy(CharPredicate predicate, String name) {
+    return notFollowedBy(literally(single(predicate, name)), name);
   }
 
   /**
@@ -755,6 +773,16 @@ public abstract class Parser<T> {
     }
 
     /**
+     * The current optional (or zero-or-more) parser must be <em>immediately</em> enclosed between
+     * non-empty {@code prefix} and {@code suffix} (no skippable characters as specified by {@link
+     * #parseSkipping} in between). Useful for matching a literal string, such as {@code
+     * zeroOrMore(isNot('"')).immediatelyBetween("\"", "\"")}.
+     */
+    public final Parser<T> immediatelyBetween(String prefix, String suffix) {
+      return string(prefix).then(literally(followedBy(suffix)));
+    }
+
+    /**
      * The current optional parser repeated and delimited by {@code delimiter}. Since this is an
      * optional parser, at least one value is guaranteed to be collected by the provided {@code
      * collector}, even if match failed. That is, on match failure, the default value (e.g. from
@@ -842,7 +870,7 @@ public abstract class Parser<T> {
 
     /**
      * Parses the entire input string, ignoring patterns matched by {@code skip}, and returns the
-     * result; if input is empty, returns the default empty value.
+     * result; if there's nothing to parse except skippable content, returns the default empty value.
      */
     public T parseSkipping(Parser<?> skip, String input) {
       return skip.canConsume(input)
@@ -852,7 +880,7 @@ public abstract class Parser<T> {
 
     /**
      * Parses the entire input string, ignoring {@code charactersToSkip}, and returns the result; if
-     * input is empty, returns the default empty value.
+     * there's nothing to parse except skippable content, returns the default empty value.
      */
     public T parseSkipping(CharPredicate charactersToSkip, String input) {
       return parseSkipping(skipConsecutive(charactersToSkip, "skipped"), input);
