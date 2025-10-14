@@ -842,7 +842,7 @@ public abstract class Parser<T> {
 
     /**
      * Parses the entire input string, ignoring patterns matched by {@code skip}, and returns the
-     * result; if input is empty, returns the default empty value.
+     * result; if there's nothing to parse except skippable content, returns the default empty value.
      */
     public T parseSkipping(Parser<?> skip, String input) {
       return skip.canConsume(input)
@@ -852,7 +852,7 @@ public abstract class Parser<T> {
 
     /**
      * Parses the entire input string, ignoring {@code charactersToSkip}, and returns the result; if
-     * input is empty, returns the default empty value.
+     * there's nothing to parse except skippable content, returns the default empty value.
      */
     public T parseSkipping(CharPredicate charactersToSkip, String input) {
       return parseSkipping(skipConsecutive(charactersToSkip, "skipped"), input);
