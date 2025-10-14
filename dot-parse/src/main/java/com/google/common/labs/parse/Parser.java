@@ -69,7 +69,7 @@ public abstract class Parser<T> {
         if (input.length() > start && matcher.test(input.charAt(start))) {
           return new MatchResult.Success<>(start, start + 1, input.charAt(start));
         }
-        return context.expecting(name, start);
+        return context.expecting(name, start, start);
       }
     };
   }
@@ -90,7 +90,7 @@ public abstract class Parser<T> {
         for (; end < input.length() && matcher.test(input.charAt(end)); end++) {}
         return end > start
             ? new MatchResult.Success<>(start, end, new Source(input, start, end))
-            : context.expecting(name, end);
+            : context.expecting(name, start, end);
       }
     };
   }
@@ -105,7 +105,7 @@ public abstract class Parser<T> {
         if (input.startsWith(value, start)) {
           return new MatchResult.Success<>(start, start + value.length(), value);
         }
-        return context.expecting(value, start);
+        return context.expecting(value, start, start);
       }
     };
   }
@@ -538,7 +538,7 @@ public abstract class Parser<T> {
             ErrorContext lookaheadContext = new ErrorContext(input);
             yield switch (suffix.skipAndMatch(skip, input, success.tail(), lookaheadContext)) {
               case MatchResult.Success<?> followed ->
-                  lookaheadContext.failAt(success.tail(), "unexpected `%s`", name);
+                  lookaheadContext.failAt(start, success.tail(), "unexpected `%s`", name);
               default -> success;
             };
           }
@@ -640,7 +640,8 @@ public abstract class Parser<T> {
    * atomic matches.
    */
   public final Stream<T> parseToStreamSkipping(Parser<?> skip, String input) {
-    return skipping(skip).parseToStream(input);
+    // If the entire input is skippable, nothing to parse, whether the parser is literally() or not.
+    return skip.canConsume(input) ? Stream.empty() : skipping(skip).parseToStream(input);
   }
 
   /** Parses {@code input} to a lazy stream while {@code charsToSkip} around atomic matches. */
@@ -660,7 +661,7 @@ public abstract class Parser<T> {
     switch (result) {
       case MatchResult.Success(int head, int tail, T value) -> {
         if (tail != input.length()) {
-          throw context.report(context.expecting("EOF", tail));
+          throw context.report(context.expecting("EOF", head, tail));
         }
         return value;
       }
@@ -753,38 +754,6 @@ public abstract class Parser<T> {
       return prefix.then(followedBy(suffix));
     }
 
-    /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
-    public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
-      return sequence(this, suffix, (a, b) -> b);
-    }
-
-    /**
-     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
-     *
-     * <p>Note that there is no {@code after()}, but you can use {@link
-     * Parser#sequence(Parser, Parser.OrEmpty, BiFunction) sequence()} and {@link
-     * Parser#followedBy(Parser.OrEmpty)} to specify that a {@code Parser.OrEmpty} grammar rule
-     * follows a regular consuming {@code Parser}.
-     */
-    public Parser<T> followedBy(String suffix) {
-      return followedBy(string(suffix));
-    }
-
-    /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
-    public <S> Parser<T>.OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
-      return sequence(this, suffix, (a, b) -> a);
-    }
-
-    /**
-     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
-     *
-     * <p>Not public because {@code lazy.delegateTo(zeroOrMore().before(lazy))} could potentially
-     * introduce a left recursion.
-     */
-    Parser<T> followedBy(Parser<?> suffix) {
-      return sequence(this, suffix, (a, b) -> a);
-    }
-
     /**
      * The current optional parser repeated and delimited by {@code delimiter}. Since this is an
      * optional parser, at least one value is guaranteed to be collected by the provided {@code
@@ -818,6 +787,38 @@ public abstract class Parser<T> {
       return delimitedBy(delimiter, toUnmodifiableList());
     }
 
+    /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
+    public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
+      return sequence(this, suffix, (a, b) -> b);
+    }
+
+    /**
+     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
+     *
+     * <p>Note that there is no {@code after()}, but you can use {@link
+     * Parser#sequence(Parser, Parser.OrEmpty, BiFunction) sequence()} and {@link
+     * Parser#followedBy(Parser.OrEmpty)} to specify that a {@code Parser.OrEmpty} grammar rule
+     * follows a regular consuming {@code Parser}.
+     */
+    public Parser<T> followedBy(String suffix) {
+      return followedBy(string(suffix));
+    }
+
+    /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
+    public <S> Parser<T>.OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
+      return sequence(this, suffix, (a, b) -> a);
+    }
+
+    /**
+     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
+     *
+     * <p>Not public because {@code lazy.delegateTo(zeroOrMore().before(lazy))} could potentially
+     * introduce a left recursion.
+     */
+    Parser<T> followedBy(Parser<?> suffix) {
+      return sequence(this, suffix, (a, b) -> a);
+    }
+
     /**
      * Returns the otherwise equivalent {@code Parser} that will fail instead of returning the
      * default value if empty.
@@ -837,6 +838,24 @@ public abstract class Parser<T> {
      */
     public T parse(String input) {
       return input.isEmpty() ? computeDefaultValue() : notEmpty().parse(input);
+    }
+
+    /**
+     * Parses the entire input string, ignoring patterns matched by {@code skip}, and returns the
+     * result; if input is empty, returns the default empty value.
+     */
+    public T parseSkipping(Parser<?> skip, String input) {
+      return skip.canConsume(input)
+          ? computeDefaultValue()
+          : notEmpty().skipping(skip).parse(input);
+    }
+
+    /**
+     * Parses the entire input string, ignoring {@code charactersToSkip}, and returns the result; if
+     * input is empty, returns the default empty value.
+     */
+    public T parseSkipping(CharPredicate charactersToSkip, String input) {
+      return parseSkipping(skipConsecutive(charactersToSkip, "skipped"), input);
     }
 
     T computeDefaultValue() {
@@ -909,6 +928,13 @@ public abstract class Parser<T> {
     };
   }
 
+  private boolean canConsume(String input) {
+    return input.isEmpty()
+        || atLeastOnce(counting()).match(input, 0, new ErrorContext(input))
+                instanceof MatchResult.Success<?> success
+            && success.tail() == input.length();
+  }
+
   sealed interface MatchResult<V> permits MatchResult.Success, MatchResult.Failure {
     /**
      * Represents a successful parse result with a value and the [head, tail) range of the match.
@@ -916,7 +942,7 @@ public abstract class Parser<T> {
     record Success<V>(int head, int tail, V value) implements MatchResult<V> {}
 
     /** Represents a partial parse result with a value and the [start, end) range of the match. */
-    record Failure<V>(int at, String message, List<?> args) implements MatchResult<V> {
+    record Failure<V>(int start, int at, String message, List<?> args) implements MatchResult<V> {
       @SuppressWarnings("unchecked")
       <X> Failure<X> safeCast() {
         return (Failure<X>) this;
@@ -949,13 +975,13 @@ public abstract class Parser<T> {
       this.input = input;
     }
 
-    <V> MatchResult.Failure<V> expecting(String name, int at) {
-      return failAt(at, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
+    <V> MatchResult.Failure<V> expecting(String name, int start, int at) {
+      return failAt(start, at, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
     }
 
-    <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
+    <V> MatchResult.Failure<V> failAt(int start, int at, String message, Object... args) {
       var failure = new MatchResult.Failure<V>(
-          at, message, stream(args).collect(toUnmodifiableList()));
+          start, at, message, stream(args).collect(toUnmodifiableList()));
       if (farthestFailure == null || failure.at() > farthestFailure.at()) {
         farthestFailure = failure;
       }
