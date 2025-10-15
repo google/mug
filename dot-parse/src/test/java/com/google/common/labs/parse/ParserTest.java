@@ -1897,6 +1897,43 @@ public class ParserTest {
   }
 
   @Test
+  public void source_string() {
+    assertThat(string("foo").source().parse("foo").toString()).isEqualTo("foo");
+  }
+
+  @Test
+  public void source_string_parseSkipping() {
+    assertThat(string("foo").source().parseSkipping(Character::isWhitespace, "  foo  ").toString())
+        .isEqualTo("  foo");
+  }
+
+  @Test
+  public void source_between() {
+    assertThat(consecutive(DIGIT, "number").between("(", ")").source().parse("(123)"))
+        .isEqualTo("(123)");
+  }
+
+  @Test
+  public void source_between_parseSkipping() {
+    assertThat(
+            consecutive(DIGIT, "number")
+                .between("(", ")")
+                .source()
+                .parseSkipping(Character::isWhitespace, " ( 123 ) "))
+        .isEqualTo(" ( 123 )");
+  }
+
+  @Test
+  public void source_immediatelyBetween_parseSkipping() {
+    assertThat(
+            consecutive(DIGIT, "number")
+                .immediatelyBetween("(", ")")
+                .source()
+                .parseSkipping(Character::isWhitespace, " (123) "))
+        .isEqualTo(" (123)");
+  }
+
+  @Test
   public void recursiveGrammar() {
     Parser<Integer> parser = simpleCalculator();
     assertThat(parser.parse("1")).isEqualTo(1);

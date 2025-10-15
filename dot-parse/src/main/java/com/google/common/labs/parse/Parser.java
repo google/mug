@@ -600,6 +600,23 @@ public abstract class Parser<T> {
     return map(Optional::ofNullable).new OrEmpty(Optional::empty);
   }
 
+  /** Returns a parser that matches the current parser and returns the matched string. */
+  public final Parser<String> source() {
+    Parser<T> self = this;
+    return new Parser<String>() {
+      @Override
+      MatchResult<String> skipAndMatch(
+          Parser<?> skip, String input, int start, ErrorContext context) {
+        return switch (self.skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success<T> success ->
+              new MatchResult.Success<>(
+                  start, success.tail(), input.substring(start, success.tail()));
+          case MatchResult.Failure<T> failure -> failure.safeCast();
+        };
+      }
+    };
+  }
+
   /**
    * Returns an equivalent parser that suppresses character skipping that's otherwise applied if
    * {@link #parseSkipping parseSkipping()} or {@link #parseToStreamSkipping parseToStreamSkipping()}
