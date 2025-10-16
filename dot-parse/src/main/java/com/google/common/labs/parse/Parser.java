@@ -973,7 +973,7 @@ public abstract class Parser<T> {
       return p.skipAndMatch(skip, input, start, context);
     }
 
-    /** Sets and returns the delegate parser. */
+    /** Define this rule as {@code parser} and returns it. */
     @SuppressWarnings("unchecked")  // Parser<T> is covariant
     public <S extends T> Parser<S> definedAs(Parser<S> parser) {
       requireNonNull(parser);
