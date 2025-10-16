@@ -895,7 +895,7 @@ public abstract class Parser<T> {
     /**
      * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
      *
-     * <p>Not public because {@code lazy.delegateTo(zeroOrMore().before(lazy))} could potentially
+     * <p>Not public because {@code rule.definedAs(zeroOrMore().before(rule))} could potentially
      * introduce a left recursion.
      */
     Parser<T> followedBy(Parser<?> suffix) {
@@ -947,38 +947,38 @@ public abstract class Parser<T> {
   }
 
   /**
-   * A lazy parser, to be used for recursive grammars.
+   * A forward-declared grammar rule, to be used for recursive grammars.
    *
    * <p>For example, to create a parser for a simple calculator that supports single-digit numbers,
    * addition, and parentheses, you can write:
    *
    * <pre>{@code
-   * var lazy = new Parser.Lazy<Integer>();
+   * var rule = new Parser.Rule<Integer>();
    * Parser<Integer> num = Parser.single(CharPredicate.inRange('0', '9')).map(c -> c - '0');
-   * Parser<Integer> atomic = lazy.between("(", ")").or(num);
+   * Parser<Integer> atomic = rule.between("(", ")").or(num);
    * Parser<Integer> expr =
    *     atomic.atLeastOnceDelimitedBy("+")
    *         .map(nums -> nums.stream().mapToInt(n -> n).sum());
-   * return lazy.delegateTo(expr);
+   * return rule.definedAs(expr);
    * }</pre>
    */
-  public static final class Lazy<T> extends Parser<T> {
-    private static final String DO_NOT_DELEGATE_TO_LAZY_PARSER = "Do not delegate to a Lazy parser";
+  public static final class Rule<T> extends Parser<T> {
+    private static final String DO_NOT_DELEGATE_TO_RULE_PARSER = "Do not delegate to a Rule parser";
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
 
     @Override MatchResult<T> skipAndMatch(
         Parser<?> skip, String input, int start, ErrorContext context) {
       Parser<T> p = ref.get();
-      checkState(p != null, "delegateTo() should have been called before parse()");
+      checkState(p != null, "definedAs() should have been called before parse()");
       return p.skipAndMatch(skip, input, start, context);
     }
 
     /** Sets and returns the delegate parser. */
     @SuppressWarnings("unchecked")  // Parser<T> is covariant
-    public <S extends T> Parser<S> delegateTo(Parser<S> parser) {
+    public <S extends T> Parser<S> definedAs(Parser<S> parser) {
       requireNonNull(parser);
-      checkArgument(!(parser instanceof Lazy), DO_NOT_DELEGATE_TO_LAZY_PARSER);
-      checkState(ref.compareAndSet(null, (Parser<T>) parser), "delegateTo() already called");
+      checkArgument(!(parser instanceof Rule), DO_NOT_DELEGATE_TO_RULE_PARSER);
+      checkState(ref.compareAndSet(null, (Parser<T>) parser), "definedAs() already called");
       return parser;
     }
   }

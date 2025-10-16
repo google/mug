@@ -1887,7 +1887,7 @@ public class ParserTest {
   }
 
   @Test
-  public void skipping_propagatesThroughLazyParser() {
+  public void skipping_propagatesThroughRuleParser() {
     Parser<Integer> parser = simpleCalculator();
     assertThat(parser.parseSkipping(Character::isWhitespace, " ( 2 ) + 3 ")).isEqualTo(5);
     assertThat(parser.parseToStreamSkipping(Character::isWhitespace, " ( 2 ) + 3 ")).containsExactly(5);
@@ -1949,40 +1949,40 @@ public class ParserTest {
   }
 
   private static Parser<Integer> simpleCalculator() {
-    Parser.Lazy<Integer> lazy = new Parser.Lazy<>();
+    Parser.Rule<Integer> lazy = new Parser.Rule<>();
     Parser<Integer> num = Parser.single(DIGIT, "digit").map(c -> c - '0');
     Parser<Integer> atomic = lazy.between("(", ")").or(num);
     Parser<Integer> expr =
         atomic.atLeastOnceDelimitedBy("+").map(nums -> nums.stream().mapToInt(n -> n).sum());
-    return lazy.delegateTo(expr);
+    return lazy.definedAs(expr);
   }
 
   @Test
-  public void lazy_setTwice_throws() {
-    Parser.Lazy<String> lazy = new Parser.Lazy<>();
-    lazy.delegateTo(string("a"));
-    assertThrows(IllegalStateException.class, () -> lazy.delegateTo(string("b")));
+  public void forwardDeclaration_setTwice_throws() {
+    Parser.Rule<String> lazy = new Parser.Rule<>();
+    lazy.definedAs(string("a"));
+    assertThrows(IllegalStateException.class, () -> lazy.definedAs(string("b")));
   }
 
   @Test
-  public void lazy_setNull_throws() {
-    Parser.Lazy<String> lazy = new Parser.Lazy<>();
+  public void forwardDeclaration_setNull_throws() {
+    Parser.Rule<String> lazy = new Parser.Rule<>();
     Parser<String> parser = null;
-    assertThrows(NullPointerException.class, () -> lazy.delegateTo(parser));
+    assertThrows(NullPointerException.class, () -> lazy.definedAs(parser));
   }
 
   @Test
-  public void lazy_lazyParseBeforeSet_throws() {
-    Parser.Lazy<String> lazy = new Parser.Lazy<>();
+  public void forwardDeclaration_lazyParseBeforeSet_throws() {
+    Parser.Rule<String> lazy = new Parser.Rule<>();
     assertThrows(IllegalStateException.class, () -> lazy.parse("a"));
     assertThrows(IllegalStateException.class, () -> lazy.parseToStream("a").toList());
   }
 
   @Test
-  public void lazy_delegateToLazy_throws() {
-    Parser.Lazy<String> lazy = new Parser.Lazy<>();
-    Parser<String> actuallyLazy = lazy;
-    assertThrows(IllegalArgumentException.class, () -> lazy.delegateTo(actuallyLazy));
+  public void forwardDeclaration_definedAsRule_throws() {
+    Parser.Rule<String> lazy = new Parser.Rule<>();
+    Parser<String> actuallyRule = lazy;
+    assertThrows(IllegalArgumentException.class, () -> lazy.definedAs(actuallyRule));
   }
 
   @Test
@@ -2139,7 +2139,7 @@ public class ParserTest {
     }
 
     static Format parse(String format) {
-      Parser.Lazy<Format> lazy = new Parser.Lazy<>();
+      Parser.Rule<Format> lazy = new Parser.Rule<>();
       Parser<String> placeholderName =
           consecutive(range('a', 'z'), "placeholder name");
       Parser<Placeholder> placeholder =
@@ -2163,7 +2163,7 @@ public class ParserTest {
                       },
                       Format.Builder::addAll,
                       Format.Builder::build));
-      return lazy.delegateTo(parser).parse(format);
+      return lazy.definedAs(parser).parse(format);
     }
   }
 
