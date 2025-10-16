@@ -974,10 +974,11 @@ public abstract class Parser<T> {
     }
 
     /** Sets and returns the delegate parser. */
-    public Parser<T> delegateTo(Parser<T> parser) {
+    @SuppressWarnings("unchecked")  // Parser<T> is covariant
+    public <S extends T> Parser<S> delegateTo(Parser<S> parser) {
       requireNonNull(parser);
       checkArgument(!(parser instanceof Lazy), DO_NOT_DELEGATE_TO_LAZY_PARSER);
-      checkState(ref.compareAndSet(null, parser), "delegateTo() already called");
+      checkState(ref.compareAndSet(null, (Parser<T>) parser), "delegateTo() already called");
       return parser;
     }
   }
