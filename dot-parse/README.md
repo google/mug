@@ -16,7 +16,7 @@ Small, safe-by-construction parser combinators for Java.
 - **Sequence:** `then()`, `sequence()`, `atLeastOnce()`, `atLeastOnceDelimitedBy()`
 - **Optional:** `optionallyFollowedBy()`, `orElse(defaultValue)`, `zeroOrMore()`, `zeroOrMoreDelimitedBy(",")`
 - **Operator Precedence:** `OperatorTable<T>` (`prefix()`, `leftAssociative()`, `build()`, etc.)
-- **Recursive:** `Parser.Lazy<T>`
+- **Recursive:** `Parser.Rule<T>`
 - **Whitespace:** `parser.parseSkipping(Character::isWhitespace, input)`
 
 That’s essentially the whole surface.
@@ -48,8 +48,8 @@ import static com.google.mu.util.CharPredicate.range;
 Parser<Integer> calculator() {
   Parser<Integer> number =
       consecutive(range('0', '9')).map(Integer::parseInt);
-  Parser.Lazy<Integer> lazy = new Parser.Lazy<>(); // forward reference
-  Parser<Integer> atom = number.or(lazy.between("(", ")");
+  Parser.Rule<Integer> rule = new Parser.Rule<>(); // forward reference
+  Parser<Integer> atom = number.or(rule.between("(", ")");
   Parser<Integer> parser = 
       new OperatorTable<Integer>()
 	      .leftAssociative('+', (a,b) -> a + b, 10)           // a+b
@@ -59,7 +59,7 @@ Parser<Integer> calculator() {
 	      .prefix('-', i -> -i, 30)                           // -a
 	      .postfix('!', i -> factorial(i), 40)                // a!
 	      .build(atom);
-  return lazy.delegateTo(parser);
+  return rule.definedAs(parser);
 }
 
 // Run (whitespace is handled globally):
@@ -112,7 +112,7 @@ static Map<String, ?> parseMap(String input) {
           .between("[", "]");                          // bracket frame consumes
 
   // Forward-declared nested map: nested := { pair (',' pair)* }
-  Parser.Lazy<Map<String, ?>> nested = new Parser.Lazy<>();
+  Parser.Rule<Map<String, ?>> nested = new Parser.Rule<>();
 
   // pair := key ':' (value | values | nested)
   // sequence(k:, v, Both::of) builds a (key,value) pair; ':' consumes.
@@ -128,7 +128,7 @@ static Map<String, ?> parseMap(String input) {
       .map(kvs -> BiStream.from(kvs.stream()).toMap());
 
   // Wire the forward ref and run with global head-skipping of whitespace.
-  return nested.delegateTo(mapParser)
+  return nested.definedAs(mapParser)
       .parseSkipping(Character::isWhitespace, input);
 }
 
