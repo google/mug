@@ -53,7 +53,7 @@ final class RegexParsers {
               .then(Parser.consecutive(c -> c != '\n', "comment").optionallyFollowedBy("\n")));
 
   static Parser<RegexPattern> pattern() {
-    var lazy = new Parser.Lazy<RegexPattern>();
+    var lazy = new Parser.Rule<RegexPattern>();
     Parser<RegexPattern> atomic =
         Parser.anyOf(
             charClass(),
@@ -68,7 +68,7 @@ final class RegexParsers {
             ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))));
     Parser<RegexPattern> sequence =
         atomic.postfix(quantifier()).atLeastOnce(RegexPattern.inSequence());
-    return lazy.delegateTo(sequence.atLeastOnceDelimitedBy("|", RegexPattern.asAlternation()));
+    return lazy.definedAs(sequence.atLeastOnceDelimitedBy("|", RegexPattern.asAlternation()));
   }
 
   private static Parser<Quantifier> quantifier() {

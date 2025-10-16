@@ -600,6 +600,23 @@ public abstract class Parser<T> {
     return map(Optional::ofNullable).new OrEmpty(Optional::empty);
   }
 
+  /** Returns a parser that matches the current parser and returns the matched string. */
+  public final Parser<String> source() {
+    Parser<T> self = this;
+    return new Parser<String>() {
+      @Override
+      MatchResult<String> skipAndMatch(
+          Parser<?> skip, String input, int start, ErrorContext context) {
+        return switch (self.skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success<T> success ->
+              new MatchResult.Success<>(
+                  start, success.tail(), input.substring(start, success.tail()));
+          case MatchResult.Failure<T> failure -> failure.safeCast();
+        };
+      }
+    };
+  }
+
   /**
    * Returns an equivalent parser that suppresses character skipping that's otherwise applied if
    * {@link #parseSkipping parseSkipping()} or {@link #parseToStreamSkipping parseToStreamSkipping()}
@@ -715,6 +732,44 @@ public abstract class Parser<T> {
       }
     }
     return whileNotNull(new Cursor()::nextOrNull).map(MatchResult.Success::value);
+  }
+
+  /**
+   * Lazily and iteratively matches {@code input}, until the input is exhausted or matching failed.
+   * This allows quick probing without fully parsing it.
+   */
+  public final Stream<T> probe(String input) {
+    requireNonNull(input);
+    class Cursor {
+      private int index = 0;
+
+      MatchResult.Success<T> nextOrNull() {
+        return switch (match(input, index, new ErrorContext(input))) {
+          case MatchResult.Success<T> success -> {
+            index = success.tail();
+            yield success;
+          }
+          case MatchResult.Failure<?> failure -> null;
+        };
+      }
+    }
+    return whileNotNull(new Cursor()::nextOrNull).map(MatchResult.Success::value);
+  }
+
+  /**
+   * Lazily and iteratively matches {@code input}, skipping {code charsToSkip}, until the input is
+   * exhausted or matching failed. This allows quick probing without fully parsing it.
+   */
+  public final Stream<T> probeSkipping(CharPredicate charsToSkip, String input) {
+    return probeSkipping(skipConsecutive(charsToSkip, "skipped"), input);
+  }
+
+  /**
+   * Lazily and iteratively matches {@code input}, skipping patterns to {code skip}, until the
+   * input is exhausted or matching failed. This allows quick probing without fully parsing it.
+   */
+  public final Stream<T> probeSkipping(Parser<?> skip, String input) {
+    return skipping(skip).probe(input);
   }
 
   /**
@@ -840,7 +895,7 @@ public abstract class Parser<T> {
     /**
      * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
      *
-     * <p>Not public because {@code lazy.delegateTo(zeroOrMore().before(lazy))} could potentially
+     * <p>Not public because {@code rule.definedAs(zeroOrMore().before(rule))} could potentially
      * introduce a left recursion.
      */
     Parser<T> followedBy(Parser<?> suffix) {
@@ -892,37 +947,38 @@ public abstract class Parser<T> {
   }
 
   /**
-   * A lazy parser, to be used for recursive grammars.
+   * A forward-declared grammar rule, to be used for recursive grammars.
    *
    * <p>For example, to create a parser for a simple calculator that supports single-digit numbers,
    * addition, and parentheses, you can write:
    *
    * <pre>{@code
-   * var lazy = new Parser.Lazy<Integer>();
+   * var rule = new Parser.Rule<Integer>();
    * Parser<Integer> num = Parser.single(CharPredicate.inRange('0', '9')).map(c -> c - '0');
-   * Parser<Integer> atomic = lazy.between("(", ")").or(num);
+   * Parser<Integer> atomic = rule.between("(", ")").or(num);
    * Parser<Integer> expr =
    *     atomic.atLeastOnceDelimitedBy("+")
    *         .map(nums -> nums.stream().mapToInt(n -> n).sum());
-   * return lazy.delegateTo(expr);
+   * return rule.definedAs(expr);
    * }</pre>
    */
-  public static final class Lazy<T> extends Parser<T> {
-    private static final String DO_NOT_DELEGATE_TO_LAZY_PARSER = "Do not delegate to a Lazy parser";
+  public static final class Rule<T> extends Parser<T> {
+    private static final String DO_NOT_DELEGATE_TO_RULE_PARSER = "Do not delegate to a Rule parser";
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
 
     @Override MatchResult<T> skipAndMatch(
         Parser<?> skip, String input, int start, ErrorContext context) {
       Parser<T> p = ref.get();
-      checkState(p != null, "delegateTo() should have been called before parse()");
+      checkState(p != null, "definedAs() should have been called before parse()");
       return p.skipAndMatch(skip, input, start, context);
     }
 
-    /** Sets and returns the delegate parser. */
-    public Parser<T> delegateTo(Parser<T> parser) {
+    /** Define this rule as {@code parser} and returns it. */
+    @SuppressWarnings("unchecked")  // Parser<T> is covariant
+    public <S extends T> Parser<S> definedAs(Parser<S> parser) {
       requireNonNull(parser);
-      checkArgument(!(parser instanceof Lazy), DO_NOT_DELEGATE_TO_LAZY_PARSER);
-      checkState(ref.compareAndSet(null, parser), "delegateTo() already called");
+      checkArgument(!(parser instanceof Rule), DO_NOT_DELEGATE_TO_RULE_PARSER);
+      checkState(ref.compareAndSet(null, (Parser<T>) parser), "definedAs() already called");
       return parser;
     }
   }

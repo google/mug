@@ -93,9 +93,9 @@ public final class OperatorTableTest {
   }
 
   private int parse(String input) {
-    var lazy = new Parser.Lazy<Integer>();
+    var lazy = new Parser.Rule<Integer>();
     var parser =
-        lazy.delegateTo(
+        lazy.definedAs(
             operatorTable.build(
                 lazy.between("(", ")")
                     .or(consecutive(range('0', '9'), "number").map(Integer::parseInt))));

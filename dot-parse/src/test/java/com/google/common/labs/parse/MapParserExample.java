@@ -43,13 +43,13 @@ public class MapParserExample {
 
   static Map<String, ?> parse(String input) {
     Parser<String> word = consecutive(CharPredicate.WORD, "word");
-    Parser.Lazy<Map<String, ?>> lazy = new Parser.Lazy<>();
+    Parser.Rule<Map<String, ?>> lazy = new Parser.Rule<>();
     Parser<List<String>> listParser = word.zeroOrMoreDelimitedBy(",").between("[", "]");
     Parser<Map<String, ?>> mapParser =
         sequence(word.followedBy(":"), anyOf(word, listParser, lazy), Both::of)
             .zeroOrMoreDelimitedBy(",")
             .between("{", "}")
             .map(kvs -> BiStream.from(kvs.stream()).toMap());
-    return lazy.delegateTo(mapParser).parseSkipping(Character::isWhitespace, input);
+    return lazy.definedAs(mapParser).parseSkipping(Character::isWhitespace, input);
   }
 }
