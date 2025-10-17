@@ -2858,7 +2858,7 @@ public class ParserTest {
                 single(is('*'), "*").notFollowedBy("/").map(Object::toString))
             .zeroOrMore(joining())
             .between("/*", "*/");
-    Parser<String> quotedLiteral = literally(zeroOrMore(c -> c != '\'', "quoted")).between("'", "'");
+    Parser<String> quotedLiteral = zeroOrMore(c -> c != '\'', "quoted").immediatelyBetween("'", "'");
     Parser<String> language =
         anyOf(
             quotedLiteral,
@@ -2894,7 +2894,7 @@ public class ParserTest {
                 single(is('*'), "*").notFollowedBy("/").map(Object::toString))
             .zeroOrMore(joining())
             .between("/*", "*/");
-    Parser<String> quotedLiteral = literally(zeroOrMore(c -> c != '\'', "quoted")).between("'", "'");
+    Parser<String> quotedLiteral = zeroOrMore(c -> c != '\'', "quoted").immediatelyBetween("'", "'");
     Parser<String> language =
         anyOf(
             quotedLiteral,
@@ -2951,9 +2951,11 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.source().parseSkipping(Character::isWhitespace, " 123 "));
 
     Parser<List<String>> numbers =
-        literally(consecutive(DIGIT, "digit")).atLeastOnceDelimitedBy(",");
-    assertThat(numbers.source().parseToStreamSkipping(Character::isWhitespace, "1,23"))
-        .containsExactly("1,23");
+        literally(consecutive(DIGIT, "digit")).source().atLeastOnceDelimitedBy(",");
+    assertThat(numbers.parseSkipping(Character::isWhitespace, "1,23"))
+        .containsExactly("1", "23").inOrder();
+    assertThat(numbers.parseToStreamSkipping(Character::isWhitespace, "1,23"))
+        .containsExactly(List.of("1", "23"));
     assertThrows(
         ParseException.class,
         () -> numbers.source().parseToStreamSkipping(Character::isWhitespace, "1 , 23").toList());
