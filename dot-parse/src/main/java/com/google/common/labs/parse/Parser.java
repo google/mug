@@ -76,20 +76,20 @@ public abstract class Parser<T> {
 
   /** Matches one or more consecutive characters as specified by {@code matcher}. */
   public static Parser<String> consecutive(CharPredicate matcher, String name) {
-    return skipConsecutive(matcher, name).map(Source::toString);
+    return skipConsecutive(matcher, name).source();
   }
 
-  private static Parser<Source> skipConsecutive(CharPredicate matcher, String name) {
+  private static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
     requireNonNull(matcher);
     requireNonNull(name);
     return new Parser<>() {
-      @Override MatchResult<Source> skipAndMatch(
+      @Override MatchResult<Void> skipAndMatch(
           Parser<?> skip, String input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         int end = start;
         for (; end < input.length() && matcher.test(input.charAt(end)); end++) {}
         return end > start
-            ? new MatchResult.Success<>(start, end, new Source(input, start, end))
+            ? new MatchResult.Success<>(start, end, null)
             : context.expecting(name, start, end);
       }
     };
@@ -1089,12 +1089,6 @@ public abstract class Parser<T> {
       operand = op.apply(operand);
     }
     return operand;
-  }
-
-  private record Source(String input, int begin, int end) {
-    @Override public String toString() {
-      return input.substring(begin, end);
-    }
   }
 
   record Snippet(String input, int at) {
