@@ -256,7 +256,7 @@ public abstract class Parser<T> {
                   from = tail2;
                 }
                 case MatchResult.Failure<?> failure -> {
-                  return new MatchResult.Success<>(start, from, collector.finisher().apply(buffer));
+                  return new MatchResult.Success<>(head, from, collector.finisher().apply(buffer));
                 }
               }
             }
@@ -608,9 +608,8 @@ public abstract class Parser<T> {
       MatchResult<String> skipAndMatch(
           Parser<?> skip, String input, int start, ErrorContext context) {
         return switch (self.skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success<T> success ->
-              new MatchResult.Success<>(
-                  start, success.tail(), input.substring(start, success.tail()));
+          case MatchResult.Success<T>(int head, int tail, T value) ->
+              new MatchResult.Success<>(head, tail, input.substring(head, tail));
           case MatchResult.Failure<T> failure -> failure.safeCast();
         };
       }
