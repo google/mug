@@ -30,10 +30,11 @@ No lexeme ceremony. Turn on skipping at `parse()` time:
 ```java
 var result = Parsers.parseSkipping(Character::isWhitespace, input);
 //                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-// Skips all whitespace at the HEAD of every sub-parse unless locally disabled with literally()
+// Skips all whitespaces in between
 ```
 
-Keeps grammars clean and reusable. If you ever need to **opt out** (e.g., inside quotes), use the provided `literally(grammar)` where appropriate.
+Keeps grammars clean and reusable. For quoted strings that need to include literal whitespaces,
+use `.immediatelyBetween("\"",  "\"")`, which will suppress the whigtespace skipping between the quotes.
 
 ---
 
@@ -97,12 +98,11 @@ static Map<String, ?> parseMap(String input) {
 
   // value := '...' (single-quoted; no escaping shown here)
   // zeroOrMore(predicate) returns an OrEmpty — by itself it may succeed empty.
-  // The *between("'", "'")* frame is what enforces consumption: the quotes themselves
+  // The immediatelyBetween("'", "'")* frame is what enforces consumption: the quotes themselves
   // must match and consume, turning the whole production into a progress-making success.
-  // literally(...) disables global skipping *inside* the quotes.
   Parser<String> value =
-      literally(zeroOrMore(c -> c != '\'', "value")）  // body: may be empty (OrEmpty)
-          .immediatelyBetween("'", "'")                // frame: guarantees net consumption on success
+      zeroOrMore(c -> c != '\'', "value")    // body: may be empty (OrEmpty)
+          .immediatelyBetween("'", "'")      // frame: guarantees net consumption on success
 
   // values := '[' value (',' value)* ']'
   // zeroOrMoreDelimitedBy returns empty on 0 items; again, the [ ] frame is what ensures progress.
