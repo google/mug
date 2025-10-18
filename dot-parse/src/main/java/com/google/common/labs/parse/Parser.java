@@ -957,16 +957,14 @@ public abstract class Parser<T> {
       this.toSkip = toSkip;
     }
 
-    /**
-     * Parses {@code input} while skipping patterns matched by {@code skip} around atomic matches.
-     */
+    /** Parses {@code input} while skipping the skippable patterns around atomic matches. */
     public T parse(String input) {
       return skippingParser().parse(input);
     }
 
     /**
-     * Parses {@code input} starting from {@code fromIndex}, while skipping patterns matched by
-     * {@code skip} around atomic matches.
+     * Parses {@code input} starting from {@code fromIndex}, while skipping the skippable patterns
+     * around atomic matches.
      */
     public T parse(String input, int fromIndex) {
       return skippingParser().parse(input, fromIndex);
