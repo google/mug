@@ -988,7 +988,7 @@ public abstract class Parser<T> {
 
     /** Parses {@code input} while skipping the skippable patterns around lexical tokens. */
     public T parse(String input) {
-      return skippingParser().parse(input);
+      return withSkipper().parse(input);
     }
 
     /**
@@ -996,7 +996,7 @@ public abstract class Parser<T> {
      * around lexical tokens.
      */
     public T parse(String input, int fromIndex) {
-      return skippingParser().parse(input, fromIndex);
+      return withSkipper().parse(input, fromIndex);
     }
 
     /**
@@ -1010,14 +1010,17 @@ public abstract class Parser<T> {
      * Parses {@code input} to a lazy stream while skipping the skippable patterns around lexical tokens.
      */
     public Stream<T> parseToStream(String input, int fromIndex) {
+      if (fromIndex == input.length()) {
+        return Stream.empty();
+      }
       checkPositionIndex(fromIndex, input.length(), "fromIndex");
       // remaining input is skippable (whether the parser is literally() or not) -> nothing
-      boolean canConsume =
-          fromIndex == input.length()
-              || (toSkip.match(input, fromIndex, new ErrorContext(input))
-                      instanceof MatchResult.Success<?> success
-                  && success.tail() == input.length());
-      return canConsume ? Stream.empty() : skippingParser().parseToStream(input, fromIndex);
+      if (toSkip.match(input, fromIndex, new ErrorContext(input))
+              instanceof MatchResult.Success<?> success
+          && success.tail() == input.length()) {
+        return Stream.empty();
+      }
+      return withSkipper().parseToStream(input, fromIndex);
     }
 
     /**
@@ -1043,10 +1046,10 @@ public abstract class Parser<T> {
      * <p>This allows quick probing without fully parsing it.
      */
     public Stream<T> probe(String input, int fromIndex) {
-      return skippingParser().probe(input, fromIndex);
+      return withSkipper().probe(input, fromIndex);
     }
 
-    private Parser<T> skippingParser() {
+    private Parser<T> withSkipper() {
       Parser<T> self = Parser.this;
       return new Parser<T>() {
         @Override MatchResult<T> skipAndMatch(
