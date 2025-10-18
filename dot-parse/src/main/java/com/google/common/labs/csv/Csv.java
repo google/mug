@@ -118,7 +118,7 @@ public final class Csv {
                 .followedBy(NEW_LINE.orElse(null))
                 .notEmpty());
     return allowsComments
-        ? line.parseToStreamSkipping(COMMENT, csv)
+        ? line.skipping((Parser<?>) COMMENT).parseToStream(csv)
         : line.parseToStream(csv);
   }
 

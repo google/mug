@@ -640,47 +640,40 @@ public abstract class Parser<T> {
     return literally(rule.notEmpty()).new OrEmpty(rule::computeDefaultValue);
   }
 
-  private Parser<T> skipping(Parser<?> patternToSkip) {
-    Parser<?> skip = patternToSkip.atLeastOnce(counting());
-    Parser<T> self = this;
-    return new Parser<T>() {
-      @Override MatchResult<T> skipAndMatch(
-          Parser<?> ignored, String input, int start, ErrorContext context) {
-        return self.skipAndMatch(skip, input, start, context);
-      }
-
-      @Override MatchResult<T> match(String input, int start, ErrorContext context) {
-        return switch (super.match(input, start, context)) {
-          case MatchResult.Success(int head, int tail, T value) ->
-              new MatchResult.Success<>(head, skipIfAny(skip, input, tail), value);
-          case MatchResult.Failure<T> failure -> failure;
-        };
-      }
-    };
+  /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
+  public final Lexical skipping(Parser<?> skip) {
+    return new Lexical(requireNonNull(skip));
   }
 
-  /** Parses {@code input} while skipping patterns matched by {@code skip} around atomic matches. */
+  /**
+   * Starts a fluent chain for parsing inputs while skipping {@code charsToSkip}.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * parser.skipping(Character::isWhitespace).parseToStream("foo 123 bar");
+   * }</pre>
+   */
+  public final Lexical skipping(CharPredicate charsToSkip) {
+    return skipping(skipConsecutive(charsToSkip, "skipped"));
+  }
+
+  /**
+   * Parses {@code input} while skipping patterns matched by {@code skip} around atomic matches.
+   *
+   * <p>Equivalent to {@code skipping(skip).parse(input)}.
+   */
   public final T parseSkipping(Parser<?> skip, String input) {
     return skipping(skip).parse(input);
   }
 
-  /** Parses {@code input} while {@code charsToSkip} around atomic matches. */
-  public final T parseSkipping(CharPredicate charsToSkip, String input) {
-    return parseSkipping(skipConsecutive(charsToSkip, "skipped"), input);
-  }
-
   /**
-   * Parses {@code input} to a lazy stream while skipping patterns matched by {@code skip} around
-   * atomic matches.
+   * Parses {@code input} while {@code charsToSkip} around atomic matches.
+   *
+   * <p>Equivalent to {@code skipping(charsToSkip).parse(input)}.
    */
-  public final Stream<T> parseToStreamSkipping(Parser<?> skip, String input) {
-    // If the entire input is skippable, nothing to parse, whether the parser is literally() or not.
-    return skip.canConsume(input) ? Stream.empty() : skipping(skip).parseToStream(input);
-  }
-
-  /** Parses {@code input} to a lazy stream while {@code charsToSkip} around atomic matches. */
-  public final Stream<T> parseToStreamSkipping(CharPredicate charsToSkip, String input) {
-    return parseToStreamSkipping(skipConsecutive(charsToSkip, "skipped"), input);
+  public final T parseSkipping(CharPredicate charsToSkip, String input) {
+    return skipping(charsToSkip).parse(input);
   }
 
   /**
@@ -690,8 +683,19 @@ public abstract class Parser<T> {
    * @throws ParseException if the input cannot be parsed.
    */
   public final T parse(String input) {
+    return parse(input, 0);
+  }
+
+  /**
+   * Parses the input string starting from {@code fromIndex} and returns the result.
+   * Upon successful return, the {@code input} starting from {@code fromIndex} is fully consumed.
+   *
+   * @throws ParseException if the input cannot be parsed.
+   */
+  public final T parse(String input, int fromIndex) {
     ErrorContext context = new ErrorContext(input);
-    MatchResult<T> result = match(input, 0, context);
+    MatchResult<T> result = match(
+        input, checkPositionIndex(fromIndex, input.length(), "fromIndex"), context);
     switch (result) {
       case MatchResult.Success(int head, int tail, T value) -> {
         if (tail != input.length()) {
@@ -710,9 +714,17 @@ public abstract class Parser<T> {
    * input. Results are returned in a lazy stream.
    */
   public final Stream<T> parseToStream(String input) {
-    requireNonNull(input);
+    return parseToStream(input, 0);
+  }
+
+  /**
+   * Parses the input string starting from {@code fromIndex} lazily by applying this parser
+   * repeatedly until the end of input. Results are returned in a lazy stream.
+   */
+  public final Stream<T> parseToStream(String input, int fromIndex) {
+    checkPositionIndex(fromIndex, input.length(), "fromIndex");
     class Cursor {
-      private int index = 0;
+      private int index = fromIndex;
 
       MatchResult.Success<T> nextOrNull() {
         if (index >= input.length()) {
@@ -738,9 +750,18 @@ public abstract class Parser<T> {
    * This allows quick probing without fully parsing it.
    */
   public final Stream<T> probe(String input) {
-    requireNonNull(input);
+    return probe(input, 0);
+  }
+
+  /**
+   * Lazily and iteratively matches {@code input} starting from {@code fromIndex} and
+   * until the input is exhausted or matching failed.
+   * This allows quick probing without fully parsing it.
+   */
+  public final Stream<T> probe(String input, int fromIndex) {
+    checkPositionIndex(fromIndex, input.length(), "fromIndex");
     class Cursor {
-      private int index = 0;
+      private int index = fromIndex;
 
       MatchResult.Success<T> nextOrNull() {
         return switch (match(input, index, new ErrorContext(input))) {
@@ -753,22 +774,6 @@ public abstract class Parser<T> {
       }
     }
     return whileNotNull(new Cursor()::nextOrNull).map(MatchResult.Success::value);
-  }
-
-  /**
-   * Lazily and iteratively matches {@code input}, skipping {code charsToSkip}, until the input is
-   * exhausted or matching failed. This allows quick probing without fully parsing it.
-   */
-  public final Stream<T> probeSkipping(CharPredicate charsToSkip, String input) {
-    return probeSkipping(skipConsecutive(charsToSkip, "skipped"), input);
-  }
-
-  /**
-   * Lazily and iteratively matches {@code input}, skipping patterns to {code skip}, until the
-   * input is exhausted or matching failed. This allows quick probing without fully parsing it.
-   */
-  public final Stream<T> probeSkipping(Parser<?> skip, String input) {
-    return skipping(skip).probe(input);
   }
 
   /**
@@ -927,21 +932,100 @@ public abstract class Parser<T> {
      * result; if there's nothing to parse except skippable content, returns the default empty value.
      */
     public T parseSkipping(Parser<?> skip, String input) {
-      return skip.canConsume(input)
+      return skip.canConsume(input, 0)
           ? computeDefaultValue()
           : notEmpty().skipping(skip).parse(input);
     }
 
     /**
-     * Parses the entire input string, ignoring {@code charactersToSkip}, and returns the result; if
+     * Parses the entire input string, ignoring {@code charsToSkip}, and returns the result; if
      * there's nothing to parse except skippable content, returns the default empty value.
      */
-    public T parseSkipping(CharPredicate charactersToSkip, String input) {
-      return parseSkipping(skipConsecutive(charactersToSkip, "skipped"), input);
+    public T parseSkipping(CharPredicate charsToSkip, String input) {
+      return parseSkipping(skipConsecutive(charsToSkip, "skipped"), input);
     }
 
     T computeDefaultValue() {
       return defaultSupplier.get();
+    }
+  }
+
+  /** Fluent API for parsing while skipping patterns around lexical tokens. */
+  public final class Lexical {
+    private final Parser<?> toSkip;
+
+    private Lexical(Parser<?> toSkip) {
+      this.toSkip = toSkip;
+    }
+
+    /**
+     * Parses {@code input} while skipping patterns matched by {@code skip} around atomic matches.
+     */
+    public T parse(String input) {
+      return skippingParser().parse(input);
+    }
+
+    /**
+     * Parses {@code input} starting from {@code fromIndex}, while skipping patterns matched by
+     * {@code skip} around atomic matches.
+     */
+    public T parse(String input, int fromIndex) {
+      return skippingParser().parse(input, fromIndex);
+    }
+
+    /**
+     * Parses {@code input} to a lazy stream while skipping the skippable patterns around atomic
+     * matches.
+     */
+    public Stream<T> parseToStream(String input) {
+      return parseToStream(input, 0);
+    }
+
+    /**
+     * Parses {@code input} to a lazy stream while skipping the skippable patterns around atomic
+     * matches.
+     */
+    public Stream<T> parseToStream(String input, int fromIndex) {
+      // If the remaining input is skippable, nothing to parse, whether the parser is literally() or not.
+      return toSkip.canConsume(input, checkPositionIndex(fromIndex, input.length(), "fromIndex"))
+          ? Stream.empty()
+          : skippingParser().parseToStream(input, fromIndex);
+    }
+
+    /**
+     * Lazily and iteratively matches {@code input}, skipping the skippable patterns, until the
+     * input is exhausted or matching failed. This allows quick probing without fully parsing it.
+     */
+    public Stream<T> probe(String input) {
+      return probe(input, 0);
+    }
+
+    /**
+     * Lazily and iteratively matches {@code input} starting from {@code fromIndex},
+     * skipping the skippable patterns, until theinput is exhausted or matching failed.
+     * This allows quick probing without fully parsing it.
+     */
+    public Stream<T> probe(String input, int fromIndex) {
+      return skippingParser().probe(input, fromIndex);
+    }
+
+    private Parser<T> skippingParser() {
+      Parser<T> self = Parser.this;
+      Parser<?> skipper = toSkip.atLeastOnce(counting());
+      return new Parser<T>() {
+        @Override MatchResult<T> skipAndMatch(
+            Parser<?> ignored, String input, int start, ErrorContext context) {
+          return self.skipAndMatch(skipper, input, start, context);
+        }
+
+        @Override MatchResult<T> match(String input, int start, ErrorContext context) {
+          return switch (super.match(input, start, context)) {
+            case MatchResult.Success(int head, int tail, T value) ->
+                new MatchResult.Success<>(head, skipIfAny(skipper, input, tail), value);
+            case MatchResult.Failure<T> failure -> failure;
+          };
+        }
+      };
     }
   }
 
@@ -1011,9 +1095,9 @@ public abstract class Parser<T> {
     };
   }
 
-  private boolean canConsume(String input) {
+  private boolean canConsume(String input, int fromIndex) {
     return input.isEmpty()
-        || atLeastOnce(counting()).match(input, 0, new ErrorContext(input))
+        || atLeastOnce(counting()).match(input, fromIndex, new ErrorContext(input))
                 instanceof MatchResult.Success<?> success
             && success.tail() == input.length();
   }
@@ -1117,6 +1201,14 @@ public abstract class Parser<T> {
     if (!condition) {
       throw new IllegalStateException(String.format(message, args));
     }
+  }
+
+  private static int checkPositionIndex(int index, int size, String name) {
+    if (index < 0 || index > size) {
+      throw new IndexOutOfBoundsException(
+         String.format("%s (%s) must be in range of [0, %s]", name, index, size));
+    }
+    return index;
   }
 
   Parser() {}
