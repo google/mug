@@ -997,7 +997,7 @@ public abstract class Parser<T> {
 
     /**
      * Lazily and iteratively matches {@code input} starting from {@code fromIndex},
-     * skipping the skippable patterns, until theinput is exhausted or matching failed.
+     * skipping the skippable patterns, until the input is exhausted or matching failed.
      * This allows quick probing without fully parsing it.
      */
     public Stream<T> probe(String input, int fromIndex) {
