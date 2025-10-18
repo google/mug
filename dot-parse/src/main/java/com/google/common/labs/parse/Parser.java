@@ -547,7 +547,8 @@ public abstract class Parser<T> {
             ErrorContext lookaheadContext = new ErrorContext(input);
             yield switch (suffix.skipAndMatch(skip, input, success.tail(), lookaheadContext)) {
               case MatchResult.Success<?> followed ->
-                  lookaheadContext.failAt(start, success.tail(), "unexpected `%s`", name);
+                  lookaheadContext.failAt(
+                      success.tail(), "unexpected `%s` – %s.", name, new Snippet(input, success.tail()));
               default -> success;
             };
           }
@@ -1141,7 +1142,7 @@ public abstract class Parser<T> {
     record Success<V>(int head, int tail, V value) implements MatchResult<V> {}
 
     /** Represents a partial parse result with a value and the [start, end) range of the match. */
-    record Failure<V>(int start, int at, String message, List<?> args) implements MatchResult<V> {
+    record Failure<V>(int at, String message, List<?> args) implements MatchResult<V> {
       @SuppressWarnings("unchecked")
       <X> Failure<X> safeCast() {
         return (Failure<X>) this;
@@ -1175,12 +1176,12 @@ public abstract class Parser<T> {
     }
 
     <V> MatchResult.Failure<V> expecting(String name, int start, int at) {
-      return failAt(start, at, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
+      return failAt(at, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
     }
 
-    <V> MatchResult.Failure<V> failAt(int start, int at, String message, Object... args) {
+    <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
       var failure = new MatchResult.Failure<V>(
-          start, at, message, stream(args).collect(toUnmodifiableList()));
+          at, message, stream(args).collect(toUnmodifiableList()));
       if (farthestFailure == null || failure.at() > farthestFailure.at()) {
         farthestFailure = failure;
       }

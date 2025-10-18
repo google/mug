@@ -363,12 +363,16 @@ public class ParserTest {
 
   @Test
   public void notFollowedBy_selfFailsToMatch() {
-    assertThrows(ParseException.class, () -> string("a").notFollowedBy("b").parse("c"));
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> string("a").notFollowedBy("b").parse("c"));
+    assertThat(thrown).hasMessageThat().contains("at 1:1: expecting <a>, encountered [c]");
   }
 
   @Test
   public void notFollowedBy_suffixFollows() {
-    assertThrows(ParseException.class, () -> string("a").notFollowedBy("b").parse("ab"));
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> string("a").notFollowedBy("b").parse("ab"));
+    assertThat(thrown).hasMessageThat().contains("at 1:2: unexpected `b` – [b]");
   }
 
   @Test
@@ -1688,6 +1692,13 @@ public class ParserTest {
   @Test
   public void optional_parseFail() {
     assertThrows(ParseException.class, () -> string("a").optional().parse("b"));
+  }
+
+  @Test
+  public void optional_withLeftOverInput() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> string("a").optional().parse("a bc"));
+    assertThat(thrown).hasMessageThat().contains("1:2: expecting <EOF>, encountered [ bc]");
   }
 
   @Test
