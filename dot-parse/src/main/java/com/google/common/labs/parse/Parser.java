@@ -650,7 +650,7 @@ public abstract class Parser<T> {
    * <p>For example:
    *
    * <pre>{@code
-   * parser.skipping(Character::isWhitespace).parseToStream("foo 123 bar");
+   * jsonRecord.skipping(whitespace()).parseToStream(input);
    * }</pre>
    */
   public final Lexical skipping(CharPredicate charsToSkip) {
