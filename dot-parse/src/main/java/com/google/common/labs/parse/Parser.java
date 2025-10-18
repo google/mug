@@ -963,6 +963,7 @@ public abstract class Parser<T> {
    * <p>For example:
    *
    * <pre>{@code
+   * Parser<JsonRecord> jsonRecord = ...;
    * jsonRecord.zeroOrMoreDelimitedBy(",")
    *     .between("[", "]")
    *     .skipping(whitespace())
