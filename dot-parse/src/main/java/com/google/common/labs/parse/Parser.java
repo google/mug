@@ -746,7 +746,11 @@ public abstract class Parser<T> {
 
   /**
    * Lazily and iteratively matches {@code input}, until the input is exhausted or matching failed.
-   * This allows quick probing without fully parsing it.
+   *
+   * <p>Note that unlike {@link #parseToStream(String) parseToStream()},
+   * a matching failure terminates the stream without throwing exception.
+   *
+   * <p>This allows quick probing without fully parsing it.
    */
   public final Stream<T> probe(String input) {
     return probe(input, 0);
@@ -755,7 +759,11 @@ public abstract class Parser<T> {
   /**
    * Lazily and iteratively matches {@code input} starting from {@code fromIndex} and
    * until the input is exhausted or matching failed.
-   * This allows quick probing without fully parsing it.
+   *
+   * <p>Note that unlike {@link #parseToStream(String, int) parseToStream()},
+   * a matching failure terminates the stream without throwing exception.
+   *
+   * <p>This allows quick probing without fully parsing it.
    */
   public final Stream<T> probe(String input, int fromIndex) {
     checkPositionIndex(fromIndex, input.length(), "fromIndex");
@@ -949,7 +957,18 @@ public abstract class Parser<T> {
     }
   }
 
-  /** Fluent API for parsing while skipping patterns around lexical tokens. */
+  /**
+   * Fluent API for parsing while skipping patterns around lexical tokens.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * jsonRecord.zeroOrMoreDelimitedBy(",")
+   *     .between("[", "]")
+   *     .skipping(whitespace())
+   *     .parseToStream(jsonInput);
+   * }</pre>
+   */
   public final class Lexical {
     private final Parser<?> toSkip;
 
@@ -989,7 +1008,12 @@ public abstract class Parser<T> {
 
     /**
      * Lazily and iteratively matches {@code input}, skipping the skippable patterns, until the
-     * input is exhausted or matching failed. This allows quick probing without fully parsing it.
+     * input is exhausted or matching failed.
+     *
+     * <p>Note that unlike {@link #parseToStream(String) parseToStream()}, a matching failure
+     * terminates the stream without throwing exception.
+     *
+     * <p>This allows quick probing without fully parsing it.
      */
     public Stream<T> probe(String input) {
       return probe(input, 0);
@@ -998,7 +1022,11 @@ public abstract class Parser<T> {
     /**
      * Lazily and iteratively matches {@code input} starting from {@code fromIndex},
      * skipping the skippable patterns, until the input is exhausted or matching failed.
-     * This allows quick probing without fully parsing it.
+     *
+     * <p>Note that unlike {@link #parseToStream(String, int) parseToStream()},
+     * a matching failure terminates the stream without throwing exception.
+     *
+     * <p>This allows quick probing without fully parsing it.
      */
     public Stream<T> probe(String input, int fromIndex) {
       return skippingParser().probe(input, fromIndex);
