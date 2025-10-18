@@ -988,7 +988,7 @@ public abstract class Parser<T> {
 
     /** Parses {@code input} while skipping the skippable patterns around lexical tokens. */
     public T parse(String input) {
-      return withSkipper().parse(input);
+      return forTokens().parse(input);
     }
 
     /**
@@ -996,7 +996,7 @@ public abstract class Parser<T> {
      * around lexical tokens.
      */
     public T parse(String input, int fromIndex) {
-      return withSkipper().parse(input, fromIndex);
+      return forTokens().parse(input, fromIndex);
     }
 
     /**
@@ -1020,7 +1020,7 @@ public abstract class Parser<T> {
           && success.tail() == input.length()) {
         return Stream.empty();
       }
-      return withSkipper().parseToStream(input, fromIndex);
+      return forTokens().parseToStream(input, fromIndex);
     }
 
     /**
@@ -1046,10 +1046,10 @@ public abstract class Parser<T> {
      * <p>This allows quick probing without fully parsing it.
      */
     public Stream<T> probe(String input, int fromIndex) {
-      return withSkipper().probe(input, fromIndex);
+      return forTokens().probe(input, fromIndex);
     }
 
-    private Parser<T> withSkipper() {
+    private Parser<T> forTokens() {
       Parser<T> self = Parser.this;
       return new Parser<T>() {
         @Override MatchResult<T> skipAndMatch(
