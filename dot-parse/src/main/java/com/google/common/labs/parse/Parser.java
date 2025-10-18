@@ -76,20 +76,20 @@ public abstract class Parser<T> {
 
   /** Matches one or more consecutive characters as specified by {@code matcher}. */
   public static Parser<String> consecutive(CharPredicate matcher, String name) {
-    return skipConsecutive(matcher, name).map(Source::toString);
+    return skipConsecutive(matcher, name).source();
   }
 
-  private static Parser<Source> skipConsecutive(CharPredicate matcher, String name) {
+  private static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
     requireNonNull(matcher);
     requireNonNull(name);
     return new Parser<>() {
-      @Override MatchResult<Source> skipAndMatch(
+      @Override MatchResult<Void> skipAndMatch(
           Parser<?> skip, String input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         int end = start;
         for (; end < input.length() && matcher.test(input.charAt(end)); end++) {}
         return end > start
-            ? new MatchResult.Success<>(start, end, new Source(input, start, end))
+            ? new MatchResult.Success<>(start, end, null)
             : context.expecting(name, start, end);
       }
     };
@@ -256,7 +256,7 @@ public abstract class Parser<T> {
                   from = tail2;
                 }
                 case MatchResult.Failure<?> failure -> {
-                  return new MatchResult.Success<>(start, from, collector.finisher().apply(buffer));
+                  return new MatchResult.Success<>(head, from, collector.finisher().apply(buffer));
                 }
               }
             }
@@ -608,9 +608,8 @@ public abstract class Parser<T> {
       MatchResult<String> skipAndMatch(
           Parser<?> skip, String input, int start, ErrorContext context) {
         return switch (self.skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success<T> success ->
-              new MatchResult.Success<>(
-                  start, success.tail(), input.substring(start, success.tail()));
+          case MatchResult.Success<T>(int head, int tail, T value) ->
+              new MatchResult.Success<>(head, tail, input.substring(head, tail));
           case MatchResult.Failure<T> failure -> failure.safeCast();
         };
       }
@@ -1092,12 +1091,6 @@ public abstract class Parser<T> {
     return operand;
   }
 
-  private record Source(String input, int begin, int end) {
-    @Override public String toString() {
-      return input.substring(begin, end);
-    }
-  }
-
   record Snippet(String input, int at) {
     @Override public String toString() {
       if (at >= input.length()) {
@@ -1106,9 +1099,10 @@ public abstract class Parser<T> {
       String snippet =
           Substring.upToIncluding(Substring.consecutive(c -> !Character.isWhitespace(c)))
               .limit(50)
+              .or(Substring.BEGINNING.toEnd().limit(3))  // print a few whitespaces then
               .in(input, at)
-              .map(Substring.Match::toString)
-              .orElse(input.substring(at, at + 1));
+              .get()
+              .toString();
       return "[" + (at + snippet.length() < input.length() ? snippet + "..." : snippet) + "]";
     }
   }
