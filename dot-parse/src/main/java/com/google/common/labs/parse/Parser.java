@@ -967,7 +967,8 @@ public abstract class Parser<T> {
    * jsonRecord.zeroOrMoreDelimitedBy(",")
    *     .between("[", "]")
    *     .skipping(whitespace())
-   *     .parseToStream(jsonInput);
+   *     .parseToStream(jsonInput)
+   *     ...;
    * }</pre>
    */
   public final class Lexical {
