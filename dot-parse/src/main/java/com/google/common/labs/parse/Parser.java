@@ -957,30 +957,28 @@ public abstract class Parser<T> {
       this.toSkip = toSkip;
     }
 
-    /** Parses {@code input} while skipping the skippable patterns around atomic matches. */
+    /** Parses {@code input} while skipping the skippable patterns around lexical tokens. */
     public T parse(String input) {
       return skippingParser().parse(input);
     }
 
     /**
      * Parses {@code input} starting from {@code fromIndex}, while skipping the skippable patterns
-     * around atomic matches.
+     * around lexical tokens.
      */
     public T parse(String input, int fromIndex) {
       return skippingParser().parse(input, fromIndex);
     }
 
     /**
-     * Parses {@code input} to a lazy stream while skipping the skippable patterns around atomic
-     * matches.
+     * Parses {@code input} to a lazy stream while skipping the skippable patterns around lexical tokens.
      */
     public Stream<T> parseToStream(String input) {
       return parseToStream(input, 0);
     }
 
     /**
-     * Parses {@code input} to a lazy stream while skipping the skippable patterns around atomic
-     * matches.
+     * Parses {@code input} to a lazy stream while skipping the skippable patterns around lexical tokens.
      */
     public Stream<T> parseToStream(String input, int fromIndex) {
       // If the remaining input is skippable, nothing to parse, whether the parser is literally() or not.
