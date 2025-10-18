@@ -617,7 +617,7 @@ public abstract class Parser<T> {
     };
   }
 
-  final Parser<T> done() {
+  final Parser<T> followedByEof() {
     return notFollowedBy(single(ANY, "left over"), "left over");
   }
 
@@ -945,7 +945,7 @@ public abstract class Parser<T> {
      */
     public T parseSkipping(Parser<?> skip, String input) {
       return notEmpty()
-          .done()
+          .followedByEof()
           .skipping(skip)
           .parseToStream(input)
           .findFirst()
