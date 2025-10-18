@@ -1099,9 +1099,10 @@ public abstract class Parser<T> {
       String snippet =
           Substring.upToIncluding(Substring.consecutive(c -> !Character.isWhitespace(c)))
               .limit(50)
+              .or(Substring.BEGINNING.toEnd().limit(3))  // print a few whitespaces then
               .in(input, at)
-              .map(Substring.Match::toString)
-              .orElse(input.substring(at, at + 1));
+              .get()
+              .toString();
       return "[" + (at + snippet.length() < input.length() ? snippet + "..." : snippet) + "]";
     }
   }

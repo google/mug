@@ -84,12 +84,62 @@ public class SnippetTest {
   @Test
   public void toString_longWhitespace_isTruncated() {
     String longString = " ".repeat(60);
-    assertThat(new Snippet(longString, 0).toString()).isEqualTo("[ ...]");
+    assertThat(new Snippet(longString, 0).toString()).isEqualTo("[   ...]");
   }
 
   @Test
   public void toString_longWhitespace_followedByMore_isTruncated() {
     String longString = " ".repeat(60) + "bar";
     assertThat(new Snippet(longString, 0).toString()).isEqualTo("[" + " ".repeat(50) + "...]");
+  }
+
+  @Test
+  public void toString_fullString() {
+    assertThat(new Snippet("abc", 0).toString()).isEqualTo("[abc]");
+  }
+
+  @Test
+  public void toString_substring() {
+    assertThat(new Snippet("abc", 1).toString()).isEqualTo("[bc]");
+  }
+
+  @Test
+  public void toString_withNewline() {
+    assertThat(new Snippet("abc\nxyz", 3).toString()).isEqualTo("[\nxyz]");
+  }
+
+  @Test
+  public void toString_pastNewline() {
+    assertThat(new Snippet("abc\nxyz", 4).toString()).isEqualTo("[xyz]");
+  }
+
+  @Test
+  public void toString_oneWhitespace() {
+    assertThat(new Snippet(" ", 0).toString()).isEqualTo("[ ]");
+  }
+
+  @Test
+  public void toString_twoWhitespaces() {
+    assertThat(new Snippet("  ", 0).toString()).isEqualTo("[  ]");
+  }
+
+  @Test
+  public void toString_threeWhitespaces() {
+    assertThat(new Snippet("   ", 0).toString()).isEqualTo("[   ]");
+  }
+
+  @Test
+  public void toString_fourWhitespaces_truncated() {
+    assertThat(new Snippet("    ", 0).toString()).isEqualTo("[   ...]");
+  }
+
+  @Test
+  public void toString_specialWhitespace() {
+    assertThat(new Snippet("\t\r\n", 0).toString()).isEqualTo("[\t\r\n]");
+  }
+
+  @Test
+  public void toString_specialWhitespace_truncated() {
+    assertThat(new Snippet("\t\r\n ", 0).toString()).isEqualTo("[\t\r\n...]");
   }
 }
