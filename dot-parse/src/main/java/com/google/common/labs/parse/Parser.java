@@ -14,6 +14,7 @@
  *****************************************************************************/
 package com.google.common.labs.parse;
 
+import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.stream;
@@ -616,6 +617,10 @@ public abstract class Parser<T> {
     };
   }
 
+  final Parser<T> done() {
+    return notFollowedBy(single(ANY, "left over"), "left over");
+  }
+
   /**
    * Returns an equivalent parser that suppresses character skipping that's otherwise applied if
    * {@link #parseSkipping parseSkipping()} or {@link #skipping skipping()}
@@ -939,9 +944,12 @@ public abstract class Parser<T> {
      * result; if there's nothing to parse except skippable content, returns the default empty value.
      */
     public T parseSkipping(Parser<?> skip, String input) {
-      return skip.canConsume(input, 0)
-          ? computeDefaultValue()
-          : notEmpty().skipping(skip).parse(input);
+      return notEmpty()
+          .done()
+          .skipping(skip)
+          .parseToStream(input)
+          .findFirst()
+          .orElseGet(defaultSupplier);
     }
 
     /**
@@ -975,7 +983,7 @@ public abstract class Parser<T> {
     private final Parser<?> toSkip;
 
     private Lexical(Parser<?> toSkip) {
-      this.toSkip = toSkip;
+      this.toSkip = toSkip.atLeastOnce(counting());
     }
 
     /** Parses {@code input} while skipping the skippable patterns around lexical tokens. */
@@ -1002,10 +1010,14 @@ public abstract class Parser<T> {
      * Parses {@code input} to a lazy stream while skipping the skippable patterns around lexical tokens.
      */
     public Stream<T> parseToStream(String input, int fromIndex) {
-      // If the remaining input is skippable, nothing to parse, whether the parser is literally() or not.
-      return toSkip.canConsume(input, checkPositionIndex(fromIndex, input.length(), "fromIndex"))
-          ? Stream.empty()
-          : skippingParser().parseToStream(input, fromIndex);
+      checkPositionIndex(fromIndex, input.length(), "fromIndex");
+      // remaining input is skippable (whether the parser is literally() or not) -> nothing
+      boolean canConsume =
+          fromIndex == input.length()
+              || (toSkip.match(input, fromIndex, new ErrorContext(input))
+                      instanceof MatchResult.Success<?> success
+                  && success.tail() == input.length());
+      return canConsume ? Stream.empty() : skippingParser().parseToStream(input, fromIndex);
     }
 
     /**
@@ -1036,17 +1048,16 @@ public abstract class Parser<T> {
 
     private Parser<T> skippingParser() {
       Parser<T> self = Parser.this;
-      Parser<?> skipper = toSkip.atLeastOnce(counting());
       return new Parser<T>() {
         @Override MatchResult<T> skipAndMatch(
             Parser<?> ignored, String input, int start, ErrorContext context) {
-          return self.skipAndMatch(skipper, input, start, context);
+          return self.skipAndMatch(toSkip, input, start, context);
         }
 
         @Override MatchResult<T> match(String input, int start, ErrorContext context) {
           return switch (super.match(input, start, context)) {
             case MatchResult.Success(int head, int tail, T value) ->
-                new MatchResult.Success<>(head, skipIfAny(skipper, input, tail), value);
+                new MatchResult.Success<>(head, skipIfAny(toSkip, input, tail), value);
             case MatchResult.Failure<T> failure -> failure;
           };
         }
@@ -1118,13 +1129,6 @@ public abstract class Parser<T> {
       case MatchResult.Success<?> success -> success.tail();
       case MatchResult.Failure<?> failure -> start;
     };
-  }
-
-  private boolean canConsume(String input, int fromIndex) {
-    return input.isEmpty()
-        || atLeastOnce(counting()).match(input, fromIndex, new ErrorContext(input))
-                instanceof MatchResult.Success<?> success
-            && success.tail() == input.length();
   }
 
   sealed interface MatchResult<V> permits MatchResult.Success, MatchResult.Failure {
