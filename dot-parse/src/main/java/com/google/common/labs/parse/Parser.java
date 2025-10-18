@@ -646,7 +646,7 @@ public abstract class Parser<T> {
 
   /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
   public final Lexical skipping(Parser<?> skip) {
-    return new Lexical(requireNonNull(skip));
+    return new Lexical(skip.atLeastOnce(counting()));
   }
 
   /**
@@ -659,7 +659,7 @@ public abstract class Parser<T> {
    * }</pre>
    */
   public final Lexical skipping(CharPredicate charsToSkip) {
-    return skipping(skipConsecutive(charsToSkip, "skipped"));
+    return new Lexical(skipConsecutive(charsToSkip, "skipped"));
   }
 
   /**
@@ -983,7 +983,7 @@ public abstract class Parser<T> {
     private final Parser<?> toSkip;
 
     private Lexical(Parser<?> toSkip) {
-      this.toSkip = toSkip.atLeastOnce(counting());
+      this.toSkip = toSkip;
     }
 
     /** Parses {@code input} while skipping the skippable patterns around lexical tokens. */

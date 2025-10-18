@@ -2435,12 +2435,12 @@ public class ParserTest {
   }
 
   @Test
-  public void parseToStreamSkipping_allCharactersSkipped() {
+  public void skipping_parseToStream_allCharactersSkipped() {
     assertThat(consecutive(DIGIT, "digit").skipping(Character::isWhitespace).parseToStream("     ")).isEmpty();
   }
 
   @Test
-  public void parseToStreamSkipping_allSkippablePatternsSkipped() {
+  public void skipping_parseToStream_allSkippablePatternsSkipped() {
     assertThat(
             consecutive(DIGIT, "digit")
                 .skipping(
@@ -3420,79 +3420,79 @@ public class ParserTest {
   }
 
   @Test
-  public void probeSkippingCharMatcher_emptyInput_returnsEmpty() {
+  public void skipping_probeCharMatcher_emptyInput_returnsEmpty() {
     assertThat(string("foo").skipping(Character::isWhitespace).probe(" ")).isEmpty();
   }
 
   @Test
-  public void probeSkippingCharMatcher_emptyInput_returnsEmpty_source() {
+  public void skipping_probeCharMatcher_emptyInput_returnsEmpty_source() {
     assertThat(string("foo").source().skipping(Character::isWhitespace).probe(" ")).isEmpty();
   }
 
   @Test
-  public void probeSkippingCharMatcher_singleMatch_returnsValue() {
+  public void skipping_probeCharMatcher_singleMatch_returnsValue() {
     assertThat(string("foo").skipping(Character::isWhitespace).probe(" foo ")).containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingCharMatcher_singleMatch_returnsValue_source() {
+  public void skipping_probeCharMatcher_singleMatch_returnsValue_source() {
     assertThat(string("foo").source().skipping(Character::isWhitespace).probe(" foo ")).containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingCharMatcher_multipleMatches_returnsValues() {
+  public void skipping_probeCharMatcher_multipleMatches_returnsValues() {
     assertThat(consecutive(DIGIT, "digit").skipping(Character::isWhitespace).probe(" 123  456 "))
         .containsExactly("123", "456")
         .inOrder();
   }
 
   @Test
-  public void probeSkippingCharMatcher_multipleMatches_returnsValues_source() {
+  public void skipping_probeCharMatcher_multipleMatches_returnsValues_source() {
     assertThat(consecutive(DIGIT, "digit").source().skipping(Character::isWhitespace).probe(" 123  456 "))
         .containsExactly("123", "456")
         .inOrder();
   }
 
   @Test
-  public void probeSkippingCharMatcher_prefixMatchWithSkipping_returnsValue() {
+  public void skipping_probeCharMatcher_prefixMatchWithSkipping_returnsValue() {
     assertThat(string("foo").skipping(Character::isWhitespace).probe(" foobar ")).containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingCharMatcher_prefixMatchWithSkipping_returnsValue_source() {
+  public void skipping_probeCharMatcher_prefixMatchWithSkipping_returnsValue_source() {
     assertThat(string("foo").source().skipping(Character::isWhitespace).probe(" foobar "))
         .containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingCharMatcher_noMatch_returnsEmpty() {
+  public void skipping_probeCharMatcher_noMatch_returnsEmpty() {
     assertThat(string("foo").skipping(Character::isWhitespace).probe("bar")).isEmpty();
   }
 
   @Test
-  public void probeSkippingCharMatcher_noMatch_returnsEmpty_source() {
+  public void skipping_probeCharMatcher_noMatch_returnsEmpty_source() {
     assertThat(string("foo").source().skipping(Character::isWhitespace).probe("bar")).isEmpty();
   }
 
   @Test
-  public void probeSkippingParser_emptyInput_returnsEmpty() {
+  public void skipping_probeParser_emptyInput_returnsEmpty() {
     assertThat(string("foo").skipping(consecutive(Character::isWhitespace, "skip")).probe("\n\n ")).isEmpty();
   }
 
   @Test
-  public void probeSkippingParser_singleMatch_returnsValue() {
+  public void skipping_probeParser_singleMatch_returnsValue() {
     assertThat(string("foo").skipping(consecutive(Character::isWhitespace, "skip")).probe(" \n foo "))
         .containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingParser_singleMatch_returnsValue_source() {
+  public void skipping_probeParser_singleMatch_returnsValue_source() {
     assertThat(string("foo").source().skipping(consecutive(Character::isWhitespace, "skip")).probe(" \n foo "))
         .containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingParser_multipleMatches_returnsValues() {
+  public void skipping_probeParser_multipleMatches_returnsValues() {
     assertThat(
             consecutive(ALPHANUMERIC, "word")
                 .skipping(consecutive(Character::isWhitespace, "skip"))
@@ -3502,7 +3502,7 @@ public class ParserTest {
   }
 
   @Test
-  public void probeSkippingParser_multipleMatches_returnsValues_source() {
+  public void skipping_probeParser_multipleMatches_returnsValues_source() {
     assertThat(
             consecutive(ALPHANUMERIC, "word")
                 .source()
@@ -3513,24 +3513,24 @@ public class ParserTest {
   }
 
   @Test
-  public void probeSkippingParser_prefixMatchWithSkipping_returnsValue() {
+  public void skipping_probeParser_prefixMatchWithSkipping_returnsValue() {
     assertThat(string("foo").skipping(consecutive(Character::isWhitespace, "skip")).probe(" foobar "))
         .containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingParser_prefixMatchWithSkipping_returnsValue_source() {
+  public void skipping_probeParser_prefixMatchWithSkipping_returnsValue_source() {
     assertThat(string("foo").source().skipping(consecutive(Character::isWhitespace, "skip")).probe(" foobar "))
         .containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingParser_noMatch_returnsEmpty() {
+  public void skipping_probeParser_noMatch_returnsEmpty() {
     assertThat(string("foo").skipping(consecutive(Character::isWhitespace, "skip")).probe("bar")).isEmpty();
   }
 
   @Test
-  public void probeSkippingParser_noMatch_returnsEmpty_source() {
+  public void skipping_probeParser_noMatch_returnsEmpty_source() {
     assertThat(string("foo").source().skipping(consecutive(Character::isWhitespace, "skip")).probe("bar"))
         .isEmpty();
   }
