@@ -64,7 +64,7 @@ interface CharInput {
   }
 
   /**
-   * An input backed by in-memory string.
+   * A lazily-loaded input from {@code reader}.
    *
    * <p>Indexes passed to this input generally are expected to be in strict sequence. For example,
    * it's illegal to call {@code charAt(i + 1)} if you haven't called {@code charAt(i)}.
