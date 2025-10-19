@@ -18,6 +18,7 @@ Small, safe-by-construction parser combinators for Java.
 - **Operator Precedence:** `OperatorTable<T>` (`prefix()`, `leftAssociative()`, `build()`, etc.)
 - **Recursive:** `Parser.Rule<T>`
 - **Whitespace:** `parser.parseSkipping(Character::isWhitespace, input)`
+- **Lazy Parsing:** `parseToStream(Reader)`, `probe(Reader)`.
 
 That’s essentially the whole surface.
 
