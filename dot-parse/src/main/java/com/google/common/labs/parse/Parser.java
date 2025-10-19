@@ -725,7 +725,16 @@ public abstract class Parser<T> {
    * input. Results are returned in a lazy stream.
    */
   public final Stream<T> parseToStream(String input) {
-    return parseToStream(CharInput.from(input));
+    return parseToStream(input, 0);
+  }
+
+  /**
+   * Parses {@code input} starting from {@code fromIndex} to a lazy stream while skipping the
+   * skippable patterns around lexical tokens.
+   */
+  public Stream<T> parseToStream(String input, int fromIndex) {
+    checkPositionIndex(fromIndex, input.length(), "fromIndex");
+    return parseToStream(CharInput.from(input), fromIndex);
   }
 
   /**
@@ -735,12 +744,12 @@ public abstract class Parser<T> {
    * <p>{@link UncheckedIOException} will be thrown if the underlying reader throws.
    */
   public final Stream<T> parseToStream(Reader input) {
-    return parseToStream(CharInput.from(input));
+    return parseToStream(CharInput.from(input), 0);
   }
 
-  private Stream<T> parseToStream(CharInput input) {
+  private Stream<T> parseToStream(CharInput input, int fromIndex) {
     class Cursor {
-      private int index = 0;
+      private int index = fromIndex;
 
       MatchResult.Success<T> nextOrNull() {
         if (input.isEof(index)) {
@@ -770,7 +779,20 @@ public abstract class Parser<T> {
    * <p>This allows quick probing without fully parsing it.
    */
   public final Stream<T> probe(String input) {
-    return probe(CharInput.from(input));
+    return probe(input, 0);
+  }
+
+  /**
+   * Lazily and iteratively matches {@code input} starting from {@code fromIndex}, skipping the
+   * skippable patterns, until the input is exhausted or matching failed. Note that unlike {@link
+   * #parseToStream(String, int) parseToStream()}, a matching failure terminates the stream
+   * without throwing exception.
+   *
+   * <p>This allows quick probing without fully parsing it.
+   */
+  public Stream<T> probe(String input, int fromIndex) {
+    checkPositionIndex(fromIndex, input.length(), "fromIndex");
+    return probe(CharInput.from(input), fromIndex);
   }
 
   /**
@@ -784,12 +806,12 @@ public abstract class Parser<T> {
    * <p>{@link UncheckedIOException} will be thrown if the underlying reader throws.
    */
   public final Stream<T> probe(Reader input) {
-    return probe(CharInput.from(input));
+    return probe(CharInput.from(input), 0);
   }
 
-  private Stream<T> probe(CharInput input) {
+  private Stream<T> probe(CharInput input, int fromIndex) {
     class Cursor {
-      private int index = 0;
+      private int index = fromIndex;
 
       MatchResult.Success<T> nextOrNull() {
         return switch (match(input, index, new ErrorContext(input))) {
@@ -1019,7 +1041,16 @@ public abstract class Parser<T> {
      * Parses {@code input} to a lazy stream while skipping the skippable patterns around lexical tokens.
      */
     public Stream<T> parseToStream(String input) {
-      return parseToStream(CharInput.from(input));
+      return parseToStream(input, 0);
+    }
+
+    /**
+     * Parses {@code input} starting from {@code fromIndex} to a lazy stream while skipping the
+     * skippable patterns around lexical tokens.
+     */
+    public Stream<T> parseToStream(String input, int fromIndex) {
+      checkPositionIndex(fromIndex, input.length(), "fromIndex");
+      return parseToStream(CharInput.from(input), fromIndex);
     }
 
     /**
@@ -1028,20 +1059,20 @@ public abstract class Parser<T> {
      * <p>{@link UncheckedIOException} will be thrown if the underlying reader throws.
      */
     public Stream<T> parseToStream(Reader input) {
-      return parseToStream(CharInput.from(input));
+      return parseToStream(CharInput.from(input), 0);
     }
 
-    private Stream<T> parseToStream(CharInput input) {
+    private Stream<T> parseToStream(CharInput input, int fromIndex) {
       if (input.isEmpty()) {
         return Stream.empty();
       }
       // remaining input is skippable (whether the parser is literally() or not) -> nothing
-      if (toSkip.match(input, 0, new ErrorContext(input))
+      if (toSkip.match(input, fromIndex, new ErrorContext(input))
               instanceof MatchResult.Success<?> success
           && input.isEof(success.tail())) {
         return Stream.empty();
       }
-      return forTokens().parseToStream(input);
+      return forTokens().parseToStream(input, fromIndex);
     }
 
     /**
@@ -1055,6 +1086,18 @@ public abstract class Parser<T> {
      */
     public Stream<T> probe(String input) {
       return forTokens().probe(input);
+    }
+
+    /**
+     * Lazily and iteratively matches {@code input} starting from {@code fromIndex}, skipping the
+     * skippable patterns, until the input is exhausted or matching failed. Note that unlike {@link
+     * #parseToStream(String, int) parseToStream()}, a matching failure terminates the stream
+     * without throwing exception.
+     *
+     * <p>This allows quick probing without fully parsing it.
+     */
+    public Stream<T> probe(String input, int fromIndex) {
+      return forTokens().probe(input, fromIndex);
     }
 
     /**

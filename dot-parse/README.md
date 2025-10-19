@@ -2,7 +2,7 @@
 
 Small, safe-by-construction parser combinators for Java.
 
-- **Extremely small footprint:** ~**800 LOC** end-to-end — roughly **1/6 jparsec**.
+- **Extremely small footprint:** ~**1000 LOC** end-to-end — roughly **1/6 jparsec**.
 - **Small API, low learning curve:** a handful of primitives; you can read the code and “just write the grammar”.
 - **Safe by construction:** free of two classic footguns (spin loops from `many/optional`, and sneaky left recursion).
 
@@ -18,6 +18,7 @@ Small, safe-by-construction parser combinators for Java.
 - **Operator Precedence:** `OperatorTable<T>` (`prefix()`, `leftAssociative()`, `build()`, etc.)
 - **Recursive:** `Parser.Rule<T>`
 - **Whitespace:** `parser.parseSkipping(Character::isWhitespace, input)`
+- **Lazy Parsing:** `parseToStream(Reader)`, `probe(Reader)`.
 
 That’s essentially the whole surface.
 
@@ -210,7 +211,7 @@ Similarly, you can never run into **accidental left recursion** (which causes `S
 
 ## Footprint
 
-- About **800 lines of Java** (including `OperatorTable`).  
+- About **1000 lines of Java** (including `OperatorTable`).
 - Besides Mug core, no other dependencies.
 
 ---
