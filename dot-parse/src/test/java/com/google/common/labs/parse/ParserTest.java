@@ -3368,6 +3368,31 @@ public class ParserTest {
   }
 
   @Test
+  public void parseToStream_fromIndex() {
+    assertThat(consecutive(DIGIT, "digit").skipping(string(",")).parseToStream("1,2,3,4", 2))
+        .containsExactly("2", "3", "4");
+    assertThat(
+            consecutive(DIGIT, "digit").source().skipping(string(",")).parseToStream("1,2,3,4", 2))
+        .containsExactly("2", "3", "4");
+  }
+
+  @Test
+  public void parseToStream_fromIndex_atEnd() {
+    assertThat(consecutive(DIGIT, "digit").parseToStream("123", 3)).isEmpty();
+    assertThat(consecutive(DIGIT, "digit").skipping(Character::isWhitespace).parseToStream("123  ", 3))
+        .isEmpty();
+  }
+
+  @Test
+  public void parseToStream_fromIndex_outOfBounds() {
+    assertThrows(
+        IndexOutOfBoundsException.class, () -> consecutive(DIGIT, "digit").parseToStream("123", 4));
+    assertThrows(
+        IndexOutOfBoundsException.class,
+        () -> consecutive(DIGIT, "digit").skipping(Character::isWhitespace).parseToStream("123 ", 5));
+  }
+
+  @Test
   public void parseToStream_reader_success() {
     Parser<Character> parser = single(DIGIT, "digit");
     assertThat(parser.parseToStream(new StringReader("123")))
@@ -3440,6 +3465,29 @@ public class ParserTest {
   @Test
   public void probe_multipleMatches_returnsValue_source() {
     assertThat(string("foo").source().probe("foofoo")).containsExactly("foo", "foo");
+  }
+
+  @Test
+  public void probe_fromIndex() {
+    assertThat(consecutive(DIGIT, "digit").skipping(string(",")).probe("1,2,3,4", 2))
+        .containsExactly("2", "3", "4");
+    assertThat(consecutive(DIGIT, "digit").source().skipping(string(",")).probe("1,2,3,4", 2))
+        .containsExactly("2", "3", "4");
+  }
+
+  @Test
+  public void probe_fromIndex_atEnd() {
+    assertThat(consecutive(DIGIT, "digit").probe("123", 3)).isEmpty();
+    assertThat(consecutive(DIGIT, "digit").skipping(Character::isWhitespace).probe("123  ", 3)).isEmpty();
+  }
+
+  @Test
+  public void probe_fromIndex_outOfBounds() {
+    assertThrows(
+        IndexOutOfBoundsException.class, () -> consecutive(DIGIT, "digit").probe("123", 4));
+    assertThrows(
+        IndexOutOfBoundsException.class,
+        () -> consecutive(DIGIT, "digit").skipping(Character::isWhitespace).probe("123 ", 5));
   }
 
   @Test
@@ -3633,6 +3681,38 @@ public class ParserTest {
     Parser<String>.Lexical lexical = string("foo").skipping(Character::isWhitespace);
     IndexOutOfBoundsException e =
         assertThrows(IndexOutOfBoundsException.class, () -> lexical.parse("foo", -1));
+    assertThat(e).hasMessageThat().contains("fromIndex (-1)");
+  }
+
+  @Test
+  public void parseToStream_fromIndex_negative_throws() {
+    Parser<String> parser = string("foo");
+    IndexOutOfBoundsException e =
+        assertThrows(IndexOutOfBoundsException.class, () -> parser.parseToStream("foo", -1));
+    assertThat(e).hasMessageThat().contains("fromIndex (-1)");
+  }
+
+  @Test
+  public void parseToStream_fromIndex_negative_skipping_throws() {
+    Parser<String>.Lexical lexical = string("foo").skipping(Character::isWhitespace);
+    IndexOutOfBoundsException e =
+        assertThrows(IndexOutOfBoundsException.class, () -> lexical.parseToStream("foo", -1));
+    assertThat(e).hasMessageThat().contains("fromIndex (-1)");
+  }
+
+  @Test
+  public void probe_fromIndex_negative_throws() {
+    Parser<String> parser = string("foo");
+    IndexOutOfBoundsException e =
+        assertThrows(IndexOutOfBoundsException.class, () -> parser.probe("foo", -1));
+    assertThat(e).hasMessageThat().contains("fromIndex (-1)");
+  }
+
+  @Test
+  public void probe_fromIndex_negative_skipping_throws() {
+    Parser<String>.Lexical lexical = string("foo").skipping(Character::isWhitespace);
+    IndexOutOfBoundsException e =
+        assertThrows(IndexOutOfBoundsException.class, () -> lexical.probe("foo", -1));
     assertThat(e).hasMessageThat().contains("fromIndex (-1)");
   }
 
