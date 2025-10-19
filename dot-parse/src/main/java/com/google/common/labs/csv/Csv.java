@@ -21,6 +21,8 @@ import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -106,6 +108,17 @@ public final class Csv {
    * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
    */
   public <A, R> Stream<R> parse(String csv, Collector<? super String, A, R> rowCollector) {
+    return parse(new StringReader(csv), rowCollector);
+  }
+
+  /**
+   * Parses {@code csv} string lazily, returning one row at a time in a stream, with field values
+   * collected by {@code rowCollector}.
+   *
+   * <p>No special treatment of the header row. If you know you have a header row, consider calling
+   * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
+   */
+  public <A, R> Stream<R> parse(Reader csv, Collector<? super String, A, R> rowCollector) {
     var supplier = rowCollector.supplier();
     var finisher = rowCollector.finisher();
     Parser<String> unquoted = consecutive(UNRESERVED_CHAR.and(is(delim).not()), "unquoted field");
@@ -118,7 +131,7 @@ public final class Csv {
                 .followedBy(NEW_LINE.orElse(null))
                 .notEmpty());
     return allowsComments
-        ? line.skipping((Parser<?>) COMMENT).parseToStream(csv)
+        ? line.skipping(COMMENT).parseToStream(csv)
         : line.parseToStream(csv);
   }
 
@@ -127,6 +140,14 @@ public final class Csv {
    * field names in the header row. The first non-empty row is expected to be the header row.
    */
   public Stream<Map<String, String>> parseToMaps(String csv) {
+    return parseToMaps(new StringReader(csv));
+  }
+
+  /**
+   * Parses {@code csv} string lazily, returning each row in a {@link Map} keyed by the
+   * field names in the header row. The first non-empty row is expected to be the header row.
+   */
+  public Stream<Map<String, String>> parseToMaps(Reader csv) {
     AtomicReference<List<String>> fieldNames = new AtomicReference<>();
     return parse(csv, toUnmodifiableList())
         .filter(row -> row.size() > 0)

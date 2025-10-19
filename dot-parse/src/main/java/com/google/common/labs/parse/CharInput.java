@@ -115,11 +115,11 @@ interface CharInput {
         return chars.toString();
       }
 
-      private void ensureCharCount(int numChars) {
-        if (charsAlreadyRead > numChars) {
+      private void ensureCharCount(int charCount) {
+        if (charsAlreadyRead >= charCount) {
           return;
         }
-        for (int missing = numChars - chars.length() + 1; missing > 0; ) {
+        for (int missing = charCount - chars.length(); missing > 0; ) {
           try {
             int loaded = reader.read(temp);
             if (loaded <= 0) { // no more to load
@@ -131,7 +131,7 @@ interface CharInput {
             throw new UncheckedIOException(e);
           }
         }
-        charsAlreadyRead = numChars;
+        charsAlreadyRead = charCount;
       }
 
       private void checkSequentialIndex(int index) {
