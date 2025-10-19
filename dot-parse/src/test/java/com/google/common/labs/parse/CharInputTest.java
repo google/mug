@@ -1,8 +1,8 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
 
+import java.io.IOException;
 import java.io.StringReader;
 
 import org.junit.Test;
@@ -11,42 +11,6 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public final class CharInputTest {
-
-  @Test
-  public void fromReader_charAt_nonSequentialIndex_throws() {
-    CharInput input = CharInput.from(new StringReader("abc"));
-    assertThrows(IllegalStateException.class, () -> input.charAt(1));
-  }
-
-  @Test
-  public void fromReader_isEof_nonSequentialIndex_throws() {
-    CharInput input = CharInput.from(new StringReader("abc"));
-    assertThrows(IllegalStateException.class, () -> input.isEof(1));
-  }
-
-  @Test
-  public void fromReader_startsWith_nonSequentialIndex_throws() {
-    CharInput input = CharInput.from(new StringReader("abc"));
-    assertThrows(IllegalStateException.class, () -> input.startsWith("a", 1));
-  }
-
-  @Test
-  public void fromReader_snippet_nonSequentialIndex_throws() {
-    CharInput input = CharInput.from(new StringReader("abc"));
-    assertThrows(IllegalStateException.class, () -> input.snippet(1, 1));
-  }
-
-  @Test
-  public void fromReader_startsWith_isPrefix() {
-    CharInput input = CharInput.from(new StringReader("food"));
-    assertThat(input.startsWith("foo", 0)).isTrue();
-  }
-
-  @Test
-  public void fromReader_startsWith_isNotPrefix() {
-    CharInput input = CharInput.from(new StringReader("food"));
-    assertThat(input.startsWith("fobar", 0)).isFalse();
-  }
 
   @Test
   public void fromString_isEof() {
@@ -74,6 +38,18 @@ public final class CharInputTest {
     assertThat(CharInput.from("abc").snippet(1, 5)).isEqualTo("bc");
     assertThat(CharInput.from("abc").snippet(3, 2)).isEqualTo("");
     assertThat(CharInput.from("").snippet(0, 1)).isEqualTo("");
+  }
+
+  @Test
+  public void fromReader_startsWith_isPrefix() {
+    CharInput input = CharInput.from(new StringReader("food"));
+    assertThat(input.startsWith("foo", 0)).isTrue();
+  }
+
+  @Test
+  public void fromReader_startsWith_isNotPrefix() {
+    CharInput input = CharInput.from(new StringReader("food"));
+    assertThat(input.startsWith("fobar", 0)).isFalse();
   }
 
   @Test
@@ -107,5 +83,42 @@ public final class CharInputTest {
     assertThat(input.snippet(1, 5)).isEqualTo("bc");
     assertThat(input.snippet(3, 2)).isEqualTo("");
     assertThat(CharInput.from(new StringReader("")).snippet(0, 1)).isEqualTo("");
+  }
+
+  @Test
+  public void fromReader_startsWith_prefixLongerThanBuffer_isPrefix() {
+    String prefix = "a".repeat(9000);
+    CharInput input = CharInput.from(new StringReader(prefix + "b"));
+    assertThat(input.startsWith(prefix, 0)).isTrue();
+  }
+
+  @Test
+  public void fromReader_startsWith_prefixLongerThanBuffer_isNotPrefix() {
+    String prefix = "a".repeat(9000);
+    CharInput input = CharInput.from(new StringReader("a".repeat(8999) + "cb"));
+    assertThat(input.startsWith(prefix, 0)).isFalse();
+  }
+
+  @Test
+  public void fromReader_startsWith_prefixLongerThanBuffer_isPrefix_loadedTwice() throws Exception {
+    String prefix = "a".repeat(9000);
+    MockReader reader = new MockReader(prefix + "b");
+    CharInput input = CharInput.from(reader);
+    assertThat(input.startsWith(prefix, 0)).isTrue();
+    assertThat(reader.loadCount).isEqualTo(2);
+  }
+
+  private static class MockReader extends StringReader {
+    private int loadCount = 0;
+
+    MockReader(String str) {
+      super(str);
+    }
+
+    @Override
+    public int read(char[] cbuf) throws IOException {
+      loadCount++;
+      return super.read(cbuf);
+    }
   }
 }
