@@ -18,8 +18,6 @@ abstract class CharInput {
   /** Is {@code index} the end of the input? */
   abstract boolean isEof(int index);
 
-  @Override public abstract String toString();
-
   final boolean isInRange(int index) {
     return !isEof(index);
   }
@@ -93,7 +91,7 @@ abstract class CharInput {
       }
 
       @Override public String toString() {
-        return chars.toString();
+        return chars.toString();  // Just show me what you've got
       }
 
       private void ensureCharCount(int charCount) {
