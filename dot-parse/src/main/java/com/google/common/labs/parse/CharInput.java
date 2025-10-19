@@ -6,12 +6,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 
-/**
- * An abstraction over sequentially read characters.
- *
- * <p>Indexes passed to this API generally are expected to be in strict sequence. For example, it's
- * illegal to call {@code charAt(i + 1)} if you haven't called {@code charAt(i)}.
- */
+/** An abstraction over sequentially read characters. */
 interface CharInput {
 
   /** Reads the character at {@code index}. */
@@ -68,7 +63,12 @@ interface CharInput {
     };
   }
 
-  /** A lazily-loaded input from {@code reader}. */
+  /**
+   * An input backed by in-memory string.
+   *
+   * <p>Indexes passed to this input generally are expected to be in strict sequence. For example,
+   * it's illegal to call {@code charAt(i + 1)} if you haven't called {@code charAt(i)}.
+   */
   static CharInput from(Reader reader) {
     requireNonNull(reader);
     return new CharInput() {
