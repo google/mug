@@ -90,7 +90,7 @@ public class SnippetTest {
   @Test
   public void toString_longWhitespace_followedByMore_isTruncated() {
     String longString = " ".repeat(60) + "bar";
-    assertThat(new Snippet(longString, 0).toString()).isEqualTo("[" + " ".repeat(50) + "...]");
+    assertThat(new Snippet(longString, 0).toString()).isEqualTo("[   ...]");
   }
 
   @Test

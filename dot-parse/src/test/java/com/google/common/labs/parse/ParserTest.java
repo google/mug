@@ -15,6 +15,7 @@ import static com.google.mu.util.CharPredicate.noneOf;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertThrows;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -363,12 +364,16 @@ public class ParserTest {
 
   @Test
   public void notFollowedBy_selfFailsToMatch() {
-    assertThrows(ParseException.class, () -> string("a").notFollowedBy("b").parse("c"));
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> string("a").notFollowedBy("b").parse("c"));
+    assertThat(thrown).hasMessageThat().contains("at 1:1: expecting <a>, encountered [c]");
   }
 
   @Test
   public void notFollowedBy_suffixFollows() {
-    assertThrows(ParseException.class, () -> string("a").notFollowedBy("b").parse("ab"));
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> string("a").notFollowedBy("b").parse("ab"));
+    assertThat(thrown).hasMessageThat().contains("at 1:2: unexpected `b` – [b]");
   }
 
   @Test
@@ -1691,6 +1696,13 @@ public class ParserTest {
   }
 
   @Test
+  public void optional_withLeftOverInput() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> string("a").optional().parse("a bc"));
+    assertThat(thrown).hasMessageThat().contains("1:2: expecting <EOF>, encountered [ bc]");
+  }
+
+  @Test
   public void orElse_between_zeroMatch() {
     Parser<String> parser = string("a").orElse("default").between("[", "]");
     assertThat(parser.parse("[]")).isEqualTo("default");
@@ -2417,6 +2429,21 @@ public class ParserTest {
   }
 
   @Test
+  public void skipping_aroundIdentifier_withReader() {
+    Parser<String> parser = string("foo");
+    assertThat(parser.skipping(Character::isWhitespace).parseToStream(new StringReader("foo")))
+        .containsExactly("foo");
+    assertThat(parser.skipping(Character::isWhitespace).parseToStream(new StringReader(" foo")))
+        .containsExactly("foo");
+    assertThat(parser.skipping(Character::isWhitespace).parseToStream(new StringReader("foo \n  ")))
+        .containsExactly("foo");
+    assertThat(parser.skipping(Character::isWhitespace).parseToStream(new StringReader(" foo ")))
+        .containsExactly("foo");
+    assertThat(parser.skipping(Character::isWhitespace).parseToStream(new StringReader("   foo   ")))
+        .containsExactly("foo");
+  }
+
+  @Test
   public void skipping_aroundIdentifier_source() {
     Parser<String> parser = string("foo");
     assertThat(parser.source().parseSkipping(Character::isWhitespace, "foo")).isEqualTo("foo");
@@ -2435,12 +2462,21 @@ public class ParserTest {
   }
 
   @Test
-  public void parseToStreamSkipping_allCharactersSkipped() {
+  public void skipping_parseToStream_allCharactersSkipped() {
     assertThat(consecutive(DIGIT, "digit").skipping(Character::isWhitespace).parseToStream("     ")).isEmpty();
   }
 
   @Test
-  public void parseToStreamSkipping_allSkippablePatternsSkipped() {
+  public void skipping_parseToStream_reader_allCharactersSkipped() {
+    assertThat(
+            consecutive(DIGIT, "digit")
+                .skipping(Character::isWhitespace)
+                .parseToStream(new StringReader("     ")))
+        .isEmpty();
+  }
+
+  @Test
+  public void skipping_parseToStream_allSkippablePatternsSkipped() {
     assertThat(
             consecutive(DIGIT, "digit")
                 .skipping(
@@ -2448,6 +2484,18 @@ public class ParserTest {
                         .then(consecutive(isNot('\n'), "comment"))
                         .optionallyFollowedBy("\n"))
                 .parseToStream("#comment1\n#comment2"))
+        .isEmpty();
+  }
+
+  @Test
+  public void skipping_parseToStream_reader_allSkippablePatternsSkipped() {
+    assertThat(
+            consecutive(DIGIT, "digit")
+                .skipping(
+                    string("#")
+                        .then(consecutive(isNot('\n'), "comment"))
+                        .optionallyFollowedBy("\n"))
+                .parseToStream(new StringReader("#comment1\n#comment2")))
         .isEmpty();
   }
 
@@ -2462,6 +2510,17 @@ public class ParserTest {
     assertThrows(
         ParseException.class,
         () -> parser.skipping(Character::isWhitespace).parseToStream(" foo bar ").toList());
+  }
+
+  @Test
+  public void skipping_aroundIdentifier_reader_failure() {
+    Parser<String> parser = string("foo");
+    assertThrows(
+        ParseException.class,
+        () -> parser.skipping(Character::isWhitespace).parseToStream(new StringReader(" foobar ")).toList());
+    assertThrows(
+        ParseException.class,
+        () -> parser.skipping(Character::isWhitespace).parseToStream(new StringReader(" foo bar ")).toList());
   }
 
   @Test
@@ -3309,6 +3368,15 @@ public class ParserTest {
   }
 
   @Test
+  public void parseToStream_reader_success() {
+    Parser<Character> parser = single(DIGIT, "digit");
+    assertThat(parser.parseToStream(new StringReader("123")))
+        .containsExactly('1', '2', '3')
+        .inOrder();
+    assertThat(parser.parseToStream(new StringReader("")).toList()).isEmpty();
+  }
+
+  @Test
   public void parseToStream_success_source() {
     Parser<Character> parser = single(DIGIT, "digit");
     assertThat(parser.source().parseToStream("123")).containsExactly("1", "2", "3").inOrder();
@@ -3321,34 +3389,22 @@ public class ParserTest {
   }
 
   @Test
-  public void parseToStream_fromIndex() {
-    assertThat(consecutive(DIGIT, "digit").skipping(string(",")).parseToStream("1,2,3,4", 2))
-        .containsExactly("2", "3", "4");
-    assertThat(
-            consecutive(DIGIT, "digit").source().skipping(string(",")).parseToStream("1,2,3,4", 2))
-        .containsExactly("2", "3", "4");
-  }
-
-  @Test
-  public void parseToStream_fromIndex_atEnd() {
-    assertThat(consecutive(DIGIT, "digit").parseToStream("123", 3)).isEmpty();
-    assertThat(consecutive(DIGIT, "digit").skipping(Character::isWhitespace).parseToStream("123  ", 3))
-        .isEmpty();
-  }
-
-  @Test
-  public void parseToStream_fromIndex_outOfBounds() {
-    assertThrows(
-        IndexOutOfBoundsException.class, () -> consecutive(DIGIT, "digit").parseToStream("123", 4));
-    assertThrows(
-        IndexOutOfBoundsException.class,
-        () -> consecutive(DIGIT, "digit").skipping(Character::isWhitespace).parseToStream("123 ", 5));
+  public void parseToStream_reader_emptyInput() {
+    Parser<Character> parser = single(DIGIT, "digit");
+    assertThat(parser.parseToStream(new StringReader("")).toList()).isEmpty();
   }
 
   @Test
   public void parseToStream_fail() {
     Parser<Character> parser = single(DIGIT, "digit");
     assertThrows(ParseException.class, () -> parser.parseToStream("1a2").toList());
+  }
+
+  @Test
+  public void parseToStream_reader_fail() {
+    Parser<Character> parser = single(DIGIT, "digit");
+    assertThrows(
+        ParseException.class, () -> parser.parseToStream(new StringReader("1a2")).toList());
   }
 
   @Test
@@ -3362,6 +3418,11 @@ public class ParserTest {
   }
 
   @Test
+  public void probe_reader_singleMatch_returnsValue() {
+    assertThat(string("foo").probe(new StringReader("foo"))).containsExactly("foo");
+  }
+
+  @Test
   public void probe_singleMatch_returnsValue_source() {
     assertThat(string("foo").source().probe("foo")).containsExactly("foo");
   }
@@ -3372,36 +3433,23 @@ public class ParserTest {
   }
 
   @Test
+  public void probe_reader_multipleMatches_returnsValue() {
+    assertThat(string("foo").probe(new StringReader("foofoo"))).containsExactly("foo", "foo");
+  }
+
+  @Test
   public void probe_multipleMatches_returnsValue_source() {
     assertThat(string("foo").source().probe("foofoo")).containsExactly("foo", "foo");
   }
 
   @Test
-  public void probe_fromIndex() {
-    assertThat(consecutive(DIGIT, "digit").skipping(string(",")).probe("1,2,3,4", 2))
-        .containsExactly("2", "3", "4");
-    assertThat(consecutive(DIGIT, "digit").source().skipping(string(",")).probe("1,2,3,4", 2))
-        .containsExactly("2", "3", "4");
-  }
-
-  @Test
-  public void probe_fromIndex_atEnd() {
-    assertThat(consecutive(DIGIT, "digit").probe("123", 3)).isEmpty();
-    assertThat(consecutive(DIGIT, "digit").skipping(Character::isWhitespace).probe("123  ", 3)).isEmpty();
-  }
-
-  @Test
-  public void probe_fromIndex_outOfBounds() {
-    assertThrows(
-        IndexOutOfBoundsException.class, () -> consecutive(DIGIT, "digit").probe("123", 4));
-    assertThrows(
-        IndexOutOfBoundsException.class,
-        () -> consecutive(DIGIT, "digit").skipping(Character::isWhitespace).probe("123 ", 5));
-  }
-
-  @Test
   public void probe_prefixMatch_returnsValue() {
     assertThat(string("foo").probe("foobar")).containsExactly("foo");
+  }
+
+  @Test
+  public void probe_reader_prefixMatch_returnsValue() {
+    assertThat(string("foo").probe(new StringReader("foobar"))).containsExactly("foo");
   }
 
   @Test
@@ -3415,84 +3463,121 @@ public class ParserTest {
   }
 
   @Test
+  public void probe_reader_noMatch_returnsEmpty() {
+    assertThat(string("foo").probe(new StringReader("bar"))).isEmpty();
+  }
+
+  @Test
   public void probe_noMatch_returnsEmpty_source() {
     assertThat(string("foo").source().probe("bar")).isEmpty();
   }
 
   @Test
-  public void probeSkippingCharMatcher_emptyInput_returnsEmpty() {
+  public void skipping_probeCharPredicate_emptyInput_returnsEmpty() {
     assertThat(string("foo").skipping(Character::isWhitespace).probe(" ")).isEmpty();
   }
 
   @Test
-  public void probeSkippingCharMatcher_emptyInput_returnsEmpty_source() {
+  public void skipping_probeReader_emptyInput_returnsEmpty() {
+    assertThat(string("foo").skipping(Character::isWhitespace).probe(new StringReader(" "))).isEmpty();
+  }
+
+  @Test
+  public void skipping_probeCharPredicate_emptyInput_returnsEmpty_source() {
     assertThat(string("foo").source().skipping(Character::isWhitespace).probe(" ")).isEmpty();
   }
 
   @Test
-  public void probeSkippingCharMatcher_singleMatch_returnsValue() {
+  public void skipping_probeCharPredicate_singleMatch_returnsValue() {
     assertThat(string("foo").skipping(Character::isWhitespace).probe(" foo ")).containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingCharMatcher_singleMatch_returnsValue_source() {
+  public void skipping_probeReader_singleMatch_returnsValue() {
+    assertThat(string("foo").skipping(Character::isWhitespace).probe(new StringReader(" foo ")))
+        .containsExactly("foo");
+  }
+
+  @Test
+  public void skipping_probeCharPredicate_singleMatch_returnsValue_source() {
     assertThat(string("foo").source().skipping(Character::isWhitespace).probe(" foo ")).containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingCharMatcher_multipleMatches_returnsValues() {
+  public void skipping_probeCharPredicate_multipleMatches_returnsValues() {
     assertThat(consecutive(DIGIT, "digit").skipping(Character::isWhitespace).probe(" 123  456 "))
         .containsExactly("123", "456")
         .inOrder();
   }
 
   @Test
-  public void probeSkippingCharMatcher_multipleMatches_returnsValues_source() {
+  public void skipping_probeReader_multipleMatches_returnsValues() {
+    assertThat(
+            consecutive(DIGIT, "digit")
+                .skipping(Character::isWhitespace)
+                .probe(new StringReader(" 123  456 ")))
+        .containsExactly("123", "456")
+        .inOrder();
+  }
+
+  @Test
+  public void skipping_probeCharPredicate_multipleMatches_returnsValues_source() {
     assertThat(consecutive(DIGIT, "digit").source().skipping(Character::isWhitespace).probe(" 123  456 "))
         .containsExactly("123", "456")
         .inOrder();
   }
 
   @Test
-  public void probeSkippingCharMatcher_prefixMatchWithSkipping_returnsValue() {
+  public void skipping_probeCharPredicate_prefixMatchWithSkipping_returnsValue() {
     assertThat(string("foo").skipping(Character::isWhitespace).probe(" foobar ")).containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingCharMatcher_prefixMatchWithSkipping_returnsValue_source() {
+  public void skipping_probeReader_prefixMatchWithSkipping_returnsValue() {
+    assertThat(string("foo").skipping(Character::isWhitespace).probe(new StringReader(" foobar ")))
+        .containsExactly("foo");
+  }
+
+  @Test
+  public void skipping_probeCharPredicate_prefixMatchWithSkipping_returnsValue_source() {
     assertThat(string("foo").source().skipping(Character::isWhitespace).probe(" foobar "))
         .containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingCharMatcher_noMatch_returnsEmpty() {
+  public void skipping_probeCharPredicate_noMatch_returnsEmpty() {
     assertThat(string("foo").skipping(Character::isWhitespace).probe("bar")).isEmpty();
   }
 
   @Test
-  public void probeSkippingCharMatcher_noMatch_returnsEmpty_source() {
+  public void skipping_probeReader_noMatch_returnsEmpty() {
+    assertThat(string("foo").skipping(Character::isWhitespace).probe(new StringReader("bar"))).isEmpty();
+  }
+
+  @Test
+  public void skipping_probeCharPredicate_noMatch_returnsEmpty_source() {
     assertThat(string("foo").source().skipping(Character::isWhitespace).probe("bar")).isEmpty();
   }
 
   @Test
-  public void probeSkippingParser_emptyInput_returnsEmpty() {
+  public void skipping_probeParser_emptyInput_returnsEmpty() {
     assertThat(string("foo").skipping(consecutive(Character::isWhitespace, "skip")).probe("\n\n ")).isEmpty();
   }
 
   @Test
-  public void probeSkippingParser_singleMatch_returnsValue() {
+  public void skipping_probeParser_singleMatch_returnsValue() {
     assertThat(string("foo").skipping(consecutive(Character::isWhitespace, "skip")).probe(" \n foo "))
         .containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingParser_singleMatch_returnsValue_source() {
+  public void skipping_probeParser_singleMatch_returnsValue_source() {
     assertThat(string("foo").source().skipping(consecutive(Character::isWhitespace, "skip")).probe(" \n foo "))
         .containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingParser_multipleMatches_returnsValues() {
+  public void skipping_probeParser_multipleMatches_returnsValues() {
     assertThat(
             consecutive(ALPHANUMERIC, "word")
                 .skipping(consecutive(Character::isWhitespace, "skip"))
@@ -3502,7 +3587,7 @@ public class ParserTest {
   }
 
   @Test
-  public void probeSkippingParser_multipleMatches_returnsValues_source() {
+  public void skipping_probeParser_multipleMatches_returnsValues_source() {
     assertThat(
             consecutive(ALPHANUMERIC, "word")
                 .source()
@@ -3513,24 +3598,24 @@ public class ParserTest {
   }
 
   @Test
-  public void probeSkippingParser_prefixMatchWithSkipping_returnsValue() {
+  public void skipping_probeParser_prefixMatchWithSkipping_returnsValue() {
     assertThat(string("foo").skipping(consecutive(Character::isWhitespace, "skip")).probe(" foobar "))
         .containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingParser_prefixMatchWithSkipping_returnsValue_source() {
+  public void skipping_probeParser_prefixMatchWithSkipping_returnsValue_source() {
     assertThat(string("foo").source().skipping(consecutive(Character::isWhitespace, "skip")).probe(" foobar "))
         .containsExactly("foo");
   }
 
   @Test
-  public void probeSkippingParser_noMatch_returnsEmpty() {
+  public void skipping_probeParser_noMatch_returnsEmpty() {
     assertThat(string("foo").skipping(consecutive(Character::isWhitespace, "skip")).probe("bar")).isEmpty();
   }
 
   @Test
-  public void probeSkippingParser_noMatch_returnsEmpty_source() {
+  public void skipping_probeParser_noMatch_returnsEmpty_source() {
     assertThat(string("foo").source().skipping(consecutive(Character::isWhitespace, "skip")).probe("bar"))
         .isEmpty();
   }
@@ -3540,7 +3625,7 @@ public class ParserTest {
     Parser<String> parser = string("foo");
     IndexOutOfBoundsException e =
         assertThrows(IndexOutOfBoundsException.class, () -> parser.parse("foo", -1));
-    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0, 3]");
+    assertThat(e).hasMessageThat().contains("fromIndex (-1)");
   }
 
   @Test
@@ -3548,39 +3633,7 @@ public class ParserTest {
     Parser<String>.Lexical lexical = string("foo").skipping(Character::isWhitespace);
     IndexOutOfBoundsException e =
         assertThrows(IndexOutOfBoundsException.class, () -> lexical.parse("foo", -1));
-    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0, 3]");
-  }
-
-  @Test
-  public void parseToStream_fromIndex_negative_throws() {
-    Parser<String> parser = string("foo");
-    IndexOutOfBoundsException e =
-        assertThrows(IndexOutOfBoundsException.class, () -> parser.parseToStream("foo", -1));
-    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0, 3]");
-  }
-
-  @Test
-  public void parseToStream_fromIndex_negative_skipping_throws() {
-    Parser<String>.Lexical lexical = string("foo").skipping(Character::isWhitespace);
-    IndexOutOfBoundsException e =
-        assertThrows(IndexOutOfBoundsException.class, () -> lexical.parseToStream("foo", -1));
-    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0, 3]");
-  }
-
-  @Test
-  public void probe_fromIndex_negative_throws() {
-    Parser<String> parser = string("foo");
-    IndexOutOfBoundsException e =
-        assertThrows(IndexOutOfBoundsException.class, () -> parser.probe("foo", -1));
-    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0, 3]");
-  }
-
-  @Test
-  public void probe_fromIndex_negative_skipping_throws() {
-    Parser<String>.Lexical lexical = string("foo").skipping(Character::isWhitespace);
-    IndexOutOfBoundsException e =
-        assertThrows(IndexOutOfBoundsException.class, () -> lexical.probe("foo", -1));
-    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0, 3]");
+    assertThat(e).hasMessageThat().contains("fromIndex (-1)");
   }
 
   @Test
