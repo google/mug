@@ -100,7 +100,7 @@ interface CharInput {
       public boolean isEof(int index) {
         checkSequentialIndex(index);
         ensureCharCount(index + 1);
-        return index == chars.length();
+        return index >= chars.length();
       }
 
       @Override
