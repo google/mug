@@ -25,6 +25,7 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Optional;
@@ -730,6 +731,8 @@ public abstract class Parser<T> {
   /**
    * Parses the input reader lazily by applying this parser repeatedly until the end of
    * input. Results are returned in a lazy stream.
+   *
+   * <p>{@link UncheckedIOException} will be thrown if the underlying reader throws.
    */
   public final Stream<T> parseToStream(Reader input) {
     return parseToStream(CharInput.from(input));
@@ -777,6 +780,8 @@ public abstract class Parser<T> {
    * a matching failure terminates the stream without throwing exception.
    *
    * <p>This allows quick probing without fully parsing it.
+   *
+   * <p>{@link UncheckedIOException} will be thrown if the underlying reader throws.
    */
   public final Stream<T> probe(Reader input) {
     return probe(CharInput.from(input));
@@ -1019,6 +1024,8 @@ public abstract class Parser<T> {
 
     /**
      * Parses {@code input} reader to a lazy stream while skipping the skippable patterns around lexical tokens.
+     *
+     * <p>{@link UncheckedIOException} will be thrown if the underlying reader throws.
      */
     public Stream<T> parseToStream(Reader input) {
       return parseToStream(CharInput.from(input));
@@ -1058,6 +1065,8 @@ public abstract class Parser<T> {
      * terminates the stream without throwing exception.
      *
      * <p>This allows quick probing without fully parsing it.
+     *
+     * <p>{@link UncheckedIOException} will be thrown if the underlying reader throws.
      */
     public Stream<T> probe(Reader input) {
       return forTokens().probe(input);
