@@ -102,9 +102,13 @@ public final class CharInputTest {
   @Test
   public void fromReader_startsWith_prefixLongerThanBuffer_isPrefix_loadedTwice() throws Exception {
     String prefix = "a".repeat(9000);
-    MockReader reader = new MockReader(prefix + "b");
+    MockReader reader = new MockReader(prefix + "a");
     CharInput input = CharInput.from(reader);
     assertThat(input.startsWith(prefix, 0)).isTrue();
+    assertThat(reader.loadCount).isEqualTo(2);
+    assertThat(input.startsWith(prefix, 1)).isTrue();
+    assertThat(reader.loadCount).isEqualTo(2);
+    assertThat(input.startsWith("a", 9000)).isTrue();
     assertThat(reader.loadCount).isEqualTo(2);
   }
 
