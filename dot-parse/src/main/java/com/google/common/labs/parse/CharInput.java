@@ -7,57 +7,51 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 
 /** An abstraction over sequentially read characters. */
-interface CharInput {
+abstract class CharInput {
 
   /** Reads the character at {@code index}. */
-  char charAt(int index);
+  abstract char charAt(int index);
 
   /** Do the characters starting from {@code index} start with {@code prefix}? */
-  boolean startsWith(String prefix, int index);
+  abstract boolean startsWith(String prefix, int index);
 
   /** Is {@code index} the end of the input? */
-  boolean isEof(int index);
+  abstract boolean isEof(int index);
 
-  @Override
-  String toString();
+  @Override public abstract String toString();
 
-  default boolean isInRange(int index) {
+  final boolean isInRange(int index) {
     return !isEof(index);
   }
 
-  default boolean isEmpty() {
+  final boolean isEmpty() {
     return isEof(0);
   }
 
   /** Returns a snippet of string starting from {@code index} with at most {@code maxChars}. */
-  String snippet(int index, int maxChars);
+  abstract String snippet(int index, int maxChars);
 
   /** An input backed by in-memory string. */
   static CharInput from(String str) {
     requireNonNull(str);
     return new CharInput() {
-      @Override
-      public char charAt(int index) {
+      @Override char charAt(int index) {
         return str.charAt(index);
       }
 
-      @Override
-      public boolean startsWith(String prefix, int index) {
+      @Override boolean startsWith(String prefix, int index) {
         return str.startsWith(prefix, index);
       }
 
-      @Override
-      public boolean isEof(int index) {
+      @Override boolean isEof(int index) {
         return index >= str.length();
       }
 
-      @Override
-      public String snippet(int index, int maxLength) {
+      @Override String snippet(int index, int maxLength) {
         return str.substring(index, Math.min(str.length(), index + maxLength));
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return str;
       }
     };
@@ -76,15 +70,13 @@ interface CharInput {
       private final StringBuilder chars = new StringBuilder(temp.length);
       private int charsAlreadyRead = 0;
 
-      @Override
-      public char charAt(int index) {
+      @Override char charAt(int index) {
         checkSequentialIndex(index);
         ensureCharCount(index + 1);
         return chars.charAt(index);
       }
 
-      @Override
-      public boolean startsWith(String prefix, int index) {
+      @Override boolean startsWith(String prefix, int index) {
         checkSequentialIndex(index);
         ensureCharCount(index + prefix.length());
         for (int i = 0; i < prefix.length(); i++) {
@@ -96,22 +88,19 @@ interface CharInput {
         return true;
       }
 
-      @Override
-      public boolean isEof(int index) {
+      @Override boolean isEof(int index) {
         checkSequentialIndex(index);
         ensureCharCount(index + 1);
         return index >= chars.length();
       }
 
-      @Override
-      public String snippet(int index, int maxLength) {
+      @Override String snippet(int index, int maxLength) {
         checkSequentialIndex(index);
         ensureCharCount(index + maxLength);
         return chars.substring(index, Math.min(chars.length(), index + maxLength));
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return chars.toString();
       }
 
