@@ -1207,7 +1207,7 @@ public abstract class Parser<T> {
     record Success<V>(int head, int tail, V value) implements MatchResult<V> {}
 
     /** Represents a partial parse result with a value and the [start, end) range of the match. */
-    record Failure<V>(int at, String message, List<?> args) implements MatchResult<V> {
+    record Failure<V>(int at, String message, Object[] args) implements MatchResult<V> {
       @SuppressWarnings("unchecked")
       <X> Failure<X> safeCast() {
         return (Failure<X>) this;
@@ -1216,7 +1216,7 @@ public abstract class Parser<T> {
       ParseException toException(String input) {
         return new ParseException(
             String.format(
-                "at %s: %s", sourcePosition(input, at), String.format(message, args.toArray())));
+                "at %s: %s", sourcePosition(input, at), String.format(message, args)));
       }
 
       static String sourcePosition(String input, int at) {
@@ -1245,8 +1245,7 @@ public abstract class Parser<T> {
     }
 
     <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
-      var failure = new MatchResult.Failure<V>(
-          at, message, stream(args).collect(toUnmodifiableList()));
+      var failure = new MatchResult.Failure<V>(at, message, args);
       if (farthestFailure == null || failure.at() > farthestFailure.at()) {
         farthestFailure = failure;
       }
