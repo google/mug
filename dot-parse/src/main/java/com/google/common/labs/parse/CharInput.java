@@ -79,9 +79,11 @@ abstract class CharInput {
       @Override boolean startsWith(String prefix, int index) {
         checkSequentialIndex(index);
         ensureCharCount(index + prefix.length());
+        if (chars.length() < index + prefix.length()) {
+          return false;
+        }
         for (int i = 0; i < prefix.length(); i++) {
-          int bufIndex = index + i;
-          if (bufIndex >= chars.length() || prefix.charAt(i) != chars.charAt(bufIndex)) {
+          if (prefix.charAt(i) != chars.charAt(index + i)) {
             return false;
           }
         }
