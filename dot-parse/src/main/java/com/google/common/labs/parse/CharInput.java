@@ -66,8 +66,8 @@ abstract class CharInput {
   static CharInput from(Reader reader) {
     requireNonNull(reader);
     return new CharInput() {
-      private final char[] temp = new char[8192];
-      private final StringBuilder chars = new StringBuilder(temp.length);
+      private final char[] buffer = new char[8192];
+      private final StringBuilder chars = new StringBuilder(buffer.length);
       private int charsAlreadyRead = 0;
 
       @Override char charAt(int index) {
@@ -110,11 +110,11 @@ abstract class CharInput {
         }
         for (int missing = charCount - chars.length(); missing > 0; ) {
           try {
-            int loaded = reader.read(temp);
+            int loaded = reader.read(buffer);
             if (loaded <= 0) { // no more to load
               break;
             }
-            chars.append(temp, 0, loaded);
+            chars.append(buffer, 0, loaded);
             missing -= loaded;
           } catch (IOException e) {
             throw new UncheckedIOException(e);
