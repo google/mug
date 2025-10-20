@@ -60,7 +60,7 @@ abstract class CharInput {
 
   /** A lazily-loaded input from {@code reader}. */
   static CharInput from(Reader reader) {
-    return from(reader, /* bufferSize= */ 8192, /* compactionThreshold= */ 128 * 1024);
+    return from(reader, /* bufferSize= */ 8192, /* compactionThreshold= */ 64 * 1024);
   }
 
   /**
