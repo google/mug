@@ -18,7 +18,6 @@ package com.google.common.labs.csv;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.stream.BiCollectors.toMap;
-import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
@@ -78,8 +77,8 @@ public final class Csv {
       Stream.of("\n", "\r\n", "\r").map(Parser::string).collect(Parser.or());
   private static final Parser<?> COMMENT =
       Parser.string("#")
-          .optionallyFollowedBy(consecutive(is('\n').not(), "comment").thenReturn(identity()))
-          .optionallyFollowedBy(NEW_LINE.thenReturn(identity()));
+          .followedBy(consecutive(is('\n').not(), "comment").orElse(null))
+          .followedBy(NEW_LINE.orElse(null));
   private static final Parser<String> QUOTED =
       Parser.consecutive(is('"').not(), "quoted")
           .or(Parser.string("\"\"").thenReturn("\"")) // escaped quote
