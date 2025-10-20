@@ -202,8 +202,8 @@ public final class Csv {
   }
 
   /**
-   * Parses {@code csv} string lazily. For each row, the column names and corresponding values are
-   * collected using {@code rowCollector}. The first non-empty row is expected to be the header row.
+   * Parses {@code csv} string lazily, expecting the first non-empty row as the header names.
+   * For each row, the column names and corresponding values are collected using {@code rowCollector}.
    *
    * <p>Usually, if you need a {@code Map} of column names to column values, consider using {@link
    * #parseToMaps(String)} instead. But if you need alternative strategies, such as collecting
@@ -222,8 +222,8 @@ public final class Csv {
   }
 
   /**
-   * Parses {@code csv} reader lazily. For each row, the column names and corresponding values are
-   * collected using {@code rowCollector}. The first non-empty row is expected to be the header row.
+   * Parses {@code csv} reader lazily, expecting the first non-empty row as the header names.
+   * For each row, the column names and corresponding values are collected using {@code rowCollector}.
    *
    * <p>Usually, if you need a {@code Map} of column names to column values, consider using {@link
    * #parseToMaps(Reader)} instead. But if you need alternative strategies, such as collecting
