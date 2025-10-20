@@ -76,6 +76,11 @@ public interface CharPredicate {
     };
   }
 
+  /** Returns a CharPredicate that matches except {@code ch}. */
+  static CharPredicate isNot(char ch) {
+    return is(ch).not();
+  }
+
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
   static CharPredicate range(char from, char to) {
     return new CharPredicate() {
