@@ -159,6 +159,23 @@ public final class CsvTest {
   }
 
   @Test
+  public void parseToMaps_emptyInput() {
+    assertThat(Csv.CSV.parseToMaps("")) .isEmpty();
+  }
+
+  @Test
+  public void parseToMaps_withOnlyBlankLines() {
+    assertThat(Csv.CSV.parseToMaps("\n")) .isEmpty();
+    assertThat(Csv.CSV.parseToMaps("\n\n")).isEmpty();
+    assertThat(Csv.CSV.parseToMaps("\n \n")).isEmpty();
+  }
+
+  @Test
+  public void parseToMaps_withOnlyHeaderRow() {
+    assertThat(Csv.CSV.parseToMaps("name,publisher\n")).isEmpty();
+  }
+
+  @Test
   public void parseToMaps_emptyRowsAreIgnored() {
     assertThat(Csv.CSV.parseToMaps("h1,h2\n\nv1,v2"))
         .containsExactly(ImmutableMap.of("h1", "v1", "h2", "v2"));
@@ -168,6 +185,12 @@ public final class CsvTest {
   public void parseToMaps_oneDataRow() {
     assertThat(Csv.CSV.parseToMaps("h1,h2\nv1,v2"))
         .containsExactly(ImmutableMap.of("h1", "v1", "h2", "v2"));
+  }
+
+  @Test
+  public void parseToMaps_withEmptyHeaderName() {
+    assertThat(Csv.CSV.parseToMaps("h1,\nv1,v2"))
+        .containsExactly(ImmutableMap.of("h1", "v1", "", "v2"));
   }
 
   @Test
