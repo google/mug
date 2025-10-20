@@ -29,6 +29,9 @@ abstract class CharInput {
   /** Returns a snippet of string starting from {@code index} with at most {@code maxChars}. */
   abstract String snippet(int index, int maxChars);
 
+  /** characters before {@code checkpointIndex} are no longer needed. */
+  void markCheckpoint(int checkpointIndex) {}
+
   /** An input backed by in-memory string. */
   static CharInput from(String str) {
     requireNonNull(str);
@@ -57,18 +60,29 @@ abstract class CharInput {
 
   /** A lazily-loaded input from {@code reader}. */
   static CharInput from(Reader reader) {
+    return from(reader, /* bufferSize= */ 8192, /* compactionThreshold= */ 128 * 1024);
+  }
+
+  /**
+   * A lazily-loaded input from {@code reader}.
+   *
+   * @param compactionThreshold compact the buffer if we have this number of chars no longer needed.
+   */
+  static CharInput from(Reader reader, int bufferSize, int compactionThreshold) {
     requireNonNull(reader);
     return new CharInput() {
-      private final char[] temp = new char[8192];
+      private final char[] temp = new char[bufferSize];
       private final StringBuilder chars = new StringBuilder(temp.length);
+      private int garbageCharCount = 0;
 
       @Override char charAt(int index) {
         ensureCharCount(index + 1);
-        return chars.charAt(index);
+        return chars.charAt(toPhysicalIndex(index));
       }
 
       @Override boolean startsWith(String prefix, int index) {
         ensureCharCount(index + prefix.length());
+        index = toPhysicalIndex(index);
         if (chars.length() < index + prefix.length()) {
           return false;
         }
@@ -82,20 +96,37 @@ abstract class CharInput {
 
       @Override boolean isEof(int index) {
         ensureCharCount(index + 1);
-        return index >= chars.length();
+        return toPhysicalIndex(index) >= chars.length();
       }
 
       @Override String snippet(int index, int maxLength) {
         ensureCharCount(index + maxLength);
+        index = toPhysicalIndex(index);
         return chars.substring(index, Math.min(chars.length(), index + maxLength));
+      }
+
+      @Override void markCheckpoint(int checkpointIndex) {
+        int unused = checkpointIndex - garbageCharCount;
+        if (unused > compactionThreshold) {
+          chars.delete(0, unused);
+          garbageCharCount += unused;
+        }
       }
 
       @Override public String toString() {
         return chars.toString();  // Just show me what you've got
       }
 
+      private int toPhysicalIndex(int index) {
+         index -= garbageCharCount;
+        if (index < 0) {
+          throw new IllegalArgumentException("index must be at least " + garbageCharCount);
+        }
+        return index;
+      }
+
       private void ensureCharCount(int charCount) {
-        for (int missing = charCount - chars.length(); missing > 0; ) {
+        for (int missing = charCount - garbageCharCount - chars.length(); missing > 0; ) {
           try {
             int loaded = reader.read(temp);
             if (loaded <= 0) { // no more to load

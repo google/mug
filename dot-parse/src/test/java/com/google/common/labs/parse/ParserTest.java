@@ -3402,6 +3402,14 @@ public class ParserTest {
   }
 
   @Test
+  public void parseToStream_withCompactingReader() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    assertThat(single(DIGIT, "digit").parseToStream(input, 0))
+        .containsExactly('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
+        .inOrder();
+  }
+
+  @Test
   public void parseToStream_success_source() {
     Parser<Character> parser = single(DIGIT, "digit");
     assertThat(parser.source().parseToStream("123")).containsExactly("1", "2", "3").inOrder();
@@ -3443,11 +3451,6 @@ public class ParserTest {
   }
 
   @Test
-  public void probe_reader_singleMatch_returnsValue() {
-    assertThat(string("foo").probe(new StringReader("foo"))).containsExactly("foo");
-  }
-
-  @Test
   public void probe_singleMatch_returnsValue_source() {
     assertThat(string("foo").source().probe("foo")).containsExactly("foo");
   }
@@ -3458,8 +3461,21 @@ public class ParserTest {
   }
 
   @Test
+  public void probe_reader_singleMatch_returnsValue() {
+    assertThat(string("foo").probe(new StringReader("foo"))).containsExactly("foo");
+  }
+
+  @Test
   public void probe_reader_multipleMatches_returnsValue() {
     assertThat(string("foo").probe(new StringReader("foofoo"))).containsExactly("foo", "foo");
+  }
+
+  @Test
+  public void probe_withCompactingReader() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    assertThat(single(DIGIT, "digit").probe(input, 0))
+        .containsExactly('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
+        .inOrder();
   }
 
   @Test

@@ -1,6 +1,7 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -110,6 +111,102 @@ public final class CharInputTest {
     assertThat(reader.loadCount).isEqualTo(2);
     assertThat(input.startsWith("a", 9000)).isTrue();
     assertThat(reader.loadCount).isEqualTo(2);
+  }
+
+  @Test
+  public void fromReader_markCheckpoint_accessBeforeCheckpoint_charAt_throws() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    char unused = input.charAt(9); // load all
+    input.markCheckpoint(6);
+    assertThrows(IllegalArgumentException.class, () -> input.charAt(5));
+  }
+
+  @Test
+  public void fromReader_markCheckpoint_accessBeforeCheckpoint_isEof_throws() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    char unused = input.charAt(9); // load all
+    input.markCheckpoint(6);
+    assertThrows(IllegalArgumentException.class, () -> input.isEof(5));
+  }
+
+  @Test
+  public void fromReader_markCheckpoint_accessBeforeCheckpoint_startsWith_throws() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    char unused = input.charAt(9); // load all
+    input.markCheckpoint(6);
+    assertThrows(IllegalArgumentException.class, () -> input.startsWith("5", 5));
+  }
+
+  @Test
+  public void fromReader_markCheckpoint_accessBeforeCheckpoint_snippet_throws() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    char unused = input.charAt(9); // load all
+    input.markCheckpoint(6);
+    assertThrows(IllegalArgumentException.class, () -> input.snippet(5, 1));
+  }
+
+  @Test
+  public void fromReader_markCheckpoint_accessAtCheckpoint_charAt() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    char unused = input.charAt(9); // load all
+    input.markCheckpoint(6);
+    assertThat(input.charAt(6)).isEqualTo('6');
+  }
+
+  @Test
+  public void fromReader_markCheckpoint_accessPastCheckpoint_charAt() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    char unused = input.charAt(9); // load all
+    input.markCheckpoint(6);
+    assertThat(input.charAt(9)).isEqualTo('9');
+  }
+
+  @Test
+  public void fromReader_markCheckpoint_accessAtCheckpoint_isEof() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    char unused = input.charAt(9); // load all
+    input.markCheckpoint(6);
+    assertThat(input.isEof(10)).isTrue();
+  }
+
+  @Test
+  public void fromReader_markCheckpoint_accessPastCheckpoint_isEof() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    char unused = input.charAt(9); // load all
+    input.markCheckpoint(6);
+    assertThat(input.isEof(10)).isTrue();
+  }
+
+  @Test
+  public void fromReader_markCheckpoint_accessAtCheckpoint_startsWith() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    char unused = input.charAt(9); // load all
+    input.markCheckpoint(6);
+    assertThat(input.startsWith("67", 6)).isTrue();
+  }
+
+  @Test
+  public void fromReader_markCheckpoint_accessPastCheckpoint_startsWith() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    char unused = input.charAt(9); // load all
+    input.markCheckpoint(6);
+    assertThat(input.startsWith("89", 8)).isTrue();
+  }
+
+  @Test
+  public void fromReader_markCheckpoint_accessAtCheckpoint_snippet() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    char unused = input.charAt(9); // load all
+    input.markCheckpoint(6);
+    assertThat(input.snippet(7, 2)).isEqualTo("78");
+  }
+
+  @Test
+  public void fromReader_markCheckpoint_accessPastCheckpoint_snippet() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    char unused = input.charAt(9); // load all
+    input.markCheckpoint(6);
+    assertThat(input.snippet(9, 1)).isEqualTo("9");
   }
 
   private static class MockReader extends StringReader {

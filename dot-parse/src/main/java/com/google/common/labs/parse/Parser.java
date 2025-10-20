@@ -747,7 +747,7 @@ public abstract class Parser<T> {
     return parseToStream(CharInput.from(input), 0);
   }
 
-  private Stream<T> parseToStream(CharInput input, int fromIndex) {
+  Stream<T> parseToStream(CharInput input, int fromIndex) {
     class Cursor {
       private int index = fromIndex;
 
@@ -759,6 +759,7 @@ public abstract class Parser<T> {
         return switch (match(input, index, context)) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
+            input.markCheckpoint(index);
             yield success;
           }
           case MatchResult.Failure<?> failure -> {
@@ -809,7 +810,7 @@ public abstract class Parser<T> {
     return probe(CharInput.from(input), 0);
   }
 
-  private Stream<T> probe(CharInput input, int fromIndex) {
+  Stream<T> probe(CharInput input, int fromIndex) {
     class Cursor {
       private int index = fromIndex;
 
@@ -817,6 +818,7 @@ public abstract class Parser<T> {
         return switch (match(input, index, new ErrorContext(input))) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
+            input.markCheckpoint(index);
             yield success;
           }
           case MatchResult.Failure<?> failure -> null;
