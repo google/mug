@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.labs.parse.Parser;
 
@@ -195,6 +196,18 @@ public final class CsvTest {
             ImmutableMap.of("h1", "v1"),
             ImmutableMap.of("h1", "v4", "h2", "v5", "h3", "v6"),
             ImmutableMap.of("h1", "v8", "h2", "v9"));
+  }
+
+  @Test
+  public void parseToMaps_duplicateColumnName_lastWins() {
+    assertThat(Csv.CSV.parseToMaps("name,name,age\nYang,Jing,28"))
+        .containsExactly(ImmutableMap.of("name", "Jing", "age", "28"));
+  }
+
+  @Test
+  public void parseToMaps_duplicateColumnName_keepBoth() {
+    assertThat(Csv.CSV.parse("name,name,age\nYang,Jing,28", ImmutableListMultimap::toImmutableListMultimap))
+        .containsExactly(ImmutableListMultimap.of("name", "Yang", "name", "Jing", "age", "28"));
   }
 
   @Test

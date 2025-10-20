@@ -747,7 +747,7 @@ public abstract class Parser<T> {
     return parseToStream(CharInput.from(input), 0);
   }
 
-  private Stream<T> parseToStream(CharInput input, int fromIndex) {
+  Stream<T> parseToStream(CharInput input, int fromIndex) {
     class Cursor {
       private int index = fromIndex;
 
@@ -759,6 +759,7 @@ public abstract class Parser<T> {
         return switch (match(input, index, context)) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
+            input.markCheckpoint(index);
             yield success;
           }
           case MatchResult.Failure<?> failure -> {
@@ -809,7 +810,7 @@ public abstract class Parser<T> {
     return probe(CharInput.from(input), 0);
   }
 
-  private Stream<T> probe(CharInput input, int fromIndex) {
+  Stream<T> probe(CharInput input, int fromIndex) {
     class Cursor {
       private int index = fromIndex;
 
@@ -817,6 +818,7 @@ public abstract class Parser<T> {
         return switch (match(input, index, new ErrorContext(input))) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
+            input.markCheckpoint(index);
             yield success;
           }
           case MatchResult.Failure<?> failure -> null;
@@ -1207,7 +1209,7 @@ public abstract class Parser<T> {
     record Success<V>(int head, int tail, V value) implements MatchResult<V> {}
 
     /** Represents a partial parse result with a value and the [start, end) range of the match. */
-    record Failure<V>(int at, String message, List<?> args) implements MatchResult<V> {
+    record Failure<V>(int at, String message, Object[] args) implements MatchResult<V> {
       @SuppressWarnings("unchecked")
       <X> Failure<X> safeCast() {
         return (Failure<X>) this;
@@ -1216,10 +1218,14 @@ public abstract class Parser<T> {
       ParseException toException(String input) {
         return new ParseException(
             String.format(
-                "at %s: %s", sourcePosition(input, at), String.format(message, args.toArray())));
+                "at %s: %s", sourcePosition(input, at), String.format(message, args)));
       }
 
       static String sourcePosition(String input, int at) {
+        if (at > input.length()) {
+          // Likely due to streaming parsing where we no longer have the full text.
+          return Integer.toString(at);
+        }
         int line = 1;
         int lineStartIndex = 0;
         for (Substring.Match match :
@@ -1245,8 +1251,7 @@ public abstract class Parser<T> {
     }
 
     <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
-      var failure = new MatchResult.Failure<V>(
-          at, message, stream(args).collect(toUnmodifiableList()));
+      var failure = new MatchResult.Failure<V>(at, message, args);
       if (farthestFailure == null || failure.at() > farthestFailure.at()) {
         farthestFailure = failure;
       }

@@ -17,6 +17,7 @@ package com.google.common.labs.csv;
 
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.mu.util.CharPredicate.is;
+import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -31,6 +32,7 @@ import java.util.stream.Stream;
 
 import com.google.common.labs.parse.Parser;
 import com.google.mu.util.CharPredicate;
+import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 
 /**
@@ -56,6 +58,15 @@ import com.google.mu.util.stream.BiStream;
  * List<Result> results =
  *     // assuming no header row
  *     CSV.parse(input, combining((foo, bar, baz) -> new Result(foo, bar, baz))).toList();
+ * }</pre>
+ *
+ * <p>You can also use the header row, and parse each row to a {@link Map} keyed by the header
+ * column names:
+ *
+ * <pre>{@code
+ * import static com.google.common.labs.csv.Csv.CSV;
+ *
+ * List<Map<String, String>> rows = CSV.parseToMaps(input).toList();
  * }</pre>
  */
 public final class Csv {
@@ -112,7 +123,7 @@ public final class Csv {
   }
 
   /**
-   * Parses {@code csv} string lazily, returning one row at a time in a stream, with field values
+   * Parses {@code csv} reader lazily, returning one row at a time in a stream, with field values
    * collected by {@code rowCollector}.
    *
    * <p>No special treatment of the header row. If you know you have a header row, consider calling
@@ -138,22 +149,102 @@ public final class Csv {
   /**
    * Parses {@code csv} string lazily, returning each row in a {@link Map} keyed by the
    * field names in the header row. The first non-empty row is expected to be the header row.
+   *
+   * <p>Upon duplicate header names, the latter wins. If you need alternative strategies,
+   * such as to reject duplicate header names, or to use {@link com.google.common.collect.ListMultimap}
+   * to keep track of all duplicate header values, consider using {@link #parse(String, BiCollector)}
+   * instead. That is:
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.stream.BiCollectors.toMap;
+   *
+   * CSV.parse(input, toMap());  // throw upon duplicate header names
+   * }</pre>
+   *
+   * or:
+   *
+   * <pre>{@code
+   * import static com.google.common.collect.ImmutableListMultimap;
+   *
+   * // keep track of duplicate header names
+   * CSV.parse(input, ImmutableListMultimap::toImmutableListMultimap);
+   * }</pre>
    */
   public Stream<Map<String, String>> parseToMaps(String csv) {
     return parseToMaps(new StringReader(csv));
   }
 
   /**
-   * Parses {@code csv} string lazily, returning each row in a {@link Map} keyed by the
+   * Parses {@code csv} reader lazily, returning each row in a {@link Map} keyed by the
    * field names in the header row. The first non-empty row is expected to be the header row.
+   *
+   * <p>Upon duplicate header names, the latter wins. If you need alternative strategies,
+   * such as to reject duplicate header names, or to use {@link com.google.common.collect.ListMultimap}
+   * to keep track of all duplicate header values, consider using {@link #parse(Reader, BiCollector)}
+   * instead. That is:
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.stream.BiCollectors.toMap;
+   *
+   * CSV.parse(input, toMap());  // throw upon duplicate header names
+   * }</pre>
+   *
+   * or:
+   *
+   * <pre>{@code
+   * import static com.google.common.collect.ImmutableListMultimap;
+   *
+   * // keep track of duplicate header names
+   * CSV.parse(input, ImmutableListMultimap::toImmutableListMultimap);
+   * }</pre>
    */
   public Stream<Map<String, String>> parseToMaps(Reader csv) {
+    return parse(csv, toMap((v1, v2) -> v2));
+  }
+
+  /**
+   * Parses {@code csv} string lazily. For each row, the column names and corresponding values are
+   * collected using {@code rowCollector}. The first non-empty row is expected to be the header row.
+   *
+   * <p>Usually, if you need a {@code Map} of column name to column value, consider using {@link
+   * #parseToMaps(String)} instead. But if you need alternative strategies, such as collecting
+   * each row to a {@link com.google.common.collect.ListMultimap} to more gracefully handle
+   * duplicate header names, you can use:
+   *
+   * <pre>{@code
+   * import static com.google.common.collect.ImmutableListMultimap;
+   *
+   * CSV.parse(input, ImmutableListMultimap::toImmutableListMultimap);
+   * }</pre>
+   */
+  public <R> Stream<R> parse(
+      String csv, BiCollector<? super String, ? super String, ? extends R> rowCollector) {
+    return parse(new StringReader(csv), rowCollector);
+  }
+
+  /**
+   * Parses {@code csv} reader lazily. For each row, the column names and corresponding values are
+   * collected using {@code rowCollector}. The first non-empty row is expected to be the header row.
+   *
+   * <p>Usually, if you need a {@code Map} of column name to column value, consider using {@link
+   * #parseToMaps(Reader)} instead. But if you need alternative strategies, such as collecting
+   * each row to a {@link com.google.common.collect.ListMultimap} to more gracefully handle
+   * duplicate header names, you can use:
+   *
+   * <pre>{@code
+   * import static com.google.common.collect.ImmutableListMultimap;
+   *
+   * CSV.parse(input, ImmutableListMultimap::toImmutableListMultimap);
+   * }</pre>
+   */
+  public <R> Stream<R> parse(
+      Reader csv, BiCollector<? super String, ? super String, ? extends R> rowCollector) {
     AtomicReference<List<String>> fieldNames = new AtomicReference<>();
     return parse(csv, toUnmodifiableList())
         .filter(row -> row.size() > 0)
         .peek(values -> fieldNames.compareAndSet(null, values))
         .skip(1)
-        .map(values -> BiStream.zip(fieldNames.get(), values).toMap());
+        .map(values -> BiStream.zip(fieldNames.get(), values).collect(rowCollector));
   }
 
   @Override
