@@ -206,7 +206,7 @@ public final class CsvTest {
 
   @Test
   public void parseToMaps_duplicateColumnName_keepBoth() {
-    assertThat(Csv.CSV.parse("name,name,age\nYang,Jing,28", ImmutableListMultimap::toImmutableListMultimap))
+    assertThat(Csv.CSV.parseWithHeader("name,name,age\nYang,Jing,28", ImmutableListMultimap::toImmutableListMultimap))
         .containsExactly(ImmutableListMultimap.of("name", "Yang", "name", "Jing", "age", "28"));
   }
 
