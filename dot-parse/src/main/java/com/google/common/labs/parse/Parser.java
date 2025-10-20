@@ -1222,6 +1222,10 @@ public abstract class Parser<T> {
       }
 
       static String sourcePosition(String input, int at) {
+        if (at > input.length()) {
+          // Likely due to streaming parsing where we no longer have the full text.
+          return Integer.toString(at);
+        }
         int line = 1;
         int lineStartIndex = 0;
         for (Substring.Match match :

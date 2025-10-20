@@ -3410,6 +3410,16 @@ public class ParserTest {
   }
 
   @Test
+  public void parseToStream_withCompactingReader_fails() {
+    CharInput input = CharInput.from(new StringReader("01 \n234 \n567 \n89 x"), 4, 3);
+    Parser<String> parser =
+        consecutive(DIGIT, "number").followedBy(consecutive(Character::isWhitespace, "whitespace").optional());
+    ParseException e =
+        assertThrows(ParseException.class, () -> parser.parseToStream(input, 0).count());
+    assertThat(e).hasMessageThat().contains("at 17: expecting <number>, encountered [x]");
+  }
+
+  @Test
   public void parseToStream_success_source() {
     Parser<Character> parser = single(DIGIT, "digit");
     assertThat(parser.source().parseToStream("123")).containsExactly("1", "2", "3").inOrder();
