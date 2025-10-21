@@ -742,6 +742,8 @@ public abstract class Parser<T> {
    * input. Results are returned in a lazy stream.
    *
    * <p>{@link UncheckedIOException} will be thrown if the underlying reader throws.
+   *
+   * <p>Characters are internally buffered, so you don't need to pass in {@code BufferedReader}.
    */
   public final Stream<T> parseToStream(Reader input) {
     return parseToStream(CharInput.from(input), 0);
@@ -805,6 +807,8 @@ public abstract class Parser<T> {
    * <p>This allows quick probing without fully parsing it.
    *
    * <p>{@link UncheckedIOException} will be thrown if the underlying reader throws.
+   *
+   * <p>Characters are internally buffered, so you don't need to pass in {@code BufferedReader}.
    */
   public final Stream<T> probe(Reader input) {
     return probe(CharInput.from(input), 0);
@@ -1059,6 +1063,8 @@ public abstract class Parser<T> {
      * Parses {@code input} reader to a lazy stream while skipping the skippable patterns around lexical tokens.
      *
      * <p>{@link UncheckedIOException} will be thrown if the underlying reader throws.
+     *
+     * <p>Characters are internally buffered, so you don't need to pass in {@code BufferedReader}.
      */
     public Stream<T> parseToStream(Reader input) {
       return parseToStream(CharInput.from(input), 0);
@@ -1112,6 +1118,8 @@ public abstract class Parser<T> {
      * <p>This allows quick probing without fully parsing it.
      *
      * <p>{@link UncheckedIOException} will be thrown if the underlying reader throws.
+     *
+     * <p>Characters are internally buffered, so you don't need to pass in {@code BufferedReader}.
      */
     public Stream<T> probe(Reader input) {
       return forTokens().probe(input);

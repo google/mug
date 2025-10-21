@@ -46,6 +46,15 @@ public class CharPredicateTest {
     assertThat(CharPredicate.is('c').toString()).isEqualTo("'c'");
   }
 
+  @Test public void testIsNot() {
+    assertThat(CharPredicate.isNot('c').test('c')).isFalse();
+    assertThat(CharPredicate.isNot('c').test('x')).isTrue();
+  }
+
+  @Test public void testIsNot_toString() {
+    assertThat(CharPredicate.isNot('c').toString()).isEqualTo("not ('c')");
+  }
+
   @Test public void testNot() {
     assertThat(CharPredicate.is('c').not().test('c')).isFalse();
     assertThat(CharPredicate.is('c').not().test('x')).isTrue();

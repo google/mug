@@ -16,7 +16,7 @@ package com.google.common.labs.csv;
 
 
 import static com.google.common.labs.parse.Parser.consecutive;
-import static com.google.mu.util.CharPredicate.is;
+import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -60,7 +60,7 @@ import com.google.mu.util.stream.BiStream;
  * }</pre>
  *
  * <p>You can also use the header row, and parse each row to a {@link Map} keyed by the header
- * column names:
+ * field names:
  *
  * <pre>{@code
  * import static com.google.common.labs.csv.Csv.CSV;
@@ -77,10 +77,10 @@ public final class Csv {
       Stream.of("\n", "\r\n", "\r").map(Parser::string).collect(Parser.or());
   private static final Parser<?> COMMENT =
       Parser.string("#")
-          .followedBy(consecutive(is('\n').not(), "comment").orElse(null))
+          .followedBy(consecutive(isNot('\n'), "comment").orElse(null))
           .followedBy(NEW_LINE.orElse(null));
   private static final Parser<String> QUOTED =
-      Parser.consecutive(is('"').not(), "quoted")
+      Parser.consecutive(isNot('"'), "quoted")
           .or(Parser.string("\"\"").thenReturn("\"")) // escaped quote
           .zeroOrMore(joining()).between("\"", "\"");
 
@@ -95,7 +95,7 @@ public final class Csv {
   /** Returns an otherwise equivalent CSV parser but using {@code delimiter} instead of comma. */
   public Csv withDelimiter(char delimiter) {
     checkArgument(
-        UNRESERVED_CHAR.and(is('#').not()).test(delimiter), "delimiter cannot be '%s'", delimiter);
+        UNRESERVED_CHAR.and(isNot('#')).test(delimiter), "delimiter cannot be '%s'", delimiter);
     return new Csv(delimiter, allowsComments);
   }
 
@@ -122,16 +122,15 @@ public final class Csv {
   }
 
   /**
-   * Parses {@code csv} reader lazily, returning one row at a time in a stream, with field values
-   * collected by {@code rowCollector}.
+   * Similar to {@link #parse(String, Collector)}, but takes a {@code Reader} instead.
    *
-   * <p>No special treatment of the header row. If you know you have a header row, consider calling
-   * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
+   * <p>Implementation note: the parser uses internal buffer so you don't need to wrap it in {@code
+   * BufferedReader}.
    */
   public <A, R> Stream<R> parse(Reader csv, Collector<? super String, A, R> rowCollector) {
     var supplier = rowCollector.supplier();
     var finisher = rowCollector.finisher();
-    Parser<String> unquoted = consecutive(UNRESERVED_CHAR.and(is(delim).not()), "unquoted field");
+    Parser<String> unquoted = consecutive(UNRESERVED_CHAR.and(isNot(delim)), "unquoted field");
     Parser<R> line =
         Parser.anyOf(
             NEW_LINE.map(unused -> finisher.apply(supplier.get())),  // empty line => [], not [""]
@@ -152,7 +151,7 @@ public final class Csv {
    * <p>Upon duplicate header names, the latter wins. If you need alternative strategies,
    * such as to reject duplicate header names, or to use {@link com.google.common.collect.ListMultimap}
    * to keep track of all duplicate header values, consider using {@link
-   * #parseWithHeader(String, BiCollector)} instead. That is:
+   * #parseWithHeaderFieldNames(String, BiCollector)} instead. That is:
    *
    * <pre>{@code
    * import static com.google.mu.util.stream.BiCollectors.toMap;
@@ -174,38 +173,20 @@ public final class Csv {
   }
 
   /**
-   * Parses {@code csv} reader lazily, returning each row in a {@link Map} keyed by the
-   * field names in the header row. The first non-empty row is expected to be the header row.
+   * Similar to {@link #parseToMaps(String)}, but takes a {@code Reader} instead.
    *
-   * <p>Upon duplicate header names, the latter wins. If you need alternative strategies,
-   * such as to reject duplicate header names, or to use {@link com.google.common.collect.ListMultimap}
-   * to keep track of all duplicate header values, consider using {@link
-   * #parseWithHeader(Reader, BiCollector)} instead. That is:
-   *
-   * <pre>{@code
-   * import static com.google.mu.util.stream.BiCollectors.toMap;
-   *
-   * CSV.parse(input, toMap());  // throw upon duplicate header names
-   * }</pre>
-   *
-   * or:
-   *
-   * <pre>{@code
-   * import static com.google.common.collect.ImmutableListMultimap;
-   *
-   * // keep track of duplicate header names
-   * CSV.parse(input, ImmutableListMultimap::toImmutableListMultimap);
-   * }</pre>
+   * <p>Implementation note: the parser uses internal buffer so you don't need to wrap it in {@code
+   * BufferedReader}.
    */
   public Stream<Map<String, String>> parseToMaps(Reader csv) {
-    return parseWithHeader(csv, toMap((v1, v2) -> v2));
+    return parseWithHeaderFieldNames(csv, toMap((v1, v2) -> v2));
   }
 
   /**
    * Parses {@code csv} string lazily, expecting the first non-empty row as the header names.
-   * For each row, the column names and corresponding values are collected using {@code rowCollector}.
+   * For each row, the field names and corresponding values are collected using {@code rowCollector}.
    *
-   * <p>Usually, if you need a {@code Map} of column names to column values, consider using {@link
+   * <p>Usually, if you need a {@code Map} of field names to column values, consider using {@link
    * #parseToMaps(String)} instead. But if you need alternative strategies, such as collecting
    * each row to a {@link com.google.common.collect.ListMultimap} to more gracefully handle
    * duplicate header names, you can use:
@@ -216,27 +197,25 @@ public final class Csv {
    * CSV.parse(input, ImmutableListMultimap::toImmutableListMultimap);
    * }</pre>
    */
-  public <R> Stream<R> parseWithHeader(
+  public <R> Stream<R> parseWithHeaderFieldNames(
       String csv, BiCollector<? super String, ? super String, ? extends R> rowCollector) {
-    return parseWithHeader(new StringReader(csv), rowCollector);
+    return parseWithHeaderFieldNames(new StringReader(csv), rowCollector);
   }
 
   /**
-   * Parses {@code csv} reader lazily, expecting the first non-empty row as the header names.
-   * For each row, the column names and corresponding values are collected using {@code rowCollector}.
-   *
-   * <p>Usually, if you need a {@code Map} of column names to column values, consider using {@link
-   * #parseToMaps(Reader)} instead. But if you need alternative strategies, such as collecting
-   * each row to a {@link com.google.common.collect.ListMultimap} to more gracefully handle
-   * duplicate header names, you can use:
+   * Similar to {@link #parseWithHeaderFieldNames(String, BiCollector)}, but takes a {@code Reader}
+   * instead. For example:
    *
    * <pre>{@code
    * import static com.google.common.collect.ImmutableListMultimap;
    *
-   * CSV.parse(input, ImmutableListMultimap::toImmutableListMultimap);
+   * CSV.parseWithHeaderFieldNames(input, ImmutableListMultimap::toImmutableListMultimap);
    * }</pre>
+   *
+   * <p>Implementation note: the parser uses internal buffer so you don't need to wrap it in {@code
+   * BufferedReader}.
    */
-  public <R> Stream<R> parseWithHeader(
+  public <R> Stream<R> parseWithHeaderFieldNames(
       Reader csv, BiCollector<? super String, ? super String, ? extends R> rowCollector) {
     AtomicReference<List<String>> fieldNames = new AtomicReference<>();
     return parse(csv, toUnmodifiableList())
@@ -246,8 +225,7 @@ public final class Csv {
         .map(values -> BiStream.zip(fieldNames.get(), values).collect(rowCollector));
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return Character.toString(delim);
   }
 
