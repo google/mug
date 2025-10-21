@@ -1071,9 +1071,6 @@ public abstract class Parser<T> {
     }
 
     Stream<T> parseToStream(CharInput input, int fromIndex) {
-      if (input.isEmpty()) {
-        return Stream.empty();
-      }
       // remaining input is skippable (whether the parser is literally() or not) -> nothing
       if (toSkip.match(input, fromIndex, new ErrorContext(input))
               instanceof MatchResult.Success<?> success

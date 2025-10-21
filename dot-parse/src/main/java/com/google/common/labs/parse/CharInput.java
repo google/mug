@@ -22,10 +22,6 @@ abstract class CharInput {
     return !isEof(index);
   }
 
-  final boolean isEmpty() {
-    return isEof(0);
-  }
-
   /** Returns a snippet of string starting from {@code index} with at most {@code maxChars}. */
   abstract String snippet(int index, int maxChars);
 
