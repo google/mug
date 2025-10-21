@@ -111,8 +111,8 @@ public final class Csv {
   }
 
   /**
-   * Parses {@code csv} string lazily, returning one row at a time in a stream, with field values
-   * collected by {@code rowCollector} as in {@code parse(input, toImmutableList())}.
+   * {@code CSV.parse(input, toImmutableList())} will parse the {@code input} string into a lazy
+   * stream of {@code ImmutableList}, one row at a time.
    *
    * <p>No special treatment of the header row. If you know you have a header row, consider calling
    * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
@@ -122,8 +122,8 @@ public final class Csv {
   }
 
   /**
-   * Similar to {@link #parse(String, Collector)} (as in {@code parse(input, toImmutableList())}),
-   * but takes a {@code Reader} instead.
+   * {@code CSV.parse(input, toImmutableList())} will parse the {@code input} reader into a lazy
+   * stream of {@code ImmutableList}, one row at a time.
    *
    * <p>Implementation note: the parser uses internal buffer so you don't need to wrap it in {@code
    * BufferedReader}.
@@ -184,8 +184,8 @@ public final class Csv {
   }
 
   /**
-   * Parses {@code csv} string lazily, expecting the first non-empty row as the header names.
-   * For each row, the field names and corresponding values are collected using {@code rowCollector}.
+   * {@code CSV.parseWithHeaderFields(input, toMap())} will parse the non-header rows in the {@code
+   * input} string into a lazy stream of {@code Map}, keyed by the header field names.
    *
    * <p>Usually, if you need a {@code Map} of field names to column values, consider using {@link
    * #parseToMaps(String)} instead. But if you need alternative strategies, such as collecting
@@ -204,8 +204,8 @@ public final class Csv {
   }
 
   /**
-   * Similar to {@link #parseWithHeaderFields(String, BiCollector)}, but takes a {@code Reader}
-   * instead. For example:
+   * {@code CSV.parseWithHeaderFields(input, toMap())} will parse the non-header rows from the
+   * {@code input} reader into a lazy stream of {@code Map}, keyed by the header field names.
    *
    * <pre>{@code
    * import static com.google.common.collect.ImmutableListMultimap;
