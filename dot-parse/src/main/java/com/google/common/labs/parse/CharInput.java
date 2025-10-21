@@ -114,7 +114,7 @@ abstract class CharInput {
       }
 
       private int toPhysicalIndex(int index) {
-         index -= garbageCharCount;
+        index -= garbageCharCount;
         if (index < 0) {
           throw new IllegalArgumentException("index must be at least " + garbageCharCount);
         }
