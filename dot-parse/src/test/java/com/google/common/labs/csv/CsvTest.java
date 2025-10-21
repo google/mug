@@ -229,8 +229,8 @@ public final class CsvTest {
   }
 
   @Test
-  public void parseToMaps_duplicateColumnName_keepBoth() {
-    assertThat(CSV.parseWithHeaderFieldNames("name,name,age\nYang,Jing,28", ImmutableListMultimap::toImmutableListMultimap))
+  public void parseWithHeaderFields_duplicateColumnName_keepBoth() {
+    assertThat(CSV.parseWithHeaderFields("name,name,age\nYang,Jing,28", ImmutableListMultimap::toImmutableListMultimap))
         .containsExactly(ImmutableListMultimap.of("name", "Yang", "name", "Jing", "age", "28"));
   }
 
