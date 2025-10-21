@@ -18,28 +18,18 @@ package com.google.common.labs.csv;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.stream.BiCollectors.toMap;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import com.google.common.labs.parse.Parser;
-import com.google.errorprone.annotations.MustBeClosed;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
@@ -79,7 +69,6 @@ import com.google.mu.util.stream.BiStream;
  * }</pre>
  */
 public final class Csv {
-  private static final Logger logger = Logger.getLogger(Csv.class.getName());
   /** Default CSV parser. Configurable using {@link #withComments} and {@link #withDelimiter}. */
   public static final Csv CSV = new Csv(',', /* allowsComments= */ false);
 
@@ -133,35 +122,10 @@ public final class Csv {
   }
 
   /**
-   * Similar to {@link #parse(String, Collector)}, but takes a {@code File} instead.
+   * Similar to {@link #parse(String, Collector)}, but takes a {@code Reader} instead.
    *
-   * <p>The file will be opened and read in UTF-8. The caller is responsible for closing the stream
-   * using try-with-resources, to close the file. For example:
-   *
-   * <pre>{@code
-   * try (Stream<User> users = CSV.parse(csvFile, combining((id, name) -> new User(id, name)))) {
-   *   ...
-   * }
-   * }</pre>
-   *
-   * <p>If you need to read from a resource URL, or need an alternative charset, consider using
-   * {@link #parse(Reader, Collector)} instead by opening the {@code Reader} explicitly and closing
-   * it using try-with-resources.
-   *
-   * @throws UncheckedIOException if there is an error opening the {@code csvFile}. The returned
-   *     stream can also throw {@code UncheckedIOException} if reading fails.
-   */
-  @MustBeClosed
-  public <A, R> Stream<R> parse(File csvFile, Collector<? super String, A, R> rowCollector) {
-    return openForStreaming(csvFile, reader -> parse(reader, rowCollector));
-  }
-
-  /**
-   * Parses {@code csv} reader lazily, returning one row at a time in a stream, with field values
-   * collected by {@code rowCollector}.
-   *
-   * <p>No special treatment of the header row. If you know you have a header row, consider calling
-   * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
+   * <p>Implementation note: the parser uses internal buffer so you don't need to wrap it in {@code
+   * BufferedReader}.
    */
   public <A, R> Stream<R> parse(Reader csv, Collector<? super String, A, R> rowCollector) {
     var supplier = rowCollector.supplier();
@@ -209,52 +173,10 @@ public final class Csv {
   }
 
   /**
-   * Similar to {@link #parseToMaps(String)}, but takes a {@code File} instead.
+   * Similar to {@link #parseToMaps(String)}, but takes a {@code Reader} instead.
    *
-   * <p>The file will be opened and read in UTF-8. The caller is responsible for closing the stream
-   * using try-with-resources, to close the file. For example:
-   *
-   * <pre>{@code
-   * try (Stream<Map<String, String>> maps = CSV.parseToMaps(csvFile)) {
-   *   maps.filter(...).map(...).forEach(...);
-   * }
-   * }</pre>
-   *
-   * <p>If you need to read from a resource URL, or need an alternative charset, consider using
-   * {@link #parseToMaps(Reader)} instead by opening the {@code Reader} explicitly and closing it
-   * using try-with-resources.
-   *
-   * @throws UncheckedIOException if there is an error opening the {@code csvFile}. The returned
-   *     stream can also throw {@code UncheckedIOException} if reading fails.
-   */
-  @MustBeClosed
-  public Stream<Map<String, String>> parseToMaps(File csvFile) {
-    return parseWithHeaderFieldNames(csvFile, toMap((v1, v2) -> v2));
-  }
-
-  /**
-   * Parses {@code csv} reader lazily, returning each row in a {@link Map} keyed by the
-   * field names in the header row. The first non-empty row is expected to be the header row.
-   *
-   * <p>Upon duplicate header names, the latter wins. If you need alternative strategies,
-   * such as to reject duplicate header names, or to use {@link com.google.common.collect.ListMultimap}
-   * to keep track of all duplicate header values, consider using {@link
-   * #parseWithHeaderFieldNames(Reader, BiCollector)} instead. That is:
-   *
-   * <pre>{@code
-   * import static com.google.mu.util.stream.BiCollectors.toMap;
-   *
-   * CSV.parse(input, toMap());  // throw upon duplicate header names
-   * }</pre>
-   *
-   * or:
-   *
-   * <pre>{@code
-   * import static com.google.common.collect.ImmutableListMultimap;
-   *
-   * // keep track of duplicate header names
-   * CSV.parse(input, ImmutableListMultimap::toImmutableListMultimap);
-   * }</pre>
+   * <p>Implementation note: the parser uses internal buffer so you don't need to wrap it in {@code
+   * BufferedReader}.
    */
   public Stream<Map<String, String>> parseToMaps(Reader csv) {
     return parseWithHeaderFieldNames(csv, toMap((v1, v2) -> v2));
@@ -281,54 +203,17 @@ public final class Csv {
   }
 
   /**
-   * Similar to {@link #parseWithHeaderFieldNames(String, BiCollector)}, but takes a {@code File}
+   * Similar to {@link #parseWithHeaderFieldNames(String, BiCollector)}, but takes a {@code Reader}
    * instead. For example:
    *
    * <pre>{@code
    * import static com.google.common.collect.ImmutableListMultimap;
    *
-   * CSV.parse(csvFile, ImmutableListMultimap::toImmutableListMultimap);
+   * CSV.parseWithHeaderFieldNames(input, ImmutableListMultimap::toImmutableListMultimap);
    * }</pre>
    *
-   * <p>The file will be opened and read in UTF-8. The caller is responsible for closing the stream
-   * using try-with-resources, to close the file. For example:
-   *
-   * <pre>{@code
-   * import static com.google.common.collect.ImmutableListMultimap;
-   *
-   * try (Stream<ImmutableListMultimap<String, String>> maps =
-   *     CSV.parseWithHeaderFieldNames(csvFile, ImmutableListMultimap::toImmutableListMultimap)) {
-   *   ...
-   * }
-   * }</pre>
-   *
-   * <p>If you need to read from a resource URL, or need an alternative charset, consider using
-   * {@link #parseWithHeaderFieldNames(Reader, BiCollector)} instead by opening the {@code Reader}
-   * explicitly and closing it using try-with-resources.
-   *
-   * @throws UncheckedIOException if there is an error opening the {@code csvFile}. The returned
-   *     stream can also throw {@code UncheckedIOException} if reading fails.
-   */
-  @MustBeClosed
-  public <R> Stream<R> parseWithHeaderFieldNames(
-      File csvFile, BiCollector<? super String, ? super String, ? extends R> rowCollector) {
-    return openForStreaming(csvFile, reader -> parseWithHeaderFieldNames(reader, rowCollector));
-  }
-
-  /**
-   * Parses {@code csv} reader lazily, expecting the first non-empty row as the header names.
-   * For each row, the field names and corresponding values are collected using {@code rowCollector}.
-   *
-   * <p>Usually, if you need a {@code Map} of field names to column values, consider using {@link
-   * #parseToMaps(Reader)} instead. But if you need alternative strategies, such as collecting
-   * each row to a {@link com.google.common.collect.ListMultimap} to more gracefully handle
-   * duplicate header names, you can use:
-   *
-   * <pre>{@code
-   * import static com.google.common.collect.ImmutableListMultimap;
-   *
-   * CSV.parse(input, ImmutableListMultimap::toImmutableListMultimap);
-   * }</pre>
+   * <p>Implementation note: the parser uses internal buffer so you don't need to wrap it in {@code
+   * BufferedReader}.
    */
   public <R> Stream<R> parseWithHeaderFieldNames(
       Reader csv, BiCollector<? super String, ? super String, ? extends R> rowCollector) {
@@ -340,29 +225,8 @@ public final class Csv {
         .map(values -> BiStream.zip(fieldNames.get(), values).collect(rowCollector));
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return Character.toString(delim);
-  }
-
-  @MustBeClosed
-  private static <T> Stream<T> openForStreaming(
-      File file, Function<? super Reader, Stream<T>> streamer) {
-    try {
-      Reader reader = new InputStreamReader(new FileInputStream(file), UTF_8);
-      return streamer
-          .apply(reader)
-          .onClose(
-              () -> {
-                try {
-                  reader.close();
-                } catch (IOException e) {
-                  logger.log(Level.SEVERE, "Failed to close file " + file, e);
-                }
-              });
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
   }
 
   private static void checkArgument(boolean condition, String message, Object... args) {
