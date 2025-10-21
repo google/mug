@@ -68,7 +68,7 @@ abstract class CharInput {
     requireNonNull(reader);
     return new CharInput() {
       private final char[] temp = new char[bufferSize];
-      private final StringBuilder chars = new StringBuilder(temp.length);
+      private final StringBuilder chars = new StringBuilder();
       private int garbageCharCount = 0;
 
       @Override char charAt(int index) {
