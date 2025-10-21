@@ -3412,10 +3412,11 @@ public class ParserTest {
   @Test
   public void parseToStream_withCompactingReader_fails() {
     CharInput input = CharInput.from(new StringReader("01 \n234 \n567 \n89 x"), 4, 3);
-    Parser<String> parser =
-        consecutive(DIGIT, "number").followedBy(consecutive(Character::isWhitespace, "whitespace").optional());
+    Parser<String> parser = consecutive(DIGIT, "number");
     ParseException e =
-        assertThrows(ParseException.class, () -> parser.parseToStream(input, 0).count());
+        assertThrows(
+            ParseException.class,
+            () -> parser.skipping(Character::isWhitespace).parseToStream(input, 0).count());
     assertThat(e).hasMessageThat().contains("at 17: expecting <number>, encountered [x]");
   }
 

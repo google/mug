@@ -151,7 +151,7 @@ public final class Csv {
    * <p>Upon duplicate header names, the latter wins. If you need alternative strategies,
    * such as to reject duplicate header names, or to use {@link com.google.common.collect.ListMultimap}
    * to keep track of all duplicate header values, consider using {@link
-   * #parseWithHeaderFieldNames(String, BiCollector)} instead. That is:
+   * #parseWithHeaderFields(String, BiCollector)} instead. That is:
    *
    * <pre>{@code
    * import static com.google.mu.util.stream.BiCollectors.toMap;
@@ -179,7 +179,7 @@ public final class Csv {
    * BufferedReader}.
    */
   public Stream<Map<String, String>> parseToMaps(Reader csv) {
-    return parseWithHeaderFieldNames(csv, toMap((v1, v2) -> v2));
+    return parseWithHeaderFields(csv, toMap((v1, v2) -> v2));
   }
 
   /**
@@ -194,28 +194,28 @@ public final class Csv {
    * <pre>{@code
    * import static com.google.common.collect.ImmutableListMultimap;
    *
-   * CSV.parse(input, ImmutableListMultimap::toImmutableListMultimap);
+   * CSV.parseWithHeaderFields(input, ImmutableListMultimap::toImmutableListMultimap);
    * }</pre>
    */
-  public <R> Stream<R> parseWithHeaderFieldNames(
+  public <R> Stream<R> parseWithHeaderFields(
       String csv, BiCollector<? super String, ? super String, ? extends R> rowCollector) {
-    return parseWithHeaderFieldNames(new StringReader(csv), rowCollector);
+    return parseWithHeaderFields(new StringReader(csv), rowCollector);
   }
 
   /**
-   * Similar to {@link #parseWithHeaderFieldNames(String, BiCollector)}, but takes a {@code Reader}
+   * Similar to {@link #parseWithHeaderFields(String, BiCollector)}, but takes a {@code Reader}
    * instead. For example:
    *
    * <pre>{@code
    * import static com.google.common.collect.ImmutableListMultimap;
    *
-   * CSV.parseWithHeaderFieldNames(input, ImmutableListMultimap::toImmutableListMultimap);
+   * CSV.parseWithHeaderFields(input, ImmutableListMultimap::toImmutableListMultimap);
    * }</pre>
    *
    * <p>Implementation note: the parser uses internal buffer so you don't need to wrap it in {@code
    * BufferedReader}.
    */
-  public <R> Stream<R> parseWithHeaderFieldNames(
+  public <R> Stream<R> parseWithHeaderFields(
       Reader csv, BiCollector<? super String, ? super String, ? extends R> rowCollector) {
     AtomicReference<List<String>> fieldNames = new AtomicReference<>();
     return parse(csv, toUnmodifiableList())

@@ -732,7 +732,7 @@ public abstract class Parser<T> {
    * Parses {@code input} starting from {@code fromIndex} to a lazy stream while skipping the
    * skippable patterns around lexical tokens.
    */
-  public Stream<T> parseToStream(String input, int fromIndex) {
+  public final Stream<T> parseToStream(String input, int fromIndex) {
     checkPositionIndex(fromIndex, input.length(), "fromIndex");
     return parseToStream(CharInput.from(input), fromIndex);
   }
@@ -749,7 +749,7 @@ public abstract class Parser<T> {
     return parseToStream(CharInput.from(input), 0);
   }
 
-  Stream<T> parseToStream(CharInput input, int fromIndex) {
+  final Stream<T> parseToStream(CharInput input, int fromIndex) {
     class Cursor {
       private int index = fromIndex;
 
@@ -793,7 +793,7 @@ public abstract class Parser<T> {
    *
    * <p>This allows quick probing without fully parsing it.
    */
-  public Stream<T> probe(String input, int fromIndex) {
+  public final Stream<T> probe(String input, int fromIndex) {
     checkPositionIndex(fromIndex, input.length(), "fromIndex");
     return probe(CharInput.from(input), fromIndex);
   }
@@ -814,7 +814,7 @@ public abstract class Parser<T> {
     return probe(CharInput.from(input), 0);
   }
 
-  Stream<T> probe(CharInput input, int fromIndex) {
+  final Stream<T> probe(CharInput input, int fromIndex) {
     class Cursor {
       private int index = fromIndex;
 
@@ -1070,7 +1070,7 @@ public abstract class Parser<T> {
       return parseToStream(CharInput.from(input), 0);
     }
 
-    private Stream<T> parseToStream(CharInput input, int fromIndex) {
+    Stream<T> parseToStream(CharInput input, int fromIndex) {
       if (input.isEmpty()) {
         return Stream.empty();
       }
