@@ -112,7 +112,7 @@ public final class Csv {
 
   /**
    * Parses {@code csv} string lazily, returning one row at a time in a stream, with field values
-   * collected by {@code rowCollector}.
+   * collected by {@code rowCollector} as in {@code parse(input, toImmutableList())}.
    *
    * <p>No special treatment of the header row. If you know you have a header row, consider calling
    * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
@@ -122,7 +122,8 @@ public final class Csv {
   }
 
   /**
-   * Similar to {@link #parse(String, Collector)}, but takes a {@code Reader} instead.
+   * Similar to {@link #parse(String, Collector)} (as in {@code parse(input, toImmutableList())}),
+   * but takes a {@code Reader} instead.
    *
    * <p>Implementation note: the parser uses internal buffer so you don't need to wrap it in {@code
    * BufferedReader}.
