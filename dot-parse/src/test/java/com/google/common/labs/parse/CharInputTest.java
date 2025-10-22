@@ -28,12 +28,6 @@ public final class CharInputTest {
   }
 
   @Test
-  public void fromString_isEmpty() {
-    assertThat(CharInput.from("").isEmpty()).isTrue();
-    assertThat(CharInput.from("a").isEmpty()).isFalse();
-  }
-
-  @Test
   public void fromString_snippet() {
     assertThat(CharInput.from("abc").snippet(0, 2)).isEqualTo("ab");
     assertThat(CharInput.from("abc").snippet(1, 5)).isEqualTo("bc");
@@ -69,12 +63,6 @@ public final class CharInputTest {
     CharInput input = CharInput.from(new StringReader("a"));
     assertThat(input.isInRange(0)).isTrue();
     assertThat(input.isInRange(1)).isFalse();
-  }
-
-  @Test
-  public void fromReader_isEmpty() {
-    assertThat(CharInput.from(new StringReader("")).isEmpty()).isTrue();
-    assertThat(CharInput.from(new StringReader("a")).isEmpty()).isFalse();
   }
 
   @Test

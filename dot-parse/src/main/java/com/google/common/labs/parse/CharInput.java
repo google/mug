@@ -22,10 +22,6 @@ abstract class CharInput {
     return !isEof(index);
   }
 
-  final boolean isEmpty() {
-    return isEof(0);
-  }
-
   /** Returns a snippet of string starting from {@code index} with at most {@code maxChars}. */
   abstract String snippet(int index, int maxChars);
 
@@ -72,7 +68,7 @@ abstract class CharInput {
     requireNonNull(reader);
     return new CharInput() {
       private final char[] temp = new char[bufferSize];
-      private final StringBuilder chars = new StringBuilder(temp.length);
+      private final StringBuilder chars = new StringBuilder();
       private int garbageCharCount = 0;
 
       @Override char charAt(int index) {
@@ -118,7 +114,7 @@ abstract class CharInput {
       }
 
       private int toPhysicalIndex(int index) {
-         index -= garbageCharCount;
+        index -= garbageCharCount;
         if (index < 0) {
           throw new IllegalArgumentException("index must be at least " + garbageCharCount);
         }

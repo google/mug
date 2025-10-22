@@ -1071,16 +1071,16 @@ public abstract class Parser<T> {
     }
 
     Stream<T> parseToStream(CharInput input, int fromIndex) {
-      if (input.isEmpty()) {
-        return Stream.empty();
-      }
-      // remaining input is skippable (whether the parser is literally() or not) -> nothing
-      if (toSkip.match(input, fromIndex, new ErrorContext(input))
-              instanceof MatchResult.Success<?> success
-          && input.isEof(success.tail())) {
-        return Stream.empty();
-      }
-      return forTokens().parseToStream(input, fromIndex);
+      // forTokens().parseToStream() would only skip the trailing upon success.
+      // If everything is skippable, it will fail to match.
+      // We use flatMap() to keep the buffer loading lazy upon the returned stream being consumed.
+      return Stream.of(new ErrorContext(input))
+          .flatMap(
+              context ->
+                  toSkip.match(input, fromIndex, context) instanceof MatchResult.Success<?> success
+                          && input.isEof(success.tail())
+                      ? Stream.empty()
+                      : forTokens().parseToStream(input, fromIndex));
     }
 
     /**
