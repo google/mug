@@ -107,12 +107,15 @@ Stream<String> jsonStringsFrom(Reader input) {
         .immediatelyBetween("\"", "\"");
   
   // Outside of string literal, any non-quote, non-brace characters are passed through
-  Parser<?> asIs = consecutive(noneOf("\"{}"), "pass through");
+  Parser<?> passThrough = consecutive(noneOf("\"{}"), "pass through");
 
   // Between curly braces, you can have string literals, nested curly braces, or passthrough chars
   // For nested curly braces, you need forward declaration to define recursive grammar
   Parser.Rule<Object> jsonRecord = new Parser.Rule<>();
-  curlyBraced.definedAs(anyOf(quoted, jsonRecord, asIs).zeroOrMore().between("{", "}"));
+  curlyBraced.definedAs(
+      anyOf(quoted, jsonRecord, passThrough)
+          .zeroOrMore()
+          .between("{", "}"));
 
   return jsonRecord.source()           // take the source of the matched json record
       .skipping(Character::isWhitespace) // allow whitespaces for indentation and newline
