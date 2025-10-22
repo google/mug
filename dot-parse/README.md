@@ -76,71 +76,48 @@ int v = calculator()
 
 ---
 
-## Example 2 — Parse a `Map<String, ?>`
+## Example 2 — Split Json Records
 
-Let's try a more realistic example: parse a tiny JSON-ish subset.
+Most JSON parsers can parse a single JSON object enclosed in curly braces `{}`,
+a json array ecnlosed by square brackets `[]`, or jsonl files with each JSON record
+at a single line.
+
+But what if you need to read a file that may contain a single JSON record, or a list of them,
+pretty-printed with indentations and newlines for human readability?
+
+What you need is to be able to split the JSON records one-by-one by matching the top level curly braces.
+
+Since curly braces can appear in quoted string literals, you will also need to recognize double quotes,
+as well as escaped double quotes (which are not to start or terminate a string literal).
+
+The following code splits the JSON records so you can feed them to GSON (or any other JSON parser of choice):
 
 ```java
 import static com.google.common.labs.parse.Parser.*;
-import static com.google.mu.util.CharPredicate.WORD;
-import com.google.mu.util.Both;
+import static com.google.mu.util.CharPredicate.noneOf;
 
-// Parses a JSON-ish Map<String, ?> supporting:
-//   - bare word keys (letters/digits/_),
-//   - single-quoted string values,
-//   - [list, of, strings],
-//   - nested { maps }.
-// Whitespace is handled globally via parseSkipping(…).
+/** Splits input into a lazy stream of top-level JSON records. */
+Stream<String> jsonStringsFrom(Reader input) {
+  // Either escaped or unescaped, enclosed between double quotes
+  Parser<?> stringLiteral =
+    anyOf(
+            consecutive(noneOf("\"\\"), "quoted char"),
+            string("\\").followedBy(single(any(), "escaped char")))
+        .zeroOrMore()
+        .immediatelyBetween("\"", "\"");
+  
+  // Outside of string literal, any non-quote, non-brace characters are passed through
+  Parser<?> asIs = consecutive(noneOf("\"{}"), "pass through");
 
-static Map<String, ?> parseMap(String input) {
-  // key := [A-Za-z0-9_]+
-  // consecutive(WORD, "key") greedy-consumes ≥1 word char; label "key" only shows up in errors.
-  Parser<String> key = consecutive(WORD, "key");
+  // Between curly braces, you can have string literals, nested curly braces, or passthrough chars
+  // For nested curly braces, you need forward declaration to model recursive grammar
+  Parser.Rule<Object> jsonRecord = new Parser.Rule<>();
+  curlyBraced.definedAs(anyOf(quoted, jsonRecord, asIs).zeroOrMore().between("{", "}"));
 
-  // value := '...' (single-quoted; no escaping shown here)
-  // zeroOrMore(predicate) returns an OrEmpty — by itself it may succeed empty.
-  // The immediatelyBetween("'", "'")* frame is what enforces consumption: the quotes themselves
-  // must match and consume, turning the whole production into a progress-making success.
-  Parser<String> value =
-      zeroOrMore(c -> c != '\'', "value")    // body: may be empty (OrEmpty)
-          .immediatelyBetween("'", "'")      // frame: guarantees net consumption on success
-
-  // values := '[' value (',' value)* ']'
-  // zeroOrMoreDelimitedBy returns empty on 0 items; again, the [ ] frame is what ensures progress.
-  Parser<List<String>> values =
-      value
-          .zeroOrMoreDelimitedBy(",")                  // possibly empty sequence
-          .between("[", "]");                          // bracket frame consumes
-
-  // Forward-declared nested map: nested := { pair (',' pair)* }
-  Parser.Rule<Map<String, ?>> nested = new Parser.Rule<>();
-
-  // pair := key ':' (value | values | nested)
-  // sequence(k:, v, Both::of) builds a (key,value) pair; ':' consumes.
-  Parser<Map<String, ?>> mapParser =
-      sequence(
-          key.followedBy(":"),                         // key plus ':' (consumes)
-          anyOf(value, values, nested),                // the first that fits wins
-          Both::of                                     // (k,v)
-      )
-      .zeroOrMoreDelimitedBy(",")                      // 0..n pairs; may be empty
-      .between("{", "}")                               // braces guarantee net consumption
-      // materialize in insertion order
-      .map(kvs -> BiStream.from(kvs.stream()).toMap());
-
-  // Wire the forward ref and run with global head-skipping of whitespace.
-  return nested.definedAs(mapParser)
-      .parseSkipping(Character::isWhitespace, input);
+  return jsonRecord.source()           // take the source of the matched json record
+    .skipping(Character::isWhitespace) // allow whitespaces for indentation and newline
+    .parseToStream(input);
 }
-
-Map<String, Object> m = parseMap(
-    """
-    {
-      name: "Jing",
-      hobbies: ["dance", "cat"],
-      meta: { "k": "v" }
-    }
-    """);
 ```
 
 ---
