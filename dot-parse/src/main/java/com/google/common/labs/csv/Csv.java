@@ -111,6 +111,26 @@ public final class Csv {
   }
 
   /**
+   * Parses the {@code input} string into a lazy stream of immutable {@code List}, one row at a time.
+   *
+   * <p>No special treatment of the header row. If you know you have a header row, consider calling
+   * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
+   */
+  public Stream<List<String>> parse(String csv) {
+    return parse(csv, toUnmodifiableList());
+  }
+
+  /**
+   * Parses the {@code input} reader into a lazy stream of immutable {@code List}, one row at a time.
+   *
+   * <p>No special treatment of the header row. If you know you have a header row, consider calling
+   * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
+   */
+  public Stream<List<String>> parse(Reader csv) {
+    return parse(csv, toUnmodifiableList());
+  }
+
+  /**
    * {@code CSV.parse(input, toImmutableList())} will parse the {@code input} string into a lazy
    * stream of {@code ImmutableList}, one row at a time.
    *
