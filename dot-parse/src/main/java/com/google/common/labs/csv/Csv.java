@@ -19,14 +19,12 @@ import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import com.google.common.labs.parse.Parser;
@@ -42,21 +40,8 @@ import com.google.mu.util.stream.BiStream;
  * <pre>{@code
  * import static com.google.common.labs.csv.Csv.CSV;
  *
- * List<List<String>> rows =
- *     // skip(1) to skip the header row.
- *     CSV.parse(input, toUnmodifiableList()).skip(1).toList();
- * }</pre>
- *
- * <p>Or, if the order and the number of fields are known at compile-time, you could directly
- * combine them to build objects of your choice:
- *
- * <pre>{@code
- * import com.google.mu.util.stream.MoreCollectors.combining;
- * import static com.google.common.labs.csv.Csv.CSV;
- *
- * List<Result> results =
- *     // assuming no header row
- *     CSV.parse(input, combining((foo, bar, baz) -> new Result(foo, bar, baz))).toList();
+ * // skip(1) to skip the header row.
+ * List<List<String>> rows = CSV.parse(input).skip(1).toList();
  * }</pre>
  *
  * <p>You can also use the header row, and parse each row to a {@link Map} keyed by the header
@@ -117,7 +102,7 @@ public final class Csv {
    * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
    */
   public Stream<List<String>> parse(String csv) {
-    return parse(csv, toUnmodifiableList());
+    return parse(new StringReader(csv));
   }
 
   /**
@@ -127,37 +112,13 @@ public final class Csv {
    * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
    */
   public Stream<List<String>> parse(Reader csv) {
-    return parse(csv, toUnmodifiableList());
-  }
-
-  /**
-   * {@code CSV.parse(input, toImmutableList())} will parse the {@code input} string into a lazy
-   * stream of {@code ImmutableList}, one row at a time.
-   *
-   * <p>No special treatment of the header row. If you know you have a header row, consider calling
-   * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
-   */
-  public <A, R> Stream<R> parse(String csv, Collector<? super String, A, R> rowCollector) {
-    return parse(new StringReader(csv), rowCollector);
-  }
-
-  /**
-   * {@code CSV.parse(input, toImmutableList())} will parse the {@code input} reader into a lazy
-   * stream of {@code ImmutableList}, one row at a time.
-   *
-   * <p>Implementation note: the parser uses internal buffer so you don't need to wrap it in {@code
-   * BufferedReader}.
-   */
-  public <A, R> Stream<R> parse(Reader csv, Collector<? super String, A, R> rowCollector) {
-    var supplier = rowCollector.supplier();
-    var finisher = rowCollector.finisher();
     Parser<String> unquoted = consecutive(UNRESERVED_CHAR.and(isNot(delim)), "unquoted field");
-    Parser<R> line =
+    Parser<List<String>> line =
         Parser.anyOf(
-            NEW_LINE.map(unused -> finisher.apply(supplier.get())),  // empty line => [], not [""]
+            NEW_LINE.thenReturn(List.of()),  // empty line => [], not [""]
             QUOTED.or(unquoted)
                 .orElse("")
-                .delimitedBy(String.valueOf(delim), rowCollector)
+                .delimitedBy(String.valueOf(delim))
                 .followedBy(NEW_LINE.orElse(null))
                 .notEmpty());
     return allowsComments
@@ -239,7 +200,7 @@ public final class Csv {
   public <R> Stream<R> parseWithHeaderFields(
       Reader csv, BiCollector<? super String, ? super String, ? extends R> rowCollector) {
     AtomicReference<List<String>> fieldNames = new AtomicReference<>();
-    return parse(csv, toUnmodifiableList())
+    return parse(csv)
         .filter(row -> row.size() > 0)
         .peek(values -> fieldNames.compareAndSet(null, values))
         .skip(1)
