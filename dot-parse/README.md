@@ -117,7 +117,7 @@ Stream<String> jsonStringsFrom(Reader input) {
           .zeroOrMore()
           .between("{", "}"));
 
-  return jsonRecord.source()           // take the source of the matched json record
+  return jsonRecord.source()             // take the source of the matched json record
       .skipping(Character::isWhitespace) // allow whitespaces for indentation and newline
       .parseToStream(input);
 }
