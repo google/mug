@@ -101,7 +101,7 @@ Stream<String> jsonStringsFrom(Reader input) {
   // Either escaped or unescaped, enclosed between double quotes
   Parser<?> stringLiteral =
     anyOf(
-            consecutive(noneOf("\"\\"), "quoted char"),
+            consecutive(noneOf("\"\\"), "quoted chars"),
             string("\\").followedBy(single(any(), "escaped char")))
         .zeroOrMore()
         .immediatelyBetween("\"", "\"");
