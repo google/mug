@@ -110,7 +110,7 @@ Stream<String> jsonStringsFrom(Reader input) {
   Parser<?> asIs = consecutive(noneOf("\"{}"), "pass through");
 
   // Between curly braces, you can have string literals, nested curly braces, or passthrough chars
-  // For nested curly braces, you need forward declaration to model recursive grammar
+  // For nested curly braces, you need forward declaration to define recursive grammar
   Parser.Rule<Object> jsonRecord = new Parser.Rule<>();
   curlyBraced.definedAs(anyOf(quoted, jsonRecord, asIs).zeroOrMore().between("{", "}"));
 
