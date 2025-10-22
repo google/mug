@@ -18,143 +18,143 @@ import com.google.common.labs.parse.Parser;
 @RunWith(JUnit4.class)
 public final class CsvTest {
   @Test
-  public void parse_empty() {
-    assertThat(CSV.parse("")).isEmpty();
+  public void parseToLists_empty() {
+    assertThat(CSV.parseToLists("")).isEmpty();
   }
 
   @Test
-  public void parse_emptyLines() {
-    assertThat(CSV.parse("\n")).containsExactly(List.of());
-    assertThat(CSV.parse("\n\r\n"))
+  public void parseToLists_emptyLines() {
+    assertThat(CSV.parseToLists("\n")).containsExactly(List.of());
+    assertThat(CSV.parseToLists("\n\r\n"))
         .containsExactly(List.of(), List.of());
-    assertThat(CSV.parse("\r\r\n"))
+    assertThat(CSV.parseToLists("\r\r\n"))
         .containsExactly(List.of(), List.of());
   }
 
   @Test
-  public void parse_emptyColumns() {
-    assertThat(CSV.parse("\"\"\n")).containsExactly(List.of(""));
-    assertThat(CSV.parse("\n\"\"\r\n\"\""))
+  public void parseToLists_emptyColumns() {
+    assertThat(CSV.parseToLists("\"\"\n")).containsExactly(List.of(""));
+    assertThat(CSV.parseToLists("\n\"\"\r\n\"\""))
         .containsExactly(List.of(), List.of(""), List.of(""));
-    assertThat(CSV.parse("\"\"\n\"\",\"\"\r\n\"\""))
+    assertThat(CSV.parseToLists("\"\"\n\"\",\"\"\r\n\"\""))
         .containsExactly(List.of(""), List.of("", ""), List.of(""));
   }
 
   @Test
-  public void parse_singleColumnSingleRow() {
-    assertThat(CSV.parse("abc")).containsExactly(List.of("abc"));
+  public void parseToLists_singleColumnSingleRow() {
+    assertThat(CSV.parseToLists("abc")).containsExactly(List.of("abc"));
   }
 
   @Test
-  public void parse_singleColumnMultipleRows() {
-    assertThat(CSV.parse("abc\ndef\nghi"))
+  public void parseToLists_singleColumnMultipleRows() {
+    assertThat(CSV.parseToLists("abc\ndef\nghi"))
         .containsExactly(List.of("abc"), List.of("def"), List.of("ghi"));
   }
 
   @Test
-  public void parse_emptyColumn() {
-    assertThat(CSV.parse("abc,,xyz"))
+  public void parseToLists_emptyColumn() {
+    assertThat(CSV.parseToLists("abc,,xyz"))
         .containsExactly(List.of("abc", "", "xyz"));
-    assertThat(CSV.parse(",,xyz"))
+    assertThat(CSV.parseToLists(",,xyz"))
         .containsExactly(List.of("", "", "xyz"));
-    assertThat(CSV.parse(",,")).containsExactly(List.of("", "", ""));
-    assertThat(CSV.parse(",")).containsExactly(List.of("", ""));
+    assertThat(CSV.parseToLists(",,")).containsExactly(List.of("", "", ""));
+    assertThat(CSV.parseToLists(",")).containsExactly(List.of("", ""));
   }
 
   @Test
-  public void parse_multipleColumnsSingleRow() {
-    assertThat(CSV.parse("abc,1234,5678"))
+  public void parseToLists_multipleColumnsSingleRow() {
+    assertThat(CSV.parseToLists("abc,1234,5678"))
         .containsExactly(List.of("abc", "1234", "5678"));
-    assertThat(CSV.parse("abc,1234,5678\n"))
+    assertThat(CSV.parseToLists("abc,1234,5678\n"))
         .containsExactly(List.of("abc", "1234", "5678"));
-    assertThat(CSV.parse("abc,1234,5678\r\n"))
+    assertThat(CSV.parseToLists("abc,1234,5678\r\n"))
         .containsExactly(List.of("abc", "1234", "5678"));
   }
 
   @Test
-  public void parse_leadingSpaceRetained() {
-    assertThat(CSV.parse("abc, 1234,5678"))
+  public void parseToLists_leadingSpaceRetained() {
+    assertThat(CSV.parseToLists("abc, 1234,5678"))
         .containsExactly(List.of("abc", " 1234", "5678"));
   }
 
   @Test
-  public void parse_trailingSpaceRetained() {
-    assertThat(CSV.parse("abc,1234,5678 "))
+  public void parseToLists_trailingSpaceRetained() {
+    assertThat(CSV.parseToLists("abc,1234,5678 "))
         .containsExactly(List.of("abc", "1234", "5678 "));
   }
 
   @Test
-  public void parse_quotedColumnWithComma() {
-    assertThat(CSV.parse("abc,\"1234,5678 \""))
+  public void parseToLists_quotedColumnWithComma() {
+    assertThat(CSV.parseToLists("abc,\"1234,5678 \""))
         .containsExactly(List.of("abc", "1234,5678 "));
   }
 
   @Test
-  public void parse_quotedColumnWithNewline() {
-    assertThat(CSV.parse("abc,\"1234\n5678\""))
+  public void parseToLists_quotedColumnWithNewline() {
+    assertThat(CSV.parseToLists("abc,\"1234\n5678\""))
         .containsExactly(List.of("abc", "1234\n5678"));
   }
 
   @Test
-  public void parse_quotedColumnWithNewline_multipleRows() {
-    assertThat(CSV.parse("abc,\"1234\n5678\"\nxyz,\"9876\n5432\"\n"))
+  public void parseToLists_quotedColumnWithNewline_multipleRows() {
+    assertThat(CSV.parseToLists("abc,\"1234\n5678\"\nxyz,\"9876\n5432\"\n"))
         .containsExactly(
             List.of("abc", "1234\n5678"), List.of("xyz", "9876\n5432"));
   }
 
   @Test
-  public void parse_quotedColumnWithEscapedQuote() {
-    assertThat(CSV.parse("abc,\"1234\"\"5678\""))
+  public void parseToLists_quotedColumnWithEscapedQuote() {
+    assertThat(CSV.parseToLists("abc,\"1234\"\"5678\""))
         .containsExactly(List.of("abc", "1234\"5678"));
   }
 
   @Test
-  public void parse_multipleColumnsMultipleRows() {
-    assertThat(CSV.parse("abc,1234,5678\nxyz,9876,5432"))
+  public void parseToLists_multipleColumnsMultipleRows() {
+    assertThat(CSV.parseToLists("abc,1234,5678\nxyz,9876,5432"))
         .containsExactly(
             List.of("abc", "1234", "5678"), List.of("xyz", "9876", "5432"));
   }
 
   @Test
-  public void parse_lazy_laterInvalidRowsNotScanned() {
+  public void parseToLists_lazy_laterInvalidRowsNotScanned() {
     String secondRowInvalid = "abc,1234,5678\n\"invalid";
-    assertThat(CSV.parse(secondRowInvalid).limit(1))
+    assertThat(CSV.parseToLists(secondRowInvalid).limit(1))
         .containsExactly(List.of("abc", "1234", "5678"));
     Parser.ParseException thrown =
         assertThrows(
             Parser.ParseException.class,
-            () -> CSV.parse(secondRowInvalid).toList());
+            () -> CSV.parseToLists(secondRowInvalid).toList());
     assertThat(thrown).hasMessageThat().contains("expecting <\">, encountered <EOF>");
   }
 
   @Test
-  public void parse_emptyCommentRow() {
-    assertThat(CSV.withComments().parse("#")).isEmpty();
-    assertThat(CSV.withComments().parse("#\n")).isEmpty();
+  public void parseToLists_emptyCommentRow() {
+    assertThat(CSV.withComments().parseToLists("#")).isEmpty();
+    assertThat(CSV.withComments().parseToLists("#\n")).isEmpty();
   }
 
   @Test
-  public void parse_singleCommentRow() {
-    assertThat(CSV.withComments().parse("# this is a comment")).isEmpty();
-    assertThat(CSV.withComments().parse("#this is a comment\n")).isEmpty();
+  public void parseToLists_singleCommentRow() {
+    assertThat(CSV.withComments().parseToLists("# this is a comment")).isEmpty();
+    assertThat(CSV.withComments().parseToLists("#this is a comment\n")).isEmpty();
   }
 
   @Test
-  public void parse_multipleCommentRows() {
+  public void parseToLists_multipleCommentRows() {
     assertThat(
-            CSV.withComments().parse("# comment 1\n# comment 2\r\n# comment 3"))
+            CSV.withComments().parseToLists("# comment 1\n# comment 2\r\n# comment 3"))
         .isEmpty();
   }
 
   @Test
-  public void parse_withCommentAndDataRows() {
-    assertThat(CSV.withComments().parse("# header\nabc,123\n# comment\nxyz,987"))
+  public void parseToLists_withCommentAndDataRows() {
+    assertThat(CSV.withComments().parseToLists("# header\nabc,123\n# comment\nxyz,987"))
         .containsExactly(List.of("abc", "123"), List.of("xyz", "987"));
   }
 
   @Test
-  public void parse_withCustomDelimiter() {
-    assertThat(CSV.withDelimiter('|').parse("abc|1234|5678"))
+  public void parseToLists_withCustomDelimiter() {
+    assertThat(CSV.withDelimiter('|').parseToLists("abc|1234|5678"))
         .containsExactly(List.of("abc", "1234", "5678"));
   }
 
