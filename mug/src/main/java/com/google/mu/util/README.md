@@ -28,7 +28,9 @@ Together, they form a toolkit for replacing brittle `indexOf`/`substring` logic 
 - Format structured strings with named placeholders
 - Parse structured strings using strongly typed lambda consumers
 - Safe to define as constants and reuse without mismatch risks
-- Efficient: formatting uses `+` string concatenation internally, and avoids runtime parsing
+- Efficient: formatting uses `+` string concatenation internally, and avoids runtime parsing.
+  This makes it often more efficient than even `StringBuilder.append()`,
+  thanks to the `invokedynamic` optimization for string concatenation.
 
 ### Example: Parse and format
 
@@ -71,11 +73,11 @@ Optional<User> user = new StringFormat("User {id} - {name}")
 ### StringFormat vs `String.format()`
 
 | Feature             | `String.format()`               | `StringFormat`                      |
-|---------------------|----------------------------------|--------------------------------------|
-| Readability          | Positional specifiers (`%s`)    | Named placeholders (`{name}`)         |
-| Parsing support      | ❌                               | ✅                                   |
-| Parameter ordering   | Error prone                      | Checked                              |
-| Performance          | Runtime parsing                 | Precompiled, uses `+`                |
+|---------------------|---------------------------------|--------------------------------------|
+| Readability         | Positional specifiers (`%s`)    | Named placeholders (`{name}`)         |
+| Parsing support     | ❌                              | ✅                                   |
+| Parameter ordering  | ❌ Prone to human errors        | ✅ Checked                              |
+| Performance         | ❌ Runtime parsing              | ✅ Precompiled, uses `+`. Faster than `StringBuilder` on Java 17+  |
 
 ---
 
