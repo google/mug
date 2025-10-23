@@ -128,11 +128,10 @@ abstract class CharInput {
 
       @Override
       String sourcePosition(int at) {
-        if (at > chars.length()) {
-          // Likely due to streaming parsing where we no longer have the full text.
-          return Integer.toString(at);
-        }
-        return from(chars.toString()).sourcePosition(at);
+        return at > chars.length()
+            // Likely due to streaming parsing where we no longer have the full text.
+            ? Integer.toString(at)
+            : from(chars.toString()).sourcePosition(at);
       }
 
       private int toPhysicalIndex(int index) {
