@@ -311,6 +311,7 @@
             <links>
               <link>https://javadoc.io/doc/com.google.cloud/google-cloud-spanner/latest</link>
               <link>https://javadoc.io/doc/com.google.cloud/google-cloud-core/latest</link>
+              <link>https://javadoc.io/doc/com.google.guava/guava/latest</link>
             </links>
           </configuration>
           <executions>
