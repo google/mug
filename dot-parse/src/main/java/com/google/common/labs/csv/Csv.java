@@ -41,7 +41,7 @@ import com.google.mu.util.stream.BiStream;
  * import static com.google.common.labs.csv.Csv.CSV;
  *
  * // skip(1) to skip the header row.
- * List<List<String>> rows = CSV.parse(input).skip(1).toList();
+ * List<List<String>> rows = CSV.parseToLists(input).skip(1).toList();
  * }</pre>
  *
  * <p>You can also use the header row, and parse each row to a {@link Map} keyed by the header
@@ -101,8 +101,8 @@ public final class Csv {
    * <p>No special treatment of the header row. If you know you have a header row, consider calling
    * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
    */
-  public Stream<List<String>> parse(String csv) {
-    return parse(new StringReader(csv));
+  public Stream<List<String>> parseToLists(String csv) {
+    return parseToLists(new StringReader(csv));
   }
 
   /**
@@ -111,7 +111,7 @@ public final class Csv {
    * <p>No special treatment of the header row. If you know you have a header row, consider calling
    * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
    */
-  public Stream<List<String>> parse(Reader csv) {
+  public Stream<List<String>> parseToLists(Reader csv) {
     Parser<String> unquoted = consecutive(UNRESERVED_CHAR.and(isNot(delim)), "unquoted field");
     Parser<List<String>> line =
         Parser.anyOf(
@@ -200,7 +200,7 @@ public final class Csv {
   public <R> Stream<R> parseWithHeaderFields(
       Reader csv, BiCollector<? super String, ? super String, ? extends R> rowCollector) {
     AtomicReference<List<String>> fieldNames = new AtomicReference<>();
-    return parse(csv)
+    return parseToLists(csv)
         .filter(row -> row.size() > 0)
         .peek(values -> fieldNames.compareAndSet(null, values))
         .skip(1)
