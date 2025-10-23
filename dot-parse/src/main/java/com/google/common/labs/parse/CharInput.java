@@ -57,8 +57,7 @@ abstract class CharInput {
         return str.substring(index, Math.min(str.length(), index + maxLength));
       }
 
-      @Override
-      String sourcePosition(int at) {
+      @Override String sourcePosition(int at) {
         int line = 1;
         int lineStartIndex = 0;
         for (Substring.Match match :
@@ -126,8 +125,7 @@ abstract class CharInput {
         }
       }
 
-      @Override
-      String sourcePosition(int at) {
+      @Override String sourcePosition(int at) {
         return at > chars.length()
             // Likely due to streaming parsing where we no longer have the full text.
             ? Integer.toString(at)

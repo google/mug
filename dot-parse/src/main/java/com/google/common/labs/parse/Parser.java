@@ -607,8 +607,7 @@ public abstract class Parser<T> {
   public final Parser<String> source() {
     Parser<T> self = this;
     return new Parser<String>() {
-      @Override
-      MatchResult<String> skipAndMatch(
+      @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (self.skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<T>(int head, int tail, T value) ->
