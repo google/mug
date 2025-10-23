@@ -823,7 +823,7 @@ abstract class AbstractStringFormat {
   /**
    * Scans the {@code input} string and extracts all matched placeholders in this string format.
    *
-   * <p>unlike {@link #parseAsList}, the input string isn't matched entirely: the pattern doesn't
+   * <p>Unlike {@link #parseAsList}, the input string isn't matched entirely: the pattern doesn't
    * have to start from the beginning, and if there are some remaining characters that don't match
    * the pattern any more, the stream stops. In particular, if there is no match, empty stream is
    * returned.
@@ -846,7 +846,7 @@ abstract class AbstractStringFormat {
    *     .scan(multiLineInput, fileName -> ...);
    * }</pre>
    *
-   * <p>unlike {@link #parse(String, Function)}, the input string isn't matched entirely: the
+   * <p>Unlike {@link #parse(String, Function)}, the input string isn't matched entirely: the
    * pattern doesn't have to start from the beginning, and if there are some remaining characters
    * that don't match the pattern any more, the stream stops. In particular, if there is no match,
    * empty stream is returned.
@@ -872,7 +872,7 @@ abstract class AbstractStringFormat {
    *     .parse(input, (key, value) -> ...);
    * }</pre>
    *
-   * <p>unlike {@link #parse(String, BiFunction)}, the input string isn't matched entirely: the
+   * <p>Unlike {@link #parse(String, BiFunction)}, the input string isn't matched entirely: the
    * pattern doesn't have to start from the beginning, and if there are some remaining characters
    * that don't match the pattern any more, the stream stops. In particular, if there is no match,
    * empty stream is returned.
@@ -899,7 +899,7 @@ abstract class AbstractStringFormat {
    *     .parse(input, (lhs, rhs, result) -> ...);
    * }</pre>
    *
-   * <p>unlike {@link #parse(String, MapFrom3)}, the input string isn't matched entirely: the pattern
+   * <p>Unlike {@link #parse(String, MapFrom3)}, the input string isn't matched entirely: the pattern
    * doesn't have to start from the beginning, and if there are some remaining characters that don't
    * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
    * is returned.
@@ -917,7 +917,7 @@ abstract class AbstractStringFormat {
    * stream of non-null results from passing the 4 placeholder values to the {@code mapper} function
    * for each iteration, with null results skipped.
    *
-   * <p>unlike {@link #parse(String, MapFrom4)}, the input string isn't matched entirely: the
+   * <p>Unlike {@link #parse(String, MapFrom4)}, the input string isn't matched entirely: the
    * pattern doesn't have to start from the beginning, and if there are some remaining characters
    * that don't match the pattern any more, the stream stops. In particular, if there is no match,
    * empty stream is returned.
@@ -935,7 +935,7 @@ abstract class AbstractStringFormat {
    * stream of non-null results from passing the 5 placeholder values to the {@code mapper} function
    * for each iteration, with null results skipped.
    *
-   * <p>unlike {@link #parse(String, MapFrom5)}, the input string isn't matched entirely: the pattern
+   * <p>Unlike {@link #parse(String, MapFrom5)}, the input string isn't matched entirely: the pattern
    * doesn't have to start from the beginning, and if there are some remaining characters that don't
    * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
    * is returned.
@@ -953,7 +953,7 @@ abstract class AbstractStringFormat {
    * stream of non-null results from passing the 6 placeholder values to the {@code mapper} function
    * for each iteration, with null results skipped.
    *
-   * <p>unlike {@link #parse(String, MapFrom6)}, the input string isn't matched entirely: the pattern
+   * <p>Unlike {@link #parse(String, MapFrom6)}, the input string isn't matched entirely: the pattern
    * doesn't have to start from the beginning, and if there are some remaining characters that don't
    * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
    * is returned.
@@ -971,7 +971,7 @@ abstract class AbstractStringFormat {
    * stream of non-null results from passing the 7 placeholder values to the {@code mapper} function
    * for each iteration, with null results skipped.
    *
-   * <p>unlike {@link #parse(String, MapFrom6)}, the input string isn't matched entirely: the pattern
+   * <p>Unlike {@link #parse(String, MapFrom6)}, the input string isn't matched entirely: the pattern
    * doesn't have to start from the beginning, and if there are some remaining characters that don't
    * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
    * is returned.
@@ -991,7 +991,7 @@ abstract class AbstractStringFormat {
    * stream of non-null results from passing the 8 placeholder values to the {@code mapper} function
    * for each iteration, with null results skipped.
    *
-   * <p>unlike {@link #parse(String, MapFrom6)}, the input string isn't matched entirely: the pattern
+   * <p>Unlike {@link #parse(String, MapFrom6)}, the input string isn't matched entirely: the pattern
    * doesn't have to start from the beginning, and if there are some remaining characters that don't
    * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
    * is returned.
