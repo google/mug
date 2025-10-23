@@ -110,6 +110,9 @@ public final class Csv {
    *
    * <p>No special treatment of the header row. If you know you have a header row, consider calling
    * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
+   *
+   * <p>Implementation note: the parser uses internal buffer so you don't need to wrap it in {@code
+   * BufferedReader}.
    */
   public Stream<List<String>> parseToLists(Reader csv) {
     Parser<String> unquoted = consecutive(UNRESERVED_CHAR.and(isNot(delim)), "unquoted field");
