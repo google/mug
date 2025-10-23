@@ -15,7 +15,6 @@
 package com.google.common.labs.parse;
 
 import static com.google.mu.util.CharPredicate.ANY;
-import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
@@ -1223,25 +1222,9 @@ public abstract class Parser<T> {
         return (Failure<X>) this;
       }
 
-      ParseException toException(String input) {
+      ParseException toException(CharInput input) {
         return new ParseException(
-            String.format(
-                "at %s: %s", sourcePosition(input, at), String.format(message, args)));
-      }
-
-      static String sourcePosition(String input, int at) {
-        if (at > input.length()) {
-          // Likely due to streaming parsing where we no longer have the full text.
-          return Integer.toString(at);
-        }
-        int line = 1;
-        int lineStartIndex = 0;
-        for (Substring.Match match :
-            iterateOnce(Substring.all('\n').match(input).takeWhile(m -> m.index() < at))) {
-          lineStartIndex = match.index() + 1;
-          line++;
-        }
-        return line + ":" + (at - lineStartIndex + 1);
+            String.format("at %s: %s", input.sourcePosition(at), String.format(message, args)));
       }
     }
   }
@@ -1268,8 +1251,8 @@ public abstract class Parser<T> {
 
     ParseException report(MatchResult.Failure<?> failure) {
       return (farthestFailure == null || failure.at() >= farthestFailure.at())
-          ? failure.toException(input.toString())
-          : farthestFailure.toException(input.toString());
+          ? failure.toException(input)
+          : farthestFailure.toException(input);
     }
   }
 

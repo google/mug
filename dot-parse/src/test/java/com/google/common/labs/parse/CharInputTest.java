@@ -197,6 +197,105 @@ public final class CharInputTest {
     assertThat(input.snippet(9, 1)).isEqualTo("9");
   }
 
+  @Test
+  public void fromString_sourcePosition_emptyString() {
+    assertThat(CharInput.from("").sourcePosition(0)).isEqualTo("1:1");
+  }
+
+  @Test
+  public void fromString_sourcePosition_singleLine() {
+    assertThat(CharInput.from("abc").sourcePosition(0)).isEqualTo("1:1");
+    assertThat(CharInput.from("abc").sourcePosition(1)).isEqualTo("1:2");
+    assertThat(CharInput.from("abc").sourcePosition(3)).isEqualTo("1:4");
+  }
+
+  @Test
+  public void fromString_sourcePosition_singleLineEndingWithNewline() {
+    assertThat(CharInput.from("abc\n").sourcePosition(3)).isEqualTo("1:4");
+    assertThat(CharInput.from("abc\n").sourcePosition(4)).isEqualTo("2:1");
+  }
+
+  @Test
+  public void fromString_sourcePosition_twoLines() {
+    assertThat(CharInput.from("abc\ndef").sourcePosition(3)).isEqualTo("1:4");
+    assertThat(CharInput.from("abc\ndef").sourcePosition(4)).isEqualTo("2:1");
+    assertThat(CharInput.from("abc\ndef").sourcePosition(5)).isEqualTo("2:2");
+  }
+
+  @Test
+  public void fromString_sourcePosition_twoLinesEndingWithNewline() {
+    assertThat(CharInput.from("abc\ndef\n").sourcePosition(7)).isEqualTo("2:4");
+    assertThat(CharInput.from("abc\ndef\n").sourcePosition(8)).isEqualTo("3:1");
+  }
+
+  @Test
+  public void fromString_sourcePosition_threeLines() {
+    assertThat(CharInput.from("abc\ndef\nghi").sourcePosition(5)).isEqualTo("2:2");
+    assertThat(CharInput.from("abc\ndef\nghi").sourcePosition(8)).isEqualTo("3:1");
+  }
+
+  @Test
+  public void fromReader_sourcePosition_emptyString() {
+    CharInput input = CharInput.from(new StringReader(""));
+    boolean unused = input.isEof(0);
+    assertThat(input.sourcePosition(0)).isEqualTo("1:1");
+  }
+
+  @Test
+  public void fromReader_sourcePosition_singleLine() {
+    CharInput input = CharInput.from(new StringReader("abc"));
+    boolean unused = input.isEof(3);
+    assertThat(input.sourcePosition(0)).isEqualTo("1:1");
+    assertThat(input.sourcePosition(1)).isEqualTo("1:2");
+    assertThat(input.sourcePosition(3)).isEqualTo("1:4");
+  }
+
+  @Test
+  public void fromReader_sourcePosition_singleLineEndingWithNewline() {
+    CharInput input = CharInput.from(new StringReader("abc\n"));
+    boolean unused = input.isEof(4);
+    assertThat(input.sourcePosition(3)).isEqualTo("1:4");
+    assertThat(input.sourcePosition(4)).isEqualTo("2:1");
+  }
+
+  @Test
+  public void fromReader_sourcePosition_twoLines() {
+    CharInput input = CharInput.from(new StringReader("abc\ndef"));
+    boolean unused = input.isEof(5);
+    assertThat(input.sourcePosition(3)).isEqualTo("1:4");
+    assertThat(input.sourcePosition(4)).isEqualTo("2:1");
+    assertThat(input.sourcePosition(5)).isEqualTo("2:2");
+  }
+
+  @Test
+  public void fromReader_sourcePosition_twoLinesEndingWithNewline() {
+    CharInput input = CharInput.from(new StringReader("abc\ndef\n"));
+    boolean unused = input.isEof(8);
+    assertThat(input.sourcePosition(7)).isEqualTo("2:4");
+    assertThat(input.sourcePosition(8)).isEqualTo("3:1");
+  }
+
+  @Test
+  public void fromReader_sourcePosition_threeLines() {
+    CharInput input = CharInput.from(new StringReader("abc\ndef\nghi"));
+    boolean unused = input.isEof(8);
+    assertThat(input.sourcePosition(5)).isEqualTo("2:2");
+    assertThat(input.sourcePosition(8)).isEqualTo("3:1");
+  }
+
+  @Test
+  public void fromReader_sourcePosition_afterCompaction() {
+    CharInput input = CharInput.from(new StringReader("012\n456\n89"), 10, 5);
+    boolean unused = input.isEof(10); // read all chars
+
+    // checkpoint is 6. indices 0-5 are before checkpoint.
+    input.markCheckpoint(6);
+
+    assertThat(input.sourcePosition(5)).isEqualTo("5");
+    assertThat(input.sourcePosition(6)).isEqualTo("6");
+    assertThat(input.sourcePosition(8)).isEqualTo("8");
+  }
+
   private static class MockReader extends StringReader {
     private int loadCount = 0;
 
