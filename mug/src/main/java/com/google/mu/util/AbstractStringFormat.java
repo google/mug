@@ -823,7 +823,7 @@ abstract class AbstractStringFormat {
   /**
    * Scans the {@code input} string and extracts all matched placeholders in this string format.
    *
-   * <p>unlike {@link #parse(String)}, the input string isn't matched entirely: the pattern doesn't
+   * <p>unlike {@link #parseAsList}, the input string isn't matched entirely: the pattern doesn't
    * have to start from the beginning, and if there are some remaining characters that don't match
    * the pattern any more, the stream stops. In particular, if there is no match, empty stream is
    * returned.
