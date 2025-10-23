@@ -1062,6 +1062,229 @@ abstract class AbstractStringFormat {
   }
 
   /**
+   * Returns the string formatted with placeholders filled using the provided 1 placeholder args.
+   *
+   * <p>While similar in functionality to {@link String#format}, StringFormat is safer to be used as
+   * a class constant because ErrorProne will check at compile-time if the format arguments are
+   * passed in the wrong order.
+   *
+   * <p>Performance-wise, it's close to native string concatenation using the '+' operator and is
+   * about 6 times faster than {@link String#format}.
+   *
+   * @since 9.3
+   */
+  public final String format(Object arg) {
+    checkFormatArgs(1);
+    return fragments.get(0) + arg + fragments.get(1);
+  }
+
+  /**
+   * Returns the string formatted with placeholders filled using the provided 2 placeholder args.
+   *
+   * <p>While similar in functionality to {@link String#format}, StringFormat is safer to be used as
+   * a class constant, because ErrorProne will check at compile-time if the format arguments are
+   * passed in the wrong order.
+   *
+   * <p>Performance-wise, it's close to native string concatenation using the '+' operator and is
+   * about 6 times faster than {@link String#format}.
+   *
+   * @since 9.3
+   */
+  public final String format(Object a, Object b) {
+    checkFormatArgs(2);
+    return fragments.get(0) + a + fragments.get(1) + b + fragments.get(2);
+  }
+
+  /**
+   * Returns the string formatted with placeholders filled using the provided 3 placeholder args.
+   *
+   * <p>While similar in functionality to {@link String#format}, StringFormat is safer to be used as
+   * a class constant, because ErrorProne will check at compile-time if the format arguments are
+   * passed in the wrong order.
+   *
+   * <p>Performance-wise, it's close to native string concatenation using the '+' operator and is
+   * about 6 times faster than {@link String#format}.
+   *
+   * @since 9.3
+   */
+  public final String format(Object a, Object b, Object c) {
+    checkFormatArgs(3);
+    return fragments.get(0) + a + fragments.get(1) + b + fragments.get(2) + c + fragments.get(3);
+  }
+
+  /**
+   * Returns the string formatted with placeholders filled using the provided 4 placeholder args.
+   *
+   * <p>While similar in functionality to {@link String#format}, StringFormat is safer to be used as
+   * a class constant, because ErrorProne will check at compile-time if the format arguments are
+   * passed in the wrong order.
+   *
+   * <p>Performance-wise, it's close to native string concatenation using the '+' operator and is
+   * about 6 times faster than {@link String#format}.
+   *
+   * @since 9.3
+   */
+  public final String format(
+      Object a, Object b, Object c, Object d) {
+    checkFormatArgs(4);
+    return fragments.get(0)
+        + a
+        + fragments.get(1)
+        + b
+        + fragments.get(2)
+        + c
+        + fragments.get(3)
+        + d
+        + fragments.get(4);
+  }
+
+  /**
+   * Returns the string formatted with placeholders filled using the provided 5 placeholder args.
+   *
+   * <p>While similar in functionality to {@link String#format}, StringFormat is safer to be used as
+   * a class constant, because ErrorProne will check at compile-time if the format arguments are
+   * passed in the wrong order.
+   *
+   * <p>Performance-wise, it's close to native string concatenation using the '+' operator, and is
+   * about 6 times faster than {@link String#format}.
+   *
+   * @since 9.3
+   */
+  public final String format(
+      Object a,
+      Object b,
+      Object c,
+      Object d,
+      Object e) {
+    checkFormatArgs(5);
+    return fragments.get(0)
+        + a
+        + fragments.get(1)
+        + b
+        + fragments.get(2)
+        + c
+        + fragments.get(3)
+        + d
+        + fragments.get(4)
+        + e
+        + fragments.get(5);
+  }
+
+  /**
+   * Returns the string formatted with placeholders filled using the provided 6 placeholder args.
+   *
+   * <p>While similar in functionality to {@link String#format}, StringFormat is safer to be used as
+   * a class constant, because ErrorProne will check at compile-time if the format arguments are
+   * passed in the wrong order.
+   *
+   * <p>Performance-wise, it's close to native string concatenation using the '+' operator, and is
+   * about 6 times faster than {@link String#format}.
+   *
+   * @since 9.3
+   */
+  public final String format(
+      Object a,
+      Object b,
+      Object c,
+      Object d,
+      Object e,
+      Object f) {
+    checkFormatArgs(6);
+    return fragments.get(0)
+        + a
+        + fragments.get(1)
+        + b
+        + fragments.get(2)
+        + c
+        + fragments.get(3)
+        + d
+        + fragments.get(4)
+        + e
+        + fragments.get(5)
+        + f
+        + fragments.get(6);
+  }
+
+  /**
+   * Returns the string formatted with placeholders filled using the provided 7 placeholder args.
+   *
+   * <p>While similar in functionality to {@link String#format}, StringFormat is safer to be used as
+   * a class constant, because ErrorProne will check at compile-time if the format arguments are
+   * passed in the wrong order.
+   *
+   * <p>Performance-wise, it's close to native string concatenation using the '+' operator, and is
+   * about 6 times faster than {@link String#format}.
+   *
+   * @since 9.3
+   */
+  public final String format(
+      Object a,
+      Object b,
+      Object c,
+      Object d,
+      Object e,
+      Object f,
+      Object g) {
+    checkFormatArgs(7);
+    return fragments.get(0)
+        + a
+        + fragments.get(1)
+        + b
+        + fragments.get(2)
+        + c
+        + fragments.get(3)
+        + d
+        + fragments.get(4)
+        + e
+        + fragments.get(5)
+        + f
+        + fragments.get(6)
+        + g
+        + fragments.get(7);
+  }
+
+  /**
+   * Returns the string formatted with placeholders filled using the provided 8 placeholder args.
+   *
+   * <p>While similar in functionality to {@link String#format}, StringFormat is safer to be used as
+   * a class constant, because ErrorProne will check at compile-time if the format arguments are
+   * passed in the wrong order.
+   *
+   * <p>Performance-wise, it's close to native string concatenation using the '+' operator, and is
+   * about 6 times faster than {@link String#format}.
+   *
+   * @since 9.3
+   */
+  public final String format(
+      Object a,
+      Object b,
+      Object c,
+      Object d,
+      Object e,
+      Object f,
+      Object g,
+      Object h) {
+    checkFormatArgs(8);
+    return fragments.get(0)
+        + a
+        + fragments.get(1)
+        + b
+        + fragments.get(2)
+        + c
+        + fragments.get(3)
+        + d
+        + fragments.get(4)
+        + e
+        + fragments.get(5)
+        + f
+        + fragments.get(6)
+        + g
+        + fragments.get(7)
+        + h
+        + fragments.get(8);
+  }
+
+  /**
    * Returns the string formatted with placeholders filled using {@code args}. This is the reverse
    * operation of the {@code parse(...)} methods. For example:
    *
@@ -1226,14 +1449,17 @@ abstract class AbstractStringFormat {
     }
   }
 
-
   final void checkFormatArgs(Object[] args) {
-    if (args.length != numPlaceholders()) {
+    checkFormatArgs(args.length);
+  }
+
+  private void checkFormatArgs(int argsCount) {
+    if (argsCount != numPlaceholders()) {
       throw new IllegalArgumentException(
           String.format(
               "format string expects %s placeholders, %s provided",
               numPlaceholders(),
-              args.length));
+              argsCount));
     }
   }
 

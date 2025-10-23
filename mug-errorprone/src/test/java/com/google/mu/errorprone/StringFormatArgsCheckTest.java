@@ -2719,6 +2719,39 @@ public final class StringFormatArgsCheckTest {
         .doTest();
   }
 
+  @Test
+  public void format_manyArgs_bad() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final StringFormat FORMAT = ",
+            "      new StringFormat(\"{a}.{b}.{c}.{d}.{e}.{f}.{g}.{h}.{i}.{j}\");",
+            "  void test(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j) {",
+            "    // BUG: Diagnostic contains:",
+            "    FORMAT.format(b, a, c, d, e, f, g, h, i, j);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void format_manyArgs_good() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final StringFormat FORMAT = ",
+            "      new StringFormat(\"{a}.{b}.{c}.{d}.{e}.{f}.{g}.{h}.{i}.{j}\");",
+            "  void test(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j) {",
+            "    FORMAT.format(a, b, c, d, e, f, g, h, i, j);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
   @Ignore
   @Test
   public void to_argLiteralDoesNotMatchPlaceholderName() {
