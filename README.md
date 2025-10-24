@@ -72,6 +72,15 @@ Add `mug-errorprone` to your annotationProcessorPaths:
     </pluginManagement>
   </build>
 ```
+SafeSql ([javadoc](https://google.github.io/mug/apidocs/com/google/mu/safesql/package-summary.html)):
+```
+  <dependency>
+    <groupId>com.google.mug</groupId>
+    <artifactId>mug-safesql</artifactId>
+    <version>9.3</version>
+  </dependency>
+```
+
 
 Dot Parse Combinators ([javadoc](https://google.github.io/mug/apidocs/com/google/common/labs/parse/package-summary.html)):
 ```
@@ -96,6 +105,8 @@ Protobuf utils ([javadoc](https://google.github.io/mug/apidocs/com/google/mu/pro
 Add to build.gradle:
 ```
   implementation 'com.google.mug:mug:9.3'
+  implementation 'com.google.mug:mug-safesql:9.3'
+  implementation 'com.google.mug:dot-parse:9.3'
   implementation 'com.google.mug:mug-guava:9.3'
   implementation 'com.google.mug:mug-protobuf:9.3'
 ```
