@@ -285,15 +285,16 @@ public final class CharInputTest {
 
   @Test
   public void fromReader_sourcePosition_afterCompaction() {
-    CharInput input = CharInput.from(new StringReader("012\n456\n89"), 10, 5);
-    boolean unused = input.isEof(10); // read all chars
+    CharInput input = CharInput.from(new StringReader("012\n456\n89abcdefg"), 10, 5);
+    assertThat(input.charAt(10)).isEqualTo('a');
 
     // checkpoint is 6. indices 0-5 are before checkpoint.
     input.markCheckpoint(6);
 
-    assertThat(input.sourcePosition(5)).isEqualTo("5");
-    assertThat(input.sourcePosition(6)).isEqualTo("6");
-    assertThat(input.sourcePosition(8)).isEqualTo("8");
+    // After compaction, read more. The builder is of size 15 - 6 + 1 = 10.
+    assertThat(input.charAt(15)).isEqualTo('f');
+    assertThat(input.sourcePosition(9)).isEqualTo("9");
+    assertThat(input.sourcePosition(15)).isEqualTo("15");
   }
 
   private static class MockReader extends StringReader {
