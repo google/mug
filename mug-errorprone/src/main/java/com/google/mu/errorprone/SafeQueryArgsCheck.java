@@ -20,12 +20,10 @@ import static com.google.errorprone.matchers.Matchers.anyMethod;
 import static com.google.mu.errorprone.FormatStringUtils.PLACEHOLDER_PATTERN;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 
+import java.util.List;
+
 import com.google.auto.service.AutoService;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.mu.util.Substring;
-import com.google.mu.util.stream.BiStream;
-import com.google.mu.util.stream.MoreStreams;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.LinkType;
 import com.google.errorprone.VisitorState;
@@ -33,12 +31,13 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.util.ASTHelpers;
+import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiStream;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type;
-import java.util.List;
 
 /**
  * Warns against potential SQL injection risks caused by unquoted string placeholders. This class

@@ -7,6 +7,7 @@
   </parent>
   <artifactId>mug-safesql-java16tests</artifactId>
   <packaging>jar</packaging>
+  <name>Tests for SafeSql that require records</name>
   <properties>
     <maven.compiler.source>16</maven.compiler.source>
     <maven.compiler.target>16</maven.compiler.target>
