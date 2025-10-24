@@ -41,7 +41,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>9.2</version>
+    <version>9.3</version>
   </dependency>
 ```
 
@@ -63,7 +63,7 @@ Add `mug-errorprone` to your annotationProcessorPaths:
               <path>
                 <groupId>com.google.mug</groupId>
                 <artifactId>mug-errorprone</artifactId>
-                <version>9.2</version>
+                <version>9.3</version>
               </path>
             </annotationProcessorPaths>
           </configuration>
@@ -73,21 +73,21 @@ Add `mug-errorprone` to your annotationProcessorPaths:
   </build>
 ```
 
+Dot Parse Combinators ([javadoc](https://google.github.io/mug/apidocs/com/google/common/labs/parse/package-summary.html)):
+```
+  <dependency>
+    <groupId>com.google.mug</groupId>
+    <artifactId>dot-parse</artifactId>
+    <version>9.3</version>
+  </dependency>
+```
+
 Protobuf utils ([javadoc](https://google.github.io/mug/apidocs/com/google/mu/protobuf/util/package-summary.html)):
 ```
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-protobuf</artifactId>
-    <version>9.2</version>
-  </dependency>
-```
-
-Guava add-ons ([`SafeSql`](https://google.github.io/mug/apidocs/com/google/mu/safesql/SafeSql.html)):
-```
-  <dependency>
-    <groupId>com.google.mug</groupId>
-    <artifactId>mug-guava</artifactId>
-    <version>9.2</version>
+    <version>9.3</version>
   </dependency>
 ```
 
@@ -95,9 +95,9 @@ Guava add-ons ([`SafeSql`](https://google.github.io/mug/apidocs/com/google/mu/sa
 
 Add to build.gradle:
 ```
-  implementation 'com.google.mug:mug:9.2'
-  implementation 'com.google.mug:mug-guava:9.2'
-  implementation 'com.google.mug:mug-protobuf:9.2'
+  implementation 'com.google.mug:mug:9.3'
+  implementation 'com.google.mug:mug-guava:9.3'
+  implementation 'com.google.mug:mug-protobuf:9.3'
 ```
 </details>
 
