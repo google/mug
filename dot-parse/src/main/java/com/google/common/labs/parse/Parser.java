@@ -1181,8 +1181,21 @@ public abstract class Parser<T> {
 
   /** Thrown if parsing failed. */
   public static class ParseException extends IllegalArgumentException {
-    ParseException(String message) {
+    private final int index;
+
+    ParseException(int index, String message) {
       super(message);
+      this.index = index;
+    }
+
+    /**
+     * Returns the index in the source where this error was detected.
+     *
+     * <p>The index is for diagnostic purpose and isn't guaranteed to be
+     * stable and deterministic across different versions.
+     */
+    public int getSourceIndex() {
+      return index;
     }
   }
 
@@ -1223,6 +1236,7 @@ public abstract class Parser<T> {
 
       ParseException toException(CharInput input) {
         return new ParseException(
+            at,
             String.format("at %s: %s", input.sourcePosition(at), String.format(message, args)));
       }
     }
