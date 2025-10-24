@@ -238,8 +238,7 @@ be more readable and safer against accidental human errors:
 private static final StringFormat FULLY_QUALIFIED_JOB_ID =
     new StringFormat("{project}:{location}:{job}");
 
-// ...
-
+  // many lines apart...
   FULLY_QUALIFIED_JOB_ID.parseOrThrow(
       "my-project:US:department:job-id",
       (project, location, jobId) -> ...);  // Guarded by compile-time check
