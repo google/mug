@@ -142,7 +142,7 @@ Substring.all(',')
 ```
 
 Note that the N-way split of `RepeatingPattern.split()` returns a stream of `Substring.Match`,
-which are *views* of the underlying substring without copying the characters
+which are *views* of the underlying substrings without copying the characters
 (it's a subtype of `CharSequence`). So you could do filtering, or short-circuiting without
 paying the cost of always copying the characters.
 
@@ -179,9 +179,12 @@ ImmutableListMultimap<String, String> keyValues = all(',')
 
 Similar to Guava `Splitter`, you can pass a `CharPredicate` or even a regex pattern to the
 `Substring.first()` method to get a more flexible `Substring.Pattern` object. And if you call
-`.repeatedly()`, the `Substring.Pattern` object is turned into a `Substring.RepeatingPattern`
-object that can be used to do N-way splitting, as well as other operations such as extraction (`from()`),
+`.repeatedly()`, the `Substring.Pattern` object is composed into a `Substring.RepeatingPattern`
+object that can be used to do N-way splitting.
+
+`RepeatingPattern` supports other operations such as extraction (`from()`),
 replacement (`replaceAllFrom()`) or removal (`removeAllFrom()`).
+But for now let's focus on splitting.
 
 Beyond using `CharPredicate` or regex, you can also use `Substring` API's lookaround capability,
 such as:
@@ -225,10 +228,11 @@ String jobId = projectAndLocationAndJobId.get(2); // department:job-id
 ```
 
 The `Substring` API doesn't provide a `limit()` method for this purpose (the `Substring.Pattern.limit()`
-method is to cap the size of the found substring, in a way similar to `Stream.limit(int)`).
+method is to cap the max size of the found substring).
 
-But consider using `StringFormat` for this kind of compile-time patterns, because the code is usually
-more readable and safer against accidental human errors:
+This omission is intentional.
+We suggest to consider using `StringFormat` for this kind of compile-time patterns, because the code will usually
+be more readable and safer against accidental human errors:
 
 ```java {.good}
 private static final StringFormat FULLY_QUALIFIED_JOB_ID =
@@ -236,7 +240,7 @@ private static final StringFormat FULLY_QUALIFIED_JOB_ID =
 
   FULLY_QUALIFIED_JOB_ID.parseOrThrow(
       "my-project:US:department:job-id",
-      (project, location, jobId) -> ...);
+      (project, location, jobId) -> ...);  // Guarded by compile-time check
 ```
 
 #### Omitting Empty Values
