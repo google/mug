@@ -1707,10 +1707,66 @@ public class SubstringTest {
         .isEqualTo(Spliterator.ORDERED);
   }
 
-  @Test public void split_canSplit() {
+  @Test
+  public void split_cannotSplit() {
+    assertThat(first('=').split("foo:bar")).isEqualTo(BiOptional.empty());
+    assertThat(first('=').split("foo:bar", (k, v) -> k + v)).isEmpty();
+  }
+
+  @Test
+  public void split_canSplit() {
     assertThat(first('=').split(" foo=bar").map((String k, String v) -> k)).hasValue(" foo");
     assertThat(first('=').split("foo=bar ").map((String k, String v) -> v)).hasValue("bar ");
-    assertThat(first('=').split(" foo=bar").map((String k, String v) -> k)).hasValue(" foo");
+    assertThat(first('=').split(" foo=bar", (k, v) -> k)).hasValue(" foo");
+    assertThat(first('=').split("foo=bar ", (k, v) -> v)).hasValue("bar ");
+  }
+
+  @Test
+  public void split_beginning() {
+    assertThat(BEGINNING.split(" foo").map((String k, String v) -> k)).hasValue("");
+    assertThat(BEGINNING.split(" foo").map((String k, String v) -> v)).hasValue(" foo");
+    assertThat(BEGINNING.split(" foo", (k, v) -> k)).hasValue("");
+    assertThat(BEGINNING.split(" foo", (k, v) -> v)).hasValue(" foo");
+  }
+
+  @Test
+  public void split_end() {
+    assertThat(END.split(" foo").map((String k, String v) -> k)).hasValue(" foo");
+    assertThat(END.split(" foo").map((String k, String v) -> v)).hasValue("");
+    assertThat(END.split(" foo", (k, v) -> k)).hasValue(" foo");
+    assertThat(END.split(" foo", (k, v) -> v)).hasValue("");
+  }
+
+  @Test
+  public void splitThenTrim_cannotSplit() {
+    assertThat(first('=').splitThenTrim("foo:bar")).isEqualTo(BiOptional.empty());
+    assertThat(first('=').splitThenTrim("foo:bar", (k, v) -> k + v)).isEmpty();
+  }
+
+  @Test
+  public void splitThenTrim_canSplit() {
+    assertThat(first('=').splitThenTrim(" foo =bar").map((String k, String v) -> k))
+        .hasValue("foo");
+    assertThat(first('=').splitThenTrim("foo = bar ").map((String k, String v) -> v))
+        .hasValue("bar");
+    assertThat(first('=').splitThenTrim(" foo =bar", (k, v) -> k)).hasValue("foo");
+    assertThat(first('=').splitThenTrim("foo = bar ", (k, v) -> v)).hasValue("bar");
+  }
+
+  @Test
+  public void splitThenTrim_beginning() {
+    assertThat(BEGINNING.splitThenTrim(" foo").map((String k, String v) -> k)).hasValue("");
+    assertThat(BEGINNING.splitThenTrim(" foo").map((String k, String v) -> v)).hasValue("foo");
+    assertThat(BEGINNING.splitThenTrim(" foo", (k, v) -> k)).hasValue("");
+    assertThat(BEGINNING.splitThenTrim(" foo", (k, v) -> v)).hasValue("foo");
+  }
+
+  @Test
+  public void splitThenTrim_end() {
+    assertThat(END.splitThenTrim(" foo ").map((String k, String v) -> k)).hasValue("foo");
+    assertThat(END.splitThenTrim(" foo").map((String k, String v) -> v)).hasValue("");
+    assertThat(END.splitThenTrim(" foo ", (k, v) -> k)).hasValue("foo");
+    assertThat(END.splitThenTrim(" foo", (k, v) -> v)).hasValue("");
   }
 
   @Test public void splitThenTrim_intoTwoParts_cannotSplit() {

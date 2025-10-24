@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -1849,10 +1850,37 @@ public final class Substring {
      * example:
      *
      * <pre>{@code
-     * Optional<KeyValue> keyValue = first('=').split("name=joe").join(KeyValue::new);
+     * Optional<KeyValue> keyValue = first('=').split("name=joe", KeyValue::new);
      * }</pre>
      *
-     * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim}.
+     * <p>If {@code this} pattern isn't found in {@code string} or if the {@code mapper} function
+     * returns null, {@code Optional.empty()} is returned.
+     *
+     * <p>If you need to trim the key-value pairs, use {@link
+     * #splitThenTrim(CharSequence, BiFunction) splitThenTrim()}.
+     *
+     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #repeatedly}.
+     *
+     * @since 9.4
+     */
+    public final <T> Optional<T> split(
+        CharSequence string, BiFunction<? super String, ? super String, ? extends T> mapper) {
+      requireNonNull(mapper);
+      Match match = match(string.toString());
+      return match == null
+          ? Optional.empty()
+          : Optional.ofNullable(mapper.apply(match.before(), match.after()));
+    }
+
+    /**
+     * Splits {@code string} into two parts that are separated by this separator pattern. For
+     * example:
+     *
+     * <pre>{@code
+     * Optional<KeyValue> keyValue = first('=').split("name=joe").map(KeyValue::new);
+     * }</pre>
+     *
+     * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim(CharSequence)}.
      *
      * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #repeatedly}.
      *
@@ -1868,7 +1896,31 @@ public final class Substring {
      * leading and trailing whitespaces trimmed. For example:
      *
      * <pre>{@code
-     * Optional<KeyValue> keyValue = first('=').splitThenTrim("name = joe ").join(KeyValue::new);
+     * Optional<KeyValue> keyValue = first('=').splitThenTrim("name = joe ", KeyValue::new);
+     * }</pre>
+     *
+     * <p>If {@code this} pattern isn't found in {@code string} or if the {@code mapper} function
+     * returns null, {@code Optional.empty()} is returned.
+     *
+     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #repeatedly}.
+     *
+     * @since 9.4
+     */
+    public final <T> Optional<T> splitThenTrim(
+        CharSequence string, BiFunction<? super String, ? super String, ? extends T> mapper) {
+      requireNonNull(mapper);
+      Match match = match(string.toString());
+      return match == null
+          ? Optional.empty()
+          : Optional.ofNullable(mapper.apply(match.before().trim(), match.after().trim()));
+    }
+
+    /**
+     * Splits {@code string} into two parts that are separated by this separator pattern, with
+     * leading and trailing whitespaces trimmed. For example:
+     *
+     * <pre>{@code
+     * Optional<KeyValue> keyValue = first('=').splitThenTrim("name = joe ").map(KeyValue::new);
      * }</pre>
      *
      * <p>If you are trying to parse a string to a key-value data structure ({@code Map}, {@code

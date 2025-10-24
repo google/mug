@@ -117,6 +117,142 @@ Substring.between("/", "/").from("/users/alice/")
     .orElse("default");
 ```
 
+### Comparison to Guava `Splitter`
+
+If you already use Guava, or don't mind pulling in the Guava dependency, just keep using `Splitter`.
+
+Otherwise, Mug's `Substring.Pattern` can be used as a two-way splitter, and `Substring.RepeatingPattern`
+(as returned by `all()` or `repeatedly()`) as an N-way splitter. Both are immutable objects
+that can be stored for reuse, and both offer additional functionalities that we will cover in a bit.
+
+For example:
+
+```java {.good}
+Substring.first('=')
+    .split("k=v", (key, value) -> ...);
+```
+Or
+
+```java {.good}
+Substring.all(',')
+    .split(commaSeparated)  // Stream<Substring.Match>
+    .filter(item -> item.startsWith("<"))
+    .map(CharSequence::toString)
+    .toList();
+```
+
+Note that the N-way split of `RepeatingPattern.split()` returns a stream of `Substring.Match`,
+which are *views* of the underlying substring without copying the characters
+(it's a subtype of `CharSequence`). So you could do filtering, or short-circuiting without
+paying the cost of always copying the characters.
+
+This makes `Substring` splitting more efficient.
+
+#### Map Splitting
+
+Similar to Guava `MapSplitter`, you can split key-value pairs into a `Map<String, String>`:
+
+```java {.good}
+import static com.google.mu.util.Substring.all;
+import static com.google.mu.util.Substring.first;
+
+Map<String, String> keyValues = all(',')
+    .splitThenTrimKeyValuesAround(first(':'), "k1 : v1, k2 : v2")  // BiStream<String, String>
+    .toMap();
+```
+
+The `Substring` API offers more flexibility because `splitThenTrimKeyValuesAround()`
+and `splitKeyValuesAround()` return a `BiStream<String, String>`.
+
+This allows you to chain from the result `BiStream`, collecting into a `Multimap` to more gracefully
+handle duplicate keys:
+
+```java {.good}
+import static com.google.common.collect.ImmutableListMultimap;
+
+ImmutableListMultimap<String, String> keyValues = all(',')
+    .splitThenTrimKeyValuesAround(first(':'), "k1 : v1, k2 : v2")  // BiStream<String, String>
+    .collect(ImmutableListMultimap::toImmutableListMultimap);
+```
+
+#### Flexible Splitting
+
+Similar to Guava `Splitter`, you can pass a `CharPredicate` or even a regex pattern to the
+`Substring.first()` method to get a more flexible `Substring.Pattern` object. And if you call
+`.repeatedly()`, the `Substring.Pattern` object is turned into a `Substring.RepeatingPattern`
+object that can be used to do N-way splitting, as well as other operations such as extraction (`from()`),
+replacement (`replaceAllFrom()`) or removal (`removeAllFrom()`).
+
+Beyond using `CharPredicate` or regex, you can also use `Substring` API's lookaround capability,
+such as:
+
+```java {.good}
+first(',')
+    .notPrecededBy("\\")
+    .repeatedly()
+    .split(...)
+```
+
+Or:
+
+```java {.good}
+first(',')
+    .immediatelyBetween(" ", " ")
+    .repeatedly()
+    .splitThenTrim(...)
+```
+
+Using regex can achieve similar lookaround, but `Substring` is generally more efficient
+and more readable.
+
+#### Splitting With a Limit
+
+In Guava, you can call `limit(int)` on a `Splitter` object to limit the number of parts to be split.
+
+For example, the following code finds the project id, location and job id from a BigQuery fully qualified job id:
+
+```java
+List<String> projectAndLocationAndJobId = Splitter.on(':')
+    .limit(3)
+    .splitToList("my-project:US:department:job-id");
+
+if (projectAndLocationAndJobId.size() < 3) {
+  throw ...;
+}
+String projectId = projectAndLocationAndJobId.get(0); // my-project
+String location = projectAndLocationAndJobId.get(1); // US
+String jobId = projectAndLocationAndJobId.get(2); // department:job-id
+```
+
+The `Substring` API doesn't provide a `limit()` method for this purpose (the `Substring.Pattern.limit()`
+method is to cap the size of the found substring, in a way similar to `Stream.limit(int)`).
+
+But consider using `StringFormat` for this kind of compile-time patterns, because the code is usually
+more readable and safer against accidental human errors:
+
+```java {.good}
+private static final StringFormat FULLY_QUALIFIED_JOB_ID =
+    new StringFormat("{project}:{location}:{job}");
+
+  FULLY_QUALIFIED_JOB_ID.parseOrThrow(
+      "my-project:US:department:job-id",
+      (project, location, jobId) -> ...);
+```
+
+#### Omitting Empty Values
+
+Guava `Splitter` offers `.omitEmptyStrings()` to, well, omit empty strings.
+
+Since `Substring.RepeatingPattern.split()` returns a `Stream<Substring.Match>`, you can directly
+`.filter()` on the stream:
+
+```java {.good}
+all(',')
+    .splitThenTrim(input)
+    .filter(Substring.Match::isNotEmpty)
+    ...;
+``` 
+
 ---
 
 ## More Examples
