@@ -92,6 +92,9 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       Matchers.anyOf(
           anyMethod().onDescendantOf("com.google.mu.util.StringFormat"),
           anyMethod().onDescendantOf("com.google.mu.util.StringFormat.Template"));
+  private static final Matcher<MethodInvocationTree> FORMAT_METHOD_MATCHER =
+      Matchers.anyOf(
+          anyMethod().onDescendantOf("com.google.mu.util.StringFormat").named("format"));
   private static final String FORMAT_STRING_NOT_FOUND =
       "Compile-time format string expected but definition not found. As a result, the"
           + " format arguments cannot be validated at compile-time.\n"
@@ -205,7 +208,9 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           /* formatStringIsInlined= */ formatExpression instanceof JCLiteral,
           state);
     } else if (STRING_FORMAT_MATCHER.matches(tree, state)) {
-      if (!method.isVarArgs() || method.getParameters().size() != 1) {
+      if (!method.isVarArgs()
+          && method.getParameters().size() != 1
+          && !FORMAT_METHOD_MATCHER.matches(tree, state)) {
         return;
       }
       ExpressionTree formatter = ASTHelpers.getReceiver(tree);

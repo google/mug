@@ -1,10 +1,13 @@
 package com.google.common.labs.parse;
 
+import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.io.UncheckedIOException;
+
+import com.google.mu.util.Substring;
 
 /** An abstraction over sequentially read characters. */
 abstract class CharInput {
@@ -28,6 +31,12 @@ abstract class CharInput {
   /** characters before {@code checkpointIndex} are no longer needed. */
   void markCheckpoint(int checkpointIndex) {}
 
+  /**
+   * Returns the source position of the character at {@code at}. It's assumed that the index {@code
+   * at} has been read.
+   */
+  abstract String sourcePosition(int at);
+
   /** An input backed by in-memory string. */
   static CharInput from(String str) {
     requireNonNull(str);
@@ -48,8 +57,15 @@ abstract class CharInput {
         return str.substring(index, Math.min(str.length(), index + maxLength));
       }
 
-      @Override public String toString() {
-        return str;
+      @Override String sourcePosition(int at) {
+        int line = 1;
+        int lineStartIndex = 0;
+        for (Substring.Match match :
+            iterateOnce(Substring.all('\n').match(str).takeWhile(m -> m.index() < at))) {
+          lineStartIndex = match.index() + 1;
+          line++;
+        }
+        return line + ":" + (at - lineStartIndex + 1);
       }
     };
   }
@@ -109,8 +125,11 @@ abstract class CharInput {
         }
       }
 
-      @Override public String toString() {
-        return chars.toString();  // Just show me what you've got
+      @Override String sourcePosition(int at) {
+        return at > chars.length()
+            // Likely due to streaming parsing where we no longer have the full text.
+            ? Integer.toString(at)
+            : from(chars.toString()).sourcePosition(at);
       }
 
       private int toPhysicalIndex(int index) {

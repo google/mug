@@ -7,7 +7,6 @@ import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.single;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
-import static com.google.common.labs.parse.Parser.MatchResult.Failure.sourcePosition;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.CharPredicate.is;
@@ -3962,43 +3961,6 @@ public class ParserTest {
   public void resourceNamePattern_withSubpathWildcard_source() {
     String input = "v1/{name=projects/**}/messages";
     assertThat(ResourceNamePattern.parser().source().parse(input)).isEqualTo(input);
-  }
-
-  @Test
-  public void sourcePosition_emptyString() {
-    assertThat(sourcePosition("", 0)).isEqualTo("1:1");
-  }
-
-  @Test
-  public void sourcePosition_singleLine() {
-    assertThat(sourcePosition("abc", 0)).isEqualTo("1:1");
-    assertThat(sourcePosition("abc", 1)).isEqualTo("1:2");
-    assertThat(sourcePosition("abc", 3)).isEqualTo("1:4");
-  }
-
-  @Test
-  public void sourcePosition_singleLineEndingWithNewline() {
-    assertThat(sourcePosition("abc\n", 3)).isEqualTo("1:4");
-    assertThat(sourcePosition("abc\n", 4)).isEqualTo("2:1");
-  }
-
-  @Test
-  public void sourcePosition_twoLines() {
-    assertThat(sourcePosition("abc\ndef", 3)).isEqualTo("1:4");
-    assertThat(sourcePosition("abc\ndef", 4)).isEqualTo("2:1");
-    assertThat(sourcePosition("abc\ndef", 5)).isEqualTo("2:2");
-  }
-
-  @Test
-  public void sourcePosition_twoLinesEndingWithNewline() {
-    assertThat(sourcePosition("abc\ndef\n", 7)).isEqualTo("2:4");
-    assertThat(sourcePosition("abc\ndef\n", 8)).isEqualTo("3:1");
-  }
-
-  @Test
-  public void sourcePosition_threeLines() {
-    assertThat(sourcePosition("abc\ndef\nghi", 5)).isEqualTo("2:2");
-    assertThat(sourcePosition("abc\ndef\nghi", 8)).isEqualTo("3:1");
   }
 
   private static CharPredicate isNot(char ch) {
