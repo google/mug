@@ -28,6 +28,8 @@ A small Java 8+ utilities library ([javadoc](http://google.github.io/mug/apidocs
   → `whileNotNull(queue::poll).filter(...).map(...)`
 - [`Optionals`](https://google.github.io/mug/apidocs/com/google/mu/util/Optionals.html)  
   → `return optionally(obj.hasFoo(), obj::getFoo);`
+- [`Parser Combinator`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html)  
+  → `zeroOrMore(noneOf("\\'")).immediatelyBetween("'", "'").parse(input);`
 
 </details>
 
