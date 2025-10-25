@@ -126,8 +126,7 @@ abstract class CharInput {
       }
 
       @Override String sourcePosition(int at) {
-        return at > chars.length()
-            // Likely due to streaming parsing where we no longer have the full text.
+        return garbageCharCount > 0
             ? Integer.toString(at)
             : from(chars.toString()).sourcePosition(at);
       }
