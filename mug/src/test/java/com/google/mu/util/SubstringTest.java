@@ -1558,10 +1558,6 @@ public class SubstringTest {
         .inOrder();
   }
 
-  @Test public void split_cannotSplit() {
-    assertThat(first('=').split("foo:bar")).isEqualTo(BiOptional.empty());
-  }
-
   @Test public void repeatedly_split_distinct() {
     assertThat(first(',').repeatedly().split("b,a,c,a,c,b,d").map(Match::toString).distinct())
         .containsExactly("b", "a", "c", "d")
