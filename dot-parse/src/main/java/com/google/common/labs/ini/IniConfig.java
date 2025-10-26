@@ -37,9 +37,9 @@ import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * A simplistic Ini syntax parser, supporting key-values and sections.
+ * A simplistic INI syntax parser, supporting key-values and sections.
  *
- * <p>The syntax looks like TOML (with sections, comments and key-value pairs)/ But no quoting or
+ * <p>The syntax looks like TOML (with sections, comments and key-value pairs). But no quoting or
  * escaping, and whitespaces around keys and values are ignored. For example:
  *
  * <pre>
@@ -69,8 +69,8 @@ import com.google.mu.util.stream.BiStream;
  * }<pre>
  *
  * <p>TOML list of tables is supported by using multiple sections of the same name
- * (i.e. {@code [plugin]}, not {@code [[plugins]]}),
- * and you can access these sections using the {@link #sections(String)} method.
+ * (i.e. {@code [plugin]}, not {@code [[plugins]]}), and you can access these sections using
+ * the {@link #sections(String)} method.
  */
 @Immutable
 @SuppressWarnings("Immutable") // Map is immutable
