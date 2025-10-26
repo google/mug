@@ -60,12 +60,10 @@ import com.google.mu.util.stream.BiStream;
  *
  * <p>A typical usage pattern: <pre>{@code
  * var config = IniConfig.parse(input);
+ *
  * boolean enabled = config.defaultSection().is("enabled");
- *
  * Instant activeTime = config.defaultSection().getInstant("start_time");
- *
  * List<Status> deniedStatuses = config.defaultSection().getEnums("denied_statuses", Status.class);
- *
  * String userName = config.section("credentials").getString("username");
  * }<pre>
  *
