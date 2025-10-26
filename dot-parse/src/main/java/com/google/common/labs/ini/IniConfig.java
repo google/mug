@@ -63,12 +63,13 @@ import com.google.mu.util.stream.BiStream;
  *
  * Instant activeTime = config.defaultSection().getInstant("start_time");
  *
- * List<Status> deniedStatuses = config.defaultSection().getEnums("denied_statuses");
+ * List<Status> deniedStatuses = config.defaultSection().getEnums("denied_statuses", Status.class);
  *
  * String userName = config.section("credentials").getString("username");
  * }<pre>
  *
- * <p>TOML list of tables is supported by using multiple sections of the same name,
+ * <p>TOML list of tables is supported by using multiple sections of the same name
+ * (i.e. {@code [plugin]}, not {@code [[plugins]]}),
  * and you can access these sections using the {@link #getSections} method.
  */
 @Immutable
