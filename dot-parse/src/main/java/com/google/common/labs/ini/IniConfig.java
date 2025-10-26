@@ -259,25 +259,41 @@ public record IniConfig(Map<String, List<Section>> sections) {
       return getAndParse(key, DateTimeFormats::parseOffsetDateTime, "isn't valid OffsetDateTime");
     }
 
-    /** Returns the int values configured by {@code key} (separated by commas), in this section. */
+    /**
+     * Returns the int values configured by {@code key} (comma separated), in this section.
+     *
+     * <p>The list may include zero, one, or multiple non-empty values.
+     */
     public List<Integer> getIntList(String key) {
       return getAndParse(
           key, value -> parseListValues(value, Integer::parseInt), "isn't valid integer list");
     }
 
-    /** Returns the long values configured by {@code key} (separated by commas), in this section. */
+    /**
+     * Returns the long values configured by {@code key} (comma separated), in this section.
+     *
+     * <p>The list may include zero, one, or multiple non-empty values.
+     */
     public List<Long> getLongList(String key) {
       return getAndParse(
           key, value -> parseListValues(value, Long::parseLong), "isn't valid long list");
     }
 
-    /** Returns the double values configured by {@code key} (separated by commas), in this section. */
+    /**
+     * Returns the double values configured by {@code key} (comma separated), in this section.
+     *
+     * <p>The list may include zero, one, or multiple non-empty values.
+     */
     public List<Double> getDoubleList(String key) {
       return getAndParse(
           key, value -> parseListValues(value, Double::parseDouble), "isn't valid double list");
     }
 
-    /** Returns the enum values configured by {@code key} (separated by commas), in this section. */
+    /**
+     * Returns the enum values configured by {@code key} (comma separated), in this section.
+     *
+     * <p>The list may include zero, one, or multiple non-empty values.
+     */
     public <E extends Enum<?>> List<E> getEnumList(Class<E> enumType, String key) {
       Map<String, E> constants = stream(enumType.getEnumConstants()).
           collect(Collectors.toMap(Enum::name, identity()));
@@ -293,31 +309,51 @@ public record IniConfig(Map<String, List<Section>> sections) {
           "isn't valid List<%s>", enumType.getName());
     }
 
-    /** Returns the {@link LocalDate} values configured by {@code key} (separated by commas), in this section. */
+    /**
+     * Returns the {@link LocalDate} values configured by {@code key} (comma separated), in this section.
+     *
+     * <p>The list may include zero, one, or multiple non-empty values.
+     */
     public List<LocalDate> getDateList(String key) {
       return getAndParse(
           key, value -> parseListValues(value, LocalDate::parse), "isn't valid List<LocalDate>");
     }
 
-    /** Returns the {@link LocalTime} values configured by {@code key} (separated by commas), in this section. */
+    /**
+     * Returns the {@link LocalTime} values configured by {@code key} (comma separated), in this section.
+     *
+     * <p>The list may include zero, one, or multiple non-empty values.
+     */
     public List<LocalTime> getLocalTimeList(String key) {
       return getAndParse(
           key, value -> parseListValues(value, LocalTime::parse), "isn't valid List<LocalTime>");
     }
 
-    /** Returns the {@link LocalDateTime} values configured by {@code key} (separated by commas), in this section. */
+    /**
+     * Returns the {@link LocalDateTime} values configured by {@code key} (comma separated), in this section.
+     *
+     * <p>The list may include zero, one, or multiple non-empty values.
+     */
     public List<LocalDateTime> getLocalDateTimeList(String key) {
       return getAndParse(
           key, value -> parseListValues(value, LocalDateTime::parse), "isn't valid List<LocalDateTime>");
     }
 
-    /** Returns the {@link Instant} values configured by {@code key} (separated by commas), in this section. */
+    /**
+     * Returns the {@link Instant} values configured by {@code key} (comma separated), in this section.
+     *
+     * <p>The list may include zero, one, or multiple non-empty values.
+     */
     public List<Instant> getInstantList(String key) {
       return getAndParse(
           key, value -> parseListValues(value, DateTimeFormats::parseToInstant), "isn't valid List<Instant>");
     }
 
-    /** Returns the {@link ZonedDateTime} values configured by {@code key} (separated by commas), in this section. */
+    /**
+     * Returns the {@link ZonedDateTime} values configured by {@code key} (comma separated), in this section.
+     *
+     * <p>The list may include zero, one, or multiple non-empty values.
+     */
     public List<ZonedDateTime> getZonedDateTimeList(String key) {
       return getAndParse(
           key,
@@ -325,7 +361,11 @@ public record IniConfig(Map<String, List<Section>> sections) {
           "isn't valid List<ZonedDateTime>");
     }
 
-    /** Returns the {@link OffsetDateTime} values configured by {@code key} (separated by commas), in this section. */
+    /**
+     * Returns the {@link OffsetDateTime} values configured by {@code key} (comma separated), in this section.
+     *
+     * <p>The list may include zero, one, or multiple non-empty values.
+     */
     public List<OffsetDateTime> getOffsetDateTimeList(String key) {
       return getAndParse(
           key,
