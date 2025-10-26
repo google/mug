@@ -189,13 +189,13 @@ public class IniConfigTest {
   }
 
   @Test public void getEnum_found() {
-    assertThat(IniConfig.parse("status = ACTIVE").defaultSection().getEnum("status", Status.class)).isEqualTo(Status.ACTIVE);
+    assertThat(IniConfig.parse("status = ACTIVE").defaultSection().getEnum(Status.class, "status")).isEqualTo(Status.ACTIVE);
   }
 
   @Test public void getEnum_notFound() {
     var section = IniConfig.parse("status = ACTIVE").defaultSection();
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> section.getEnum("suffix", Status.class));
+        assertThrows(IllegalArgumentException.class, () -> section.getEnum(Status.class, "suffix"));
     assertThat(thrown).hasMessageThat().contains("suffix");
     assertThat(thrown).hasMessageThat().contains("[status]");
   }
@@ -203,14 +203,14 @@ public class IniConfigTest {
   @Test public void getEnum_invalid() {
     var section = IniConfig.parse("status = na").defaultSection();
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> section.getEnum("status", Status.class));
+        assertThrows(IllegalArgumentException.class, () -> section.getEnum(Status.class, "status"));
     assertThat(thrown).hasMessageThat().contains("status = na");
     assertThat(thrown).hasMessageThat().contains("isn't a valid enum");
     assertThat(thrown).hasMessageThat().contains("Status");
   }
 
   @Test public void getEnumList_found() {
-    assertThat(IniConfig.parse("status = ACTIVE, INACTIVE").defaultSection().getEnumList("status", Status.class))
+    assertThat(IniConfig.parse("status = ACTIVE, INACTIVE").defaultSection().getEnumList(Status.class, "status"))
         .containsExactly(Status.ACTIVE, Status.INACTIVE)
         .inOrder();
   }
@@ -218,7 +218,7 @@ public class IniConfigTest {
   @Test public void getEnumList_notFound() {
     var section = IniConfig.parse("status = ACTIVE").defaultSection();
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> section.getEnumList("suffix", Status.class));
+        assertThrows(IllegalArgumentException.class, () -> section.getEnumList(Status.class, "suffix"));
     assertThat(thrown).hasMessageThat().contains("suffix");
     assertThat(thrown).hasMessageThat().contains("[status]");
   }
@@ -226,7 +226,7 @@ public class IniConfigTest {
   @Test public void getEnumList_invalid() {
     var section = IniConfig.parse("status = ACTIVE,inactive").defaultSection();
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> section.getEnumList("status", Status.class));
+        assertThrows(IllegalArgumentException.class, () -> section.getEnumList(Status.class, "status"));
     assertThat(thrown).hasMessageThat().contains("status = ACTIVE,inactive");
     assertThat(thrown).hasMessageThat().contains("isn't valid List");
     assertThat(thrown).hasMessageThat().contains("Status");
