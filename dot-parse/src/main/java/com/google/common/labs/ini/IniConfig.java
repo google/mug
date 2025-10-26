@@ -7,6 +7,8 @@ import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.CharPredicate.noneOf;
+import static com.google.mu.util.Substring.prefix;
+import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiStream.toBiStream;
 import static java.util.Arrays.stream;
@@ -72,7 +74,6 @@ import com.google.mu.util.stream.BiStream;
 @Immutable
 @SuppressWarnings("Immutable") // Map is immutable
 public record IniConfig(Map<String, List<Section>> sections) {
-
   static IniConfig of(Map<String, String> keyValues) {
     return of(new Section("", keyValues));
   }
@@ -133,13 +134,15 @@ public record IniConfig(Map<String, List<Section>> sections) {
   /**
    * Returns the section identified by {@code sectionName}, case-sensitively.
    *
+   * @param sectionName the section name as in {@code [profile]}
    * @throws IllegalArgumentException if {@code sectionName} isn't found in the config
    */
   public Section section(String sectionName) {
+    sectionName = normalizeSectionName(sectionName);
     List<Section> candidates = sections(sectionName);
     if (candidates.size() > 1) {
       throw new IllegalArgumentException(
-          "section " + sectionName + " is ambiguous. Consider using getSections() instead.");
+          "section [" + sectionName + "] is ambiguous. Consider using getSections() instead.");
     }
     return candidates.get(0);
   }
@@ -152,10 +155,11 @@ public record IniConfig(Map<String, List<Section>> sections) {
    * @throws IllegalArgumentException if {@code sectionName} isn't found in the config
    */
   public List<Section> sections(String sectionName) {
+    sectionName = normalizeSectionName(sectionName);
     List<Section> found = sections.get(sectionName);
     if (found == null) {
       throw new IllegalArgumentException(
-          "section " + sectionName + " isn't among the known sections: " + sections.keySet());
+          "section [" + sectionName + "] isn't among the known sections: " + sections.keySet());
     }
     return found;
   }
@@ -309,5 +313,9 @@ public record IniConfig(Map<String, List<Section>> sections) {
           .map(parse)
           .collect(toUnmodifiableList());
     }
+  }
+
+  private static String normalizeSectionName(String sectionName) {
+    return Substring.between(prefix('['), suffix(']')).from(sectionName).orElse(sectionName);
   }
 }

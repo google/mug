@@ -72,9 +72,10 @@ public class IniConfigTest {
   }
 
   @Test public void getInts_notFound() {
-    var section = IniConfig.parse("max_size = 10").defaultSection();
+    var section = IniConfig.parse("[size] max_size = 10").section("size");
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> section.getInts("min_size"));
+    assertThat(thrown).hasMessageThat().contains("section [size]");
     assertThat(thrown).hasMessageThat().contains("min_size");
     assertThat(thrown).hasMessageThat().contains("[max_size]");
   }
@@ -371,6 +372,36 @@ public class IniConfigTest {
         assertThrows(IllegalArgumentException.class, () -> section.getDates("start_date"));
     assertThat(thrown).hasMessageThat().contains("Beijing");
     assertThat(thrown).hasMessageThat().contains("start_date =");
+  }
+
+  @Test public void sections_duplicateSectionName() {
+    var config = IniConfig.parse("[plugin]\n name = jing\n[plugin]\n name=yang");
+    assertThat(config.sections("plugin"))
+        .containsExactly(new Section("plugin", Map.of("name", "jing")), new Section("plugin", Map.of("name", "yang")))
+        .inOrder();
+    assertThat(config.sections("[plugin]"))
+        .containsExactly(new Section("plugin", Map.of("name", "jing")), new Section("plugin", Map.of("name", "yang")))
+        .inOrder();
+  }
+
+  @Test public void section_duplicateSectionName() {
+    var config = IniConfig.parse("[plugin]\n name = jing\n[plugin]\n name=yang");
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> config.section("plugin"));
+    assertThat(thrown).hasMessageThat().contains("section [plugin] is ambiguous");
+  }
+
+  @Test public void sectionNameIncludesSquareBrackets_found() {
+    var section = IniConfig.parse("[launch] start_time = 2025-10-30 10:00:00-07").section("[launch]");
+    assertThat(section.getInstant("start_time")).isEqualTo(DateTimeFormats.parseToInstant("2025-10-30 10:00:00-07"));
+  }
+
+  @Test public void sectionNameIncludesSquareBrackets_notFound() {
+    var config = IniConfig.parse("[launch] start_time = 2025-10-30 10:00:00-07");
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> config.section("[not launch]"));
+    assertThat(thrown).hasMessageThat().contains("section [not launch]");
+    assertThat(thrown).hasMessageThat().contains("[launch]");
   }
 
   @Test
