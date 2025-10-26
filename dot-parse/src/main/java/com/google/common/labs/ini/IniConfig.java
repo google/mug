@@ -318,6 +318,9 @@ public record IniConfig(Map<String, List<Section>> sections) {
     }
 
     private static <T> List<T> parseListValues(String value, Function<? super String, ? extends T> parse) {
+      if (value.isEmpty()) {
+        return List.of();
+      }
       return Substring.all(',')
           .splitThenTrim(value)
           .map(CharSequence::toString)

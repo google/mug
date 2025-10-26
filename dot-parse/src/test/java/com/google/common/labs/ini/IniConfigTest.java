@@ -69,6 +69,7 @@ public class IniConfigTest {
   @Test public void getInts_found() {
     assertThat(IniConfig.parse("max_size = 10").defaultSection().getInts("max_size")).containsExactly(10);
     assertThat(IniConfig.parse("max_size = -10, 20").defaultSection().getInts("max_size")).containsExactly(-10, 20);
+    assertThat(IniConfig.parse("max_size = ").defaultSection().getInts("max_size")).isEmpty();
   }
 
   @Test public void getInts_notFound() {
