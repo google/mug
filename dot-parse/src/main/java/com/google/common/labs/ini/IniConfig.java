@@ -22,6 +22,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -202,17 +204,17 @@ public record IniConfig(Map<String, List<Section>> sections) {
 
     /** Returns the int value configured by {@code key} in this section. */
     public int getInt(String key) {
-      return getAndParse(key, Integer::parseInt ,"isn't valid integer");
+      return getAndParse(key, Integer::parseInt, "isn't valid integer");
     }
 
     /** Returns the long value configured by {@code key} in this section. */
     public long getLong(String key) {
-      return getAndParse(key, Long::parseLong ,"isn't valid long");
+      return getAndParse(key, Long::parseLong, "isn't valid long");
     }
 
     /** Returns the double value configured by {@code key} in this section. */
     public double getDouble(String key) {
-      return getAndParse(key, Double::parseDouble ,"isn't valid double");
+      return getAndParse(key, Double::parseDouble, "isn't valid double");
     }
 
     /** Returns the enum value configured by {@code key} in this section. */
@@ -229,22 +231,32 @@ public record IniConfig(Map<String, List<Section>> sections) {
 
     /** Returns the {@link LocalDate} value configured by {@code key} in this section. */
     public LocalDate getDate(String key) {
-      return getAndParse(key, LocalDate::parse ,"isn't valid LocalDate");
+      return getAndParse(key, LocalDate::parse, "isn't valid LocalDate");
+    }
+
+    /** Returns the {@link LocalTime} value configured by {@code key} in this section. */
+    public LocalTime getLocalTime(String key) {
+      return getAndParse(key, LocalTime::parse, "isn't valid LocalTime");
+    }
+
+    /** Returns the {@link LocalDateTime} value configured by {@code key} in this section. */
+    public LocalDateTime getLocalDateTime(String key) {
+      return getAndParse(key, LocalDateTime::parse, "isn't valid LocalDateTime");
     }
 
     /** Returns the {@link Instant} value configured by {@code key} in this section. */
     public Instant getInstant(String key) {
-      return getAndParse(key, DateTimeFormats::parseToInstant ,"isn't valid time");
+      return getAndParse(key, DateTimeFormats::parseToInstant, "isn't valid time");
     }
 
     /** Returns the {@link ZonedDateTime} value configured by {@code key} in this section. */
     public ZonedDateTime getZonedDateTime(String key) {
-      return getAndParse(key, DateTimeFormats::parseZonedDateTime ,"isn't valid ZonedDateTime");
+      return getAndParse(key, DateTimeFormats::parseZonedDateTime, "isn't valid ZonedDateTime");
     }
 
     /** Returns the {@link OffsetDateTime} value configured by {@code key} in this section. */
     public OffsetDateTime getOffsetDateTime(String key) {
-      return getAndParse(key, DateTimeFormats::parseOffsetDateTime ,"isn't valid OffsetDateTime");
+      return getAndParse(key, DateTimeFormats::parseOffsetDateTime, "isn't valid OffsetDateTime");
     }
 
     /** Returns the int values configured by {@code key} (separated by commas), in this section. */
@@ -285,6 +297,18 @@ public record IniConfig(Map<String, List<Section>> sections) {
     public List<LocalDate> getDateList(String key) {
       return getAndParse(
           key, value -> parseListValues(value, LocalDate::parse), "isn't valid List<LocalDate>");
+    }
+
+    /** Returns the {@link LocalTime} values configured by {@code key} (separated by commas), in this section. */
+    public List<LocalTime> getLocalTimeList(String key) {
+      return getAndParse(
+          key, value -> parseListValues(value, LocalTime::parse), "isn't valid List<LocalTime>");
+    }
+
+    /** Returns the {@link LocalDateTime} values configured by {@code key} (separated by commas), in this section. */
+    public List<LocalDateTime> getLocalDateTimeList(String key) {
+      return getAndParse(
+          key, value -> parseListValues(value, LocalDateTime::parse), "isn't valid List<LocalDateTime>");
     }
 
     /** Returns the {@link Instant} values configured by {@code key} (separated by commas), in this section. */
