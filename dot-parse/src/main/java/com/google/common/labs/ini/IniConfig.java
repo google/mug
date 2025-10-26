@@ -38,7 +38,7 @@ import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * A simplistic INI syntax parser, supporting key-values and sections.
+ * A light-weight INI syntax parser, supporting key-values and sections.
  *
  * <p>The syntax looks like TOML (with sections, comments and key-value pairs). But no quoting or
  * escaping, and whitespaces around keys and values are ignored. For example:
