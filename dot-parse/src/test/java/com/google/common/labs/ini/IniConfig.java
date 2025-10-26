@@ -33,7 +33,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.common.labs.parse.Parser;
-import com.google.errorprone.annotations.Immutable;
 import com.google.mu.time.DateTimeFormats;
 import com.google.mu.util.Both;
 import com.google.mu.util.Substring;
@@ -170,7 +169,6 @@ record IniConfig(Map<String, List<Section>> sections) {
   }
 
   /** A section is a collection of key value pairs. */
-  @Immutable
   public record Section(String name, Map<String, String> keyValues) {
     private static final Set<String> TRUE = Set.of("TRUE", "True", "true", "YES", "Yes", "yes", "ON", "On", "on");
     private static final Set<String> FALSE = Set.of("FALSE", "False", "false", "NO", "No", "no", "OFF", "Off", "off");
