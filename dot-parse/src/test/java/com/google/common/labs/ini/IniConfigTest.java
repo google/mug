@@ -9,6 +9,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.google.common.labs.ini.IniConfig.Section;
+import com.google.common.testing.NullPointerTester;
 import com.google.mu.time.DateTimeFormats;
 
 public class IniConfigTest {
@@ -66,25 +67,27 @@ public class IniConfigTest {
     assertThat(thrown).hasMessageThat().contains("isn't valid integer");
   }
 
-  @Test public void getInts_found() {
-    assertThat(IniConfig.parse("max_size = 10").defaultSection().getInts("max_size")).containsExactly(10);
-    assertThat(IniConfig.parse("max_size = -10, 20").defaultSection().getInts("max_size")).containsExactly(-10, 20);
-    assertThat(IniConfig.parse("max_size = ").defaultSection().getInts("max_size")).isEmpty();
+  @Test public void getIntList_found() {
+    assertThat(IniConfig.parse("max_size = 10").defaultSection().getIntList("max_size")).containsExactly(10);
+    assertThat(IniConfig.parse("max_size = -10, 20").defaultSection().getIntList("max_size")).containsExactly(-10, 20);
+    assertThat(IniConfig.parse("max_size = -10, 20,").defaultSection().getIntList("max_size")).containsExactly(-10, 20);
+    assertThat(IniConfig.parse("max_size = ").defaultSection().getIntList("max_size")).isEmpty();
+    assertThat(IniConfig.parse("max_size = ,").defaultSection().getIntList("max_size")).isEmpty();
   }
 
-  @Test public void getInts_notFound() {
+  @Test public void getIntList_notFound() {
     var section = IniConfig.parse("[size] max_size = 10").section("size");
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> section.getInts("min_size"));
+        assertThrows(IllegalArgumentException.class, () -> section.getIntList("min_size"));
     assertThat(thrown).hasMessageThat().contains("section [size]");
     assertThat(thrown).hasMessageThat().contains("min_size");
     assertThat(thrown).hasMessageThat().contains("[max_size]");
   }
 
-  @Test public void getInts_invalid() {
-    var section = IniConfig.parse("max_size = 10,").defaultSection();
+  @Test public void getIntList_invalid() {
+    var section = IniConfig.parse("max_size = 10,x").defaultSection();
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> section.getInts("max_size"));
+        assertThrows(IllegalArgumentException.class, () -> section.getIntList("max_size"));
     assertThat(thrown).hasMessageThat().contains("max_size = 10,");
     assertThat(thrown).hasMessageThat().contains("isn't valid integer list");
   }
@@ -103,32 +106,74 @@ public class IniConfigTest {
   }
 
   @Test public void getLong_invalid() {
-    var section = IniConfig.parse("max_size = a0").defaultSection();
+    var section = IniConfig.parse("max_size = 0.1").defaultSection();
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> section.getLong("max_size"));
-    assertThat(thrown).hasMessageThat().contains("max_size = a0");
+    assertThat(thrown).hasMessageThat().contains("max_size = 0.1");
     assertThat(thrown).hasMessageThat().contains("isn't valid long");
   }
 
-  @Test public void getLongs_found() {
-    assertThat(IniConfig.parse("max_size = 10, 20").defaultSection().getLongs("max_size")).containsExactly(10L, 20L);
-    assertThat(IniConfig.parse("max_size = -10").defaultSection().getLongs("max_size")).containsExactly(-10L);
+  @Test public void getLongList_found() {
+    assertThat(IniConfig.parse("max_size = 10, 20").defaultSection().getLongList("max_size")).containsExactly(10L, 20L);
+    assertThat(IniConfig.parse("max_size = -10").defaultSection().getLongList("max_size")).containsExactly(-10L);
   }
 
-  @Test public void getLongs_notFound() {
+  @Test public void getLongList_notFound() {
     var section = IniConfig.parse("max_size = 10").defaultSection();
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> section.getLongs("min_size"));
+        assertThrows(IllegalArgumentException.class, () -> section.getLongList("min_size"));
     assertThat(thrown).hasMessageThat().contains("min_size");
     assertThat(thrown).hasMessageThat().contains("[max_size]");
   }
 
-  @Test public void getLongs_invalid() {
+  @Test public void getLongList_invalid() {
     var section = IniConfig.parse("max_size = a0").defaultSection();
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> section.getLongs("max_size"));
+        assertThrows(IllegalArgumentException.class, () -> section.getLongList("max_size"));
     assertThat(thrown).hasMessageThat().contains("max_size = a0");
     assertThat(thrown).hasMessageThat().contains("isn't valid long list");
+  }
+
+  @Test public void getDouble_found() {
+    assertThat(IniConfig.parse("max_size = 10.5").defaultSection().getDouble("max_size")).isEqualTo(10.5);
+    assertThat(IniConfig.parse("max_size = -10").defaultSection().getDouble("max_size")).isEqualTo(-10);
+  }
+
+  @Test public void getDouble_notFound() {
+    var section = IniConfig.parse("max_size = 10").defaultSection();
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> section.getDouble("min_size"));
+    assertThat(thrown).hasMessageThat().contains("min_size");
+    assertThat(thrown).hasMessageThat().contains("[max_size]");
+  }
+
+  @Test public void getDouble_invalid() {
+    var section = IniConfig.parse("max_size = a0").defaultSection();
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> section.getDouble("max_size"));
+    assertThat(thrown).hasMessageThat().contains("max_size = a0");
+    assertThat(thrown).hasMessageThat().contains("isn't valid double");
+  }
+
+  @Test public void getDoubleList_found() {
+    assertThat(IniConfig.parse("max_size = 10, 20.5").defaultSection().getDoubleList("max_size")).containsExactly(10D, 20.5D);
+    assertThat(IniConfig.parse("max_size = -10.0").defaultSection().getDoubleList("max_size")).containsExactly(-10D);
+  }
+
+  @Test public void getDoubleList_notFound() {
+    var section = IniConfig.parse("max_size = 10.5").defaultSection();
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> section.getDoubleList("min_size"));
+    assertThat(thrown).hasMessageThat().contains("min_size");
+    assertThat(thrown).hasMessageThat().contains("[max_size]");
+  }
+
+  @Test public void getDoubleList_invalid() {
+    var section = IniConfig.parse("max_size = a0").defaultSection();
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> section.getDoubleList("max_size"));
+    assertThat(thrown).hasMessageThat().contains("max_size = a0");
+    assertThat(thrown).hasMessageThat().contains("isn't valid double list");
   }
 
   @Test public void getString_found() {
@@ -164,24 +209,24 @@ public class IniConfigTest {
     assertThat(thrown).hasMessageThat().contains("Status");
   }
 
-  @Test public void getEnums_found() {
-    assertThat(IniConfig.parse("status = ACTIVE, INACTIVE").defaultSection().getEnums("status", Status.class))
+  @Test public void getEnumList_found() {
+    assertThat(IniConfig.parse("status = ACTIVE, INACTIVE").defaultSection().getEnumList("status", Status.class))
         .containsExactly(Status.ACTIVE, Status.INACTIVE)
         .inOrder();
   }
 
-  @Test public void getEnums_notFound() {
+  @Test public void getEnumList_notFound() {
     var section = IniConfig.parse("status = ACTIVE").defaultSection();
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> section.getEnums("suffix", Status.class));
+        assertThrows(IllegalArgumentException.class, () -> section.getEnumList("suffix", Status.class));
     assertThat(thrown).hasMessageThat().contains("suffix");
     assertThat(thrown).hasMessageThat().contains("[status]");
   }
 
-  @Test public void getEnums_invalid() {
+  @Test public void getEnumList_invalid() {
     var section = IniConfig.parse("status = ACTIVE,inactive").defaultSection();
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> section.getEnums("status", Status.class));
+        assertThrows(IllegalArgumentException.class, () -> section.getEnumList("status", Status.class));
     assertThat(thrown).hasMessageThat().contains("status = ACTIVE,inactive");
     assertThat(thrown).hasMessageThat().contains("isn't valid List");
     assertThat(thrown).hasMessageThat().contains("Status");
@@ -209,28 +254,28 @@ public class IniConfigTest {
     assertThat(thrown).hasMessageThat().contains("start_time =");
   }
 
-  @Test public void getInstants_found() {
+  @Test public void getInstantList_found() {
     var section = IniConfig.parse("start_time = 2025-10-30 15:30:00 America/Los_Angeles, 2025-04-01 10:00:00-07:00")
         .defaultSection();
-    assertThat(section.getInstants("start_time"))
+    assertThat(section.getInstantList("start_time"))
         .containsExactly(
             DateTimeFormats.parseToInstant("2025-10-30 15:30:00 America/Los_Angeles"),
             DateTimeFormats.parseToInstant("2025-04-01 10:00:00-07:00"))
         .inOrder();
   }
 
-  @Test public void getInstants_notFound() {
+  @Test public void getInstantList_notFound() {
     var section = IniConfig.parse("start_time = 2025-10-30 15:30:00 America/Los_Angeles").defaultSection();
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> section.getInstants("end_date"));
+        assertThrows(IllegalArgumentException.class, () -> section.getInstantList("end_date"));
     assertThat(thrown).hasMessageThat().contains("end_date");
     assertThat(thrown).hasMessageThat().contains("[start_time]");
   }
 
-  @Test public void getInstants_invalid() {
+  @Test public void getInstantList_invalid() {
     var section = IniConfig.parse("start_time = 2025-10-30 15:30:00 Beijing").defaultSection();
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> section.getInstants("start_time"));
+        assertThrows(IllegalArgumentException.class, () -> section.getInstantList("start_time"));
     assertThat(thrown).hasMessageThat().contains("Beijing");
     assertThat(thrown).hasMessageThat().contains("start_time =");
   }
@@ -352,25 +397,25 @@ public class IniConfigTest {
     assertThat(thrown).hasMessageThat().contains("start_date =");
   }
 
-  @Test public void getDates_found() {
+  @Test public void getDateList_found() {
     var section = IniConfig.parse("start_date = 2025-01-01,2025-04-01").defaultSection();
-    assertThat(section.getDates("start_date"))
+    assertThat(section.getDateList("start_date"))
         .containsExactly(LocalDate.parse("2025-01-01"), LocalDate.parse("2025-04-01"))
         .inOrder();
   }
 
-  @Test public void getDates_notFound() {
+  @Test public void getDateList_notFound() {
     var section = IniConfig.parse("start_date = 2025-10-30 15:30:00 America/Los_Angeles").defaultSection();
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> section.getDates("end_date"));
+        assertThrows(IllegalArgumentException.class, () -> section.getDateList("end_date"));
     assertThat(thrown).hasMessageThat().contains("end_date");
     assertThat(thrown).hasMessageThat().contains("[start_date]");
   }
 
-  @Test public void getDates_invalid() {
+  @Test public void getDateList_invalid() {
     var section = IniConfig.parse("start_date = 2025-10-30 15:30:00 Beijing").defaultSection();
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> section.getDates("start_date"));
+        assertThrows(IllegalArgumentException.class, () -> section.getDateList("start_date"));
     assertThat(thrown).hasMessageThat().contains("Beijing");
     assertThat(thrown).hasMessageThat().contains("start_date =");
   }
@@ -510,6 +555,14 @@ public class IniConfigTest {
             IniConfig.of(
                 new Section("profile", Map.of("name", "John Doe")),
                 new Section("profile", Map.of("email", "jdoe@example.com"))));
+  }
+
+  @Test public void testNulls() {
+    new NullPointerTester().testAllPublicStaticMethods(IniConfig.class);
+    new NullPointerTester().testAllPublicConstructors(IniConfig.class);
+    new NullPointerTester().testAllPublicConstructors(Section.class);
+    new NullPointerTester().testAllPublicInstanceMethods(IniConfig.parse("k=v"));
+    new NullPointerTester().testAllPublicInstanceMethods(IniConfig.parse("k=v").defaultSection());
   }
 
   private enum Status {ACTIVE, INACTIVE}

@@ -63,7 +63,8 @@ import com.google.mu.util.stream.BiStream;
  *
  * boolean enabled = config.defaultSection().is("enabled");
  * Instant activeTime = config.defaultSection().getInstant("start_time");
- * List<Status> deniedStatuses = config.defaultSection().getEnums("denied_statuses", Status.class);
+ * List<Status> deniedStatuses =
+ *     config.defaultSection().getEnumList("denied_statuses", Status.class);
  * String userName = config.section("credentials").getString("username");
  * }</pre>
  *
@@ -209,8 +210,14 @@ public record IniConfig(Map<String, List<Section>> sections) {
       return getAndParse(key, Long::parseLong ,"isn't valid long");
     }
 
+    /** Returns the double value configured by {@code key} in this section. */
+    public double getDouble(String key) {
+      return getAndParse(key, Double::parseDouble ,"isn't valid double");
+    }
+
     /** Returns the enum value configured by {@code key} in this section. */
     public <E extends Enum<?>> E getEnum(String key, Class<E> enumType) {
+      requireNonNull(enumType);
       String value = getString(key);
       return stream(enumType.getEnumConstants())
           .filter(e -> e.name().equals(value))
@@ -241,19 +248,25 @@ public record IniConfig(Map<String, List<Section>> sections) {
     }
 
     /** Returns the int values configured by {@code key} (separated by commas), in this section. */
-    public List<Integer> getInts(String key) {
+    public List<Integer> getIntList(String key) {
       return getAndParse(
           key, value -> parseListValues(value, Integer::parseInt), "isn't valid integer list");
     }
 
     /** Returns the long values configured by {@code key} (separated by commas), in this section. */
-    public List<Long> getLongs(String key) {
+    public List<Long> getLongList(String key) {
       return getAndParse(
           key, value -> parseListValues(value, Long::parseLong), "isn't valid long list");
     }
 
+    /** Returns the double values configured by {@code key} (separated by commas), in this section. */
+    public List<Double> getDoubleList(String key) {
+      return getAndParse(
+          key, value -> parseListValues(value, Double::parseDouble), "isn't valid double list");
+    }
+
     /** Returns the enum values configured by {@code key} (separated by commas), in this section. */
-    public <E extends Enum<?>> List<E> getEnums(String key, Class<E> enumType) {
+    public <E extends Enum<?>> List<E> getEnumList(String key, Class<E> enumType) {
       Map<String, E> constants = stream(enumType.getEnumConstants()).
           collect(Collectors.toMap(Enum::name, identity()));
       return getAndParse(
@@ -269,13 +282,13 @@ public record IniConfig(Map<String, List<Section>> sections) {
     }
 
     /** Returns the {#link LocalDate} values configured by {@code key} (separated by commas), in this section. */
-    public List<LocalDate> getDates(String key) {
+    public List<LocalDate> getDateList(String key) {
       return getAndParse(
           key, value -> parseListValues(value, LocalDate::parse), "isn't valid List<LocalDate>");
     }
 
     /** Returns the {#link Instant} values configured by {@code key} (separated by commas), in this section. */
-    public List<Instant> getInstants(String key) {
+    public List<Instant> getInstantList(String key) {
       return getAndParse(
           key, value -> parseListValues(value, DateTimeFormats::parseToInstant), "isn't valid List<Instant>");
     }
@@ -298,6 +311,7 @@ public record IniConfig(Map<String, List<Section>> sections) {
 
     /** Returns the string value configured by {@code key} (leading and trailing spaces ignored), in this section. */
     public String getString(String key) {
+      requireNonNull(key);
       String value = keyValues.get(key);
       if (value == null) {
         throw new IllegalArgumentException(
@@ -318,11 +332,9 @@ public record IniConfig(Map<String, List<Section>> sections) {
     }
 
     private static <T> List<T> parseListValues(String value, Function<? super String, ? extends T> parse) {
-      if (value.isEmpty()) {
-        return List.of();
-      }
       return Substring.all(',')
           .splitThenTrim(value)
+          .filter(Substring.Match::isNotEmpty)
           .map(CharSequence::toString)
           .map(parse)
           .collect(toUnmodifiableList());
