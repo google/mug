@@ -33,7 +33,7 @@ import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * An easy-to-use CSV parser with lazy parsing support.
+ * An easy-to-use CSV parser with lazy parsing support and friendly error reporting.
  *
  * <p>For example:
  *
