@@ -216,7 +216,7 @@ public record IniConfig(Map<String, List<Section>> sections) {
     }
 
     /** Returns the enum value configured by {@code key} in this section. */
-    public <E extends Enum<?>> E getEnum(String key, Class<E> enumType) {
+    public <E extends Enum<?>> E getEnum(Class<E> enumType, String key) {
       requireNonNull(enumType);
       String value = getString(key);
       return stream(enumType.getEnumConstants())
@@ -266,7 +266,7 @@ public record IniConfig(Map<String, List<Section>> sections) {
     }
 
     /** Returns the enum values configured by {@code key} (separated by commas), in this section. */
-    public <E extends Enum<?>> List<E> getEnumList(String key, Class<E> enumType) {
+    public <E extends Enum<?>> List<E> getEnumList(Class<E> enumType, String key) {
       Map<String, E> constants = stream(enumType.getEnumConstants()).
           collect(Collectors.toMap(Enum::name, identity()));
       return getAndParse(
