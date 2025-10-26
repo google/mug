@@ -33,7 +33,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.common.labs.parse.Parser;
-import com.google.errorprone.annotations.Immutable;
 import com.google.mu.time.DateTimeFormats;
 import com.google.mu.util.Both;
 import com.google.mu.util.Substring;
@@ -73,12 +72,8 @@ import com.google.mu.util.stream.BiStream;
  * <p>TOML list of tables is supported by using multiple sections of the same name
  * (i.e. {@code [plugin]}, not {@code [[plugins]]}), and you can access these sections using
  * the {@link #sections(String)} method.
- *
- * @since 9.4
  */
-@Immutable
-@SuppressWarnings("Immutable") // Map is immutable
-public record IniConfig(Map<String, List<Section>> sections) {
+record IniConfig(Map<String, List<Section>> sections) {
   public IniConfig {
     requireNonNull(sections);
   }
@@ -174,7 +169,6 @@ public record IniConfig(Map<String, List<Section>> sections) {
   }
 
   /** A section is a collection of key value pairs. */
-  @Immutable
   public record Section(String name, Map<String, String> keyValues) {
     private static final Set<String> TRUE = Set.of("TRUE", "True", "true", "YES", "Yes", "yes", "ON", "On", "on");
     private static final Set<String> FALSE = Set.of("FALSE", "False", "false", "NO", "No", "no", "OFF", "Off", "off");
