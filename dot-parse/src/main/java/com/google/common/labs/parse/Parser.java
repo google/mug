@@ -14,7 +14,6 @@
  *****************************************************************************/
 package com.google.common.labs.parse;
 
-import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
@@ -60,6 +59,20 @@ import com.google.mu.util.Substring;
  * subject to stack overflow error on maliciously crafted input (think of 10K left parens).
  */
 public abstract class Parser<T> {
+  /**
+   * Only use in context where input consumption is guaranteed. Do not use within a loop, like
+   * atLeastOnce(), zeroOrMore()!
+   */
+  private static final Parser<Void> UNSAFE_EOF = new Parser<>() {
+    @Override MatchResult<Void> skipAndMatch(
+        Parser<?> skip, CharInput input, int start, ErrorContext context) {
+      start = skipIfAny(skip, input, start);
+      return input.isEof(start)
+          ? new MatchResult.Success<>(start, start, null)
+          : context.expecting("EOF", start, start);
+    }
+  };
+
   /** Matches a character as specified by {@code matcher}. */
   public static Parser<Character> single(CharPredicate matcher, String name) {
     requireNonNull(matcher);
@@ -618,8 +631,18 @@ public abstract class Parser<T> {
     };
   }
 
+  /**
+   * Specifies that the matched pattern must be either followed by {@code suffix} or EOF.
+   * No other suffixes allowed.
+   *
+   * @since 9.4
+   */
+  public final Parser<T> followedByEofOr(Parser<?> suffix) {
+    return followedBy(anyOf(suffix, UNSAFE_EOF));
+  }
+
   final Parser<T> followedByEof() {
-    return notFollowedBy(single(ANY, "left over"), "left over");
+    return followedBy(UNSAFE_EOF);
   }
 
   /**
@@ -964,7 +987,7 @@ public abstract class Parser<T> {
      * Returns the otherwise equivalent {@code Parser} that will fail instead of returning the
      * default value if empty.
      *
-     * <p>{@code parser.optional().failIfEmpty()} is equivalent to {@code parser}.
+     * <p>{@code parser.optional().notEmpty()} is equivalent to {@code parser}.
      *
      * <p>Useful when multiple optional parsers are chained together with any of them successfully
      * consuming some input.

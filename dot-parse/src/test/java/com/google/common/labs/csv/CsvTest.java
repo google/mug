@@ -233,6 +233,16 @@ public final class CsvTest {
         .containsExactly(ImmutableListMultimap.of("name", "Yang", "name", "Jing", "age", "28"));
   }
 
+  @Test public void quoteNotBeforeComma() {
+    var thrown = assertThrows(Parser.ParseException.class, () -> CSV.parseToLists("\"a\"b, c").toList());
+    assertThat(thrown).hasMessageThat().contains("1:4");
+  }
+
+  @Test public void unescapedQuote() {
+    var thrown = assertThrows(Parser.ParseException.class, () -> CSV.parseToLists("\"foo\"bar\"").toList());
+    assertThat(thrown).hasMessageThat().contains("1:6");
+  }
+
   @Test
   public void invalidDelimiter() {
     assertThrows(IllegalArgumentException.class, () -> CSV.withDelimiter('\r'));
