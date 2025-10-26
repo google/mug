@@ -12,6 +12,7 @@ import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.stream.BiCollectors.groupingBy;
 import static com.google.mu.util.stream.BiStream.toBiStream;
 import static java.util.Arrays.stream;
+import static java.util.Objects.requireNonNull;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
@@ -75,6 +76,10 @@ import com.google.mu.util.stream.BiStream;
 @Immutable
 @SuppressWarnings("Immutable") // Map is immutable
 public record IniConfig(Map<String, List<Section>> sections) {
+  public IniConfig {
+    requireNonNull(sections);
+  }
+
   static IniConfig of(Map<String, String> keyValues) {
     return of(new Section("", keyValues));
   }
@@ -170,6 +175,11 @@ public record IniConfig(Map<String, List<Section>> sections) {
   public record Section(String name, Map<String, String> keyValues) {
     private static final Set<String> TRUE = Set.of("TRUE", "True", "true", "YES", "Yes", "yes", "ON", "On", "on");
     private static final Set<String> FALSE = Set.of("FALSE", "False", "false", "NO", "No", "no", "OFF", "Off", "off");
+
+    public Section {
+      requireNonNull(name);
+      requireNonNull(keyValues);
+    }
 
     /**
      * Returns the boolean value configured by {@code key} in this section.
