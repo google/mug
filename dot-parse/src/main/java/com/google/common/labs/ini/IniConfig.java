@@ -281,19 +281,19 @@ public record IniConfig(Map<String, List<Section>> sections) {
           "isn't valid List<%s>", enumType.getName());
     }
 
-    /** Returns the {#link LocalDate} values configured by {@code key} (separated by commas), in this section. */
+    /** Returns the {@link LocalDate} values configured by {@code key} (separated by commas), in this section. */
     public List<LocalDate> getDateList(String key) {
       return getAndParse(
           key, value -> parseListValues(value, LocalDate::parse), "isn't valid List<LocalDate>");
     }
 
-    /** Returns the {#link Instant} values configured by {@code key} (separated by commas), in this section. */
+    /** Returns the {@link Instant} values configured by {@code key} (separated by commas), in this section. */
     public List<Instant> getInstantList(String key) {
       return getAndParse(
           key, value -> parseListValues(value, DateTimeFormats::parseToInstant), "isn't valid List<Instant>");
     }
 
-    /** Returns the {#link ZonedDateTime} values configured by {@code key} (separated by commas), in this section. */
+    /** Returns the {@link ZonedDateTime} values configured by {@code key} (separated by commas), in this section. */
     public List<ZonedDateTime> getZonedDateTimeList(String key) {
       return getAndParse(
           key,
@@ -301,7 +301,7 @@ public record IniConfig(Map<String, List<Section>> sections) {
           "isn't valid List<ZonedDateTime>");
     }
 
-    /** Returns the {#link OffsetDateTime} values configured by {@code key} (separated by commas), in this section. */
+    /** Returns the {@link OffsetDateTime} values configured by {@code key} (separated by commas), in this section. */
     public List<OffsetDateTime> getOffsetDateTimeList(String key) {
       return getAndParse(
           key,
