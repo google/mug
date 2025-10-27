@@ -122,7 +122,7 @@ Stream<String> jsonStringsFrom(Reader input) {
 
 ---
 
-## No More Infinite Loop (as in many combinator libraries)
+## No More Infinite Loops (if you've used other combinator libraries)
 
 The infinite loop bug happens when a repeating parser succeeds without moving forward.
 It’s like a machine that says "Job done!" but never actually takes the next item off the conveyor belt,
