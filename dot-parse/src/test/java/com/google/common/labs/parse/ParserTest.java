@@ -338,40 +338,6 @@ public class ParserTest {
   }
 
   @Test
-  public void orEmpty_followedByOrEof_suffixMatches() {
-    Parser<String>.OrEmpty parser = zeroOrMore(DIGIT, "digits").followedByOrEof(string("bar"));
-    assertThat(parser.parse("123bar")).isEqualTo("123");
-  }
-
-  @Test
-  public void orEmpty_followedByOrEof_eofMatches() {
-    Parser<String>.OrEmpty parser = zeroOrMore(DIGIT, "digits").followedByOrEof(string("bar"));
-    assertThat(parser.parse("123")).isEqualTo("123");
-  }
-
-  @Test
-  public void orEmpty_followedByOrEof_emptyInput() {
-    Parser<String>.OrEmpty parser = zeroOrMore(DIGIT, "digits").followedByOrEof(string("bar"));
-    assertThat(parser.parse("")).isEqualTo("");
-  }
-
-  @Test
-  public void orEmpty_followedByOrEof_neitherMatches() {
-    Parser<String>.OrEmpty parser = zeroOrMore(DIGIT, "digits").followedByOrEof(string("bar"));
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("123baz"));
-    assertThat(e).hasMessageThat().contains("at 1:4:");
-    assertThat(e).hasMessageThat().contains("expecting <bar>");
-    assertThat(e).hasMessageThat().contains("encountered [baz]");
-  }
-
-  @Test
-  public void orEmpty_followedByOrEof_mainParserFails() {
-    Parser<String>.OrEmpty parser = zeroOrMore(DIGIT, "digits").followedByOrEof(string("bar"));
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("baz"));
-    assertThat(e).hasMessageThat().contains("expecting <digits>");
-  }
-
-  @Test
   public void optionallyFollowedBy_suffixCannotBeEmpty() {
     assertThrows(IllegalArgumentException.class, () -> string("123").optionallyFollowedBy(""));
   }

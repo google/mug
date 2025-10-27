@@ -122,8 +122,8 @@ public final class Csv {
             QUOTED.or(unquoted)
                 .orElse("")
                 .delimitedBy(String.valueOf(delim))
-                .followedByOrEof(NEW_LINE)
-                .notEmpty());
+                .notEmpty()
+                .followedByOrEof(NEW_LINE));
     return allowsComments
         ? line.skipping(COMMENT).parseToStream(csv)
         : line.parseToStream(csv);
