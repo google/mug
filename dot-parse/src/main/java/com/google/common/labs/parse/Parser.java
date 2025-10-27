@@ -1166,8 +1166,8 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Defines a simple recursive grammar without the need of explicit forward-declaring a
-   * {@link Rule}. Essentially a fixed-point of {@link Rule}. For example:
+   * Defines a simple recursive grammar without needing to explicitly forward-declare a {@link
+   * Rule}. Essentially a fixed-point. For example:
    *
    * <pre>{@code
    * Parser<Expr> atomic = ...;
