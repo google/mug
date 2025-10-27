@@ -25,6 +25,7 @@ public final class CsvTest {
   @Test
   public void parseToLists_emptyLines() {
     assertThat(CSV.parseToLists("\n")).containsExactly(List.of());
+    assertThat(CSV.parseToLists("\n\n")).containsExactly(List.of(), List.of());
     assertThat(CSV.parseToLists("\n\r\n"))
         .containsExactly(List.of(), List.of());
     assertThat(CSV.parseToLists("\r\r\n"))

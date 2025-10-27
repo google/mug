@@ -637,7 +637,7 @@ public abstract class Parser<T> {
    *
    * @since 9.4
    */
-  public final Parser<T> followedByEofOr(Parser<?> suffix) {
+  public final Parser<T> followedByOrEof(Parser<?> suffix) {
     return followedBy(anyOf(suffix, UNSAFE_EOF));
   }
 
@@ -981,6 +981,14 @@ public abstract class Parser<T> {
      */
     Parser<T> followedBy(Parser<?> suffix) {
       return sequence(this, suffix, (a, b) -> a);
+    }
+
+    /**
+     * Specifies that the matched non-empty pattern must be either followed by {@code suffix} or
+     * EOF. Any other suffix will disqualify the match.
+     */
+    public final Parser<T>.OrEmpty followedByOrEof(Parser<?> suffix) {
+      return notEmpty().followedByOrEof(suffix).new OrEmpty(defaultSupplier);
     }
 
     /**
