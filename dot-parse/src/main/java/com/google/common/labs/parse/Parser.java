@@ -986,6 +986,8 @@ public abstract class Parser<T> {
     /**
      * Specifies that the matched non-empty pattern must be either followed by {@code suffix} or
      * EOF. Any other suffix will disqualify the match.
+     *
+     * @since 9.4
      */
     public final Parser<T>.OrEmpty followedByOrEof(Parser<?> suffix) {
       return notEmpty().followedByOrEof(suffix).new OrEmpty(defaultSupplier);
