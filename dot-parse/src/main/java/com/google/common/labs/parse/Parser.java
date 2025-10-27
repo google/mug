@@ -519,6 +519,20 @@ public abstract class Parser<T> {
     return sequence(this, suffix, (value, unused) -> value);
   }
 
+  /**
+   * Specifies that the matched pattern must be either followed by {@code suffix} or EOF.
+   * No other suffixes allowed.
+   *
+   * @since 9.4
+   */
+  public final Parser<T> followedByOrEof(Parser<?> suffix) {
+    return followedBy(anyOf(suffix, UNSAFE_EOF));
+  }
+
+  final Parser<T> followedByEof() {
+    return followedBy(UNSAFE_EOF);
+  }
+
   /** Returns an equivalent parser except it allows {@code suffix} if present. */
   public final Parser<T> optionallyFollowedBy(String suffix) {
     return followedBy(string(suffix).orElse(null));
@@ -629,20 +643,6 @@ public abstract class Parser<T> {
         };
       }
     };
-  }
-
-  /**
-   * Specifies that the matched pattern must be either followed by {@code suffix} or EOF.
-   * No other suffixes allowed.
-   *
-   * @since 9.4
-   */
-  public final Parser<T> followedByOrEof(Parser<?> suffix) {
-    return followedBy(anyOf(suffix, UNSAFE_EOF));
-  }
-
-  final Parser<T> followedByEof() {
-    return followedBy(UNSAFE_EOF);
   }
 
   /**
@@ -1163,6 +1163,22 @@ public abstract class Parser<T> {
         }
       };
     }
+  }
+
+  /**
+   * Used to create a simple recursive grammar without the need of explicit forward-declaring a
+   * {@link Rule}. Essentially a fixed-point of {@link Rule}. For example:
+   *
+   * <pre>{@code
+   * Parser<Expr> atomic = ...;
+   * Parser<Expr> expression = rule(expr -> expr.between("(", ")").or(atomic));
+   * }</pre>
+   *
+   * @since 9.4
+   */
+  public static <T> Parser<T> rule(Function<? super Parser<T>, ? extends Parser<T>> definition) {
+    Rule<T> rule = new Rule<>();
+    return rule.definedAs(definition.apply(rule));
   }
 
   /**

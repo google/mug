@@ -117,7 +117,7 @@ Stream<String> jsonStringsFrom(Reader input) {
           .zeroOrMore()
           .between("{", "}"));
 
-  return jsonRecord.source()             // take the source of the matched json record
+  return jsonRecord.source()             // take the source of the matched JSON record
       .skipping(Character::isWhitespace) // allow whitespaces for indentation and newline
       .parseToStream(input);
 }
@@ -125,11 +125,9 @@ Stream<String> jsonStringsFrom(Reader input) {
 
 ---
 
-## No Trap!
+## No More Infinite Loop (as in many combinator libraries)
 
-### The Infinite Loop (in many combinator libraries)
-
-That infinite loop bug happens when a repeating parser can succeed without moving forward.
+The infinite loop bug happens when a repeating parser succeeds without moving forward.
 It’s like a machine that says "Job done!" but never actually takes the next item off the conveyor belt,
 so it gets stuck doing the same thing forever.
 

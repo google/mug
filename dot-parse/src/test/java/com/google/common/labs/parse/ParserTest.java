@@ -3336,12 +3336,13 @@ public class ParserTest {
   }
 
   private static Parser<Integer> simpleCalculator() {
-    Parser.Rule<Integer> rule = new Parser.Rule<>();
     Parser<Integer> num = Parser.single(DIGIT, "digit").map(c -> c - '0');
-    Parser<Integer> atomic = rule.between("(", ")").or(num);
-    Parser<Integer> expr =
-        atomic.atLeastOnceDelimitedBy("+").map(nums -> nums.stream().mapToInt(n -> n).sum());
-    return rule.definedAs(expr);
+    return Parser.rule(
+        calc ->
+        calc.between("(", ")")
+            .or(num)
+            .atLeastOnceDelimitedBy("+")
+            .map(nums -> nums.stream().mapToInt(n -> n).sum()));
   }
 
   @Test
