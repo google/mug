@@ -1176,9 +1176,12 @@ public abstract class Parser<T> {
    *
    * @since 9.4
    */
-  public static <T> Parser<T> define(Function<? super Parser<T>, ? extends Parser<T>> definition) {
+  public static <T> Parser<T> define(
+      Function<? super Parser<T>, ? extends Parser<? extends T>> definition) {
     Rule<T> rule = new Rule<>();
-    return rule.definedAs(definition.apply(rule));
+    @SuppressWarnings("unchecked") // Parser<T> is covariant
+    Parser<T> parser = (Parser<T>) rule.definedAs(definition.apply(rule));
+    return parser;
   }
 
   /**

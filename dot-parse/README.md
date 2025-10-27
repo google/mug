@@ -16,7 +16,7 @@ Small, safe-by-construction parser combinators for Java.
 - **Sequence:** `then()`, `sequence()`, `atLeastOnce()`, `atLeastOnceDelimitedBy()`
 - **Optional:** `optionallyFollowedBy()`, `orElse(defaultValue)`, `zeroOrMore()`, `zeroOrMoreDelimitedBy(",")`
 - **Operator Precedence:** `OperatorTable<T>` (`prefix()`, `leftAssociative()`, `build()`, etc.)
-- **Recursive:** `Parser.Rule<T>`
+- **Recursive:** `Parser.define()`, `Parser.Rule<T>`
 - **Whitespace:** `parser.parseSkipping(Character::isWhitespace, input)`
 - **Lazy Parsing:** `parseToStream(Reader)`, `probe(Reader)`.
 
@@ -50,9 +50,7 @@ import static com.google.mu.util.CharPredicate.range;
 Parser<Integer> calculator() {
   Parser<Integer> number =
       consecutive(range('0', '9')).map(Integer::parseInt);
-  Parser.Rule<Integer> rule = new Parser.Rule<>(); // forward reference
-  Parser<Integer> atom = number.or(rule.between("(", ")");
-  Parser<Integer> parser = 
+  return Parser.define(rule ->
       new OperatorTable<Integer>()
 	      .leftAssociative('+', (a,b) -> a + b, 10)           // a+b
 	      .leftAssociative('-', (a,b) -> a - b, 10)           // a-b
@@ -60,8 +58,7 @@ Parser<Integer> calculator() {
 	      .leftAssociative('/', (a,b) -> a / b, 20)           // a/b
 	      .prefix('-', i -> -i, 30)                           // -a
 	      .postfix('!', i -> factorial(i), 40)                // a!
-	      .build(atom);
-  return rule.definedAs(parser);
+	      .build(number.or(rule.between("(", ")"))));
 }
 
 // Run (whitespace is handled globally):
@@ -111,11 +108,11 @@ Stream<String> jsonStringsFrom(Reader input) {
 
   // Between curly braces, you can have string literals, nested JSON records, or passthrough chars
   // For nested curly braces, you need forward declaration to define recursive grammar
-  Parser.Rule<Object> jsonRecord = new Parser.Rule<>();
-  jsonRecord.definedAs(
-      anyOf(quoted, jsonRecord, passThrough)
-          .zeroOrMore()
-          .between("{", "}"));
+  Parser<Object> jsonRecord =
+      Parser.define(rule ->
+	      anyOf(quoted, rule, passThrough)
+	          .zeroOrMore()
+	          .between("{", "}"));
 
   return jsonRecord.source()             // take the source of the matched JSON record
       .skipping(Character::isWhitespace) // allow whitespaces for indentation and newline
