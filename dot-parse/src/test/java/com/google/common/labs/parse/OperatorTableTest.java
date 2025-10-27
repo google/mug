@@ -93,12 +93,11 @@ public final class OperatorTableTest {
   }
 
   private int parse(String input) {
-    var lazy = new Parser.Rule<Integer>();
-    var parser =
-        lazy.definedAs(
+    Parser<Integer> calculator = Parser.define(
+        expr ->
             operatorTable.build(
-                lazy.between("(", ")")
+                expr.between("(", ")")
                     .or(consecutive(range('0', '9'), "number").map(Integer::parseInt))));
-    return parser.parseSkipping(Character::isWhitespace, input);
+    return calculator.parseSkipping(Character::isWhitespace, input);
   }
 }
