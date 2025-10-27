@@ -877,8 +877,8 @@ public abstract class Parser<T> {
    *         field
    *             .orElse("")                         // empty field is ok
    *             .delimitedBy(",")                   // comma-separated
-   *             .followedByOrEof(newline)           // trailing newline optional on last line
-   *             .notEmpty());                       // fail if the line is completely empty
+   *             .notEmpty()                         // fail if the line is completely empty
+   *             .followedByOrEof(newline));         // trailing newline optional on last line
    * }</pre>
    *
    * <p>In addition, the {@link #parse} convenience method is provided to parse potentially-empty
@@ -981,16 +981,6 @@ public abstract class Parser<T> {
      */
     Parser<T> followedBy(Parser<?> suffix) {
       return sequence(this, suffix, (a, b) -> a);
-    }
-
-    /**
-     * Specifies that the matched non-empty pattern must be either followed by {@code suffix} or
-     * EOF. Any other suffix will disqualify the match.
-     *
-     * @since 9.4
-     */
-    public final Parser<T>.OrEmpty followedByOrEof(Parser<?> suffix) {
-      return notEmpty().followedByOrEof(suffix).new OrEmpty(defaultSupplier);
     }
 
     /**
