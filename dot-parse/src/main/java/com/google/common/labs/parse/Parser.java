@@ -1171,7 +1171,11 @@ public abstract class Parser<T> {
    *
    * <pre>{@code
    * Parser<Expr> atomic = ...;
-   * Parser<Expr> expression = define(expr -> expr.between("(", ")").or(atomic));
+   * Parser<Expr> expression = define(
+   *     expr ->
+   *         anyOf(expr.between("(", ")"), atomic)
+   *             .atLeastOnceDelimitedBy("+")
+   *             .map(nums -> nums.stream().mapToInt(n -> n).sum()));
    * }</pre>
    *
    * @since 9.4
