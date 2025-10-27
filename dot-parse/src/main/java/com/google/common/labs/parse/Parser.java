@@ -877,7 +877,7 @@ public abstract class Parser<T> {
    *         field
    *             .orElse("")                         // empty field is ok
    *             .delimitedBy(",")                   // comma-separated
-   *             .followedBy(newline.optional())     // optional trailing newline
+   *             .followedByOrEof(newline)           // trailing newline optional on last line
    *             .notEmpty());                       // fail if the line is completely empty
    * }</pre>
    *
