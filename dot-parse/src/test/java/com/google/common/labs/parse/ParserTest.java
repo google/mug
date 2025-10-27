@@ -3337,7 +3337,7 @@ public class ParserTest {
 
   private static Parser<Integer> simpleCalculator() {
     Parser<Integer> num = Parser.single(DIGIT, "digit").map(c -> c - '0');
-    return Parser.rule(
+    return Parser.define(
         calc ->
         calc.between("(", ")")
             .or(num)
