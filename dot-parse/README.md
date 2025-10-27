@@ -3,8 +3,8 @@
 Small, safe-by-construction parser combinators for Java.
 
 - **Extremely small footprint:** ~**1000 LOC** end-to-end — roughly **1/6 jparsec**.
-- **Small API, low learning curve:** a handful of primitives; you can read the code and “just write the grammar”.
-- **Safe by construction:** free of two classic footguns (spin loops from `many/optional`, and sneaky left recursion).
+- **Easy to use:** a handful of primitives; you can read the code and “just write the grammar”.
+- **Hard to misuse:** free of two classic footguns (spin loops from `many/optional`, and sneaky left recursion).
 
 ---
 
