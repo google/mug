@@ -2,9 +2,9 @@
 
 Small, safe-by-construction parser combinators for Java.
 
-- **Extremely small footprint:** ~**1000 LOC** end-to-end — roughly **1/5 jparsec**.
 - **Easy to use:** a handful of primitives; write parser intuitively.
 - **Hard to misuse:** free of the common footgun of infinite loop caused by `many(optional)` or accidental left recursion.
+- **Extremely small footprint:** ~**1000 LOC** end-to-end — roughly **1/5 jparsec**.
 
 ---
 
