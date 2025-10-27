@@ -1166,6 +1166,22 @@ public abstract class Parser<T> {
   }
 
   /**
+   * Used to create a simple recursive grammar without the need of explicit forward-declaring a
+   * {@link Rule}. Essentially a fixed-point of {@link Rule}. For example:
+   *
+   * <pre>{@code
+   * Parser<Expr> atomic = ...;
+   * Parser<Expr> expression = rule(expr -> expr.between("(", ")").or(atomic));
+   * }</pre>
+   *
+   * @since 9.4
+   */
+  public static <T> Parser<T> rule(Function<? super Parser<T>, ? extends Parser<T>> definition) {
+    Rule<T> rule = new Rule<>();
+    return rule.definedAs(definition.apply(rule));
+  }
+
+  /**
    * A forward-declared grammar rule, to be used for recursive grammars.
    *
    * <p>For example, to create a parser for a simple calculator that supports single-digit numbers,
