@@ -1106,6 +1106,31 @@ public class ParserTest {
   }
 
   @Test
+  public void atLeastOnce_withReducer_success() {
+    Parser<Integer> integer = single(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> parser = integer.atLeastOnce((a, b) -> a - b);
+    assertThat(parser.parse("1")).isEqualTo(1);
+    assertThat(parser.parse("12")).isEqualTo(-1);
+    assertThat(parser.parse("123")).isEqualTo(-4);
+  }
+
+  @Test
+  public void atLeastOnce_withReducer_failure_withLeftover() {
+    Parser<Integer> integer = single(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> parser = integer.atLeastOnce((a, b) -> a - b);
+    assertThrows(ParseException.class, () -> parser.parse("1a"));
+    assertThrows(ParseException.class, () -> parser.parse("12a"));
+  }
+
+  @Test
+  public void atLeastOnce_withReducer_failure() {
+    Parser<Integer> integer = single(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> parser = integer.atLeastOnce((a, b) -> a - b);
+    assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+  }
+
+  @Test
   public void zeroOrMore_between_zeroMatch() {
     Parser<List<String>> parser = string("a").zeroOrMore().between("[", "]");
     assertThat(parser.parse("[]")).isEmpty();
@@ -2018,6 +2043,34 @@ public class ParserTest {
         Parser.DIGITS.atLeastOnceDelimitedBy(",").optionallyFollowedBy(",");
     ParseException e = assertThrows(ParseException.class, () -> parser.parse(""));
     assertThat(e).hasMessageThat().contains("at 1:1: expecting <digits>, encountered <EOF>");
+  }
+
+  @Test
+  public void atLeastOnceDelimitedBy_withReducer_success() {
+    Parser<Integer> integer = single(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> parser = integer.atLeastOnceDelimitedBy(",", (a, b) -> a - b);
+    assertThat(parser.parse("1")).isEqualTo(1);
+    assertThat(parser.parse("1,2")).isEqualTo(-1);
+    assertThat(parser.parse("1,2,3")).isEqualTo(-4);
+  }
+
+  @Test
+  public void atLeastOnceDelimitedBy_withReducer_failure_withLeftover() {
+    Parser<Integer> integer = single(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> parser = integer.atLeastOnceDelimitedBy(",", (a, b) -> a - b);
+    assertThrows(ParseException.class, () -> parser.parse("1a"));
+    assertThrows(ParseException.class, () -> parser.parse("1,2a"));
+  }
+
+  @Test
+  public void atLeastOnceDelimitedBy_withReducer_failure() {
+    Parser<Integer> integer = single(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> parser = integer.atLeastOnceDelimitedBy(",", (a, b) -> a - b);
+    assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parse("1,"));
+    assertThrows(ParseException.class, () -> parser.parse(",1"));
+    assertThrows(ParseException.class, () -> parser.parse("1,,2"));
   }
 
   @Test

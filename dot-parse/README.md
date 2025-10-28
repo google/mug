@@ -172,6 +172,8 @@ static SearchCriteria parse(String input) {
 }
 ```
 
+Didn't take much?
+
 ---
 
 ## No More Infinite Loops (if you've used other combinator libraries)

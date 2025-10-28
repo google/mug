@@ -19,6 +19,7 @@ import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -265,6 +267,16 @@ public abstract class Parser<T> {
   }
 
   /**
+   * Returns a parser that applies this parser at least once, greedily, and reduces the results
+   * using the {@code reducer} function.
+   *
+   * @since 9.4
+   */
+  public final Parser<T> atLeastOnce(BinaryOperator<T> reducer) {
+    return atLeastOnce(reducing(requireNonNull(reducer))).map(Optional::get);
+  }
+
+  /**
    * Returns a parser that applies this parser at least once, greedily, and collects the return
    * values using {@code collector}.
    */
@@ -311,6 +323,16 @@ public abstract class Parser<T> {
    */
   public final Parser<List<T>> atLeastOnceDelimitedBy(String delimiter) {
     return atLeastOnceDelimitedBy(delimiter, toUnmodifiableList());
+  }
+
+  /**
+   * Returns a parser that matches the current parser at least once, delimited by the given
+   * delimiter, using the given {@code reducer} function to reduce the results.
+   *
+   * @since 9.4
+   */
+  public final Parser<T> atLeastOnceDelimitedBy(String delimiter, BinaryOperator<T> reducer) {
+    return atLeastOnceDelimitedBy(delimiter, reducing(requireNonNull(reducer))).map(Optional::get);
   }
 
   /**
