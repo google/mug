@@ -165,7 +165,7 @@ static SearchCriteria parse(String input) {
           .prefix("NOT", Not::new, 30)
           .leftAssociative("AND", And::new, 20)
           .leftAssociative("OR", Or::new, 10)
-          .build(anyOf(unquoted, quoted, sub.between("(", ")")));
+          .build(anyOf(unquoted, quoted, sub.between("(", ")"))));
  
    // Skip the whitespaces
   return parser.parseSkipping(Character::isWhitespace, input);
