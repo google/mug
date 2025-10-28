@@ -518,6 +518,7 @@ public abstract class Parser<T> {
    * <p>For example if you are trying to parse a non-reserved word, you can use:
    *
    * <pre>{@code
+   * Set<String> reservedWords = ...;
    * Parser.WORD.suchThat(w -> !reservedWords.contains(w), "unreserved word");
    * }</pre>
    *
