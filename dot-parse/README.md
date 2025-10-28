@@ -48,8 +48,8 @@ import static com.google.mu.util.CharPredicate.range;
 Parser<Integer> calculator() {
   Parser<Integer> number =
       consecutive(range('0', '9')).map(Integer::parseInt);
-  return Parser.define(rule ->
-      new OperatorTable<Integer>()
+  return Parser.define(
+      rule -> new OperatorTable<Integer>()
 	      .leftAssociative('+', (a,b) -> a + b, 10)           // a+b
 	      .leftAssociative('-', (a,b) -> a - b, 10)           // a-b
 	      .leftAssociative('*', (a,b) -> a * b, 20)           // a*b
@@ -106,11 +106,10 @@ Stream<String> jsonStringsFrom(Reader input) {
 
   // Between curly braces, you can have string literals, nested JSON records, or passthrough chars
   // For nested curly braces, you need forward declaration to define recursive grammar
-  Parser<Object> jsonRecord =
-      Parser.define(rule ->
-	      anyOf(quoted, rule, passThrough)
-	          .zeroOrMore()
-	          .between("{", "}"));
+  Parser<Object> jsonRecord = Parser.define(
+      rule -> anyOf(quoted, rule, passThrough)
+	      .zeroOrMore()
+	      .between("{", "}"));
 
   return jsonRecord.source()             // take the source of the matched JSON record
       .skipping(Character::isWhitespace) // allow whitespaces for indentation and newline
