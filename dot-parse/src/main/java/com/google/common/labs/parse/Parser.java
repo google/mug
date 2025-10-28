@@ -534,6 +534,14 @@ public abstract class Parser<T> {
   }
 
   /**
+   * If this parser matches, applies the given optional (or zero-or-more) parser on the remaining
+   * input.
+   */
+  public final <R> Parser<R> then(Parser<R>.OrEmpty next) {
+    return sequence(this, next, (unused, value) -> value);
+  }
+
+  /**
    * If this parser matches, applies the given {@code condition} and disqualifies the match if the
    * condition is false.
    *
@@ -559,14 +567,6 @@ public abstract class Parser<T> {
             : result;
       }
     };
-  }
-
-  /**
-   * If this parser matches, applies the given optional (or zero-or-more) parser on the remaining
-   * input.
-   */
-  public final <R> Parser<R> then(Parser<R>.OrEmpty next) {
-    return sequence(this, next, (unused, value) -> value);
   }
 
   /** If this parser matches, continue to match {@code suffix}. */
