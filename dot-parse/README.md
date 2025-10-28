@@ -8,7 +8,7 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 
 ---
 
-## API sketch (tiny on purpose)
+## API sketch
 
 - **Primitives:** `string("if")`, `consecutive(Character::isWhitespace)`, `single(range('0', '9'))`
 - **Compose:** `.thenReturn(true)`, `.followedBy("else")`, `.between("[", "]")`, `.map(Literal::new)`
@@ -19,8 +19,6 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 - **Recursive:** `Parser.define()`, `Parser.Rule<T>`
 - **Whitespace:** `parser.parseSkipping(Character::isWhitespace, input)`
 - **Lazy Parsing:** `parseToStream(Reader)`, `probe(Reader)`.
-
-That’s essentially the whole surface.
 
 ---
 
