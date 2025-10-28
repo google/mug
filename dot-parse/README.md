@@ -120,7 +120,7 @@ Imagine you are building your own search engine, and you want to allow users to 
 
 For example: typing `coffee` will search for "coffee"; typing `coffee AND mug` will search for both "coffee" and "mug";
 typing `coffee OR tea` will search for articles that include either "coffee" or "tea"; `coffee AND NOT tea` searches for
-"coffee" and exclude all "tea" results.
+"coffee" and excludes all "tea" results.
 
 We'll respect normal intuitive operator precedence.
 
@@ -128,7 +128,7 @@ Users can also search for quoted phrases like `"coffee mug"`, which will require
 
 And finally, we want to allow users to use parentheses like `mug AND (coffee OR tea)`.
 
-First, let's say you've already built AST types using records:
+We can use sealed interface and records to model the search criteria ASTs:
 
 ```java
 sealed interface SearchCriteria
@@ -151,7 +151,7 @@ import static com.google.common.labs.parse.Parser.*;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.common.labs.parse.OperatorTable;
 
-SearchCriteria parse(String input) {
+static SearchCriteria parse(String input) {
   Set<String> keywords = Set.of("AND", "OR", "NOT");
 
   // A search term is either quoted, or unquoted (but cannot be a keyword)
