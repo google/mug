@@ -1,14 +1,14 @@
 # Mug *dot parse*
 
-Small, safe-by-construction parser combinators for Java.
+Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 
-- **Extremely small footprint:** ~**1000 LOC** end-to-end — roughly **1/6 jparsec**.
-- **Small API, low learning curve:** a handful of primitives; you can read the code and “just write the grammar”.
-- **Safe by construction:** free of two classic footguns (spin loops from `many/optional`, and sneaky left recursion).
+- **Easy to use:** a handful of primitives; write parser intuitively.
+- **Hard to misuse:** free of the common footguns like infinite loops caused by `many(optional)` or accidental left recursion.
+- **Tiny footprint:** ~**1000 LOC** end-to-end — roughly **1/5 jparsec**.
 
 ---
 
-## API sketch (tiny on purpose)
+## API sketch
 
 - **Primitives:** `string("if")`, `consecutive(Character::isWhitespace)`, `single(range('0', '9'))`
 - **Compose:** `.thenReturn(true)`, `.followedBy("else")`, `.between("[", "]")`, `.map(Literal::new)`
@@ -19,8 +19,6 @@ Small, safe-by-construction parser combinators for Java.
 - **Recursive:** `Parser.define()`, `Parser.Rule<T>`
 - **Whitespace:** `parser.parseSkipping(Character::isWhitespace, input)`
 - **Lazy Parsing:** `parseToStream(Reader)`, `probe(Reader)`.
-
-That’s essentially the whole surface.
 
 ---
 
@@ -35,7 +33,7 @@ var result = Parsers.parseSkipping(Character::isWhitespace, input);
 ```
 
 Keeps grammars clean and reusable. For quoted strings that need to include literal whitespaces,
-use `.immediatelyBetween("\"",  "\"")`, which will suppress the whigtespace skipping between the quotes.
+use `.immediatelyBetween("\"",  "\"")` to retain the whitespaces between the quotes.
 
 ---
 
@@ -43,15 +41,14 @@ use `.immediatelyBetween("\"",  "\"")`, which will suppress the whigtespace skip
 
 Goal: support `+ - * /`, factorial (`!`), unary negative, parentheses, and whitespace.
 
-```java
+```java {.good}
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.mu.util.CharPredicate.range;
 
 Parser<Integer> calculator() {
-  Parser<Integer> number =
-      consecutive(range('0', '9')).map(Integer::parseInt);
-  return Parser.define(rule ->
-      new OperatorTable<Integer>()
+  Parser<Integer> number = consecutive(range('0', '9')).map(Integer::parseInt);
+  return Parser.define(
+      rule -> new OperatorTable<Integer>()
 	      .leftAssociative('+', (a,b) -> a + b, 10)           // a+b
 	      .leftAssociative('-', (a,b) -> a - b, 10)           // a-b
 	      .leftAssociative('*', (a,b) -> a * b, 20)           // a*b
@@ -65,18 +62,16 @@ Parser<Integer> calculator() {
 int v = calculator()
     .parseSkipping(Character::isWhitespace, " -1 + 2 * (3 + 4!) / 5 ");
 ```
-
-**Why this stays simple**
-
-- `OperatorTable` takes care of infix, infix and postfix with precedences.
-- No per-token lexeme. The entry call `parseSkipping(...)` takes care of space everywhere.
+The `Parser.define(rule -> ...)` method call defines a recursive grammar
+where the lambda parameter `rule` is a placeholder of the result parser itself so that
+you can nest it between parentheses.
 
 ---
 
-## Example 2 — Split Json Records
+## Example 2 — Split JSON Records
 
 Most JSON parsers can parse a single JSON object enclosed in curly braces `{}`,
-a json array ecnlosed by square brackets `[]`, or jsonl files with each JSON record
+a json array enclosed by square brackets `[]`, or .jsonl files with each JSON record
 at a single line.
 
 But what if you need to read a file that may contain a single JSON record, or a list of them,
@@ -89,7 +84,7 @@ as well as escaped double quotes (which are not to start or terminate a string l
 
 The following code splits the JSON records so you can feed them to GSON (or any other JSON parser of choice):
 
-```java
+```java {.good}
 import static com.google.common.labs.parse.Parser.*;
 import static com.google.mu.util.CharPredicate.noneOf;
 
@@ -107,12 +102,11 @@ Stream<String> jsonStringsFrom(Reader input) {
   Parser<?> passThrough = consecutive(noneOf("\"{}"), "pass through");
 
   // Between curly braces, you can have string literals, nested JSON records, or passthrough chars
-  // For nested curly braces, you need forward declaration to define recursive grammar
-  Parser<Object> jsonRecord =
-      Parser.define(rule ->
-	      anyOf(quoted, rule, passThrough)
-	          .zeroOrMore()
-	          .between("{", "}"));
+  // For nested curly braces, let's define() it.
+  Parser<Object> jsonRecord = Parser.define(
+      rule -> anyOf(quoted, rule, passThrough)
+	      .zeroOrMore()
+	      .between("{", "}"));
 
   return jsonRecord.source()             // take the source of the matched JSON record
       .skipping(Character::isWhitespace) // allow whitespaces for indentation and newline
@@ -122,7 +116,7 @@ Stream<String> jsonStringsFrom(Reader input) {
 
 ---
 
-## No More Infinite Loop (as in many combinator libraries)
+## No More Infinite Loops (if you've used other combinator libraries)
 
 The infinite loop bug happens when a repeating parser succeeds without moving forward.
 It’s like a machine that says "Job done!" but never actually takes the next item off the conveyor belt,
@@ -135,7 +129,7 @@ At first, you'll write:
 Parser<List<Row>> csv = row.delimitedBy(newline) ✅
 ```
 
-You parse rows separated by newlines using . Works great.
+You parse rows separated by newlines. Works great.
 
 But what about empty lines? We should allow them, right?
 
@@ -146,7 +140,7 @@ Parser<List<Row>> csv = row.orElse(EMPTY_ROW)
 
 Still safe, because the required newline forces the parser to move forward.
 
-Next day, you realize that some csv inputs may or may not have the newline character at the last line.
+Next day, you realize that some CSV inputs may or may not have the newline character at the last line.
 So the `delimitedBy()` would not consume the last newline character.
 
 You're like: "easy, I'll just replace `delimitedBy()` with `zeroOrMore()`, and make the newline an optional suffix":
@@ -162,7 +156,7 @@ And you run `parse(input)`. The program hangs!
 At the end of the file, `row.orElse()` succeeds (by finding nothing) and `newline.optional()` also succeeds (by finding nothing).
 The combined parser succeeds but consumes zero characters. Then `zeroOrMore()` loop sees this success and happily tries again on the exact same spot... forever.
 
-### The Guardrail: How Dot Parse Uses Static Types To Help 🛡
+### The Guardrail: How Dot Parse Prevents Infinite Loops 🛡
 ️
 Mug's Dot Parse library uses the type system to prevent you from ever falling into this trap. The bug becomes a compile-time error.
 

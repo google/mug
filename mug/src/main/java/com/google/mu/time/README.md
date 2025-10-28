@@ -1,6 +1,6 @@
 ## Tl;dr
 
-What are the occasions you need to reach out to `java.util.time.DateTimeFormatter` or `SimpleDateTimeFormatter`? I rarely have a prescribed format that I want to descibe in these pattern strings. What usually happens is that there are some date time strings (likely in one of the standard formats) waiting to be parsed.
+What are the occasions you need to reach out to `java.util.time.DateTimeFormatter` or `SimpleDateTimeFormatter`? I rarely have a prescribed format that I want to describe in these pattern strings. What usually happens is that there are some date time strings (likely in one of the standard formats) waiting to be parsed.
 
 One time I got some timestamp strings from db (like `2023-12-30 10:30:00-07`) and needed to read and parse them from a file. Having to look up the DateTimeFormatter pattern syntax and then the right API to parse them felt like: 
 
@@ -26,7 +26,7 @@ DateTimeFormatter.ofPattern("EEEE, LLLL dd MM HH:mm:ss.SSSa VV");
 DateTimeFormatter.ofPattern("EEEE, yyyy-MM-dd hh:mm:ss.SSSa ZZZZZ");
 ```
 
-Some of the format specifiers are relatively intutive, such as the `HH:mm:ss` part (you still need to pay attention to use the upper case `HH` and not the lower caes `hh`), and the `yyyy-MM-dd` part (again, need to remember to use lower case `yyyy` and upper case `MM`).
+Some of the format specifiers are relatively intuitive, such as the `HH:mm:ss` part (you still need to pay attention to use the upper case `HH` and not the lower case `hh`), and the `yyyy-MM-dd` part (again, need to remember to use lower case `yyyy` and upper case `MM`).
 
 But other specifiers (like the timezone or offset specifiers, the weekday etc.) require carefully reading and memorizing the details in the [`DateTimeFormatter`](https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html) javadoc.
 
@@ -34,12 +34,12 @@ Even after you've memorized all the details about when to use `VV`, how many `Z`
 
 ## Prior Arts
 
-The golang's [time library](https://go.dev/src/time/format.go) uses the `2006 Jan 2 15:04:05` as the reference time to specify date time formats. The benefit of such approach is that users don't need to learn the non-intuitive format specifiers.
+The golang's [time library](https://go.dev/src/time/format.go) uses the `2006 Jan 2 15:04:05` as the reference time to specify date time formats. The benefit of such an approach is that users don't need to learn the non-intuitive format specifiers.
 
 
 ## DateTimeFormats
 
-As a similar solution, the `DateTimeFormats` library uses date time _examples_ to specify the date time foramt. Let's see some examples first:
+As a similar solution, the `DateTimeFormats` library uses date time _examples_ to specify the date time format. Let's see some examples first:
 
 ```java {.good}
 import static com.google.mu.time.DateTimeFormats.formatOf;
@@ -85,7 +85,7 @@ The benefits of this approach are two-fold:
 
 ## Avoiding Ambiguity
 
-By default, the library can successfully infer from `2023/10/01`, `2023-10-01`, `2023 Oct 01`, `Oct 01 2023`, `01 Oct 2023` etc. What it can't figure out is `01/02/2023`. Is that January 2nd or Febuary 1st? Both interpretations are valid in certain regions of the world.
+By default, the library can successfully infer from `2023/10/01`, `2023-10-01`, `2023 Oct 01`, `Oct 01 2023`, `01 Oct 2023` etc. What it can't figure out is `01/02/2023`. Is that January 2nd or February 1st? Both interpretations are valid in certain regions of the world.
 
 So if you need `01/02/2023` to mean January 2nd, use a day-of-month that's unambiguous (such as 30):
 
@@ -104,7 +104,7 @@ formatOf("30/01/2023")
 
 The Java `DateTimeFormatter` API supports flexible specifiers. For example, you might want to make the microsecond part optional (only printed if non-zero). It's accomplished using square brackets in the format pattern, but `DateTimeFormats` has no way to infer this from the example date time string.
 
-So when you need flexibilities like this, you can mix explict pattern specifiers with example strings (quoted inside pointy brackets):
+So when you need flexibilities like this, you can mix explicit pattern specifiers with example strings (quoted inside pointy brackets):
 
 ```java {.good}
 // Equivalent to DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy HH:mm:ss[.SSS] VV")
