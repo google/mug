@@ -91,12 +91,7 @@ import static com.google.mu.util.CharPredicate.noneOf;
 /** Splits input into a lazy stream of top-level JSON records. */
 Stream<String> jsonStringsFrom(Reader input) {
   // Either escaped or unescaped, enclosed between double quotes
-  Parser<?> stringLiteral =
-    anyOf(
-            consecutive(noneOf("\"\\"), "quoted chars"),
-            string("\\").followedBy(single(any(), "escaped char")))
-        .zeroOrMore()
-        .immediatelyBetween("\"", "\"");
+  Parser<?> stringLiteral = Parser.quotedStringWithEscapes('"');
   
   // Outside of string literal, any non-quote, non-brace characters are passed through
   Parser<?> passThrough = consecutive(noneOf("\"{}"), "pass through");
