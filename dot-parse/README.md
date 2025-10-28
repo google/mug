@@ -33,7 +33,7 @@ var result = Parsers.parseSkipping(Character::isWhitespace, input);
 ```
 
 Keeps grammars clean and reusable. For quoted strings that need to include literal whitespaces,
-use `.immediatelyBetween("\"",  "\"")`, which will suppress the whigtespace skipping between the quotes.
+use `.immediatelyBetween("\"",  "\"")` to retain the whitespaces between the quotes.
 
 ---
 
@@ -46,8 +46,7 @@ import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.mu.util.CharPredicate.range;
 
 Parser<Integer> calculator() {
-  Parser<Integer> number =
-      consecutive(range('0', '9')).map(Integer::parseInt);
+  Parser<Integer> number = consecutive(range('0', '9')).map(Integer::parseInt);
   return Parser.define(
       rule -> new OperatorTable<Integer>()
 	      .leftAssociative('+', (a,b) -> a + b, 10)           // a+b
@@ -63,11 +62,9 @@ Parser<Integer> calculator() {
 int v = calculator()
     .parseSkipping(Character::isWhitespace, " -1 + 2 * (3 + 4!) / 5 ");
 ```
-
-**Why this stays simple**
-
-- `OperatorTable` takes care of infix, infix and postfix with precedences.
-- No per-token lexeme. The entry call `parseSkipping(...)` takes care of space everywhere.
+The `Parser.define(rule -> ...)` method call defines a recursive grammar
+where the lambda parameter `rule` is a placeholder of the result parser itself so that
+you can nest it between parentheses.
 
 ---
 
@@ -105,7 +102,7 @@ Stream<String> jsonStringsFrom(Reader input) {
   Parser<?> passThrough = consecutive(noneOf("\"{}"), "pass through");
 
   // Between curly braces, you can have string literals, nested JSON records, or passthrough chars
-  // For nested curly braces, you need forward declaration to define recursive grammar
+  // For nested curly braces, let's define() it.
   Parser<Object> jsonRecord = Parser.define(
       rule -> anyOf(quoted, rule, passThrough)
 	      .zeroOrMore()
