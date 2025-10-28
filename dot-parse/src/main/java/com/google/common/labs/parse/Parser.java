@@ -93,7 +93,10 @@ public abstract class Parser<T> {
   };
 
   /**
-   * String literal quoted by {@code quoteChar} and allows backslash escapes (no Unicode escapes).
+   * String literal quoted by {@code quoteChar} and allows backslash escapes (no Unicode escapes or
+   * C-style escapes like '\n', '\t' etc.).
+   *
+   * <p>For example, {@code "foo\\bar"} is parsed as {@code "foo\bar"}.
    *
    * @since 9.4
    */
