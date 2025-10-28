@@ -37,7 +37,7 @@ use `.immediatelyBetween("\"",  "\"")` to retain the whitespaces between the quo
 
 ---
 
-## Example 1 — Calculator (OperatorTable)
+## Example — Calculator (OperatorTable)
 
 Goal: support `+ - * /`, factorial (`!`), unary negative, parentheses, and whitespace.
 
@@ -68,7 +68,7 @@ you can nest it between parentheses.
 
 ---
 
-## Example 2 — Split JSON Records
+## Example — Split JSON Records
 
 Most JSON parsers can parse a single JSON object enclosed in curly braces `{}`,
 a json array enclosed by square brackets `[]`, or .jsonl files with each JSON record
@@ -113,6 +113,66 @@ Stream<String> jsonStringsFrom(Reader input) {
       .parseToStream(input);
 }
 ```
+
+## Example — Mini Search Language
+
+Imagine you are building your own search engine, and you want to allow users to search by search terms.
+
+For example: typing `coffee` will search for "coffee"; typing `coffee AND mug` will search for both "coffee" and "mug";
+typing `coffee OR tea` will search for articles that include either "coffee" or "tea"; `coffee AND NOT tea` searches for
+"coffee" and excludes all "tea" results.
+
+We'll respect normal intuitive operator precedence.
+
+Users can also search for quoted phrases like `"coffee mug"`, which will require exact match of "coffee mug".
+
+And finally, we want to allow users to use parentheses like `mug AND (coffee OR tea)`.
+
+We can use sealed interface and records to model the search criteria ASTs:
+
+```java
+sealed interface SearchCriteria
+    permits SearchCriteria.Term, SearchCriteria.And, SearchCriteria.Or, SearchCriteria.Not {
+  
+  record Term(String term) implements SearchCriteria {}
+  
+  record And(SearchCriteria left, SearchCriteria right) implements SearchCriteria {}
+  
+  record Or(SearchCriteria left, SearchCriteria right) implements SearchCriteria {}
+  
+  record Not(SearchCriteria criteria) implements SearchCriteria {}
+}
+```
+
+Now let's build the parser:
+
+```java {.good}
+import static com.google.common.labs.parse.Parser.*;
+import static com.google.mu.util.CharPredicate.isNot;
+import static com.google.common.labs.parse.OperatorTable;
+
+static SearchCriteria parse(String input) {
+  Set<String> keywords = Set.of("AND", "OR", "NOT");
+
+  // A search term is either quoted, or unquoted (but cannot be a keyword)
+  Parser<Term> unquoted = WORD.suchThat(w -> !keywords.contains(w), "search term").map(Term::new);
+  Parser<Term> quoted = consecutive(isNot('"')).immediatelyBetween("\"", "\"").map(Term::new);
+
+  // Leaf-level search term can be a quoted, unquoted term, or a sub-criteria inside parentheses.
+  // They are then grouped by the boolean operators.
+  Parser<SearchCriteria> parser = define(
+      sub -> new OperatorTable<SearchCriteria>()
+          .prefix("NOT", Not::new, 30)
+          .leftAssociative("AND", And::new, 20)
+          .leftAssociative("OR", Or::new, 10)
+          .build(anyOf(unquoted, quoted, sub.between("(", ")"))));
+ 
+   // Skip the whitespaces
+  return parser.parseSkipping(Character::isWhitespace, input);
+}
+```
+
+Didn't take much?
 
 ---
 
