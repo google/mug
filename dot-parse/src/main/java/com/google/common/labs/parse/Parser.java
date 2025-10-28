@@ -519,7 +519,7 @@ public abstract class Parser<T> {
    *
    * <pre>{@code
    * Set<String> reservedWords = ...;
-   * Parser.WORD.suchThat(w -> !reservedWords.contains(w), "unreserved word");
+   * Parser<String> identifier = Parser.WORD.suchThat(w -> !reservedWords.contains(w), "identifier");
    * }</pre>
    *
    * @since 9.4
