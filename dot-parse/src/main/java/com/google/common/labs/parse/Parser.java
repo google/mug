@@ -155,11 +155,14 @@ public abstract class Parser<T> {
    */
   public static Parser<String> quotedStringWithEscapes(
       char quoteChar, Function<? super Character, String> escapeFunction) {
-    checkArgument(quoteChar != '\\', "quoteChar cannot be \\");
+    requireNonNull(escapeFunction);
+    CharPredicate allowedChars = c -> !Character.isISOControl(c);
+    checkArgument(quoteChar != '\\', "quoteChar cannot be '\\'");
+    checkArgument(allowedChars.test(quoteChar), "quoteChar cannot be %s", quoteChar);
     String quoteString = Character.toString(quoteChar);
     return anyOf(
-            consecutive(isNot(quoteChar).and(isNot('\\')), "quoted chars"),
-            string("\\").then(single(CharPredicate.ANY, "escaped char").map(escapeFunction)))
+            consecutive(isNot(quoteChar).and(isNot('\\')).and(allowedChars), "quoted chars"),
+            string("\\").then(single(allowedChars, "escaped char").map(escapeFunction)))
         .zeroOrMore(joining())
         .immediatelyBetween(quoteString, quoteString);
   }

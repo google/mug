@@ -2329,13 +2329,28 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> singleQuoted.parse("'foo")); // unclosed
     assertThrows(ParseException.class, () -> singleQuoted.parse("'foo'bar")); // leftover
     assertThrows(ParseException.class, () -> singleQuoted.parse("'foo\\")); // dangling escape
+    assertThrows(ParseException.class, () -> singleQuoted.parse("foo\n")); // literal newline
+    assertThrows(ParseException.class, () -> singleQuoted.parse("foo\r")); // CR
+    assertThrows(ParseException.class, () -> singleQuoted.parse("foo\t"));
+    assertThrows(ParseException.class, () -> singleQuoted.parse("\\\n")); // literal newline
+    assertThrows(ParseException.class, () -> singleQuoted.parse("\\\r")); // CR
+    assertThrows(ParseException.class, () -> singleQuoted.parse("\\\t"));
   }
 
   @Test
-  public void quotedStringWithEscapes_backslashQuoteChar_throws() {
+  public void quotedStringWithEscapes_invalidQuoteChar_throws() {
     assertThrows(
         IllegalArgumentException.class,
         () -> Parser.quotedStringWithEscapes('\\', Object::toString));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Parser.quotedStringWithEscapes('\n', Object::toString));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Parser.quotedStringWithEscapes('\r', Object::toString));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Parser.quotedStringWithEscapes('\t', Object::toString));
   }
 
   @Test
