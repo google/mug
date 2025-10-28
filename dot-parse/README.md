@@ -1,6 +1,6 @@
 # Mug *dot parse*
 
-Small, safe-by-construction parser combinators for Java.
+Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 
 - **Easy to use:** a handful of primitives; write parser intuitively.
 - **Hard to misuse:** free of the common footgun of infinite loop caused by `many(optional)` or accidental left recursion.
