@@ -92,24 +92,6 @@ public abstract class Parser<T> {
     }
   };
 
-  /**
-   * String literal quoted by {@code quoteChar} and allows backslash escapes (no Unicode escapes or
-   * C-style escapes like '\n', '\t' etc.).
-   *
-   * <p>For example, {@code "foo\\bar"} is parsed as {@code "foo\bar"}.
-   *
-   * @since 9.4
-   */
-  public static Parser<String> quotedStringWithEscapes(char quoteChar) {
-    checkArgument(quoteChar != '\\', "quoteChar cannot be \\");
-    String quoteString = Character.toString(quoteChar);
-    return anyOf(
-            consecutive(isNot(quoteChar).and(isNot('\\')), "quoted chars"),
-            string("\\").then(single(CharPredicate.ANY, "escaped char").source()))
-        .zeroOrMore(joining())
-        .immediatelyBetween(quoteString, quoteString);
-  }
-
   /** Matches a character as specified by {@code matcher}. */
   public static Parser<Character> single(CharPredicate matcher, String name) {
     requireNonNull(matcher);
@@ -160,6 +142,24 @@ public abstract class Parser<T> {
         return context.expecting(value, start);
       }
     };
+  }
+
+  /**
+   * String literal quoted by {@code quoteChar} and allows backslash escapes (no Unicode escapes or
+   * C-style escapes like '\n', '\t' etc.).
+   *
+   * <p>For example, {@code "foo\\bar"} is parsed as {@code foo\bar}.
+   *
+   * @since 9.4
+   */
+  public static Parser<String> quotedStringWithEscapes(char quoteChar) {
+    checkArgument(quoteChar != '\\', "quoteChar cannot be \\");
+    String quoteString = Character.toString(quoteChar);
+    return anyOf(
+            consecutive(isNot(quoteChar).and(isNot('\\')), "quoted chars"),
+            string("\\").then(single(CharPredicate.ANY, "escaped char").source()))
+        .zeroOrMore(joining())
+        .immediatelyBetween(quoteString, quoteString);
   }
 
   /**
