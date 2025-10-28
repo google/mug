@@ -41,7 +41,7 @@ use `.immediatelyBetween("\"",  "\"")`, which will suppress the whigtespace skip
 
 Goal: support `+ - * /`, factorial (`!`), unary negative, parentheses, and whitespace.
 
-```java
+```java {.good}
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.mu.util.CharPredicate.range;
 
@@ -71,10 +71,10 @@ int v = calculator()
 
 ---
 
-## Example 2 — Split Json Records
+## Example 2 — Split JSON Records
 
 Most JSON parsers can parse a single JSON object enclosed in curly braces `{}`,
-a json array ecnlosed by square brackets `[]`, or jsonl files with each JSON record
+a json array enclosed by square brackets `[]`, or .jsonl files with each JSON record
 at a single line.
 
 But what if you need to read a file that may contain a single JSON record, or a list of them,
@@ -87,7 +87,7 @@ as well as escaped double quotes (which are not to start or terminate a string l
 
 The following code splits the JSON records so you can feed them to GSON (or any other JSON parser of choice):
 
-```java
+```java {.good}
 import static com.google.common.labs.parse.Parser.*;
 import static com.google.mu.util.CharPredicate.noneOf;
 
