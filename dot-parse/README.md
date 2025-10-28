@@ -155,7 +155,7 @@ static SearchCriteria parse(String input) {
   Set<String> keywords = Set.of("AND", "OR", "NOT");
 
   // A search term is either quoted, or unquoted (but cannot be a keyword)
-  Parser<Term> unquoted =  WORD.suchThat(w -> !keywords.contains(w), "search term").map(Term::new);
+  Parser<Term> unquoted = WORD.suchThat(w -> !keywords.contains(w), "search term").map(Term::new);
   Parser<Term> quoted = consecutive(isNot('"')).immediatelyBetween("\"", "\"").map(Term::new);
 
   // Leaf-level search term can be a quoted, unquoted term, or a sub-criteria inside parentheses.
