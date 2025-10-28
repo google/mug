@@ -2305,7 +2305,7 @@ public class ParserTest {
 
   @Test
   public void quotedStringWithEscapes_singleQuote_success() {
-    Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'');
+    Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'', Object::toString);
     assertThat(singleQuoted.parse("''")).isEmpty();
     assertThat(singleQuoted.parse("'foo'")).isEqualTo("foo");
     assertThat(singleQuoted.parse("'foo\\'s'")).isEqualTo("foo's");
@@ -2316,7 +2316,7 @@ public class ParserTest {
 
   @Test
   public void quotedStringWithEscapes_doubleQuote_success() {
-    Parser<String> doubleQuoted = Parser.quotedStringWithEscapes('"');
+    Parser<String> doubleQuoted = Parser.quotedStringWithEscapes('"', Object::toString);
     assertThat(doubleQuoted.parse("\"\"")).isEmpty();
     assertThat(doubleQuoted.parse("\"bar\"")).isEqualTo("bar");
     assertThat(doubleQuoted.parse("\"bar\\\"baz\"")).isEqualTo("bar\"baz");
@@ -2325,7 +2325,7 @@ public class ParserTest {
 
   @Test
   public void quotedStringWithEscapes_failures() {
-    Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'');
+    Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'', Object::toString);
     assertThrows(ParseException.class, () -> singleQuoted.parse("'foo")); // unclosed
     assertThrows(ParseException.class, () -> singleQuoted.parse("'foo'bar")); // leftover
     assertThrows(ParseException.class, () -> singleQuoted.parse("'foo\\")); // dangling escape
@@ -2333,7 +2333,9 @@ public class ParserTest {
 
   @Test
   public void quotedStringWithEscapes_backslashQuoteChar_throws() {
-    assertThrows(IllegalArgumentException.class, () -> Parser.quotedStringWithEscapes('\\'));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Parser.quotedStringWithEscapes('\\', Object::toString));
   }
 
   @Test

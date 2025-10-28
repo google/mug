@@ -67,7 +67,7 @@ public class MiniSearchTest {
       // A search term is either quoted, or unquoted (but cannot be a keyword)
       Parser<Term> unquoted =
           WORD.suchThat(w -> !keywords.contains(w), "search term").map(Term::new);
-      Parser<Term> quoted = Parser.quotedStringWithEscapes('"').map(Term::new);
+      Parser<Term> quoted = Parser.quotedStringWithEscapes('"', Object::toString).map(Term::new);
 
       // Leaf-level search term can be a quoted, unquoted term, or a sub-criteria inside parentheses.
       // They are then grouped by the boolean operators.

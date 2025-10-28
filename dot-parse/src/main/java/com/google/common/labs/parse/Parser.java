@@ -145,19 +145,21 @@ public abstract class Parser<T> {
   }
 
   /**
-   * String literal quoted by {@code quoteChar} and allows backslash escapes (no Unicode escapes or
-   * C-style escapes like '\n', '\t' etc.).
+   * String literal quoted by {@code quoteChar} and allows backslash escapes (no Unicode escapes).
    *
-   * <p>For example, {@code "foo\\bar"} is parsed as {@code foo\bar}.
+   * <p>Any escaped character will be passed to the {@code escapeFunction} to translate. If you need
+   * ST-Query style escaping that doesn't treat '\t', '\n' etc. specially, just pass {@code
+   * Object::toString}.
    *
    * @since 9.4
    */
-  public static Parser<String> quotedStringWithEscapes(char quoteChar) {
+  public static Parser<String> quotedStringWithEscapes(
+      char quoteChar, Function<? super Character, String> escapeFunction) {
     checkArgument(quoteChar != '\\', "quoteChar cannot be \\");
     String quoteString = Character.toString(quoteChar);
     return anyOf(
             consecutive(isNot(quoteChar).and(isNot('\\')), "quoted chars"),
-            string("\\").then(single(CharPredicate.ANY, "escaped char").source()))
+            string("\\").then(single(CharPredicate.ANY, "escaped char").map(escapeFunction)))
         .zeroOrMore(joining())
         .immediatelyBetween(quoteString, quoteString);
   }
