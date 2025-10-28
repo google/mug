@@ -156,7 +156,7 @@ static SearchCriteria parse(String input) {
 
   // A search term is either quoted, or unquoted (but cannot be a keyword)
   Parser<Term> unquoted = WORD.suchThat(w -> !keywords.contains(w), "search term").map(Term::new);
-  Parser<Term> quoted = consecutive(isNot('"'), "qutoed")
+  Parser<Term> quoted = consecutive(isNot('"'), "quoted")
       .immediatelyBetween("\"", "\"")
       .map(Term::new);
 
