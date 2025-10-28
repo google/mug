@@ -147,22 +147,24 @@ public abstract class Parser<T> {
   /**
    * String literal quoted by {@code quoteChar} and allows backslash escapes (no Unicode escapes).
    *
-   * <p>Any escaped character will be passed to the {@code escapeFunction} to translate. If you need
-   * ST-Query style escaping that doesn't treat '\t', '\n' etc. specially, just pass {@code
-   * Object::toString}.
+   * <p>Any escaped character will be passed to the {@code unescapeFunction} to translate to the
+   * literal character. If you need ST-Query style escaping that doesn't treat '\t', '\n' etc.
+   * specially, just pass {@code Object::toString}.
+   *
+   * <p>For example, {@code "foo\\bar"} is parsed as {@code foo\bar}.
    *
    * @since 9.4
    */
   public static Parser<String> quotedStringWithEscapes(
-      char quoteChar, Function<? super Character, String> escapeFunction) {
-    requireNonNull(escapeFunction);
+      char quoteChar, Function<? super Character, String> unescapeFunction) {
+    requireNonNull(unescapeFunction);
     CharPredicate allowedChars = c -> !Character.isISOControl(c);
     checkArgument(quoteChar != '\\', "quoteChar cannot be '\\'");
     checkArgument(allowedChars.test(quoteChar), "quoteChar cannot be %s", quoteChar);
     String quoteString = Character.toString(quoteChar);
     return anyOf(
             consecutive(isNot(quoteChar).and(isNot('\\')).and(allowedChars), "quoted chars"),
-            string("\\").then(single(allowedChars, "escaped char").map(escapeFunction)))
+            string("\\").then(single(allowedChars, "escaped char").map(unescapeFunction)))
         .zeroOrMore(joining())
         .immediatelyBetween(quoteString, quoteString);
   }
