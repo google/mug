@@ -160,7 +160,7 @@ And you run `parse(input)`. The program hangs!
 At the end of the file, `row.orElse()` succeeds (by finding nothing) and `newline.optional()` also succeeds (by finding nothing).
 The combined parser succeeds but consumes zero characters. Then `zeroOrMore()` loop sees this success and happily tries again on the exact same spot... forever.
 
-### The Guardrail: How Dot Parse Uses Static Types To Help 🛡
+### The Guardrail: How Dot Parse Prevents Infinite Loops 🛡
 ️
 Mug's Dot Parse library uses the type system to prevent you from ever falling into this trap. The bug becomes a compile-time error.
 
