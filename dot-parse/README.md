@@ -135,7 +135,7 @@ At first, you'll write:
 Parser<List<Row>> csv = row.delimitedBy(newline) ✅
 ```
 
-You parse rows separated by newlines using . Works great.
+You parse rows separated by newlines. Works great.
 
 But what about empty lines? We should allow them, right?
 
@@ -146,7 +146,7 @@ Parser<List<Row>> csv = row.orElse(EMPTY_ROW)
 
 Still safe, because the required newline forces the parser to move forward.
 
-Next day, you realize that some csv inputs may or may not have the newline character at the last line.
+Next day, you realize that some CSV inputs may or may not have the newline character at the last line.
 So the `delimitedBy()` would not consume the last newline character.
 
 You're like: "easy, I'll just replace `delimitedBy()` with `zeroOrMore()`, and make the newline an optional suffix":
