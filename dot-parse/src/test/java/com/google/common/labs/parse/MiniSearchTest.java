@@ -1,6 +1,6 @@
 package com.google.common.labs.parse;
 
-import static com.google.common.labs.parse.Parser.WORD;
+import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.util.Set;
@@ -66,7 +66,7 @@ public class MiniSearchTest {
 
       // A search term is either quoted, or unquoted (but cannot be a keyword)
       Parser<Term> unquoted =
-          WORD.suchThat(w -> !keywords.contains(w), "search term").map(Term::new);
+          word().suchThat(w -> !keywords.contains(w), "search term").map(Term::new);
       Parser<Term> quoted = Parser.quotedStringWithEscapes('"', Object::toString).map(Term::new);
 
       // Leaf-level search term can be a quoted, unquoted term, or a sub-criteria inside parentheses.

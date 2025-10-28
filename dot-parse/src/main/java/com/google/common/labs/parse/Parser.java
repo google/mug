@@ -65,20 +65,6 @@ import com.google.mu.util.Substring;
  */
 public abstract class Parser<T> {
   /**
-   * One or more regex {@code \w+} characters.
-   *
-   * @since 9.4
-   */
-  public static final Parser<String> WORD = consecutive(CharPredicate.WORD, "word");
-
-  /**
-   * One or more regex {@code \d+} characters.
-   *
-   * @since 9.4
-   */
-  public static final Parser<String> DIGITS = consecutive(CharPredicate.range('0', '9'), "digits");
-
-  /**
    * Only use in context where input consumption is guaranteed. Do not use within a loop, like
    * atLeastOnce(), zeroOrMore()!
    */
@@ -127,6 +113,24 @@ public abstract class Parser<T> {
             : context.expecting(name, end);
       }
     };
+  }
+
+  /**
+   * One or more regex {@code \w+} characters.
+   *
+   * @since 9.4
+   */
+  public static Parser<String> word() {
+    return consecutive(CharPredicate.WORD, "word");
+  }
+
+  /**
+   * One or more regex {@code \d+} characters.
+   *
+   * @since 9.4
+   */
+  public static Parser<String> digits() {
+    return consecutive(CharPredicate.range('0', '9'), "digits");
   }
 
   /** Matches a literal {@code string}. */
