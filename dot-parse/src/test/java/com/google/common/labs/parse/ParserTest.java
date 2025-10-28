@@ -1,5 +1,7 @@
 package com.google.common.labs.parse;
 
+import static com.google.common.labs.parse.Parser.DIGITS;
+import static com.google.common.labs.parse.Parser.WORD;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
@@ -18,6 +20,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -164,6 +167,35 @@ public class ParserTest {
     assertThrows(
         ParseException.class,
         () -> string("abc").map(Integer::parseInt).parseToStream("def").toList());
+  }
+
+  @Test
+  public void suchThat_parserFails() {
+    Set<String> keywords = Set.of("if", "else");
+    Parser<String> parser = WORD.suchThat(keywords::contains, "keyword");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("b"));
+    assertThat(thrown).hasMessageThat().contains("at 1:1: expecting <keyword>, encountered [b]");
+  }
+
+  @Test
+  public void suchThat_conditionSucceeds() {
+    Set<String> magicNumbers = Set.of("888", "911");
+    Parser<String> parser = DIGITS.suchThat(magicNumbers::contains, "magic");
+    assertThat(parser.parse("888")).isEqualTo("888");
+    assertThat(parser.skipping(Character::isWhitespace).parseToStream("911 888"))
+        .containsExactly("911", "888")
+        .inOrder();
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test
+  public void suchThat_conditionFails() {
+    Parser<Integer> parser =
+        string("23").map(Integer::parseInt).suchThat(i -> i > 100, "larger than 100");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("23"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("at 1:1: expecting <larger than 100>, encountered [23]");
   }
 
   @Test

@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
@@ -60,6 +61,20 @@ import com.google.mu.util.Substring;
  */
 public abstract class Parser<T> {
   /**
+   * One or more regex {@code \w} characters.
+   *
+   * @since 9.4
+   */
+  public static final Parser<String> WORD = consecutive(CharPredicate.WORD, "word");
+
+  /**
+   * One or more regex {@code \d} characters.
+   *
+   * @since 9.4
+   */
+  public static final Parser<String> DIGITS = consecutive(CharPredicate.range('0', '9'), "digits");
+
+  /**
    * Only use in context where input consumption is guaranteed. Do not use within a loop, like
    * atLeastOnce(), zeroOrMore()!
    */
@@ -69,7 +84,7 @@ public abstract class Parser<T> {
       start = skipIfAny(skip, input, start);
       return input.isEof(start)
           ? new MatchResult.Success<>(start, start, null)
-          : context.expecting("EOF", start, start);
+          : context.expecting("EOF", start);
     }
   };
 
@@ -84,7 +99,7 @@ public abstract class Parser<T> {
         if (input.isInRange(start) && matcher.test(input.charAt(start))) {
           return new MatchResult.Success<>(start, start + 1, input.charAt(start));
         }
-        return context.expecting(name, start, start);
+        return context.expecting(name, start);
       }
     };
   }
@@ -105,7 +120,7 @@ public abstract class Parser<T> {
         for (; input.isInRange(end) && matcher.test(input.charAt(end)); end++) {}
         return end > start
             ? new MatchResult.Success<>(start, end, null)
-            : context.expecting(name, start, end);
+            : context.expecting(name, end);
       }
     };
   }
@@ -120,7 +135,7 @@ public abstract class Parser<T> {
         if (input.startsWith(value, start)) {
           return new MatchResult.Success<>(start, start + value.length(), value);
         }
-        return context.expecting(value, start, start);
+        return context.expecting(value, start);
       }
     };
   }
@@ -497,6 +512,33 @@ public abstract class Parser<T> {
   }
 
   /**
+   * If this parser matches, applies the given {@code condition} and disqualifies the match if the
+   * condition is false.
+   *
+   * <p>For example if you are trying to parse a non-reserved word, you can use:
+   *
+   * <pre>{@code
+   * word.suchThat(w -> !reservedWords.contains(w), "unreserved word");
+   * }</pre>
+   *
+   * @since 9.4
+   */
+  public final Parser<T> suchThat(Predicate<? super T> condition, String name) {
+    requireNonNull(condition);
+    requireNonNull(name);
+    Parser<T> self = this;
+    return new Parser<>() {
+      @Override MatchResult<T> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        var result = self.skipAndMatch(skip, input, start, context);
+        return result instanceof MatchResult.Success<T> success && !condition.test(success.value())
+            ? context.expecting(name, success.head())
+            : result;
+      }
+    };
+  }
+
+  /**
    * If this parser matches, applies the given optional (or zero-or-more) parser on the remaining
    * input.
    */
@@ -731,7 +773,7 @@ public abstract class Parser<T> {
     switch (result) {
       case MatchResult.Success(int head, int tail, T value) -> {
         if (!input.isEof(tail)) {
-          throw context.report(context.expecting("EOF", head, tail));
+          throw context.report(context.expecting("EOF", tail));
         }
         return value;
       }
@@ -1296,7 +1338,7 @@ public abstract class Parser<T> {
       this.input = input;
     }
 
-    <V> MatchResult.Failure<V> expecting(String name, int start, int at) {
+    <V> MatchResult.Failure<V> expecting(String name, int at) {
       return failAt(at, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
     }
 
