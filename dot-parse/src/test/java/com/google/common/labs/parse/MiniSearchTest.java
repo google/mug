@@ -1,9 +1,7 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Parser.WORD;
-import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.CharPredicate.isNot;
 
 import java.util.Set;
 
@@ -17,6 +15,16 @@ public class MiniSearchTest {
   @Test public void testTerm() {
     assertThat(SearchCriteria.parse("foo"))
         .isEqualTo(new SearchCriteria.Term("foo"));
+  }
+
+  @Test public void testQuoted() {
+    assertThat(SearchCriteria.parse("\"foo AND bar\""))
+        .isEqualTo(new SearchCriteria.Term("foo AND bar"));
+  }
+
+  @Test public void testQuotedWithEscape() {
+    assertThat(SearchCriteria.parse("\"foo AND \\\"bar\\\"\""))
+        .isEqualTo(new SearchCriteria.Term("foo AND \"bar\""));
   }
 
   @Test public void testAnd() {
@@ -57,8 +65,9 @@ public class MiniSearchTest {
       Set<String> keywords = Set.of("AND", "OR", "NOT");
 
       // A search term is either quoted, or unquoted (but cannot be a keyword)
-      Parser<Term> unquoted = WORD.suchThat(w -> !keywords.contains(w), "search term").map(Term::new);
-      Parser<Term> quoted = consecutive(isNot('"'), "quoted").immediatelyBetween("\"", "\"").map(Term::new);
+      Parser<Term> unquoted =
+          WORD.suchThat(w -> !keywords.contains(w), "search term").map(Term::new);
+      Parser<Term> quoted = Parser.quotedStringWithEscapes('"').map(Term::new);
 
       // Leaf-level search term can be a quoted, unquoted term, or a sub-criteria inside parentheses.
       // They are then grouped by the boolean operators.

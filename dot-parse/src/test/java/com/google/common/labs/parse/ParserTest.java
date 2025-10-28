@@ -2304,6 +2304,39 @@ public class ParserTest {
   }
 
   @Test
+  public void quotedStringWithEscapes_singleQuote_success() {
+    Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'');
+    assertThat(singleQuoted.parse("''")).isEmpty();
+    assertThat(singleQuoted.parse("'foo'")).isEqualTo("foo");
+    assertThat(singleQuoted.parse("'foo\\'s'")).isEqualTo("foo's");
+    assertThat(singleQuoted.parse("'foo\\\\bar'")).isEqualTo("foo\\bar");
+    assertThat(singleQuoted.parse("'\\''")).isEqualTo("'");
+    assertThat(singleQuoted.parse("'\\\\'")).isEqualTo("\\");
+  }
+
+  @Test
+  public void quotedStringWithEscapes_doubleQuote_success() {
+    Parser<String> doubleQuoted = Parser.quotedStringWithEscapes('"');
+    assertThat(doubleQuoted.parse("\"\"")).isEmpty();
+    assertThat(doubleQuoted.parse("\"bar\"")).isEqualTo("bar");
+    assertThat(doubleQuoted.parse("\"bar\\\"baz\"")).isEqualTo("bar\"baz");
+    assertThat(doubleQuoted.parse("\"bar\\\\baz\"")).isEqualTo("bar\\baz");
+  }
+
+  @Test
+  public void quotedStringWithEscapes_failures() {
+    Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'');
+    assertThrows(ParseException.class, () -> singleQuoted.parse("'foo")); // unclosed
+    assertThrows(ParseException.class, () -> singleQuoted.parse("'foo'bar")); // leftover
+    assertThrows(ParseException.class, () -> singleQuoted.parse("'foo\\")); // dangling escape
+  }
+
+  @Test
+  public void quotedStringWithEscapes_backslashQuoteChar_throws() {
+    assertThrows(IllegalArgumentException.class, () -> Parser.quotedStringWithEscapes('\\'));
+  }
+
+  @Test
   public void consecutive_success() {
     Parser<String> parser = consecutive(DIGIT, "digit");
     assertThat(parser.parse("1")).isEqualTo("1");

@@ -14,11 +14,13 @@
  *****************************************************************************/
 package com.google.common.labs.parse;
 
+import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -89,6 +91,21 @@ public abstract class Parser<T> {
           : context.expecting("EOF", start);
     }
   };
+
+  /**
+   * String literal quoted by {@code quoteChar} and allows backslash escapes (no Unicode escapes).
+   *
+   * @since 9.4
+   */
+  public static Parser<String> quotedStringWithEscapes(char quoteChar) {
+    checkArgument(quoteChar != '\\', "quoteChar cannot be \\");
+    String quoteString = Character.toString(quoteChar);
+    return anyOf(
+            consecutive(isNot(quoteChar).and(isNot('\\')), "quoted chars"),
+            string("\\").then(single(CharPredicate.ANY, "escaped char").source()))
+        .zeroOrMore(joining())
+        .immediatelyBetween(quoteString, quoteString);
+  }
 
   /** Matches a character as specified by {@code matcher}. */
   public static Parser<Character> single(CharPredicate matcher, String name) {
