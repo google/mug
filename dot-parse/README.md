@@ -3,8 +3,8 @@
 Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 
 - **Easy to use:** a handful of primitives; write parser intuitively.
-- **Hard to misuse:** free of the common footgun of infinite loop caused by `many(optional)` or accidental left recursion.
-- **Extremely small footprint:** ~**1000 LOC** end-to-end — roughly **1/5 jparsec**.
+- **Hard to misuse:** free of the common footguns like infinite loops caused by `many(optional)` or accidental left recursion.
+- **Tiny footprint:** ~**1000 LOC** end-to-end — roughly **1/5 jparsec**.
 
 ---
 
