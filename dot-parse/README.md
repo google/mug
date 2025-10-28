@@ -91,7 +91,7 @@ import static com.google.mu.util.CharPredicate.noneOf;
 /** Splits input into a lazy stream of top-level JSON records. */
 Stream<String> jsonStringsFrom(Reader input) {
   // Either escaped or unescaped, enclosed between double quotes
-  Parser<?> stringLiteral = Parser.quotedStringWithEscapes('"');
+  Parser<?> stringLiteral = Parser.quotedStringWithEscapes('"', Object::toString);
   
   // Outside of string literal, any non-quote, non-brace characters are passed through
   Parser<?> passThrough = consecutive(noneOf("\"{}"), "pass through");
@@ -99,7 +99,7 @@ Stream<String> jsonStringsFrom(Reader input) {
   // Between curly braces, you can have string literals, nested JSON records, or passthrough chars
   // For nested curly braces, let's define() it.
   Parser<Object> jsonRecord = Parser.define(
-      rule -> anyOf(quoted, rule, passThrough)
+      rule -> anyOf(stringLiteral, rule, passThrough)
 	      .zeroOrMore()
 	      .between("{", "}"));
 
@@ -151,7 +151,7 @@ static SearchCriteria parse(String input) {
 
   // A search term is either quoted, or unquoted (but cannot be a keyword)
   Parser<Term> unquoted = WORD.suchThat(w -> !keywords.contains(w), "search term").map(Term::new);
-  Parser<Term> quoted = Parser.quotedStringWithEscapes('"');
+  Parser<Term> quoted = Parser.quotedStringWithEscapes('"', Object::toString);
 
   // Leaf-level search term can be a quoted, unquoted term, or a sub-criteria inside parentheses.
   // They are then grouped by the boolean operators.
