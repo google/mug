@@ -63,14 +63,14 @@ import com.google.mu.util.Substring;
  */
 public abstract class Parser<T> {
   /**
-   * One or more regex {@code \w} characters.
+   * One or more regex {@code \w+} characters.
    *
    * @since 9.4
    */
   public static final Parser<String> WORD = consecutive(CharPredicate.WORD, "word");
 
   /**
-   * One or more regex {@code \d} characters.
+   * One or more regex {@code \d+} characters.
    *
    * @since 9.4
    */
