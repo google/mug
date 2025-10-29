@@ -94,7 +94,6 @@ as well as escaped double quotes (which are not to start or terminate a string l
 The following code splits the JSON records so you can feed them to GSON (or any other JSON parser of choice):
 
 ```java {.good}
-import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.mu.util.CharPredicate.noneOf;
 
 /** Splits input into a lazy stream of top-level JSON records. */
@@ -108,7 +107,7 @@ Stream<String> jsonStringsFrom(Reader input) {
   // Between curly braces, you can have string literals, nested JSON records, or passthrough chars
   // For nested curly braces, let's define() it.
   Parser<?> jsonRecord = Parser.define(
-      rule -> anyOf(stringLiteral, rule, passThrough)
+      rule -> Parser.anyOf(stringLiteral, rule, passThrough)
 	      .zeroOrMore()
 	      .between("{", "}"));
 
@@ -151,7 +150,6 @@ sealed interface SearchCriteria
 Now let's build the parser:
 
 ```java {.good}
-import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.mu.util.CharPredicate.isNot;
 
 static SearchCriteria parse(String input) {
@@ -170,7 +168,7 @@ static SearchCriteria parse(String input) {
           .prefix("NOT", Not::new, 30)
           .leftAssociative("AND", And::new, 20)
           .leftAssociative("OR", Or::new, 10)
-          .build(anyOf(unquoted, quoted, sub.between("(", ")"))));
+          .build(Parser.anyOf(unquoted, quoted, sub.between("(", ")"))));
  
    // Skip the whitespaces
   return parser.parseSkipping(Character::isWhitespace, input);
