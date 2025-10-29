@@ -14,11 +14,13 @@
  *****************************************************************************/
 package com.google.common.labs.parse;
 
+import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -62,20 +64,6 @@ import com.google.mu.util.Substring;
  * subject to stack overflow error on maliciously crafted input (think of 10K left parens).
  */
 public abstract class Parser<T> {
-  /**
-   * One or more regex {@code \w} characters.
-   *
-   * @since 9.4
-   */
-  public static final Parser<String> WORD = consecutive(CharPredicate.WORD, "word");
-
-  /**
-   * One or more regex {@code \d} characters.
-   *
-   * @since 9.4
-   */
-  public static final Parser<String> DIGITS = consecutive(CharPredicate.range('0', '9'), "digits");
-
   /**
    * Only use in context where input consumption is guaranteed. Do not use within a loop, like
    * atLeastOnce(), zeroOrMore()!
@@ -127,6 +115,24 @@ public abstract class Parser<T> {
     };
   }
 
+  /**
+   * One or more regex {@code \w+} characters.
+   *
+   * @since 9.4
+   */
+  public static Parser<String> word() {
+    return consecutive(CharPredicate.WORD, "word");
+  }
+
+  /**
+   * One or more regex {@code \d+} characters.
+   *
+   * @since 9.4
+   */
+  public static Parser<String> digits() {
+    return consecutive(CharPredicate.range('0', '9'), "digits");
+  }
+
   /** Matches a literal {@code string}. */
   public static Parser<String> string(String value) {
     checkArgument(value.length() > 0, "value cannot be empty");
@@ -140,6 +146,30 @@ public abstract class Parser<T> {
         return context.expecting(value, start);
       }
     };
+  }
+
+  /**
+   * String literal quoted by {@code quoteChar} and allows backslash escapes (no Unicode escapes).
+   *
+   * <p>Any escaped character will be passed to the {@code unescapeFunction} to translate to the
+   * literal character. If you need ST-Query style escaping that doesn't treat '\t', '\n' etc.
+   * specially, just pass {@code Object::toString}.
+   *
+   * <p>For example, {@code "foo\\bar"} is parsed as {@code foo\bar}.
+   *
+   * @since 9.4
+   */
+  public static Parser<String> quotedStringWithEscapes(
+      char quoteChar, Function<? super Character, ? extends CharSequence> unescapeFunction) {
+    requireNonNull(unescapeFunction);
+    checkArgument(quoteChar != '\\', "quoteChar cannot be '\\'");
+    checkArgument(!Character.isISOControl(quoteChar), "quoteChar cannot be a control character");
+    String quoteString = Character.toString(quoteChar);
+    return anyOf(
+            consecutive(isNot(quoteChar).and(isNot('\\')), "quoted chars"),
+            string("\\").then(single(CharPredicate.ANY, "escaped char").map(unescapeFunction)))
+        .zeroOrMore(joining())
+        .immediatelyBetween(quoteString, quoteString);
   }
 
   /**
@@ -534,6 +564,14 @@ public abstract class Parser<T> {
   }
 
   /**
+   * If this parser matches, applies the given optional (or zero-or-more) parser on the remaining
+   * input.
+   */
+  public final <R> Parser<R> then(Parser<R>.OrEmpty next) {
+    return sequence(this, next, (unused, value) -> value);
+  }
+
+  /**
    * If this parser matches, applies the given {@code condition} and disqualifies the match if the
    * condition is false.
    *
@@ -559,14 +597,6 @@ public abstract class Parser<T> {
             : result;
       }
     };
-  }
-
-  /**
-   * If this parser matches, applies the given optional (or zero-or-more) parser on the remaining
-   * input.
-   */
-  public final <R> Parser<R> then(Parser<R>.OrEmpty next) {
-    return sequence(this, next, (unused, value) -> value);
   }
 
   /** If this parser matches, continue to match {@code suffix}. */
