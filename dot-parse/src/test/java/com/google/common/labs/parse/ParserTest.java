@@ -2329,12 +2329,6 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> singleQuoted.parse("'foo")); // unclosed
     assertThrows(ParseException.class, () -> singleQuoted.parse("'foo'bar")); // leftover
     assertThrows(ParseException.class, () -> singleQuoted.parse("'foo\\")); // dangling escape
-    assertThrows(ParseException.class, () -> singleQuoted.parse("foo\n")); // literal newline
-    assertThrows(ParseException.class, () -> singleQuoted.parse("foo\r")); // CR
-    assertThrows(ParseException.class, () -> singleQuoted.parse("foo\t"));
-    assertThrows(ParseException.class, () -> singleQuoted.parse("\\\n")); // literal newline
-    assertThrows(ParseException.class, () -> singleQuoted.parse("\\\r")); // CR
-    assertThrows(ParseException.class, () -> singleQuoted.parse("\\\t"));
   }
 
   @Test
