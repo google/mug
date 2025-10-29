@@ -17,7 +17,7 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 - **Optional:** `optionallyFollowedBy()`, `orElse(defaultValue)`, `zeroOrMore()`, `zeroOrMoreDelimitedBy(",")`
 - **Operator Precedence:** `OperatorTable<T>` (`prefix()`, `leftAssociative()`, `build()`, etc.)
 - **Recursive:** `Parser.define()`, `Parser.Rule<T>`
-- **Whitespace:** `parser.parseSkipping(Character::isWhitespace, input)`
+- **Whitespace:** `parser.parseSkipping(Character::isWhitespace, input)`, `parser.skipping(...).parse(...)`
 - **Lazy Parsing:** `parseToStream(Reader)`, `probe(Reader)`.
 
 ---
@@ -26,14 +26,23 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 
 No lexeme ceremony. Turn on skipping at `parse()` time:
 
-```java
-var result = Parsers.parseSkipping(Character::isWhitespace, input);
-//                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+```java {.good}
+var result = parser.parseSkipping(Character::isWhitespace, input);
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 // Skips all whitespaces in between
 ```
 
-Keeps grammars clean and reusable. For quoted strings that need to include literal whitespaces,
-use `.immediatelyBetween("\"",  "\"")` to retain the whitespaces between the quotes.
+Or for streaming parsing from a `Reader`:
+
+```java {.good}
+try (Reader reader = ...) {
+  return parser.skipping(Character::isWhitespace)
+    .parseToStream(reader)
+    .filter(...)
+    .map(...)
+    .toList();
+}
+```
 
 ---
 
@@ -42,11 +51,11 @@ use `.immediatelyBetween("\"",  "\"")` to retain the whitespaces between the quo
 Goal: support `+ - * /`, factorial (`!`), unary negative, parentheses, and whitespace.
 
 ```java {.good}
-import static com.google.common.labs.parse.Parser.consecutive;
-import static com.google.mu.util.CharPredicate.range;
+import com.google.common.labs.parse.OperatorTable;
+import com.google.common.labs.parse.Parser;
 
 Parser<Integer> calculator() {
-  Parser<Integer> number = consecutive(range('0', '9')).map(Integer::parseInt);
+  Parser<Integer> number = Parser.digits().map(Integer::parseInt);
   return Parser.define(
       rule -> new OperatorTable<Integer>()
 	      .leftAssociative('+', (a,b) -> a + b, 10)           // a+b
@@ -85,7 +94,7 @@ as well as escaped double quotes (which are not to start or terminate a string l
 The following code splits the JSON records so you can feed them to GSON (or any other JSON parser of choice):
 
 ```java {.good}
-import static com.google.common.labs.parse.Parser.*;
+import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.mu.util.CharPredicate.noneOf;
 
 /** Splits input into a lazy stream of top-level JSON records. */
@@ -94,11 +103,11 @@ Stream<String> jsonStringsFrom(Reader input) {
   Parser<?> stringLiteral = Parser.quotedStringWithEscapes('"', Object::toString);
   
   // Outside of string literal, any non-quote, non-brace characters are passed through
-  Parser<?> passThrough = consecutive(noneOf("\"{}"), "pass through");
+  Parser<?> passThrough = Parser.consecutive(noneOf("\"{}"), "pass through");
 
   // Between curly braces, you can have string literals, nested JSON records, or passthrough chars
   // For nested curly braces, let's define() it.
-  Parser<Object> jsonRecord = Parser.define(
+  Parser<?> jsonRecord = Parser.define(
       rule -> anyOf(stringLiteral, rule, passThrough)
 	      .zeroOrMore()
 	      .between("{", "}"));
@@ -142,20 +151,21 @@ sealed interface SearchCriteria
 Now let's build the parser:
 
 ```java {.good}
-import static com.google.common.labs.parse.Parser.*;
+import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.mu.util.CharPredicate.isNot;
-import static com.google.common.labs.parse.OperatorTable;
 
 static SearchCriteria parse(String input) {
   Set<String> keywords = Set.of("AND", "OR", "NOT");
 
   // A search term is either quoted, or unquoted (but cannot be a keyword)
-  Parser<Term> unquoted = WORD.suchThat(w -> !keywords.contains(w), "search term").map(Term::new);
+  Parser<Term> unquoted = Parser.word()
+      .suchThat(w -> !keywords.contains(w), "search term")
+      .map(Term::new);
   Parser<Term> quoted = Parser.quotedStringWithEscapes('"', Object::toString);
 
   // Leaf-level search term can be a quoted, unquoted term, or a sub-criteria inside parentheses.
   // They are then grouped by the boolean operators.
-  Parser<SearchCriteria> parser = define(
+  Parser<SearchCriteria> parser = Parser.define(
       sub -> new OperatorTable<SearchCriteria>()
           .prefix("NOT", Not::new, 30)
           .leftAssociative("AND", And::new, 20)
