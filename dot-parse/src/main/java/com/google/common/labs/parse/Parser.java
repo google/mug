@@ -1298,6 +1298,9 @@ public abstract class Parser<T> {
    *         .map(nums -> nums.stream().mapToInt(n -> n).sum());
    * return rule.definedAs(expr);
    * }</pre>
+   *
+   * <p>For simple definitions, you could use the {@link #define} method with a lambda
+   * to elide the need of an explicit forward declaration.
    */
   public static final class Rule<T> extends Parser<T> {
     private static final String DO_NOT_DELEGATE_TO_RULE_PARSER = "Do not delegate to a Rule parser";

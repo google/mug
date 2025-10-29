@@ -10,7 +10,7 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 
 ## API sketch
 
-- **Primitives:** `string("if")`, `consecutive(Character::isWhitespace)`, `single(range('0', '9'))`
+- **Primitives:** `word()`, `digits()`, `string("if")`, `single(ANY)`, `quotedStringWithEscapes()`
 - **Compose:** `.thenReturn(true)`, `.followedBy("else")`, `.between("[", "]")`, `.map(Literal::new)`
 - **Alternative:** `p1.or(p2)`, `anyOf(p1, p2)`
 - **Sequence:** `then()`, `sequence()`, `atLeastOnce()`, `atLeastOnceDelimitedBy()`
