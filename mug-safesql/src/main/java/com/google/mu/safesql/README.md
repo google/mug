@@ -121,7 +121,7 @@ SafeSql.of(
     SELECT department_id {group_by_day -> , date}, COUNT(*) AS cnt
     FROM Sales
     WHERE department_id IN ({department_ids})
-    GROUP BY department_id {group_by_day -> , date},
+    GROUP BY department_id {group_by_day -> , date}
     """,
     groupByDay, departmentIds, groupByDay);
 ```
