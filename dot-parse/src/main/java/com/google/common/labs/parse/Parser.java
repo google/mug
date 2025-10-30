@@ -84,25 +84,28 @@ public abstract class Parser<T> {
   /**
    * Convenience method taking a character set as parameter.
    *
-   * <p>For example {@code anyCharIn("a-zA-Z-_")} is a short hand of {@code
+   * <p>For example {@code anyCharIn("[a-zA-Z-_]")} is a short hand of {@code
    * single(range('a', 'z').orRange('A', 'Z').or('-').or('_')}.
    *
    * <p>You can also use {@code '^'} to get negative character set like:
-   * {@code anyCharIn("^a-zA-Z")}, which is any non-alphabet character.
+   * {@code anyCharIn("[^a-zA-Z]")}, which is any non-alphabet character.
    *
    * <p>Note that it's differnt from {@code single(CharPredicate.anyOf(string))},
    * which treats the string as a list of literal characters, not a regex-like
    * character set.
    *
+   * <p>Implementation Note: regex isn't used during parsing. The character set string is translated
+   * to a plain {@link CharPredicate} at construction time.
+   *
    * @param characterSet regex-like character set but disallows backslash so doesn't
    *        support escaping. If your character set includes special characters like literal backslash
    *        or right bracket, use {@link #single} with the corresponding {@link CharPredicate}.
    * @throws IllegalArgumentException if {@code characterSet} includes backslash
-   *         or the right bracket (the outmost pairs of {@code []} are allowed and ignored.).
+   *         or the right bracket (except the outmost pairs of {@code []}).
    * @since 9.4
    */
   public static Parser<Character> anyCharIn(String characterSet) {
-    return single(compileCharacterSet(characterSet), showCharSet(characterSet));
+    return single(compileCharacterSet(characterSet), characterSet);
   }
 
   /** Matches a character as specified by {@code matcher}. */
@@ -124,26 +127,29 @@ public abstract class Parser<T> {
   /**
    * Convenience method taking a character set as parameter.
    *
-   * <p>For example {@code oneOrMoreCharsIn("a-zA-Z-_")} is a short hand of {@code
+   * <p>For example {@code oneOrMoreCharsIn("[a-zA-Z-_]")} is a short hand of {@code
    * consecutive(range('a', 'z').orRange('A', 'Z').or('-').or('_')}.
    *
    * <p>You can also use {@code '^'} to get negative character set like:
-   * {@code oneOrMoreCharsIn("^a-zA-Z")}, which represents consecutive non-alphabet characters.
+   * {@code oneOrMoreCharsIn("[^a-zA-Z]")}, which represents consecutive non-alphabet characters.
    *
    * <p>Note that it's differnt from {@code consecutive(CharPredicate.anyOf(string))},
    * which treats the string as a list of literal characters, not a regex-like
    * character set.
    *
+   * <p>Implementation Note: regex isn't used during parsing. The character set string is translated
+   * to a plain {@link CharPredicate} at construction time.
+   *
    * @param characterSet regex-like character set but disallows backslash so doesn't
    *        support escaping. If your character set includes special characters like literal backslash
    *        or right bracket, use {@link #consecutive} with the corresponding {@link CharPredicate}.
    * @throws IllegalArgumentException if {@code characterSet} includes backslash
-   *         or the right bracket (the outmost pairs of {@code []} are allowed and ignored.).
+   *         or the right bracket (except the outmost pairs of {@code []}).
    * @since 9.4
    */
   public static Parser<String> oneOrMoreCharsIn(String characterSet) {
     return consecutive(
-        compileCharacterSet(characterSet), "one or more " + showCharSet(characterSet));
+        compileCharacterSet(characterSet), "one or more " + characterSet);
   }
 
   /** Matches one or more consecutive characters as specified by {@code matcher}. */
@@ -1498,7 +1504,9 @@ public abstract class Parser<T> {
   }
 
   private static CharPredicate compileCharacterSet(String characterSet) {
-    characterSet = SQUARE_BRACKETED.from(characterSet).orElse(characterSet);
+    characterSet = Substring.between(Substring.prefix('['), Substring.suffix(']'))
+        .from(characterSet)
+        .orElseThrow(() -> new IllegalArgumentException("character set must be in square brackets."));
     if (characterSet.isEmpty()) {
       return CharPredicate.NONE;
     }
@@ -1509,12 +1517,6 @@ public abstract class Parser<T> {
         anyOf(range, validChar.map(CharPredicate::is)).atLeastOnce(CharPredicate::or);
     return anyOf(string("^").then(positiveSet).map(CharPredicate::not), positiveSet)
         .parse(characterSet);
-  }
-
-  private static String showCharSet(String characterSet) {
-    return SQUARE_BRACKETED.in(characterSet)
-        .map(bracketed -> characterSet)
-        .orElseGet(() -> "[" + characterSet + "]");
   }
 
   private static void checkArgument(boolean condition, String message, Object... args) {

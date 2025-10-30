@@ -2305,7 +2305,7 @@ public class ParserTest {
 
   @Test
   public void anyCharIn_positiveCharSet_parseSuccess() {
-    Parser<Character> parser = Parser.anyCharIn("a-f[A-F-_");
+    Parser<Character> parser = Parser.anyCharIn("[a-f[A-F-_]");
     assertThat(parser.parseToStream("abcf_-AEF"))
         .containsExactly('a', 'b', 'c', 'f', '_', '-', 'A', 'E', 'F')
         .inOrder();
@@ -2316,7 +2316,7 @@ public class ParserTest {
 
   @Test
   public void anyCharIn_negativeCharSet_parseSuccess() {
-    Parser<Character> parser = Parser.anyCharIn("^[a-fA-F-_");
+    Parser<Character> parser = Parser.anyCharIn("[^[a-fA-F-_]");
     assertThat(parser.parseToStream("Zz"))
         .containsExactly('Z', 'z')
         .inOrder();
@@ -2327,7 +2327,7 @@ public class ParserTest {
 
   @Test
   public void anyCharIn_positiveCharSet_parseFailure() {
-    Parser<Character> parser = Parser.anyCharIn("a-fA-F-_");
+    Parser<Character> parser = Parser.anyCharIn("[a-fA-F-_]");
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("z"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo("at 1:1: expecting <[a-fA-F-_]>, encountered [z].");
@@ -2335,7 +2335,7 @@ public class ParserTest {
 
   @Test
   public void anyCharIn_negativeCharSet_parseFailure() {
-    Parser<Character> parser = Parser.anyCharIn("^[a-fA-F-_");
+    Parser<Character> parser = Parser.anyCharIn("[^[a-fA-F-_]");
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("["));
     assertThat(thrown).hasMessageThat()
         .isEqualTo("at 1:1: expecting <[^[a-fA-F-_]>, encountered [[].");
@@ -2343,13 +2343,6 @@ public class ParserTest {
 
   @Test
   public void anyCharIn_emptyCharSet_parseFailure() {
-    Parser<Character> parser = Parser.anyCharIn("");
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
-    assertThat(thrown).hasMessageThat().isEqualTo("at 1:1: expecting <[]>, encountered [a].");
-  }
-
-  @Test
-  public void anyCharIn_emptyCharSetInBrackets_parseFailure() {
     Parser<Character> parser = Parser.anyCharIn("[]");
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
     assertThat(thrown).hasMessageThat().isEqualTo("at 1:1: expecting <[]>, encountered [a].");
@@ -2358,14 +2351,14 @@ public class ParserTest {
   @Test
   public void anyCharIn_backslashNotAllowed_throws() {
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Parser.anyCharIn("\\"));
+        assertThrows(IllegalArgumentException.class, () -> Parser.anyCharIn("[\\]"));
     assertThat(thrown).hasMessageThat().contains("encountered [\\]");
   }
 
   @Test
   public void anyCharIn_closingBracketNotAllowed_throws() {
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Parser.anyCharIn("]"));
+        assertThrows(IllegalArgumentException.class, () -> Parser.anyCharIn("[]]"));
     assertThat(thrown).hasMessageThat().contains("encountered []]");
   }
 
@@ -2454,7 +2447,7 @@ public class ParserTest {
 
   @Test
   public void oneOrMoreCharsIn_positiveCharSet_parseSuccess() {
-    Parser<String> parser = Parser.oneOrMoreCharsIn("a-fA-F-_");
+    Parser<String> parser = Parser.oneOrMoreCharsIn("[a-fA-F-_]");
     assertThat(parser.parse("abf-_F")).isEqualTo("abf-_F");
   }
 
@@ -2474,7 +2467,7 @@ public class ParserTest {
 
   @Test
   public void oneOrMoreCharsIn_positiveCharSet_parseFailure() {
-    Parser<String> parser = Parser.oneOrMoreCharsIn("a-fA-F-_");
+    Parser<String> parser = Parser.oneOrMoreCharsIn("[a-fA-F-_]");
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("1a"));
     assertThat(thrown).hasMessageThat().contains("expecting <one or more [a-fA-F-_]>");
   }
@@ -2488,13 +2481,6 @@ public class ParserTest {
 
   @Test
   public void oneOrMoreCharsIn_emptyCharSet_parseFails() {
-    Parser<String> parser = Parser.oneOrMoreCharsIn("");
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
-    assertThat(thrown).hasMessageThat().contains("expecting <one or more []>");
-  }
-
-  @Test
-  public void oneOrMoreCharsIn_emptyCharSetInBrackets_parseFails() {
     Parser<String> parser = Parser.oneOrMoreCharsIn("[]");
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
     assertThat(thrown).hasMessageThat().contains("expecting <one or more []>");
@@ -2503,14 +2489,14 @@ public class ParserTest {
   @Test
   public void oneOrMoreCharsIn_backslashNotAllowed_throws() {
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Parser.oneOrMoreCharsIn("\\"));
+        assertThrows(IllegalArgumentException.class, () -> Parser.oneOrMoreCharsIn("[\\]"));
     assertThat(thrown).hasMessageThat().contains("encountered [\\]");
   }
 
   @Test
   public void oneOrMoreCharsIn_closingBracketNotAllowed_throws() {
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Parser.oneOrMoreCharsIn("]"));
+        assertThrows(IllegalArgumentException.class, () -> Parser.oneOrMoreCharsIn("[]]"));
     assertThat(thrown).hasMessageThat().contains("encountered []]");
   }
 
