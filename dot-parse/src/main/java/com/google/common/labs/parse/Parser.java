@@ -95,8 +95,8 @@ public abstract class Parser<T> {
    * character set.
    *
    * <p>It's strongly recommended to install the mug-errorprone plugin (v9.4+) in your
-   * compiler's annotationProcessorPaths so that you get compile-time protection against accidental
-   * errors.
+   * compiler's and IDE's annotationProcessorPaths so that you can get instant feedback
+   * against incorrect character set format.
    *
    * <p>Implementation Note: regex isn't used during parsing. The character set string is translated
    * to a plain {@link CharPredicate} at construction time.
@@ -142,8 +142,8 @@ public abstract class Parser<T> {
    * character set.
    *
    * <p>It's strongly recommended to install the mug-errorprone plugin (v9.4+) in your
-   * compiler's annotationProcessorPaths so that you get compile-time protection against accidental
-   * errors.
+   * compiler's and IDE's annotationProcessorPaths so that you can get instant feedback
+   * against incorrect character set format.
    *
    * <p>Implementation Note: regex isn't used during parsing. The character set string is translated
    * to a plain {@link CharPredicate} at construction time.
