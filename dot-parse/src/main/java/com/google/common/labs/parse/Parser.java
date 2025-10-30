@@ -353,7 +353,7 @@ public abstract class Parser<T> {
   }
 
   /** Matches if {@code this} or {@code that} matches. */
-  public final Parser<T> or(Parser<T> that) {
+  public final Parser<T> or(Parser<? extends T> that) {
     return anyOf(this, that);
   }
 
@@ -363,9 +363,8 @@ public abstract class Parser<T> {
    *
    * @since 9.4
    */
-  @SuppressWarnings("unchecked")  // Parser<T> is covariant
   public final Parser<T>.OrEmpty or(Parser<? extends T>.OrEmpty that) {
-    return or((Parser<T>) that.notEmpty()).new OrEmpty(that.defaultSupplier);
+    return or(that.notEmpty()).new OrEmpty(that.defaultSupplier);
   }
 
   /** Returns a parser that applies this parser at least once, greedily. */
