@@ -154,7 +154,7 @@ Parser<String> compileCharacterSet(String characterSet) {
 We use `anyOf()` to group the two primitives, and then use `atLeastOnce()` for 1 or more
 repetitions, with the result predicates OR'ed together. This will parse a positive character set.
 
-Then we use the another `anyOf()` for either a negative character set or a positive one.
+Then we use another `anyOf()` for either a negative character set or a positive one.
 
 Additionally, a completely empty set is supported and it means that no character is included
 in the character set. Thus the `.orElse(NONE)`.
