@@ -1010,6 +1010,14 @@ public class ParserTest {
   }
 
   @Test
+  public void or_withOrEmpty() {
+    Parser<String>.OrEmpty parser = string("foo").or(string("bar").orElse("default"));
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+    assertThat(parser.parse("bar")).isEqualTo("bar");
+    assertThat(parser.parse("")).isEqualTo("default");
+  }
+
+  @Test
   public void anyOf_success() {
     Parser<String> parser = anyOf(string("one"), string("two"), string("three"));
     assertThat(parser.parse("one")).isEqualTo("one");

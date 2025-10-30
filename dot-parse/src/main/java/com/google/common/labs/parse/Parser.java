@@ -357,6 +357,17 @@ public abstract class Parser<T> {
     return anyOf(this, that);
   }
 
+  /**
+   * Matches if {@code this} or {@code that} matches. If both failed to match, use the default
+   * result specified in {@code that}.
+   *
+   * @since 9.4
+   */
+  @SuppressWarnings("unchecked")  // Parser<T> is covariant
+  public final Parser<T>.OrEmpty or(Parser<? extends T>.OrEmpty that) {
+    return or((Parser<T>) that.notEmpty()).new OrEmpty(that.defaultSupplier);
+  }
+
   /** Returns a parser that applies this parser at least once, greedily. */
   public final Parser<List<T>> atLeastOnce() {
     return atLeastOnce(toUnmodifiableList());
@@ -1526,7 +1537,8 @@ public abstract class Parser<T> {
         anyOf(range, validChar.map(CharPredicate::is))
             .zeroOrMore(reducing(CharPredicate.NONE, CharPredicate::or));
     Parser<CharPredicate> negativeSet = string("^").then(positiveSet).map(CharPredicate::not);
-    return anyOf(negativeSet.between("[", "]"), positiveSet.between("[", "]"))
+    return negativeSet.or(positiveSet)
+        .between("[", "]")
         .parse(characterSet);
   }
 
