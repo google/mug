@@ -1514,7 +1514,12 @@ public abstract class Parser<T> {
   private static CharPredicate compileCharacterSet(String characterSet) {
     checkArgument(characterSet.startsWith("[") && characterSet.endsWith("]"),
         "character set must be in square brackets. Use [%s] instead.", characterSet);
-    Parser<Character> validChar = single(CharPredicate.noneOf("\\]"), "character");
+    checkArgument(
+        !characterSet.contains("\\"),
+        "Escaping (%s) not supported. "
+        + "Please use single(CharePredicate) or consecutive(CharPredicate) instead.",
+        characterSet);
+    Parser<Character> validChar = single(isNot(']'), "character");
     Parser<CharPredicate> range =
         sequence(validChar.followedBy("-"), validChar, CharPredicate::range);
     Parser<CharPredicate> positiveSet =

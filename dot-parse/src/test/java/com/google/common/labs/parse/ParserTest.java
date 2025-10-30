@@ -2352,7 +2352,7 @@ public class ParserTest {
   public void anyCharIn_backslashNotAllowed_throws() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Parser.anyCharIn("[\\]"));
-    assertThat(thrown).hasMessageThat().contains("encountered [\\]");
+    assertThat(thrown).hasMessageThat().contains("Escaping ([\\]) not supported");
   }
 
   @Test
@@ -2497,7 +2497,7 @@ public class ParserTest {
   public void oneOrMoreCharsIn_backslashNotAllowed_throws() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Parser.oneOrMoreCharsIn("[\\]"));
-    assertThat(thrown).hasMessageThat().contains("encountered [\\]");
+    assertThat(thrown).hasMessageThat().contains("Escaping ([\\]) not supported");
   }
 
   @Test

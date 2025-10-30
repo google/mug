@@ -60,7 +60,7 @@ public final class CharacterSetLiteralCheckTest {
             "import com.google.common.labs.parse.Parser;",
             "class Test {",
             "  private static final Parser<?> PARSER = Parser.oneOrMoreCharsIn(",
-            "      // BUG: Diagnostic contains: encountered [\\n]",
+            "      // BUG: Diagnostic contains: Escaping ([\\n]) not supported",
             "      \"[\\\\n]\");",
             "}")
         .doTest();
