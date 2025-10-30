@@ -151,7 +151,7 @@ CharPredicate compileCharacterSet(String characterSet) {
       .parse(characterSet);
 }
 ```
-We use `anyOf()` to group the two primitives, and then use `atLeastOnce()` for 1 or more
+We use `anyOf()` to group the two primitives, and then use `atLeastOnce()` for one or more
 repetitions, with the result predicates OR'ed together. This will parse a positive character set.
 
 Then we use another `anyOf()` for either a negative character set or a positive one.
