@@ -2305,12 +2305,12 @@ public class ParserTest {
 
   @Test
   public void anyCharIn_positiveCharSet_parseSuccess() {
-    Parser<Character> parser = Parser.anyCharIn("a-fA-F-_");
+    Parser<Character> parser = Parser.anyCharIn("a-f[A-F-_");
     assertThat(parser.parseToStream("abcf_-AEF"))
         .containsExactly('a', 'b', 'c', 'f', '_', '-', 'A', 'E', 'F')
         .inOrder();
-    assertThat(parser.probe("aFz"))
-        .containsExactly('a', 'F')
+    assertThat(parser.probe("aF[z"))
+        .containsExactly('a', 'F', '[')
         .inOrder();
   }
 
