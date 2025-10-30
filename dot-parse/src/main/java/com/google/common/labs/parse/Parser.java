@@ -1536,9 +1536,7 @@ public abstract class Parser<T> {
         anyOf(range, validChar.map(CharPredicate::is))
             .zeroOrMore(reducing(CharPredicate.NONE, CharPredicate::or));
     Parser<CharPredicate> negativeSet = string("^").then(positiveSet).map(CharPredicate::not);
-    return negativeSet.or(positiveSet)
-        .between("[", "]")
-        .parse(characterSet);
+    return negativeSet.or(positiveSet).between("[", "]").parse(characterSet);
   }
 
   private static void checkArgument(boolean condition, String message, Object... args) {
