@@ -1503,7 +1503,8 @@ public abstract class Parser<T> {
       return CharPredicate.NONE;
     }
     Parser<Character> validChar = single(CharPredicate.noneOf("\\]"), "character");
-    Parser<CharPredicate> range = sequence(validChar.followedBy("-"), validChar, CharPredicate::range);
+    Parser<CharPredicate> range =
+        sequence(validChar.followedBy("-"), validChar, CharPredicate::range);
     Parser<CharPredicate> positiveSet =
         anyOf(range, validChar.map(CharPredicate::is)).atLeastOnce(CharPredicate::or);
     return anyOf(string("^").then(positiveSet).map(CharPredicate::not), positiveSet)

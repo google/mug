@@ -2329,14 +2329,16 @@ public class ParserTest {
   public void anyCharIn_positiveCharSet_parseFailure() {
     Parser<Character> parser = Parser.anyCharIn("a-fA-F-_");
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("z"));
-    assertThat(thrown).hasMessageThat().isEqualTo("at 1:1: expecting <[a-fA-F-_]>, encountered [z].");
+    assertThat(thrown).hasMessageThat()
+        .isEqualTo("at 1:1: expecting <[a-fA-F-_]>, encountered [z].");
   }
 
   @Test
   public void anyCharIn_negativeCharSet_parseFailure() {
     Parser<Character> parser = Parser.anyCharIn("^[a-fA-F-_");
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("["));
-    assertThat(thrown).hasMessageThat().isEqualTo("at 1:1: expecting <[^[a-fA-F-_]>, encountered [[].");
+    assertThat(thrown).hasMessageThat()
+        .isEqualTo("at 1:1: expecting <[^[a-fA-F-_]>, encountered [[].");
   }
 
   @Test
