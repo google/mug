@@ -115,7 +115,7 @@ indicates negation.
 
 And finally the character set is enclosed by square brackets.
 
-Now let's build the parser using the `Parser` class. First we build the two primitives:
+Now let's build the parser using the `Parser` class. First, the two primitives:
 
 ```java {.good}
 // backslash and right bracket are not allowed
