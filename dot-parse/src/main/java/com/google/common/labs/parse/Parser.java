@@ -94,8 +94,11 @@ public abstract class Parser<T> {
    * which treats the string as a list of literal characters, not a regex-like
    * character set.
    *
+   * @param characterSet regex-like character set but disallows backslash so doesn't
+   *        support escaping. If your character set includes special characters like backslash
+   *        or right bracket, use {@link #single} with the corresponding {@link CharPredicate}.
    * @throws IllegalArgumentException if {@code characterSet} includes backslash
-   *         or the right bracket (']').
+   *         or the right bracket (the outmost pairs of {@code []} are allowed and ignored.).
    * @since 9.4
    */
   public static Parser<Character> anyCharIn(String characterSet) {
@@ -125,14 +128,17 @@ public abstract class Parser<T> {
    * consecutive(range('a', 'z').orRange('A', 'Z').or('-').or('_')}.
    *
    * <p>You can also use {@code '^'} to get negative character set like:
-   * {@code oneOrMoreCharsIn("^a-zA-Z")}, which is any non-alphabet character.
+   * {@code oneOrMoreCharsIn("^a-zA-Z")}, which represents consecutive non-alphabet characters.
    *
    * <p>Note that it's differnt from {@code consecutive(CharPredicate.anyOf(string))},
    * which treats the string as a list of literal characters, not a regex-like
    * character set.
    *
+   * @param characterSet regex-like character set but disallows backslash so doesn't
+   *        support escaping. If your character set includes special characters like backslash
+   *        or right bracket, use {@link #consecutive} with the corresponding {@link CharPredicate}.
    * @throws IllegalArgumentException if {@code characterSet} includes backslash
-   *         or the right bracket (']').
+   *         or the right bracket (the outmost pairs of {@code []} are allowed and ignored.).
    * @since 9.4
    */
   public static Parser<String> oneOrMoreCharsIn(String characterSet) {
