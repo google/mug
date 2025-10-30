@@ -2347,6 +2347,13 @@ public class ParserTest {
   }
 
   @Test
+  public void anyCharIn_emptyCharSetInBrackets_parseFailure() {
+    Parser<Character> parser = Parser.anyCharIn("[]");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(thrown).hasMessageThat().isEqualTo("at 1:1: expecting <[]>, encountered [a].");
+  }
+
+  @Test
   public void anyCharIn_backslashNotAllowed_throws() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Parser.anyCharIn("\\"));
@@ -2480,6 +2487,13 @@ public class ParserTest {
   @Test
   public void oneOrMoreCharsIn_emptyCharSet_parseFails() {
     Parser<String> parser = Parser.oneOrMoreCharsIn("");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(thrown).hasMessageThat().contains("expecting <one or more []>");
+  }
+
+  @Test
+  public void oneOrMoreCharsIn_emptyCharSetInBrackets_parseFails() {
+    Parser<String> parser = Parser.oneOrMoreCharsIn("[]");
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
     assertThat(thrown).hasMessageThat().contains("expecting <one or more []>");
   }
