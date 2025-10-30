@@ -100,7 +100,7 @@ Stream<String> jsonStringsFrom(Reader input) {
   Parser<?> stringLiteral = Parser.quotedStringWithEscapes('"', Object::toString);
   
   // Outside of string literal, any non-quote, non-brace characters are passed through
-  Parser<?> passThrough = Parser.oneOrMoreCharsIn("[^\"{}]");
+  Parser<?> passThrough = Parser.oneOrMoreCharsIn("[^\"{}]");  // uses regex-like character set
 
   // Between curly braces, you can have string literals, nested JSON records, or passthrough chars
   // For nested curly braces, let's define() it.
