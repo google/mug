@@ -2316,7 +2316,7 @@ public class ParserTest {
 
   @Test
   public void anyCharIn_negativeCharSet_parseSuccess() {
-    Parser<Character> parser = Parser.anyCharIn("^a-fA-F-_");
+    Parser<Character> parser = Parser.anyCharIn("^[a-fA-F-_");
     assertThat(parser.parseToStream("Zz"))
         .containsExactly('Z', 'z')
         .inOrder();
@@ -2334,9 +2334,9 @@ public class ParserTest {
 
   @Test
   public void anyCharIn_negativeCharSet_parseFailure() {
-    Parser<Character> parser = Parser.anyCharIn("^a-fA-F-_");
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
-    assertThat(thrown).hasMessageThat().isEqualTo("at 1:1: expecting <[^a-fA-F-_]>, encountered [a].");
+    Parser<Character> parser = Parser.anyCharIn("^[a-fA-F-_");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("["));
+    assertThat(thrown).hasMessageThat().isEqualTo("at 1:1: expecting <[^[a-fA-F-_]>, encountered [[].");
   }
 
   @Test
