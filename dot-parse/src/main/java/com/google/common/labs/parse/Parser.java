@@ -1524,7 +1524,8 @@ public abstract class Parser<T> {
         sequence(validChar.followedBy("-"), validChar, CharPredicate::range);
     Parser<CharPredicate> positiveSet =
         anyOf(range, validChar.map(CharPredicate::is)).atLeastOnce(CharPredicate::or);
-    return anyOf(string("^").then(positiveSet).map(CharPredicate::not), positiveSet)
+    Parser<CharPredicate> negativeSet = string("^").then(positiveSet).map(CharPredicate::not);
+    return anyOf(negativeSet, positiveSet)
         .orElse(CharPredicate.NONE)
         .between("[", "]")
         .parse(characterSet);
