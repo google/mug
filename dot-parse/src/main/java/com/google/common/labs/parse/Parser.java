@@ -90,7 +90,7 @@ public abstract class Parser<T> {
    * <p>You can also use {@code '^'} to get negative character set like:
    * {@code anyCharIn("[^a-zA-Z]")}, which is any non-alphabet character.
    *
-   * <p>Note that it's differnt from {@code single(CharPredicate.anyOf(string))},
+   * <p>Note that it's different from {@code single(CharPredicate.anyOf(string))},
    * which treats the string as a list of literal characters, not a regex-like
    * character set.
    *
@@ -133,7 +133,7 @@ public abstract class Parser<T> {
    * <p>You can also use {@code '^'} to get negative character set like:
    * {@code oneOrMoreCharsIn("[^a-zA-Z]")}, which represents consecutive non-alphabet characters.
    *
-   * <p>Note that it's differnt from {@code consecutive(CharPredicate.anyOf(string))},
+   * <p>Note that it's different from {@code consecutive(CharPredicate.anyOf(string))},
    * which treats the string as a list of literal characters, not a regex-like
    * character set.
    *
