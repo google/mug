@@ -111,11 +111,13 @@ Parser<CharPredicate> range = Parser.sequence(
     supportedChar.followedBy("-"), supportedChar, CharPrediate::range);
 Parser<CharPredicate> singleChar = supportedChar.map(CharPredicate::is);
 ```
-Regex character set doesn't allow literal `]`. 
+Regex character set doesn't allow literal `']'`. 
 
 And the API decides not to support escaping because escaping rule is pretty complex
 and they hurt readability (particulary in Java where you can easily get lost on the
-number of backslashes you need).
+number of backslashes you need). Instead, for use cases that need these special characters,
+there's always the `single(CharPredicate)` and `consecutive(CharPredicate)` to programmatically
+build the primitive parsers.
 
 Now let's compose the primitives to get the work done:
 
