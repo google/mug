@@ -1513,7 +1513,7 @@ public abstract class Parser<T> {
 
   private static CharPredicate compileCharacterSet(String characterSet) {
     checkArgument(characterSet.startsWith("[") && characterSet.endsWith("]"),
-        "character set must be in square brackets. Use [%s] instead.", characterSet);
+        "Character set must be in square brackets. Use [%s] instead.", characterSet);
     checkArgument(
         !characterSet.contains("\\"),
         "Escaping (%s) not supported. "
