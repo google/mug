@@ -87,10 +87,23 @@ if you are already familiar with them.
 
 The implementation doesn't use a regex engine during parsing (which would have been expensive),
 instead, it parses the character set and translates it to a `CharPredicate` object.
-For example, `[a-zA-Z]` would be translated to
-`CharPredicate.range('a', 'z').or(CharPredicate.range('A', 'Z')`, whereas `[^ab-]` would be
-translated to `CharPredicate.is('a').or(CharPredicate.is('b')).or(CharPredicate.is('-')).not()`,
-with the final `.not()` corresponding to the caret (`^`) character.
+For example, `[a-zA-Z]` would be translated to:
+
+```java
+CharPredicate.range('a', 'z')
+    .or(CharPredicate.range('A', 'Z'))`
+```
+
+Whereas `[^ab-]` would be translated to:
+
+```
+CharPredicate.is('a')
+    .or(CharPredicate.is('b'))
+    .or(CharPredicate.is('-'))
+    .not()
+```
+
+The final `.not()` corresponds to the caret (`^`) character.
 
 To parse the character set string, there are two types of primitives:
 
@@ -139,7 +152,7 @@ Parser<String> compileCharacterSet(String characterSet) {
 }
 ```
 We use `anyOf()` to group the two primitives, and then use `atLeastOnce()` for 1 or more
-repetitions, with the result predicates OR'ed together. This is a positive character set.
+repetitions, with the result predicates OR'ed together. This will parse a positive character set.
 
 Then we use the another `anyOf()` for either a negative character set or a positive one.
 
