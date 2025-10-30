@@ -2304,6 +2304,72 @@ public class ParserTest {
   }
 
   @Test
+  public void anyCharIn_positiveCharSet_parseSuccess() {
+    Parser<Character> parser = Parser.anyCharIn("[a-f[A-F-_]");
+    assertThat(parser.parseToStream("abcf_-AEF"))
+        .containsExactly('a', 'b', 'c', 'f', '_', '-', 'A', 'E', 'F')
+        .inOrder();
+    assertThat(parser.probe("aF[z"))
+        .containsExactly('a', 'F', '[')
+        .inOrder();
+  }
+
+  @Test
+  public void anyCharIn_negativeCharSet_parseSuccess() {
+    Parser<Character> parser = Parser.anyCharIn("[^[a-fA-F-_]");
+    assertThat(parser.parseToStream("Zz"))
+        .containsExactly('Z', 'z')
+        .inOrder();
+    assertThat(parser.probe("Zz-"))
+        .containsExactly('Z', 'z')
+        .inOrder();
+  }
+
+  @Test
+  public void anyCharIn_positiveCharSet_parseFailure() {
+    Parser<Character> parser = Parser.anyCharIn("[a-fA-F-_]");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("z"));
+    assertThat(thrown).hasMessageThat()
+        .isEqualTo("at 1:1: expecting <[a-fA-F-_]>, encountered [z].");
+  }
+
+  @Test
+  public void anyCharIn_negativeCharSet_parseFailure() {
+    Parser<Character> parser = Parser.anyCharIn("[^[a-fA-F-_]");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("["));
+    assertThat(thrown).hasMessageThat()
+        .isEqualTo("at 1:1: expecting <[^[a-fA-F-_]>, encountered [[].");
+  }
+
+  @Test
+  public void anyCharIn_emptyCharSet_parseFailure() {
+    Parser<Character> parser = Parser.anyCharIn("[]");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(thrown).hasMessageThat().isEqualTo("at 1:1: expecting <[]>, encountered [a].");
+  }
+
+  @Test
+  public void anyCharIn_backslashNotAllowed_throws() {
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> Parser.anyCharIn("[\\]"));
+    assertThat(thrown).hasMessageThat().contains("encountered [\\]");
+  }
+
+  @Test
+  public void anyCharIn_closingBracketNotAllowed_throws() {
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> Parser.anyCharIn("[]]"));
+    assertThat(thrown).hasMessageThat().contains("encountered []]");
+  }
+
+  @Test
+  public void anyCharIn_missingBrackets_throws() {
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> Parser.anyCharIn("A-Z"));
+    assertThat(thrown).hasMessageThat().contains("Use [A-Z] instead.");
+  }
+
+  @Test
   public void quotedStringWithEscapes_singleQuote_success() {
     Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'', Object::toString);
     assertThat(singleQuoted.parse("''")).isEmpty();
@@ -2384,6 +2450,68 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.parse("12a"));
     assertThrows(ParseException.class, () -> parser.parseToStream("12a").toList());
     assertThrows(ParseException.class, () -> parser.parse(""));
+  }
+
+  @Test
+  public void oneOrMoreCharsIn_positiveCharSet_parseSuccess() {
+    Parser<String> parser = Parser.oneOrMoreCharsIn("[a-fA-F-_]");
+    assertThat(parser.parse("abf-_F")).isEqualTo("abf-_F");
+  }
+
+  @Test
+  public void oneOrMoreCharsIn_negativeCharSet_parseSuccess() {
+    Parser<String> parser = Parser.oneOrMoreCharsIn("[^\"{}]");
+    assertThat(parser.parse("zzZ")).isEqualTo("zzZ");
+  }
+
+  @Test
+  public void oneOrMoreCharsIn_squareBracketsAllowed() {
+    assertThat(Parser.oneOrMoreCharsIn("[a-fA-F-_]").parse("abf-_F"))
+        .isEqualTo("abf-_F");
+    assertThat(Parser.oneOrMoreCharsIn("[^a-fA-F-_]").parse("zzZ"))
+        .isEqualTo("zzZ");
+  }
+
+  @Test
+  public void oneOrMoreCharsIn_positiveCharSet_parseFailure() {
+    Parser<String> parser = Parser.oneOrMoreCharsIn("[a-fA-F-_]");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("1a"));
+    assertThat(thrown).hasMessageThat().contains("expecting <one or more [a-fA-F-_]>");
+  }
+
+  @Test
+  public void oneOrMoreCharsIn_negativeCharSet_parseFailure() {
+    Parser<String> parser = Parser.oneOrMoreCharsIn("[^\"{}]");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("{"));
+    assertThat(thrown).hasMessageThat().contains("expecting <one or more [^\"{}]>");
+  }
+
+  @Test
+  public void oneOrMoreCharsIn_emptyCharSet_parseFails() {
+    Parser<String> parser = Parser.oneOrMoreCharsIn("[]");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(thrown).hasMessageThat().contains("expecting <one or more []>");
+  }
+
+  @Test
+  public void oneOrMoreCharsIn_backslashNotAllowed_throws() {
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> Parser.oneOrMoreCharsIn("[\\]"));
+    assertThat(thrown).hasMessageThat().contains("encountered [\\]");
+  }
+
+  @Test
+  public void oneOrMoreCharsIn_closingBracketNotAllowed_throws() {
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> Parser.oneOrMoreCharsIn("[]]"));
+    assertThat(thrown).hasMessageThat().contains("encountered []]");
+  }
+
+  @Test
+  public void oneOrMoreCharsIn_missingBrackets_throws() {
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> Parser.oneOrMoreCharsIn("a-z"));
+    assertThat(thrown).hasMessageThat().contains("Use [a-z] instead.");
   }
 
   @Test
