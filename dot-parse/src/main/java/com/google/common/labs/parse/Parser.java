@@ -95,7 +95,7 @@ public abstract class Parser<T> {
    * character set.
    *
    * @param characterSet regex-like character set but disallows backslash so doesn't
-   *        support escaping. If your character set includes special characters like backslash
+   *        support escaping. If your character set includes special characters like literal backslash
    *        or right bracket, use {@link #single} with the corresponding {@link CharPredicate}.
    * @throws IllegalArgumentException if {@code characterSet} includes backslash
    *         or the right bracket (the outmost pairs of {@code []} are allowed and ignored.).
@@ -135,7 +135,7 @@ public abstract class Parser<T> {
    * character set.
    *
    * @param characterSet regex-like character set but disallows backslash so doesn't
-   *        support escaping. If your character set includes special characters like backslash
+   *        support escaping. If your character set includes special characters like literal backslash
    *        or right bracket, use {@link #consecutive} with the corresponding {@link CharPredicate}.
    * @throws IllegalArgumentException if {@code characterSet} includes backslash
    *         or the right bracket (the outmost pairs of {@code []} are allowed and ignored.).
