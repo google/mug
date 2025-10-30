@@ -94,15 +94,13 @@ as well as escaped double quotes (which are not to start or terminate a string l
 The following code splits the JSON records so you can feed them to GSON (or any other JSON parser of choice):
 
 ```java {.good}
-import static com.google.mu.util.CharPredicate.noneOf;
-
 /** Splits input into a lazy stream of top-level JSON records. */
 Stream<String> jsonStringsFrom(Reader input) {
   // Either escaped or unescaped, enclosed between double quotes
   Parser<?> stringLiteral = Parser.quotedStringWithEscapes('"', Object::toString);
   
   // Outside of string literal, any non-quote, non-brace characters are passed through
-  Parser<?> passThrough = Parser.consecutive(noneOf("\"{}"), "pass through");
+  Parser<?> passThrough = Parser.oneOrMoreCharsIn("[^\"{}]");
 
   // Between curly braces, you can have string literals, nested JSON records, or passthrough chars
   // For nested curly braces, let's define() it.
