@@ -133,7 +133,7 @@ build the primitive parsers.
 Now let's compose the primitives to get the work done:
 
 ```java {.good}
-Parser<String> compileCharacterSet(String characterSet) {
+Parser<CharPredicate> compileCharacterSet(String characterSet) {
   // The above primitives, omitted...
   
   // A list of the primitives, OR'ed together
