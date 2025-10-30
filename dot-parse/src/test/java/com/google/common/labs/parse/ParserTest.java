@@ -2494,6 +2494,12 @@ public class ParserTest {
   }
 
   @Test
+  public void oneOrMoreCharsIn_emptyNegativeCharSet_parseSucceeds() {
+    Parser<String> parser = Parser.oneOrMoreCharsIn("[^]");
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+  }
+
+  @Test
   public void oneOrMoreCharsIn_backslashNotAllowed_throws() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Parser.oneOrMoreCharsIn("[\\]"));

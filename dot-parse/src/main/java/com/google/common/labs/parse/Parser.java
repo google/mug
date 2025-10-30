@@ -1522,12 +1522,11 @@ public abstract class Parser<T> {
     Parser<Character> validChar = single(isNot(']'), "character");
     Parser<CharPredicate> range =
         sequence(validChar.followedBy("-"), validChar, CharPredicate::range);
-    Parser<CharPredicate> positiveSet =
-        anyOf(range, validChar.map(CharPredicate::is)).atLeastOnce(CharPredicate::or);
+    Parser<CharPredicate>.OrEmpty positiveSet =
+        anyOf(range, validChar.map(CharPredicate::is))
+            .zeroOrMore(reducing(CharPredicate.NONE, CharPredicate::or));
     Parser<CharPredicate> negativeSet = string("^").then(positiveSet).map(CharPredicate::not);
-    return anyOf(negativeSet, positiveSet)
-        .orElse(CharPredicate.NONE)
-        .between("[", "]")
+    return anyOf(negativeSet.between("[", "]"), positiveSet.between("[", "]"))
         .parse(characterSet);
   }
 
