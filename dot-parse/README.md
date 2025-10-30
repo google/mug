@@ -141,11 +141,13 @@ Parser<String> compileCharacterSet(String characterSet) {
   // A list of the primitives, OR'ed together
   Parser<CharPredicate> positiveSet =
       Parser.anyOf(range, singleChar).atLeastOnce(CharPredicate::or);
+ 
+  // ^ starts a negative set
+  Parser<CharPredicate> negativeSet =
+      Parser.string("^").then(positiveSet).map(CharPredicate::not);
   
   // Either negative with ^, or positive, or empty
-  return Parser.anyOf(
-          Parser.string("^").then(positiveSet).map(CharPredicate::not),  // negative
-          positiveSet)
+  return Parser.anyOf(negativeSet, positiveSet)
       .orElse(CharPredicate.NONE)  // empty means matching no char
       .between("[", "]")
       .parse(characterSet);
