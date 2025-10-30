@@ -94,6 +94,10 @@ public abstract class Parser<T> {
    * which treats the string as a list of literal characters, not a regex-like
    * character set.
    *
+   * <p>It's strongly recommended to install the mug-errorprone plugin (v9.4+) in your
+   * compiler's annotationProcessorPaths so that you get compile-time protection against accidental
+   * errors.
+   *
    * <p>Implementation Note: regex isn't used during parsing. The character set string is translated
    * to a plain {@link CharPredicate} at construction time.
    *
@@ -136,6 +140,10 @@ public abstract class Parser<T> {
    * <p>Note that it's different from {@code consecutive(CharPredicate.anyOf(string))},
    * which treats the string as a list of literal characters, not a regex-like
    * character set.
+   *
+   * <p>It's strongly recommended to install the mug-errorprone plugin (v9.4+) in your
+   * compiler's annotationProcessorPaths so that you get compile-time protection against accidental
+   * errors.
    *
    * <p>Implementation Note: regex isn't used during parsing. The character set string is translated
    * to a plain {@link CharPredicate} at construction time.
