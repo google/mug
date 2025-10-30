@@ -1511,21 +1511,17 @@ public abstract class Parser<T> {
     }
   }
 
-  private static CharPredicate compileCharacterSet(String bracketedCharSet) {
-    String characterSet = Substring.between(Substring.prefix('['), Substring.suffix(']'))
-        .from(bracketedCharSet)
-        .orElseThrow(() ->
-           new IllegalArgumentException(
-               "character set must be in square brackets. Use [" + bracketedCharSet + "] instead."));
-    if (characterSet.isEmpty()) {
-      return CharPredicate.NONE;
-    }
+  private static CharPredicate compileCharacterSet(String characterSet) {
+    checkArgument(characterSet.startsWith("[") && characterSet.endsWith("]"),
+        "character set must be in square brackets. Use [%s] instead.", characterSet);
     Parser<Character> validChar = single(CharPredicate.noneOf("\\]"), "character");
     Parser<CharPredicate> range =
         sequence(validChar.followedBy("-"), validChar, CharPredicate::range);
     Parser<CharPredicate> positiveSet =
         anyOf(range, validChar.map(CharPredicate::is)).atLeastOnce(CharPredicate::or);
     return anyOf(string("^").then(positiveSet).map(CharPredicate::not), positiveSet)
+        .orElse(CharPredicate.NONE)
+        .between("[", "]")
         .parse(characterSet);
   }
 
