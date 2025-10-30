@@ -20,27 +20,32 @@ import static com.google.errorprone.matchers.Matchers.staticMethod;
 import java.time.DateTimeException;
 
 import com.google.auto.service.AutoService;
-import com.google.mu.time.DateTimeFormats;
+import com.google.common.labs.parse.Parser;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.LinkType;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Matcher;
+import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 
-/** Validate the example datetime string passed to {@code DateTimeFormats.formatOf()}. */
+/**
+ * Validates the character set literal string passed to {@code Parser.anyCharIn()}
+ * and {@code Parser.oneOrMoreCharsIn()}.
+ */
 @BugPattern(
-    summary = "Checks that the format string passed to DateTimeFormats.formatOf() is supported.",
-    link = "https://github.com/google/mug/blob/master/mug/src/main/java/com/google/mu/time/README.md",
+    summary = "Checks that the character set literal string used by Parser is valid.",
+    link = "https://github.com/google/mug/blob/master/dot-parse/README.md",
     linkType = LinkType.CUSTOM,
     severity = ERROR)
 @AutoService(BugChecker.class)
-public final class DateTimeExampleStringCheck extends AbstractBugChecker
+public final class CharacterSetLiteralCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck {
-  private static final Matcher<ExpressionTree> MATCHER =
-      staticMethod().onClass("com.google.mu.time.DateTimeFormats").named("formatOf");
+  private static final Matcher<ExpressionTree> MATCHER = Matchers.anyOf(
+      staticMethod().onClass("com.google.common.labs.parse.Parser").named("anyCharIn"),
+      staticMethod().onClass("com.google.common.labs.parse.Parser").named("oneOrMoreCharsIn"));
 
   @Override
   public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
@@ -48,13 +53,14 @@ public final class DateTimeExampleStringCheck extends AbstractBugChecker
     if (!MATCHER.matches(tree, state) || tree.getArguments().isEmpty()) {
       return;
     }
-    ExpressionTree exampleArg = tree.getArguments().get(0);
-    String exampleString = ASTHelpers.constValue(exampleArg, String.class);
-    checkingOn(exampleArg).require(exampleString != null, "compile-time string constant expected");
+    ExpressionTree characterSetArg = tree.getArguments().get(0);
+    String exampleString = ASTHelpers.constValue(characterSetArg, String.class);
+    checkingOn(characterSetArg)
+        .require(exampleString != null, "compile-time string constant expected");
     try {
-      Object verified = DateTimeFormats.formatOf(exampleString);
-    } catch (IllegalArgumentException | DateTimeException e) {
-      throw checkingOn(exampleArg).report(e.getMessage());
+      Object verified = Parser.anyCharIn(exampleString);
+    } catch (IllegalArgumentException e) {
+      throw checkingOn(characterSetArg).report(e.getMessage());
     }
   }
 }
