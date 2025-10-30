@@ -84,8 +84,8 @@ public abstract class Parser<T> {
   /**
    * Convenience method taking a character set as parameter.
    *
-   * <p>For example {@code anyCharIn("[a-zA-Z-_]")} is a short hand of {@code
-   * single(range('a', 'z').orRange('A', 'Z').or('-').or('_')}.
+   * <p>For example {@code anyCharIn("[a-zA-Z-_]")} is a shorthand of {@code
+   * single(range('a', 'z').orRange('A', 'Z').or('-').or('_'))}.
    *
    * <p>You can also use {@code '^'} to get negative character set like:
    * {@code anyCharIn("[^a-zA-Z]")}, which is any non-alphabet character.
@@ -127,8 +127,8 @@ public abstract class Parser<T> {
   /**
    * Convenience method taking a character set as parameter.
    *
-   * <p>For example {@code oneOrMoreCharsIn("[a-zA-Z-_]")} is a short hand of {@code
-   * consecutive(range('a', 'z').orRange('A', 'Z').or('-').or('_')}.
+   * <p>For example {@code oneOrMoreCharsIn("[a-zA-Z-_]")} is a shorthand of {@code
+   * consecutive(range('a', 'z').orRange('A', 'Z').or('-').or('_'))}.
    *
    * <p>You can also use {@code '^'} to get negative character set like:
    * {@code oneOrMoreCharsIn("[^a-zA-Z]")}, which represents consecutive non-alphabet characters.
