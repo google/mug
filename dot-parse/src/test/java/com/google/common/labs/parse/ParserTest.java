@@ -2363,6 +2363,13 @@ public class ParserTest {
   }
 
   @Test
+  public void anyCharIn_missingBrackets_throws() {
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> Parser.anyCharIn("A-Z"));
+    assertThat(thrown).hasMessageThat().contains("Use [A-Z] instead.");
+  }
+
+  @Test
   public void quotedStringWithEscapes_singleQuote_success() {
     Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'', Object::toString);
     assertThat(singleQuoted.parse("''")).isEmpty();
@@ -2498,6 +2505,13 @@ public class ParserTest {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Parser.oneOrMoreCharsIn("[]]"));
     assertThat(thrown).hasMessageThat().contains("encountered []]");
+  }
+
+  @Test
+  public void oneOrMoreCharsIn_missingBrackets_throws() {
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> Parser.oneOrMoreCharsIn("a-z"));
+    assertThat(thrown).hasMessageThat().contains("Use [a-z] instead.");
   }
 
   @Test

@@ -1503,10 +1503,12 @@ public abstract class Parser<T> {
     }
   }
 
-  private static CharPredicate compileCharacterSet(String characterSet) {
-    characterSet = Substring.between(Substring.prefix('['), Substring.suffix(']'))
-        .from(characterSet)
-        .orElseThrow(() -> new IllegalArgumentException("character set must be in square brackets."));
+  private static CharPredicate compileCharacterSet(String bracketedCharSet) {
+    String characterSet = Substring.between(Substring.prefix('['), Substring.suffix(']'))
+        .from(bracketedCharSet)
+        .orElseThrow(() ->
+           new IllegalArgumentException(
+               "character set must be in square brackets. Use [" + bracketedCharSet + "] instead."));
     if (characterSet.isEmpty()) {
       return CharPredicate.NONE;
     }
