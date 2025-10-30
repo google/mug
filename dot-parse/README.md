@@ -110,10 +110,8 @@ To parse the character set string, there are two types of primitives:
 1. Ranges, like `a-z`, `0-9`.
 2. Literal characters, like `abc` (3 literal characters), or `-_` (literal hyphen and literal underscore).
 
-A character set is a list of these two types of primitives. And optionally a caret (`^`) at the beginning
-indicates negation.
-
-And finally the character set is enclosed by square brackets.
+A character set is a list of these two types of primitives, with an optional caret (`^`) at the beginning
+to indicate negation. And a character set is enclosed by square brackets.
 
 Now let's build the parser using the `Parser` class. First, the two primitives:
 
