@@ -156,8 +156,7 @@ public abstract class Parser<T> {
    * @since 9.4
    */
   public static Parser<String> oneOrMoreCharsIn(String characterSet) {
-    return consecutive(
-        compileCharacterSet(characterSet), "one or more " + characterSet);
+    return consecutive(compileCharacterSet(characterSet), "one or more " + characterSet);
   }
 
   /** Matches one or more consecutive characters as specified by {@code matcher}. */
