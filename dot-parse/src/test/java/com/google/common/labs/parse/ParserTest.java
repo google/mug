@@ -3195,7 +3195,7 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMore_charSet_matchesZeroTimes() {
+  public void zeroOrMoreCharsIn_matchesZeroTimes() {
     Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
     assertThat(parser.parse("[]")).isEmpty();
     assertThat(parser.parseToStream("[]")).containsExactly("");
@@ -3204,7 +3204,7 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMore_charSet_matchesZeroTimes_source() {
+  public void zeroOrMoreCharsIn_matchesZeroTimes_source() {
     Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
     assertThat(parser.source().parse("[]")).isEqualTo("[]");
     assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
@@ -3213,7 +3213,7 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMore_charSet_matchesOneTime() {
+  public void zeroOrMoreCharsIn_matchesOneTime() {
     Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
     assertThat(parser.parse("[1]")).isEqualTo("1");
     assertThat(parser.parseToStream("[1]")).containsExactly("1");
@@ -3222,7 +3222,7 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMore_charSet_matchesOneTime_source() {
+  public void zeroOrMoreCharsIn_matchesOneTime_source() {
     Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
     assertThat(parser.source().parse("[1]")).isEqualTo("[1]");
     assertThat(parser.source().parseToStream("[1]")).containsExactly("[1]");
@@ -3232,7 +3232,7 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMore_charSet_matchesMultipleTimes() {
+  public void zeroOrMoreCharsIn_matchesMultipleTimes() {
     Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
     assertThat(parser.parse("[123]")).isEqualTo("123");
     assertThat(parser.parseToStream("[123]")).containsExactly("123");
@@ -3241,7 +3241,7 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMore_charSet_matchesMultipleTimes_source() {
+  public void zeroOrMoreCharsIn_matchesMultipleTimes_source() {
     Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
     assertThat(parser.source().parse("[123]")).isEqualTo("[123]");
     assertThat(parser.source().parseToStream("[123]")).containsExactly("[123]");
