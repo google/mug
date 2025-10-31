@@ -35,6 +35,7 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.mu.util.CharPredicate;
 
 @RunWith(JUnit4.class)
+@SuppressWarnings("CharacterSetLiteralCheck")
 public class ParserTest {
   private static final CharPredicate DIGIT = CharPredicate.range('0', '9');
 
