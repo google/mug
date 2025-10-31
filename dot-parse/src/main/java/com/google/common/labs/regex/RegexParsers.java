@@ -15,6 +15,8 @@
 package com.google.common.labs.regex;
 
 import static com.google.common.labs.parse.Parser.literally;
+import static com.google.common.labs.parse.Parser.word;
+import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static java.util.Arrays.stream;
@@ -37,11 +39,8 @@ import com.google.mu.util.stream.MoreCollectors;
 
 /** Parsers for {@link RegexPattern}. */
 final class RegexParsers {
-  private static final CharPredicate NUM = CharPredicate.range('0', '9');
-  private static final CharPredicate ALPHA =
-      CharPredicate.range('a', 'z').orRange('A', 'Z').or('_');
   private static final Parser<Character> ESCAPED_CHAR =
-      literally(Parser.string("\\").then(Parser.single(c -> true, "escaped char")));
+      literally(Parser.string("\\").then(Parser.single(ANY, "escaped char")));
   private static final Map<String, RegexPattern.CharacterProperty> POSIX_CHAR_CLASS_MAP =
       stream(RegexPattern.PosixCharClass.values())
           .collect(groupingByEach(charClass -> charClass.names().stream(), MoreCollectors.onlyElement(UnaryOperator.identity())))
@@ -72,7 +71,7 @@ final class RegexParsers {
   }
 
   private static Parser<Quantifier> quantifier() {
-    Parser<Integer> number = Parser.consecutive(NUM, "digit for quantifier").map(Integer::parseInt);
+    Parser<Integer> number = Parser.digits().map(Integer::parseInt);
     Parser<Quantifier> question = Parser.string("?").thenReturn(Quantifier.atMost(1));
     Parser<Quantifier> star = Parser.string("*").thenReturn(Quantifier.repeated());
     Parser<Quantifier> plus = Parser.string("+").thenReturn(Quantifier.atLeast(1));
@@ -99,7 +98,7 @@ final class RegexParsers {
   }
 
   private static Parser<RegexPattern.CharacterProperty> characterPropertySuffix() {
-    return Parser.consecutive(ALPHA.or(NUM), "character property name")
+    return word()
         .between("{", "}")
         .map(
             name ->
@@ -129,7 +128,7 @@ final class RegexParsers {
 
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {
     Parser<Group.Named> named =
-        Parser.consecutive(ALPHA.or(NUM), "alphanumeric for group name")
+        word()
             .between(Parser.string("?<").or(Parser.string("?P<")), Parser.string(">"))
             .flatMap(n -> content.map(c -> new Group.Named(n, c)))
             .between("(", ")");
