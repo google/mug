@@ -79,8 +79,9 @@ you can nest it between parentheses.
 
 ## Example — Parse Regex-like Character Set
 
-The `Parser.anyCharIn()` and `Parser.oneOrMoreCharsIn()` accept a character set string.
-And you can call it with `anyCharIn("[0-9a-fA-F]")`, `oneOrMoreCharsIn("[^0-9]")` etc.
+The `Parser.anyCharIn()`, `Parser.oneOrMoreCharsIn()` and `Parser.zeroOrMoreCharsIn()` methods
+accept a character set string. And you can call it with `anyCharIn("[0-9a-fA-F]")`,
+`oneOrMoreCharsIn("[^0-9]")` etc.
 
 It makes it easier to create a primitive parser using a regex-like character set specification
 if you are already familiar with them.
@@ -124,7 +125,7 @@ Parser<CharPredicate> singleChar = supportedChar.map(CharPredicate::is);
 ```
 Regex character set doesn't allow literal `']'`. 
 
-And the API decides not to support escaping because escaping rule is pretty complex
+The API decides not to support escaping because escaping rule is pretty complex
 and they hurt readability (particularly in Java where you can easily get lost on the
 number of backslashes you need). Instead, for use cases that need these special characters,
 there's always the `single(CharPredicate)` and `consecutive(CharPredicate)` to programmatically

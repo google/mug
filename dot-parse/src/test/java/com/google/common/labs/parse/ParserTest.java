@@ -9,6 +9,7 @@ import static com.google.common.labs.parse.Parser.single;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
+import static com.google.common.labs.parse.Parser.zeroOrMoreCharsIn;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.CharPredicate.is;
@@ -3186,6 +3187,62 @@ public class ParserTest {
   @Test
   public void zeroOrMore_charMatcher_matchesMultipleTimes_source() {
     Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
+    assertThat(parser.source().parse("[123]")).isEqualTo("[123]");
+    assertThat(parser.source().parseToStream("[123]")).containsExactly("[123]");
+    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[ 123 ]")).isEqualTo("[ 123 ]");
+    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[ 123 ]"))
+        .containsExactly("[ 123 ]");
+  }
+
+  @Test
+  public void zeroOrMore_charSet_matchesZeroTimes() {
+    Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]")).containsExactly("");
+    assertThat(parser.parseSkipping(Character::isWhitespace, "[ ]")).isEmpty();
+    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[ ]")).containsExactly("");
+  }
+
+  @Test
+  public void zeroOrMore_charSet_matchesZeroTimes_source() {
+    Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+    assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
+    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[ ]")).isEqualTo("[ ]");
+    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[ ]")).containsExactly("[ ]");
+  }
+
+  @Test
+  public void zeroOrMore_charSet_matchesOneTime() {
+    Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
+    assertThat(parser.parse("[1]")).isEqualTo("1");
+    assertThat(parser.parseToStream("[1]")).containsExactly("1");
+    assertThat(parser.parseSkipping(Character::isWhitespace, "[ 1 ]")).isEqualTo("1");
+    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[ 1 ]")).containsExactly("1");
+  }
+
+  @Test
+  public void zeroOrMore_charSet_matchesOneTime_source() {
+    Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
+    assertThat(parser.source().parse("[1]")).isEqualTo("[1]");
+    assertThat(parser.source().parseToStream("[1]")).containsExactly("[1]");
+    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[ 1 ]")).isEqualTo("[ 1 ]");
+    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[ 1 ]"))
+        .containsExactly("[ 1 ]");
+  }
+
+  @Test
+  public void zeroOrMore_charSet_matchesMultipleTimes() {
+    Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
+    assertThat(parser.parse("[123]")).isEqualTo("123");
+    assertThat(parser.parseToStream("[123]")).containsExactly("123");
+    assertThat(parser.parseSkipping(Character::isWhitespace, "[ 123 ]")).isEqualTo("123");
+    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[ 123 ]")).containsExactly("123");
+  }
+
+  @Test
+  public void zeroOrMore_charSet_matchesMultipleTimes_source() {
+    Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
     assertThat(parser.source().parse("[123]")).isEqualTo("[123]");
     assertThat(parser.source().parseToStream("[123]")).containsExactly("[123]");
     assertThat(parser.source().parseSkipping(Character::isWhitespace, "[ 123 ]")).isEqualTo("[ 123 ]");
