@@ -353,8 +353,18 @@ public abstract class Parser<T> {
   }
 
   /** Matches if {@code this} or {@code that} matches. */
-  public final Parser<T> or(Parser<T> that) {
+  public final Parser<T> or(Parser<? extends T> that) {
     return anyOf(this, that);
+  }
+
+  /**
+   * Matches if {@code this} or {@code that} matches. If both failed to match, use the default
+   * result specified in {@code that}.
+   *
+   * @since 9.4
+   */
+  public final Parser<T>.OrEmpty or(Parser<? extends T>.OrEmpty that) {
+    return or(that.notEmpty()).new OrEmpty(that.defaultSupplier);
   }
 
   /** Returns a parser that applies this parser at least once, greedily. */
@@ -1511,22 +1521,22 @@ public abstract class Parser<T> {
     }
   }
 
-  private static CharPredicate compileCharacterSet(String bracketedCharSet) {
-    String characterSet = Substring.between(Substring.prefix('['), Substring.suffix(']'))
-        .from(bracketedCharSet)
-        .orElseThrow(() ->
-           new IllegalArgumentException(
-               "character set must be in square brackets. Use [" + bracketedCharSet + "] instead."));
-    if (characterSet.isEmpty()) {
-      return CharPredicate.NONE;
-    }
-    Parser<Character> validChar = single(CharPredicate.noneOf("\\]"), "character");
+  private static CharPredicate compileCharacterSet(String characterSet) {
+    checkArgument(characterSet.startsWith("[") && characterSet.endsWith("]"),
+        "Character set must be in square brackets. Use [%s] instead.", characterSet);
+    checkArgument(
+        !characterSet.contains("\\"),
+        "Escaping (%s) not supported. "
+        + "Please use single(CharePredicate) or consecutive(CharPredicate) instead.",
+        characterSet);
+    Parser<Character> validChar = single(isNot(']'), "character");
     Parser<CharPredicate> range =
         sequence(validChar.followedBy("-"), validChar, CharPredicate::range);
-    Parser<CharPredicate> positiveSet =
-        anyOf(range, validChar.map(CharPredicate::is)).atLeastOnce(CharPredicate::or);
-    return anyOf(string("^").then(positiveSet).map(CharPredicate::not), positiveSet)
-        .parse(characterSet);
+    Parser<CharPredicate>.OrEmpty positiveSet =
+        anyOf(range, validChar.map(CharPredicate::is))
+            .zeroOrMore(reducing(CharPredicate.NONE, CharPredicate::or));
+    Parser<CharPredicate> negativeSet = string("^").then(positiveSet).map(CharPredicate::not);
+    return negativeSet.or(positiveSet).between("[", "]").parse(characterSet);
   }
 
   private static void checkArgument(boolean condition, String message, Object... args) {

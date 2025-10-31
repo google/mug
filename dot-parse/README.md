@@ -77,6 +77,94 @@ you can nest it between parentheses.
 
 ---
 
+## Example — Parse Regex-like Character Set
+
+The `Parser.anyCharIn()` and `Parser.oneOrMoreCharsIn()` accept a character set string.
+And you can call it with `anyCharIn("[0-9a-fA-F]")`, `oneOrMoreCharsIn("[^0-9]")` etc.
+
+It makes it easier to create a primitive parser using a regex-like character set specification
+if you are already familiar with them.
+
+The implementation doesn't use a regex engine during parsing (which would have been expensive),
+instead, it parses the character set and translates it to a `CharPredicate` object.
+For example, `[a-zA-Z]` would be translated to:
+
+```java
+CharPredicate.range('a', 'z')
+    .or(CharPredicate.range('A', 'Z'))`
+```
+
+Whereas `[^ab-]` would be translated to:
+
+```
+CharPredicate.is('a')
+    .or(CharPredicate.is('b'))
+    .or(CharPredicate.is('-'))
+    .not()
+```
+
+The final `.not()` corresponds to the caret (`^`) character.
+
+To parse the character set string, there are two types of primitives:
+
+1. Ranges, like `a-z`, `0-9`.
+2. Literal characters, like `abc` (3 literal characters), or `-_` (literal hyphen and literal underscore).
+
+A character set is a list of these two types of primitives, with an optional caret (`^`) at the beginning
+to indicate negation. And a character set is enclosed by square brackets.
+
+Now let's build the parser using the `Parser` class. First, the two primitives:
+
+```java {.good}
+// backslash and right bracket are not allowed
+Parser<Character> supportedChar = Parser.single(CharPredicate.noneOf("\\]"), "valid char");
+Parser<CharPredicate> range = Parser.sequence(
+    supportedChar.followedBy("-"), supportedChar, CharPrediate::range);
+Parser<CharPredicate> singleChar = supportedChar.map(CharPredicate::is);
+```
+Regex character set doesn't allow literal `']'`. 
+
+And the API decides not to support escaping because escaping rule is pretty complex
+and they hurt readability (particularly in Java where you can easily get lost on the
+number of backslashes you need). Instead, for use cases that need these special characters,
+there's always the `single(CharPredicate)` and `consecutive(CharPredicate)` to programmatically
+build the primitive parsers.
+
+Now let's compose the primitives to get the work done:
+
+```java {.good}
+CharPredicate compileCharacterSet(String characterSet) {
+  // The above primitives, omitted...
+  
+  // A list of the primitives, OR'ed together
+  Parser<CharPredicate> positiveSet =
+      Parser.anyOf(range, singleChar).atLeastOnce(CharPredicate::or);
+ 
+  // ^ starts a negative set
+  Parser<CharPredicate> negativeSet =
+      Parser.string("^").then(positiveSet).map(CharPredicate::not);
+  
+  // Either negative with ^, or positive, or empty
+  return Parser.anyOf(negativeSet, positiveSet)
+      .orElse(CharPredicate.NONE)  // empty means matching no char
+      .between("[", "]")
+      .parse(characterSet);
+}
+```
+We use `anyOf()` to group the two primitives, and then use `atLeastOnce()` for one or more
+repetitions, with the result predicates OR'ed together. This will parse a positive character set.
+
+Then we use another `anyOf()` for either a negative character set or a positive one.
+
+Additionally, a completely empty set is supported and it means that no character is included
+in the character set. Thus the `.orElse(NONE)`.
+
+A positive, negative or empty character set are all enclosed in a pair of brackets.
+
+That's it.
+
+---
+
 ## Example — Split JSON Records
 
 Most JSON parsers can parse a single JSON object enclosed in curly braces `{}`,

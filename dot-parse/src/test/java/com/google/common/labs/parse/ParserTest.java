@@ -1010,6 +1010,14 @@ public class ParserTest {
   }
 
   @Test
+  public void or_withOrEmpty() {
+    Parser<String>.OrEmpty parser = string("foo").or(string("bar").orElse("default"));
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+    assertThat(parser.parse("bar")).isEqualTo("bar");
+    assertThat(parser.parse("")).isEqualTo("default");
+  }
+
+  @Test
   public void anyOf_success() {
     Parser<String> parser = anyOf(string("one"), string("two"), string("three"));
     assertThat(parser.parse("one")).isEqualTo("one");
@@ -2352,7 +2360,7 @@ public class ParserTest {
   public void anyCharIn_backslashNotAllowed_throws() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Parser.anyCharIn("[\\]"));
-    assertThat(thrown).hasMessageThat().contains("encountered [\\]");
+    assertThat(thrown).hasMessageThat().contains("Escaping ([\\]) not supported");
   }
 
   @Test
@@ -2494,10 +2502,16 @@ public class ParserTest {
   }
 
   @Test
+  public void oneOrMoreCharsIn_emptyNegativeCharSet_parseSucceeds() {
+    Parser<String> parser = Parser.oneOrMoreCharsIn("[^]");
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+  }
+
+  @Test
   public void oneOrMoreCharsIn_backslashNotAllowed_throws() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> Parser.oneOrMoreCharsIn("[\\]"));
-    assertThat(thrown).hasMessageThat().contains("encountered [\\]");
+    assertThat(thrown).hasMessageThat().contains("Escaping ([\\]) not supported");
   }
 
   @Test
