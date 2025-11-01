@@ -2,12 +2,9 @@ package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
-import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.oneOrMoreCharsIn;
 import static com.google.common.labs.parse.Parser.sequence;
-import static com.google.common.labs.parse.Parser.single;
 import static com.google.common.labs.parse.Parser.string;
-import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.stream.Collectors.joining;
 
@@ -138,12 +135,8 @@ public class JavaTypeParserTest {
 
   private static final Parser<String> PACKAGE =
       oneOrMoreCharsIn("[a-z0-0_]").atLeastOnceDelimitedBy(".", joining("."));
-  private static final Parser<String> SIMPLE_CLASS_NAME =
-      literally(
-          sequence(
-              single(Character::isUpperCase, "capital letter"),
-              consecutive(Character::isJavaIdentifierPart, "identifier part").orElse(""),
-              (firstLetter, rest) -> firstLetter + rest));
+  private static final Parser<String> IDENTIFIER =
+      consecutive(Character::isJavaIdentifierPart, "identifier part");
 
   /**
    * A type declaration, such as {@code java.lang.String}, {@code T}, {@code List<T>} or {@code ?
@@ -155,7 +148,7 @@ public class JavaTypeParserTest {
     /** Parses a type declaration from a string. */
     static TypeDeclaration parse(String type) {
       Parser<FullyQualifiedClassName> fullyQualifiedClassName =
-          sequence(PACKAGE.followedBy("."), SIMPLE_CLASS_NAME, FullyQualifiedClassName::new);
+          sequence(PACKAGE.followedBy("."), IDENTIFIER, FullyQualifiedClassName::new);
       var rule = new Parser.Rule<TypeDeclaration>();
       Parser<WildcardType> wildcardType =
           anyOf(
@@ -176,10 +169,10 @@ public class JavaTypeParserTest {
                   0)
               .postfix(
                   string(".")
-                      .then(SIMPLE_CLASS_NAME)
+                      .then(IDENTIFIER)
                       .map(name -> enclosingType -> new NestedTypeName(enclosingType, name)),
                   0)
-              .build(anyOf(fullyQualifiedClassName, word().map(SimpleTypeName::new))));
+              .build(anyOf(fullyQualifiedClassName, IDENTIFIER.map(SimpleTypeName::new))));
       return rule.parseSkipping(Character::isWhitespace, type);
     }
 
