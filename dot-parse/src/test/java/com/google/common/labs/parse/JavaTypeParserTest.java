@@ -137,6 +137,10 @@ public class JavaTypeParserTest {
       oneOrMoreCharsIn("[a-z0-0_]").atLeastOnceDelimitedBy(".", joining("."));
   private static final Parser<String> IDENTIFIER =
       consecutive(Character::isJavaIdentifierPart, "identifier part");
+  private static final Parser<TypeName> TYPE_NAME =
+      anyOf(
+          sequence(PACKAGE.followedBy("."), IDENTIFIER, FullyQualifiedClassName::new),
+          IDENTIFIER.map(SimpleTypeName::new));
 
   /**
    * A type declaration, such as {@code java.lang.String}, {@code T}, {@code List<T>} or {@code ?
@@ -147,32 +151,29 @@ public class JavaTypeParserTest {
 
     /** Parses a type declaration from a string. */
     static TypeDeclaration parse(String type) {
-      Parser<FullyQualifiedClassName> fqn =
-          sequence(PACKAGE.followedBy("."), IDENTIFIER, FullyQualifiedClassName::new);
       Parser<TypeDeclaration> parser = Parser.define(rule -> {
           Parser<WildcardType> wildcardType =
               anyOf(
                   string("?")
-                      .followedBy("extends")
+                      .then(word("extends"))
                       .then(rule.atLeastOnceDelimitedBy("&"))
                       .map(UpperBoundedWildcard::new),
-                  string("?").followedBy("super").then(rule).map(LowerBoundedWildcard::new),
+                  string("?").then(word("super")).then(rule).map(LowerBoundedWildcard::new),
                   string("?").thenReturn(new UnboundedWildcard()));
           var typeParams =
               anyOf(wildcardType, rule).atLeastOnceDelimitedBy(",").between("<", ">");
           int precedence = 0;
-          return
-              new OperatorTable<TypeDeclaration>()
-                  .postfix("[]", ArrayType::new, precedence)
-                  .postfix(
-                      typeParams.map(params -> rawType -> new ParameterizedType(rawType, params)),
-                      precedence)
-                  .postfix(
-                      string(".")
-                          .then(IDENTIFIER)
-                          .map(inner -> enclosing -> new NestedTypeName(enclosing, inner)),
-                      precedence)
-                  .build(anyOf(fqn, IDENTIFIER.map(SimpleTypeName::new)));
+          return new OperatorTable<TypeDeclaration>()
+              .postfix("[]", ArrayType::new, precedence)
+              .postfix(
+                  typeParams.map(params -> rawType -> new ParameterizedType(rawType, params)),
+                  precedence)
+              .postfix(
+                  string(".")
+                      .then(IDENTIFIER)
+                      .map(inner -> enclosing -> new NestedTypeName(enclosing, inner)),
+                  precedence)
+              .build(TYPE_NAME);
           });
       return parser.parseSkipping(Character::isWhitespace, type);
     }
@@ -270,5 +271,9 @@ public class JavaTypeParserTest {
     public String toString() {
       return "?";
     }
+  }
+
+  private static Parser<String> word(String word) {
+    return Parser.word().suchThat(word::equals, word);
   }
 }
