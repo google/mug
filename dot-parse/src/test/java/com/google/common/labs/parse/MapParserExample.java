@@ -1,8 +1,8 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Parser.anyOf;
-import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.sequence;
+import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.util.List;
@@ -13,7 +13,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.mu.util.Both;
-import com.google.mu.util.CharPredicate;
 import com.google.mu.util.stream.BiStream;
 
 @RunWith(JUnit4.class)
@@ -42,11 +41,10 @@ public class MapParserExample {
   }
 
   static Map<String, ?> parse(String input) {
-    Parser<String> word = consecutive(CharPredicate.WORD, "word");
     Parser.Rule<Map<String, ?>> lazy = new Parser.Rule<>();
-    Parser<List<String>> listParser = word.zeroOrMoreDelimitedBy(",").between("[", "]");
+    Parser<List<String>> listParser = word().zeroOrMoreDelimitedBy(",").between("[", "]");
     Parser<Map<String, ?>> mapParser =
-        sequence(word.followedBy(":"), anyOf(word, listParser, lazy), Both::of)
+        sequence(word().followedBy(":"), anyOf(word(), listParser, lazy), Both::of)
             .zeroOrMoreDelimitedBy(",")
             .between("{", "}")
             .map(kvs -> BiStream.from(kvs.stream()).toMap());

@@ -156,8 +156,7 @@ public abstract class Parser<T> {
    * @since 9.4
    */
   public static Parser<String> oneOrMoreCharsIn(String characterSet) {
-    return consecutive(
-        compileCharacterSet(characterSet), "one or more " + characterSet);
+    return consecutive(compileCharacterSet(characterSet), "one or more " + characterSet);
   }
 
   /** Matches one or more consecutive characters as specified by {@code matcher}. */
@@ -461,6 +460,22 @@ public abstract class Parser<T> {
           deque.addFirst(first);
           return deque.stream().collect(collector);
         });
+  }
+
+  /**
+   * Starts a fluent chain for matching zero or more characters in the given {@code characterSet}. If no
+   * such character is found, empty string is the result.
+   *
+   * <p>For example if you need to parse a quoted literal that's allowed to be empty:
+   *
+   * <pre>{@code
+   * zeroOrMoreCharsIn("[^']").between("'", "'")
+   * }</pre>
+   *
+   * @since 9.4
+   */
+  public static Parser<String>.OrEmpty zeroOrMoreCharsIn(String characterSet) {
+    return oneOrMoreCharsIn(characterSet).orElse("");
   }
 
   /**
@@ -1526,8 +1541,8 @@ public abstract class Parser<T> {
         "Character set must be in square brackets. Use [%s] instead.", characterSet);
     checkArgument(
         !characterSet.contains("\\"),
-        "Escaping (%s) not supported. "
-        + "Please use single(CharePredicate) or consecutive(CharPredicate) instead.",
+        "Escaping (%s) not supported in a character set. "
+            + "Please use single(CharePredicate) or consecutive(CharPredicate) instead.",
         characterSet);
     Parser<Character> validChar = single(isNot(']'), "character");
     Parser<CharPredicate> range =

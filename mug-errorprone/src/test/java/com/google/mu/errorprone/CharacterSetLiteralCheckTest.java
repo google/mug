@@ -45,7 +45,7 @@ public final class CharacterSetLiteralCheckTest {
             "Test.java",
             "import com.google.common.labs.parse.Parser;",
             "class Test {",
-            "  private static final Parser<?> PARSER = Parser.anyCharIn(",
+            "  private static final Parser<?>.OrEmpty PARSER = Parser.zeroOrMoreCharsIn(",
             "      // BUG: Diagnostic contains: Use [a-zA-Z] instead",
             "      \"a-zA-Z\");",
             "}")

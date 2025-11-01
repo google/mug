@@ -2,9 +2,11 @@ package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.util.CharPredicate.isNot;
 import static java.util.stream.Collectors.joining;
 
 import org.junit.Ignore;
@@ -12,15 +14,14 @@ import org.junit.Test;
 
 public class JsonParserTest {
   private static Parser<String> QUOTED =
-      consecutive(c -> c != '"', "quoted").immediatelyBetween("\"", "\"").map(v -> '"' + v + '"');
-  private static Parser<String> NUMBER = consecutive(Character::isDigit, "number");
+      consecutive(isNot('"'), "quoted").immediatelyBetween("\"", "\"").map(v -> '"' + v + '"');
   private static Parser<String> NULL =
       string("null").notImmediatelyFollowedBy(Character::isJavaIdentifierPart, "identifier char");
 
   private static Parser<String> json() {
     var value = new Parser.Rule<String>();
     var struct = new Parser.Rule<String>();
-    value.definedAs(anyOf(QUOTED, NULL, NUMBER, listOf(value), struct));
+    value.definedAs(anyOf(QUOTED, NULL, digits(), listOf(value), struct));
     return struct.definedAs(sequence(QUOTED.followedBy(":"), value, (k, v) -> k + ":" + v)
         .zeroOrMoreDelimitedBy(",", joining(","))
         .between("{", "}")

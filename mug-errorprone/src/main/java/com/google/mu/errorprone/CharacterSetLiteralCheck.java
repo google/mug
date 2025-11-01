@@ -45,6 +45,7 @@ public final class CharacterSetLiteralCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck {
   private static final Matcher<ExpressionTree> MATCHER = Matchers.anyOf(
       staticMethod().onClass("com.google.common.labs.parse.Parser").named("anyCharIn"),
+      staticMethod().onClass("com.google.common.labs.parse.Parser").named("zeroOrMoreCharsIn"),
       staticMethod().onClass("com.google.common.labs.parse.Parser").named("oneOrMoreCharsIn"));
 
   @Override
