@@ -160,8 +160,7 @@ public class JavaTypeParserTest {
                       .map(UpperBoundedWildcard::new),
                   string("?").then(word("super")).then(rule).map(LowerBoundedWildcard::new),
                   string("?").thenReturn(new UnboundedWildcard()));
-          var typeParams =
-              anyOf(wildcardType, rule).atLeastOnceDelimitedBy(",").between("<", ">");
+          var typeParams = anyOf(wildcardType, rule).atLeastOnceDelimitedBy(",").between("<", ">");
           int precedence = 0;
           return new OperatorTable<TypeDeclaration>()
               .postfix("[]", ArrayType::new, precedence)
