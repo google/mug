@@ -147,33 +147,34 @@ public class JavaTypeParserTest {
 
     /** Parses a type declaration from a string. */
     static TypeDeclaration parse(String type) {
-      Parser<FullyQualifiedClassName> fullyQualifiedClassName =
+      Parser<FullyQualifiedClassName> fqn =
           sequence(PACKAGE.followedBy("."), IDENTIFIER, FullyQualifiedClassName::new);
-      var rule = new Parser.Rule<TypeDeclaration>();
-      Parser<WildcardType> wildcardType =
-          anyOf(
-              string("?")
-                  .followedBy("extends")
-                  .then(rule.atLeastOnceDelimitedBy("&"))
-                  .map(UpperBoundedWildcard::new),
-              string("?").followedBy("super").then(rule).map(LowerBoundedWildcard::new),
-              string("?").thenReturn(new UnboundedWildcard()));
-      rule.definedAs(
-          new OperatorTable<TypeDeclaration>()
-              .postfix("[]", ArrayType::new, 0)
-              .postfix(
-                  anyOf(wildcardType, rule)
-                      .atLeastOnceDelimitedBy(",")
-                      .between("<", ">")
-                      .map(typeParams -> rawType -> new ParameterizedType(rawType, typeParams)),
-                  0)
-              .postfix(
-                  string(".")
-                      .then(IDENTIFIER)
-                      .map(name -> enclosingType -> new NestedTypeName(enclosingType, name)),
-                  0)
-              .build(anyOf(fullyQualifiedClassName, IDENTIFIER.map(SimpleTypeName::new))));
-      return rule.parseSkipping(Character::isWhitespace, type);
+      Parser<TypeDeclaration> parser = Parser.define(rule -> {
+          Parser<WildcardType> wildcardType =
+              anyOf(
+                  string("?")
+                      .followedBy("extends")
+                      .then(rule.atLeastOnceDelimitedBy("&"))
+                      .map(UpperBoundedWildcard::new),
+                  string("?").followedBy("super").then(rule).map(LowerBoundedWildcard::new),
+                  string("?").thenReturn(new UnboundedWildcard()));
+          var typeParams =
+              anyOf(wildcardType, rule).atLeastOnceDelimitedBy(",").between("<", ">");
+          int precedence = 0;
+          return
+              new OperatorTable<TypeDeclaration>()
+                  .postfix("[]", ArrayType::new, precedence)
+                  .postfix(
+                      typeParams.map(params -> rawType -> new ParameterizedType(rawType, params)),
+                      precedence)
+                  .postfix(
+                      string(".")
+                          .then(IDENTIFIER)
+                          .map(inner -> enclosing -> new NestedTypeName(enclosing, inner)),
+                      precedence)
+                  .build(anyOf(fqn, IDENTIFIER.map(SimpleTypeName::new)));
+          });
+      return parser.parseSkipping(Character::isWhitespace, type);
     }
 
     @Override
