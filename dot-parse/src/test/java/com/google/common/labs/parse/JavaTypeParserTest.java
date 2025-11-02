@@ -2,12 +2,9 @@ package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
-import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.oneOrMoreCharsIn;
 import static com.google.common.labs.parse.Parser.sequence;
-import static com.google.common.labs.parse.Parser.single;
 import static com.google.common.labs.parse.Parser.string;
-import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.stream.Collectors.joining;
 
@@ -138,12 +135,12 @@ public class JavaTypeParserTest {
 
   private static final Parser<String> PACKAGE =
       oneOrMoreCharsIn("[a-z0-0_]").atLeastOnceDelimitedBy(".", joining("."));
-  private static final Parser<String> SIMPLE_CLASS_NAME =
-      literally(
-          sequence(
-              single(Character::isUpperCase, "capital letter"),
-              consecutive(Character::isJavaIdentifierPart, "identifier part").orElse(""),
-              (firstLetter, rest) -> firstLetter + rest));
+  private static final Parser<String> IDENTIFIER =
+      consecutive(Character::isJavaIdentifierPart, "identifier part");
+  private static final Parser<TypeName> TYPE_NAME =
+      anyOf(
+          sequence(PACKAGE.followedBy("."), IDENTIFIER, FullyQualifiedClassName::new),
+          IDENTIFIER.map(SimpleTypeName::new));
 
   /**
    * A type declaration, such as {@code java.lang.String}, {@code T}, {@code List<T>} or {@code ?
@@ -154,33 +151,30 @@ public class JavaTypeParserTest {
 
     /** Parses a type declaration from a string. */
     static TypeDeclaration parse(String type) {
-      Parser<FullyQualifiedClassName> fullyQualifiedClassName =
-          sequence(PACKAGE.followedBy("."), SIMPLE_CLASS_NAME, FullyQualifiedClassName::new);
-      var rule = new Parser.Rule<TypeDeclaration>();
-      Parser<WildcardType> wildcardType =
-          anyOf(
-              string("?")
-                  .followedBy("extends")
-                  .then(rule.atLeastOnceDelimitedBy("&"))
-                  .map(UpperBoundedWildcard::new),
-              string("?").followedBy("super").then(rule).map(LowerBoundedWildcard::new),
-              string("?").thenReturn(new UnboundedWildcard()));
-      rule.definedAs(
-          new OperatorTable<TypeDeclaration>()
-              .postfix("[]", ArrayType::new, 0)
+      Parser<TypeDeclaration> parser = Parser.define(t -> {
+          Parser<Wildcard> wildcardType =
+              anyOf(
+                  string("?")
+                      .then(word("extends"))
+                      .then(t.atLeastOnceDelimitedBy("&"))
+                      .map(UpperBoundedWildcard::new),
+                  string("?").then(word("super")).then(t).map(LowerBoundedWildcard::new),
+                  string("?").thenReturn(new UnboundedWildcard()));
+          var typeParams = anyOf(wildcardType, t).atLeastOnceDelimitedBy(",").between("<", ">");
+          int precedence = 0;
+          return new OperatorTable<TypeDeclaration>()
+              .postfix("[]", ArrayType::new, precedence)
               .postfix(
-                  anyOf(wildcardType, rule)
-                      .atLeastOnceDelimitedBy(",")
-                      .between("<", ">")
-                      .map(typeParams -> rawType -> new ParameterizedType(rawType, typeParams)),
-                  0)
+                  typeParams.map(params -> rawType -> new ParameterizedType(rawType, params)),
+                  precedence)
               .postfix(
                   string(".")
-                      .then(SIMPLE_CLASS_NAME)
-                      .map(name -> enclosingType -> new NestedTypeName(enclosingType, name)),
-                  0)
-              .build(anyOf(fullyQualifiedClassName, word().map(SimpleTypeName::new))));
-      return rule.parseSkipping(Character::isWhitespace, type);
+                      .then(IDENTIFIER)
+                      .map(inner -> enclosing -> new NestedTypeName(enclosing, inner)),
+                  precedence)
+              .build(TYPE_NAME);
+          });
+      return parser.parseSkipping(Character::isWhitespace, type);
     }
 
     @Override
@@ -236,13 +230,13 @@ public class JavaTypeParserTest {
   }
 
   /** A type parameter, such as {@code T} or {@code ? extends Number}. */
-  sealed interface TypeParameter permits WildcardType, TypeDeclaration {
+  sealed interface TypeParameter permits Wildcard, TypeDeclaration {
     @Override
     abstract String toString();
   }
 
   /** A wildcard type, such as {@code ?}, {@code ? extends Number} or {@code ? super String}. */
-  public sealed interface WildcardType extends TypeParameter
+  public sealed interface Wildcard extends TypeParameter
       permits UpperBoundedWildcard, LowerBoundedWildcard, UnboundedWildcard {}
 
   /**
@@ -250,7 +244,7 @@ public class JavaTypeParserTest {
    * String&Number}.
    */
   record UpperBoundedWildcard(List<TypeDeclaration> upperBounds)
-      implements WildcardType {
+      implements Wildcard {
     public UpperBoundedWildcard(TypeDeclaration upperBound) {
       this(List.of(upperBound));
     }
@@ -263,7 +257,7 @@ public class JavaTypeParserTest {
   }
 
   /** A wildcard type with lower bounds, such as {@code ? super String}. */
-  record LowerBoundedWildcard(TypeDeclaration lowerBound) implements WildcardType {
+  record LowerBoundedWildcard(TypeDeclaration lowerBound) implements Wildcard {
     @Override
     public String toString() {
       return "? super " + lowerBound;
@@ -271,10 +265,14 @@ public class JavaTypeParserTest {
   }
 
   /** An unbounded wildcard type, such as {@code ?}. */
-  record UnboundedWildcard() implements WildcardType {
+  record UnboundedWildcard() implements Wildcard {
     @Override
     public String toString() {
       return "?";
     }
+  }
+
+  private static Parser<String> word(String word) {
+    return Parser.word().suchThat(word::equals, word);
   }
 }
