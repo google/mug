@@ -22,7 +22,7 @@ import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
-import static java.util.function.Function.identity;
+import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.joining;
@@ -763,18 +763,11 @@ public abstract class Parser<T> {
    * by {@code suffix}.
    */
   public final Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
-    return optionallyFollowedBy(string(suffix).thenReturn(op::apply));
+    return optionalPostfix(string(suffix).thenReturn(op::apply));
   }
 
-  /**
-   * Returns an equivalent parser except it will optionally apply the unary operator resulting from
-   * {@code suffix}.
-   */
-  public final Parser<T> optionallyFollowedBy(Parser<? extends UnaryOperator<T>> suffix) {
-    return sequence(
-        this,
-        suffix.orElse(null),
-        (operand, operator) -> operator == null ? operand : operator.apply(operand));
+  final Parser<T> optionalPostfix(Parser<UnaryOperator<T>> suffix) {
+    return sequence(this, suffix.orElse(identity()), (operand, op) -> op.apply(operand));
   }
 
   /** A form of negative lookahead such that the match is rejected if followed by {@code suffix}. */
