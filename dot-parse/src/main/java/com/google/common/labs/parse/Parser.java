@@ -106,7 +106,14 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Matches one or more consecutive characters as specified by {@code characterSet}.
+   * Matches one or more consecutive characters contained in {@code characterSet}.
+   *
+   * <p>For example: <pre>{@code
+   * import static com.google.common.labs.parse.CharacterSet.charsIn;
+   *
+   * Parser<Integer> hexNumber = consecutive(charsIn("[0-9A-Fa-f]"))
+   *     .map(hex -> Integer.parseInt(hex, 16));
+   * }</pre>
    *
    * @since 9.4
    */
