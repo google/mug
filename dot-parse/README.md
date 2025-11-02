@@ -79,12 +79,11 @@ you can nest it between parentheses.
 
 ## Example — Parse Regex-like Character Set
 
-The `Parser.anyCharIn()`, `Parser.oneOrMoreCharsIn()` and `Parser.zeroOrMoreCharsIn()` methods
-accept a character set string. And you can call it with `anyCharIn("[0-9a-fA-F]")`,
-`oneOrMoreCharsIn("[^0-9]")` etc.
+The `CharacterSet.charsIn()` method accepts a character set string. And you can call it with
+`charsIn("[0-9a-fA-F]")`, `charsIn("[^0-9]")` etc.
 
 It makes it easier to create a primitive parser using a regex-like character set specification
-if you are already familiar with them.
+if you are already familiar with them. For example `var hexDigits = Parser.consecutive(charsIn("[0-9A-F]"))`.
 
 The implementation doesn't use a regex engine during parsing (which would have been expensive),
 instead, it parses the character set and translates it to a `CharPredicate` object.
@@ -183,13 +182,16 @@ as well as escaped double quotes (which are not to start or terminate a string l
 The following code splits the JSON records so you can feed them to GSON (or any other JSON parser of choice):
 
 ```java {.good}
+import static com.google.common.labs.parse.CharacterSet.charsIn;
+import com.google.common.labs.parse.Parser;
+
 /** Splits input into a lazy stream of top-level JSON records. */
 Stream<String> jsonStringsFrom(Reader input) {
   // Either escaped or unescaped, enclosed between double quotes
   Parser<?> stringLiteral = Parser.quotedStringWithEscapes('"', Object::toString);
   
   // Outside of string literal, any non-quote, non-brace characters are passed through
-  Parser<?> passThrough = Parser.oneOrMoreCharsIn("[^\"{}]");  // uses regex-like character set
+  Parser<?> passThrough = Parser.consecutive(charsIn("[^\"{}]"));  // uses regex-like character set
 
   // Between curly braces, you can have string literals, nested JSON records, or passthrough chars
   // For nested curly braces, let's define() it.
