@@ -189,12 +189,13 @@ public abstract class Parser<T> {
       MatchResult<Void> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-        for (int at = start; input.isInRange(at) && matcher.test(input.charAt(at)); at++) {
-          if (at - start + 1 == n) {
-            return new MatchResult.Success<>(start, at + 1, null);
+        for (int i = 0; i < n; i++) {
+          int at = start + i;
+          if (!input.isInRange(at) || !matcher.test(input.charAt(at))) {
+            return context.expecting(name, start);
           }
         }
-        return context.expecting(name, start);
+        return new MatchResult.Success<>(start, start + n, null);
       }
     };
   }
