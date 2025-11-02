@@ -164,6 +164,15 @@ public abstract class Parser<T> {
     return skipConsecutive(matcher, name).source();
   }
 
+  /**
+   * Matches exactly {@code n} consecutive characters as specified by {@code matcher}.
+   *
+   * @since 9.4
+   */
+  public static Parser<String> consecutive(int n, CharPredicate matcher, String name) {
+    return skip(n, matcher, name).source();
+  }
+
   private static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
     requireNonNull(matcher);
     requireNonNull(name);
@@ -198,15 +207,6 @@ public abstract class Parser<T> {
         return new MatchResult.Success<>(start, start + n, null);
       }
     };
-  }
-
-  /**
-   * Matches exactly {@code n} characters as specified by {@code matcher}.
-   *
-   * @since 9.4
-   */
-  public static Parser<String> repeat(int n, CharPredicate matcher, String name) {
-    return skip(n, matcher, name).source();
   }
 
   /**
