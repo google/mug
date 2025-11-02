@@ -21,7 +21,7 @@ import com.google.mu.util.CharPredicate;
  *
  * <p>It's strongly recommended to install the mug-errorprone plugin (v9.4+) in your
  * compiler's and IDE's annotationProcessorPaths so that you can get instant feedback
- * against incorrect character set format.
+ * against incorrect character set syntax.
  *
  * <p>Implementation Note: regex isn't used during parsing. The character set string is translated
  * to a plain {@link CharPredicate} at construction time.
@@ -72,8 +72,7 @@ public final class CharacterSet implements CharPredicate {
         "Character set must be in square brackets. Use [%s] instead.", characterSet);
     checkArgument(
         !characterSet.contains("\\"),
-        "Escaping (%s) not supported in a character set. "
-            + "Please use single(CharePredicate) or consecutive(CharPredicate) instead.",
+        "Escaping (%s) not supported in a character set. Please use CharePredicate instead.",
         characterSet);
     Parser<Character> validChar = Parser.single(isNot(']'), "character");
     Parser<CharPredicate> range =
