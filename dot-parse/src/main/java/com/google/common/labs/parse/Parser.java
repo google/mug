@@ -534,7 +534,7 @@ public abstract class Parser<T> {
    * Applies {@code first} and {@code second} patterns in order, for zero or more times, collecting
    * the results using the provided {@link BiCollector}.
    *
-   * <p>This can be typically used to parse key-value pairs:
+   * <p>Typically used to parse key-value pairs:
    *
    * <pre>{@code
    * import static com.google.mu.util.stream.BiCollectors.toMap;
@@ -565,7 +565,7 @@ public abstract class Parser<T> {
    * Applies {@code first} and the optional {@code second} patterns in order, for zero or more
    * times, collecting the results using the provided {@link BiCollector}.
    *
-   * <p>This can be typically used to parse key-value pairs:
+   * <p>Typically used to parse key-value pairs:
    *
    * <pre>{@code
    * import static com.google.mu.util.stream.BiCollectors.toMap;
