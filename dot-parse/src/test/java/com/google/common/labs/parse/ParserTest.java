@@ -2441,9 +2441,10 @@ public class ParserTest {
 
   @Test
   public void consecutive_exactNTimes_unicodeEscapeExample() {
-    CharacterSet hexDigit = charsIn("[0-9A-F]");
     Parser<Integer> uncodeEscape =
-        string("\\u").then(consecutive(4, hexDigit, "4 hex")).map(hex -> Integer.parseInt(hex, 16));
+        string("\\u")
+            .then(consecutive(4, charsIn("[0-9A-F]"), "4 hex"))
+            .map(hex -> Integer.parseInt(hex, 16));
     assertThat(uncodeEscape.parseToStream("\\uD83D\\uDE00"))
         .containsExactly(0xD83D, 0xDE00)
         .inOrder();
