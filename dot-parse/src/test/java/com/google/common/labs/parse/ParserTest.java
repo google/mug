@@ -1,17 +1,15 @@
 package com.google.common.labs.parse;
 
+import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
-import static com.google.common.labs.parse.Parser.compileCharacterSet;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.literally;
-import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.single;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
-import static com.google.common.labs.parse.Parser.zeroOrMoreCharsIn;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.CharPredicate.is;
@@ -2316,72 +2314,6 @@ public class ParserTest {
   }
 
   @Test
-  public void anyCharIn_positiveCharSet_parseSuccess() {
-    Parser<Character> parser = Parser.anyCharIn("[a-f[A-F-_]");
-    assertThat(parser.parseToStream("abcf_-AEF"))
-        .containsExactly('a', 'b', 'c', 'f', '_', '-', 'A', 'E', 'F')
-        .inOrder();
-    assertThat(parser.probe("aF[z"))
-        .containsExactly('a', 'F', '[')
-        .inOrder();
-  }
-
-  @Test
-  public void anyCharIn_negativeCharSet_parseSuccess() {
-    Parser<Character> parser = Parser.anyCharIn("[^[a-fA-F-_]");
-    assertThat(parser.parseToStream("Zz"))
-        .containsExactly('Z', 'z')
-        .inOrder();
-    assertThat(parser.probe("Zz-"))
-        .containsExactly('Z', 'z')
-        .inOrder();
-  }
-
-  @Test
-  public void anyCharIn_positiveCharSet_parseFailure() {
-    Parser<Character> parser = Parser.anyCharIn("[a-fA-F-_]");
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("z"));
-    assertThat(thrown).hasMessageThat()
-        .isEqualTo("at 1:1: expecting <[a-fA-F-_]>, encountered [z].");
-  }
-
-  @Test
-  public void anyCharIn_negativeCharSet_parseFailure() {
-    Parser<Character> parser = Parser.anyCharIn("[^[a-fA-F-_]");
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("["));
-    assertThat(thrown).hasMessageThat()
-        .isEqualTo("at 1:1: expecting <[^[a-fA-F-_]>, encountered [[].");
-  }
-
-  @Test
-  public void anyCharIn_emptyCharSet_parseFailure() {
-    Parser<Character> parser = Parser.anyCharIn("[]");
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
-    assertThat(thrown).hasMessageThat().isEqualTo("at 1:1: expecting <[]>, encountered [a].");
-  }
-
-  @Test
-  public void anyCharIn_backslashNotAllowed_throws() {
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Parser.anyCharIn("[\\]"));
-    assertThat(thrown).hasMessageThat().contains("Escaping ([\\]) not supported");
-  }
-
-  @Test
-  public void anyCharIn_closingBracketNotAllowed_throws() {
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Parser.anyCharIn("[]]"));
-    assertThat(thrown).hasMessageThat().contains("encountered []]");
-  }
-
-  @Test
-  public void anyCharIn_missingBrackets_throws() {
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Parser.anyCharIn("A-Z"));
-    assertThat(thrown).hasMessageThat().contains("Use [A-Z] instead.");
-  }
-
-  @Test
   public void quotedStringWithEscapes_singleQuote_success() {
     Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'', Object::toString);
     assertThat(singleQuoted.parse("''")).isEmpty();
@@ -2509,7 +2441,7 @@ public class ParserTest {
 
   @Test
   public void consecutive_exactNTimes_unicodeEscapeExample() {
-    CharPredicate hexDigit = compileCharacterSet("[0-9A-F]");
+    CharacterSet hexDigit = charsIn("[0-9A-F]");
     Parser<Integer> uncodeEscape =
         string("\\u").then(consecutive(4, hexDigit, "4 hex")).map(hex -> Integer.parseInt(hex, 16));
     assertThat(uncodeEscape.parseToStream("\\uD83D\\uDE00"))
@@ -2519,70 +2451,41 @@ public class ParserTest {
 
   @Test
   public void oneOrMoreCharsIn_positiveCharSet_parseSuccess() {
-    Parser<String> parser = Parser.oneOrMoreCharsIn("[a-fA-F-_]");
+    Parser<String> parser = consecutive(charsIn("[a-fA-F-_]"));
     assertThat(parser.parse("abf-_F")).isEqualTo("abf-_F");
   }
 
   @Test
   public void oneOrMoreCharsIn_negativeCharSet_parseSuccess() {
-    Parser<String> parser = Parser.oneOrMoreCharsIn("[^\"{}]");
+    Parser<String> parser = consecutive(charsIn("[^\"{}]"));
     assertThat(parser.parse("zzZ")).isEqualTo("zzZ");
   }
 
   @Test
-  public void oneOrMoreCharsIn_squareBracketsAllowed() {
-    assertThat(Parser.oneOrMoreCharsIn("[a-fA-F-_]").parse("abf-_F"))
-        .isEqualTo("abf-_F");
-    assertThat(Parser.oneOrMoreCharsIn("[^a-fA-F-_]").parse("zzZ"))
-        .isEqualTo("zzZ");
-  }
-
-  @Test
   public void oneOrMoreCharsIn_positiveCharSet_parseFailure() {
-    Parser<String> parser = Parser.oneOrMoreCharsIn("[a-fA-F-_]");
+    Parser<String> parser = consecutive(charsIn("[a-fA-F-_]"));
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("1a"));
     assertThat(thrown).hasMessageThat().contains("expecting <one or more [a-fA-F-_]>");
   }
 
   @Test
   public void oneOrMoreCharsIn_negativeCharSet_parseFailure() {
-    Parser<String> parser = Parser.oneOrMoreCharsIn("[^\"{}]");
+    Parser<String> parser = consecutive(charsIn("[^\"{}]"));
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("{"));
     assertThat(thrown).hasMessageThat().contains("expecting <one or more [^\"{}]>");
   }
 
   @Test
   public void oneOrMoreCharsIn_emptyCharSet_parseFails() {
-    Parser<String> parser = Parser.oneOrMoreCharsIn("[]");
+    Parser<String> parser = consecutive(charsIn("[]"));
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
     assertThat(thrown).hasMessageThat().contains("expecting <one or more []>");
   }
 
   @Test
   public void oneOrMoreCharsIn_emptyNegativeCharSet_parseSucceeds() {
-    Parser<String> parser = Parser.oneOrMoreCharsIn("[^]");
+    Parser<String> parser = consecutive(charsIn("[^]"));
     assertThat(parser.parse("foo")).isEqualTo("foo");
-  }
-
-  @Test
-  public void oneOrMoreCharsIn_backslashNotAllowed_throws() {
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Parser.oneOrMoreCharsIn("[\\]"));
-    assertThat(thrown).hasMessageThat().contains("Escaping ([\\]) not supported");
-  }
-
-  @Test
-  public void oneOrMoreCharsIn_closingBracketNotAllowed_throws() {
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Parser.oneOrMoreCharsIn("[]]"));
-    assertThat(thrown).hasMessageThat().contains("encountered []]");
-  }
-
-  @Test
-  public void oneOrMoreCharsIn_missingBrackets_throws() {
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Parser.oneOrMoreCharsIn("a-z"));
-    assertThat(thrown).hasMessageThat().contains("Use [a-z] instead.");
   }
 
   @Test
@@ -3242,62 +3145,6 @@ public class ParserTest {
   @Test
   public void zeroOrMore_charMatcher_matchesMultipleTimes_source() {
     Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
-    assertThat(parser.source().parse("[123]")).isEqualTo("[123]");
-    assertThat(parser.source().parseToStream("[123]")).containsExactly("[123]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[ 123 ]")).isEqualTo("[ 123 ]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[ 123 ]"))
-        .containsExactly("[ 123 ]");
-  }
-
-  @Test
-  public void zeroOrMoreCharsIn_matchesZeroTimes() {
-    Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
-    assertThat(parser.parse("[]")).isEmpty();
-    assertThat(parser.parseToStream("[]")).containsExactly("");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[ ]")).isEmpty();
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[ ]")).containsExactly("");
-  }
-
-  @Test
-  public void zeroOrMoreCharsIn_matchesZeroTimes_source() {
-    Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
-    assertThat(parser.source().parse("[]")).isEqualTo("[]");
-    assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[ ]")).isEqualTo("[ ]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[ ]")).containsExactly("[ ]");
-  }
-
-  @Test
-  public void zeroOrMoreCharsIn_matchesOneTime() {
-    Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
-    assertThat(parser.parse("[1]")).isEqualTo("1");
-    assertThat(parser.parseToStream("[1]")).containsExactly("1");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[ 1 ]")).isEqualTo("1");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[ 1 ]")).containsExactly("1");
-  }
-
-  @Test
-  public void zeroOrMoreCharsIn_matchesOneTime_source() {
-    Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
-    assertThat(parser.source().parse("[1]")).isEqualTo("[1]");
-    assertThat(parser.source().parseToStream("[1]")).containsExactly("[1]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[ 1 ]")).isEqualTo("[ 1 ]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[ 1 ]"))
-        .containsExactly("[ 1 ]");
-  }
-
-  @Test
-  public void zeroOrMoreCharsIn_matchesMultipleTimes() {
-    Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
-    assertThat(parser.parse("[123]")).isEqualTo("123");
-    assertThat(parser.parseToStream("[123]")).containsExactly("123");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[ 123 ]")).isEqualTo("123");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[ 123 ]")).containsExactly("123");
-  }
-
-  @Test
-  public void zeroOrMoreCharsIn_matchesMultipleTimes_source() {
-    Parser<String> parser = zeroOrMoreCharsIn("[0-9]").between("[", "]");
     assertThat(parser.source().parse("[123]")).isEqualTo("[123]");
     assertThat(parser.source().parseToStream("[123]")).containsExactly("[123]");
     assertThat(parser.source().parseSkipping(Character::isWhitespace, "[ 123 ]")).isEqualTo("[ 123 ]");

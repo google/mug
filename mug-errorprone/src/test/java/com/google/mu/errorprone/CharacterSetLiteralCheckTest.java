@@ -15,9 +15,9 @@ public final class CharacterSetLiteralCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.common.labs.parse.Parser;",
+            "import com.google.common.labs.parse.CharacterSet;",
             "class Test {",
-            "  private static final Parser<?> PARSER = Parser.anyCharIn(\"[a-zA-Z-_0-9]\");",
+            "  private static final CharacterSet CHARS = CharacterSet.charsIn(\"[a-zA-Z-_0-9]\");",
             "}")
         .doTest();
   }
@@ -27,10 +27,10 @@ public final class CharacterSetLiteralCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.common.labs.parse.Parser;",
+            "import com.google.common.labs.parse.CharacterSet;",
             "class Test {",
-            "  private Parser<?> parser(String charSet) {",
-            "    return Parser.anyCharIn(",
+            "  private CharacterSet CHARS(String charSet) {",
+            "    return CharacterSet.charsIn(",
             "        // BUG: Diagnostic contains: compile-time string constant",
             "        charSet);",
             "  }",
@@ -43,9 +43,9 @@ public final class CharacterSetLiteralCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.common.labs.parse.Parser;",
+            "import com.google.common.labs.parse.CharacterSet;",
             "class Test {",
-            "  private static final Parser<?>.OrEmpty PARSER = Parser.zeroOrMoreCharsIn(",
+            "  private static final CharacterSet CHARS = CharacterSet.charsIn(",
             "      // BUG: Diagnostic contains: Use [a-zA-Z] instead",
             "      \"a-zA-Z\");",
             "}")
@@ -57,9 +57,9 @@ public final class CharacterSetLiteralCheckTest {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.common.labs.parse.Parser;",
+            "import com.google.common.labs.parse.CharacterSet;",
             "class Test {",
-            "  private static final Parser<?> PARSER = Parser.oneOrMoreCharsIn(",
+            "  private static final CharacterSet CHARS = CharacterSet.charsIn(",
             "      // BUG: Diagnostic contains: Escaping ([\\n]) not supported",
             "      \"[\\\\n]\");",
             "}")

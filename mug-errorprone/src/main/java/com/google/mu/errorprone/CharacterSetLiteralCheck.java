@@ -17,16 +17,13 @@ package com.google.mu.errorprone;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.errorprone.matchers.Matchers.staticMethod;
 
-import java.time.DateTimeException;
-
 import com.google.auto.service.AutoService;
-import com.google.common.labs.parse.Parser;
+import com.google.common.labs.parse.CharacterSet;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.LinkType;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Matcher;
-import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
@@ -43,10 +40,8 @@ import com.sun.source.tree.MethodInvocationTree;
 @AutoService(BugChecker.class)
 public final class CharacterSetLiteralCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck {
-  private static final Matcher<ExpressionTree> MATCHER = Matchers.anyOf(
-      staticMethod().onClass("com.google.common.labs.parse.Parser").named("anyCharIn"),
-      staticMethod().onClass("com.google.common.labs.parse.Parser").named("zeroOrMoreCharsIn"),
-      staticMethod().onClass("com.google.common.labs.parse.Parser").named("oneOrMoreCharsIn"));
+  private static final Matcher<ExpressionTree> MATCHER =
+      staticMethod().onClass("com.google.common.labs.parse.CharacterSet").named("charsIn");
 
   @Override
   public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
@@ -59,7 +54,7 @@ public final class CharacterSetLiteralCheck extends AbstractBugChecker
     checkingOn(characterSetArg)
         .require(exampleString != null, "compile-time string constant expected");
     try {
-      Object verified = Parser.anyCharIn(exampleString);
+      Object verified = CharacterSet.charsIn(exampleString);
     } catch (IllegalArgumentException e) {
       throw checkingOn(characterSetArg).report(e.getMessage());
     }

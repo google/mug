@@ -1,8 +1,8 @@
 package com.google.common.labs.parse;
 
+import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
-import static com.google.common.labs.parse.Parser.oneOrMoreCharsIn;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.truth.Truth.assertThat;
@@ -134,7 +134,7 @@ public class JavaTypeParserTest {
   }
 
   private static final Parser<String> PACKAGE =
-      oneOrMoreCharsIn("[a-z0-0_]").atLeastOnceDelimitedBy(".", joining("."));
+      consecutive(charsIn("[a-z0-9_]"), "lowercase").atLeastOnceDelimitedBy(".", joining("."));
   private static final Parser<String> IDENTIFIER =
       consecutive(Character::isJavaIdentifierPart, "identifier part");
   private static final Parser<TypeName> TYPE_NAME =
