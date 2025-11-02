@@ -40,8 +40,9 @@ public final class CharacterSet implements CharPredicate {
   /**
    * Returns a {@link CharacterSet} instance compiled from the given {@code characterSet} specifier.
    *
-   * @param characterSet regex-like character set but disallows backslash so doesn't
-   *        support escaping. If your character set includes special characters like literal backslash
+   * @param characterSet A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}),
+   *        but disallows backslash so doesn't support escaping.
+   *        If your character set includes special characters like literal backslash
    *        or right bracket, use {@link CharPredicate} instead.
    * @throws IllegalArgumentException if {@code characterSet} includes backslash
    *         or the right bracket (except the outmost pairs of {@code []}).

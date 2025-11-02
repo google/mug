@@ -134,7 +134,7 @@ public class JavaTypeParserTest {
   }
 
   private static final Parser<String> PACKAGE =
-      consecutive(charsIn("[a-z0-9_]"), "lowercase").atLeastOnceDelimitedBy(".", joining("."));
+      consecutive(charsIn("[a-z0-9_]")).atLeastOnceDelimitedBy(".", joining("."));
   private static final Parser<String> IDENTIFIER =
       consecutive(Character::isJavaIdentifierPart, "identifier part");
   private static final Parser<TypeName> TYPE_NAME =
