@@ -537,14 +537,15 @@ public abstract class Parser<T> {
    * <p>This can be typically used to parse key-value pairs:
    *
    * <pre>{@code
-   * import static com.google.common.labs.collect.BiCollectors.toImmutableListMultimap;
+   * import static com.google.mu.util.stream.BiCollectors.toMap;
+   * import static java.util.stream.Collectors.toList;
    *
-   * Parser<ImmutableListMultimap<String, String>> jsonMap =
+   * Parser<Map<String, List<String>>> jsonMap =
    *     zeroOrMoreDelimited(
    *            word().followedBy(":"),
    *            quotedStringWithEscapes('"', Object::toString)),
    *            ",",
-   *            toImmutableListMultimap())
+   *            toMap(toList()))
    *         .followedBy(string(",").optional()) // only if you need to allow trailing comma
    *         .between("{", "}");
    * }</pre>
@@ -567,14 +568,14 @@ public abstract class Parser<T> {
    * <p>This can be typically used to parse key-value pairs:
    *
    * <pre>{@code
-   * import static com.google.common.labs.collect.BiCollectors.toImmutableMap;
+   * import static com.google.mu.util.stream.BiCollectors.toMap;
    *
-   * Parser<ImmutableMap<String, Integer>> keyValues =
+   * Parser<Map<String, Integer>> keyValues =
    *     zeroOrMoreDelimited(
    *            word(),
    *            string("=").then(digits()).map(Integer::parseInt).orElse(0),
    *            ",",
-   *            toImmutableMap())
+   *            toMap())
    *         .followedBy(string(",").optional()) // only if you need to allow trailing comma
    *         .between("{", "}");
    * }</pre>
