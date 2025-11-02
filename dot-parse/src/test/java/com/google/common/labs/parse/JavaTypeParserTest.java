@@ -151,16 +151,16 @@ public class JavaTypeParserTest {
 
     /** Parses a type declaration from a string. */
     static TypeDeclaration parse(String type) {
-      Parser<TypeDeclaration> parser = Parser.define(rule -> {
-          Parser<WildcardType> wildcardType =
+      Parser<TypeDeclaration> parser = Parser.define(t -> {
+          Parser<Wildcard> wildcardType =
               anyOf(
                   string("?")
                       .then(word("extends"))
-                      .then(rule.atLeastOnceDelimitedBy("&"))
+                      .then(t.atLeastOnceDelimitedBy("&"))
                       .map(UpperBoundedWildcard::new),
-                  string("?").then(word("super")).then(rule).map(LowerBoundedWildcard::new),
+                  string("?").then(word("super")).then(t).map(LowerBoundedWildcard::new),
                   string("?").thenReturn(new UnboundedWildcard()));
-          var typeParams = anyOf(wildcardType, rule).atLeastOnceDelimitedBy(",").between("<", ">");
+          var typeParams = anyOf(wildcardType, t).atLeastOnceDelimitedBy(",").between("<", ">");
           int precedence = 0;
           return new OperatorTable<TypeDeclaration>()
               .postfix("[]", ArrayType::new, precedence)
@@ -230,13 +230,13 @@ public class JavaTypeParserTest {
   }
 
   /** A type parameter, such as {@code T} or {@code ? extends Number}. */
-  sealed interface TypeParameter permits WildcardType, TypeDeclaration {
+  sealed interface TypeParameter permits Wildcard, TypeDeclaration {
     @Override
     abstract String toString();
   }
 
   /** A wildcard type, such as {@code ?}, {@code ? extends Number} or {@code ? super String}. */
-  public sealed interface WildcardType extends TypeParameter
+  public sealed interface Wildcard extends TypeParameter
       permits UpperBoundedWildcard, LowerBoundedWildcard, UnboundedWildcard {}
 
   /**
@@ -244,7 +244,7 @@ public class JavaTypeParserTest {
    * String&Number}.
    */
   record UpperBoundedWildcard(List<TypeDeclaration> upperBounds)
-      implements WildcardType {
+      implements Wildcard {
     public UpperBoundedWildcard(TypeDeclaration upperBound) {
       this(List.of(upperBound));
     }
@@ -257,7 +257,7 @@ public class JavaTypeParserTest {
   }
 
   /** A wildcard type with lower bounds, such as {@code ? super String}. */
-  record LowerBoundedWildcard(TypeDeclaration lowerBound) implements WildcardType {
+  record LowerBoundedWildcard(TypeDeclaration lowerBound) implements Wildcard {
     @Override
     public String toString() {
       return "? super " + lowerBound;
@@ -265,7 +265,7 @@ public class JavaTypeParserTest {
   }
 
   /** An unbounded wildcard type, such as {@code ?}. */
-  record UnboundedWildcard() implements WildcardType {
+  record UnboundedWildcard() implements Wildcard {
     @Override
     public String toString() {
       return "?";

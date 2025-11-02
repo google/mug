@@ -180,6 +180,34 @@ public abstract class Parser<T> {
     };
   }
 
+  private static Parser<Void> skip(int n, CharPredicate matcher, String name) {
+    requireNonNull(matcher);
+    requireNonNull(name);
+    checkArgument(n > 0, "repetition count (%s) must be positive", n);
+    return new Parser<>() {
+      @Override
+      MatchResult<Void> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        for (int at = start; input.isInRange(at) && matcher.test(input.charAt(at)); at++) {
+          if (at - start + 1 == n) {
+            return new MatchResult.Success<>(start, at + 1, null);
+          }
+        }
+        return context.expecting(name, start);
+      }
+    };
+  }
+
+  /**
+   * Matches exactly {@code n} characters as specified by {@code matcher}.
+   *
+   * @since 9.4
+   */
+  public static Parser<String> repeat(int n, CharPredicate matcher, String name) {
+    return skip(n, matcher, name).source();
+  }
+
   /**
    * One or more regex {@code \w+} characters.
    *
@@ -1536,7 +1564,7 @@ public abstract class Parser<T> {
     }
   }
 
-  private static CharPredicate compileCharacterSet(String characterSet) {
+  static CharPredicate compileCharacterSet(String characterSet) {
     checkArgument(characterSet.startsWith("[") && characterSet.endsWith("]"),
         "Character set must be in square brackets. Use [%s] instead.", characterSet);
     checkArgument(
