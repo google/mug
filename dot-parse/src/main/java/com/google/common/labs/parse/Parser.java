@@ -18,9 +18,11 @@ import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.common.labs.parse.Utils.checkPositionIndex;
 import static com.google.common.labs.parse.Utils.checkState;
 import static com.google.mu.util.CharPredicate.isNot;
+import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.joining;
@@ -43,8 +45,10 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
+import com.google.mu.util.Both;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiCollector;
 
 /**
  * A simple recursive descent parser combinator intended to parse simple grammars such as regex, csv
@@ -524,6 +528,66 @@ public abstract class Parser<T> {
       String delimiter, Collector<? super T, A, ? extends R> collector) {
     return this.<A, R>atLeastOnceDelimitedBy(delimiter, collector)
         .new OrEmpty(emptyValueSupplier(collector));
+  }
+
+  /**
+   * Applies {@code first} and {@code second} patterns in order, for zero or more times, collecting
+   * the results using the provided {@link BiCollector}.
+   *
+   * <p>This can be typically used to parse key-value pairs:
+   *
+   * <pre>{@code
+   * import static com.google.common.labs.collect.BiCollectors.toImmutableListMultimap;
+   *
+   * Parser<ImmutableListMultimap<String, String>> jsonMap =
+   *     zeroOrMoreDelimited(
+   *            word().followedBy(":"),
+   *            quotedStringWithEscapes('"', Object::toString)),
+   *            ",",
+   *            toImmutableListMultimap())
+   *         .followedBy(string(",").optional()) // only if you need to allow trailing comma
+   *         .between("{", "}");
+   * }</pre>
+   *
+   * @since 9.4
+   */
+  public static <A, B, R> Parser<R>.OrEmpty zeroOrMoreDelimited(
+      Parser<A> first,
+      Parser<B> second,
+      String delimiter,
+      BiCollector<? super A, ? super B, R> collector) {
+    return sequence(first, second, Both::of)
+        .zeroOrMoreDelimitedBy(delimiter, mapping(identity(), collector));
+  }
+
+  /**
+   * Applies {@code first} and the optional {@code second} patterns in order, for zero or more
+   * times, collecting the results using the provided {@link BiCollector}.
+   *
+   * <p>This can be typically used to parse key-value pairs:
+   *
+   * <pre>{@code
+   * import static com.google.common.labs.collect.BiCollectors.toImmutableMap;
+   *
+   * Parser<ImmutableMap<String, Integer>> keyValues =
+   *     zeroOrMoreDelimited(
+   *            word(),
+   *            string("=").then(digits()).map(Integer::parseInt).orElse(0),
+   *            ",",
+   *            toImmutableMap())
+   *         .followedBy(string(",").optional()) // only if you need to allow trailing comma
+   *         .between("{", "}");
+   * }</pre>
+   *
+   * @since 9.4
+   */
+  public static <A, B, R> Parser<R>.OrEmpty zeroOrMoreDelimited(
+      Parser<A> first,
+      Parser<B>.OrEmpty second,
+      String delimiter,
+      BiCollector<? super A, ? super B, R> collector) {
+    return sequence(first, second, Both::of)
+        .zeroOrMoreDelimitedBy(delimiter, mapping(identity(), collector));
   }
 
   /**

@@ -10,16 +10,19 @@ import static com.google.common.labs.parse.Parser.single;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
+import static com.google.common.labs.parse.Parser.zeroOrMoreDelimited;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.noneOf;
+import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertThrows;
 
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.UnaryOperator;
@@ -30,6 +33,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.labs.parse.Parser.ParseException;
 import com.google.common.testing.NullPointerTester;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -1646,6 +1650,149 @@ public class ParserTest {
             .notEmpty();
     ParseException e = assertThrows(ParseException.class, () -> parser.parse(""));
     assertThat(e).hasMessageThat().contains("at 1:1: expecting <digits>, encountered <EOF>");
+  }
+
+  @Test
+  public void zeroOrMoreDelimited_empty() {
+    Parser<ImmutableListMultimap<String, String>> parser =
+        zeroOrMoreDelimited(
+                word().followedBy(string(":")),
+                Parser.quotedStringWithEscapes('"', Object::toString),
+                ",",
+                ImmutableListMultimap::toImmutableListMultimap)
+            .between("{", "}");
+    assertThat(parser.parse("{}")).isEmpty();
+  }
+
+  @Test
+  public void zeroOrMoreDelimited_single() {
+    Parser<ImmutableListMultimap<String, String>> parser =
+        zeroOrMoreDelimited(
+                word().followedBy(string(":")),
+                Parser.quotedStringWithEscapes('"', Object::toString),
+                ",",
+                ImmutableListMultimap::toImmutableListMultimap)
+            .between("{", "}");
+    assertThat(parser.parse("{k:\"v\"}")).containsExactly("k", "v");
+  }
+
+  @Test
+  public void zeroOrMoreDelimited_multiple() {
+    Parser<ImmutableListMultimap<String, String>> parser =
+        zeroOrMoreDelimited(
+                word().followedBy(string(":")),
+                Parser.quotedStringWithEscapes('"', Object::toString),
+                ",",
+                ImmutableListMultimap::toImmutableListMultimap)
+            .between("{", "}");
+    assertThat(parser.parse("{k1:\"v1\",k2:\"v2\"}"))
+        .containsExactly("k1", "v1", "k2", "v2")
+        .inOrder();
+  }
+
+  @Test
+  public void zeroOrMoreDelimited_skippingWhitespace() {
+    Parser<ImmutableListMultimap<String, String>> parser =
+        zeroOrMoreDelimited(
+                word().followedBy(string(":")),
+                Parser.quotedStringWithEscapes('"', Object::toString),
+                ",",
+                ImmutableListMultimap::toImmutableListMultimap)
+            .between("{", "}");
+    assertThat(parser.skipping(Character::isWhitespace).parse(" { k1 : \"v1\" , k2 : \"v2\" } "))
+        .containsExactly("k1", "v1", "k2", "v2")
+        .inOrder();
+  }
+
+  @Test
+  public void zeroOrMoreDelimited_withTrailingComma() {
+    Parser<ImmutableListMultimap<String, String>> parser =
+        zeroOrMoreDelimited(
+                word().followedBy(string(":")),
+                Parser.quotedStringWithEscapes('"', Object::toString),
+                ",",
+                ImmutableListMultimap::toImmutableListMultimap)
+            .followedBy(string(",").optional())
+            .between("{", "}");
+    assertThat(parser.skipping(Character::isWhitespace).parse(" { k1 : \"v1\" , k2 : \"v2\", } "))
+        .containsExactly("k1", "v1", "k2", "v2")
+        .inOrder();
+  }
+
+  @Test
+  public void zeroOrMoreDelimited_withOptionalValue_empty() {
+    Parser<Map<String, Integer>> parser =
+        zeroOrMoreDelimited(
+                word(),
+                string("=").then(digits()).map(Integer::parseInt).orElse(0),
+                ",",
+                toMap())
+            .between("{", "}");
+    assertThat(parser.parse("{}")).isEmpty();
+  }
+
+  @Test
+  public void zeroOrMoreDelimited_withOptionalValue_singleWithNoValue() {
+    Parser<Map<String, Integer>> parser =
+        zeroOrMoreDelimited(
+                word(),
+                string("=").then(digits()).map(Integer::parseInt).orElse(0),
+                ",",
+                toMap())
+            .between("{", "}");
+    assertThat(parser.parse("{a}")).containsExactly("a", 0);
+  }
+
+  @Test
+  public void zeroOrMoreDelimited_withOptionalValue_singleWithValue() {
+    Parser<Map<String, Integer>> parser =
+        zeroOrMoreDelimited(
+                word(),
+                string("=").then(digits()).map(Integer::parseInt).orElse(0),
+                ",",
+                toMap())
+            .between("{", "}");
+    assertThat(parser.parse("{a=1}")).containsExactly("a", 1);
+  }
+
+  @Test
+  public void zeroOrMoreDelimited_withOptionalValue_multiple() {
+    Parser<Map<String, Integer>> parser =
+        zeroOrMoreDelimited(
+                word(),
+                string("=").then(digits()).map(Integer::parseInt).orElse(0),
+                ",",
+                toMap())
+            .between("{", "}");
+    assertThat(parser.parse("{a=1,b,c=3}")).containsExactly("a", 1, "b", 0, "c", 3);
+  }
+
+  @Test
+  public void zeroOrMoreDelimited_withOptionalValue_skippingWhitespace() {
+    Parser<Map<String, Integer>> parser =
+        zeroOrMoreDelimited(
+                word(),
+                string("=").then(digits()).map(Integer::parseInt).orElse(0),
+                ",",
+                toMap())
+            .between("{", "}");
+    assertThat(parser.skipping(Character::isWhitespace).parse(" { a=1 , b , c=3 } "))
+        .containsExactly("a", 1, "b", 0, "c", 3);
+  }
+
+  @Test
+  public void zeroOrMoreDelimited_withOptionalValue_withTrailingComma() {
+    Parser<Map<String, Integer>> parser =
+        zeroOrMoreDelimited(
+                word(),
+                string("=").then(digits()).map(Integer::parseInt).orElse(0),
+                ",",
+                toMap())
+            .followedBy(string(",").optional())
+            .between("{", "}");
+    assertThat(parser.skipping(Character::isWhitespace).parse(" { a=1 , b , c=3, } "))
+        .containsExactly("a", 1, "b", 0, "c", 3)
+        .inOrder();
   }
 
   @Test
