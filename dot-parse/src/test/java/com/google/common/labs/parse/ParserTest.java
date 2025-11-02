@@ -5,7 +5,7 @@ import static com.google.common.labs.parse.Parser.compileCharacterSet;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.literally;
-import static com.google.common.labs.parse.Parser.repeat;
+import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.single;
 import static com.google.common.labs.parse.Parser.string;
@@ -2465,53 +2465,53 @@ public class ParserTest {
   }
 
   @Test
-  public void repeat_zeroTimes_fails() {
-    assertThrows(IllegalArgumentException.class, () -> repeat(0, is('a'), "a"));
+  public void consecutive_exactNTimes_zeroTimes_fails() {
+    assertThrows(IllegalArgumentException.class, () -> consecutive(0, is('a'), "a"));
   }
 
   @Test
-  public void repeat_negativeTimes_fails() {
-    assertThrows(IllegalArgumentException.class, () -> repeat(-1, is('a'), "a"));
+  public void consecutive_exactNTimes_negativeTimes_fails() {
+    assertThrows(IllegalArgumentException.class, () -> consecutive(-1, is('a'), "a"));
   }
 
   @Test
-  public void repeat_nextCharNoMatch_fails() {
-    Parser<String> parser = repeat(1, is('a'), "a");
+  public void consecutive_exactNTimes_nextCharNoMatch_fails() {
+    Parser<String> parser = consecutive(1, is('a'), "a");
     assertThrows(ParseException.class, () -> parser.parse("b"));
   }
 
   @Test
-  public void repeat_nextCharDoesNotMatch_fails() {
-    Parser<String> parser = repeat(3, CharPredicate.anyOf("ab"), "three ab");
+  public void consecutive_exactNTimes_nextCharDoesNotMatch_fails() {
+    Parser<String> parser = consecutive(3, CharPredicate.anyOf("ab"), "three ab");
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("c"));
     assertThat(thrown).hasMessageThat().contains("1:1: expecting <three ab>, encountered [c].");
   }
 
   @Test
-  public void repeat_fewerCharsMatch_fails() {
-    Parser<String> parser = repeat(3, CharPredicate.anyOf("ab"), "three ab");
+  public void consecutive_exactNTimes_fewerCharsMatch_fails() {
+    Parser<String> parser = consecutive(3, CharPredicate.anyOf("ab"), "three ab");
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("ab"));
     assertThat(thrown).hasMessageThat().contains("1:1: expecting <three ab>, encountered [ab].");
   }
 
   @Test
-  public void repeat_exactNumberOfCharsMatch_succeeds() {
-    Parser<String> parser = repeat(3, CharPredicate.anyOf("ab"), "three ab");
+  public void consecutive_exactNTimes_exactNumberOfCharsMatch_succeeds() {
+    Parser<String> parser = consecutive(3, CharPredicate.anyOf("ab"), "three ab");
     assertThat(parser.parse("aba")).isEqualTo("aba");
   }
 
   @Test
-  public void repeat_moreThanNCharsMatch() {
-    Parser<String> parser = repeat(2, CharPredicate.anyOf("abc"), "2 abc");
+  public void consecutive_exactNTimes_moreThanNCharsMatch() {
+    Parser<String> parser = consecutive(2, CharPredicate.anyOf("abc"), "2 abc");
     assertThrows(ParseException.class, () -> parser.parse("abc"));
     assertThat(parser.parseToStream("abbcac")).containsExactly("ab", "bc", "ac").inOrder();
   }
 
   @Test
-  public void repeat_unicodeEscapeExample() {
+  public void consecutive_exactNTimes_unicodeEscapeExample() {
     CharPredicate hexDigit = compileCharacterSet("[0-9A-F]");
     Parser<Integer> uncodeEscape =
-        string("\\u").then(repeat(4, hexDigit, "4 hex")).map(hex -> Integer.parseInt(hex, 16));
+        string("\\u").then(consecutive(4, hexDigit, "4 hex")).map(hex -> Integer.parseInt(hex, 16));
     assertThat(uncodeEscape.parseToStream("\\uD83D\\uDE00"))
         .containsExactly(0xD83D, 0xDE00)
         .inOrder();
