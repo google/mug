@@ -125,15 +125,6 @@ public abstract class Parser<T> {
     return consecutive(characterSet, "one or more " + characterSet);
   }
 
-  /**
-   * Matches exactly {@code n} consecutive characters as specified by {@code matcher}.
-   *
-   * @since 9.4
-   */
-  public static Parser<String> consecutive(int n, CharPredicate matcher, String name) {
-    return skip(n, matcher, name).source();
-  }
-
   private static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
     requireNonNull(matcher);
     requireNonNull(name);
@@ -150,33 +141,23 @@ public abstract class Parser<T> {
     };
   }
 
-  private static Parser<Void> skip(int n, CharPredicate matcher, String name) {
-    requireNonNull(matcher);
-    requireNonNull(name);
-    checkArgument(n > 0, "repetition count (%s) must be positive", n);
-    return new Parser<>() {
-      @Override
-      MatchResult<Void> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        for (int i = 0; i < n; i++) {
-          int at = start + i;
-          if (!input.isInRange(at) || !matcher.test(input.charAt(at))) {
-            return context.expecting(name, start);
-          }
-        }
-        return new MatchResult.Success<>(start, start + n, null);
-      }
-    };
-  }
-
   /**
    * Consumes exactly {@code n} consecutive characters. {@code n} must be positive.
    *
    * @since 9.4
    */
   public static Parser<String> chars(int n) {
-    return consecutive(n, CharPredicate.ANY, n + " char(s)");
+    checkArgument(n > 0, "repetition count (%s) must be positive", n);
+    String name = n + " char(s)";
+    return new Parser<>() {
+      @Override MatchResult<String> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        return input.isEof(start + n - 1)
+            ? context.expecting(name, start)
+            : new MatchResult.Success<>(start, start + n, input.snippet(start, n));
+      }
+    };
   }
 
   /**
@@ -230,7 +211,8 @@ public abstract class Parser<T> {
    *
    * <pre>{@code
    * Parser<String> unicodeEscaped = string("u")
-   *     .then(consecutive(4, charsIn("[0-9A-Fa-f]"), "hex digit4"))
+   *     .then(chars(4))
+   *     .suchThat(charsIn("[0-9A-Fa-f]")::matchesAllOf, "4 hex digits")
    *     .map(digits -> Character.toString(Integer.parseInt(digits, 16)));
    * quotedStringWithEscapes('"', unicodeEscaped.or(chars(1))).parse("foo\\uD83D");
    * }</pre>
