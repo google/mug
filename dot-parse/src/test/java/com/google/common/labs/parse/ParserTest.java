@@ -2591,6 +2591,9 @@ public class ParserTest {
     assertThat(chars(2).skipping(Character::isWhitespace).parseToStream(" ab cd"))
         .containsExactly("ab", "cd")
         .inOrder();
+    assertThat(chars(2).parseToStream(" ab cd"))
+        .containsExactly(" a", "b ", "cd")
+        .inOrder();
   }
 
   @Test
