@@ -1,9 +1,10 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Parser.anyOf;
-import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.word;
+import static com.google.common.labs.parse.Parser.zeroOrMoreDelimited;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.util.stream.BiCollectors.toMap;
 
 import java.util.List;
 import java.util.Map;
@@ -11,9 +12,6 @@ import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import com.google.mu.util.Both;
-import com.google.mu.util.stream.BiStream;
 
 @RunWith(JUnit4.class)
 public class MapParserExample {
@@ -43,11 +41,9 @@ public class MapParserExample {
   static Map<String, ?> parse(String input) {
     Parser.Rule<Map<String, ?>> lazy = new Parser.Rule<>();
     Parser<List<String>> listParser = word().zeroOrMoreDelimitedBy(",").between("[", "]");
-    Parser<Map<String, ?>> mapParser =
-        sequence(word().followedBy(":"), anyOf(word(), listParser, lazy), Both::of)
-            .zeroOrMoreDelimitedBy(",")
-            .between("{", "}")
-            .map(kvs -> BiStream.from(kvs.stream()).toMap());
+    Parser<Map<String, Object>> mapParser =
+        zeroOrMoreDelimited(word().followedBy(":"), anyOf(word(), listParser, lazy), ",", toMap())
+            .between("{", "}");
     return lazy.definedAs(mapParser).parseSkipping(Character::isWhitespace, input);
   }
 }

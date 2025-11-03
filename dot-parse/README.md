@@ -14,7 +14,7 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 - **Compose:** `.thenReturn(true)`, `.followedBy("else")`, `.between("[", "]")`, `.map(Literal::new)`
 - **Alternative:** `p1.or(p2)`, `anyOf(p1, p2)`
 - **Sequence:** `then()`, `sequence()`, `atLeastOnce()`, `atLeastOnceDelimitedBy()`
-- **Optional:** `optionallyFollowedBy()`, `orElse(defaultValue)`, `zeroOrMore()`, `zeroOrMoreDelimitedBy(",")`
+- **Optional:** `optional()`, `optionallyFollowedBy()`, `orElse(defaultValue)`, `zeroOrMore()`, `zeroOrMoreDelimitedBy(",")`
 - **Operator Precedence:** `OperatorTable<T>` (`prefix()`, `leftAssociative()`, `build()`, etc.)
 - **Recursive:** `Parser.define()`, `Parser.Rule<T>`
 - **Whitespace:** `parser.parseSkipping(Character::isWhitespace, input)`, `parser.skipping(...).parse(...)`
