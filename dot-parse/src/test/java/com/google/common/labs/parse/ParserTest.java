@@ -2588,6 +2588,9 @@ public class ParserTest {
   @Test
   public void chars_moreThanSufficientChars_succeeds() {
     assertThat(chars(2).parseToStream("abcd")).containsExactly("ab", "cd").inOrder();
+    assertThat(chars(2).skipping(Character::isWhitespace).parseToStream(" ab cd"))
+        .containsExactly("ab", "cd")
+        .inOrder();
   }
 
   @Test
