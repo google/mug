@@ -2576,7 +2576,8 @@ public class ParserTest {
   @Test
   public void chars_notSufficientChars_fails() {
     Parser<String> parser = chars(2);
-    assertThrows(ParseException.class, () -> parser.parse("a"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(thrown).hasMessageThat().contains("1:1: expecting <2 char(s)>, encountered [a]");
   }
 
   @Test
