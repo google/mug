@@ -226,7 +226,7 @@ public abstract class Parser<T> {
    *
    * will treat the escaped character as literal and return {@code foo\bar}.
    *
-   * <p>You can also support unicode escaping:
+   * <p>You can also support Unicode escaping:
    *
    * <pre>{@code
    * Parser<String> unicodeEscaped = string("u")
@@ -236,13 +236,11 @@ public abstract class Parser<T> {
    * }</pre>
    */
   public static Parser<String> quotedStringWithEscapes(char quoteChar, Parser<String> escaped) {
-    requireNonNull(escaped);
+    Parser<String> escape = string("\\").then(escaped);
     checkArgument(quoteChar != '\\', "quoteChar cannot be '\\'");
     checkArgument(!Character.isISOControl(quoteChar), "quoteChar cannot be a control character");
     String quoteString = Character.toString(quoteChar);
-    return anyOf(
-            consecutive(isNot(quoteChar).and(isNot('\\')), "quoted chars"),
-            string("\\").then(escaped))
+    return anyOf(consecutive(isNot(quoteChar).and(isNot('\\')), "quoted chars"), escape)
         .zeroOrMore(joining())
         .immediatelyBetween(quoteString, quoteString);
   }
