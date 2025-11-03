@@ -153,9 +153,9 @@ public abstract class Parser<T> {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-        return input.isEof(start + n - 1)
-            ? context.expecting(name, start)
-            : new MatchResult.Success<>(start, start + n, input.snippet(start, n));
+        return input.isInRange(start + n - 1)
+            ? new MatchResult.Success<>(start, start + n, input.snippet(start, n))
+            : context.expecting(name, start);
       }
     };
   }
