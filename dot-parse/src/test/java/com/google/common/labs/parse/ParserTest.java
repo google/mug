@@ -2,6 +2,7 @@ package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
+import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.literally;
@@ -1657,7 +1658,7 @@ public class ParserTest {
     Parser<ImmutableListMultimap<String, String>> parser =
         zeroOrMoreDelimited(
                 word().followedBy(string(":")),
-                Parser.quotedStringWithEscapes('"', Object::toString),
+                Parser.quotedStringWithEscapes('"', chars(1)),
                 ",",
                 ImmutableListMultimap::toImmutableListMultimap)
             .between("{", "}");
@@ -1669,7 +1670,7 @@ public class ParserTest {
     Parser<ImmutableListMultimap<String, String>> parser =
         zeroOrMoreDelimited(
                 word().followedBy(string(":")),
-                Parser.quotedStringWithEscapes('"', Object::toString),
+                Parser.quotedStringWithEscapes('"', chars(1)),
                 ",",
                 ImmutableListMultimap::toImmutableListMultimap)
             .between("{", "}");
@@ -1681,7 +1682,7 @@ public class ParserTest {
     Parser<ImmutableListMultimap<String, String>> parser =
         zeroOrMoreDelimited(
                 word().followedBy(string(":")),
-                Parser.quotedStringWithEscapes('"', Object::toString),
+                Parser.quotedStringWithEscapes('"', chars(1)),
                 ",",
                 ImmutableListMultimap::toImmutableListMultimap)
             .between("{", "}");
@@ -1695,7 +1696,7 @@ public class ParserTest {
     Parser<ImmutableListMultimap<String, String>> parser =
         zeroOrMoreDelimited(
                 word().followedBy(string(":")),
-                Parser.quotedStringWithEscapes('"', Object::toString),
+                Parser.quotedStringWithEscapes('"', chars(1)),
                 ",",
                 ImmutableListMultimap::toImmutableListMultimap)
             .between("{", "}");
@@ -1709,7 +1710,7 @@ public class ParserTest {
     Parser<ImmutableListMultimap<String, String>> parser =
         zeroOrMoreDelimited(
                 word().followedBy(string(":")),
-                Parser.quotedStringWithEscapes('"', Object::toString),
+                Parser.quotedStringWithEscapes('"', chars(1)),
                 ",",
                 ImmutableListMultimap::toImmutableListMultimap)
             .followedBy(string(",").optional())
@@ -2462,7 +2463,7 @@ public class ParserTest {
 
   @Test
   public void quotedStringWithEscapes_singleQuote_success() {
-    Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'', Object::toString);
+    Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'', chars(1));
     assertThat(singleQuoted.parse("''")).isEmpty();
     assertThat(singleQuoted.parse("'foo'")).isEqualTo("foo");
     assertThat(singleQuoted.parse("'foo\\'s'")).isEqualTo("foo's");
@@ -2473,7 +2474,7 @@ public class ParserTest {
 
   @Test
   public void quotedStringWithEscapes_doubleQuote_success() {
-    Parser<String> doubleQuoted = Parser.quotedStringWithEscapes('"', Object::toString);
+    Parser<String> doubleQuoted = Parser.quotedStringWithEscapes('"', chars(1));
     assertThat(doubleQuoted.parse("\"\"")).isEmpty();
     assertThat(doubleQuoted.parse("\"bar\"")).isEqualTo("bar");
     assertThat(doubleQuoted.parse("\"bar\\\"baz\"")).isEqualTo("bar\"baz");
@@ -2482,7 +2483,7 @@ public class ParserTest {
 
   @Test
   public void quotedStringWithEscapes_failures() {
-    Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'', Object::toString);
+    Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'', chars(1));
     assertThrows(ParseException.class, () -> singleQuoted.parse("'foo")); // unclosed
     assertThrows(ParseException.class, () -> singleQuoted.parse("'foo'bar")); // leftover
     assertThrows(ParseException.class, () -> singleQuoted.parse("'foo\\")); // dangling escape
@@ -2492,16 +2493,27 @@ public class ParserTest {
   public void quotedStringWithEscapes_invalidQuoteChar_throws() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> Parser.quotedStringWithEscapes('\\', Object::toString));
+        () -> Parser.quotedStringWithEscapes('\\', chars(1)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Parser.quotedStringWithEscapes('\n', Object::toString));
+        () -> Parser.quotedStringWithEscapes('\n', chars(1)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Parser.quotedStringWithEscapes('\r', Object::toString));
+        () -> Parser.quotedStringWithEscapes('\r', chars(1)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> Parser.quotedStringWithEscapes('\t', Object::toString));
+        () -> Parser.quotedStringWithEscapes('\t', chars(1)));
+  }
+
+  @Test
+  public void quotedStringWithEscapes_unicodeEscape_success() {
+    Parser<String> unicodeEscaped =
+        string("u")
+            .then(consecutive(4, charsIn("[0-9A-Fa-f]"), "hex digit4"))
+            .map(digits -> Character.toString(Integer.parseInt(digits, 16)));
+    Parser<String> quotedString = Parser.quotedStringWithEscapes('\'', unicodeEscaped.or(chars(1)));
+    assertThat(quotedString.parse("''")).isEmpty();
+    assertThat(quotedString.parse("'emoji: \\uD83D\\uDE00'")).isEqualTo("emoji: 😀");
   }
 
   @Test
@@ -2595,6 +2607,22 @@ public class ParserTest {
     assertThat(uncodeEscape.parseToStream("\\uD83D\\uDE00"))
         .containsExactly(0xD83D, 0xDE00)
         .inOrder();
+  }
+
+  @Test
+  public void chars_zeroTimes_fails() {
+    assertThrows(IllegalArgumentException.class, () -> chars(0));
+  }
+
+  @Test
+  public void chars_notSufficientChars_fails() {
+    Parser<String> parser = chars(2);
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+  }
+
+  @Test
+  public void chars_sufficientChars_succeeds() {
+    assertThat(chars(2).parse("ab")).isEqualTo("ab");
   }
 
   @Test
@@ -4268,7 +4296,7 @@ public class ParserTest {
               subpath)
           .atLeastOnceDelimitedBy("/")
           .map(ResourceNamePattern::new)
-          .optionallyFollowedBy(revision.map(v -> pattern -> pattern.withRevision(v)));
+          .optionalPostfix(revision.map(v -> pattern -> pattern.withRevision(v)));
     }
 
     static ResourceNamePattern parse(String path) {

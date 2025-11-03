@@ -22,7 +22,7 @@ import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
-import static java.util.function.Function.identity;
+import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.joining;
@@ -171,6 +171,15 @@ public abstract class Parser<T> {
   }
 
   /**
+   * Consumes exactly {@code n} consecutive characters. {@code n} must be positive.
+   *
+   * @since 9.4
+   */
+  public static Parser<String> chars(int n) {
+    return consecutive(n, CharPredicate.ANY, n + " char(s)");
+  }
+
+  /**
    * One or more regex {@code \w+} characters.
    *
    * @since 9.4
@@ -204,25 +213,36 @@ public abstract class Parser<T> {
   }
 
   /**
-   * String literal quoted by {@code quoteChar} and allows backslash escapes (no Unicode escapes).
+   * String literal quoted by {@code quoteChar} and allows backslash escapes.
    *
-   * <p>Any escaped character will be passed to the {@code unescapeFunction} to translate to the
-   * literal character. If you need ST-Query style escaping that doesn't treat '\t', '\n' etc.
-   * specially, just pass {@code Object::toString}.
+   * <p>When a backslash is encountered, the {@code escaped} parser is used to parse the escaped
+   * character(s).
    *
-   * <p>For example, {@code "foo\\bar"} is parsed as {@code foo\bar}.
+   * <p>For example:
    *
-   * @since 9.4
+   * <pre>{@code
+   * quotedStringWithEscapes('"', chars(1)).parse("foo\\bar");
+   * }</pre>
+   *
+   * will treat the escaped character as literal and return {@code foo\bar}.
+   *
+   * <p>You can also support unicode escaping:
+   *
+   * <pre>{@code
+   * Parser<String> unicodeEscaped = string("u")
+   *     .then(consecutive(4, charsIn("[0-9A-Fa-f]"), "hex digit4"))
+   *     .map(digits -> Character.toString(Integer.parseInt(digits, 16)));
+   * quotedStringWithEscapes('"', unicodeEscaped.or(chars(1))).parse("foo\\uD83D");
+   * }</pre>
    */
-  public static Parser<String> quotedStringWithEscapes(
-      char quoteChar, Function<? super Character, ? extends CharSequence> unescapeFunction) {
-    requireNonNull(unescapeFunction);
+  public static Parser<String> quotedStringWithEscapes(char quoteChar, Parser<String> escaped) {
+    requireNonNull(escaped);
     checkArgument(quoteChar != '\\', "quoteChar cannot be '\\'");
     checkArgument(!Character.isISOControl(quoteChar), "quoteChar cannot be a control character");
     String quoteString = Character.toString(quoteChar);
     return anyOf(
             consecutive(isNot(quoteChar).and(isNot('\\')), "quoted chars"),
-            string("\\").then(single(CharPredicate.ANY, "escaped char").map(unescapeFunction)))
+            string("\\").then(escaped))
         .zeroOrMore(joining())
         .immediatelyBetween(quoteString, quoteString);
   }
@@ -763,18 +783,11 @@ public abstract class Parser<T> {
    * by {@code suffix}.
    */
   public final Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
-    return optionallyFollowedBy(string(suffix).thenReturn(op::apply));
+    return optionalPostfix(string(suffix).thenReturn(op::apply));
   }
 
-  /**
-   * Returns an equivalent parser except it will optionally apply the unary operator resulting from
-   * {@code suffix}.
-   */
-  public final Parser<T> optionallyFollowedBy(Parser<? extends UnaryOperator<T>> suffix) {
-    return sequence(
-        this,
-        suffix.orElse(null),
-        (operand, operator) -> operator == null ? operand : operator.apply(operand));
+  final Parser<T> optionalPostfix(Parser<UnaryOperator<T>> suffix) {
+    return sequence(this, suffix.orElse(identity()), (operand, op) -> op.apply(operand));
   }
 
   /** A form of negative lookahead such that the match is rejected if followed by {@code suffix}. */
