@@ -544,7 +544,7 @@ public abstract class Parser<T> {
    * Parser<Map<String, List<String>>> jsonMap =
    *     zeroOrMoreDelimited(
    *            word().followedBy(":"),
-   *            quotedStringWithEscapes('"', Object::toString)),
+   *            quotedStringWithEscapes('"', chars(1)),
    *            ",",
    *            toMap(toList()))
    *         .followedBy(string(",").optional()) // only if you need to allow trailing comma
