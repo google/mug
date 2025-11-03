@@ -147,7 +147,7 @@ public abstract class Parser<T> {
    * @since 9.4
    */
   public static Parser<String> chars(int n) {
-    checkArgument(n > 0, "repetition count (%s) must be positive", n);
+    checkArgument(n > 0, "chars count (%s) must be positive", n);
     String name = n + " char(s)";
     return new Parser<>() {
       @Override MatchResult<String> skipAndMatch(
