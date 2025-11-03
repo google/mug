@@ -96,7 +96,7 @@ If your own mini parser needs quoted string literals with similar escapes, you c
 For example, to parse the ST Query style quoted string, simply use:
 
 ```java {.good}
-// \t -> t, \n -> n, \" -> "
+// \" -> ", \\ -> \, \t -> t, \n -> n
 Parser<String> quotedString =
     Parser.quotedStringWithEscapes('"', /* escaped = */ Parser.chars(1));
 ```
