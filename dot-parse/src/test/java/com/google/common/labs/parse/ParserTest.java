@@ -2509,7 +2509,8 @@ public class ParserTest {
   public void quotedStringWithEscapes_unicodeEscape_success() {
     Parser<String> unicodeEscaped =
         string("u")
-            .then(consecutive(4, charsIn("[0-9A-Fa-f]"), "hex digit4"))
+            .then(chars(4))
+            .suchThat(charsIn("[0-9A-Fa-f]")::matchesAllOf, "4 hex digits")
             .map(digits -> Character.toString(Integer.parseInt(digits, 16)));
     Parser<String> quotedString = Parser.quotedStringWithEscapes('\'', unicodeEscaped.or(chars(1)));
     assertThat(quotedString.parse("''")).isEmpty();
@@ -2556,53 +2557,11 @@ public class ParserTest {
   }
 
   @Test
-  public void consecutive_exactNTimes_zeroTimes_fails() {
-    assertThrows(IllegalArgumentException.class, () -> consecutive(0, is('a'), "a"));
-  }
-
-  @Test
-  public void consecutive_exactNTimes_negativeTimes_fails() {
-    assertThrows(IllegalArgumentException.class, () -> consecutive(-1, is('a'), "a"));
-  }
-
-  @Test
-  public void consecutive_exactNTimes_nextCharNoMatch_fails() {
-    Parser<String> parser = consecutive(1, is('a'), "a");
-    assertThrows(ParseException.class, () -> parser.parse("b"));
-  }
-
-  @Test
-  public void consecutive_exactNTimes_nextCharDoesNotMatch_fails() {
-    Parser<String> parser = consecutive(3, CharPredicate.anyOf("ab"), "three ab");
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("c"));
-    assertThat(thrown).hasMessageThat().contains("1:1: expecting <three ab>, encountered [c].");
-  }
-
-  @Test
-  public void consecutive_exactNTimes_fewerCharsMatch_fails() {
-    Parser<String> parser = consecutive(3, CharPredicate.anyOf("ab"), "three ab");
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("ab"));
-    assertThat(thrown).hasMessageThat().contains("1:1: expecting <three ab>, encountered [ab].");
-  }
-
-  @Test
-  public void consecutive_exactNTimes_exactNumberOfCharsMatch_succeeds() {
-    Parser<String> parser = consecutive(3, CharPredicate.anyOf("ab"), "three ab");
-    assertThat(parser.parse("aba")).isEqualTo("aba");
-  }
-
-  @Test
-  public void consecutive_exactNTimes_moreThanNCharsMatch() {
-    Parser<String> parser = consecutive(2, CharPredicate.anyOf("abc"), "2 abc");
-    assertThrows(ParseException.class, () -> parser.parse("abc"));
-    assertThat(parser.parseToStream("abbcac")).containsExactly("ab", "bc", "ac").inOrder();
-  }
-
-  @Test
   public void consecutive_exactNTimes_unicodeEscapeExample() {
     Parser<Integer> uncodeEscape =
         string("\\u")
-            .then(consecutive(4, charsIn("[0-9A-F]"), "4 hex"))
+            .then(chars(4))
+            .suchThat(charsIn("[0-9A-F]")::matchesAllOf, "4 hex")
             .map(hex -> Integer.parseInt(hex, 16));
     assertThat(uncodeEscape.parseToStream("\\uD83D\\uDE00"))
         .containsExactly(0xD83D, 0xDE00)
@@ -2623,6 +2582,11 @@ public class ParserTest {
   @Test
   public void chars_sufficientChars_succeeds() {
     assertThat(chars(2).parse("ab")).isEqualTo("ab");
+  }
+
+  @Test
+  public void chars_moreThanSufficientChars_succeeds() {
+    assertThat(chars(2).parseToStream("abcd")).containsExactly("ab", "cd").inOrder();
   }
 
   @Test
