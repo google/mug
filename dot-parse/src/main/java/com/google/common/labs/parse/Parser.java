@@ -221,10 +221,10 @@ public abstract class Parser<T> {
    * <p>For example:
    *
    * <pre>{@code
-   * quotedStringWithEscapes('"', chars(1)).parse("foo\\bar");
+   * quotedStringWithEscapes('"', chars(1)).parse("foo\\\\bar");
    * }</pre>
    *
-   * will treat the escaped character as literal and return {@code foo\bar}.
+   * will treat the escaped character as literal and return {@code "foo\\bar"}.
    *
    * <p>You can also support Unicode escaping:
    *
