@@ -213,7 +213,7 @@ public abstract class Parser<T> {
   }
 
   /**
-   * String literal quoted by {@code quoteChar} and allows backslash escapes.
+   * String literal quoted by {@code quoteChar} with backslash escapes.
    *
    * <p>When a backslash is encountered, the {@code escaped} parser is used to parse the escaped
    * character(s).
