@@ -86,7 +86,7 @@ And most grammar use a pair of quotes to demarcate them - often double quotes (`
 Whichever quote character is picked, escaping is often used to be able to put the literal quote character inside the string.
 
 You are familiar with Java's string literal syntax, where `\"` indicates literal quote, `\n` is newline and `\uD83D\uDE00`
-is Unicode escaped smiley face.
+is Unicode-escaped emoji.
 
 Google ST Query on the other hand doesn't support Unicode escaping, and `\"`, `\n` would just be translated to the literal `"` and `n`
 characters respectively, without any special meaning.
