@@ -183,12 +183,13 @@ The following code splits the JSON records so you can feed them to GSON (or any 
 
 ```java {.good}
 import static com.google.common.labs.parse.CharacterSet.charsIn;
+import static com.google.common.labs.parse.Parser.chars;
 import com.google.common.labs.parse.Parser;
 
 /** Splits input into a lazy stream of top-level JSON records. */
 Stream<String> jsonStringsFrom(Reader input) {
   // Either escaped or unescaped, enclosed between double quotes
-  Parser<?> stringLiteral = Parser.quotedStringWithEscapes('"', Object::toString);
+  Parser<?> stringLiteral = Parser.quotedStringWithEscapes('"', chars(1));
   
   // Outside of string literal, any non-quote, non-brace characters are passed through
   Parser<?> passThrough = Parser.consecutive(charsIn("[^\"{}]"));  // uses regex-like character set
@@ -239,6 +240,7 @@ sealed interface SearchCriteria
 Now let's build the parser:
 
 ```java {.good}
+import static com.google.common.labs.parse.Parser.chars;
 import static com.google.mu.util.CharPredicate.isNot;
 
 static SearchCriteria parse(String input) {
@@ -248,7 +250,7 @@ static SearchCriteria parse(String input) {
   Parser<Term> unquoted = Parser.word()
       .suchThat(w -> !keywords.contains(w), "search term")
       .map(Term::new);
-  Parser<Term> quoted = Parser.quotedStringWithEscapes('"', Object::toString);
+  Parser<Term> quoted = Parser.quotedStringWithEscapes('"', chars(1));
 
   // Leaf-level search term can be a quoted, unquoted term, or a sub-criteria inside parentheses.
   // They are then grouped by the boolean operators.
