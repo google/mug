@@ -235,8 +235,9 @@ public abstract class Parser<T> {
    * quotedStringWithEscapes('"', unicodeEscaped.or(chars(1))).parse("foo\\uD83D");
    * }</pre>
    */
-  public static Parser<String> quotedStringWithEscapes(char quoteChar, Parser<String> escaped) {
-    Parser<String> escape = string("\\").then(escaped);
+  public static Parser<String> quotedStringWithEscapes(
+      char quoteChar, Parser<? extends CharSequence> escaped) {
+    var escape = string("\\").then(escaped);
     checkArgument(quoteChar != '\\', "quoteChar cannot be '\\'");
     checkArgument(!Character.isISOControl(quoteChar), "quoteChar cannot be a control character");
     String quoteString = Character.toString(quoteChar);
