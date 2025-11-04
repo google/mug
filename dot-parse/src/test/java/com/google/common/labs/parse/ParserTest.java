@@ -2576,7 +2576,8 @@ public class ParserTest {
   @Test
   public void chars_notSufficientChars_fails() {
     Parser<String> parser = chars(2);
-    assertThrows(ParseException.class, () -> parser.parse("a"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(thrown).hasMessageThat().contains("1:1: expecting <2 char(s)>, encountered [a]");
   }
 
   @Test
@@ -2587,6 +2588,22 @@ public class ParserTest {
   @Test
   public void chars_moreThanSufficientChars_succeeds() {
     assertThat(chars(2).parseToStream("abcd")).containsExactly("ab", "cd").inOrder();
+  }
+
+  @Test
+  public void chars_source_moreThanSufficientChars_succeeds() {
+    assertThat(chars(2).source().parseToStream("abcd")).containsExactly("ab", "cd").inOrder();
+  }
+
+  @Test
+  public void chars_skipping() {
+    assertThat(chars(2).skipping(Character::isWhitespace).parseToStream(" ab cd"))
+        .containsExactly("ab", "cd")
+        .inOrder();
+    assertThat(chars(2).parseToStream(" ab cd")).containsExactly(" a", "b ", "cd").inOrder();
+    assertThat(literally(chars(2)).skipping(Character::isWhitespace).parseToStream(" ab cd"))
+        .containsExactly(" a", "b ", "cd")
+        .inOrder();
   }
 
   @Test

@@ -67,8 +67,9 @@ import com.google.mu.util.stream.BiCollector;
  * anyOf(expr.followedBy(";"), expr)}, use {@code expr.optionallyFollowedBy(";"))} instead.
  *
  * <p>WARNING: careful using this class to parse user-provided input, or in performance critical hot
- * paths. Parser combinators are not known for optimal performance and recursive grammars can be
- * subject to stack overflow error on maliciously crafted input (think of 10K left parens).
+ * paths. A poorly-written grammar with long common prefixes may incur expensive backtracking
+ * overhead. And if you define recursive grammars using {@link #define} or {@link Parser.Rule},
+ * maliciously crafted input (think of 10K left parens) can cause StackOverflowError.
  */
 public abstract class Parser<T> {
   private static final Substring.Pattern SQUARE_BRACKETED =
@@ -147,15 +148,15 @@ public abstract class Parser<T> {
    * @since 9.4
    */
   public static Parser<String> chars(int n) {
-    checkArgument(n > 0, "repetition count (%s) must be positive", n);
+    checkArgument(n > 0, "chars count (%s) must be positive", n);
     String name = n + " char(s)";
     return new Parser<>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-        return input.isEof(start + n - 1)
-            ? context.expecting(name, start)
-            : new MatchResult.Success<>(start, start + n, input.snippet(start, n));
+        return input.isInRange(start + n - 1)
+            ? new MatchResult.Success<>(start, start + n, input.snippet(start, n))
+            : context.expecting(name, start);
       }
     };
   }
@@ -544,7 +545,7 @@ public abstract class Parser<T> {
    * Parser<Map<String, List<String>>> jsonMap =
    *     zeroOrMoreDelimited(
    *            word().followedBy(":"),
-   *            quotedStringWithEscapes('"', Object::toString)),
+   *            quotedStringWithEscapes('"', chars(1)),
    *            ",",
    *            toMap(toList()))
    *         .followedBy(string(",").optional()) // only if you need to allow trailing comma

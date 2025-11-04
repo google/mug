@@ -46,6 +46,50 @@ try (Reader reader = ...) {
 
 ---
 
+## Example — Block Comment
+
+Non-nestable block comment like `/* this is a comment */` is pretty easy to parse:
+
+```java {.good}
+import static com.google.mu.util.CharPredicate.isNot;
+import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.string;
+import static java.util.stream.Collectors.joining;
+
+// The commented must not be '*', or if it's '*', must not be followed by '/'
+Parser<String> content = Parser.anyOf(consecutive(isNot('*')), string("*").notFollowedBy("/"));
+Parser<String> blockComment = content.zeroOrMore(joining())
+    .between("/*", "*/");
+blockComment.parse("/* this is comment */ ");
+```
+
+That's it.
+
+What's more interesting is nestable block comments.
+
+Imagine you want to allow `/* this is /* nested comment */ and some */` to be a valid block comment.
+Any nesting requires recursive grammar. You can create the recursive grammar using the `Parser.define()`
+method:
+
+```java {.good}
+import static com.google.mu.util.CharPredicate.isNot;
+import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.string;
+import static java.util.stream.Collectors.joining;
+
+// The commented must not be '*', or if it's '*', must not be followed by '/'
+Parser<String> content = Parser.anyOf(consecutive(isNot('*')), string("*").notFollowedBy("/"));
+Parser<String> blockComment = Parser.define(
+    nested -> content.or(nested)
+        .zeroOrMore(joining())
+        .between("/*", "*/"));
+```
+
+It's similar to the non-nested parser, except you need to use `content.or(nested)` to allow either
+regular comment or a nested block comment.
+
+---
+
 ## Example — Calculator (OperatorTable)
 
 Goal: support `+ - * /`, factorial (`!`), unary negative, parentheses, and whitespace.
@@ -74,6 +118,75 @@ int v = calculator()
 The `Parser.define(rule -> ...)` method call defines a recursive grammar
 where the lambda parameter `rule` is a placeholder of the result parser itself so that
 you can nest it between parentheses.
+
+---
+
+## Example — Parse Quoted String With Escapes
+
+When parsing real world syntaxes, chances are you'll run into string literals.
+
+And most grammar use a pair of quotes to demarcate them - often double quotes (`"`) but sometimes single quotes too.
+
+Whichever quote character is picked, escaping is often used to be able to put the literal quote character inside the string.
+
+You are familiar with Java's string literal syntax, where `\"` indicates literal quote, `\n` is newline and `\uD83D\uDE00`
+is Unicode-escaped emoji.
+
+Google ST Query on the other hand doesn't support Unicode escaping, and `\"`, `\n` would just be translated to the literal `"` and `n`
+characters respectively, without any special meaning.
+
+If your own mini parser needs quoted string literals with similar escapes, you can use the `Parser.quotedStringWithEscapes()` method.
+
+For example, to parse the ST Query style quoted string, simply use:
+
+```java {.good}
+// \" -> ", \\ -> \, \t -> t, \n -> n
+Parser<String> quotedString =
+    Parser.quotedStringWithEscapes('"', /* escaped = */ Parser.chars(1));
+```
+
+The first parameter is the quote character; and the second parameter is a `Parser` object that translates the escaped character(s).
+In this case, the code simply takes the escaped character as is.
+
+But what if you do want to translate `\t` to a tab and `\n` to a newline? You can use the `escaped` Parser object to achieve that effect:
+
+```java {.good}
+Parser<String> singleCharEscaped =  Parser.chars(1)
+    .map(c ->
+        switch (c) {
+          "t" -> "\t";
+          "n" -> "\n";
+          "r" -> "\r";
+          default -> c;  // backslash itself or other regular chars
+        });
+```
+
+The same technique can be used to handle Unicode escaping:
+
+```java {.good}
+import static com.google.common.labs.parse.CharacterSet;
+import static com.google.common.labs.parse.Parser.chars;
+import static com.google.common.labs.parse.Parser.string;
+
+CharacterSet hexDigit = ChraracterSet.charsIn("[0-9a-fA-F]");
+Parser<String> unicodeEscaped = string("u")
+    .then(chars(4))  // 4 chars after \u
+    .suchThat(hexDigit::matchesAllOf, "4 hex digits")
+    // parse 4 hex digits to a code point integer; then convert to string
+    .map(hex -> Character.toString(Integer.parseInt(hex, 16)));
+```
+
+Combine the `singleCharEscaped` and `unicodeEscaped` parsers created above,
+you get a Java-style string literal parser:
+
+```java {.good}
+Parser<String> quotedString =
+    // IMPORTANT: \u must be placed before the single-char case!
+    Parser.quotedStringWithEscapes('"', unicodeEscaped.or(singleCharEscaped));
+quotedString.parse(
+    "\"this is a string with quote: \\\" and unicode: \\uD83D\\uDE00\"");
+    // this is a string with quote: " and unicode: 😀
+```
 
 ---
 

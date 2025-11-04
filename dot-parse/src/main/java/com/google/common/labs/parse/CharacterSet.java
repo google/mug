@@ -56,6 +56,11 @@ public final class CharacterSet implements CharPredicate {
     return predicate.test(ch);
   }
 
+  /** Returns true if this set contains the character {@code ch}. */
+  public boolean contains(char ch) {
+    return predicate.test(ch);
+  }
+
   @Override public boolean equals(Object obj) {
     return (obj instanceof CharacterSet that) && string.equals(that.string);
   }
