@@ -69,7 +69,7 @@ public final class CharacterSet implements CharPredicate {
     return string.hashCode();
   }
 
-  /** Returns the character set string. For example {@code "[a-zA-Z0-9-_]"}. */
+  /** Returns the character set string representation. For example {@code "[a-zA-Z0-9-_]"}. */
   @Override public String toString() {
     return string;
   }
