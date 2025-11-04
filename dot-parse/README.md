@@ -52,10 +52,13 @@ Non-nestable block comment like `/* this is a comment */` is pretty easy to pars
 
 ```java {.good}
 import static com.google.mu.util.CharPredicate.isNot;
+import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.string;
+import static java.util.stream.Collectors.joining;
 
 // The commented must not be '*', or if it's '*', must not be followed by '/'
 Parser<String> content = Parser.anyOf(consecutive(isNot('*')), string("*").notFollowedBy("/"));
-Parser<String> blockComment = content.zeroOrMore(Collectors.joining())
+Parser<String> blockComment = content.zeroOrMore(joining())
     .between("/*", "*/");
 blockComment.parse("/* this is comment */ ");
 ```
@@ -70,12 +73,15 @@ method:
 
 ```java {.good}
 import static com.google.mu.util.CharPredicate.isNot;
+import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.string;
+import static java.util.stream.Collectors.joining;
 
 // The commented must not be '*', or if it's '*', must not be followed by '/'
 Parser<String> content = Parser.anyOf(consecutive(isNot('*')), string("*").notFollowedBy("/"));
 Parser<String> blockComment = Parser.define(
     nested -> content.or(nested)
-        .zeroOrMore(Collectors.joining())
+        .zeroOrMore(joining())
         .between("/*", "*/"));
 ```
 
