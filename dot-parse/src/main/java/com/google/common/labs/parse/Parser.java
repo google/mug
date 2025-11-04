@@ -67,8 +67,9 @@ import com.google.mu.util.stream.BiCollector;
  * anyOf(expr.followedBy(";"), expr)}, use {@code expr.optionallyFollowedBy(";"))} instead.
  *
  * <p>WARNING: careful using this class to parse user-provided input, or in performance critical hot
- * paths. Parser combinators are not known for optimal performance and recursive grammars can be
- * subject to stack overflow error on maliciously crafted input (think of 10K left parens).
+ * paths. A poorly-written grammar with long common prefixes may incur expensive backtracking
+ * overhead. And if you define recursive grammars using {@link #define} or {@link Parser.Rule},
+ * maliciously crafted input (think of 10K left parens) can cause StackOverflowError.
  */
 public abstract class Parser<T> {
   private static final Substring.Pattern SQUARE_BRACKETED =
