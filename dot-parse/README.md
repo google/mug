@@ -48,7 +48,7 @@ try (Reader reader = ...) {
 
 ## Example — Block Comment
 
-Non-nestable block comment like `/* this is a comment */` is pretty easy to parse:
+Non-nestable block comment like `/* this is * in a comment */` is pretty easy to parse:
 
 ```java {.good}
 import static com.google.mu.util.CharPredicate.isNot;
@@ -60,7 +60,7 @@ import static java.util.stream.Collectors.joining;
 Parser<String> content = Parser.anyOf(consecutive(isNot('*')), string("*").notFollowedBy("/"));
 Parser<String> blockComment = content.zeroOrMore(joining())
     .between("/*", "*/");
-blockComment.parse("/* this is comment */ ");
+blockComment.parse("/* this is * in a comment */ ");
 ```
 
 That's it.
