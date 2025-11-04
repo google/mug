@@ -68,8 +68,8 @@ import com.google.mu.util.stream.BiCollector;
  *
  * <p>WARNING: careful using this class to parse user-provided input, or in performance critical hot
  * paths. A poorly-written grammar with long common prefixes may incur expensive backtracking
- * overhead. And if you define recursive grammars using {@link #define} or {@link Parser.Rule},
- * maliciously crafted input (think of 10K left parens) can cause StackOverflowError.
+ * overhead. And if you define recursive grammars using {@link #define define()} or {@link
+ * Parser.Rule}, maliciously crafted input (think of 10K left parens) can cause StackOverflowError.
  */
 public abstract class Parser<T> {
   private static final Substring.Pattern SQUARE_BRACKETED =
