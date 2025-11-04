@@ -363,7 +363,7 @@ static SearchCriteria parse(String input) {
   Parser<Term> unquoted = Parser.word()
       .suchThat(w -> !keywords.contains(w), "search term")
       .map(Term::new);
-  Parser<Term> quoted = Parser.quotedStringWithEscapes('"', chars(1));
+  Parser<Term> quoted = Parser.quotedStringWithEscapes('"', chars(1)).map(Term::new);
 
   // Leaf-level search term can be a quoted, unquoted term, or a sub-criteria inside parentheses.
   // They are then grouped by the boolean operators.
