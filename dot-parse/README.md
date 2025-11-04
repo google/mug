@@ -46,6 +46,44 @@ try (Reader reader = ...) {
 
 ---
 
+## Example — Block Comment
+
+Non-nestable block comment like `/* this is a comment */` is pretty easy to parse:
+
+```java {.good}
+import static com.google.mu.util.CharPredicate.isNot;
+
+// The commented must not be '*', or if it's '*', must not be followed by '/'
+Parser<String> content = Parser.anyOf(consecutive(isNot('*')), string("*").notFollowedBy("/"));
+Parser<String> blockComment = content.zeroOrMore(Collectors.joining())
+    .between("/*", "*/");
+blockComment.parse("/* this is comment */ ");
+```
+
+That's it.
+
+What's more interesting is nestable block comments.
+
+Imagine you want to allow `/* this is /* nested comment */ and some */` to be a valid block comment.
+Any nesting requires recursive grammar. You can create the recursive grammar using the `Parser.define()`
+method:
+
+```java {.good}
+import static com.google.mu.util.CharPredicate.isNot;
+
+// The commented must not be '*', or if it's '*', must not be followed by '/'
+Parser<String> content = Parser.anyOf(consecutive(isNot('*')), string("*").notFollowedBy("/"));
+Parser<String> blockComment = Parser.define(
+    nested -> content.or(nested)
+        .zeroOrMore(Collectors.joining())
+        .between("/*", "*/"));
+```
+
+It's similar to the non-nested parser, except you need to use `content.or(nested)` to allow either
+regular comment or a nested block comment.
+
+---
+
 ## Example — Calculator (OperatorTable)
 
 Goal: support `+ - * /`, factorial (`!`), unary negative, parentheses, and whitespace.
