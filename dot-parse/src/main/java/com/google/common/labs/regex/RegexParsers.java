@@ -14,15 +14,18 @@
  *****************************************************************************/
 package com.google.common.labs.regex;
 
+import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
+import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
+import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.stream;
+import static java.util.function.UnaryOperator.identity;
 
 import java.util.Map;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import com.google.common.labs.parse.Parser;
@@ -35,21 +38,20 @@ import com.google.common.labs.regex.RegexPattern.Lookaround;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
 import com.google.mu.util.CharPredicate;
-import com.google.mu.util.stream.MoreCollectors;
 
 /** Parsers for {@link RegexPattern}. */
 final class RegexParsers {
   private static final Parser<Character> ESCAPED_CHAR =
-      literally(Parser.string("\\").then(Parser.single(ANY, "escaped char")));
+      literally(string("\\").then(Parser.single(ANY, "escaped char")));
   private static final Map<String, RegexPattern.CharacterProperty> POSIX_CHAR_CLASS_MAP =
       stream(RegexPattern.PosixCharClass.values())
-          .collect(groupingByEach(charClass -> charClass.names().stream(), MoreCollectors.onlyElement(UnaryOperator.identity())))
+          .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
           .collect(Collectors::toUnmodifiableMap);
   static final Parser<?> FREE_SPACES =
       Parser.anyOf(
-          Parser.consecutive(Character::isWhitespace, "whitespace"),
-          Parser.string("#")
-              .then(Parser.consecutive(c -> c != '\n', "comment").optionallyFollowedBy("\n")));
+          consecutive(Character::isWhitespace, "whitespace"),
+          string("#")
+              .then(consecutive(c -> c != '\n', "comment").followedByOrEof(string("\n"))));
 
   static Parser<RegexPattern> pattern() {
     var lazy = new Parser.Rule<RegexPattern>();
@@ -61,9 +63,9 @@ final class RegexParsers {
             groupOrLookaround(lazy),
             anyOf(PredefinedCharClass.values()),
             anyOf(Anchor.values()),
-            Parser.consecutive(CharPredicate.noneOf(".[]{}()*+?^$|\\ #"), "literal char")
+            consecutive(CharPredicate.noneOf(".[]{}()*+?^$|\\ #"), "literal char")
                 .map(Literal::new),
-            Parser.consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
+            consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
             ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))));
     Parser<RegexPattern> sequence =
         atomic.postfix(quantifier()).atLeastOnce(RegexPattern.inSequence());
@@ -72,15 +74,15 @@ final class RegexParsers {
 
   private static Parser<Quantifier> quantifier() {
     Parser<Integer> number = Parser.digits().map(Integer::parseInt);
-    Parser<Quantifier> question = Parser.string("?").thenReturn(Quantifier.atMost(1));
-    Parser<Quantifier> star = Parser.string("*").thenReturn(Quantifier.repeated());
-    Parser<Quantifier> plus = Parser.string("+").thenReturn(Quantifier.atLeast(1));
+    Parser<Quantifier> question = string("?").thenReturn(Quantifier.atMost(1));
+    Parser<Quantifier> star = string("*").thenReturn(Quantifier.repeated());
+    Parser<Quantifier> plus = string("+").thenReturn(Quantifier.atLeast(1));
     Parser<Quantifier> exact = number.between("{", "}").map(Quantifier::repeated);
     Parser<Quantifier> atLeast = number.followedBy(",").between("{", "}").map(Quantifier::atLeast);
     Parser<Quantifier> atMost =
-        Parser.string(",").then(number).between("{", "}").map(Quantifier::atMost);
+        string(",").then(number).between("{", "}").map(Quantifier::atMost);
     Parser<Quantifier> range =
-        Parser.sequence(number, Parser.string(",").then(number), Quantifier::repeated)
+        Parser.sequence(number, string(",").then(number), Quantifier::repeated)
             .between("{", "}");
     return Parser.anyOf(question, star, plus, exact, atLeast, atMost, range)
         .optionallyFollowedBy("?", Quantifier::reluctant)
@@ -88,11 +90,11 @@ final class RegexParsers {
   }
 
   private static Parser<RegexPattern.CharacterProperty> positiveCharacterProperty() {
-    return Parser.string("\\p").then(characterPropertySuffix());
+    return string("\\p").then(characterPropertySuffix());
   }
 
   private static Parser<RegexPattern.CharacterProperty.Negated> negativeCharacterProperty() {
-    return Parser.string("\\P")
+    return string("\\P")
         .then(characterPropertySuffix())
         .map(RegexPattern.CharacterProperty::negated);
   }
@@ -113,7 +115,7 @@ final class RegexParsers {
             ESCAPED_CHAR, Parser.single(CharPredicate.noneOf("]\\"), "literal character or dash"));
     Parser<CharRange> range =
         Parser.sequence(
-            literalChar, Parser.string("-").then(literalChar), RegexPattern.CharRange::new);
+            literalChar, string("-").then(literalChar), RegexPattern.CharRange::new);
     var element =
         Parser.anyOf(
             positiveCharacterProperty(),
@@ -129,7 +131,7 @@ final class RegexParsers {
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {
     Parser<Group.Named> named =
         word()
-            .between(Parser.string("?<").or(Parser.string("?P<")), Parser.string(">"))
+            .between(string("?<").or(string("?P<")), string(">"))
             .flatMap(n -> content.map(c -> new Group.Named(n, c)))
             .between("(", ")");
     return Parser.anyOf(
@@ -143,6 +145,6 @@ final class RegexParsers {
   }
 
   private static <E extends Enum<E>> Parser<E> anyOf(E... values) {
-    return stream(values).map(e -> Parser.string(e.toString()).thenReturn(e)).collect(Parser.or());
+    return stream(values).map(e -> string(e.toString()).thenReturn(e)).collect(Parser.or());
   }
 }

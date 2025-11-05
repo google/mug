@@ -217,6 +217,8 @@ public abstract class Parser<T> {
    *     .map(digits -> Character.toString(Integer.parseInt(digits, 16)));
    * quotedStringWithEscapes('"', unicodeEscaped.or(chars(1))).parse("foo\\uD83D");
    * }</pre>
+   *
+   * @since 9.4
    */
   public static Parser<String> quotedStringWithEscapes(
       char quoteChar, Parser<? extends CharSequence> escaped) {
@@ -564,7 +566,7 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Applies {@code first} and the optional {@code second} patterns in order, for zero or more
+   * Applies {@code first} and the optional {@code second} pattern in order, for zero or more
    * times, collecting the results using the provided {@link BiCollector}.
    *
    * <p>Typically used to parse key-value pairs:
