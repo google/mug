@@ -48,7 +48,7 @@ try (Reader reader = ...) {
 
 ## Example — Block Comment
 
-Non-nestable block comment like `/* this is a comment */` is pretty easy to parse:
+Non-nestable block comment like `/* this is * in a comment */` is pretty easy to parse:
 
 ```java {.good}
 import static com.google.mu.util.CharPredicate.isNot;
@@ -60,7 +60,7 @@ import static java.util.stream.Collectors.joining;
 Parser<String> content = Parser.anyOf(consecutive(isNot('*')), string("*").notFollowedBy("/"));
 Parser<String> blockComment = content.zeroOrMore(joining())
     .between("/*", "*/");
-blockComment.parse("/* this is comment */ ");
+blockComment.parse("/* this is * in a comment */ ");
 ```
 
 That's it.
@@ -363,7 +363,7 @@ static SearchCriteria parse(String input) {
   Parser<Term> unquoted = Parser.word()
       .suchThat(w -> !keywords.contains(w), "search term")
       .map(Term::new);
-  Parser<Term> quoted = Parser.quotedStringWithEscapes('"', chars(1));
+  Parser<Term> quoted = Parser.quotedStringWithEscapes('"', chars(1)).map(Term::new);
 
   // Leaf-level search term can be a quoted, unquoted term, or a sub-criteria inside parentheses.
   // They are then grouped by the boolean operators.
