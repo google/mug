@@ -3,6 +3,7 @@ package com.google.common.labs.parse;
 import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.chars;
+import static com.google.common.labs.parse.Parser.codePoint;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.literally;
@@ -2507,14 +2508,16 @@ public class ParserTest {
 
   @Test
   public void quotedStringWithEscapes_unicodeEscape_success() {
-    Parser<String> unicodeEscaped =
-        string("u")
-            .then(chars(4))
-            .suchThat(charsIn("[0-9A-Fa-f]")::matchesAllOf, "4 hex digits")
-            .map(digits -> Character.toString(Integer.parseInt(digits, 16)));
+    Parser<String> unicodeEscaped = string("u").then(codePoint()).map(Character::toString);
     Parser<String> quotedString = Parser.quotedStringWithEscapes('\'', unicodeEscaped.or(chars(1)));
     assertThat(quotedString.parse("''")).isEmpty();
     assertThat(quotedString.parse("'emoji: \\uD83D\\uDE00'")).isEqualTo("emoji: 😀");
+  }
+
+  @Test
+  public void codePoint_emoji() {
+    assertThat(codePoint().map(Character::toString).zeroOrMore(joining()).parse("d83dDE00"))
+        .isEqualTo("😀");
   }
 
   @Test

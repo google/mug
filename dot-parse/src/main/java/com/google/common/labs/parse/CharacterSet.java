@@ -43,7 +43,7 @@ public final class CharacterSet implements CharPredicate {
    * @param characterSet A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}),
    *        but disallows backslash so doesn't support escaping.
    *        If your character set includes special characters like literal backslash
-   *        or right bracket, use {@link CharPredicate} instead.
+   *        or right bracket, use {@link CharPredicate} directly.
    * @throws IllegalArgumentException if {@code characterSet} includes backslash
    *         or the right bracket (except the outmost pairs of {@code []}).
    */

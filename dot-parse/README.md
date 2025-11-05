@@ -164,16 +164,12 @@ Parser<String> singleCharEscaped =  Parser.chars(1)
 The same technique can be used to handle Unicode escaping:
 
 ```java {.good}
-import static com.google.common.labs.parse.CharacterSet;
-import static com.google.common.labs.parse.Parser.chars;
+import static com.google.common.labs.parse.Parser.codePoint;
 import static com.google.common.labs.parse.Parser.string;
 
-CharacterSet hexDigit = ChraracterSet.charsIn("[0-9a-fA-F]");
 Parser<String> unicodeEscaped = string("u")
-    .then(chars(4))  // 4 chars after \u
-    .suchThat(hexDigit::matchesAllOf, "4 hex digits")
-    // parse 4 hex digits to a code point integer; then convert to string
-    .map(hex -> Character.toString(Integer.parseInt(hex, 16)));
+    .then(codePoint())
+    .map(Character::toString);
 ```
 
 Combine the `singleCharEscaped` and `unicodeEscaped` parsers created above,

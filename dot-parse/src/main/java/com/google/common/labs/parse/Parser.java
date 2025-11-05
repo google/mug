@@ -212,9 +212,8 @@ public abstract class Parser<T> {
    *
    * <pre>{@code
    * Parser<String> unicodeEscaped = string("u")
-   *     .then(chars(4))
-   *     .suchThat(charsIn("[0-9A-Fa-f]")::matchesAllOf, "4 hex digits")
-   *     .map(digits -> Character.toString(Integer.parseInt(digits, 16)));
+   *     .then(codePoint())
+   *     .map(Character::toString);
    * quotedStringWithEscapes('"', unicodeEscaped.or(chars(1))).parse("foo\\uD83D");
    * }</pre>
    *
@@ -229,6 +228,34 @@ public abstract class Parser<T> {
     return anyOf(consecutive(isNot(quoteChar).and(isNot('\\')), "quoted chars"), escape)
         .zeroOrMore(joining())
         .immediatelyBetween(quoteString, quoteString);
+  }
+
+  /**
+   * Parses a 4-digit hex code point. For example:
+   *
+   * <pre>{@code
+   * codePoint()
+   *     .map(Character::toString)
+   *     .zeroOrMore(Collectors.joining())
+   *     .parse("D83DDE00");
+   * }</pre>
+   *
+   * will return the emoji {@code 😀}.
+   *
+   * <p>You can also use it together with {@link #quotedStringWithEscapes}:
+   *
+   * <pre>{@code
+   * quotedStringWithEscapes('"', string("u").then(codePoint()).map(Character::toString));
+   * }</pre>
+   *
+   * @since 9.4
+   */
+  public static Parser<Integer> codePoint() {
+    return chars(4)
+        .suchThat(
+            CharPredicate.range('0', '9').orRange('A', 'F').orRange('a', 'f')::matchesAllOf,
+            "4-digit hex code point")
+        .map(digits -> Integer.parseInt(digits, 16));
   }
 
   /**
