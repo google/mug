@@ -162,6 +162,15 @@ public abstract class Parser<T> {
   }
 
   /**
+   * {@code word("equal")} matches "equal" but not "equals".
+   *
+   * @since 9.4
+   */
+  public static Parser<String> word(String word) {
+    return string(word).notImmediatelyFollowedBy(CharPredicate.WORD, "[a-zA-Z0-9_]");
+  }
+
+  /**
    * One or more regex {@code \w+} characters.
    *
    * @since 9.4
@@ -242,7 +251,7 @@ public abstract class Parser<T> {
    *
    * will return the emoji {@code 😀}.
    *
-   * <p>You can also use it together with {@link #quotedStringWithEscapes}:
+   * <p>You can also compose it with {@link #quotedStringWithEscapes}:
    *
    * <pre>{@code
    * quotedStringWithEscapes('"', string("u").then(codePoint()).map(Character::toString));

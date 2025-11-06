@@ -316,6 +316,10 @@ Stream<String> jsonStringsFrom(Reader input) {
 }
 ```
 
+Note that JSON supports Unicode escape. But we don't need to care because we are just splitting by calling
+`.source()` after finding the split point. The parser translating a unicode escape correctly or not
+is irrelevant.
+
 ## Example — Mini Search Language
 
 Imagine you are building your own search engine, and you want to allow users to search by search terms.
