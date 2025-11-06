@@ -84,6 +84,40 @@ public class ParserTest {
   }
 
   @Test
+  public void word_success() {
+    assertThat(word("foo").parse("foo")).isEqualTo("foo");
+  }
+
+  @Test
+  public void word_failIfFollowedByWordChar() {
+    assertThrows(ParseException.class, () -> word("foo").parse("foobar"));
+    assertThrows(ParseException.class, () -> word("foo").parse("foo_bar"));
+    assertThrows(ParseException.class, () -> word("foo").parse("foo1"));
+  }
+
+  @Test
+  public void word_successIfNotFollowedByWordChar() {
+    assertThat(word("foo").probe("foo?")).containsExactly("foo");
+    assertThat(word("foo").probe("foo-")).containsExactly("foo");
+  }
+
+  @Test
+  public void word_skipping_success() {
+    assertThat(word("foo").skipping(Character::isWhitespace).parseToStream("foo")).containsExactly("foo");
+    assertThat(word("foo").skipping(Character::isWhitespace).parseToStream("foo foo"))
+        .containsExactly("foo", "foo");
+    assertThat(word("foo").skipping(Character::isWhitespace).probe(" foo-foo")).containsExactly("foo");
+  }
+
+  @Test
+  public void word_skipping_failIfFollowedByWordChar() {
+    assertThrows(ParseException.class, () -> word("foo").parseSkipping(Character::isWhitespace, "foobar"));
+    assertThrows(ParseException.class, () -> word("foo").parseSkipping(Character::isWhitespace, "foo_bar"));
+    assertThrows(ParseException.class, () -> word("foo").parseSkipping(Character::isWhitespace, "foo1"));
+    assertThrows(ParseException.class, () -> word("foo").parseSkipping(Character::isWhitespace, " foo1"));
+  }
+
+  @Test
   public void testNulls() {
     NullPointerTester tester =
         new NullPointerTester()
