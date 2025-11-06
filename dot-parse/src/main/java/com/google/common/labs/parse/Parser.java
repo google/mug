@@ -162,7 +162,7 @@ public abstract class Parser<T> {
   }
 
   /**
-   * {@code word("equal")} matches "equal" but not "equals".
+   * {@code word("or")} matches "or" but not "orange".
    *
    * @since 9.4
    */
