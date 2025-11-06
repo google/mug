@@ -68,7 +68,8 @@ public final class CharacterSet implements CharPredicate {
   @Override public CharacterSet not() {
     String content = Substring.between(prefix("["), suffix("]")).from(string).get();
     return new CharacterSet(
-        "[" + after(prefix("^")).from(content).orElseGet(() -> "^" + content) + "]", predicate.not());
+        "[" + after(prefix("^")).from(content).orElseGet(() -> "^" + content) + "]",
+        predicate.not());
   }
 
   @Override public boolean equals(Object obj) {
