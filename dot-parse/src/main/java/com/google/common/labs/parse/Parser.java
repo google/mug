@@ -850,17 +850,6 @@ public abstract class Parser<T> {
   }
 
   /**
-   * A form of negative lookahead such that the match is rejected if <em>immediately</em> followed
-   * by (no skippable characters as specified by {@link #parseSkipping parseSkipping()} in between)
-   * a character contained in {@code characterSet}.
-   *
-   * @since 9.4
-   */
-  public final Parser<T> notImmediatelyFollowedBy(CharacterSet characterSet) {
-    return notImmediatelyFollowedBy(characterSet, characterSet.toString());
-  }
-
-  /**
    * Starts a fluent chain for matching the current parser optionally. {@code defaultValue} will be
    * the result in case the current parser doesn't match.
    *

@@ -61,6 +61,64 @@ public class CharacterSetTest {
   }
 
   @Test
+  public void not_positiveSet() {
+    CharacterSet positive = charsIn("[ab]");
+    CharacterSet negated = positive.not();
+    assertThat(negated.contains('a')).isFalse();
+    assertThat(negated.contains('b')).isFalse();
+    assertThat(negated.contains('c')).isTrue();
+    assertThat(negated.toString()).isEqualTo("[^ab]");
+  }
+
+  @Test
+  public void not_negativeSet() {
+    CharacterSet negative = charsIn("[^ab]");
+    CharacterSet negated = negative.not();
+    assertThat(negated.contains('a')).isTrue();
+    assertThat(negated.contains('b')).isTrue();
+    assertThat(negated.contains('c')).isFalse();
+    assertThat(negated.toString()).isEqualTo("[ab]");
+  }
+
+  @Test
+  public void not_rangeSet() {
+    CharacterSet range = charsIn("[a-c]");
+    CharacterSet negated = range.not();
+    assertThat(negated.contains('a')).isFalse();
+    assertThat(negated.contains('b')).isFalse();
+    assertThat(negated.contains('c')).isFalse();
+    assertThat(negated.contains('d')).isTrue();
+    assertThat(negated.toString()).isEqualTo("[^a-c]");
+  }
+
+  @Test
+  public void not_negatedRangeSet() {
+    CharacterSet negatedRange = charsIn("[^a-c]");
+    CharacterSet negated = negatedRange.not();
+    assertThat(negated.contains('a')).isTrue();
+    assertThat(negated.contains('b')).isTrue();
+    assertThat(negated.contains('c')).isTrue();
+    assertThat(negated.contains('d')).isFalse();
+    assertThat(negated.toString()).isEqualTo("[a-c]");
+  }
+
+  @Test
+  public void not_emptySet() {
+    CharacterSet empty = charsIn("[]");
+    CharacterSet negated = empty.not();
+    assertThat(negated.contains('a')).isTrue();
+    assertThat(negated.toString()).isEqualTo("[^]");
+  }
+
+  @Test
+  public void not_fullSet() {
+    CharacterSet full = charsIn("[^]");
+    CharacterSet negated = full.not();
+    assertThat(negated.contains('a')).isFalse();
+    assertThat(negated.toString()).isEqualTo("[]");
+  }
+
+  @Test
   public void testEquals() {
     new EqualsTester()
         .addEqualityGroup(charsIn("[]"), charsIn("[]"))
