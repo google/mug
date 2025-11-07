@@ -79,6 +79,7 @@ public final class StringUnformatArgsCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck {
   private static final MethodClassMatcher MATCHER =
       instanceMethod().onDescendantOf("com.google.mu.util.StringFormat");
+  private static final TypeName CHAR_SEQUENCE_TYPE = TypeName.of(CharSequence.class);
   private static final CharMatcher ALPHA_NUM =
       CharMatcher.inRange('a', 'z')
           .or(CharMatcher.inRange('A', 'Z'))
@@ -114,7 +115,7 @@ public final class StringUnformatArgsCheck extends AbstractBugChecker
     }
     ExpressionTree stringArg =
         BiStream.zip(symbol.getParameters(), tree.getArguments())
-            .filterKeys(param -> isStringType(param.type, state))
+            .filterKeys(param -> CHAR_SEQUENCE_TYPE.isSupertypeOf(param.type, state))
             .values()
             .findFirst()
             .orElse(null);
