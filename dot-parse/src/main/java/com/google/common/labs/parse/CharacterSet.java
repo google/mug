@@ -2,9 +2,13 @@ package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.CharPredicate.isNot;
+import static com.google.mu.util.Substring.after;
+import static com.google.mu.util.Substring.prefix;
+import static com.google.mu.util.Substring.suffix;
 import static java.util.stream.Collectors.reducing;
 
 import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
 
 /**
  * Represents a set of characters specified by a regex-like character set string.
@@ -59,6 +63,13 @@ public final class CharacterSet implements CharPredicate {
   /** Returns true if this set contains the character {@code ch}. */
   public boolean contains(char ch) {
     return predicate.test(ch);
+  }
+
+  @Override public CharacterSet not() {
+    String content = Substring.between(prefix("["), suffix("]")).from(string).get();
+    return new CharacterSet(
+        "[" + after(prefix("^")).from(content).orElseGet(() -> "^" + content) + "]",
+        predicate.not());
   }
 
   @Override public boolean equals(Object obj) {

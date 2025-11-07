@@ -61,6 +61,58 @@ public class CharacterSetTest {
   }
 
   @Test
+  public void not_positiveSet() {
+    CharacterSet positive = charsIn("[ab]");
+    assertThat(positive.not().contains('a')).isFalse();
+    assertThat(positive.not().contains('b')).isFalse();
+    assertThat(positive.not().contains('c')).isTrue();
+    assertThat(positive.not().toString()).isEqualTo("[^ab]");
+  }
+
+  @Test
+  public void not_negativeSet() {
+    CharacterSet negative = charsIn("[^ab]");
+    assertThat(negative.not().contains('a')).isTrue();
+    assertThat(negative.not().contains('b')).isTrue();
+    assertThat(negative.not().contains('c')).isFalse();
+    assertThat(negative.not().toString()).isEqualTo("[ab]");
+  }
+
+  @Test
+  public void not_rangeSet() {
+    CharacterSet range = charsIn("[a-c]");
+    assertThat(range.not().contains('a')).isFalse();
+    assertThat(range.not().contains('b')).isFalse();
+    assertThat(range.not().contains('c')).isFalse();
+    assertThat(range.not().contains('d')).isTrue();
+    assertThat(range.not().toString()).isEqualTo("[^a-c]");
+  }
+
+  @Test
+  public void not_negatedRangeSet() {
+    CharacterSet negatedRange = charsIn("[^a-c]");
+    assertThat(negatedRange.not().contains('a')).isTrue();
+    assertThat(negatedRange.not().contains('b')).isTrue();
+    assertThat(negatedRange.not().contains('c')).isTrue();
+    assertThat(negatedRange.not().contains('d')).isFalse();
+    assertThat(negatedRange.not().toString()).isEqualTo("[a-c]");
+  }
+
+  @Test
+  public void not_emptySet() {
+    CharacterSet empty = charsIn("[]");
+    assertThat(empty.not().contains('a')).isTrue();
+    assertThat(empty.not().toString()).isEqualTo("[^]");
+  }
+
+  @Test
+  public void not_fullSet() {
+    CharacterSet full = charsIn("[^]");
+    assertThat(full.not().contains('a')).isFalse();
+    assertThat(full.not().toString()).isEqualTo("[]");
+  }
+
+  @Test
   public void testEquals() {
     new EqualsTester()
         .addEqualityGroup(charsIn("[]"), charsIn("[]"))

@@ -185,6 +185,10 @@ public interface CharPredicate {
         return !me.test(c);
       }
 
+      @Override public CharPredicate not() {
+        return me;
+      }
+
       @Override public String toString() {
         return "not (" + me + ")";
       }
