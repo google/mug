@@ -1265,13 +1265,12 @@ public abstract class Parser<T> {
     }
 
     /**
-     * Temporarily creates a zero-width success parser. It's not safe to be used in a loop and must
-     * be carefully attached with parser that consumes!
+     * Temporarily creates a zero-width success parser. It's a crippled parser, not safe to be used
+     * in a loop and must be carefully composed with a parser that does consume!
      */
     private Parser<T> asUnsafeZeroWidthParser() {
       return new Parser<T>() {
-        @Override
-        MatchResult<T> skipAndMatch(
+        @Override MatchResult<T> skipAndMatch(
             Parser<?> skip, CharInput input, int start, ErrorContext context) {
           return switch (notEmpty().skipAndMatch(skip, input, start, context)) {
             case MatchResult.Success<T> success -> success;
