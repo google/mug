@@ -52,6 +52,9 @@ import com.google.mu.util.stream.BiStream;
  *
  * List<Map<String, String>> rows = CSV.parseToMaps(input).toList();
  * }</pre>
+ *
+ * <p>Note that streams returned by this class are sequential and are <em>not</em> safe to be used
+ * as parallel streams.
  */
 public final class Csv {
   /** Default CSV parser. Configurable using {@link #withComments} and {@link #withDelimiter}. */
@@ -63,7 +66,7 @@ public final class Csv {
   private static final Parser<?> COMMENT =
       Parser.string("#")
           .followedBy(consecutive(isNot('\n'), "comment").orElse(null))
-          .followedBy(NEW_LINE.orElse(null));
+          .followedByOrEof(NEW_LINE);
   private static final Parser<String> QUOTED =
       Parser.consecutive(isNot('"'), "quoted")
           .or(Parser.string("\"\"").thenReturn("\"")) // escaped quote
@@ -211,7 +214,7 @@ public final class Csv {
   }
 
   @Override public String toString() {
-    return Character.toString(delim);
+    return "Csv{delimiter='" + delim + "', allowsComments=" + allowsComments + "}";
   }
 
   private static void checkArgument(boolean condition, String message, Object... args) {

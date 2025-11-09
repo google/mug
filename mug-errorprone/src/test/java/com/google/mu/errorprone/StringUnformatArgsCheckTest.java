@@ -801,4 +801,49 @@ public class StringUnformatArgsCheckTest {
             "}")
         .doTest();
   }
+
+  @Test
+  public void parseGreedyWithLambda() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String s) {",
+            "    new StringFormat(\"{foo}-{bar_id}\").parseGreedy(s, (foo, barId) -> foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void parseGreedyWithIncorrectLambdaParameters() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String s) {",
+            "    new StringFormat(\"{foo}-{bar_id}\")",
+            "        // BUG: Diagnostic contains: inconsistent order",
+            "        .parseGreedy(s, (barId, foo) -> foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void parseGreedyWithUnknownFormat() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(StringFormat format, String s) {",
+            "    // BUG: Diagnostic contains: Compile-time format string required",
+            "    format.parseGreedy(s, (barId, foo) -> foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
 }

@@ -240,7 +240,8 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Parses a 4-digit hex code point. For example:
+   * Parses a 4-digit hex code point. The following example parses a surrogate pair of two code
+   * points and will return the emoji {@code 😀}:
    *
    * <pre>{@code
    * codePoint()
@@ -248,8 +249,6 @@ public abstract class Parser<T> {
    *     .zeroOrMore(Collectors.joining())
    *     .parse("D83DDE00");
    * }</pre>
-   *
-   * will return the emoji {@code 😀}.
    *
    * <p>You can also compose it with {@link #quotedStringWithEscapes}:
    *
@@ -289,25 +288,7 @@ public abstract class Parser<T> {
       Parser<A> left,
       Parser<B>.OrEmpty right,
       BiFunction<? super A, ? super B, ? extends C> combiner) {
-    requireNonNull(left);
-    requireNonNull(right);
-    requireNonNull(combiner);
-    return new Parser<C>() {
-      @Override MatchResult<C> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        return switch (left.skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success(int prefixBegin, int prefixEnd, A v1) ->
-              switch (right.notEmpty().skipAndMatch(skip, input, prefixEnd, context)) {
-                case MatchResult.Success(int suffixBegin, int suffixEnd, B v2) ->
-                    new MatchResult.Success<>(prefixBegin, suffixEnd, combiner.apply(v1, v2));
-                case MatchResult.Failure<?> failure ->
-                    new MatchResult.Success<>(
-                        prefixBegin, prefixEnd, combiner.apply(v1, right.computeDefaultValue()));
-              };
-          case MatchResult.Failure<?> failure -> failure.safeCast();
-        };
-      }
-    };
+    return sequence(left, right.asUnsafeZeroWidthParser(), combiner);
   }
 
   /**
@@ -1280,6 +1261,22 @@ public abstract class Parser<T> {
 
     T computeDefaultValue() {
       return defaultSupplier.get();
+    }
+
+    /**
+     * Temporarily creates a zero-width success parser. It's a crippled parser, not safe to be used
+     * in a loop and must be carefully composed with a parser that does consume!
+     */
+    private Parser<T> asUnsafeZeroWidthParser() {
+      return new Parser<T>() {
+        @Override MatchResult<T> skipAndMatch(
+            Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          return switch (notEmpty().skipAndMatch(skip, input, start, context)) {
+            case MatchResult.Success<T> success -> success;
+            default -> new MatchResult.Success<>(start, start, computeDefaultValue());
+          };
+        }
+      };
     }
   }
 

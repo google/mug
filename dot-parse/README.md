@@ -10,7 +10,7 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 
 ## API sketch
 
-- **Primitives:** `word()`, `digits()`, `string("if")`, `single(ANY)`, `quotedStringWithEscapes()`
+- **Primitives:** `string()`, `digits()`, `word("if")`, `single(ANY)`, `quotedStringWithEscapes()`
 - **Compose:** `.thenReturn(true)`, `.followedBy("else")`, `.between("[", "]")`, `.map(Literal::new)`
 - **Alternative:** `p1.or(p2)`, `anyOf(p1, p2)`
 - **Sequence:** `then()`, `sequence()`, `atLeastOnce()`, `atLeastOnceDelimitedBy()`
@@ -354,6 +354,7 @@ Now let's build the parser:
 
 ```java {.good}
 import static com.google.common.labs.parse.Parser.chars;
+import static com.google.common.labs.parse.Parser.word;
 import static com.google.mu.util.CharPredicate.isNot;
 
 static SearchCriteria parse(String input) {
@@ -369,9 +370,9 @@ static SearchCriteria parse(String input) {
   // They are then grouped by the boolean operators.
   Parser<SearchCriteria> parser = Parser.define(
       sub -> new OperatorTable<SearchCriteria>()
-          .prefix("NOT", Not::new, 30)
-          .leftAssociative("AND", And::new, 20)
-          .leftAssociative("OR", Or::new, 10)
+          .prefix(word("NOT").thenReturn(Not::new), 30)
+          .leftAssociative(word("AND").thenReturn(And::new), 20)
+          .leftAssociative(word("OR").thenReturn(Or::new), 10)
           .build(Parser.anyOf(unquoted, quoted, sub.between("(", ")"))));
  
    // Skip the whitespaces

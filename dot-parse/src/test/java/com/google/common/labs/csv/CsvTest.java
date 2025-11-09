@@ -229,6 +229,23 @@ public final class CsvTest {
   }
 
   @Test
+  public void parseToMaps_withComments_commentRowsSkipped() {
+    assertThat(CSV.withComments().parseToMaps("#c1\n#c2\nh1,h2\n#c3\nv1,v2\n#c4\nv3,v4\n#c5"))
+        .containsExactly(
+            ImmutableMap.of("h1", "v1", "h2", "v2"), ImmutableMap.of("h1", "v3", "h2", "v4"));
+  }
+
+  @Test
+  public void parseToMaps_withComments_onlyCommentRows() {
+    assertThat(CSV.withComments().parseToMaps("#c1\n#c2")).isEmpty();
+  }
+
+  @Test
+  public void parseToMaps_withComments_headerAndCommentRows() {
+    assertThat(CSV.withComments().parseToMaps("#c1\nh1,h2\n#c2")).isEmpty();
+  }
+
+  @Test
   public void parseWithHeaderFields_duplicateColumnName_keepBoth() {
     assertThat(CSV.parseWithHeaderFields("name,name,age\nYang,Jing,28", ImmutableListMultimap::toImmutableListMultimap))
         .containsExactly(ImmutableListMultimap.of("name", "Yang", "name", "Jing", "age", "28"));
