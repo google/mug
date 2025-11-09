@@ -1551,7 +1551,7 @@ public abstract class Parser<T> {
     <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
       var failure = new MatchResult.Failure<V>(at, message, args);
       // prefer the farthest then the most recent failure
-      if (farthestFailure == null || failure.at() >= farthestFailure.at()) {
+      if (farthestFailure == null || at >= farthestFailure.at()) {
         farthestFailure = failure;
       }
       return failure;
