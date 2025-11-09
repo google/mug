@@ -315,9 +315,7 @@ public abstract class Parser<T> {
       Parser<A>.OrEmpty left,
       Parser<B> right,
       BiFunction<? super A, ? super B, ? extends C> combiner) {
-    return anyOf(
-        sequence(left.notEmpty(), right, combiner),
-        right.map(v2 -> combiner.apply(left.computeDefaultValue(), v2)));
+    return sequence(left.asUnsafeZeroWidthParser(), right, combiner);
   }
 
   /** Matches if any of the given {@code parsers} match. */
