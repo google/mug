@@ -1235,7 +1235,7 @@ public abstract class Parser<T> {
      * empty value.
      */
     public T parse(String input) {
-      return input.isEmpty() ? computeDefaultValue() : notEmpty().parse(input);
+      return asUnsafeZeroWidthParser().parse(input);
     }
 
     /**
@@ -1243,12 +1243,7 @@ public abstract class Parser<T> {
      * result; if there's nothing to parse except skippable content, returns the default empty value.
      */
     public T parseSkipping(Parser<?> skip, String input) {
-      return notEmpty()
-          .followedByEof()
-          .skipping(skip)
-          .parseToStream(input)
-          .findFirst()
-          .orElseGet(defaultSupplier);
+      return asUnsafeZeroWidthParser().parseSkipping(skip, input);
     }
 
     /**
@@ -1555,7 +1550,8 @@ public abstract class Parser<T> {
 
     <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
       var failure = new MatchResult.Failure<V>(at, message, args);
-      if (farthestFailure == null || failure.at() > farthestFailure.at()) {
+      // prefer the farthest then the most recent failure
+      if (farthestFailure == null || failure.at() >= farthestFailure.at()) {
         farthestFailure = failure;
       }
       return failure;
