@@ -272,11 +272,9 @@ public abstract class Parser<T> {
    */
   public static <A, B, C> Parser<C> sequence(
       Parser<A> left, Parser<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
-    requireNonNull(left);
     requireNonNull(right);
     requireNonNull(combiner);
-    return left.flatMap(
-        leftValue -> right.map(rightValue -> combiner.apply(leftValue, rightValue)));
+    return left.flatMap(v1 -> right.map(v2 -> combiner.apply(v1, v2)));
   }
 
   /**
@@ -285,9 +283,7 @@ public abstract class Parser<T> {
    * default value is passed to the {@code combiner} function.
    */
   public static <A, B, C> Parser<C> sequence(
-      Parser<A> left,
-      Parser<B>.OrEmpty right,
-      BiFunction<? super A, ? super B, ? extends C> combiner) {
+      Parser<A> left, Parser<B>.OrEmpty right, BiFunction<? super A, ? super B, ? extends C> combiner) {
     return sequence(left, right.asUnsafeZeroWidthParser(), combiner);
   }
 
@@ -297,9 +293,7 @@ public abstract class Parser<T> {
    * corresponding default value is passed to the {@code combiner} function.
    */
   public static <A, B, C> Parser<C>.OrEmpty sequence(
-      Parser<A>.OrEmpty left,
-      Parser<B>.OrEmpty right,
-      BiFunction<? super A, ? super B, ? extends C> combiner) {
+      Parser<A>.OrEmpty left, Parser<B>.OrEmpty right, BiFunction<? super A, ? super B, ? extends C> combiner) {
     return anyOf(
         sequence(left.notEmpty(), right, combiner),
         right.notEmpty().map(v2 -> combiner.apply(left.computeDefaultValue(), v2)))
@@ -312,15 +306,12 @@ public abstract class Parser<T> {
    * default value is passed to the {@code combiner} function.
    */
   static <A, B, C> Parser<C> sequence(
-      Parser<A>.OrEmpty left,
-      Parser<B> right,
-      BiFunction<? super A, ? super B, ? extends C> combiner) {
+      Parser<A>.OrEmpty left, Parser<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
     return sequence(left.asUnsafeZeroWidthParser(), right, combiner);
   }
 
   /** Matches if any of the given {@code parsers} match. */
-  @SafeVarargs
-  public static <T> Parser<T> anyOf(Parser<? extends T>... parsers) {
+  @SafeVarargs public static <T> Parser<T> anyOf(Parser<? extends T>... parsers) {
     return stream(parsers).collect(or());
   }
 
