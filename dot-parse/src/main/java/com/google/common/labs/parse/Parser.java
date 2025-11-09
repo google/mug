@@ -240,7 +240,8 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Parses a 4-digit hex code point. For example:
+   * Parses a 4-digit hex code point. The following example parses a surrogate pair of two code
+   * points and will return the emoji {@code 😀}:
    *
    * <pre>{@code
    * codePoint()
@@ -248,8 +249,6 @@ public abstract class Parser<T> {
    *     .zeroOrMore(Collectors.joining())
    *     .parse("D83DDE00");
    * }</pre>
-   *
-   * will return the emoji {@code 😀}.
    *
    * <p>You can also compose it with {@link #quotedStringWithEscapes}:
    *
