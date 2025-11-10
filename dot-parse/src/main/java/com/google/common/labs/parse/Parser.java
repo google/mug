@@ -72,9 +72,6 @@ import com.google.mu.util.stream.BiCollector;
  * Parser.Rule}, maliciously crafted input (think of 10K left parens) can cause StackOverflowError.
  */
 public abstract class Parser<T> {
-  private static final Substring.Pattern SQUARE_BRACKETED =
-      Substring.between(Substring.prefix('['), Substring.suffix(']'));
-
   /**
    * Only use in context where input consumption is guaranteed. Do not use within a loop, like
    * atLeastOnce(), zeroOrMore()!
