@@ -1439,7 +1439,6 @@ public abstract class Parser<T> {
    * to elide the need of an explicit forward declaration.
    */
   public static final class Rule<T> extends Parser<T> {
-    private static final String DO_NOT_DELEGATE_TO_RULE_PARSER = "Do not delegate to a Rule parser";
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
 
     @Override MatchResult<T> skipAndMatch(
@@ -1453,7 +1452,7 @@ public abstract class Parser<T> {
     @SuppressWarnings("unchecked")  // Parser<T> is covariant
     public <S extends T> Parser<S> definedAs(Parser<S> parser) {
       requireNonNull(parser);
-      checkArgument(!(parser instanceof Rule), DO_NOT_DELEGATE_TO_RULE_PARSER);
+      checkArgument(!(parser instanceof Rule), "Do not delegate to a Rule parser");
       checkState(ref.compareAndSet(null, (Parser<T>) parser), "definedAs() already called");
       return parser;
     }
