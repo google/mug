@@ -152,13 +152,12 @@ But what if you do want to translate `\t` to a tab and `\n` to a newline? You ca
 
 ```java {.good}
 Parser<String> singleCharEscaped =  Parser.chars(1)
-    .map(c ->
-        switch (c) {
-          "t" -> "\t";
-          "n" -> "\n";
-          "r" -> "\r";
-          default -> c;  // backslash itself or other regular chars
-        });
+    .map(c -> switch (c) {
+      "t" -> "\t";
+      "n" -> "\n";
+      "r" -> "\r";
+      default -> c;  // backslash itself or other regular chars
+    });
 ```
 
 The same technique can be used to handle Unicode escaping:
