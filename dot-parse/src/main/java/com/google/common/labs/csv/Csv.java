@@ -70,7 +70,8 @@ public final class Csv {
   private static final Parser<String> QUOTED =
       Parser.consecutive(isNot('"'), "quoted")
           .or(Parser.string("\"\"").thenReturn("\"")) // escaped quote
-          .zeroOrMore(joining()).between("\"", "\"");
+          .zeroOrMore(joining())
+          .between("\"", "\"");
 
   private final char delim;
   private final boolean allowsComments;
