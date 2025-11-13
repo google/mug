@@ -102,12 +102,12 @@ Parser<Integer> calculator() {
   Parser<Integer> number = Parser.digits().map(Integer::parseInt);
   return Parser.define(
       rule -> new OperatorTable<Integer>()
-	      .leftAssociative('+', (a,b) -> a + b, 10)           // a+b
-	      .leftAssociative('-', (a,b) -> a - b, 10)           // a-b
-	      .leftAssociative('*', (a,b) -> a * b, 20)           // a*b
-	      .leftAssociative('/', (a,b) -> a / b, 20)           // a/b
-	      .prefix('-', i -> -i, 30)                           // -a
-	      .postfix('!', i -> factorial(i), 40)                // a!
+	      .leftAssociative("+", (a,b) -> a + b, 10)           // a+b
+	      .leftAssociative("-", (a,b) -> a - b, 10)           // a-b
+	      .leftAssociative("*", (a,b) -> a * b, 20)           // a*b
+	      .leftAssociative("/", (a,b) -> a / b, 20)           // a/b
+	      .prefix("-", i -> -i, 30)                           // -a
+	      .postfix("!", i -> factorial(i), 40)                // a!
 	      .build(number.or(rule.between("(", ")"))));
 }
 
