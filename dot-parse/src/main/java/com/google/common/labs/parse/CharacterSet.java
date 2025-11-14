@@ -4,11 +4,9 @@ import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.prefix;
-import static com.google.mu.util.Substring.suffix;
 import static java.util.stream.Collectors.reducing;
 
 import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
 
 /**
  * Represents a set of characters specified by a regex-like character set string.
@@ -66,9 +64,11 @@ public final class CharacterSet implements CharPredicate {
   }
 
   @Override public CharacterSet not() {
-    String content = Substring.between(prefix("["), suffix("]")).from(string).get();
     return new CharacterSet(
-        "[" + after(prefix("^")).from(content).orElseGet(() -> "^" + content) + "]",
+        after(prefix("["))
+            .in(string)
+            .map(m -> m.startsWith("^") ? "[" + m.skip(1, 0) : "[^" + m)
+            .orElse(string),
         predicate.not());
   }
 

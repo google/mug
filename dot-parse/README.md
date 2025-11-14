@@ -102,12 +102,12 @@ Parser<Integer> calculator() {
   Parser<Integer> number = Parser.digits().map(Integer::parseInt);
   return Parser.define(
       rule -> new OperatorTable<Integer>()
-	      .leftAssociative('+', (a,b) -> a + b, 10)           // a+b
-	      .leftAssociative('-', (a,b) -> a - b, 10)           // a-b
-	      .leftAssociative('*', (a,b) -> a * b, 20)           // a*b
-	      .leftAssociative('/', (a,b) -> a / b, 20)           // a/b
-	      .prefix('-', i -> -i, 30)                           // -a
-	      .postfix('!', i -> factorial(i), 40)                // a!
+	      .leftAssociative("+", (a,b) -> a + b, 10)           // a+b
+	      .leftAssociative("-", (a,b) -> a - b, 10)           // a-b
+	      .leftAssociative("*", (a,b) -> a * b, 20)           // a*b
+	      .leftAssociative("/", (a,b) -> a / b, 20)           // a/b
+	      .prefix("-", i -> -i, 30)                           // -a
+	      .postfix("!", i -> factorial(i), 40)                // a!
 	      .build(number.or(rule.between("(", ")"))));
 }
 
@@ -152,13 +152,12 @@ But what if you do want to translate `\t` to a tab and `\n` to a newline? You ca
 
 ```java {.good}
 Parser<String> singleCharEscaped =  Parser.chars(1)
-    .map(c ->
-        switch (c) {
-          "t" -> "\t";
-          "n" -> "\n";
-          "r" -> "\r";
-          default -> c;  // backslash itself or other regular chars
-        });
+    .map(c -> switch (c) {
+      "t" -> "\t";
+      "n" -> "\n";
+      "r" -> "\r";
+      default -> c;  // backslash itself or other regular chars
+    });
 ```
 
 The same technique can be used to handle Unicode escaping:

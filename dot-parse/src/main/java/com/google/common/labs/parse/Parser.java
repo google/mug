@@ -72,9 +72,6 @@ import com.google.mu.util.stream.BiCollector;
  * Parser.Rule}, maliciously crafted input (think of 10K left parens) can cause StackOverflowError.
  */
 public abstract class Parser<T> {
-  private static final Substring.Pattern SQUARE_BRACKETED =
-      Substring.between(Substring.prefix('['), Substring.suffix(']'));
-
   /**
    * Only use in context where input consumption is guaranteed. Do not use within a loop, like
    * atLeastOnce(), zeroOrMore()!
@@ -272,11 +269,9 @@ public abstract class Parser<T> {
    */
   public static <A, B, C> Parser<C> sequence(
       Parser<A> left, Parser<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
-    requireNonNull(left);
     requireNonNull(right);
     requireNonNull(combiner);
-    return left.flatMap(
-        leftValue -> right.map(rightValue -> combiner.apply(leftValue, rightValue)));
+    return left.flatMap(v1 -> right.map(v2 -> combiner.apply(v1, v2)));
   }
 
   /**
@@ -285,9 +280,7 @@ public abstract class Parser<T> {
    * default value is passed to the {@code combiner} function.
    */
   public static <A, B, C> Parser<C> sequence(
-      Parser<A> left,
-      Parser<B>.OrEmpty right,
-      BiFunction<? super A, ? super B, ? extends C> combiner) {
+      Parser<A> left, Parser<B>.OrEmpty right, BiFunction<? super A, ? super B, ? extends C> combiner) {
     return sequence(left, right.asUnsafeZeroWidthParser(), combiner);
   }
 
@@ -297,9 +290,7 @@ public abstract class Parser<T> {
    * corresponding default value is passed to the {@code combiner} function.
    */
   public static <A, B, C> Parser<C>.OrEmpty sequence(
-      Parser<A>.OrEmpty left,
-      Parser<B>.OrEmpty right,
-      BiFunction<? super A, ? super B, ? extends C> combiner) {
+      Parser<A>.OrEmpty left, Parser<B>.OrEmpty right, BiFunction<? super A, ? super B, ? extends C> combiner) {
     return anyOf(
         sequence(left.notEmpty(), right, combiner),
         right.notEmpty().map(v2 -> combiner.apply(left.computeDefaultValue(), v2)))
@@ -312,17 +303,12 @@ public abstract class Parser<T> {
    * default value is passed to the {@code combiner} function.
    */
   static <A, B, C> Parser<C> sequence(
-      Parser<A>.OrEmpty left,
-      Parser<B> right,
-      BiFunction<? super A, ? super B, ? extends C> combiner) {
-    return anyOf(
-        sequence(left.notEmpty(), right, combiner),
-        right.map(v2 -> combiner.apply(left.computeDefaultValue(), v2)));
+      Parser<A>.OrEmpty left, Parser<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
+    return sequence(left.asUnsafeZeroWidthParser(), right, combiner);
   }
 
   /** Matches if any of the given {@code parsers} match. */
-  @SafeVarargs
-  public static <T> Parser<T> anyOf(Parser<? extends T>... parsers) {
+  @SafeVarargs public static <T> Parser<T> anyOf(Parser<? extends T>... parsers) {
     return stream(parsers).collect(or());
   }
 
@@ -1235,7 +1221,7 @@ public abstract class Parser<T> {
      * empty value.
      */
     public T parse(String input) {
-      return input.isEmpty() ? computeDefaultValue() : notEmpty().parse(input);
+      return asUnsafeZeroWidthParser().parse(input);
     }
 
     /**
@@ -1243,12 +1229,7 @@ public abstract class Parser<T> {
      * result; if there's nothing to parse except skippable content, returns the default empty value.
      */
     public T parseSkipping(Parser<?> skip, String input) {
-      return notEmpty()
-          .followedByEof()
-          .skipping(skip)
-          .parseToStream(input)
-          .findFirst()
-          .orElseGet(defaultSupplier);
+      return asUnsafeZeroWidthParser().parseSkipping(skip, input);
     }
 
     /**
@@ -1458,7 +1439,6 @@ public abstract class Parser<T> {
    * to elide the need of an explicit forward declaration.
    */
   public static final class Rule<T> extends Parser<T> {
-    private static final String DO_NOT_DELEGATE_TO_RULE_PARSER = "Do not delegate to a Rule parser";
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
 
     @Override MatchResult<T> skipAndMatch(
@@ -1472,7 +1452,7 @@ public abstract class Parser<T> {
     @SuppressWarnings("unchecked")  // Parser<T> is covariant
     public <S extends T> Parser<S> definedAs(Parser<S> parser) {
       requireNonNull(parser);
-      checkArgument(!(parser instanceof Rule), DO_NOT_DELEGATE_TO_RULE_PARSER);
+      checkArgument(!(parser instanceof Rule), "Do not delegate to a Rule parser");
       checkState(ref.compareAndSet(null, (Parser<T>) parser), "definedAs() already called");
       return parser;
     }
@@ -1555,7 +1535,8 @@ public abstract class Parser<T> {
 
     <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
       var failure = new MatchResult.Failure<V>(at, message, args);
-      if (farthestFailure == null || failure.at() > farthestFailure.at()) {
+      // prefer the farthest then the most recent failure
+      if (farthestFailure == null || failure.at() >= farthestFailure.at()) {
         farthestFailure = failure;
       }
       return failure;
