@@ -93,7 +93,7 @@ regular comment or a nested block comment.
 
 ---
 
-## Example — Calculator (OperatorTable)
+## Example — Calculator ([OperatorTable](https://google.github.io/mug/apidocs/com/google/common/labs/parse/OperatorTable.html))
 
 Goal: support `+ - * /`, factorial (`!`), unary negative, parentheses, and whitespace.
 
