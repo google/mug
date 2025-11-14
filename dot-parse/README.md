@@ -20,7 +20,8 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 - **Operator Precedence:** `OperatorTable<T>` (`prefix()`, `leftAssociative()`, `build()`, etc.)
 - **Recursive:** `Parser.define()`, `Parser.Rule<T>`
 - **Whitespace:** `parser.parseSkipping(Character::isWhitespace, input)`, `parser.skipping(...).parse(...)`
-- **Lazy Parsing:** `parseToStream(Reader)`, `probe(Reader)`.
+- **Lazy Parsing:** [`parseToStream(Reader)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#parseToStream(java.io.Reader)),
+  [`probe(Reader)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#probe(java.io.Reader)).
 
 ---
 
