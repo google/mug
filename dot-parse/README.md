@@ -13,8 +13,8 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 - **Primitives:** [`string()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#string(java.lang.String)),
   [`digits()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#digits()),
   [`word("if")`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#word(java.lang.String)),
-  [`single(ANY)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#single(com.google.mu.util.CharPredicate)),
-  [`quotedStringWithEscapes()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#quotedStringWithEscapes(char, com.google.common.labs.parse.Parser))
+  [`single(ANY)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#single(com.google.mu.util.CharPredicate, java.lang.String)),
+  [`quotedStringWithEscapes()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#quotedStringWithEscapes(char,com.google.common.labs.parse.Parser))
 - **Compose:** `.thenReturn(true)`, `.followedBy("else")`, `.between("[", "]")`, `.map(Literal::new)`
 - **Alternative:** `p1.or(p2)`, `anyOf(p1, p2)`
 - **Sequence:** `then()`, `sequence()`, `atLeastOnce()`, `atLeastOnceDelimitedBy()`
