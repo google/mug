@@ -10,7 +10,7 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 
 ## API sketch
 
-- **Primitives:** `string()`, `digits()`, `word("if")`, `single(ANY)`, `quotedStringWithEscapes()`
+- **Primitives:** [`string()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#string(java.lang.String)), `digits()`, `word("if")`, `single(ANY)`, `quotedStringWithEscapes()`
 - **Compose:** `.thenReturn(true)`, `.followedBy("else")`, `.between("[", "]")`, `.map(Literal::new)`
 - **Alternative:** `p1.or(p2)`, `anyOf(p1, p2)`
 - **Sequence:** `then()`, `sequence()`, `atLeastOnce()`, `atLeastOnceDelimitedBy()`
@@ -458,7 +458,7 @@ Similarly, you can never run into **accidental left recursion** (which causes `S
 <dependency>
   <groupId>com.google.mug</groupId>
   <artifactId>dot-parse</artifactId>
-  <version>9.3</version>
+  <version>9.4</version>
 </dependency>
 ```
 
