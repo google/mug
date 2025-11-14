@@ -12,9 +12,7 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 
 - **Primitives:** [`string()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#string(java.lang.String)),
   [`digits()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#digits()),
-  [`word("if")`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#word(java.lang.String)),
-  [`single(ANY)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#single(com.google.mu.util.CharPredicate, java.lang.String)),
-  [`quotedStringWithEscapes()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#quotedStringWithEscapes(char,com.google.common.labs.parse.Parser))
+  [`word("if")`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#word(java.lang.String)), `single(ANY)`, `quotedStringWithEscapes()`
 - **Compose:** `.thenReturn(true)`, `.followedBy("else")`, `.between("[", "]")`, `.map(Literal::new)`
 - **Alternative:** `p1.or(p2)`, `anyOf(p1, p2)`
 - **Sequence:** `then()`, `sequence()`, `atLeastOnce()`, `atLeastOnceDelimitedBy()`
@@ -72,7 +70,7 @@ That's it.
 What's more interesting is nestable block comments.
 
 Imagine you want to allow `/* this is /* nested comment */ and some */` to be a valid block comment.
-Any nesting requires recursive grammar. You can create the recursive grammar using the `Parser.define()`
+Any nesting requires recursive grammar. You can create the recursive grammar using the [`Parser.define()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#define(java.util.function.Function))
 method:
 
 ```java {.good}
@@ -119,7 +117,8 @@ Parser<Integer> calculator() {
 int v = calculator()
     .parseSkipping(Character::isWhitespace, " -1 + 2 * (3 + 4!) / 5 ");
 ```
-The `Parser.define(rule -> ...)` method call defines a recursive grammar
+The [`Parser.define(rule -> ...)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#define(java.util.function.Function))
+method call defines a recursive grammar
 where the lambda parameter `rule` is a placeholder of the result parser itself so that
 you can nest it between parentheses.
 
@@ -139,7 +138,8 @@ is Unicode-escaped emoji.
 Google ST Query on the other hand doesn't support Unicode escaping, and `\"`, `\n` would just be translated to the literal `"` and `n`
 characters respectively, without any special meaning.
 
-If your own mini parser needs quoted string literals with similar escapes, you can use the `Parser.quotedStringWithEscapes()` method.
+If your own mini parser needs quoted string literals with similar escapes, you can use the
+[`Parser.quotedStringWithEscapes()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#quotedStringWithEscapes(char,com.google.common.labs.parse.Parser)) method.
 
 For example, to parse the ST Query style quoted string, simply use:
 
@@ -191,14 +191,15 @@ quotedString.parse(
 
 ## Example — Parse Regex-like Character Set
 
-The `CharacterSet.charsIn()` method accepts a character set string. And you can call it with
+The [`CharacterSet.charsIn()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/CharacterSet.html#charsIn(java.lang.String))
+method accepts a character set string. And you can call it with
 `charsIn("[0-9a-fA-F]")`, `charsIn("[^0-9]")` etc.
 
 It makes it easier to create a primitive parser using a regex-like character set specification
 if you are already familiar with them. For example `var hexDigits = Parser.consecutive(charsIn("[0-9A-F]"))`.
 
 The implementation doesn't use a regex engine during parsing (which would have been expensive),
-instead, it parses the character set and translates it to a `CharPredicate` object.
+instead, it parses the character set and translates it to a [`CharPredicate`](https://google.github.io/mug/apidocs/com/google/mu/util/CharPredicate.html) object.
 For example, `[a-zA-Z]` would be translated to:
 
 ```java
@@ -215,7 +216,7 @@ CharPredicate.is('a')
     .not()
 ```
 
-The final `.not()` corresponds to the caret (`^`) character.
+The final [`.not()`](https://google.github.io/mug/apidocs/com/google/mu/util/CharPredicate.html#not()) corresponds to the caret (`^`) character.
 
 To parse the character set string, there are two types of primitives:
 
@@ -239,7 +240,8 @@ Regex character set doesn't allow literal `']'`.
 The API decides not to support escaping because escaping rule is pretty complex
 and they hurt readability (particularly in Java where you can easily get lost on the
 number of backslashes you need). Instead, for use cases that need these special characters,
-there's always the `single(CharPredicate)` and `consecutive(CharPredicate)` to programmatically
+there's always the [`single(CharPredicate)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#single(com.google.mu.util.CharPredicate,java.lang.String))
+and [`consecutive(CharPredicate)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#consecutive(com.google.mu.util.CharPredicate,java.lang.String)) to programmatically
 build the primitive parsers.
 
 Now let's compose the primitives to get the work done:
@@ -263,13 +265,15 @@ CharPredicate compileCharacterSet(String characterSet) {
       .parse(characterSet);
 }
 ```
-We use `anyOf()` to group the two primitives, and then use `atLeastOnce()` for one or more
+We use [`anyOf()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#anyOf(com.google.common.labs.parse.Parser...))
+to group the two primitives, and then use [`atLeastOnce()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#atLeastOnce(java.util.function.BinaryOperator))
+for one or more
 repetitions, with the result predicates OR'ed together. This will parse a positive character set.
 
 Then we use another `anyOf()` for either a negative character set or a positive one.
 
 Additionally, a completely empty set is supported and it means that no character is included
-in the character set. Thus the `.orElse(NONE)`.
+in the character set. Thus the [`.orElse(NONE)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#orElse(T)).
 
 A positive, negative or empty character set are all enclosed in a pair of brackets.
 
@@ -320,7 +324,8 @@ Stream<String> jsonStringsFrom(Reader input) {
 ```
 
 Note that JSON supports Unicode escape. But we don't need to care because we are just splitting by calling
-`.source()` after finding the split point. The parser translating a unicode escape correctly or not
+[`.source()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#source())
+after finding the split point. The parser translating a unicode escape correctly or not
 is irrelevant.
 
 ## Example — Mini Search Language
@@ -412,7 +417,7 @@ Parser<List<Row>> csv = row.orElse(EMPTY_ROW)
 Still safe, because the required newline forces the parser to move forward.
 
 Next day, you realize that some CSV inputs may or may not have the newline character at the last line.
-So the `delimitedBy()` would not consume the last newline character.
+So the [`delimitedBy()`]() would not consume the last newline character.
 
 You're like: "easy, I'll just replace `delimitedBy()` with `zeroOrMore()`, and make the newline an optional suffix":
 
@@ -432,7 +437,8 @@ The combined parser succeeds but consumes zero characters. Then `zeroOrMore()` l
 Mug's Dot Parse library uses the type system to prevent you from ever falling into this trap. The bug becomes a compile-time error.
 
 When you write `row.orElse(EMPTY_ROW)`, you don't get back a first-class Parser.
-It returns a special `Parser<Row>.OrEmpty` type that doesn't have dangerous methods like `zeroOrMore()`.
+It returns a special [`Parser<Row>.OrEmpty`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.OrEmpty.html)
+type that doesn't have dangerous methods like `zeroOrMore()`.
 The compiler stops you cold.
 
 This forces you to define the grammar rule to be always consuming:
@@ -445,7 +451,7 @@ Parser<List<Row>>.OrEmpty parser =
         .notEmpty()                      // But you gotta have at least one  ✅
         .zeroOrMore();                   // It's a Parser again, and safe in a loop
 ```
-If your code compiles, `zeroOrMore()` can never loop infinitely.
+If your code compiles, [`zeroOrMore()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#zeroOrMore()) can never loop infinitely.
 
 Similarly, you can never run into **accidental left recursion** (which causes `StackOverflowError`).
 
