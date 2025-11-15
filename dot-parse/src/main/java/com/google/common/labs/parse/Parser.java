@@ -773,6 +773,18 @@ public abstract class Parser<T> {
     return optionalPostfix(string(suffix).thenReturn(op::apply));
   }
 
+  /**
+   * If this parser matches, optionally matches {@code suffix} with the {@code op} BiFunction
+   * to transform the current parser's result.
+   *
+   * @since 9.5
+   */
+  public final <S> Parser<T> optionallyFollowedBy(
+      Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> op) {
+    requireNonNull(op);
+    return optionalPostfix(suffix.map(s -> p -> op.apply(p, s)));
+  }
+
   final Parser<T> optionalPostfix(Parser<UnaryOperator<T>> suffix) {
     return sequence(this, suffix.orElse(identity()), (operand, op) -> op.apply(operand));
   }

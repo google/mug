@@ -457,6 +457,29 @@ public class ParserTest {
   }
 
   @Test
+  public void optionallyFollowedBy_parserSuffix_suffixExists() {
+    Parser<Integer> parser =
+        string("123")
+            .map(Integer::parseInt)
+            .optionallyFollowedBy(
+                string("+").then(digits()).map(Integer::parseInt), (n, i) -> n + i);
+    assertThat(parser.parse("123+1")).isEqualTo(124);
+    assertThat(parser.parseToStream("123+2")).containsExactly(125);
+  }
+
+  @Test
+  public void optionallyFollowedBy_parserSuffix_suffixDoesNotExist() {
+    Parser<Integer> parser =
+        string("123")
+            .map(Integer::parseInt)
+            .optionallyFollowedBy(
+                string("+").then(digits()).map(Integer::parseInt), (n, i) -> n + i);
+    assertThat(parser.parse("123")).isEqualTo(123);
+    assertThat(parser.parseToStream("123+3")).containsExactly(126);
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test
   public void notFollowedBy_emptySuffix_throws() {
     assertThrows(IllegalArgumentException.class, () -> string("a").notFollowedBy(""));
   }
