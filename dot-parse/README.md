@@ -217,7 +217,7 @@ with `.followedBy(":")` separating the key and value.
 
 The third parameter is the comma delimiter (`,`).
 
-The last parameter is a `BiCollector` to control the "sink" of the key value pairs.
+The last parameter is a `BiCollector` as the "sink" of the key value pairs.
 In this case, they are collected into an immutable `Map`, but you could also
 collect them into other data structure, for example, to Guava `ImmutableListMultimap` when
 the keys may have duplicates:
@@ -231,7 +231,7 @@ Parser<ImmutableListMultimap<String, String>> parser =
 ```
 
 If you want to collect them into a list of your own custom `KeyValue` records,
-you can just use the simpler [`Parser.sequence()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.util.function.BiFunction))
+use the simpler [`Parser.sequence()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.util.function.BiFunction))
 method:
 
 ```java {.good}
