@@ -1204,6 +1204,15 @@ public abstract class Parser<T> {
     }
 
     /**
+     * The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.
+     *
+     * @since 9.5
+     */
+    public Parser<T>.OrEmpty optionallyFollowedBy(String suffix) {
+      return followedBy(string(suffix).orElse(null));
+    }
+
+    /**
      * Returns the otherwise equivalent {@code Parser} that will fail instead of returning the
      * default value if empty.
      *
