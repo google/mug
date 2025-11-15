@@ -780,6 +780,8 @@ public abstract class Parser<T> {
    * <p>For example:
    *
    * <pre>{@code
+   * Parser<MarkdownLink> link = ...;
+   * Parser<String> title = ...;
    * Parser<MarkdownLink> parser = link.optionallyFollowedBy(title, MarkdownLink::withTitle);
    * }</pre>
    *
