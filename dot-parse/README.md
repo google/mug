@@ -190,6 +190,70 @@ quotedString.parse(
 
 ---
 
+## Example — Parse Key-Value Pairs
+
+Imagine you have some key value pairs enclosed in a pair of curly braces, like `{name: Stark, address: "1234 Winterfell"}`.
+
+That is, the keys are words, and the values are optionally-quoted strings (when they have spaces, escapes etc.).
+
+You can parse it into a `Map<String, String>` pretty easily by using the out-of-box
+[`Parser.zeroOrMoreDelimited()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#zeroOrMoreDelimited(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.lang.String,com.google.mu.util.stream.BiCollector))
+method:
+
+```java {.good}
+Parser<String> quoted = Parser.uotedStringWithEscapes('"', chars(1));
+Parser<Map<String, String>> parser =
+    Parser.zeroOrMoreDelimited(
+        Parser.word().followedBy(":"), word().or(quoted),
+        ",",                                    // delimited by ","
+        Collectors::toUnmodifiableMap)          // collect key-values into a Map
+    .between("{", "}");                         // enclosed by curly braces
+Map<String, String> keyValues =
+    parser.parseSkipping(Character::isWhitespace, input);
+```
+
+Specifically, the first two `Parser` parameters specify the key and the value respectively,
+with `.followedBy(":")` separating the key and value.
+
+The third parameter is the comma delimiter (`,`).
+
+The last parameter is a `BiCollector` to control the "sink" of the key value pairs.
+In this case, they are collected into an immutable `Map`, but you could also
+collect them into other data structure, for example, to Guava `ImmutableListMultimap` when
+the keys may have duplicates:
+
+```java {.good}
+Parser<ImmutableListMultimap<String, String>> parser =
+    Parser.zeroOrMoreDelimited(
+        Parser.word().followedBy(":"), word().or(quoted),
+        ",", ImmutableListMultimap::toImmutableListMultimap)
+    .between("{", "}");
+```
+
+If you want to collect them into a list of your own custom `KeyValue` records,
+you can just use the simpler [`Parser.sequence()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.util.function.BiFunction))
+method:
+
+```java {.good}
+Parser<List<KeyValue>> parser =
+    Parser.sequence(Parser.word().followedBy(":"), word().or(quoted), KeyValue::new)
+        .zeroOrMoreDelimitedBy(",")
+        .between("{", "}");
+```
+Another variant is if you want to allow optional trailing comma, which is kinda common
+these days, to allow easier editing:
+
+```java {.good}
+Parser<Map<String, String>> parser =
+    Parser.zeroOrMoreDelimited(
+        Parser.word().followedBy(":"), word().or(quoted),
+        ",", Collectors::toUnmodifiableMap)
+    .optionallyFollowedBy(",")
+    .between("{", "}");
+```
+
+---
+
 ## Example — Parse Regex-like Character Set
 
 The [`CharacterSet.charsIn()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/CharacterSet.html#charsIn(java.lang.String))
