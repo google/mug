@@ -229,6 +229,10 @@ Parser<ImmutableListMultimap<String, String>> parser =
         ",", ImmutableListMultimap::toImmutableListMultimap)
     .between("{", "}");
 ```
+NOTE: in case it wasn't obvious, the `BiCollector` comes from the reference to the `toUnmodifiableMap()`,
+`toImmutableListMultimap()` factory methods. This is how a typical `BiCollector` can be
+created (off of a `Collector toWhatever(Function, Function)` method). Don't confuse it with
+the actual method call.
 
 If you want to collect them into a list of your own custom `KeyValue` records,
 use the simpler [`Parser.sequence()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.util.function.BiFunction))
