@@ -115,8 +115,9 @@ public final class OperatorTable<T> {
   }
 
   /**
-   * Adds a non-associative infix operator with the given precedence to the table. The higher {@code
-   * precedence} value the higher precedence it is.
+   * Adds a non-associative infix operator (e.g. a comparison operator like '>'),
+   * with the given precedence to the table. The higher {@code precedence} value
+   * the higher precedence it is.
    */
   @CanIgnoreReturnValue
   public OperatorTable<T> nonAssociative(String op, BinaryOperator<T> operator, int precedence) {
@@ -125,8 +126,9 @@ public final class OperatorTable<T> {
   }
 
   /**
-   * Adds a non-associative infix operator with the given precedence to the table. The higher {@code
-   * precedence} value the higher precedence it is.
+   * Adds a non-associative infix operator (e.g. a comparison operator like '>'),
+   * with the given precedence to the table. The higher {@code precedence} value
+   * the higher precedence it is.
    */
   @CanIgnoreReturnValue
   public OperatorTable<T> nonAssociative(

@@ -85,6 +85,12 @@ public final class CsvTest {
   }
 
   @Test
+  public void parseToLists_spaceAroundQuotesIgnored() {
+    assertThat(CSV.parseToLists("\"abc\", \"1234\" ,\"5678\""))
+        .containsExactly(List.of("abc", "1234", "5678"));
+  }
+
+  @Test
   public void parseToLists_quotedColumnWithComma() {
     assertThat(CSV.parseToLists("abc,\"1234,5678 \""))
         .containsExactly(List.of("abc", "1234,5678 "));
