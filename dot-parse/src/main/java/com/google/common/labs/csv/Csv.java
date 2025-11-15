@@ -53,6 +53,8 @@ import com.google.mu.util.stream.BiStream;
  * List<Map<String, String>> rows = CSV.parseToMaps(input).toList();
  * }</pre>
  *
+ * <p>Starting from v9.5, spaces and tabs around double quoted fields are leniently ignored.
+ *
  * <p>Note that streams returned by this class are sequential and are <em>not</em> safe to be used
  * as parallel streams.
  */
