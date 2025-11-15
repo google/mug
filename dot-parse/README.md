@@ -248,7 +248,7 @@ Parser<Map<String, String>> parser =
     Parser.zeroOrMoreDelimited(
         Parser.word().followedBy(":"), word().or(quoted),
         ",", Collectors::toUnmodifiableMap)
-    .optionallyFollowedBy(",")
+    .followedBy(Parser.string(",").optional())
     .between("{", "}");
 ```
 
