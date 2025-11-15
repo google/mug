@@ -2312,6 +2312,24 @@ public class ParserTest {
   }
 
   @Test
+  public void orEmpty_optionallyFollowedBy_suffix() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's").optionallyFollowedBy(",").between("[", "]");
+    assertThat(parser.parse("[aa,]")).isEqualTo("aa");
+    assertThat(parser.parse("[aa]")).isEqualTo("aa");
+    assertThat(parser.parse("[,]")).isEmpty();
+    assertThat(parser.parse("[]")).isEmpty();
+  }
+
+  @Test
+  public void orEmpty_optionallyFollowedBy_suffix_source() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's").optionallyFollowedBy(",").between("[", "]");
+    assertThat(parser.source().parse("[aa,]")).isEqualTo("[aa,]");
+    assertThat(parser.source().parse("[aa]")).isEqualTo("[aa]");
+    assertThat(parser.source().parse("[,]")).isEqualTo("[,]");
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+  }
+
+  @Test
   public void orEmpty_immediatelyBetween_success() {
     Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
     assertThat(parser.parse("[foo]")).isEqualTo("foo");

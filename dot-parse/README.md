@@ -10,7 +10,9 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 
 ## API sketch
 
-- **Primitives:** `string()`, `digits()`, `word("if")`, `single(ANY)`, `quotedStringWithEscapes()`
+- **Primitives:** [`string()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#string(java.lang.String)),
+  [`digits()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#digits()),
+  [`word("if")`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#word(java.lang.String)), `single(ANY)`, `quotedStringWithEscapes()`
 - **Compose:** `.thenReturn(true)`, `.followedBy("else")`, `.between("[", "]")`, `.map(Literal::new)`
 - **Alternative:** `p1.or(p2)`, `anyOf(p1, p2)`
 - **Sequence:** `then()`, `sequence()`, `atLeastOnce()`, `atLeastOnceDelimitedBy()`
@@ -18,7 +20,8 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 - **Operator Precedence:** `OperatorTable<T>` (`prefix()`, `leftAssociative()`, `build()`, etc.)
 - **Recursive:** `Parser.define()`, `Parser.Rule<T>`
 - **Whitespace:** `parser.parseSkipping(Character::isWhitespace, input)`, `parser.skipping(...).parse(...)`
-- **Lazy Parsing:** `parseToStream(Reader)`, `probe(Reader)`.
+- **Lazy Parsing:** [`parseToStream(Reader)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#parseToStream(java.io.Reader)),
+  [`probe(Reader)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#probe(java.io.Reader)).
 
 ---
 
@@ -68,7 +71,7 @@ That's it.
 What's more interesting is nestable block comments.
 
 Imagine you want to allow `/* this is /* nested comment */ and some */` to be a valid block comment.
-Any nesting requires recursive grammar. You can create the recursive grammar using the `Parser.define()`
+Any nesting requires recursive grammar. You can create the recursive grammar using the [`Parser.define()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#define(java.util.function.Function))
 method:
 
 ```java {.good}
@@ -90,7 +93,7 @@ regular comment or a nested block comment.
 
 ---
 
-## Example — Calculator (OperatorTable)
+## Example — Calculator ([OperatorTable](https://google.github.io/mug/apidocs/com/google/common/labs/parse/OperatorTable.html))
 
 Goal: support `+ - * /`, factorial (`!`), unary negative, parentheses, and whitespace.
 
@@ -115,7 +118,8 @@ Parser<Integer> calculator() {
 int v = calculator()
     .parseSkipping(Character::isWhitespace, " -1 + 2 * (3 + 4!) / 5 ");
 ```
-The `Parser.define(rule -> ...)` method call defines a recursive grammar
+The [`Parser.define(rule -> ...)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#define(java.util.function.Function))
+method call defines a recursive grammar
 where the lambda parameter `rule` is a placeholder of the result parser itself so that
 you can nest it between parentheses.
 
@@ -135,7 +139,8 @@ is Unicode-escaped emoji.
 Google ST Query on the other hand doesn't support Unicode escaping, and `\"`, `\n` would just be translated to the literal `"` and `n`
 characters respectively, without any special meaning.
 
-If your own mini parser needs quoted string literals with similar escapes, you can use the `Parser.quotedStringWithEscapes()` method.
+If your own mini parser needs quoted string literals with similar escapes, you can use the
+[`Parser.quotedStringWithEscapes()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#quotedStringWithEscapes(char,com.google.common.labs.parse.Parser)) method.
 
 For example, to parse the ST Query style quoted string, simply use:
 
@@ -185,16 +190,85 @@ quotedString.parse(
 
 ---
 
+## Example — Parse Key-Value Pairs
+
+Imagine you have some key value pairs enclosed in a pair of curly braces, like `{name: Stark, address: "1234 Winterfell"}`.
+
+That is, the keys are words, and the values are optionally-quoted strings (when they have spaces, escapes etc.).
+
+You can parse it into a `Map<String, String>` pretty easily by using the out-of-box
+[`Parser.zeroOrMoreDelimited()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#zeroOrMoreDelimited(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.lang.String,com.google.mu.util.stream.BiCollector))
+method:
+
+```java {.good}
+Parser<String> quoted = Parser.uotedStringWithEscapes('"', chars(1));
+Parser<Map<String, String>> parser =
+    Parser.zeroOrMoreDelimited(
+        Parser.word().followedBy(":"), word().or(quoted),
+        ",",                                    // delimited by ","
+        Collectors::toUnmodifiableMap)          // collect key-values into a Map
+    .between("{", "}");                         // enclosed by curly braces
+Map<String, String> keyValues =
+    parser.parseSkipping(Character::isWhitespace, input);
+```
+
+Specifically, the first two `Parser` parameters specify the key and the value respectively,
+with `.followedBy(":")` separating the key and value.
+
+The third parameter is the comma delimiter (`,`).
+
+The last parameter is a `BiCollector` as the "sink" of the key value pairs.
+In this case, they are collected into an immutable `Map`, but you could also
+collect them into other data structure, for example, to Guava `ImmutableListMultimap` when
+the keys may have duplicates:
+
+```java {.good}
+Parser<ImmutableListMultimap<String, String>> parser =
+    Parser.zeroOrMoreDelimited(
+        Parser.word().followedBy(":"), word().or(quoted),
+        ",", ImmutableListMultimap::toImmutableListMultimap)
+    .between("{", "}");
+```
+NOTE: in case it wasn't obvious, the `BiCollector` comes from the reference to the `toUnmodifiableMap()`,
+`toImmutableListMultimap()` factory methods. This is how a typical `BiCollector` can be
+inferred (off of a `Collector toWhatever(Function, Function)` method).
+Don't confuse the method reference with the _actual_ method call.
+
+If you want to collect them into a list of your own custom `KeyValue` records,
+use the simpler [`Parser.sequence()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.util.function.BiFunction))
+method:
+
+```java {.good}
+Parser<List<KeyValue>> parser =
+    Parser.sequence(Parser.word().followedBy(":"), word().or(quoted), KeyValue::new)
+        .zeroOrMoreDelimitedBy(",")
+        .between("{", "}");
+```
+Another variant is if you want to allow optional trailing comma, which is kinda common
+these days, to allow easier editing:
+
+```java {.good}
+Parser<Map<String, String>> parser =
+    Parser.zeroOrMoreDelimited(
+        Parser.word().followedBy(":"), word().or(quoted),
+        ",", Collectors::toUnmodifiableMap)
+    .followedBy(Parser.string(",").optional())
+    .between("{", "}");
+```
+
+---
+
 ## Example — Parse Regex-like Character Set
 
-The `CharacterSet.charsIn()` method accepts a character set string. And you can call it with
+The [`CharacterSet.charsIn()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/CharacterSet.html#charsIn(java.lang.String))
+method accepts a character set string. And you can call it with
 `charsIn("[0-9a-fA-F]")`, `charsIn("[^0-9]")` etc.
 
 It makes it easier to create a primitive parser using a regex-like character set specification
 if you are already familiar with them. For example `var hexDigits = Parser.consecutive(charsIn("[0-9A-F]"))`.
 
 The implementation doesn't use a regex engine during parsing (which would have been expensive),
-instead, it parses the character set and translates it to a `CharPredicate` object.
+instead, it parses the character set and translates it to a [`CharPredicate`](https://google.github.io/mug/apidocs/com/google/mu/util/CharPredicate.html) object.
 For example, `[a-zA-Z]` would be translated to:
 
 ```java
@@ -211,7 +285,7 @@ CharPredicate.is('a')
     .not()
 ```
 
-The final `.not()` corresponds to the caret (`^`) character.
+The final [`.not()`](https://google.github.io/mug/apidocs/com/google/mu/util/CharPredicate.html#not()) corresponds to the caret (`^`) character.
 
 To parse the character set string, there are two types of primitives:
 
@@ -235,7 +309,8 @@ Regex character set doesn't allow literal `']'`.
 The API decides not to support escaping because escaping rule is pretty complex
 and they hurt readability (particularly in Java where you can easily get lost on the
 number of backslashes you need). Instead, for use cases that need these special characters,
-there's always the `single(CharPredicate)` and `consecutive(CharPredicate)` to programmatically
+there's always the [`single(CharPredicate)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#single(com.google.mu.util.CharPredicate,java.lang.String))
+and [`consecutive(CharPredicate)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#consecutive(com.google.mu.util.CharPredicate,java.lang.String)) to programmatically
 build the primitive parsers.
 
 Now let's compose the primitives to get the work done:
@@ -259,13 +334,15 @@ CharPredicate compileCharacterSet(String characterSet) {
       .parse(characterSet);
 }
 ```
-We use `anyOf()` to group the two primitives, and then use `atLeastOnce()` for one or more
+We use [`anyOf()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#anyOf(com.google.common.labs.parse.Parser...))
+to group the two primitives, and then use [`atLeastOnce()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#atLeastOnce(java.util.function.BinaryOperator))
+for one or more
 repetitions, with the result predicates OR'ed together. This will parse a positive character set.
 
 Then we use another `anyOf()` for either a negative character set or a positive one.
 
 Additionally, a completely empty set is supported and it means that no character is included
-in the character set. Thus the `.orElse(NONE)`.
+in the character set. Thus the [`.orElse(NONE)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#orElse(T)).
 
 A positive, negative or empty character set are all enclosed in a pair of brackets.
 
@@ -316,7 +393,8 @@ Stream<String> jsonStringsFrom(Reader input) {
 ```
 
 Note that JSON supports Unicode escape. But we don't need to care because we are just splitting by calling
-`.source()` after finding the split point. The parser translating a unicode escape correctly or not
+[`.source()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#source())
+after finding the split point. The parser translating a unicode escape correctly or not
 is irrelevant.
 
 ## Example — Mini Search Language
@@ -408,7 +486,7 @@ Parser<List<Row>> csv = row.orElse(EMPTY_ROW)
 Still safe, because the required newline forces the parser to move forward.
 
 Next day, you realize that some CSV inputs may or may not have the newline character at the last line.
-So the `delimitedBy()` would not consume the last newline character.
+So the [`delimitedBy()`]() would not consume the last newline character.
 
 You're like: "easy, I'll just replace `delimitedBy()` with `zeroOrMore()`, and make the newline an optional suffix":
 
@@ -428,7 +506,8 @@ The combined parser succeeds but consumes zero characters. Then `zeroOrMore()` l
 Mug's Dot Parse library uses the type system to prevent you from ever falling into this trap. The bug becomes a compile-time error.
 
 When you write `row.orElse(EMPTY_ROW)`, you don't get back a first-class Parser.
-It returns a special `Parser<Row>.OrEmpty` type that doesn't have dangerous methods like `zeroOrMore()`.
+It returns a special [`Parser<Row>.OrEmpty`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.OrEmpty.html)
+type that doesn't have dangerous methods like `zeroOrMore()`.
 The compiler stops you cold.
 
 This forces you to define the grammar rule to be always consuming:
@@ -441,7 +520,7 @@ Parser<List<Row>>.OrEmpty parser =
         .notEmpty()                      // But you gotta have at least one  ✅
         .zeroOrMore();                   // It's a Parser again, and safe in a loop
 ```
-If your code compiles, `zeroOrMore()` can never loop infinitely.
+If your code compiles, [`zeroOrMore()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#zeroOrMore()) can never loop infinitely.
 
 Similarly, you can never run into **accidental left recursion** (which causes `StackOverflowError`).
 
@@ -458,7 +537,7 @@ Similarly, you can never run into **accidental left recursion** (which causes `S
 <dependency>
   <groupId>com.google.mug</groupId>
   <artifactId>dot-parse</artifactId>
-  <version>9.3</version>
+  <version>9.4</version>
 </dependency>
 ```
 
