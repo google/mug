@@ -61,6 +61,8 @@ public final class Csv {
   public static final Csv CSV = new Csv(',', /* allowsComments= */ false);
 
   private static final CharPredicate UNRESERVED_CHAR = CharPredicate.noneOf("\"\r\n");
+  private static final Parser<?>.OrEmpty IGNORED_WHITESPACES =
+      Parser.zeroOrMore(c -> c == ' ' || c == '\t', "ignored");
   private static final Parser<?> NEW_LINE =
       Stream.of("\n", "\r\n", "\r").map(Parser::string).collect(Parser.or());
   private static final Parser<?> COMMENT =
@@ -71,7 +73,8 @@ public final class Csv {
       Parser.consecutive(isNot('"'), "quoted")
           .or(Parser.string("\"\"").thenReturn("\"")) // escaped quote
           .zeroOrMore(joining())
-          .between("\"", "\"");
+          .between("\"", "\"")
+          .between(IGNORED_WHITESPACES, IGNORED_WHITESPACES);
 
   private final char delim;
   private final boolean allowsComments;

@@ -2335,6 +2335,39 @@ public class ParserTest {
   }
 
   @Test
+  public void between_orEmpty_success() {
+    Parser<String> parser =
+        string("content")
+            .between(zeroOrMore(Character::isWhitespace, "ignore"), zeroOrMore(Character::isWhitespace, "ignore"));
+    assertThat(parser.parse("content")).isEqualTo("content");
+    assertThat(parser.parse(" content")).isEqualTo("content");
+    assertThat(parser.parse("content ")).isEqualTo("content");
+    assertThat(parser.parse(" content ")).isEqualTo("content");
+    assertThat(parser.parse("  content  ")).isEqualTo("content");
+  }
+
+  @Test
+  public void between_orEmpty_success_source() {
+    Parser<String> parser =
+        string("content")
+            .between(zeroOrMore(Character::isWhitespace, "ignore"), zeroOrMore(Character::isWhitespace, "ignore"));
+    assertThat(parser.source().parse("content")).isEqualTo("content");
+    assertThat(parser.source().parse(" content")).isEqualTo(" content");
+    assertThat(parser.source().parse("content ")).isEqualTo("content ");
+    assertThat(parser.source().parse(" content ")).isEqualTo(" content ");
+    assertThat(parser.source().parse("  content  ")).isEqualTo("  content  ");
+  }
+
+  @Test
+  public void between_orEmpty_failure() {
+    Parser<String> parser =
+        string("content")
+            .between(zeroOrMore(Character::isWhitespace, "ignore"), zeroOrMore(Character::isWhitespace, "ignore"));
+    assertThrows(ParseException.class, () -> parser.parse("Content"));
+    assertThrows(ParseException.class, () -> parser.parse(" contentX"));
+  }
+
+  @Test
   public void orEmpty_optionallyFollowedBy_suffix() {
     Parser<String> parser = zeroOrMore(is('a'), "a's").optionallyFollowedBy(",").between("[", "]");
     assertThat(parser.parse("[aa,]")).isEqualTo("aa");

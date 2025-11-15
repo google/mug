@@ -638,6 +638,16 @@ public abstract class Parser<T> {
   }
 
   /**
+   * Returns a parser that matches the current parser enclosed between {@code prefix} and {@code suffix},
+   * both allowed to be empty.
+   *
+   * @since 9.5
+   */
+  public final Parser<T> between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix) {
+    return prefix.then(followedBy(suffix));
+  }
+
+  /**
    * Returns a parser that matches the current parser <em>immediately</em> enclosed between {@code
    * prefix} and {@code suffix} (no skippable characters as specified by {@link #parseSkipping
    * parseSkipping()} in between).
@@ -1193,6 +1203,10 @@ public abstract class Parser<T> {
 
     /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
     public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
+      return sequence(this, suffix, (a, b) -> b);
+    }
+
+    <S> Parser<S> then(Parser<S> suffix) {
       return sequence(this, suffix, (a, b) -> b);
     }
 
