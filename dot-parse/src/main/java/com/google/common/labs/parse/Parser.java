@@ -777,6 +777,12 @@ public abstract class Parser<T> {
    * If this parser matches, optionally matches {@code suffix} with the {@code op} BiFunction
    * to transform the current parser's result.
    *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * Parser<MarkdownLink> parser = link.optionallyFollowedBy(title, MarkdownLink::withTitle);
+   * }</pre>
+   *
    * @since 9.5
    */
   public final <S> Parser<T> optionallyFollowedBy(
