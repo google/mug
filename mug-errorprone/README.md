@@ -12,12 +12,12 @@ If you use Maven, add the following POM snippet to your `maven-compiler-plugin`:
     <path>
       <groupId>com.google.errorprone</groupId>
       <artifactId>error_prone_core</artifactId>
-      <version>2.23.0</version>
+      <version>2.40.0</version>
     </path>
     <path>
       <groupId>com.google.mug</groupId>
       <artifactId>mug-errorprone</artifactId>
-      <version>7.0</version>
+      <version>9.4</version>
     </path>
 </configuration>
 ```
