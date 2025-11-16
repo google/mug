@@ -634,7 +634,7 @@ public abstract class Parser<T> {
    * Returns a parser that matches the current parser enclosed between {@code prefix} and {@code suffix}.
    */
   public final Parser<T> between(Parser<?> prefix, Parser<?> suffix) {
-    return prefix.then(followedBy(suffix));
+    return prefix.then(this).followedBy(suffix);
   }
 
   /**
@@ -644,7 +644,7 @@ public abstract class Parser<T> {
    * @since 9.5
    */
   public final Parser<T> between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix) {
-    return prefix.then(followedBy(suffix));
+    return prefix.then(this).followedBy(suffix);
   }
 
   /**
@@ -1155,7 +1155,16 @@ public abstract class Parser<T> {
      * prefix} and {@code suffix}.
      */
     public Parser<T> between(Parser<?> prefix, Parser<?> suffix) {
-      return prefix.then(followedBy(suffix));
+      return prefix.then(this).followedBy(suffix);
+    }
+
+    /**
+     * The current parser enclosed between {@code prefix} and {@code suffix}, both allowed to be empty.
+     *
+     * @since 9.5
+     */
+    public final Parser<T>.OrEmpty between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix) {
+      return prefix.then(this).followedBy(suffix);
     }
 
     /**
