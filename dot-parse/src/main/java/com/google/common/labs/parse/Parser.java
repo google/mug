@@ -414,7 +414,7 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a parser that matches the current parser at least once, delimited by the given delimiter.
+   * Returns a parser that matches {@code this} pattern at least once, delimited by the given delimiter.
    *
    * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use:
    *
@@ -428,7 +428,7 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a parser that matches the current parser at least once, delimited by the given
+   * Returns a parser that matches {@code this} pattern at least once, delimited by the given
    * delimiter, using the given {@code reducer} function to reduce the results.
    *
    * @since 9.4
@@ -438,7 +438,7 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a parser that matches the current parser at least once, delimited by the given delimiter.
+   * Returns a parser that matches {@code this} pattern at least once, delimited by the given delimiter.
    *
    * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use:
    *
@@ -623,7 +623,7 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a parser that matches the current parser enclosed between {@code prefix} and
+   * Returns a parser that matches {@code this} pattern enclosed between {@code prefix} and
    * {@code suffix}, which are non-empty string delimiters.
    */
   public final Parser<T> between(String prefix, String suffix) {
@@ -631,14 +631,14 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a parser that matches the current parser enclosed between {@code prefix} and {@code suffix}.
+   * Returns a parser that matches {@code this} pattern enclosed between {@code prefix} and {@code suffix}.
    */
   public final Parser<T> between(Parser<?> prefix, Parser<?> suffix) {
     return prefix.then(this).followedBy(suffix);
   }
 
   /**
-   * Returns a parser that matches the current parser enclosed between {@code prefix} and {@code suffix},
+   * Returns a parser that matches {@code this} pattern enclosed between {@code prefix} and {@code suffix},
    * both allowed to be empty.
    *
    * @since 9.5
@@ -648,7 +648,7 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a parser that matches the current parser <em>immediately</em> enclosed between {@code
+   * Returns a parser that matches {@code this} pattern <em>immediately</em> enclosed between {@code
    * prefix} and {@code suffix} (no skippable characters as specified by {@link #parseSkipping
    * parseSkipping()} in between).
    */
@@ -880,7 +880,7 @@ public abstract class Parser<T> {
     return map(Optional::ofNullable).new OrEmpty(Optional::empty);
   }
 
-  /** Returns a parser that matches the current parser and returns the matched string. */
+  /** Returns a parser that matches {@code this} pattern and returns the matched string. */
   public final Parser<String> source() {
     Parser<T> self = this;
     return new Parser<String>() {
