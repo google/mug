@@ -25,6 +25,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.UnaryOperator;
@@ -45,6 +46,19 @@ import com.google.mu.util.CharPredicate;
 @SuppressWarnings("CharacterSetLiteralCheck")
 public class ParserTest {
   private static final CharPredicate DIGIT = CharPredicate.range('0', '9');
+
+  @Test public void testReddit() {
+    Parser<Double> parser = consecutive(charsIn("[0-9.]"))
+        .map(s -> {
+          try {
+            return Double.parseDouble(s);
+          } catch (NumberFormatException e) {
+            return null;
+          }
+        })
+        .suchThat(Objects::nonNull, "double number");
+    assertThat(parser.probe("1.23.4")).isEmpty();
+  }
 
   @Test
   public void string_success() {
@@ -2365,6 +2379,27 @@ public class ParserTest {
             .between(zeroOrMore(Character::isWhitespace, "ignore"), zeroOrMore(Character::isWhitespace, "ignore"));
     assertThrows(ParseException.class, () -> parser.parse("Content"));
     assertThrows(ParseException.class, () -> parser.parse(" contentX"));
+  }
+
+  @Test
+  public void orEmpty_between_orEmpty_success() {
+    Parser<String>.OrEmpty parser =
+        zeroOrMore(is('a'), "a's")
+            .between(zeroOrMore(Character::isWhitespace, "ignore"), zeroOrMore(Character::isWhitespace, "ignore"));
+    assertThat(parser.parse("aa")).isEqualTo("aa");
+    assertThat(parser.parse(" aa")).isEqualTo("aa");
+    assertThat(parser.parse("aa ")).isEqualTo("aa");
+    assertThat(parser.parse(" aa ")).isEqualTo("aa");
+    assertThat(parser.parse("  ")).isEmpty();
+    assertThat(parser.parse("")).isEmpty();
+  }
+
+  @Test
+  public void orEmpty_between_orEmpty_failure() {
+    Parser<String>.OrEmpty parser =
+        zeroOrMore(is('a'), "a's")
+            .between(zeroOrMore(Character::isWhitespace, "ignore"), zeroOrMore(Character::isWhitespace, "ignore"));
+    assertThrows(ParseException.class, () -> parser.parse("a a"));
   }
 
   @Test
