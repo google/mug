@@ -40,6 +40,7 @@ public class CharacterSetTest {
   }
 
   @Test
+  @SuppressWarnings("CharacterSetLiteralCheck")
   public void test_backslashNotAllowed_throws() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> charsIn("[\\]"));
@@ -47,6 +48,7 @@ public class CharacterSetTest {
   }
 
   @Test
+  @SuppressWarnings("CharacterSetLiteralCheck")
   public void test_closingBracketNotAllowed_throws() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> charsIn("[]]"));
@@ -54,6 +56,7 @@ public class CharacterSetTest {
   }
 
   @Test
+  @SuppressWarnings("CharacterSetLiteralCheck")
   public void test_missingBrackets_throws() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> charsIn("a-z"));
