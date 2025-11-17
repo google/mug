@@ -1,6 +1,6 @@
 # Compile Time Plugin for `StringFormat`
 
-The `com.google.mu.util.StringFormat` class in Mug and `com.google.mu.safesql.SafeQuery` class provide parsing and formatting functionality based on a string template. This artifact provides compile-time checks to help using these classes safely.
+The `com.google.mu.util.StringFormat` class in Mug and `com.google.mu.safesql.SafeSql` class provide parsing and formatting functionality based on a string template. This artifact provides compile-time checks to help using these classes safely.
 
 If you use bazel, the `mug:format` and `mug-guava:safe_sql` build targets export the plugin out of the box.
 
