@@ -611,7 +611,7 @@ public abstract class Parser<T> {
 
   /**
    * Returns a parser that after this parser succeeds, applies the {@code operator} parser zero or
-   * more times and apply the result unary operator function iteratively.
+   * more times and applies the result unary operator function iteratively.
    *
    * <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
    * postfix.
@@ -620,6 +620,27 @@ public abstract class Parser<T> {
    */
   public final Parser<T> postfix(Parser<? extends UnaryOperator<T>> operator) {
     return sequence(this, operator.zeroOrMore(), (operand, ops) -> applyOperators(ops, operand));
+  }
+
+  /**
+   * Returns a parser that after this parser succeeds, applies the {@code operator} parser zero or
+   * more times and applies the result unary operator function iteratively. For example:
+   *
+   * <pre>{@code
+   * Parser<Expr> parser = word()
+   *     .map(Expr::variable)
+   *     .postfix(string(".").then(word()), (expr, field) -> Expr.fieldAccess(expr, field)));
+   * }</pre>
+   *
+   * <p>For infix operator support, consider using {@link OperatorTable}.
+   *
+   * @since 9.5
+   */
+  public final <S> Parser<T> postfix(
+      Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
+    requireNonNull(postfixFunction);
+    return postfix(
+        operator.map(postfixValue -> operand -> postfixFunction.apply(operand, postfixValue)));
   }
 
   /**

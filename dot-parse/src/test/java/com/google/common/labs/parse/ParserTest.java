@@ -2950,6 +2950,22 @@ public class ParserTest {
   }
 
   @Test
+  public void postfix_withBiFunction_success() {
+    Parser<Integer> parser =
+        digits().map(Integer::parseInt).postfix(string("++").map(s -> 1), (a, b) -> a + b);
+    assertThat(parser.parse("10")).isEqualTo(10);
+    assertThat(parser.parse("10++")).isEqualTo(11);
+    assertThat(parser.parse("10++++")).isEqualTo(12);
+  }
+
+  @Test
+  public void postfix_withBiFunction_failure() {
+    Parser<Integer> parser =
+        digits().map(Integer::parseInt).postfix(string("!").map(s -> 1), (a, b) -> a + b);
+    assertThrows(ParseException.class, () -> parser.parse("10!a"));
+  }
+
+  @Test
   public void parse_fromIndex() {
     assertThat(string("bar").parse("foobar", 3)).isEqualTo("bar");
     assertThat(string("bar").source().parse("foobar", 3)).isEqualTo("bar");
