@@ -1,6 +1,8 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.string;
+import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.CharPredicate.range;
 import static org.junit.Assert.assertThrows;
@@ -83,6 +85,24 @@ public final class OperatorTableTest {
         """;
     assertThat(parse(code)).isEqualTo(-416);
   }
+
+  @Test
+  public void testPostfix_parserWithBiFunction() {
+    Parser<Expr> memberAccess =
+        Parser.define(
+            expr ->
+                new OperatorTable<Expr>()
+                    .postfix(string(".").then(word()), Call::new, 1)
+                    .build(word().map(Var::new)));
+    assertThat(memberAccess.parse("a.b")).isEqualTo(new Call(new Var("a"), "b"));
+    assertThat(memberAccess.parse("a.b.c")).isEqualTo(new Call(new Call(new Var("a"), "b"), "c"));
+  }
+
+  private sealed interface Expr permits Var, Call {}
+
+  private record Var(String name) implements Expr {}
+
+  private record Call(Expr callee, String name) implements Expr {}
 
   @Test
   public void testNulls() {

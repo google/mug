@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
@@ -82,6 +83,24 @@ public final class OperatorTable<T> {
   @CanIgnoreReturnValue
   public OperatorTable<T> postfix(String op, UnaryOperator<T> operator, int precedence) {
     return postfix(string(op).thenReturn(requireNonNull(operator)), precedence);
+  }
+
+  /**
+   * Adds a postfix operator with the given precedence to the table. This binary operator will call
+   * {@code postfixFunction.apply(operand, postfixValue)}, where {@code postfixValue} is the result
+   * of the postfix {@code operator} parser. The higher {@code precedence} value the higher
+   * precedence it is.
+   *
+   * @since 9.5
+   */
+  @CanIgnoreReturnValue
+  public <S> OperatorTable<T> postfix(
+      Parser<S> operator,
+      BiFunction<? super T, ? super S, ? extends T> postfixFunction,
+      int precedence) {
+    requireNonNull(postfixFunction);
+    return postfix(
+        operator.map(suffix -> operand -> postfixFunction.apply(operand, suffix)), precedence);
   }
 
   /**
