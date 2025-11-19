@@ -1,5 +1,6 @@
 package com.google.common.labs.parse;
 
+import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.util.Objects.requireNonNull;
 
@@ -14,6 +15,9 @@ abstract class CharInput {
 
   /** Reads the character at {@code index}. */
   abstract char charAt(int index);
+
+  /** Returns the index of {@code str} starting from {@code fromIndex}, or -1 if not found. */
+  abstract int indexOf(String str, int fromIndex);
 
   /** Do the characters starting from {@code index} start with {@code prefix}? */
   abstract boolean startsWith(String prefix, int index);
@@ -38,30 +42,34 @@ abstract class CharInput {
   abstract String sourcePosition(int at);
 
   /** An input backed by in-memory string. */
-  static CharInput from(String str) {
-    requireNonNull(str);
+  static CharInput from(String text) {
+    requireNonNull(text);
     return new CharInput() {
       @Override char charAt(int index) {
-        return str.charAt(index);
+        return text.charAt(index);
+      }
+
+      @Override int indexOf(String str, int fromIndex) {
+        return text.indexOf(str, fromIndex);
       }
 
       @Override boolean startsWith(String prefix, int index) {
-        return str.startsWith(prefix, index);
+        return text.startsWith(prefix, index);
       }
 
       @Override boolean isEof(int index) {
-        return index >= str.length();
+        return index >= text.length();
       }
 
       @Override String snippet(int index, int maxLength) {
-        return str.substring(index, Math.min(str.length(), index + maxLength));
+        return text.substring(index, Math.min(text.length(), index + maxLength));
       }
 
       @Override String sourcePosition(int at) {
         int line = 1;
         int lineStartIndex = 0;
         for (Substring.Match match :
-            iterateOnce(Substring.all('\n').match(str).takeWhile(m -> m.index() < at))) {
+            iterateOnce(Substring.all('\n').match(text).takeWhile(m -> m.index() < at))) {
           lineStartIndex = match.index() + 1;
           line++;
         }
@@ -90,6 +98,27 @@ abstract class CharInput {
       @Override char charAt(int index) {
         ensureCharCount(index + 1);
         return chars.charAt(toPhysicalIndex(index));
+      }
+
+      @Override int indexOf(String str, int fromIndex) {
+        checkArgument(fromIndex >= garbageCharCount, "fromIndex < %s", garbageCharCount);
+        for (int i = fromIndex; ; ) {
+          ensureCharCount(i + str.length());
+          int fromPhysicalIndex = toPhysicalIndex(i);
+          // If after expansion, we don't have enough chars, we've reached the end.
+          if (fromPhysicalIndex + str.length() > chars.length()) {
+            return -1;
+          }
+          int foundPhysicalIndex = chars.indexOf(str, fromPhysicalIndex);
+          // if String.indeexOf() has found it, translate the physical index back to logical.
+          if (foundPhysicalIndex >= fromPhysicalIndex) {
+            return foundPhysicalIndex + garbageCharCount;
+          }
+          // Assuming `str` is 5 chars, when we load the next page of characters, we can resume the
+          // scan with the last 4 chars in the current page, just in case. All other chars are
+          // provably useless.
+          i = garbageCharCount + chars.length() - str.length() + 1;
+        }
       }
 
       @Override boolean startsWith(String prefix, int index) {

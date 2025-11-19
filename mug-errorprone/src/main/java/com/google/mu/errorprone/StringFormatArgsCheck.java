@@ -214,6 +214,9 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
         return;
       }
       ExpressionTree formatter = ASTHelpers.getReceiver(tree);
+      if (formatter == null) {
+        return;
+      }
       ExpressionTree formatExpression = FormatStringUtils.findFormatStringNode(formatter, state).orElse(null);
       checkingOn(formatter).require(formatExpression != null, FORMAT_STRING_NOT_FOUND);
       // For inline format strings, the args and the placeholders are close to each other.

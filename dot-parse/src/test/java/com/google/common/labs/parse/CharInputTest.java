@@ -31,8 +31,24 @@ public final class CharInputTest {
   public void fromString_snippet() {
     assertThat(CharInput.from("abc").snippet(0, 2)).isEqualTo("ab");
     assertThat(CharInput.from("abc").snippet(1, 5)).isEqualTo("bc");
-    assertThat(CharInput.from("abc").snippet(3, 2)).isEqualTo("");
-    assertThat(CharInput.from("").snippet(0, 1)).isEqualTo("");
+    assertThat(CharInput.from("abc").snippet(3, 2)).isEmpty();
+    assertThat(CharInput.from("").snippet(0, 1)).isEmpty();
+  }
+
+  @Test
+  public void fromString_indexOf_found() {
+    assertThat(CharInput.from("hello world").indexOf("world", 0)).isEqualTo(6);
+    assertThat(CharInput.from("hello world").indexOf("world", 6)).isEqualTo(6);
+  }
+
+  @Test
+  public void fromString_indexOf_notFound() {
+    assertThat(CharInput.from("hello world").indexOf("moon", 0)).isEqualTo(-1);
+  }
+
+  @Test
+  public void fromString_indexOf_notFound_pastTarget() {
+    assertThat(CharInput.from("hello world").indexOf("hello", 1)).isEqualTo(-1);
   }
 
   @Test
@@ -45,33 +61,6 @@ public final class CharInputTest {
   public void fromReader_startsWith_isNotPrefix() {
     CharInput input = CharInput.from(new StringReader("food"));
     assertThat(input.startsWith("fobar", 0)).isFalse();
-  }
-
-  @Test
-  public void fromReader_isEof() {
-    CharInput empty = CharInput.from(new StringReader(""));
-    assertThat(empty.isEof(0)).isTrue();
-    CharInput input = CharInput.from(new StringReader("a"));
-    assertThat(input.isEof(0)).isFalse();
-    assertThat(input.isEof(1)).isTrue();
-  }
-
-  @Test
-  public void fromReader_isInRange() {
-    CharInput empty = CharInput.from(new StringReader(""));
-    assertThat(empty.isInRange(0)).isFalse();
-    CharInput input = CharInput.from(new StringReader("a"));
-    assertThat(input.isInRange(0)).isTrue();
-    assertThat(input.isInRange(1)).isFalse();
-  }
-
-  @Test
-  public void fromReader_snippet() {
-    CharInput input = CharInput.from(new StringReader("abc"));
-    assertThat(input.snippet(0, 2)).isEqualTo("ab");
-    assertThat(input.snippet(1, 5)).isEqualTo("bc");
-    assertThat(input.snippet(3, 2)).isEqualTo("");
-    assertThat(CharInput.from(new StringReader("")).snippet(0, 1)).isEqualTo("");
   }
 
   @Test
@@ -102,11 +91,104 @@ public final class CharInputTest {
   }
 
   @Test
+  public void fromReader_indexOf_prefixLongerThanBuffer_found() {
+    String prefix = "a".repeat(9000);
+    CharInput input = CharInput.from(new StringReader(prefix + "b"));
+    assertThat(input.indexOf(prefix, 0)).isEqualTo(0);
+  }
+
+  @Test
+  public void fromReader_indexOf_prefixLongerThanBuffer_notFound() {
+    String prefix = "a".repeat(9000);
+    CharInput input = CharInput.from(new StringReader("a".repeat(8999) + "cb"));
+    assertThat(input.indexOf(prefix, 0)).isEqualTo(-1);
+  }
+
+  @Test
+  public void fromReader_indexOf_prefixLongerThanBuffer_loadedTwice() throws Exception {
+    String prefix = "a".repeat(9000);
+    MockReader reader = new MockReader("b" + prefix + "a");
+    CharInput input = CharInput.from(reader);
+    assertThat(input.indexOf(prefix, 1)).isEqualTo(1);
+    assertThat(reader.loadCount).isEqualTo(2);
+    assertThat(input.indexOf("a", 9001)).isEqualTo(9001);
+    assertThat(reader.loadCount).isEqualTo(2);
+  }
+
+  @Test
+  public void fromReader_isEof() {
+    CharInput empty = CharInput.from(new StringReader(""));
+    assertThat(empty.isEof(0)).isTrue();
+    CharInput input = CharInput.from(new StringReader("a"));
+    assertThat(input.isEof(0)).isFalse();
+    assertThat(input.isEof(1)).isTrue();
+  }
+
+  @Test
+  public void fromReader_isInRange() {
+    CharInput empty = CharInput.from(new StringReader(""));
+    assertThat(empty.isInRange(0)).isFalse();
+    CharInput input = CharInput.from(new StringReader("a"));
+    assertThat(input.isInRange(0)).isTrue();
+    assertThat(input.isInRange(1)).isFalse();
+  }
+
+  @Test
+  public void fromReader_snippet() {
+    CharInput input = CharInput.from(new StringReader("abc"));
+    assertThat(input.snippet(0, 2)).isEqualTo("ab");
+    assertThat(input.snippet(1, 5)).isEqualTo("bc");
+    assertThat(input.snippet(3, 2)).isEmpty();
+    assertThat(CharInput.from(new StringReader("")).snippet(0, 1)).isEmpty();
+  }
+
+  @Test
+  public void fromReader_indexOf_found() {
+    CharInput input = CharInput.from(new StringReader("hello world"));
+    assertThat(input.indexOf("world", 0)).isEqualTo(6);
+    assertThat(input.indexOf("world", 6)).isEqualTo(6);
+  }
+
+  @Test
+  public void fromReader_indexOf_notFound() {
+    CharInput input = CharInput.from(new StringReader("hello world"));
+    assertThat(input.indexOf("moon", 0)).isEqualTo(-1);
+  }
+
+  @Test
+  public void fromReader_indexOf_notFound_pastTarget() {
+    CharInput input = CharInput.from(new StringReader("hello world"));
+    assertThat(input.indexOf("hello", 1)).isEqualTo(-1);
+  }
+
+  @Test
+  public void fromReader_indexOf_loadsMoreChars() {
+    CharInput input = CharInput.from(new StringReader("0123456789abcfoo"), 10, 5);
+    assertThat(input.indexOf("foo", 9)).isEqualTo(13);
+  }
+
+  @Test
+  public void fromReader_indexOf_afterCompaction() {
+    CharInput input = CharInput.from(new StringReader("0123456789abcdef"), 10, 5);
+    assertThat(input.charAt(9)).isEqualTo('9'); // load first 10
+    input.markCheckpoint(6);
+    assertThat(input.indexOf("f", 6)).isEqualTo(15);
+  }
+
+  @Test
   public void fromReader_markCheckpoint_accessBeforeCheckpoint_charAt_throws() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
     assertThrows(IllegalArgumentException.class, () -> input.charAt(5));
+  }
+
+  @Test
+  public void fromReader_markCheckpoint_accessBeforeCheckpoint_indexOf_throws() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    char unused = input.charAt(9); // load all
+    input.markCheckpoint(6);
+    assertThrows(IllegalArgumentException.class, () -> input.indexOf("5", 5));
   }
 
   @Test

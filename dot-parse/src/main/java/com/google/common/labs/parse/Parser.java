@@ -185,6 +185,33 @@ public abstract class Parser<T> {
     return consecutive(CharPredicate.range('0', '9'), "digits");
   }
 
+  /**
+   * Returns a parser that finds the literal {@code string} that may start from the current position
+   * or after any number of characters.
+   *
+   * <p>Useful when you need to skip characters until a particular anchor point, something awkward
+   * to express in regex.
+   *
+   * @since 9.5
+   */
+  public static Parser<String> find(String value) {
+    checkArgument(value.length() > 0, "value cannot be empty");
+    return new Parser<>() {
+      @Override MatchResult<String> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        // Unlike other parsers, find() doesn't apply the skip parser first. Its job is to find the
+        // value string, and the characters it skips are simply non-matching characters. Applying
+        // skip could cause the match to fail if value itself contains characters that
+        // would be skipped (e.g. whitespace).
+        int found = input.indexOf(value, start);
+        if (found >= 0) {
+          return new MatchResult.Success<>(found, found + value.length(), value);
+        }
+        return context.expecting(value, skipIfAny(skip, input, start));
+      }
+    };
+  }
+
   /** Matches a literal {@code string}. */
   public static Parser<String> string(String value) {
     checkArgument(value.length() > 0, "value cannot be empty");
@@ -611,7 +638,7 @@ public abstract class Parser<T> {
 
   /**
    * Returns a parser that after this parser succeeds, applies the {@code operator} parser zero or
-   * more times and apply the result unary operator function iteratively.
+   * more times and applies the result unary operator function iteratively.
    *
    * <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
    * postfix.
@@ -620,6 +647,27 @@ public abstract class Parser<T> {
    */
   public final Parser<T> postfix(Parser<? extends UnaryOperator<T>> operator) {
     return sequence(this, operator.zeroOrMore(), (operand, ops) -> applyOperators(ops, operand));
+  }
+
+  /**
+   * Returns a parser that after this parser succeeds, applies the {@code operator} parser zero or
+   * more times and applies the result unary operator function iteratively. For example:
+   *
+   * <pre>{@code
+   * Parser<Expr> parser = word()
+   *     .map(Expr::variable)
+   *     .postfix(string(".").then(word()), (expr, field) -> Expr.fieldAccess(expr, field)));
+   * }</pre>
+   *
+   * <p>For infix operator support, consider using {@link OperatorTable}.
+   *
+   * @since 9.5
+   */
+  public final <S> Parser<T> postfix(
+      Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
+    requireNonNull(postfixFunction);
+    return postfix(
+        operator.map(postfixValue -> operand -> postfixFunction.apply(operand, postfixValue)));
   }
 
   /**
