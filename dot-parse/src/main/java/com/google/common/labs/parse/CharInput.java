@@ -103,13 +103,18 @@ abstract class CharInput {
         for (int i = fromIndex; i >= 0; ) {
           ensureCharCount(i + str.length());
           int fromPhysicalIndex = toPhysicalIndex(i);
+          // If after expansion, we don't have enough chars, we've reached the end.
           if (fromPhysicalIndex + str.length() > chars.length()) {
             return -1;
           }
           int foundPhysicalIndex = chars.indexOf(str, fromPhysicalIndex);
+          // if String.indeexOf() has found it, translate the physical index back to logical.
           if (foundPhysicalIndex >= fromPhysicalIndex) {
             return foundPhysicalIndex + garbageCharCount;
           }
+          // Assuming `str` is 5 chars, when we load the next page of characters, we can
+          // scanning with the last 4 chars in the current page. All other chars have already been
+          // tried.
           i = garbageCharCount + chars.length() - str.length() + 1;
         }
         return -1;

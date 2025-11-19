@@ -199,6 +199,9 @@ public abstract class Parser<T> {
     return new Parser<>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        // Do not need to apply `skip` because indexOf() should skip through the skippable
+        // characters if they aren't useful. And if they are (like `value` includes whitespace), we
+        // don't want to miss the match.
         int found = input.indexOf(value, start);
         if (found >= 0) {
           return new MatchResult.Success<>(found, found + value.length(), value);
