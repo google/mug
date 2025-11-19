@@ -185,6 +185,29 @@ public abstract class Parser<T> {
     return consecutive(CharPredicate.range('0', '9'), "digits");
   }
 
+  /**
+   * Returns a parser that finds the literal {@code string} that may start from the current position
+   * or after any number of characters.
+   *
+   * <p>Useful when you need to skip characters until a particular anchor point, something awkward
+   * to express in regex.
+   *
+   * @since 9.5
+   */
+  public static Parser<String> find(String value) {
+    checkArgument(value.length() > 0, "value cannot be empty");
+    return new Parser<>() {
+      @Override MatchResult<String> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        int found = input.indexOf(value, start);
+        if (found >= 0) {
+          return new MatchResult.Success<>(found, found + value.length(), value);
+        }
+        return context.expecting(value, skipIfAny(skip, input, start));
+      }
+    };
+  }
+
   /** Matches a literal {@code string}. */
   public static Parser<String> string(String value) {
     checkArgument(value.length() > 0, "value cannot be empty");

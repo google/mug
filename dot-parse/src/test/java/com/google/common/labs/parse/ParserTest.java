@@ -6,6 +6,7 @@ import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.codePoint;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.digits;
+import static com.google.common.labs.parse.Parser.find;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.single;
@@ -21,6 +22,7 @@ import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertThrows;
 
+import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +45,6 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.mu.util.CharPredicate;
 
 @RunWith(JUnit4.class)
-@SuppressWarnings("CharacterSetLiteralCheck")
 public class ParserTest {
   private static final CharPredicate DIGIT = CharPredicate.range('0', '9');
 
@@ -58,6 +59,59 @@ public class ParserTest {
         })
         .suchThat(Objects::nonNull, "double number");
     assertThat(parser.probe("1.23.4")).isEmpty();
+  }
+
+  @Test
+  public void find_atBeginning_followedBy() {
+    assertThat(find("foo").followedBy(string("bar")).parse("foobar")).isEqualTo("foo");
+  }
+
+  @Test
+  public void find_severalCharsIn_followedBy() {
+    assertThat(find("foo").followedBy(string("bar")).parse("skip foobar")).isEqualTo("foo");
+  }
+
+  @Test
+  public void find_notFound() {
+    assertThrows(
+        ParseException.class, () -> find("foo").followedBy(string("bar")).parse("skip fobar"));
+  }
+
+  @Test
+  public void find_withReader_targetInSecondPage() {
+    CharInput input = CharInput.from(new StringReader("0123456789foo_"), 10, 5);
+    assertThat(find("foo").followedBy("_").parseToStream(input, 0)).containsExactly("foo");
+  }
+
+  @Test
+  public void find_withReader_targetInThirdPage() {
+    CharInput input = CharInput.from(new StringReader("01234567890123456789foo_"), 10, 5);
+    assertThat(find("foo").followedBy("_").parseToStream(input, 0)).containsExactly("foo");
+  }
+
+  @Test
+  public void find_withReader_targetAcrossPageBoundary() {
+    CharInput input = CharInput.from(new StringReader("0123456789012345678foobar_"), 10, 5);
+    assertThat(find("foobar").followedBy("_").parseToStream(input, 0)).containsExactly("foobar");
+  }
+
+  @Test
+  public void find_skippingWhitespace() {
+    assertThat(find(" foo").skipping(Character::isWhitespace).parse("    foo")).isEqualTo(" foo");
+  }
+
+  @Test
+  public void find_withReader_largeInput_notFound() {
+    String page = "fo".repeat(8192);
+    Reader reader = new StringReader(page + page + "bar");
+    assertThrows(ParseException.class, () -> find("foo").parseToStream(reader).count());
+  }
+
+  @Test
+  public void find_withReader_largeInput_foundNearEnd() {
+    String page = "fo".repeat(8192);
+    Reader reader = new StringReader(page + page + "foo");
+    assertThat(find("foo").parseToStream(reader)).containsExactly("foo");
   }
 
   @Test

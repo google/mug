@@ -15,6 +15,9 @@ abstract class CharInput {
   /** Reads the character at {@code index}. */
   abstract char charAt(int index);
 
+  /** Returns the index of {@code str} starting from {@code fromIndex}, or -1 if not found. */
+  abstract int indexOf(String str, int fromIndex);
+
   /** Do the characters starting from {@code index} start with {@code prefix}? */
   abstract boolean startsWith(String prefix, int index);
 
@@ -43,6 +46,10 @@ abstract class CharInput {
     return new CharInput() {
       @Override char charAt(int index) {
         return text.charAt(index);
+      }
+
+      @Override int indexOf(String str, int fromIndex) {
+        return text.indexOf(str, fromIndex);
       }
 
       @Override boolean startsWith(String prefix, int index) {
@@ -90,6 +97,22 @@ abstract class CharInput {
       @Override char charAt(int index) {
         ensureCharCount(index + 1);
         return chars.charAt(toPhysicalIndex(index));
+      }
+
+      @Override int indexOf(String str, int fromIndex) {
+        for (int i = fromIndex; i >= 0; ) {
+          ensureCharCount(i + str.length());
+          int fromPhysicalIndex = toPhysicalIndex(i);
+          if (fromPhysicalIndex + str.length() > chars.length()) {
+            return -1;
+          }
+          int foundPhysicalIndex = chars.indexOf(str, fromPhysicalIndex);
+          if (foundPhysicalIndex >= fromPhysicalIndex) {
+            return foundPhysicalIndex + garbageCharCount;
+          }
+          i = garbageCharCount + chars.length() - str.length() + 1;
+        }
+        return -1;
       }
 
       @Override boolean startsWith(String prefix, int index) {
