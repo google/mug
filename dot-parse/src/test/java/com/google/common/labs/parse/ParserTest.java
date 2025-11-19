@@ -62,17 +62,17 @@ public class ParserTest {
   }
 
   @Test
-  public void find_atBeginning_followedBy() {
+  public void first_atBeginning_followedBy() {
     assertThat(first("foo").followedBy(string("bar")).parse("foobar")).isEqualTo("foo");
   }
 
   @Test
-  public void find_severalCharsIn_followedBy() {
+  public void first_severalCharsIn_followedBy() {
     assertThat(first("foo").followedBy(string("bar")).parse("skip foobar")).isEqualTo("foo");
   }
 
   @Test
-  public void find_notFound() {
+  public void first_notFound() {
     ParseException thrown =
         assertThrows(
             ParseException.class, () -> first("skip").then(first("foo")).parse("skip fobar"));
@@ -81,37 +81,37 @@ public class ParserTest {
   }
 
   @Test
-  public void find_withReader_targetInSecondPage() {
+  public void first_withReader_targetInSecondPage() {
     CharInput input = CharInput.from(new StringReader("0123456789foo_"), 10, 5);
     assertThat(first("foo").followedBy("_").parseToStream(input, 0)).containsExactly("foo");
   }
 
   @Test
-  public void find_withReader_targetInThirdPage() {
+  public void first_withReader_targetInThirdPage() {
     CharInput input = CharInput.from(new StringReader("01234567890123456789foo_"), 10, 5);
     assertThat(first("foo").followedBy("_").parseToStream(input, 0)).containsExactly("foo");
   }
 
   @Test
-  public void find_withReader_targetAcrossPageBoundary() {
+  public void first_withReader_targetAcrossPageBoundary() {
     CharInput input = CharInput.from(new StringReader("0123456789012345678foobar_"), 10, 5);
     assertThat(first("foobar").followedBy("_").parseToStream(input, 0)).containsExactly("foobar");
   }
 
   @Test
-  public void find_skippingWhitespace() {
+  public void first_skippingWhitespace() {
     assertThat(first(" foo").skipping(Character::isWhitespace).parse("    foo")).isEqualTo(" foo");
   }
 
   @Test
-  public void find_withReader_largeInput_notFound() {
+  public void first_withReader_largeInput_notFound() {
     String page = "fo".repeat(8192);
     Reader reader = new StringReader(page + page + "bar");
     assertThrows(ParseException.class, () -> first("foo").parseToStream(reader).count());
   }
 
   @Test
-  public void find_withReader_largeInput_foundNearEnd() {
+  public void first_withReader_largeInput_foundNearEnd() {
     String page = "fo".repeat(8192);
     Reader reader = new StringReader(page + page + "foo");
     assertThat(first("foo").parseToStream(reader)).containsExactly("foo");
