@@ -73,8 +73,11 @@ public class ParserTest {
 
   @Test
   public void find_notFound() {
-    assertThrows(
-        ParseException.class, () -> find("foo").followedBy(string("bar")).parse("skip fobar"));
+    ParseException thrown =
+        assertThrows(
+            ParseException.class, () -> find("skip").then(find("foo")).parse("skip fobar"));
+    assertThat(thrown).hasMessageThat().contains("1:5");
+    assertThat(thrown).hasMessageThat().contains("expecting <foo>");
   }
 
   @Test
