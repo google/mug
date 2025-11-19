@@ -38,30 +38,30 @@ abstract class CharInput {
   abstract String sourcePosition(int at);
 
   /** An input backed by in-memory string. */
-  static CharInput from(String str) {
-    requireNonNull(str);
+  static CharInput from(String text) {
+    requireNonNull(text);
     return new CharInput() {
       @Override char charAt(int index) {
-        return str.charAt(index);
+        return text.charAt(index);
       }
 
       @Override boolean startsWith(String prefix, int index) {
-        return str.startsWith(prefix, index);
+        return text.startsWith(prefix, index);
       }
 
       @Override boolean isEof(int index) {
-        return index >= str.length();
+        return index >= text.length();
       }
 
       @Override String snippet(int index, int maxLength) {
-        return str.substring(index, Math.min(str.length(), index + maxLength));
+        return text.substring(index, Math.min(text.length(), index + maxLength));
       }
 
       @Override String sourcePosition(int at) {
         int line = 1;
         int lineStartIndex = 0;
         for (Substring.Match match :
-            iterateOnce(Substring.all('\n').match(str).takeWhile(m -> m.index() < at))) {
+            iterateOnce(Substring.all('\n').match(text).takeWhile(m -> m.index() < at))) {
           lineStartIndex = match.index() + 1;
           line++;
         }

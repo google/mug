@@ -42,6 +42,8 @@ import com.google.mu.util.stream.MoreStreams;
  *     .leftAssociative("*", (l, r) -> l * r), 20)
  *     .rightAssociative("^", (l, r) -> pow(l, r), 30)
  *     .prefix("-", n -> -n, 40)
+ *     .postfix("++", n -> n + 1, 40)
+ *     .postfix("--", n -> n - 1, 40)
  *     .build(consecutive(DIGIT, "number").map(Integer::parseInt));
  *
  * calculator.parse("1+2*3^2") // 19
