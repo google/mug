@@ -1,5 +1,6 @@
 package com.google.common.labs.parse;
 
+import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.util.Objects.requireNonNull;
 
@@ -100,7 +101,8 @@ abstract class CharInput {
       }
 
       @Override int indexOf(String str, int fromIndex) {
-        for (int i = fromIndex; i >= 0; ) {
+        checkArgument(fromIndex >= garbageCharCount, "fromIndex < %s", garbageCharCount);
+        for (int i = fromIndex; ; ) {
           ensureCharCount(i + str.length());
           int fromPhysicalIndex = toPhysicalIndex(i);
           // If after expansion, we don't have enough chars, we've reached the end.
@@ -117,7 +119,6 @@ abstract class CharInput {
           // tried.
           i = garbageCharCount + chars.length() - str.length() + 1;
         }
-        return -1;
       }
 
       @Override boolean startsWith(String prefix, int index) {
