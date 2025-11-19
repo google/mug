@@ -192,6 +192,27 @@ public abstract class Parser<T> {
    * <p>Useful when you need to skip characters until a particular anchor point, something awkward
    * to express in regex.
    *
+   * <p>For example, if you want to express a tag that looks like {@code <div .... dir='rtl'>}, you
+   * have to use a pattern like: {@code "<div\\s+[^>]*dir\\s*=\\s*'rtl'>"}. Such regex is awkward to
+   * express and inherently requires backtracking because {@code [^>]+} can eat up the "dir..."
+   * characters so the regex engine would have to back track in order to match those later patterns.
+   *
+   * <p>With the {@code find()} parser, such pattern can be expressed more straight-forwardly, and
+   * not subject to backtracking:
+   *
+   * <pre>{@code
+   * import com.google.mu.util.Substring;
+   *
+   * Substring.between("<div", ">").from(html)               // locate the div tag
+   *     .flatMap(tag ->
+   *         Parser.find("dir")                              // find the "dir" inside the tag
+   *             .followedBy("=")
+   *             .then(word().immediatelyBetween("'", "'"))  // ltr or rtl
+   *             .skipping(whitespace())                     // ignore whitespaces
+   *             .probe(tag)                                 // probe, don't throw
+   *             .findFirst());                              // Stream.findFirst()
+   * }</pre>
+   *
    * @since 9.5
    */
   public static Parser<String> find(String value) {
