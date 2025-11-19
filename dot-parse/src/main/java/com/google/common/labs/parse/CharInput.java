@@ -114,9 +114,9 @@ abstract class CharInput {
           if (foundPhysicalIndex >= fromPhysicalIndex) {
             return foundPhysicalIndex + garbageCharCount;
           }
-          // Assuming `str` is 5 chars, when we load the next page of characters, we can
-          // scanning with the last 4 chars in the current page. All other chars have already been
-          // tried.
+          // Assuming `str` is 5 chars, when we load the next page of characters, we can resume the
+          // scan with the last 4 chars in the current page, just in case. All other chars are
+          // provably useless.
           i = garbageCharCount + chars.length() - str.length() + 1;
         }
       }
