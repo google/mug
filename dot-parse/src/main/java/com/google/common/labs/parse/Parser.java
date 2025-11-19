@@ -193,9 +193,10 @@ public abstract class Parser<T> {
    * to express in regex.
    *
    * <p>For example, if you want to express a tag that looks like {@code <div .... dir='rtl'>}, you
-   * have to use a pattern like: {@code "<div\\s+[^>]*dir\\s*=\\s*'rtl'>"}. Such regex is awkward to
-   * express and inherently requires backtracking because {@code [^>]+} can eat up the "dir..."
-   * characters so the regex engine would have to back track in order to match those later patterns.
+   * have to use a pattern like: {@code "<div\\s+[^>]*dir\\s*=\\s*'rtl'>"}, or worse {@code
+   * "<div\\s+.*dir\\s*=\\s*'rtl'>"} Such regex is awkward to express and inherently requires
+   * backtracking because {@code [^>]+} can eat up the "dir..." characters so the regex engine would
+   * have to back track in order to match those later patterns.
    *
    * <p>With the {@code find()} parser, such pattern can be expressed more straight-forwardly, and
    * not subject to backtracking:
