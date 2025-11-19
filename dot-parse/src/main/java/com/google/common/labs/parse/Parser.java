@@ -186,18 +186,19 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a parser that finds the literal {@code string} that may start from the current position
-   * or after any number of characters.
+   * Returns a parser that finds the first literal {@code string} that may start from the current
+   * position or after any number of characters.
    *
    * <p>Useful when you need to skip characters until a particular anchor point, something awkward
    * to express in regex.
    *
    * <p>For example, if you want to express a tag that looks like {@code <div .... dir='rtl'>}, you
-   * have to use a pattern like: {@code "<div\\s+[^>]*dir\\s*=\\s*'rtl'>"}. Such regex is awkward to
-   * express and inherently requires backtracking because {@code [^>]+} can eat up the "dir..."
-   * characters so the regex engine would have to back track in order to match those later patterns.
+   * have to use a pattern like: {@code "<div\\s+[^>]*dir\\s*=\\s*'rtl'>"}, or worse {@code
+   * "<div\\s+.*dir\\s*=\\s*'rtl'>"} Such regex is awkward to express and inherently requires
+   * backtracking because {@code [^>]+} can eat up the "dir..." characters so the regex engine would
+   * have to back track in order to match those later patterns.
    *
-   * <p>With the {@code find()} parser, such pattern can be expressed more straight-forwardly, and
+   * <p>With the {@code first()} parser, such pattern can be expressed more straight-forwardly, and
    * not subject to backtracking:
    *
    * <pre>{@code
@@ -205,7 +206,7 @@ public abstract class Parser<T> {
    *
    * Substring.between("<div", ">").from(html)               // locate the div tag
    *     .flatMap(tag ->
-   *         Parser.find("dir")                              // find the "dir" inside the tag
+   *         Parser.first("dir")                             // find the "dir" inside the tag
    *             .followedBy("=")
    *             .then(word().immediatelyBetween("'", "'"))  // ltr or rtl
    *             .skipping(whitespace())                     // ignore whitespaces
@@ -215,12 +216,12 @@ public abstract class Parser<T> {
    *
    * @since 9.5
    */
-  public static Parser<String> find(String value) {
+  public static Parser<String> first(String value) {
     checkArgument(value.length() > 0, "value cannot be empty");
     return new Parser<>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        // Unlike other parsers, find() doesn't apply the skip parser first. Its job is to find the
+        // Unlike other parsers, first() doesn't apply the skip parser first. Its job is to find the
         // value string, and the characters it skips are simply non-matching characters. Applying
         // skip could cause the match to fail if value itself contains characters that
         // would be skipped (e.g. whitespace).
