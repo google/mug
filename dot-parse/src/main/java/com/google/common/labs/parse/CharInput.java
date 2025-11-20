@@ -112,12 +112,12 @@ abstract class CharInput {
           int foundPhysicalIndex = chars.indexOf(str, fromPhysicalIndex);
           // if String.indeexOf() has found it, translate the physical index back to logical.
           if (foundPhysicalIndex >= fromPhysicalIndex) {
-            return foundPhysicalIndex + garbageCharCount;
+            return toLogicalIndex(foundPhysicalIndex);
           }
           // Assuming `str` is 5 chars, when we load the next page of characters, we can resume the
           // scan with the last 4 chars in the current page, just in case. All other chars are
           // provably useless.
-          i = garbageCharCount + chars.length() - str.length() + 1;
+          i = toLogicalIndex(chars.length() - str.length() + 1);
         }
       }
 
@@ -166,6 +166,10 @@ abstract class CharInput {
           throw new IllegalArgumentException("index must be at least " + garbageCharCount);
         }
         return index;
+      }
+
+      private int toLogicalIndex(int physical) {
+        return garbageCharCount + physical;
       }
 
       private void ensureCharCount(int charCount) {
