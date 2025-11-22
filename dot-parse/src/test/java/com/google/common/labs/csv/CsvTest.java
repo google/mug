@@ -6,6 +6,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -255,6 +256,70 @@ public final class CsvTest {
   public void parseWithHeaderFields_duplicateColumnName_keepBoth() {
     assertThat(CSV.parseWithHeaderFields("name,name,age\nYang,Jing,28", ImmutableListMultimap::toImmutableListMultimap))
         .containsExactly(ImmutableListMultimap.of("name", "Yang", "name", "Jing", "age", "28"));
+  }
+
+  @Test
+  public void join_empty() {
+    assertThat(CSV.join()).isEmpty();
+  }
+
+  @Test
+  public void join_singleField() {
+    assertThat(CSV.join("a")).isEqualTo("a");
+  }
+
+  @Test
+  public void join_multipleFields() {
+    assertThat(CSV.join("a", "b", "c")).isEqualTo("a,b,c");
+  }
+
+  @Test
+  public void join_nullField() {
+    assertThat(CSV.join("a", null, "c")).isEqualTo("a,,c");
+    assertThat(CSV.join(null, "b", "c")).isEqualTo(",b,c");
+    assertThat(CSV.join("a", "b", null)).isEqualTo("a,b,");
+    assertThat(CSV.join((Object) null)).isEqualTo("");
+  }
+
+  @Test
+  public void join_fieldWithComma() {
+    assertThat(CSV.join("a,b")).isEqualTo("\"a,b\"");
+    assertThat(CSV.join("a", "b,c", "d")).isEqualTo("a,\"b,c\",d");
+  }
+
+  @Test
+  public void join_fieldWithDoubleQuote() {
+    assertThat(CSV.join("a\"b")).isEqualTo("\"a\"\"b\"");
+    assertThat(CSV.join("a", "b\"c", "d")).isEqualTo("a,\"b\"\"c\",d");
+  }
+
+  @Test
+  public void join_fieldWithNewline() {
+    assertThat(CSV.join("a\nb")).isEqualTo("\"a\nb\"");
+    assertThat(CSV.join("a", "b\nc", "d")).isEqualTo("a,\"b\nc\",d");
+  }
+
+  @Test
+  public void join_fieldWithCarriageReturn() {
+    assertThat(CSV.join("a\rb")).isEqualTo("\"a\rb\"");
+    assertThat(CSV.join("a", "b\rc", "d")).isEqualTo("a,\"b\rc\",d");
+  }
+
+  @Test
+  public void join_fieldWithCrLf() {
+    assertThat(CSV.join("a\r\nb")).isEqualTo("\"a\r\nb\"");
+    assertThat(CSV.join("a", "b\r\nc", "d")).isEqualTo("a,\"b\r\nc\",d");
+  }
+
+  @Test
+  public void join_withCustomDelimiter() {
+    assertThat(CSV.withDelimiter('|').join("a|b", "c\"d", "e\nf", "g h"))
+        .isEqualTo("\"a|b\"|\"c\"\"d\"|\"e\nf\"|g h");
+  }
+
+  @Test
+  public void usedAsCollector() {
+    assertThat(Stream.of(1, "two,3", 4).collect(CSV)).isEqualTo("1,\"two,3\",4");
   }
 
   @Test public void quoteNotBeforeComma() {

@@ -22,13 +22,23 @@ import static java.util.stream.Collectors.joining;
 
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import com.google.common.labs.parse.Parser;
 import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 
@@ -55,10 +65,28 @@ import com.google.mu.util.stream.BiStream;
  *
  * <p>Starting from v9.5, spaces and tabs around double quoted fields are leniently ignored.
  *
+ * <p>Also starting from v9.5, to write to CSV format, simply use it as a collector in the same way
+ * as {@code Collectors.joining()}:
+ *
+ * <pre>{@code
+ * import static com.google.common.labs.csv.Csv.CSV;
+ *
+ * String csv = Stream.of("a", "b", "c").collect(CSV);
+ * }</pre>
+ *
+ * Field values with newline, quote or comma will be automatically quoted, with literal double quote
+ * characters escaped. You can also use the equivalent {@link #join(Collection)} method:
+ *
+ * <pre>{@code
+ * import static com.google.common.labs.csv.Csv.CSV;
+ *
+ * String csv = CSV.join(myList);
+ * }</pre>
+ *
  * <p>Note that streams returned by this class are sequential and are <em>not</em> safe to be used
  * as parallel streams.
  */
-public final class Csv {
+public final class Csv implements Collector<Object, StringJoiner, String> {
   /** Default CSV parser. Configurable using {@link #withComments} and {@link #withDelimiter}. */
   public static final Csv CSV = new Csv(',', /* allowsComments= */ false);
 
@@ -124,7 +152,7 @@ public final class Csv {
    * BufferedReader}.
    */
   public Stream<List<String>> parseToLists(Reader csv) {
-    Parser<String> unquoted = consecutive(UNRESERVED_CHAR.and(isNot(delim)), "unquoted field");
+    Parser<String> unquoted = consecutive(regularChar(), "unquoted field");
     Parser<List<String>> line =
         Parser.anyOf(
             NEW_LINE.thenReturn(List.of()),  // empty line => [], not [""]
@@ -219,8 +247,61 @@ public final class Csv {
         .map(values -> BiStream.zip(fieldNames.get(), values).collect(rowCollector));
   }
 
+  /**
+   * Joins {@code fields} as a CSV row. If a field value is null, an empty string is used.
+   *
+   * @since 9.5
+   */
+  public String join(Collection<?> fields) {
+    return fields.stream().collect(this);
+  }
+
+  /**
+   * Joins {@code fields} as a CSV row. If a field value is null, an empty string is used.
+   *
+   * @since 9.5
+   */
+  public String join(Object... fields) {
+    return Arrays.stream(fields).collect(this);
+  }
+
+  @Override public Supplier<StringJoiner> supplier() {
+    return () -> new StringJoiner(String.valueOf(delim));
+  }
+
+  @Override public BiConsumer<StringJoiner, Object> accumulator() {
+    return (joiner, obj) -> joiner.add(escapeIfNeeded(obj));
+  }
+
+  @Override public BinaryOperator<StringJoiner> combiner() {
+    return StringJoiner::merge;
+  }
+
+  @Override public Function<StringJoiner, String> finisher() {
+    return StringJoiner::toString;
+  }
+
+  @Override public Set<Characteristics> characteristics() {
+    return Set.of();
+  }
+
   @Override public String toString() {
     return "Csv{delimiter='" + delim + "', allowsComments=" + allowsComments + "}";
+  }
+
+  private String escapeIfNeeded(Object field) {
+    if (field == null) {
+      return "";
+    }
+    String str = field.toString();
+    if (regularChar().matchesAllOf(str)) {
+      return str;
+    }
+    return '"' + Substring.all('"').replaceAllFrom(str, q -> "\"\"") + '"';
+  }
+
+  private CharPredicate regularChar() {
+    return UNRESERVED_CHAR.and(isNot(delim));
   }
 
   private static void checkArgument(boolean condition, String message, Object... args) {
