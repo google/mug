@@ -1285,7 +1285,12 @@ public abstract class Parser<T> {
       return sequence(this, suffix, (a, b) -> b);
     }
 
-    <S> Parser<S> then(Parser<S> suffix) {
+    /**
+     * After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.
+     *
+     * @since 9.5
+     */
+    public <S> Parser<S> then(Parser<S> suffix) {
       return sequence(this, suffix, (a, b) -> b);
     }
 
