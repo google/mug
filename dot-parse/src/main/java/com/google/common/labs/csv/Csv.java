@@ -18,7 +18,6 @@ package com.google.common.labs.csv;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.stream.BiCollectors.toMap;
-import static java.util.stream.Collectors.joining;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -26,14 +25,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.labs.parse.Parser;
@@ -65,17 +59,8 @@ import com.google.mu.util.stream.BiStream;
  *
  * <p>Starting from v9.5, spaces and tabs around double quoted fields are leniently ignored.
  *
- * <p>Also starting from v9.5, to write to CSV format, simply use it as a collector in the same way
- * as {@code Collectors.joining()}:
- *
- * <pre>{@code
- * import static com.google.common.labs.csv.Csv.CSV;
- *
- * String csv = Stream.of("a", "b", "c").collect(CSV);
- * }</pre>
- *
- * Field values with newline, quote or comma will be automatically quoted, with literal double quote
- * characters escaped. You can also use the equivalent {@link #join(Collection)} method:
+ * <p>Also starting from v9.5, to write to CSV format, use the {@link #join(Collection)} method to
+ * join to CSV format:
  *
  * <pre>{@code
  * import static com.google.common.labs.csv.Csv.CSV;
@@ -83,10 +68,21 @@ import com.google.mu.util.stream.BiStream;
  * String csv = CSV.join(myList);
  * }</pre>
  *
+ * Field values with newline, quote or comma will be automatically quoted, with literal double quote
+ * characters escaped.
+ *
+ * <p>You can also use the {@link #joining} collector:
+ *
+ * <pre>{@code
+ * import static com.google.common.labs.csv.Csv.CSV;
+ *
+ * String csv = Stream.of("a", "b", "c").collect(CSV.joining());
+ * }</pre>
+ *
  * <p>Note that streams returned by this class are sequential and are <em>not</em> safe to be used
  * as parallel streams.
  */
-public final class Csv implements Collector<Object, StringJoiner, String> {
+public final class Csv {
   /** Default CSV parser. Configurable using {@link #withComments} and {@link #withDelimiter}. */
   public static final Csv CSV = new Csv(',', /* allowsComments= */ false);
 
@@ -102,7 +98,7 @@ public final class Csv implements Collector<Object, StringJoiner, String> {
   private static final Parser<String> QUOTED =
       Parser.consecutive(isNot('"'), "quoted")
           .or(Parser.string("\"\"").thenReturn("\"")) // escaped quote
-          .zeroOrMore(joining())
+          .zeroOrMore(Collectors.joining())
           .between("\"", "\"")
           .between(IGNORED_WHITESPACES, IGNORED_WHITESPACES);
 
@@ -253,7 +249,7 @@ public final class Csv implements Collector<Object, StringJoiner, String> {
    * @since 9.5
    */
   public String join(Collection<?> fields) {
-    return fields.stream().collect(this);
+    return fields.stream().collect(joining());
   }
 
   /**
@@ -262,34 +258,25 @@ public final class Csv implements Collector<Object, StringJoiner, String> {
    * @since 9.5
    */
   public String join(Object... fields) {
-    return Arrays.stream(fields).collect(this);
+    return Arrays.stream(fields).collect(joining());
   }
 
-  @Override public Supplier<StringJoiner> supplier() {
-    return () -> new StringJoiner(String.valueOf(delim));
-  }
-
-  @Override public BiConsumer<StringJoiner, Object> accumulator() {
-    return (joiner, obj) -> joiner.add(escapeIfNeeded(obj));
-  }
-
-  @Override public BinaryOperator<StringJoiner> combiner() {
-    return StringJoiner::merge;
-  }
-
-  @Override public Function<StringJoiner, String> finisher() {
-    return StringJoiner::toString;
-  }
-
-  @Override public Set<Characteristics> characteristics() {
-    return Set.of();
+  /**
+   * Returns a collector that joins the input elements into a CSV row.
+   *
+   * <p>If a field value is null, an empty string is used.
+   *
+   * @since 9.5
+   */
+  public Collector<Object, ?, String> joining() {
+    return Collectors.mapping(this::quoteIfNeeded, Collectors.joining(String.valueOf(delim)));
   }
 
   @Override public String toString() {
     return "Csv{delimiter='" + delim + "', allowsComments=" + allowsComments + "}";
   }
 
-  private String escapeIfNeeded(Object field) {
+  private String quoteIfNeeded(Object field) {
     if (field == null) {
       return "";
     }

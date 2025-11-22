@@ -319,7 +319,7 @@ public final class CsvTest {
 
   @Test
   public void usedAsCollector() {
-    assertThat(Stream.of(1, "two,3", 4).collect(CSV)).isEqualTo("1,\"two,3\",4");
+    assertThat(Stream.of(1, "two,3", 4).collect(CSV.joining())).isEqualTo("1,\"two,3\",4");
   }
 
   @Test public void quoteNotBeforeComma() {
