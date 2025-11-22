@@ -1032,6 +1032,25 @@ public class ParserTest {
   }
 
   @Test
+  public void orEmpty_followedBy_parser_orEmptyMatches() {
+    Parser<String> parser = string("a").orElse("x").followedBy(string("b"));
+    assertThat(parser.parse("ab")).isEqualTo("a");
+  }
+
+  @Test
+  public void orEmpty_followedBy_parser_orEmptyEmitsDefault() {
+    Parser<String> parser = string("a").orElse("x").followedBy(string("b"));
+    assertThat(parser.parse("b")).isEqualTo("x");
+  }
+
+  @Test
+  public void orEmpty_followedBy_parser_suffixFails() {
+    Parser<String> parser = string("a").orElse("x").followedBy(string("b"));
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+  }
+
+  @Test
   public void orEmpty_parseSkipping_emptyInput() {
     Parser<String>.OrEmpty parser = string("foo").orElse("bar");
     assertThat(parser.parseSkipping(Character::isWhitespace, "")).isEqualTo("bar");

@@ -1314,10 +1314,9 @@ public abstract class Parser<T> {
     /**
      * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
      *
-     * <p>Not public because {@code rule.definedAs(zeroOrMore().before(rule))} could potentially
-     * introduce a left recursion.
+     * @since 9.5
      */
-    Parser<T> followedBy(Parser<?> suffix) {
+    public Parser<T> followedBy(Parser<?> suffix) {
       return sequence(this, suffix, (a, b) -> a);
     }
 
