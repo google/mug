@@ -18,13 +18,14 @@ package com.google.common.labs.csv;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static java.util.Arrays.asList;
 
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -47,6 +48,8 @@ import com.google.mu.util.stream.BiStream;
  * // skip(1) to skip the header row.
  * List<List<String>> rows = CSV.parseToLists(input).skip(1).toList();
  * }</pre>
+ *
+ * <p>Empty rows are ignored.
  *
  * <p>You can also use the header row, and parse each row to a {@link Map} keyed by the header
  * field names:
@@ -158,8 +161,8 @@ public final class Csv {
                 .notEmpty()
                 .followedByOrEof(NEW_LINE));
     return allowsComments
-        ? line.skipping(COMMENT).parseToStream(csv)
-        : line.parseToStream(csv);
+        ? line.skipping(COMMENT).parseToStream(csv).filter(row -> !row.isEmpty())
+        : line.parseToStream(csv).filter(row -> !row.isEmpty());
   }
 
   /**
@@ -249,7 +252,19 @@ public final class Csv {
    * @since 9.5
    */
   public String join(Collection<?> fields) {
-    return fields.stream().collect(joining());
+    if (fields.size() == 1) {
+      for (Object field : fields) {
+        String s = quoteIfNeeded(field);
+        return s.isEmpty() ? "\"\"" : s; // single empty field should produce [""]
+      }
+      throw new IllegalStateException("malformed collection!");
+    } else {
+      StringJoiner joiner = new StringJoiner(String.valueOf(delim));
+      for (Object field : fields) {
+        joiner.add(quoteIfNeeded(field));
+      }
+      return joiner.toString();
+    }
   }
 
   /**
@@ -258,7 +273,7 @@ public final class Csv {
    * @since 9.5
    */
   public String join(Object... fields) {
-    return Arrays.stream(fields).collect(joining());
+    return join(asList(fields));
   }
 
   /**
@@ -269,7 +284,7 @@ public final class Csv {
    * @since 9.5
    */
   public Collector<Object, ?, String> joining() {
-    return Collectors.mapping(this::quoteIfNeeded, Collectors.joining(String.valueOf(delim)));
+    return Collectors.collectingAndThen(Collectors.toList(), this::join);
   }
 
   @Override public String toString() {

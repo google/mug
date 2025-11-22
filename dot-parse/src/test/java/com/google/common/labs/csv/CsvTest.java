@@ -3,8 +3,10 @@ package com.google.common.labs.csv;
 import static com.google.common.labs.csv.Csv.CSV;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
+import java.io.StringReader;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -12,6 +14,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.labs.parse.Parser;
@@ -25,19 +28,23 @@ public final class CsvTest {
 
   @Test
   public void parseToLists_emptyLines() {
-    assertThat(CSV.parseToLists("\n")).containsExactly(List.of());
-    assertThat(CSV.parseToLists("\n\n")).containsExactly(List.of(), List.of());
-    assertThat(CSV.parseToLists("\n\r\n"))
-        .containsExactly(List.of(), List.of());
-    assertThat(CSV.parseToLists("\r\r\n"))
-        .containsExactly(List.of(), List.of());
+    assertThat(CSV.parseToLists("\n")).isEmpty();
+    assertThat(CSV.parseToLists("\n\r\n")).isEmpty();
+    assertThat(CSV.parseToLists("\r\r\n")).isEmpty();
+  }
+
+  @Test
+  public void parseToLists_fromReader_emptyLines() {
+    assertThat(CSV.parseToLists(new StringReader("\n"))).isEmpty();
+    assertThat(CSV.parseToLists(new StringReader("\n\r\n"))).isEmpty();
+    assertThat(CSV.parseToLists(new StringReader("\r\r\n"))).isEmpty();
   }
 
   @Test
   public void parseToLists_emptyColumns() {
     assertThat(CSV.parseToLists("\"\"\n")).containsExactly(List.of(""));
     assertThat(CSV.parseToLists("\n\"\"\r\n\"\""))
-        .containsExactly(List.of(), List.of(""), List.of(""));
+        .containsExactly(List.of(""), List.of(""));
     assertThat(CSV.parseToLists("\"\"\n\"\",\"\"\r\n\"\""))
         .containsExactly(List.of(""), List.of("", ""), List.of(""));
   }
@@ -266,56 +273,103 @@ public final class CsvTest {
   @Test
   public void join_singleField() {
     assertThat(CSV.join("a")).isEqualTo("a");
+    assertThat(CSV.parseToLists(CSV.join("a"))).containsExactly(ImmutableList.of("a"));
+  }
+
+  @Test
+  public void join_singleEmptyField() {
+    List<?> fields = asList("");
+    assertThat(CSV.parseToLists(CSV.join(fields))).containsExactly(fields);
+    assertThat(CSV.join(fields)).isEqualTo("\"\"");
+  }
+
+  @Test
+  public void join_twoEmptyFields() {
+    List<?> fields = asList("", "");
+    assertThat(CSV.parseToLists(CSV.join(fields))).containsExactly(fields);
+    assertThat(CSV.join(fields)).isEqualTo(",");
+  }
+
+  @Test
+  public void join_emptyAndNullFields() {
+    List<?> fields = asList("", null);
+    assertThat(CSV.join(fields)).isEqualTo(",");
   }
 
   @Test
   public void join_multipleFields() {
     assertThat(CSV.join("a", "b", "c")).isEqualTo("a,b,c");
+    assertThat(CSV.parseToLists(CSV.join("a", "b", "c")))
+        .containsExactly(ImmutableList.of("a", "b", "c"));
   }
 
   @Test
   public void join_nullField() {
     assertThat(CSV.join("a", null, "c")).isEqualTo("a,,c");
+    assertThat(CSV.parseToLists(CSV.join("a", null, "c")))
+        .containsExactly(ImmutableList.of("a", "", "c"));
     assertThat(CSV.join(null, "b", "c")).isEqualTo(",b,c");
+    assertThat(CSV.parseToLists(CSV.join(null, "b", "c")))
+        .containsExactly(ImmutableList.of("", "b", "c"));
     assertThat(CSV.join("a", "b", null)).isEqualTo("a,b,");
-    assertThat(CSV.join((Object) null)).isEqualTo("");
+    assertThat(CSV.parseToLists(CSV.join("a", "b", null)))
+        .containsExactly(ImmutableList.of("a", "b", ""));
+    assertThat(CSV.join((Object) null)).isEqualTo("\"\"");
   }
 
   @Test
   public void join_fieldWithComma() {
     assertThat(CSV.join("a,b")).isEqualTo("\"a,b\"");
+    assertThat(CSV.parseToLists(CSV.join("a,b"))).containsExactly(ImmutableList.of("a,b"));
     assertThat(CSV.join("a", "b,c", "d")).isEqualTo("a,\"b,c\",d");
+    assertThat(CSV.parseToLists(CSV.join("a", "b,c", "d")))
+        .containsExactly(ImmutableList.of("a", "b,c", "d"));
   }
 
   @Test
   public void join_fieldWithDoubleQuote() {
     assertThat(CSV.join("a\"b")).isEqualTo("\"a\"\"b\"");
+    assertThat(CSV.parseToLists(CSV.join("a\"b"))).containsExactly(ImmutableList.of("a\"b"));
     assertThat(CSV.join("a", "b\"c", "d")).isEqualTo("a,\"b\"\"c\",d");
+    assertThat(CSV.parseToLists(CSV.join("a", "b\"c", "d")))
+        .containsExactly(ImmutableList.of("a", "b\"c", "d"));
   }
 
   @Test
   public void join_fieldWithNewline() {
     assertThat(CSV.join("a\nb")).isEqualTo("\"a\nb\"");
+    assertThat(CSV.parseToLists(CSV.join("a\nb"))).containsExactly(ImmutableList.of("a\nb"));
     assertThat(CSV.join("a", "b\nc", "d")).isEqualTo("a,\"b\nc\",d");
+    assertThat(CSV.parseToLists(CSV.join("a", "b\nc", "d")))
+        .containsExactly(ImmutableList.of("a", "b\nc", "d"));
   }
 
   @Test
   public void join_fieldWithCarriageReturn() {
     assertThat(CSV.join("a\rb")).isEqualTo("\"a\rb\"");
+    assertThat(CSV.parseToLists(CSV.join("a\rb"))).containsExactly(ImmutableList.of("a\rb"));
     assertThat(CSV.join("a", "b\rc", "d")).isEqualTo("a,\"b\rc\",d");
+    assertThat(CSV.parseToLists(CSV.join("a", "b\rc", "d")))
+        .containsExactly(ImmutableList.of("a", "b\rc", "d"));
   }
 
   @Test
   public void join_fieldWithCrLf() {
     assertThat(CSV.join("a\r\nb")).isEqualTo("\"a\r\nb\"");
+    assertThat(CSV.parseToLists(CSV.join("a\r\nb"))).containsExactly(ImmutableList.of("a\r\nb"));
     assertThat(CSV.join("a", "b\r\nc", "d")).isEqualTo("a,\"b\r\nc\",d");
+    assertThat(CSV.parseToLists(CSV.join("a", "b\r\nc", "d")))
+        .containsExactly(ImmutableList.of("a", "b\r\nc", "d"));
   }
 
   @Test
   public void join_withCustomDelimiter() {
-    assertThat(CSV.withDelimiter('|').join("a|b", "c\"d", "e\nf", "g h"))
-        .isEqualTo("\"a|b\"|\"c\"\"d\"|\"e\nf\"|g h");
+    Csv csv = CSV.withDelimiter('|');
+    assertThat(csv.join("a|b", "c\"d", "e\nf", "g h")).isEqualTo("\"a|b\"|\"c\"\"d\"|\"e\nf\"|g h");
+    assertThat(csv.parseToLists(csv.join("a|b", "c\"d", "e\nf", "g h")))
+        .containsExactly(ImmutableList.of("a|b", "c\"d", "e\nf", "g h"));
   }
+
 
   @Test
   public void usedAsCollector() {
