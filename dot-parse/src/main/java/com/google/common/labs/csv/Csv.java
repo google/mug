@@ -258,13 +258,12 @@ public final class Csv {
         return s.isEmpty() ? "\"\"" : s; // single empty field should produce [""]
       }
       throw new IllegalStateException("malformed collection!");
-    } else {
-      StringJoiner joiner = new StringJoiner(String.valueOf(delim));
-      for (Object field : fields) {
-        joiner.add(quoteIfNeeded(field));
-      }
-      return joiner.toString();
     }
+    StringJoiner joiner = new StringJoiner(String.valueOf(delim));
+    for (Object field : fields) {
+      joiner.add(quoteIfNeeded(field));
+    }
+    return joiner.toString();
   }
 
   /**
