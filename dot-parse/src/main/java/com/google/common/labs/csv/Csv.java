@@ -253,9 +253,7 @@ public final class Csv {
     if (fields.size() == 1) {
       for (Object field : fields) {
         String s = quoteIfNeeded(field);
-        return s.isEmpty() // single empty field should produce [""]
-            ? "\"\""
-            : s;
+        return s.isEmpty() ? "\"\"" : s; // single empty field should produce [""]
       }
       throw new IllegalStateException("malformed collection!");
     } else {
