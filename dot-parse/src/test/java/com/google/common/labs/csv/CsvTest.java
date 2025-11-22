@@ -6,6 +6,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
+import java.io.StringReader;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -30,6 +31,13 @@ public final class CsvTest {
     assertThat(CSV.parseToLists("\n")).isEmpty();
     assertThat(CSV.parseToLists("\n\r\n")).isEmpty();
     assertThat(CSV.parseToLists("\r\r\n")).isEmpty();
+  }
+
+  @Test
+  public void parseToLists_fromReader_emptyLines() {
+    assertThat(CSV.parseToLists(new StringReader("\n"))).isEmpty();
+    assertThat(CSV.parseToLists(new StringReader("\n\r\n"))).isEmpty();
+    assertThat(CSV.parseToLists(new StringReader("\r\r\n"))).isEmpty();
   }
 
   @Test
