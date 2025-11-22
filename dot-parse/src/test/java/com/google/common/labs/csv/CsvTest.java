@@ -3,6 +3,7 @@ package com.google.common.labs.csv;
 import static com.google.common.labs.csv.Csv.CSV;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
 import java.util.List;
@@ -271,6 +272,26 @@ public final class CsvTest {
   }
 
   @Test
+  public void join_singleEmptyField() {
+    List<?> fields = asList("");
+    assertThat(CSV.parseToLists(CSV.join(fields))).containsExactly(fields);
+    assertThat(CSV.join(fields)).isEqualTo("\"\"");
+  }
+
+  @Test
+  public void join_twoEmptyFields() {
+    List<?> fields = asList("", "");
+    assertThat(CSV.parseToLists(CSV.join(fields))).containsExactly(fields);
+    assertThat(CSV.join(fields)).isEqualTo(",");
+  }
+
+  @Test
+  public void join_emptyAndNullFields() {
+    List<?> fields = asList("", null);
+    assertThat(CSV.join(fields)).isEqualTo(",");
+  }
+
+  @Test
   public void join_multipleFields() {
     assertThat(CSV.join("a", "b", "c")).isEqualTo("a,b,c");
     assertThat(CSV.parseToLists(CSV.join("a", "b", "c")))
@@ -288,9 +309,7 @@ public final class CsvTest {
     assertThat(CSV.join("a", "b", null)).isEqualTo("a,b,");
     assertThat(CSV.parseToLists(CSV.join("a", "b", null)))
         .containsExactly(ImmutableList.of("a", "b", ""));
-    assertThat(CSV.join((Object) null)).isEqualTo("");
-    // joining a single null field leads to "", which parses to empty.
-    assertThat(CSV.parseToLists(CSV.join((Object) null))).isEmpty();
+    assertThat(CSV.join((Object) null)).isEqualTo("\"\"");
   }
 
   @Test
