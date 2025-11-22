@@ -27,19 +27,16 @@ public final class CsvTest {
 
   @Test
   public void parseToLists_emptyLines() {
-    assertThat(CSV.parseToLists("\n")).containsExactly(List.of());
-    assertThat(CSV.parseToLists("\n\n")).containsExactly(List.of(), List.of());
-    assertThat(CSV.parseToLists("\n\r\n"))
-        .containsExactly(List.of(), List.of());
-    assertThat(CSV.parseToLists("\r\r\n"))
-        .containsExactly(List.of(), List.of());
+    assertThat(CSV.parseToLists("\n")).isEmpty();
+    assertThat(CSV.parseToLists("\n\r\n")).isEmpty();
+    assertThat(CSV.parseToLists("\r\r\n")).isEmpty();
   }
 
   @Test
   public void parseToLists_emptyColumns() {
     assertThat(CSV.parseToLists("\"\"\n")).containsExactly(List.of(""));
     assertThat(CSV.parseToLists("\n\"\"\r\n\"\""))
-        .containsExactly(List.of(), List.of(""), List.of(""));
+        .containsExactly(List.of(""), List.of(""));
     assertThat(CSV.parseToLists("\"\"\n\"\",\"\"\r\n\"\""))
         .containsExactly(List.of(""), List.of("", ""), List.of(""));
   }

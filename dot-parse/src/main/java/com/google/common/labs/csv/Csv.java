@@ -49,6 +49,8 @@ import com.google.mu.util.stream.BiStream;
  * List<List<String>> rows = CSV.parseToLists(input).skip(1).toList();
  * }</pre>
  *
+ * <p>Empty rows are ignored.
+ *
  * <p>You can also use the header row, and parse each row to a {@link Map} keyed by the header
  * field names:
  *
@@ -159,8 +161,8 @@ public final class Csv {
                 .notEmpty()
                 .followedByOrEof(NEW_LINE));
     return allowsComments
-        ? line.skipping(COMMENT).parseToStream(csv)
-        : line.parseToStream(csv);
+        ? line.skipping(COMMENT).parseToStream(csv).filter(row -> !row.isEmpty())
+        : line.parseToStream(csv).filter(row -> !row.isEmpty());
   }
 
   /**
