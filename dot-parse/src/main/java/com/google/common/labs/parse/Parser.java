@@ -216,8 +216,8 @@ public abstract class Parser<T> {
    *
    * @since 9.5
    */
-  public static Parser<String> first(String value) {
-    checkArgument(value.length() > 0, "value cannot be empty");
+  public static Parser<String> first(String target) {
+    checkArgument(target.length() > 0, "target cannot be empty");
     return new Parser<>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
@@ -225,11 +225,11 @@ public abstract class Parser<T> {
         // value string, and the characters it skips are simply non-matching characters. Applying
         // skip could cause the match to fail if value itself contains characters that
         // would be skipped (e.g. whitespace).
-        int found = input.indexOf(value, start);
+        int found = input.indexOf(target, start);
         if (found >= 0) {
-          return new MatchResult.Success<>(found, found + value.length(), value);
+          return new MatchResult.Success<>(found, found + target.length(), target);
         }
-        return context.expecting(value, skipIfAny(skip, input, start));
+        return context.expecting(target, skipIfAny(skip, input, start));
       }
     };
   }

@@ -118,6 +118,11 @@ public class ParserTest {
   }
 
   @Test
+  public void first_emptyString_throws() {
+    assertThrows(IllegalArgumentException.class, () -> first(""));
+  }
+
+  @Test
   public void string_success() {
     Parser<String> parser = string("foo");
     assertThat(parser.parse("foo")).isEqualTo("foo");
