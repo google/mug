@@ -8,6 +8,7 @@ import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.first;
 import static com.google.common.labs.parse.Parser.literally;
+import static com.google.common.labs.parse.Parser.quotedBy;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.single;
 import static com.google.common.labs.parse.Parser.string;
@@ -2703,6 +2704,46 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.parse("a"));
     assertThrows(ParseException.class, () -> parser.parseToStream("a").toList());
     assertThrows(ParseException.class, () -> parser.parse("12"));
+  }
+
+  @Test
+  public void quotedBy_emptyDelimiters_throws() {
+    assertThrows(IllegalArgumentException.class, () -> quotedBy("", "}"));
+    assertThrows(IllegalArgumentException.class, () -> quotedBy("{", ""));
+  }
+
+  @Test
+  public void quotedBy_emptyContent() {
+    assertThat(quotedBy("{", "}").parse("{}")).isEmpty();
+    assertThat(quotedBy("{", "}").source().parse("{}")).isEqualTo("{}");
+  }
+
+  @Test
+  public void quotedBy_success() {
+    assertThat(quotedBy("{", "}").parse("{foo}")).isEqualTo("foo");
+    assertThat(quotedBy("{", "}").source().parse("{foo}")).isEqualTo("{foo}");
+  }
+
+  @Test
+  public void quotedBy_beforeNotMatched() {
+    ParseException e = assertThrows(ParseException.class, () -> quotedBy("{", "}").parse("a}"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <{>");
+  }
+
+  @Test
+  public void quotedBy_afterNotMatched() {
+    ParseException e = assertThrows(ParseException.class, () -> quotedBy("{", "}").parse("{a"));
+    assertThat(e).hasMessageThat().contains("1:2");
+    assertThat(e).hasMessageThat().contains("expecting <}>");
+  }
+
+  @Test
+  public void quotedBy_withSkipping() {
+    assertThat(quotedBy("{", "}").parseSkipping(Character::isWhitespace, " { foo } "))
+        .isEqualTo(" foo ");
+    assertThat(quotedBy("{", "}").source().parseSkipping(Character::isWhitespace, " { foo } "))
+        .isEqualTo("{ foo }");
   }
 
   @Test
