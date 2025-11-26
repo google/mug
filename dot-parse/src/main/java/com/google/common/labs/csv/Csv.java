@@ -247,7 +247,8 @@ public final class Csv {
   }
 
   /**
-   * Joins {@code fields} as a CSV row. If a field value is null, an empty string is used.
+   * Joins {@code fields} as a CSV row, quote if needed.
+   * If a field value is null, an empty string is used.
    *
    * @since 9.5
    */
@@ -267,7 +268,8 @@ public final class Csv {
   }
 
   /**
-   * Joins {@code fields} as a CSV row. If a field value is null, an empty string is used.
+   * Joins {@code fields} as a CSV row, quote if needed.
+   * If a field value is null, an empty string is used.
    *
    * @since 9.5
    */
@@ -276,9 +278,10 @@ public final class Csv {
   }
 
   /**
-   * Returns a collector that joins the input elements into a CSV row.
+   * Returns a collector that joins the input fields into a CSV row.
    *
-   * <p>If a field value is null, an empty string is used.
+   * <p>Fields are quoted and optionally escaped if needed.
+   * If a field value is null, an empty string is used.
    *
    * @since 9.5
    */
