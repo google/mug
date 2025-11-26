@@ -2747,6 +2747,46 @@ public class ParserTest {
   }
 
   @Test
+  public void quotedBy_stringDelimiters_success() {
+    assertThat(quotedBy("{{", "}}").parse("{{foo}}")).isEqualTo("foo");
+    assertThat(quotedBy("{{", "}}").source().parse("{{foo}}")).isEqualTo("{{foo}}");
+  }
+
+  @Test
+  public void quotedBy_stringDelimiters_partialDelimiterInContent() {
+    assertThat(quotedBy("{{", "}}").parse("{{f}o{o}}")).isEqualTo("f}o{o");
+    assertThat(quotedBy("{{", "}}").source().parse("{{f}o{o}}")).isEqualTo("{{f}o{o}}");
+  }
+
+  @Test
+  public void quotedBy_stringDelimiters_emptyContent() {
+    assertThat(quotedBy("{{", "}}").parse("{{}}")).isEmpty();
+    assertThat(quotedBy("{{", "}}").source().parse("{{}}")).isEqualTo("{{}}");
+  }
+
+  @Test
+  public void quotedBy_stringDelimiters_beforeNotMatched() {
+    ParseException e = assertThrows(ParseException.class, () -> quotedBy("{{", "}}").parse("{a}}"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <{{>");
+  }
+
+  @Test
+  public void quotedBy_stringDelimiters_afterNotMatched() {
+    ParseException e = assertThrows(ParseException.class, () -> quotedBy("{{", "}}").parse("{{a"));
+    assertThat(e).hasMessageThat().contains("1:3");
+    assertThat(e).hasMessageThat().contains("expecting <}}>");
+  }
+
+  @Test
+  public void quotedBy_stringDelimiters_withSkipping() {
+    assertThat(quotedBy("{{", "}}").parseSkipping(Character::isWhitespace, " {{ foo }} "))
+        .isEqualTo(" foo ");
+    assertThat(quotedBy("{{", "}}").source().parseSkipping(Character::isWhitespace, " {{ foo }} "))
+        .isEqualTo("{{ foo }}");
+  }
+
+  @Test
   public void quotedStringWithEscapes_singleQuote_success() {
     Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'', chars(1));
     assertThat(singleQuoted.parse("''")).isEmpty();
