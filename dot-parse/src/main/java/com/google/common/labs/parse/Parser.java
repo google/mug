@@ -235,8 +235,8 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Matches the range between {@code before} and {@code after}, inclusive, and returns the string
-   * in between. For example: {@code quotedBy('"', '"').parse("\"foo\"")} will return {@code "foo"}.
+   * Matches the characters quoted by {@code before} and {@code after}, and returns the string in
+   * between. For example: {@code quotedBy('"', '"').parse("\"foo\"")} will return {@code "foo"}.
    *
    * <p>If you need to support backslash escapes, use {@link #quotedStringWithEscapes} instead.
    *
@@ -247,8 +247,8 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Matches the range between {@code before} and {@code after}, inclusive, and returns the string
-   * in between. For example: {@code quotedBy("'", "'").parse("'foo'")} will return {@code "foo"}.
+   * Matches the characters quoted by {@code before} and {@code after}, and returns the string in
+   * between. For example: {@code quotedBy("'", "'").parse("'foo'")} will return {@code "foo"}.
    *
    * <p>If you need to support backslash escapes, use {@link #quotedStringWithEscapes} instead.
    *
