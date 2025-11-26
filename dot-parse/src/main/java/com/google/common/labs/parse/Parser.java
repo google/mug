@@ -251,9 +251,7 @@ public abstract class Parser<T> {
               MatchResult<String> skipAndMatch(
                   Parser<?> skip, CharInput input, int start, ErrorContext context) {
                 // Unlike other parsers, quoted() doesn't apply the skip parser first. Its job is to
-                // find the anchor string, and the characters it skips will all be quoted. Applying
-                // skip could cause the match to fail if `after` itself contains characters that
-                // would be skipped (e.g. whitespace).
+                // find the anchor string, and the characters it skips will all be quoted.
                 int found = input.indexOf(after, start);
                 if (found >= 0) {
                   return new MatchResult.Success<>(
