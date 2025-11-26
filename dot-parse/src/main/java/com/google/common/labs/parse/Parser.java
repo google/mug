@@ -234,6 +234,34 @@ public abstract class Parser<T> {
     };
   }
 
+  /**
+   * Matches the range between {@code before} and {@code after}, inclusive, and returns the string
+   * in between. For example: {@code quotedBy("'", "'").parse("'foo'")} will return {@code "foo"}.
+   *
+   * <p>If you need to support backslash escapes, use {@link #quotedStringWithEscapes} instead.
+   *
+   * @since 9.5
+   */
+  public static Parser<String> quotedBy(String before, String after) {
+    checkArgument(after.length() > 0, "after cannot be empty");
+    return string(before)
+        .then(
+            new Parser<>() {
+              @Override
+              MatchResult<String> skipAndMatch(
+                  Parser<?> skip, CharInput input, int start, ErrorContext context) {
+                // Unlike other parsers, quoted() doesn't apply the skip parser first. Its job is to
+                // find the anchor string, and the characters it skips will all be quoted.
+                int found = input.indexOf(after, start);
+                if (found >= 0) {
+                  return new MatchResult.Success<>(
+                      start, found + after.length(), input.snippet(start, found - start));
+                }
+                return context.expecting(after, skipIfAny(skip, input, start));
+              }
+            });
+  }
+
   /** Matches a literal {@code string}. */
   public static Parser<String> string(String value) {
     checkArgument(value.length() > 0, "value cannot be empty");
