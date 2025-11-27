@@ -263,7 +263,8 @@ public abstract class Parser<T> {
 
   /**
    * Matches the characters quoted by {@code before} and {@code after}, and returns the string in
-   * between. For example: {@code quotedBy("'", "'").parse("'foo'")} will return {@code "foo"}.
+   * between. For example: {@code quotedBy("<!--", "-->").parse("<!--comment-->")} will return
+   * {@code "comment"}.
    *
    * <p>If you need to support backslash escapes, use {@link #quotedStringWithEscapes} instead.
    *
