@@ -234,6 +234,21 @@ public abstract class Parser<T> {
     };
   }
 
+  /** Matches a literal {@code string}. */
+  public static Parser<String> string(String value) {
+    checkArgument(value.length() > 0, "value cannot be empty");
+    return new Parser<>() {
+      @Override MatchResult<String> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        if (input.startsWith(value, start)) {
+          return new MatchResult.Success<>(start, start + value.length(), value);
+        }
+        return context.expecting(value, start);
+      }
+    };
+  }
+
   /**
    * Matches the characters quoted by {@code before} and {@code after}, and returns the string in
    * between. For example: {@code quotedBy('<', '>').parse("<foo>")} will return {@code "foo"}.
@@ -272,21 +287,6 @@ public abstract class Parser<T> {
                 return context.expecting(after, skipIfAny(skip, input, start));
               }
             });
-  }
-
-  /** Matches a literal {@code string}. */
-  public static Parser<String> string(String value) {
-    checkArgument(value.length() > 0, "value cannot be empty");
-    return new Parser<>() {
-      @Override MatchResult<String> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        if (input.startsWith(value, start)) {
-          return new MatchResult.Success<>(start, start + value.length(), value);
-        }
-        return context.expecting(value, start);
-      }
-    };
   }
 
   /**
