@@ -277,10 +277,8 @@ public abstract class Parser<T> {
   /**
    * Matches the characters quoted by {@code before} and {@code after}, and returns the string in
    * between.
-   *
-   * @since 9.5
    */
-  public static Parser<String> quotedBy(Parser<?> before, Parser<?> after) {
+  private static Parser<String> quotedBy(Parser<?> before, Parser<?> after) {
     requireNonNull(after);
     return before.then(
         new Parser<>() {
