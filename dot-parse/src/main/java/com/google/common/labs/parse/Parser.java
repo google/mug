@@ -271,23 +271,22 @@ public abstract class Parser<T> {
    * @since 9.5
    */
   public static Parser<String> quotedBy(String before, String after) {
-    checkArgument(after.length() > 0, "after cannot be empty");
-    return string(before)
-        .then(
-            new Parser<>() {
-              @Override
-              MatchResult<String> skipAndMatch(
-                  Parser<?> skip, CharInput input, int start, ErrorContext context) {
-                // Unlike other parsers, quoted() doesn't apply the skip parser first. Its job is to
-                // find the anchor string, and the characters it skips will all be quoted.
-                int found = input.indexOf(after, start);
-                if (found >= 0) {
-                  return new MatchResult.Success<>(
-                      start, found + after.length(), input.snippet(start, found - start));
-                }
-                return context.expecting(after, skipIfAny(skip, input, start));
-              }
-            });
+    return quotedBy(string(before), first(after));
+  }
+
+  private static Parser<String> quotedBy(Parser<?> before, Parser<?> after) {
+    return before.then(
+        new Parser<>() {
+          @Override MatchResult<String> skipAndMatch(
+              Parser<?> skip, CharInput input, int start, ErrorContext context) {
+            return switch (after.skipAndMatch(skip, input, start, context)) {
+              case MatchResult.Success<?> success ->
+                  new MatchResult.Success<>(
+                      start, success.tail(), input.snippet(start, success.head() - start));
+              case MatchResult.Failure<?> failure -> failure.safeCast();
+            };
+          }
+        });
   }
 
   /**
