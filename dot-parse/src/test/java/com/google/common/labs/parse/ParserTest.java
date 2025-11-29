@@ -2787,6 +2787,50 @@ public class ParserTest {
   }
 
   @Test
+  public void quotedBy_parserDelimiters_success() {
+    assertThat(quotedBy(string("{{"), first("}}")).parse("{{foo}}")).isEqualTo("foo");
+    assertThat(quotedBy(string("{{"), first("}}")).source().parse("{{foo}}")).isEqualTo("{{foo}}");
+  }
+
+  @Test
+  public void quotedBy_parserDelimiters_partialDelimiterInContent() {
+    assertThat(quotedBy(string("{{"), first("}}")).parse("{{f}o{o}}")).isEqualTo("f}o{o");
+    assertThat(quotedBy(string("{{"), first("}}")).source().parse("{{f}o{o}}"))
+        .isEqualTo("{{f}o{o}}");
+  }
+
+  @Test
+  public void quotedBy_parserDelimiters_emptyContent() {
+    assertThat(quotedBy(string("{{"), string("}}")).parse("{{}}")).isEmpty();
+    assertThat(quotedBy(string("{{"), string("}}")).source().parse("{{}}")).isEqualTo("{{}}");
+  }
+
+  @Test
+  public void quotedBy_parserDelimiters_beforeNotMatched() {
+    ParseException e =
+        assertThrows(ParseException.class, () -> quotedBy(string("{{"), first("}}")).parse("{a}}"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <{{>");
+  }
+
+  @Test
+  public void quotedBy_parserDelimiters_afterNotMatched() {
+    ParseException e =
+        assertThrows(ParseException.class, () -> quotedBy(string("{{"), first("}}")).parse("{{a"));
+    assertThat(e).hasMessageThat().contains("1:3");
+    assertThat(e).hasMessageThat().contains("expecting <}}>");
+  }
+
+  @Test
+  public void quotedBy_parserDelimiters_withSkipping() {
+    assertThat(quotedBy(string("{{"), first("}}")).parseSkipping(Character::isWhitespace, " {{ foo }} "))
+        .isEqualTo(" foo ");
+    assertThat(
+            quotedBy(string("{{"), first("}}")).source().parseSkipping(Character::isWhitespace, " {{ foo }} "))
+        .isEqualTo("{{ foo }}");
+  }
+
+  @Test
   public void quotedStringWithEscapes_singleQuote_success() {
     Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'', chars(1));
     assertThat(singleQuoted.parse("''")).isEmpty();
