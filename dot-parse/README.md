@@ -25,6 +25,35 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 
 ---
 
+## Regex Cheat Sheet
+
+For brevity, all unqualified methods are assumed to be static imported from the
+`Parser` class.
+
+\#  | Regex Pattern      | Parser Equivalent                                           | Notes
+--- | ------------------ | ----------------------------------------------------------- | -----
+1   | `(foo)+`           | `string("foo").atLeastOnce()`                               | Matches one or more occurrences of "foo".
+2   | `[a-zA-Z0-9_]+`    | `word()`                                                    | Matches a "word" (alphanumeric and underscore).
+3   | `[0-9]{5}`         | `digits().suchThat(s -> s.length() == 5, "zip code")`       | Matches exactly 5 digits.
+4   | `(foo\|bar\|baz)`  | `anyOf(string("foo"), string("bar"), string("baz"))`        | Matches one of the alternatives.
+5   | `'[^']*'`          | `quotedBy("'", "'")`                                        | Matches a single-quoted string, excluding the quotes from the result.
+6   | `u[a-fA-F0-9]{4}`  | `string("u").then(codePoint())`                             | Matches 'u' followed by 4 hex digits.
+7   | `\d+(\.\d+)?`      | `digits().optionallyFollowedBy(string(".").then(digits()))` | Matches an integer or a simple float.
+8   | `\[(\w+(,\w+)*)?\]`| `word().zeroOrMoreDelimitedBy(",").between("[", "]")`       | Comma-delimited list of words inside square brackets.
+9   | `if\b`             | `word("if")`                                                | Matches the whole word "if".
+10  | `\d+(?!\.)`        | `digits().notFollowedBy(".")`                               | Matches digits not immediately followed by a dot.
+11  | `foo?`             | `string("foo").optional()`                                  | Matches "foo" zero or one time.
+12  | `\s+`              | `consecutive(CharMatcher.whitespace())`                     | Matches one or more whitespace characters.
+13  | `[ \t\r\n]*`       | `zeroOrMore(CharMatcher.whitespace())`                      | Matches zero or more whitespace characters.
+14  | `(group)(?:bar)`   | `groupParser.followedBy(barParser)`                         | Capture a group before a suffix pattern.
+15  | `(?:foo)(group)`   | `fooParser.then(groupParser)`                               | Capture a group after a prefix pattern.
+16  | `(group1)(group2)` | `sequence(parser1, parser2, (g1, g2) -> ...)`               | Capturing groups map to arguments in the `sequence` lambda.
+
+If you were to build a regex fluent builder, the API will likely look very
+similar.
+
+---
+
 ## Whitespace — one switch at the entry point
 
 No lexeme ceremony. Turn on skipping at `parse()` time:
