@@ -1831,7 +1831,7 @@ public class ParserTest {
     Parser<ImmutableListMultimap<String, String>> parser =
         zeroOrMoreDelimited(
                 word().followedBy(string(":")),
-                Parser.quotedStringWithEscapes('"', chars(1)),
+                Parser.quotedByWithEscapes('"', '"', chars(1)),
                 ",",
                 ImmutableListMultimap::toImmutableListMultimap)
             .between("{", "}");
@@ -1843,7 +1843,7 @@ public class ParserTest {
     Parser<ImmutableListMultimap<String, String>> parser =
         zeroOrMoreDelimited(
                 word().followedBy(string(":")),
-                Parser.quotedStringWithEscapes('"', chars(1)),
+                Parser.quotedByWithEscapes('"', '"', chars(1)),
                 ",",
                 ImmutableListMultimap::toImmutableListMultimap)
             .between("{", "}");
@@ -1855,7 +1855,7 @@ public class ParserTest {
     Parser<ImmutableListMultimap<String, String>> parser =
         zeroOrMoreDelimited(
                 word().followedBy(string(":")),
-                Parser.quotedStringWithEscapes('"', chars(1)),
+                Parser.quotedByWithEscapes('"', '"', chars(1)),
                 ",",
                 ImmutableListMultimap::toImmutableListMultimap)
             .between("{", "}");
@@ -1869,7 +1869,7 @@ public class ParserTest {
     Parser<ImmutableListMultimap<String, String>> parser =
         zeroOrMoreDelimited(
                 word().followedBy(string(":")),
-                Parser.quotedStringWithEscapes('"', chars(1)),
+                Parser.quotedByWithEscapes('"', '"', chars(1)),
                 ",",
                 ImmutableListMultimap::toImmutableListMultimap)
             .between("{", "}");
@@ -1883,7 +1883,7 @@ public class ParserTest {
     Parser<ImmutableListMultimap<String, String>> parser =
         zeroOrMoreDelimited(
                 word().followedBy(string(":")),
-                Parser.quotedStringWithEscapes('"', chars(1)),
+                Parser.quotedByWithEscapes('"', '"', chars(1)),
                 ",",
                 ImmutableListMultimap::toImmutableListMultimap)
             .followedBy(string(",").optional())
@@ -2787,8 +2787,8 @@ public class ParserTest {
   }
 
   @Test
-  public void quotedStringWithEscapes_singleQuote_success() {
-    Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'', chars(1));
+  public void quotedByWithEscapes_singleQuote_success() {
+    Parser<String> singleQuoted = Parser.quotedByWithEscapes('\'', '\'', chars(1));
     assertThat(singleQuoted.parse("''")).isEmpty();
     assertThat(singleQuoted.parse("'foo'")).isEqualTo("foo");
     assertThat(singleQuoted.parse("'foo\\'s'")).isEqualTo("foo's");
@@ -2798,8 +2798,8 @@ public class ParserTest {
   }
 
   @Test
-  public void quotedStringWithEscapes_doubleQuote_success() {
-    Parser<String> doubleQuoted = Parser.quotedStringWithEscapes('"', chars(1));
+  public void quotedByWithEscapes_doubleQuote_success() {
+    Parser<String> doubleQuoted = Parser.quotedByWithEscapes('"', '"', chars(1));
     assertThat(doubleQuoted.parse("\"\"")).isEmpty();
     assertThat(doubleQuoted.parse("\"bar\"")).isEqualTo("bar");
     assertThat(doubleQuoted.parse("\"bar\\\"baz\"")).isEqualTo("bar\"baz");
@@ -2807,33 +2807,45 @@ public class ParserTest {
   }
 
   @Test
-  public void quotedStringWithEscapes_failures() {
-    Parser<String> singleQuoted = Parser.quotedStringWithEscapes('\'', chars(1));
+  public void quotedByWithEscapes_differentBeforeAndAfterChars_success() {
+    Parser<String> parser = Parser.quotedByWithEscapes('<', '>', chars(1));
+    assertThat(parser.parse("<foo>")).isEqualTo("foo");
+    assertThat(parser.parse("<foo<bar>")).isEqualTo("foo<bar");
+    assertThat(parser.parse("<foo\\>bar>")).isEqualTo("foo>bar");
+  }
+
+  @Test
+  public void quotedByWithEscapes_failures() {
+    Parser<String> singleQuoted = Parser.quotedByWithEscapes('\'', '\'', chars(1));
     assertThrows(ParseException.class, () -> singleQuoted.parse("'foo")); // unclosed
     assertThrows(ParseException.class, () -> singleQuoted.parse("'foo'bar")); // leftover
     assertThrows(ParseException.class, () -> singleQuoted.parse("'foo\\")); // dangling escape
   }
 
   @Test
-  public void quotedStringWithEscapes_invalidQuoteChar_throws() {
+  public void quotedByWithEscapes_invalidQuoteChar_throws() {
     assertThrows(
-        IllegalArgumentException.class,
-        () -> Parser.quotedStringWithEscapes('\\', chars(1)));
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('\\', '"', chars(1)));
     assertThrows(
-        IllegalArgumentException.class,
-        () -> Parser.quotedStringWithEscapes('\n', chars(1)));
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('\n', '"', chars(1)));
     assertThrows(
-        IllegalArgumentException.class,
-        () -> Parser.quotedStringWithEscapes('\r', chars(1)));
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('\r', '"', chars(1)));
     assertThrows(
-        IllegalArgumentException.class,
-        () -> Parser.quotedStringWithEscapes('\t', chars(1)));
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('\t', '"', chars(1)));
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('"', '\\', chars(1)));
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('"', '\n', chars(1)));
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('"', '\r', chars(1)));
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('"', '\t', chars(1)));
   }
 
   @Test
-  public void quotedStringWithEscapes_unicodeEscape_success() {
+  public void quotedByWithEscapes_unicodeEscape_success() {
     Parser<String> unicodeEscaped = string("u").then(codePoint()).map(Character::toString);
-    Parser<String> quotedString = Parser.quotedStringWithEscapes('\'', unicodeEscaped.or(chars(1)));
+    Parser<String> quotedString = Parser.quotedByWithEscapes('\'', '\'', unicodeEscaped.or(chars(1)));
     assertThat(quotedString.parse("''")).isEmpty();
     assertThat(quotedString.parse("'emoji: \\uD83D\\uDE00'")).isEqualTo("emoji: 😀");
   }

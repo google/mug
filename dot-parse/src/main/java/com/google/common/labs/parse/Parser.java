@@ -253,7 +253,7 @@ public abstract class Parser<T> {
    * Matches the characters quoted by {@code before} and {@code after}, and returns the string in
    * between. For example: {@code quotedBy('<', '>').parse("<foo>")} will return {@code "foo"}.
    *
-   * <p>If you need to support backslash escapes, use {@link #quotedStringWithEscapes} instead.
+   * <p>If you need to support backslash escapes, use {@link #quotedByWithEscapes} instead.
    *
    * @since 9.5
    */
@@ -266,7 +266,7 @@ public abstract class Parser<T> {
    * between. For example: {@code quotedBy("<!--", "-->").parse("<!--comment-->")} will return
    * {@code "comment"}.
    *
-   * <p>If you need to support backslash escapes, use {@link #quotedStringWithEscapes} instead.
+   * <p>If you need to support backslash escapes, use {@link #quotedByWithEscapes} instead.
    *
    * @since 9.5
    */
@@ -303,31 +303,39 @@ public abstract class Parser<T> {
    * <p>For example:
    *
    * <pre>{@code
-   * quotedStringWithEscapes('"', chars(1)).parse("foo\\\\bar");
+   * quotedByWithEscapes('"', '"', chars(1)).parse("foo\\\\bar");
    * }</pre>
    *
    * will treat the escaped character as literal and return {@code "foo\\bar"}.
    *
-   * <p>You can also support Unicode escaping:
+   * <p>You can also support unicode escaping:
    *
    * <pre>{@code
    * Parser<String> unicodeEscaped = string("u")
    *     .then(codePoint())
    *     .map(Character::toString);
-   * quotedStringWithEscapes('"', unicodeEscaped.or(chars(1))).parse("foo\\uD83D");
+   * quotedByWithEscapes('"', '"', unicodeEscaped.or(chars(1))).parse("foo\\uD83D");
    * }</pre>
    *
-   * @since 9.4
+   * @since 9.5
    */
+  public static Parser<String> quotedByWithEscapes(
+      char before, char after, Parser<? extends CharSequence> escaped) {
+    var escape = string("\\").then(escaped);
+    checkArgument(before != '\\', "quoteChar cannot be '\\'");
+    checkArgument(after != '\\', "quoteChar cannot be '\\'");
+    checkArgument(!Character.isISOControl(before), "quoteChar cannot be a control character");
+    checkArgument(!Character.isISOControl(after), "quoteChar cannot be a control character");
+    return anyOf(consecutive(isNot(after).and(isNot('\\')), "quoted chars"), escape)
+        .zeroOrMore(joining())
+        .immediatelyBetween(Character.toString(before), Character.toString(after));
+  }
+
+  /** @deprecated Use {@link #quotedByWithEscapes} instead */
+  @Deprecated
   public static Parser<String> quotedStringWithEscapes(
       char quoteChar, Parser<? extends CharSequence> escaped) {
-    var escape = string("\\").then(escaped);
-    checkArgument(quoteChar != '\\', "quoteChar cannot be '\\'");
-    checkArgument(!Character.isISOControl(quoteChar), "quoteChar cannot be a control character");
-    String quoteString = Character.toString(quoteChar);
-    return anyOf(consecutive(isNot(quoteChar).and(isNot('\\')), "quoted chars"), escape)
-        .zeroOrMore(joining())
-        .immediatelyBetween(quoteString, quoteString);
+    return quotedByWithEscapes(quoteChar, quoteChar, escaped);
   }
 
   /**
@@ -341,10 +349,10 @@ public abstract class Parser<T> {
    *     .parse("D83DDE00");
    * }</pre>
    *
-   * <p>You can also compose it with {@link #quotedStringWithEscapes}:
+   * <p>You can also compose it with {@link #quotedByWithEscapes}:
    *
    * <pre>{@code
-   * quotedStringWithEscapes('"', string("u").then(codePoint()).map(Character::toString));
+   * quotedByWithEscapes('"', '"', string("u").then(codePoint()).map(Character::toString));
    * }</pre>
    *
    * @since 9.4
@@ -644,7 +652,7 @@ public abstract class Parser<T> {
    * Parser<Map<String, List<String>>> jsonMap =
    *     zeroOrMoreDelimited(
    *            word().followedBy(":"),
-   *            quotedStringWithEscapes('"', chars(1)),
+   *            quotedByWithEscapes('"', '"', chars(1)),
    *            ",",
    *            toMap(toList()))
    *         .followedBy(string(",").optional()) // only if you need to allow trailing comma
