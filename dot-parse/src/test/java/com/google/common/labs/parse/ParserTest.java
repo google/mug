@@ -913,6 +913,20 @@ public class ParserTest {
   }
 
   @Test
+  public void sequence4_success() {
+    Parser<String> parser =
+        sequence(
+            string("one").thenReturn(1),
+            string("two").thenReturn(2),
+            string("three").thenReturn(3),
+            string("four").thenReturn(4),
+            (a, b, c, d) -> String.format("%d+%d+%d+%d=%d", a, b, c, d, a + b + c + d));
+    assertThat(parser.parse("onetwothreefour")).isEqualTo("1+2+3+4=10");
+    assertThat(parser.parseToStream("onetwothreefour")).containsExactly("1+2+3+4=10");
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test
   public void orEmpty_delimitedBy_bothSides() {
     Parser<List<String>>.OrEmpty parser =
         word().orElse("").delimitedBy(",");

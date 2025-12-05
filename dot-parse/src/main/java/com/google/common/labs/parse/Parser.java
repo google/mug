@@ -45,6 +45,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
+import com.google.mu.function.Function4;
 import com.google.mu.function.TriFunction;
 import com.google.mu.util.Both;
 import com.google.mu.util.CharPredicate;
@@ -422,7 +423,22 @@ public abstract class Parser<T> {
     requireNonNull(combiner);
     return sequence(
         a, sequence(b, c, Both::of),
-        (left, bc) -> bc.andThen((mid, right) -> combiner.apply(left, mid, right)));
+        (v1, bc) -> bc.andThen((v2, v3) -> combiner.apply(v1, v2, v3)));
+  }
+
+  /**
+   * Sequentially matches {@code a}, {@code b}, {@code c} and {@code d},
+   * and then combines the results using the {@code combiner} function.
+   *
+   * @since 9.5
+   */
+  public static <A, B, C, D, T> Parser<T> sequence(
+      Parser<A> a, Parser<B> b, Parser<C> c, Parser<D> d,
+      Function4<? super A, ? super B, ? super C, ? super D, ? extends T> combiner) {
+    requireNonNull(combiner);
+    return sequence(
+        sequence(a, b, Both::of), sequence(c, d, Both::of),
+        (ab, cd) -> ab.andThen((v1, v2) -> cd.andThen((v3, v4) -> combiner.apply(v1, v2, v3, v4))));
   }
 
   /** Matches if any of the given {@code parsers} match. */
