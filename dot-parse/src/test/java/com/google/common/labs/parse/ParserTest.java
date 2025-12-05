@@ -913,6 +913,19 @@ public class ParserTest {
   }
 
   @Test
+  public void sequence3_withNull() {
+    Parser<String> parser =
+        sequence(
+            string("one").thenReturn(1),
+            string("two").thenReturn(null),
+            string("three").thenReturn(3),
+            (a, b, c) -> String.format("%s %s %s", a, b, c));
+    assertThat(parser.parse("onetwothree")).isEqualTo("1 null 3");
+    assertThat(parser.parseToStream("onetwothree")).containsExactly("1 null 3");
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test
   public void sequence4_success() {
     Parser<String> parser =
         sequence(
@@ -923,6 +936,20 @@ public class ParserTest {
             (a, b, c, d) -> String.format("%d+%d+%d+%d=%d", a, b, c, d, a + b + c + d));
     assertThat(parser.parse("onetwothreefour")).isEqualTo("1+2+3+4=10");
     assertThat(parser.parseToStream("onetwothreefour")).containsExactly("1+2+3+4=10");
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test
+  public void sequence4_withNull() {
+    Parser<String> parser =
+        sequence(
+            string("one").thenReturn(1),
+            string("two").thenReturn(null),
+            string("three").thenReturn(null),
+            string("four").thenReturn(4),
+            (a, b, c, d) -> String.format("%s %s %s %s", a, b, c, d));
+    assertThat(parser.parse("onetwothreefour")).isEqualTo("1 null null 4");
+    assertThat(parser.parseToStream("onetwothreefour")).containsExactly("1 null null 4");
     assertThat(parser.parseToStream("")).isEmpty();
   }
 

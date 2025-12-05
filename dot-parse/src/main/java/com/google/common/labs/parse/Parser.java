@@ -32,9 +32,9 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.io.Reader;
 import java.io.UncheckedIOException;
+import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
@@ -423,7 +423,7 @@ public abstract class Parser<T> {
       TriFunction<? super A, ? super B, ? super C, ? extends T> combiner) {
     requireNonNull(combiner);
     return sequence(
-        a, sequence(b, c, Map::entry),
+        a, sequence(b, c, AbstractMap.SimpleImmutableEntry<B, C>::new),
         (v1, bc) -> combiner.apply(v1, bc.getKey(), bc.getValue()));
   }
 
@@ -438,7 +438,8 @@ public abstract class Parser<T> {
       Function4<? super A, ? super B, ? super C, ? super D, ? extends T> combiner) {
     requireNonNull(combiner);
     return sequence(
-        sequence(a, b, Map::entry), sequence(c, d, Map::entry),
+        sequence(a, b, AbstractMap.SimpleImmutableEntry<A, B>::new),
+        sequence(c, d, AbstractMap.SimpleImmutableEntry<C, D>::new),
         (ab, cd) -> combiner.apply(ab.getKey(), ab.getValue(), cd.getKey(), cd.getValue()));
   }
 
