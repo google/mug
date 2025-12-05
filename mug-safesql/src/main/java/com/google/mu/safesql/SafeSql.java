@@ -1503,7 +1503,7 @@ public final class SafeSql {
    * Returns a DML (create, update, delete) template that will reuse the same cached {@code
    * PreparedStatement} for repeated calls of {@link Template#with} using different parameters.
    *
-   * <p>It's designed for using JDBC {@link PreparedStatemeny#executeBatch}.
+   * <p>It's designed for using JDBC {@link PreparedStatement#executeBatch}.
    * The caller can call {@link Template#with} in a loop to pass in different parameters and these
    * parameters will be added as {@link PreparedStatement#addBatch batches} to the returned
    * {@link PreparedStatement}. After all batches have been added, you can call {@code executeBatch()}.
