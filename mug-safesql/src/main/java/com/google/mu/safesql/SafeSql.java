@@ -1500,6 +1500,39 @@ public final class SafeSql {
   }
 
   /**
+   * Returns a DML (create, update, delete) template that will reuse the same cached {@code
+   * PreparedStatement} for repeated calls of {@link Template#with} using different parameters.
+   *
+   * <p>It's designed for using JDBC {@link PreparedStatemeny#executeBatch}.
+   * The caller can call {@link Template#with} in a loop to pass in different parameters and these
+   * parameters will be added as {@link PreparedStatement#addBatch batches} to the returned
+   * {@link PreparedStatement}. After all batches have been added, you can call {@code executeBatch()}.
+   *
+   * <p>Note that if you pass in different subquery or identifier parameters, a distinct
+   * PreparedStatement object will be returned, each holding a separate batch of commands.
+   * You can store them in a {@code Set<PreparedStatement>} and call {@code executeBatch()}
+   * on all of them.
+   *
+   * <p>The template arguments follow the same rules as discussed in {@link #of(String, Object...)}
+   * and receives the same compile-time protection against mismatch or out-of-order human mistakes.
+   *
+   * <p>The returned Template is <em>not</em> thread safe because the cached {@link
+   * PreparedStatement} objects aren't.
+   *
+   * <p>The caller is expected to close the {@code connection} after done, which will close the
+   * cached PreparedStatement.
+   *
+   * @since 9.5
+   */
+  public static Template<PreparedStatement> prepareToBatch(
+      Connection connection, @CompileTimeConstant String template) {
+    return prepare(connection, template, stmt -> {
+      stmt.addBatch();
+      return stmt;
+    });
+  }
+
+  /**
    * Returns a query string with the parameter values embedded for easier debugging (logging,
    * testing, golden file etc.). DO NOT use it as the production SQL query because embedding the
    * parameter values isn't safe from SQL injection.

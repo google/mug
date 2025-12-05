@@ -10,6 +10,7 @@ import static org.junit.Assert.assertThrows;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -18,6 +19,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -35,6 +37,7 @@ import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.hash.Hashing;
 import com.google.mu.util.StringFormat;
 
@@ -393,6 +396,43 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
         SafeSql.prepareToUpdate(connection(), "insert into ITEMS(id, title) VALUES({id}, {...})");
     assertThat(insertUser.with(testId(), "foo")).isEqualTo(1);
     assertThat(insertUser.with(testId() + 1, SafeSql.of("'bar'"))).isEqualTo(1);
+    StringFormat.Template<List<String>> template = SafeSql.prepareToQuery(
+        connection(),
+        "select title from ITEMS where title = '{...}' and id in ({id})",
+        resultSet -> resultSet.getString("title"));
+    assertThat(template.with("foo", testId())).containsExactly("foo");
+    assertThat(template.with("bar", testId() + 1)).containsExactly("bar");
+  }
+
+  @Test public void prepareToBatch_sameArgTypes() throws Exception {
+    connection().setAutoCommit(false);
+    StringFormat.Template<List<String>> template = SafeSql.prepareToQuery(
+        connection(),
+        "select title from ITEMS where title = '{...}' and id in ({id})",
+        resultSet -> resultSet.getString("title"));
+    StringFormat.Template<PreparedStatement> insertUsers =
+        SafeSql.prepareToBatch(connection(), "insert into ITEMS(id, title) VALUES({id}, {...})");
+    PreparedStatement stmt = insertUsers.with(testId(), "foo");
+    assertThat(insertUsers.with(testId() + 1, "bar")).isSameInstanceAs(stmt);
+    assertThat(template.with("foo", testId())).isEmpty();
+    assertThat(template.with("bar", testId() + 1)).isEmpty();
+
+    // Now execute the batch
+    assertThat(stmt.executeBatch()).hasLength(2);
+    assertThat(template.with("foo", testId())).containsExactly("foo");
+    assertThat(template.with("bar", testId() + 1)).containsExactly("bar");
+  }
+
+  @Test public void prepareToBatch_differentArgTypes() throws Exception {
+    connection().setAutoCommit(false);
+    StringFormat.Template<PreparedStatement> insertUser =
+        SafeSql.prepareToBatch(connection(), "insert into ITEMS(id, title) VALUES({id}, {...})");
+    Set<PreparedStatement> batches =
+        ImmutableSet.of(insertUser.with(testId(), "foo"), insertUser.with(testId() + 1, SafeSql.of("'bar'")));
+    assertThat(batches).hasSize(2);
+    for (PreparedStatement batch : batches) {
+      batch.executeBatch();
+    }
     StringFormat.Template<List<String>> template = SafeSql.prepareToQuery(
         connection(),
         "select title from ITEMS where title = '{...}' and id in ({id})",
