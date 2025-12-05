@@ -34,6 +34,7 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
@@ -422,8 +423,8 @@ public abstract class Parser<T> {
       TriFunction<? super A, ? super B, ? super C, ? extends T> combiner) {
     requireNonNull(combiner);
     return sequence(
-        a, sequence(b, c, Both::of),
-        (v1, bc) -> bc.andThen((v2, v3) -> combiner.apply(v1, v2, v3)));
+        a, sequence(b, c, Map::entry),
+        (v1, bc) -> combiner.apply(v1, bc.getKey(), bc.getValue()));
   }
 
   /**
@@ -437,8 +438,8 @@ public abstract class Parser<T> {
       Function4<? super A, ? super B, ? super C, ? super D, ? extends T> combiner) {
     requireNonNull(combiner);
     return sequence(
-        sequence(a, b, Both::of), sequence(c, d, Both::of),
-        (ab, cd) -> ab.andThen((v1, v2) -> cd.andThen((v3, v4) -> combiner.apply(v1, v2, v3, v4))));
+        sequence(a, b, Map::entry), sequence(c, d, Map::entry),
+        (ab, cd) -> combiner.apply(ab.getKey(), ab.getValue(), cd.getKey(), cd.getValue()));
   }
 
   /** Matches if any of the given {@code parsers} match. */
