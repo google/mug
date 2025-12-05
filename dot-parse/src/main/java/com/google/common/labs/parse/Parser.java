@@ -45,6 +45,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
+import com.google.mu.function.TriFunction;
 import com.google.mu.util.Both;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
@@ -407,6 +408,21 @@ public abstract class Parser<T> {
   static <A, B, C> Parser<C> sequence(
       Parser<A>.OrEmpty left, Parser<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
     return sequence(left.asUnsafeZeroWidthParser(), right, combiner);
+  }
+
+  /**
+   * Sequentially matches {@code a}, {@code b} and {@code c}, and then combines the results using the
+   * {@code combiner} function.
+   *
+   * @since 9.5
+   */
+  public static <A, B, C, T> Parser<T> sequence(
+      Parser<A> a, Parser<B> b, Parser<C> c,
+      TriFunction<? super A, ? super B, ? super C, ? extends T> combiner) {
+    requireNonNull(combiner);
+    return sequence(
+        a, sequence(b, c, Both::of),
+        (left, bc) -> bc.andThen((mid, right) -> combiner.apply(left, mid, right)));
   }
 
   /** Matches if any of the given {@code parsers} match. */
