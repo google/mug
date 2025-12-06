@@ -8,23 +8,6 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 
 ---
 
-## API sketch
-
-- **Primitives:** [`string()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#string(java.lang.String)),
-  [`digits()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#digits()),
-  [`word("if")`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#word(java.lang.String)), `single(ANY)`, `quotedStringWithEscapes()`
-- **Compose:** `.thenReturn(true)`, `.followedBy("else")`, `.between("[", "]")`, `.map(Literal::new)`
-- **Alternative:** `p1.or(p2)`, `anyOf(p1, p2)`
-- **Sequence:** `then()`, `sequence()`, `atLeastOnce()`, `atLeastOnceDelimitedBy()`
-- **Optional:** `optional()`, `optionallyFollowedBy()`, `orElse(defaultValue)`, `zeroOrMore()`, `zeroOrMoreDelimitedBy(",")`
-- **Operator Precedence:** `OperatorTable<T>` (`prefix()`, `leftAssociative()`, `build()`, etc.)
-- **Recursive:** `Parser.define()`, `Parser.Rule<T>`
-- **Whitespace:** `parser.parseSkipping(Character::isWhitespace, input)`, `parser.skipping(...).parse(...)`
-- **Lazy Parsing:** [`parseToStream(Reader)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#parseToStream(java.io.Reader)),
-  [`probe(Reader)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#probe(java.io.Reader)).
-
----
-
 ## Instead of Regex
 
 Use Dot Parse for more readable and more efficient string processing.
