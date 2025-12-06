@@ -1518,7 +1518,7 @@ public final class SafeSql {
    *     Set<PreparedStatement> batches = users.stream()
    *         .map(user -> insertUser.with(user.id(), user.name()))
    *         .collect(toUnmodifiableSet());
-   *     for (PreparedStatement batch : batches) {  // should be at most one batch
+   *     for (PreparedStatement batch : batches) {  // 0 or 1 batch in `batches`
    *       batch.executeBatch();
    *     }
    *   }
