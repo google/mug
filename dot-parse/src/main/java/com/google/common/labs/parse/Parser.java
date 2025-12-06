@@ -32,6 +32,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.io.Reader;
 import java.io.UncheckedIOException;
+import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Optional;
@@ -45,6 +46,8 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
+import com.google.mu.function.Function4;
+import com.google.mu.function.TriFunction;
 import com.google.mu.util.Both;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
@@ -407,6 +410,37 @@ public abstract class Parser<T> {
   static <A, B, C> Parser<C> sequence(
       Parser<A>.OrEmpty left, Parser<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
     return sequence(left.asUnsafeZeroWidthParser(), right, combiner);
+  }
+
+  /**
+   * Sequentially matches {@code a}, {@code b} and {@code c}, and then combines the results using the
+   * {@code combiner} function.
+   *
+   * @since 9.5
+   */
+  public static <A, B, C, T> Parser<T> sequence(
+      Parser<A> a, Parser<B> b, Parser<C> c,
+      TriFunction<? super A, ? super B, ? super C, ? extends T> combiner) {
+    requireNonNull(combiner);
+    return sequence(
+        a, sequence(b, c, AbstractMap.SimpleImmutableEntry<B, C>::new),
+        (v1, bc) -> combiner.apply(v1, bc.getKey(), bc.getValue()));
+  }
+
+  /**
+   * Sequentially matches {@code a}, {@code b}, {@code c} and {@code d},
+   * and then combines the results using the {@code combiner} function.
+   *
+   * @since 9.5
+   */
+  public static <A, B, C, D, T> Parser<T> sequence(
+      Parser<A> a, Parser<B> b, Parser<C> c, Parser<D> d,
+      Function4<? super A, ? super B, ? super C, ? super D, ? extends T> combiner) {
+    requireNonNull(combiner);
+    return sequence(
+        sequence(a, b, AbstractMap.SimpleImmutableEntry<A, B>::new),
+        sequence(c, d, AbstractMap.SimpleImmutableEntry<C, D>::new),
+        (ab, cd) -> combiner.apply(ab.getKey(), ab.getValue(), cd.getKey(), cd.getValue()));
   }
 
   /** Matches if any of the given {@code parsers} match. */

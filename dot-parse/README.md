@@ -8,24 +8,9 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 
 ---
 
-## API sketch
+## Instead of Regex
 
-- **Primitives:** [`string()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#string(java.lang.String)),
-  [`digits()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#digits()),
-  [`word("if")`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#word(java.lang.String)), `single(ANY)`, `quotedStringWithEscapes()`
-- **Compose:** `.thenReturn(true)`, `.followedBy("else")`, `.between("[", "]")`, `.map(Literal::new)`
-- **Alternative:** `p1.or(p2)`, `anyOf(p1, p2)`
-- **Sequence:** `then()`, `sequence()`, `atLeastOnce()`, `atLeastOnceDelimitedBy()`
-- **Optional:** `optional()`, `optionallyFollowedBy()`, `orElse(defaultValue)`, `zeroOrMore()`, `zeroOrMoreDelimitedBy(",")`
-- **Operator Precedence:** `OperatorTable<T>` (`prefix()`, `leftAssociative()`, `build()`, etc.)
-- **Recursive:** `Parser.define()`, `Parser.Rule<T>`
-- **Whitespace:** `parser.parseSkipping(Character::isWhitespace, input)`, `parser.skipping(...).parse(...)`
-- **Lazy Parsing:** [`parseToStream(Reader)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#parseToStream(java.io.Reader)),
-  [`probe(Reader)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#probe(java.io.Reader)).
-
----
-
-## Regex Cheat Sheet
+Use Dot Parse for more readable and more efficient string processing.
 
 For brevity, all unqualified methods are assumed to be static imported from the
 `Parser` class.
@@ -83,15 +68,7 @@ try (Reader reader = ...) {
 Non-nestable block comment like `/* this is * in a comment */` is pretty easy to parse:
 
 ```java {.good}
-import static com.google.mu.util.CharPredicate.isNot;
-import static com.google.common.labs.parse.Parser.consecutive;
-import static com.google.common.labs.parse.Parser.string;
-import static java.util.stream.Collectors.joining;
-
-// The commented must not be '*', or if it's '*', must not be followed by '/'
-Parser<String> content = Parser.anyOf(consecutive(isNot('*')), string("*").notFollowedBy("/"));
-Parser<String> blockComment = content.zeroOrMore(joining())
-    .between("/*", "*/");
+Parser<String> blockComment = Parser.quotedBy("/*", "*/");
 blockComment.parse("/* this is * in a comment */ ");
 ```
 
