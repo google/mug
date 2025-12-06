@@ -25,7 +25,9 @@ Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
 
 ---
 
-## Regex Cheat Sheet
+## Instead of Regex
+
+Use Dot Parse for more readable and more efficient string processing.
 
 For brevity, all unqualified methods are assumed to be static imported from the
 `Parser` class.
