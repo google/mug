@@ -1511,7 +1511,18 @@ public final class SafeSql {
    * <p>Note that if you pass in different subquery or identifier parameters, a distinct
    * PreparedStatement object will be returned, each holding a separate batch of commands.
    * You can store them in a {@code Set<PreparedStatement>} and call {@code executeBatch()}
-   * on all of them.
+   * on all of them. For example in: <pre>{@code
+   *   try (var connection = ...) {
+   *     var insertUser = SafeSql.prepareToBatch(
+   *         connection, "INSERT INTO Users(id, name) VALUES({user_id}, '{user_name}')");
+   *     Set<PreparedStatement> batches = users.stream()
+   *         .map(user -> insertUser.with(user.id(), user.name()))
+   *         .collect(toUnmodifiableSet());
+   *     for (PreparedStatement batch : batches) {  // Should only have one batch
+   *       batch.executeBatch();
+   *     }
+   *   }
+   * }</pre>
    *
    * <p>The template arguments follow the same rules as discussed in {@link #of(String, Object...)}
    * and receives the same compile-time protection against mismatch or out-of-order human mistakes.
