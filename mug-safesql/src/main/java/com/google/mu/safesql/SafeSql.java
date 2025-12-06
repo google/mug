@@ -1515,10 +1515,10 @@ public final class SafeSql {
    *   try (var connection = ...) {
    *     var insertUser = SafeSql.prepareToBatch(
    *         connection, "INSERT INTO Users(id, name) VALUES({user_id}, '{user_name}')");
-   *     Set<PreparedStatement> batches = users.stream()
+   *     Set<Statement> batches = users.stream()
    *         .map(user -> insertUser.with(user.id(), user.name()))
    *         .collect(toUnmodifiableSet());
-   *     for (PreparedStatement batch : batches) {  // 0 or 1 batch in `batches`
+   *     for (Statement batch : batches) {  // 0 or 1 batch in `batches`
    *       batch.executeBatch();
    *     }
    *   }
