@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -427,10 +428,10 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     connection().setAutoCommit(false);
     StringFormat.Template<PreparedStatement> insertUser =
         SafeSql.prepareToBatch(connection(), "insert into ITEMS(id, title) VALUES({id}, {...})");
-    Set<PreparedStatement> batches =
+    Set<Statement> batches =
         ImmutableSet.of(insertUser.with(testId(), "foo"), insertUser.with(testId() + 1, SafeSql.of("'bar'")));
     assertThat(batches).hasSize(2);
-    for (PreparedStatement batch : batches) {
+    for (Statement batch : batches) {
       batch.executeBatch();
     }
     StringFormat.Template<List<String>> template = SafeSql.prepareToQuery(
