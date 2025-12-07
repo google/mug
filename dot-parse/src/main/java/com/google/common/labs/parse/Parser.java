@@ -315,7 +315,7 @@ public abstract class Parser<T> {
    *
    * <pre>{@code
    * Parser<String> unicodeEscaped = string("u")
-   *     .then(codePoint())
+   *     .then(bmpCodeUnit())
    *     .map(Character::toString);
    * quotedByWithEscapes('"', '"', unicodeEscaped.or(chars(1))).parse("foo\\uD83D");
    * }</pre>
@@ -341,12 +341,18 @@ public abstract class Parser<T> {
     return quotedByWithEscapes(quoteChar, quoteChar, escaped);
   }
 
+  /** @deprecated Use {@link #bmpCodeUnit} instead.  */
+  @Deprecated
+  public static Parser<Integer> codePoint() {
+    return bmpCodeUnit();
+  }
+
   /**
-   * Parses a 4-digit hex code point. The following example parses a surrogate pair of two code
-   * points and will return the emoji {@code 😀}:
+   * Parses a 4-digit hex code point as a BMP code unit. The following example parses a surrogate
+   * pair of two UTF-16 code units and will return the emoji {@code 😀}:
    *
    * <pre>{@code
-   * codePoint()
+   * bmpCodeUnit()
    *     .map(Character::toString)
    *     .zeroOrMore(Collectors.joining())
    *     .parse("D83DDE00");
@@ -355,12 +361,12 @@ public abstract class Parser<T> {
    * <p>You can also compose it with {@link #quotedByWithEscapes}:
    *
    * <pre>{@code
-   * quotedByWithEscapes('"', '"', string("u").then(codePoint()).map(Character::toString));
+   * quotedByWithEscapes('"', '"', string("u").then(bmpCodeUnit()).map(Character::toString));
    * }</pre>
    *
-   * @since 9.4
+   * @since 9.5
    */
-  public static Parser<Integer> codePoint() {
+  public static Parser<Integer> bmpCodeUnit() {
     return chars(4)
         .suchThat(
             CharPredicate.range('0', '9').orRange('A', 'F').orRange('a', 'f')::matchesAllOf,

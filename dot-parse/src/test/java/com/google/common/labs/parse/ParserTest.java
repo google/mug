@@ -2,8 +2,8 @@ package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
+import static com.google.common.labs.parse.Parser.bmpCodeUnit;
 import static com.google.common.labs.parse.Parser.chars;
-import static com.google.common.labs.parse.Parser.codePoint;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.first;
@@ -2898,7 +2898,7 @@ public class ParserTest {
 
   @Test
   public void quotedByWithEscapes_unicodeEscape_success() {
-    Parser<String> unicodeEscaped = string("u").then(codePoint()).map(Character::toString);
+    Parser<String> unicodeEscaped = string("u").then(bmpCodeUnit()).map(Character::toString);
     Parser<String> quotedString = Parser.quotedByWithEscapes('\'', '\'', unicodeEscaped.or(chars(1)));
     assertThat(quotedString.parse("''")).isEmpty();
     assertThat(quotedString.parse("'emoji: \\uD83D\\uDE00'")).isEqualTo("emoji: 😀");
@@ -2906,7 +2906,7 @@ public class ParserTest {
 
   @Test
   public void codePoint_emoji() {
-    assertThat(codePoint().map(Character::toString).zeroOrMore(joining()).parse("d83dDE00"))
+    assertThat(bmpCodeUnit().map(Character::toString).zeroOrMore(joining()).parse("d83dDE00"))
         .isEqualTo("😀");
   }
 
