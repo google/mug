@@ -348,8 +348,8 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Parses a 4-digit hex code point as a BMP code unit. The following example parses a surrogate
-   * pair of two UTF-16 code units and will return the emoji {@code 😀}:
+   * Parses a 4-digit hex BMP code unit. The following example parses a surrogate pair of two UTF-16
+   * code units and will return the emoji {@code 😀}:
    *
    * <pre>{@code
    * bmpCodeUnit()
