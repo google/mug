@@ -160,7 +160,7 @@ import com.google.mu.util.stream.BiStream;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>9.3</version>
+ *               <version>9.5</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>

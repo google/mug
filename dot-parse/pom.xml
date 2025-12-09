@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>9.5-SNAPSHOT</version>
+    <version>9.6-SNAPSHOT</version>
   </parent>
   <artifactId>dot-parse</artifactId>
   <name>Compact Parser Combinators</name>
@@ -35,7 +35,7 @@
               <path>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>mug-errorprone</artifactId>
-                <version>9.4</version>
+                <version>9.5</version>
               </path>
             <!-- Other annotation processors go here.
             If 'annotationProcessorPaths' is set, processors will no longer be

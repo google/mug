@@ -370,7 +370,7 @@ public abstract class Parser<T> {
     return chars(4)
         .suchThat(
             CharPredicate.range('0', '9').orRange('A', 'F').orRange('a', 'f')::matchesAllOf,
-            "4-digit hex code point")
+            "4 hex digits UTF-16 code unit")
         .map(digits -> Integer.parseInt(digits, 16));
   }
 
