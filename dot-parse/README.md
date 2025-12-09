@@ -22,7 +22,7 @@ For brevity, all unqualified methods are assumed to be static imported from the
 3   | `[0-9]{5}`         | `digits().suchThat(s -> s.length() == 5, "zip code")`       | Matches exactly 5 digits.
 4   | `(foo\|bar\|baz)`  | `anyOf(string("foo"), string("bar"), string("baz"))`        | Matches one of the alternatives.
 5   | `'[^']*'`          | `quotedBy("'", "'")`                                        | Matches a single-quoted string, excluding the quotes from the result.
-6   | `u[a-fA-F0-9]{4}`  | `string("u").then(codePoint())`                             | Matches 'u' followed by 4 hex digits.
+6   | `u[a-fA-F0-9]{4}`  | `string("u").then(bmpCodeUnit())`                             | Matches 'u' followed by 4 hex digits.
 7   | `\d+(\.\d+)?`      | `digits().optionallyFollowedBy(string(".").then(digits()))` | Matches an integer or a simple float.
 8   | `\[(\w+(,\w+)*)?\]`| `word().zeroOrMoreDelimitedBy(",").between("[", "]")`       | Comma-delimited list of words inside square brackets.
 9   | `if\b`             | `word("if")`                                                | Matches the whole word "if".
@@ -146,14 +146,14 @@ Google ST Query on the other hand doesn't support Unicode escaping, and `\"`, `\
 characters respectively, without any special meaning.
 
 If your own mini parser needs quoted string literals with similar escapes, you can use the
-[`Parser.quotedStringWithEscapes()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#quotedStringWithEscapes(char,com.google.common.labs.parse.Parser)) method.
+[`Parser.quotedByWithEscapes()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#quotedByWithEscapes(char,char,com.google.common.labs.parse.Parser)) method.
 
 For example, to parse the ST Query style quoted string, simply use:
 
 ```java {.good}
 // \" -> ", \\ -> \, \t -> t, \n -> n
 Parser<String> quotedString =
-    Parser.quotedStringWithEscapes('"', /* escaped = */ Parser.chars(1));
+    Parser.quotedByWithEscapes('"', '"', /* escaped = */ Parser.chars(1));
 ```
 
 The first parameter is the quote character; and the second parameter is a `Parser` object that translates the escaped character(s).
@@ -174,11 +174,11 @@ Parser<String> singleCharEscaped =  Parser.chars(1)
 The same technique can be used to handle Unicode escaping:
 
 ```java {.good}
-import static com.google.common.labs.parse.Parser.codePoint;
+import static com.google.common.labs.parse.Parser.bmpCodeUnit;
 import static com.google.common.labs.parse.Parser.string;
 
 Parser<String> unicodeEscaped = string("u")
-    .then(codePoint())
+    .then(bmpCodeUnit())
     .map(Character::toString);
 ```
 
@@ -188,7 +188,7 @@ you get a Java-style string literal parser:
 ```java {.good}
 Parser<String> quotedString =
     // IMPORTANT: \u must be placed before the single-char case!
-    Parser.quotedStringWithEscapes('"', unicodeEscaped.or(singleCharEscaped));
+    Parser.quotedByWithEscapes('"', '"', unicodeEscaped.or(singleCharEscaped));
 quotedString.parse(
     "\"this is a string with quote: \\\" and unicode: \\uD83D\\uDE00\"");
     // this is a string with quote: " and unicode: 😀
@@ -380,7 +380,7 @@ import com.google.common.labs.parse.Parser;
 /** Splits input into a lazy stream of top-level JSON records. */
 Stream<String> jsonStringsFrom(Reader input) {
   // Either escaped or unescaped, enclosed between double quotes
-  Parser<?> stringLiteral = Parser.quotedStringWithEscapes('"', chars(1));
+  Parser<?> stringLiteral = Parser.quotedByWithEscapes('"', '"', chars(1));
   
   // Outside of string literal, any non-quote, non-brace characters are passed through
   Parser<?> passThrough = Parser.consecutive(charsIn("[^\"{}]"));  // uses regex-like character set
@@ -447,7 +447,7 @@ static SearchCriteria parse(String input) {
   Parser<Term> unquoted = Parser.word()
       .suchThat(w -> !keywords.contains(w), "search term")
       .map(Term::new);
-  Parser<Term> quoted = Parser.quotedStringWithEscapes('"', chars(1)).map(Term::new);
+  Parser<Term> quoted = Parser.quotedByWithEscapes('"', '"', chars(1)).map(Term::new);
 
   // Leaf-level search term can be a quoted, unquoted term, or a sub-criteria inside parentheses.
   // They are then grouped by the boolean operators.
