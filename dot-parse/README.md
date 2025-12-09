@@ -543,7 +543,7 @@ Similarly, you can never run into **accidental left recursion** (which causes `S
 <dependency>
   <groupId>com.google.mug</groupId>
   <artifactId>dot-parse</artifactId>
-  <version>9.4</version>
+  <version>9.5</version>
 </dependency>
 ```
 
