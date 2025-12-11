@@ -2,83 +2,64 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>com.google.mug</groupId>
-    <artifactId>mug-root</artifactId>
-    <version>9.6-SNAPSHOT</version>
-  </parent>
-
+  <groupId>com.google.mug</groupId>
   <artifactId>mug-bom</artifactId>
   <packaging>pom</packaging>
+  <version>9.6-SNAPSHOT</version>
+
   <name>Mug Bill of Materials</name>
   <description>Dependency version alignment for all Mug modules</description>
 
-  <properties>
-    <mug.version>${project.version}</mug.version>
-  </properties>
-
   <dependencyManagement>
     <dependencies>
-
       <dependency>
         <groupId>com.google.mug</groupId>
         <artifactId>mug</artifactId>
-        <version>${mug.version}</version>
+        <version>${project.version}</version>
       </dependency>
-
-      <dependency>
-        <groupId>com.google.mug</groupId>
-        <artifactId>mug-guava</artifactId>
-        <version>${mug.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>com.google.mug</groupId>
-        <artifactId>mug-protobuf</artifactId>
-        <version>${mug.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>com.google.mug</groupId>
-        <artifactId>mug-errorprone</artifactId>
-        <version>${mug.version}</version>
-      </dependency>
-
       <dependency>
         <groupId>com.google.mug</groupId>
         <artifactId>mug-bigquery</artifactId>
-        <version>${mug.version}</version>
+        <version>${project.version}</version>
       </dependency>
-
-      <dependency>
-        <groupId>com.google.mug</groupId>
-        <artifactId>mug-safesql</artifactId>
-        <version>${mug.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>com.google.mug</groupId>
-        <artifactId>mug-spanner</artifactId>
-        <version>${mug.version}</version>
-      </dependency>
-
       <dependency>
         <groupId>com.google.mug</groupId>
         <artifactId>mug-concurrent24</artifactId>
-        <version>${mug.version}</version>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.mug</groupId>
+        <artifactId>mug-errorprone</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.mug</groupId>
+        <artifactId>mug-guava</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.mug</groupId>
+        <artifactId>mug-protobuf</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.mug</groupId>
+        <artifactId>mug-safesql</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.mug</groupId>
+        <artifactId>mug-spanner</artifactId>
+        <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>com.google.mug</groupId>
         <artifactId>dot-parse</artifactId>
-        <version>${mug.version}</version>
+        <version>${project.version}</version>
       </dependency>
-
     </dependencies>
   </dependencyManagement>
-
 </project>
-
