@@ -65,7 +65,7 @@ import java.util.stream.Stream;
  *       generate(response.getFoos());
  *       String nextPage = response.getNextPageToken();
  *       if (!nextPage.isEmpty()) {
- *         yield(() -> paginate(request.toBuilder().setNextPageToken(nextPage).build()));
+ *         this.yield(() -> paginate(request.toBuilder().setNextPageToken(nextPage).build()));
  *       }
  *       return this;
  *     }
@@ -98,9 +98,9 @@ import java.util.stream.Stream;
  * class DepthFirst<T> extends Iteration<T> {
  *   DepthFirst<T> inOrder(Tree<T> tree) {
  *     if (tree == null) return this;
- *     yield(() -> inOrder(tree.left));
+ *     this.yield(() -> inOrder(tree.left));
  *     generate(tree.value);
- *     yield(() -> inOrder(tree.right));
+ *     this.yield(() -> inOrder(tree.right));
  *   }
  * }
  *
@@ -154,7 +154,7 @@ import java.util.stream.Stream;
  *   DepthFirst<N> postOrder(N node) {
  *     if (visited.add(node)) {
  *       for (N successor : node.getSuccessors()) {
- *         yield(() -> postOrder(successor));
+ *         this.yield(() -> postOrder(successor));
  *       }
  *       generate(node);
  *     }
@@ -228,16 +228,6 @@ public class Iteration<T> {
   }
 
   /**
-   * Yields {@code element} to the result stream.
-   *
-   * @deprecated use {@link #generate} instead
-   */
-  @Deprecated
-  public final Iteration<T> yield(T element) {
-    return generate(element);
-  }
-
-  /**
    * Yields to the stream a recursive iteration or lazy side-effect wrapped in
    * {@code continuation}.
    */
@@ -270,9 +260,9 @@ public class Iteration<T> {
    *     if (tree == null) return this;
    *     AtomicInteger leftSum = new AtomicInteger();
    *     AtomicInteger rightSum = new AtomicInteger();
-   *     yield(() -> sum(tree.left, leftSum));
-   *     yield(() -> sum(tree.right, rightSum));
-   *     yield(() -> tree.value + leftSum.get() + rightSum.get(), result::set);
+   *     this.yield(() -> sum(tree.left, leftSum));
+   *     this.yield(() -> sum(tree.right, rightSum));
+   *     this.yield(() -> tree.value + leftSum.get() + rightSum.get(), result::set);
    *     return this;
    *   }
    * }
@@ -296,17 +286,6 @@ public class Iteration<T> {
       consumer.accept(result);
       generate(result);
     });
-  }
-
-  /**
-   * Yields all of {@code elements} to the result stream.
-   *
-   * @since 5.4
-   * @deprecated use {@link #generate(Iterable)} instead
-   */
-  @Deprecated
-  public final Iteration<T> yieldAll(Iterable<? extends T> elements) {
-    return generate(elements);
   }
 
   /**
