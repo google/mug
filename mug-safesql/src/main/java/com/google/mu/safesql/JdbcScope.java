@@ -84,9 +84,9 @@ final class JdbcScope implements AutoCloseable {
      close(stack);
   }
 
-  private static void close(JdbcCloseable closebale) {
+  private static void close(JdbcCloseable closeable) {
     try {
-      closebale.close();
+      closeable.close();
     } catch (SQLException e) {
       throw new UncheckedSqlException(e);
     }
