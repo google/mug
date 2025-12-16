@@ -396,55 +396,8 @@ import com.google.mu.util.stream.BiStream;
  *
  * <hr width = "100%" size = "2"></hr>
  *
- * <p><em>For Spring users:</em> in order to participate in Spring declarative transaction
- * (methods annotated with {@code @Transactional}),
- * you need to call one of the methods that accept a {@link Connection}, such as the
- * {@link #update(Connection)} method. In a nutshell, it takes calling
- * {@code DataSourceUtils.getConnection(dataSource)} to get the connection in the current transaction,
- * then passing it to {@code update(connection)}.
- *
- * <p>Note that you will also need to catch {@link SQLException} and turn it into a Spring
- * DataAccessException. For that you need Spring's {@code SQLExceptionTranslator}, which
- * has some quirks to use.
- *
- * <p>At this point, it may be easier to create a small wrapper class to execute SafeSql from within
- * a Spring transaction. And while you are there, might as well make it safer to also support
- * calling from outside of a transaction, by using try-with-resources to close the connection:
- *
- * <pre>{@code
- * // Use Java 16 record for brevity. You can use a regular class too.
- * @Component
- * public record SafeSqlBridge(DataSource dataSource, SQLExceptionTranslator translator) {
- *   public int executeUpdate(SafeSql sql) {
- *     try {
- *       if (TransactionSynchronizationManager.isActualTransactionActive()) {
- *         // in an active transaction, don't close or release the connection.
- *         return sql.update(DataSourceUtils.getConnection(dataSource()));
- *       } else {
- *         // not in active transaction, should close the connection.
- *         try (Connection connection = dataSource().getConnection()) {
- *           return sql.update(connection);
- *         }
- *       }
- *     } catch (SQLException e) {
- *       DataAccessException dae =
- *           translator().translate("executeUpdate(SafeSql)", sql.debugString(), e);
- *       throw dae == null ? throw new UncheckedSqlException(e) : dae;
- *     }
- *   }
- * }
- * }</pre>
- *
- * You can then dependency-inject SafeSqlBridge to execute SafeSql queries: <pre>{@code
- * // Use Java 16 record for brevity. You can use a regular class too.
- * @Service
- * record MyService(SafeSqlBridge bridge) {
- *   @Transactional void transferCredit(String fromAccount, String toAccount) {
- *     SafeSql sql = SafeSql.of("INSERT INTO(...)...'{from}'...'{to}'", fromAccount(), toAccount());
- *     bridge().executeUpdate(sql);
- *   }
- * }
- * }</pre>
+ * <p><em>For Spring users:</em> you can delegate to {@code JdbcTemplate} by calling
+ * {@link #toString} to get the SQL string and {@link #args} to get the JDBC arguments.
  *
  * <hr width = "100%" size = "2"></hr>
  *
@@ -1554,6 +1507,16 @@ public final class SafeSql {
     StringFormat placeholderWithValue = new StringFormat("? /* {...} */");
     Iterator<?> args = paramValues.iterator();
     return all("?").replaceAllFrom(sql, q -> placeholderWithValue.format(args.next()));
+  }
+
+  /**
+   * Returns a copy of the JDBC arguments. If you need to call Spring JdbcTemplate, consider
+   * {@code jdbcTemplate.query(safeSql.toString(), safeSql.args())}.
+   *
+   * @since 9.6
+   */
+  public Object[] args() {
+    return paramValues.toArray();
   }
 
   /**
