@@ -1511,7 +1511,7 @@ public final class SafeSql {
 
   /**
    * Returns a copy of the JDBC arguments. If you need to call Spring JdbcTemplate, consider
-   * {@code jdbcTemplate.query(safeSql.toString(), safeSql.args()).
+   * {@code jdbcTemplate.query(safeSql.toString(), safeSql.args())}.
    *
    * @since 9.6
    */
