@@ -3,7 +3,6 @@ com.google.common.labs.parse
 com.google.common.labs.regex
 com.google.guava.labs.base
 com.google.guava.labs.collect
-com.google.guava.labs.safesql
 com.google.mu.annotations
 com.google.mu.bigquery
 com.google.mu.collect
