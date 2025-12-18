@@ -73,6 +73,10 @@ public final class DateTimeFormatsTest {
   public void singleDigitHourWithAmPm() {
     assertLocalTime("1AM", "ha").isEqualTo(LocalTime.of(1, 0, 0));
     assertLocalTime("2 PM", "h a").isEqualTo(LocalTime.of(14, 0, 0));
+    assertLocalTime("1am", "ha").isEqualTo(LocalTime.of(1, 0, 0));
+    assertLocalTime("2pm", "ha").isEqualTo(LocalTime.of(14, 0, 0));
+    assertLocalTime("1a.m.", "ha").isEqualTo(LocalTime.of(1, 0, 0));
+    assertLocalTime("2p.m.", "ha").isEqualTo(LocalTime.of(14, 0, 0));
   }
 
   @Test
@@ -85,6 +89,10 @@ public final class DateTimeFormatsTest {
   public void singleDigitHourMinuteWithAmPm() {
     assertLocalTime("1:10AM", "h:mma").isEqualTo(LocalTime.of(1, 10, 0));
     assertLocalTime("2:05 PM", "h:mm a").isEqualTo(LocalTime.of(14, 5, 0));
+    assertLocalTime("1:10 am", "h:mm a").isEqualTo(LocalTime.of(1, 10, 0));
+    assertLocalTime("2:05pm", "h:mma").isEqualTo(LocalTime.of(14, 5, 0));
+    assertLocalTime("1:10 a.m.", "h:mm a").isEqualTo(LocalTime.of(1, 10, 0));
+    assertLocalTime("2:05p.m.", "h:mma").isEqualTo(LocalTime.of(14, 5, 0));
   }
 
   @Test
@@ -97,12 +105,20 @@ public final class DateTimeFormatsTest {
   public void singleDigitHourMinuteSecondWithAmPm() {
     assertLocalTime("1:10:30AM", "h:mm:ssa").isEqualTo(LocalTime.of(1, 10, 30));
     assertLocalTime("2:05:00 PM", "h:mm:ss a").isEqualTo(LocalTime.of(14, 5, 0));
+    assertLocalTime("1:10:30 am", "h:mm:ss a").isEqualTo(LocalTime.of(1, 10, 30));
+    assertLocalTime("2:05:00pm", "h:mm:ssa").isEqualTo(LocalTime.of(14, 5, 0));
+    assertLocalTime("1:10:30a.m.", "h:mm:ssa").isEqualTo(LocalTime.of(1, 10, 30));
+    assertLocalTime("2:05:00p.m.", "h:mm:ssa").isEqualTo(LocalTime.of(14, 5, 0));
   }
 
   @Test
   public void twoDigitHourWithAmPm() {
     assertLocalTime("09AM", "HHa").isEqualTo(LocalTime.of(9, 0, 0));
     assertLocalTime("12 PM", "HH a").isEqualTo(LocalTime.of(12, 0, 0));
+    assertLocalTime("09am", "HHa").isEqualTo(LocalTime.of(9, 0, 0));
+    assertLocalTime("12 pm", "HH a").isEqualTo(LocalTime.of(12, 0, 0));
+    assertLocalTime("09 a.m.", "HHa").isEqualTo(LocalTime.of(9, 0, 0));
+    assertLocalTime("12 p.m.", "HH a").isEqualTo(LocalTime.of(12, 0, 0));
   }
 
   @Test
@@ -115,12 +131,20 @@ public final class DateTimeFormatsTest {
   public void twoDigitHourMinuteWithAmPm() {
     assertLocalTime("09:00AM", "HH:mma").isEqualTo(LocalTime.of(9, 0, 0));
     assertLocalTime("12:00 PM", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
+    assertLocalTime("12:00 pm", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
+    assertLocalTime("12:00 am", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
+    assertLocalTime("12:00 a.m.", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
+    assertLocalTime("12:00 p.m.", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
   }
 
   @Test
   public void twoDigitHourMinuteSecondWithAmPm() {
     assertLocalTime("09:00:30AM", "HH:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
     assertLocalTime("15:00:30 PM", "HH:mm:ss a").isEqualTo(LocalTime.of(15, 0, 30));
+    assertLocalTime("09:00:30am", "HH:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
+    assertLocalTime("15:00:30 pm", "HH:mm:ss a").isEqualTo(LocalTime.of(15, 0, 30));
+    assertLocalTime("09:00:30a.m.", "HH:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
+    assertLocalTime("15:00:30 p.m.", "HH:mm:ss a").isEqualTo(LocalTime.of(15, 0, 30));
   }
 
 
@@ -634,8 +658,8 @@ public final class DateTimeFormatsTest {
     assumeUsLocale();
     ZonedDateTime zonedTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
     String example = zonedTime.format(getFormatterByName(formatterName));
-    assertThat(ZonedDateTime.parse(example, DateTimeFormats.formatOf(example)))
-        .isEqualTo(zonedTime);
+    assertThat(ZonedDateTime.parse(example, DateTimeFormats.formatOf(example)).toInstant())
+        .isEqualTo(zonedTime.toInstant());
   }
 
   @Test
