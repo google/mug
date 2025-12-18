@@ -16,6 +16,7 @@ package com.google.mu.time;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.common.truth.TruthJUnit.assume;
 import static com.google.mu.time.DateTimeFormats.formatOf;
 import static org.junit.Assert.assertThrows;
 
@@ -34,6 +35,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
 
+import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -429,6 +431,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void formatOf_12HourFormat() {
+    assumeUsLocale();
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
     DateTimeFormatter formatter = formatOf("dd MM yyyy <AD> hh:mm <PM> <+08:00>");
@@ -581,6 +584,7 @@ public final class DateTimeFormatsTest {
           })
           String datetime)
       throws Exception {
+    assumeUsLocale();
     ZonedDateTime zonedTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
     String example = zonedTime.format(getFormatterByName(formatterName));
     assertThat(DateTimeFormats.parseZonedDateTime(example).withFixedOffsetZone())
@@ -599,6 +603,24 @@ public final class DateTimeFormatsTest {
             "yyyy/MM/dd HH:mm:ss.nnn VV",
             "yyyy/MM/dd HH:mm:ss.SSSSSS VV",
             "yyyy-MM-dd HH:mm:ss.SSSSSS VV",
+          })
+          String formatterName,
+      @TestParameter({
+            "2020-01-01T00:00:01-07:00[America/New_York]",
+            "1979-01-01T00:00:00+01:00[Europe/Paris]",
+          })
+          String datetime)
+      throws Exception {
+    ZonedDateTime zonedTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
+    String example = zonedTime.format(getFormatterByName(formatterName));
+    assertThat(ZonedDateTime.parse(example, DateTimeFormats.formatOf(example)))
+        .isEqualTo(zonedTime);
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void zoneIdRetainedExamples_usLocaleOnly(
+      @TestParameter({
             "yyyy-MM-dd HH:mm:ss.SSSSSS z",
             "yyyy-MM-dd HH:mm:ss.SSSSSS zz",
             "yyyy-MM-dd HH:mm:ss.SSSSSS zzz",
@@ -610,6 +632,7 @@ public final class DateTimeFormatsTest {
           })
           String datetime)
       throws Exception {
+    assumeUsLocale();
     ZonedDateTime zonedTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
     String example = zonedTime.format(getFormatterByName(formatterName));
     assertThat(ZonedDateTime.parse(example, DateTimeFormats.formatOf(example)))
@@ -992,6 +1015,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_twoLetterZoneNameAbbreviation() {
+    assumeUsLocale();
     DateTimeFormatter formatter = DateTimeFormats.formatOf("M dd yyyy HH:mm:ss<PT>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30PT", formatter);
     assertThat(dateTime)
@@ -1011,12 +1035,13 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_abbreviatedZoneName() {
+    assumeUsLocale();
     DateTimeFormatter formatter = DateTimeFormats.formatOf("MM dd yyyy HH:mm:ss<GMT>");
     ZonedDateTime dateTime = ZonedDateTime.parse("01 10 2023 10:20:30PST", formatter);
-    assertThat(dateTime)
+    assertThat(dateTime.toInstant())
         .isEqualTo(
             ZonedDateTime.of(
-                LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0), ZoneId.of("America/Los_Angeles")));
+                LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0), ZoneId.of("America/Los_Angeles")).toInstant());
   }
 
   @Test
@@ -1353,7 +1378,13 @@ public final class DateTimeFormatsTest {
     String pattern = DateTimeFormats.inferDateTimePattern(example);
     assertThat(pattern).isEqualTo(equivalentPattern);
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
-    LocalTime time = LocalTime.parse(example, formatter);
+    LocalTime time;
+    try {
+      time = LocalTime.parse(example, formatter);
+    } catch (DateTimeParseException e) {
+      Assume.assumeNoException("Cannot test local time in system locale", e);
+      throw e;
+    }
     assertThat(time.format(formatter)).isEqualTo(example);
     return assertThat(time);
   }
@@ -1370,5 +1401,13 @@ public final class DateTimeFormatsTest {
     assertThat(time.format(formatter)).isEqualTo(time.format(DateTimeFormatter.ofPattern(pattern)));
     assertThat(ZonedDateTime.parse(time.format(DateTimeFormatter.ofPattern(pattern)), formatter))
         .isEqualTo(time);
+  }
+
+  private static void assumeUsLocale() {
+    ZonedDateTime zonedTime = ZonedDateTime.parse(
+        "2020-01-01T00:00:01-07:00[America/New_York]", DateTimeFormatter.ISO_DATE_TIME);
+    String example = zonedTime.format(DateTimeFormatter.ofPattern(("yyyy/MM/dd HH:mm:ssa VV")));
+    assume().that(zonedTime.format(DateTimeFormatter.ofPattern(("yyyy/MM/dd HH:mm:ssa VV"))))
+        .isEqualTo("2020/01/01 02:00:01AM America/New_York");
   }
 }
