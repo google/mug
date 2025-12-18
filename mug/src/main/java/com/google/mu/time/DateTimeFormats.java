@@ -258,6 +258,7 @@ public final class DateTimeFormats {
           .add(forExample("Jan"), "LLL")
           .add(forExample("January"), "LLLL")
           .add(forExample("PM"), "a")
+          .add(forExample("a.m."), "a")
           .add(forExample("AD"), "G")
           .build();
 
@@ -630,7 +631,7 @@ public final class DateTimeFormats {
     HOUR_CODES("HH", "hh"),
     MINUTE_CODES("mm"),
     SECOND_CODES("ss"),
-    AM_PM("AM", "PM"),
+    AM_PM("AM", "PM", "am", "pm"),
     WU("上午", "下午"),
     AD_BC("AD", "BC"),
     GENERIC_ZONE_NAME(

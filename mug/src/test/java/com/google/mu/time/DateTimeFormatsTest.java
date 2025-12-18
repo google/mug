@@ -584,7 +584,6 @@ public final class DateTimeFormatsTest {
           })
           String datetime)
       throws Exception {
-    assumeUsLocale();
     ZonedDateTime zonedTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
     String example = zonedTime.format(getFormatterByName(formatterName));
     assertThat(DateTimeFormats.parseZonedDateTime(example).withFixedOffsetZone())
