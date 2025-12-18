@@ -1406,7 +1406,6 @@ public final class DateTimeFormatsTest {
   private static void assumeUsLocale() {
     ZonedDateTime zonedTime = ZonedDateTime.parse(
         "2020-01-01T00:00:01-07:00[America/New_York]", DateTimeFormatter.ISO_DATE_TIME);
-    String example = zonedTime.format(DateTimeFormatter.ofPattern(("yyyy/MM/dd HH:mm:ssa VV")));
     assume().that(zonedTime.format(DateTimeFormatter.ofPattern(("yyyy/MM/dd HH:mm:ssa VV"))))
         .isEqualTo("2020/01/01 02:00:01AM America/New_York");
   }
