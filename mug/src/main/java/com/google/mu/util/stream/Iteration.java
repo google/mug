@@ -202,7 +202,7 @@ public class Iteration<T> {
   private final AtomicBoolean started = new AtomicBoolean();
 
   /**
-   * Generates {@code element} to the result stream.
+   * Emits {@code element} to the result stream.
    *
    * @since 0.6
    */
@@ -215,7 +215,7 @@ public class Iteration<T> {
   }
 
   /**
-   * Generates all of {@code elements} to the result stream.
+   * Emits all of {@code elements} to the result stream.
    *
    * @since 9.6
    */
@@ -227,7 +227,7 @@ public class Iteration<T> {
   }
 
   /**
-   * Yields to the stream a recursive iteration or lazy side-effect wrapped in
+   * Lazily generate into the stream a recursive iteration or lazy side-effect wrapped in
    * {@code continuation}.
    *
    * @since 9.6
@@ -238,7 +238,7 @@ public class Iteration<T> {
   }
 
   /**
-   * Yields to the stream the result of {@code computation}. Upon evaluation, also
+   * Lazily generate into the stream the result of {@code computation}. Upon evaluation, also
    * passes the computation result to {@code consumer}. Useful when the
    * computation result of a recursive call is needed. For example, if you have a
    * recursive algorithm to sum all node values of a tree:
@@ -290,7 +290,7 @@ public class Iteration<T> {
   }
 
   /**
-   * Generates {@code element} to the result stream.
+   * Emits {@code element} to the result stream.
    *
    * @since 8.1
    */
@@ -299,7 +299,7 @@ public class Iteration<T> {
   }
 
   /**
-   * Generates all of {@code elements} to the result stream.
+   * Emits all of {@code elements} to the result stream.
    *
    * @since 8.1
    */
