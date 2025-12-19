@@ -26,10 +26,9 @@ import java.util.stream.Stream;
 
 /**
  * Transforms eager, recursive algorithms into <em>lazy</em> streams.
- * {@link #generate generate()} is used to <a href=
- * "https://en.wikipedia.org/wiki/Generator_(computer_programming)">generate</a>
- * a sequence of values; and {@link #yield yield()} is used to yield control
- * back to the stream, with elements lazily generated on-demand.
+ * {@link #emit emit()} is used to <a href=
+ * "https://en.wikipedia.org/wiki/Generator_(computer_programming)">emit</a>
+ * a sequence of values; and {@link #lazily lazily()} is used to lazily generate elements.
  *
  * <p>
  * {@code Iteration} can be used to adapt iterative or recursive algorithms to
@@ -62,10 +61,10 @@ import java.util.stream.Stream;
  *   class Pagination extends new Iteration<Foo>() {
  *     Pagination paginate(ListFooRequest request) {
  *       ListFooResponse response = service.listFoos(request);
- *       generate(response.getFoos());
+ *       emit(response.getFoos());
  *       String nextPage = response.getNextPageToken();
  *       if (!nextPage.isEmpty()) {
- *         this.yield(() -> paginate(request.toBuilder().setNextPageToken(nextPage).build()));
+ *         lazily(() -> paginate(request.toBuilder().setNextPageToken(nextPage).build()));
  *       }
  *       return this;
  *     }
@@ -98,9 +97,9 @@ import java.util.stream.Stream;
  * class DepthFirst<T> extends Iteration<T> {
  *   DepthFirst<T> inOrder(Tree<T> tree) {
  *     if (tree == null) return this;
- *     this.yield(() -> inOrder(tree.left));
- *     generate(tree.value);
- *     this.yield(() -> inOrder(tree.right));
+ *     lazily(() -> inOrder(tree.left));
+ *     emit(tree.value);
+ *     lazily(() -> inOrder(tree.right));
  *   }
  * }
  *
@@ -154,9 +153,9 @@ import java.util.stream.Stream;
  *   DepthFirst<N> postOrder(N node) {
  *     if (visited.add(node)) {
  *       for (N successor : node.getSuccessors()) {
- *         this.yield(() -> postOrder(successor));
+ *         lazily(() -> postOrder(successor));
  *       }
- *       generate(node);
+ *       emit(node);
  *     }
  *     return this;
  *   }
@@ -205,9 +204,9 @@ public class Iteration<T> {
   /**
    * Generates {@code element} to the result stream.
    *
-   * @since 8.1
+   * @since 0.6
    */
-  public final Iteration<T> generate(T element) {
+  public final Iteration<T> emit(T element) {
     if (element instanceof Continuation) {
       throw new IllegalArgumentException("Do not stream Continuation objects");
     }
@@ -218,11 +217,11 @@ public class Iteration<T> {
   /**
    * Generates all of {@code elements} to the result stream.
    *
-   * @since 8.1
+   * @since 9.6
    */
-  public final Iteration<T> generate(Iterable<? extends T> elements) {
+  public final Iteration<T> emit(Iterable<? extends T> elements) {
     for (T element : elements) {
-      generate(element);
+      emit(element);
     }
     return this;
   }
@@ -230,8 +229,10 @@ public class Iteration<T> {
   /**
    * Yields to the stream a recursive iteration or lazy side-effect wrapped in
    * {@code continuation}.
+   *
+   * @since 9.6
    */
-  public final Iteration<T> yield(Continuation continuation) {
+  public final Iteration<T> lazily(Continuation continuation) {
     inbox.push(continuation);
     return this;
   }
@@ -260,9 +261,9 @@ public class Iteration<T> {
    *     if (tree == null) return this;
    *     AtomicInteger leftSum = new AtomicInteger();
    *     AtomicInteger rightSum = new AtomicInteger();
-   *     this.yield(() -> sum(tree.left, leftSum));
-   *     this.yield(() -> sum(tree.right, rightSum));
-   *     this.yield(() -> tree.value + leftSum.get() + rightSum.get(), result::set);
+   *     lazily(() -> sum(tree.left, leftSum));
+   *     lazily(() -> sum(tree.right, rightSum));
+   *     lazily(() -> tree.value + leftSum.get() + rightSum.get(), result::set);
    *     return this;
    *   }
    * }
@@ -276,16 +277,50 @@ public class Iteration<T> {
    * }
    * </pre>
    *
-   * @since 4.5
+   * @since 9.6
    */
-  public final Iteration<T> yield(Supplier<? extends T> computation, Consumer<? super T> consumer) {
+  public final Iteration<T> lazily(Supplier<? extends T> computation, Consumer<? super T> consumer) {
     requireNonNull(computation);
     requireNonNull(consumer);
-    return this.yield(() -> {
+    return this.lazily(() -> {
       T result = computation.get();
       consumer.accept(result);
-      generate(result);
+      emit(result);
     });
+  }
+
+  /**
+   * Generates {@code element} to the result stream.
+   *
+   * @since 8.1
+   */
+  public final Iteration<T> generate(T element) {
+    return emit(element);
+  }
+
+  /**
+   * Generates all of {@code elements} to the result stream.
+   *
+   * @since 8.1
+   */
+  public final Iteration<T> generate(Iterable<? extends T> elements) {
+    return emit(elements);
+  }
+
+  /**
+   * @deprecated Use {@link #lazily(Continuation)} instead
+   */
+  @Deprecated
+  public final Iteration<T> yield(Continuation continuation) {
+    return lazily(continuation);
+  }
+
+  /**
+   * @deprecated Use {@link #lazily(Supplier, Consumer)} instead
+   */
+  @Deprecated
+  public final Iteration<T> yield(Supplier<? extends T> computation, Consumer<? super T> consumer) {
+    return lazily(computation, consumer);
   }
 
   /**

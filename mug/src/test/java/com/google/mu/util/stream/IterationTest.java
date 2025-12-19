@@ -30,8 +30,8 @@ public class IterationTest {
     assertThat(new Iteration<Object>().iterate()).isEmpty();
   }
 
-  @Test public void yield_eagerElements() {
-    assertThat(new Iteration<>().generate(1).generate(2).iterate()).containsExactly(1, 2).inOrder();
+  @Test public void lazily_eagerElements() {
+    assertThat(new Iteration<>().emit(1).emit(2).iterate()).containsExactly(1, 2).inOrder();
   }
 
   @Test public void preOrder_deep() {
@@ -106,9 +106,9 @@ public class IterationTest {
         if (tree == null) return this;
         AtomicInteger fromLeft = new AtomicInteger();
         AtomicInteger fromRight = new AtomicInteger();
-       this.yield(() -> sum(tree.left(), fromLeft));
-       this.yield(() -> sum(tree.right(), fromRight));
-       this.yield(() -> tree.value() + fromLeft.get() + fromRight.get(), result::set);
+       lazily(() -> sum(tree.left(), fromLeft));
+       lazily(() -> sum(tree.right(), fromRight));
+       lazily(() -> tree.value() + fromLeft.get() + fromRight.get(), result::set);
         return this;
       }
     }
@@ -118,25 +118,25 @@ public class IterationTest {
   private static final class DepthFirst<T> extends Iteration<T> {
     DepthFirst<T> preOrder(Tree<T> tree) {
       if (tree == null) return this;
-      generate(tree.value());
-     this.yield(() -> preOrder(tree.left()));
-     this.yield(() -> preOrder(tree.right()));
+      emit(tree.value());
+     lazily(() -> preOrder(tree.left()));
+     lazily(() -> preOrder(tree.right()));
       return this;
     }
 
     DepthFirst<T> inOrder(Tree<T> tree) {
       if (tree == null) return this;
-     this.yield(() -> inOrder(tree.left()));
-      generate(tree.value());
-     this.yield(() -> inOrder(tree.right()));
+     lazily(() -> inOrder(tree.left()));
+      emit(tree.value());
+     lazily(() -> inOrder(tree.right()));
       return this;
     }
 
     DepthFirst<T> postOrder(Tree<T> tree) {
       if (tree == null) return this;
-     this.yield(() -> postOrder(tree.left()));
-     this.yield(() -> postOrder(tree.right()));
-      generate(tree.value());
+     lazily(() -> postOrder(tree.left()));
+     lazily(() -> postOrder(tree.right()));
+      emit(tree.value());
       return this;
     }
   }
@@ -271,11 +271,11 @@ public class IterationTest {
          return this;
        }
        int mid = (low + high) / 2;
-       generate(mid);
+       emit(mid);
        if (mid < number) {
-        this.yield(() -> guess(mid + 1, high, number));
+        lazily(() -> guess(mid + 1, high, number));
        } else if (mid > number) {
-        this.yield(() -> guess(low, mid - 1, number));
+        lazily(() -> guess(low, mid - 1, number));
        }
        return this;
      }
