@@ -87,22 +87,23 @@ public final class ShortestPath<N> {
     requireNonNull(findSuccessors);
     PriorityQueue<ShortestPath<N>> horizon =
         new PriorityQueue<>(comparingDouble(ShortestPath::distance));
-    horizon.add(new ShortestPath<>(startNode));
-    Map<N, ShortestPath<N>> seen = new HashMap<>();
-    Set<N> settled = new HashSet<>();
+    ShortestPath<N> root = new ShortestPath<>(startNode);
+    Map<N, ShortestPath<N>> bestPaths = new HashMap<>();
+    horizon.add(root);
+    bestPaths.put(root.to(), root);
     return withSideEffect(
-        whileNotNull(horizon::poll).filter(path -> settled.add(path.to())),
+        whileNotNull(horizon::poll).filter(path -> bestPaths.get(path.to()) == path),
         path ->
             forEachPairOrNull(
                 findSuccessors.apply(path.to()),
                 (neighbor, distance) -> {
                   requireNonNull(neighbor);
                   checkNotNegative(distance, "distance");
-                  ShortestPath<?> old = seen.get(neighbor);
+                  ShortestPath<?> old = bestPaths.get(neighbor);
                   if (old == null || path.distance() + distance < old.distance()) {
                     ShortestPath<N> shorter = path.extendTo(neighbor, distance);
-                    seen.put(neighbor, shorter);
                     horizon.add(shorter);
+                    bestPaths.put(neighbor, shorter);
                   }
                 }));
   }
