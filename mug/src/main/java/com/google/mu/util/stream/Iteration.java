@@ -289,20 +289,14 @@ public class Iteration<T> {
     });
   }
 
-  /**
-   * Emits {@code element} to the result stream.
-   *
-   * @since 8.1
-   */
+  /** @deprecated Use {@link #emit(Object)} instead. */
+  @Deprecated
   public final Iteration<T> generate(T element) {
     return emit(element);
   }
 
-  /**
-   * Emits all of {@code elements} to the result stream.
-   *
-   * @since 8.1
-   */
+  /** @deprecated Use {@link #emit(Iterable)} instead. */
+  @Deprecated
   public final Iteration<T> generate(Iterable<? extends T> elements) {
     return emit(elements);
   }
