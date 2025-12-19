@@ -16,6 +16,7 @@ package com.google.mu.time;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.common.truth.TruthJUnit.assume;
 import static com.google.mu.time.DateTimeFormats.formatOf;
 import static org.junit.Assert.assertThrows;
 
@@ -34,6 +35,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
 
+import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -71,6 +73,10 @@ public final class DateTimeFormatsTest {
   public void singleDigitHourWithAmPm() {
     assertLocalTime("1AM", "ha").isEqualTo(LocalTime.of(1, 0, 0));
     assertLocalTime("2 PM", "h a").isEqualTo(LocalTime.of(14, 0, 0));
+    assertLocalTime("1am", "ha").isEqualTo(LocalTime.of(1, 0, 0));
+    assertLocalTime("2pm", "ha").isEqualTo(LocalTime.of(14, 0, 0));
+    assertLocalTime("1a.m.", "ha").isEqualTo(LocalTime.of(1, 0, 0));
+    assertLocalTime("2p.m.", "ha").isEqualTo(LocalTime.of(14, 0, 0));
   }
 
   @Test
@@ -83,6 +89,10 @@ public final class DateTimeFormatsTest {
   public void singleDigitHourMinuteWithAmPm() {
     assertLocalTime("1:10AM", "h:mma").isEqualTo(LocalTime.of(1, 10, 0));
     assertLocalTime("2:05 PM", "h:mm a").isEqualTo(LocalTime.of(14, 5, 0));
+    assertLocalTime("1:10 am", "h:mm a").isEqualTo(LocalTime.of(1, 10, 0));
+    assertLocalTime("2:05pm", "h:mma").isEqualTo(LocalTime.of(14, 5, 0));
+    assertLocalTime("1:10 a.m.", "h:mm a").isEqualTo(LocalTime.of(1, 10, 0));
+    assertLocalTime("2:05p.m.", "h:mma").isEqualTo(LocalTime.of(14, 5, 0));
   }
 
   @Test
@@ -95,12 +105,20 @@ public final class DateTimeFormatsTest {
   public void singleDigitHourMinuteSecondWithAmPm() {
     assertLocalTime("1:10:30AM", "h:mm:ssa").isEqualTo(LocalTime.of(1, 10, 30));
     assertLocalTime("2:05:00 PM", "h:mm:ss a").isEqualTo(LocalTime.of(14, 5, 0));
+    assertLocalTime("1:10:30 am", "h:mm:ss a").isEqualTo(LocalTime.of(1, 10, 30));
+    assertLocalTime("2:05:00pm", "h:mm:ssa").isEqualTo(LocalTime.of(14, 5, 0));
+    assertLocalTime("1:10:30a.m.", "h:mm:ssa").isEqualTo(LocalTime.of(1, 10, 30));
+    assertLocalTime("2:05:00p.m.", "h:mm:ssa").isEqualTo(LocalTime.of(14, 5, 0));
   }
 
   @Test
   public void twoDigitHourWithAmPm() {
     assertLocalTime("09AM", "HHa").isEqualTo(LocalTime.of(9, 0, 0));
     assertLocalTime("12 PM", "HH a").isEqualTo(LocalTime.of(12, 0, 0));
+    assertLocalTime("09am", "HHa").isEqualTo(LocalTime.of(9, 0, 0));
+    assertLocalTime("12 pm", "HH a").isEqualTo(LocalTime.of(12, 0, 0));
+    assertLocalTime("09 a.m.", "HHa").isEqualTo(LocalTime.of(9, 0, 0));
+    assertLocalTime("12 p.m.", "HH a").isEqualTo(LocalTime.of(12, 0, 0));
   }
 
   @Test
@@ -113,12 +131,20 @@ public final class DateTimeFormatsTest {
   public void twoDigitHourMinuteWithAmPm() {
     assertLocalTime("09:00AM", "HH:mma").isEqualTo(LocalTime.of(9, 0, 0));
     assertLocalTime("12:00 PM", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
+    assertLocalTime("12:00 pm", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
+    assertLocalTime("12:00 am", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
+    assertLocalTime("12:00 a.m.", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
+    assertLocalTime("12:00 p.m.", "HH:mm a").isEqualTo(LocalTime.of(12, 0, 0));
   }
 
   @Test
   public void twoDigitHourMinuteSecondWithAmPm() {
     assertLocalTime("09:00:30AM", "HH:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
     assertLocalTime("15:00:30 PM", "HH:mm:ss a").isEqualTo(LocalTime.of(15, 0, 30));
+    assertLocalTime("09:00:30am", "HH:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
+    assertLocalTime("15:00:30 pm", "HH:mm:ss a").isEqualTo(LocalTime.of(15, 0, 30));
+    assertLocalTime("09:00:30a.m.", "HH:mm:ssa").isEqualTo(LocalTime.of(9, 0, 30));
+    assertLocalTime("15:00:30 p.m.", "HH:mm:ss a").isEqualTo(LocalTime.of(15, 0, 30));
   }
 
 
@@ -429,6 +455,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void formatOf_12HourFormat() {
+    assumeUsLocale();
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
     DateTimeFormatter formatter = formatOf("dd MM yyyy <AD> hh:mm <PM> <+08:00>");
@@ -599,9 +626,6 @@ public final class DateTimeFormatsTest {
             "yyyy/MM/dd HH:mm:ss.nnn VV",
             "yyyy/MM/dd HH:mm:ss.SSSSSS VV",
             "yyyy-MM-dd HH:mm:ss.SSSSSS VV",
-            "yyyy-MM-dd HH:mm:ss.SSSSSS z",
-            "yyyy-MM-dd HH:mm:ss.SSSSSS zz",
-            "yyyy-MM-dd HH:mm:ss.SSSSSS zzz",
           })
           String formatterName,
       @TestParameter({
@@ -614,6 +638,28 @@ public final class DateTimeFormatsTest {
     String example = zonedTime.format(getFormatterByName(formatterName));
     assertThat(ZonedDateTime.parse(example, DateTimeFormats.formatOf(example)))
         .isEqualTo(zonedTime);
+  }
+
+  @Test
+  @SuppressWarnings("DateTimeExampleStringCheck")
+  public void zoneIdRetainedExamples_usLocaleOnly(
+      @TestParameter({
+            "yyyy-MM-dd HH:mm:ss.SSSSSS z",
+            "yyyy-MM-dd HH:mm:ss.SSSSSS zz",
+            "yyyy-MM-dd HH:mm:ss.SSSSSS zzz",
+          })
+          String formatterName,
+      @TestParameter({
+            "2020-01-01T00:00:01-07:00[America/New_York]",
+            "1979-01-01T00:00:00+01:00[Europe/Paris]",
+          })
+          String datetime)
+      throws Exception {
+    assumeUsLocale();
+    ZonedDateTime zonedTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
+    String example = zonedTime.format(getFormatterByName(formatterName));
+    assertThat(ZonedDateTime.parse(example, DateTimeFormats.formatOf(example)).toInstant())
+        .isEqualTo(zonedTime.toInstant());
   }
 
   @Test
@@ -992,6 +1038,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_twoLetterZoneNameAbbreviation() {
+    assumeUsLocale();
     DateTimeFormatter formatter = DateTimeFormats.formatOf("M dd yyyy HH:mm:ss<PT>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30PT", formatter);
     assertThat(dateTime)
@@ -1011,12 +1058,13 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_abbreviatedZoneName() {
+    assumeUsLocale();
     DateTimeFormatter formatter = DateTimeFormats.formatOf("MM dd yyyy HH:mm:ss<GMT>");
     ZonedDateTime dateTime = ZonedDateTime.parse("01 10 2023 10:20:30PST", formatter);
-    assertThat(dateTime)
+    assertThat(dateTime.toInstant())
         .isEqualTo(
             ZonedDateTime.of(
-                LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0), ZoneId.of("America/Los_Angeles")));
+                LocalDateTime.of(2023, 1, 10, 10, 20, 30, 0), ZoneId.of("America/Los_Angeles")).toInstant());
   }
 
   @Test
@@ -1353,7 +1401,13 @@ public final class DateTimeFormatsTest {
     String pattern = DateTimeFormats.inferDateTimePattern(example);
     assertThat(pattern).isEqualTo(equivalentPattern);
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
-    LocalTime time = LocalTime.parse(example, formatter);
+    LocalTime time;
+    try {
+      time = LocalTime.parse(example, formatter);
+    } catch (DateTimeParseException e) {
+      Assume.assumeNoException("Cannot test local time in system locale", e);
+      throw e;
+    }
     assertThat(time.format(formatter)).isEqualTo(example);
     return assertThat(time);
   }
@@ -1370,5 +1424,12 @@ public final class DateTimeFormatsTest {
     assertThat(time.format(formatter)).isEqualTo(time.format(DateTimeFormatter.ofPattern(pattern)));
     assertThat(ZonedDateTime.parse(time.format(DateTimeFormatter.ofPattern(pattern)), formatter))
         .isEqualTo(time);
+  }
+
+  private static void assumeUsLocale() {
+    ZonedDateTime zonedTime = ZonedDateTime.parse(
+        "2020-01-01T00:00:01-07:00[America/New_York]", DateTimeFormatter.ISO_DATE_TIME);
+    assume().that(zonedTime.format(DateTimeFormatter.ofPattern(("yyyy/MM/dd HH:mm:ssa VV"))))
+        .isEqualTo("2020/01/01 02:00:01AM America/New_York");
   }
 }
