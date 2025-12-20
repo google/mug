@@ -318,10 +318,9 @@ public class Iteration<T> {
   }
 
   /**
-   * Starts iteration over the {@link #generate generated} elements.
+   * Starts iteration over the {@link #emit emitted} elements.
    *
-   * <p>
-   * Because an {@code Iteration} instance is stateful and mutable,
+   * <p>Because an {@code Iteration} instance is stateful and mutable,
    * {@code iterate()} can be called at most once per instance.
    *
    * @throws IllegalStateException if {@code iterate()} has already been called.
