@@ -472,10 +472,10 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void formatOf_zoneOffsetNotRetranslated() {
-    DateTimeFormatter formatter = formatOf("E, LLL dd yyyy <12:10:00> zzzz");
+    DateTimeFormatter formatter = formatOf("E, LLL dd yyyy <12:10:00> O");
     ZonedDateTime zonedTime =
-        ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
-    assertEquivalent(formatter, zonedTime, "E, LLL dd yyyy HH:mm:ss zzzz");
+        ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneOffset.ofHours(-7));
+    assertEquivalent(formatter, zonedTime, "E, LLL dd yyyy HH:mm:ss O");
   }
 
   @Test
@@ -1421,8 +1421,11 @@ public final class DateTimeFormatsTest {
   }
 
   private static void assertEquivalent(DateTimeFormatter formatter, ZonedDateTime time, String pattern) {
-    assertThat(time.format(formatter)).isEqualTo(time.format(DateTimeFormatter.ofPattern(pattern)));
-    assertThat(ZonedDateTime.parse(time.format(DateTimeFormatter.ofPattern(pattern)), formatter))
+    assertWithMessage(formatter.toString())
+        .that(time.format(formatter))
+        .isEqualTo(time.format(DateTimeFormatter.ofPattern(pattern)));
+    assertWithMessage(formatter.toString())
+        .that(ZonedDateTime.parse(time.format(DateTimeFormatter.ofPattern(pattern)), formatter))
         .isEqualTo(time);
   }
 
