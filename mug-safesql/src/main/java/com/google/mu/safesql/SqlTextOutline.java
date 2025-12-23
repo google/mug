@@ -20,6 +20,7 @@ final class SqlTextOutline {
           enclosedBy("--", "\n"),
           enclosedBy("`", "`"),
           enclosedBy("\"", "\""),
+          // single-quoted string, with '' to escape. Closing single-quote may be missing
           first(Pattern.compile("'[^']*(?:''[^']*)*(?:'|(?=$))")))
       .collect(firstOccurrence())
       .repeatedly();
