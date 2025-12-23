@@ -1670,10 +1670,17 @@ public final class SafeSql {
                 eachPlaceholderValue(placeholder, elements)
                     .mapToObj(SafeSql::subqueryOrParameter)
                     .collect(joining(", ")));
-          } else {
+          } else if (placeholder.isPrecededBy("%") || placeholder.isFollowedBy("%")
+              || placeholder.isPrecededBy("_") || placeholder.isFollowedBy("_")) {
             builder.addSubQuery(
                 eachPlaceholderValue(placeholder, elements)
                     .mapToObj(SafeSql::mustBeSubquery)
+                    .collect(joining(", ")));
+            validateSubqueryPlaceholder(placeholder);
+          } else {
+            builder.addSubQuery(
+                eachPlaceholderValue(placeholder, elements)
+                    .mapToObj(SafeSql::subqueryOrParameter)
                     .collect(joining(", ")));
             validateSubqueryPlaceholder(placeholder);
           }

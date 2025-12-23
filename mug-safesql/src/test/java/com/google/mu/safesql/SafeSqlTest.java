@@ -346,18 +346,16 @@ public class SafeSqlTest {
         () -> SafeSql.of(
             "select {columns} from tbl",
             /* columns */ asList(SafeSql.of("c1"), null, SafeSql.of("c3"))));
-    assertThat(thrown).hasMessageThat().contains("{columns}[1] expected to be SafeSql, but is null");
+    assertThat(thrown).hasMessageThat().contains("{columns}[1]");
+    assertThat(thrown).hasMessageThat().contains("null");
   }
 
   @Test
-  public void listWithNonSafeSql_throws() {
-    IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class,
-        () -> SafeSql.of(
-            "select {columns} from tbl",
-            /* columns */ asList(SafeSql.of("c1"), SafeSql.of("c2"), "c3")));
-    assertThat(thrown)
-        .hasMessageThat().contains("{columns}[2] expected to be SafeSql, but is class java.lang.String");
+  public void listWithNonSafeSql() {
+    SafeSql sql = SafeSql.of(
+        "select {columns} from tbl",
+        /* columns */ asList(SafeSql.of("c1"), SafeSql.of("c2"), "c3"));
+    assertThat(sql.debugString()).isEqualTo("select c1, c2, ? /* c3 */ from tbl");
   }
 
   @Test
@@ -1017,6 +1015,13 @@ public class SafeSqlTest {
     SafeSql sql = SafeSql.of("select * from tbl where id in ({ids})", /* ids */ asList(1, 2, 3));
     assertThat(sql.toString()).isEqualTo("select * from tbl where id in (?, ?, ?)");
     assertThat(sql.debugString()).isEqualTo("select * from tbl where id in (? /* 1 */, ? /* 2 */, ? /* 3 */)");
+  }
+
+  @Test
+  public void inListOfParameters_withParameterValuesAndLiteralValues() {
+    SafeSql sql = SafeSql.of("select * from tbl where id in (1, 2, {ids})", /* ids */ asList(3, 4));
+    assertThat(sql.toString()).isEqualTo("select * from tbl where id in (1, 2, ?, ?)");
+    assertThat(sql.debugString()).isEqualTo("select * from tbl where id in (1, 2, ? /* 3 */, ? /* 4 */)");
   }
 
   @Test
