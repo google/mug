@@ -1589,9 +1589,10 @@ public final class SafeSql {
       placeholders.forEach((placeholder, value) -> {
         checkMisuse(placeholder, value);
         class SanityChecker {
-          SafeSql subqueryOrParameter( CharSequence name, Object param) {
+          SafeSql subqueryOrParameter(CharSequence name, Object param) {
             checkArgument(param != null, "%s must not be null", name);
             if (param instanceof SafeSql) {
+              validateSubqueryPlaceholder(placeholder);
               return (SafeSql) param;
             }
             String enclosedBy = outline.getEnclosedBy(placeholder);
@@ -1680,17 +1681,11 @@ public final class SafeSql {
                 eachPlaceholderValue(placeholder, elements)
                     .mapToObj(SafeSql::mustBeIdentifier)
                     .collect(Collectors.joining("\", \"")));
-          } else if (context.lookaround("IN (", placeholder, ")")) {
-            builder.addSubQuery(
-                eachPlaceholderValue(placeholder, elements)
-                    .mapToObj(new SanityChecker()::subqueryOrParameter)
-                    .collect(joining(", ")));
           } else {
             builder.addSubQuery(
                 eachPlaceholderValue(placeholder, elements)
                 .mapToObj(new SanityChecker()::subqueryOrParameter)
                     .collect(joining(", ")));
-            validateSubqueryPlaceholder(placeholder);
           }
         } else if (value instanceof SafeSql) {
           builder.appendSql(scanner.nextFragment()).addSubQuery((SafeSql) value);
