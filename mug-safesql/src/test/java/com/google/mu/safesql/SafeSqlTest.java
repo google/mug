@@ -1048,11 +1048,39 @@ public class SafeSqlTest {
   }
 
   @Test
-  public void inListOfQuotedStringParametersWithChars_throws() {
+  public void inListOfQuotedStringParameters_insideQuotedString_throws() {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () ->  SafeSql.of("select * from tbl where id in ('%{ids}%')", /* ids */ asList("foo", "bar")));
-    assertThat(thrown).hasMessageThat().contains("{ids}[0]");
+    assertThat(thrown).hasMessageThat().contains("{ids}");
+    assertThat(thrown).hasMessageThat().contains("enclosed by '");
+  }
+
+  @Test
+  public void inListOfQuotedStringParameters_insideIdentifier_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () ->  SafeSql.of("select * from tbl where id in (`my_{ids}`)", /* ids */ asList("foo", "bar")));
+    assertThat(thrown).hasMessageThat().contains("{ids}");
+    assertThat(thrown).hasMessageThat().contains("enclosed by `");
+  }
+
+  @Test
+  public void inListOfQuotedStringParameters_insideBlockComment_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () ->  SafeSql.of("select * from tbl where id in (/* my_{ids} */)", /* ids */ asList("foo", "bar")));
+    assertThat(thrown).hasMessageThat().contains("{ids}");
+    assertThat(thrown).hasMessageThat().contains("enclosed by /*");
+  }
+
+  @Test
+  public void inListOfQuotedStringParameters_insideLineComment_throws() {
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class,
+        () ->  SafeSql.of("select * from tbl where id in (-- my_{ids} \n)", /* ids */ asList("foo", "bar")));
+    assertThat(thrown).hasMessageThat().contains("{ids}");
+    assertThat(thrown).hasMessageThat().contains("enclosed by --");
   }
 
   @Test
