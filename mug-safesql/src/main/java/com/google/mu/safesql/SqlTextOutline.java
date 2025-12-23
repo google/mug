@@ -7,6 +7,7 @@ import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import com.google.mu.util.Substring;
@@ -19,11 +20,7 @@ final class SqlTextOutline {
           enclosedBy("--", "\n"),
           enclosedBy("`", "`"),
           enclosedBy("\"", "\""),
-          Substring.between(
-              first('\''),
-              INCLUSIVE,
-              first('\'').notFollowedBy("'").notPrecededBy("'").or(Substring.END),
-              INCLUSIVE))
+          first(Pattern.compile("'[^']*(?:''[^']*)*(?:'|(?=$))")))
       .collect(firstOccurrence())
       .repeatedly();
 
@@ -44,7 +41,7 @@ final class SqlTextOutline {
   String getEnclosedBy(int index) {
     return Optional.ofNullable(sections.floorEntry(index))
         .map(Map.Entry::getValue)
-        .filter(section -> index > section.index() && section.index() + section.length() > index)
+        .filter(section -> index > section.index() && index < section.index() + section.length())
         .map(section -> {
           if (section.startsWith("--")) {
             return "--";

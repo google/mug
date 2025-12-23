@@ -47,9 +47,10 @@ public final class SqlTextOutlineTest {
 
   @Test
   public void getEnclosedBy_blockComment_unterminated() {
-    SqlTextOutline outline = new SqlTextOutline("select 1 /* block comment");
-    assertThat(outline.getEnclosedBy(9)).isEmpty();
-    assertThat(outline.getEnclosedBy(25)).isEmpty();
+    SqlTextOutline outline = new SqlTextOutline("s /* ");
+    assertThat(outline.getEnclosedBy(2)).isEmpty();
+    assertThat(outline.getEnclosedBy(4)).isEqualTo("/*");
+    assertThat(outline.getEnclosedBy(5)).isEmpty();
   }
 
   @Test
@@ -64,9 +65,10 @@ public final class SqlTextOutlineTest {
 
   @Test
   public void getEnclosedBy_stringLiteral_unterminated() {
-    SqlTextOutline outline = new SqlTextOutline("select 'string literal");
-    assertThat(outline.getEnclosedBy(7)).isEmpty();
-    assertThat(outline.getEnclosedBy(22)).isEmpty();
+    SqlTextOutline outline = new SqlTextOutline("s 'x''yz");
+    assertThat(outline.getEnclosedBy(2)).isEmpty();
+    assertThat(outline.getEnclosedBy(5)).isEqualTo("'");
+    assertThat(outline.getEnclosedBy(6)).isEqualTo("'");
   }
 
   @Test
@@ -77,6 +79,16 @@ public final class SqlTextOutlineTest {
     assertThat(outline.getEnclosedBy(16)).isEqualTo("'"); // second ' in ''
     assertThat(outline.getEnclosedBy(25)).isEqualTo("'"); // last '
     assertThat(outline.getEnclosedBy(26)).isEmpty();
+  }
+
+  @Test
+  public void getEnclosedBy_stringLiteral_withEscapedQuoteAtEnd() {
+    SqlTextOutline outline = new SqlTextOutline(" 's '''");
+    assertThat(outline.getEnclosedBy(1)).isEmpty();
+    assertThat(outline.getEnclosedBy(2)).isEqualTo("'"); // '
+    assertThat(outline.getEnclosedBy(5)).isEqualTo("'"); // first ' in ''
+    assertThat(outline.getEnclosedBy(6)).isEqualTo("'"); // second ' in ''
+    assertThat(outline.getEnclosedBy(7)).isEmpty();
   }
 
   @Test
@@ -151,9 +163,10 @@ public final class SqlTextOutlineTest {
 
   @Test
   public void getEnclosedBy_backtickQuote_unterminated() {
-    SqlTextOutline outline = new SqlTextOutline("select `backtick");
-    assertThat(outline.getEnclosedBy(7)).isEmpty();
-    assertThat(outline.getEnclosedBy(16)).isEmpty();
+    SqlTextOutline outline = new SqlTextOutline("s `xy");
+    assertThat(outline.getEnclosedBy(2)).isEmpty();
+    assertThat(outline.getEnclosedBy(3)).isEqualTo("`");
+    assertThat(outline.getEnclosedBy(4)).isEqualTo("`");
   }
 
   @Test
@@ -168,9 +181,10 @@ public final class SqlTextOutlineTest {
 
   @Test
   public void getEnclosedBy_doubleQuote_unterminated() {
-    SqlTextOutline outline = new SqlTextOutline("select \"double");
-    assertThat(outline.getEnclosedBy(7)).isEmpty();
-    assertThat(outline.getEnclosedBy(14)).isEmpty();
+    SqlTextOutline outline = new SqlTextOutline("s \"xy");
+    assertThat(outline.getEnclosedBy(2)).isEmpty();
+    assertThat(outline.getEnclosedBy(3)).isEqualTo("\"");
+    assertThat(outline.getEnclosedBy(4)).isEqualTo("\"");
   }
 
   @Test
