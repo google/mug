@@ -266,4 +266,21 @@ public final class SqlTextOutlineTest {
     assertThat(outline.getEnclosedBy(23)).isEqualTo("\"");
     assertThat(outline.getEnclosedBy(24)).isEmpty();
   }
+
+  @Test
+  public void getEnclosedBy_twoSingleQuotedStrings() {
+    SqlTextOutline outline = new SqlTextOutline("'string1' and 'string2'");
+    assertThat(outline.getEnclosedBy(0)).isEmpty(); // '
+    assertThat(outline.getEnclosedBy(1)).isEqualTo("'"); // s
+    assertThat(outline.getEnclosedBy(8)).isEqualTo("'"); // '
+    assertThat(outline.getEnclosedBy(9)).isEmpty(); // space
+    assertThat(outline.getEnclosedBy(10)).isEmpty(); // a
+    assertThat(outline.getEnclosedBy(11)).isEmpty(); // n
+    assertThat(outline.getEnclosedBy(12)).isEmpty(); // d
+    assertThat(outline.getEnclosedBy(13)).isEmpty(); // space
+    assertThat(outline.getEnclosedBy(14)).isEmpty(); // '
+    assertThat(outline.getEnclosedBy(15)).isEqualTo("'"); // s
+    assertThat(outline.getEnclosedBy(22)).isEqualTo("'"); // '
+    assertThat(outline.getEnclosedBy(23)).isEmpty();
+  }
 }
