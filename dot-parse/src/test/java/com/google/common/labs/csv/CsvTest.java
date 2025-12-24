@@ -121,6 +121,8 @@ public final class CsvTest {
   public void parseToLists_quotedColumnWithEscapedQuote() {
     assertThat(CSV.parseToLists("abc,\"1234\"\"5678\""))
         .containsExactly(List.of("abc", "1234\"5678"));
+    assertThat(CSV.parseToLists("abc,\"1234\"\"\"\"5678\""))
+        .containsExactly(List.of("abc", "1234\"\"5678"));
   }
 
   @Test

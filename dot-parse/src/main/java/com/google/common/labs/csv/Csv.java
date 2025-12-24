@@ -99,9 +99,8 @@ public final class Csv {
           .followedBy(consecutive(isNot('\n'), "comment").orElse(null))
           .followedByOrEof(NEW_LINE);
   private static final Parser<String> QUOTED =
-      Parser.consecutive(isNot('"'), "quoted")
-          .or(Parser.string("\"\"").thenReturn("\"")) // escaped quote
-          .zeroOrMore(Collectors.joining())
+      Parser.zeroOrMore(isNot('"'), "quoted")
+          .delimitedBy("\"\"", Collectors.joining("\""))
           .between("\"", "\"")
           .between(IGNORED_WHITESPACES, IGNORED_WHITESPACES);
 
