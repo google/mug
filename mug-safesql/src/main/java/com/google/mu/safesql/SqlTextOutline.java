@@ -3,8 +3,11 @@ package com.google.mu.safesql;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
 import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
+import static java.util.Arrays.asList;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
@@ -24,6 +27,7 @@ final class SqlTextOutline {
           first(Pattern.compile("'[^']*(?:''[^']*)*(?:'|(?=$))")))
       .collect(firstOccurrence())
       .repeatedly();
+  private static final List<String> SECTION_PREFIXES = asList("/*", "--", "`", "\"", "'");
 
   private final TreeMap<Integer, Substring.Match> sections;
 
@@ -43,24 +47,10 @@ final class SqlTextOutline {
     return Optional.ofNullable(sections.floorEntry(index))
         .map(Map.Entry::getValue)
         .filter(section -> index > section.index() && index < section.index() + section.length())
-        .map(section -> {
-          if (section.startsWith("--")) {
-            return "--";
-          }
-          if (section.startsWith("/*")) {
-            return "/*";
-          }
-          if (section.startsWith("'")) {
-            return "'";
-          }
-          if (section.startsWith("`")) {
-            return "`";
-          }
-          if (section.startsWith("\"")) {
-            return "\"";
-          }
-          return "";
-        })
+        .flatMap(section -> SECTION_PREFIXES.stream()
+            .map(prefix -> section.startsWith(prefix) ? prefix : null)
+            .filter(Objects::nonNull)
+            .findFirst())
         .orElse("");
   }
 
