@@ -45,7 +45,7 @@ import com.google.mu.util.stream.Joiner.FasterStringJoiner;
  * Except that JDK {@code joining()} requires the inputs to be strings; while Joiner can join any input,
  * e.g. numbers.
  *
- * <p>Starting from v9.6, {@code Joiner.on()} is optimized to be more efficient than {@cod
+ * <p>Starting from v9.6, {@code Joiner.on()} is optimized to be more efficient than {@code
  * Collectors.joining()} when the input has only one string element because it will return the
  * string element as is, whereas JDK {@code Collectors.joining()} delegates to {@link StringJoiner},
  * which performs a deep copy even when there is only one string with no prefix and suffix.
@@ -84,6 +84,20 @@ public final class Joiner implements Collector<Object, FasterStringJoiner, Strin
     this.prefix = prefix;
     this.delimiter = delimiter;
     this.suffix = suffix;
+  }
+
+  /**
+   * A default joiner that uses no delimiter between elements.
+   *
+   * <p>Use this instead of {@code Collectors.joining()} because it's more efficient when
+   * the input contains a single string element.
+   *
+   * @since 9.6
+   */
+  public Joiner() {
+    this.prefix = "";
+    this.delimiter = "";
+    this.suffix = "";
   }
 
   /** Joining the inputs on the {@code delimiter} character */

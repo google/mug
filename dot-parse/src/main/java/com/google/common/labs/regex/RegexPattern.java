@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 
 import com.google.common.labs.parse.Parser;
 import com.google.mu.util.CharPredicate;
+import com.google.mu.util.stream.Joiner;
 
 
 /**
@@ -160,7 +161,7 @@ public sealed interface RegexPattern
 
     @Override
     public String toString() {
-      return elements.stream().map(Object::toString).collect(joining());
+      return elements.stream().map(Object::toString).collect(new Joiner());
     }
   }
 
@@ -398,7 +399,7 @@ public sealed interface RegexPattern
 
       @Override
       public String toString() {
-        return "[" + elements.stream().map(Object::toString).collect(joining()) + "]";
+        return "[" + elements.stream().map(Object::toString).collect(new Joiner()) + "]";
       }
     }
 
@@ -410,7 +411,7 @@ public sealed interface RegexPattern
 
       @Override
       public String toString() {
-        return "[^" + elements.stream().map(Object::toString).collect(joining()) + "]";
+        return "[^" + elements.stream().map(Object::toString).collect(new Joiner()) + "]";
       }
     }
   }
