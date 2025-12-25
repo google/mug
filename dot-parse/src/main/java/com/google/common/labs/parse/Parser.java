@@ -25,7 +25,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -52,6 +51,7 @@ import com.google.mu.util.Both;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.Joiner;
 
 /**
  * A simple recursive descent parser combinator intended to parse simple grammars such as regex, csv
@@ -330,7 +330,7 @@ public abstract class Parser<T> {
     checkArgument(!Character.isISOControl(before), "quoteChar cannot be a control character");
     checkArgument(!Character.isISOControl(after), "quoteChar cannot be a control character");
     return anyOf(consecutive(isNot(after).and(isNot('\\')), "quoted chars"), escape)
-        .zeroOrMore(joining())
+        .zeroOrMore(new Joiner())
         .immediatelyBetween(Character.toString(before), Character.toString(after));
   }
 
@@ -357,6 +357,10 @@ public abstract class Parser<T> {
    *     .zeroOrMore(Collectors.joining())
    *     .parse("D83DDE00");
    * }</pre>
+   *
+   * <p>Note that it's recommended to use {@link Joiner} in place of JDK {@code Collectors.joining()}
+   * because {@code Joiner} optimizes for single-string input, which is a common case in the context
+   * of parsing.
    *
    * <p>You can also compose it with {@link #quotedByWithEscapes}:
    *
