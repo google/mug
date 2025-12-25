@@ -358,7 +358,8 @@ public abstract class Parser<T> {
    *     .parse("D83DDE00");
    * }</pre>
    *
-   * <p>Note that it's recommended to use {@link Joiner} in place of JDK {@code Collectors.joining()}
+   * <p>Note that starting from v9.6, it's recommended to use {@link Joiner} ({@code new Joiner()}
+   * or {@code Joiner.on(delimiter)}) in place of JDK {@code Collectors.joining()}
    * because {@code Joiner} optimizes for single-string input, which is a common case in the context
    * of parsing.
    *
