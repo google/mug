@@ -1552,6 +1552,7 @@ public final class SafeSql {
 
   private static Template<SafeSql> unsafeTemplate(String template) {
     TemplatePlaceholdersContext context = new TemplatePlaceholdersContext(template);
+    SqlTextOutline outline = new SqlTextOutline(template);
     return StringFormat.template(template, (fragments, placeholders) -> {
       TemplateFragmentScanner scanner = new TemplateFragmentScanner(fragments);
       Builder builder = new Builder();
@@ -1587,6 +1588,21 @@ public final class SafeSql {
       }
       placeholders.forEach((placeholder, value) -> {
         checkMisuse(placeholder, value);
+        class SanityChecker {
+          SafeSql subqueryOrParameter(CharSequence name, Object param) {
+            checkArgument(param != null, "%s must not be null", name);
+            if (param instanceof SafeSql) {
+              validateSubqueryPlaceholder(placeholder);
+              return (SafeSql) param;
+            }
+            String enclosedBy = outline.getEnclosedBy(placeholder);
+            checkArgument(
+                enclosedBy.isEmpty(),
+                "Placeholder %s cannot be a JDBC parameter when enclosed by %s",
+                placeholder, enclosedBy);
+            return PARAM.with(param);
+          }
+        }
         String paramName = placeholder.skip(1, 1).toString().trim();
         Substring.Match conditional = first("->").in(paramName).orElse(null);
         if (conditional != null) {
@@ -1665,17 +1681,11 @@ public final class SafeSql {
                 eachPlaceholderValue(placeholder, elements)
                     .mapToObj(SafeSql::mustBeIdentifier)
                     .collect(Collectors.joining("\", \"")));
-          } else if (context.lookaround("IN (", placeholder, ")")) {
-            builder.addSubQuery(
-                eachPlaceholderValue(placeholder, elements)
-                    .mapToObj(SafeSql::subqueryOrParameter)
-                    .collect(joining(", ")));
           } else {
             builder.addSubQuery(
                 eachPlaceholderValue(placeholder, elements)
-                    .mapToObj(SafeSql::mustBeSubquery)
+                .mapToObj(new SanityChecker()::subqueryOrParameter)
                     .collect(joining(", ")));
-            validateSubqueryPlaceholder(placeholder);
           }
         } else if (value instanceof SafeSql) {
           builder.appendSql(scanner.nextFragment()).addSubQuery((SafeSql) value);
@@ -1799,19 +1809,6 @@ public final class SafeSql {
         element instanceof String,
         "%s expected to be String, but is %s", name, element.getClass());
     return (String) element;
-  }
-
-  private static SafeSql mustBeSubquery(CharSequence name, Object element) {
-    checkArgument(element != null, "%s expected to be SafeSql, but is null", name);
-    checkArgument(
-        element instanceof SafeSql,
-        "%s expected to be SafeSql, but is %s", name, element.getClass());
-    return (SafeSql) element;
-  }
-
-  private static SafeSql subqueryOrParameter(CharSequence name, Object param) {
-    checkArgument(param != null, "%s must not be null", name);
-    return param instanceof SafeSql ? (SafeSql) param : PARAM.with(param);
   }
 
   private static BiStream<String, ?> eachPlaceholderValue(

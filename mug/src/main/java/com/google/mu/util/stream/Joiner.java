@@ -27,6 +27,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import com.google.mu.util.stream.Joiner.FasterStringJoiner;
+
 /**
  * A joiner (and {@code Collector}) that joins strings.
  *
@@ -42,6 +44,11 @@ import java.util.stream.Collectors;
  *
  * Except that JDK {@code joining()} requires the inputs to be strings; while Joiner can join any input,
  * e.g. numbers.
+ *
+ * <p>Starting from v9.6, {@code Joiner.on()} is optimized to be more efficient than {@cod
+ * Collectors.joining()} when the input has only one string element because it will return the
+ * string element as is, whereas JDK {@code Collectors.joining()} delegates to {@link StringJoiner},
+ * which performs a deep copy even when there is only one string with no prefix and suffix.
  *
  * <p>You can also chain {@link #between} to further enclose the joined result between a pair of strings.
  * The following code joins a list of ids and their corresponding names in the format of
@@ -68,7 +75,7 @@ import java.util.stream.Collectors;
  *
  * @since 5.6
  */
-public final class Joiner implements Collector<Object, StringJoiner, String> {
+public final class Joiner implements Collector<Object, FasterStringJoiner, String> {
   private final String prefix;
   private final String delimiter;
   private final String suffix;
@@ -138,23 +145,58 @@ public final class Joiner implements Collector<Object, StringJoiner, String> {
     return Java9Collectors.filtering(s -> s != null && s.length() > 0, this);
   }
 
-  @Override public Supplier<StringJoiner> supplier() {
-    return () -> new StringJoiner(delimiter, prefix, suffix);
+  @Override public Supplier<FasterStringJoiner> supplier() {
+    return () -> new FasterStringJoiner(prefix, delimiter, suffix);
   }
 
-  @Override public BiConsumer<StringJoiner, Object> accumulator() {
+  @Override public BiConsumer<FasterStringJoiner, Object> accumulator() {
     return (joiner, obj) -> joiner.add(String.valueOf(obj));
   }
 
-  @Override public BinaryOperator<StringJoiner> combiner() {
-    return StringJoiner::merge;
+  @Override public BinaryOperator<FasterStringJoiner> combiner() {
+    return FasterStringJoiner::merge;
   }
 
-  @Override public Function<StringJoiner, String> finisher() {
-    return StringJoiner::toString;
+  @Override public Function<FasterStringJoiner, String> finisher() {
+    return FasterStringJoiner::toString;
   }
 
   @Override public Set<Characteristics> characteristics() {
     return Collections.emptySet();
+  }
+
+  /** Faster than StringJoiner when there is only one string to join. */
+  static final class FasterStringJoiner {
+    private final StringJoiner buffer;
+    private final String prefix;
+    private final String suffix;
+    private int count;
+    private String last;
+
+    FasterStringJoiner(String prefix, String delim, String suffix) {
+      this.buffer = new StringJoiner(delim, prefix, suffix);
+      this.prefix = prefix;
+      this.suffix = suffix;
+    }
+
+    FasterStringJoiner add(String str) {
+      buffer.add(str);
+      last = str;
+      count++;
+      return this;
+    }
+
+    FasterStringJoiner merge(FasterStringJoiner that) {
+      this.buffer.merge(that.buffer);
+      this.count += that.count;
+      if (that.last != null) {
+        this.last = that.last;
+      }
+      return this;
+    }
+
+    @Override public String toString() {
+      return count == 1 && prefix.isEmpty() && suffix.isEmpty() ? last : buffer.toString();
+    }
   }
 }
