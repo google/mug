@@ -36,6 +36,7 @@ import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
+import com.google.mu.util.stream.Joiner;
 
 /**
  * An easy-to-use CSV parser with lazy parsing support and friendly error reporting.
@@ -100,7 +101,7 @@ public final class Csv {
           .followedByOrEof(NEW_LINE);
   private static final Parser<String> QUOTED =
       Parser.zeroOrMore(isNot('"'), "quoted")
-          .delimitedBy("\"\"", Collectors.joining("\""))
+          .delimitedBy("\"\"", Joiner.on("\""))
           .between("\"", "\"")
           .between(IGNORED_WHITESPACES, IGNORED_WHITESPACES);
 
