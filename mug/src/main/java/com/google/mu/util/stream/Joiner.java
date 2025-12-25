@@ -45,10 +45,10 @@ import com.google.mu.util.stream.Joiner.FasterStringJoiner;
  * Except that JDK {@code joining()} requires the inputs to be strings; while Joiner can join any input,
  * e.g. numbers.
  *
- * <p>Starting from v9.6, {@code Joiner.on()} is also more efficient than {@code Collectors.joining()}
- * when the input has only one string element because it will return the string element as is, whereas
- * JDK {@code Collectors.joining()} delegates to {@link StringJoiner}, which performs a deep copy
- * even when there is only one string with no prefix and suffix.
+ * <p>Starting from v9.6, {@code Joiner.on()} is optimized to be more efficient than {@cod
+ * Collectors.joining()} when the input has only one string element because it will return the
+ * string element as is, whereas JDK {@code Collectors.joining()} delegates to {@link StringJoiner},
+ * which performs a deep copy even when there is only one string with no prefix and suffix.
  *
  * <p>You can also chain {@link #between} to further enclose the joined result between a pair of strings.
  * The following code joins a list of ids and their corresponding names in the format of
