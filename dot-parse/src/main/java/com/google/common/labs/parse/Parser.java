@@ -71,8 +71,8 @@ import com.google.mu.util.stream.Joiner;
  *
  * <p>WARNING: A poorly-written grammar with long common prefixes may incur expensive backtracking
  * overhead. And if you define recursive grammars using {@link #define define()} or {@link
- * Parser.Rule}, maliciously crafted input (think of 10K left parens when a pair of parentheses
- * define a nested recursive grammar rule) can cause StackOverflowError.
+ * Parser.Rule}, maliciously crafted input (think of 10K left parens in an expression parser)
+ * can cause StackOverflowError.
  */
 public abstract class Parser<T> {
   /**
