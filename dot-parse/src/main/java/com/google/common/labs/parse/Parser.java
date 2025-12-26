@@ -43,6 +43,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.mu.function.Function4;
@@ -330,7 +331,7 @@ public abstract class Parser<T> {
     checkArgument(!Character.isISOControl(before), "quoteChar cannot be a control character");
     checkArgument(!Character.isISOControl(after), "quoteChar cannot be a control character");
     return anyOf(consecutive(isNot(after).and(isNot('\\')), "quoted chars"), escape)
-        .zeroOrMore(new Joiner())
+        .zeroOrMore(Collectors.joining())
         .immediatelyBetween(Character.toString(before), Character.toString(after));
   }
 
@@ -358,10 +359,9 @@ public abstract class Parser<T> {
    *     .parse("D83DDE00");
    * }</pre>
    *
-   * <p>Note that starting from v9.6, it's recommended to use {@link Joiner} ({@code new Joiner()}
-   * or {@code Joiner.on(delimiter)}) in place of JDK {@code Collectors.joining()}
-   * because {@code Joiner} optimizes for single-string input, which is a common case in the context
-   * of parsing.
+   * <p>Note that starting from v9.6, it's recommended to use {@link Joiner} ({@code Joiner.on(delimiter)})
+   * in place of JDK {@code Collectors.joining(delimiter)} because {@code Joiner} optimizes for single-string
+   * input, which is a common case in the context of parsing.
    *
    * <p>You can also compose it with {@link #quotedByWithEscapes}:
    *

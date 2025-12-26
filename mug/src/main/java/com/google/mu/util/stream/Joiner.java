@@ -86,20 +86,6 @@ public final class Joiner implements Collector<Object, FasterStringJoiner, Strin
     this.suffix = suffix;
   }
 
-  /**
-   * A default joiner that uses no delimiter between elements.
-   *
-   * <p>Use this instead of {@code Collectors.joining()} because it's more efficient when
-   * the input contains a single string element.
-   *
-   * @since 9.6
-   */
-  public Joiner() {
-    this.prefix = "";
-    this.delimiter = "";
-    this.suffix = "";
-  }
-
   /** Joining the inputs on the {@code delimiter} character */
   public static Joiner on(char delimiter) {
     return on(Character.toString(delimiter));
@@ -193,11 +179,10 @@ public final class Joiner implements Collector<Object, FasterStringJoiner, Strin
       this.suffix = suffix;
     }
 
-    FasterStringJoiner add(String str) {
+    void add(String str) {
       buffer.add(str);
       last = str;
       count++;
-      return this;
     }
 
     FasterStringJoiner merge(FasterStringJoiner that) {
@@ -210,7 +195,11 @@ public final class Joiner implements Collector<Object, FasterStringJoiner, Strin
     }
 
     @Override public String toString() {
-      return count == 1 && prefix.isEmpty() && suffix.isEmpty() ? last : buffer.toString();
+      if (prefix.isEmpty() && suffix.isEmpty()) {
+        if (count == 0) return "";
+        if (count == 1) return last;
+      }
+      return buffer.toString();
     }
   }
 }
