@@ -67,7 +67,7 @@ import com.google.mu.util.stream.Joiner;
  *
  * <p>For simplicity, {@link #or or()} and {@link #anyOf anyOf()} will always backtrack upon failure.
  * But it's more efficient to factor out common left prefix. For example instead of {@code
- * anyOf(expr.followedBy(";"), expr)}, use {@code expr.optionallyFollowedBy(";"))} instead.
+ * anyOf(expr.followedBy(";"), expr)}, use {@code expr.optionallyFollowedBy(";")} instead.
  *
  * <p>WARNING: A poorly-written grammar with long common prefixes may incur expensive backtracking
  * overhead. And if you define recursive grammars using {@link #define define()} or {@link
