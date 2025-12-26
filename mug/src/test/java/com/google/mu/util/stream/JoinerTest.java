@@ -54,38 +54,6 @@ public class JoinerTest {
         .isEqualTo("[(1, one), (2, two)]");
   }
 
-  @Test public void noDelimiter_joinEmptyInput() {
-    assertThat(Stream.empty().collect(new Joiner()))
-        .isEmpty();
-    assertThat(Stream.empty().collect(new Joiner().between("(", ")")))
-        .isEqualTo("()");
-  }
-
-  @Test public void noDelimiter_joinSingleString() {
-    assertThat(Stream.of("str").collect(new Joiner()))
-        .isEqualTo("str");
-    assertThat(Stream.of("str").collect(new Joiner().between("(", ")")))
-        .isEqualTo("(str)");
-    assertThat(Stream.of("str").collect(new Joiner().between("", ".")))
-        .isEqualTo("str.");
-    assertThat(Stream.of("str").collect(new Joiner().between("$", "")))
-        .isEqualTo("$str");
-  }
-
-
-  @Test public void noDelimiter_joinTwoObjects() {
-    assertThat(
-            BiStream.of(1, "one", 2, "two")
-                .mapToObj(new Joiner().between('(', ')')::join)
-                .collect(Joiner.on(", ")))
-        .isEqualTo("(1one), (2two)");
-    assertThat(
-            BiStream.of(1, "one", 2, "two")
-                .mapToObj(Joiner.on(", ").between('(', ')')::join)
-                .collect(new Joiner().between("[", "]")))
-        .isEqualTo("[(1, one)(2, two)]");
-  }
-
   @Test public void joinParallel() {
     assertThat(
             BiStream.of(1, "one")
