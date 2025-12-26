@@ -38,10 +38,9 @@ public class PermutationTest {
         lazily(() -> next(List.of(), elements));
       }
 
-      Permutation next(List<T> sofar, Set<T> remaining) {
+      void next(List<T> sofar, Set<T> remaining) {
         if (remaining.isEmpty()) {
           emit(sofar);
-          return this;
         }
         for (T element : remaining) {
           List<T> state = new ArrayList<>(sofar);
@@ -50,7 +49,6 @@ public class PermutationTest {
           newRemaining.remove(element);
           lazily(() -> next(state, newRemaining));
         }
-        return this;
       }
     }
     return new Permutation().iterate();
