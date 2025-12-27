@@ -30,8 +30,14 @@ public class IterationTest {
     assertThat(new Iteration<Object>().iterate()).isEmpty();
   }
 
-  @Test public void lazily_eagerElements() {
+  @Test public void emit_eagerElements() {
     assertThat(new Iteration<>().emit(1).emit(2).iterate()).containsExactly(1, 2).inOrder();
+  }
+
+  @Test public void emit_lazyElements() {
+    Iteration<Integer> iteration = new Iteration<>();
+    assertThat(iteration.forEachLazily(Stream.of(1, 2, 3), iteration::emit).iterate())
+        .containsExactly(1, 2, 3).inOrder();
   }
 
   @Test public void preOrder_deep() {

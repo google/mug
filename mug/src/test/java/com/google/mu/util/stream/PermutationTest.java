@@ -42,13 +42,13 @@ public class PermutationTest {
         if (pending.isEmpty()) {
           emit(prefix);
         }
-        for (T element : pending) {
+        forEachLazily(pending, element -> {
           List<T> materialized = new ArrayList<>(prefix);
           materialized.add(element);
           Set<T> remaining = new LinkedHashSet<>(pending);
           remaining.remove(element);
           lazily(() -> next(materialized, remaining));
-        }
+        });
       }
     }
     return new Permutation().iterate();
