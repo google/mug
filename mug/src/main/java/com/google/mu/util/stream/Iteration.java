@@ -303,7 +303,7 @@ public class Iteration<T> {
    *
    * @since 9.6
    */
-  public final <V> Iteration<T> forEachLazily(
+  private <V> Iteration<T> forEachLazily(
       Spliterator.OfInt spliterator, IntConsumer consumer) {
     requireNonNull(spliterator);
     requireNonNull(consumer);
