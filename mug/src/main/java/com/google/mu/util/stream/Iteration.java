@@ -301,18 +301,6 @@ public class Iteration<T> {
   }
 
   /**
-   * Applies {@code consumer} lazily on each pair from {@code stream}.
-   * A pair is only iterated when consumed by the result stream.
-   *
-   * @since 9.6
-   */
-  public final <K, V> Iteration<T> forEachLazily(
-      BiStream<K, V> stream, BiConsumer<? super K, ? super V> consumer) {
-    requireNonNull(consumer);
-    return forEachLazily(stream.mapToEntry(), e -> consumer.accept(e.getKey(), e.getValue()));
-  }
-
-  /**
    * Lazily generate into the stream the result of {@code computation}. Upon evaluation, also
    * passes the computation result to {@code consumer}. Useful when the
    * computation result of a recursive call is needed. For example, if you have a
