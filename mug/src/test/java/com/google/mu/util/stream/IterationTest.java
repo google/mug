@@ -33,28 +33,34 @@ public class IterationTest {
   }
 
   @Test public void emit_eagerElements() {
-    assertThat(new Iteration<>().emit(1).emit(2).iterate()).containsExactly(1, 2).inOrder();
+    Iteration<Integer> iteration = new Iteration<>();
+    iteration.emit(1);
+    iteration.emit(2);
+    assertThat(iteration.iterate()).containsExactly(1, 2).inOrder();
   }
 
   @Test public void emit_lazyElements() {
     Iteration<Integer> iteration = new Iteration<>();
-    assertThat(iteration.forEachLazily(Stream.of(1, 2, 3), iteration::emit).iterate())
+    iteration.forEachLazily(Stream.of(1, 2, 3), iteration::emit);
+    assertThat(iteration.iterate())
         .containsExactly(1, 2, 3)
         .inOrder();
   }
 
   @Test public void emit_lazyIntElements() {
     Iteration<Integer> iteration = new Iteration<>();
-    assertThat(iteration.forEachLazily(IntStream.of(1, 2, 3), iteration::emit).iterate())
+    iteration.forEachLazily(IntStream.of(1, 2, 3), iteration::emit);
+    assertThat(iteration.iterate())
         .containsExactly(1, 2, 3)
         .inOrder();
   }
 
   @Test public void emit_lazyEntries() {
     Iteration<String> iteration = new Iteration<>();
-    assertThat(iteration.forEachLazily(
-            ImmutableMap.of(1, "one", 2, "two"),
-            (k, v) -> iteration.emit(k + ":" + v)).iterate())
+    iteration.forEachLazily(
+        ImmutableMap.of(1, "one", 2, "two"),
+        (k, v) -> iteration.emit(k + ":" + v));
+    assertThat(iteration.iterate())
         .containsExactly("1:one", "2:two")
         .inOrder();
   }
