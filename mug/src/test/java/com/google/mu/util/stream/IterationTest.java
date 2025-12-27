@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.ClassSanityTester;
 
 public class IterationTest {
@@ -30,8 +31,33 @@ public class IterationTest {
     assertThat(new Iteration<Object>().iterate()).isEmpty();
   }
 
-  @Test public void lazily_eagerElements() {
+  @Test public void emit_eagerElements() {
     assertThat(new Iteration<>().emit(1).emit(2).iterate()).containsExactly(1, 2).inOrder();
+  }
+
+  @Test public void emit_lazyElements() {
+    Iteration<Integer> iteration = new Iteration<>();
+    assertThat(iteration.forEachLazily(Stream.of(1, 2, 3), iteration::emit).iterate())
+        .containsExactly(1, 2, 3)
+        .inOrder();
+  }
+
+  @Test public void emit_lazyEntries() {
+    Iteration<String> iteration = new Iteration<>();
+    assertThat(iteration.forEachLazily(
+            ImmutableMap.of(1, "one", 2, "two"),
+            (k, v) -> iteration.emit(k + ":" + v)).iterate())
+        .containsExactly("1:one", "2:two")
+        .inOrder();
+  }
+
+  @Test public void emit_lazyPairs() {
+    Iteration<String> iteration = new Iteration<>();
+    assertThat(iteration.forEachLazily(
+            BiStream.of(1, "one", 2, "two"),
+            (k, v) -> iteration.emit(k + ":" + v)).iterate())
+        .containsExactly("1:one", "2:two")
+        .inOrder();
   }
 
   @Test public void preOrder_deep() {
@@ -78,7 +104,8 @@ public class IterationTest {
   }
 
   @Test public void nullChecks() {
-    new ClassSanityTester().testNulls(Iteration.class);
+    new ClassSanityTester().setDefault(BiStream.class, BiStream.empty())
+        .testNulls(Iteration.class);
   }
 
   private static <T> Stream<T> preOrderFrom(Tree<T> tree) {
