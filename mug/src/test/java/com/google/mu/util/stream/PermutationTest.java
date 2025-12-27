@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static java.util.Collections.swap;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -35,7 +36,7 @@ public class PermutationTest {
         .containsExactly(List.of(1, 2, 3), List.of(1, 3, 2), List.of(2, 1, 3), List.of(2, 3, 1), List.of(3, 1, 2), List.of(3, 2, 1));
   }
 
-  static <T> Stream<ImmutableList<T>> permute(Set<T> elements) {
+  static <T> Stream<ImmutableList<T>> permute(Collection<T> elements) {
     class Permutation extends Iteration<ImmutableList<T>> {
       Permutation() {
         lazily(() -> next(new ArrayList<>(elements), 0));
