@@ -19,6 +19,7 @@ import static com.google.mu.util.stream.IterationTest.Tree.tree;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -38,6 +39,13 @@ public class IterationTest {
   @Test public void emit_lazyElements() {
     Iteration<Integer> iteration = new Iteration<>();
     assertThat(iteration.forEachLazily(Stream.of(1, 2, 3), iteration::emit).iterate())
+        .containsExactly(1, 2, 3)
+        .inOrder();
+  }
+
+  @Test public void emit_lazyIntElements() {
+    Iteration<Integer> iteration = new Iteration<>();
+    assertThat(iteration.forEachLazily(IntStream.of(1, 2, 3), iteration::emit).iterate())
         .containsExactly(1, 2, 3)
         .inOrder();
   }
