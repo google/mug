@@ -39,18 +39,18 @@ public class PermutationTest {
         lazily(() -> next(new ArrayList<>(elements), 0));
       }
 
-      void next(List<T> buffer, int materializedCount) {
-        if (materializedCount == buffer.size()) {
+      void next(List<T> buffer, int i) {
+        if (i == buffer.size()) {
           emit(ImmutableList.copyOf(buffer));
           return;
         }
-        lazily(() -> next(buffer, materializedCount + 1));
+        lazily(() -> next(buffer, i + 1));
         forEachLazily(
-            IntStream.range(materializedCount + 1, buffer.size()).boxed(),
+            IntStream.range(i + 1, buffer.size()).boxed(),
             j -> {
-              swap(buffer, materializedCount, j);
-              next(buffer, materializedCount + 1);
-              lazily(() -> swap(buffer, materializedCount, j));
+              swap(buffer, i, j);
+              next(buffer, i + 1);
+              lazily(() -> swap(buffer, i, j));
             });
       }
     }
