@@ -1,15 +1,16 @@
 package com.google.mu.util.stream;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.truth.Truth8;
 
 @RunWith(JUnit4.class)
@@ -32,25 +33,33 @@ public class PermutationTest {
         .containsExactly(List.of(1, 2, 3), List.of(1, 3, 2), List.of(2, 1, 3), List.of(2, 3, 1), List.of(3, 1, 2), List.of(3, 2, 1));
   }
 
-  static <T> Stream<List<T>> permute(Set<T> elements) {
-    class Permutation extends Iteration<List<T>> {
+  static <T> Stream<ImmutableList<T>> permute(Set<T> elements) {
+    class Permutation extends Iteration<ImmutableList<T>> {
       Permutation() {
-        lazily(() -> next(List.of(), elements));
+        lazily(() -> next(new ArrayList<>(elements), 0));
       }
 
-      void next(List<T> prefix, Set<T> pending) {
-        if (pending.isEmpty()) {
-          emit(prefix);
+      void next(List<T> buffer, int materializedCount) {
+        if (materializedCount == buffer.size()) {
+          emit(ImmutableList.copyOf(buffer));
+          return;
         }
-        forEachLazily(pending, element -> {
-          List<T> materialized = new ArrayList<>(prefix);
-          materialized.add(element);
-          Set<T> remaining = new LinkedHashSet<>(pending);
-          remaining.remove(element);
-          lazily(() -> next(materialized, remaining));
-        });
+        lazily(() -> next(buffer, materializedCount + 1));
+        forEachLazily(
+            IntStream.range(materializedCount + 1, buffer.size()).boxed(),
+            j -> {
+              swap(buffer, materializedCount, j);
+              next(buffer, materializedCount + 1);
+              lazily(() -> swap(buffer, materializedCount, j));
+            });
       }
     }
     return new Permutation().iterate();
+  }
+
+  private static <T> void swap(List<T> list, int i, int j) {
+    T temp = list.get(i);
+    list.set(i, list.get(j));
+    list.set(j, temp);
   }
 }
