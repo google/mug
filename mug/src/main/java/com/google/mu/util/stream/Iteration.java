@@ -244,6 +244,13 @@ public class Iteration<T> {
    * Applies {@code consumer} lazily on each element in {@code iterable}.
    * An element is only iterated when consumed by the result stream.
    *
+   * <p>Note that if you have a small iterable of elements to be emitted, using {@link
+   * #emit(Iterable)} is more efficient. Only use this method if it's critical that
+   * the iterable elements must be lazily consumed (for example it's a large list).
+   *
+   * <p>Upon return, you shouldn't add or remove from {@code iterable} any more or else
+   * {@link java.util.ConcurrentModificationException} may be thrown while streaming.
+   *
    * @since 9.6
    */
   public final <V> Iteration<T> forEachLazily(Iterable<V> iterable, Consumer<? super V> consumer) {
@@ -281,6 +288,9 @@ public class Iteration<T> {
   /**
    * Applies {@code consumer} lazily on each entry from {@code map}.
    * An entry is only iterated when consumed by the result stream.
+   *
+   * <p>Upon return, you shouldn't add or remove from {@code map} any more or else
+   * {@link java.util.ConcurrentModificationException} may be thrown while streaming.
    *
    * @since 9.6
    */
