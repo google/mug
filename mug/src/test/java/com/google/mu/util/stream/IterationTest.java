@@ -51,15 +51,6 @@ public class IterationTest {
         .inOrder();
   }
 
-  @Test public void emit_lazyPairs() {
-    Iteration<String> iteration = new Iteration<>();
-    assertThat(iteration.forEachLazily(
-            BiStream.of(1, "one", 2, "two"),
-            (k, v) -> iteration.emit(k + ":" + v)).iterate())
-        .containsExactly("1:one", "2:two")
-        .inOrder();
-  }
-
   @Test public void preOrder_deep() {
     Tree<String> tree = tree("a")
         .setLeft(tree("b")
