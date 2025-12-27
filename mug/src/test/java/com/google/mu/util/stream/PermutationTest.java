@@ -37,25 +37,24 @@ public class PermutationTest {
 
   static <T> Stream<ImmutableList<T>> permute(Collection<T> elements) {
     class Permutation extends Iteration<ImmutableList<T>> {
-      Permutation() {
-        lazily(() -> next(new ArrayList<>(elements), 0));
-      }
+      final List<T> buffer = new ArrayList<>(elements);
 
-      void next(List<T> buffer, int i) {
+      Permutation from(int i) {
         if (i == buffer.size()) {
           emit(ImmutableList.copyOf(buffer));
-          return;
+          return this;
         }
-        lazily(() -> next(buffer, i + 1));
+        lazily(() -> from(i + 1));
         forEachLazily(
             IntStream.range(i + 1, buffer.size()),
             j -> {
               Collections.swap(buffer, i, j);
-              next(buffer, i + 1);
+              from(i + 1);
               lazily(() -> Collections.swap(buffer, i, j));
             });
+        return this;
       }
     }
-    return new Permutation().iterate();
+    return new Permutation().from(0).iterate();
   }
 }
