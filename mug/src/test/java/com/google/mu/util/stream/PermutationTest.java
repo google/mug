@@ -38,16 +38,16 @@ public class PermutationTest {
         lazily(() -> next(List.of(), elements));
       }
 
-      void next(List<T> sofar, Set<T> remaining) {
-        if (remaining.isEmpty()) {
-          emit(sofar);
+      void next(List<T> prefix, Set<T> pending) {
+        if (pending.isEmpty()) {
+          emit(prefix);
         }
-        for (T element : remaining) {
-          List<T> state = new ArrayList<>(sofar);
-          state.add(element);
-          Set<T> newRemaining = new LinkedHashSet<>(remaining);
-          newRemaining.remove(element);
-          lazily(() -> next(state, newRemaining));
+        for (T element : pending) {
+          List<T> materialized = new ArrayList<>(prefix);
+          materialized.add(element);
+          Set<T> remaining = new LinkedHashSet<>(pending);
+          remaining.remove(element);
+          lazily(() -> next(materialized, remaining));
         }
       }
     }
