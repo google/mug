@@ -279,12 +279,6 @@ public class Iteration<T> {
     return forEachLazily(stream.spliterator(), consumer);
   }
 
-  /**
-   * Applies {@code consumer} lazily on each element from {@code spliterator}.
-   * An element is only iterated when consumed by the result stream.
-   *
-   * @since 9.6
-   */
   private <V> Iteration<T> forEachLazily(
       Spliterator<V> spliterator, Consumer<? super V> consumer) {
     requireNonNull(spliterator);
@@ -297,12 +291,6 @@ public class Iteration<T> {
             }));
   }
 
-  /**
-   * Applies {@code consumer} lazily on each int element from {@code spliterator}.
-   * An element is only iterated when consumed by the result stream.
-   *
-   * @since 9.6
-   */
   private <V> Iteration<T> forEachLazily(
       Spliterator.OfInt spliterator, IntConsumer consumer) {
     requireNonNull(spliterator);
