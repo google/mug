@@ -1,6 +1,7 @@
 package com.google.mu.util.stream;
 
 import static com.google.common.truth.Truth8.assertThat;
+import static java.util.Collections.swap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,11 +57,5 @@ public class PermutationTest {
       }
     }
     return new Permutation().iterate();
-  }
-
-  private static <T> void swap(List<T> list, int i, int j) {
-    T temp = list.get(i);
-    list.set(i, list.get(j));
-    list.set(j, temp);
   }
 }
