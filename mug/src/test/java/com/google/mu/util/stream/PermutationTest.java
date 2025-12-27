@@ -1,10 +1,10 @@
 package com.google.mu.util.stream;
 
 import static com.google.common.truth.Truth8.assertThat;
-import static java.util.Collections.swap;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -51,9 +51,9 @@ public class PermutationTest {
         forEachLazily(
             IntStream.range(i + 1, buffer.size()),
             j -> {
-              swap(buffer, i, j);
+              Collections.swap(buffer, i, j);
               next(buffer, i + 1);
-              lazily(() -> swap(buffer, i, j));
+              lazily(() -> Collections.swap(buffer, i, j));
             });
       }
     }
