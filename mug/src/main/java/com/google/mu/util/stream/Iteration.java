@@ -19,8 +19,10 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Map;
 import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -274,6 +276,30 @@ public class Iteration<T> {
               consumer.accept(e);
               forEachLazily(spliterator, consumer);
             }));
+  }
+
+  /**
+   * Applies {@code consumer} lazily on each entry from {@code map}.
+   * An entry is only iterated when consumed by the result stream.
+   *
+   * @since 9.6
+   */
+  public final <K, V> Iteration<T> forEachLazily(
+      Map<K, V> map, BiConsumer<? super K, ? super V> consumer) {
+    requireNonNull(consumer);
+    return forEachLazily(map.entrySet(), e -> consumer.accept(e.getKey(), e.getValue()));
+  }
+
+  /**
+   * Applies {@code consumer} lazily on each pair from {@code stream}.
+   * A pair is only iterated when consumed by the result stream.
+   *
+   * @since 9.6
+   */
+  public final <K, V> Iteration<T> forEachLazily(
+      BiStream<K, V> stream, BiConsumer<? super K, ? super V> consumer) {
+    requireNonNull(consumer);
+    return forEachLazily(stream.mapToEntry(), e -> consumer.accept(e.getKey(), e.getValue()));
   }
 
   /**
