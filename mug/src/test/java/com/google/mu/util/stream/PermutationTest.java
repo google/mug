@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -20,19 +19,19 @@ import com.google.common.collect.ImmutableList;
 public class PermutationTest {
 
   @Test public void permute_empty() {
-    assertThat(permute(Set.of())).containsExactly(List.of());
+    assertThat(permute(List.of())).containsExactly(List.of());
   }
 
   @Test public void permute_singleElement() {
-    assertThat(permute(Set.of(1))).containsExactly(List.of(1));
+    assertThat(permute(List.of(1))).containsExactly(List.of(1));
   }
 
   @Test public void permute_twoElements() {
-    assertThat(permute(Set.of(1, 2))).containsExactly(List.of(1, 2), List.of(2, 1));
+    assertThat(permute(List.of(1, 2))).containsExactly(List.of(1, 2), List.of(2, 1));
   }
 
   @Test public void permute_threeElements() {
-    assertThat(permute(Set.of(1, 2, 3)))
+    assertThat(permute(List.of(1, 2, 3)))
         .containsExactly(List.of(1, 2, 3), List.of(1, 3, 2), List.of(2, 1, 3), List.of(2, 3, 1), List.of(3, 1, 2), List.of(3, 2, 1));
   }
 
