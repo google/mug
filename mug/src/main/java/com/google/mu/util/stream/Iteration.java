@@ -363,7 +363,7 @@ public class Iteration<T> {
   public final Iteration<T> lazily(Supplier<? extends T> computation, Consumer<? super T> consumer) {
     requireNonNull(computation);
     requireNonNull(consumer);
-    return this.lazily(() -> {
+    return lazily(() -> {
       T result = computation.get();
       consumer.accept(result);
       emit(result);
