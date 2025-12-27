@@ -211,12 +211,11 @@ public class Iteration<T> {
    *
    * @since 0.6
    */
-  public final Iteration<T> emit(T element) {
+  public final void emit(T element) {
     if (element instanceof Continuation) {
       throw new IllegalArgumentException("Do not stream Continuation objects");
     }
     inbox.push(element);
-    return this;
   }
 
   /**
@@ -224,11 +223,10 @@ public class Iteration<T> {
    *
    * @since 9.6
    */
-  public final Iteration<T> emit(Iterable<? extends T> elements) {
+  public final void emit(Iterable<? extends T> elements) {
     for (T element : elements) {
       emit(element);
     }
-    return this;
   }
 
   /**
@@ -237,9 +235,8 @@ public class Iteration<T> {
    *
    * @since 9.6
    */
-  public final Iteration<T> lazily(Continuation continuation) {
+  public final void lazily(Continuation continuation) {
     inbox.push(continuation);
-    return this;
   }
 
   /**
@@ -255,8 +252,8 @@ public class Iteration<T> {
    *
    * @since 9.6
    */
-  public final <V> Iteration<T> forEachLazily(Iterable<V> iterable, Consumer<? super V> consumer) {
-    return forEachLazily(iterable.spliterator(), consumer);
+  public final <V> void forEachLazily(Iterable<V> iterable, Consumer<? super V> consumer) {
+    forEachLazily(iterable.spliterator(), consumer);
   }
 
   /**
@@ -265,8 +262,8 @@ public class Iteration<T> {
    *
    * @since 9.6
    */
-  public final <V> Iteration<T> forEachLazily(Stream<V> stream, Consumer<? super V> consumer) {
-    return forEachLazily(stream.spliterator(), consumer);
+  public final <V> void forEachLazily(Stream<V> stream, Consumer<? super V> consumer) {
+    forEachLazily(stream.spliterator(), consumer);
   }
 
   /**
@@ -275,15 +272,15 @@ public class Iteration<T> {
    *
    * @since 9.6
    */
-  public final <V> Iteration<T> forEachLazily(IntStream stream, IntConsumer consumer) {
-    return forEachLazily(stream.spliterator(), consumer);
+  public final <V> void forEachLazily(IntStream stream, IntConsumer consumer) {
+    forEachLazily(stream.spliterator(), consumer);
   }
 
-  private <V> Iteration<T> forEachLazily(
+  private <V> void forEachLazily(
       Spliterator<V> spliterator, Consumer<? super V> consumer) {
     requireNonNull(spliterator);
     requireNonNull(consumer);
-    return lazily(
+    lazily(
         () -> spliterator.tryAdvance(
             e -> {
               consumer.accept(e);
@@ -291,11 +288,11 @@ public class Iteration<T> {
             }));
   }
 
-  private <V> Iteration<T> forEachLazily(
+  private <V> void forEachLazily(
       Spliterator.OfInt spliterator, IntConsumer consumer) {
     requireNonNull(spliterator);
     requireNonNull(consumer);
-    return lazily(
+    lazily(
         () -> spliterator.tryAdvance(
             (int i) -> {
               consumer.accept(i);
@@ -312,10 +309,10 @@ public class Iteration<T> {
    *
    * @since 9.6
    */
-  public final <K, V> Iteration<T> forEachLazily(
+  public final <K, V> void forEachLazily(
       Map<K, V> map, BiConsumer<? super K, ? super V> consumer) {
     requireNonNull(consumer);
-    return forEachLazily(map.entrySet(), e -> consumer.accept(e.getKey(), e.getValue()));
+    forEachLazily(map.entrySet(), e -> consumer.accept(e.getKey(), e.getValue()));
   }
 
   /**
@@ -360,10 +357,10 @@ public class Iteration<T> {
    *
    * @since 9.6
    */
-  public final Iteration<T> lazily(Supplier<? extends T> computation, Consumer<? super T> consumer) {
+  public final void lazily(Supplier<? extends T> computation, Consumer<? super T> consumer) {
     requireNonNull(computation);
     requireNonNull(consumer);
-    return this.lazily(() -> {
+    lazily(() -> {
       T result = computation.get();
       consumer.accept(result);
       emit(result);
@@ -373,13 +370,15 @@ public class Iteration<T> {
   /** @deprecated Use {@link #emit(Object)} instead. */
   @Deprecated
   public final Iteration<T> generate(T element) {
-    return emit(element);
+    emit(element);
+    return this;
   }
 
   /** @deprecated Use {@link #emit(Iterable)} instead. */
   @Deprecated
   public final Iteration<T> generate(Iterable<? extends T> elements) {
-    return emit(elements);
+    emit(elements);
+    return this;
   }
 
   /**
@@ -387,7 +386,8 @@ public class Iteration<T> {
    */
   @Deprecated
   public final Iteration<T> yield(Continuation continuation) {
-    return lazily(continuation);
+    lazily(continuation);
+    return this;
   }
 
   /**
@@ -395,7 +395,8 @@ public class Iteration<T> {
    */
   @Deprecated
   public final Iteration<T> yield(Supplier<? extends T> computation, Consumer<? super T> consumer) {
-    return lazily(computation, consumer);
+    lazily(computation, consumer);
+    return this;
   }
 
   /**

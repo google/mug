@@ -3,8 +3,9 @@ package com.google.mu.util.stream;
 import static com.google.common.truth.Truth8.assertThat;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -18,49 +19,42 @@ import com.google.common.collect.ImmutableList;
 public class PermutationTest {
 
   @Test public void permute_empty() {
-    assertThat(permute(Set.of())).containsExactly(List.of());
+    assertThat(permute(List.of())).containsExactly(List.of());
   }
 
   @Test public void permute_singleElement() {
-    assertThat(permute(Set.of(1))).containsExactly(List.of(1));
+    assertThat(permute(List.of(1))).containsExactly(List.of(1));
   }
 
   @Test public void permute_twoElements() {
-    assertThat(permute(Set.of(1, 2))).containsExactly(List.of(1, 2), List.of(2, 1));
+    assertThat(permute(List.of(1, 2))).containsExactly(List.of(1, 2), List.of(2, 1));
   }
 
   @Test public void permute_threeElements() {
-    assertThat(permute(Set.of(1, 2, 3)))
+    assertThat(permute(List.of(1, 2, 3)))
         .containsExactly(List.of(1, 2, 3), List.of(1, 3, 2), List.of(2, 1, 3), List.of(2, 3, 1), List.of(3, 1, 2), List.of(3, 2, 1));
   }
 
-  static <T> Stream<ImmutableList<T>> permute(Set<T> elements) {
+  static <T> Stream<ImmutableList<T>> permute(Collection<T> elements) {
     class Permutation extends Iteration<ImmutableList<T>> {
-      Permutation() {
-        lazily(() -> next(new ArrayList<>(elements), 0));
-      }
+      final List<T> buffer = new ArrayList<>(elements);
 
-      void next(List<T> buffer, int i) {
+      Permutation from(int i) {
         if (i == buffer.size()) {
           emit(ImmutableList.copyOf(buffer));
-          return;
+          return this;
         }
-        lazily(() -> next(buffer, i + 1));
+        lazily(() -> from(i + 1));
         forEachLazily(
             IntStream.range(i + 1, buffer.size()),
             j -> {
-              swap(buffer, i, j);
-              next(buffer, i + 1);
-              lazily(() -> swap(buffer, i, j));
+              Collections.swap(buffer, i, j);
+              from(i + 1);
+              lazily(() -> Collections.swap(buffer, i, j));
             });
+        return this;
       }
     }
-    return new Permutation().iterate();
-  }
-
-  private static <T> void swap(List<T> list, int i, int j) {
-    T temp = list.get(i);
-    list.set(i, list.get(j));
-    list.set(j, temp);
+    return new Permutation().from(0).iterate();
   }
 }
