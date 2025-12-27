@@ -46,7 +46,7 @@ public class PermutationTest {
         }
         lazily(() -> next(buffer, i + 1));
         forEachLazily(
-            IntStream.range(i + 1, buffer.size()).boxed(),
+            IntStream.range(i + 1, buffer.size()),
             j -> {
               swap(buffer, i, j);
               next(buffer, i + 1);

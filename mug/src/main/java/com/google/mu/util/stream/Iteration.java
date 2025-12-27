@@ -24,7 +24,9 @@ import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -268,6 +270,16 @@ public class Iteration<T> {
   }
 
   /**
+   * Applies {@code consumer} lazily on each int element from {@code stream}.
+   * An element is only iterated when consumed by the result stream.
+   *
+   * @since 9.6
+   */
+  public final <V> Iteration<T> forEachLazily(IntStream stream, IntConsumer consumer) {
+    return forEachLazily(stream.spliterator(), consumer);
+  }
+
+  /**
    * Applies {@code consumer} lazily on each element from {@code spliterator}.
    * An element is only iterated when consumed by the result stream.
    *
@@ -281,6 +293,24 @@ public class Iteration<T> {
         () -> spliterator.tryAdvance(
             e -> {
               consumer.accept(e);
+              forEachLazily(spliterator, consumer);
+            }));
+  }
+
+  /**
+   * Applies {@code consumer} lazily on each int element from {@code spliterator}.
+   * An element is only iterated when consumed by the result stream.
+   *
+   * @since 9.6
+   */
+  public final <V> Iteration<T> forEachLazily(
+      Spliterator.OfInt spliterator, IntConsumer consumer) {
+    requireNonNull(spliterator);
+    requireNonNull(consumer);
+    return lazily(
+        () -> spliterator.tryAdvance(
+            (int i) -> {
+              consumer.accept(i);
               forEachLazily(spliterator, consumer);
             }));
   }
