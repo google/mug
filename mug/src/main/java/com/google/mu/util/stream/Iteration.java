@@ -239,31 +239,12 @@ public class Iteration<T> {
   }
 
   /**
-   * Applies {@code consumer} lazily on each element from {@code spliterator}.
-   * An element is only iterated when consumed by the result stream.
-   *
-   * @since 9.6
-   */
-  public final <V> Iteration<T> forEachLazily(
-      Spliterator<? extends V> spliterator, Consumer<? super V> consumer) {
-    requireNonNull(spliterator);
-    requireNonNull(consumer);
-    return lazily(
-        () -> spliterator.tryAdvance(
-            e -> {
-              consumer.accept(e);
-              forEachLazily(spliterator, consumer);
-            }));
-  }
-
-  /**
    * Applies {@code consumer} lazily on each element in {@code iterable}.
    * An element is only iterated when consumed by the result stream.
    *
    * @since 9.6
    */
-  public final <V> Iteration<T> forEachLazily(
-      Iterable<? extends V> iterable, Consumer<? super V> consumer) {
+  public final <V> Iteration<T> forEachLazily(Iterable<V> iterable, Consumer<? super V> consumer) {
     return forEachLazily(iterable.spliterator(), consumer);
   }
 
@@ -273,9 +254,26 @@ public class Iteration<T> {
    *
    * @since 9.6
    */
-  public final <V> Iteration<T> forEachLazily(
-      Stream<? extends V> stream, Consumer<? super V> consumer) {
+  public final <V> Iteration<T> forEachLazily(Stream<V> stream, Consumer<? super V> consumer) {
     return forEachLazily(stream.spliterator(), consumer);
+  }
+
+  /**
+   * Applies {@code consumer} lazily on each element from {@code spliterator}.
+   * An element is only iterated when consumed by the result stream.
+   *
+   * @since 9.6
+   */
+  public final <V> Iteration<T> forEachLazily(
+      Spliterator<V> spliterator, Consumer<? super V> consumer) {
+    requireNonNull(spliterator);
+    requireNonNull(consumer);
+    return lazily(
+        () -> spliterator.tryAdvance(
+            e -> {
+              consumer.accept(e);
+              forEachLazily(spliterator, consumer);
+            }));
   }
 
   /**
