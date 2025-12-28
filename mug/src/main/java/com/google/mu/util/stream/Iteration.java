@@ -276,6 +276,21 @@ public class Iteration<T> {
     forEachLazily(stream.spliterator(), consumer);
   }
 
+  /**
+   * Applies {@code consumer} lazily on each entry from {@code map}.
+   * An entry is only iterated when consumed by the result stream.
+   *
+   * <p>Upon return, you shouldn't add or remove from {@code map} any more or else
+   * {@link java.util.ConcurrentModificationException} may be thrown while streaming.
+   *
+   * @since 9.6
+   */
+  public final <K, V> void forEachLazily(
+      Map<K, V> map, BiConsumer<? super K, ? super V> consumer) {
+    requireNonNull(consumer);
+    forEachLazily(map.entrySet(), e -> consumer.accept(e.getKey(), e.getValue()));
+  }
+
   private <V> void forEachLazily(
       Spliterator<V> spliterator, Consumer<? super V> consumer) {
     requireNonNull(spliterator);
@@ -300,19 +315,27 @@ public class Iteration<T> {
             }));
   }
 
+  /** @deprecated Use {@link #emit(Object)} instead. */
+  @Deprecated
+  public final Iteration<T> generate(T element) {
+    emit(element);
+    return this;
+  }
+
+  /** @deprecated Use {@link #emit(Iterable)} instead. */
+  @Deprecated
+  public final Iteration<T> generate(Iterable<? extends T> elements) {
+    emit(elements);
+    return this;
+  }
+
   /**
-   * Applies {@code consumer} lazily on each entry from {@code map}.
-   * An entry is only iterated when consumed by the result stream.
-   *
-   * <p>Upon return, you shouldn't add or remove from {@code map} any more or else
-   * {@link java.util.ConcurrentModificationException} may be thrown while streaming.
-   *
-   * @since 9.6
+   * @deprecated Use {@link #lazily(Continuation)} instead
    */
-  public final <K, V> void forEachLazily(
-      Map<K, V> map, BiConsumer<? super K, ? super V> consumer) {
-    requireNonNull(consumer);
-    forEachLazily(map.entrySet(), e -> consumer.accept(e.getKey(), e.getValue()));
+  @Deprecated
+  public final Iteration<T> yield(Continuation continuation) {
+    lazily(continuation);
+    return this;
   }
 
   /**
@@ -341,7 +364,7 @@ public class Iteration<T> {
    *     AtomicInteger rightSum = new AtomicInteger();
    *     lazily(() -> sum(tree.left, leftSum));
    *     lazily(() -> sum(tree.right, rightSum));
-   *     lazily(() -> tree.value + leftSum.get() + rightSum.get(), result::set);
+   *     this.yield(() -> tree.value + leftSum.get() + rightSum.get(), result::set);
    *     return this;
    *   }
    * }
@@ -355,9 +378,10 @@ public class Iteration<T> {
    * }
    * </pre>
    *
-   * @since 9.6
+   * @deprecated too niche
    */
-  public final void lazily(Supplier<? extends T> computation, Consumer<? super T> consumer) {
+  @Deprecated
+  public final Iteration<T> yield(Supplier<? extends T> computation, Consumer<? super T> consumer) {
     requireNonNull(computation);
     requireNonNull(consumer);
     lazily(() -> {
@@ -365,37 +389,6 @@ public class Iteration<T> {
       consumer.accept(result);
       emit(result);
     });
-  }
-
-  /** @deprecated Use {@link #emit(Object)} instead. */
-  @Deprecated
-  public final Iteration<T> generate(T element) {
-    emit(element);
-    return this;
-  }
-
-  /** @deprecated Use {@link #emit(Iterable)} instead. */
-  @Deprecated
-  public final Iteration<T> generate(Iterable<? extends T> elements) {
-    emit(elements);
-    return this;
-  }
-
-  /**
-   * @deprecated Use {@link #lazily(Continuation)} instead
-   */
-  @Deprecated
-  public final Iteration<T> yield(Continuation continuation) {
-    lazily(continuation);
-    return this;
-  }
-
-  /**
-   * @deprecated Use {@link #lazily(Supplier, Consumer)} instead
-   */
-  @Deprecated
-  public final Iteration<T> yield(Supplier<? extends T> computation, Consumer<? super T> consumer) {
-    lazily(computation, consumer);
     return this;
   }
 

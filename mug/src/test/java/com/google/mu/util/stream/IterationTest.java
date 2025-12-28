@@ -140,8 +140,8 @@ public class IterationTest {
         AtomicInteger fromRight = new AtomicInteger();
        lazily(() -> sum(tree.left(), fromLeft));
        lazily(() -> sum(tree.right(), fromRight));
-       lazily(() -> tree.value() + fromLeft.get() + fromRight.get(), result::set);
-        return this;
+       this.yield(() -> tree.value() + fromLeft.get() + fromRight.get(), result::set);
+       return this;
       }
     }
     return new SumNodes().sum(tree, new AtomicInteger()).iterate();
