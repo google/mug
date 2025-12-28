@@ -5,6 +5,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.google.mug</groupId>
+  <parent>
+    <groupId>com.google.mug</groupId>
+    <artifactId>mug-root</artifactId>
+    <version>9.6</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
   <artifactId>mug-bom</artifactId>
   <packaging>pom</packaging>
   <version>9.6-SNAPSHOT</version>
