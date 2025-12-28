@@ -315,6 +315,39 @@ public class Iteration<T> {
             }));
   }
 
+  /**
+   * Starts iteration over the {@link #emit emitted} elements.
+   *
+   * <p>Because an {@code Iteration} instance is stateful and mutable,
+   * {@code iterate()} can be called at most once per instance.
+   *
+   * @throws IllegalStateException if {@code iterate()} has already been called.
+   * @since 4.5
+   */
+  public final Stream<T> iterate() {
+    if (started.getAndSet(true)) {
+      throw new IllegalStateException("Iteration already started.");
+    }
+    return whileNotNull(this::nextOrNull);
+  }
+
+  /**
+   * Encapsulates recursive iteration or a lazy block of code with side-effect.
+   *
+   * <p>
+   * Note that if after a {@link #yield(Continuation) yielded} recursive
+   * iteration, the subsequent code expects state change (for example, the nodes
+   * being visited will keep changing during graph traversal), the subsequent code
+   * also needs to be yielded to be able to observe the expected state change.
+   */
+  @FunctionalInterface
+  public interface Continuation {
+    /**
+     * Runs the continuation. It will be called at most once throughout the stream.
+     */
+    void run();
+  }
+
   /** @deprecated Use {@link #emit(Object)} instead. */
   @Deprecated
   public final Iteration<T> generate(T element) {
@@ -390,39 +423,6 @@ public class Iteration<T> {
       emit(result);
     });
     return this;
-  }
-
-  /**
-   * Starts iteration over the {@link #emit emitted} elements.
-   *
-   * <p>Because an {@code Iteration} instance is stateful and mutable,
-   * {@code iterate()} can be called at most once per instance.
-   *
-   * @throws IllegalStateException if {@code iterate()} has already been called.
-   * @since 4.5
-   */
-  public final Stream<T> iterate() {
-    if (started.getAndSet(true)) {
-      throw new IllegalStateException("Iteration already started.");
-    }
-    return whileNotNull(this::nextOrNull);
-  }
-
-  /**
-   * Encapsulates recursive iteration or a lazy block of code with side-effect.
-   *
-   * <p>
-   * Note that if after a {@link #yield(Continuation) yielded} recursive
-   * iteration, the subsequent code expects state change (for example, the nodes
-   * being visited will keep changing during graph traversal), the subsequent code
-   * also needs to be yielded to be able to observe the expected state change.
-   */
-  @FunctionalInterface
-  public interface Continuation {
-    /**
-     * Runs the continuation. It will be called at most once throughout the stream.
-     */
-    void run();
   }
 
   private T nextOrNull() {
