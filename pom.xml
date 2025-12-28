@@ -167,6 +167,7 @@
               <publishingServerId>central</publishingServerId>
               <!-- optional but recommended in CI -->
               <autoPublish>true</autoPublish>
+              <checksums>all</checksums>
               <waitUntil>published</waitUntil>
             </configuration>
           </plugin>

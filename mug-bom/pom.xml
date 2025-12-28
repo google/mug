@@ -3,8 +3,6 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
-  <groupId>com.google.mug</groupId>
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
@@ -13,8 +11,6 @@
   </parent>
   <artifactId>mug-bom</artifactId>
   <packaging>pom</packaging>
-  <version>9.6-SNAPSHOT</version>
-
   <name>Mug Bill of Materials</name>
   <description>Dependency version alignment for all Mug modules</description>
 
