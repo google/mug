@@ -171,7 +171,7 @@ public final class Joiner implements Collector<Object, FasterStringJoiner, Strin
     private final String prefix;
     private final String suffix;
     private int count;
-    private String last;
+    private String outstanding;
 
     FasterStringJoiner(String prefix, String delim, String suffix) {
       this.buffer = new StringJoiner(delim, prefix, suffix);
@@ -180,26 +180,45 @@ public final class Joiner implements Collector<Object, FasterStringJoiner, Strin
     }
 
     void add(String str) {
-      buffer.add(str);
-      last = str;
       count++;
+      if (prefix.isEmpty() && suffix.isEmpty()) {
+        if (count == 1) {
+          outstanding = str;
+          return;
+        }
+        if (count == 2) {
+          buffer.add(outstanding);
+          outstanding = null;
+        }
+      }
+      buffer.add(str);
     }
 
     FasterStringJoiner merge(FasterStringJoiner that) {
+      flushOutstanding();
+      that.flushOutstanding();
       this.buffer.merge(that.buffer);
       this.count += that.count;
-      if (that.last != null) {
-        this.last = that.last;
-      }
       return this;
     }
 
     @Override public String toString() {
       if (prefix.isEmpty() && suffix.isEmpty()) {
-        if (count == 0) return "";
-        if (count == 1) return last;
+        if (count == 0) {
+          return "";
+        }
+        if (count == 1) {
+          return outstanding;
+        }
       }
       return buffer.toString();
+    }
+
+    private void flushOutstanding() {
+      if (outstanding != null) {
+        buffer.add(outstanding);
+        outstanding = null;
+      }
     }
   }
 }
