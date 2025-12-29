@@ -18,7 +18,7 @@
     <maven_compiler_plugin.version>3.14.0</maven_compiler_plugin.version>
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
-    <mug.version>9.5-SNAPSHOT</mug.version>
+    <mug.version>9.8-SNAPSHOT</mug.version>
   </properties>
 
   <licenses>
