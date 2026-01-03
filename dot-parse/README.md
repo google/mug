@@ -1,6 +1,6 @@
 # Mug *dot parse*
 
-Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
+Low-ceremony, easiest-to-use Java parser combinator, aimed to replace regex and your everyday one-off parsing tasks.
 
 - **Easy to use:** a handful of primitives; write parser intuitively.
 - **Hard to misuse:** free of the common footguns like infinite loops caused by `many(optional)` or accidental left recursion.
