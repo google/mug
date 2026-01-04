@@ -21,7 +21,7 @@ jobs:
         uses: cicirello/jacoco-badge-generator@v2
         with:
           # Maven's default JaCoCo CSV location
-          jacoco-csv-file: target/site/jacoco/jacoco.csv
+          jacoco-csv-file: mug/target/site/jacoco/jacoco.csv
           badges-directory: .github/badges
           generate-branches-badge: true
           generate-summary: true
