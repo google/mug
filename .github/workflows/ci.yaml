@@ -13,7 +13,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '24'
           distribution: 'temurin'
       - name: Build and Test
         run: mvn test # or ./gradlew test
