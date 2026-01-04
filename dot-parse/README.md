@@ -4,7 +4,7 @@ Low-ceremony, easiest-to-use Java parser combinator, aimed to replace regex and 
 
 - **Easy to use:** a handful of primitives; write parser intuitively.
 - **Hard to misuse:** free of the common footguns like infinite loops caused by `many(optional)` or accidental left recursion.
-- **Idiomatic Java:** modern, first-class Java style API for Java users (not a Haskell or Scala port).
+- **Idiomatic Java:** modern, first-class Java style API designed for Java users (not a Haskell or Scala port).
 - **Tiny footprint:** ~**1000 LOC** end-to-end — roughly **1/5 jparsec**.
 
 ---
