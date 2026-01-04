@@ -16,7 +16,7 @@ jobs:
           java-version: '24'
           distribution: 'temurin'
       - name: Build and Test
-        run: mvn test # or ./gradlew test
+        run: mvn clean test -U
       - name: Generate Core JaCoCo Badge
         id: jacoco_mug
         uses: cicirello/jacoco-badge-generator@v2
