@@ -80,14 +80,19 @@ jobs:
       - name: Commit and push badges
         if: github.event_name != 'pull_request'
         run: |
-          cd .github/badges
-          if [[ `git status --porcelain` ]]; then
-            git config --global user.name 'github-actions'
-            git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add *.svg
-            git add *.json
-            if ! git diff --cached --quiet; then
-              git commit -m "Update coverage badges for all modules"
-              git push
-            fi
+          git config --global user.name 'github-actions'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          
+          # 1. Stage the specific files
+          git add .github/badges/*.svg
+          git add .github/badges/*.json
+          
+          # 2. Check if the STAGED changes are different from the last commit
+          # git diff --cached --quiet returns 1 if there are differences
+          if ! git diff --cached --quiet; then
+            git commit -m "Update coverage badges"
+            git push
+          else
+            echo "No changes in coverage results; skipping commit."
           fi
+
