@@ -45,7 +45,9 @@ jobs:
         id: jacoco_safesql
         uses: cicirello/jacoco-badge-generator@v2
         with:
-          jacoco-csv-file: mug-safesql/target/site/jacoco/jacoco.csv
+          jacoco-csv-file: >
+            mug-safesql/target/site/jacoco/jacoco.csv
+            mug-safesql-java16tests/target/site/jacoco/jacoco.csv
           badges-directory: .github/badges
           badge-filename: mug-safesql-coverage.svg
           generate-branches-badge: true
