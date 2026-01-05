@@ -76,7 +76,7 @@ public class PermutationTest {
           emit(ImmutableList.copyOf(buffer));
           return this;
         }
-        lazily(() -> from(i + 1));
+        from(i + 1);
         forEachLazily(
             IntStream.range(i + 1, buffer.size()),
             j -> {
