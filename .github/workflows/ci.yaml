@@ -28,6 +28,7 @@ jobs:
           branches-badge-filename: mug-branches.svg
           generate-summary: true
           summary-filename: mug-summary.json
+          summary-badge-filename: mug-summary.svg
       - name: Generate dot-parse JaCoCo Badge
         id: jacoco_dot_parse
         uses: cicirello/jacoco-badge-generator@v2
@@ -35,10 +36,11 @@ jobs:
           jacoco-csv-file: dot-parse/target/site/jacoco/jacoco.csv
           badges-directory: .github/badges
           badge-filename: dot-parse-coverage.svg
-          generate-branches-badge: false
+          generate-branches-badge: true
           branches-badge-filename: dot-parse-branches.svg
           generate-summary: true
           summary-filename: dot-parse-summary.json
+          summary-badge-filename: dot-parse-summary.svg
       - name: Generate safe-sql JaCoCo Badge
         id: jacoco_safesql
         uses: cicirello/jacoco-badge-generator@v2
@@ -46,10 +48,11 @@ jobs:
           jacoco-csv-file: mug-safesql/target/site/jacoco/jacoco.csv
           badges-directory: .github/badges
           badge-filename: mug-safesql-coverage.svg
-          generate-branches-badge: false
+          generate-branches-badge: true
           branches-badge-filename: safesql-branches.svg
           generate-summary: true
           summary-filename: mug-safesql-summary.json
+          summary-badge-filename: mug-safesql-summary.svg
       - name: Generate concurent-24 JaCoCo Badge
         id: jacoco_concurrent24
         uses: cicirello/jacoco-badge-generator@v2
@@ -57,10 +60,11 @@ jobs:
           jacoco-csv-file: mug-concurrent24/target/site/jacoco/jacoco.csv
           badges-directory: .github/badges
           badge-filename: mug-concurrent24-coverage.svg
-          generate-branches-badge: false
+          generate-branches-badge: true
           branches-badge-filename: concurrent24-branches.svg
           generate-summary: true
           summary-filename: mug-concurrent24-summary.json
+          summary-badge-filename: mug-concurrent24-summary.svg
       - name: Generate mug-guava JaCoCo Badge
         id: jacoco_guava
         uses: cicirello/jacoco-badge-generator@v2
@@ -68,10 +72,11 @@ jobs:
           jacoco-csv-file: mug-guava/target/site/jacoco/jacoco.csv
           badges-directory: .github/badges
           badge-filename: mug-guava-coverage.svg
-          generate-branches-badge: false
+          generate-branches-badge: true
           branches-badge-filename: guava-branches.svg
           generate-summary: true
           summary-filename: mug-guava-summary.json
+          summary-badge-filename: mug-guava-summary.svg
       - name: Log coverage percentage
         run: |
           echo "coverage = ${{ steps.jacoco.outputs.coverage }}"
