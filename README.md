@@ -9,7 +9,7 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
   → `Substring.between("(", ")").from("call(foo)") → "foo"`
 - ✅ [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained) – compile-time-safe bidirectional parsing/formatting  
   → `new StringFormat("/home/{user}/{date}").parse(filePath, (user, date) -> ...)`
-- ✅ [`Parser`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html) – replace your regex  
+- ✅ [`Parser`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html) – no more regex  
   → `zeroOrMore(noneOf("\\'")).immediatelyBetween("'", "'").parse(input);`
 - ✅ [`BiStream`](./mug/src/main/java/com/google/mu/util/stream/README.md) – streams `Map` and pair-wise collections  
   → `BiStream.zip(keys, values).toMap()`
