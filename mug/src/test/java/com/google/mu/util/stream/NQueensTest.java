@@ -80,6 +80,28 @@ public final class NQueensTest {
     assertThat(nQueens(10)).hasSize(724);
   }
 
+  @Test
+  public void nQueens_27() {
+    assertThat(nQueens(27).limit(5))
+        .containsExactly(
+            asList(
+                0, 2, 4, 1, 3, 8, 10, 12, 14, 16, 18, 22, 24, 26, 23, 25, 5, 9, 6, 15, 7, 11, 13,
+                20, 17, 19, 21),
+            asList(
+                0, 2, 4, 1, 3, 8, 10, 12, 14, 16, 18, 22, 25, 23, 26, 24, 5, 9, 6, 15, 7, 11, 13,
+                20, 17, 19, 21),
+            asList(
+                0, 2, 4, 1, 3, 8, 10, 12, 14, 16, 20, 26, 23, 25, 22, 24, 5, 9, 6, 15, 13, 11, 7,
+                18, 21, 19, 17),
+            asList(
+                0, 2, 4, 1, 3, 8, 10, 12, 14, 16, 20, 26, 24, 22, 25, 23, 5, 9, 6, 15, 13, 11, 7,
+                18, 21, 19, 17),
+            asList(
+                0, 2, 4, 1, 3, 8, 10, 12, 14, 16, 21, 25, 22, 26, 23, 5, 24, 11, 15, 7, 9, 6, 13,
+                18, 20, 17, 19))
+        .inOrder();
+  }
+
   static Stream<ImmutableList<Integer>> nQueens(int n) {
     class NQueen extends Iteration<ImmutableList<Integer>> {
       final List<Integer> queens = new ArrayList<>(nCopies(n, -1));
