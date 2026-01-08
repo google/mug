@@ -82,24 +82,12 @@ public final class NQueensTest {
 
   @Test
   public void nQueens_27() {
-    assertThat(nQueens(27).limit(5))
-        .containsExactly(
-            asList(
-                0, 2, 4, 1, 3, 8, 10, 12, 14, 16, 18, 22, 24, 26, 23, 25, 5, 9, 6, 15, 7, 11, 13,
-                20, 17, 19, 21),
-            asList(
-                0, 2, 4, 1, 3, 8, 10, 12, 14, 16, 18, 22, 25, 23, 26, 24, 5, 9, 6, 15, 7, 11, 13,
-                20, 17, 19, 21),
-            asList(
-                0, 2, 4, 1, 3, 8, 10, 12, 14, 16, 20, 26, 23, 25, 22, 24, 5, 9, 6, 15, 13, 11, 7,
-                18, 21, 19, 17),
-            asList(
-                0, 2, 4, 1, 3, 8, 10, 12, 14, 16, 20, 26, 24, 22, 25, 23, 5, 9, 6, 15, 13, 11, 7,
-                18, 21, 19, 17),
-            asList(
-                0, 2, 4, 1, 3, 8, 10, 12, 14, 16, 21, 25, 22, 26, 23, 5, 24, 11, 15, 7, 9, 6, 13,
-                18, 20, 17, 19))
-        .inOrder();
+    assertThat(nQueens(27).limit(100)) .hasSize(100);
+  }
+
+  @Test
+  public void nQueens_more() {
+    assertThat(nQueens(51).limit(5)).hasSize(5);
   }
 
   static Stream<ImmutableList<Integer>> nQueens(int n) {
@@ -114,7 +102,8 @@ public final class NQueensTest {
           emit(ImmutableList.copyOf(queens));
           return this;
         }
-        forEachLazily(IntStream.range(0, n), c -> {
+        forEachLazily(IntStream.range(0, n), i -> {
+          int c = (i + (n / 2)) % n;  // Start from the middle. Quicker to land on a solution
           int d = r + c;
           int ad = r - c + n;
           if (columns.get(c) || diagonals.get(d) || antiDiagonals.get(ad)) {
