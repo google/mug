@@ -61,11 +61,11 @@
   </modules>
   <distributionManagement>
     <snapshotRepository>
-      <id>central</id>
+      <id>ossrh</id>
       <url>https://central.sonatype.com/repository/maven-snapshots/</url>
     </snapshotRepository>
     <repository>
-      <id>central</id>
+      <id>ossrh</id>
       <url>https://central.sonatype.com/content/repositories/releases/</url>
     </repository>
   </distributionManagement>
@@ -164,7 +164,7 @@
             <version>0.8.0</version> <!-- or latest -->
             <extensions>true</extensions>
             <configuration>
-              <publishingServerId>central</publishingServerId>
+              <publishingServerId>ossrh</publishingServerId>
               <!-- optional but recommended in CI -->
               <autoPublish>true</autoPublish>
               <checksums>all</checksums>
