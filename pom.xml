@@ -4,7 +4,7 @@
   <groupId>com.google.mug</groupId>
   <artifactId>mug-root</artifactId>
   <packaging>pom</packaging>
-  <version>9.6-SNAPSHOT</version>
+  <version>9.8-SNAPSHOT</version>
   <name>mug-root</name>
   <description>Google Mug Library</description>
   <url>http://github.com/google/mug</url>
@@ -18,7 +18,7 @@
     <maven_compiler_plugin.version>3.14.0</maven_compiler_plugin.version>
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
-    <mug.version>9.5-SNAPSHOT</mug.version>
+    <mug.version>9.8-SNAPSHOT</mug.version>
   </properties>
 
   <licenses>
@@ -61,11 +61,11 @@
   </modules>
   <distributionManagement>
     <snapshotRepository>
-      <id>central</id>
+      <id>ossrh</id>
       <url>https://central.sonatype.com/repository/maven-snapshots/</url>
     </snapshotRepository>
     <repository>
-      <id>central</id>
+      <id>ossrh</id>
       <url>https://central.sonatype.com/content/repositories/releases/</url>
     </repository>
   </distributionManagement>
@@ -164,9 +164,10 @@
             <version>0.8.0</version> <!-- or latest -->
             <extensions>true</extensions>
             <configuration>
-              <publishingServerId>central</publishingServerId>
+              <publishingServerId>ossrh</publishingServerId>
               <!-- optional but recommended in CI -->
               <autoPublish>true</autoPublish>
+              <checksums>all</checksums>
               <waitUntil>published</waitUntil>
             </configuration>
           </plugin>
@@ -235,7 +236,20 @@
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.22.0</version>
+          <version>3.2.5</version>
+          <configuration>
+            <threadCount>1</threadCount>
+            <includes>
+              <include>**/*Test.java</include>
+            </includes>
+          </configuration>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.maven.surefire</groupId>
+              <artifactId>surefire-junit4</artifactId>
+              <version>3.2.5</version>
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
@@ -324,10 +338,42 @@
           </execution>
           </executions>
         </plugin>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>0.8.14</version>
+          <executions>
+            <execution>
+              <id>default-prepare-agent</id>
+              <phase>initialize</phase>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>report</id>
+              <phase>test</phase>
+              <goals>
+                <goal>report</goal>
+              </goals>
+              <configuration>
+                <formats>
+                    <format>HTML</format>
+                    <format>XML</format>
+                    <format>CSV</format>
+                </formats>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
     </pluginManagement>
   
     <plugins>
+	  <plugin>
+	    <groupId>org.jacoco</groupId>
+	    <artifactId>jacoco-maven-plugin</artifactId>
+	  </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>

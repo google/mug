@@ -165,13 +165,26 @@ public final class Joiner implements Collector<Object, FasterStringJoiner, Strin
     return Collections.emptySet();
   }
 
-  /** Faster than StringJoiner when there is only one string to join. */
+  /**
+   * Faster than StringJoiner when there is only one string to join.
+   *
+   * <p>Benchmark result (50% faster for 1-element):
+   *
+   * <pre>
+   * JoinerBenchmark.jdkJoinerOnDelimiter_0     thrpt    5    15459455.875 ±   352409.649  ops/s
+   * JoinerBenchmark.jdkJoinerOnDelimiter_1     thrpt    5    10136456.867 ±   315453.742  ops/s
+   * JoinerBenchmark.jdkJoinerOnDelimiter_10    thrpt    5     1820908.505 ±    97917.965  ops/s
+   * JoinerBenchmark.joinerOnDelimiter_0        thrpt    5    16653265.076 ±   151067.211  ops/s
+   * JoinerBenchmark.joinerOnDelimiter_1        thrpt    5    15801647.373 ±  1198936.678  ops/s
+   * JoinerBenchmark.joinerOnDelimiter_10       thrpt    5     1813032.864 ±   217044.024  ops/s
+   * </pre>
+   */
   static final class FasterStringJoiner {
     private final StringJoiner buffer;
     private final String prefix;
     private final String suffix;
     private int count;
-    private String last;
+    private String outstanding;
 
     FasterStringJoiner(String prefix, String delim, String suffix) {
       this.buffer = new StringJoiner(delim, prefix, suffix);
@@ -180,26 +193,31 @@ public final class Joiner implements Collector<Object, FasterStringJoiner, Strin
     }
 
     void add(String str) {
+      if (++count == 1 && prefix.isEmpty() && suffix.isEmpty()) {
+        outstanding = str;
+        return;
+      }
+      flushOutstanding();
       buffer.add(str);
-      last = str;
-      count++;
     }
 
     FasterStringJoiner merge(FasterStringJoiner that) {
+      flushOutstanding();
+      that.flushOutstanding();
       this.buffer.merge(that.buffer);
       this.count += that.count;
-      if (that.last != null) {
-        this.last = that.last;
-      }
       return this;
     }
 
     @Override public String toString() {
-      if (prefix.isEmpty() && suffix.isEmpty()) {
-        if (count == 0) return "";
-        if (count == 1) return last;
+      return outstanding == null ? buffer.toString() : outstanding;
+    }
+
+    private void flushOutstanding() {
+      if (outstanding != null) {
+        buffer.add(outstanding);
+        outstanding = null;
       }
-      return buffer.toString();
     }
   }
 }

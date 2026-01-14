@@ -6,11 +6,41 @@
 
   <groupId>com.google.mug</groupId>
   <artifactId>mug-bom</artifactId>
+  <version>9.8-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <version>9.6-SNAPSHOT</version>
 
   <name>Mug Bill of Materials</name>
   <description>Dependency version alignment for all Mug modules</description>
+  <url>http://github.com/google/mug</url>
+
+  <licenses>
+    <license>
+      <name>Apache License 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>http://github.com/google/mug</url>
+    <connection>scm:git:git@github.com:google/mug.git</connection>
+    <developerConnection>scm:git:git@github.com:google/mug.git</developerConnection>
+  </scm>
+
+  <developers>
+    <developer>
+      <name>Ben Yu</name>
+    </developer>
+  </developers>
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://central.sonatype.com/content/repositories/releases/</url>
+    </repository>
+  </distributionManagement>
 
   <dependencyManagement>
     <dependencies>
@@ -54,7 +84,6 @@
         <artifactId>mug-spanner</artifactId>
         <version>${project.version}</version>
       </dependency>
-
       <dependency>
         <groupId>com.google.mug</groupId>
         <artifactId>dot-parse</artifactId>
@@ -62,4 +91,55 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>0.8.0</version>
+        <extensions>true</extensions>
+        <configuration>
+          <publishingServerId>ossrh</publishingServerId>
+          <!-- optional but recommended in CI -->
+          <autoPublish>true</autoPublish>
+          <checksums>all</checksums>
+          <waitUntil>published</waitUntil>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>release</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.5</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <configuration>
+                  <arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

@@ -1,9 +1,10 @@
 # Mug *dot parse*
 
-Low-ceremony Java parser combinators, for your everyday one-off parsing tasks.
+Low-ceremony, easiest-to-use Java parser combinator, aimed to replace regex and your everyday one-off parsing tasks.
 
 - **Easy to use:** a handful of primitives; write parser intuitively.
 - **Hard to misuse:** free of the common footguns like infinite loops caused by `many(optional)` or accidental left recursion.
+- **Idiomatic Java:** modern, first-class Java style API designed for Java users (not a Haskell or Scala port).
 - **Tiny footprint:** ~**1000 LOC** end-to-end — roughly **1/5 jparsec**.
 
 ---
@@ -22,7 +23,7 @@ For brevity, all unqualified methods are assumed to be static imported from the
 3   | `[0-9]{5}`         | `digits().suchThat(s -> s.length() == 5, "zip code")`       | Matches exactly 5 digits.
 4   | `(foo\|bar\|baz)`  | `anyOf(string("foo"), string("bar"), string("baz"))`        | Matches one of the alternatives.
 5   | `'[^']*'`          | `quotedBy("'", "'")`                                        | Matches a single-quoted string, excluding the quotes from the result.
-6   | `u[a-fA-F0-9]{4}`  | `string("u").then(bmpCodeUnit())`                             | Matches 'u' followed by 4 hex digits.
+6   | `u[a-fA-F0-9]{4}`  | `string("u").then(bmpCodeUnit())`                           | Matches 'u' followed by 4 hex digits.
 7   | `\d+(\.\d+)?`      | `digits().optionallyFollowedBy(string(".").then(digits()))` | Matches an integer or a simple float.
 8   | `\[(\w+(,\w+)*)?\]`| `word().zeroOrMoreDelimitedBy(",").between("[", "]")`       | Comma-delimited list of words inside square brackets.
 9   | `if\b`             | `word("if")`                                                | Matches the whole word "if".

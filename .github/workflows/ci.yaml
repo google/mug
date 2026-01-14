@@ -1,0 +1,99 @@
+name: Java CI
+on: [push, pull_request]
+
+permissions:
+  contents: write    # Required to push the badge SVG back to the repo
+  actions: read      # Optional: helpful for some internal metadata
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '24'
+          distribution: 'temurin'
+      - name: Build and Test
+        run: mvn clean test -U
+      - name: Generate Core JaCoCo Badge
+        id: jacoco_mug
+        uses: cicirello/jacoco-badge-generator@v2
+        with:
+          jacoco-csv-file: mug/target/site/jacoco/jacoco.csv
+          badges-directory: .github/badges
+          generate-branches-badge: true
+          branches-badge-filename: mug-branches.svg
+          generate-summary: true
+          summary-filename: mug-summary.json
+          coverage-badge-filename: mug-coverage.svg
+      - name: Generate dot-parse JaCoCo Badge
+        id: jacoco_dot_parse
+        uses: cicirello/jacoco-badge-generator@v2
+        with:
+          jacoco-csv-file: dot-parse/target/site/jacoco/jacoco.csv
+          badges-directory: .github/badges
+          generate-branches-badge: true
+          branches-badge-filename: dot-parse-branches.svg
+          generate-summary: true
+          summary-filename: dot-parse-summary.json
+          coverage-badge-filename: dot-parse-coverage.svg
+      - name: Generate safe-sql JaCoCo Badge
+        id: jacoco_safesql
+        uses: cicirello/jacoco-badge-generator@v2
+        with:
+          jacoco-csv-file: >
+            mug-safesql/target/site/jacoco/jacoco.csv
+          badges-directory: .github/badges
+          generate-branches-badge: true
+          branches-badge-filename: safesql-branches.svg
+          generate-summary: true
+          summary-filename: mug-safesql-summary.json
+          coverage-badge-filename: mug-safesql-coverage.svg
+      - name: Generate concurent-24 JaCoCo Badge
+        id: jacoco_concurrent24
+        uses: cicirello/jacoco-badge-generator@v2
+        with:
+          jacoco-csv-file: mug-concurrent24/target/site/jacoco/jacoco.csv
+          badges-directory: .github/badges
+          generate-branches-badge: true
+          branches-badge-filename: concurrent24-branches.svg
+          generate-summary: true
+          summary-filename: mug-concurrent24-summary.json
+          coverage-badge-filename: mug-concurrent24-coverage.svg
+      - name: Generate mug-guava JaCoCo Badge
+        id: jacoco_guava
+        uses: cicirello/jacoco-badge-generator@v2
+        with:
+          jacoco-csv-file: mug-guava/target/site/jacoco/jacoco.csv
+          badges-directory: .github/badges
+          generate-branches-badge: true
+          branches-badge-filename: guava-branches.svg
+          generate-summary: true
+          summary-filename: mug-guava-summary.json
+          coverage-badge-filename: mug-guava-coverage.svg
+      - name: Log coverage percentage
+        run: |
+          echo "coverage = ${{ steps.jacoco.outputs.coverage }}"
+          echo "branch coverage = ${{ steps.jacoco.outputs.branches }}"
+
+      - name: Commit and push badges
+        if: github.event_name != 'pull_request'
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          
+          # 1. Stage the specific files
+          git add .github/badges/*.svg
+          git add .github/badges/*.json
+          
+          # 2. Check if the STAGED changes are different from the last commit
+          # git diff --cached --quiet returns 1 if there are differences
+          if ! git diff --cached --quiet; then
+            git commit -m "Update coverage badges"
+            git push
+          else
+            echo "No changes in coverage results; skipping commit."
+          fi
+
