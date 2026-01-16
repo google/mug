@@ -395,7 +395,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     requireNonNull(toKey);
     requireNonNull(toValue);
     return collectingAndThen(
-        Collectors.mapping(e -> kv(toKey.apply(e), toValue.apply(e)), toStream()),
+        Collectors.mapping((E e) -> kv(toKey.apply(e), toValue.apply(e)), toStream()),
         BiStream::fromEntries);
   }
 
