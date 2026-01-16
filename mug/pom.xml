@@ -19,7 +19,7 @@
           <version>0.8.0</version> <!-- or latest -->
           <extensions>true</extensions>
           <configuration>
-            <publishingServerId>central</publishingServerId>
+            <publishingServerId>ossrh</publishingServerId>
             <!-- optional but recommended in CI -->
             <autoPublish>true</autoPublish>
             <waitUntil>published</waitUntil>
