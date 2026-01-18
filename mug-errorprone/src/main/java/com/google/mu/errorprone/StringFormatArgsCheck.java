@@ -39,7 +39,6 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeKind;
 
 import com.google.auto.service.AutoService;
