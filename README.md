@@ -21,14 +21,14 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
  
 - [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md) – parse datetimes by example  
   → `DateTimeFormatter format = formatOf("2024-03-14 10:00:00.123 America/New_York")`
-- [`Iteration`](https://github.com/google/mug/wiki/Iteration-Explained) - implement lazy stream with recursive code
-- [`BinarySearch`](./mug-guava/src/main/java/com/google/mu/collect/README.md) - solve LeetCode binary search problems  
+- [`Iteration`](./mug/wiki/Iteration-Explained) - implement lazy stream with recursive code
+- [`BinarySearch`](./mug-guava/src/main/java/com/google/guava/labs/collect/README.md) - solve LeetCode binary search problems  
   → `BinarySearch.inSortedArrayWithTolerance(doubleArray, 0.0001).find(target)`
 - [`StructuredConcurrency`](./mug/src/main/java/com/google/mu/util/concurrent/README.md) - simple structured concurrency on virtual threads  
   → `concurrently(() -> fetchArm(), () -> fetchLeg(), (arm, leg) -> makeRobot(arm, leg))`
-- [`MoreStreams`](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html)  
+- [`MoreStreams`](./mug/apidocs/com/google/mu/util/stream/MoreStreams.html)  
   → `whileNotNull(queue::poll).filter(...).map(...)`
-- [`Optionals`](https://google.github.io/mug/apidocs/com/google/mu/util/Optionals.html)  
+- [`Optionals`](./mug/apidocs/com/google/mu/util/Optionals.html)  
   → `return optionally(obj.hasFoo(), obj::getFoo);`
 
 </details>
