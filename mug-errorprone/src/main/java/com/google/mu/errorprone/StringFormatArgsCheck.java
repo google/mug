@@ -39,6 +39,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeKind;
 
 import com.google.auto.service.AutoService;
@@ -207,10 +208,9 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           skip(argsAsTexts(tree.getMethodSelect(), tree.getArguments(), state), templateStringIndex + 1),
           /* formatStringIsInlined= */ formatExpression instanceof JCLiteral,
           state);
-    } else if (STRING_FORMAT_MATCHER.matches(tree, state)) {
-      if (!method.isVarArgs()
-          && method.getParameters().size() != 1
-          && !FORMAT_METHOD_MATCHER.matches(tree, state)) {
+    } else if (method.isPublic() && STRING_FORMAT_MATCHER.matches(tree, state)) {
+      boolean varargsOnly = method.isVarArgs() && method.getParameters().size() == 1;
+      if (!varargsOnly && !FORMAT_METHOD_MATCHER.matches(tree, state)) {
         return;
       }
       ExpressionTree formatter = ASTHelpers.getReceiver(tree);
