@@ -31,8 +31,6 @@ import com.google.common.collect.Range;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.Expect;
-import com.google.guava.labs.collect.BinarySearch;
-import com.google.guava.labs.collect.InsertionPoint;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
