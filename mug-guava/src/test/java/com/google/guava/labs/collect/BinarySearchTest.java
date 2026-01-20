@@ -1585,6 +1585,30 @@ public class BinarySearchTest {
     assertThat(mean).isIn(Range.open(d1, d2));
   }
 
+  @Test public void find_betweenNegativeAndPositiveZero(
+      @TestParameter({"-1", "-0.5", "-0.1", "0"}) double secret) {
+    assertThat(
+          BinarySearch.forDoubles(Range.closed(-1D, 0D))
+              .find((lo, mid, hi) -> Double.compare(secret, mid)))
+        .hasValue(secret);
+  }
+
+  @Test public void find_betweenNegativeZeroAndPositiveZero(
+      @TestParameter({"0"}) double secret) {
+    assertThat(
+          BinarySearch.forDoubles(Range.closed(-0D, 0D))
+              .find((lo, mid, hi) -> Double.compare(secret, mid)))
+        .hasValue(secret);
+  }
+
+  @Test public void find_betweenNegativeAndPositive(
+      @TestParameter({"-1", "-0.5", "-0.1", "0", "0.5", "1"}) double secret) {
+    assertThat(
+          BinarySearch.forDoubles(Range.closed(-1D, 1D))
+              .find((lo, mid, hi) -> Double.compare(secret, mid)))
+        .hasValue(secret);
+  }
+
   private static double parabola(int x) {
     return Math.pow(x, 2) + 4 * x - 3;
   }
