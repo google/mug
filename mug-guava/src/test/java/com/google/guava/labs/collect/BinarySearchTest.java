@@ -1536,6 +1536,55 @@ public class BinarySearchTest {
     assertThat(solution).isEqualTo(-2);
   }
 
+  @Test public void median_betweenNegatives() {
+    double d1 = -1;
+    double d2 = -0.5;
+    double mean = BinarySearch.median(d1, d2);
+    assertThat(mean).isIn(Range.open(d1, d2));
+  }
+
+  @Test public void median_betweenNegativeAndNegativeZero() {
+    double d1 = -1;
+    double d2 = -0.0;
+    double mean = BinarySearch.median(d1, d2);
+    assertThat(mean).isIn(Range.open(d1, d2));
+  }
+
+  @Test public void median_betweenNegativeAndPositiveZero() {
+    double d1 = -1;
+    double d2 = 0;
+    double mean = BinarySearch.median(d1, d2);
+    assertThat(mean).isIn(Range.closed(d1, d2));
+  }
+
+  @Test public void median_betweePositiveZeroAndPositive() {
+    double d1 = 0;
+    double d2 = 1.5;
+    double mean = BinarySearch.median(d1, d2);
+    assertThat(mean).isIn(Range.open(d1, d2));
+  }
+
+  @Test public void median_betweeNegativeZeroAndPositive() {
+    double d1 = -0.0;
+    double d2 = 1.5;
+    double mean = BinarySearch.median(d1, d2);
+    assertThat(mean).isIn(Range.open(d1, d2));
+  }
+
+  @Test public void median_betweeNegaetiveZeroAndPositiveZero() {
+    double d1 = -0.0;
+    double d2 = 0.0;
+    double mean = BinarySearch.median(d1, d2);
+    assertThat(mean).isIn(Range.closed(d1, d2));
+  }
+
+  @Test public void median_betweePositives() {
+    double d1 = 1;
+    double d2 = 1.5;
+    double mean = BinarySearch.median(d1, d2);
+    assertThat(mean).isIn(Range.open(d1, d2));
+  }
+
   private static double parabola(int x) {
     return Math.pow(x, 2) + 4 * x - 3;
   }
