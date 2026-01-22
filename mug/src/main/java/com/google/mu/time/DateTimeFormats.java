@@ -192,7 +192,7 @@ public final class DateTimeFormats {
 
   private static final Map<List<?>, DateTimeFormatter> LOCAL_DATE_FORMATTERS =
       BiStream.from(LOCAL_DATE_PATTERNS)
-          .mapKeyValue((signature, p) -> inferLocaleIfNeeded(DateTimeFormatter.ofPattern(p), signature))
+          .mapValues((signature, p) -> inferLocaleIfNeeded(DateTimeFormatter.ofPattern(p), signature))
           .append(forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE)
           .toMap();
 

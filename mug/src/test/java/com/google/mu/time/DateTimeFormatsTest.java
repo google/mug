@@ -37,13 +37,13 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 import org.junit.Assume;
-import org.junit.Rule;
-import org.junit.rules.TestRule;
-import org.junit.runners.model.Description;
-import org.junit.runners.model.Statement;
+import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
 import org.junit.runner.RunWith;
+import org.junit.runners.model.Statement;
 
 import com.google.common.truth.ComparableSubject;
 import com.google.errorprone.annotations.CompileTimeConstant;
@@ -57,7 +57,7 @@ public final class DateTimeFormatsTest {
    * Ensures all tests run with US locale and UTC timezone to avoid
    * locale-dependent test failures (such as AM/PM parsing differences).
    */
-  @Rule
+  @ClassRule
   public static final LocaleTimeZoneRule localeTimeZoneRule =
       new LocaleTimeZoneRule(Locale.US, TimeZone.getTimeZone("UTC"));
 
