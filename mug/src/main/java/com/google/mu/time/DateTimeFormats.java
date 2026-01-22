@@ -191,7 +191,8 @@ public final class DateTimeFormats {
       .toMap();
 
   private static final Map<List<?>, DateTimeFormatter> LOCAL_DATE_FORMATTERS =
-      BiStream.from(LOCAL_DATE_PATTERNS).mapValues(p -> DateTimeFormatter.ofPattern(p))
+      BiStream.from(LOCAL_DATE_PATTERNS)
+          .mapKeyValue((signature, p) -> inferLocaleIfNeeded(DateTimeFormatter.ofPattern(p), signature))
           .append(forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE)
           .toMap();
 
@@ -299,7 +300,7 @@ public final class DateTimeFormats {
                 if (placeholderCount.get() > 0) {
                   // There is at least 1 placeholder. The input isn't a pure datetime "example".
                   // So we can't validate using parse().
-                  return DateTimeFormatter.ofPattern(pattern);
+                  return inferLocaleIfNeeded(DateTimeFormatter.ofPattern(pattern), signature);
                 }
                 pattern = inferDateTimePattern(example, signature);
                 DateTimeFormatter fmt = inferLocaleIfNeeded(DateTimeFormatter.ofPattern(pattern), signature);
@@ -322,9 +323,15 @@ public final class DateTimeFormats {
   }
 
   private static DateTimeFormatter inferLocaleIfNeeded(DateTimeFormatter fmt, List<?> signature) {
-    return signature.contains(Token.XINGQI) || signature.contains(Token.ZHOU) || signature.contains(Token.WU)
-        ? fmt.withLocale(Locale.CHINA)
-        : fmt;
+    if (signature.contains(Token.XINGQI) || signature.contains(Token.ZHOU) || signature.contains(Token.WU)) {
+      return fmt.withLocale(Locale.CHINA);
+    }
+    if (signature.contains(Token.MONTH_ABBREVIATION) || signature.contains(Token.MONTH)
+        || signature.contains(Token.WEEKDAY_ABBREVIATION) || signature.contains(Token.WEEKDAY)
+        || signature.contains(Token.AM_PM)) {
+      return fmt.withLocale(Locale.ENGLISH);
+    }
+    return fmt;
   }
 
   /**
