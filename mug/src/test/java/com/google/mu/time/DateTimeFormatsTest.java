@@ -33,33 +33,45 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Locale;
-import java.util.TimeZone;
 
+import org.junit.After;
 import org.junit.Assume;
-import org.junit.ClassRule;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
 import org.junit.runner.RunWith;
-import org.junit.runners.model.Statement;
 
+import com.google.common.testing.TearDownStack;
 import com.google.common.truth.ComparableSubject;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameter.TestParameterValuesProvider;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
 public final class DateTimeFormatsTest {
+  @TestParameter(valuesProvider = LocaleProvider.class) private Locale locale;
 
-  /**
-   * Ensures all tests run with US locale and UTC timezone to avoid
-   * locale-dependent test failures (such as AM/PM parsing differences).
-   */
-  @ClassRule
-  public static final LocaleTimeZoneRule localeTimeZoneRule =
-      new LocaleTimeZoneRule(Locale.US, TimeZone.getTimeZone("UTC"));
+  private final TearDownStack tearDowns = new TearDownStack();
+
+  @Before public void setUpEnvironment() {
+    overrideLocale(locale);
+  }
+
+  @After public void restoreEnvironment() {
+    tearDowns.runTearDown();
+  }
+
+  private static class LocaleProvider implements TestParameterValuesProvider {
+    @Override public List<Locale> provideValues() {
+      return List.of(
+          Locale.ROOT, Locale.US, Locale.ENGLISH,
+          Locale.CHINA, Locale.CHINESE, Locale.SIMPLIFIED_CHINESE, Locale.TRADITIONAL_CHINESE, Locale.TAIWAN,
+          Locale.FRANCE, Locale.FRENCH);
+    }
+  }
 
   @Test
   public void dateOnlyExamples() {
@@ -461,6 +473,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void formatOf_fullWeekdayAndMonthNamePlaceholder() {
+    assume().that(locale).isEqualTo(Locale.US);
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
     DateTimeFormatter formatter = formatOf("<Tuesday>, <May> dd yyyy <12:10:00> <+08:00> <America/New_York>");
@@ -469,7 +482,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void formatOf_12HourFormat() {
-    assumeUsLocale();
+    assume().that(locale).isEqualTo(Locale.US);
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
     DateTimeFormatter formatter = formatOf("dd MM yyyy <AD> hh:mm <PM> <+08:00>");
@@ -478,6 +491,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void formatOf_zoneNameNotRetranslated() {
+    assume().that(locale).isEqualTo(Locale.US);
     DateTimeFormatter formatter = formatOf("<Mon>, <Jan> dd yyyy <12:10:00> VV");
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
@@ -669,7 +683,7 @@ public final class DateTimeFormatsTest {
           })
           String datetime)
       throws Exception {
-    assumeUsLocale();
+    assume().that(locale).isEqualTo(Locale.US);
     ZonedDateTime zonedTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
     String example = zonedTime.format(getFormatterByName(formatterName));
     assertThat(ZonedDateTime.parse(example, DateTimeFormats.formatOf(example)).toInstant())
@@ -1052,7 +1066,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_twoLetterZoneNameAbbreviation() {
-    assumeUsLocale();
+    assume().that(locale).isEqualTo(Locale.US);
     DateTimeFormatter formatter = DateTimeFormats.formatOf("M dd yyyy HH:mm:ss<PT>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30PT", formatter);
     assertThat(dateTime)
@@ -1072,7 +1086,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_abbreviatedZoneName() {
-    assumeUsLocale();
+    assume().that(locale).isEqualTo(Locale.US);
     DateTimeFormatter formatter = DateTimeFormats.formatOf("MM dd yyyy HH:mm:ss<GMT>");
     ZonedDateTime dateTime = ZonedDateTime.parse("01 10 2023 10:20:30PST", formatter);
     assertThat(dateTime.toInstant())
@@ -1179,6 +1193,7 @@ public final class DateTimeFormatsTest {
   }
 
   @Test public void fuzzTests() {
+    assume().that(locale).isEqualTo(Locale.US);
     assertLocalDate("2005-04-27", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2005-04-27"));
     assertLocalDate("2004-10-27", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2004-10-27"));
     assertLocalDate("1993/07/05", "yyyy/MM/dd").isEqualTo(LocalDate.parse("1993-07-05"));
@@ -1292,6 +1307,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void fuzzTestsWithZoneAndWeekdays() {
+    assume().that(locale).isEqualTo(Locale.US);
     assertLocalDate("2005-04-27", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2005-04-27"));
     assertLocalDate("2004-10-27", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2004-10-27"));
     assertLocalDate("1993/07/05", "yyyy/MM/dd").isEqualTo(LocalDate.parse("1993-07-05"));
@@ -1443,43 +1459,11 @@ public final class DateTimeFormatsTest {
         .isEqualTo(time);
   }
 
-  private static void assumeUsLocale() {
-    ZonedDateTime zonedTime = ZonedDateTime.parse(
-        "2020-01-01T00:00:01-07:00[America/New_York]", DateTimeFormatter.ISO_DATE_TIME);
-    assume().that(zonedTime.format(DateTimeFormatter.ofPattern(("yyyy/MM/dd HH:mm:ssa VV"))))
-        .isEqualTo("2020/01/01 02:00:01AM America/New_York");
-  }
-
-  /**
-   * JUnit Rule that sets a specific Locale and TimeZone for each test and ensures
-   * the original values are restored afterward.
-   */
-  private static class LocaleTimeZoneRule implements TestRule {
-    private final Locale locale;
-    private final TimeZone timeZone;
-
-    LocaleTimeZoneRule(Locale locale, TimeZone timeZone) {
-      this.locale = locale;
-      this.timeZone = timeZone;
-    }
-
-    @Override
-    public Statement apply(Statement base, Description description) {
-      return new Statement() {
-        @Override
-        public void evaluate() throws Throwable {
-          Locale savedLocale = Locale.getDefault();
-          TimeZone savedTz = TimeZone.getDefault();
-          try {
-            Locale.setDefault(locale);
-            TimeZone.setDefault(timeZone);
-            base.evaluate();
-          } finally {
-            Locale.setDefault(savedLocale);
-            TimeZone.setDefault(savedTz);
-          }
-        }
-      };
-    }
+  private void overrideLocale(Locale locale) {
+    Locale originalLocale = Locale.getDefault();
+    tearDowns.addTearDown(() -> {
+      Locale.setDefault(originalLocale);
+    });
+    Locale.setDefault(locale);
   }
 }
