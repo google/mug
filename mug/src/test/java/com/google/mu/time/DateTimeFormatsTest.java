@@ -1482,12 +1482,14 @@ public final class DateTimeFormatsTest {
   private static class LocaleProvider implements TestParameterValuesProvider {
     @Override public List<Locale> provideValues() {
       return List.of(
-          Locale.ROOT, Locale.US, Locale.ENGLISH, Locale.UK,
+          Locale.ROOT,
+          Locale.US, Locale.ENGLISH, Locale.UK,
+          Locale.CANADA, Locale.CANADA_FRENCH,
+          Locale.FRANCE, Locale.FRENCH,
           Locale.GERMAN, Locale.GERMANY,
           Locale.ITALY, Locale.ITALIAN,
           Locale.CHINA, Locale.CHINESE, Locale.SIMPLIFIED_CHINESE, Locale.TRADITIONAL_CHINESE,
           Locale.TAIWAN, Locale.PRC,
-          Locale.FRANCE, Locale.FRENCH, Locale.CANADA_FRENCH,
           Locale.JAPAN, Locale.JAPANESE,
           Locale.KOREA, Locale.KOREAN);
     }
