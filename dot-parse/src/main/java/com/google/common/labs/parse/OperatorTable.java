@@ -88,7 +88,7 @@ public final class OperatorTable<T> {
   }
 
   /**
-   * Adds a postfix operator with the given precedence to the table. This binary operator will call
+   * Adds a postfix operator with the given precedence to the table. This operator will call
    * {@code postfixFunction.apply(operand, postfixValue)}, where {@code postfixValue} is the result
    * of the postfix {@code operator} parser. The higher {@code precedence} value the higher
    * precedence it is.
@@ -100,9 +100,7 @@ public final class OperatorTable<T> {
       Parser<S> operator,
       BiFunction<? super T, ? super S, ? extends T> postfixFunction,
       int precedence) {
-    requireNonNull(postfixFunction);
-    return postfix(
-        operator.map(suffix -> operand -> postfixFunction.apply(operand, suffix)), precedence);
+    return postfix(Parser.asPostfixOperator(operator, postfixFunction), precedence);
   }
 
   /**

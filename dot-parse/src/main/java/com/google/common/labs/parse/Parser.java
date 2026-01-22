@@ -785,9 +785,7 @@ public abstract class Parser<T> {
    */
   public final <S> Parser<T> postfix(
       Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
-    requireNonNull(postfixFunction);
-    return postfix(
-        operator.map(postfixValue -> operand -> postfixFunction.apply(operand, postfixValue)));
+    return postfix(asPostfixOperator(operator, postfixFunction));
   }
 
   /**
@@ -1767,6 +1765,12 @@ public abstract class Parser<T> {
           ? failure.toException(input)
           : farthestFailure.toException(input);
     }
+  }
+
+  static <S, T> Parser<UnaryOperator<T>> asPostfixOperator(
+      Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
+    requireNonNull(postfixFunction);
+    return operator.map(postfixValue -> operand -> postfixFunction.apply(operand, postfixValue));
   }
 
   private static <A, T> Supplier<T> emptyValueSupplier(Collector<?, A, ? extends T> collector) {
