@@ -34,8 +34,13 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import org.junit.Assume;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.junit.runners.model.Description;
+import org.junit.runners.model.Statement;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,6 +52,15 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
 public final class DateTimeFormatsTest {
+
+  /**
+   * Ensures all tests run with US locale and UTC timezone to avoid
+   * locale-dependent test failures (such as AM/PM parsing differences).
+   */
+  @Rule
+  public static final LocaleTimeZoneRule localeTimeZoneRule =
+      new LocaleTimeZoneRule(Locale.US, TimeZone.getTimeZone("UTC"));
+
   @Test
   public void dateOnlyExamples() {
     assertLocalDate("2023-10-20", "yyyy-MM-dd").isEqualTo(LocalDate.of(2023, 10, 20));
@@ -1434,5 +1448,38 @@ public final class DateTimeFormatsTest {
         "2020-01-01T00:00:01-07:00[America/New_York]", DateTimeFormatter.ISO_DATE_TIME);
     assume().that(zonedTime.format(DateTimeFormatter.ofPattern(("yyyy/MM/dd HH:mm:ssa VV"))))
         .isEqualTo("2020/01/01 02:00:01AM America/New_York");
+  }
+
+  /**
+   * JUnit Rule that sets a specific Locale and TimeZone for each test and ensures
+   * the original values are restored afterward.
+   */
+  private static class LocaleTimeZoneRule implements TestRule {
+    private final Locale locale;
+    private final TimeZone timeZone;
+
+    LocaleTimeZoneRule(Locale locale, TimeZone timeZone) {
+      this.locale = locale;
+      this.timeZone = timeZone;
+    }
+
+    @Override
+    public Statement apply(Statement base, Description description) {
+      return new Statement() {
+        @Override
+        public void evaluate() throws Throwable {
+          Locale savedLocale = Locale.getDefault();
+          TimeZone savedTz = TimeZone.getDefault();
+          try {
+            Locale.setDefault(locale);
+            TimeZone.setDefault(timeZone);
+            base.evaluate();
+          } finally {
+            Locale.setDefault(savedLocale);
+            TimeZone.setDefault(savedTz);
+          }
+        }
+      };
+    }
   }
 }
