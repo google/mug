@@ -55,7 +55,7 @@ public final class DateTimeFormatsTest {
 
   /**
    * Ensures all tests run with US locale and UTC timezone to avoid
-   * locale-dependent test failures (e.g., AM/PM parsing differences).
+   * locale-dependent test failures (such as AM/PM parsing differences).
    */
   @Rule
   public static final LocaleTimeZoneRule localeTimeZoneRule =
