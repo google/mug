@@ -64,15 +64,6 @@ public final class DateTimeFormatsTest {
     tearDowns.runTearDown();
   }
 
-  private static class LocaleProvider implements TestParameterValuesProvider {
-    @Override public List<Locale> provideValues() {
-      return List.of(
-          Locale.ROOT, Locale.US, Locale.ENGLISH,
-          Locale.CHINA, Locale.CHINESE, Locale.SIMPLIFIED_CHINESE, Locale.TRADITIONAL_CHINESE, Locale.TAIWAN,
-          Locale.FRANCE, Locale.FRENCH, Locale.CANADA_FRENCH);
-    }
-  }
-
   @Test
   public void dateOnlyExamples() {
     assertLocalDate("2023-10-20", "yyyy-MM-dd").isEqualTo(LocalDate.of(2023, 10, 20));
@@ -473,16 +464,17 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void formatOf_fullWeekdayAndMonthNamePlaceholder() {
-    assume().that(locale).isEqualTo(Locale.US);
+    assumeUsLocale();
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
     DateTimeFormatter formatter = formatOf("<Tuesday>, <May> dd yyyy <12:10:00> <+08:00> <America/New_York>");
     assertEquivalent(formatter, zonedTime, "EEEE, LLLL dd yyyy HH:mm:ss ZZZZZ VV");
   }
 
+
   @Test
   public void formatOf_12HourFormat() {
-    assume().that(locale).isEqualTo(Locale.US);
+    assumeUsLocale();
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
     DateTimeFormatter formatter = formatOf("dd MM yyyy <AD> hh:mm <PM> <+08:00>");
@@ -491,7 +483,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void formatOf_zoneNameNotRetranslated() {
-    assume().that(locale).isEqualTo(Locale.US);
+    assumeUsLocale();
     DateTimeFormatter formatter = formatOf("<Mon>, <Jan> dd yyyy <12:10:00> VV");
     ZonedDateTime zonedTime =
         ZonedDateTime.of(LocalDateTime.of(2023, 10, 20, 1, 2, 3), ZoneId.of("America/Los_Angeles"));
@@ -612,7 +604,6 @@ public final class DateTimeFormatsTest {
             "ISO_DATE_TIME",
             "ISO_ZONED_DATE_TIME",
             "RFC_1123_DATE_TIME",
-            "yyyy/MM/dd HH:mm:ssa VV",
             "yyyy/MM/dd HH:mm:ss VV",
             "yyyy/MM/dd HH:mm:ss.nnn VV",
             "yyyy/MM/dd HH:mm:ss.nnn VV",
@@ -636,6 +627,23 @@ public final class DateTimeFormatsTest {
           })
           String datetime)
       throws Exception {
+    ZonedDateTime zonedTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
+    String example = zonedTime.format(getFormatterByName(formatterName));
+    assertThat(DateTimeFormats.parseZonedDateTime(example).withFixedOffsetZone())
+        .isEqualTo(zonedTime.withFixedOffsetZone());
+  }
+
+  @Test
+  public void withZoneIdExamplesFromDifferentFormatters_usLocaleSpecific(
+      @TestParameter({"yyyy/MM/dd HH:mm:ssa VV"})
+          String formatterName,
+      @TestParameter({
+            "2020-01-01T00:00:01-07:00[America/New_York]",
+            "1979-01-01T00:00:00+01:00[Europe/Paris]",
+          })
+          String datetime)
+      throws Exception {
+    assumeUsLocale();
     ZonedDateTime zonedTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
     String example = zonedTime.format(getFormatterByName(formatterName));
     assertThat(DateTimeFormats.parseZonedDateTime(example).withFixedOffsetZone())
@@ -683,7 +691,7 @@ public final class DateTimeFormatsTest {
           })
           String datetime)
       throws Exception {
-    assume().that(locale).isEqualTo(Locale.US);
+    assumeUsLocale();
     ZonedDateTime zonedTime = ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
     String example = zonedTime.format(getFormatterByName(formatterName));
     assertThat(ZonedDateTime.parse(example, DateTimeFormats.formatOf(example)).toInstant())
@@ -1066,7 +1074,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_twoLetterZoneNameAbbreviation() {
-    assume().that(locale).isEqualTo(Locale.US);
+    assumeUsLocale();
     DateTimeFormatter formatter = DateTimeFormats.formatOf("M dd yyyy HH:mm:ss<PT>");
     ZonedDateTime dateTime = ZonedDateTime.parse("1 10 2023 10:20:30PT", formatter);
     assertThat(dateTime)
@@ -1086,7 +1094,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void timeZoneMixedIn_abbreviatedZoneName() {
-    assume().that(locale).isEqualTo(Locale.US);
+    assumeUsLocale();
     DateTimeFormatter formatter = DateTimeFormats.formatOf("MM dd yyyy HH:mm:ss<GMT>");
     ZonedDateTime dateTime = ZonedDateTime.parse("01 10 2023 10:20:30PST", formatter);
     assertThat(dateTime.toInstant())
@@ -1193,7 +1201,7 @@ public final class DateTimeFormatsTest {
   }
 
   @Test public void fuzzTests() {
-    assume().that(locale).isEqualTo(Locale.US);
+    assumeUsLocale();
     assertLocalDate("2005-04-27", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2005-04-27"));
     assertLocalDate("2004-10-27", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2004-10-27"));
     assertLocalDate("1993/07/05", "yyyy/MM/dd").isEqualTo(LocalDate.parse("1993-07-05"));
@@ -1307,7 +1315,7 @@ public final class DateTimeFormatsTest {
 
   @Test
   public void fuzzTestsWithZoneAndWeekdays() {
-    assume().that(locale).isEqualTo(Locale.US);
+    assumeUsLocale();
     assertLocalDate("2005-04-27", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2005-04-27"));
     assertLocalDate("2004-10-27", "yyyy-MM-dd").isEqualTo(LocalDate.parse("2004-10-27"));
     assertLocalDate("1993/07/05", "yyyy/MM/dd").isEqualTo(LocalDate.parse("1993-07-05"));
@@ -1465,5 +1473,23 @@ public final class DateTimeFormatsTest {
       Locale.setDefault(originalLocale);
     });
     Locale.setDefault(locale);
+  }
+
+  private void assumeUsLocale() {
+    assume().that(locale).isAnyOf(Locale.US, Locale.ENGLISH);
+  }
+
+  private static class LocaleProvider implements TestParameterValuesProvider {
+    @Override public List<Locale> provideValues() {
+      return List.of(
+          Locale.ROOT, Locale.US, Locale.ENGLISH, Locale.UK,
+          Locale.GERMAN, Locale.GERMANY,
+          Locale.ITALY, Locale.ITALIAN,
+          Locale.CHINA, Locale.CHINESE, Locale.SIMPLIFIED_CHINESE, Locale.TRADITIONAL_CHINESE,
+          Locale.TAIWAN, Locale.PRC,
+          Locale.FRANCE, Locale.FRENCH, Locale.CANADA_FRENCH,
+          Locale.JAPAN, Locale.JAPANESE,
+          Locale.KOREA, Locale.KOREAN);
+    }
   }
 }
