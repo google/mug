@@ -69,7 +69,7 @@ public final class DateTimeFormatsTest {
       return List.of(
           Locale.ROOT, Locale.US, Locale.ENGLISH,
           Locale.CHINA, Locale.CHINESE, Locale.SIMPLIFIED_CHINESE, Locale.TRADITIONAL_CHINESE, Locale.TAIWAN,
-          Locale.FRANCE, Locale.FRENCH);
+          Locale.FRANCE, Locale.FRENCH, Locale.CANADA_FRENCH);
     }
   }
 

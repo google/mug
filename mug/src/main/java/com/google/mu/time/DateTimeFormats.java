@@ -651,7 +651,7 @@ public final class DateTimeFormats {
         "CHUT", "CIST", "CIT", "CKT", "CLST", "CLT", "CST", "CVT", "CWST", "CXT", "ChST", "DAVT",
         "DDUT", "DFT", "DUT", "EASST", "EAT", "ECT", "EDT", "EEDT", "EEST", "EET", "EGST", "EGT",
         "EIT", "EST", "FET", "FJT", "FKST", "FKT", "FNT", "GALT", "GAMT", "GFT", "GMT", "GST",
-        "GYT", "HADT", "HAEC", "HAST", "HDT", "HKT", "HMT", "HOVT", "HST", "ICT", "IDT", "IOT",
+        "GYT", "HADT", "HAEC", "HAST", "HDT", "HKT", "HMT", "HNE", "HOVT", "HST", "ICT", "IDT", "IOT",
         "IRDT", "IRKT", "IRST", "IST", "JST", "KGT", "KOST", "KRAT", "KST", "LHST", "LINT", "MAGT",
         "MAWT", "MDT", "MEST", "MET", "MHT", "MMT", "MSK", "MST", "MUT", "MVT", "MYT", "NCT", "NDT",
         "NFT", "NPT", "NST", "NUT", "NZDT", "NZST", "NZT", "OMST", "ORAT", "PDT", "PETT", "PGT",
