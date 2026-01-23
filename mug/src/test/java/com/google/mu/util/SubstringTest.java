@@ -2030,15 +2030,15 @@ public class SubstringTest {
   @Test
   public void matchExpand_negativeExpansionDisallowed() {
     Substring.Match match = first("foo").in(" foo bar").get();
-    assertThrows(AssertionError.class, () -> match.expand(-1, 0));
-    assertThrows(AssertionError.class, () -> match.expand(0, -1));
+    assertThrows(IllegalArgumentException.class, () -> match.expand(-1, 0));
+    assertThrows(IllegalArgumentException.class, () -> match.expand(0, -1));
   }
 
   @Test
   public void matchExpand_expandingBeyondScopeDisallowed() {
     Substring.Match match = first("bar").in(" foo bar ").get();
-    assertThrows(AssertionError.class, () -> match.expand(6, 0));
-    assertThrows(AssertionError.class, () -> match.expand(0, 2));
+    assertThrows(IllegalStateException.class, () -> match.expand(6, 0));
+    assertThrows(IllegalStateException.class, () -> match.expand(0, 2));
   }
 
   @Test

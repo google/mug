@@ -2774,10 +2774,20 @@ public final class Substring {
       this.endIndex = startIndex + length;
       this.backtrackIndex = backtrackIndex;
       this.repetitionStartIndex = repetitionStartIndex;
-      assert startIndex >= 0 : "Invalid index: " + startIndex;
-      assert length >= 0 : "Invalid length: " + length;
-      assert endIndex <= context.length() : "Invalid endIndex: " + endIndex;
-      assert repetitionStartIndex >= endIndex : "Invalid repetitionStartIndex: " + repetitionStartIndex;
+      if (startIndex < 0) {
+        throw new IllegalArgumentException("Invalid startIndex: " + startIndex);
+      }
+      if (length < 0) {
+        throw new IllegalArgumentException("Invalid length: " + length);
+      }
+      if (endIndex > context.length()) {
+        throw new IllegalArgumentException(
+            "Invalid endIndex: " + endIndex + " > context.length(): " + context.length());
+      }
+      if (repetitionStartIndex < endIndex) {
+        throw new IllegalArgumentException(
+            "Invalid repetitionStartIndex: " + repetitionStartIndex + " < endIndex: " + endIndex);
+      }
     }
 
     static Match suffix(String context, int length) {
@@ -3069,11 +3079,21 @@ public final class Substring {
      * @throws IllegalStateException if there are not sufficient characters to expand
      */
     Match expand(int toLeft, int toRight) {
-      assert toLeft >= 0 : "Invalid toLeft: " + toLeft;
-      assert toRight >= 0 : "Invalid toRight: " + toRight;
+      if (toLeft < 0) {
+        throw new IllegalArgumentException("Invalid toLeft: " + toLeft);
+      }
+      if (toRight < 0) {
+        throw new IllegalArgumentException("Invalid toRight: " + toRight);
+      }
       int newStartIndex = startIndex - toLeft;
       int newLength = length() + toLeft + toRight;
       int newEndIndex = newStartIndex + newLength;
+      if (newStartIndex < 0) {
+        throw new IllegalStateException("Cannot expand beyond start of context");
+      }
+      if (newEndIndex > context.length()) {
+        throw new IllegalStateException("Cannot expand beyond end of context");
+      }
       int newRepetitionStartIndex = max(repetitionStartIndex, newEndIndex);
       return new Match(context, newStartIndex, newLength, backtrackIndex, newRepetitionStartIndex);
     }
