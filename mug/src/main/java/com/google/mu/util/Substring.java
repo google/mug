@@ -785,6 +785,10 @@ public final class Substring {
 
             @Override public Match get() {
               for (; g <= groups; g++) {
+                // Skip groups that didn't participate in the match (e.g., optional groups)
+                if (matcher.group(g) == null) {
+                  continue;
+                }
                 int start = matcher.start(g);
                 int end = matcher.end(g);
                 if (start >= next) {
@@ -833,6 +837,10 @@ public final class Substring {
         }
         Matcher matcher = regexPattern.matcher(input);
         if (matcher.find(fromIndex)) {
+          // Check if the group participated in the match (e.g., not an optional group that didn't match)
+          if (matcher.group(group) == null) {
+            return null;
+          }
           int start = matcher.start(group);
           return Match.backtrackable(1, input, start, matcher.end(group) - start);
         }
