@@ -15,13 +15,14 @@
 package com.google.mu.collect;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.junit.Test;
 
@@ -51,28 +52,20 @@ public class ChainConcurrentAccessTest {
         Chain.of("gamma", "delta", "epsilon"));
 
     int threadCount = 16;
-    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
     List<String> results = new CopyOnWriteArrayList<>();
-
-    try {
-      new Parallelizer(executor, threadCount)
-          .parallelize(
-              IntStream.range(0, threadCount).boxed(),
-              i -> {
-                int index = i % 5;  // Access different indices
-                String expectedValue = List.of("alpha", "beta", "gamma", "delta", "epsilon").get(index);
-                String result = chain.get(index);
-                // Parallelizer will propagate exceptions to main thread
-                if (!result.equals(expectedValue)) {
-                  throw new AssertionError(
-                      "Expected '" + expectedValue + "' at index " + index + " but got '" + result + "'");
-                }
-                results.add(result);
-              });
-    } finally {
-      executor.shutdown();
-      executor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
-    }
+    runConcurrently(
+        threadCount,
+        i -> {
+          int index = i % 5;  // Access different indices
+          String expectedValue = List.of("alpha", "beta", "gamma", "delta", "epsilon").get(index);
+          String result = chain.get(index);
+          // Parallelizer will propagate exceptions to main thread
+          if (!result.equals(expectedValue)) {
+            throw new AssertionError(
+                "Expected '" + expectedValue + "' at index " + index + " but got '" + result + "'");
+          }
+          results.add(result);
+        });
 
     // Assert in main thread after all workers complete
     assertThat(results).containsAtLeastElementsIn(
@@ -90,21 +83,14 @@ public class ChainConcurrentAccessTest {
         Chain.concat(Chain.of(4, 5), Chain.of(6, 7, 8, 9, 10)));
 
     int threadCount = 12;
-    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
     List<List<Integer>> collectedResults = new CopyOnWriteArrayList<>();
 
-    try {
-      new Parallelizer(executor, threadCount)
-          .parallelize(
-              IntStream.range(0, threadCount).boxed(),
-              i -> {
-                List<Integer> threadResult = chain.stream().collect(Collectors.toList());
-                collectedResults.add(threadResult);
-              });
-    } finally {
-      executor.shutdown();
-      executor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
-    }
+    runConcurrently(
+        threadCount,
+        i -> {
+          List<Integer> threadResult = chain.stream().collect(Collectors.toList());
+          collectedResults.add(threadResult);
+        });
 
     // Every thread should see exactly [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     List<Integer> expected = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
@@ -124,19 +110,8 @@ public class ChainConcurrentAccessTest {
         Chain.concat(Chain.of(6, 7, 8), Chain.of(9, 10)));
 
     int threadCount = 20;
-    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
     List<Integer> sizes = new CopyOnWriteArrayList<>();
-
-    try {
-      new Parallelizer(executor, threadCount)
-          .parallelize(
-              IntStream.range(0, threadCount).boxed(),
-              i -> sizes.add(chain.size()));
-    } finally {
-      executor.shutdown();
-      executor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
-    }
-
+    runConcurrently(threadCount, i -> sizes.add(chain.size()));
     // All threads should see size = 10
     assertThat(sizes).hasSize(threadCount);
     assertThat(sizes).doesNotContain(0);
@@ -155,18 +130,10 @@ public class ChainConcurrentAccessTest {
         Chain.concat(Chain.of("three"), Chain.of("four", "five")));
 
     int threadCount = 15;
-    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
     List<List<String>> collectedResults = new CopyOnWriteArrayList<>();
-
-    try {
-      new Parallelizer(executor, threadCount)
-          .parallelize(
-              IntStream.range(0, threadCount).boxed(),
-              i -> collectedResults.add(chain.stream().collect(Collectors.toList())));
-    } finally {
-      executor.shutdown();
-      executor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
-    }
+    runConcurrently(
+        threadCount,
+        i -> collectedResults.add(chain.stream().collect(Collectors.toList())));
 
     // Every thread should see exactly ["one", "two", "three", "four", "five"]
     List<String> expected = List.of("one", "two", "three", "four", "five");
@@ -186,7 +153,6 @@ public class ChainConcurrentAccessTest {
         Chain.of(60, 70, 80, 90, 100));
 
     int threadCount = 24;
-    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 
     // Track results from different operation types
     List<Integer> getSizeResults = new CopyOnWriteArrayList<>();
@@ -195,38 +161,32 @@ public class ChainConcurrentAccessTest {
 
     List<Integer> validValues = List.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
 
-    try {
-      new Parallelizer(executor, threadCount)
-          .parallelize(
-              IntStream.range(0, threadCount).boxed(),
-              threadId -> {
-                // Different threads perform different operations
-                switch (threadId % 3) {
-                  case 0:  // size()
-                    int size = chain.size();
-                    if (size != 10) {
-                      throw new AssertionError("Expected size=10 but got " + size);
-                    }
-                    getSizeResults.add(size);
-                    break;
-                  case 1:  // get()
-                    Integer value = chain.get(threadId % 10);
-                    if (!validValues.contains(value)) {
-                      throw new AssertionError(
-                          "Invalid value: " + value + " (threadId=" + threadId + ")");
-                    }
-                    getResults.add(value);
-                    break;
-                  case 2:  // stream()
-                    List<Integer> streamResult = chain.stream().collect(Collectors.toList());
-                    streamResults.add(streamResult);
-                    break;
-                }
-              });
-    } finally {
-      executor.shutdown();
-      executor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
-    }
+    runConcurrently(
+        threadCount,
+        threadId -> {
+          // Different threads perform different operations
+          switch (threadId % 3) {
+            case 0:  // size()
+              int size = chain.size();
+              if (size != 10) {
+                throw new AssertionError("Expected size=10 but got " + size);
+              }
+              getSizeResults.add(size);
+              break;
+            case 1:  // get()
+              Integer value = chain.get(threadId % 10);
+              if (!validValues.contains(value)) {
+                throw new AssertionError(
+                    "Invalid value: " + value + " (threadId=" + threadId + ")");
+              }
+              getResults.add(value);
+              break;
+            case 2:  // stream()
+              List<Integer> streamResult = chain.stream().collect(Collectors.toList());
+              streamResults.add(streamResult);
+              break;
+          }
+        });
 
     // All size() calls should return 10
     assertThat(getSizeResults).isNotEmpty();
@@ -245,6 +205,16 @@ public class ChainConcurrentAccessTest {
     List<Integer> expected = List.of(10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
     for (List<Integer> streamResult : streamResults) {
       assertThat(streamResult).containsExactlyElementsIn(expected).inOrder();
+    }
+  }
+
+  private static void runConcurrently(int numThreads, IntConsumer task) {
+    try (ExecutorService executor = Executors.newFixedThreadPool(numThreads)) {
+      new Parallelizer(executor, numThreads)
+          .parallelize(indexesFrom(0).limit(numThreads), i -> task.accept(i));
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new AssertionError(e);
     }
   }
 }
