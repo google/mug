@@ -23,9 +23,9 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import com.google.mu.util.concurrent.Parallelizer;
-
 import org.junit.Test;
+
+import com.google.mu.util.concurrent.Parallelizer;
 
 /**
  * Tests for concurrent access to Chain focusing on correct values.
