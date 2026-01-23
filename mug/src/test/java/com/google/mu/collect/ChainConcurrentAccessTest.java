@@ -131,10 +131,7 @@ public class ChainConcurrentAccessTest {
       new Parallelizer(executor, threadCount)
           .parallelize(
               IntStream.range(0, threadCount).boxed(),
-              i -> {
-                int size = chain.size();
-                sizes.add(size);
-              });
+              i -> sizes.add(chain.size()));
     } finally {
       executor.shutdown();
       executor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
@@ -165,10 +162,7 @@ public class ChainConcurrentAccessTest {
       new Parallelizer(executor, threadCount)
           .parallelize(
               IntStream.range(0, threadCount).boxed(),
-              i -> {
-                List<String> threadResult = chain.stream().collect(Collectors.toList());
-                collectedResults.add(threadResult);
-              });
+              i -> collectedResults.add(chain.stream().collect(Collectors.toList())));
     } finally {
       executor.shutdown();
       executor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
