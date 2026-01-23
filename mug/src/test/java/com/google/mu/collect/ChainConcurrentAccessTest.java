@@ -208,13 +208,11 @@ public class ChainConcurrentAccessTest {
     }
   }
 
-  private static void runConcurrently(int numThreads, IntConsumer task) {
+  private static void runConcurrently(int numThreads, IntConsumer task)
+      throws InterruptedException {
     try (ExecutorService executor = Executors.newFixedThreadPool(numThreads)) {
       new Parallelizer(executor, numThreads)
           .parallelize(indexesFrom(0).limit(numThreads), i -> task.accept(i));
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new AssertionError(e);
     }
   }
 }
