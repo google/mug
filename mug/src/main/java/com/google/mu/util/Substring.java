@@ -767,8 +767,11 @@ public final class Substring {
     requireNonNull(regexPattern);
     return new RepeatingPattern() {
       @Override public Stream<Match> match(String input, int fromIndex) {
+        if (fromIndex > input.length()) {
+          return Stream.empty();
+        }
         Matcher matcher = regexPattern.matcher(input);
-        if (fromIndex > input.length() || !matcher.find(fromIndex)) {
+        if (!matcher.find(fromIndex)) {
           return Stream.empty();
         }
         int groups = matcher.groupCount();
@@ -825,8 +828,11 @@ public final class Substring {
     }
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
+        if (fromIndex > input.length()) {
+          return null;
+        }
         Matcher matcher = regexPattern.matcher(input);
-        if (fromIndex <= input.length() && matcher.find(fromIndex)) {
+        if (matcher.find(fromIndex)) {
           int start = matcher.start(group);
           return Match.backtrackable(1, input, start, matcher.end(group) - start);
         }
