@@ -3899,6 +3899,127 @@ public class SubstringTest {
         .containsExactly("f", "cde");
   }
 
+  @Test public void testRegexTopLevelGroups_beforeAfter_withFromIndex() {
+    // Test that before() and after() return text relative to ORIGINAL input, not the substring
+    // Original: "abcfffcde123"
+    // From index 3: "fffcde" -> matches "(f+)(cde)" -> ["fff", "cde"]
+    // The first group is "fff" at index 3-6 in the original input
+    // before() should be "abc" (text before index 3)
+    // after() should be "cde123" (text after index 6, including the second group)
+    Substring.Match match =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match("abcfffcde123", 3)
+            .findFirst()
+            .get();
+    assertThat(match.before()).isEqualTo("abc");
+    assertThat(match.after()).isEqualTo("cde123");
+    assertThat(match.toString()).isEqualTo("fff");
+
+    // Test with match at the beginning (fromIndex = 0)
+    Substring.Match matchAtStart =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match("fffcde123", 0)
+            .findFirst()
+            .get();
+    assertThat(matchAtStart.before()).isEmpty();
+    assertThat(matchAtStart.after()).isEqualTo("cde123");
+
+    // Test with match at the end
+    Substring.Match matchAtEnd =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match("123fffcde", 3)
+            .findFirst()
+            .get();
+    assertThat(matchAtEnd.before()).isEqualTo("123");
+    assertThat(matchAtEnd.after()).isEqualTo("cde");
+  }
+
+  @Test public void testRegexTopLevelGroups_remove_withFromIndex() {
+    // Test that remove() correctly removes the first group match from the ORIGINAL input
+    String input = "abcfffcde123";
+    Substring.Match match =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input, 3)
+            .findFirst()
+            .get();
+    // Should remove "fff" (first group) from the original, leaving "abccde123"
+    assertThat(match.remove()).isEqualTo("abccde123");
+
+    // Test with match at the beginning
+    String input2 = "fffcde123";
+    Substring.Match match2 =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input2, 0)
+            .findFirst()
+            .get();
+    assertThat(match2.remove()).isEqualTo("cde123");
+
+    // Test with match at the end
+    String input3 = "123fffcde";
+    Substring.Match match3 =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input3, 3)
+            .findFirst()
+            .get();
+    assertThat(match3.remove()).isEqualTo("123cde");
+
+    // Test with match in the middle only
+    String input4 = "xxxfffcdeyyy";
+    Substring.Match match4 =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input4, 3)
+            .findFirst()
+            .get();
+    assertThat(match4.remove()).isEqualTo("xxxcdeyyy");
+  }
+
+  @Test public void testRegexTopLevelGroups_fullString_withFromIndex() {
+    // Test that fullString() returns the ORIGINAL input, not the substring
+    String input = "abcfffcde123";
+    Substring.Match match =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input, 3)
+            .findFirst()
+            .get();
+    assertThat(match.fullString()).isEqualTo(input);
+
+    // Even when matching from middle of string, fullString() returns original
+    String input2 = "start-fffcde-end";
+    Substring.Match match2 =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(fff)(cde)"))
+            .match(input2, 6)
+            .findFirst()
+            .get();
+    assertThat(match2.fullString()).isEqualTo(input2);
+  }
+
+  @Test public void testRegexTopLevelGroups_index_withFromIndex() {
+    // Test that index() and length() are absolute positions in ORIGINAL input
+    String input = "abcfffcde123";
+    Substring.Match match =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input, 3)
+            .findFirst()
+            .get();
+    // First group "fff" starts at index 3 and has length 3
+    assertThat(match.index()).isEqualTo(3);
+    assertThat(match.length()).isEqualTo(3);
+
+    // Test with match at different positions
+    String input2 = "xfffcde";
+    Substring.Match match2 =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input2, 1)
+            .findFirst()
+            .get();
+    assertThat(match2.index()).isEqualTo(1);
+    assertThat(match2.length()).isEqualTo(3);
+
+    // Verify indices are consistent with before() and after()
+    assertThat(match2.before()).isEqualTo(input2.substring(0, match2.index()));
+    assertThat(match2.after()).isEqualTo(input2.substring(match2.index() + match2.length()));
+  }
+
   @Test
   public void match_contentEquals_false() {
     Substring.Match match = first("bar").in("foobarbaz").get();
