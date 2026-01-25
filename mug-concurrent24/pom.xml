@@ -7,6 +7,9 @@
   </parent>
   <artifactId>mug-concurrent24</artifactId>
   <name>Java 24 Concurrency Utils</name>
+  <properties>
+    <module.name>concurrent24</module.name>
+  </properties>
   
   <build>
     <pluginManagement>

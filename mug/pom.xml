@@ -8,6 +8,9 @@
   </parent>
   <artifactId>mug</artifactId>
   <packaging>jar</packaging>
+  <properties>
+    <module.name>mug</module.name>
+  </properties>
 
   <name>core</name>
   <build>

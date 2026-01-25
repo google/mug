@@ -11,6 +11,7 @@
   <name>Safe Spanner Client</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <module.name>spanner</module.name>
   </properties>
   <build>
     <pluginManagement>

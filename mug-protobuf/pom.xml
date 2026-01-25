@@ -8,6 +8,9 @@
   <artifactId>mug-protobuf</artifactId>
   <packaging>jar</packaging>
   <name>Protobuf utils</name>
+  <properties>
+    <module.name>protobuf</module.name>
+  </properties>
   <build>
     <pluginManagement>
       <plugins>

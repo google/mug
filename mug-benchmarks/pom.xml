@@ -12,6 +12,7 @@
   <name>benchmarks</name>
   <properties>
     <maven.javadoc.skip>true</maven.javadoc.skip>
+    <module.name>benchmarks</module.name>
   </properties>
 
   <build>

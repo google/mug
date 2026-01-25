@@ -9,6 +9,9 @@
   <artifactId>mug-bigquery</artifactId>
   <packaging>jar</packaging>
   <name>BigQuery Client Library</name>
+  <properties>
+    <module.name>bigquery</module.name>
+  </properties>
 
   <build>
     <pluginManagement>

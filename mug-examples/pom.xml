@@ -9,6 +9,9 @@
   <artifactId>mug-examples</artifactId>
   <packaging>jar</packaging>
   <name>Examples</name>
+  <properties>
+    <module.name>examples</module.name>
+  </properties>
 
   <build>
     <pluginManagement>

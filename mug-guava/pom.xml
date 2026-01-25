@@ -11,6 +11,7 @@
   <name>Guava add-ons</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <module.name>guava</module.name>
   </properties>
   <build>
     <pluginManagement>

@@ -12,6 +12,7 @@
     <maven.compiler.source>16</maven.compiler.source>
     <maven.compiler.target>16</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <module.name>safesql.java16tests</module.name>
   </properties>
   <build>
     <pluginManagement>

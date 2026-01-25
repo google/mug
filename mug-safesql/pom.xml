@@ -10,6 +10,7 @@
   <name>SafeSql</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <module.name>safesq1</module.name>
   </properties>
   <build>
     <pluginManagement>

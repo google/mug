@@ -9,6 +9,7 @@
   <name>Compile-time plugins</name>
   <properties>
     <maven.javadoc.skip>true</maven.javadoc.skip>
+    <module.name>errorprone</module.name>
   </properties>
   <build>
     <pluginManagement>
