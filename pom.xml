@@ -19,6 +19,8 @@
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
     <mug.version>9.8-SNAPSHOT</mug.version>
+    <!-- Reproducible builds: fixed timestamp for build artifacts -->
+    <project.build.outputTimestamp>2024-01-01T00:00:00Z</project.build.outputTimestamp>
   </properties>
 
   <licenses>
@@ -220,7 +222,7 @@
         </plugin>
         <plugin>
           <artifactId>maven-source-plugin</artifactId>
-          <version>2.2.1</version>
+          <version>3.3.1</version>
         </plugin>
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
@@ -253,7 +255,14 @@
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>3.4.2</version>
+          <configuration>
+            <archive>
+              <manifest>
+                <addBuildEnvironmentEntries>false</addBuildEnvironmentEntries>
+              </manifest>
+            </archive>
+          </configuration>
           <executions>
             <execution>
               <id>javadoc-jar</id>
