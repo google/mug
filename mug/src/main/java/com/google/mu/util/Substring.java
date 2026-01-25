@@ -879,7 +879,7 @@ public final class Substring {
   }
 
   /**
-   * Returns a {@link Collector} that collects the input candidate {@link Pattern} and reults in a
+   * Returns a {@link Collector} that collects the input candidate {@link Pattern} and results in a
    * pattern that matches whichever that occurs first in the input string. For example you can use
    * it to find the first occurrence of any reserved word in a set:
    *
@@ -3064,9 +3064,6 @@ public final class Substring {
     /**
      * Expands this match for {@code toLeft} characters before the starting index and {@code
      * toRight} characters beyond the end index.
-     *
-     * @throws IllegalArgumentException if either {@code toLeft} or {@code toRight} is negative
-     * @throws IllegalStateException if there are not sufficient characters to expand
      */
     Match expand(int toLeft, int toRight) {
       assert toLeft >= 0 : "Invalid toLeft: " + toLeft;
