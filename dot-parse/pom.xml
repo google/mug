@@ -8,7 +8,7 @@
   <artifactId>dot-parse</artifactId>
   <name>Compact Parser Combinators</name>
   <properties>
-    <module.name>dot_parse</module.name>
+    <module.name>parse</module.name>
   </properties>
   
   <build>
