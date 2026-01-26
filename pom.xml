@@ -476,7 +476,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.5</version>
+            <version>3.2.8</version>
             <configuration>
               <arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
             </configuration>
