@@ -559,7 +559,8 @@ to define the `AND` `OR` binary operators, their EBNF would have also been left 
 
 The solution?
 
-TIP: Use `OperatorTable` for left recursive grammars.
+> [!TIP]
+> Use `OperatorTable` for left recursive grammars.
 
 If you take a closer look, `<expr>.<field_name>` produces a `FieldRef` expression. 
 That is, the `.<field_name>` part can be thought of as an abstract _postfix operator_!
