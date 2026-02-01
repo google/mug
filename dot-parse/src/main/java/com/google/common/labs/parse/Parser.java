@@ -1158,7 +1158,10 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns true if this parser matches the entirety of the {@code input}.
+   * Returns true if this parser matches the entirety of the {@code input}. It's similar to the
+   * regex {@code Matcher.matches(String}} method. If you don't need to match the entire input
+   * string, which is similar to the regex {@code Matcher.lookingAt(String)} method, you can use
+   * {@link #probe(String) probe(input).findFirst().isPresent()} to achieve the same effect.
    *
    * @since 10.0
    */
@@ -1474,7 +1477,8 @@ public abstract class Parser<T> {
     }
 
     /**
-     * Returns true if this parser matches the entirety of the {@code input}.
+     * Returns true if this parser matches the entirety of the {@code input}, or if the input is
+     * empty. It's similar to the regex {@code Matcher.matches(String}} method.
      *
      * @since 10.0
      */
@@ -1538,7 +1542,11 @@ public abstract class Parser<T> {
     }
 
     /**
-     * Returns true if this parser matches the entirety of the {@code input}.
+     * Returns true if this parser matches the entirety of the {@code input}. It's similar to the
+     * regex {@code Matcher.matches(String}} method. If you don't need to match the entire input
+     * string, which is similar to the regex {@code Matcher.lookingAt(String)} method, you can use
+     * {@link #probe(String) parser.skipping(...).probe(input).findFirst().isPresent()} to achieve
+     * the same effect.
      *
      * @since 10.0
      */
