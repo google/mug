@@ -1158,6 +1158,21 @@ public abstract class Parser<T> {
   }
 
   /**
+   * Returns true if this parser matches the entirety of the {@code input}.
+   *
+   * @since 10.0
+   */
+  public final boolean matches(String input) {
+    return matches(CharInput.from(input), 0);
+  }
+
+  private boolean matches(CharInput input, int fromIndex) {
+    ErrorContext context = new ErrorContext(input);
+    return match(input, fromIndex, context) instanceof MatchResult.Success<?> success
+        && input.isEof(success.tail());
+  }
+
+  /**
    * Parses the entire input string lazily by applying this parser repeatedly until the end of
    * input. Results are returned in a lazy stream.
    */
@@ -1458,6 +1473,15 @@ public abstract class Parser<T> {
       return parseSkipping(skipConsecutive(charsToSkip, "skipped"), input);
     }
 
+    /**
+     * Returns true if this parser matches the entirety of the {@code input}.
+     *
+     * @since 10.0
+     */
+    public boolean matches(String input) {
+      return asUnsafeZeroWidthParser().matches(input);
+    }
+
     T computeDefaultValue() {
       return defaultSupplier.get();
     }
@@ -1511,6 +1535,15 @@ public abstract class Parser<T> {
      */
     public T parse(String input, int fromIndex) {
       return forTokens().parse(input, fromIndex);
+    }
+
+    /**
+     * Returns true if this parser matches the entirety of the {@code input}.
+     *
+     * @since 10.0
+     */
+    public boolean matches(String input) {
+      return forTokens().matches(input);
     }
 
     /**
