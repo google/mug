@@ -91,7 +91,7 @@ public class ParserTest {
   }
 
   @Test
-  public void first_skippingCharacter_whitespace() {
+  public void first_skippingWhitespace() {
     assertThat(first(" foo").skipping(Character::isWhitespace).parse("    foo")).isEqualTo(" foo");
     assertThat(first(" foo").skipping(Character::isWhitespace).matches("    foo")).isTrue();
   }
@@ -2179,7 +2179,7 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMoreDelimited_skippingCharacter_whitespace() {
+  public void zeroOrMoreDelimited_skippingWhitespace() {
     Parser<ImmutableListMultimap<String, String>> parser =
         zeroOrMoreDelimited(
                 word().followedBy(string(":")),
@@ -2256,7 +2256,7 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMoreDelimited_withOptionalValue_skippingCharacter_whitespace() {
+  public void zeroOrMoreDelimited_withOptionalValue_skippingWhitespace() {
     Parser<Map<String, Integer>> parser =
         zeroOrMoreDelimited(
                 word(),
@@ -2266,6 +2266,8 @@ public class ParserTest {
             .between("{", "}");
     assertThat(parser.skipping(Character::isWhitespace).parse(" { a=1 , b , c=3 } "))
         .containsExactly("a", 1, "b", 0, "c", 3);
+    assertThat(parser.skipping(Character::isWhitespace).matches(" { a=1 , b , c=3 } "))
+        .isTrue();
   }
 
   @Test
@@ -2897,6 +2899,7 @@ public class ParserTest {
         assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " [foo ] "));
     assertThat(thrown).hasMessageThat().contains("1:6");
     assertThat(thrown).hasMessageThat().contains("encountered [ ]...");
+    assertThat(parser.skipping(Character::isWhitespace).matches(" [foo ] ")).isFalse();
   }
 
   @Test
