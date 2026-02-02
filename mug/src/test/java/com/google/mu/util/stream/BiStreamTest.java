@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.adjacentPairsFrom;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.BiStream.concatenating;
 import static com.google.mu.util.stream.BiStream.crossJoining;
@@ -1009,6 +1010,37 @@ public class BiStreamTest {
   @Test public void testToAdjacentPairs_nullPadding() {
     Stream<String> stream =
         Stream.of(null, 1, 2, 3, null).collect(toAdjacentPairs()).mapToObj(Joiner.on(':')::join);
+    assertThat(stream).containsExactly("null:1", "1:2", "2:3", "3:null").inOrder();
+  }
+
+  @Test public void adjacentPairsFrom_empty() {
+    Stream<String> stream = adjacentPairsFrom().mapToObj(Joiner.on(':')::join);
+    assertThat(stream).isEmpty();
+  }
+
+  @Test public void adjacentPairsFrom_oneElement() {
+    Stream<String> stream = adjacentPairsFrom(1).mapToObj(Joiner.on(':')::join);
+    assertThat(stream).isEmpty();
+  }
+
+  @Test public void adjacentPairsFrom_twoElements() {
+    Stream<String> stream = adjacentPairsFrom(1, 2).mapToObj(Joiner.on(':')::join);
+    assertThat(stream).containsExactly("1:2").inOrder();
+  }
+
+  @Test public void adjacentPairsFrom_threeElements() {
+    Stream<String> stream = adjacentPairsFrom(1, 2, 3).mapToObj(Joiner.on(':')::join);
+    assertThat(stream).containsExactly("1:2", "2:3").inOrder();
+  }
+
+  @Test public void adjacentPairsFrom_fourElements() {
+    Stream<String> stream = adjacentPairsFrom(1, 2, 3, 4).mapToObj(Joiner.on(':')::join);
+    assertThat(stream).containsExactly("1:2", "2:3", "3:4").inOrder();
+  }
+
+  @Test public void adjacentPairs_nullPadding() {
+    Stream<String> stream =
+        adjacentPairsFrom(null, 1, 2, 3, null).mapToObj(Joiner.on(':')::join);
     assertThat(stream).containsExactly("null:1", "1:2", "2:3", "3:null").inOrder();
   }
 
