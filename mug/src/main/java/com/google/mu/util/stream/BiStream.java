@@ -382,7 +382,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a BiStream of every neighboring pair from {@code collection}.
+   * Returns a BiStream of every neighboring pair from {@code elements}.
    * For example {@code adjacentPairsFrom(1, 2, 3, 4)} will
    * return {@code [{1, 2}, {2, 3}, {3, 4}]}.
    *
