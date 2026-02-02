@@ -1159,7 +1159,7 @@ public abstract class Parser<T> {
 
   /**
    * Returns true if this parser matches the entirety of the {@code input}. It's similar to the
-   * regex {@code Matcher.matches(String}} method.
+   * regex {@code Matcher.matches(String)} method.
    *
    * <p>If you don't need to match the entire input string, which is similar to the regex {@code
    * Matcher.lookingAt(String)} method, you can use {@link #probe(String)
@@ -1480,7 +1480,7 @@ public abstract class Parser<T> {
 
     /**
      * Returns true if this parser matches the entirety of the {@code input}, or if the input is
-     * empty. It's similar to the regex {@code Matcher.matches(String}} method.
+     * empty. It's similar to the regex {@code Matcher.matches(String)} method.
      *
      * @since 10.0
      */
@@ -1545,7 +1545,7 @@ public abstract class Parser<T> {
 
     /**
      * Returns true if this parser matches the entirety of the {@code input}. It's similar to the
-     * regex {@code Matcher.matches(String}} method.
+     * regex {@code Matcher.matches(String)} method.
      *
      * <p>If you don't need to match the entire input string, which is similar to the regex {@code
      * Matcher.lookingAt(String)} method, you can use {@link #probe(String)
