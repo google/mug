@@ -2,3 +2,4 @@
 # Claude cache
 .claude/
 .claude-cache/
+.settings/
