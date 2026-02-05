@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
  *
  * <p>For example: {@code new Dimension(size.getWidth(), size.getHeight())} will match
  * {@code record Dimension(int width, int height)}, but will fail to compile if the constructor
- * is defined as {@code record Dimension(int height, int width)}.
+ * were defined as {@code record Dimension(int height, int width)}.
  *
  * <p>If the argument expression is indeed as expected despite not matching the parameter name,
  * you can always use an explicit comment, for example: <pre>{@code
