@@ -10,12 +10,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Methods and constructors annotated as so will require the call site
+ * Methods and constructors annotated as such will require the call site
  * argument expressions match (include) the tokenized and normalized formal parameter name.
  *
  * <p>For example: {@code new Dimension(size.getWidth(), size.getHeight())} will match
- * {@code record Dimension(int width, int height)}, but will fail if it's defined as
- * {@code record Dimension(int height, int width)}.
+ * {@code record Dimension(int width, int height)}, but will fail to compile if the constructor
+ * is defined as {@code record Dimension(int height, int width)}.
  *
  * <p>If the argument expression is indeed as expected despite not matching the parameter name,
  * you can always use an explicit comment, for example: <pre>{@code
