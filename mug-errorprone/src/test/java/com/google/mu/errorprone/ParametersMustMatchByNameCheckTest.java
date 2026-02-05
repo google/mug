@@ -169,6 +169,49 @@ public final class ParametersMustMatchByNameCheckTest {
   }
 
   @Test
+  public void onConstructor_crossCompilationUnit_argsInWrongOrder_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  Test(int width, int height) {}",
+            "}")
+        .addSourceLines(
+            "Caller.java",
+            "class Caller {",
+            "  void callSite(int height, int width) {",
+            "    new Test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        height,",
+            "        width);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onConstructor_crossCompilationUnit_parametersMatchExactly() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  Test(int width, int height) {}",
+            "}")
+        .addSourceLines(
+            "Caller.java",
+            "class Caller {",
+            "  void callSite(int height, int width) {",
+            "    new Test(width, height);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void onRecordConstructor_argsInWrongOrder_fails() {
     helper
         .addSourceLines(

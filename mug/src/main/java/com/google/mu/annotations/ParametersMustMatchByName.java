@@ -26,9 +26,10 @@ import java.lang.annotation.Target;
  * name matching between the method declaration and the functional interface's method names.
  *
  * <p>Usually, if your method or constructor has multiple parameters of the same type, it adds
- * risk of them being passed in the wrong order. You could create a builder, but builders
- * carry significant boilerplate and you could forget to set a required parameter, resulting in
- * runtime error. By simply annotating the constructor with {@code @ParametersMustMatchByName}
+ * risk of them being passed in the wrong order, particularly if they are primitive types like
+ * strings or ints. You could create a builder, but builders carry significant boilerplate and
+ * you could forget to set a required parameter, resulting in runtime error.
+ * By simply annotating the constructor with {@code @ParametersMustMatchByName}
  * (and using {@code mug-errorprone} artifact in your {@code <annotationProcessorPaths>}),
  * you get compile-time safety for free. Just ensure you have the following snippet in your pom.xml:
  *

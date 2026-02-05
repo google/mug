@@ -77,7 +77,6 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       String normalizedParamName = normalizeForComparison(param.toString());
       ExpressionTree arg = args.get(i);
       if (!normalizedArgTexts.get(i).contains(normalizedParamName)) {
-        // arg doesn't match placeholder
         boolean trust = args.size() <= 1 && arg instanceof JCLiteral && (args.size() <= 1);
         checkingOn(arg)
             .require(
