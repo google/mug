@@ -454,4 +454,40 @@ public final class ParametersMustMatchByNameCheckTest {
             "}")
         .doTest();
   }
+
+  @Test
+  public void onRecordCanonicalConstructor_argsInWrongOrder_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  record Dimension(int width) {",
+            "    @ParametersMustMatchByName Dimension {}",
+            "  }",
+            "  static Dimension factory(int height) {",
+            "    return new Dimension(",
+            "        // BUG: Diagnostic contains: must match",
+            "        height);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onRecordCanonicalConstructor_parametersMatchExactly() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  record Dimension(int width, int height) {",
+            "    @ParametersMustMatchByName Dimension {}",
+            "  }",
+            "  static Dimension factory(int height, int width) {",
+            "    return new Dimension(width, height);",
+            "  }",
+            "}")
+        .doTest();
+  }
 }
