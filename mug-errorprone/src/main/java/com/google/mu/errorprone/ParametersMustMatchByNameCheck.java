@@ -75,14 +75,16 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     List<VarSymbol> params = method.getParameters();
     ImmutableList<String> normalizedArgTexts =
         argSources.stream().map(txt -> normalizeForComparison(txt)).collect(toImmutableList());
-    for (int i = 0; i < params.size(); i++) {
+    // No need to check for varargs parameter name.
+    int argsToCheck = method.isVarArgs() ? params.size() - 1 : params.size();
+    for (int i = 0; i < argsToCheck; i++) {
       VarSymbol param = params.get(i);
       String normalizedParamName = normalizeForComparison(param.toString());
       ExpressionTree arg = args.get(i);
       if (!normalizedArgTexts.get(i).contains(normalizedParamName)) {
         checkingOn(arg)
             .require(
-                arg instanceof JCLiteral  // trust literal arg if it's unique type
+                arg instanceof JCLiteral // trust literal arg if it's unique type
                     && !ARG_COMMENT.in(argSources.get(i)).isPresent()
                     && isUniqueType(params, i, state),
                 "argument expression must match parameter name `%s`",

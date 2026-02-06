@@ -91,6 +91,57 @@ public final class ParametersMustMatchByNameCheckTest {
   }
 
   @Test
+  public void onMethod_varargs_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(int... nums) {}",
+            "  void callSite(int a, int b) {",
+            "    test(a, b);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_regularArgsFollowedByVarargs_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(String message, int... nums) {}",
+            "  void callSite(String message, int a, int b) {",
+            "    test(message, a, b);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_regularArgsFollowedByVarargs_regularArgWrong_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(String message, int... nums) {}",
+            "  void callSite(String s, int a, int b) {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        s,",
+            "        a, b);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void onMethod_zeroArgsAllowed() {
     helper
         .addSourceLines(
