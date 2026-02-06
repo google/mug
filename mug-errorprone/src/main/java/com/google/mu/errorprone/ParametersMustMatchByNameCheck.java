@@ -109,8 +109,7 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     }
   }
 
-  private static boolean isUniqueType(
-      List<? extends VarSymbol> params, int paramIndex, VisitorState state) {
+  private static boolean isUniqueType(List<VarSymbol> params, int paramIndex, VisitorState state) {
     Type type = params.get(paramIndex).type;
     return IntStream.range(0, params.size())
         .filter(i -> i != paramIndex)
