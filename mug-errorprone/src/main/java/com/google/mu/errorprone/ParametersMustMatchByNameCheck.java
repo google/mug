@@ -44,37 +44,35 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       "com.google.mu.annotations.ParametersMustMatchByName";
   private static final Substring.Pattern ARG_COMMENT = Substring.spanningInOrder("/*", "*/");
 
-  @Override
-  public void checkConstructorCall(NewClassTree tree, VisitorState state) throws ErrorReport {
-    MethodSymbol method = ASTHelpers.getSymbol(tree);
-    if (requiresNameMatch(method, state)) {
-      checkParameters(
-          method.getParameters(),
-          tree.getArguments(),
-          argsAsTexts(tree.getIdentifier(), tree.getArguments(), state),
-          state);
-    }
+  @Override public void checkConstructorCall(NewClassTree tree, VisitorState state)
+      throws ErrorReport {
+    checkParameters(
+        ASTHelpers.getSymbol(tree),
+        tree.getArguments(),
+        argsAsTexts(tree.getIdentifier(), tree.getArguments(), state),
+        state);
   }
 
-  @Override
-  public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
+  @Override public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
       throws ErrorReport {
-    MethodSymbol method = ASTHelpers.getSymbol(tree);
-    if (requiresNameMatch(method, state)) {
-      checkParameters(
-          method.getParameters(),
-          tree.getArguments(),
-          argsAsTexts(tree.getMethodSelect(), tree.getArguments(), state),
-          state);
-    }
+    checkParameters(
+        ASTHelpers.getSymbol(tree),
+        tree.getArguments(),
+        argsAsTexts(tree.getMethodSelect(), tree.getArguments(), state),
+        state);
   }
 
   private void checkParameters(
-      List<? extends VarSymbol> params,
+      MethodSymbol method,
       List<? extends ExpressionTree> args,
       List<String> argSources,
       VisitorState state)
       throws ErrorReport {
+    if (!ASTHelpers.hasAnnotation(method, ANNOTATION_NAME, state)
+        && !ASTHelpers.hasAnnotation(method.enclClass(), ANNOTATION_NAME, state)) {
+      return;
+    }
+    List<VarSymbol> params = method.getParameters();
     ImmutableList<String> normalizedArgTexts =
         argSources.stream().map(txt -> normalizeForComparison(txt)).collect(toImmutableList());
     for (int i = 0; i < params.size(); i++) {
@@ -85,16 +83,11 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
         boolean trust = arg instanceof JCLiteral && isUniqueType(params, i, state);
         checkingOn(arg)
             .require(
-                trust && ARG_COMMENT.in(argSources.get(i)).isEmpty(),
+                trust && !ARG_COMMENT.in(argSources.get(i)).isPresent(),
                 "argument expression must match parameter name `%s`",
                 param);
       }
     }
-  }
-
-  private static boolean requiresNameMatch(MethodSymbol method, VisitorState state) {
-    return ASTHelpers.hasAnnotation(method, ANNOTATION_NAME, state)
-        || ASTHelpers.hasAnnotation(method.enclClass(), ANNOTATION_NAME, state);
   }
 
   private static boolean isUniqueType(
