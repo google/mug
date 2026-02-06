@@ -142,6 +142,41 @@ public final class ParametersMustMatchByNameCheckTest {
   }
 
   @Test
+  public void onMethod_regularLiteralArgsFollowedByVarargs_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(String message, int n, int... nums) {}",
+            "  void callSite(String message, int a, int b) {",
+            "    test(\"foo\", 0, a, b);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_withVarargs_twoLiteralsOfSameType_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(String s1, String s2, int... nums) {}",
+            "  void callSite() {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        \"foo\",",
+            "        \"bar\", 1);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void onMethod_zeroArgsAllowed() {
     helper
         .addSourceLines(
@@ -223,6 +258,78 @@ public final class ParametersMustMatchByNameCheckTest {
             "  void test(int width, String height) {}",
             "  void callSite() {",
             "    test(100, \"200\");",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_genericParametersMatch_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  <T1, T2> void test(T1 first, T2 second) {}",
+            "  void callSite(String second, int first) {",
+            "    test(first, second);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_genericParametersDoNotMatch_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  <T1, T2> void test(T1 first, T2 second) {}",
+            "  void callSite(String second, int first) {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        second,",
+            "        first);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_parameterizedTypesMatch_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "import java.util.List;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(List<String> names, List<Integer> ids) {}",
+            "  void callSite(List<Integer> ids, List<String> names) {",
+            "    test(names, ids);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_parameterizedTypesDoNotMatch_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "import java.util.List;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(List<String> names, List<String> ids) {}",
+            "  void callSite(List<String> ids, List<String> names) {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        ids,",
+            "        names);",
             "  }",
             "}")
         .doTest();
