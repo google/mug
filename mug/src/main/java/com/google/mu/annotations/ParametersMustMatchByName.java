@@ -13,9 +13,12 @@ import java.lang.annotation.Target;
  * Methods and constructors annotated as such will require the call site
  * argument expressions match (include) the tokenized and normalized formal parameter name.
  *
- * <p>For example: {@code new Dimension(size.getWidth(), size.getHeight())} will match
- * {@code record Dimension(int width, int height)}, but will fail to compile if the constructor
- * were defined as {@code record Dimension(int height, int width)}.
+ * <p>For example: {@code new Profile(currentUser.getId(), currentUser.getName())} will match {@code
+ * record Profile(String userId, String userName)}, but will fail to compile if the constructor were
+ * defined as {@code record Profile(String userName, String userId)}. The {@code
+ * currentUser.getId()} expression matches the {@code userId} parameter name because the effective
+ * tokens of {@code currentUser.getId()} is {@code ["current", "user", "id"]}, which includes as a
+ * subsequence the ({@code ["user", "id"]}) tokens from {@code userId}.
  *
  * <p>If the argument expression is indeed as expected despite not matching the parameter name,
  * you can always use an explicit comment, for example: <pre>{@code
