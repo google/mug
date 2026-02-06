@@ -546,4 +546,23 @@ public final class ParametersMustMatchByNameCheckTest {
             "}")
         .doTest();
   }
+
+  @Test
+  public void onSameClassWithinLambda_parametersWithDistinctTypes_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import java.util.function.Supplier;",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  record Dimension(int width) {",
+            "    static Dimension factory(int size) {",
+            "      Supplier<Dimension> supplier = () -> new Dimension(size);",
+            "      return supplier.get();",
+            "    }",
+            "  }",
+            "}")
+        .doTest();
+  }
 }
