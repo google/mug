@@ -80,10 +80,11 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       String normalizedParamName = normalizeForComparison(param.toString());
       ExpressionTree arg = args.get(i);
       if (!normalizedArgTexts.get(i).contains(normalizedParamName)) {
-        boolean trust = arg instanceof JCLiteral && isUniqueType(params, i, state);
         checkingOn(arg)
             .require(
-                trust && !ARG_COMMENT.in(argSources.get(i)).isPresent(),
+                arg instanceof JCLiteral  // trust literal arg if it's unique type
+                    && !ARG_COMMENT.in(argSources.get(i)).isPresent()
+                    && isUniqueType(params, i, state),
                 "argument expression must match parameter name `%s`",
                 param);
       }
