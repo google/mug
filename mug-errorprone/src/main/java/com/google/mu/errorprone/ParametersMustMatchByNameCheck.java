@@ -82,10 +82,6 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       return;
     }
     ClassSymbol currentClass = ASTHelpers.getSymbol(classTree);
-    if (!ASTHelpers.hasAnnotation(method, ANNOTATION_NAME, state)
-        && !ASTHelpers.hasAnnotation(method.enclClass(), ANNOTATION_NAME, state)) {
-      return;
-    }
     List<VarSymbol> params = method.getParameters();
     ImmutableList<String> normalizedArgTexts =
         argSources.stream().map(txt -> normalizeForComparison(txt)).collect(toImmutableList());
