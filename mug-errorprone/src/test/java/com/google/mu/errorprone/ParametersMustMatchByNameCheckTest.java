@@ -91,6 +91,22 @@ public final class ParametersMustMatchByNameCheckTest {
   }
 
   @Test
+  public void onMethod_zeroArgsAllowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test() {}",
+            "  void callSite() {",
+            "    test();",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void onMethod_literalOnOneArgAllowed() {
     helper
         .addSourceLines(
