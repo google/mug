@@ -73,7 +73,8 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     if (method == null) {
       return;
     }
-    if (!ASTHelpers.hasAnnotation(method, ANNOTATION_NAME, state)
+    boolean methodAnnotated = ASTHelpers.hasAnnotation(method, ANNOTATION_NAME, state);
+    if (!methodAnnotated
         && !ASTHelpers.hasAnnotation(method.enclClass(), ANNOTATION_NAME, state)) {
       return;
     }
@@ -96,8 +97,7 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
         // relax the rule except if there is contradiction or ambiguity.
         boolean trustable =
             arg instanceof JCLiteral
-                || (!ASTHelpers.hasAnnotation(method, ANNOTATION_NAME, state)
-                    && method.enclClass().equals(currentClass));
+                || (!methodAnnotated && method.enclClass().equals(currentClass));
         checkingOn(arg)
             .require(
                 trustable // trust if no other parameter has the same type
