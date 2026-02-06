@@ -5,6 +5,7 @@ import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static java.util.stream.Collectors.joining;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 import com.google.auto.service.AutoService;
 import com.google.common.base.Ascii;
@@ -21,6 +22,7 @@ import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.tree.JCTree.JCLiteral;
 
 /**
@@ -49,7 +51,8 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       checkParameters(
           method.getParameters(),
           tree.getArguments(),
-          argsAsTexts(tree.getIdentifier(), tree.getArguments(), state));
+          argsAsTexts(tree.getIdentifier(), tree.getArguments(), state),
+          state);
     }
   }
 
@@ -61,14 +64,16 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       checkParameters(
           method.getParameters(),
           tree.getArguments(),
-          argsAsTexts(tree.getMethodSelect(), tree.getArguments(), state));
+          argsAsTexts(tree.getMethodSelect(), tree.getArguments(), state),
+          state);
     }
   }
 
   private void checkParameters(
       List<? extends VarSymbol> params,
       List<? extends ExpressionTree> args,
-      List<String> argSources)
+      List<String> argSources,
+      VisitorState state)
       throws ErrorReport {
     ImmutableList<String> normalizedArgTexts =
         argSources.stream().map(txt -> normalizeForComparison(txt)).collect(toImmutableList());
@@ -77,7 +82,7 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       String normalizedParamName = normalizeForComparison(param.toString());
       ExpressionTree arg = args.get(i);
       if (!normalizedArgTexts.get(i).contains(normalizedParamName)) {
-        boolean trust = args.size() <= 1 && arg instanceof JCLiteral && (args.size() <= 1);
+        boolean trust = arg instanceof JCLiteral && isUniqueType(params, i, state);
         checkingOn(arg)
             .require(
                 trust && ARG_COMMENT.in(argSources.get(i)).isEmpty(),
@@ -90,6 +95,15 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
   private static boolean requiresNameMatch(MethodSymbol method, VisitorState state) {
     return ASTHelpers.hasAnnotation(method, ANNOTATION_NAME, state)
         || ASTHelpers.hasAnnotation(method.enclClass(), ANNOTATION_NAME, state);
+  }
+
+  private static boolean isUniqueType(
+      List<? extends VarSymbol> params, int paramIndex, VisitorState state) {
+    Type type = params.get(paramIndex).type;
+    return IntStream.range(0, params.size())
+        .filter(i -> i != paramIndex)
+        .mapToObj(i -> params.get(i).type)
+        .noneMatch(t -> ASTHelpers.isSameType(t, type, state));
   }
 
   private static String normalizeForComparison(String text) {

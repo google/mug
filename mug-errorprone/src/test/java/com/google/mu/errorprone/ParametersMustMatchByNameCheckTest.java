@@ -109,21 +109,35 @@ public final class ParametersMustMatchByNameCheckTest {
   }
 
   @Test
-  public void onMethod_literalOnTwoArgs_fails() {
+  public void onMethod_literalOnTwoArgsOfSameType_fails() {
     helper
         .addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
-            "",
             "class Test {",
             "  @ParametersMustMatchByName",
             "  void test(int width, int height) {}",
-            "",
             "  void callSite() {",
             "    test(",
             "        // BUG: Diagnostic contains: must match",
             "        100,",
             "        200);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_literalOnTwoArgsOfDifferentTypes_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(int width, String height) {}",
+            "  void callSite() {",
+            "    test(100, \"200\");",
             "  }",
             "}")
         .doTest();

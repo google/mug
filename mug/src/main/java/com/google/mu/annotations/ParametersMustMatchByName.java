@@ -22,6 +22,9 @@ import java.lang.annotation.Target;
  * new Dimension(&#47;* width *&#47; list.get(0), &#47;* height *&#47; list.get(1));
  * }</pre>
  *
+ * <p>For literal string or number parameters, the parameter name matching rule is relaxed if the
+ * corresponding method parameter's type is unique (no other parameters share the same type).
+ *
  * <p>Note that method references used as functional interfaces are not checked for parameter
  * name matching between the method declaration and the functional interface's method names.
  *
