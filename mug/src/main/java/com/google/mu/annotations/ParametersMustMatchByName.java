@@ -32,8 +32,7 @@ import java.lang.annotation.Target;
  * risk of them being passed in the wrong order, particularly if they are primitive types like
  * strings or ints. You could create a builder, but builders carry significant boilerplate and
  * you could forget to set a required parameter, resulting in runtime error.
- * By simply annotating the constructor with {@code @ParametersMustMatchByName}
- * (and using {@code mug-errorprone} artifact in your {@code <annotationProcessorPaths>}),
+ * By simply annotating the constructor with {@code @ParametersMustMatchByName},
  * you get compile-time safety for free. Just ensure you have the following snippet in your pom.xml:
  *
  * <pre>{@code
