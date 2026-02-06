@@ -21,9 +21,9 @@ import java.lang.annotation.Target;
  * subsequence the ({@code ["user", "id"]}) tokens from {@code userId}.
  *
  * <p>If the argument expression is indeed as expected despite not matching the parameter name,
- * you can always use an explicit comment, for example: <pre>{@code
+ * you can always use an explicit comment, for example: <pre>
  * new Dimension(&#47;* width *&#47; list.get(0), &#47;* height *&#47; list.get(1));
- * }</pre>
+ * </pre>
  *
  * <p>For literal string or number parameters, the parameter name matching rule is relaxed if the
  * corresponding method parameter's type is unique (no other parameters share the same type).
