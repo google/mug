@@ -490,4 +490,60 @@ public final class ParametersMustMatchByNameCheckTest {
             "}")
         .doTest();
   }
+
+  @Test
+  public void onRecordCanonicalConstructor_sameCalss_parametersWithDistinctTypes_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  record Dimension(int width) {",
+            "    @ParametersMustMatchByName Dimension {}",
+            "    static Dimension factory(int size) {",
+            "      return new Dimension(",
+            "          // BUG: Diagnostic contains: must match",
+            "          size);",
+            "    }",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onSameClass_parametersWithDistinctTypes_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  record Dimension(int width) {",
+            "    static Dimension factory(int size) {",
+            "      return new Dimension(size);",
+            "    }",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onSameClass_parametersWithSameTypes_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  record Dimension(int width, int height) {",
+            "    static Dimension factory(int size, int value) {",
+            "      return new Dimension(",
+            "        // BUG: Diagnostic contains: must match",
+            "        size,",
+            "        value);",
+            "    }",
+            "  }",
+            "}")
+        .doTest();
+  }
 }

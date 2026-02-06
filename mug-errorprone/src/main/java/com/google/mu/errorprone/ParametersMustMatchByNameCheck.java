@@ -17,9 +17,11 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.util.ASTHelpers;
 import com.google.mu.util.CaseBreaker;
 import com.google.mu.util.Substring;
+import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Type;
@@ -68,6 +70,18 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       List<String> argSources,
       VisitorState state)
       throws ErrorReport {
+    if (method == null) {
+      return;
+    }
+    if (!ASTHelpers.hasAnnotation(method, ANNOTATION_NAME, state)
+        && !ASTHelpers.hasAnnotation(method.enclClass(), ANNOTATION_NAME, state)) {
+      return;
+    }
+    ClassTree classTree = state.findEnclosing(ClassTree.class);
+    if (classTree == null) {
+      return;
+    }
+    ClassSymbol currentClass = ASTHelpers.getSymbol(classTree);
     if (!ASTHelpers.hasAnnotation(method, ANNOTATION_NAME, state)
         && !ASTHelpers.hasAnnotation(method.enclClass(), ANNOTATION_NAME, state)) {
       return;
@@ -82,9 +96,15 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       String normalizedParamName = normalizeForComparison(param.toString());
       ExpressionTree arg = args.get(i);
       if (!normalizedArgTexts.get(i).contains(normalizedParamName)) {
+        // Literal arg or for class-level annotation where the caller is also in the same class,
+        // relax the rule except if there is contradiction or ambiguity.
+        boolean trustable =
+            arg instanceof JCLiteral
+                || (!ASTHelpers.hasAnnotation(method, ANNOTATION_NAME, state)
+                    && method.enclClass().equals(currentClass));
         checkingOn(arg)
             .require(
-                arg instanceof JCLiteral // trust literal arg if it's unique type
+                trustable // trust if no other parameter has the same type
                     && !ARG_COMMENT.in(argSources.get(i)).isPresent()
                     && isUniqueType(params, i, state),
                 "argument expression must match parameter name `%s`",
