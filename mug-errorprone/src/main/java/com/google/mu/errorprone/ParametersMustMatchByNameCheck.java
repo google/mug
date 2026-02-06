@@ -94,7 +94,7 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       ExpressionTree arg = args.get(i);
       if (!normalizedArgTexts.get(i).contains(normalizedParamName)) {
         // Literal arg or for class-level annotation where the caller is also in the same class,
-        // relax the rule except if there is contradiction or ambiguity.
+        // relax the rule except if there is explicit /* paramName */ or ambiguity.
         boolean trustable =
             arg instanceof JCLiteral
                 || (!methodAnnotated && method.enclClass().equals(currentClass));
