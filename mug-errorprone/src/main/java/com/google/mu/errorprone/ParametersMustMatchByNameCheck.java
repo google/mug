@@ -2,34 +2,34 @@ package com.google.mu.errorprone;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
-import static java.util.stream.Collectors.joining;
+import static com.google.mu.errorprone.SourceUtils.argsAsTexts;
+import static com.google.mu.errorprone.SourceUtils.normalizeForComparison;
 
 import java.util.List;
 import java.util.stream.IntStream;
 
 import com.google.auto.service.AutoService;
-import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.LinkType;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.util.ASTHelpers;
-import com.google.mu.util.CaseBreaker;
 import com.google.mu.util.Substring;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.LambdaExpressionTree;
+import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
+import com.sun.source.tree.Tree;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.tree.JCTree.JCLiteral;
 
 /**
  * Checks that call sites of {@code @ParametersMustMatchByName} methods must match the declared parameter
@@ -88,33 +88,39 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     }
     ClassSymbol currentClass = ASTHelpers.getSymbol(classTree);
     List<VarSymbol> params = method.getParameters();
-    ImmutableList<String> normalizedArgTexts =
-        argSources.stream().map(txt -> normalizeForComparison(txt)).collect(toImmutableList());
+    ImmutableList<String> normalizedArgTexts = normalizeForComparison(argSources);
     // No need to check for varargs parameter name.
     int argsToCheck = method.isVarArgs() ? params.size() - 1 : params.size();
     for (int i = 0; i < argsToCheck; i++) {
       VarSymbol param = params.get(i);
-      String normalizedParamName = normalizeForComparison(param.toString());
       ExpressionTree arg = args.get(i);
-      if (!normalizedArgTexts.get(i).contains(normalizedParamName)) {
-        // Literal arg or for class-level annotation where the caller is also in the same class,
-        // relax the rule except if there is explicit /* paramName */ or ambiguity.
-        boolean trustable =
-            arg instanceof JCLiteral
-                || arg instanceof LambdaExpressionTree
-                || arg instanceof MemberReferenceTree
-                || isClassLiteral(arg)
-                || isEnumConstant(arg)
-                || (!methodAnnotated && method.enclClass().equals(currentClass));
-        checkingOn(arg)
-            .require(
-                trustable // trust if no other parameter has the same type
-                    && !ARG_COMMENT.in(argSources.get(i)).isPresent()
-                    && isUniqueType(params, i, state),
-                "argument expression must match parameter name `%s`",
-                param);
+      if (normalizedArgTexts.get(i).contains(normalizeForComparison(param.toString()))) {
+        continue;
       }
+      // Literal arg or for class-level annotation where the caller is also in the same class,
+      // relax the rule except if there is explicit /* paramName */ or ambiguity.
+      boolean trustable =
+          isTrustableLiteral(arg)
+              || arg instanceof LambdaExpressionTree
+              || arg instanceof MemberReferenceTree
+              || arg instanceof NewClassTree
+              || isClassLiteral(arg)
+              || isEnumConstant(arg)
+              || (!methodAnnotated && method.enclClass().equals(currentClass));
+      checkingOn(arg)
+          .require(
+              trustable // trust if no other parameter has the same type
+                  && !ARG_COMMENT.in(argSources.get(i)).isPresent()
+                  && isUniqueType(params, i, state),
+              "argument expression must match parameter name `%s`",
+              param);
     }
+  }
+
+  private static boolean isTrustableLiteral(ExpressionTree tree) {
+    return tree instanceof LiteralTree
+        && tree.getKind() != Tree.Kind.BOOLEAN_LITERAL
+        && tree.getKind() != Tree.Kind.NULL_LITERAL;
   }
 
   private static boolean isClassLiteral(ExpressionTree tree) {
@@ -133,32 +139,5 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
         .filter(i -> i != paramIndex)
         .mapToObj(i -> params.get(i).type)
         .noneMatch(t -> ASTHelpers.isSameType(t, type, state));
-  }
-
-  private static String normalizeForComparison(String text) {
-    return new CaseBreaker()
-        .breakCase(text) // All punctuation chars gone
-        .filter(s -> !s.equals("get")) // user.getId() should match e.g. user_id
-        .filter(s -> !s.equals("is")) // job.isComplete() should match job_complete
-        .map(Ascii::toLowerCase) // ignore case
-        .collect(joining("_")); // delimit words
-  }
-
-  private static ImmutableList<String> argsAsTexts(
-      ExpressionTree invocationStart, List<? extends ExpressionTree> args, VisitorState state) {
-    int position = state.getEndPosition(invocationStart);
-    if (position < 0) {
-      return ImmutableList.of();
-    }
-    ImmutableList.Builder<String> builder = ImmutableList.builder();
-    for (ExpressionTree arg : args) {
-      int next = state.getEndPosition(arg);
-      if (next < 0) {
-        return ImmutableList.of();
-      }
-      builder.add(state.getSourceCode().subSequence(position, next).toString());
-      position = next;
-    }
-    return builder.build();
   }
 }

@@ -3,7 +3,8 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>9.9-SNAPSHOT</version>
+    <version>9.9.1-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-safesql</artifactId>
   <packaging>jar</packaging>
@@ -11,6 +12,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <module.name>safesq1</module.name>
+    <maven.compiler.parameters>true</maven.compiler.parameters>
   </properties>
   <build>
     <pluginManagement>
@@ -30,9 +32,6 @@
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
           <configuration>
-            <compilerArgs>
-              <arg>-parameters</arg>
-            </compilerArgs>
             <annotationProcessorPaths>
               <path>
                 <groupId>com.google.errorprone</groupId>
@@ -42,7 +41,7 @@
               <path>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>mug-errorprone</artifactId>
-                <version>9.7</version>
+                <version>${project.version}</version>
               </path>
             <!-- Other annotation processors go here.
             If 'annotationProcessorPaths' is set, processors will no longer be
@@ -68,11 +67,11 @@
     </plugins>
   </build>
   <dependencies>
-    <dependency>
+     <dependency>
       <groupId>com.google.errorprone</groupId>
       <artifactId>error_prone_annotations</artifactId>
       <version>${error_prone_annotations.version}</version>
-   </dependency>
+    </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>mug</artifactId>

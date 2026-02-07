@@ -4,7 +4,7 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>9.9-SNAPSHOT</version>
+    <version>9.9.1-SNAPSHOT</version>
   </parent>
   <artifactId>mug-guava</artifactId>
   <packaging>jar</packaging>
@@ -43,7 +43,7 @@
               <path>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>mug-errorprone</artifactId>
-                <version>9.2</version>
+                <version>9.9</version>
               </path>
             <!-- Other annotation processors go here.
             If 'annotationProcessorPaths' is set, processors will no longer be
@@ -69,12 +69,12 @@
     </plugins>
   </build>
   <dependencies>
-      <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <scope>compile</scope>
-        <version>33.4.0-jre</version>
-      </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <scope>compile</scope>
+      <version>33.4.0-jre</version>
+    </dependency>
     <dependency>
       <groupId>com.google.errorprone</groupId>
       <artifactId>error_prone_annotations</artifactId>
