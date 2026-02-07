@@ -10,8 +10,15 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Methods and constructors annotated as such will require the call site
- * argument expressions match (include) the tokenized and normalized formal parameter name.
+ * Methods and constructors annotated as such will ensure the call sites pass in expressions
+ * that "look like" matching the parameter names.
+ *
+ * <p>Usually, if your method or constructor has multiple parameters of the same type, it adds
+ * risk of them being passed in the wrong order, particularly if they are primitive types like
+ * strings or ints. You could create a builder, but builders carry significant boilerplate and
+ * you could forget to set a required parameter, resulting in runtime error.
+ * By simply annotating the constructor with {@code @ParametersMustMatchByName},
+ * you get compile-time safety for free.
  *
  * <p>For example:
  *
@@ -48,12 +55,7 @@ import java.lang.annotation.Target;
  * <p>Note that method references used as functional interfaces are not checked for parameter
  * name matching between the method declaration and the functional interface's method names.
  *
- * <p>Usually, if your method or constructor has multiple parameters of the same type, it adds
- * risk of them being passed in the wrong order, particularly if they are primitive types like
- * strings or ints. You could create a builder, but builders carry significant boilerplate and
- * you could forget to set a required parameter, resulting in runtime error.
- * By simply annotating the constructor with {@code @ParametersMustMatchByName},
- * you get compile-time safety for free. Just ensure you have the following snippet in your pom.xml:
+ * <p>To use, just ensure you have the following snippet in your pom.xml:
  *
  * <pre>{@code
  * <build>
