@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>9.9.1-SNAPSHOT</version>
+    <version>9.9.2-SNAPSHOT</version>
   </parent>
   <artifactId>mug-concurrent24</artifactId>
   <name>Java 24 Concurrency Utils</name>
