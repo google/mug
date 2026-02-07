@@ -9,6 +9,7 @@
   <name>Java 24 Concurrency Utils</name>
   <properties>
     <module.name>concurrent24</module.name>
+    <argLine>--enable-preview</argLine>
   </properties>
   
   <build>
@@ -50,14 +51,6 @@
             <arg>--enable-preview</arg>
           </compilerArgs>
           </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.2.5</version>
-        <configuration>
-          <argLine>@{argLine} --enable-preview</argLine>
-        </configuration>
       </plugin>
     </plugins>
   </build>
