@@ -1071,7 +1071,7 @@ abstract class AbstractStringFormat {
    * <p>Performance-wise, it's close to native string concatenation using the '+' operator and is
    * about 6 times faster than {@link String#format}.
    *
-   * @since 10.0
+   * @since 9.9.1
    */
   public final String format(long arg) {
     checkFormatArgs(1);

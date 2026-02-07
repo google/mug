@@ -389,7 +389,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * <p>If the input has 0 or 1 elements then the output is an empty {@code BiStream}. Otherwise the
    * length of the output {@code BiStream} is one less than the length of the input.
    *
-   * @since 10.0
+   * @since 9.9.1
    */
   @SafeVarargs
   public static <T> BiStream<T, T> adjacentPairsFrom(T... elements) {
@@ -404,7 +404,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * <p>If the input has 0 or 1 elements then the output is an empty {@code BiStream}. Otherwise the
    * length of the output {@code BiStream} is one less than the length of the input.
    *
-   * @since 10.0
+   * @since 9.9.1
    */
   public static <T> BiStream<T, T> adjacentPairsFrom(Collection<? extends T> collection) {
     return zip(collection.stream(), collection.stream().skip(1));
@@ -794,12 +794,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Returns a {@code BiStream} of {@code elements}, each transformed to a pair of values with
    * {@code toKey} and {@code toValue}.
-   *
-   * @deprecated Use {@code biStream(User::id, users)} to create {@code BiStream<UserId, User>},
-   *     or, use {@code biStream(users, User::getAccount)} to create {@code BiStream<User, Account>}.
-   *     Then use {@link #mapKeys} or {@link #mapValues} to apply further mappings.
    */
-  @Deprecated
   public static <T, K, V> BiStream<K, V> from(
       Collection<T> elements,
       Function<? super T, ? extends K> toKey,
@@ -810,12 +805,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
    * values with {@code toKey} and {@code toValue}.
-   *
-   * @deprecated Use {@code biStream(User::id, users)} to create {@code BiStream<UserId, User>},
-   *     or, use {@code biStream(users, User::getAccount)} to create {@code BiStream<User, Account>}.
-   *     Then use {@link #mapKeys} or {@link #mapValues} to apply further mappings.
    */
-  @Deprecated
   public static <T, K, V> BiStream<K, V> from(
       Stream<T> stream,
       Function<? super T, ? extends K> toKey,

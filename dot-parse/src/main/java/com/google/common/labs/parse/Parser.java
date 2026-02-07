@@ -1165,7 +1165,7 @@ public abstract class Parser<T> {
    * Matcher.lookingAt(String)} method, you can use {@link #probe(String)
    * probe(input).findFirst().isPresent()} to achieve the same effect.
    *
-   * @since 10.0
+   * @since 9.9.1
    */
   public final boolean matches(String input) {
     return matches(CharInput.from(input), 0);
@@ -1482,7 +1482,7 @@ public abstract class Parser<T> {
      * Returns true if this parser matches the entirety of the {@code input}, or if the input is
      * empty. It's similar to the regex {@code Matcher.matches(String)} method.
      *
-     * @since 10.0
+     * @since 9.9.1
      */
     public boolean matches(String input) {
       return asUnsafeZeroWidthParser().matches(input);
@@ -1551,7 +1551,7 @@ public abstract class Parser<T> {
      * Matcher.lookingAt(String)} method, you can use {@link #probe(String)
      * parser.skipping(...).probe(input).findFirst().isPresent()} to achieve the same effect.
      *
-     * @since 10.0
+     * @since 9.9.1
      */
     public boolean matches(String input) {
       return forTokens().matches(input);
