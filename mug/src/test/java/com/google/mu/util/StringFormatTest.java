@@ -1646,7 +1646,7 @@ public class StringFormatTest {
   }
 
   @Test
-  @SuppressWarnings("LabsStringFormatArgsCheck")
+  @SuppressWarnings("StringFormatArgsCheck")
   public void format_oneIntArg_incorrectNumberOfPlaceholders() {
     assertThrows(IllegalArgumentException.class, () -> new StringFormat("{a} + {b} = c").format(1));
   }
@@ -1663,7 +1663,7 @@ public class StringFormatTest {
   }
 
   @Test
-  @SuppressWarnings("LabsStringFormatArgsCheck")
+  @SuppressWarnings("StringFormatArgsCheck")
   public void format_oneLongArg_incorrectNumberOfPlaceholders() {
     assertThrows(
         IllegalArgumentException.class, () -> new StringFormat("{a} + {b} = c").format(1L));
@@ -1681,7 +1681,7 @@ public class StringFormatTest {
   }
 
   @Test
-  @SuppressWarnings("LabsStringFormatArgsCheck")
+  @SuppressWarnings("StringFormatArgsCheck")
   public void format_oneBoolArg_incorrectNumberOfPlaceholders() {
     assertThrows(
         IllegalArgumentException.class, () -> new StringFormat("{a} + {b} = c").format(true));
@@ -1699,7 +1699,7 @@ public class StringFormatTest {
   }
 
   @Test
-  @SuppressWarnings("LabsStringFormatArgsCheck")
+  @SuppressWarnings("StringFormatArgsCheck")
   public void format_oneDoubleArg_incorrectNumberOfPlaceholders() {
     assertThrows(
         IllegalArgumentException.class, () -> new StringFormat("{a} + {b} = c").format(1.5D));
