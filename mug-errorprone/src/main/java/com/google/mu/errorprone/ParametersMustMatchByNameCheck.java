@@ -21,6 +21,7 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -96,7 +97,7 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
         // Literal arg or for class-level annotation where the caller is also in the same class,
         // relax the rule except if there is explicit /* paramName */ or ambiguity.
         boolean trustable =
-            arg instanceof JCLiteral
+            (arg instanceof JCLiteral || isEnumConstant(arg))
                 || (!methodAnnotated && method.enclClass().equals(currentClass));
         checkingOn(arg)
             .require(
@@ -107,6 +108,11 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
                 param);
       }
     }
+  }
+
+  private static boolean isEnumConstant(ExpressionTree tree) {
+    Symbol symbol = ASTHelpers.getSymbol(tree);
+    return symbol instanceof VarSymbol && symbol.isEnum();
   }
 
   private static boolean isUniqueType(List<VarSymbol> params, int paramIndex, VisitorState state) {

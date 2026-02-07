@@ -264,6 +264,43 @@ public final class ParametersMustMatchByNameCheckTest {
   }
 
   @Test
+  public void onMethod_enumConstantOnOneArgAllowed() {
+    helper
+        .addSourceLines(
+            "Mode.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "enum Mode {",
+            "  ACTIVE, INACTIVE;",
+            "  @ParametersMustMatchByName",
+            "  void test(Mode mode) {}",
+            "  void callSite() {",
+            "    test(ACTIVE);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_enumConstantOnTwoArgsOfSameType_fails() {
+    helper
+        .addSourceLines(
+            "Mode.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "enum Mode {",
+            "  ACTIVE, INACTIVE;",
+            "  @ParametersMustMatchByName",
+            "  void test(Mode mode1, Mode mode2) {}",
+            "  void callSite() {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        ACTIVE,",
+            "        INACTIVE);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void onMethod_genericParametersMatch_succeeds() {
     helper
         .addSourceLines(
