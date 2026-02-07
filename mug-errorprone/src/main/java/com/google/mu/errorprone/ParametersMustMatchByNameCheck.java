@@ -2,20 +2,19 @@ package com.google.mu.errorprone;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
-import static java.util.stream.Collectors.joining;
+import static com.google.mu.errorprone.SourceUtils.argsAsTexts;
+import static com.google.mu.errorprone.SourceUtils.normalizeForComparison;
 
 import java.util.List;
 import java.util.stream.IntStream;
 
 import com.google.auto.service.AutoService;
-import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.LinkType;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.util.ASTHelpers;
-import com.google.mu.util.CaseBreaker;
 import com.google.mu.util.Substring;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
@@ -89,8 +88,7 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     }
     ClassSymbol currentClass = ASTHelpers.getSymbol(classTree);
     List<VarSymbol> params = method.getParameters();
-    ImmutableList<String> normalizedArgTexts =
-        argSources.stream().map(txt -> normalizeForComparison(txt)).collect(toImmutableList());
+    ImmutableList<String> normalizedArgTexts = normalizeForComparison(argSources);
     // No need to check for varargs parameter name.
     int argsToCheck = method.isVarArgs() ? params.size() - 1 : params.size();
     for (int i = 0; i < argsToCheck; i++) {
@@ -141,32 +139,5 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
         .filter(i -> i != paramIndex)
         .mapToObj(i -> params.get(i).type)
         .noneMatch(t -> ASTHelpers.isSameType(t, type, state));
-  }
-
-  private static String normalizeForComparison(String text) {
-    return new CaseBreaker()
-        .breakCase(text) // All punctuation chars gone
-        .filter(s -> !s.equals("get")) // user.getId() should match e.g. user_id
-        .filter(s -> !s.equals("is")) // job.isComplete() should match job_complete
-        .map(Ascii::toLowerCase) // ignore case
-        .collect(joining("_")); // delimit words
-  }
-
-  private static ImmutableList<String> argsAsTexts(
-      ExpressionTree invocationStart, List<? extends ExpressionTree> args, VisitorState state) {
-    int position = state.getEndPosition(invocationStart);
-    if (position < 0) {
-      return ImmutableList.of();
-    }
-    ImmutableList.Builder<String> builder = ImmutableList.builder();
-    for (ExpressionTree arg : args) {
-      int next = state.getEndPosition(arg);
-      if (next < 0) {
-        return ImmutableList.of();
-      }
-      builder.add(state.getSourceCode().subSequence(position, next).toString());
-      position = next;
-    }
-    return builder.build();
   }
 }

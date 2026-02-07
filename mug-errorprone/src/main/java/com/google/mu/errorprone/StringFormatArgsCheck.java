@@ -18,8 +18,9 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.errorprone.matchers.Matchers.anyMethod;
 import static com.google.guava.labs.collect.GuavaCollectors.toImmutableListMultimap;
+import static com.google.mu.errorprone.SourceUtils.argsAsTexts;
+import static com.google.mu.errorprone.SourceUtils.normalizeForComparison;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
-import static java.util.stream.Collectors.joining;
 
 import java.util.Collection;
 import java.util.List;
@@ -42,7 +43,6 @@ import java.util.stream.Stream;
 import javax.lang.model.type.TypeKind;
 
 import com.google.auto.service.AutoService;
-import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
@@ -57,7 +57,6 @@ import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.util.ASTHelpers;
 import com.google.errorprone.util.ErrorProneTokens;
-import com.google.mu.util.CaseBreaker;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
 import com.sun.source.tree.ExpressionTree;
@@ -275,8 +274,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     for (ExpressionTree arg : args) {
       checkArgFormattability(arg, state);
     }
-    ImmutableList<String> normalizedArgTexts =
-        argSources.stream().map(txt -> normalizeForComparison(txt)).collect(toImmutableList());
+    ImmutableList<String> normalizedArgTexts = normalizeForComparison(argSources);
     LineMap lineMap = state.getPath().getCompilationUnit().getLineMap();
     for (int i = 0; i < placeholders.size(); i++) {
       Placeholder placeholder = placeholders.get(i);
@@ -399,33 +397,6 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     return ErrorProneTokens.getTokens(source, state.context).stream()
         .map(token -> source.subSequence(token.pos(), token.endPos()).toString())
         .collect(toImmutableList());
-  }
-
-  private static String normalizeForComparison(String text) {
-    return new CaseBreaker()
-        .breakCase(text) // All punctuation chars gone
-        .filter(s -> !s.equals("get")) // user.getId() should match e.g. user_id
-        .filter(s -> !s.equals("is")) // job.isComplete() should match job_complete
-        .map(Ascii::toLowerCase) // ignore case
-        .collect(joining("_")); // delimit words
-  }
-
-  private static ImmutableList<String> argsAsTexts(
-      ExpressionTree invocationStart, List<? extends ExpressionTree> args, VisitorState state) {
-    int position = state.getEndPosition(invocationStart);
-    if (position < 0) {
-      return ImmutableList.of();
-    }
-    ImmutableList.Builder<String> builder = ImmutableList.builder();
-    for (ExpressionTree arg : args) {
-      int next = state.getEndPosition(arg);
-      if (next < 0) {
-        return ImmutableList.of();
-      }
-      builder.add(state.getSourceCode().subSequence(position, next).toString());
-      position = next;
-    }
-    return builder.build();
   }
 
   private void checkArgFormattability(ExpressionTree arg, VisitorState state) throws ErrorReport {

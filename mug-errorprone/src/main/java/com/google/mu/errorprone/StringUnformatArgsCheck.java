@@ -15,10 +15,10 @@
 package com.google.mu.errorprone;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.errorprone.matchers.Matchers.instanceMethod;
 import static com.google.guava.labs.collect.GuavaCollectors.toImmutableMap;
+import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
 
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -35,24 +35,13 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.sun.source.tree.ExpressionTree;
-import com.sun.source.tree.LambdaExpressionTree;
-import com.sun.source.tree.MemberReferenceTree;
-import com.sun.source.tree.MethodInvocationTree;
-import com.sun.source.tree.MethodTree;
-import com.sun.tools.javac.api.JavacTrees;
-import com.sun.tools.javac.code.Symbol.MethodSymbol;
-import com.sun.tools.javac.code.Type;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.LinkType;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
-import com.google.errorprone.matchers.Matcher;
-import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.matchers.method.MethodMatchers.MethodClassMatcher;
 import com.google.errorprone.util.ASTHelpers;
 import com.google.guava.labs.base.CaseFormats;
-import com.google.mu.errorprone.AbstractBugChecker.ErrorReport;
 import com.google.mu.function.MapFrom3;
 import com.google.mu.function.MapFrom4;
 import com.google.mu.function.MapFrom5;
@@ -61,6 +50,14 @@ import com.google.mu.function.MapFrom7;
 import com.google.mu.function.MapFrom8;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.LambdaExpressionTree;
+import com.sun.source.tree.MemberReferenceTree;
+import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.tools.javac.api.JavacTrees;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Type;
 
 /**
  * Checks that the "unformat" methods (methods that parse an input string according to a predefined
