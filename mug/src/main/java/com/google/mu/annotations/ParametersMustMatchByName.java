@@ -49,8 +49,8 @@ import java.lang.annotation.Target;
  * redundancy mandated by {@code builder.setWidth(width)}. The most concise code is also the safe
  * code, guaranteed by the compile-time plugin.
  *
- * <p>For literal parameters (string, int, enum constant, class literals), the parameter name
- * matching rule is relaxed if the corresponding method parameter's type is unique
+ * <p>For literal parameters (string literals, int literals, enum constants, class literals),
+ * the parameter name matching rule is relaxed if the corresponding method parameter's type is unique
  * (no other parameters share the same type).
  *
  * <p>Note that method references used as functional interfaces are not checked for parameter
