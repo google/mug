@@ -93,6 +93,26 @@ public final class OperatorTable<T> {
    * of the postfix {@code operator} parser. The higher {@code precedence} value the higher
    * precedence it is.
    *
+   * <p>This method is particularly useful to express otherwise-left-recursive grammars. For example,
+   * if you need to parse Java method invocations such as {@code expression.doSomething(foo, bar)},
+   * the receiver part is an expression and the method invocation is also an expression, resulting
+   * in a left recursive grammar. Using {@code OperatorTable.postfix()}, you basically think of
+   * the {@code .doSomething(foo, bar)} part as an abstract postfix operator that turns an
+   * expression into another expression: <pre>{@code
+   * Parser<Expression> expression = Parser.define(
+   *     rule -> {
+   *       Parser<FunctionInvocation> methodInvocation = Parser.sequence(
+   *           word(), rule.zeroOrMoreDelimitedBy(",").between("(", ")"),
+   *           FunctionInvocation::new);
+   *       return new OperatorTable<Expression>()
+   *           // Assuming you have the following constructor:
+   *           //   MethodInvocation(Expression receiver, FunctionInvocation invocation);
+   *           .postfix(string(".").then(methodInvocation), MethodInvocation::new, 10)
+   *           ... // other operators
+   *           .build();
+   *     });
+   * }</pre>
+   *
    * @since 9.5
    */
   @CanIgnoreReturnValue
