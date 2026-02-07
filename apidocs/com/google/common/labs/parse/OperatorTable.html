@@ -314,7 +314,7 @@ loadScripts(document, 'script');</script>
  the <code>.doSomething(foo, bar)</code> part as an abstract postfix operator that turns an
  expression into another expression: <pre><code>
  Parser&lt;Expression&gt; expression = Parser.define(
-     rule -&gt; {
+     rule -&gt; {  // recursive because the parameters are also expressions
        Parser&lt;FunctionInvocation&gt; methodInvocation = Parser.sequence(
            word(), rule.zeroOrMoreDelimitedBy(",").between("(", ")"),
            FunctionInvocation::new);
