@@ -94,9 +94,8 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     int argsToCheck = method.isVarArgs() ? params.size() - 1 : params.size();
     for (int i = 0; i < argsToCheck; i++) {
       VarSymbol param = params.get(i);
-      String normalizedParamName = normalizeForComparison(param.toString());
       ExpressionTree arg = args.get(i);
-      if (!normalizedArgTexts.get(i).contains(normalizedParamName)) {
+      if (!normalizedArgTexts.get(i).contains(normalizeForComparison(param.toString()))) {
         // Literal arg or for class-level annotation where the caller is also in the same class,
         // relax the rule except if there is explicit /* paramName */ or ambiguity.
         boolean trustable =
