@@ -100,7 +100,7 @@ public final class OperatorTable<T> {
    * the {@code .doSomething(foo, bar)} part as an abstract postfix operator that turns an
    * expression into another expression: <pre>{@code
    * Parser<Expression> expression = Parser.define(
-   *     rule -> {
+   *     rule -> {  // recursive because the parameters are also expressions
    *       Parser<FunctionInvocation> methodInvocation = Parser.sequence(
    *           word(), rule.zeroOrMoreDelimitedBy(",").between("(", ")"),
    *           FunctionInvocation::new);
