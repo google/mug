@@ -62,6 +62,7 @@ import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.LineMap;
+import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
@@ -70,7 +71,6 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.tree.JCTree.JCLiteral;
 
 /**
  * Checks that the {@code StringFormat.format()} method is invoked with the correct lambda according
@@ -205,7 +205,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           tree,
           skip(tree.getArguments(), templateStringIndex + 1),
           skip(argsAsTexts(tree.getMethodSelect(), tree.getArguments(), state), templateStringIndex + 1),
-          /* formatStringIsInlined= */ formatExpression instanceof JCLiteral,
+          /* formatStringIsInlined= */ formatExpression instanceof LiteralTree,
           state);
     } else if (method.isPublic() && STRING_FORMAT_MATCHER.matches(tree, state)) {
       boolean varargsOnly = method.isVarArgs() && method.getParameters().size() == 1;
@@ -222,7 +222,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       // With <= 3 args, we can give the author some leeway and don't ask for silly comments like:
       // new StringFormat("{key}:{value}").format(/* key */ "one", /* value */ 1);
       boolean formatStringIsInlined =
-          FormatStringUtils.getInlineStringArg(formatter, state).orElse(null) instanceof JCLiteral;
+          FormatStringUtils.getInlineStringArg(formatter, state).orElse(null) instanceof LiteralTree;
       checkFormatArgs(
           formatExpression,
           FormatStringUtils.placeholdersFrom(ASTHelpers.constValue(formatExpression, String.class)),
@@ -259,7 +259,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
         tree,
         skip(args, templateStringIndex + 1),
         skip(argSources, templateStringIndex + 1),
-        /* formatStringIsInlined= */ formatExpression instanceof JCLiteral,
+        /* formatStringIsInlined= */ formatExpression instanceof LiteralTree,
         state);
   }
 
@@ -290,7 +290,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
         boolean trust =
             formatStringIsInlined
                 && args.size() <= 3
-                && arg instanceof JCLiteral
+                && arg instanceof LiteralTree
                 && (args.size() <= 1
                     || normalizedArgTexts.stream() // out-of-order is suspicious
                         .noneMatch(txt -> txt.contains(normalizedPlacehoderName)));

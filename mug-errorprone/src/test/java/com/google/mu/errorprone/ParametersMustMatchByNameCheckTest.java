@@ -407,6 +407,49 @@ public final class ParametersMustMatchByNameCheckTest {
   }
 
   @Test
+  public void onMethod_constructorCallOnOneArgAllowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(Runnable task) {}",
+            "  void callSite() {",
+            "    test(new Runnable() {",
+            "      @Override public void run() {}",
+            "    });",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_constructorCallOnTwoArgsOfSameType_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(Runnable task1, Runnable task2) {}",
+            "  void callSite() {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        new Runnable() {",
+            "          @Override",
+            "          public void run() {}",
+            "        },",
+            "        new Runnable() {",
+            "          @Override",
+            "          public void run() {}",
+            "        });",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void onMethod_genericParametersMatch_succeeds() {
     helper
         .addSourceLines(
