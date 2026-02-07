@@ -13,18 +13,34 @@ import java.lang.annotation.Target;
  * Methods and constructors annotated as such will require the call site
  * argument expressions match (include) the tokenized and normalized formal parameter name.
  *
- * <p>For example: {@code new Profile(currentUser.getId(), currentUser.getName())} will match {@code
- * record Profile(String userId, String userName)}, but will fail to compile if the constructor were
- * defined as {@code record Profile(String userName, String userId)}. The {@code
- * currentUser.getId()} expression matches the {@code userId} parameter name because the effective
- * tokens of {@code currentUser.getId()} is {@code ["current", "user", "id"]} ("get" and "is"
- * prefixes are ignored), which includes as a subsequence the ({@code ["user", "id"]}) tokens from
- * {@code userId}.
+ * <p>For example:
+ *
+ * <pre>{@code new Profile(currentUser.getId(), currentUser.getName())}</pre> will match
+ *
+ * <pre>{@code record Profile(String userId, String userName)}</pre>
+ *
+ * But it will fail to compile if the constructor were defined as {@code
+ * record Profile(String userName, String userId)}. The {@code currentUser.getId()} expression
+ * matches the {@code userId} parameter name because the effective tokens of {@code
+ * currentUser.getId()} is {@code ["current", "user", "id"]} ("get" and "is" prefixes are ignored),
+ * which includes as a subsequence the {@code ["user", "id"]} tokens from {@code userId}.
  *
  * <p>If the argument expression is indeed as expected despite not matching the parameter name,
- * you can always use an explicit comment, for example: <pre>
+ * you can always add an explicit comment to tell the compiler <em>and the code readers</em> that:
+ * "trust me, I know what I'm doing".
+ *
+ * <p>For example: <pre>
  * new Dimension(&#47;* width *&#47; list.get(0), &#47;* height *&#47; list.get(1));
  * </pre>
+ *
+ * <p>In a sense, <pre>(&#47;* width *&#47; list.get(0)</pre> serves a similar purpose to
+ * {@code .setWidth(list.get(0))} in a builder chain – they both explicitly spell out "width"
+ * as the target to ensure you don't pass in {@code height} by mistake. Except with a {@code
+ * @ParametersMustMatchByName}-annotated constructor, the per-parameter comment is on a need basis
+ * only necessary for code that isn't already self-evident.
+ * If you have a {@code width} local variable for example, simply pass it in without any syntax
+ * redundancy as seen in {@code .setWidth(width)}. The most concise code is also the safe code
+ * because safety is guaranteed by the compile-time plugin.
  *
  * <p>For literal string or number parameters, the parameter name matching rule is relaxed if the
  * corresponding method parameter's type is unique (no other parameters share the same type).
@@ -65,7 +81,7 @@ import java.lang.annotation.Target;
  * </build>
  * }</pre>
  *
- * @since 10.0
+ * @since 9.9.1
  */
 @Documented
 @Retention(CLASS)
