@@ -305,7 +305,27 @@ loadScripts(document, 'script');</script>
 <div class="block">Adds a postfix operator with the given precedence to the table. This operator will call
  <code>postfixFunction.apply(operand, postfixValue)</code>, where <code>postfixValue</code> is the result
  of the postfix <code>operator</code> parser. The higher <code>precedence</code> value the higher
- precedence it is.</div>
+ precedence it is.
+
+ <p>This method is particularly useful to express otherwise-left-recursive grammars. For example,
+ if you need to parse Java method invocations such as <code>expression.doSomething(foo, bar)</code>,
+ the receiver part is an expression and the method invocation is also an expression, resulting
+ in a left recursive grammar. Using <code>OperatorTable.postfix()</code>, you basically think of
+ the <code>.doSomething(foo, bar)</code> part as an abstract postfix operator that turns an
+ expression into another expression: <pre><code>
+ Parser&lt;Expression&gt; expression = Parser.define(
+     rule -&gt; {
+       Parser&lt;FunctionInvocation&gt; methodInvocation = Parser.sequence(
+           word(), rule.zeroOrMoreDelimitedBy(",").between("(", ")"),
+           FunctionInvocation::new);
+       return new OperatorTable&lt;Expression&gt;()
+           // Assuming you have the following constructor:
+           //   MethodInvocation(Expression receiver, FunctionInvocation invocation);
+           .postfix(string(".").then(methodInvocation), MethodInvocation::new, 10)
+           ... // other operators
+           .build();
+     });
+ </code></pre></div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.5</dd>
