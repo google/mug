@@ -336,6 +336,112 @@ public final class ParametersMustMatchByNameCheckTest {
   }
 
   @Test
+  public void onMethod_booleanLiteral_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(boolean debug) {}",
+            "  void callSite() {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        true);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_booleanLiteralWithTwoArgs_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(boolean debug, boolean verbose) {}",
+            "  void callSite() {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        true,",
+            "        false);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_booleanLiteralWithComment_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(boolean debug) {}",
+            "  void callSite() {",
+            "    test(/* debug */ true);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_nullLiteral_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(String name) {}",
+            "  void callSite() {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        null);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_nullLiteralWithTwoArgs_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(String name, String value) {}",
+            "  void callSite() {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        null,",
+            "        null);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_nullLiteralWithComment_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(String name) {}",
+            "  void callSite() {",
+            "    test(/* name */ null);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void onMethod_lambdaOnOneArgAllowed() {
     helper
         .addSourceLines(

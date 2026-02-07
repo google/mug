@@ -25,6 +25,7 @@ import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
+import com.sun.source.tree.Tree;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
@@ -101,7 +102,7 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       // Literal arg or for class-level annotation where the caller is also in the same class,
       // relax the rule except if there is explicit /* paramName */ or ambiguity.
       boolean trustable =
-          arg instanceof LiteralTree
+          isTrustableLiteral(arg)
               || arg instanceof LambdaExpressionTree
               || arg instanceof MemberReferenceTree
               || arg instanceof NewClassTree
@@ -116,6 +117,12 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
               "argument expression must match parameter name `%s`",
               param);
     }
+  }
+
+  private static boolean isTrustableLiteral(ExpressionTree tree) {
+    return tree instanceof LiteralTree
+        && tree.getKind() != Tree.Kind.BOOLEAN_LITERAL
+        && tree.getKind() != Tree.Kind.NULL_LITERAL;
   }
 
   private static boolean isClassLiteral(ExpressionTree tree) {
