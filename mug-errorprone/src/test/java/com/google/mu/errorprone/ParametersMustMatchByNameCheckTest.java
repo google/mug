@@ -301,6 +301,41 @@ public final class ParametersMustMatchByNameCheckTest {
   }
 
   @Test
+  public void onMethod_classLiteralOnOneArgAllowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(Class<?> type) {}",
+            "  void callSite() {",
+            "    test(String.class);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_classLiteralOnTwoArgsOfSameType_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(Class<?> type1, Class<?> type2) {}",
+            "  void callSite() {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        String.class,",
+            "        Integer.class);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void onMethod_genericParametersMatch_succeeds() {
     helper
         .addSourceLines(
