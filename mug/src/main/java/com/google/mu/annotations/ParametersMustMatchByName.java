@@ -38,9 +38,9 @@ import java.lang.annotation.Target;
  * as the target to ensure you don't pass in {@code height} by mistake. Except with a {@code
  * @ParametersMustMatchByName}-annotated constructor, the per-parameter comment is on a need basis
  * only necessary for code that isn't already self-evident.
- * If you have a {@code width} local variable for example, simply pass it in without any syntax
- * redundancy as seen in {@code .setWidth(width)}. The most concise code is also the safe code
- * because safety is guaranteed by the compile-time plugin.
+ * If you have a {@code width} local variable for example, simply pass it in without the syntax
+ * redundancy mandated by {@code builder.setWidth(width)}. The most concise code is also the safe
+ * code, guaranteed by the compile-time plugin.
  *
  * <p>For literal string or number parameters, the parameter name matching rule is relaxed if the
  * corresponding method parameter's type is unique (no other parameters share the same type).
