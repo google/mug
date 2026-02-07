@@ -82,18 +82,6 @@ loadScripts(document, 'script');</script>
              <code>optionally("or {foo}", optionalFoo)</code> because the former allows
              you to reference <code>foo?</code> multiple times in the right hand side snippet.</div>
 </div>
-<div class="col-summary-item-name even-row-color"><a href="com/google/mu/util/stream/BiStream.html#from(java.util.Collection,java.util.function.Function,java.util.function.Function)">com.google.mu.util.stream.BiStream.from<wbr>(Collection&lt;T&gt;, Function&lt;? super T, ? extends K&gt;, Function&lt;? super T, ? extends V&gt;)</a></div>
-<div class="col-last even-row-color">
-<div class="block">Use <code>biStream(User::id, users)</code> to create <code>BiStream&lt;UserId, User&gt;</code>,
-     or, use <code>biStream(users, User::getAccount)</code> to create <code>BiStream&lt;User, Account&gt;</code>.
-     Then use <a href="com/google/mu/util/stream/BiStream.html#mapKeys(java.util.function.BiFunction)"><code>BiStream.mapKeys(java.util.function.BiFunction&lt;? super K, ? super V, ? extends K2&gt;)</code></a> or <a href="com/google/mu/util/stream/BiStream.html#mapValues(java.util.function.BiFunction)"><code>BiStream.mapValues(java.util.function.BiFunction&lt;? super K, ? super V, ? extends V2&gt;)</code></a> to apply further mappings.</div>
-</div>
-<div class="col-summary-item-name odd-row-color"><a href="com/google/mu/util/stream/BiStream.html#from(java.util.stream.Stream,java.util.function.Function,java.util.function.Function)">com.google.mu.util.stream.BiStream.from<wbr>(Stream&lt;T&gt;, Function&lt;? super T, ? extends K&gt;, Function&lt;? super T, ? extends V&gt;)</a></div>
-<div class="col-last odd-row-color">
-<div class="block">Use <code>biStream(User::id, users)</code> to create <code>BiStream&lt;UserId, User&gt;</code>,
-     or, use <code>biStream(users, User::getAccount)</code> to create <code>BiStream&lt;User, Account&gt;</code>.
-     Then use <a href="com/google/mu/util/stream/BiStream.html#mapKeys(java.util.function.BiFunction)"><code>BiStream.mapKeys(java.util.function.BiFunction&lt;? super K, ? super V, ? extends K2&gt;)</code></a> or <a href="com/google/mu/util/stream/BiStream.html#mapValues(java.util.function.BiFunction)"><code>BiStream.mapValues(java.util.function.BiFunction&lt;? super K, ? super V, ? extends V2&gt;)</code></a> to apply further mappings.</div>
-</div>
 <div class="col-summary-item-name even-row-color"><a href="com/google/mu/util/stream/Iteration.html#generate(java.lang.Iterable)">com.google.mu.util.stream.Iteration.generate<wbr>(Iterable&lt;? extends T&gt;)</a></div>
 <div class="col-last even-row-color">
 <div class="block">Use <a href="com/google/mu/util/stream/Iteration.html#emit(java.lang.Iterable)"><code>Iteration.emit(Iterable)</code></a> instead.</div>

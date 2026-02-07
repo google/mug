@@ -1818,11 +1818,8 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#from(java.util.Collection,java.util.function.Function,java.util.function.Function)" class="member-name-link">from(Collection&lt;T&gt;, Function&lt;? super T, ? extends K&gt;, Function&lt;? super T, ? extends V&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
-<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <code>biStream(User::id, users)</code> to create <code>BiStream&lt;UserId, User&gt;</code>,
-     or, use <code>biStream(users, User::getAccount)</code> to create <code>BiStream&lt;User, Account&gt;</code>.
-     Then use <a href="com/google/mu/util/stream/BiStream.html#mapKeys(java.util.function.BiFunction)"><code>BiStream.mapKeys(java.util.function.BiFunction&lt;? super K, ? super V, ? extends K2&gt;)</code></a> or <a href="com/google/mu/util/stream/BiStream.html#mapValues(java.util.function.BiFunction)"><code>BiStream.mapValues(java.util.function.BiFunction&lt;? super K, ? super V, ? extends V2&gt;)</code></a> to apply further mappings.</div>
-</div>
+<div class="block">Returns a <code>BiStream</code> of <code>elements</code>, each transformed to a pair of values with
+ <code>toKey</code> and <code>toValue</code>.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#from(java.util.Map)" class="member-name-link">from(Map&lt;K, V&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
@@ -1839,11 +1836,8 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#from(java.util.stream.Stream,java.util.function.Function,java.util.function.Function)" class="member-name-link">from(Stream&lt;T&gt;, Function&lt;? super T, ? extends K&gt;, Function&lt;? super T, ? extends V&gt;)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
-<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <code>biStream(User::id, users)</code> to create <code>BiStream&lt;UserId, User&gt;</code>,
-     or, use <code>biStream(users, User::getAccount)</code> to create <code>BiStream&lt;User, Account&gt;</code>.
-     Then use <a href="com/google/mu/util/stream/BiStream.html#mapKeys(java.util.function.BiFunction)"><code>BiStream.mapKeys(java.util.function.BiFunction&lt;? super K, ? super V, ? extends K2&gt;)</code></a> or <a href="com/google/mu/util/stream/BiStream.html#mapValues(java.util.function.BiFunction)"><code>BiStream.mapValues(java.util.function.BiFunction&lt;? super K, ? super V, ? extends V2&gt;)</code></a> to apply further mappings.</div>
-</div>
+<div class="block">Returns a <code>BiStream</code> of the elements from <code>stream</code>, each transformed to a pair of
+ values with <code>toKey</code> and <code>toValue</code>.</div>
 </dd>
 <dt><a href="com/google/mu/util/Substring.html#from-apache-stringutils-to-substring-heading" class="search-tag-link">From Apache StringUtils to Substring</a> - Search tag in class com.google.mu.util.Substring</dt>
 <dd>Section</dd>

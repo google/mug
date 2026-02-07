@@ -422,10 +422,8 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super T, ? extends K&gt;&nbsp;toKey,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super T, ? extends V&gt;&nbsp;toValue)</code></div>
 <div class="col-last even-row-color">
-<div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <code>biStream(User::id, users)</code> to create <code>BiStream&lt;UserId, User&gt;</code>,
-     or, use <code>biStream(users, User::getAccount)</code> to create <code>BiStream&lt;User, Account&gt;</code>.</div>
-</div>
+<div class="block">Returns a <code>BiStream</code> of <code>elements</code>, each transformed to a pair of values with
+ <code>toKey</code> and <code>toValue</code>.</div>
 </div>
 <div class="col-first odd-row-color"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="../BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">BiStream.</span><code><a href="../BiStream.html#from(java.util.Map)" class="member-name-link">from</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;K,<wbr>V&gt;&nbsp;map)</code></div>
@@ -442,10 +440,8 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super T, ? extends K&gt;&nbsp;toKey,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super T, ? extends V&gt;&nbsp;toValue)</code></div>
 <div class="col-last odd-row-color">
-<div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">Use <code>biStream(User::id, users)</code> to create <code>BiStream&lt;UserId, User&gt;</code>,
-     or, use <code>biStream(users, User::getAccount)</code> to create <code>BiStream&lt;User, Account&gt;</code>.</div>
-</div>
+<div class="block">Returns a <code>BiStream</code> of the elements from <code>stream</code>, each transformed to a pair of
+ values with <code>toKey</code> and <code>toValue</code>.</div>
 </div>
 <div class="col-first even-row-color"><code>static &lt;K, V, E extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.Entry.html" title="class or interface in java.util" class="external-link">Map.Entry</a>&lt;? extends K, ? extends V&gt;&gt;<br><a href="../BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
 <div class="col-second even-row-color"><span class="type-name-label">BiStream.</span><code><a href="../BiStream.html#fromEntries(java.util.stream.Stream)" class="member-name-link">fromEntries</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;E&gt;&nbsp;entryStream)</code></div>
