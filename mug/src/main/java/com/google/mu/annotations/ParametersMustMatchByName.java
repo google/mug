@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
  * new Dimension(&#47;* width *&#47; list.get(0), &#47;* height *&#47; list.get(1));
  * </pre>
  *
- * <p>In a sense, <pre>(&#47;* width *&#47; list.get(0)</pre> serves a similar purpose to
+ * <p>In a sense, <pre>&#47;* width *&#47; list.get(0)</pre> serves a similar purpose to
  * {@code .setWidth(list.get(0))} in a builder chain – they both explicitly spell out "width"
  * as the target to ensure you don't pass in {@code height} by mistake. Except with a {@code
  * @ParametersMustMatchByName}-annotated constructor, the per-parameter comment is on a need basis
@@ -71,7 +71,7 @@ import java.lang.annotation.Target;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>10.0</version>
+ *               <version>9.9.1</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>
