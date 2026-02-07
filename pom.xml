@@ -48,12 +48,12 @@
 
   <modules>
     <module>mug</module>
+    <module>mug-errorprone</module>
     <module>mug-bom</module>
     <module>mug-benchmarks</module>
     <module>mug-examples</module>
     <module>mug-guava</module>
     <module>mug-protobuf</module>
-    <module>mug-errorprone</module>
     <module>mug-bigquery</module>
     <module>mug-safesql</module>
     <module>mug-spanner</module>

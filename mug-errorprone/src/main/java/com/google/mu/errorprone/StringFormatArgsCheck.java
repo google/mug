@@ -217,6 +217,8 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       }
       ExpressionTree formatExpression = FormatStringUtils.findFormatStringNode(formatter, state).orElse(null);
       checkingOn(formatter).require(formatExpression != null, FORMAT_STRING_NOT_FOUND);
+      String formatString = ASTHelpers.constValue(formatExpression, String.class);
+      checkingOn(tree).require(formatString != null, FORMAT_STRING_NOT_FOUND);
       // For inline format strings, the args and the placeholders are close to each other.
       // With <= 3 args, we can give the author some leeway and don't ask for silly comments like:
       // new StringFormat("{key}:{value}").format(/* key */ "one", /* value */ 1);
@@ -224,7 +226,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           FormatStringUtils.getInlineStringArg(formatter, state).orElse(null) instanceof LiteralTree;
       checkFormatArgs(
           formatExpression,
-          FormatStringUtils.placeholdersFrom(ASTHelpers.constValue(formatExpression, String.class)),
+          FormatStringUtils.placeholdersFrom(formatString),
           tree,
           tree.getArguments(),
           argsAsTexts(tree.getMethodSelect(), tree.getArguments(), state),
