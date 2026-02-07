@@ -336,6 +336,77 @@ public final class ParametersMustMatchByNameCheckTest {
   }
 
   @Test
+  public void onMethod_lambdaOnOneArgAllowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(Runnable task) {}",
+            "  void callSite() {",
+            "    test(() -> {});",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_lambdaOnTwoArgsOfSameType_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(Runnable task1, Runnable task2) {}",
+            "  void callSite() {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        () -> {},",
+            "        () -> {});",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_methodReferenceOnOneArgAllowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(Runnable task) {}",
+            "  void callSite() {",
+            "    test(System::gc);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_methodReferenceOnTwoArgsOfSameType_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  static void noop() {}",
+            "  @ParametersMustMatchByName",
+            "  void test(Runnable task1, Runnable task2) {}",
+            "  void callSite() {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        System::gc,",
+            "        Test::noop);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void onMethod_genericParametersMatch_succeeds() {
     helper
         .addSourceLines(

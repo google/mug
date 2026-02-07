@@ -19,6 +19,8 @@ import com.google.mu.util.CaseBreaker;
 import com.google.mu.util.Substring;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.LambdaExpressionTree;
+import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
@@ -98,7 +100,11 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
         // Literal arg or for class-level annotation where the caller is also in the same class,
         // relax the rule except if there is explicit /* paramName */ or ambiguity.
         boolean trustable =
-            (arg instanceof JCLiteral || isEnumConstant(arg) || isClassLiteral(arg))
+            arg instanceof JCLiteral
+                || arg instanceof LambdaExpressionTree
+                || arg instanceof MemberReferenceTree
+                || isClassLiteral(arg)
+                || isEnumConstant(arg)
                 || (!methodAnnotated && method.enclClass().equals(currentClass));
         checkingOn(arg)
             .require(
