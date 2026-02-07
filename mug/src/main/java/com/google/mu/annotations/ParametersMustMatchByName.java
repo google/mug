@@ -44,7 +44,7 @@ import java.lang.annotation.Target;
  * {@code .setWidth(list.get(0))} in a builder chain – they both explicitly spell out "width"
  * as the target to ensure you don't pass in {@code height} by mistake. Except with a {@code
  * @ParametersMustMatchByName}-annotated constructor, the per-parameter comment is on a need basis
- * only necessary for code that isn't already self-evident.
+ * that's only necessary for code not already self-evident.
  * If you have a {@code width} local variable for example, simply pass it in without the syntax
  * redundancy mandated by {@code builder.setWidth(width)}. The most concise code is also the safe
  * code, guaranteed by the compile-time plugin.
