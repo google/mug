@@ -4,7 +4,7 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>9.9.1-SNAPSHOT</version>
+    <version>9.9.2-SNAPSHOT</version>
   </parent>
   <artifactId>mug-guava</artifactId>
   <packaging>jar</packaging>
@@ -43,7 +43,7 @@
               <path>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>mug-errorprone</artifactId>
-                <version>9.9</version>
+                <version>9.9.1</version>
               </path>
             <!-- Other annotation processors go here.
             If 'annotationProcessorPaths' is set, processors will no longer be
