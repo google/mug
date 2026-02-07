@@ -95,25 +95,26 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     for (int i = 0; i < argsToCheck; i++) {
       VarSymbol param = params.get(i);
       ExpressionTree arg = args.get(i);
-      if (!normalizedArgTexts.get(i).contains(normalizeForComparison(param.toString()))) {
-        // Literal arg or for class-level annotation where the caller is also in the same class,
-        // relax the rule except if there is explicit /* paramName */ or ambiguity.
-        boolean trustable =
-            arg instanceof LiteralTree
-                || arg instanceof LambdaExpressionTree
-                || arg instanceof MemberReferenceTree
-                || arg instanceof NewClassTree
-                || isClassLiteral(arg)
-                || isEnumConstant(arg)
-                || (!methodAnnotated && method.enclClass().equals(currentClass));
-        checkingOn(arg)
-            .require(
-                trustable // trust if no other parameter has the same type
-                    && !ARG_COMMENT.in(argSources.get(i)).isPresent()
-                    && isUniqueType(params, i, state),
-                "argument expression must match parameter name `%s`",
-                param);
+      if (normalizedArgTexts.get(i).contains(normalizeForComparison(param.toString()))) {
+        continue;
       }
+      // Literal arg or for class-level annotation where the caller is also in the same class,
+      // relax the rule except if there is explicit /* paramName */ or ambiguity.
+      boolean trustable =
+          arg instanceof LiteralTree
+              || arg instanceof LambdaExpressionTree
+              || arg instanceof MemberReferenceTree
+              || arg instanceof NewClassTree
+              || isClassLiteral(arg)
+              || isEnumConstant(arg)
+              || (!methodAnnotated && method.enclClass().equals(currentClass));
+      checkingOn(arg)
+          .require(
+              trustable // trust if no other parameter has the same type
+                  && !ARG_COMMENT.in(argSources.get(i)).isPresent()
+                  && isUniqueType(params, i, state),
+              "argument expression must match parameter name `%s`",
+              param);
     }
   }
 
