@@ -253,7 +253,7 @@ public class Iteration<T> {
    * @since 9.6
    */
   public final <V> void forEachLazily(Iterable<V> iterable, Consumer<? super V> consumer) {
-    forEachLazily(iterable.spliterator(), consumer);
+    forEachLazily(iterable.spliterator(), requireNonNull(consumer));
   }
 
   /**
@@ -263,7 +263,7 @@ public class Iteration<T> {
    * @since 9.6
    */
   public final <V> void forEachLazily(Stream<V> stream, Consumer<? super V> consumer) {
-    forEachLazily(stream.spliterator(), consumer);
+    forEachLazily(stream.spliterator(), requireNonNull(consumer));
   }
 
   /**
@@ -273,7 +273,7 @@ public class Iteration<T> {
    * @since 9.6
    */
   public final <V> void forEachLazily(IntStream stream, IntConsumer consumer) {
-    forEachLazily(stream.spliterator(), consumer);
+    forEachLazily(stream.spliterator(), requireNonNull(consumer));
   }
 
   /**
@@ -293,8 +293,6 @@ public class Iteration<T> {
 
   private <V> void forEachLazily(
       Spliterator<V> spliterator, Consumer<? super V> consumer) {
-    requireNonNull(spliterator);
-    requireNonNull(consumer);
     lazily(
         () -> spliterator.tryAdvance(
             e -> {
@@ -305,8 +303,6 @@ public class Iteration<T> {
 
   private void forEachLazily(
       Spliterator.OfInt spliterator, IntConsumer consumer) {
-    requireNonNull(spliterator);
-    requireNonNull(consumer);
     lazily(
         () -> spliterator.tryAdvance(
             (int i) -> {

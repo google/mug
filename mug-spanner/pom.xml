@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>9.8-SNAPSHOT</version>
+    <version>9.9-SNAPSHOT</version>
   </parent>
   <artifactId>mug-spanner</artifactId>
 
@@ -11,6 +11,7 @@
   <name>Safe Spanner Client</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <module.name>spanner</module.name>
   </properties>
   <build>
     <pluginManagement>
@@ -21,7 +22,7 @@
           <version>0.8.0</version> <!-- or latest -->
           <extensions>true</extensions>
           <configuration>
-            <publishingServerId>central</publishingServerId>
+            <publishingServerId>ossrh</publishingServerId>
             <!-- optional but recommended in CI -->
             <autoPublish>true</autoPublish>
             <waitUntil>published</waitUntil>
@@ -39,7 +40,7 @@
               <path>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>mug-errorprone</artifactId>
-                <version>9.2</version>
+                <version>9.7</version>
               </path>
             <!-- Other annotation processors go here.
             If 'annotationProcessorPaths' is set, processors will no longer be

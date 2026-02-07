@@ -531,6 +531,59 @@ If your code compiles, [`zeroOrMore()`](https://google.github.io/mug/apidocs/com
 
 Similarly, you can never run into **accidental left recursion** (which causes `StackOverflowError`).
 
+---
+
+## Left Recursions
+
+Similar to other parser combinator frameworks, left recursions are not allowed.
+
+For example, the following code attempts to parse a field reference expression following EBNS:
+
+```java {.bad}
+Parser<Expr> expr = Parser.define(
+    rule -> Parser.anyOf(
+        identifier.map(IdentifierRef::new), // "foo" is an expression
+        Parser.sequence(
+            rule, string(".").then(identifier), FieldRef::new)));  // ❌
+```
+
+An expression is either an identifier like variable name, or a field reference
+that may be chained, like `foo.bar.baz`.
+
+Unfortunately if you use it to parse you'll get a `StackOverflowError`
+because an `expr` parser will recursively call into itself which will in turn
+recursively call into itself, over and over again.
+
+Actually, when we built the Mini Search Language above, if we didn't use `OperatorTable`
+to define the `AND` `OR` binary operators, their EBNF would have also been left recursive.
+
+The solution?
+
+> [!TIP]
+> Use `OperatorTable` for left recursive grammars.
+
+If you take a closer look, `<expr>.<field_name>` produces a `FieldRef` expression. 
+That is, the `.<field_name>` part can be thought of as an abstract _postfix operator_!
+
+Using `OperatorTable`, the left recursive grammar becomes a declarative postfix operator:
+
+```java {.good}
+Parser<Expr> expr = new OperatorTable<Expr>()
+    .postfix(string(".").then(identifier), FieldRef::new, 10)
+    .build(identifier.map(IdentifierRef::new));
+```
+
+The same technique can also be used to define other left recursive grammars like method calls,
+nested types etc.
+
+As a bonus, you can declare it along with other binary and unary operators
+in the language, and use the precedence number (the larger the higher precedence) to control
+precedence across regular operators and the abstract operators, all in the same consistent syntax.
+
+This saves you from manually composing and maintaining layers on top of layers of sub-rules just to encode precedences.
+
+---
+
 ## Footprint
 
 - About **1000 lines of Java** (including `OperatorTable`).

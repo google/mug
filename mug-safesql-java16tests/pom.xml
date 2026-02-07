@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>9.8-SNAPSHOT</version>
+    <version>9.9-SNAPSHOT</version>
   </parent>
   <artifactId>mug-safesql-java16tests</artifactId>
   <packaging>jar</packaging>
@@ -12,6 +12,7 @@
     <maven.compiler.source>16</maven.compiler.source>
     <maven.compiler.target>16</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <module.name>safesql.java16tests</module.name>
   </properties>
   <build>
     <pluginManagement>

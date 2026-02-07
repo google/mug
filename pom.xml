@@ -4,7 +4,7 @@
   <groupId>com.google.mug</groupId>
   <artifactId>mug-root</artifactId>
   <packaging>pom</packaging>
-  <version>9.8-SNAPSHOT</version>
+  <version>9.9-SNAPSHOT</version>
   <name>mug-root</name>
   <description>Google Mug Library</description>
   <url>http://github.com/google/mug</url>
@@ -18,7 +18,9 @@
     <maven_compiler_plugin.version>3.14.0</maven_compiler_plugin.version>
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
-    <mug.version>9.8-SNAPSHOT</mug.version>
+    <mug.version>9.9-SNAPSHOT</mug.version>
+    <!-- Reproducible builds: fixed timestamp for build artifacts -->
+    <project.build.outputTimestamp>2024-01-01T00:00:00Z</project.build.outputTimestamp>
   </properties>
 
   <licenses>
@@ -220,19 +222,19 @@
         </plugin>
         <plugin>
           <artifactId>maven-source-plugin</artifactId>
-          <version>2.2.1</version>
+          <version>3.4.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
-          <version>2.4.1</version>
+          <version>3.5.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-install-plugin</artifactId>
-          <version>2.3.1</version>
+          <version>3.1.4</version>
         </plugin>
         <plugin>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>2.5</version>
+          <version>3.4.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
@@ -253,7 +255,14 @@
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>3.4.2</version>
+          <configuration>
+            <archive>
+              <manifest>
+                <addBuildEnvironmentEntries>false</addBuildEnvironmentEntries>
+              </manifest>
+            </archive>
+          </configuration>
           <executions>
             <execution>
               <id>javadoc-jar</id>
@@ -264,7 +273,7 @@
                 <archive>
                   <manifestEntries>
                     <Automatic-Module-Name>
-                      ${project.groupId}.${project.artifactId}
+                      ${project.groupId}.${module.name}
                     </Automatic-Module-Name>
                   </manifestEntries>
                 </archive>
@@ -274,7 +283,7 @@
         </plugin>
         <plugin>
           <artifactId>maven-deploy-plugin</artifactId>
-          <version>2.7</version>
+          <version>3.1.4</version>
         </plugin>
         <plugin>
           <artifactId>maven-site-plugin</artifactId>
@@ -467,7 +476,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.5</version>
+            <version>3.2.8</version>
             <configuration>
               <arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
             </configuration>

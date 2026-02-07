@@ -1052,6 +1052,75 @@ public class SubstringTest {
     assertThrows(IndexOutOfBoundsException.class, () -> first(Pattern.compile("f(o.)(ba.)"), 3));
   }
 
+  @Test public void regexGroup_optionalGroupNotParticipating() {
+    // Pattern: (a)?(b) - first group optional
+    // Input: "b" - group 1 doesn't participate, should return empty Optional
+    assertThat(first(Pattern.compile("(a)?(b)"), 1).in("b")).isEmpty();
+    // Group 2 still participates
+    assertThat(first(Pattern.compile("(a)?(b)"), 2).in("b").get().toString()).isEqualTo("b");
+  }
+
+  @Test public void regexGroup_optionalGroupParticipates() {
+    // When optional group does participate
+    assertThat(first(Pattern.compile("(a)?(b)"), 1).in("ab").get().toString()).isEqualTo("a");
+    assertThat(first(Pattern.compile("(a)?(b)"), 2).in("ab").get().toString()).isEqualTo("b");
+  }
+
+  @Test public void regexGroup_optionalGroupNotParticipating_repeatedly() {
+    // repeatedly() stops when first match has non-participating group
+    assertThat(first(Pattern.compile("(a)?(b)"), 1).repeatedly().from("b"))
+        .isEmpty();
+    assertThat(first(Pattern.compile("(a)?(b)"), 1).repeatedly().from("bb"))
+        .isEmpty();
+  }
+
+  @Test public void regexGroup_decimalNumberOptional() {
+    // Pattern: \d+(\.\d+)? - optional decimal part
+    // "price: 42" - no decimal part, group 1 doesn't participate
+    assertThat(first(Pattern.compile("\\d+(\\.\\d+)?"), 1).in("price: 42")).isEmpty();
+    // "price: 42.99" - has decimal, should return ".99"
+    Substring.Match match = first(Pattern.compile("\\d+(\\.\\d+)?"), 1).in("price: 42.99").get();
+    assertThat(match.toString()).isEqualTo(".99");
+    assertThat(match.before()).isEqualTo("price: 42");
+    assertThat(match.after()).isEmpty();
+  }
+
+  @Test public void regexGroup_multipleOptionalGroups() {
+    // Pattern: (a)?(b)?(c) - two optional groups
+    // Only group 3 participates
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 1).in("c")).isEmpty();
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 2).in("c")).isEmpty();
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 3).in("c").get().toString()).isEqualTo("c");
+    // Groups 1 and 3 participate, group 2 doesn't
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 1).in("ac").get().toString()).isEqualTo("a");
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 2).in("ac")).isEmpty();
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 3).in("ac").get().toString()).isEqualTo("c");
+  }
+
+  @Test public void regexGroup_nestedOptionalGroups() {
+    // Pattern with nested optional groups: ((a)b)?(c)
+    // "c" - outer group doesn't participate, inner group (c) does
+    assertThat(first(Pattern.compile("((a)b)?(c)"), 1).in("c")).isEmpty();
+  }
+
+  @Test public void regexGroup_alternationWithOptionalGroup() {
+    // Pattern: (a)?b|c - group 1 is optional in first alternative
+    assertThat(first(Pattern.compile("(a)?b|c"), 1).in("b")).isEmpty();
+    assertThat(first(Pattern.compile("(a)?b|c"), 1).in("ab").get().toString()).isEqualTo("a");
+    // "c" matches second alternative, group 1 doesn't participate
+    assertThat(first(Pattern.compile("(a)?b|c"), 1).in("c")).isEmpty();
+  }
+
+  @Test public void regexGroup_zeroLengthMatch() {
+    // Pattern with * quantifier that can match zero times
+    // a*b* - both can match zero times (but still participate)
+    // When pattern matches but group is empty, it should still return a match
+    assertThat(first(Pattern.compile("(a*)(b*)"), 1).in("c").get().toString()).isEmpty();
+    assertThat(first(Pattern.compile("(a*)(b*)"), 2).in("c").get().toString()).isEmpty();
+    assertThat(first(Pattern.compile("(a*)(b*)"), 1).in("aa").get().toString()).isEqualTo("aa");
+    assertThat(first(Pattern.compile("(a*)(b*)"), 2).in("aa").get().toString()).isEmpty();
+  }
+
   @Test public void lastSnippet_toString() {
     assertThat(last("foo").toString()).isEqualTo("last('foo')");
   }
@@ -3897,6 +3966,196 @@ public class SubstringTest {
                 .match("fffcde", 2)
                 .map(Object::toString))
         .containsExactly("f", "cde");
+  }
+
+  @Test public void testRegexTopLevelGroups_beforeAfter_withFromIndex() {
+    // Test that before() and after() return text relative to ORIGINAL input, not the substring
+    // Original: "abcfffcde123"
+    // From index 3: "fffcde" -> matches "(f+)(cde)" -> ["fff", "cde"]
+    // The first group is "fff" at index 3-6 in the original input
+    // before() should be "abc" (text before index 3)
+    // after() should be "cde123" (text after index 6, including the second group)
+    Substring.Match match =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match("abcfffcde123", 3)
+            .findFirst()
+            .get();
+    assertThat(match.before()).isEqualTo("abc");
+    assertThat(match.after()).isEqualTo("cde123");
+    assertThat(match.toString()).isEqualTo("fff");
+
+    // Test with match at the beginning (fromIndex = 0)
+    Substring.Match matchAtStart =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match("fffcde123", 0)
+            .findFirst()
+            .get();
+    assertThat(matchAtStart.before()).isEmpty();
+    assertThat(matchAtStart.after()).isEqualTo("cde123");
+
+    // Test with match at the end
+    Substring.Match matchAtEnd =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match("123fffcde", 3)
+            .findFirst()
+            .get();
+    assertThat(matchAtEnd.before()).isEqualTo("123");
+    assertThat(matchAtEnd.after()).isEqualTo("cde");
+  }
+
+  @Test public void testRegexTopLevelGroups_remove_withFromIndex() {
+    // Test that remove() correctly removes the first group match from the ORIGINAL input
+    String input = "abcfffcde123";
+    Substring.Match match =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input, 3)
+            .findFirst()
+            .get();
+    // Should remove "fff" (first group) from the original, leaving "abccde123"
+    assertThat(match.remove()).isEqualTo("abccde123");
+
+    // Test with match at the beginning
+    String input2 = "fffcde123";
+    Substring.Match match2 =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input2, 0)
+            .findFirst()
+            .get();
+    assertThat(match2.remove()).isEqualTo("cde123");
+
+    // Test with match at the end
+    String input3 = "123fffcde";
+    Substring.Match match3 =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input3, 3)
+            .findFirst()
+            .get();
+    assertThat(match3.remove()).isEqualTo("123cde");
+
+    // Test with match in the middle only
+    String input4 = "xxxfffcdeyyy";
+    Substring.Match match4 =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input4, 3)
+            .findFirst()
+            .get();
+    assertThat(match4.remove()).isEqualTo("xxxcdeyyy");
+  }
+
+  @Test public void testRegexTopLevelGroups_fullString_withFromIndex() {
+    // Test that fullString() returns the ORIGINAL input, not the substring
+    String input = "abcfffcde123";
+    Substring.Match match =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input, 3)
+            .findFirst()
+            .get();
+    assertThat(match.fullString()).isEqualTo(input);
+
+    // Even when matching from middle of string, fullString() returns original
+    String input2 = "start-fffcde-end";
+    Substring.Match match2 =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(fff)(cde)"))
+            .match(input2, 6)
+            .findFirst()
+            .get();
+    assertThat(match2.fullString()).isEqualTo(input2);
+  }
+
+  @Test public void testRegexTopLevelGroups_index_withFromIndex() {
+    // Test that index() and length() are absolute positions in ORIGINAL input
+    String input = "abcfffcde123";
+    Substring.Match match =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input, 3)
+            .findFirst()
+            .get();
+    // First group "fff" starts at index 3 and has length 3
+    assertThat(match.index()).isEqualTo(3);
+    assertThat(match.length()).isEqualTo(3);
+
+    // Test with match at different positions
+    String input2 = "xfffcde";
+    Substring.Match match2 =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input2, 1)
+            .findFirst()
+            .get();
+    assertThat(match2.index()).isEqualTo(1);
+    assertThat(match2.length()).isEqualTo(3);
+
+    // Verify indices are consistent with before() and after()
+    assertThat(match2.before()).isEqualTo(input2.substring(0, match2.index()));
+    assertThat(match2.after()).isEqualTo(input2.substring(match2.index() + match2.length()));
+  }
+
+  @Test public void testRegexTopLevelGroups_optionalGroupNotParticipating() {
+    // Pattern: (a)?(b) - first group optional
+    // Input: "b" - group 1 doesn't participate, should skip it and return only group 2
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)")).from("b"))
+        .containsExactly("b");
+  }
+
+  @Test public void testRegexTopLevelGroups_optionalGroupParticipating() {
+    // When optional group does participate, both groups are returned
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)")).from("ab"))
+        .containsExactly("a", "b");
+  }
+
+  @Test public void testRegexTopLevelGroups_multipleOptionalGroups() {
+    // Pattern: (a)?(b)?(c) - two optional groups
+    // Only group 3 participates
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)?(c)")).from("c"))
+        .containsExactly("c");
+    // Groups 1 and 3 participate, group 2 doesn't
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)?(c)")).from("ac"))
+        .containsExactly("a", "c");
+    // All groups participate
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)?(c)")).from("abc"))
+        .containsExactly("a", "b", "c");
+  }
+
+  @Test public void testRegexTopLevelGroups_nestedOptionalGroups() {
+    // Pattern: ((a)b)?(c) - outer group is optional
+    // "c" - outer group doesn't participate, only group 2
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("((a)b)?(c)")).from("c"))
+        .containsExactly("c");
+    // "abc" - both groups participate
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("((a)b)?(c)")).from("abc"))
+        .containsExactly("ab", "c");
+  }
+
+  @Test public void testRegexTopLevelGroups_trailingOptionalGroup() {
+    // Pattern: (\d+)(\.\d+)? - optional decimal part
+    // "42" - no decimal part
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(\\d+)(\\.\\d+)?")).from("42"))
+        .containsExactly("42");
+    // "42.99" - has decimal part
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(\\d+)(\\.\\d+)?")).from("42.99"))
+        .containsExactly("42", ".99");
+  }
+
+  @Test public void testRegexTopLevelGroups_optionalGroupInMiddle() {
+    // Pattern: (a+)(b)?(c+) - optional middle group
+    // "ac" - middle group doesn't participate
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a+)(b)?(c+)")).from("ac"))
+        .containsExactly("a", "c");
+    // "abc" - all groups participate
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a+)(b)?(c+)")).from("abc"))
+        .containsExactly("a", "b", "c");
+  }
+
+  @Test public void testRegexTopLevelGroups_allOptionalGroups() {
+    // Pattern with all top-level groups optional: (a)?(b)?
+    // Only "b" participates
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)?")).from("b"))
+        .containsExactly("b");
+    // Only "a" participates
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)?")).from("a"))
+        .containsExactly("a");
+    // Both participate
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)?")).from("ab"))
+        .containsExactly("a", "b");
   }
 
   @Test

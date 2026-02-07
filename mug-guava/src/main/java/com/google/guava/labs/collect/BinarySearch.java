@@ -760,7 +760,7 @@ public final class BinarySearch {
     };
   }
 
-  private static double median(double low, double high) {
+  static double median(double low, double high) {
     // use doubleToRawLongBits() because we've already checked that low/high cannot be NaN.
     long lowBits = doubleToRawLongBits(low);
     long highBits = doubleToRawLongBits(high);

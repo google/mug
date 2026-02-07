@@ -17,7 +17,7 @@ If you use Maven, add the following POM snippet to your `maven-compiler-plugin`:
     <path>
       <groupId>com.google.mug</groupId>
       <artifactId>mug-errorprone</artifactId>
-      <version>9.4</version>
+      <version>9.8</version>
     </path>
 </configuration>
 ```

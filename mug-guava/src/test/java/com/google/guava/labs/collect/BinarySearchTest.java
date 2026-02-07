@@ -31,8 +31,6 @@ import com.google.common.collect.Range;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.truth.Expect;
-import com.google.guava.labs.collect.BinarySearch;
-import com.google.guava.labs.collect.InsertionPoint;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
@@ -1536,6 +1534,79 @@ public class BinarySearchTest {
         .insertionPointFor((low, mid, high) -> Double.compare(parabola(mid - 1), parabola(mid)));
     int solution = point.floor();
     assertThat(solution).isEqualTo(-2);
+  }
+
+  @Test public void median_betweenNegatives() {
+    double d1 = -1;
+    double d2 = -0.5;
+    double mean = BinarySearch.median(d1, d2);
+    assertThat(mean).isIn(Range.open(d1, d2));
+  }
+
+  @Test public void median_betweenNegativeAndNegativeZero() {
+    double d1 = -1;
+    double d2 = -0.0;
+    double mean = BinarySearch.median(d1, d2);
+    assertThat(mean).isIn(Range.open(d1, d2));
+  }
+
+  @Test public void median_betweenNegativeAndPositiveZero() {
+    double d1 = -1;
+    double d2 = 0;
+    double mean = BinarySearch.median(d1, d2);
+    assertThat(mean).isIn(Range.closed(d1, d2));
+  }
+
+  @Test public void median_betweePositiveZeroAndPositive() {
+    double d1 = 0;
+    double d2 = 1.5;
+    double mean = BinarySearch.median(d1, d2);
+    assertThat(mean).isIn(Range.open(d1, d2));
+  }
+
+  @Test public void median_betweeNegativeZeroAndPositive() {
+    double d1 = -0.0;
+    double d2 = 1.5;
+    double mean = BinarySearch.median(d1, d2);
+    assertThat(mean).isIn(Range.open(d1, d2));
+  }
+
+  @Test public void median_betweeNegaetiveZeroAndPositiveZero() {
+    double d1 = -0.0;
+    double d2 = 0.0;
+    double mean = BinarySearch.median(d1, d2);
+    assertThat(mean).isIn(Range.closed(d1, d2));
+  }
+
+  @Test public void median_betweePositives() {
+    double d1 = 1;
+    double d2 = 1.5;
+    double mean = BinarySearch.median(d1, d2);
+    assertThat(mean).isIn(Range.open(d1, d2));
+  }
+
+  @Test public void find_betweenNegativeAndPositiveZero(
+      @TestParameter({"-1", "-0.5", "-0.1", "0"}) double secret) {
+    assertThat(
+          BinarySearch.forDoubles(Range.closed(-1D, 0D))
+              .find((lo, mid, hi) -> Double.compare(secret, mid)))
+        .hasValue(secret);
+  }
+
+  @Test public void find_betweenNegativeZeroAndPositiveZero(
+      @TestParameter({"0"}) double secret) {
+    assertThat(
+          BinarySearch.forDoubles(Range.closed(-0D, 0D))
+              .find((lo, mid, hi) -> Double.compare(secret, mid)))
+        .hasValue(secret);
+  }
+
+  @Test public void find_betweenNegativeAndPositive(
+      @TestParameter({"-1", "-0.5", "-0.1", "0", "0.5", "1"}) double secret) {
+    assertThat(
+          BinarySearch.forDoubles(Range.closed(-1D, 1D))
+              .find((lo, mid, hi) -> Double.compare(secret, mid)))
+        .hasValue(secret);
   }
 
   private static double parabola(int x) {

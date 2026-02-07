@@ -3,12 +3,13 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>9.8-SNAPSHOT</version>
+    <version>9.9-SNAPSHOT</version>
   </parent>
   <artifactId>mug-errorprone</artifactId>
   <name>Compile-time plugins</name>
   <properties>
     <maven.javadoc.skip>true</maven.javadoc.skip>
+    <module.name>errorprone</module.name>
   </properties>
   <build>
     <pluginManagement>
@@ -19,7 +20,7 @@
           <version>0.8.0</version> <!-- or latest -->
           <extensions>true</extensions>
           <configuration>
-            <publishingServerId>central</publishingServerId>
+            <publishingServerId>ossrh</publishingServerId>
             <!-- optional but recommended in CI -->
             <autoPublish>true</autoPublish>
             <waitUntil>published</waitUntil>

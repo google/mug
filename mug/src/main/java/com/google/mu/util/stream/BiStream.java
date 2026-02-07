@@ -28,6 +28,7 @@ import static java.util.stream.StreamSupport.longStream;
 import static java.util.stream.StreamSupport.stream;
 
 import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -377,7 +378,36 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 3.2
    */
   public static <T> Collector<T, ?, BiStream<T, T>> toAdjacentPairs() {
-    return collectingAndThen(toList(), list -> zip(list.stream(), list.stream().skip(1)));
+    return collectingAndThen(toList(), BiStream::adjacentPairsFrom);
+  }
+
+  /**
+   * Returns a BiStream of every neighboring pair from {@code elements}.
+   * For example {@code adjacentPairsFrom(1, 2, 3, 4)} will
+   * return {@code [{1, 2}, {2, 3}, {3, 4}]}.
+   *
+   * <p>If the input has 0 or 1 elements then the output is an empty {@code BiStream}. Otherwise the
+   * length of the output {@code BiStream} is one less than the length of the input.
+   *
+   * @since 10.0
+   */
+  @SafeVarargs
+  public static <T> BiStream<T, T> adjacentPairsFrom(T... elements) {
+    return adjacentPairsFrom(Arrays.asList(elements));
+  }
+
+  /**
+   * Returns a BiStream of every neighboring pair from {@code collection}.
+   * For example {@code adjacentPairsFrom(List.of(1, 2, 3, 4))} will
+   * return {@code [{1, 2}, {2, 3}, {3, 4}]}.
+   *
+   * <p>If the input has 0 or 1 elements then the output is an empty {@code BiStream}. Otherwise the
+   * length of the output {@code BiStream} is one less than the length of the input.
+   *
+   * @since 10.0
+   */
+  public static <T> BiStream<T, T> adjacentPairsFrom(Collection<? extends T> collection) {
+    return zip(collection.stream(), collection.stream().skip(1));
   }
 
   /**
@@ -395,7 +425,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     requireNonNull(toKey);
     requireNonNull(toValue);
     return collectingAndThen(
-        Collectors.mapping(e -> kv(toKey.apply(e), toValue.apply(e)), toStream()),
+        Collectors.mapping((E e) -> kv(toKey.apply(e), toValue.apply(e)), toStream()),
         BiStream::fromEntries);
   }
 
@@ -619,7 +649,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @since 3.0
    */
-  public static <L, R> BiStream<L, R> zip(Collection<L> left, Collection<R> right) {
+  public static <L, R> BiStream<L, R> zip(
+      Collection<? extends L> left, Collection<? extends R> right) {
     return zip(left.stream(), right.stream());
   }
 
@@ -637,7 +668,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * href="http://gee.cs.oswego.edu/dl/html/StreamParallelGuidance.html">efficiently splittable</a>.
    * and may not perform well if run in parallel.
    */
-  public static <L, R> BiStream<L, R> zip(Stream<L> left, Stream<R> right) {
+  public static <L, R> BiStream<L, R> zip(Stream<? extends L> left, Stream<? extends R> right) {
     return new ZippingStream<>(left, right);
   }
 
@@ -2109,10 +2140,10 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   private static final class ZippingStream<K, V> extends BiStream<K, V> {
-    private final Stream<K> left;
-    private final Stream<V> right;
+    private final Stream<? extends K> left;
+    private final Stream<? extends V> right;
 
-    ZippingStream(Stream<K> left, Stream<V> right) {
+    ZippingStream(Stream<? extends K> left, Stream<? extends V> right) {
       this.left = requireNonNull(left);
       this.right = requireNonNull(right);
     }
@@ -2195,14 +2226,14 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     }
 
     @Override public final void close() {
-      try (Stream<K> closeLeft = left) {
+      try (Stream<? extends K> closeLeft = left) {
         right.close();
       }
     }
 
     @Override public final BiIterator<K, V> iterator() {
-      Spliterator<K> leftSpliterator = left.spliterator();
-      Spliterator<V> rightSpliterator = right.spliterator();
+      Spliterator<? extends K> leftSpliterator = left.spliterator();
+      Spliterator<? extends V> rightSpliterator = right.spliterator();
       Temp<K> tempLeft = new Temp<>();
       Temp<V> tempRight = new Temp<>();
       return consumer -> {
@@ -2217,8 +2248,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     private final class Spliteration {
       private final Temp<K> currentLeft = new Temp<>();
       private final Temp<V> currentRight = new Temp<>();
-      private final Spliterator<K> leftIt = left.spliterator();
-      private final Spliterator<V> rightIt = right.spliterator();
+      private final Spliterator<? extends K> leftIt = left.spliterator();
+      private final Spliterator<? extends V> rightIt = right.spliterator();
 
       /**
        * Returns {@code dominatingResult} if {@code predicate} evaluates to {@code dominatingResult}

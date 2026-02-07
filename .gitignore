@@ -1,4 +1,5 @@
 
+<<<<<<< HEAD
 *.prefs
 *.log
 *.releaseBackup
@@ -34,3 +35,9 @@ build/
 
 ### VS Code ###
 .vscode/
+=======
+# Claude cache
+.claude/
+.claude-cache/
+.settings/
+>>>>>>> master

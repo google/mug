@@ -117,7 +117,7 @@ import com.google.mu.util.stream.BiStream;
  *             <path>
  *               <groupId>com.google.errorprone</groupId>
  *               <artifactId>error_prone_core</artifactId>
- *               <version>2.23.0</version>
+ *               <version>2.40.0</version>
  *             </path>
  *             <path>
  *               <groupId>com.google.mug</groupId>

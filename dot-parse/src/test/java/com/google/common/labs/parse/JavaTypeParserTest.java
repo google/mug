@@ -164,14 +164,9 @@ public class JavaTypeParserTest {
           int precedence = 0;
           return new OperatorTable<TypeDeclaration>()
               .postfix("[]", ArrayType::new, precedence)
+              .postfix(typeParams, ParameterizedType::new, precedence)
               .postfix(
-                  typeParams.map(params -> rawType -> new ParameterizedType(rawType, params)),
-                  precedence)
-              .postfix(
-                  string(".")
-                      .then(IDENTIFIER)
-                      .map(inner -> enclosing -> new NestedTypeName(enclosing, inner)),
-                  precedence)
+                  string(".").then(IDENTIFIER), NestedTypeName::new, precedence)
               .build(TYPE_NAME);
           });
       return parser.parseSkipping(Character::isWhitespace, type);

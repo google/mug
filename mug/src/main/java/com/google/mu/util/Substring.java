@@ -767,25 +767,33 @@ public final class Substring {
     requireNonNull(regexPattern);
     return new RepeatingPattern() {
       @Override public Stream<Match> match(String input, int fromIndex) {
-        String string = input.substring(fromIndex);
-        Matcher matcher = regexPattern.matcher(string);
-        if (!matcher.find()) return Stream.empty();
+        if (fromIndex > input.length()) {
+          return Stream.empty();
+        }
+        Matcher matcher = regexPattern.matcher(input);
+        if (!matcher.find(fromIndex)) {
+          return Stream.empty();
+        }
         int groups = matcher.groupCount();
         if (groups == 0) {
           return Stream.of(
-              Match.backtrackable(1, string, matcher.start(), matcher.end() - matcher.start()));
+              Match.backtrackable(1, input, matcher.start(), matcher.end() - matcher.start()));
         } else {
           return MoreStreams.whileNotNull(new Supplier<Match>() {
-            private int next = 0;
+            private int next = fromIndex;
             private int g = 1;
 
             @Override public Match get() {
               for (; g <= groups; g++) {
+                // Skip groups that didn't participate in the match (e.g., optional groups)
+                if (matcher.group(g) == null) {
+                  continue;
+                }
                 int start = matcher.start(g);
                 int end = matcher.end(g);
                 if (start >= next) {
                   next = end;
-                  return Match.backtrackable(1, string, start, end - start);
+                  return Match.backtrackable(1, input, start, end - start);
                 }
               }
               return null;
@@ -824,8 +832,15 @@ public final class Substring {
     }
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
+        if (fromIndex > input.length()) {
+          return null;
+        }
         Matcher matcher = regexPattern.matcher(input);
-        if (fromIndex <= input.length() && matcher.find(fromIndex)) {
+        if (matcher.find(fromIndex)) {
+          // Check if the group participated in the match (e.g., not an optional group that didn't match)
+          if (matcher.group(group) == null) {
+            return null;
+          }
           int start = matcher.start(group);
           return Match.backtrackable(1, input, start, matcher.end(group) - start);
         }
@@ -864,7 +879,7 @@ public final class Substring {
   }
 
   /**
-   * Returns a {@link Collector} that collects the input candidate {@link Pattern} and reults in a
+   * Returns a {@link Collector} that collects the input candidate {@link Pattern} and results in a
    * pattern that matches whichever that occurs first in the input string. For example you can use
    * it to find the first occurrence of any reserved word in a set:
    *
@@ -3049,9 +3064,6 @@ public final class Substring {
     /**
      * Expands this match for {@code toLeft} characters before the starting index and {@code
      * toRight} characters beyond the end index.
-     *
-     * @throws IllegalArgumentException if either {@code toLeft} or {@code toRight} is negative
-     * @throws IllegalStateException if there are not sufficient characters to expand
      */
     Match expand(int toLeft, int toRight) {
       assert toLeft >= 0 : "Invalid toLeft: " + toLeft;

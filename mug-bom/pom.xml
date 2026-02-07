@@ -6,12 +6,15 @@
 
   <groupId>com.google.mug</groupId>
   <artifactId>mug-bom</artifactId>
-  <version>9.8-SNAPSHOT</version>
+  <version>9.9-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Mug Bill of Materials</name>
   <description>Dependency version alignment for all Mug modules</description>
   <url>http://github.com/google/mug</url>
+  <properties>
+    <project.build.outputTimestamp>2024-01-01T00:00:00Z</project.build.outputTimestamp>
+  </properties>
 
   <licenses>
     <license>
@@ -124,7 +127,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.5</version>
+            <version>3.2.8</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
