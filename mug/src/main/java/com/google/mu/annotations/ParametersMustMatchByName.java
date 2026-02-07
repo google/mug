@@ -71,7 +71,7 @@ import java.lang.annotation.Target;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>10.0</version>
+ *               <version>9.9.1</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>
