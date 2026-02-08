@@ -20,11 +20,16 @@ import java.lang.annotation.Target;
  * By simply annotating the constructor with {@code @ParametersMustMatchByName},
  * you get compile-time safety for free.
  *
- * <p>For example:
+ * <p>For example if you have a record like the following:
+ * 
+ * <pre>{@code
+ * @ParametersMustMatchByName
+ * Profile(String userId, String userName) {}
+ * }</pre>
  *
- * <pre>{@code new Profile(currentUser.getId(), currentUser.getName())}</pre> will match
- *
- * <pre>{@code record Profile(String userId, String userName)}</pre>
+ * You can construct it with <pre>{@code
+ *   new Profile(currentUser.getId(), currentUser.getName())
+ * }</pre>
  *
  * But it will fail to compile if the constructor were defined as {@code
  * record Profile(String userName, String userId)}. The {@code currentUser.getId()} expression
