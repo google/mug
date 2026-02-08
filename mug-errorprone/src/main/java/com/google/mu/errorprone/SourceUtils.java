@@ -76,6 +76,7 @@ final class SourceUtils {
     return args.stream()
         .anyMatch(arg -> lineMap.getLineNumber(ASTHelpers.getStartPosition(arg)) > baseLine);
   }
+
   private static int locateLineEnd(VisitorState state, int pos) {
     CharSequence source = state.getSourceCode();
     int end = pos;
