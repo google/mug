@@ -857,4 +857,93 @@ public final class ParametersMustMatchByNameCheckTest {
             "}")
         .doTest();
   }
+
+  @Test
+  public void onMethod_matchByTrailingComment() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(int width, int height) {}",
+            "  void callSite() {",
+            "    test(1, // width",
+            "        2); // height",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_matchByTrailingComment_afterMultilineArgument() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(int width, int height) {}",
+            "  void callSite() {",
+            "    test(1",
+            "           + 2, // width",
+            "         3); // height",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_matchByTrailingComment_mixedWithSingleLineComment() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(int width, int height) {}",
+            "  void callSite() {",
+            "    test(1, // width",
+            "        // height",
+            "        2);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_matchByTrailingComment_mixedWithBlockComment() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(int width, int height) {}",
+            "  void callSite() {",
+            "    test(1, // width",
+            "         /* height */ 2);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onMethod_commentAfterArgLineDoesntCount() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(int width, int height) {}",
+            "  void callSite() {",
+            "    test(1, // width",
+            "         // BUG: Diagnostic contains: must match",
+            "         2);",
+            "    // height",
+            "  }",
+            "}")
+        .doTest();
+  }
 }

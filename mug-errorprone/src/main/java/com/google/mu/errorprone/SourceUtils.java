@@ -23,8 +23,10 @@ import java.util.List;
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.VisitorState;
+import com.google.errorprone.util.ASTHelpers;
 import com.google.mu.util.CaseBreaker;
 import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.LineMap;
 
 final class SourceUtils {
   static ImmutableList<String> normalizeForComparison(Collection<String> codes) {
@@ -47,14 +49,31 @@ final class SourceUtils {
       return ImmutableList.of();
     }
     ImmutableList.Builder<String> builder = ImmutableList.builder();
-    for (ExpressionTree arg : args) {
+    LineMap lineMap = state.getPath().getCompilationUnit().getLineMap();
+    for (int i = 0; i < args.size(); i++) {
+      ExpressionTree arg = args.get(i);
       int next = state.getEndPosition(arg);
       if (next < 0) {
         return ImmutableList.of();
       }
-      builder.add(state.getSourceCode().subSequence(position, next).toString());
-      position = next;
+      int end =
+          i == args.size() - 1
+                  || lineMap.getLineNumber(next)
+                      < lineMap.getLineNumber(ASTHelpers.getStartPosition(args.get(i + 1)))
+              ? locateLineEnd(state, next)
+              : next;
+      builder.add(state.getSourceCode().subSequence(position, end).toString());
+      position = end;
     }
     return builder.build();
+  }
+
+  private static int locateLineEnd(VisitorState state, int pos) {
+    CharSequence source = state.getSourceCode();
+    int end = pos;
+    while (end < source.length() && source.charAt(end) != '\n') {
+      end++;
+    }
+    return end;
   }
 }

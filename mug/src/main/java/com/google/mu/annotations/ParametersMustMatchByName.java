@@ -42,8 +42,14 @@ import java.lang.annotation.Target;
  * "trust me, I know what I'm doing".
  *
  * <p>For example: <pre>
- * new Dimension(&#47;* width *&#47; list.get(0), &#47;* height *&#47; list.get(1));
+ *   new Dimension(&#47;* width *&#47; list.get(0), &#47;* height *&#47; list.get(1));
  * </pre>
+ * 
+ * Or, trailing comments can also be used under the style of one-arg-per-line: <pre>{@code
+ *   new Dimension(
+ *       list.get(0),  // width
+ *       list.get(1)); // height
+ * }</pre>
  *
  * <p>In a sense, <pre>&#47;* width *&#47; list.get(0)</pre> serves a similar purpose to
  * {@code .setWidth(list.get(0))} in a builder chain – they both explicitly spell out "width"
