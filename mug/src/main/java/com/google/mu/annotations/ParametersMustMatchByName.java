@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
  * 
  * <pre>{@code
  * @ParametersMustMatchByName
- * Profile(String userId, String userName) {}
+ * record Profile(String userId, String userName) {}
  * }</pre>
  *
  * You can construct it with <pre>{@code
