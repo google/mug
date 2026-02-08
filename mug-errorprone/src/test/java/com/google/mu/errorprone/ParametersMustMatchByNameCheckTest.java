@@ -946,4 +946,21 @@ public final class ParametersMustMatchByNameCheckTest {
             "}")
         .doTest();
   }
+
+  @Test
+  public void onMethod_trailingCommentOnSingleLine_ignored() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(int width) {}",
+            "  void callSite(int n) {",
+            "    // BUG: Diagnostic contains: must match",
+            "    test(n); // width",
+            "  }",
+            "}")
+        .doTest();
+  }
 }
