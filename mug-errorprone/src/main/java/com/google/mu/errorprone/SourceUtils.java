@@ -48,9 +48,9 @@ final class SourceUtils {
     if (position < 0) {
       return ImmutableList.of();
     }
-    ImmutableList.Builder<String> builder = ImmutableList.builder();
     LineMap lineMap = state.getPath().getCompilationUnit().getLineMap();
-    boolean inMultiline = inMultiline(invocationStart, args, state);
+    boolean inMultiline = inMultiline(position, args, lineMap);
+    ImmutableList.Builder<String> builder = ImmutableList.builder();
     for (int i = 0; i < args.size(); i++) {
       ExpressionTree arg = args.get(i);
       int next = state.getEndPosition(arg);
@@ -71,11 +71,10 @@ final class SourceUtils {
   }
 
   private static boolean inMultiline(
-      ExpressionTree invocationStart, List<? extends ExpressionTree> args, VisitorState state) {
-    LineMap lineMap = state.getPath().getCompilationUnit().getLineMap();
-    long baseLine = lineMap.getLineNumber(ASTHelpers.getStartPosition(invocationStart));
+      int startPosition, List<? extends ExpressionTree> args, LineMap lineMap) {
+    long baseLine = lineMap.getLineNumber(startPosition);
     return args.stream()
-        .anyMatch(arg -> lineMap.getLineNumber(ASTHelpers.getStartPosition(arg)) != baseLine);
+        .anyMatch(arg -> lineMap.getLineNumber(ASTHelpers.getStartPosition(arg)) > baseLine);
   }
   private static int locateLineEnd(VisitorState state, int pos) {
     CharSequence source = state.getSourceCode();
