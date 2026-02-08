@@ -1,5 +1,10 @@
 name: Java CI
-on: [push, pull_request]
+on:
+  branches-ignore:
+      - 'gh-pages'
+  pull_request:
+    branches-ignore:
+      - 'gh-pages'
 
 permissions:
   contents: write    # Required to push the badge SVG back to the repo
