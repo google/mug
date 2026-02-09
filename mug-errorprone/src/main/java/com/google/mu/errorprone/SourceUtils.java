@@ -62,7 +62,12 @@ final class SourceUtils {
       return ImmutableList.of();
     }
     LineMap lineMap = state.getPath().getCompilationUnit().getLineMap();
-    boolean inMultiline = inMultiline(position, args, lineMap);
+    long baseLine = lineMap.getLineNumber(position);
+    ImmutableList<Long> argLineNumbers =
+        args.stream()
+            .map(arg -> lineMap.getLineNumber(getStartPosition(arg)))
+            .collect(toImmutableList());
+    boolean isMultiline = argLineNumbers.stream().anyMatch(line -> line > baseLine);
     ImmutableList.Builder<String> builder = ImmutableList.builder();
     for (int i = 0; i < args.size(); i++) {
       ExpressionTree arg = args.get(i);
@@ -71,23 +76,13 @@ final class SourceUtils {
         return ImmutableList.of();
       }
       int end =
-          inMultiline
-                  && (i == args.size() - 1
-                      || lineMap.getLineNumber(next)
-                          < lineMap.getLineNumber(getStartPosition(args.get(i + 1))))
+          isMultiline && (i == args.size() - 1 || argLineNumbers.get(i) < argLineNumbers.get(i + 1))
               ? locateLineEnd(state, next)
               : next;
       builder.add(state.getSourceCode().subSequence(position, end).toString());
       position = end;
     }
     return builder.build();
-  }
-
-  private static boolean inMultiline(
-      int startPosition, List<? extends ExpressionTree> args, LineMap lineMap) {
-    long baseLine = lineMap.getLineNumber(startPosition);
-    return args.stream()
-        .anyMatch(arg -> lineMap.getLineNumber(getStartPosition(arg)) > baseLine);
   }
 
   private static int locateLineEnd(VisitorState state, int pos) {
