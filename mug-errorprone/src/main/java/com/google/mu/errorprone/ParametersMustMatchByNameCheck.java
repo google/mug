@@ -1,6 +1,5 @@
 package com.google.mu.errorprone;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.mu.errorprone.SourceUtils.argsAsTexts;
 import static com.google.mu.errorprone.SourceUtils.normalizeForComparison;
