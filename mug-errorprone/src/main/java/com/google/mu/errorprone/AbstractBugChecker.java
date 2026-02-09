@@ -38,6 +38,7 @@ import java.util.function.Supplier;
  * from the {@link ErrorReport} exception thrown by the `check` abstract methods to the {@link
  * com.google.errorprone.matchers.Description} return value expected by Error-Prone.
  */
+@SuppressWarnings("restriction")
 abstract class AbstractBugChecker extends BugChecker {
   /**
    * Mixin interface for checkers that check constructor calls. Subclasses can implement the {@link

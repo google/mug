@@ -28,6 +28,7 @@ import com.google.mu.util.CaseBreaker;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.LineMap;
 
+@SuppressWarnings("restriction")
 final class SourceUtils {
   static ImmutableList<String> normalizeForComparison(Collection<String> codes) {
     return codes.stream().map(SourceUtils::normalizeForComparison).collect(toImmutableList());

@@ -22,6 +22,7 @@ import com.google.errorprone.util.ASTHelpers;
 import com.sun.tools.javac.code.Type;
 
 /** Represents a (lazily memoized) type name with convenient methods to operate on it. */
+@SuppressWarnings("restriction")
 final class TypeName {
   private final String name;
   private final Supplier<Type> memoized;

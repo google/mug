@@ -44,6 +44,7 @@ import com.sun.tools.javac.code.Type;
     linkType = LinkType.CUSTOM,
     severity = ERROR)
 @AutoService(BugChecker.class)
+@SuppressWarnings("restriction")
 public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck, AbstractBugChecker.ConstructorCallCheck {
   private static final String ANNOTATION_NAME =

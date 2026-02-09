@@ -41,6 +41,7 @@ import com.sun.source.tree.NewClassTree;
     linkType = LinkType.CUSTOM,
     severity = ERROR)
 @AutoService(BugChecker.class)
+@SuppressWarnings("restriction")
 public final class StringFormatPlaceholderNamesCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck, AbstractBugChecker.ConstructorCallCheck {
   private static final Matcher<ExpressionTree> MATCHER =

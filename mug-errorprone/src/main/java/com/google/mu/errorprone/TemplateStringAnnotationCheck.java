@@ -34,6 +34,7 @@ import com.sun.tools.javac.code.Type;
  */
 @BugPattern(summary = "Invalid use of @TemplateString annotation.", severity = ERROR)
 @AutoService(BugChecker.class)
+@SuppressWarnings("restriction")
 public final class TemplateStringAnnotationCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodCheck {
   @Override
