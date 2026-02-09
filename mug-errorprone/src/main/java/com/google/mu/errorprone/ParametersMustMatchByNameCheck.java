@@ -14,7 +14,6 @@ import com.google.errorprone.BugPattern.LinkType;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.util.ASTHelpers;
-import com.google.mu.util.Substring;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.LambdaExpressionTree;
@@ -48,8 +47,6 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck, AbstractBugChecker.ConstructorCallCheck {
   private static final String ANNOTATION_NAME =
       "com.google.mu.annotations.ParametersMustMatchByName";
-  private static final Substring.Pattern ARG_COMMENT =
-	      Substring.spanningInOrder("/*", "*/").or(Substring.spanningInOrder("//", "\n"));
 
   @Override public void checkConstructorCall(NewClassTree tree, VisitorState state)
       throws ErrorReport {
@@ -107,7 +104,7 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       checkingOn(arg)
           .require(
               trustable // trust if no other parameter has the same type
-                  && !ARG_COMMENT.in(argSources.get(i)).isPresent()
+                  && !SourceUtils.hasArgComment(argSources.get(i))
                   && isUniqueType(params, i, state),
               "argument expression must match parameter name `%s`",
               param);

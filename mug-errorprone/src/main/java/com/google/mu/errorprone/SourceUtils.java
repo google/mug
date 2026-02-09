@@ -15,6 +15,9 @@
 package com.google.mu.errorprone;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.mu.util.Substring.END;
+import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.Substring.suffix;
 import static java.util.stream.Collectors.joining;
 
 import java.util.Collection;
@@ -25,11 +28,20 @@ import com.google.common.collect.ImmutableList;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.util.ASTHelpers;
 import com.google.mu.util.CaseBreaker;
+import com.google.mu.util.Substring;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.LineMap;
 
 @SuppressWarnings("restriction")
 final class SourceUtils {
+  private static final Substring.Pattern ARG_COMMENT =
+      Substring.spanningInOrder("/*", "*/")
+          .or(Substring.between(first("//"), suffix('\n').or(END)));
+ 
+  static boolean hasArgComment(String source) {
+	return ARG_COMMENT.in(source).isPresent();
+  }
+
   static ImmutableList<String> normalizeForComparison(Collection<String> codes) {
     return codes.stream().map(SourceUtils::normalizeForComparison).collect(toImmutableList());
   }

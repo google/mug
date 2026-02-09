@@ -57,7 +57,6 @@ import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
 import com.google.errorprone.util.ASTHelpers;
 import com.google.errorprone.util.ErrorProneTokens;
-import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.LineMap;
@@ -128,7 +127,6 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   private static final TypeName BOOLEAN_TYPE = TypeName.of(Boolean.class);
   private static final TypeName OPTIONAL_TYPE = TypeName.of(Optional.class);
   private static final TypeName COLLECTION_TYPE = TypeName.of(Collection.class);
-  private static final Substring.Pattern ARG_COMMENT = Substring.spanningInOrder("/*", "*/");
 
   @Override
   public void checkMemberReference(MemberReferenceTree tree, VisitorState state)
@@ -297,7 +295,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                         .noneMatch(txt -> txt.contains(normalizedPlacehoderName)));
         checkingOn(arg)
             .require(
-                trust && ARG_COMMENT.in(argSources.get(i)).isEmpty(),
+                trust && !SourceUtils.hasArgComment(argSources.get(i)),
                 "String format placeholder {%s} at line %s (defined as in \"%s\") should appear in the format"
                     + " argument: %s. Consider the following to address this error:\n"
                     + "  1. Ensure the argument isn't passed in out of order.\n"
