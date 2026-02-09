@@ -963,4 +963,84 @@ public final class ParametersMustMatchByNameCheckTest {
             "}")
         .doTest();
   }
+
+  @Test
+  public void onEnclosingClass_argsInWrongOrder_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "@ParametersMustMatchByName",
+            "class Outer {",
+            "  class Test {",
+            "    void test(int width, int height) {}",
+            "    void callSite(int height, int width) {",
+            "      test(",
+            "          // BUG: Diagnostic contains: must match",
+            "          height,",
+            "          width);",
+            "    }",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onEnclosingClass_argsInCorrectOrder_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "@ParametersMustMatchByName",
+            "class Outer {",
+            "  class Test {",
+            "    void test(int width, int height) {}",
+            "    void callSite(int height, int width) {",
+            "      test(width, height);",
+            "    }",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onPackage_argsInWrongOrder_fails() {
+    helper
+        .addSourceLines(
+            "package-info.java",
+            "@com.google.mu.annotations.ParametersMustMatchByName",
+            "package com.mypackage;")
+        .addSourceLines(
+            "Test.java",
+            "package com.mypackage;",
+            "class Test {",
+            "  void test(int width, int height) {}",
+            "  void callSite(int height, int width) {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        height,",
+            "        width);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onPackage_argsInCorrectOrder_succeeds() {
+    helper
+        .addSourceLines(
+            "package-info.java",
+            "@com.google.mu.annotations.ParametersMustMatchByName",
+            "package com.mypackage;")
+        .addSourceLines(
+            "Test.java",
+            "package com.mypackage;",
+            "class Test {",
+            "  void test(int width, int height) {}",
+            "  void callSite(int height, int width) {",
+            "    test(width, height);",
+            "  }",
+            "}")
+        .doTest();
+  }
 }

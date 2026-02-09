@@ -77,11 +77,10 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     if (method == null) {
       return;
     }
-    boolean methodAnnotated = ASTHelpers.hasAnnotation(method, ANNOTATION_NAME, state);
-    if (!methodAnnotated
-        && !ASTHelpers.hasAnnotation(method.enclClass(), ANNOTATION_NAME, state)) {
-      return;
+    if (!isEffectivelyAnnotated(method, state)) {
+        return;
     }
+    boolean methodAnnotated = ASTHelpers.hasAnnotation(method, ANNOTATION_NAME, state);
     ClassTree classTree = state.findEnclosing(ClassTree.class);
     if (classTree == null) {
       return;
@@ -115,6 +114,15 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
               "argument expression must match parameter name `%s`",
               param);
     }
+  }
+
+  private static boolean isEffectivelyAnnotated(Symbol symbol, VisitorState state) {
+    for (Symbol s = symbol; s != null; s = s.owner) {
+      if (ASTHelpers.hasAnnotation(s, ANNOTATION_NAME, state)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static boolean isTrustableLiteral(ExpressionTree tree) {
