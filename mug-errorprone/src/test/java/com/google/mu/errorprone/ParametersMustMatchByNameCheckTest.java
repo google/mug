@@ -229,6 +229,24 @@ public final class ParametersMustMatchByNameCheckTest {
   }
 
   @Test
+  public void onMethod_literalOnOneArg_incorrectTrailingComment_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(int width) {}",
+            "  void callSite() {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        100); // height",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void onMethod_literalOnTwoArgsOfSameType_fails() {
     helper
         .addSourceLines(
@@ -1039,6 +1057,21 @@ public final class ParametersMustMatchByNameCheckTest {
             "  void test(int width, int height) {}",
             "  void callSite(int height, int width) {",
             "    test(width, height);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void onUnannotatedMethod_argsInWrongOrder_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  void test(int width, int height) {}",
+            "  void callSite(int height, int width) {",
+            "    test(height, width);",
             "  }",
             "}")
         .doTest();

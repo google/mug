@@ -48,7 +48,8 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck, AbstractBugChecker.ConstructorCallCheck {
   private static final String ANNOTATION_NAME =
       "com.google.mu.annotations.ParametersMustMatchByName";
-  private static final Substring.Pattern ARG_COMMENT = Substring.spanningInOrder("/*", "*/");
+  private static final Substring.Pattern ARG_COMMENT =
+	      Substring.spanningInOrder("/*", "*/").or(Substring.spanningInOrder("//", "\n"));
 
   @Override public void checkConstructorCall(NewClassTree tree, VisitorState state)
       throws ErrorReport {
@@ -74,9 +75,6 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       List<String> argSources,
       VisitorState state)
       throws ErrorReport {
-    if (method == null) {
-      return;
-    }
     if (!isEffectivelyAnnotated(method, state)) {
         return;
     }
