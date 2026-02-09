@@ -15,6 +15,7 @@
 package com.google.mu.errorprone;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.errorprone.util.ASTHelpers.getStartPosition;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.suffix;
@@ -26,7 +27,6 @@ import java.util.List;
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.VisitorState;
-import com.google.errorprone.util.ASTHelpers;
 import com.google.mu.util.CaseBreaker;
 import com.google.mu.util.Substring;
 import com.sun.source.tree.ExpressionTree;
@@ -74,7 +74,7 @@ final class SourceUtils {
           inMultiline
                   && (i == args.size() - 1
                       || lineMap.getLineNumber(next)
-                          < lineMap.getLineNumber(ASTHelpers.getStartPosition(args.get(i + 1))))
+                          < lineMap.getLineNumber(getStartPosition(args.get(i + 1))))
               ? locateLineEnd(state, next)
               : next;
       builder.add(state.getSourceCode().subSequence(position, end).toString());
@@ -87,7 +87,7 @@ final class SourceUtils {
       int startPosition, List<? extends ExpressionTree> args, LineMap lineMap) {
     long baseLine = lineMap.getLineNumber(startPosition);
     return args.stream()
-        .anyMatch(arg -> lineMap.getLineNumber(ASTHelpers.getStartPosition(arg)) > baseLine);
+        .anyMatch(arg -> lineMap.getLineNumber(getStartPosition(arg)) > baseLine);
   }
 
   private static int locateLineEnd(VisitorState state, int pos) {
