@@ -2,6 +2,7 @@ package com.google.mu.errorprone;
 
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.mu.errorprone.SourceUtils.argsAsTexts;
+import static com.google.mu.errorprone.SourceUtils.hasArgComment;
 import static com.google.mu.errorprone.SourceUtils.normalizeForComparison;
 
 import java.util.List;
@@ -104,7 +105,7 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       checkingOn(arg)
           .require(
               trustable // trust if no other parameter has the same type
-                  && !SourceUtils.hasArgComment(argSources.get(i))
+                  && !hasArgComment(argSources.get(i))
                   && isUniqueType(params, i, state),
               "argument expression must match parameter name `%s`",
               param);

@@ -62,12 +62,12 @@ final class SourceUtils {
       return ImmutableList.of();
     }
     LineMap lineMap = state.getPath().getCompilationUnit().getLineMap();
-    long baseLine = lineMap.getLineNumber(position);
+    long startingLine = lineMap.getLineNumber(position);
     ImmutableList<Long> argLineNumbers =
         args.stream()
             .map(arg -> lineMap.getLineNumber(getStartPosition(arg)))
             .collect(toImmutableList());
-    boolean isMultiline = argLineNumbers.stream().anyMatch(line -> line > baseLine);
+    boolean isMultiline = argLineNumbers.stream().anyMatch(line -> line > startingLine);
     ImmutableList.Builder<String> builder = ImmutableList.builder();
     for (int i = 0; i < args.size(); i++) {
       ExpressionTree arg = args.get(i);
@@ -75,10 +75,9 @@ final class SourceUtils {
       if (next < 0) {
         return ImmutableList.of();
       }
-      int end =
-          isMultiline && (i == args.size() - 1 || argLineNumbers.get(i) < argLineNumbers.get(i + 1))
-              ? locateLineEnd(state, next)
-              : next;
+      boolean lastArgOfLine =
+          i == args.size() - 1 || argLineNumbers.get(i) < argLineNumbers.get(i + 1);
+      int end = isMultiline && lastArgOfLine ? locateLineEnd(state, next) : next;
       builder.add(state.getSourceCode().subSequence(position, end).toString());
       position = end;
     }
