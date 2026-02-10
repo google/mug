@@ -73,8 +73,8 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       List<String> argSources,
       VisitorState state)
       throws ErrorReport {
-    if (!isEffectivelyAnnotated(method, state)) {
-        return;
+    if (argSources.isEmpty() || !isEffectivelyAnnotated(method, state)) {
+      return;
     }
     boolean methodAnnotated = ASTHelpers.hasAnnotation(method, ANNOTATION_NAME, state);
     ClassTree classTree = state.findEnclosing(ClassTree.class);

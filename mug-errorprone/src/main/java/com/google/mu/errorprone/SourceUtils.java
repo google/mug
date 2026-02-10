@@ -56,18 +56,21 @@ final class SourceUtils {
   }
 
   static ImmutableList<String> argsAsTexts(
-      ExpressionTree invocationStart, List<? extends ExpressionTree> args, VisitorState state) {
-    int position = state.getEndPosition(invocationStart);
+      ExpressionTree methodName, List<? extends ExpressionTree> args, VisitorState state) {
+    int position = state.getEndPosition(methodName);
     if (position < 0) {
       return ImmutableList.of();
     }
     LineMap lineMap = state.getPath().getCompilationUnit().getLineMap();
+    if (lineMap == null) {
+      return ImmutableList.of();
+    }
     long startingLine = lineMap.getLineNumber(position);
-    ImmutableList<Long> argLineNumbers =
+    ImmutableList<Long> argLines =
         args.stream()
             .map(arg -> lineMap.getLineNumber(getStartPosition(arg)))
             .collect(toImmutableList());
-    boolean isMultiline = argLineNumbers.stream().anyMatch(line -> line > startingLine);
+    boolean isMultiline = argLines.stream().anyMatch(line -> line > startingLine);
     ImmutableList.Builder<String> builder = ImmutableList.builder();
     for (int i = 0; i < args.size(); i++) {
       ExpressionTree arg = args.get(i);
@@ -75,17 +78,15 @@ final class SourceUtils {
       if (next < 0) {
         return ImmutableList.of();
       }
-      boolean lastArgOfLine =
-          i == args.size() - 1 || argLineNumbers.get(i) < argLineNumbers.get(i + 1);
-      int end = isMultiline && lastArgOfLine ? locateLineEnd(state, next) : next;
+      boolean lastArgOfLine = i == args.size() - 1 || argLines.get(i) < argLines.get(i + 1);
+      int end = isMultiline && lastArgOfLine ? locateLineEnd(state.getSourceCode(), next) : next;
       builder.add(state.getSourceCode().subSequence(position, end).toString());
       position = end;
     }
     return builder.build();
   }
 
-  private static int locateLineEnd(VisitorState state, int pos) {
-    CharSequence source = state.getSourceCode();
+  private static int locateLineEnd(CharSequence source, int pos) {
     int end = pos;
     while (end < source.length() && source.charAt(end) != '\n') {
       end++;

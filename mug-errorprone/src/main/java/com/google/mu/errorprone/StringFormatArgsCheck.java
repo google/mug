@@ -241,6 +241,9 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       List<String> argSources,
       VisitorState state)
       throws ErrorReport {
+    if (argSources.isEmpty()) {
+      return;
+    }
     int templateStringIndex =
         BiStream.zip(indexesFrom(0), params.stream())
             .filterValues(
