@@ -241,9 +241,6 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
       List<String> argSources,
       VisitorState state)
       throws ErrorReport {
-    if (argSources.isEmpty()) {
-      return;
-    }
     int templateStringIndex =
         BiStream.zip(indexesFrom(0), params.stream())
             .filterValues(
@@ -278,86 +275,88 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     for (ExpressionTree arg : args) {
       checkArgFormattability(arg, state);
     }
-    ImmutableList<String> normalizedArgTexts = normalizeForComparison(argSources);
-    LineMap lineMap = state.getPath().getCompilationUnit().getLineMap();
-    for (int i = 0; i < placeholders.size(); i++) {
-      Placeholder placeholder = placeholders.get(i);
-      NodeCheck onPlaceholder = checkingOn(() -> placeholder.sourcePosition(formatExpression, state));
-      onPlaceholder.require(
-          args.size() > i, "No value is provided for placeholder {%s}", placeholder.name());
-      String normalizedPlacehoderName = normalizeForComparison(placeholder.name());
-      ExpressionTree arg = args.get(i);
-      if (!normalizedArgTexts.get(i).contains(normalizedPlacehoderName)) {
-        // arg doesn't match placeholder
-        boolean trust =
-            formatStringIsInlined
-                && args.size() <= 3
-                && arg instanceof LiteralTree
-                && (args.size() <= 1
-                    || normalizedArgTexts.stream() // out-of-order is suspicious
-                        .noneMatch(txt -> txt.contains(normalizedPlacehoderName)));
-        checkingOn(arg)
-            .require(
-                trust && !SourceUtils.hasArgComment(argSources.get(i)),
-                "String format placeholder {%s} at line %s (defined as in \"%s\") should appear in the format"
-                    + " argument: %s. Consider the following to address this error:\n"
-                    + "  1. Ensure the argument isn't passed in out of order.\n"
-                    + "  2. If the argument does correspond to the placeholder positionally, rename"
-                    + " either the placeholder {%s} or local variable used in the argument, if any,"
-                    + " to make the argument expression include the placeholder name word-by-word"
-                    + " (case insensitive)\n"
-                    + "  3. If you can't make them organically match, as the last resort, add a"
-                    + " comment like /* %s */ before the argument. You only need to add the comment"
-                    + " for non-matching placeholders. Don't add redundant comments for the"
-                    + " placeholders that already match.",
-                placeholder.name(),
-                lineMap.getLineNumber(
-                    placeholder
-                        .sourcePosition(formatExpression, state)
-                        .getPreferredPosition()),
-                placeholder,
-                arg,
-                placeholder.name(),
-                placeholder.name());
-      }
-      if (placeholder.hasConditionalOperator()) {
-        Type argType = ASTHelpers.getType(arg);
-        ImmutableSet<String> references = placeholder.optionalParametersFromOperatorRhs();
-        if (ASTHelpers.isSameType(argType, state.getSymtab().booleanType, state)
-            || BOOLEAN_TYPE.isSameType(argType, state)) {
-          onPlaceholder.require(
-              references.isEmpty(),
-              "guard placeholder {%s ->} maps to boolean expression <%s> at line %s. The optional"
-                  + " placeholder references %s to the right of the `->` operator should only be"
-                  + " used for an optional placeholder.",
+    if (argSources.size() > 0) { // skip if we failed to get the arg sources or if there are 0 args.
+      ImmutableList<String> normalizedArgTexts = normalizeForComparison(argSources);
+      LineMap lineMap = state.getPath().getCompilationUnit().getLineMap();
+      for (int i = 0; i < placeholders.size(); i++) {
+        Placeholder placeholder = placeholders.get(i);
+        NodeCheck onPlaceholder = checkingOn(() -> placeholder.sourcePosition(formatExpression, state));
+        onPlaceholder.require(
+            args.size() > i, "No value is provided for placeholder {%s}", placeholder.name());
+        String normalizedPlacehoderName = normalizeForComparison(placeholder.name());
+        ExpressionTree arg = args.get(i);
+        if (!normalizedArgTexts.get(i).contains(normalizedPlacehoderName)) {
+          // arg doesn't match placeholder
+          boolean trust =
+              formatStringIsInlined
+                  && args.size() <= 3
+                  && arg instanceof LiteralTree
+                  && (args.size() <= 1
+                      || normalizedArgTexts.stream() // out-of-order is suspicious
+                          .noneMatch(txt -> txt.contains(normalizedPlacehoderName)));
+          checkingOn(arg)
+              .require(
+                  trust && !SourceUtils.hasArgComment(argSources.get(i)),
+                  "String format placeholder {%s} at line %s (defined as in \"%s\") should appear in the format"
+                      + " argument: %s. Consider the following to address this error:\n"
+                      + "  1. Ensure the argument isn't passed in out of order.\n"
+                      + "  2. If the argument does correspond to the placeholder positionally, rename"
+                      + " either the placeholder {%s} or local variable used in the argument, if any,"
+                      + " to make the argument expression include the placeholder name word-by-word"
+                      + " (case insensitive)\n"
+                      + "  3. If you can't make them organically match, as the last resort, add a"
+                      + " comment like /* %s */ before the argument. You only need to add the comment"
+                      + " for non-matching placeholders. Don't add redundant comments for the"
+                      + " placeholders that already match.",
                   placeholder.name(),
+                  lineMap.getLineNumber(
+                      placeholder
+                          .sourcePosition(formatExpression, state)
+                          .getPreferredPosition()),
+                  placeholder,
                   arg,
-                  lineMap.getLineNumber(ASTHelpers.getStartPosition(arg)),
-                  references);
-        } else if (OPTIONAL_TYPE.isSameType(argType, state) || COLLECTION_TYPE.isSupertypeOf(argType, state)) {
-          onPlaceholder
-              .require(
-                  placeholder.hasOptionalParameter(),
-                  "optional parameter {%s->} must be an identifier followed by a '?'",
-                  placeholder.name())
-              .require(
-                  !references.isEmpty(),
-                  "optional parameter %s must be referenced at least once to the right of {%s->}",
                   placeholder.name(),
-                  placeholder.name())
-              .require(
-                  references.equals(ImmutableSet.of(placeholder.cleanName())),
-                  "unexpected optional parameters to the right of {%s->}: %s",
-                  placeholder.name(),
-                  Sets.difference(references, ImmutableSet.of(placeholder.name())));
-        } else {
-          throw onPlaceholder.report(
-              "guard placeholder {%s ->} is expected to be boolean, Optional or Collection, whereas"
-                  + " argument <%s> at line %s is of type %s",
-              placeholder.name(),
-              arg,
-              lineMap.getLineNumber(ASTHelpers.getStartPosition(arg)),
-              argType);
+                  placeholder.name());
+        }
+        if (placeholder.hasConditionalOperator()) {
+          Type argType = ASTHelpers.getType(arg);
+          ImmutableSet<String> references = placeholder.optionalParametersFromOperatorRhs();
+          if (ASTHelpers.isSameType(argType, state.getSymtab().booleanType, state)
+              || BOOLEAN_TYPE.isSameType(argType, state)) {
+            onPlaceholder.require(
+                references.isEmpty(),
+                "guard placeholder {%s ->} maps to boolean expression <%s> at line %s. The optional"
+                    + " placeholder references %s to the right of the `->` operator should only be"
+                    + " used for an optional placeholder.",
+                    placeholder.name(),
+                    arg,
+                    lineMap.getLineNumber(ASTHelpers.getStartPosition(arg)),
+                    references);
+          } else if (OPTIONAL_TYPE.isSameType(argType, state) || COLLECTION_TYPE.isSupertypeOf(argType, state)) {
+            onPlaceholder
+                .require(
+                    placeholder.hasOptionalParameter(),
+                    "optional parameter {%s->} must be an identifier followed by a '?'",
+                    placeholder.name())
+                .require(
+                    !references.isEmpty(),
+                    "optional parameter %s must be referenced at least once to the right of {%s->}",
+                    placeholder.name(),
+                    placeholder.name())
+                .require(
+                    references.equals(ImmutableSet.of(placeholder.cleanName())),
+                    "unexpected optional parameters to the right of {%s->}: %s",
+                    placeholder.name(),
+                    Sets.difference(references, ImmutableSet.of(placeholder.name())));
+          } else {
+            throw onPlaceholder.report(
+                "guard placeholder {%s ->} is expected to be boolean, Optional or Collection, whereas"
+                    + " argument <%s> at line %s is of type %s",
+                placeholder.name(),
+                arg,
+                lineMap.getLineNumber(ASTHelpers.getStartPosition(arg)),
+                argType);
+          }
         }
       }
     }
