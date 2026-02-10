@@ -42,6 +42,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 
 /** Some common utils for format and unformat checks. */
+@SuppressWarnings("restriction")
 final class FormatStringUtils {
   static final Substring.Pattern PLACEHOLDER_PATTERN =
       consecutive(CharMatcher.noneOf("{}")::matches).immediatelyBetween("{", INCLUSIVE, "}", INCLUSIVE);

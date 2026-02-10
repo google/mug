@@ -2,6 +2,7 @@ package com.google.mu.annotations;
 
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
 import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PACKAGE;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.CLASS;
 
@@ -99,5 +100,5 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Retention(CLASS)
-@Target({ METHOD, CONSTRUCTOR, TYPE })
+@Target({ METHOD, CONSTRUCTOR, TYPE, PACKAGE })
 public @interface ParametersMustMatchByName {}

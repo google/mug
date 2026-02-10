@@ -1,8 +1,8 @@
 package com.google.mu.errorprone;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.mu.errorprone.SourceUtils.argsAsTexts;
+import static com.google.mu.errorprone.SourceUtils.hasArgComment;
 import static com.google.mu.errorprone.SourceUtils.normalizeForComparison;
 
 import java.util.List;
@@ -15,7 +15,6 @@ import com.google.errorprone.BugPattern.LinkType;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.util.ASTHelpers;
-import com.google.mu.util.Substring;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.LambdaExpressionTree;
@@ -44,11 +43,11 @@ import com.sun.tools.javac.code.Type;
     linkType = LinkType.CUSTOM,
     severity = ERROR)
 @AutoService(BugChecker.class)
+@SuppressWarnings("restriction")
 public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck, AbstractBugChecker.ConstructorCallCheck {
   private static final String ANNOTATION_NAME =
       "com.google.mu.annotations.ParametersMustMatchByName";
-  private static final Substring.Pattern ARG_COMMENT = Substring.spanningInOrder("/*", "*/");
 
   @Override public void checkConstructorCall(NewClassTree tree, VisitorState state)
       throws ErrorReport {
@@ -74,14 +73,10 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       List<String> argSources,
       VisitorState state)
       throws ErrorReport {
-    if (method == null) {
+    if (argSources.isEmpty() || !isEffectivelyAnnotated(method, state)) {
       return;
     }
     boolean methodAnnotated = ASTHelpers.hasAnnotation(method, ANNOTATION_NAME, state);
-    if (!methodAnnotated
-        && !ASTHelpers.hasAnnotation(method.enclClass(), ANNOTATION_NAME, state)) {
-      return;
-    }
     ClassTree classTree = state.findEnclosing(ClassTree.class);
     if (classTree == null) {
       return;
@@ -110,11 +105,20 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       checkingOn(arg)
           .require(
               trustable // trust if no other parameter has the same type
-                  && !ARG_COMMENT.in(argSources.get(i)).isPresent()
+                  && !hasArgComment(argSources.get(i))
                   && isUniqueType(params, i, state),
               "argument expression must match parameter name `%s`",
               param);
     }
+  }
+
+  private static boolean isEffectivelyAnnotated(Symbol symbol, VisitorState state) {
+    for (Symbol s = symbol; s != null; s = s.owner) {
+      if (ASTHelpers.hasAnnotation(s, ANNOTATION_NAME, state)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static boolean isTrustableLiteral(ExpressionTree tree) {

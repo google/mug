@@ -38,6 +38,7 @@ import com.sun.source.tree.MethodInvocationTree;
     linkType = LinkType.CUSTOM,
     severity = ERROR)
 @AutoService(BugChecker.class)
+@SuppressWarnings("restriction")
 public final class CharacterSetLiteralCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck {
   private static final Matcher<ExpressionTree> MATCHER =

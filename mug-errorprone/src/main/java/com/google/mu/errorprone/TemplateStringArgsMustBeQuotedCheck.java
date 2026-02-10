@@ -47,6 +47,7 @@ import java.util.List;
     linkType = LinkType.CUSTOM,
     severity = ERROR)
 @AutoService(BugChecker.class)
+@SuppressWarnings("restriction")
 public final class TemplateStringArgsMustBeQuotedCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodCheck,
         AbstractBugChecker.MethodInvocationCheck,

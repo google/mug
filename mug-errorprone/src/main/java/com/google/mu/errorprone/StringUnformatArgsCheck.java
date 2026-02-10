@@ -72,6 +72,7 @@ import com.sun.tools.javac.code.Type;
     linkType = LinkType.CUSTOM,
     severity = ERROR)
 @AutoService(BugChecker.class)
+@SuppressWarnings("restriction")
 public final class StringUnformatArgsCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck {
   private static final MethodClassMatcher MATCHER =

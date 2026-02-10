@@ -34,6 +34,7 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 /** Represents a single placeholder enclosed by curly braces or square brackets. */
+@SuppressWarnings("restriction")
 final class Placeholder {
   /**
    * For cloud resource names, '=' is used to denote the sub-pattern; For SQL templates, "->" is
