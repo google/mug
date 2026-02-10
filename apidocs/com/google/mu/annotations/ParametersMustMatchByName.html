@@ -97,11 +97,14 @@ loadScripts(document, 'script');</script>
    new Profile(currentUser.getId(), currentUser.getName())
  </code></pre>
 
- But it will fail to compile if the constructor were defined as <code>
- record Profile(String userName, String userId)</code>. The <code>currentUser.getId()</code> expression
- matches the <code>userId</code> parameter name because the effective tokens of <code>
- currentUser.getId()</code> is <code>["current", "user", "id"]</code> ("get" and "is" prefixes are ignored),
- which includes as a subsequence the <code>["user", "id"]</code> tokens from <code>userId</code>.
+ But if you changed the constructor signature to <code>
+ record Profile(String userName, String userId)</code>. it will fail to compile because the parameter
+ name doesn't match the provided arguments.
+ 
+ <p>The <code>currentUser.getId()</code> expression matches the <code>userId</code> parameter name
+ because the effective tokens of <code>currentUser.getId()</code> is <code>["current", "user", "id"]</code>
+ ("get" and "is" prefixes are ignored). It includes as a subsequence the <code>["user", "id"]</code>
+ tokens from <code>userId</code>.
 
  <p>If the argument expression is indeed as expected despite not matching the parameter name,
  you can always add an explicit comment to tell the compiler <em>and the code readers</em> that:
