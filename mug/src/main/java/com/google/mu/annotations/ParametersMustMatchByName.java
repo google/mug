@@ -32,18 +32,18 @@ import java.lang.annotation.Target;
  *   new Profile(currentUser.getId(), currentUser.getName())
  * }</pre>
  *
- * But if you changed the constructor signature to {@code
+ * But if you change the constructor signature to {@code
  * record Profile(String userName, String userId)}. it will fail to compile because the parameter
- * name doesn't match the provided arguments.
+ * names no longer match the provided argument expressions, in order.
  * 
  * <p>The {@code currentUser.getId()} expression matches the {@code userId} parameter name
  * because the effective tokens of {@code currentUser.getId()} is {@code ["current", "user", "id"]}
  * ("get" and "is" prefixes are ignored). It includes as a subsequence the {@code ["user", "id"]}
  * tokens from {@code userId}.
  *
- * <p>If the argument expression is indeed as expected despite not matching the parameter name,
- * you can always add an explicit comment to tell the compiler <em>and the code readers</em> that:
- * "trust me, I know what I'm doing".
+ * <p>Occasionally, if the argument expression is indeed as expected despite not matching the
+ * parameter name, you can always add an explicit comment to tell the compiler
+ * <em>and the code readers</em> that: "trust me, I know what I'm doing".
  *
  * <p>For example: <pre>
  *   new Dimension(&#47;* width *&#47; list.get(0), &#47;* height *&#47; list.get(1));
