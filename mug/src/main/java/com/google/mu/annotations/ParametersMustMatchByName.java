@@ -89,7 +89,7 @@ import java.lang.annotation.Target;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>9.9.1</version>
+ *               <version>9.9.2</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>
