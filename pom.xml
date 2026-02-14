@@ -4,7 +4,7 @@
   <groupId>com.google.mug</groupId>
   <artifactId>mug-root</artifactId>
   <packaging>pom</packaging>
-  <version>9.9.2-SNAPSHOT</version>
+  <version>9.9.3-SNAPSHOT</version>
   <name>mug-root</name>
   <description>Google Mug Library</description>
   <url>http://github.com/google/mug</url>
@@ -20,7 +20,7 @@
     <maven.compiler.target>8</maven.compiler.target>
     <mug.version>9.9-SNAPSHOT</mug.version>
     <!-- Reproducible builds: fixed timestamp for build artifacts -->
-    <project.build.outputTimestamp>2026-02-07T21:51:16Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-02-14T20:18:35Z</project.build.outputTimestamp>
   </properties>
 
   <licenses>
