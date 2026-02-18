@@ -87,14 +87,18 @@ public class HappenstanceTest {
   @Test
   public void inOrder_cycle_throwsIllegalArgumentException() {
     Happenstance.Builder<String> builder = Happenstance.<String>builder().happenInOrder("A", "B");
-    assertThrows(IllegalArgumentException.class, () -> builder.happenInOrder("B", "A"));
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> builder.happenInOrder("B", "A").build());
+    assertThat(thrown).hasMessageThat().contains("A -> B -> A");
   }
 
   @Test
   public void inOrder_longCycle_throwsIllegalArgumentException() {
     Happenstance.Builder<String> builder =
         Happenstance.<String>builder().happenInOrder("A", "B", "C");
-    assertThrows(IllegalArgumentException.class, () -> builder.happenInOrder("C", "A"));
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> builder.happenInOrder("C", "A").build());
+    assertThat(thrown).hasMessageThat().contains("A -> B -> C -> A");
   }
 
   @Test

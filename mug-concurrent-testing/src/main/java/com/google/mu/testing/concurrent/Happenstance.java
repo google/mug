@@ -16,6 +16,7 @@ import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.mu.util.graph.Walker;
 import com.google.mu.util.stream.BiStream;
+import com.google.mu.util.stream.Joiner;
 
 /**
  * A utility to manipulate temporal ordering (via {@link #checkpoint}) or happens-before (via {@link
@@ -69,7 +70,7 @@ public final class Happenstance<K> {
   private static final int SPIN_THRESHOLD = 1000;
   private final Map<K, Integer> pointToIndex;
   private final int[][] predecessors;
-  private final int[] completedStatus; // completion counts
+  private final int[] checkInStatus; // 1 if checked in.
 
   private Happenstance(Builder<K> builder) {
     this.pointToIndex = BiStream.from(builder.pointToIndex).toMap();
@@ -77,7 +78,7 @@ public final class Happenstance<K> {
         builder.predecessors.stream()
             .map(list -> list.stream().mapToInt(Integer::intValue).toArray())
             .toArray(int[][]::new);
-    this.completedStatus = new int[builder.pointToIndex.size()];
+    this.checkInStatus = new int[builder.pointToIndex.size()];
   }
 
   /**
@@ -117,15 +118,12 @@ public final class Happenstance<K> {
     Builder() {}
 
     /**
-     * Defines a happens-before relationship between consecutive {@code sequencePoints}. For
-     * example, {@code inOrder("A", "B", "C")} specifies that sequence points "A", "B", and "C" must
+     * Defines a ordering between consecutive {@code sequencePoints}. For example,
+     * {@code inOrder("A", "B", "C")} specifies that sequence points "A", "B", and "C" must
      * be completed in that order ("A" before "B", and "B" before "C").
      *
      * <p>This method should be called to define all sequence point orders before {@link #build} is
      * called.
-     *
-     * @throws IllegalArgumentException if adding an edge introduces a cycle in the dependency
-     *     graph.
      */
     @CanIgnoreReturnValue
     @SafeVarargs
@@ -138,18 +136,24 @@ public final class Happenstance<K> {
             int u = pointToIndex.get(predecessor);
             int v = pointToIndex.get(successor);
             if (u != v && successors.get(u).add(v)) {
-              checkArgument(
-                  !isReachable(v, u),
-                  "Adding edge %s -> %s creates a cycle",
-                  predecessor,
-                  successor);
               predecessors.get(v).add(u);
             }
           });
       return this;
     }
 
+    /**
+     * Builds a {@link Happenstance} instance respecting the sequence points ordering.
+     *
+     * @throws IllegalArgumentException if the ordering contains a cycle
+     */
     public Happenstance<K> build() {
+      Walker.inGraph((Integer index) -> successors.get(index).stream())
+         .detectCycleFrom(pointToIndex.values())
+         .ifPresent(cycle -> {
+           throw new IllegalArgumentException(
+               "cycle detected: " + cycle.map(indexToPoint::get).collect(Joiner.on(" -> ")));
+         });
       return new Happenstance<>(this);
     }
 
@@ -164,12 +168,6 @@ public final class Happenstance<K> {
             successors.add(new LinkedHashSet<>());
             return index;
           });
-    }
-
-    private boolean isReachable(int from, int to) {
-      return Walker.inGraph((Integer index) -> successors.get(index).stream())
-          .breadthFirstFrom(from)
-          .anyMatch(node -> node.intValue() == to);
     }
   }
 
@@ -218,7 +216,7 @@ public final class Happenstance<K> {
 
   private void checkIn(K sequencePoint, Ordering ordering) {
     int index = uponSequencePoint(sequencePoint);
-    int[] statuses = this.completedStatus;
+    int[] statuses = this.checkInStatus;
     for (int predecessor : predecessors[index]) {
       for (int spins = 0; ordering.read(statuses, predecessor) == 0; spins++) {
         if (spins < SPIN_THRESHOLD) {
