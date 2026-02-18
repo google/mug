@@ -21,6 +21,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.testing.NullPointerTester;
+
 @RunWith(JUnit4.class)
 public class HappenstanceTest {
 
@@ -662,6 +664,11 @@ public class HappenstanceTest {
       }
     }
     assertThat(races).isNotEmpty();
+  }
+  
+  @Test public void testNulls() {
+    new NullPointerTester().testAllPublicStaticMethods(Happenstance.class);
+    new NullPointerTester().testAllPublicInstanceMethods(Happenstance.builder());
   }
 
   private static class BuggySut {

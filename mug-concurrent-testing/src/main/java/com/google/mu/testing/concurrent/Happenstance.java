@@ -98,7 +98,7 @@ public final class Happenstance<K> {
   public static <K> Builder<K> builder(Iterable<? extends K> sequencePoints) {
     Builder<K> builder = new Builder<>();
     for (K point : sequencePoints) {
-      builder.happenInOrder(point);
+      builder.declareSequencePoint(point);
     }
     return builder;
   }
@@ -128,25 +128,24 @@ public final class Happenstance<K> {
      *     graph.
      */
     @CanIgnoreReturnValue
-    public Builder<K> happenInOrder(K... sequencePoints) {
+    @SafeVarargs
+    public final Builder<K> happenInOrder(K... sequencePoints) {
       for (K point : sequencePoints) {
         declareSequencePoint(point);
       }
-      for (int i = 0; i < sequencePoints.length - 1; i++) {
-        int u = pointToIndex.get(sequencePoints[i]);
-        int v = pointToIndex.get(sequencePoints[i + 1]);
-        if (u == v) {
-          continue;
-        }
-        if (successors.get(u).add(v)) {
-          checkArgument(
-              !isReachable(v, u),
-              "Adding edge %s -> %s creates a cycle",
-              sequencePoints[i + 1],
-              sequencePoints[i]);
-          predecessors.get(v).add(u);
-        }
-      }
+      BiStream.adjacentPairsFrom(sequencePoints)
+          .forEach((predecessor, successor) -> {
+            int u = pointToIndex.get(predecessor);
+            int v = pointToIndex.get(successor);
+            if (u != v && successors.get(u).add(v)) {
+              checkArgument(
+                  !isReachable(v, u),
+                  "Adding edge %s -> %s creates a cycle",
+                  predecessor,
+                  successor);
+              predecessors.get(v).add(u);
+            }
+          });
       return this;
     }
 
