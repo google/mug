@@ -219,10 +219,6 @@ public final class Happenstance<K> {
   private void checkIn(K sequencePoint, Ordering ordering) {
     int index = uponSequencePoint(sequencePoint);
     int[] statuses = this.completedStatus;
-    checkState(
-        Ordering.TEMPORAL.read(statuses, index) == 0,
-        "sequencePoint '%s' has already been checked in or joined.",
-        sequencePoint);
     for (int predecessor : predecessors[index]) {
       for (int spins = 0; ordering.read(statuses, predecessor) == 0; spins++) {
         if (spins < SPIN_THRESHOLD) {
@@ -232,6 +228,10 @@ public final class Happenstance<K> {
         }
       }
     }
+    checkState(
+        Ordering.TEMPORAL.read(statuses, index) == 0,
+        "sequencePoint '%s' has already been checked in or joined.",
+        sequencePoint);
     ordering.write(statuses, index, 1);
   }
 
