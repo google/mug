@@ -119,7 +119,7 @@ public final class Happenstance<K> {
 
     /**
      * Defines a ordering between consecutive {@code sequencePoints}. For example,
-     * {@code inOrder("A", "B", "C")} specifies that sequence points "A", "B", and "C" must
+     * {@code happenInOrder("A", "B", "C")} specifies that sequence points "A", "B", and "C" must
      * be completed in that order ("A" before "B", and "B" before "C").
      *
      * <p>This method should be called to define all sequence point orders before {@link #build} is
