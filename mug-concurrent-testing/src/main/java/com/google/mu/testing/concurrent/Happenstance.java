@@ -65,7 +65,7 @@ import com.google.mu.util.stream.Joiner;
  */
 @ThreadSafe
 public final class Happenstance<K> {
-  private static final VarHandle COMPLETED_STATUS_HANDLE =
+  private static final VarHandle CHECKIN_STATUS_HANDLE =
       MethodHandles.arrayElementVarHandle(int[].class);
   private static final int SPIN_THRESHOLD = 1000;
   private final Map<K, Integer> pointToIndex;
@@ -244,23 +244,23 @@ public final class Happenstance<K> {
     HAPPENS_BEFORE {
       @Override
       int read(int[] statuses, int index) {
-        return (int) COMPLETED_STATUS_HANDLE.getAcquire(statuses, index);
+        return (int) CHECKIN_STATUS_HANDLE.getAcquire(statuses, index);
       }
 
       @Override
       void write(int[] statuses, int index, int value) {
-        COMPLETED_STATUS_HANDLE.setRelease(statuses, index, value);
+        CHECKIN_STATUS_HANDLE.setRelease(statuses, index, value);
       }
     },
     TEMPORAL {
       @Override
       int read(int[] statuses, int index) {
-        return (int) COMPLETED_STATUS_HANDLE.getOpaque(statuses, index);
+        return (int) CHECKIN_STATUS_HANDLE.getOpaque(statuses, index);
       }
 
       @Override
       void write(int[] statuses, int index, int value) {
-        COMPLETED_STATUS_HANDLE.setOpaque(statuses, index, value);
+        CHECKIN_STATUS_HANDLE.setOpaque(statuses, index, value);
       }
     };
 
