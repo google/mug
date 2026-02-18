@@ -22,7 +22,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class SequencerTest {
+public class HappenstanceTest {
 
   @Test
   public void checkpoint_undefinedPoint_throwsIllegalArgumentException() {
@@ -121,6 +121,44 @@ public class SequencerTest {
   }
 
   @Test
+  public void builder_initialPoints_noOrder() throws Exception {
+    Happenstance<String> happens = Happenstance.<String>builder("A", "B").build();
+    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+      Future<?> b = executor.submit(() -> happens.join("B"));
+      b.get(1, TimeUnit.SECONDS); // B is not blocked by A
+      Future<?> a = executor.submit(() -> happens.join("A"));
+      a.get(1, TimeUnit.SECONDS); // A is not blocked by B
+    }
+  }
+
+  @Test
+  public void builder_points_then_happenInOrder() throws Exception {
+    Happenstance<String> happens =
+        Happenstance.<String>builder("A done", "B start")
+            .happenInOrder("A done", "B start")
+            .build();
+    List<String> completed = Collections.synchronizedList(new ArrayList<>());
+    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+      Future<?> futureB =
+          executor.submit(
+              () -> {
+                happens.join("B start");
+                completed.add("B");
+              });
+      Thread.sleep(100);
+      Future<?> futureA =
+          executor.submit(
+              () -> {
+                completed.add("A");
+                happens.join("A done");
+              });
+      futureA.get(5, TimeUnit.SECONDS);
+      futureB.get(5, TimeUnit.SECONDS);
+    }
+    assertThat(completed).containsExactly("A", "B").inOrder();
+  }
+
+  @Test
   public void checkpoint_singleThread_respectsOrder() throws Exception {
     Happenstance<String> happens =
         Happenstance.<String>builder().happenInOrder("1", "2", "3").build();
@@ -210,6 +248,31 @@ public class SequencerTest {
                 happens.join("A done");
               });
 
+      futureA.get(5, TimeUnit.SECONDS);
+      futureB.get(5, TimeUnit.SECONDS);
+    }
+    assertThat(completed).containsExactly("A", "B").inOrder();
+  }
+
+  @Test
+  public void builder_happenInOrderAddsNewPoint() throws Exception {
+    Happenstance<String> happens =
+        Happenstance.<String>builder("A done").happenInOrder("A done", "B start").build();
+    List<String> completed = Collections.synchronizedList(new ArrayList<>());
+    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+      Future<?> futureB =
+          executor.submit(
+              () -> {
+                happens.join("B start");
+                completed.add("B");
+              });
+      Thread.sleep(100);
+      Future<?> futureA =
+          executor.submit(
+              () -> {
+                completed.add("A");
+                happens.join("A done");
+              });
       futureA.get(5, TimeUnit.SECONDS);
       futureB.get(5, TimeUnit.SECONDS);
     }

@@ -1,5 +1,7 @@
 package com.google.mu.testing.concurrent;
 
+import static java.util.Arrays.asList;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
@@ -78,9 +80,27 @@ public final class Happenstance<K> {
     this.completedStatus = new int[builder.pointToIndex.size()];
   }
 
-  /** Returns a new {@link Builder}. */
-  public static <K> Builder<K> builder() {
-    return new Builder<>();
+  /**
+   * Returns a new {@link Builder} initialized with {@code sequencePoints}.
+   * No order is defined among these sequence points, until you explicitly
+   * call {@link Builder#happenInOrder}.
+   */
+  @SafeVarargs
+  public static <K> Builder<K> builder(K... sequencePoints) {
+    return builder(asList(sequencePoints));
+  }
+
+  /**
+   * Returns a new {@link Builder} initialized with {@code sequencePoints}.
+   * No order is defined among these sequence points, until you explicitly
+   * call {@link Builder#happenInOrder}.
+   */
+  public static <K> Builder<K> builder(Iterable<? extends K> sequencePoints) {
+    Builder<K> builder = new Builder<>();
+    for (K point : sequencePoints) {
+      builder.happenInOrder(point);
+    }
+    return builder;
   }
 
   /**
