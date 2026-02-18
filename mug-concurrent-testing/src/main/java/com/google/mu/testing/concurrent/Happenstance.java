@@ -285,4 +285,11 @@ public final class Happenstance<K> {
       throw new IllegalStateException(String.format(message, args));
     }
   }
+
+  @FormatMethod
+  private static void checkState(boolean condition, String message, Object arg) {
+    if (!condition) {
+      throw new IllegalStateException(String.format(message, arg));
+    }
+  }
 }
