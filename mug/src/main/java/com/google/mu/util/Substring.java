@@ -17,6 +17,7 @@ package com.google.mu.util;
 import static com.google.mu.util.InternalCollectors.toImmutableList;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.util.Comparator.comparingInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.regex.Pattern.compile;
@@ -3146,11 +3147,12 @@ public final class Substring {
       Last original = this;
       return new Last() {
         @Override Match match(String input, int fromIndex, int endIndex) {
-          for (int i = endIndex; i >= fromIndex; i--) {
+          for (int i = endIndex; i >= fromIndex; ) {
             Match match = original.match(input, fromIndex, i);
             if (match == null || condition.test(match)) {
               return match;
             }
+            i = min(match.endIndex - 1, i - 1);
           }
           return null;
         }
