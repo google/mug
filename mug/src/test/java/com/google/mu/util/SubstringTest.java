@@ -1657,6 +1657,11 @@ public class SubstringTest {
         .containsExactly("foo", "bar", "");
   }
 
+  @Test public void repeatedly_splitThenTrim_emptyParts() {
+    assertThat(first("//").repeatedly().splitThenTrim(" // //   ").map(Match::toString))
+        .containsExactly("", "", "");
+  }
+
   @Test public void repeatedly_splitKeyValuesAround_empty() {
     assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), ""))
         .isEmpty();
@@ -1770,6 +1775,13 @@ public class SubstringTest {
   @Test public void repeatedly_splitThenTrim_ordered() {
     assertThat(first(',').repeatedly().splitThenTrim("a,b").spliterator().characteristics() & Spliterator.ORDERED)
         .isEqualTo(Spliterator.ORDERED);
+  }
+
+  @Test public void match_trim_toEmpty() {
+    Substring.Match match = Substring.between('(', ')').in("(  )").get().trim();
+    assertThat(match.length()).isEqualTo(0);
+    assertThat(match.isNotEmpty()).isFalse();
+    assertThat(match.toString()).isEmpty();
   }
 
   @Test

@@ -97,7 +97,7 @@ import com.google.mu.util.stream.BiStream;
  * <p>If the variant of the date time pattern you need exceeds the out-of-box support, you can
  * explicitly mix the {@link DateTimeFormatter} specifiers with example placeholders
  * (between a pair of pointy brackets) to be translated.
- *s
+ *
  * <p>For example the following code uses the {@code dd}, {@code MM} and {@code yyyy} specifiers as
  * is but translates the {@code Tue} and {@code America/New_York} example snippets into {@code E}
  * and {@code VV} specifiers respectively. It will then parse and format to datetime strings like
