@@ -473,12 +473,13 @@ public final class MoreStreams {
   public static <T> Stream<T> withSideEffect(Stream<T> stream, Consumer<? super T> sideEffect) {
     requireNonNull(stream);
     requireNonNull(sideEffect);
-    return StreamSupport.stream(() -> withSideEffect(stream.spliterator(), sideEffect), 0, false);
+    return StreamSupport.stream(
+        () -> withSideEffect(stream.spliterator(), sideEffect), Spliterator.ORDERED, false);
   }
 
   private static <T> Spliterator<T> withSideEffect(
       Spliterator<T> spliterator, Consumer<? super T> sideEffect) {
-    return new AbstractSpliterator<T>(spliterator.estimateSize(), 0) {
+    return new AbstractSpliterator<T>(spliterator.estimateSize(), Spliterator.ORDERED) {
       @Override public boolean tryAdvance(Consumer<? super T> action) {
         return spliterator.tryAdvance(e -> {
           sideEffect.accept(e);
