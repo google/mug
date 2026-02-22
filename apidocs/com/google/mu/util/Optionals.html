@@ -69,6 +69,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#optional(boolean,T)" tabindex="0">optional(boolean, T)</a></li>
 <li><a href="#asSet(java.util.Optional)" tabindex="0">asSet(Optional)</a></li>
 <li><a href="#nonEmpty(C)" tabindex="0">nonEmpty(C)</a></li>
+<li><a href="#nonEmpty(S)" tabindex="0">nonEmpty(S)</a></li>
 <li><a href="#both(java.util.Optional,java.util.Optional)" tabindex="0">both(Optional, Optional)</a></li>
 <li><a href="#inOrder(java.util.Optional,java.util.function.Supplier)" tabindex="0">inOrder(Optional, Supplier)</a></li>
 <li><a href="#inOrder(java.util.Optional,java.util.function.Function)" tabindex="0">inOrder(Optional, Function)</a></li>
@@ -183,17 +184,23 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns <code>Optional.empty()</code> if <code>collection</code> is empty;
  otherwise wraps it with <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html#of(T)" title="class or interface in java.util" class="external-link"><code>Optional.of(T)</code></a>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a><wbr>&lt;T&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#optional(boolean,T)" class="member-name-link">optional</a><wbr>(boolean&nbsp;condition,
- T&nbsp;value)</code></div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;S extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>&gt;<br><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a><wbr>&lt;S&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#nonEmpty(S)" class="member-name-link">nonEmpty</a><wbr>(S&nbsp;s)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Returns <code>Optional.empty()</code> if <code>s</code> is null or empty;
+ otherwise wraps it with <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html#of(T)" title="class or interface in java.util" class="external-link"><code>Optional.of(T)</code></a>.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a><wbr>&lt;T&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#optional(boolean,T)" class="member-name-link">optional</a><wbr>(boolean&nbsp;condition,
+ T&nbsp;value)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns an Optional that wraps <code>value</code> if <code>condition</code> is true and <code>value</code> is
  not null, or else <code>empty()</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T, E extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Throwable.html" title="class or interface in java.lang" class="external-link">Throwable</a>&gt;<br><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a><wbr>&lt;T&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#optionally(boolean,com.google.mu.function.CheckedSupplier)" class="member-name-link">optionally</a><wbr>(boolean&nbsp;condition,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T, E extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Throwable.html" title="class or interface in java.lang" class="external-link">Throwable</a>&gt;<br><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a><wbr>&lt;T&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#optionally(boolean,com.google.mu.function.CheckedSupplier)" class="member-name-link">optionally</a><wbr>(boolean&nbsp;condition,
  <a href="../function/CheckedSupplier.html" title="interface in com.google.mu.function">CheckedSupplier</a>&lt;? extends T, E&gt;&nbsp;supplier)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns an Optional that wraps the nullable result from <code>supplier</code> if <code>condition</code>
  is true, or else <code>empty()</code>.</div>
 </div>
@@ -295,6 +302,20 @@ loadScripts(document, 'script');</script>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>8.3</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="nonEmpty(S)">
+<h3 id="nonEmpty(java.lang.CharSequence)">nonEmpty</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;S extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>&gt;</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;S&gt;</span>&nbsp;<span class="element-name">nonEmpty</span><wbr><span class="parameters">(S&nbsp;s)</span></div>
+<div class="block">Returns <code>Optional.empty()</code> if <code>s</code> is null or empty;
+ otherwise wraps it with <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html#of(T)" title="class or interface in java.util" class="external-link"><code>Optional.of(T)</code></a>.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>9.9.3</dd>
 </dl>
 </div>
 </section>
