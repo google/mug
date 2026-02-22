@@ -82,6 +82,18 @@ public class OptionalsTest {
     assertThat(Optionals.nonEmpty(asList(1))).hasValue(asList(1));
   }
 
+  @Test public void nonEmpty_nullString() {
+    assertThat(Optionals.nonEmpty("")).isEmpty();
+  }
+
+  @Test public void nonEmpty_emptyString() {
+    assertThat(Optionals.nonEmpty("")).isEmpty();
+  }
+
+  @Test public void nonEmpty_nonEmptyString() {
+    assertThat(Optionals.nonEmpty("foo")).hasValue("foo");
+  }
+
   @Test public void ifPresent_or_firstIsAbsent_secondSupplierIsPresent() {
     ifPresent(Optional.empty(), consumer::accept)
         .or(() -> ifPresent(Optional.of("left"), Optional.of("right"), action::run))
@@ -256,12 +268,14 @@ public class OptionalsTest {
         .setDefault(BiOptional.class, BiOptional.of(1, "one"))
         .ignore(Optionals.class.getMethod("optional", boolean.class, Object.class))
         .ignore(Optionals.class.getMethod("both", Optional.class, Optional.class))
+        .ignore(Optionals.class.getMethod("nonEmpty", CharSequence.class))
         .testAllPublicStaticMethods(Optionals.class);
     new NullPointerTester()
         .setDefault(Optional.class, Optional.of("foo"))
         .setDefault(OptionalInt.class, OptionalInt.of(123))
         .setDefault(OptionalLong.class, OptionalLong.of(123))
         .setDefault(OptionalDouble.class, OptionalDouble.of(123))
+        .ignore(Optionals.class.getMethod("nonEmpty", CharSequence.class))
         .setDefault(BiOptional.class, BiOptional.of(1, "one"))
         .ignore(Optionals.class.getMethod("optional", boolean.class, Object.class))
         .testAllPublicStaticMethods(Optionals.class);
