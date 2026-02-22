@@ -102,7 +102,7 @@ public final class Optionals {
    * @since 8.3
    */
   public static <C extends Collection<?>> Optional<C> nonEmpty(C collection) {
-    return collection.isEmpty() ? Optional.empty() : Optional.of(collection);
+    return optional(collection != null && !collection.isEmpty(), collection);
   }
 
   /**
