@@ -106,6 +106,16 @@ public final class Optionals {
   }
 
   /**
+   * Returns {@code Optional.empty()} if {@code s} is null or empty;
+   * otherwise wraps it with {@link Optional#of}.
+   *
+   * @since 9.9.3
+   */
+  public static <S extends CharSequence> Optional<S> nonEmpty(S s) {
+    return optional(s != null && s.length() > 0, s);
+  }
+
+  /**
    * If {@code a} and {@code b} are present, returns a {@code BiOptional} instance containing them;
    * otherwise returns an empty {@code BiOptional}.
    *
