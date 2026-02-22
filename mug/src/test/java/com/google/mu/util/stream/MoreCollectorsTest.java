@@ -312,7 +312,8 @@ public class MoreCollectorsTest {
   }
 
   @Test public void testAllMax_toOnlyElement() {
-    assertThat(Stream.of(1, 1, 1, 1, 1, 1, 2).collect(allMax(naturalOrder(), onlyElement())))
+    assertThat(Stream.of(1, 1, 1, 1, 1, 1, 2).collect(
+        allMax(Comparator.<Integer>naturalOrder(), onlyElement(identity()))))
         .isEqualTo(2);
   }
 
@@ -327,7 +328,8 @@ public class MoreCollectorsTest {
   }
 
   @Test public void testAllMin_toOnlyElement() {
-    assertThat(Stream.of(2, 2, 2, 2, 2, 2, 1).collect(allMin(naturalOrder(), onlyElement())))
+    assertThat(Stream.of(2, 2, 2, 2, 2, 2, 1).collect(
+        allMin(Comparator.<Integer>naturalOrder(), onlyElement(identity()))))
         .isEqualTo(1);
   }
 
