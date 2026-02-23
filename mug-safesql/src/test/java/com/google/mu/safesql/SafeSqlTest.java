@@ -1007,7 +1007,7 @@ public class SafeSqlTest {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> SafeSql.of("select * where id = {foo?}", 123));
-    assertThat(thrown).hasMessageThat().contains("instead of '?'");
+    assertThat(thrown).hasMessageThat().contains("without '?'");
   }
 
   @Test
@@ -1015,7 +1015,7 @@ public class SafeSqlTest {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> SafeSql.of("select * where id = ?"));
-    assertThat(thrown).hasMessageThat().contains("instead of '?'");
+    assertThat(thrown).hasMessageThat().contains("without '?'");
   }
 
   @Test
@@ -1030,7 +1030,7 @@ public class SafeSqlTest {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> SafeSql.of("select * from {tbl}", /* tbl */ SafeSql.of("?")));
-    assertThat(thrown).hasMessageThat().contains("instead of '?'");
+    assertThat(thrown).hasMessageThat().contains("without '?'");
   }
 
   @Test

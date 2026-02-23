@@ -1771,7 +1771,7 @@ public final class SafeSql {
   }
 
   @CanIgnoreReturnValue private static String rejectQuestionMark(String sql) {
-    checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} instead of '?'");
+    checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} without '?'");
     return sql;
   }
 

@@ -3033,12 +3033,13 @@ public final class StringFormatArgsCheckTest {
     helper
         .addSourceLines(
             "Test.java",
+            "import static java.util.Optional.ofNullable;",
             "import com.google.mu.annotations.TemplateFormatMethod;",
             "import com.google.mu.annotations.TemplateString;",
             "import java.util.stream.Stream;",
             "class Test {",
             "  void test(Boolean isActive) {",
-            "    query(\"SELECT * from Users {isActive? -> WHERE isActive = isActive?}\", isActive);",
+            "    query(\"SELECT * from Users {isActive? -> WHERE isActive = isActive?}\", ofNullable(isActive));",
             "  }",
             "  @TemplateFormatMethod",
             "  void query(@TemplateString String template, Object... args) {}",
