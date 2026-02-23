@@ -1614,6 +1614,12 @@ public final class SafeSql {
               !placeholder.isImmediatelyBetween("\"", "\""),
               "boolean placeholder {%s->} shouldn't be double quoted",
               conditional.before());
+          if (value == null && OPTIONAL_PARAMETER.in(conditional.before()).isPresent()) {
+            // {foo? -> foo?} is a common pattern for guards by nullable parameter
+            String rhsIgnored = validateOptionalOperatorRhs(conditional);
+            builder.appendSql(scanner.nextFragment());
+            return;
+          }
           checkArgument(
               value != null,
               "boolean placeholder {%s->} cannot be used with a null value",

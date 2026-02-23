@@ -118,6 +118,14 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
   }
 
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_null() {
+    Integer id = null;
+    assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
+        .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
   @Test
   public void guardOperator_optionalParameterReferencedMultipleTimes() {
     Optional<String> id = Optional.of("myId");

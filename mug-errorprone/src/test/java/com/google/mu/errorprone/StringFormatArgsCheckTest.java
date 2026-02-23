@@ -1,11 +1,11 @@
 package com.google.mu.errorprone;
 
-import com.google.errorprone.CompilationTestHelper;
-
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import com.google.errorprone.CompilationTestHelper;
 
 @RunWith(JUnit4.class)
 public final class StringFormatArgsCheckTest {
@@ -2967,6 +2967,81 @@ public final class StringFormatArgsCheckTest {
             "    // expected to be boolean, Optional or Collection,",
             "    // whereas argument <fooId> at line 9 is of type int",
             "    query(\"SELECT {foo_id -> foo_id}\", fooId);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_integerForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(Integer fooId) {",
+            "    query(\"SELECT {foo_id? -> foo_id?}\", fooId);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_longForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(Long fooId) {",
+            "    query(\"SELECT {foo_id? -> foo_id?}\", fooId);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_StringForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(String fooId) {",
+            "    query(\"SELECT {foo_id? -> foo_id?}\", fooId);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_nonBooleanForGuardOperator_disallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(int fooId) {",
+            "    // BUG: Diagnostic contains: guard placeholder {foo_id? ->} is",
+            "    // expected to be boolean, Optional or Collection,",
+            "    // whereas argument <fooId> at line 9 is of type int",
+            "    query(\"SELECT {foo_id? -> foo_id?}\", fooId);",
             "  }",
             "  @TemplateFormatMethod",
             "  void query(@TemplateString String template, Object... args) {}",

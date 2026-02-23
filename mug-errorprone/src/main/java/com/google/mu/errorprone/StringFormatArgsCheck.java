@@ -126,6 +126,8 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           new TypeName("com.google.mu.util.Both"));
   private static final TypeName BOOLEAN_TYPE = TypeName.of(Boolean.class);
   private static final TypeName OPTIONAL_TYPE = TypeName.of(Optional.class);
+  private static final TypeName NUMBER_TYPE = TypeName.of(Number.class);
+  private static final TypeName STRING_TYPE = TypeName.of(String.class);
   private static final TypeName COLLECTION_TYPE = TypeName.of(Collection.class);
 
   @Override
@@ -332,7 +334,10 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                     arg,
                     lineMap.getLineNumber(ASTHelpers.getStartPosition(arg)),
                     references);
-          } else if (OPTIONAL_TYPE.isSameType(argType, state) || COLLECTION_TYPE.isSupertypeOf(argType, state)) {
+          } else if (OPTIONAL_TYPE.isSameType(argType, state)
+              || COLLECTION_TYPE.isSupertypeOf(argType, state)
+              || STRING_TYPE.isSameType(argType, state)
+              || NUMBER_TYPE.isSupertypeOf(argType, state)) {
             onPlaceholder
                 .require(
                     placeholder.hasOptionalParameter(),
