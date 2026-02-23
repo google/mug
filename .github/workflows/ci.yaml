@@ -1,6 +1,7 @@
 name: Java CI
 on:
-  branches-ignore:
+  push:
+    branches-ignore:
       - 'gh-pages'
   pull_request:
     branches-ignore:
