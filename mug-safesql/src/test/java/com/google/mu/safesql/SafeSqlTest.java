@@ -120,10 +120,25 @@ public class SafeSqlTest {
 
   @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
   @Test
-  public void guardOperator_null() {
+  public void guardOperator_nullInteger() {
     Integer id = null;
     assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
         .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
+  @Test
+  public void guardOperator_nullString() {
+    String id = null;
+    assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
+        .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nullBoolean() {
+    Boolean isActive = null;
+    assertThat(SafeSql.of("SELECT name FROM tbl { isActive? -> WHERE isActive = isActive? }", isActive))
+        .isEqualTo(SafeSql.of("SELECT name FROM tbl "));
   }
 
   @Test

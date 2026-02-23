@@ -324,7 +324,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           Type argType = ASTHelpers.getType(arg);
           ImmutableSet<String> references = placeholder.optionalParametersFromOperatorRhs();
           if (ASTHelpers.isSameType(argType, state.getSymtab().booleanType, state)
-              || BOOLEAN_TYPE.isSameType(argType, state)) {
+              || (BOOLEAN_TYPE.isSameType(argType, state) && !placeholder.hasOptionalParameter())) {
             onPlaceholder.require(
                 references.isEmpty(),
                 "guard placeholder {%s ->} maps to boolean expression <%s> at line %s. The optional"
@@ -337,6 +337,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           } else if (OPTIONAL_TYPE.isSameType(argType, state)
               || COLLECTION_TYPE.isSupertypeOf(argType, state)
               || STRING_TYPE.isSameType(argType, state)
+              || BOOLEAN_TYPE.isSameType(argType, state)
               || NUMBER_TYPE.isSupertypeOf(argType, state)) {
             onPlaceholder
                 .require(

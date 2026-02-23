@@ -3011,7 +3011,7 @@ public final class StringFormatArgsCheckTest {
   }
 
   @Test
-  public void templateFormatMethod_StringForGuardOperator_allowed() {
+  public void templateFormatMethod_stringForGuardOperator_allowed() {
     helper
         .addSourceLines(
             "Test.java",
@@ -3021,6 +3021,24 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(String fooId) {",
             "    query(\"SELECT {foo_id? -> foo_id?}\", fooId);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_booleanForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(Boolean isActive) {",
+            "    query(\"SELECT * from Users {isActive? -> WHERE isActive = isActive?}\", isActive);",
             "  }",
             "  @TemplateFormatMethod",
             "  void query(@TemplateString String template, Object... args) {}",
