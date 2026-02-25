@@ -5,6 +5,10 @@ import static com.google.mu.safesql.SafeSql.template;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -126,11 +130,74 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
   }
 
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nonNullInteger() {
+    Integer id = 123;
+    assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
+        .isEqualTo(SafeSql.of("SELECT {id} AS id, name FROM tbl", id));
+  }
+
   @Test
   public void guardOperator_nullString() {
     String id = null;
     assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
         .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
+  @Test
+  public void guardOperator_nonNullString() {
+    String id = "xyz";
+    assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
+        .isEqualTo(SafeSql.of("SELECT {id} AS id, name FROM tbl", id));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nullInstant() {
+    Instant time = null;
+    assertThat(SafeSql.of("SELECT name FROM tbl {time? -> WHERE time > time?}", time))
+        .isEqualTo(SafeSql.of("SELECT name FROM tbl "));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_notNullInstant() {
+    Instant time = ZonedDateTime.of(2026, 2, 25, 10, 0, 0, 0, ZoneId.of("UTC")).toInstant();
+    assertThat(SafeSql.of("SELECT name FROM tbl {time? -> WHERE time > time?}", time))
+        .isEqualTo(SafeSql.of("SELECT name FROM tbl WHERE time > {time}", time));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nullLocalDate() {
+    LocalDate time = null;
+    assertThat(SafeSql.of("SELECT name FROM tbl {time? -> WHERE time > time?}", time))
+        .isEqualTo(SafeSql.of("SELECT name FROM tbl "));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nonNullLocalDate() {
+    LocalDate time = LocalDate.of(2025, 02, 25);
+    assertThat(SafeSql.of("SELECT name FROM tbl {time? -> WHERE time > time?}", time))
+        .isEqualTo(SafeSql.of("SELECT name FROM tbl WHERE time > {time}", time));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nonNullZonedDateTime() {
+    ZonedDateTime time = ZonedDateTime.of(2026, 2, 25, 10, 0, 0, 0, ZoneId.of("UTC"));
+    assertThat(SafeSql.of("SELECT name FROM tbl {time? -> WHERE time > time?}", time))
+        .isEqualTo(SafeSql.of("SELECT name FROM tbl WHERE time > {time}", time));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nullZonedDateTime() {
+    ZonedDateTime time = null;
+    assertThat(SafeSql.of("SELECT name FROM tbl {time? -> WHERE time > time?}", time))
+        .isEqualTo(SafeSql.of("SELECT name FROM tbl "));
   }
 
   @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version

@@ -15,6 +15,7 @@
 package com.google.mu.errorprone;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.errorprone.matchers.Matchers.anyMethod;
 import static com.google.guava.labs.collect.GuavaCollectors.toImmutableListMultimap;
@@ -124,10 +125,10 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           TypeName.of(DoubleStream.class),
           new TypeName("com.google.mu.util.BiStream"),
           new TypeName("com.google.mu.util.Both"));
+  private static final ImmutableSet<String> PACKAGES_ALLOWING_NULLABLE_ARGS =
+      Stream.of("java.lang", "java.time").collect(toImmutableSet());
   private static final TypeName BOOLEAN_TYPE = TypeName.of(Boolean.class);
   private static final TypeName OPTIONAL_TYPE = TypeName.of(Optional.class);
-  private static final TypeName NUMBER_TYPE = TypeName.of(Number.class);
-  private static final TypeName STRING_TYPE = TypeName.of(String.class);
   private static final TypeName COLLECTION_TYPE = TypeName.of(Collection.class);
 
   @Override
@@ -336,8 +337,8 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                     references);
           } else if (OPTIONAL_TYPE.isSameType(argType, state)
               || COLLECTION_TYPE.isSupertypeOf(argType, state)
-              || STRING_TYPE.isSameType(argType, state)
-              || NUMBER_TYPE.isSupertypeOf(argType, state)) {
+              || PACKAGES_ALLOWING_NULLABLE_ARGS.contains(
+                  String.valueOf(ASTHelpers.enclosingPackage(argType.tsym)))) {
             onPlaceholder
                 .require(
                     placeholder.hasOptionalParameter(),

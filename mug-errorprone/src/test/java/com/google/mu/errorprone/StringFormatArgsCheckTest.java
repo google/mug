@@ -3029,6 +3029,42 @@ public final class StringFormatArgsCheckTest {
   }
 
   @Test
+  public void templateFormatMethod_instantForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.time.Instant;",
+            "class Test {",
+            "  void test(Instant time) {",
+            "    query(\"SELECT * from USER {time? -> WHERE time > time?}\", time);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_zonedDateTimeForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.time.ZonedDateTime;",
+            "class Test {",
+            "  void test(ZonedDateTime time) {",
+            "    query(\"SELECT * from USER {time? -> WHERE time > time?}\", time);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void templateFormatMethod_booleanForGuardOperator_allowed() {
     helper
         .addSourceLines(
