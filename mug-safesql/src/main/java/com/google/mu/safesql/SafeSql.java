@@ -412,7 +412,7 @@ import com.google.mu.util.stream.BiStream;
 @CheckReturnValue
 public final class SafeSql {
   private static final Set<String> PACKAGES_ALLOWING_NULLABLE_ARGS =
-      Stream.of("java.lang", "java.time").collect(Collectors.toSet());
+      Stream.of("java.lang", "java.time", "java.sql").collect(Collectors.toSet());
   private static final Substring.Pattern OPTIONAL_PARAMETER =
       word().immediatelyBetween("", INCLUSIVE, "?", INCLUSIVE);
   private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
@@ -1630,10 +1630,11 @@ public final class SafeSql {
               }
               return;
             }
-            if (PACKAGES_ALLOWING_NULLABLE_ARGS.contains(value.getClass().getPackageName())) {
+            if (value instanceof Number
+                || value.getClass().isArray()
+                || PACKAGES_ALLOWING_NULLABLE_ARGS.contains(value.getClass().getPackageName())) {
               String rhs = validateOptionalOperatorRhs(conditional);
-              builder.appendSql(scanner.nextFragment());
-              builder.addSubQuery(innerSubquery(rhs, value));
+              builder.appendSql(scanner.nextFragment()).addSubQuery(innerSubquery(rhs, value));
               return;
             }
           }

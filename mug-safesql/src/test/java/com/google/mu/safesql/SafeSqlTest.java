@@ -5,6 +5,7 @@ import static com.google.mu.safesql.SafeSql.template;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
+import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -136,6 +137,54 @@ public class SafeSqlTest {
     Integer id = 123;
     assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
         .isEqualTo(SafeSql.of("SELECT {id} AS id, name FROM tbl", id));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nullBigInteger() {
+    BigInteger id = null;
+    assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
+        .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nonNullBigInteger() {
+    BigInteger id = BigInteger.TEN;
+    assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
+        .isEqualTo(SafeSql.of("SELECT {id} AS id, name FROM tbl", id));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nullByteArray() {
+    byte[] payload = null;
+    assertThat(SafeSql.of("SELECT { payload? -> payload? AS payload,} name FROM tbl", payload))
+        .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nonNullByteArray() {
+    byte[] payload = new byte[] {1, 2};
+    assertThat(SafeSql.of("SELECT { payload? -> payload? AS payload,} name FROM tbl", payload))
+        .isEqualTo(SafeSql.of("SELECT {payload} AS payload, name FROM tbl", payload));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nullBlob() {
+    java.sql.Blob payload = null;
+    assertThat(SafeSql.of("SELECT { payload? -> payload? AS payload,} name FROM tbl", payload))
+        .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nonNullJavaSqlTimestamp() {
+    java.sql.Timestamp time = java.sql.Timestamp.valueOf("2026-02-26 10:00:00");
+    assertThat(SafeSql.of("SELECT { time? -> time? AS time,} name FROM tbl", time))
+        .isEqualTo(SafeSql.of("SELECT {time} AS time, name FROM tbl", time));
   }
 
   @Test

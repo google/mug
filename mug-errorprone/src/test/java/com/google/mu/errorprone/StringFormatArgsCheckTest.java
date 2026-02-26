@@ -3084,6 +3084,42 @@ public final class StringFormatArgsCheckTest {
   }
 
   @Test
+  public void templateFormatMethod_bigDecimalForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.math.BigDecimal;",
+            "class Test {",
+            "  void test(BigDecimal money) {",
+            "    query(\"SELECT * from USER {money? -> WHERE revenue > money?}\", money);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_arrayForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.math.BigDecimal;",
+            "class Test {",
+            "  void test(byte[] payload) {",
+            "    query(\"SELECT * from USER {payload? -> WHERE payload > payload?}\", payload);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void templateFormatMethod_nonBooleanForGuardOperator_disallowed() {
     helper
         .addSourceLines(
@@ -3341,22 +3377,6 @@ public final class StringFormatArgsCheckTest {
 
             "  @TemplateFormatMethod",
             "  void query(@TemplateString String template, Object... args) {}",
-            "}")
-        .doTest();
-  }
-
-  @Test
-  public void arrayArgDisallowed() {
-    helper
-        .addSourceLines(
-            "Test.java",
-            "import com.google.mu.util.StringFormat;",
-            "class Test {",
-            "  void test() {",
-            "    new StringFormat(\"{foo}\")",
-            "        // BUG: Diagnostic contains:",
-            "        .format(/* foo */ new int[] {1});",
-            "  }",
             "}")
         .doTest();
   }

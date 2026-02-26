@@ -41,8 +41,6 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import javax.lang.model.type.TypeKind;
-
 import com.google.auto.service.AutoService;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
@@ -70,6 +68,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.TypeTag;
 
 /**
  * Checks that the {@code StringFormat.format()} method is invoked with the correct lambda according
@@ -126,8 +125,9 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
           new TypeName("com.google.mu.util.BiStream"),
           new TypeName("com.google.mu.util.Both"));
   private static final ImmutableSet<String> PACKAGES_ALLOWING_NULLABLE_ARGS =
-      Stream.of("java.lang", "java.time").collect(toImmutableSet());
+      Stream.of("java.lang", "java.time", "java.sql").collect(toImmutableSet());
   private static final TypeName BOOLEAN_TYPE = TypeName.of(Boolean.class);
+  private static final TypeName NUMBER_TYPE = TypeName.of(Number.class);
   private static final TypeName OPTIONAL_TYPE = TypeName.of(Optional.class);
   private static final TypeName COLLECTION_TYPE = TypeName.of(Collection.class);
 
@@ -323,6 +323,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
         }
         if (placeholder.hasConditionalOperator()) {
           Type argType = ASTHelpers.getType(arg);
+          if (argType == null) continue;
           ImmutableSet<String> references = placeholder.optionalParametersFromOperatorRhs();
           if (ASTHelpers.isSameType(argType, state.getSymtab().booleanType, state)
               || BOOLEAN_TYPE.isSameType(argType, state)) {
@@ -337,6 +338,8 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
                     references);
           } else if (OPTIONAL_TYPE.isSameType(argType, state)
               || COLLECTION_TYPE.isSupertypeOf(argType, state)
+              || NUMBER_TYPE.isSupertypeOf(argType, state)
+              || argType.hasTag(TypeTag.ARRAY)
               || PACKAGES_ALLOWING_NULLABLE_ARGS.contains(
                   String.valueOf(ASTHelpers.enclosingPackage(argType.tsym)))) {
             onPlaceholder
@@ -411,8 +414,6 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   private void checkArgFormattability(ExpressionTree arg, VisitorState state) throws ErrorReport {
     Type type = ASTHelpers.getType(arg);
     checkingOn(arg)
-        .require(
-            type.getKind() != TypeKind.ARRAY, "arrays shouldn't be used as string format argument")
         .require(
             BAD_FORMAT_ARG_TYPES.stream().noneMatch(bad -> bad.isSameType(type, state)),
             "%s shouldn't be used as string format argument",
