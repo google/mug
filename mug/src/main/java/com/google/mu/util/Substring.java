@@ -424,7 +424,7 @@ public final class Substring {
    * Returns a {@code Prefix} pattern that matches strings starting with {@code prefix}.
    *
    * <p>Typically if you have a {@code String} constant representing a prefix, consider to declare a
-   * {@link Prefix} constant instead. The type is more explicit, and utilitiy methods like {@link
+   * {@link Prefix} constant instead. The type is more explicit, and utility methods like {@link
    * Pattern#removeFrom}, {@link Pattern#from} are easier to discover and use.
    */
   public static Prefix prefix(String prefix) {
@@ -435,7 +435,7 @@ public final class Substring {
    * Returns a {@code Prefix} pattern that matches strings starting with {@code prefix}.
    *
    * <p>Typically if you have a {@code char} constant representing a prefix, consider to declare a
-   * {@link Prefix} constant instead. The type is more explicit, and utilitiy methods like {@link
+   * {@link Prefix} constant instead. The type is more explicit, and utility methods like {@link
    * Pattern#removeFrom}, {@link Pattern#from} are easier to discover and use.
    */
   public static Prefix prefix(char prefix) {
@@ -446,7 +446,7 @@ public final class Substring {
    * Returns a {@code Suffix} pattern that matches strings ending with {@code suffix}.
    *
    * <p>Typically if you have a {@code String} constant representing a suffix, consider to declare a
-   * {@link Suffix} constant instead. The type is more explicit, and utilitiy methods like {@link
+   * {@link Suffix} constant instead. The type is more explicit, and utility methods like {@link
    * Pattern#removeFrom}, {@link Pattern#from} are easier to discover and use.
    */
   public static Suffix suffix(String suffix) {
@@ -457,7 +457,7 @@ public final class Substring {
    * Returns a {@code Suffix} pattern that matches strings ending with {@code suffix}.
    *
    * <p>Typically if you have a {@code char} constant representing a suffix, consider to declare a
-   * {@link Suffix} constant instead. The type is more explicit, and utilitiy methods like {@link
+   * {@link Suffix} constant instead. The type is more explicit, and utility methods like {@link
    * Pattern#removeFrom}, {@link Pattern#from} are easier to discover and use.
    */
   public static Suffix suffix(char suffix) {
