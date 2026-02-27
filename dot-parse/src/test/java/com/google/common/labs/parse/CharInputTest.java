@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+
 @RunWith(JUnit4.class)
 public final class CharInputTest {
 
@@ -52,15 +53,39 @@ public final class CharInputTest {
   }
 
   @Test
+  public void fromString_startsWithCaseInsensitive_isPrefix() {
+    CharInput input = CharInput.from("AbCde");
+    assertThat(input.startsWithCaseInsensitive("aBcD", 0)).isTrue();
+  }
+
+  @Test
+  public void fromString_startsWithCaseInsensitive_isNotPrefix() {
+    CharInput input = CharInput.from("AbCde");
+    assertThat(input.startsWithCaseInsensitive("aBcDg", 0)).isFalse();
+  }
+
+  @Test
   public void fromReader_startsWith_isPrefix() {
     CharInput input = CharInput.from(new StringReader("food"));
     assertThat(input.startsWith("foo", 0)).isTrue();
   }
 
   @Test
+  public void fromReader_startsWithCaseInsensitive_isPrefix() {
+    CharInput input = CharInput.from(new StringReader("AbCde"));
+    assertThat(input.startsWithCaseInsensitive("aBcD", 0)).isTrue();
+  }
+
+  @Test
   public void fromReader_startsWith_isNotPrefix() {
     CharInput input = CharInput.from(new StringReader("food"));
     assertThat(input.startsWith("fobar", 0)).isFalse();
+  }
+
+  @Test
+  public void fromReader_startsWithCaseInsensitive_isNotPrefix() {
+    CharInput input = CharInput.from(new StringReader("AbCde"));
+    assertThat(input.startsWithCaseInsensitive("aBcDf", 0)).isFalse();
   }
 
   @Test
@@ -71,10 +96,24 @@ public final class CharInputTest {
   }
 
   @Test
+  public void fromReader_startsWithCaseInsensitive_prefixLongerThanBuffer_isPrefix() {
+    String prefix = "a".repeat(4500) + "B".repeat(4500);
+    CharInput input = CharInput.from(new StringReader("A".repeat(4500) + "b".repeat(4500) + "c"));
+    assertThat(input.startsWithCaseInsensitive(prefix, 0)).isTrue();
+  }
+
+  @Test
   public void fromReader_startsWith_prefixLongerThanBuffer_isNotPrefix() {
     String prefix = "a".repeat(9000);
     CharInput input = CharInput.from(new StringReader("a".repeat(8999) + "cb"));
     assertThat(input.startsWith(prefix, 0)).isFalse();
+  }
+
+  @Test
+  public void fromReader_startsWithCaseInsensitive_prefixLongerThanBuffer_isNotPrefix() {
+    String prefix = "a".repeat(4500) + "B".repeat(4500);
+    CharInput input = CharInput.from(new StringReader("A".repeat(4500) + "b".repeat(4499) + "cD"));
+    assertThat(input.startsWithCaseInsensitive(prefix, 0)).isFalse();
   }
 
   @Test
@@ -87,6 +126,20 @@ public final class CharInputTest {
     assertThat(input.startsWith(prefix, 1)).isTrue();
     assertThat(reader.loadCount).isEqualTo(2);
     assertThat(input.startsWith("a", 9000)).isTrue();
+    assertThat(reader.loadCount).isEqualTo(2);
+  }
+
+  @Test
+  public void fromReader_startsWithCaseInsensitive_prefixLongerThanBuffer_isPrefix_loadedTwice()
+      throws Exception {
+    String prefix = "a".repeat(4500) + "B".repeat(4500);
+    MockReader reader = new MockReader("A".repeat(4500) + "b".repeat(4500) + "A");
+    CharInput input = CharInput.from(reader);
+    assertThat(input.startsWithCaseInsensitive(prefix, 0)).isTrue();
+    assertThat(reader.loadCount).isEqualTo(2);
+    assertThat(input.startsWithCaseInsensitive(prefix, 1)).isFalse();
+    assertThat(reader.loadCount).isEqualTo(2);
+    assertThat(input.startsWithCaseInsensitive("a", 9000)).isTrue();
     assertThat(reader.loadCount).isEqualTo(2);
   }
 

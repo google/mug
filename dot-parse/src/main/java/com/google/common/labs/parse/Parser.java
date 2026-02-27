@@ -172,6 +172,15 @@ public abstract class Parser<T> {
   }
 
   /**
+   * {@code word("or")} matches "or" but not "orange", case insensitively.
+   *
+   * @since 9.9.3
+   */
+  public static Parser<String> caseInsensitiveWord(String word) {
+    return caseInsensitive(word).notImmediatelyFollowedBy(CharPredicate.WORD, "[a-zA-Z0-9_]");
+  }
+
+  /**
    * One or more regex {@code \w+} characters.
    *
    * @since 9.4
@@ -247,6 +256,26 @@ public abstract class Parser<T> {
         start = skipIfAny(skip, input, start);
         if (input.startsWith(value, start)) {
           return new MatchResult.Success<>(start, start + value.length(), value);
+        }
+        return context.expecting(value, start);
+      }
+    };
+  }
+
+  /**
+   * Matches a literal {@code string} case insensitively.
+   *
+   * @since 9.9.3
+   */
+  public static Parser<String> caseInsensitive(String value) {
+    checkArgument(value.length() > 0, "value cannot be empty");
+    return new Parser<>() {
+      @Override MatchResult<String> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        if (input.startsWithCaseInsensitive(value, start)) {
+          return new MatchResult.Success<>(
+              start, start + value.length(), input.snippet(start, value.length()));
         }
         return context.expecting(value, start);
       }
