@@ -9,9 +9,9 @@ import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.first;
 import static com.google.common.labs.parse.Parser.literally;
+import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.quotedBy;
 import static com.google.common.labs.parse.Parser.sequence;
-import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
@@ -165,7 +165,7 @@ public class ParserTest {
 
   @Test
   public void caseInsensitive_success() {
-    Parser<String> parser = caseInsensitive("foo");
+    Parser<String> parser = caseInsensitive("foo").source();
     assertThat(parser.parse("FoO")).isEqualTo("FoO");
     assertThat(parser.matches("FoO")).isTrue();
     assertThat(parser.parseToStream("fOo")).containsExactly("fOo");
@@ -174,7 +174,7 @@ public class ParserTest {
 
   @Test
   public void caseInsensitive_success_source() {
-    Parser<String> parser = caseInsensitive("foo");
+    Parser<String> parser = caseInsensitive("foo").source();
     assertThat(parser.source().parse("FoO")).isEqualTo("FoO");
     assertThat(parser.source().matches("FoO")).isTrue();
     assertThat(parser.source().parseToStream("fOo")).containsExactly("fOo");
@@ -250,8 +250,8 @@ public class ParserTest {
 
   @Test
   public void caseInsensitiveWord_success() {
-    assertThat(caseInsensitiveWord("foo").parse("FoO")).isEqualTo("FoO");
-    assertThat(caseInsensitiveWord("foo").matches("FoO")).isTrue();
+    assertThat(caseInsensitiveWord("foo").source().parse("FoO")).isEqualTo("FoO");
+    assertThat(caseInsensitiveWord("foo").source().matches("FoO")).isTrue();
   }
 
   @Test
@@ -266,17 +266,17 @@ public class ParserTest {
 
   @Test
   public void caseInsensitiveWord_successIfNotFollowedByWordChar() {
-    assertThat(caseInsensitiveWord("foo").probe("FoO?")).containsExactly("FoO");
-    assertThat(caseInsensitiveWord("foo").probe("FoO-")).containsExactly("FoO");
+    assertThat(caseInsensitiveWord("foo").source().probe("FoO?")).containsExactly("FoO");
+    assertThat(caseInsensitiveWord("foo").source().probe("FoO-")).containsExactly("FoO");
   }
 
   @Test
   public void caseInsensitiveWord_skipping_success() {
-    assertThat(caseInsensitiveWord("foo").skipping(Character::isWhitespace).parseToStream("fOo"))
+    assertThat(caseInsensitiveWord("foo").source().skipping(Character::isWhitespace).parseToStream("fOo"))
         .containsExactly("fOo");
-    assertThat(caseInsensitiveWord("foo").skipping(Character::isWhitespace).parseToStream("FoO fOO"))
+    assertThat(caseInsensitiveWord("foo").source().skipping(Character::isWhitespace).parseToStream("FoO fOO"))
         .containsExactly("FoO", "fOO");
-    assertThat(caseInsensitiveWord("foo").skipping(Character::isWhitespace).probe(" FoO-fOo"))
+    assertThat(caseInsensitiveWord("foo").source().skipping(Character::isWhitespace).probe(" FoO-fOo"))
         .containsExactly("FoO");
   }
 
