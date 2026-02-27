@@ -559,7 +559,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
   @Test public void query_withResultType_toInstantResults() throws Exception {
     ZonedDateTime barTime = ZonedDateTime.of(2024, 11, 1, 10, 20, 30, 0, ZoneId.of("UTC"));
     assertThat(
-            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time})", testId(), "bar", barTime)
+            SafeSql.of("insert into ITEMS(id, title, time) VALUES({id}, {title}, {time? -> time?})", testId(), "bar", barTime)
                 .update(connection()))
         .isEqualTo(1);
     assertThat(

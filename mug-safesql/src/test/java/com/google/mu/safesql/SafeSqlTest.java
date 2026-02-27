@@ -5,6 +5,11 @@ import static com.google.mu.safesql.SafeSql.template;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
+import java.math.BigInteger;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -116,6 +121,140 @@ public class SafeSqlTest {
     Optional<Integer> id = Optional.empty();
     assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
         .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nullInteger() {
+    Integer id = null;
+    assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
+        .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nonNullInteger() {
+    Integer id = 123;
+    assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
+        .isEqualTo(SafeSql.of("SELECT {id} AS id, name FROM tbl", id));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nullBigInteger() {
+    BigInteger id = null;
+    assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
+        .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nonNullBigInteger() {
+    BigInteger id = BigInteger.TEN;
+    assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
+        .isEqualTo(SafeSql.of("SELECT {id} AS id, name FROM tbl", id));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nullByteArray() {
+    byte[] payload = null;
+    assertThat(SafeSql.of("SELECT { payload? -> payload? AS payload,} name FROM tbl", payload))
+        .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nonNullByteArray() {
+    byte[] payload = new byte[] {1, 2};
+    assertThat(SafeSql.of("SELECT { payload? -> payload? AS payload,} name FROM tbl", payload))
+        .isEqualTo(SafeSql.of("SELECT {payload} AS payload, name FROM tbl", payload));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nullBlob() {
+    java.sql.Blob payload = null;
+    assertThat(SafeSql.of("SELECT { payload? -> payload? AS payload,} name FROM tbl", payload))
+        .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nonNullJavaSqlTimestamp() {
+    java.sql.Timestamp time = java.sql.Timestamp.valueOf("2026-02-26 10:00:00");
+    assertThat(SafeSql.of("SELECT { time? -> time? AS time,} name FROM tbl", time))
+        .isEqualTo(SafeSql.of("SELECT {time} AS time, name FROM tbl", time));
+  }
+
+  @Test
+  public void guardOperator_nullString() {
+    String id = null;
+    assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
+        .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
+  }
+
+  @Test
+  public void guardOperator_nonNullString() {
+    String id = "xyz";
+    assertThat(SafeSql.of("SELECT { id? -> id? AS id,} name FROM tbl", id))
+        .isEqualTo(SafeSql.of("SELECT {id} AS id, name FROM tbl", id));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nullInstant() {
+    Instant time = null;
+    assertThat(SafeSql.of("SELECT name FROM tbl {time? -> WHERE time > time?}", time))
+        .isEqualTo(SafeSql.of("SELECT name FROM tbl "));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_notNullInstant() {
+    Instant time = ZonedDateTime.of(2026, 2, 25, 10, 0, 0, 0, ZoneId.of("UTC")).toInstant();
+    assertThat(SafeSql.of("SELECT name FROM tbl {time? -> WHERE time > time?}", time))
+        .isEqualTo(SafeSql.of("SELECT name FROM tbl WHERE time > {time}", time));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nullLocalDate() {
+    LocalDate time = null;
+    assertThat(SafeSql.of("SELECT name FROM tbl {time? -> WHERE time > time?}", time))
+        .isEqualTo(SafeSql.of("SELECT name FROM tbl "));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nonNullLocalDate() {
+    LocalDate time = LocalDate.of(2025, 02, 25);
+    assertThat(SafeSql.of("SELECT name FROM tbl {time? -> WHERE time > time?}", time))
+        .isEqualTo(SafeSql.of("SELECT name FROM tbl WHERE time > {time}", time));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nonNullZonedDateTime() {
+    ZonedDateTime time = ZonedDateTime.of(2026, 2, 25, 10, 0, 0, 0, ZoneId.of("UTC"));
+    assertThat(SafeSql.of("SELECT name FROM tbl {time? -> WHERE time > time?}", time))
+        .isEqualTo(SafeSql.of("SELECT name FROM tbl WHERE time > {time}", time));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nullZonedDateTime() {
+    ZonedDateTime time = null;
+    assertThat(SafeSql.of("SELECT name FROM tbl {time? -> WHERE time > time?}", time))
+        .isEqualTo(SafeSql.of("SELECT name FROM tbl "));
+  }
+
+  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @Test
+  public void guardOperator_nullBoolean() {
+    Boolean isActive = null;
+    assertThat(SafeSql.of("SELECT name FROM tbl { isActive? -> WHERE isActive = isActive? }", isActive))
+        .isEqualTo(SafeSql.of("SELECT name FROM tbl "));
   }
 
   @Test
@@ -984,7 +1123,7 @@ public class SafeSqlTest {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> SafeSql.of("select * where id = {foo?}", 123));
-    assertThat(thrown).hasMessageThat().contains("instead of '?'");
+    assertThat(thrown).hasMessageThat().contains("without '?'");
   }
 
   @Test
@@ -992,7 +1131,7 @@ public class SafeSqlTest {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> SafeSql.of("select * where id = ?"));
-    assertThat(thrown).hasMessageThat().contains("instead of '?'");
+    assertThat(thrown).hasMessageThat().contains("without '?'");
   }
 
   @Test
@@ -1007,7 +1146,7 @@ public class SafeSqlTest {
     IllegalArgumentException thrown = assertThrows(
         IllegalArgumentException.class,
         () -> SafeSql.of("select * from {tbl}", /* tbl */ SafeSql.of("?")));
-    assertThat(thrown).hasMessageThat().contains("instead of '?'");
+    assertThat(thrown).hasMessageThat().contains("without '?'");
   }
 
   @Test

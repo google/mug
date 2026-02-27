@@ -22,6 +22,9 @@ abstract class CharInput {
   /** Do the characters starting from {@code index} start with {@code prefix}? */
   abstract boolean startsWith(String prefix, int index);
 
+  /** Do the characters starting from {@code index} start with {@code prefix}, case insensitive? */
+  abstract boolean startsWithCaseInsensitive(String prefix, int index);
+
   /** Is {@code index} the end of the input? */
   abstract boolean isEof(int index);
 
@@ -55,6 +58,11 @@ abstract class CharInput {
 
       @Override boolean startsWith(String prefix, int index) {
         return text.startsWith(prefix, index);
+      }
+
+      @Override boolean startsWithCaseInsensitive(String prefix, int index) {
+        return text.regionMatches(
+            /* ignoreCase= */ true, index, String.valueOf(prefix), 0, prefix.length());
       }
 
       @Override boolean isEof(int index) {
@@ -129,6 +137,22 @@ abstract class CharInput {
         }
         for (int i = 0; i < prefix.length(); i++) {
           if (prefix.charAt(i) != chars.charAt(index + i)) {
+            return false;
+          }
+        }
+        return true;
+      }
+
+      @Override boolean startsWithCaseInsensitive(String prefix, int index) {
+        ensureCharCount(index + prefix.length());
+        index = toPhysicalIndex(index);
+        if (chars.length() < index + prefix.length()) {
+          return false;
+        }
+        for (int i = 0; i < prefix.length(); i++) {
+          char c1 = chars.charAt(index + i);
+          char c2 = prefix.charAt(i);
+          if (c1 != c2 && Character.toUpperCase(c1) != Character.toUpperCase(c2)) {
             return false;
           }
         }

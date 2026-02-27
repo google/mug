@@ -411,6 +411,8 @@ import com.google.mu.util.stream.BiStream;
 @ThreadSafe
 @CheckReturnValue
 public final class SafeSql {
+  private static final Set<String> PACKAGES_ALLOWING_NULLABLE_ARGS =
+      Stream.of("java.lang", "java.time", "java.sql").collect(Collectors.toSet());
   private static final Substring.Pattern OPTIONAL_PARAMETER =
       word().immediatelyBetween("", INCLUSIVE, "?", INCLUSIVE);
   private static final StringFormat PLACEHOLDER_ELEMENT_NAME =
@@ -1614,6 +1616,28 @@ public final class SafeSql {
               !placeholder.isImmediatelyBetween("\"", "\""),
               "boolean placeholder {%s->} shouldn't be double quoted",
               conditional.before());
+          if (OPTIONAL_PARAMETER.in(conditional.before()).isPresent()) {
+            if (value == null) {
+              // {foo? -> foo?} is a common pattern for guards by nullable parameter
+              String rhsIgnored = validateOptionalOperatorRhs(conditional);
+              builder.appendSql(scanner.nextFragment());
+              return;
+            }
+            if (value instanceof Boolean) {  // e.g. {enable_foo? -> , foo}
+              builder.appendSql(scanner.nextFragment());
+              if ((Boolean) value) {
+                builder.appendSql(conditional.after().trim());
+              }
+              return;
+            }
+            if (value instanceof Number
+                || value.getClass().isArray()
+                || PACKAGES_ALLOWING_NULLABLE_ARGS.contains(value.getClass().getPackageName())) {
+              String rhs = validateOptionalOperatorRhs(conditional);
+              builder.appendSql(scanner.nextFragment()).addSubQuery(innerSubquery(rhs, value));
+              return;
+            }
+          }
           checkArgument(
               value != null,
               "boolean placeholder {%s->} cannot be used with a null value",
@@ -1765,7 +1789,7 @@ public final class SafeSql {
   }
 
   @CanIgnoreReturnValue private static String rejectQuestionMark(String sql) {
-    checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} instead of '?'");
+    checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} without '?'");
     return sql;
   }
 

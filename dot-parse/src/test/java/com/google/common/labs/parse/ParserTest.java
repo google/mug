@@ -2,6 +2,8 @@ package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.bmpCodeUnit;
+import static com.google.common.labs.parse.Parser.caseInsensitive;
+import static com.google.common.labs.parse.Parser.caseInsensitiveWord;
 import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.digits;
@@ -162,6 +164,49 @@ public class ParserTest {
   }
 
   @Test
+  public void caseInsensitive_success() {
+    Parser<String> parser = caseInsensitive("foo");
+    assertThat(parser.parse("FoO")).isEqualTo("FoO");
+    assertThat(parser.matches("FoO")).isTrue();
+    assertThat(parser.parseToStream("fOo")).containsExactly("fOo");
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test
+  public void caseInsensitive_success_source() {
+    Parser<String> parser = caseInsensitive("foo");
+    assertThat(parser.source().parse("FoO")).isEqualTo("FoO");
+    assertThat(parser.source().matches("FoO")).isTrue();
+    assertThat(parser.source().parseToStream("fOo")).containsExactly("fOo");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test
+  public void caseInsensitive_failure_withLeftover() {
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parse("Fooa"));
+    assertThat(caseInsensitive("foo").matches("Fooa")).isFalse();
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parseToStream("Fooa").toList());
+  }
+
+  @Test
+  public void caseInsensitive_failure() {
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parse("fo"));
+    assertThat(caseInsensitive("foo").matches("fo")).isFalse();
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parseToStream("fo").toList());
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parse("Food"));
+    assertThat(caseInsensitive("foo").matches("Food")).isFalse();
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parseToStream("Food").toList());
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parse("bar"));
+    assertThat(caseInsensitive("foo").matches("bar")).isFalse();
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parseToStream("bar").toList());
+  }
+
+  @Test
+  public void caseInsensitive_cannotBeEmpty() {
+    assertThrows(IllegalArgumentException.class, () -> caseInsensitive(""));
+  }
+
+  @Test
   public void word_success() {
     assertThat(word("foo").parse("foo")).isEqualTo("foo");
     assertThat(word("foo").matches("foo")).isTrue();
@@ -201,6 +246,57 @@ public class ParserTest {
     assertThat(word("foo").skipping(Character::isWhitespace).matches("foo1")).isFalse();
     assertThrows(ParseException.class, () -> word("foo").parseSkipping(Character::isWhitespace, " foo1"));
     assertThat(word("foo").skipping(Character::isWhitespace).matches(" foo1")).isFalse();
+  }
+
+  @Test
+  public void caseInsensitiveWord_success() {
+    assertThat(caseInsensitiveWord("foo").parse("FoO")).isEqualTo("FoO");
+    assertThat(caseInsensitiveWord("foo").matches("FoO")).isTrue();
+  }
+
+  @Test
+  public void caseInsensitiveWord_failIfFollowedByWordChar() {
+    assertThrows(ParseException.class, () -> caseInsensitiveWord("foo").parse("FoObar"));
+    assertThat(caseInsensitiveWord("foo").matches("FoObar")).isFalse();
+    assertThrows(ParseException.class, () -> caseInsensitiveWord("foo").parse("FoO_bar"));
+    assertThat(caseInsensitiveWord("foo").matches("FoO_bar")).isFalse();
+    assertThrows(ParseException.class, () -> caseInsensitiveWord("foo").parse("FoO1"));
+    assertThat(caseInsensitiveWord("foo").matches("FoO1")).isFalse();
+  }
+
+  @Test
+  public void caseInsensitiveWord_successIfNotFollowedByWordChar() {
+    assertThat(caseInsensitiveWord("foo").probe("FoO?")).containsExactly("FoO");
+    assertThat(caseInsensitiveWord("foo").probe("FoO-")).containsExactly("FoO");
+  }
+
+  @Test
+  public void caseInsensitiveWord_skipping_success() {
+    assertThat(caseInsensitiveWord("foo").skipping(Character::isWhitespace).parseToStream("fOo"))
+        .containsExactly("fOo");
+    assertThat(caseInsensitiveWord("foo").skipping(Character::isWhitespace).parseToStream("FoO fOO"))
+        .containsExactly("FoO", "fOO");
+    assertThat(caseInsensitiveWord("foo").skipping(Character::isWhitespace).probe(" FoO-fOo"))
+        .containsExactly("FoO");
+  }
+
+  @Test
+  public void caseInsensitiveWord_skipping_failIfFollowedByWordChar() {
+    assertThrows(
+        ParseException.class,
+        () -> caseInsensitiveWord("foo").parseSkipping(Character::isWhitespace, "FoObar"));
+    assertThat(caseInsensitiveWord("foo").skipping(Character::isWhitespace).matches("FoObar")).isFalse();
+    assertThrows(
+        ParseException.class,
+        () -> caseInsensitiveWord("foo").parseSkipping(Character::isWhitespace, "FoO_bar"));
+    assertThat(caseInsensitiveWord("foo").skipping(Character::isWhitespace).matches("FoO_bar")).isFalse();
+    assertThrows(
+        ParseException.class, () -> caseInsensitiveWord("foo").parseSkipping(Character::isWhitespace, "FoO1"));
+    assertThat(caseInsensitiveWord("foo").skipping(Character::isWhitespace).matches("FoO1")).isFalse();
+    assertThrows(
+        ParseException.class,
+        () -> caseInsensitiveWord("foo").parseSkipping(Character::isWhitespace, " FoO1"));
+    assertThat(caseInsensitiveWord("foo").skipping(Character::isWhitespace).matches(" FoO1")).isFalse();
   }
 
   @Test
@@ -384,6 +480,39 @@ public class ParserTest {
   }
 
   @Test
+  public void quotedByWithEscapes_stringBeforeCharAfter_success() {
+    Parser<String> parser = Parser.quotedByWithEscapes("<<", '>', chars(1));
+    assertThat(parser.parse("<<foo>")).isEqualTo("foo");
+    assertThat(parser.matches("<<foo>")).isTrue();
+    assertThat(parser.parse("<<foo<bar>")).isEqualTo("foo<bar");
+    assertThat(parser.matches("<<foo<bar>")).isTrue();
+    assertThat(parser.parse("<<foo\\>bar>")).isEqualTo("foo>bar");
+    assertThat(parser.matches("<<foo\\>bar>")).isTrue();
+  }
+
+  @Test
+  public void quotedByWithEscapes_stringBeforeCharAfter_failures() {
+    Parser<String> parser = Parser.quotedByWithEscapes("<<", '>', chars(1));
+    assertThrows(ParseException.class, () -> parser.parse("<<foo")); // unclosed
+    assertThat(parser.matches("<<foo")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parse("<<foo>bar")); // leftover
+    assertThat(parser.matches("<<foo>bar")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parse("<<foo\\")); // dangling escape
+    assertThat(parser.matches("<<foo\\>")).isFalse();
+  }
+
+  @Test
+  public void quotedByWithEscapes_stringBeforeCharAfter_unicodeEscape_success() {
+    Parser<String> unicodeEscaped = string("u").then(bmpCodeUnit()).map(Character::toString);
+    Parser<String> quotedString =
+        Parser.quotedByWithEscapes("begin:", ';', unicodeEscaped.or(chars(1)));
+    assertThat(quotedString.parse("begin:;")).isEmpty();
+    assertThat(quotedString.matches("begin:;")).isTrue();
+    assertThat(quotedString.parse("begin:emoji: \\uD83D\\uDe00;")).isEqualTo("emoji: 😀");
+    assertThat(quotedString.matches("begin:emoji: \\uD83D\\uDe00;")).isTrue();
+  }
+
+  @Test
   public void bmpCodeUnit_emoji() {
     assertThat(bmpCodeUnit().map(Character::toString).zeroOrMore(joining()).parse("d83dDE00"))
         .isEqualTo("😀");
@@ -397,7 +526,8 @@ public class ParserTest {
         new NullPointerTester()
             .setDefault(Parser.class, string("a"))
             .setDefault(Parser.OrEmpty.class, string("a").orElse("default"))
-            .setDefault(String.class, "test");
+            .setDefault(String.class, "test")
+            .setDefault(char.class, '`');
     tester.testAllPublicStaticMethods(Parser.class);
   }
 

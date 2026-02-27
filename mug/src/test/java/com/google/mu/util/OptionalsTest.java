@@ -10,6 +10,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
@@ -72,6 +74,11 @@ public class OptionalsTest {
 
   @Test public void asSet_notEmpty() {
     assertThat(Optionals.asSet(Optional.of(123))).containsExactly(123);
+  }
+
+  @Test public void nonEmpty_nullCollection() {
+    List<?> list = null;
+    assertThat(Optionals.nonEmpty(list)).isEmpty();
   }
 
   @Test public void nonEmpty_emptyCollection() {
@@ -269,6 +276,7 @@ public class OptionalsTest {
         .ignore(Optionals.class.getMethod("optional", boolean.class, Object.class))
         .ignore(Optionals.class.getMethod("both", Optional.class, Optional.class))
         .ignore(Optionals.class.getMethod("nonEmpty", CharSequence.class))
+        .ignore(Optionals.class.getMethod("nonEmpty", Collection.class))
         .testAllPublicStaticMethods(Optionals.class);
     new NullPointerTester()
         .setDefault(Optional.class, Optional.of("foo"))
@@ -276,6 +284,7 @@ public class OptionalsTest {
         .setDefault(OptionalLong.class, OptionalLong.of(123))
         .setDefault(OptionalDouble.class, OptionalDouble.of(123))
         .ignore(Optionals.class.getMethod("nonEmpty", CharSequence.class))
+        .ignore(Optionals.class.getMethod("nonEmpty", Collection.class))
         .setDefault(BiOptional.class, BiOptional.of(1, "one"))
         .ignore(Optionals.class.getMethod("optional", boolean.class, Object.class))
         .testAllPublicStaticMethods(Optionals.class);
