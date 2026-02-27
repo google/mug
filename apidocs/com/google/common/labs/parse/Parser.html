@@ -71,12 +71,12 @@ loadScripts(document, 'script');</script>
 <li><a href="#consecutive(com.google.common.labs.parse.CharacterSet)" tabindex="0">consecutive(CharacterSet)</a></li>
 <li><a href="#chars(int)" tabindex="0">chars(int)</a></li>
 <li><a href="#word(java.lang.String)" tabindex="0">word(String)</a></li>
-<li><a href="#caseInsensitiveWord(java.lang.String)" tabindex="0">caseInsensitiveWord(String)</a></li>
 <li><a href="#word()" tabindex="0">word()</a></li>
 <li><a href="#digits()" tabindex="0">digits()</a></li>
 <li><a href="#first(java.lang.String)" tabindex="0">first(String)</a></li>
 <li><a href="#string(java.lang.String)" tabindex="0">string(String)</a></li>
 <li><a href="#caseInsensitive(java.lang.String)" tabindex="0">caseInsensitive(String)</a></li>
+<li><a href="#caseInsensitiveWord(java.lang.String)" tabindex="0">caseInsensitiveWord(String)</a></li>
 <li><a href="#quotedBy(char,char)" tabindex="0">quotedBy(char, char)</a></li>
 <li><a href="#quotedBy(java.lang.String,java.lang.String)" tabindex="0">quotedBy(String, String)</a></li>
 <li><a href="#quotedByWithEscapes(char,char,com.google.common.labs.parse.Parser)" tabindex="0">quotedByWithEscapes(char, char, Parser)</a></li>
@@ -813,19 +813,6 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
-<section class="detail" id="caseInsensitiveWord(java.lang.String)">
-<h3>caseInsensitiveWord</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">caseInsensitiveWord</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;word)</span></div>
-<div class="block"><code>word("or")</code> matches "or" but not "orange", case insensitively.</div>
-<dl class="notes">
-<dt>Since:</dt>
-<dd>9.9.3</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
 <section class="detail" id="word()">
 <h3>word</h3>
 <div class="horizontal-scroll">
@@ -905,6 +892,19 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">caseInsensitive</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;value)</span></div>
 <div class="block">Matches a literal <code>string</code> case insensitively.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>9.9.3</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="caseInsensitiveWord(java.lang.String)">
+<h3>caseInsensitiveWord</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">caseInsensitiveWord</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;word)</span></div>
+<div class="block"><code>word("or")</code> matches "or" but not "orange", case insensitively.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.9.3</dd>
