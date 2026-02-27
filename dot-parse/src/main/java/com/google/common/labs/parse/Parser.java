@@ -384,7 +384,7 @@ public abstract class Parser<T> {
    * quotedByWithEscapes("(http://", ')', chars(1)).parse("(http://foo\\\\bar.com)");
    * }</pre>
    *
-   * will treat the escaped character as literal and return {@code "foo\\bar"}.
+   * will treat the escaped character as literal and return {@code "foo\\bar.com"}.
    *
    * @since 9.9.3
    */
