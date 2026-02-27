@@ -11,7 +11,7 @@ import static com.google.common.labs.parse.Parser.first;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.quotedBy;
 import static com.google.common.labs.parse.Parser.sequence;
-import static com.google.common.labs.parse.Parser.single;
+import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
@@ -1356,7 +1356,7 @@ public class ParserTest {
   }
 
   @Test
-  public void orEmpty_delimitedBy_single_source() {
+  public void orEmpty_delimitedBy_one_source() {
     assertThat(word().source().orElse("").delimitedBy(",").parse("foo")).containsExactly("foo");
     assertThat(word().source().orElse("").delimitedBy(",").matches("foo")).isTrue();
     assertThat(word().source().orElse("").delimitedBy(",").notEmpty().parse("foo"))
@@ -1746,7 +1746,7 @@ public class ParserTest {
 
   @Test
   public void atLeastOnce_withReducer_success() {
-    Parser<Integer> integer = single(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> integer = one(DIGIT, "digit").map(c -> c - '0');
     Parser<Integer> parser = integer.atLeastOnce((a, b) -> a - b);
     assertThat(parser.parse("1")).isEqualTo(1);
     assertThat(parser.parse("12")).isEqualTo(-1);
@@ -1755,7 +1755,7 @@ public class ParserTest {
 
   @Test
   public void atLeastOnce_withReducer_failure_withLeftover() {
-    Parser<Integer> integer = single(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> integer = one(DIGIT, "digit").map(c -> c - '0');
     Parser<Integer> parser = integer.atLeastOnce((a, b) -> a - b);
     assertThrows(ParseException.class, () -> parser.parse("1a"));
     assertThrows(ParseException.class, () -> parser.parse("12a"));
@@ -1763,7 +1763,7 @@ public class ParserTest {
 
   @Test
   public void atLeastOnce_withReducer_failure() {
-    Parser<Integer> integer = single(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> integer = one(DIGIT, "digit").map(c -> c - '0');
     Parser<Integer> parser = integer.atLeastOnce((a, b) -> a - b);
     assertThrows(ParseException.class, () -> parser.parse(""));
     assertThrows(ParseException.class, () -> parser.parse("a"));
@@ -2783,7 +2783,7 @@ public class ParserTest {
 
   @Test
   public void atLeastOnceDelimitedBy_withReducer_success() {
-    Parser<Integer> integer = single(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> integer = one(DIGIT, "digit").map(c -> c - '0');
     Parser<Integer> parser = integer.atLeastOnceDelimitedBy(",", (a, b) -> a - b);
     assertThat(parser.parse("1")).isEqualTo(1);
     assertThat(parser.parse("1,2")).isEqualTo(-1);
@@ -2792,7 +2792,7 @@ public class ParserTest {
 
   @Test
   public void atLeastOnceDelimitedBy_withReducer_failure_withLeftover() {
-    Parser<Integer> integer = single(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> integer = one(DIGIT, "digit").map(c -> c - '0');
     Parser<Integer> parser = integer.atLeastOnceDelimitedBy(",", (a, b) -> a - b);
     assertThrows(ParseException.class, () -> parser.parse("1a"));
     assertThrows(ParseException.class, () -> parser.parse("1,2a"));
@@ -2800,7 +2800,7 @@ public class ParserTest {
 
   @Test
   public void atLeastOnceDelimitedBy_withReducer_failure() {
-    Parser<Integer> integer = single(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> integer = one(DIGIT, "digit").map(c -> c - '0');
     Parser<Integer> parser = integer.atLeastOnceDelimitedBy(",", (a, b) -> a - b);
     assertThrows(ParseException.class, () -> parser.parse(""));
     assertThrows(ParseException.class, () -> parser.parse("a"));
@@ -3123,7 +3123,7 @@ public class ParserTest {
 
   @Test
   public void single_success() {
-    Parser<Character> parser = single(DIGIT, "digit");
+    Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.parse("1")).isEqualTo('1');
     assertThat(parser.parseToStream("1")).containsExactly('1');
     assertThat(parser.parse("9")).isEqualTo('9');
@@ -3133,7 +3133,7 @@ public class ParserTest {
 
   @Test
   public void single_success_source() {
-    Parser<Character> parser = single(DIGIT, "digit");
+    Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.source().parse("1")).isEqualTo("1");
     assertThat(parser.source().parseToStream("1")).containsExactly("1");
     assertThat(parser.source().parse("9")).isEqualTo("9");
@@ -3143,14 +3143,14 @@ public class ParserTest {
 
   @Test
   public void single_failure_withLeftover() {
-    Parser<Character> parser = single(DIGIT, "digit");
+    Parser<Character> parser = one(DIGIT, "digit");
     assertThrows(ParseException.class, () -> parser.parse("1a"));
     assertThrows(ParseException.class, () -> parser.parseToStream("1a").toList());
   }
 
   @Test
   public void single_failure() {
-    Parser<Character> parser = single(DIGIT, "digit");
+    Parser<Character> parser = one(DIGIT, "digit");
     assertThrows(ParseException.class, () -> parser.parse("a"));
     assertThrows(ParseException.class, () -> parser.parseToStream("a").toList());
     assertThrows(ParseException.class, () -> parser.parse("12"));
@@ -3640,7 +3640,7 @@ public class ParserTest {
 
   @Test
   public void skipping_propagatesThroughSingle() {
-    Parser<Character> parser = single(DIGIT, "digit");
+    Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.parseSkipping(Character::isWhitespace, "1")).isEqualTo('1');
     assertThat(parser.skipping(Character::isWhitespace).parseToStream("1")).containsExactly('1');
     assertThat(parser.parseSkipping(Character::isWhitespace, " 1 ")).isEqualTo('1');
@@ -3651,7 +3651,7 @@ public class ParserTest {
 
   @Test
   public void skipping_propagatesThroughSingle_source() {
-    Parser<Character> parser = single(DIGIT, "digit");
+    Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.source().parseSkipping(Character::isWhitespace, "1")).isEqualTo("1");
     assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("1")).containsExactly("1");
     assertThat(parser.source().parseSkipping(Character::isWhitespace, " 1 ")).isEqualTo("1");
@@ -3955,7 +3955,7 @@ public class ParserTest {
     Parser<?> blockComment =
         anyOf(
                 consecutive(isNot('*'), "block comment"),
-                single(is('*'), "*").notFollowedBy("/").map(Object::toString))
+                one(is('*'), "*").notFollowedBy("/").map(Object::toString))
             .zeroOrMore(joining())
             .between("/*", "*/");
     Parser<String> quotedLiteral = zeroOrMore(isNot('\''), "quoted").immediatelyBetween("'", "'");
@@ -3986,7 +3986,7 @@ public class ParserTest {
     Parser<?> blockComment =
         anyOf(
                 consecutive(isNot('*'), "block comment"),
-                single(is('*'), "*").notFollowedBy("/").map(Object::toString))
+                one(is('*'), "*").notFollowedBy("/").map(Object::toString))
             .zeroOrMore(joining())
             .between("/*", "*/");
     Parser<String> quotedLiteral = zeroOrMore(isNot('\''), "quoted").immediatelyBetween("'", "'");
@@ -4314,7 +4314,7 @@ public class ParserTest {
 
   private static Parser<Integer> simpleCalculator() {
     Parser.Rule<Integer> rule = new Parser.Rule<>();
-    Parser<Integer> num = Parser.single(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> num = Parser.one(DIGIT, "digit").map(c -> c - '0');
     Parser<Integer> atomic = rule.between("(", ")").or(num);
     Parser<Integer> expr =
         atomic.atLeastOnceDelimitedBy("+").map(nums -> nums.stream().mapToInt(n -> n).sum());
@@ -4366,14 +4366,14 @@ public class ParserTest {
 
   @Test
   public void parseToStream_success() {
-    Parser<Character> parser = single(DIGIT, "digit");
+    Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.parseToStream("123")).containsExactly('1', '2', '3').inOrder();
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
   @Test
   public void parseToStream_reader_success() {
-    Parser<Character> parser = single(DIGIT, "digit");
+    Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.parseToStream(new StringReader("123")))
         .containsExactly('1', '2', '3')
         .inOrder();
@@ -4383,7 +4383,7 @@ public class ParserTest {
   @Test
   public void parseToStream_withCompactingReader() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
-    assertThat(single(DIGIT, "digit").parseToStream(input, 0))
+    assertThat(one(DIGIT, "digit").parseToStream(input, 0))
         .containsExactly('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
         .inOrder();
   }
@@ -4400,13 +4400,13 @@ public class ParserTest {
 
   @Test
   public void parseToStream_success_source() {
-    Parser<Character> parser = single(DIGIT, "digit");
+    Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.source().parseToStream("123")).containsExactly("1", "2", "3").inOrder();
   }
 
   @Test
   public void parseToStream_emptyInput() {
-    Parser<Character> parser = single(DIGIT, "digit");
+    Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.parseToStream("").toList()).isEmpty();
   }
 
@@ -4434,19 +4434,19 @@ public class ParserTest {
 
   @Test
   public void parseToStream_reader_emptyInput() {
-    Parser<Character> parser = single(DIGIT, "digit");
+    Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.parseToStream(new StringReader("")).toList()).isEmpty();
   }
 
   @Test
   public void parseToStream_fail() {
-    Parser<Character> parser = single(DIGIT, "digit");
+    Parser<Character> parser = one(DIGIT, "digit");
     assertThrows(ParseException.class, () -> parser.parseToStream("1a2").toList());
   }
 
   @Test
   public void parseToStream_reader_fail() {
-    Parser<Character> parser = single(DIGIT, "digit");
+    Parser<Character> parser = one(DIGIT, "digit");
     assertThrows(
         ParseException.class, () -> parser.parseToStream(new StringReader("1a2")).toList());
   }
@@ -4484,7 +4484,7 @@ public class ParserTest {
   @Test
   public void probe_withCompactingReader() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
-    assertThat(single(DIGIT, "digit").probe(input, 0))
+    assertThat(one(DIGIT, "digit").probe(input, 0))
         .containsExactly('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
         .inOrder();
   }
