@@ -307,7 +307,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;?&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#caseInsensitiveWord(java.lang.String)" class="member-name-link">caseInsensitiveWord</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;word)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block"><code>caseInsensitiveWord("or")</code> matches "Or" and "OR", but not "orange", case insensitively.</div>
+<div class="block"><code>caseInsensitiveWord("or")</code> matches "Or" and "OR", but not "orange".</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#chars(int)" class="member-name-link">chars</a><wbr>(int&nbsp;n)</code></div>
@@ -654,7 +654,7 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a parser that matches <code>this</code> pattern and returns the matched string.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#string(java.lang.String)" class="member-name-link">string</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;value)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#string(java.lang.String)" class="member-name-link">string</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;string)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Matches a literal <code>string</code>.</div>
 </div>
@@ -908,7 +908,7 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="string(java.lang.String)">
 <h3>string</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">string</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;value)</span></div>
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">string</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;string)</span></div>
 <div class="block">Matches a literal <code>string</code>.</div>
 </div>
 </section>
@@ -921,7 +921,7 @@ loadScripts(document, 'script');</script>
 <div class="block">Matches a literal <code>string</code> case insensitively.
 
  <p>If you need to access the input substring that matched case insensitively,
- you can use <code>.source()</code>.</div>
+ consider using <code>.source()</code>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.9.3</dd>
@@ -934,10 +934,10 @@ loadScripts(document, 'script');</script>
 <h3>caseInsensitiveWord</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;</span>&nbsp;<span class="element-name">caseInsensitiveWord</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;word)</span></div>
-<div class="block"><code>caseInsensitiveWord("or")</code> matches "Or" and "OR", but not "orange", case insensitively.
+<div class="block"><code>caseInsensitiveWord("or")</code> matches "Or" and "OR", but not "orange".
 
  <p>If you need to access the input substring that matched case insensitively,
- you can use <code>.source()</code>.</div>
+ consider using <code>.source()</code>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.9.3</dd>
