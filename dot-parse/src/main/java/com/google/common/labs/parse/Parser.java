@@ -90,8 +90,21 @@ public abstract class Parser<T> {
     }
   };
 
-  /** Matches a character as specified by {@code matcher}. */
+  /** Matches a character as specified by {@code matcher}.
+   *
+   * @deprecated Use {@link #one} instead.
+   */
+  @Deprecated
   public static Parser<Character> single(CharPredicate matcher, String name) {
+    return one(matcher, name);
+  }
+
+  /**
+   * Matches a character as specified by {@code matcher}.
+   *
+   * @since 9.9.3
+   */
+  public static Parser<Character> one(CharPredicate matcher, String name) {
     requireNonNull(matcher);
     requireNonNull(name);
     return new Parser<>() {
@@ -1060,7 +1073,7 @@ public abstract class Parser<T> {
    * string("if").notImmediatelyFollowedBy(IDENTIFIER_CHAR, "identifier char")}.
    */
   public final Parser<T> notImmediatelyFollowedBy(CharPredicate predicate, String name) {
-    return notFollowedBy(literally(single(predicate, name)), name);
+    return notFollowedBy(literally(one(predicate, name)), name);
   }
 
   /**

@@ -306,7 +306,7 @@ Now let's build the parser using the `Parser` class. First, the two primitives:
 
 ```java {.good}
 // backslash and right bracket are not allowed
-Parser<Character> supportedChar = Parser.single(CharPredicate.noneOf("\\]"), "valid char");
+Parser<Character> supportedChar = Parser.one(CharPredicate.noneOf("\\]"), "valid char");
 Parser<CharPredicate> range = Parser.sequence(
     supportedChar.followedBy("-"), supportedChar, CharPrediate::range);
 Parser<CharPredicate> singleChar = supportedChar.map(CharPredicate::is);
@@ -316,7 +316,7 @@ Regex character set doesn't allow literal `']'`.
 The API decides not to support escaping because escaping rule is pretty complex
 and they hurt readability (particularly in Java where you can easily get lost on the
 number of backslashes you need). Instead, for use cases that need these special characters,
-there's always the [`single(CharPredicate)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#single(com.google.mu.util.CharPredicate,java.lang.String))
+there's always the [`one(CharPredicate)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#one(com.google.mu.util.CharPredicate,java.lang.String))
 and [`consecutive(CharPredicate)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#consecutive(com.google.mu.util.CharPredicate,java.lang.String)) to programmatically
 build the primitive parsers.
 

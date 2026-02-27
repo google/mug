@@ -92,7 +92,7 @@ public final class CharacterSet implements CharPredicate {
         !characterSet.contains("\\"),
         "Escaping (%s) not supported in a character set. Please use CharePredicate instead.",
         characterSet);
-    Parser<Character> validChar = Parser.single(isNot(']'), "character");
+    Parser<Character> validChar = Parser.one(isNot(']'), "character");
     Parser<CharPredicate> range =
         Parser.sequence(validChar.followedBy("-"), validChar, CharPredicate::range);
     Parser<CharPredicate>.OrEmpty positiveSet =

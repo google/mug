@@ -42,7 +42,7 @@ import com.google.mu.util.CharPredicate;
 /** Parsers for {@link RegexPattern}. */
 final class RegexParsers {
   private static final Parser<Character> ESCAPED_CHAR =
-      literally(string("\\").then(Parser.single(ANY, "escaped char")));
+      literally(string("\\").then(Parser.one(ANY, "escaped char")));
   private static final Map<String, RegexPattern.CharacterProperty> POSIX_CHAR_CLASS_MAP =
       stream(RegexPattern.PosixCharClass.values())
           .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
@@ -109,10 +109,10 @@ final class RegexParsers {
 
   private static Parser<RegexPattern.CharacterSet> charClass() {
     Parser<Character> literalChar =
-        Parser.anyOf(ESCAPED_CHAR, Parser.single(CharPredicate.noneOf("-]\\"), "literal character"));
+        Parser.anyOf(ESCAPED_CHAR, Parser.one(CharPredicate.noneOf("-]\\"), "literal character"));
     Parser<Character> literalCharOrDash =
         Parser.anyOf(
-            ESCAPED_CHAR, Parser.single(CharPredicate.noneOf("]\\"), "literal character or dash"));
+            ESCAPED_CHAR, Parser.one(CharPredicate.noneOf("]\\"), "literal character or dash"));
     Parser<CharRange> range =
         Parser.sequence(
             literalChar, string("-").then(literalChar), RegexPattern.CharRange::new);
