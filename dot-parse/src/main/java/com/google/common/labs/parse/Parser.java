@@ -325,14 +325,36 @@ public abstract class Parser<T> {
    */
   public static Parser<String> quotedByWithEscapes(
       char before, char after, Parser<? extends CharSequence> escaped) {
-    var escape = string("\\").then(escaped);
     checkArgument(before != '\\', "quoteChar cannot be '\\'");
-    checkArgument(after != '\\', "quoteChar cannot be '\\'");
     checkArgument(!Character.isISOControl(before), "quoteChar cannot be a control character");
+    return quotedByWithEscapes(Character.toString(before), after, escaped);
+  }
+
+  /**
+   * String literal quoted by {@code before} and {@code after} with backslash escapes.
+   *
+   * <p>When a backslash is encountered, the {@code escaped} parser is used to parse the escaped
+   * character(s).
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * quotedByWithEscapes("(http://", ')', chars(1)).parse("(http://foo\\\\bar.com)");
+   * }</pre>
+   *
+   * will treat the escaped character as literal and return {@code "foo\\bar"}.
+   *
+   * @since 9.9.3
+   */
+  public static Parser<String> quotedByWithEscapes(
+      String before, char after, Parser<? extends CharSequence> escaped) {
+    requireNonNull(before);
+    var escape = string("\\").then(escaped);
+    checkArgument(after != '\\', "quoteChar cannot be '\\'");
     checkArgument(!Character.isISOControl(after), "quoteChar cannot be a control character");
     return anyOf(consecutive(isNot(after).and(isNot('\\')), "quoted chars"), escape)
         .zeroOrMore(Collectors.joining())
-        .immediatelyBetween(Character.toString(before), Character.toString(after));
+        .immediatelyBetween(before, Character.toString(after));
   }
 
   /** @deprecated Use {@link #quotedByWithEscapes} instead */

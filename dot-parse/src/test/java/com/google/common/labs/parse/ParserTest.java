@@ -384,6 +384,39 @@ public class ParserTest {
   }
 
   @Test
+  public void quotedByWithEscapes_stringBeforeCharAfter_success() {
+    Parser<String> parser = Parser.quotedByWithEscapes("<<", '>', chars(1));
+    assertThat(parser.parse("<<foo>")).isEqualTo("foo");
+    assertThat(parser.matches("<<foo>")).isTrue();
+    assertThat(parser.parse("<<foo<bar>")).isEqualTo("foo<bar");
+    assertThat(parser.matches("<<foo<bar>")).isTrue();
+    assertThat(parser.parse("<<foo\\>bar>")).isEqualTo("foo>bar");
+    assertThat(parser.matches("<<foo\\>bar>")).isTrue();
+  }
+
+  @Test
+  public void quotedByWithEscapes_stringBeforeCharAfter_failures() {
+    Parser<String> parser = Parser.quotedByWithEscapes("<<", '>', chars(1));
+    assertThrows(ParseException.class, () -> parser.parse("<<foo")); // unclosed
+    assertThat(parser.matches("<<foo")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parse("<<foo>bar")); // leftover
+    assertThat(parser.matches("<<foo>bar")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parse("<<foo\\")); // dangling escape
+    assertThat(parser.matches("<<foo\\>")).isFalse();
+  }
+
+  @Test
+  public void quotedByWithEscapes_stringBeforeCharAfter_unicodeEscape_success() {
+    Parser<String> unicodeEscaped = string("u").then(bmpCodeUnit()).map(Character::toString);
+    Parser<String> quotedString =
+        Parser.quotedByWithEscapes("begin:", ';', unicodeEscaped.or(chars(1)));
+    assertThat(quotedString.parse("begin:;")).isEmpty();
+    assertThat(quotedString.matches("begin:;")).isTrue();
+    assertThat(quotedString.parse("begin:emoji: \\uD83D\\uDe00;")).isEqualTo("emoji: 😀");
+    assertThat(quotedString.matches("begin:emoji: \\uD83D\\uDe00;")).isTrue();
+  }
+
+  @Test
   public void bmpCodeUnit_emoji() {
     assertThat(bmpCodeUnit().map(Character::toString).zeroOrMore(joining()).parse("d83dDE00"))
         .isEqualTo("😀");
@@ -397,7 +430,8 @@ public class ParserTest {
         new NullPointerTester()
             .setDefault(Parser.class, string("a"))
             .setDefault(Parser.OrEmpty.class, string("a").orElse("default"))
-            .setDefault(String.class, "test");
+            .setDefault(String.class, "test")
+            .setDefault(char.class, '`');
     tester.testAllPublicStaticMethods(Parser.class);
   }
 
