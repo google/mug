@@ -281,8 +281,7 @@ public abstract class Parser<T> {
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         if (input.startsWithCaseInsensitive(string, start)) {
-          return new MatchResult.Success<>(
-              start, start + string.length(), input.snippet(start, string.length()));
+          return new MatchResult.Success<>(start, start + string.length(), string);
         }
         return context.expecting(string, start);
       }
