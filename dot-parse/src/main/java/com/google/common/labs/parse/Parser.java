@@ -252,16 +252,16 @@ public abstract class Parser<T> {
   }
 
   /** Matches a literal {@code string}. */
-  public static Parser<String> string(String value) {
-    checkArgument(value.length() > 0, "value cannot be empty");
+  public static Parser<String> string(String string) {
+    checkArgument(string.length() > 0, "string cannot be empty");
     return new Parser<>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-        if (input.startsWith(value, start)) {
-          return new MatchResult.Success<>(start, start + value.length(), value);
+        if (input.startsWith(string, start)) {
+          return new MatchResult.Success<>(start, start + string.length(), string);
         }
-        return context.expecting(value, start);
+        return context.expecting(string, start);
       }
     };
   }
