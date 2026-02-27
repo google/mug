@@ -275,7 +275,7 @@ public abstract class Parser<T> {
    * @since 9.9.3
    */
   public static Parser<?> caseInsensitive(String string) {
-    checkArgument(string.length() > 0, "value cannot be empty");
+    checkArgument(string.length() > 0, "string cannot be empty");
     return new Parser<String>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
