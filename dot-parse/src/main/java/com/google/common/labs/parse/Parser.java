@@ -252,16 +252,16 @@ public abstract class Parser<T> {
   }
 
   /** Matches a literal {@code string}. */
-  public static Parser<String> string(String value) {
-    checkArgument(value.length() > 0, "value cannot be empty");
+  public static Parser<String> string(String string) {
+    checkArgument(string.length() > 0, "string cannot be empty");
     return new Parser<>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-        if (input.startsWith(value, start)) {
-          return new MatchResult.Success<>(start, start + value.length(), value);
+        if (input.startsWith(string, start)) {
+          return new MatchResult.Success<>(start, start + string.length(), string);
         }
-        return context.expecting(value, start);
+        return context.expecting(string, start);
       }
     };
   }
@@ -270,19 +270,18 @@ public abstract class Parser<T> {
    * Matches a literal {@code string} case insensitively.
    *
    * <p>If you need to access the input substring that matched case insensitively,
-   * you can use {@code .source()}.
+   * consider using {@code .source()}.
    *
    * @since 9.9.3
    */
   public static Parser<?> caseInsensitive(String string) {
-    checkArgument(string.length() > 0, "value cannot be empty");
+    checkArgument(string.length() > 0, "string cannot be empty");
     return new Parser<String>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         if (input.startsWithCaseInsensitive(string, start)) {
-          return new MatchResult.Success<>(
-              start, start + string.length(), input.snippet(start, string.length()));
+          return new MatchResult.Success<>(start, start + string.length(), string);
         }
         return context.expecting(string, start);
       }
@@ -290,10 +289,10 @@ public abstract class Parser<T> {
   }
 
   /**
-   * {@code caseInsensitiveWord("or")} matches "Or" and "OR", but not "orange", case insensitively.
+   * {@code caseInsensitiveWord("or")} matches "Or" and "OR", but not "orange".
    *
    * <p>If you need to access the input substring that matched case insensitively,
-   * you can use {@code .source()}.
+   * consider using {@code .source()}.
    *
    * @since 9.9.3
    */
