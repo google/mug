@@ -270,7 +270,7 @@ public abstract class Parser<T> {
    * Matches a literal {@code string} case insensitively.
    *
    * <p>If you need to access the input substring that matched case insensitively,
-   * you can use {@code .source()}.
+   * consider using {@code .source()}.
    *
    * @since 9.9.3
    */
@@ -289,10 +289,10 @@ public abstract class Parser<T> {
   }
 
   /**
-   * {@code caseInsensitiveWord("or")} matches "Or" and "OR", but not "orange", case insensitively.
+   * {@code caseInsensitiveWord("or")} matches "Or" and "OR", but not "orange".
    *
    * <p>If you need to access the input substring that matched case insensitively,
-   * you can use {@code .source()}.
+   * consider using {@code .source()}.
    *
    * @since 9.9.3
    */
