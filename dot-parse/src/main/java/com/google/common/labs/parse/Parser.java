@@ -287,7 +287,7 @@ public abstract class Parser<T> {
   }
 
   /**
-   * {@code word("or")} matches "Or" and "OR", but not "orange", case insensitively.
+   * {@code caseInsensitiveWord("or")} matches "Or" and "OR", but not "orange", case insensitively.
    *
    * @since 9.9.3
    */

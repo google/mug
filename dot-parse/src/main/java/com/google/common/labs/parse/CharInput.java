@@ -61,8 +61,7 @@ abstract class CharInput {
       }
 
       @Override boolean startsWithCaseInsensitive(String prefix, int index) {
-        return text.regionMatches(
-            /* ignoreCase= */ true, index, String.valueOf(prefix), 0, prefix.length());
+        return text.regionMatches(/* ignoreCase= */ true, index, prefix, 0, prefix.length());
       }
 
       @Override boolean isEof(int index) {
