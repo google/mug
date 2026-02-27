@@ -269,19 +269,22 @@ public abstract class Parser<T> {
   /**
    * Matches a literal {@code string} case insensitively.
    *
+   * <p>If you need to access the input substring that matched case insensitively,
+   * you can use {@code .source()}.
+   *
    * @since 9.9.3
    */
-  public static Parser<String> caseInsensitive(String value) {
-    checkArgument(value.length() > 0, "value cannot be empty");
-    return new Parser<>() {
+  public static Parser<?> caseInsensitive(String string) {
+    checkArgument(string.length() > 0, "value cannot be empty");
+    return new Parser<String>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-        if (input.startsWithCaseInsensitive(value, start)) {
+        if (input.startsWithCaseInsensitive(string, start)) {
           return new MatchResult.Success<>(
-              start, start + value.length(), input.snippet(start, value.length()));
+              start, start + string.length(), input.snippet(start, string.length()));
         }
-        return context.expecting(value, start);
+        return context.expecting(string, start);
       }
     };
   }
@@ -289,9 +292,12 @@ public abstract class Parser<T> {
   /**
    * {@code caseInsensitiveWord("or")} matches "Or" and "OR", but not "orange", case insensitively.
    *
+   * <p>If you need to access the input substring that matched case insensitively,
+   * you can use {@code .source()}.
+   *
    * @since 9.9.3
    */
-  public static Parser<String> caseInsensitiveWord(String word) {
+  public static Parser<?> caseInsensitiveWord(String word) {
     return caseInsensitive(word).notImmediatelyFollowedBy(CharPredicate.WORD, "[a-zA-Z0-9_]");
   }
 
