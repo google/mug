@@ -72,30 +72,34 @@ loadScripts(document, 'script');</script>
 <div class="col-last odd-row-color">
 <div class="block">Use <a href="com/google/common/labs/parse/Parser.html#quotedByWithEscapes(char,char,com.google.common.labs.parse.Parser)"><code>Parser.quotedByWithEscapes(char, char, com.google.common.labs.parse.Parser&lt;? extends java.lang.CharSequence&gt;)</code></a> instead</div>
 </div>
-<div class="col-summary-item-name even-row-color"><a href="com/google/mu/safesql/SafeSql.html#nonNegativeLiteral(int)">com.google.mu.safesql.SafeSql.nonNegativeLiteral<wbr>(int)</a></div>
+<div class="col-summary-item-name even-row-color"><a href="com/google/common/labs/parse/Parser.html#single(com.google.mu.util.CharPredicate,java.lang.String)">com.google.common.labs.parse.Parser.single<wbr>(CharPredicate, String)</a></div>
 <div class="col-last even-row-color">
+<div class="block">Use <a href="com/google/common/labs/parse/Parser.html#one(com.google.mu.util.CharPredicate,java.lang.String)"><code>Parser.one(com.google.mu.util.CharPredicate, java.lang.String)</code></a> instead.</div>
+</div>
+<div class="col-summary-item-name odd-row-color"><a href="com/google/mu/safesql/SafeSql.html#nonNegativeLiteral(int)">com.google.mu.safesql.SafeSql.nonNegativeLiteral<wbr>(int)</a></div>
+<div class="col-last odd-row-color">
 <div class="block">Prefer <code>OFFSET-FETCH</code> clause, which is parameterizable</div>
 </div>
-<div class="col-summary-item-name odd-row-color"><a href="com/google/mu/safesql/SafeSql.html#optionally(java.lang.String,java.util.Optional)">com.google.mu.safesql.SafeSql.optionally<wbr>(String, Optional&lt;?&gt;)</a></div>
-<div class="col-last odd-row-color">
+<div class="col-summary-item-name even-row-color"><a href="com/google/mu/safesql/SafeSql.html#optionally(java.lang.String,java.util.Optional)">com.google.mu.safesql.SafeSql.optionally<wbr>(String, Optional&lt;?&gt;)</a></div>
+<div class="col-last even-row-color">
 <div class="block">Use <code>SafeSql.of("{foo? -&gt; OR foo?}", optionalFoo)</code> instead of
              <code>optionally("or {foo}", optionalFoo)</code> because the former allows
              you to reference <code>foo?</code> multiple times in the right hand side snippet.</div>
 </div>
-<div class="col-summary-item-name even-row-color"><a href="com/google/mu/util/stream/Iteration.html#generate(java.lang.Iterable)">com.google.mu.util.stream.Iteration.generate<wbr>(Iterable&lt;? extends T&gt;)</a></div>
-<div class="col-last even-row-color">
+<div class="col-summary-item-name odd-row-color"><a href="com/google/mu/util/stream/Iteration.html#generate(java.lang.Iterable)">com.google.mu.util.stream.Iteration.generate<wbr>(Iterable&lt;? extends T&gt;)</a></div>
+<div class="col-last odd-row-color">
 <div class="block">Use <a href="com/google/mu/util/stream/Iteration.html#emit(java.lang.Iterable)"><code>Iteration.emit(Iterable)</code></a> instead.</div>
 </div>
-<div class="col-summary-item-name odd-row-color"><a href="com/google/mu/util/stream/Iteration.html#generate(T)">com.google.mu.util.stream.Iteration.generate<wbr>(T)</a></div>
-<div class="col-last odd-row-color">
+<div class="col-summary-item-name even-row-color"><a href="com/google/mu/util/stream/Iteration.html#generate(T)">com.google.mu.util.stream.Iteration.generate<wbr>(T)</a></div>
+<div class="col-last even-row-color">
 <div class="block">Use <a href="com/google/mu/util/stream/Iteration.html#emit(T)"><code>Iteration.emit(Object)</code></a> instead.</div>
 </div>
-<div class="col-summary-item-name even-row-color"><a href="com/google/mu/util/stream/Iteration.html#yield(com.google.mu.util.stream.Iteration.Continuation)">com.google.mu.util.stream.Iteration.yield<wbr>(Iteration.Continuation)</a></div>
-<div class="col-last even-row-color">
+<div class="col-summary-item-name odd-row-color"><a href="com/google/mu/util/stream/Iteration.html#yield(com.google.mu.util.stream.Iteration.Continuation)">com.google.mu.util.stream.Iteration.yield<wbr>(Iteration.Continuation)</a></div>
+<div class="col-last odd-row-color">
 <div class="block">Use <a href="com/google/mu/util/stream/Iteration.html#lazily(com.google.mu.util.stream.Iteration.Continuation)"><code>Iteration.lazily(Continuation)</code></a> instead</div>
 </div>
-<div class="col-summary-item-name odd-row-color"><a href="com/google/mu/util/stream/Iteration.html#yield(java.util.function.Supplier,java.util.function.Consumer)">com.google.mu.util.stream.Iteration.yield<wbr>(Supplier&lt;? extends T&gt;, Consumer&lt;? super T&gt;)</a></div>
-<div class="col-last odd-row-color">
+<div class="col-summary-item-name even-row-color"><a href="com/google/mu/util/stream/Iteration.html#yield(java.util.function.Supplier,java.util.function.Consumer)">com.google.mu.util.stream.Iteration.yield<wbr>(Supplier&lt;? extends T&gt;, Consumer&lt;? super T&gt;)</a></div>
+<div class="col-last even-row-color">
 <div class="block">too niche</div>
 </div>
 </div>
