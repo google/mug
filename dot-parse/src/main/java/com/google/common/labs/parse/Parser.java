@@ -1,4 +1,5 @@
 /*****************************************************************************
+ * Copyright (C) google.com                                                  *
  * ------------------------------------------------------------------------- *
  * Licensed under the Apache License, Version 2.0 (the "License");           *
  * you may not use this file except in compliance with the License.          *
@@ -821,8 +822,10 @@ public abstract class Parser<T> {
    * this} and applies the result unary operator functions iteratively.
    *
    * <p>For infix operator support, consider using {@link OperatorTable}.
+   *
+   * @since 9.9.3
    */
-  public final Parser<T> prefix(Parser<? extends UnaryOperator<T>> operator) {
+  public final Parser<T> withPrefixes(Parser<? extends UnaryOperator<T>> operator) {
     return sequence(
         operator.zeroOrMore(), this, (ops, operand) -> applyOperators(ops.reversed(), operand));
   }
@@ -835,8 +838,10 @@ public abstract class Parser<T> {
    * postfix.
    *
    * <p>For infix operator support, consider using {@link OperatorTable}.
+   *
+   * @since 9.9.3
    */
-  public final Parser<T> postfix(Parser<? extends UnaryOperator<T>> operator) {
+  public final Parser<T> withPostfixes(Parser<? extends UnaryOperator<T>> operator) {
     return sequence(this, operator.zeroOrMore(), (operand, ops) -> applyOperators(ops, operand));
   }
 
@@ -847,16 +852,35 @@ public abstract class Parser<T> {
    * <pre>{@code
    * Parser<Expr> parser = word()
    *     .map(Expr::variable)
-   *     .postfix(string(".").then(word()), (expr, field) -> Expr.fieldAccess(expr, field)));
+   *     .withPostfixes(string(".").then(word()), (expr, field) -> Expr.fieldAccess(expr, field)));
    * }</pre>
    *
    * <p>For infix operator support, consider using {@link OperatorTable}.
    *
-   * @since 9.5
+   * @since 9.9.3
    */
+  public final <S> Parser<T> withPostfixes(
+      Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
+    return withPostfixes(asPostfixOperator(operator, postfixFunction));
+  }
+
+  /** @deprecated Use {@link #withPrefixes} instead. */
+  @Deprecated
+  public final Parser<T> prefix(Parser<? extends UnaryOperator<T>> operator) {
+    return withPrefixes(operator);
+  }
+
+  /** @deprecated Use {@link #withPostfixes(Parser)} instead. */
+  @Deprecated
+  public final Parser<T> postfix(Parser<? extends UnaryOperator<T>> operator) {
+    return withPostfixes(operator);
+  }
+
+
+  /** @deprecated Use {@link #withPostfixes(Parser, BiFunction)} instead. */
   public final <S> Parser<T> postfix(
       Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
-    return postfix(asPostfixOperator(operator, postfixFunction));
+    return withPostfixes(operator, postfixFunction);
   }
 
   /**

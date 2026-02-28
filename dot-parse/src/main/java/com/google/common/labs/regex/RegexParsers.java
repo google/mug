@@ -68,7 +68,7 @@ final class RegexParsers {
             consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
             ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))));
     Parser<RegexPattern> sequence =
-        atomic.postfix(quantifier()).atLeastOnce(RegexPattern.inSequence());
+        atomic.withPostfixes(quantifier()).atLeastOnce(RegexPattern.inSequence());
     return lazy.definedAs(sequence.atLeastOnceDelimitedBy("|", RegexPattern.asAlternation()));
   }
 
