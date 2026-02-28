@@ -70,8 +70,10 @@ import com.google.mu.util.stream.Joiner;
  * But it's more efficient to factor out common left prefix. For example instead of {@code
  * anyOf(expr.followedBy(";"), expr)}, use {@code expr.optionallyFollowedBy(";")} instead.
  *
- * <p>WARNING: A poorly-written grammar with long common prefixes may incur expensive backtracking
- * overhead. And if you define recursive grammars using {@link #define define()} or {@link
+ * <p>WARNING: A poorly-written grammar with long common prefixes among {@code anyOf()} choices
+ * may incur expensive backtracking overhead.
+ *
+ * <p>WARNING: If you define recursive grammars using {@link #define define()} or {@link
  * Parser.Rule}, maliciously crafted input (think of 10K left parens in an expression parser)
  * can cause StackOverflowError.
  */
