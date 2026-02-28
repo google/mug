@@ -505,6 +505,23 @@ public class ParserTest {
   }
 
   @Test
+  public void quotedByWithEscapes_markdownLinkWithEscape() {
+    record MarkdownLink(String text, String url) {}
+    Parser<String> escapedChar =
+        Parser.one(CharPredicate.anyOf("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~\\"), "escapable char")
+            .map(c -> Character.toString(c))
+            .or(one(CharPredicate.ANY, "non-escapable char").map(c -> "\\" + c));
+    Parser<MarkdownLink> parser =
+        Parser.sequence(
+            Parser.quotedByWithEscapes("![", ']', escapedChar),
+            Parser.quotedByWithEscapes("(http://", ')', escapedChar),
+            MarkdownLink::new);
+    assertThat(parser.parse("![text](http://\\)url)")).isEqualTo(new MarkdownLink("text", ")url"));
+    assertThat(parser.parse("![text\\a](http://\\)url)"))
+        .isEqualTo(new MarkdownLink("text\\a", ")url"));
+  }
+
+  @Test
   public void bmpCodeUnit_emoji() {
     assertThat(bmpCodeUnit().map(Character::toString).zeroOrMore(joining()).parse("d83dDE00"))
         .isEqualTo("😀");
