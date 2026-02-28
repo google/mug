@@ -184,8 +184,10 @@ loadScripts(document, 'script');</script>
  But it's more efficient to factor out common left prefix. For example instead of <code>
  anyOf(expr.followedBy(";"), expr)</code>, use <code>expr.optionallyFollowedBy(";")</code> instead.
 
- <p>WARNING: A poorly-written grammar with long common prefixes may incur expensive backtracking
- overhead. And if you define recursive grammars using <a href="#define(java.util.function.Function)"><code>define()</code></a> or <a href="Parser.Rule.html" title="class in com.google.common.labs.parse"><code>Parser.Rule</code></a>, maliciously crafted input (think of 10K left parens in an expression parser)
+ <p>WARNING: A poorly-written grammar with long common prefixes among <code>anyOf()</code> choices
+ may incur expensive backtracking overhead.
+
+ <p>WARNING: If you define recursive grammars using <a href="#define(java.util.function.Function)"><code>define()</code></a> or <a href="Parser.Rule.html" title="class in com.google.common.labs.parse"><code>Parser.Rule</code></a>, maliciously crafted input (think of 10K left parens in an expression parser)
  can cause StackOverflowError.</div>
 </div>
 </section>
