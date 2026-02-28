@@ -3242,7 +3242,7 @@ public class ParserTest {
   }
 
   @Test
-  public void prefix_zeroOperator_success() {
+  public void withPrefixes_zeroOperator_success() {
     Parser<Integer> number = digits().map(Integer::parseInt);
     Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
     Parser<Integer> parser = number.withPrefixes(neg);
@@ -3252,7 +3252,7 @@ public class ParserTest {
   }
 
   @Test
-  public void prefix_zeroOperator_success_source() {
+  public void withPrefixes_zeroOperator_success_source() {
     Parser<Integer> number = digits().map(Integer::parseInt);
     Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
     Parser<Integer> parser = number.withPrefixes(neg);
@@ -3262,7 +3262,7 @@ public class ParserTest {
   }
 
   @Test
-  public void prefix_oneOperator_success() {
+  public void withPrefixes_oneOperator_success() {
     Parser<Integer> number = digits().map(Integer::parseInt);
     Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
     Parser<Integer> parser = number.withPrefixes(neg);
@@ -3271,7 +3271,7 @@ public class ParserTest {
   }
 
   @Test
-  public void prefix_oneOperator_success_source() {
+  public void withPrefixes_oneOperator_success_source() {
     Parser<Integer> number = digits().map(Integer::parseInt);
     Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
     Parser<Integer> parser = number.withPrefixes(neg);
@@ -3280,7 +3280,7 @@ public class ParserTest {
   }
 
   @Test
-  public void prefix_multipleOperators_success() {
+  public void withPrefixes_multipleOperators_success() {
     Parser<Integer> number = digits().map(Integer::parseInt);
     Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
     Parser<UnaryOperator<Integer>> plus = string("+").thenReturn(i -> i);
@@ -3298,7 +3298,7 @@ public class ParserTest {
   }
 
   @Test
-  public void prefix_multipleOperators_success_source() {
+  public void withPrefixes_multipleOperators_success_source() {
     Parser<Integer> number = digits().map(Integer::parseInt);
     Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
     Parser<UnaryOperator<Integer>> plus = string("+").thenReturn(i -> i);
@@ -3316,7 +3316,7 @@ public class ParserTest {
   }
 
   @Test
-  public void prefix_operandParseFails() {
+  public void withPrefixes_operandParseFails() {
     Parser<Integer> number = digits().map(Integer::parseInt);
     Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
     Parser<Integer> parser = number.withPrefixes(neg);
@@ -3327,7 +3327,7 @@ public class ParserTest {
   }
 
   @Test
-  public void prefix_failure_withLeftover() {
+  public void withPrefixes_failure_withLeftover() {
     Parser<Integer> number = digits().map(Integer::parseInt);
     Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
     Parser<Integer> parser = number.withPrefixes(neg);
@@ -3338,7 +3338,7 @@ public class ParserTest {
   }
 
   @Test
-  public void postfix_success() {
+  public void withPostfixes_success() {
     Parser<Integer> number = digits().map(Integer::parseInt);
     Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
     Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
@@ -3356,7 +3356,7 @@ public class ParserTest {
   }
 
   @Test
-  public void postfix_success_source() {
+  public void withPostfixes_success_source() {
     Parser<Integer> number = digits().map(Integer::parseInt);
     Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
     Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
@@ -3374,7 +3374,7 @@ public class ParserTest {
   }
 
   @Test
-  public void postfix_failure() {
+  public void withPostfixes_failure() {
     Parser<Integer> number = digits().map(Integer::parseInt);
     Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
     Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
@@ -3387,7 +3387,7 @@ public class ParserTest {
   }
 
   @Test
-  public void postfix_failure_withLeftover() {
+  public void withPostfixes_failure_withLeftover() {
     Parser<Integer> number = digits().map(Integer::parseInt);
     Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
     Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
@@ -3400,7 +3400,7 @@ public class ParserTest {
   }
 
   @Test
-  public void postfix_withBiFunction_success() {
+  public void withPostfixes_withBiFunction_success() {
     Parser<Integer> parser =
         digits().map(Integer::parseInt).withPostfixes(string("++").map(s -> 1), (a, b) -> a + b);
     assertThat(parser.parse("10")).isEqualTo(10);
@@ -3409,7 +3409,7 @@ public class ParserTest {
   }
 
   @Test
-  public void postfix_withBiFunction_failure() {
+  public void withPostfixes_withBiFunction_failure() {
     Parser<Integer> parser =
         digits().map(Integer::parseInt).withPostfixes(string("!").map(s -> 1), (a, b) -> a + b);
     assertThrows(ParseException.class, () -> parser.parse("10!a"));
