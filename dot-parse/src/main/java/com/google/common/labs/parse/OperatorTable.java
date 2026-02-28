@@ -218,19 +218,19 @@ public final class OperatorTable<T> {
 
   private static final class Prefix<T> extends Unary<T> {
     @Override public Parser<T> makeExpressionParser(Parser<T> operand) {
-      return operand.prefix(opParser());
+      return operand.withPrefixes(opParser());
     }
   }
 
   private static final class Postfix<T> extends Unary<T> {
     @Override public Parser<T> makeExpressionParser(Parser<T> operand) {
-      return operand.postfix(opParser());
+      return operand.withPostfixes(opParser());
     }
   }
 
   private static final class Infixl<T> extends Binary<T> {
     @Override public Parser<T> makeExpressionParser(Parser<T> operand) {
-      return operand.postfix(opWithRightHandSide(operand));
+      return operand.withPostfixes(opWithRightHandSide(operand));
     }
   }
 
