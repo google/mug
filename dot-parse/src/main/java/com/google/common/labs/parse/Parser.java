@@ -349,7 +349,7 @@ public abstract class Parser<T> {
   }
 
   /**
-   * String literal quoted by {@code quoteChar} with backslash escapes.
+   * String literal quoted by {@code before} and {@code after} with backslash escapes.
    *
    * <p>When a backslash is encountered, the {@code escaped} parser is used to parse the escaped
    * character(s).
@@ -375,8 +375,6 @@ public abstract class Parser<T> {
    */
   public static Parser<String> quotedByWithEscapes(
       char before, char after, Parser<? extends CharSequence> escaped) {
-    checkArgument(before != '\\', "quoteChar cannot be '\\'");
-    checkArgument(!Character.isISOControl(before), "quoteChar cannot be a control character");
     return quotedByWithEscapes(Character.toString(before), after, escaped);
   }
 

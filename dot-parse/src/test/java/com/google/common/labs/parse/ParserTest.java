@@ -451,14 +451,6 @@ public class ParserTest {
   @Test
   public void quotedByWithEscapes_invalidQuoteChar_throws() {
     assertThrows(
-        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('\\', '"', chars(1)));
-    assertThrows(
-        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('\n', '"', chars(1)));
-    assertThrows(
-        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('\r', '"', chars(1)));
-    assertThrows(
-        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('\t', '"', chars(1)));
-    assertThrows(
         IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('"', '\\', chars(1)));
     assertThrows(
         IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('"', '\n', chars(1)));
