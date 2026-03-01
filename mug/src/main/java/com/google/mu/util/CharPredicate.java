@@ -28,7 +28,7 @@ public interface CharPredicate {
   static CharPredicate ALPHA =  c -> (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 
   /** Equivalent to the {@code [a-zA-Z0-9_]} character class. */
-  static CharPredicate WORD = c -> c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
+  static CharPredicate WORD = c -> (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
 
   /** Corresponds to the ASCII characters. */
   static CharPredicate ASCII = new CharPredicate() {
