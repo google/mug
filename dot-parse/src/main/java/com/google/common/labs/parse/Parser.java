@@ -280,7 +280,7 @@ public abstract class Parser<T> {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-       return input.startsWithCaseInsensitive(string, start)
+        return input.startsWithCaseInsensitive(string, start)
             ? new MatchResult.Success<>(start, start + string.length(), string)
             : context.expecting(string, start);
       }
