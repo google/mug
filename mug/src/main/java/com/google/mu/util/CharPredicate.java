@@ -25,10 +25,10 @@ import static java.util.Objects.requireNonNull;
 public interface CharPredicate {
 
   /** Equivalent to the {@code [a-zA-Z]} character class. */
-  static CharPredicate ALPHA = range('a', 'z').orRange('A', 'Z');
+  static CharPredicate ALPHA =  c -> (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 
   /** Equivalent to the {@code [a-zA-Z0-9_]} character class. */
-  static CharPredicate WORD = ALPHA .orRange('0', '9').or('_');
+  static CharPredicate WORD = c -> c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
 
   /** Corresponds to the ASCII characters. */
   static CharPredicate ASCII = new CharPredicate() {
