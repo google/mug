@@ -114,10 +114,9 @@ public abstract class Parser<T> {
       @Override MatchResult<Character> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-        if (input.isInRange(start) && matcher.test(input.charAt(start))) {
-          return new MatchResult.Success<>(start, start + 1, input.charAt(start));
-        }
-        return context.expecting(name, start);
+        return input.isInRange(start) && matcher.test(input.charAt(start))
+            ? new MatchResult.Success<>(start, start + 1, input.charAt(start))
+            : context.expecting(name, start);
       }
     };
   }
@@ -246,10 +245,9 @@ public abstract class Parser<T> {
         // skip could cause the match to fail if value itself contains characters that
         // would be skipped (e.g. whitespace).
         int found = input.indexOf(target, start);
-        if (found >= 0) {
-          return new MatchResult.Success<>(found, found + target.length(), target);
-        }
-        return context.expecting(target, skipIfAny(skip, input, start));
+        return found >= 0
+            ? new MatchResult.Success<>(found, found + target.length(), target)
+            : context.expecting(target, skipIfAny(skip, input, start));
       }
     };
   }
@@ -261,10 +259,9 @@ public abstract class Parser<T> {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-        if (input.startsWith(string, start)) {
-          return new MatchResult.Success<>(start, start + string.length(), string);
-        }
-        return context.expecting(string, start);
+        return input.startsWith(string, start)
+            ? new MatchResult.Success<>(start, start + string.length(), string)
+            : context.expecting(string, start);
       }
     };
   }
@@ -283,10 +280,9 @@ public abstract class Parser<T> {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-        if (input.startsWithCaseInsensitive(string, start)) {
-          return new MatchResult.Success<>(start, start + string.length(), string);
-        }
-        return context.expecting(string, start);
+       return input.startsWithCaseInsensitive(string, start)
+            ? new MatchResult.Success<>(start, start + string.length(), string)
+            : context.expecting(string, start);
       }
     };
   }

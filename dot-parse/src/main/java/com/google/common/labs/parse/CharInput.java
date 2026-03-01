@@ -61,7 +61,8 @@ abstract class CharInput {
       }
 
       @Override boolean startsWithCaseInsensitive(String prefix, int index) {
-        return text.regionMatches(/* ignoreCase= */ true, index, prefix, 0, prefix.length());
+        // shorter.regionMatches(..., longer, ...) appears to be faster, according to benchmark.
+        return prefix.regionMatches(/* ignoreCase= */ true, 0, text, index, prefix.length());
       }
 
       @Override boolean isEof(int index) {
