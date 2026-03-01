@@ -396,7 +396,6 @@ public abstract class Parser<T> {
    */
   public static Parser<String> quotedByWithEscapes(
       String before, char after, Parser<? extends CharSequence> escaped) {
-    requireNonNull(before);
     var escape = string("\\").then(escaped);
     checkArgument(after != '\\', "quoteChar cannot be '\\'");
     checkArgument(!Character.isISOControl(after), "quoteChar cannot be a control character");
