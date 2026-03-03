@@ -6,6 +6,11 @@
     <version>9.9.3-SNAPSHOT</version>
   </parent>
   <artifactId>mug-concurrent-testing</artifactId>
+  <name>Concurrency Testing Utils</name>
+
+  <properties>
+    <module.name>concurrent.testing</module.name>
+  </properties>
   
   <build>
     <pluginManagement>
