@@ -307,35 +307,37 @@ public class MoreCollectorsTest {
   }
 
   @Test public void testAllMax_empty() {
-    assertThat(Stream.<Integer>empty().collect(allMax(Comparator.<Integer>naturalOrder(), toImmutableList())))
+    assertThat(Stream.<Integer>empty().collect(allMax(naturalOrder(), toImmutableList())))
         .isEmpty();
   }
 
   @Test public void testAllMax_toOnlyElement() {
-    assertThat(Stream.of(1, 1, 1, 1, 1, 1, 2).collect(
-        allMax(Comparator.<Integer>naturalOrder(), onlyElement(identity()))))
+    assertThat(
+            Stream.of(1, 1, 1, 1, 1, 1, 2).collect(allMax(naturalOrder(), onlyElement(i -> i)))
+                .intValue())
         .isEqualTo(2);
   }
 
   @Test public void testAllMax_multiple() {
-    assertThat(Stream.of(1, 1, 2, 1, 2).collect(allMax(Comparator.<Integer>naturalOrder(), toImmutableList())))
+    assertThat(Stream.of(1, 1, 2, 1, 2).collect(allMax(naturalOrder(), toImmutableList())))
         .containsExactly(2, 2);
   }
 
   @Test public void testAllMin_empty() {
     assertThat(Stream.<String>empty().collect(
-        MoreCollectors.allMin(Comparator.<String>naturalOrder(), toImmutableSet())))
+        MoreCollectors.allMin(naturalOrder(), toImmutableSet())))
         .isEmpty();
   }
 
   @Test public void testAllMin_toOnlyElement() {
-    assertThat(Stream.of(2, 2, 2, 2, 2, 2, 1).collect(
-        allMin(Comparator.<Integer>naturalOrder(), onlyElement(identity()))))
+    assertThat(
+            Stream.of(2, 2, 2, 2, 2, 2, 1).collect(allMin(naturalOrder(), onlyElement(i -> i)))
+                .intValue())
         .isEqualTo(1);
   }
 
   @Test public void testAllMin_multiple() {
-    assertThat(Stream.of(1, 1, 2, 1, 2).collect(allMin(Comparator.<Integer>naturalOrder(), toImmutableList())))
+    assertThat(Stream.of(1, 1, 2, 1, 2).collect(allMin(naturalOrder(), toImmutableList())))
         .containsExactly(1, 1, 1);
   }
 
