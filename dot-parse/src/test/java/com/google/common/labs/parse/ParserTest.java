@@ -4553,6 +4553,11 @@ public class ParserTest {
     assertThat(string("foo").source().probe("bar")).isEmpty();
   }
 
+  @Test public void matches_nullReturnsFalse() {
+    assertThat(string("foo").matches(null)).isFalse();
+    assertThat(string("foo").skipping(Character::isWhitespace).matches(null)).isFalse();
+  }
+
   @Test
   public void skipping_probeCharPredicate_emptyInput_returnsEmpty() {
     assertThat(string("foo").skipping(Character::isWhitespace).probe(" ")).isEmpty();
