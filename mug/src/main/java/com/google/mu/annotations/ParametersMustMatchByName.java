@@ -22,7 +22,7 @@ import java.lang.annotation.Target;
  * you get compile-time safety for free.
  *
  * <p>For example if you have a record like the following:
- * 
+ *
  * <pre>{@code
  * @ParametersMustMatchByName
  * record Profile(String userId, String userName) {}
@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
  * But if you change the constructor signature to {@code
  * record Profile(String userName, String userId)}. it will fail to compile because the parameter
  * names no longer match the provided argument expressions, in order.
- * 
+ *
  * <p>The {@code currentUser.getId()} expression matches the {@code userId} parameter name
  * because the effective tokens of {@code currentUser.getId()} is {@code ["current", "user", "id"]}
  * ("get" and "is" prefixes are ignored). It includes as a subsequence the {@code ["user", "id"]}
@@ -48,7 +48,7 @@ import java.lang.annotation.Target;
  * <p>For example: <pre>
  *   new Dimension(&#47;* width *&#47; list.get(0), &#47;* height *&#47; list.get(1));
  * </pre>
- * 
+ *
  * Or, trailing comments can also be used under the style of one-arg-per-line: <pre>{@code
  *   new Dimension(
  *       list.get(0),  // width
@@ -89,7 +89,7 @@ import java.lang.annotation.Target;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>9.9.2</version>
+ *               <version>9.9.3</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>
