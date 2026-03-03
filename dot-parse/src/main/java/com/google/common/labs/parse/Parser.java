@@ -1256,7 +1256,7 @@ public abstract class Parser<T> {
    * @since 9.9.1
    */
   public final boolean matches(String input) {
-    return input != null && matches(CharInput.from(input), 0);
+    return matches(CharInput.from(input), 0);
   }
 
   private boolean matches(CharInput input, int fromIndex) {
