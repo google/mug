@@ -29,7 +29,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     requireNonNull(domain);
   }
 
-  /** Returns an {@link EmailAddress} with {@code displayName}. */
+  /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
   public EmailAddress withDisplayName(String displayName) {
     return new EmailAddress(Optional.ofNullable(displayName), localPart, domain);
   }
