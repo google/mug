@@ -1,4 +1,5 @@
 com.google.common.labs.csv
+com.google.common.labs.email
 com.google.common.labs.parse
 com.google.common.labs.regex
 com.google.guava.labs.base

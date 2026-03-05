@@ -138,6 +138,10 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/guava/labs/base/package-summary.html#addons-pertaining-to-guava-common-base-package-requires-mug-guava-artifact--heading" class="search-tag-link">Addons pertaining to Guava common.base package (requires mug-guava artifact)</a> - Search tag in package com.google.guava.labs.base</dt>
 <dd>Section</dd>
+<dt><a href="com/google/common/labs/email/EmailAddress.html#address()" class="member-name-link">address()</a> - Method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
+<dd>
+<div class="block">Returns the <code>addr-spec</code>, in the form of <code>user@mycompany.com</code>.</div>
+</dd>
 <dt><a href="com/google/mu/util/Substring.Prefix.html#addToIfAbsent(java.lang.String)" class="member-name-link">addToIfAbsent(String)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/Substring.Prefix.html" title="class in com.google.mu.util">Substring.Prefix</a></dt>
 <dd>
 <div class="block">If <code>string</code> has this prefix, return it as-is; otherwise, return it with this prefix
@@ -894,6 +898,11 @@ loadScripts(document, 'script');</script>
 <div class="block">A convenient CSV parser (requires dot-parse artifact)
 <br></div>
 </dd>
+<dt><a href="com/google/common/labs/email/package-summary.html">com.google.common.labs.email</a> - package com.google.common.labs.email</dt>
+<dd>
+<div class="block">A strict, i18n-compliant email address parser (requires dot-parse artifact)
+<br></div>
+</dd>
 <dt><a href="com/google/common/labs/parse/package-summary.html">com.google.common.labs.parse</a> - package com.google.common.labs.parse</dt>
 <dd>
 <div class="block">Parser combinator that's free from infinite loop or accidental left recursion (requires dot-parse artifact)
@@ -1233,6 +1242,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">One or more regex <code>\d+</code> characters.</div>
 </dd>
+<dt><a href="com/google/common/labs/email/EmailAddress.html#displayName()" class="member-name-link">displayName()</a> - Method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>displayName</code> record component.</div>
+</dd>
 <dt><a href="com/google/mu/util/graph/ShortestPath.html#distance()" class="member-name-link">distance()</a> - Method in class com.google.mu.util.graph.<a href="com/google/mu/util/graph/ShortestPath.html" title="class in com.google.mu.util.graph">ShortestPath</a></dt>
 <dd>
 <div class="block">Returns the non-negative distance between the starting node and the <a href="com/google/mu/util/graph/ShortestPath.html#to()"><code>last node</code></a> of
@@ -1249,6 +1262,10 @@ loadScripts(document, 'script');</script>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Anchor.html#DOC_END" class="member-name-link">DOC_END</a> - Enum constant in enum class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.Anchor.html" title="enum class in com.google.common.labs.regex">RegexPattern.Anchor</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="com/google/common/labs/email/EmailAddress.html#domain()" class="member-name-link">domain()</a> - Method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>domain</code> record component.</div>
+</dd>
 </dl>
 <h2 class="title" id="I:E">E</h2>
 <dl class="index">
@@ -1267,6 +1284,14 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Sequence.html#elements()" class="member-name-link">elements()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.Sequence.html" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a></dt>
 <dd>
 <div class="block">Returns the value of the <code>elements</code> record component.</div>
+</dd>
+<dt><a href="com/google/common/labs/email/EmailAddress.html" class="type-name-link" title="class in com.google.common.labs.email">EmailAddress</a> - Record Class in <a href="com/google/common/labs/email/package-summary.html">com.google.common.labs.email</a></dt>
+<dd>
+<div class="block">Represents an email address according to RFC 5322.</div>
+</dd>
+<dt><a href="com/google/common/labs/email/EmailAddress.html#%3Cinit%3E(java.util.Optional,java.lang.String,java.lang.String)" class="member-name-link">EmailAddress(Optional&lt;String&gt;, String, String)</a> - Constructor for record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
+<dd>
+<div class="block">Creates an instance of a <code>EmailAddress</code> record class.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/Iteration.html#emit(java.lang.Iterable)" class="member-name-link">emit(Iterable&lt;? extends T&gt;)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/Iteration.html" title="class in com.google.mu.util.stream">Iteration</a></dt>
 <dd>
@@ -1314,6 +1339,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns the stream of enum constants defined by <code>enumClass</code>,
  with the names wrapped in ParameterizedQuery.</div>
+</dd>
+<dt><a href="com/google/common/labs/email/EmailAddress.html#equals(java.lang.Object)" class="member-name-link">equals(Object)</a> - Method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
+<dd>
+<div class="block">Indicates whether some other object is "equal to" this one.</div>
 </dd>
 <dt><a href="com/google/common/labs/parse/CharacterSet.html#equals(java.lang.Object)" class="member-name-link">equals(Object)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/CharacterSet.html" title="class in com.google.common.labs.parse">CharacterSet</a></dt>
 <dd>&nbsp;</dd>
@@ -2055,6 +2084,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns true if <code>candidate</code> is in this selection.</div>
 </dd>
+<dt><a href="com/google/common/labs/email/EmailAddress.html#hashCode()" class="member-name-link">hashCode()</a> - Method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
+<dd>
+<div class="block">Returns a hash code value for this object.</div>
+</dd>
 <dt><a href="com/google/common/labs/parse/CharacterSet.html#hashCode()" class="member-name-link">hashCode()</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/CharacterSet.html" title="class in com.google.common.labs.parse">CharacterSet</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.Alternation.html#hashCode()" class="member-name-link">hashCode()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.Alternation.html" title="class in com.google.common.labs.regex">RegexPattern.Alternation</a></dt>
@@ -2666,6 +2699,10 @@ loadScripts(document, 'script');</script>
 <div class="block">Specifies that the optional (or zero-or-more) <code>rule</code> should be matched literally even if
  <a href="com/google/common/labs/parse/Parser.html#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="com/google/common/labs/parse/Parser.html#skipping(com.google.common.labs.parse.Parser)"><code>skipping()</code></a> is called.</div>
 </dd>
+<dt><a href="com/google/common/labs/email/EmailAddress.html#localPart()" class="member-name-link">localPart()</a> - Method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>localPart</code> record component.</div>
+</dd>
 <dt><a href="com/google/guava/labs/collect/BinarySearch.DoubleSearchTarget.html#locate(double,double,double)" class="member-name-link">locate(double, double, double)</a> - Method in interface com.google.guava.labs.collect.<a href="com/google/guava/labs/collect/BinarySearch.DoubleSearchTarget.html" title="interface in com.google.guava.labs.collect">BinarySearch.DoubleSearchTarget</a></dt>
 <dd>
 <div class="block">Given a range of <code>[low..high]</code> inclusively with <code>median</code> as the
@@ -3195,6 +3232,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns <a href="com/google/mu/spanner/ParameterizedQuery.html" title="class in com.google.mu.spanner"><code>ParameterizedQuery</code></a> using <code>template</code> and <code>params</code>.</div>
 </dd>
+<dt><a href="com/google/common/labs/email/EmailAddress.html#of(java.lang.String,java.lang.String)" class="member-name-link">of(String, String)</a> - Static method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
+<dd>
+<div class="block">For example: <code>EmailAddress.of("user", "mycompany.com")</code>.</div>
+</dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#of(K,V)" class="member-name-link">of(K, V)</a> - Static method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
 <div class="block">Returns a <code>BiStream</code> of a single pair containing <code>key</code> and <code>value</code>.</div>
@@ -3469,6 +3510,8 @@ loadScripts(document, 'script');</script>
 <dl class="index">
 <dt><a href="com/google/common/labs/csv/package-summary.html#package-specification-heading" class="search-tag-link">Package Specification</a> - Search tag in package com.google.common.labs.csv</dt>
 <dd>Section</dd>
+<dt><a href="com/google/common/labs/email/package-summary.html#package-specification-heading" class="search-tag-link">Package Specification</a> - Search tag in package com.google.common.labs.email</dt>
+<dd>Section</dd>
 <dt><a href="com/google/common/labs/parse/package-summary.html#package-specification-heading" class="search-tag-link">Package Specification</a> - Search tag in package com.google.common.labs.parse</dt>
 <dd>Section</dd>
 <dt><a href="com/google/common/labs/regex/package-summary.html#package-specification-heading" class="search-tag-link">Package Specification</a> - Search tag in package com.google.common.labs.regex</dt>
@@ -3597,6 +3640,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Methods and constructors annotated as such will ensure the call sites pass in expressions
  that "look like" matching the parameter names.</div>
+</dd>
+<dt><a href="com/google/common/labs/email/EmailAddress.html#parse(java.lang.String)" class="member-name-link">parse(String)</a> - Static method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
+<dd>
+<div class="block">Parses <code>address</code> and throws <a href="com/google/common/labs/parse/Parser.ParseException.html" title="class in com.google.common.labs.parse"><code>Parser.ParseException</code></a> if failed.</div>
 </dd>
 <dt><a href="com/google/common/labs/parse/Parser.Lexical.html#parse(java.lang.String)" class="member-name-link">parse(String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.Lexical.html" title="class in com.google.common.labs.parse">Parser.Lexical</a></dt>
 <dd>
@@ -3757,6 +3804,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Parses <code>input</code> and applies <code>mapper</code> with the single placeholder value in this
  format string.</div>
+</dd>
+<dt><a href="com/google/common/labs/email/EmailAddress.html#parser()" class="member-name-link">parser()</a> - Static method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
+<dd>
+<div class="block">Returns a parser for email address, according to RFC 5322, supporting BMP characters.</div>
 </dd>
 <dt><a href="com/google/mu/collect/Selection.html#parser()" class="member-name-link">parser()</a> - Static method in interface com.google.mu.collect.<a href="com/google/mu/collect/Selection.html" title="interface in com.google.mu.collect">Selection</a></dt>
 <dd>
@@ -5335,6 +5386,10 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/common/labs/csv/Csv.html#toString()" class="member-name-link">toString()</a> - Method in class com.google.common.labs.csv.<a href="com/google/common/labs/csv/Csv.html" title="class in com.google.common.labs.csv">Csv</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="com/google/common/labs/email/EmailAddress.html#toString()" class="member-name-link">toString()</a> - Method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
+<dd>
+<div class="block">Returns a string representation of this record class.</div>
+</dd>
 <dt><a href="com/google/common/labs/parse/CharacterSet.html#toString()" class="member-name-link">toString()</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/CharacterSet.html" title="class in com.google.common.labs.parse">CharacterSet</a></dt>
 <dd>
 <div class="block">Returns the character set string representation.</div>
@@ -5681,6 +5736,8 @@ the order they are declared.</div>
 <dd>
 <div class="block">Returns an otherwise equivalent CSV parser but using <code>delimiter</code> instead of comma.</div>
 </dd>
+<dt><a href="com/google/common/labs/email/EmailAddress.html#withDisplayName(java.lang.String)" class="member-name-link">withDisplayName(String)</a> - Method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/util/CaseBreaker.html#withLowerCaseChars(com.google.mu.util.CharPredicate)" class="member-name-link">withLowerCaseChars(CharPredicate)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/CaseBreaker.html" title="class in com.google.mu.util">CaseBreaker</a></dt>
 <dd>
 <div class="block">Returns a new instance using <code>camelLower</code> to identify lower case characters (don't forget
