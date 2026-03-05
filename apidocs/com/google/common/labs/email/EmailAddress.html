@@ -123,11 +123,12 @@ loadScripts(document, 'script');</script>
        between the display name and the angle-bracketed address.</li>
  </ul>
 
- <h3 id="comparing-with-javax-mail-internetaddress-heading">Comparing with <code>javax.mail.InternetAddress</code></h3>
- <table>
+ <h3 id="comparison-with-javax-mail-internetaddress-heading">Comparison with <code>javax.mail.InternetAddress</code></h3>
+ <table border="1">
+   <caption>Feature Comparison</caption>
    <tr><th>Feature</th><th><code>InternetAddress</code></th><th><code>EmailAddress</code></th></tr>
    <tr><td><b>Immutability</b></td><td>Mutable POJO</td><td>Immutable <code>record</code></td></tr>
-   <li><b>DNS Labels</b></td><td>Permissive (allows illegal hyphens)</td><td>Strict (RFC 1035/1123 63-char limit)</td></tr>
+   <tr><td><b>DNS Labels</b></td><td>Permissive (allows illegal hyphens)</td><td>Strict (RFC 1035/1123 63-char limit)</td></tr>
    <tr><td><b>Null Safety</b></td><td><code>getPersonal()</code> returns null</td><td><code>Optional&lt;String&gt; displayName</code></td></tr>
    <tr><td><b>Validation</b></td><td>Lazy/Permissive</td><td>Fail-fast via <code>Parser.ParseException</code></td></tr>
    <tr><td><b>I18N</b></td><td>Often requires Encoded-Words</td><td>Native BMP support in names</td></tr>
