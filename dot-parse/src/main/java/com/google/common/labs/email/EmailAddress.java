@@ -25,6 +25,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     requireNonNull(domain);
   }
 
+  /** Returns an {@link EmailAddress} with {@code displayName}. */
   public EmailAddress withDisplayName(String displayName) {
     return new EmailAddress(Optional.ofNullable(displayName), localPart, domain);
   }
@@ -39,6 +40,9 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     return localPart + '@' + domain;
   }
 
+  /** Returns the full email address, in the form of {@code local-part@domain} or
+   * {@code "display name"<local-part@domain>}.
+   */
   @Override public String toString() {
     return displayName.map(n ->
             "\"" + all(CharPredicate.anyOf("\"\\")).replaceAllFrom(n, c -> "\\" + c)
