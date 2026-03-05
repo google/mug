@@ -123,7 +123,6 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
   }
 
-  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
   @Test
   public void guardOperator_nullInteger() {
     Integer id = null;
@@ -131,7 +130,6 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
   }
 
-  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
   @Test
   public void guardOperator_nonNullInteger() {
     Integer id = 123;
@@ -139,7 +137,6 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT {id} AS id, name FROM tbl", id));
   }
 
-  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
   @Test
   public void guardOperator_nullBigInteger() {
     BigInteger id = null;
@@ -147,7 +144,6 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
   }
 
-  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
   @Test
   public void guardOperator_nonNullBigInteger() {
     BigInteger id = BigInteger.TEN;
@@ -155,7 +151,6 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT {id} AS id, name FROM tbl", id));
   }
 
-  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
   @Test
   public void guardOperator_nullByteArray() {
     byte[] payload = null;
@@ -163,7 +158,6 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
   }
 
-  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
   @Test
   public void guardOperator_nonNullByteArray() {
     byte[] payload = new byte[] {1, 2};
@@ -171,7 +165,6 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT {payload} AS payload, name FROM tbl", payload));
   }
 
-  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
   @Test
   public void guardOperator_nullBlob() {
     java.sql.Blob payload = null;
@@ -179,7 +172,6 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT  name FROM tbl"));
   }
 
-  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
   @Test
   public void guardOperator_nonNullJavaSqlTimestamp() {
     java.sql.Timestamp time = java.sql.Timestamp.valueOf("2026-02-26 10:00:00");
@@ -201,7 +193,6 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT {id} AS id, name FROM tbl", id));
   }
 
-  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
   @Test
   public void guardOperator_nullInstant() {
     Instant time = null;
@@ -209,7 +200,6 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT name FROM tbl "));
   }
 
-  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
   @Test
   public void guardOperator_notNullInstant() {
     Instant time = ZonedDateTime.of(2026, 2, 25, 10, 0, 0, 0, ZoneId.of("UTC")).toInstant();
@@ -217,7 +207,6 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT name FROM tbl WHERE time > {time}", time));
   }
 
-  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
   @Test
   public void guardOperator_nullLocalDate() {
     LocalDate time = null;
@@ -225,7 +214,6 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT name FROM tbl "));
   }
 
-  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
   @Test
   public void guardOperator_nonNullLocalDate() {
     LocalDate time = LocalDate.of(2025, 02, 25);
@@ -233,7 +221,6 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT name FROM tbl WHERE time > {time}", time));
   }
 
-  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
   @Test
   public void guardOperator_nonNullZonedDateTime() {
     ZonedDateTime time = ZonedDateTime.of(2026, 2, 25, 10, 0, 0, 0, ZoneId.of("UTC"));
@@ -241,7 +228,6 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT name FROM tbl WHERE time > {time}", time));
   }
 
-  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
   @Test
   public void guardOperator_nullZonedDateTime() {
     ZonedDateTime time = null;
@@ -249,7 +235,7 @@ public class SafeSqlTest {
         .isEqualTo(SafeSql.of("SELECT name FROM tbl "));
   }
 
-  @SuppressWarnings("StringFormatArgsCheck")  // TODO: remove once we are on next version
+  @SuppressWarnings("StringFormatArgsCheck")
   @Test
   public void guardOperator_nullBoolean() {
     Boolean isActive = null;
