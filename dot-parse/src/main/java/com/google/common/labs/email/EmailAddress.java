@@ -51,11 +51,12 @@ import com.google.mu.util.CharPredicate;
  *       between the display name and the angle-bracketed address.</li>
  * </ul>
  *
- * <h3>Comparing with {@code javax.mail.InternetAddress}</h3>
- * <table>
+ * <h3>Comparison with {@code javax.mail.InternetAddress}</h3>
+ * <table border="1">
+ *   <caption>Feature Comparison</caption>
  *   <tr><th>Feature</th><th>{@code InternetAddress}</th><th>{@code EmailAddress}</th></tr>
  *   <tr><td><b>Immutability</b></td><td>Mutable POJO</td><td>Immutable {@code record}</td></tr>
- *   <li><b>DNS Labels</b></td><td>Permissive (allows illegal hyphens)</td><td>Strict (RFC 1035/1123 63-char limit)</td></tr>
+ *   <tr><td><b>DNS Labels</b></td><td>Permissive (allows illegal hyphens)</td><td>Strict (RFC 1035/1123 63-char limit)</td></tr>
  *   <tr><td><b>Null Safety</b></td><td>{@code getPersonal()} returns null</td><td>{@code Optional<String> displayName}</td></tr>
  *   <tr><td><b>Validation</b></td><td>Lazy/Permissive</td><td>Fail-fast via {@code Parser.ParseException}</td></tr>
  *   <tr><td><b>I18N</b></td><td>Often requires Encoded-Words</td><td>Native BMP support in names</td></tr>
