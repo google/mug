@@ -46,7 +46,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /**
    * Returns the full email address, in the form of {@code local-part@domain} or
-   * {@code "display name"<local-part@domain>}. Backslashes and double quotes in
+   * {@code "display name" <local-part@domain>}. Backslashes and double quotes in
    * the display name are auto-escaped.
    */
   @Override public String toString() {
