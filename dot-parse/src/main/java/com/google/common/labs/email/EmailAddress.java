@@ -52,7 +52,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   @Override public String toString() {
     return displayName.map(n ->
             "\"" + all(CharPredicate.anyOf("\"\\")).replaceAllFrom(n, c -> "\\" + c)
-            + "\"<" + address() + ">")
+            + "\" <" + address() + ">")
         .orElseGet(this::address);
   }
 
