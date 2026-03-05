@@ -56,7 +56,7 @@ import com.google.mu.util.CharPredicate;
  *   <tr><th>Feature</th><th>{@code InternetAddress}</th><th>{@code EmailAddress}</th></tr>
  *   <tr><td><b>Immutability</b></td><td>Mutable pojo</td><td>Immutable {@code record}</td></tr>
  *   <tr><td><b>DNS labels</b></td><td>Permissive (allows illegal hyphens)</td><td>Strict (RFC 1035/1123 63-char limit)</td></tr>
- *   <tr><td><b>Validation</b></td><td>Permissive</td><td>Strict</td></tr>
+ *   <tr><td><b>Validation</b></td><td>Lazy (need to call {@code validate()})</td><td>Eager ({@code parse()} throws if invalid)</td></tr>
  *   <tr><td><b>I18n</b></td><td>Often requires Encoded-Words</td><td>Native BMP support</td></tr>
  * </table>
  *
