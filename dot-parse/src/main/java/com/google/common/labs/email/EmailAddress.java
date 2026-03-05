@@ -16,6 +16,10 @@ import com.google.mu.util.CharPredicate;
 /**
  * Represents an email address according to RFC 5322.
  *
+ * <p>For example: <pre>{@code
+ * EmailAddress emailAddress = EmailAddress.parse("john-doe@gmail.com");
+ * }</pre>
+ *
  * @since 9.9.4
  */
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
