@@ -148,22 +148,17 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             .suchThat(
                 a -> a.localPart().length() + a.domain().length() + 1 <= 254,
                 "addr-spec <= 254 chars");;
-    Parser<String> quotedDisplayName =
-        Parser.quotedByWithEscapes(
-            '"', '"', chars(1).suchThat(c -> isIsoControl.matchesNoneOf(c), "escapable char"));
-    Parser<String> unquotedDisplayName =
-        consecutive(
-                CharPredicate.anyOf("()<>[]:;@\\,\"").or(isIsoControl).not(),
-                "unquoted display name")
-            .map(String::trim);
+    Parser<String> quotedDisplayName = Parser.quotedByWithEscapes(
+        '"', '"', chars(1).suchThat(c -> isIsoControl.matchesNoneOf(c), "escapable char"));
+    Parser<String> unquotedDisplayName = consecutive(
+        CharPredicate.anyOf("()<>[]:;@\\,\"").or(isIsoControl).not(), "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
+    Parser<String> displayName = Parser.anyOf(
+        quotedDisplayName.followedBy(zeroOrMore(Character::isWhitespace, "whitespaces")),
+        unquotedDisplayName.map(String::trim));
     return Parser.anyOf(
         bracketedAddress,
         address,
-        sequence( // or with display name
-            Parser.anyOf(quotedDisplayName, unquotedDisplayName)
-                .followedBy(zeroOrMore(Character::isWhitespace, "whitespaces")),
-            bracketedAddress,
-            (name, addr) -> addr.withDisplayName(name)));
+        sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)));
   }
 }
