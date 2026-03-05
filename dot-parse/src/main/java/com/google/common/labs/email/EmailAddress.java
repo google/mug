@@ -131,12 +131,14 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             .suchThat(
                 s -> s.length() <= 63 && s.charAt(0) != '-' && s.charAt(s.length() - 1) != '-',
                 "{1,63} chars domain label")
-            .atLeastOnceDelimitedBy(".", joining("."));
+            .atLeastOnceDelimitedBy(".", joining("."))
+            .suchThat(s -> s.length() <= 253, "domain <= 253 chars");
     CharPredicate isIsoControl = Character::isISOControl;
     Parser<String> localPart =
         consecutive(
-            CharPredicate.anyOf("@<>(),;:\\\"[]").or(isIsoControl).or(Character::isWhitespace).not(),
-            "local part");
+            CharPredicate.anyOf("@<>(),;:\\\"[].").or(isIsoControl).or(Character::isWhitespace).not(),
+            "local part")
+        .atLeastOnceDelimitedBy(".", joining("."));
     Parser<EmailAddress> emailAddr =
         sequence(localPart, Parser.string("@").then(domain), EmailAddress::of);
     Parser<String> quotedDisplayName =

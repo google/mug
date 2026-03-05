@@ -208,6 +208,15 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_invalid_domainTooLong(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    String domain254 =
+        "a".repeat(63) + "." + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(62);
+    assertThat(domain254.length()).isEqualTo(254);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("test@" + domain254));
+  }
+
+  @Test
   public void testEmailAddressParsing_invalid_domainLabelStartsWithHyphen(
       @TestParameter ParseStrategy parser) {
     assertThrows(IllegalArgumentException.class, () -> parser.parse("test@-example.com"));
@@ -223,6 +232,27 @@ public class EmailAddressTest {
   public void testEmailAddressParsing_invalid_domainLabelWithIllegalChars(
       @TestParameter ParseStrategy parser) {
     assertThrows(IllegalArgumentException.class, () -> parser.parse("test@exam_ple.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_invalid_localPartStartsWithDot(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse(".test@example.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_invalid_localPartEndsWithDot(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("test.@example.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_invalid_localPartWithDoubleDot(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("test..foo@example.com"));
   }
 
   @Test
