@@ -29,7 +29,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     requireNonNull(domain);
   }
 
-  /** Returns an {@link EmailAddress} with {@code displayName}. */
+  /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
   public EmailAddress withDisplayName(String displayName) {
     return new EmailAddress(Optional.ofNullable(displayName), localPart, domain);
   }
@@ -44,8 +44,10 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     return localPart + '@' + domain;
   }
 
-  /** Returns the full email address, in the form of {@code local-part@domain} or
-   * {@code "display name"<local-part@domain>}.
+  /**
+   * Returns the full email address, in the form of {@code local-part@domain} or
+   * {@code "display name"<local-part@domain>}. Backslashes and double quotes in
+   * the display name are auto-escaped.
    */
   @Override public String toString() {
     return displayName.map(n ->
