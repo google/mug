@@ -217,6 +217,16 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_invalid_addressTooLong(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    String local = "l".repeat(127);
+    String domain = "a".repeat(63) + "." + "b".repeat(63);
+    assertThat(local.length()).isEqualTo(127);
+    assertThat(domain.length()).isEqualTo(127);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse(local + "@" + domain));
+  }
+
+  @Test
   public void testEmailAddressParsing_invalid_domainLabelStartsWithHyphen(
       @TestParameter ParseStrategy parser) {
     assertThrows(IllegalArgumentException.class, () -> parser.parse("test@-example.com"));

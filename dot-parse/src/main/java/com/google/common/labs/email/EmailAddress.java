@@ -140,7 +140,10 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             "local part")
         .atLeastOnceDelimitedBy(".", joining("."));
     Parser<EmailAddress> emailAddr =
-        sequence(localPart, Parser.string("@").then(domain), EmailAddress::of);
+        sequence(localPart, Parser.string("@").then(domain), EmailAddress::of)
+            .suchThat(
+                e -> e.localPart().length() + e.domain().length() + 1 <= 254,
+                "addr-spec length <= 254 chars");;
     Parser<String> quotedDisplayName =
         Parser.quotedByWithEscapes(
             '"', '"', chars(1).suchThat(c -> isIsoControl.matchesNoneOf(c), "quoted"));
