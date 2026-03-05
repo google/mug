@@ -74,7 +74,7 @@ import com.google.mu.util.CharPredicate;
  */
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
   /**
-   * Prefer using the {@link #of} factory method instead. You can call {@link #withDisplayName}
+   * Prefer using the {@link #of} factory method. You can call {@link #withDisplayName}
    * to optionally attach a display name.
    */
   public EmailAddress{
