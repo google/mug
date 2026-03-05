@@ -101,11 +101,47 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public record </span><span class="element-name type-name-label">EmailAddress</span>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;displayName, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;localPart, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;domain)
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a></span></div>
-<div class="block">Represents an email address according to RFC 5322.
+<div class="block">Represents an email address according to RFC 5322, designed as a modern,
+ type-safe replacement for <code>javax.mail.InternetAddress</code>.
 
  <p>For example: <pre><code>
  EmailAddress emailAddress = EmailAddress.parse("john-doe@gmail.com");
- </code></pre></div>
+ </code></pre>
+
+ <h3 id="rfc-5322-compliance-profile-heading">RFC 5322 Compliance Profile</h3>
+ <ul>
+   <li><b>Address Specification (addr-spec):</b> Supports the standard
+       <code>local-part@domain</code> format (RFC 5322 §3.4.1).</li>
+   <li><b>Name-Addr:</b> Fully supports <code>[display-name] &lt;addr-spec&gt;</code>
+       syntax (RFC 5322 §3.4).</li>
+   <li><b>Quoted-Strings:</b> Complies with RFC 5322 §3.2.4, supporting
+       backslash-escaped characters within double-quoted display names.</li>
+   <li><b>Phrases (Unquoted Names):</b> Supports RFC 5322 "atoms" in
+       display names, correctly forbidding "specials" <code>()&lt;&gt;[]:;@\,."</code>
+       while allowing periods for real-world usability (e.g., "J.R.R. Tolkien").</li>
+   <li><b>Folding White Space (FWS):</b> Supports optional whitespace
+       between the display name and the angle-bracketed address.</li>
+ </ul>
+
+ <h3 id="comparing-with-javax-mail-internetaddress-heading">Comparing with <code>javax.mail.InternetAddress</code></h3>
+ <table>
+   <tr><th>Feature</th><th><code>InternetAddress</code></th><th><code>EmailAddress</code></th></tr>
+   <tr><td><b>Immutability</b></td><td>Mutable POJO</td><td>Immutable <code>record</code></td></tr>
+   <li><b>DNS Labels</b></td><td>Permissive (allows illegal hyphens)</td><td>Strict (RFC 1035/1123 63-char limit)</td></tr>
+   <tr><td><b>Null Safety</b></td><td><code>getPersonal()</code> returns null</td><td><code>Optional&lt;String&gt; displayName</code></td></tr>
+   <tr><td><b>Validation</b></td><td>Lazy/Permissive</td><td>Fail-fast via <code>Parser.ParseException</code></td></tr>
+   <tr><td><b>I18N</b></td><td>Often requires Encoded-Words</td><td>Native BMP support in names</td></tr>
+ </table>
+
+ <h3 id="intentionally-omitted-legacy-features-heading">Intentionally Omitted Legacy Features</h3>
+ <p>To maintain compatibility with modern MTAs (Gmail, Outlook) and mitigate
+ header injection risks, the following RFC 5322 edge cases are excluded:</p>
+ <ul>
+   <li><b>Quoted Local-Parts:</b> (e.g., <code>"john doe"@domain</code>) - Deprecated in practice.</li>
+   <li><b>Comments (CFWS):</b> (e.g., <code>name(comment) &lt;addr&gt;</code>) - Parenthetical comments are ignored.</li>
+   <li><b>Domain Literals:</b> (e.g., <code>user@[192.168.1.1]</code>) - IP routing is rarely supported.</li>
+   <li><b>Obsolete Syntax:</b> (RFC 5322 §4) - Legacy syntax like "quoted-pairs" in unquoted names.</li>
+ </ul></div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.9.4</dd>
