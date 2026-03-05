@@ -5388,7 +5388,8 @@ loadScripts(document, 'script');</script>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/common/labs/email/EmailAddress.html#toString()" class="member-name-link">toString()</a> - Method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
 <dd>
-<div class="block">Returns a string representation of this record class.</div>
+<div class="block">Returns the full email address, in the form of <code>local-part@domain</code> or
+ <code>"display name"&lt;local-part@domain&gt;</code>.</div>
 </dd>
 <dt><a href="com/google/common/labs/parse/CharacterSet.html#toString()" class="member-name-link">toString()</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/CharacterSet.html" title="class in com.google.common.labs.parse">CharacterSet</a></dt>
 <dd>
@@ -5737,7 +5738,9 @@ the order they are declared.</div>
 <div class="block">Returns an otherwise equivalent CSV parser but using <code>delimiter</code> instead of comma.</div>
 </dd>
 <dt><a href="com/google/common/labs/email/EmailAddress.html#withDisplayName(java.lang.String)" class="member-name-link">withDisplayName(String)</a> - Method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Returns an <a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email"><code>EmailAddress</code></a> with <code>displayName</code>.</div>
+</dd>
 <dt><a href="com/google/mu/util/CaseBreaker.html#withLowerCaseChars(com.google.mu.util.CharPredicate)" class="member-name-link">withLowerCaseChars(CharPredicate)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/CaseBreaker.html" title="class in com.google.mu.util">CaseBreaker</a></dt>
 <dd>
 <div class="block">Returns a new instance using <code>camelLower</code> to identify lower case characters (don't forget
