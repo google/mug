@@ -40,7 +40,7 @@ import com.google.mu.util.CharPredicate;
  * <ul>
  *   <li><b>Address Specification (addr-spec):</b> Supports the standard
  *       {@code local-part@domain} format (RFC 5322 §3.4.1).</li>
- *   <li><b>Name-Addr:</b> Fully supports {@code [display-name] <addr-spec>}
+ *   <li><b>Name-Addr:</b> Fully supports {@code "display-name" <addr-spec>}
  *       syntax (RFC 5322 §3.4).</li>
  *   <li><b>Quoted-Strings:</b> Complies with RFC 5322 §3.2.4, supporting
  *       backslash-escaped characters within double-quoted display names.</li>
