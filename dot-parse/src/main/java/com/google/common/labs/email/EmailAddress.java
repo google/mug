@@ -45,7 +45,7 @@ import com.google.mu.util.CharPredicate;
  *   <li><b>Quoted-Strings:</b> Complies with RFC 5322 §3.2.4, supporting
  *       backslash-escaped characters within double-quoted display names.</li>
  *   <li><b>Phrases (unquoted names):</b> Supports RFC 5322 "atoms" in
- *       display names, correctly forbidding "specials", i.e. the {@code ()<>[]:;@\,."} characters,
+ *       display names, correctly forbidding "specials", i.e. the {@code ()<>[]:;@\,"} characters,
  *       while allowing periods for real-world usability (e.g., "J.R.R. Tolkien").</li>
  *   <li><b>Folding White Space (FWS):</b> Supports optional whitespace
  *       between the display name and the angle-bracketed address.</li>
