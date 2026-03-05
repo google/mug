@@ -128,7 +128,7 @@ loadScripts(document, 'script');</script>
    <tr><th>Feature</th><th><code>InternetAddress</code></th><th><code>EmailAddress</code></th></tr>
    <tr><td><b>Immutability</b></td><td>Mutable pojo</td><td>Immutable <code>record</code></td></tr>
    <tr><td><b>DNS labels</b></td><td>Permissive (allows illegal hyphens)</td><td>Strict (RFC 1035/1123 63-char limit)</td></tr>
-   <tr><td><b>Validation</b></td><td>Lazy (need to call <code>validate()</code>)</td><td>Eager (<code>parse()</code> throws if invalid)</td></tr>
+   <tr><td><b>Validation</b></td><td>Lazy – need to call <code>validate()</code></td><td>Eager – <code>parse()</code> throws if invalid</td></tr>
    <tr><td><b>I18n</b></td><td>Often requires Encoded-Words</td><td>Native BMP support</td></tr>
  </table>
 
