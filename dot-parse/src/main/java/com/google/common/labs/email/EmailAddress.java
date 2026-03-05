@@ -145,7 +145,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
                 "addr-spec length <= 254 chars");;
     Parser<String> quotedDisplayName =
         Parser.quotedByWithEscapes(
-            '"', '"', chars(1).suchThat(c -> isIsoControl.matchesNoneOf(c), "quoted"));
+            '"', '"', chars(1).suchThat(c -> isIsoControl.matchesNoneOf(c), "quoted display name"));
     Parser<String> unquotedDisplayName =
         consecutive(
                 CharPredicate.anyOf("()<>[]:;@\\,\"").or(isIsoControl).not(),
