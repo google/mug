@@ -117,7 +117,7 @@ loadScripts(document, 'script');</script>
    <li><b>Quoted-Strings:</b> Complies with RFC 5322 §3.2.4, supporting
        backslash-escaped characters within double-quoted display names.</li>
    <li><b>Phrases (unquoted names):</b> Supports RFC 5322 "atoms" in
-       display names, correctly forbidding "specials" <code>()&lt;&gt;[]:;@\,."</code>
+       display names, correctly forbidding "specials", i.e. the <code>()&lt;&gt;[]:;@\,."</code> characters,
        while allowing periods for real-world usability (e.g., "J.R.R. Tolkien").</li>
    <li><b>Folding White Space (FWS):</b> Supports optional whitespace
        between the display name and the angle-bracketed address.</li>
@@ -161,7 +161,7 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;localPart,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;domain)</code></div>
 <div class="col-last even-row-color">
-<div class="block">Consider using the <a href="#of(java.lang.String,java.lang.String)"><code>of(java.lang.String, java.lang.String)</code></a> factory method instead.</div>
+<div class="block">Prefer using the <a href="#of(java.lang.String,java.lang.String)"><code>of(java.lang.String, java.lang.String)</code></a> factory method instead.</div>
 </div>
 </div>
 </section>
@@ -258,7 +258,7 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">EmailAddress</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;displayName,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;localPart,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;domain)</span></div>
-<div class="block">Consider using the <a href="#of(java.lang.String,java.lang.String)"><code>of(java.lang.String, java.lang.String)</code></a> factory method instead. You can call <a href="#withDisplayName(java.lang.String)"><code>withDisplayName(java.lang.String)</code></a>
+<div class="block">Prefer using the <a href="#of(java.lang.String,java.lang.String)"><code>of(java.lang.String, java.lang.String)</code></a> factory method instead. You can call <a href="#withDisplayName(java.lang.String)"><code>withDisplayName(java.lang.String)</code></a>
  to optionally attach a display name.</div>
 </div>
 </section>
