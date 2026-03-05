@@ -29,10 +29,10 @@ public class EmailAddressTest {
             (                                                      # Group 1: Display Name
              "(?:\\\\[\\x20-\\x7E]|[^"\\\\])*"                     # Quoted name
              |                                                     # OR
-             [a-zA-Z0-9!\\#$%&'*+/=?^_`{|}~\\-]+                   # Unquoted atom (# escaped)
+             [a-zA-Z0-9!\\#$%&'*+/=?^_`{|}~.\\-]+                  # Unquoted atom (# escaped)
               (?:\\s+[a-zA-Z0-9!\\#$%&'*+/=?^_`{|}~\\-]+)*         # Optional additional atoms
             )
-            \\s+                                                   # Mandatory space before brackets
+            \\s*                                                   # Optional space before brackets
            )?                                                      # Name is optional
            <                                                       # Opening bracket
            ([a-zA-Z0-9.!\\#$%&'*+/=?^_`{|}~\\-]+)                  # Group 2: Local-part
@@ -179,7 +179,7 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_withQuotedDisplayName_withEscapedBackslash(
       @TestParameter ParseStrategy parser) {
-    EmailAddress email = parser.parse("\"John \\\\ Doe\" <test@example.com>");
+    EmailAddress email = parser.parse("\"John \\\\ Doe\"<test@example.com>");
     assertThat(email.displayName()).hasValue("John \\ Doe");
     assertThat(email.localPart()).isEqualTo("test");
     assertThat(email.domain()).isEqualTo("example.com");
@@ -197,8 +197,17 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_withQuotedDisplayName_onlySpacesInsideQuotes(
       @TestParameter ParseStrategy parser) {
-    EmailAddress email = parser.parse("\"  \" <test@example.com>");
+    EmailAddress email = parser.parse("\"  \"<test@example.com>");
     assertThat(email.displayName()).hasValue("  ");
+    assertThat(email.localPart()).isEqualTo("test");
+    assertThat(email.domain()).isEqualTo("example.com");
+  }
+
+  @Test
+  public void testEmailAddressParsing_withEmptyQuotedDisplayName(
+      @TestParameter ParseStrategy parser) {
+    EmailAddress email = parser.parse("\"\" <test@example.com>");
+    assertThat(email.displayName()).hasValue("");
     assertThat(email.localPart()).isEqualTo("test");
     assertThat(email.domain()).isEqualTo("example.com");
   }
@@ -357,14 +366,23 @@ public class EmailAddressTest {
   public void testToString_withDisplayName() {
     EmailAddress emailAddress = EmailAddress.of("user", "google.com").withDisplayName("it's me");
     assertThat(emailAddress.address()).isEqualTo("user@google.com");
-    assertThat(emailAddress.toString()).isEqualTo("\"it's me\"<user@google.com>");
+    assertThat(emailAddress.toString()).isEqualTo("\"it's me\" <user@google.com>");
   }
 
   @Test
   public void testToString_withDisplayName_withEscapes() {
     EmailAddress emailAddress = EmailAddress.of("user", "google.com").withDisplayName("name:\"\\me\"");
     assertThat(emailAddress.address()).isEqualTo("user@google.com");
-    assertThat(emailAddress.toString()).isEqualTo("\"name:\\\"\\\\me\\\"\"<user@google.com>");
+    assertThat(emailAddress.toString()).isEqualTo("\"name:\\\"\\\\me\\\"\" <user@google.com>");
+  }
+
+  @Test
+  public void testEmailAddressParsing_unquotedDisplayNameWithDots(
+      @TestParameter ParseStrategy parser) {
+    EmailAddress email = parser.parse("J.R.R. Tolkien <tolkien@example.com>");
+    assertThat(email.displayName()).hasValue("J.R.R. Tolkien");
+    assertThat(email.localPart()).isEqualTo("tolkien");
+    assertThat(email.domain()).isEqualTo("example.com");
   }
 
   private static String unescape(String text) {

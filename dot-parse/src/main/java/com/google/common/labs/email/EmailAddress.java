@@ -46,13 +46,13 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /**
    * Returns the full email address, in the form of {@code local-part@domain} or
-   * {@code "display name"<local-part@domain>}. Backslashes and double quotes in
+   * {@code "display name" <local-part@domain>}. Backslashes and double quotes in
    * the display name are auto-escaped.
    */
   @Override public String toString() {
     return displayName.map(n ->
             "\"" + all(CharPredicate.anyOf("\"\\")).replaceAllFrom(n, c -> "\\" + c)
-            + "\"<" + address() + ">")
+            + "\" <" + address() + ">")
         .orElseGet(this::address);
   }
 
@@ -81,7 +81,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             '"', '"', chars(1).suchThat(c -> isIsoControl.matchesNoneOf(c), "quoted"));
     Parser<String> unquotedDisplayName =
         consecutive(
-                CharPredicate.anyOf("()<>[]:;@\\,.\"").or(isIsoControl).not(),
+                CharPredicate.anyOf("()<>[]:;@\\,\"").or(isIsoControl).not(),
                 "unquoted display name")
             .map(String::trim);
     Parser<EmailAddress> emailPartWithBrackets = emailAddr.between("<", ">");
