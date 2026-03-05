@@ -29,7 +29,7 @@ public class EmailAddressTest {
             (                                                      # Group 1: Display Name
              "(?:\\\\[\\x20-\\x7E]|[^"\\\\])*"                     # Quoted name
              |                                                     # OR
-             [a-zA-Z0-9!\\#$%&'*+/=?^_`{|}~\\-]+                   # Unquoted atom (# escaped)
+             [a-zA-Z0-9!\\#$%&'*+/=?^_`{|}~.\\-]+                  # Unquoted atom (# escaped)
               (?:\\s+[a-zA-Z0-9!\\#$%&'*+/=?^_`{|}~\\-]+)*         # Optional additional atoms
             )
             \\s+                                                   # Mandatory space before brackets
@@ -365,6 +365,15 @@ public class EmailAddressTest {
     EmailAddress emailAddress = EmailAddress.of("user", "google.com").withDisplayName("name:\"\\me\"");
     assertThat(emailAddress.address()).isEqualTo("user@google.com");
     assertThat(emailAddress.toString()).isEqualTo("\"name:\\\"\\\\me\\\"\"<user@google.com>");
+  }
+
+  @Test
+  public void testEmailAddressParsing_unquotedDisplayNameWithDots(
+      @TestParameter ParseStrategy parser) {
+    EmailAddress email = parser.parse("J.R.R. Tolkien <tolkien@example.com>");
+    assertThat(email.displayName()).hasValue("J.R.R. Tolkien");
+    assertThat(email.localPart()).isEqualTo("tolkien");
+    assertThat(email.domain()).isEqualTo("example.com");
   }
 
   private static String unescape(String text) {

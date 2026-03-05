@@ -81,7 +81,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             '"', '"', chars(1).suchThat(c -> isIsoControl.matchesNoneOf(c), "quoted"));
     Parser<String> unquotedDisplayName =
         consecutive(
-                CharPredicate.anyOf("()<>[]:;@\\,.\"").or(isIsoControl).not(),
+                CharPredicate.anyOf("()<>[]:;@\\,\"").or(isIsoControl).not(),
                 "unquoted display name")
             .map(String::trim);
     Parser<EmailAddress> emailPartWithBrackets = emailAddr.between("<", ">");
