@@ -74,6 +74,16 @@ import com.google.mu.util.CharPredicate;
  */
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
   /**
+   * The parser for email address, according to RFC 5322, and supporting BMP characters.
+   *
+   * <p>Prefer using the {@link #parse} convenience method. This constant is to be used for
+   * composition, for example to parse a list of email addresses: <pre>{@code
+   * EmailAddress.PARSER.skipping(whitespace()).parseToStream(emailAddresses).toList();
+   * }</pre>
+   */
+  public static final Parser<EmailAddress> PARSER = makeParser();
+
+  /**
    * Prefer using the {@link #of} factory method. You can call {@link #withDisplayName}
    * to optionally attach a display name.
    */
@@ -112,11 +122,10 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /** Parses {@code address} and throws {@link Parser.ParseException} if failed. */
   public static EmailAddress parse(String address) {
-    return parser().parse(address);
+    return PARSER.parse(address);
   }
 
-  /** Returns a parser for email address, according to RFC 5322, supporting BMP characters. */
-  public static Parser<EmailAddress> parser() {
+  private static Parser<EmailAddress> makeParser() {
     Parser<String> domain =
         consecutive(CharPredicate.is('-').or(Character::isLetterOrDigit), "domain label chars")
             .suchThat(
