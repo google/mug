@@ -269,11 +269,11 @@ public interface CharPredicate {
   }
 
   /**
-   * Returns an equivalent {@link CharPredicate} but precomputes the results for all ASCII characters.
+   * Returns an equivalent {@link CharPredicate} but pre-computes the results for all ASCII characters.
    * Useful if the CharPredicate is used in a hot path.
    *
-   * <p>Note that {@link #anyOf} and {@link #noneOf} are already precomputed for ASCII chars.
-   * You may still want to call it on a deeply composed {@code CharPredicate} though.
+   * <p>Note that {@link #WORD}, {@link #anyOf} and {@link #noneOf} are already pre-computed for
+   * ASCII chars. You may still want to call it on a deeply composed {@code CharPredicate} though.
    *
    * @since 9.9.4
    */
