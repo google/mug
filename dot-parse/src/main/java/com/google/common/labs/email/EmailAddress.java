@@ -130,7 +130,6 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     return PARSER.parseSkipping(Character::isWhitespace, address);
   }
 
-
   /**
    * Parses {@code addressList} according to RFC 5322 and returns an immutable list of {@link
    * EmailAddress}.
