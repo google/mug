@@ -293,6 +293,10 @@ public interface CharPredicate {
         return base.test(c); // Fallback for non-ASCII
       }
 
+      @Override public CharPredicate precomputeForAscii() {
+        return this;
+      }
+
       @Override public String toString() {
         return base.toString();
       }

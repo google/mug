@@ -275,4 +275,11 @@ public class CharPredicateTest {
     assertThat(predicate.test(' ')).isTrue();
     assertThat(predicate.test('\t')).isTrue();
   }
+
+  @Test
+  public void precomputeForAscii_idempotent() {
+    CharPredicate whitespace = Character::isWhitespace;
+    CharPredicate predicate = whitespace.precomputeForAscii();
+    assertThat(predicate.precomputeForAscii()).isSameInstanceAs(predicate);
+  }
 }
