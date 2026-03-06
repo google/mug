@@ -135,6 +135,24 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_whitespaceAfterOpeningBracket(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    parser.assertParsesTo(
+        "John Doe < test@example.com>",
+        EmailAddress.of("test", "example.com").withDisplayName("John Doe"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_whitespaceBeforeClosingBracket(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    parser.assertParsesTo(
+        "John Doe <test@example.com >",
+        EmailAddress.of("test", "example.com").withDisplayName("John Doe"));
+  }
+
+  @Test
   public void testEmailAddressParsing_withDisplayName_multipleSpacesInName(
       @TestParameter ParseStrategy parser) {
     parser.assertParsesTo(

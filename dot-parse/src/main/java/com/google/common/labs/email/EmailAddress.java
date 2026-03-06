@@ -174,7 +174,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         '"', '"', chars(1).suchThat(c -> isIsoControl.matchesNoneOf(c), "escapable char"));
     Parser<String> unquotedDisplayName = consecutive(
         CharPredicate.anyOf("()<>[]:;@\\,\"").or(isIsoControl).not(), "unquoted display name");
-    Parser<EmailAddress> bracketedAddress = address.immediatelyBetween("<", ">");
+    Parser<EmailAddress> bracketedAddress = address.between("<", ">");
     Parser<String> displayName = Parser.anyOf(
         quotedDisplayName.followedBy(zeroOrMore(Character::isWhitespace, "whitespaces")),
         unquotedDisplayName.map(String::trim));
