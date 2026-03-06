@@ -180,8 +180,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         quotedDisplayName.followedBy(zeroOrMore(Character::isWhitespace, "whitespaces")),
         unquotedDisplayName.map(String::trim));
     return Parser.anyOf(
-        bracketedAddress,
         address,
+        bracketedAddress,
         sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)));
   }
 }
