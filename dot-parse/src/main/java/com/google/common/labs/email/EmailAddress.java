@@ -18,7 +18,6 @@ package com.google.common.labs.email;
 import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.sequence;
-import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.mu.util.Substring.all;
 import static java.util.Objects.requireNonNull;
@@ -141,7 +140,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * <p>Empty input will result in an empty list being returned.
    */
   public static List<EmailAddress> parseAddressList(String addressList) {
-    Parser<?> delimiter = Parser.anyOf(string(","), string(";")).atLeastOnce(counting());
+    Parser<?> delimiter = Parser.one(CharPredicate.anyOf(",;"), "delimiter").atLeastOnce(counting());
     return PARSER
         .zeroOrMoreDelimitedBy(delimiter, toUnmodifiableList())
         .followedBy(delimiter.orElse(null))
