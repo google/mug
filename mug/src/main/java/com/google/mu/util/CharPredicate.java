@@ -44,7 +44,7 @@ public interface CharPredicate {
     @Override public String toString() {
       return "WORD";
     }
-  };
+  }.precomputeForAscii();
 
   /** Corresponds to the ASCII characters. */
   static CharPredicate ASCII = new CharPredicate() {
@@ -287,7 +287,8 @@ public interface CharPredicate {
       @Override public boolean test(char c) {
         if (c < 64) {
           return ((low64 >>> c) & 1L) != 0;
-        } else if (c < 128) {
+        }
+        if (c < 128) {
           return ((high64 >>> (c - 64)) & 1L) != 0;
         }
         return base.test(c); // Fallback for non-ASCII

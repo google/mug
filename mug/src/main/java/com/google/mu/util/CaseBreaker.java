@@ -51,7 +51,7 @@ public final class CaseBreaker {
   private final CharPredicate camelLower;
 
   public CaseBreaker() {
-    this.punctuation = ASCII.and(ALPHA.or(NUM).not());
+    this.punctuation = ASCII.and(ALPHA.or(NUM).not()).precomputeForAscii();
     this.camelLower = NUM.or(Character::isLowerCase);
   }
 
