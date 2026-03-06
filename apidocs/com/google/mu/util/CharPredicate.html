@@ -91,6 +91,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#matchesNoneOf(java.lang.CharSequence)" tabindex="0">matchesNoneOf(CharSequence)</a></li>
 <li><a href="#isPrefixOf(java.lang.CharSequence)" tabindex="0">isPrefixOf(CharSequence)</a></li>
 <li><a href="#isSuffixOf(java.lang.CharSequence)" tabindex="0">isSuffixOf(CharSequence)</a></li>
+<li><a href="#precomputeForAscii()" tabindex="0">precomputeForAscii()</a></li>
 </ol>
 </li>
 </ol>
@@ -245,15 +246,20 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a <a href="CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> that evaluates true if either this predicate evaluates to true,
  or the character is in the range of <code>[from, to]</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1"><code>static <a href="CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1"><code><a href="#range(char,char)" class="member-name-link">range</a><wbr>(char&nbsp;from,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#precomputeForAscii()" class="member-name-link">precomputeForAscii</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
+<div class="block">Returns an equivalent <a href="CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> but precomputes the results for all ASCII characters.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1"><code>static <a href="CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1"><code><a href="#range(char,char)" class="member-name-link">range</a><wbr>(char&nbsp;from,
  char&nbsp;to)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1">
 <div class="block">Returns a CharPredicate for the range of characters: <code>[from, to]</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>boolean</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#test(char)" class="member-name-link">test</a><wbr>(char&nbsp;ch)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>boolean</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#test(char)" class="member-name-link">test</a><wbr>(char&nbsp;ch)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">Returns true if <code>ch</code> satisfies this predicate.</div>
 </div>
 </div>
@@ -491,6 +497,23 @@ loadScripts(document, 'script');</script>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.0</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="precomputeForAscii()">
+<h3>precomputeForAscii</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="return-type"><a href="CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></span>&nbsp;<span class="element-name">precomputeForAscii</span>()</div>
+<div class="block">Returns an equivalent <a href="CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> but precomputes the results for all ASCII characters.
+ Useful if the CharPredicate is used in a hot path.
+
+ <p>Note that <a href="#anyOf(java.lang.String)"><code>anyOf(java.lang.String)</code></a> and <a href="#noneOf(java.lang.String)"><code>noneOf(java.lang.String)</code></a> are already precomputed for ASCII chars.
+ You may still want to call it on a deeply composed <code>CharPredicate</code> though.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>9.9.4</dd>
 </dl>
 </div>
 </section>
