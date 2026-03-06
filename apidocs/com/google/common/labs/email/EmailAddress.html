@@ -375,8 +375,8 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a>&gt;</span>&nbsp;<span class="element-name">parseAddressList</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;addressList)</span></div>
 <div class="block">Parses <code>addressList</code> according to RFC 5322 and returns an immutable list of <a href="EmailAddress.html" title="class in com.google.common.labs.email"><code>EmailAddress</code></a>.
 
- <p>Both colon and semicolon are supported as delimiters, and można also be surrounded by
- whitespace. Trailing delimiters are allowed.
+ <p>Both colon (<code>,</code>) and semicolon (<code>;</code>) are supported as delimiters, with
+ whitespaces ignored. Trailing delimiters are allowed.
 
  <p>Empty input will result in an empty list being returned.</div>
 </div>
