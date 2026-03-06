@@ -100,6 +100,6 @@ public final class CharacterSet implements CharPredicate {
             .zeroOrMore(reducing(CharPredicate.NONE, CharPredicate::or));
     Parser<CharPredicate> negativeSet =
         Parser.string("^").then(positiveSet).map(CharPredicate::not);
-    return negativeSet.or(positiveSet).between("[", "]").parse(characterSet);
+    return negativeSet.or(positiveSet).between("[", "]").parse(characterSet).precomputeForAscii();
   }
 }
