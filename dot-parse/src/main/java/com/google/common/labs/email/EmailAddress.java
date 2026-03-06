@@ -147,10 +147,6 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         .parseSkipping(Character::isWhitespace, addressList);
   }
 
-  private static String escape(String name) {
-    return all(CharPredicate.anyOf("\"\\")).replaceAllFrom(name, c -> "\\" + c);
-  }
-
   private static Parser<EmailAddress> makeParser() {
     CharPredicate letterOrDigit = Character::isLetterOrDigit;
     CharPredicate isIsoControl = Character::isISOControl;
@@ -183,5 +179,9 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         address,
         bracketedAddress,
         sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)));
+  }
+
+  private static String escape(String name) {
+    return all(CharPredicate.anyOf("\"\\")).replaceAllFrom(name, c -> "\\" + c);
   }
 }
