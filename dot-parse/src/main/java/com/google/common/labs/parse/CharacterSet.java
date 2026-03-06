@@ -63,6 +63,10 @@ public final class CharacterSet implements CharPredicate {
     return predicate.test(ch);
   }
 
+  @Override public CharacterSet precomputeForAscii() {
+    return new CharacterSet(string, predicate.precomputeForAscii());
+  }
+
   @Override public CharacterSet not() {
     return new CharacterSet(
         after(prefix("["))
