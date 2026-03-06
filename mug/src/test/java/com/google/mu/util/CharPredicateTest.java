@@ -110,7 +110,7 @@ public class CharPredicateTest {
 
   @Test
   public void testNoneOf_toString() {
-    assertThat(CharPredicate.noneOf("ab").toString()).isEqualTo("noneOf('ab')");
+    assertThat(CharPredicate.noneOf("ab").toString()).isEqualTo("not (anyOf('ab'))");
   }
 
   @Test

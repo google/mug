@@ -16,6 +16,8 @@ package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Arrays;
+
 /**
  * A predicate of character. More efficient than {@code Predicate<Character>}.
  *
@@ -112,9 +114,11 @@ public interface CharPredicate {
 
   /** Returns a CharPredicate that matches any of {@code chars}. */
   static CharPredicate anyOf(String chars) {
+    char[] array = chars.toCharArray();
+    Arrays.sort(array);
     return new CharPredicate() {
       @Override public boolean test(char c) {
-        return chars.indexOf(c) >= 0;
+        return Arrays.binarySearch(array, c) >= 0;
       }
 
       @Override public String toString() {
@@ -125,16 +129,7 @@ public interface CharPredicate {
 
   /** Returns a CharPredicate that matches any of {@code chars}. */
   static CharPredicate noneOf(String chars) {
-    requireNonNull(chars);
-    return new CharPredicate() {
-      @Override public boolean test(char c) {
-        return chars.indexOf(c) < 0;
-      }
-
-      @Override public String toString() {
-        return "noneOf('" + chars + "')";
-      }
-    }.precomputeForAscii();
+    return anyOf(chars).not();
   }
 
   /** Returns true if {@code ch} satisfies this predicate. */
