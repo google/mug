@@ -19,11 +19,11 @@ import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.sequence;
+import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.mu.util.Substring.all;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.util.List;
@@ -160,13 +160,15 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             .suchThat(
                 s -> s.length() <= 63 && s.charAt(0) != '-' && s.charAt(s.length() - 1) != '-',
                 "{1,63} chars domain label")
-            .atLeastOnceDelimitedBy(".", joining("."))
+            .atLeastOnceDelimitedBy(".", counting())
+            .source()
             .suchThat(d -> d.length() <= 253, "domain <= 253 chars");
     Parser<String> localPart =
         consecutive(letterOrDigit.or(CharPredicate.anyOf("!#$%&'*+-/=?^_`{|}~")), "local part")
-            .atLeastOnceDelimitedBy(".", joining("."));
+            .atLeastOnceDelimitedBy(".", counting())
+            .source();
     Parser<EmailAddress> address =
-        sequence(localPart, literally(Parser.string("@").then(domain)), EmailAddress::of)
+        sequence(localPart, literally(string("@").then(domain)), EmailAddress::of)
             .suchThat(
                 a -> a.localPart().length() + a.domain().length() + 1 <= 254,
                 "addr-spec <= 254 chars");;
