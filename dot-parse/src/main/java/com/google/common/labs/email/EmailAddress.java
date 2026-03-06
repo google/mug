@@ -17,12 +17,13 @@ package com.google.common.labs.email;
 
 import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.sequence;
+import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.mu.util.Substring.all;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.util.List;
@@ -67,11 +68,12 @@ import com.google.mu.util.StringFormat;
  * <h3>Intentionally Omitted Legacy Features</h3>
  * <p>To maintain compatibility with modern MTAs (Gmail, Outlook) and mitigate
  * header injection risks, the following RFC 5322 edge cases are excluded:</p>
+ *
  * <ul>
- *   <li><b>Quoted Local-Parts:</b> (e.g., {@code "john doe"@domain}) - Deprecated in practice.</li>
- *   <li><b>Comments (CFWS):</b> (e.g., {@code name(comment) <addr>}) - Parenthetical comments are ignored.</li>
- *   <li><b>Domain Literals:</b> (e.g., {@code user@[192.168.1.1]}) - IP routing is rarely supported.</li>
- *   <li><b>Obsolete Syntax:</b> (RFC 5322 §4) - Legacy syntax like "quoted-pairs" in unquoted names.</li>
+ *   <li><b>Quoted Local-Parts:</b> (e.g., {@code "john doe"@domain}) - Deprecated in practice.
+ *   <li><b>Comments (CFWS):</b> (e.g., {@code name(comment) <addr>}) - De facto obsolete.
+ *   <li><b>Domain Literals:</b> (e.g., {@code user@[192.168.1.1]}) - IP routing is rarely supported.
+ *   <li><b>Obsolete Syntax:</b> (RFC 5322 §4) - Legacy syntax like "quoted-pairs" in unquoted names.
  * </ul>
  *
  * @since 9.9.4
@@ -126,9 +128,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /** Parses {@code address} and throws {@link Parser.ParseException} if failed. */
   public static EmailAddress parse(String address) {
-    return PARSER.parse(address);
+    return PARSER.parseSkipping(Character::isWhitespace, address);
   }
-
 
   /**
    * Parses {@code addressList} according to RFC 5322 and returns an immutable list of {@link
@@ -147,10 +148,6 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         .parseSkipping(Character::isWhitespace, addressList);
   }
 
-  private static String escape(String name) {
-    return all(CharPredicate.anyOf("\"\\")).replaceAllFrom(name, c -> "\\" + c);
-  }
-
   private static Parser<EmailAddress> makeParser() {
     CharPredicate letterOrDigit = Character::isLetterOrDigit;
     CharPredicate isIsoControl = Character::isISOControl;
@@ -159,13 +156,15 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             .suchThat(
                 s -> s.length() <= 63 && s.charAt(0) != '-' && s.charAt(s.length() - 1) != '-',
                 "{1,63} chars domain label")
-            .atLeastOnceDelimitedBy(".", joining("."))
+            .atLeastOnceDelimitedBy(".", counting())
+            .source()
             .suchThat(d -> d.length() <= 253, "domain <= 253 chars");
     Parser<String> localPart =
         consecutive(letterOrDigit.or(CharPredicate.anyOf("!#$%&'*+-/=?^_`{|}~")), "local part")
-            .atLeastOnceDelimitedBy(".", joining("."));
+            .atLeastOnceDelimitedBy(".", counting())
+            .source();
     Parser<EmailAddress> address =
-        sequence(localPart, Parser.string("@").then(domain), EmailAddress::of)
+        sequence(localPart, literally(string("@").then(domain)), EmailAddress::of)
             .suchThat(
                 a -> a.localPart().length() + a.domain().length() + 1 <= 254,
                 "addr-spec <= 254 chars");;
@@ -178,8 +177,12 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         quotedDisplayName.followedBy(zeroOrMore(Character::isWhitespace, "whitespaces")),
         unquotedDisplayName.map(String::trim));
     return Parser.anyOf(
-        bracketedAddress,
         address,
+        bracketedAddress,
         sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)));
+  }
+
+  private static String escape(String name) {
+    return all(CharPredicate.anyOf("\"\\")).replaceAllFrom(name, c -> "\\" + c);
   }
 }
