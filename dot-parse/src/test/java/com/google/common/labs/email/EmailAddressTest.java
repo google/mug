@@ -1,6 +1,7 @@
 package com.google.common.labs.email;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.labs.email.EmailAddress.parseAddressList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.common.truth.TruthJUnit.assume;
@@ -377,6 +378,72 @@ public class EmailAddressTest {
         .containsExactly(EmailAddress.of("a", "example.com"), EmailAddress.of("b", "foo.com"));
     assertThat(EmailAddress.PARSER.skipping(Character::isWhitespace).parseToStream("a@example.com b@foo.com"))
         .containsExactly(EmailAddress.of("a", "example.com"), EmailAddress.of("b", "foo.com"));
+  }
+
+  @Test
+  public void testParseAddressList_emptyString_fails() {
+    assertThrows(IllegalArgumentException.class, () -> parseAddressList(""));
+  }
+
+  @Test
+  public void testParseAddressList_singleAddress() {
+    assertThat(parseAddressList("a@b.com")).containsExactly(EmailAddress.of("a", "b.com"));
+  }
+
+  @Test
+  public void testParseAddressList_twoAddressesNoWhitespace() {
+    assertThat(parseAddressList("a@b.com,c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+  }
+
+  @Test
+  public void testParseAddressList_twoAddressesWithWhitespaces() {
+    assertThat(parseAddressList(" a@b.com , c@d.com "))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+  }
+
+  @Test
+  public void testParseAddressList_withTrailingComma() {
+    assertThat(parseAddressList("a@b.com,")).containsExactly(EmailAddress.of("a", "b.com"));
+    assertThat(parseAddressList("a@b.com , ")).containsExactly(EmailAddress.of("a", "b.com"));
+    assertThat(parseAddressList("a@b.com, c@d.com,"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com,c@d.com , "))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+  }
+
+  @Test
+  public void testParseAddressList_semicolonDelimiter() {
+    assertThat(parseAddressList("a@b.com;c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com ; c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com;\nc@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com\n;\nc@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com\n;\n c@d.com "))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+  }
+
+  @Test
+  public void testParseAddressList_consecutiveDelimiters() {
+    assertThat(parseAddressList("a@b.com,,c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com;;c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com,;c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com;,c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com ,, c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com ; ; c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com,\n;c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com,\n;\r\nc@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
   }
 
   private static String unescape(String text) {

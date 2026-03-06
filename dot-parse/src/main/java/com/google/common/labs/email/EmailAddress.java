@@ -18,11 +18,15 @@ package com.google.common.labs.email;
 import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.sequence;
+import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.mu.util.Substring.all;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.google.common.labs.parse.Parser;
@@ -124,6 +128,22 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   /** Parses {@code address} and throws {@link Parser.ParseException} if failed. */
   public static EmailAddress parse(String address) {
     return PARSER.parse(address);
+  }
+
+
+  /**
+   * Parses {@code addressList} according to RFC 5322 and returns an immutable list of {@link
+   * EmailAddress}.
+   *
+   * <p>Both colon and semicolon are supported as delimiters, and można also be surrounded by
+   * whitespace. Trailing delimiters are allowed.
+   */
+  public static List<EmailAddress> parseAddressList(String addressList) {
+    Parser<?> delimiter = Parser.anyOf(string(","), string(";")).atLeastOnce(counting());
+    return PARSER
+        .atLeastOnceDelimitedBy(delimiter, toUnmodifiableList())
+        .followedBy(delimiter.orElse(null))
+        .parseSkipping(Character::isWhitespace, addressList);
   }
 
   private static String escape(String name) {

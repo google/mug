@@ -661,10 +661,21 @@ public abstract class Parser<T> {
    */
   public final <A, R> Parser<R> atLeastOnceDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
+    return atLeastOnceDelimitedBy(string(delimiter), collector);
+  }
+
+  /**
+   * Returns a parser that matches {@code this} pattern at least once, delimited by the given
+   * delimiter.
+   *
+   * @since 9.9.4
+   */
+  public final <A, R> Parser<R> atLeastOnceDelimitedBy(
+      Parser<?> delimiter, Collector<? super T, A, ? extends R> collector) {
     requireNonNull(collector);
     return sequence(
         this,
-        string(delimiter).then(this).zeroOrMore(toCollection(ArrayDeque::new)),
+        delimiter.then(this).zeroOrMore(toCollection(ArrayDeque::new)),
         (first, deque) -> {
           deque.addFirst(first);
           return deque.stream().collect(collector);
@@ -745,8 +756,20 @@ public abstract class Parser<T> {
    */
   public final <A, R> Parser<R>.OrEmpty zeroOrMoreDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
+    return this.<A, R>zeroOrMoreDelimitedBy(string(delimiter), collector);
+  }
+
+  /**
+   * Starts a fluent chain for matching the current parser zero or more times, delimited by {@code
+   * delimiter}. {@code collector} is used to collect the parsed results and the empty collector
+   * result will be used if this parser matches zero times.
+   *
+   * @since 9.9.4
+   */
+  public final <A, R> Parser<R>.OrEmpty zeroOrMoreDelimitedBy(
+      Parser<?> delimiter, Collector<? super T, A, ? extends R> collector) {
     return this.<A, R>atLeastOnceDelimitedBy(delimiter, collector)
-        .new OrEmpty(emptyValueSupplier(collector));
+    .new OrEmpty(emptyValueSupplier(collector));
   }
 
   /**
