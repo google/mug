@@ -91,6 +91,9 @@ public class CharPredicateTest {
 
   @Test
   public void testAnyOf() {
+    assertThat(CharPredicate.anyOf("").test('a')).isFalse();
+    assertThat(CharPredicate.anyOf("a").test('a')).isTrue();
+    assertThat(CharPredicate.anyOf("b").test('a')).isFalse();
     assertThat(CharPredicate.anyOf("ab").test('a')).isTrue();
     assertThat(CharPredicate.anyOf("ab").test('b')).isTrue();
     assertThat(CharPredicate.anyOf("ab").test('c')).isFalse();

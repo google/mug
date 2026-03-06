@@ -114,6 +114,12 @@ public interface CharPredicate {
 
   /** Returns a CharPredicate that matches any of {@code chars}. */
   static CharPredicate anyOf(String chars) {
+    if (chars.length() == 0) {
+      return NONE;
+    }
+    if (chars.length() == 1) {
+      return is(chars.charAt(0));
+    }
     char[] array = chars.toCharArray();
     Arrays.sort(array);
     return new CharPredicate() {
