@@ -70,7 +70,7 @@ import com.google.mu.util.StringFormat;
  * header injection risks, the following RFC 5322 edge cases are excluded:</p>
  * <ul>
  *   <li><b>Quoted Local-Parts:</b> (e.g., {@code "john doe"@domain}) - Deprecated in practice.</li>
- *   <li><b>Comments (CFWS):</b> (e.g., {@code name(comment) <addr>}) - Parenthetical comments are ignored.</li>
+ *   <li><b>Comments (CFWS):</b> (e.g., {@code name(comment) <addr>}) - De facto obsolete.</li>
  *   <li><b>Domain Literals:</b> (e.g., {@code user@[192.168.1.1]}) - IP routing is rarely supported.</li>
  *   <li><b>Obsolete Syntax:</b> (RFC 5322 §4) - Legacy syntax like "quoted-pairs" in unquoted names.</li>
  * </ul>
