@@ -152,7 +152,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     CharPredicate letterOrDigit = Character::isLetterOrDigit;
     CharPredicate isIsoControl = Character::isISOControl;
     Parser<String> domain =
-        consecutive(letterOrDigit.or('-'), "domain label chars")
+        consecutive(letterOrDigit.or('-').precomputeForAscii(), "domain label chars")
             .suchThat(
                 s -> s.length() <= 63 && s.charAt(0) != '-' && s.charAt(s.length() - 1) != '-',
                 "{1,63} chars domain label")
@@ -160,7 +160,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             .source()
             .suchThat(d -> d.length() <= 253, "domain <= 253 chars");
     Parser<String> localPart =
-        consecutive(letterOrDigit.or(CharPredicate.anyOf("!#$%&'*+-/=?^_`{|}~")), "local part")
+        consecutive(letterOrDigit.or(CharPredicate.anyOf("!#$%&'*+-/=?^_`{|}~")).precomputeForAscii(), "local part")
             .atLeastOnceDelimitedBy(".", counting())
             .source();
     Parser<EmailAddress> address =
@@ -171,7 +171,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<String> quotedDisplayName = Parser.quotedByWithEscapes(
         '"', '"', chars(1).suchThat(c -> isIsoControl.matchesNoneOf(c), "escapable char"));
     Parser<String> unquotedDisplayName = consecutive(
-        CharPredicate.anyOf("()<>[]:;@\\,\"").or(isIsoControl).not(), "unquoted display name");
+        CharPredicate.anyOf("()<>[]:;@\\,\"").or(isIsoControl).not().precomputeForAscii(),
+        "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
     Parser<String> displayName = Parser.anyOf(
         quotedDisplayName.followedBy(zeroOrMore(Character::isWhitespace, "whitespaces")),

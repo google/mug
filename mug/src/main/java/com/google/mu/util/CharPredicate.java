@@ -112,7 +112,6 @@ public interface CharPredicate {
 
   /** Returns a CharPredicate that matches any of {@code chars}. */
   static CharPredicate anyOf(String chars) {
-    requireNonNull(chars);
     return new CharPredicate() {
       @Override public boolean test(char c) {
         return chars.indexOf(c) >= 0;
@@ -121,7 +120,7 @@ public interface CharPredicate {
       @Override public String toString() {
         return "anyOf('" + chars + "')";
       }
-    };
+    }.precomputeForAscii();
   }
 
   /** Returns a CharPredicate that matches any of {@code chars}. */
@@ -135,7 +134,7 @@ public interface CharPredicate {
       @Override public String toString() {
         return "noneOf('" + chars + "')";
       }
-    };
+    }.precomputeForAscii();
   }
 
   /** Returns true if {@code ch} satisfies this predicate. */
@@ -267,5 +266,43 @@ public interface CharPredicate {
   default boolean isSuffixOf(CharSequence sequence) {
     int len = sequence.length();
     return len > 0 && test(sequence.charAt(len - 1));
+  }
+
+  /**
+   * Returns an equivalent {@link CharPredicate} but precomputes the results for all ASCII characters.
+   * Useful if the CharPredicate is used in a hot path.
+   *
+   * @since 9.9.4
+   */
+  default CharPredicate precomputeForAscii() {
+    CharPredicate base = this;
+
+    return new CharPredicate() {
+      private final long low64 = computeMask(0); // ASCII 0-63
+      private final long high64 = computeMask(64); // ASCII 64-127
+
+      @Override public boolean test(char c) {
+        if (c < 64) {
+          return ((low64 >>> c) & 1L) != 0;
+        } else if (c < 128) {
+          return ((high64 >>> (c - 64)) & 1L) != 0;
+        }
+        return base.test(c); // Fallback for non-ASCII
+      }
+
+      @Override public String toString() {
+        return base.toString();
+      }
+
+      private long computeMask(int offset) {
+        long mask = 0L;
+        for (int i = 0; i < 64; i++) {
+          if (base.test((char) (offset + i))) {
+            mask |= (1L << i);
+          }
+        }
+        return mask;
+      }
+    };
   }
 }

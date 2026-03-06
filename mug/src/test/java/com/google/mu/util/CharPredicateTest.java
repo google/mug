@@ -15,6 +15,7 @@
 package com.google.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.util.CharPredicate.anyOf;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,7 +26,8 @@ import com.google.common.testing.NullPointerTester;
 @RunWith(JUnit4.class)
 public class CharPredicateTest {
 
-  @Test public void testRange() {
+  @Test
+  public void testRange() {
     assertThat(CharPredicate.range('a', 'z').test('a')).isTrue();
     assertThat(CharPredicate.range('a', 'z').test('z')).isTrue();
     assertThat(CharPredicate.range('a', 'z').test('v')).isTrue();
@@ -33,38 +35,46 @@ public class CharPredicateTest {
     assertThat(CharPredicate.range('a', 'z').test('C')).isFalse();
   }
 
-  @Test public void testRange_toString() {
+  @Test
+  public void testRange_toString() {
     assertThat(CharPredicate.range('a', 'z').toString()).isEqualTo("['a', 'z']");
   }
 
-  @Test public void testIs() {
+  @Test
+  public void testIs() {
     assertThat(CharPredicate.is('c').test('c')).isTrue();
     assertThat(CharPredicate.is('x').test('c')).isFalse();
   }
 
-  @Test public void testIs_toString() {
+  @Test
+  public void testIs_toString() {
     assertThat(CharPredicate.is('c').toString()).isEqualTo("'c'");
   }
 
-  @Test public void testIsNot() {
+  @Test
+  public void testIsNot() {
     assertThat(CharPredicate.isNot('c').test('c')).isFalse();
     assertThat(CharPredicate.isNot('c').test('x')).isTrue();
   }
 
-  @Test public void testIsNot_toString() {
+  @Test
+  public void testIsNot_toString() {
     assertThat(CharPredicate.isNot('c').toString()).isEqualTo("not ('c')");
   }
 
-  @Test public void testNot() {
+  @Test
+  public void testNot() {
     assertThat(CharPredicate.is('c').not().test('c')).isFalse();
     assertThat(CharPredicate.is('c').not().test('x')).isTrue();
   }
 
-  @Test public void testNot_toString() {
+  @Test
+  public void testNot_toString() {
     assertThat(CharPredicate.is('c').not().toString()).isEqualTo("not ('c')");
   }
 
-  @Test public void testOr() {
+  @Test
+  public void testOr() {
     assertThat(CharPredicate.is('c').orRange('A', 'Z').test('c')).isTrue();
     assertThat(CharPredicate.is('c').orRange('A', 'Z').test('Z')).isTrue();
     assertThat(CharPredicate.is('c').orRange('A', 'Z').test('z')).isFalse();
@@ -73,43 +83,51 @@ public class CharPredicateTest {
     assertThat(CharPredicate.is('x').or('X').test('y')).isFalse();
   }
 
-  @Test public void testOr_toString() {
+  @Test
+  public void testOr_toString() {
     assertThat(CharPredicate.is('c').orRange('A', 'Z').toString()).isEqualTo("'c' | ['A', 'Z']");
     assertThat(CharPredicate.range('A', 'Z').or('c').toString()).isEqualTo("['A', 'Z'] | 'c'");
   }
 
-  @Test public void testAnyOf() {
+  @Test
+  public void testAnyOf() {
     assertThat(CharPredicate.anyOf("ab").test('a')).isTrue();
     assertThat(CharPredicate.anyOf("ab").test('b')).isTrue();
     assertThat(CharPredicate.anyOf("ab").test('c')).isFalse();
   }
 
-  @Test public void testAnyOf_toString() {
+  @Test
+  public void testAnyOf_toString() {
     assertThat(CharPredicate.anyOf("ab").toString()).isEqualTo("anyOf('ab')");
   }
 
-  @Test public void testNoneOf() {
+  @Test
+  public void testNoneOf() {
     assertThat(CharPredicate.noneOf("ab").test('a')).isFalse();
     assertThat(CharPredicate.noneOf("ab").test('b')).isFalse();
     assertThat(CharPredicate.noneOf("ab").test('c')).isTrue();
   }
 
-  @Test public void testNoneOf_toString() {
+  @Test
+  public void testNoneOf_toString() {
     assertThat(CharPredicate.noneOf("ab").toString()).isEqualTo("noneOf('ab')");
   }
 
-  @Test public void testMatchesAnyOf() {
+  @Test
+  public void testMatchesAnyOf() {
     assertThat(CharPredicate.range('0', '9').matchesAnyOf("-")).isFalse();
     assertThat(CharPredicate.range('0', '9').matchesAnyOf("0")).isTrue();
   }
 
-  @Test public void testMatchesNoneOf() {
+  @Test
+  public void testMatchesNoneOf() {
     assertThat(CharPredicate.anyOf("ab").matchesNoneOf("a")).isFalse();
     assertThat(CharPredicate.anyOf("ab").matchesNoneOf("b")).isFalse();
     assertThat(CharPredicate.anyOf("ab").matchesNoneOf("c")).isTrue();
   }
 
-  @Test public void testMatchesAllOf() {
+  @Test
+  public void testMatchesAllOf() {
     assertThat(CharPredicate.anyOf("ab").matchesAllOf("a")).isTrue();
     assertThat(CharPredicate.anyOf("ab").matchesAllOf("b")).isTrue();
     assertThat(CharPredicate.anyOf("ab").matchesAllOf("ba")).isTrue();
@@ -117,21 +135,144 @@ public class CharPredicateTest {
     assertThat(CharPredicate.anyOf("ab").matchesAllOf("c")).isFalse();
   }
 
-  @Test public void testIsPrefixOf() {
+  @Test
+  public void testIsPrefixOf() {
     assertThat(CharPredicate.range('0', '9').isPrefixOf("0-")).isTrue();
     assertThat(CharPredicate.range('0', '9').isPrefixOf("1-")).isTrue();
     assertThat(CharPredicate.range('0', '9').isPrefixOf("-1")).isFalse();
   }
 
-  @Test public void testIsSuffixOf() {
+  @Test
+  public void testIsSuffixOf() {
     assertThat(CharPredicate.range('0', '9').isSuffixOf("10")).isTrue();
     assertThat(CharPredicate.range('0', '9').isSuffixOf("a1")).isTrue();
     assertThat(CharPredicate.range('0', '9').isSuffixOf("1a")).isFalse();
   }
 
-  @Test public void testNulls() throws Throwable {
+  @Test
+  public void testNulls() throws Throwable {
     CharPredicate p = CharPredicate.is('a');
     new NullPointerTester().testAllPublicInstanceMethods(p);
     new NullPointerTester().testAllPublicStaticMethods(CharPredicate.class);
+  }
+
+  @Test
+  public void precomputeForAscii_lowerRangeMatches() {
+    // ' ' is 32, '#' is 35
+    CharPredicate predicate = anyOf(" #").precomputeForAscii();
+
+    assertThat(predicate.test(' ')).isTrue();
+    assertThat(predicate.test('#')).isTrue();
+    assertThat(predicate.test('!')).isFalse(); // 33 - not in mask
+  }
+
+  @Test
+  public void precomputeForAscii_higherRangeMatches() {
+    // 'A' is 65, 'Z' is 90
+    CharPredicate predicate = anyOf("AZ").precomputeForAscii();
+
+    assertThat(predicate.test('A')).isTrue();
+    assertThat(predicate.test('Z')).isTrue();
+    assertThat(predicate.test('B')).isFalse(); // 66 - not in mask
+  }
+
+  @Test
+  public void precomputeForAscii_boundaryBetweenMasks() {
+    // 63 is '?', 64 is '@'
+    CharPredicate predicate = anyOf("?@").precomputeForAscii();
+
+    assertThat(predicate.test('?')).isTrue();
+    assertThat(predicate.test('@')).isTrue();
+  }
+
+  @Test
+  public void precomputeForAscii_nonAsciiTrue() {
+    // 'π' (U+03C0) = 960, '€' (U+20AC) = 8364
+    CharPredicate predicate = anyOf("π€").precomputeForAscii();
+
+    assertThat(predicate.test('π')).isTrue();
+    assertThat(predicate.test('€')).isTrue();
+  }
+
+  @Test
+  public void precomputeForAscii_nonAsciiFalse() {
+    // Only contains 'π'
+    CharPredicate predicate = anyOf("π").precomputeForAscii();
+
+    // 'Ω' (U+03A9) = 937. Non-ASCII, but not in the string.
+    assertThat(predicate.test('Ω')).isFalse();
+    // 'ÿ' (U+00FF) = 255.
+    assertThat(predicate.test('ÿ')).isFalse();
+  }
+
+  @Test
+  public void precomputeForAscii_asciiBoundaryToSlowPath() {
+    CharPredicate predicate = anyOf("a").precomputeForAscii();
+    assertThat(predicate.test((char) 127)).isFalse();
+    assertThat(predicate.test((char) 128)).isFalse();
+  }
+
+  @Test
+  public void precomputeForAscii_emptyInput() {
+    CharPredicate predicate = anyOf("").precomputeForAscii();
+    assertThat(predicate.test('a')).isFalse();
+    assertThat(predicate.test(' ')).isFalse();
+    assertThat(predicate.test('π')).isFalse();
+  }
+
+  @Test
+  public void precomputeForAscii_any() {
+    CharPredicate predicate = CharPredicate.ANY.precomputeForAscii();
+    for (int i = 0; i <= 128; i++) {
+      assertThat(predicate.test((char) i)).isTrue();
+    }
+    assertThat(predicate.test('π')).isTrue();
+  }
+
+  @Test
+  public void precomputeForAscii_none() {
+    CharPredicate predicate = CharPredicate.NONE.precomputeForAscii();
+    for (int i = 0; i <= 128; i++) {
+      assertThat(predicate.test((char) i)).isFalse();
+    }
+    assertThat(predicate.test('π')).isFalse();
+  }
+
+  @Test
+  public void precomputeForAscii_ascii() {
+    CharPredicate predicate = CharPredicate.ASCII.precomputeForAscii();
+    for (int i = 0; i < 128; i++) {
+      assertThat(predicate.test((char) i)).isTrue();
+    }
+    assertThat(predicate.test('π')).isFalse();
+  }
+
+  @Test
+  public void precomputeForAscii_nonAscii() {
+    CharPredicate predicate = CharPredicate.ASCII.not().precomputeForAscii();
+    for (int i = 0; i < 128; i++) {
+      assertThat(predicate.test((char) i)).isFalse();
+    }
+    assertThat(predicate.test('π')).isTrue();
+  }
+
+  @Test
+  public void precomputeForAscii_isoControl() {
+    CharPredicate isIsoControl =  Character::isISOControl;
+    CharPredicate predicate = isIsoControl.precomputeForAscii();
+    assertThat(predicate.test('a')).isFalse();
+    assertThat(predicate.test('\n')).isTrue();
+    assertThat(predicate.test('\0')).isTrue();
+    assertThat(predicate.test('\t')).isTrue();
+  }
+
+  @Test
+  public void precomputeForAscii_isWhitespace() {
+    CharPredicate whitespace = Character::isWhitespace;
+    CharPredicate predicate = whitespace.precomputeForAscii();
+    assertThat(predicate.test('a')).isFalse();
+    assertThat(predicate.test('\n')).isTrue();
+    assertThat(predicate.test(' ')).isTrue();
+    assertThat(predicate.test('\t')).isTrue();
   }
 }
