@@ -68,11 +68,12 @@ import com.google.mu.util.StringFormat;
  * <h3>Intentionally Omitted Legacy Features</h3>
  * <p>To maintain compatibility with modern MTAs (Gmail, Outlook) and mitigate
  * header injection risks, the following RFC 5322 edge cases are excluded:</p>
+ *
  * <ul>
- *   <li><b>Quoted Local-Parts:</b> (e.g., {@code "john doe"@domain}) - Deprecated in practice.</li>
- *   <li><b>Comments (CFWS):</b> (e.g., {@code name(comment) <addr>}) - De facto obsolete.</li>
- *   <li><b>Domain Literals:</b> (e.g., {@code user@[192.168.1.1]}) - IP routing is rarely supported.</li>
- *   <li><b>Obsolete Syntax:</b> (RFC 5322 §4) - Legacy syntax like "quoted-pairs" in unquoted names.</li>
+ *   <li><b>Quoted Local-Parts:</b> (e.g., {@code "john doe"@domain}) - Deprecated in practice.
+ *   <li><b>Comments (CFWS):</b> (e.g., {@code name(comment) <addr>}) - De facto obsolete.
+ *   <li><b>Domain Literals:</b> (e.g., {@code user@[192.168.1.1]}) - IP routing is rarely supported.
+ *   <li><b>Obsolete Syntax:</b> (RFC 5322 §4) - Legacy syntax like "quoted-pairs" in unquoted names.
  * </ul>
  *
  * @since 9.9.4
