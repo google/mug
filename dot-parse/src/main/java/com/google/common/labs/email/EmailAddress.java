@@ -137,11 +137,13 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    *
    * <p>Both colon and semicolon are supported as delimiters, and można also be surrounded by
    * whitespace. Trailing delimiters are allowed.
+   *
+   * <p>Empty input will result in an empty list being returned.
    */
   public static List<EmailAddress> parseAddressList(String addressList) {
     Parser<?> delimiter = Parser.anyOf(string(","), string(";")).atLeastOnce(counting());
     return PARSER
-        .atLeastOnceDelimitedBy(delimiter, toUnmodifiableList())
+        .zeroOrMoreDelimitedBy(delimiter, toUnmodifiableList())
         .followedBy(delimiter.orElse(null))
         .parseSkipping(Character::isWhitespace, addressList);
   }

@@ -381,8 +381,10 @@ public class EmailAddressTest {
   }
 
   @Test
-  public void testParseAddressList_emptyString_fails() {
-    assertThrows(IllegalArgumentException.class, () -> parseAddressList(""));
+  public void testParseAddressList_emptyString() {
+    assertThat(parseAddressList("")).isEmpty();
+    assertThat(parseAddressList("  ")).isEmpty();
+    assertThat(parseAddressList(" , ;\r\n, ")).isEmpty();
   }
 
   @Test
