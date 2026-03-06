@@ -1,6 +1,7 @@
 package com.google.common.labs.email;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.labs.email.EmailAddress.parseAddressList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.common.truth.TruthJUnit.assume;
@@ -208,6 +209,25 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_invalid_domainTooLong(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    String domain254 =
+        "a".repeat(63) + "." + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(62);
+    assertThat(domain254.length()).isEqualTo(254);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("test@" + domain254));
+  }
+
+  @Test
+  public void testEmailAddressParsing_invalid_addressTooLong(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    String local = "l".repeat(127);
+    String domain = "a".repeat(63) + "." + "b".repeat(63);
+    assertThat(local.length()).isEqualTo(127);
+    assertThat(domain.length()).isEqualTo(127);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse(local + "@" + domain));
+  }
+
+  @Test
   public void testEmailAddressParsing_invalid_domainLabelStartsWithHyphen(
       @TestParameter ParseStrategy parser) {
     assertThrows(IllegalArgumentException.class, () -> parser.parse("test@-example.com"));
@@ -223,6 +243,27 @@ public class EmailAddressTest {
   public void testEmailAddressParsing_invalid_domainLabelWithIllegalChars(
       @TestParameter ParseStrategy parser) {
     assertThrows(IllegalArgumentException.class, () -> parser.parse("test@exam_ple.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_invalid_localPartStartsWithDot(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse(".test@example.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_invalid_localPartEndsWithDot(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("test.@example.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_invalid_localPartWithDoubleDot(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("test..foo@example.com"));
   }
 
   @Test
@@ -337,6 +378,74 @@ public class EmailAddressTest {
         .containsExactly(EmailAddress.of("a", "example.com"), EmailAddress.of("b", "foo.com"));
     assertThat(EmailAddress.PARSER.skipping(Character::isWhitespace).parseToStream("a@example.com b@foo.com"))
         .containsExactly(EmailAddress.of("a", "example.com"), EmailAddress.of("b", "foo.com"));
+  }
+
+  @Test
+  public void testParseAddressList_emptyString() {
+    assertThat(parseAddressList("")).isEmpty();
+    assertThat(parseAddressList("  ")).isEmpty();
+    assertThat(parseAddressList(" , ;\r\n, ")).isEmpty();
+  }
+
+  @Test
+  public void testParseAddressList_singleAddress() {
+    assertThat(parseAddressList("a@b.com")).containsExactly(EmailAddress.of("a", "b.com"));
+  }
+
+  @Test
+  public void testParseAddressList_twoAddressesNoWhitespace() {
+    assertThat(parseAddressList("a@b.com,c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+  }
+
+  @Test
+  public void testParseAddressList_twoAddressesWithWhitespaces() {
+    assertThat(parseAddressList(" a@b.com , c@d.com "))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+  }
+
+  @Test
+  public void testParseAddressList_withTrailingComma() {
+    assertThat(parseAddressList("a@b.com,")).containsExactly(EmailAddress.of("a", "b.com"));
+    assertThat(parseAddressList("a@b.com , ")).containsExactly(EmailAddress.of("a", "b.com"));
+    assertThat(parseAddressList("a@b.com, c@d.com,"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com,c@d.com , "))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+  }
+
+  @Test
+  public void testParseAddressList_semicolonDelimiter() {
+    assertThat(parseAddressList("a@b.com;c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com ; c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com;\nc@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com\n;\nc@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com\n;\n c@d.com "))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+  }
+
+  @Test
+  public void testParseAddressList_consecutiveDelimiters() {
+    assertThat(parseAddressList("a@b.com,,c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com;;c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com,;c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com;,c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com ,, c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com ; ; c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com,\n;c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList("a@b.com,\n;\r\nc@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
   }
 
   private static String unescape(String text) {

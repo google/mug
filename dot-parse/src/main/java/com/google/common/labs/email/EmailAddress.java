@@ -21,12 +21,16 @@ import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.mu.util.Substring.all;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.google.common.labs.parse.Parser;
 import com.google.mu.util.CharPredicate;
+import com.google.mu.util.StringFormat;
 
 /**
  * Represents an email address according to RFC 5322, designed as a modern,
@@ -73,6 +77,7 @@ import com.google.mu.util.CharPredicate;
  * @since 9.9.4
  */
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
+  private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
    *
@@ -114,9 +119,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * the display name are auto-escaped.
    */
   @Override public String toString() {
-    return displayName.map(n ->
-            "\"" + all(CharPredicate.anyOf("\"\\")).replaceAllFrom(n, c -> "\\" + c)
-            + "\" <" + address() + ">")
+    return displayName
+        .map(name -> WITH_DISPLAY_NAME.format(escape(name), address()))
         .orElseGet(this::address);
   }
 
@@ -125,36 +129,57 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     return PARSER.parse(address);
   }
 
+
+  /**
+   * Parses {@code addressList} according to RFC 5322 and returns an immutable list of {@link
+   * EmailAddress}.
+   *
+   * <p>Both colon and semicolon are supported as delimiters, and można also be surrounded by
+   * whitespace. Trailing delimiters are allowed.
+   *
+   * <p>Empty input will result in an empty list being returned.
+   */
+  public static List<EmailAddress> parseAddressList(String addressList) {
+    Parser<?> delimiter = Parser.one(CharPredicate.anyOf(",;"), "delimiter").atLeastOnce(counting());
+    return PARSER
+        .zeroOrMoreDelimitedBy(delimiter, toUnmodifiableList())
+        .followedBy(delimiter.orElse(null))
+        .parseSkipping(Character::isWhitespace, addressList);
+  }
+
+  private static String escape(String name) {
+    return all(CharPredicate.anyOf("\"\\")).replaceAllFrom(name, c -> "\\" + c);
+  }
+
   private static Parser<EmailAddress> makeParser() {
+    CharPredicate letterOrDigit = Character::isLetterOrDigit;
+    CharPredicate isIsoControl = Character::isISOControl;
     Parser<String> domain =
-        consecutive(CharPredicate.is('-').or(Character::isLetterOrDigit), "domain label chars")
+        consecutive(letterOrDigit.or('-'), "domain label chars")
             .suchThat(
                 s -> s.length() <= 63 && s.charAt(0) != '-' && s.charAt(s.length() - 1) != '-',
                 "{1,63} chars domain label")
-            .atLeastOnceDelimitedBy(".", joining("."));
-    CharPredicate isIsoControl = Character::isISOControl;
+            .atLeastOnceDelimitedBy(".", joining("."))
+            .suchThat(d -> d.length() <= 253, "domain <= 253 chars");
     Parser<String> localPart =
-        consecutive(
-            CharPredicate.anyOf("@<>(),;:\\\"[]").or(isIsoControl).or(Character::isWhitespace).not(),
-            "local part");
-    Parser<EmailAddress> emailAddr =
-        sequence(localPart, Parser.string("@").then(domain), EmailAddress::of);
-    Parser<String> quotedDisplayName =
-        Parser.quotedByWithEscapes(
-            '"', '"', chars(1).suchThat(c -> isIsoControl.matchesNoneOf(c), "quoted"));
-    Parser<String> unquotedDisplayName =
-        consecutive(
-                CharPredicate.anyOf("()<>[]:;@\\,\"").or(isIsoControl).not(),
-                "unquoted display name")
-            .map(String::trim);
-    Parser<EmailAddress> emailPartWithBrackets = emailAddr.between("<", ">");
+        consecutive(letterOrDigit.or(CharPredicate.anyOf("!#$%&'*+-/=?^_`{|}~")), "local part")
+            .atLeastOnceDelimitedBy(".", joining("."));
+    Parser<EmailAddress> address =
+        sequence(localPart, Parser.string("@").then(domain), EmailAddress::of)
+            .suchThat(
+                a -> a.localPart().length() + a.domain().length() + 1 <= 254,
+                "addr-spec <= 254 chars");;
+    Parser<String> quotedDisplayName = Parser.quotedByWithEscapes(
+        '"', '"', chars(1).suchThat(c -> isIsoControl.matchesNoneOf(c), "escapable char"));
+    Parser<String> unquotedDisplayName = consecutive(
+        CharPredicate.anyOf("()<>[]:;@\\,\"").or(isIsoControl).not(), "unquoted display name");
+    Parser<EmailAddress> bracketedAddress = address.between("<", ">");
+    Parser<String> displayName = Parser.anyOf(
+        quotedDisplayName.followedBy(zeroOrMore(Character::isWhitespace, "whitespaces")),
+        unquotedDisplayName.map(String::trim));
     return Parser.anyOf(
-        emailPartWithBrackets,
-        emailAddr,
-        sequence( // or with display name
-            Parser.anyOf(quotedDisplayName, unquotedDisplayName)
-                .followedBy(zeroOrMore(Character::isWhitespace, "whitespaces")),
-            emailPartWithBrackets,
-            (d, e) -> e.withDisplayName(d)));
+        bracketedAddress,
+        address,
+        sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)));
   }
 }

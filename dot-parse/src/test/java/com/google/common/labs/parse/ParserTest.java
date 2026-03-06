@@ -24,6 +24,7 @@ import static com.google.mu.util.CharPredicate.noneOf;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertThrows;
 
 import java.io.Reader;
@@ -2280,6 +2281,29 @@ public class ParserTest {
   }
 
   @Test
+  public void zeroOrMoreDelimitedBy_parserDelimiter_success() {
+    var parser = digits().zeroOrMoreDelimitedBy(consecutive(is('.'), "dot"), toList());
+    assertThat(parser.parse("1")).containsExactly("1");
+    assertThat(parser.parse("1.2")).containsExactly("1", "2").inOrder();
+    assertThat(parser.parse("1..2")).containsExactly("1", "2").inOrder();
+    assertThat(parser.parse("1...2..3")).containsExactly("1", "2", "3").inOrder();
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_parserDelimiter_empty() {
+    var parser = digits().zeroOrMoreDelimitedBy(consecutive(is('.'), "dot"), toList());
+    assertThat(parser.parse("")).isEmpty();
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_parserDelimiter_failure() {
+    var parser = digits().zeroOrMoreDelimitedBy(consecutive(is('.'), "dot"), toList());
+    assertThrows(ParseException.class, () -> parser.parse("1_2"));
+    assertThrows(ParseException.class, () -> parser.parse("."));
+    assertThrows(ParseException.class, () -> parser.parse("1."));
+  }
+
+  @Test
   public void zeroOrMoreDelimited_empty() {
     Parser<ImmutableListMultimap<String, String>> parser =
         zeroOrMoreDelimited(
@@ -2860,6 +2884,24 @@ public class ParserTest {
         digits().atLeastOnceDelimitedBy(",").optionallyFollowedBy(",");
     ParseException e = assertThrows(ParseException.class, () -> parser.parse(""));
     assertThat(e).hasMessageThat().contains("at 1:1: expecting <digits>, encountered <EOF>");
+  }
+
+  @Test
+  public void atLeastOnceDelimitedBy_parserDelimiter_success() {
+    Parser<List<String>> parser =
+        digits().atLeastOnceDelimitedBy(consecutive(is('.'), "dot"), toList());
+    assertThat(parser.parse("1")).containsExactly("1");
+    assertThat(parser.parse("1.2")).containsExactly("1", "2").inOrder();
+    assertThat(parser.parse("1..2")).containsExactly("1", "2").inOrder();
+    assertThat(parser.parse("1...2..3")).containsExactly("1", "2", "3").inOrder();
+  }
+
+  @Test
+  public void atLeastOnceDelimitedBy_parserDelimiter_failure() {
+    Parser<List<String>> parser =
+        digits().atLeastOnceDelimitedBy(consecutive(is('.'), "dot"), toList());
+    assertThrows(ParseException.class, () -> parser.parse("1_2"));
+    assertThrows(ParseException.class, () -> parser.parse("1."));
   }
 
   @Test
