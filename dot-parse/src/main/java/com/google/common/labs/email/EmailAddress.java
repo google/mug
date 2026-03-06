@@ -17,6 +17,7 @@ package com.google.common.labs.email;
 
 import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.mu.util.Substring.all;
@@ -126,7 +127,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /** Parses {@code address} and throws {@link Parser.ParseException} if failed. */
   public static EmailAddress parse(String address) {
-    return PARSER.parse(address);
+    return PARSER.parseSkipping(Character::isWhitespace, address);
   }
 
 
@@ -165,7 +166,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         consecutive(letterOrDigit.or(CharPredicate.anyOf("!#$%&'*+-/=?^_`{|}~")), "local part")
             .atLeastOnceDelimitedBy(".", joining("."));
     Parser<EmailAddress> address =
-        sequence(localPart, Parser.string("@").then(domain), EmailAddress::of)
+        sequence(localPart, literally(Parser.string("@").then(domain)), EmailAddress::of)
             .suchThat(
                 a -> a.localPart().length() + a.domain().length() + 1 <= 254,
                 "addr-spec <= 254 chars");;
@@ -173,7 +174,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         '"', '"', chars(1).suchThat(c -> isIsoControl.matchesNoneOf(c), "escapable char"));
     Parser<String> unquotedDisplayName = consecutive(
         CharPredicate.anyOf("()<>[]:;@\\,\"").or(isIsoControl).not(), "unquoted display name");
-    Parser<EmailAddress> bracketedAddress = address.between("<", ">");
+    Parser<EmailAddress> bracketedAddress = address.immediatelyBetween("<", ">");
     Parser<String> displayName = Parser.anyOf(
         quotedDisplayName.followedBy(zeroOrMore(Character::isWhitespace, "whitespaces")),
         unquotedDisplayName.map(String::trim));
