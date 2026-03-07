@@ -156,11 +156,9 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<String> domain =
         consecutive(letterOrDigit.or('-').precomputeForAscii(), "domain label chars")
             .suchThat(
-                s -> s.length() <= 63 && s.charAt(0) != '-' && s.charAt(s.length() - 1) != '-',
-                "{1,63} chars domain label")
+                s -> s.charAt(0) != '-' && s.charAt(s.length() - 1) != '-', "valid domain label")
             .atLeastOnceDelimitedBy(".", counting())
-            .source()
-            .suchThat(d -> d.length() <= 253, "domain <= 253 chars");
+            .source();
     Parser<String> localPart =
         consecutive(letterOrDigit.or(CharPredicate.anyOf("!#$%&'*+-/=?^_`{|}~")).precomputeForAscii(), "local part")
             .atLeastOnceDelimitedBy(".", counting())
