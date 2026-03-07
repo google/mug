@@ -160,8 +160,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<String> domain =
         consecutive(letterOrDigit.or('-').precomputeForAscii(), "domain label chars")
             .suchThat(s -> s.charAt(0) != '-' && s.charAt(s.length() - 1) != '-', "domain label")
-            .atLeastOnceDelimitedBy(".", counting())
-            .source();
+            .atLeastOnceDelimitedBy(".", counting())  // counting is the cheapest collector
+            .source();                                // source() is faster than using joining(".")
     Parser<String> localPart = consecutive(
         letterOrDigit.or(CharPredicate.anyOf("!#$%&'*+-/=?^_`{|}~.")).precomputeForAscii(),
         "local part");
