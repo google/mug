@@ -20,7 +20,6 @@ import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
-import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.mu.util.Substring.all;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
@@ -174,9 +173,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         CharPredicate.anyOf("()<>[]:;@\\,\"").or(isIsoControl).not().precomputeForAscii(),
         "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
-    Parser<String> displayName = Parser.anyOf(
-        quotedDisplayName.followedBy(zeroOrMore(Character::isWhitespace, "whitespaces")),
-        unquotedDisplayName.map(String::trim));
+    Parser<String> displayName =
+        Parser.anyOf(quotedDisplayName, unquotedDisplayName.map(String::trim));
     return Parser.anyOf(
         address,
         bracketedAddress,
