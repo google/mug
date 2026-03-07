@@ -249,7 +249,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#precomputeForAscii()" class="member-name-link">precomputeForAscii</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
-<div class="block">Returns an equivalent <a href="CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> but precomputes the results for all ASCII characters.</div>
+<div class="block">Returns an equivalent <a href="CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> but pre-computes the results for all ASCII characters.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1"><code>static <a href="CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1"><code><a href="#range(char,char)" class="member-name-link">range</a><wbr>(char&nbsp;from,
@@ -506,11 +506,14 @@ loadScripts(document, 'script');</script>
 <h3>precomputeForAscii</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="return-type"><a href="CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a></span>&nbsp;<span class="element-name">precomputeForAscii</span>()</div>
-<div class="block">Returns an equivalent <a href="CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> but precomputes the results for all ASCII characters.
+<div class="block">Returns an equivalent <a href="CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> but pre-computes the results for all ASCII characters.
  Useful if the CharPredicate is used in a hot path.
 
- <p>Note that <a href="#anyOf(java.lang.String)"><code>anyOf(java.lang.String)</code></a> and <a href="#noneOf(java.lang.String)"><code>noneOf(java.lang.String)</code></a> are already precomputed for ASCII chars.
- You may still want to call it on a deeply composed <code>CharPredicate</code> though.</div>
+ <p>Thjs method is more efficient for ASCII chars than Guava <a href="https://javadoc.io/doc/com.google.guava/guava/latest/com/google/common/base/CharMatcher.html#precomputed()" title="class or interface in com.google.common.base" class="external-link"><code>CharMatcher.precomputed()</code></a>, and is far cheaper
+ because it only uses two 64-bit long integers to store the pre-computation results.
+
+ <p>Note that <a href="#WORD"><code>WORD</code></a>, <a href="#anyOf(java.lang.String)"><code>anyOf(java.lang.String)</code></a> and <a href="#noneOf(java.lang.String)"><code>noneOf(java.lang.String)</code></a> are already pre-computed for
+ ASCII chars. You may still want to call it on a deeply composed <code>CharPredicate</code> though.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.9.4</dd>
