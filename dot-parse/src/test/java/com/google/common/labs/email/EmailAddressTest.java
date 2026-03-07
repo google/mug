@@ -268,24 +268,18 @@ public class EmailAddressTest {
   }
 
   @Test
-  public void testEmailAddressParsing_invalid_localPartStartsWithDot(
-      @TestParameter ParseStrategy parser) {
-    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
-    assertThrows(IllegalArgumentException.class, () -> parser.parse(".test@example.com"));
+  public void testEmailAddressParsing_localPartStartsWithDot(@TestParameter ParseStrategy parser) {
+    parser.assertParsesTo(".test@example.com", EmailAddress.of(".test", "example.com"));
   }
 
   @Test
-  public void testEmailAddressParsing_invalid_localPartEndsWithDot(
-      @TestParameter ParseStrategy parser) {
-    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
-    assertThrows(IllegalArgumentException.class, () -> parser.parse("test.@example.com"));
+  public void testEmailAddressParsing_localPartEndsWithDot(@TestParameter ParseStrategy parser) {
+    parser.assertParsesTo("test.@example.com", EmailAddress.of("test.", "example.com"));
   }
 
   @Test
-  public void testEmailAddressParsing_invalid_localPartWithDoubleDot(
-      @TestParameter ParseStrategy parser) {
-    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
-    assertThrows(IllegalArgumentException.class, () -> parser.parse("test..foo@example.com"));
+  public void testEmailAddressParsing_localPartWithDoubleDot(@TestParameter ParseStrategy parser) {
+    parser.assertParsesTo("test..foo@example.com", EmailAddress.of("test..foo", "example.com"));
   }
 
   @Test

@@ -158,10 +158,9 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             .suchThat(s -> s.charAt(0) != '-' && s.charAt(s.length() - 1) != '-', "valid domain label")
             .atLeastOnceDelimitedBy(".", counting())
             .source();
-    Parser<String> localPart =
-        consecutive(letterOrDigit.or(CharPredicate.anyOf("!#$%&'*+-/=?^_`{|}~")).precomputeForAscii(), "local part")
-            .atLeastOnceDelimitedBy(".", counting())
-            .source();
+    Parser<String> localPart = consecutive(
+        letterOrDigit.or(CharPredicate.anyOf("!#$%&'*+-/=?^_`{|}~.")).precomputeForAscii(),
+        "local part");
     Parser<EmailAddress> address =
         sequence(localPart, literally(string("@").then(domain)), EmailAddress::of)
             .suchThat(
