@@ -56,6 +56,10 @@ public class EmailAddressTest {
           """,
           Pattern.COMMENTS);
 
+  private static final StringFormat QUOTED = new StringFormat("\"{quoted}\"");
+  private static final Substring.RepeatingPattern ESCAPED_CHARS =
+      Substring.first(Pattern.compile("\\\\.")).repeatedly();
+
   @Test
   public void testEmailAddressParsing_simple(@TestParameter ParseStrategy parser) {
     parser.assertParsesTo("test@example.com", EmailAddress.of("test", "example.com"));
@@ -467,13 +471,11 @@ public class EmailAddressTest {
   }
 
   private static String unescape(String text) {
-    return Substring.first(Pattern.compile("\\\\."))
-        .repeatedly()
-        .replaceAllFrom(text, e -> e.subSequence(1, e.length()));
+    return ESCAPED_CHARS.replaceAllFrom(text, e -> e.subSequence(1, e.length()));
   }
 
   private static String unquoteAndUnescapeDisplayName(String displayName) {
-    return new StringFormat("\"{quoted}\"")
+    return QUOTED
         .parse(displayName, quoted -> unescape(quoted))
         .orElse(displayName);
   }
