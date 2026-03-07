@@ -168,7 +168,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<EmailAddress> address =
         sequence(localPart, literally(string("@").then(domain)), EmailAddress::of);
     Parser<String> quotedDisplayName = Parser.quotedByWithEscapes(
-        '"', '"', chars(1).suchThat(c -> isIsoControl.matchesNoneOf(c), "escapable char"));
+        '"', '"', chars(1).suchThat(isIsoControl::matchesNoneOf, "escapable char"));
     Parser<String> unquotedDisplayName = consecutive(
         CharPredicate.anyOf("()<>[]:;@\\,\"").or(isIsoControl).not().precomputeForAscii(),
         "unquoted display name");
