@@ -96,10 +96,9 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * to optionally attach a display name.
    */
   public EmailAddress{
+    checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
+    checkArgument(!domain.isEmpty(), "domain cannot be empty");
     requireNonNull(displayName);
-    requireNonNull(localPart);
-    requireNonNull(domain);
-    String idnValidated = IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED);
   }
 
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
@@ -109,6 +108,10 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
   public static EmailAddress of(String localPart, String domain) {
+    checkArgument(
+        localPart.length() + domain.length() + 1 <= 254,
+        "<%s@%s> must be <= 254 chars", localPart, domain);
+    String idnValidated = IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED);
     return new EmailAddress(Optional.empty(), localPart, domain);
   }
 
@@ -162,10 +165,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         letterOrDigit.or(CharPredicate.anyOf("!#$%&'*+-/=?^_`{|}~.")).precomputeForAscii(),
         "local part");
     Parser<EmailAddress> address =
-        sequence(localPart, literally(string("@").then(domain)), EmailAddress::of)
-            .suchThat(
-                a -> a.localPart().length() + a.domain().length() + 1 <= 254,
-                "addr-spec <= 254 chars");;
+        sequence(localPart, literally(string("@").then(domain)), EmailAddress::of);
     Parser<String> quotedDisplayName = Parser.quotedByWithEscapes(
         '"', '"', chars(1).suchThat(c -> isIsoControl.matchesNoneOf(c), "escapable char"));
     Parser<String> unquotedDisplayName = consecutive(
@@ -183,5 +183,11 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   private static String escape(String name) {
     return all(CharPredicate.anyOf("\"\\")).replaceAllFrom(name, c -> "\\" + c);
+  }
+
+  private static void checkArgument(boolean condition, String message, Object... args) {
+    if (!condition) {
+      throw new IllegalArgumentException(String.format(message, args));
+    }
   }
 }
