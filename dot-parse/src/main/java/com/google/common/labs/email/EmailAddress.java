@@ -155,8 +155,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     CharPredicate isIsoControl = Character::isISOControl;
     Parser<String> domain =
         consecutive(letterOrDigit.or('-').precomputeForAscii(), "domain label chars")
-            .suchThat(
-                s -> s.charAt(0) != '-' && s.charAt(s.length() - 1) != '-', "valid domain label")
+            .suchThat(s -> s.charAt(0) != '-' && s.charAt(s.length() - 1) != '-', "valid domain label")
             .atLeastOnceDelimitedBy(".", counting())
             .source();
     Parser<String> localPart =
