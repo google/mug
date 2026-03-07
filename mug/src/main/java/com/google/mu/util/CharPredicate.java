@@ -272,7 +272,7 @@ public interface CharPredicate {
    * Returns an equivalent {@link CharPredicate} but pre-computes the results for all ASCII characters.
    * Useful if the CharPredicate is used in a hot path.
    *
-   * <p>Thjs method is more efficient for ASCII chars than Guava {@link
+   * <p>This method is more efficient for ASCII chars than Guava {@link
    * com.google.common.base.CharMatcher#precomputed CharMatcher.precomputed()}, and is far cheaper
    * because it only uses two 64-bit long integers to store the pre-computation results.
    *

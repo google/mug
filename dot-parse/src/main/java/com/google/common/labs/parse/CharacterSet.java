@@ -26,7 +26,7 @@ import com.google.mu.util.CharPredicate;
  * against incorrect character set syntax.
  *
  * <p>Implementation Note: regex isn't used during parsing. The character set string is translated
- * to a plain {@link CharPredicate} at construction time.
+ * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
  *
  * @since 9.4
  */
