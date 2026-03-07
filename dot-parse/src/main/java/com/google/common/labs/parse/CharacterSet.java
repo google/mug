@@ -63,6 +63,10 @@ public final class CharacterSet implements CharPredicate {
     return predicate.test(ch);
   }
 
+  @Override public CharacterSet precomputeForAscii() {
+    return new CharacterSet(string, predicate.precomputeForAscii());
+  }
+
   @Override public CharacterSet not() {
     return new CharacterSet(
         after(prefix("["))
@@ -100,6 +104,6 @@ public final class CharacterSet implements CharPredicate {
             .zeroOrMore(reducing(CharPredicate.NONE, CharPredicate::or));
     Parser<CharPredicate> negativeSet =
         Parser.string("^").then(positiveSet).map(CharPredicate::not);
-    return negativeSet.or(positiveSet).between("[", "]").parse(characterSet);
+    return negativeSet.or(positiveSet).between("[", "]").parse(characterSet).precomputeForAscii();
   }
 }

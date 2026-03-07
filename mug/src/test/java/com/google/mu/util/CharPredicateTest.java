@@ -91,26 +91,46 @@ public class CharPredicateTest {
 
   @Test
   public void testAnyOf() {
+    assertThat(CharPredicate.anyOf("").test('a')).isFalse();
+    assertThat(CharPredicate.anyOf("a").test('a')).isTrue();
+    assertThat(CharPredicate.anyOf("b").test('a')).isFalse();
     assertThat(CharPredicate.anyOf("ab").test('a')).isTrue();
     assertThat(CharPredicate.anyOf("ab").test('b')).isTrue();
     assertThat(CharPredicate.anyOf("ab").test('c')).isFalse();
+    assertThat(CharPredicate.anyOf("abc").test('a')).isTrue();
+    assertThat(CharPredicate.anyOf("abc").test('b')).isTrue();
+    assertThat(CharPredicate.anyOf("abc").test('c')).isTrue();
+    assertThat(CharPredicate.anyOf("abc").test('d')).isFalse();
   }
 
   @Test
   public void testAnyOf_toString() {
-    assertThat(CharPredicate.anyOf("ab").toString()).isEqualTo("anyOf('ab')");
+    assertThat(CharPredicate.anyOf("abc").toString()).isEqualTo("anyOf('abc')");
+    assertThat(CharPredicate.anyOf("ab").toString()).isEqualTo("'a' | 'b'");
+    assertThat(CharPredicate.anyOf("a").toString()).isEqualTo("'a'");
+    assertThat(CharPredicate.anyOf("").toString()).isEqualTo("NONE");
   }
 
   @Test
   public void testNoneOf() {
+    assertThat(CharPredicate.noneOf("").test('a')).isTrue();
+    assertThat(CharPredicate.noneOf("a").test('a')).isFalse();
+    assertThat(CharPredicate.noneOf("a").test('b')).isTrue();
     assertThat(CharPredicate.noneOf("ab").test('a')).isFalse();
     assertThat(CharPredicate.noneOf("ab").test('b')).isFalse();
     assertThat(CharPredicate.noneOf("ab").test('c')).isTrue();
+    assertThat(CharPredicate.noneOf("abc").test('a')).isFalse();
+    assertThat(CharPredicate.noneOf("abc").test('b')).isFalse();
+    assertThat(CharPredicate.noneOf("abc").test('c')).isFalse();
+    assertThat(CharPredicate.noneOf("abc").test('d')).isTrue();
   }
 
   @Test
   public void testNoneOf_toString() {
-    assertThat(CharPredicate.noneOf("ab").toString()).isEqualTo("noneOf('ab')");
+    assertThat(CharPredicate.noneOf("ab").toString()).isEqualTo("not ('a' | 'b')");
+    assertThat(CharPredicate.noneOf("a").toString()).isEqualTo("not ('a')");
+    assertThat(CharPredicate.noneOf("abc").toString()).isEqualTo("not (anyOf('abc'))");
+    assertThat(CharPredicate.noneOf("").toString()).isEqualTo("not (NONE)");
   }
 
   @Test
@@ -274,5 +294,12 @@ public class CharPredicateTest {
     assertThat(predicate.test('\n')).isTrue();
     assertThat(predicate.test(' ')).isTrue();
     assertThat(predicate.test('\t')).isTrue();
+  }
+
+  @Test
+  public void precomputeForAscii_idempotent() {
+    CharPredicate whitespace = Character::isWhitespace;
+    CharPredicate predicate = whitespace.precomputeForAscii();
+    assertThat(predicate.precomputeForAscii()).isSameInstanceAs(predicate);
   }
 }

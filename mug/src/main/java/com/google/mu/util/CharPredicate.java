@@ -16,6 +16,8 @@ package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Arrays;
+
 /**
  * A predicate of character. More efficient than {@code Predicate<Character>}.
  *
@@ -44,7 +46,7 @@ public interface CharPredicate {
     @Override public String toString() {
       return "WORD";
     }
-  };
+  }.precomputeForAscii();
 
   /** Corresponds to the ASCII characters. */
   static CharPredicate ASCII = new CharPredicate() {
@@ -112,9 +114,16 @@ public interface CharPredicate {
 
   /** Returns a CharPredicate that matches any of {@code chars}. */
   static CharPredicate anyOf(String chars) {
+    switch (chars.length()) {
+      case 2: return is(chars.charAt(0)).or(chars.charAt(1));
+      case 1: return is(chars.charAt(0));
+      case 0: return NONE;
+    }
+    char[] array = chars.toCharArray();
+    Arrays.sort(array);
     return new CharPredicate() {
       @Override public boolean test(char c) {
-        return chars.indexOf(c) >= 0;
+        return Arrays.binarySearch(array, c) >= 0;
       }
 
       @Override public String toString() {
@@ -125,16 +134,7 @@ public interface CharPredicate {
 
   /** Returns a CharPredicate that matches any of {@code chars}. */
   static CharPredicate noneOf(String chars) {
-    requireNonNull(chars);
-    return new CharPredicate() {
-      @Override public boolean test(char c) {
-        return chars.indexOf(c) < 0;
-      }
-
-      @Override public String toString() {
-        return "noneOf('" + chars + "')";
-      }
-    }.precomputeForAscii();
+    return anyOf(chars).not();
   }
 
   /** Returns true if {@code ch} satisfies this predicate. */
@@ -269,11 +269,15 @@ public interface CharPredicate {
   }
 
   /**
-   * Returns an equivalent {@link CharPredicate} but precomputes the results for all ASCII characters.
+   * Returns an equivalent {@link CharPredicate} but pre-computes the results for all ASCII characters.
    * Useful if the CharPredicate is used in a hot path.
    *
-   * <p>Note that {@link #anyOf} and {@link #noneOf} are already precomputed for ASCII chars.
-   * You may still want to call it on a deeply composed {@code CharPredicate} though.
+   * <p>Thjs method is more efficient for ASCII chars than Guava {@link
+   * com.google.common.base.CharMatcher#precomputed CharMatcher.precomputed()}, and is far cheaper
+   * because it only uses two 64-bit long integers to store the pre-computation results.
+   *
+   * <p>Note that {@link #WORD}, {@link #anyOf} and {@link #noneOf} are already pre-computed for
+   * ASCII chars. You may still want to call it on a deeply composed {@code CharPredicate} though.
    *
    * @since 9.9.4
    */
@@ -287,10 +291,15 @@ public interface CharPredicate {
       @Override public boolean test(char c) {
         if (c < 64) {
           return ((low64 >>> c) & 1L) != 0;
-        } else if (c < 128) {
+        }
+        if (c < 128) {
           return ((high64 >>> (c - 64)) & 1L) != 0;
         }
         return base.test(c); // Fallback for non-ASCII
+      }
+
+      @Override public CharPredicate precomputeForAscii() {
+        return this;
       }
 
       @Override public String toString() {
