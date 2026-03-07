@@ -273,8 +273,8 @@ public interface CharPredicate {
    * Useful if the CharPredicate is used in a hot path.
    *
    * <p>Thjs method is more efficient for ASCII chars than Guava {@link
-   * com.google.common.base.CharMatcher#precomputed}, and is far cheaper because it only uses two
-   * 64-bit long integers to store the pre-computation results.
+   * com.google.common.base.CharMatcher#precomputed CharMatcher.precomputed()}, and is far cheaper
+   * because it only uses two 64-bit long integers to store the pre-computation results.
    *
    * <p>Note that {@link #WORD}, {@link #anyOf} and {@link #noneOf} are already pre-computed for
    * ASCII chars. You may still want to call it on a deeply composed {@code CharPredicate} though.
