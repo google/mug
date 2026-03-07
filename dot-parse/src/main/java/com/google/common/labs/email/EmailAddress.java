@@ -26,6 +26,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+import java.net.IDN;
 import java.util.List;
 import java.util.Optional;
 
@@ -98,6 +99,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     requireNonNull(displayName);
     requireNonNull(localPart);
     requireNonNull(domain);
+    String idnValidated = IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED);
   }
 
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */

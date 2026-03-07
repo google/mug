@@ -393,6 +393,12 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_i18n_mixedLtrRtlIdnDomainIsIllegal(
+      @TestParameter ParseStrategy parser) {
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("test@aא.com"));
+  }
+
+  @Test
   public void testParserComposition() {
     assertThat(EmailAddress.PARSER.atLeastOnceDelimitedBy(",").parse("a@example.com,b@foo.com"))
         .containsExactly(EmailAddress.of("a", "example.com"), EmailAddress.of("b", "foo.com"));
