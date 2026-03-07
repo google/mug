@@ -156,7 +156,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   private static Parser<EmailAddress> makeParser() {
     CharPredicate letterOrDigit = Character::isLetterOrDigit;
-    CharPredicate isIsoControl = Character::isISOControl;                            // source() is faster than using joining(".")
+    CharPredicate isoControl = Character::isISOControl;                            // source() is faster than using joining(".")
     Parser<String> localPart = consecutive(
         letterOrDigit.or(CharPredicate.anyOf("!#$%&'*+-/=?^_`{|}~.")).precomputeForAscii(),
         "local part");
@@ -168,9 +168,9 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<EmailAddress> address =
         sequence(localPart, literally(string("@").then(domain)), EmailAddress::of);
     Parser<String> quotedDisplayName = Parser.quotedByWithEscapes(
-        '"', '"', chars(1).suchThat(isIsoControl::matchesNoneOf, "escapable char"));
+        '"', '"', chars(1).suchThat(isoControl::matchesNoneOf, "escapable char"));
     Parser<String> unquotedDisplayName = consecutive(
-        CharPredicate.anyOf("()<>[]:;@\\,\"").or(isIsoControl).not().precomputeForAscii(),
+        CharPredicate.anyOf("()<>[]:;@\\,\"").or(isoControl).not().precomputeForAscii(),
         "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
     Parser<String> displayName =
