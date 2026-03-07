@@ -63,6 +63,11 @@ public final class CharacterSet implements CharPredicate {
     return predicate.test(ch);
   }
 
+  /**
+   * No-op because a {@code CharacterSet} is already pre-computed for ASCII.
+   *
+   * @since 9.9.4
+   */
   @Override public CharacterSet precomputeForAscii() {
     return new CharacterSet(string, predicate.precomputeForAscii());
   }
