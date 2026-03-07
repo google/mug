@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Optional;
 
 import com.google.common.labs.parse.Parser;
+import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
 
@@ -185,7 +187,9 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     return all(CharPredicate.anyOf("\"\\")).replaceAllFrom(name, c -> "\\" + c);
   }
 
-  private static void checkArgument(boolean condition, String message, Object... args) {
+  @FormatMethod
+  private static void checkArgument(
+      boolean condition, @FormatString String message, Object... args) {
     if (!condition) {
       throw new IllegalArgumentException(String.format(message, args));
     }
