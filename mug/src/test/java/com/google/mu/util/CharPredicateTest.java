@@ -98,6 +98,12 @@ public class CharPredicateTest {
   }
 
   @Test
+  public void testOr_emptyString() {
+    assertThat(CharPredicate.is('x').or("").test('x')).isTrue();
+    assertThat(CharPredicate.is('x').or("").test('y')).isFalse();
+  }
+
+  @Test
   public void testAnyOf() {
     assertThat(CharPredicate.anyOf("").test('a')).isFalse();
     assertThat(CharPredicate.anyOf("a").test('a')).isTrue();

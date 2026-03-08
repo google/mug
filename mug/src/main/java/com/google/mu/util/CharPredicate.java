@@ -165,7 +165,7 @@ public interface CharPredicate {
    * @since 9.9.4
    */
   default CharPredicate or(String chars) {
-    return or(anyOf(chars));
+    return chars.isEmpty() ? this : or(anyOf(chars));
   }
 
   /**
