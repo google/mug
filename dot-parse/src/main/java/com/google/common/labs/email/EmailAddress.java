@@ -82,6 +82,7 @@ import com.google.mu.util.StringFormat;
  */
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
+
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
    *

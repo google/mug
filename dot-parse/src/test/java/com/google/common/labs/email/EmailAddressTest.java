@@ -335,6 +335,12 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_underscoreInDomainNameIsInvalid(
+      @TestParameter ParseStrategy parser) {
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("test@under_score.com"));
+  }
+
+  @Test
   public void testEmailAddressParsing_i18n_chineseLocalPart(@TestParameter ParseStrategy parser) {
     assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
     parser.assertParsesTo("中文@example.com", EmailAddress.of("中文", "example.com"));
