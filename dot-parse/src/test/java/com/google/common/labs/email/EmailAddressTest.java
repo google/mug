@@ -298,6 +298,11 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_domainWithDoubleDot(@TestParameter ParseStrategy parser) {
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("foo@example..com"));
+  }
+
+  @Test
   public void testEmailAddressParsing_invalid_spaceBeforeAtSign(
       @TestParameter ParseStrategy parser) {
     assertThrows(IllegalArgumentException.class, () -> parser.parse("test @example.com"));
