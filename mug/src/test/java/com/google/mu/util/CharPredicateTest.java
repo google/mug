@@ -99,8 +99,8 @@ public class CharPredicateTest {
 
   @Test
   public void testOr_emptyString() {
-    assertThat(CharPredicate.is('x').or("").test('x')).isTrue();
-    assertThat(CharPredicate.is('x').or("").test('y')).isFalse();
+    CharPredicate predicate = CharPredicate.is('x');
+    assertThat(predicate.or("")).isSameInstanceAs(predicate);
   }
 
   @Test
