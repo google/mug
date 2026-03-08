@@ -151,7 +151,7 @@ public final class Csv {
    * BufferedReader}.
    */
   public Stream<List<String>> parseToLists(Reader csv) {
-    Parser<String> unquoted = consecutive(regularChar(), "unquoted field");
+    Parser<String> unquoted = consecutive(regularChar().precomputeForAscii(), "unquoted field");
     Parser<List<String>> line =
         Parser.anyOf(
             NEW_LINE.thenReturn(List.of()),  // empty line => [], not [""]
