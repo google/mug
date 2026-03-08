@@ -268,24 +268,18 @@ public class EmailAddressTest {
   }
 
   @Test
-  public void testEmailAddressParsing_invalid_localPartStartsWithDot(
-      @TestParameter ParseStrategy parser) {
-    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
-    assertThrows(IllegalArgumentException.class, () -> parser.parse(".test@example.com"));
+  public void testEmailAddressParsing_localPartStartsWithDot(@TestParameter ParseStrategy parser) {
+    parser.assertParsesTo(".test@example.com", EmailAddress.of(".test", "example.com"));
   }
 
   @Test
-  public void testEmailAddressParsing_invalid_localPartEndsWithDot(
-      @TestParameter ParseStrategy parser) {
-    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
-    assertThrows(IllegalArgumentException.class, () -> parser.parse("test.@example.com"));
+  public void testEmailAddressParsing_localPartEndsWithDot(@TestParameter ParseStrategy parser) {
+    parser.assertParsesTo("test.@example.com", EmailAddress.of("test.", "example.com"));
   }
 
   @Test
-  public void testEmailAddressParsing_invalid_localPartWithDoubleDot(
-      @TestParameter ParseStrategy parser) {
-    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
-    assertThrows(IllegalArgumentException.class, () -> parser.parse("test..foo@example.com"));
+  public void testEmailAddressParsing_localPartWithDoubleDot(@TestParameter ParseStrategy parser) {
+    parser.assertParsesTo("test..foo@example.com", EmailAddress.of("test..foo", "example.com"));
   }
 
   @Test
@@ -341,6 +335,12 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_underscoreInDomainNameIsInvalid(
+      @TestParameter ParseStrategy parser) {
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("test@under_score.com"));
+  }
+
+  @Test
   public void testEmailAddressParsing_i18n_chineseLocalPart(@TestParameter ParseStrategy parser) {
     assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
     parser.assertParsesTo("中文@example.com", EmailAddress.of("中文", "example.com"));
@@ -390,6 +390,12 @@ public class EmailAddressTest {
     parser.assertParsesTo(
         "\"john.smith@example.com\" <real@example.com>",
         EmailAddress.of("real", "example.com").withDisplayName("john.smith@example.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_i18n_mixedLtrRtlIdnDomainIsIllegal(
+      @TestParameter ParseStrategy parser) {
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("test@aא.com"));
   }
 
   @Test

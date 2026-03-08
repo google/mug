@@ -15,21 +15,25 @@
  *****************************************************************************/
 package com.google.common.labs.email;
 
+import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
-import static com.google.common.labs.parse.Parser.zeroOrMore;
+import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.Substring.all;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+import java.net.IDN;
 import java.util.List;
 import java.util.Optional;
 
 import com.google.common.labs.parse.Parser;
+import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
 
@@ -80,6 +84,7 @@ import com.google.mu.util.StringFormat;
  */
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
+
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
    *
@@ -95,9 +100,9 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * to optionally attach a display name.
    */
   public EmailAddress{
+    checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
+    checkArgument(!domain.isEmpty(), "domain cannot be empty");
     requireNonNull(displayName);
-    requireNonNull(localPart);
-    requireNonNull(domain);
   }
 
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
@@ -107,6 +112,10 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
   public static EmailAddress of(String localPart, String domain) {
+    checkArgument(
+        localPart.length() + domain.length() + 1 <= 254,
+        "<%s@%s> must be <= 254 chars", localPart, domain);
+    String idnValidated = IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED);
     return new EmailAddress(Optional.empty(), localPart, domain);
   }
 
@@ -141,7 +150,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * <p>Empty input will result in an empty list being returned.
    */
   public static List<EmailAddress> parseAddressList(String addressList) {
-    Parser<?> delimiter = Parser.one(CharPredicate.anyOf(",;"), "delimiter").atLeastOnce(counting());
+    Parser<?> delimiter = Parser.one(anyOf(",;"), "delimiter").atLeastOnce(counting());
     return PARSER
         .zeroOrMoreDelimitedBy(delimiter, toUnmodifiableList())
         .followedBy(delimiter.orElse(null))
@@ -150,40 +159,37 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   private static Parser<EmailAddress> makeParser() {
     CharPredicate letterOrDigit = Character::isLetterOrDigit;
-    CharPredicate isIsoControl = Character::isISOControl;
+    CharPredicate isoControl = Character::isISOControl;
+    Parser<String> localPart =
+        consecutive(letterOrDigit.or("!#$%&'*+-/=?^_`{|}~.").precomputeForAscii(), "local part");
     Parser<String> domain =
         consecutive(letterOrDigit.or('-').precomputeForAscii(), "domain label chars")
-            .suchThat(
-                s -> s.length() <= 63 && s.charAt(0) != '-' && s.charAt(s.length() - 1) != '-',
-                "{1,63} chars domain label")
-            .atLeastOnceDelimitedBy(".", counting())
-            .source()
-            .suchThat(d -> d.length() <= 253, "domain <= 253 chars");
-    Parser<String> localPart =
-        consecutive(letterOrDigit.or(CharPredicate.anyOf("!#$%&'*+-/=?^_`{|}~")).precomputeForAscii(), "local part")
-            .atLeastOnceDelimitedBy(".", counting())
-            .source();
+            .suchThat(s -> s.charAt(0) != '-' && s.charAt(s.length() - 1) != '-', "domain label")
+            .atLeastOnceDelimitedBy(".", counting())  // counting is the cheapest collector
+            .source();                                // source() is faster than using joining(".")
     Parser<EmailAddress> address =
-        sequence(localPart, literally(string("@").then(domain)), EmailAddress::of)
-            .suchThat(
-                a -> a.localPart().length() + a.domain().length() + 1 <= 254,
-                "addr-spec <= 254 chars");;
+        sequence(localPart, literally(string("@").then(domain)), EmailAddress::of);
     Parser<String> quotedDisplayName = Parser.quotedByWithEscapes(
-        '"', '"', chars(1).suchThat(c -> isIsoControl.matchesNoneOf(c), "escapable char"));
+        '"', '"', chars(1).suchThat(isoControl::matchesNoneOf, "escapable char"));
     Parser<String> unquotedDisplayName = consecutive(
-        CharPredicate.anyOf("()<>[]:;@\\,\"").or(isIsoControl).not().precomputeForAscii(),
-        "unquoted display name");
+        isoControl.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
-    Parser<String> displayName = Parser.anyOf(
-        quotedDisplayName.followedBy(zeroOrMore(Character::isWhitespace, "whitespaces")),
-        unquotedDisplayName.map(String::trim));
-    return Parser.anyOf(
+    Parser<String> displayName = anyOf(quotedDisplayName, unquotedDisplayName.map(String::trim));
+    return anyOf(
         address,
         bracketedAddress,
         sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)));
   }
 
   private static String escape(String name) {
-    return all(CharPredicate.anyOf("\"\\")).replaceAllFrom(name, c -> "\\" + c);
+    return all(anyOf("\"\\")).replaceAllFrom(name, c -> "\\" + c);
+  }
+
+  @FormatMethod
+  private static void checkArgument(
+      boolean condition, @FormatString String message, Object... args) {
+    if (!condition) {
+      throw new IllegalArgumentException(String.format(message, args));
+    }
   }
 }
