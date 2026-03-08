@@ -165,7 +165,7 @@ public interface CharPredicate {
    * @since 9.9.4
    */
   default CharPredicate or(String chars) {
-    return anyOf(chars).or(this);
+    return or(anyOf(chars));
   }
 
   /**
