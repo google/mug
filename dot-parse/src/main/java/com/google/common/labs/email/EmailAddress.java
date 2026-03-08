@@ -115,6 +115,11 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     checkArgument(
         localPart.length() + domain.length() + 1 <= 254,
         "<%s@%s> must be <= 254 chars", localPart, domain);
+    all('.').split(domain).forEach(label ->
+        checkArgument(
+            !label.startsWith("-") && !label.endsWith("-"),
+            "domain label '%s' must not start or end with a hyphen",
+            label));
     String idnValidated = IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED);
     return new EmailAddress(Optional.empty(), localPart, domain);
   }
@@ -163,10 +168,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<String> localPart =
         consecutive(letterOrDigit.or("!#$%&'*+-/=?^_`{|}~.").precomputeForAscii(), "local part");
     Parser<String> domain =
-        consecutive(letterOrDigit.or('-').precomputeForAscii(), "domain label chars")
-            .suchThat(s -> s.charAt(0) != '-' && s.charAt(s.length() - 1) != '-', "domain label")
-            .atLeastOnceDelimitedBy(".", counting())  // counting is the cheapest collector
-            .source();                                // source() is faster than using joining(".")
+        consecutive(letterOrDigit.or("-.").precomputeForAscii(), "domain label chars");
     Parser<EmailAddress> address =
         sequence(localPart, literally(string("@").then(domain)), EmailAddress::of);
     Parser<String> quotedDisplayName = Parser.quotedByWithEscapes(
