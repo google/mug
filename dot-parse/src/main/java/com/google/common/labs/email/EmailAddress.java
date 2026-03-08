@@ -15,11 +15,13 @@
  *****************************************************************************/
 package com.google.common.labs.email;
 
+import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
+import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.Substring.all;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
@@ -148,7 +150,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * <p>Empty input will result in an empty list being returned.
    */
   public static List<EmailAddress> parseAddressList(String addressList) {
-    Parser<?> delimiter = Parser.one(CharPredicate.anyOf(",;"), "delimiter").atLeastOnce(counting());
+    Parser<?> delimiter = Parser.one(anyOf(",;"), "delimiter").atLeastOnce(counting());
     return PARSER
         .zeroOrMoreDelimitedBy(delimiter, toUnmodifiableList())
         .followedBy(delimiter.orElse(null))
@@ -158,9 +160,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   private static Parser<EmailAddress> makeParser() {
     CharPredicate letterOrDigit = Character::isLetterOrDigit;
     CharPredicate isoControl = Character::isISOControl;
-    Parser<String> localPart = consecutive(
-        letterOrDigit.or(CharPredicate.anyOf("!#$%&'*+-/=?^_`{|}~.")).precomputeForAscii(),
-        "local part");
+    Parser<String> localPart =
+        consecutive(letterOrDigit.or("!#$%&'*+-/=?^_`{|}~.").precomputeForAscii(), "local part");
     Parser<String> domain =
         consecutive(letterOrDigit.or('-').precomputeForAscii(), "domain label chars")
             .suchThat(s -> s.charAt(0) != '-' && s.charAt(s.length() - 1) != '-', "domain label")
@@ -171,19 +172,17 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<String> quotedDisplayName = Parser.quotedByWithEscapes(
         '"', '"', chars(1).suchThat(isoControl::matchesNoneOf, "escapable char"));
     Parser<String> unquotedDisplayName = consecutive(
-        CharPredicate.anyOf("()<>[]:;@\\,\"").or(isoControl).not().precomputeForAscii(),
-        "unquoted display name");
+        isoControl.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
-    Parser<String> displayName =
-        Parser.anyOf(quotedDisplayName, unquotedDisplayName.map(String::trim));
-    return Parser.anyOf(
+    Parser<String> displayName = anyOf(quotedDisplayName, unquotedDisplayName.map(String::trim));
+    return anyOf(
         address,
         bracketedAddress,
         sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)));
   }
 
   private static String escape(String name) {
-    return all(CharPredicate.anyOf("\"\\")).replaceAllFrom(name, c -> "\\" + c);
+    return all(anyOf("\"\\")).replaceAllFrom(name, c -> "\\" + c);
   }
 
   @FormatMethod

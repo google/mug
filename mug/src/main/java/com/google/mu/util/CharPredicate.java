@@ -159,6 +159,16 @@ public interface CharPredicate {
   }
 
   /**
+   * Returns a {@link CharPredicate} that evaluates true if either this evaluates to true,
+   * or the character is equal to any of {@code chars}.
+   *
+   * @since 9.9.4
+   */
+  default CharPredicate or(String chars) {
+    return anyOf(chars).or(this);
+  }
+
+  /**
    * Returns a {@link CharPredicate} that evaluates true if both this and {@code that} predicate
    * evaluate to true.
    */

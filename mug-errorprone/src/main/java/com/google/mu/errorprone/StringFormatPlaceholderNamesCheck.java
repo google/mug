@@ -14,22 +14,21 @@
  *****************************************************************************/
 package com.google.mu.errorprone;
 
-import static com.google.mu.util.Substring.after;
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.errorprone.matchers.Matchers.constructor;
 import static com.google.errorprone.matchers.Matchers.staticMethod;
+import static com.google.mu.util.Substring.after;
 
 import com.google.auto.service.AutoService;
-import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableSet;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.LinkType;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.matchers.Matchers;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
@@ -48,10 +47,8 @@ public final class StringFormatPlaceholderNamesCheck extends AbstractBugChecker
       Matchers.anyOf(
           constructor().forClass("com.google.mu.util.StringFormat"),
           staticMethod().onClass("com.google.mu.util.StringFormat"));
-  private static final CharPredicate ALPHA =
-      CharPredicate.range('a', 'z').orRange('A', 'Z');
-  private static final CharPredicate VALID_CHARS =
-      ALPHA.orRange('0', '9').or(CharMatcher.anyOf(".*_-")::matches);
+  private static final CharPredicate ALPHA = CharPredicate.range('a', 'z').orRange('A', 'Z');
+  private static final CharPredicate VALID_CHARS = ALPHA.orRange('0', '9').or(".*_-");
 
   /** Currently allowed special placeholder names. */
   private static final ImmutableSet<String> SPECIAL_PLACEHOLDER_NAMES = ImmutableSet.of("...");

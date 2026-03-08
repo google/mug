@@ -74,7 +74,7 @@ public class CharPredicateTest {
   }
 
   @Test
-  public void testOr() {
+  public void testOr_char() {
     assertThat(CharPredicate.is('c').orRange('A', 'Z').test('c')).isTrue();
     assertThat(CharPredicate.is('c').orRange('A', 'Z').test('Z')).isTrue();
     assertThat(CharPredicate.is('c').orRange('A', 'Z').test('z')).isFalse();
@@ -84,9 +84,17 @@ public class CharPredicateTest {
   }
 
   @Test
-  public void testOr_toString() {
+  public void testOr_char_toString() {
     assertThat(CharPredicate.is('c').orRange('A', 'Z').toString()).isEqualTo("'c' | ['A', 'Z']");
     assertThat(CharPredicate.range('A', 'Z').or('c').toString()).isEqualTo("['A', 'Z'] | 'c'");
+  }
+
+  @Test
+  public void testOr_string() {
+    assertThat(CharPredicate.is('x').or("XY").test('x')).isTrue();
+    assertThat(CharPredicate.is('x').or("XY").test('X')).isTrue();
+    assertThat(CharPredicate.is('x').or("XY").test('Y')).isTrue();
+    assertThat(CharPredicate.is('x').or("XY").test('Z')).isFalse();
   }
 
   @Test

@@ -15,7 +15,6 @@
 package com.google.mu.time;
 
 import static com.google.mu.util.CharPredicate.anyOf;
-import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.noneOf;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
@@ -115,7 +114,7 @@ import com.google.mu.util.stream.BiStream;
 public final class DateTimeFormats {
   private static final CharPredicate DIGIT = CharPredicate.range('0', '9');
   private static final CharPredicate ALPHA =
-      CharPredicate.range('a', 'z').or(CharPredicate.range('A', 'Z').or(is('_')));
+      CharPredicate.range('a', 'z').orRange('A', 'Z').or('_').precomputeForAscii();
 
   /** delimiters don't have semantics and are ignored during parsing. */
   private static final CharPredicate DELIMITER = anyOf(" ,;");
