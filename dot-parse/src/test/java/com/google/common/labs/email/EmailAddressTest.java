@@ -6,6 +6,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.common.truth.TruthJUnit.assume;
 import static java.util.Optional.ofNullable;
+import static java.util.function.Function.identity;
 import static org.junit.Assert.assertThrows;
 
 import java.util.Optional;
@@ -19,6 +20,10 @@ import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import com.sanctionco.jmail.JMail;
+
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
 
 /**
  * Benchmark for email parsing.
@@ -74,6 +79,7 @@ public class EmailAddressTest {
   private static final StringFormat QUOTED = new StringFormat("\"{quoted}\"");
   private static final Substring.RepeatingPattern ESCAPED_CHARS =
       Substring.first(Pattern.compile("\\\\.")).repeatedly();
+  private static final StringFormat ADDR_SPEC = new StringFormat("{localPart}@{domain}");
 
   @Test
   public void testEmailAddressParsing_simple(@TestParameter ParseStrategy parser) {
@@ -130,6 +136,7 @@ public class EmailAddressTest {
 
   @Test
   public void testEmailAddressParsing_withDisplayName(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);
     parser.assertParsesTo(
         "John Doe <test@example.com>",
         EmailAddress.of("test", "example.com").withDisplayName("John Doe"));
@@ -137,6 +144,7 @@ public class EmailAddressTest {
 
   @Test
   public void testEmailAddressParsing_withQuotedDisplayName(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);  // does not remove trailing blank
     parser.assertParsesTo(
         "\"John Doe\" <test@example.com>",
         EmailAddress.of("test", "example.com").withDisplayName("John Doe"));
@@ -156,7 +164,7 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_whitespaceAfterOpeningBracket(
       @TestParameter ParseStrategy parser) {
-    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    assume().that(parser).isNoneOf(ParseStrategy.REGEX, ParseStrategy.JMAIL);
     parser.assertParsesTo(
         "John Doe < test@example.com>",
         EmailAddress.of("test", "example.com").withDisplayName("John Doe"));
@@ -165,7 +173,7 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_whitespaceBeforeClosingBracket(
       @TestParameter ParseStrategy parser) {
-    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    assume().that(parser).isNoneOf(ParseStrategy.REGEX, ParseStrategy.JMAIL);
     parser.assertParsesTo(
         "John Doe <test@example.com >",
         EmailAddress.of("test", "example.com").withDisplayName("John Doe"));
@@ -174,6 +182,7 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_withDisplayName_multipleSpacesInName(
       @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);  // does not remove trailing blank
     parser.assertParsesTo(
         "John  Doe <test@example.com>",
         EmailAddress.of("test", "example.com").withDisplayName("John  Doe"));
@@ -182,6 +191,7 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_withDisplayName_multipleSpacesBeforeBracket(
       @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);  // does not remove trailing blank
     parser.assertParsesTo(
         "John Doe  <test@example.com>",
         EmailAddress.of("test", "example.com").withDisplayName("John Doe"));
@@ -190,6 +200,7 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_withQuotedDisplayName_withEscapedQuote(
       @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);  // does not remove trailing blank
     parser.assertParsesTo(
         "\"John \\\"Doe\\\"\" <test@example.com>",
         EmailAddress.of("test", "example.com").withDisplayName("John \"Doe\""));
@@ -198,6 +209,7 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_withQuotedDisplayName_withEscapedBackslash(
       @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);  // does not remove trailing blank
     parser.assertParsesTo(
         "\"John \\\\ Doe\" <test@example.com>",
         EmailAddress.of("test", "example.com").withDisplayName("John \\ Doe"));
@@ -206,6 +218,8 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_withQuotedDisplayName_spacesInsideQuotesPreserved(
       @TestParameter ParseStrategy parser) {
+    // JMAIL doesn't remove the trailing blank
+    assume().that(parser).isNotEqualTo( ParseStrategy.JMAIL);
     parser.assertParsesTo(
         "\"  John Doe  \" <test@example.com>",
         EmailAddress.of("test", "example.com").withDisplayName("  John Doe  "));
@@ -214,6 +228,7 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_withEmptyQuotedDisplayName(
       @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JAKARTA);
     parser.assertParsesTo(
         "\"\"<test@example.com>", EmailAddress.of("test", "example.com").withDisplayName(""));
   }
@@ -221,6 +236,7 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_withQuotedDisplayName_onlySpacesInsideQuotes(
       @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNoneOf(ParseStrategy.JAKARTA, ParseStrategy.JMAIL);
     parser.assertParsesTo(
         "\"  \" <test@example.com>", EmailAddress.of("test", "example.com").withDisplayName("  "));
   }
@@ -284,16 +300,19 @@ public class EmailAddressTest {
 
   @Test
   public void testEmailAddressParsing_localPartStartsWithDot(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isNoneOf(ParseStrategy.JAKARTA, ParseStrategy.JMAIL);
     parser.assertParsesTo(".test@example.com", EmailAddress.of(".test", "example.com"));
   }
 
   @Test
   public void testEmailAddressParsing_localPartEndsWithDot(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isNoneOf(ParseStrategy.JAKARTA, ParseStrategy.JMAIL);
     parser.assertParsesTo("test.@example.com", EmailAddress.of("test.", "example.com"));
   }
 
   @Test
   public void testEmailAddressParsing_localPartWithDoubleDot(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isNoneOf(ParseStrategy.JAKARTA, ParseStrategy.JMAIL);
     parser.assertParsesTo("test..foo@example.com", EmailAddress.of("test..foo", "example.com"));
   }
 
@@ -305,24 +324,28 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_invalid_spaceBeforeAtSign(
       @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);  // does not check space
     assertThrows(IllegalArgumentException.class, () -> parser.parse("test @example.com"));
   }
 
   @Test
   public void testEmailAddressParsing_invalid_spaceAfterAtSign(
       @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);  // does not check space
     assertThrows(IllegalArgumentException.class, () -> parser.parse("test@ example.com"));
   }
 
   @Test
   public void testEmailAddressParsing_invalid_spaceInDomainBeforeDot(
       @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);
     assertThrows(IllegalArgumentException.class, () -> parser.parse("test@example .com"));
   }
 
   @Test
   public void testEmailAddressParsing_invalid_spaceInDomainAfterDot(
       @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);  // does not check space in domain
     assertThrows(IllegalArgumentException.class, () -> parser.parse("test@example. com"));
   }
 
@@ -340,7 +363,7 @@ public class EmailAddressTest {
 
   @Test
   public void testEmailAddressParsing_i18n_displayName(@TestParameter ParseStrategy parser) {
-    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    assume().that(parser).isNoneOf(ParseStrategy.REGEX, ParseStrategy.JMAIL);
     parser.assertParsesTo(
         "\"Жशिऐ\" <test@example.com>",
         EmailAddress.of("test", "example.com").withDisplayName("Жशिऐ"));
@@ -349,7 +372,7 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_i18n_unquotedDisplayName(
       @TestParameter ParseStrategy parser) {
-    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    assume().that(parser).isNoneOf(ParseStrategy.REGEX, ParseStrategy.JMAIL);
     parser.assertParsesTo(
         "Жशिऐ <test@example.com>", EmailAddress.of("test", "example.com").withDisplayName("Жशिऐ"));
   }
@@ -374,7 +397,7 @@ public class EmailAddressTest {
 
   @Test
   public void testEmailAddressParsing_i18n_chineseDisplayName(@TestParameter ParseStrategy parser) {
-    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    assume().that(parser).isNoneOf(ParseStrategy.REGEX, ParseStrategy.JMAIL);
     parser.assertParsesTo(
         "\"中文名\" <test@example.com>",
         EmailAddress.of("test", "example.com").withDisplayName("中文名"));
@@ -383,6 +406,7 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_unquotedDisplayNameWithAllWeirdChars(
       @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);  // does not remove trailing blank
     parser.assertParsesTo(
         "weird!#$%&'*+/=?^_`{|}~-name <test@example.com>",
         EmailAddress.of("test", "example.com").withDisplayName("weird!#$%&'*+/=?^_`{|}~-name"));
@@ -399,6 +423,7 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_unquotedDisplayNameWithDots(
       @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);  // does not remove trailing blank
     parser.assertParsesTo(
         "J.R.R. Tolkien <tolkien@example.com>",
         EmailAddress.of("tolkien", "example.com").withDisplayName("J.R.R. Tolkien"));
@@ -407,6 +432,7 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_aliasLookingLikeAddress(
       @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);
     parser.assertParsesTo(
         "\"john.smith@example.com\" <real@example.com>",
         EmailAddress.of("real", "example.com").withDisplayName("john.smith@example.com"));
@@ -524,6 +550,36 @@ public class EmailAddressTest {
       @Override
       EmailAddress parse(String email) {
         return EmailAddress.parse(email);
+      }
+    },
+    JAKARTA {
+      @Override
+      EmailAddress parse(String email) {
+        try {
+          InternetAddress internetAddress = new InternetAddress(email, /* strict= */ true);
+          EmailAddress emailAddress =
+              ADDR_SPEC.parseOrThrow(internetAddress.getAddress(), EmailAddress::of);
+          return ofNullable(internetAddress.getPersonal())
+              .map(emailAddress::withDisplayName)
+              .orElse(emailAddress);
+        } catch (AddressException e) {
+          throw new IllegalArgumentException(e);
+        }
+      }
+    },
+    JMAIL {
+      @Override
+      EmailAddress parse(String email) {
+        return JMail.tryParse(email)
+            .map(result -> {
+              EmailAddress address = EmailAddress.of(result.localPart(), result.domain());
+              return result.hasIdentifier()
+                  ? address.withDisplayName(
+                      // INCOMPATIBILITY: JMAIL does not remove the double quotes
+                      QUOTED.parse(result.identifier(), identity()).orElse(result.identifier()))
+                  : address;
+            })
+            .orElseThrow(() -> new IllegalArgumentException("failed to parse " + email));
       }
     };
 
