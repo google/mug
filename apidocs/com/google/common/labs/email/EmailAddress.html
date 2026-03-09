@@ -103,15 +103,24 @@ loadScripts(document, 'script');</script>
 </div>
 </div>
 <section class="class-description" id="class-description">
+<dl class="notes">
+<dt>Record Components:</dt>
+<dd><code><span id="param-displayName">displayName</span></code> - the <code>"J.R.R. Tolkien"</code> from <code>J.R.R. Tolkien &lt;tolkien@lotr.org&gt;</code></dd>
+<dd><code><span id="param-localPart">localPart</span></code> - the <code>"tolkien"</code> from <code>J.R.R. Tolkien &lt;tolkien@lotr.org&gt;</code></dd>
+<dd><code><span id="param-domain">domain</span></code> - the <code>"lotr.org"</code> from <code>J.R.R. Tolkien &lt;tolkien@lotr.org&gt;</code></dd>
+</dl>
 <hr>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public record </span><span class="element-name type-name-label">EmailAddress</span>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;displayName, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;localPart, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;domain)
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a></span></div>
 <div class="block">Represents an email address according to RFC 5322, designed as a modern,
- type-safe replacement for <code>javax.mail.InternetAddress</code>.
+ light-weight alternative API to <code>javax.mail.InternetAddress</code>.
 
  <p>For example: <pre><code>
- EmailAddress emailAddress = EmailAddress.parse("john-doe@gmail.com");
+ EmailAddress address = EmailAddress.parse("J.R.R. Tolkien &lt;tolkien@lotr.org&gt;");
+ assertThat(address.displayName()).hasValue("J.R.R. Tolkien");
+ assertThat(address.localPart()).isEqualTo("tolkien");
+ assertThat(address.domain()).isEqualTo("lotr.org");
  </code></pre>
 
  <h3 id="rfc-5322-compliance-profile-heading">RFC 5322 Compliance Profile</h3>
@@ -133,8 +142,7 @@ loadScripts(document, 'script');</script>
  <table border="1">
    <tr><th>Feature</th><th><code>InternetAddress</code></th><th><code>EmailAddress</code></th></tr>
    <tr><td><b>Immutability</b></td><td>Mutable pojo</td><td>Immutable <code>record</code></td></tr>
-   <tr><td><b>DNS labels</b></td><td>Permissive (allows illegal hyphens)</td><td>Strict (RFC 1035/1123 63-char limit)</td></tr>
-   <tr><td><b>Validation</b></td><td>Lazy – need to call <code>validate()</code></td><td>Eager – <code>parse()</code> throws if invalid</td></tr>
+   <tr><td><b>DNS labels</b></td><td>Permissive (allows illegal hyphens)</td><td>Rejects <code>wrong-@.com</code></td></tr>
    <tr><td><b>I18n</b></td><td>Often requires Encoded-Words</td><td>Native BMP support</td></tr>
  </table>
 
@@ -209,12 +217,12 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#displayName()" class="member-name-link">displayName</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns the value of the <code>displayName</code> record component.</div>
+<div class="block">Returns the value of the <a href="#param-displayName"><code>displayName</code></a> record component.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#domain()" class="member-name-link">domain</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns the value of the <code>domain</code> record component.</div>
+<div class="block">Returns the value of the <a href="#param-domain"><code>domain</code></a> record component.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final boolean</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#equals(java.lang.Object)" class="member-name-link">equals</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;o)</code></div>
@@ -229,7 +237,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#localPart()" class="member-name-link">localPart</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns the value of the <code>localPart</code> record component.</div>
+<div class="block">Returns the value of the <a href="#param-localPart"><code>localPart</code></a> record component.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(java.lang.String,java.lang.String)" class="member-name-link">of</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;localPart,
@@ -420,10 +428,10 @@ loadScripts(document, 'script');</script>
 <h3>displayName</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">displayName</span>()</div>
-<div class="block">Returns the value of the <code>displayName</code> record component.</div>
+<div class="block">Returns the value of the <a href="#param-displayName"><code>displayName</code></a> record component.</div>
 <dl class="notes">
 <dt>Returns:</dt>
-<dd>the value of the <code>displayName</code> record component</dd>
+<dd>the value of the <a href="#param-displayName"><code>displayName</code></a> record component</dd>
 </dl>
 </div>
 </section>
@@ -433,10 +441,10 @@ loadScripts(document, 'script');</script>
 <h3>localPart</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">localPart</span>()</div>
-<div class="block">Returns the value of the <code>localPart</code> record component.</div>
+<div class="block">Returns the value of the <a href="#param-localPart"><code>localPart</code></a> record component.</div>
 <dl class="notes">
 <dt>Returns:</dt>
-<dd>the value of the <code>localPart</code> record component</dd>
+<dd>the value of the <a href="#param-localPart"><code>localPart</code></a> record component</dd>
 </dl>
 </div>
 </section>
@@ -446,10 +454,10 @@ loadScripts(document, 'script');</script>
 <h3>domain</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">domain</span>()</div>
-<div class="block">Returns the value of the <code>domain</code> record component.</div>
+<div class="block">Returns the value of the <a href="#param-domain"><code>domain</code></a> record component.</div>
 <dl class="notes">
 <dt>Returns:</dt>
-<dd>the value of the <code>domain</code> record component</dd>
+<dd>the value of the <a href="#param-domain"><code>domain</code></a> record component</dd>
 </dl>
 </div>
 </section>
