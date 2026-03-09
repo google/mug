@@ -25,6 +25,7 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -52,7 +53,6 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.Tables;
 import com.google.common.collect.TreeRangeMap;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.mu.collect.Chain;
 import com.google.mu.util.Both;
@@ -435,52 +435,24 @@ public final class GuavaCollectors {
           Function<? super T, ? extends K> toKey, Function<? super T, ? extends V> toValue) {
     requireNonNull(toKey);
     requireNonNull(toValue);
-    // Use a custom collector to be able to report the offending key without having to invoke the
-    // toKey and toValue functions more than once (except when reporting the exception message).
-    class ConsistentMapping {
-      private T entry;
-      private V value;
+    return Collector.of(
+        LinkedHashMap<K, V>::new,
+        (map, t) -> addDistinct(map, toKey.apply(t), toValue.apply(t)),
+        (m1, m2) -> {
+          m2.forEach((key, value) -> addDistinct(m1, key, value));
+          return m1;
+        },
+        ImmutableMap::copyOf);
+  }
 
-      void add(T entry) {
-        V newValue = requireNonNull(toValue.apply(entry), "Null value disallowed");
-        if (value == null) {
-          this.entry = entry;
-          this.value = newValue;
-        } else if (!value.equals(newValue)) {
-          throw new IllegalArgumentException(
-              "Key <"
-                  + toKey.apply(entry)
-                  + "> is mapped to more than one values: <"
-                  + value
-                  + "> vs. <"
-                  + newValue
-                  + ">");
-        }
-      }
-
-      @CanIgnoreReturnValue
-      ConsistentMapping merge(ConsistentMapping that) {
-        if (that.value != null) {
-          add(that.entry);
-        }
-        return this;
-      }
-
-      V getValue() {
-        checkState(value != null);
-        return value;
-      }
-    }
-
-    return collectingAndThen(
-        BiStream.<T, K, V>groupingBy(
-            toKey,
-            Collector.of(
-                ConsistentMapping::new,
-                ConsistentMapping::add,
-                ConsistentMapping::merge,
-                ConsistentMapping::getValue)),
-        stream -> stream.collect(toImmutableMap()));
+  private static <K, V> void addDistinct(Map<K, V> map, K key, V value) {
+    requireNonNull(key);
+    requireNonNull(value);
+    V previous = map.put(key, value);
+    checkState(
+        previous == null || previous.equals(value),
+        "Key <%s> is mapped to more than one values: <%s> vs. <%s>",
+        key, previous, value);
   }
 
 

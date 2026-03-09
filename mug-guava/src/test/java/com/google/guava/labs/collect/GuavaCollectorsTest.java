@@ -60,7 +60,6 @@ import com.google.common.collect.Range;
 import com.google.common.collect.TreeMultimap;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.testing.NullPointerTester;
-import com.google.guava.labs.collect.GuavaCollectors;
 import com.google.mu.collect.Chain;
 import com.google.mu.util.Both;
 import com.google.mu.util.stream.BiStream;
@@ -301,7 +300,7 @@ public class GuavaCollectorsTest {
   @Test public void
       testToImmutableMapIgnoringDuplicateEntries_unequalValuesMappedToEqualKeysAreRejected() {
     assertThrows(
-        IllegalArgumentException.class,
+        IllegalStateException.class,
         () -> Stream.of(1, 2).collect(toImmutableMapIgnoringDuplicateEntries(k -> 0, v -> v)));
   }
 
@@ -318,9 +317,9 @@ public class GuavaCollectorsTest {
 
   @Test public void testToImmutableMapIgnoringDuplicateEntries_fromPairs_inconsistentMapping() {
     String input = "k1=v1,k2=v2,k2=v3";
-    IllegalArgumentException thrown =
+    IllegalStateException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            IllegalStateException.class,
             () ->
                 first(',')
                     .repeatedly()
@@ -333,9 +332,9 @@ public class GuavaCollectorsTest {
   }
 
   @Test public void testToImmutableMapIgnoringDuplicateEntries_asBiCollector_inconsistentMapping() {
-    IllegalArgumentException thrown =
+    IllegalStateException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            IllegalStateException.class,
             () ->
                 BiStream.zip(Stream.of("k1", "k2", "k1", "k2"), Stream.of("v1", "v2", "v1", "v3"))
                     .collect(GuavaCollectors::toImmutableMapIgnoringDuplicateEntries));
