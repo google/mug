@@ -61,6 +61,8 @@ import com.google.mu.util.StringFormat;
  *       while allowing periods for real-world usability (e.g., "J.R.R. Tolkien").</li>
  *   <li><b>Folding White Space (FWS):</b> Supports optional whitespace
  *       between the display name and the angle-bracketed address.</li>
+ *   <li><b>Address-List:</b> Supports semicolon as separators; allows real-world
+ *       variations like trailing commas, two-commas-in-a-row etc.</li>
  * </ul>
  *
  * <h3>Comparison with {@code javax.mail.InternetAddress}</h3>
