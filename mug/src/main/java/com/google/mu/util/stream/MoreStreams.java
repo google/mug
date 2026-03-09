@@ -493,7 +493,7 @@ public final class MoreStreams {
    * Consume up to {@code n} elements from {@code stream}, pass them to {@code consumer}
    * in encounter order, then return the remaining elements in a stream.
    *
-   * <p>Upon return, all consumable elements have been consumed.
+   * <p>Upon return, to-be-consumed (up to {@code n}) elements have been consumed.
    * The {@code stream} reference should no longer be used.
    *
    * @throws IllegalArgumentException if {@code n} is negative;
