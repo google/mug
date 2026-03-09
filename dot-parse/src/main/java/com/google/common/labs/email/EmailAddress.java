@@ -39,10 +39,13 @@ import com.google.mu.util.StringFormat;
 
 /**
  * Represents an email address according to RFC 5322, designed as a modern,
- * type-safe replacement for {@code javax.mail.InternetAddress}.
+ * light-weight alternative API to {@code javax.mail.InternetAddress}.
  *
  * <p>For example: <pre>{@code
- * EmailAddress emailAddress = EmailAddress.parse("john-doe@gmail.com");
+ * EmailAddress address = EmailAddress.parse("J.R.R. Tolkien <tolkien@lotr.org>");
+ * assertThat(address.displayName()).hasValue("J.R.R. Tolkien");
+ * assertThat(address.localPart()).isEqualTo("tolkien");
+ * assertThat(address.domain()).isEqualTo("lotr.org");
  * }</pre>
  *
  * <h3>RFC 5322 Compliance Profile</h3>
@@ -79,6 +82,9 @@ import com.google.mu.util.StringFormat;
  *   <li><b>Obsolete Syntax:</b> (RFC 5322 §4) - Legacy syntax like "quoted-pairs" in unquoted names.
  * </ul>
  *
+ * @param displayName the {@code "J.R.R. Tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
+ * @param localPart the {@code "tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
+ * @param domain the {@code "lotr.org"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
  * @since 9.9.4
  */
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
