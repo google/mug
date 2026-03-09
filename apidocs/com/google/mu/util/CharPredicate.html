@@ -530,7 +530,7 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns an equivalent <a href="CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> but pre-computes the results for all ASCII characters.
  Useful if the CharPredicate is used in a hot path.
 
- <p>This method is more efficient for ASCII chars than Guava <a href="https://javadoc.io/doc/com.google.guava/guava/latest/com/google/common/base/CharMatcher.html#precomputed()" title="class or interface in com.google.common.base" class="external-link"><code>CharMatcher.precomputed()</code></a>, and is far cheaper
+ <p>This method is more efficient for ASCII chars than Guava <code>CharMatcher.precomputed()</code>, and is far cheaper
  because it only uses two 64-bit long integers to store the pre-computation results.
 
  <p>Note that <a href="#WORD"><code>WORD</code></a>, <a href="#anyOf(java.lang.String)"><code>anyOf(java.lang.String)</code></a> and <a href="#noneOf(java.lang.String)"><code>noneOf(java.lang.String)</code></a> are already pre-computed for
