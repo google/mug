@@ -118,9 +118,9 @@ loadScripts(document, 'script');</script>
 
  <p>For example: <pre><code>
  EmailAddress address = EmailAddress.parse("J.R.R. Tolkien &lt;tolkien@lotr.org&gt;");
- assertThat(address.displayName()).hasValue("J.R.R. Tolkien");
- assertThat(address.localPart()).isEqualTo("tolkien");
- assertThat(address.domain()).isEqualTo("lotr.org");
+ // address.displayName() =&gt; "J.R.R. Tolkien"
+ // address.localPart()) =&gt; "tolkien"
+ // address.domain() =&gt; "lotr.org"
  </code></pre>
 
  <h3 id="rfc-5322-compliance-profile-heading">RFC 5322 Compliance Profile</h3>
@@ -385,7 +385,7 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a>&gt;</span>&nbsp;<span class="element-name">parseAddressList</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;addressList)</span></div>
 <div class="block">Parses <code>addressList</code> according to RFC 5322 and returns an immutable list of <a href="EmailAddress.html" title="class in com.google.common.labs.email"><code>EmailAddress</code></a>.
 
- <p>Both colon (<code>,</code>) and semicolon (<code>;</code>) are supported as delimiters, with
+ <p>Both comma (<code>,</code>) and semicolon (<code>;</code>) are supported as delimiters, with
  whitespaces ignored. Trailing delimiters are allowed.
 
  <p>Empty input will result in an empty list being returned.</div>
