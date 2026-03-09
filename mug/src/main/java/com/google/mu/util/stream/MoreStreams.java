@@ -490,6 +490,26 @@ public final class MoreStreams {
   }
 
   /**
+   * Consume up to {@code n} elements from {@code stream}, pass them to {@code consumer}
+   * in encounter order, then return the remaining elements in a stream.
+   *
+   * <p>Upon return, all consumable elements have been consumed.
+   * The {@code stream} reference should no longer be used.
+   *
+   * @throws IllegalArgumentException if {@code n} is negative;
+   * @since 9.9.5
+   */
+  public static <T> Stream<T> consume(Stream<T> stream, int n, Consumer<? super T> consumer) {
+    if (n < 0) {
+      throw new IllegalArgumentException("n (" + n + ") shouldn't be negative");
+    }
+    Spliterator<T> spliterator = stream.spliterator();
+    requireNonNull(consumer);
+    for (int i = 0; i < n && spliterator.tryAdvance(consumer); i++) {}
+    return StreamSupport.stream(spliterator, /* parallel */ false);
+  }
+
+  /**
    * Returns a collector that first copies all input elements into a new {@code Stream} and then
    * passes the stream to the {@code finisher} function, which translates it to the final result.
    */

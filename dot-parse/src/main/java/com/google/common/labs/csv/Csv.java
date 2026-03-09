@@ -43,6 +43,7 @@ import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.Joiner;
+import com.google.mu.util.stream.MoreStreams;
 
 /**
  * An easy-to-use CSV parser with lazy parsing support and friendly error reporting.
@@ -250,10 +251,10 @@ public final class Csv {
   public <R> Stream<R> parseWithHeaderFields(
       Reader csv, BiCollector<? super String, ? super String, ? extends R> rowCollector) {
     AtomicReference<List<String>> fieldNames = new AtomicReference<>();
-    return parseToLists(csv)
-        .filter(row -> row.size() > 0)
-        .peek(values -> fieldNames.compareAndSet(null, values))
-        .skip(1)
+    return MoreStreams.consume(
+            parseToLists(csv).filter(row -> row.size() > 0),
+            1,
+            values -> fieldNames.compareAndSet(null, values))
         .map(values -> BiStream.zip(fieldNames.get(), values).collect(rowCollector));
   }
 
