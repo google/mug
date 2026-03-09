@@ -279,14 +279,6 @@ public class MoreStreamsTest {
     assertThat(set).containsExactlyElementsIn(source);
   }
 
-  @Test public void testNulls() throws Exception {
-    NullPointerTester tester = new NullPointerTester();
-    asList(MoreStreams.class.getDeclaredMethods()).stream()
-        .filter(m -> m.getName().equals("generate"))
-        .forEach(tester::ignore);
-    tester.testAllPublicStaticMethods(MoreStreams.class);
-  }
-
   @Test public void withSideEffectInOrder() {
     int num = 10000;
     ImmutableList<Integer> source =  indexesFrom(1).limit(num).collect(toImmutableList());
@@ -295,6 +287,60 @@ public class MoreStreamsTest {
     MoreStreams.withSideEffect(source.stream(), peeked::add).parallel().forEachOrdered(result::add);
     assertThat(result).containsExactlyElementsIn(source).inOrder();
     assertThat(peeked).containsExactlyElementsIn(source).inOrder();
+  }
+
+  @Test public void consume_emptyStream() {
+    List<Integer> consumed = new ArrayList<>();
+    Stream<Integer> remaining = MoreStreams.consume(Stream.empty(), 2, consumed::add);
+    assertThat(consumed).isEmpty();
+    assertThat(remaining).isEmpty();
+    assertThat(consumed).isEmpty();
+  }
+
+  @Test public void consume_lessThanNumberOfElements() {
+    List<Integer> consumed = new ArrayList<>();
+    Stream<Integer> stream = Stream.of(1, 2, 3, 4, 5);
+    Stream<Integer> remaining = MoreStreams.consume(stream, 2, consumed::add);
+    assertThat(consumed).containsExactly(1, 2).inOrder();
+    assertThat(remaining).containsExactly(3, 4, 5).inOrder();
+    assertThat(consumed).containsExactly(1, 2).inOrder();
+  }
+
+  @Test public void consume_moreThanNumberOfElements() {
+    List<Integer> consumed = new ArrayList<>();
+    Stream<Integer> stream = Stream.of(1, 2, 3);
+    Stream<Integer> remaining = MoreStreams.consume(stream, 4, consumed::add);
+    assertThat(consumed).containsExactly(1, 2, 3).inOrder();
+    assertThat(remaining).isEmpty();
+    assertThat(consumed).containsExactly(1, 2, 3).inOrder();
+  }
+
+  @Test public void consume_equalToNumberOfElements() {
+    List<Integer> consumed = new ArrayList<>();
+    Stream<Integer> stream = Stream.of(1, 2, 3);
+    Stream<Integer> remaining = MoreStreams.consume(stream, 3, consumed::add);
+    assertThat(consumed).containsExactly(1, 2, 3).inOrder();
+    assertThat(remaining).isEmpty();
+    assertThat(consumed).containsExactly(1, 2, 3).inOrder();
+  }
+
+  @Test public void consume_zero() {
+    Stream<Integer> stream = Stream.of(1, 2, 3);
+    assertThat(MoreStreams.consume(stream, 0, x -> { throw new AssertionError("shouldn't be called"); }))
+        .containsExactly(1, 2, 3)
+        .inOrder();
+  }
+
+  @Test public void consume_streamReferenceNoLongerUsable() {
+    Stream<Integer> stream = Stream.of(1, 2, 3);
+    Stream<Integer> remaining =
+        MoreStreams.consume(stream, 0, x -> { throw new AssertionError("shouldn't be called"); });
+    assertThrows(IllegalStateException.class, () -> stream.forEach(e -> {}));
+    assertThat(remaining).containsExactly(1, 2, 3).inOrder();
+  }
+
+  @Test public void consume_negative() {
+    assertThrows(IllegalArgumentException.class, () -> MoreStreams.consume(Stream.of(1), -1, x -> {}));
   }
 
   @Test public void testGroupConsecutive_byPredicate() {
@@ -322,5 +368,13 @@ public class MoreStreamsTest {
     assertThat(encoded)
         .containsExactly(10, 2L, 9, 3L, 8, 1L)
         .inOrder();
+  }
+
+  @Test public void testNulls() throws Exception {
+    NullPointerTester tester = new NullPointerTester();
+    asList(MoreStreams.class.getDeclaredMethods()).stream()
+        .filter(m -> m.getName().equals("generate"))
+        .forEach(tester::ignore);
+    tester.testAllPublicStaticMethods(MoreStreams.class);
   }
 }
