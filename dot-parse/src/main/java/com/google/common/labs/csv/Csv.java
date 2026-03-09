@@ -15,8 +15,14 @@
 package com.google.common.labs.csv;
 
 
+import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.one;
+import static com.google.common.labs.parse.Parser.string;
+import static com.google.common.labs.parse.Parser.zeroOrMore;
+import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.isNot;
+import static com.google.mu.util.CharPredicate.noneOf;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.Arrays.asList;
 
@@ -86,23 +92,35 @@ import com.google.mu.util.stream.Joiner;
  * <p>Note that streams returned by this class are sequential and are <em>not</em> safe to be used
  * as parallel streams.
  */
+// Benchmark results comparing parseToLists():
+// Benchmark                                   Mode  Cnt        Score         Error  Units
+// CsvBenchmark.commonTextCsvParser            avgt    5  2630037.966 ±  285646.022  ns/op
+// CsvBenchmark.commonTextCsvParserFromString  avgt    5  1055409.847 ±  120665.175  ns/op
+// CsvBenchmark.commonsCsv                     avgt    5  5506227.230 ±  231762.293  ns/op
+// CsvBenchmark.commonsCsvFromString           avgt    5  3565672.881 ±  189698.197  ns/op
+// CsvBenchmark.easyCsv                        avgt    5  2554233.807 ±  244661.803  ns/op
+// CsvBenchmark.easyCsvFromString              avgt    5  1616436.163 ± 2794707.212  ns/op
+// CsvBenchmark.dotParseCsv                    avgt    5  5327569.323 ±  367681.742  ns/op
+// CsvBenchmark.dotParseCsvFromString          avgt    5  2867898.182 ±   35946.724  ns/op
+// CsvBenchmark.univocity                      avgt    5  3171410.923 ±  193134.460  ns/op
+// CsvBenchmark.univocityFromString            avgt    5  1388068.463 ±  132654.257  ns/op
 public final class Csv {
   /** Default CSV parser. Configurable using {@link #withComments} and {@link #withDelimiter}. */
   public static final Csv CSV = new Csv(',', /* allowsComments= */ false);
 
-  private static final CharPredicate UNRESERVED_CHAR = CharPredicate.noneOf("\"\r\n");
+  private static final CharPredicate UNRESERVED_CHAR = noneOf("\"\r\n");
   private static final Parser<?>.OrEmpty IGNORED_WHITESPACES =
-      Parser.zeroOrMore(c -> c == ' ' || c == '\t', "ignored");
+      zeroOrMore(c -> c == ' ' || c == '\t', "ignored");
   private static final Parser<?> NEW_LINE =
-      Stream.of("\n", "\r\n", "\r").map(Parser::string).collect(Parser.or());
+      anyOf(one(is('\n'), "LF"), string("\r\n"), one(is('\r'), "CR"));
   private static final Parser<?> COMMENT =
-      Parser.string("#")
+      string("#")
           .followedBy(consecutive(isNot('\n'), "comment").orElse(null))
           .followedByOrEof(NEW_LINE);
   private static final Parser<String> QUOTED =
-      Parser.zeroOrMore(isNot('"'), "quoted")
+      zeroOrMore(isNot('"'), "quoted")
           .delimitedBy("\"\"", Joiner.on("\""))
-          .between("\"", "\"")
+          .immediatelyBetween("\"", "\"")
           .between(IGNORED_WHITESPACES, IGNORED_WHITESPACES);
 
   private final char delim;
@@ -138,7 +156,9 @@ public final class Csv {
    * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
    */
   public Stream<List<String>> parseToLists(String csv) {
-    return parseToLists(new StringReader(csv));
+    return allowsComments
+        ? line().skipping(COMMENT).parseToStream(csv).filter(row -> !row.isEmpty())
+        : line().parseToStream(csv).filter(row -> !row.isEmpty());
   }
 
   /**
@@ -151,18 +171,9 @@ public final class Csv {
    * BufferedReader}.
    */
   public Stream<List<String>> parseToLists(Reader csv) {
-    Parser<String> unquoted = consecutive(regularChar(), "unquoted field");
-    Parser<List<String>> line =
-        Parser.anyOf(
-            NEW_LINE.thenReturn(List.of()),  // empty line => [], not [""]
-            QUOTED.or(unquoted)
-                .orElse("")
-                .delimitedBy(String.valueOf(delim))
-                .notEmpty()
-                .followedByOrEof(NEW_LINE));
     return allowsComments
-        ? line.skipping(COMMENT).parseToStream(csv).filter(row -> !row.isEmpty())
-        : line.parseToStream(csv).filter(row -> !row.isEmpty());
+        ? line().skipping(COMMENT).parseToStream(csv).filter(row -> !row.isEmpty())
+        : line().parseToStream(csv).filter(row -> !row.isEmpty());
   }
 
   /**
@@ -302,6 +313,17 @@ public final class Csv {
       return str;
     }
     return '"' + Substring.all('"').replaceAllFrom(str, q -> "\"\"") + '"';
+  }
+
+  private Parser<List<String>> line() {
+    Parser<String> unquoted = consecutive(regularChar().precomputeForAscii(), "unquoted field");
+    return anyOf(
+        NEW_LINE.thenReturn(List.of()),  // empty line => [], not [""]
+        QUOTED.or(unquoted)
+            .orElse("")
+            .delimitedBy(String.valueOf(delim))
+            .notEmpty()
+            .followedByOrEof(NEW_LINE));
   }
 
   private CharPredicate regularChar() {

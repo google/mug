@@ -20,6 +20,21 @@ import com.google.mu.util.Substring;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
+/**
+ * Benchmark for email parsing.
+ *
+ * <p>Result:
+ *
+ * <pre>
+ * Benchmark                                            Mode  Cnt     Score      Error  Units
+ * EmailParserTest.combinatorParseEmailWithDisplayName  avgt    5  1800.977 ±   20.637  ns/op
+ * EmailParserTest.combinatorParseSimpleEmail           avgt    5  1007.580 ±   28.874  ns/op
+ * EmailParserTest.javaMailParseEmailWithDisplayName    avgt    5  1724.123 ±   47.234  ns/op
+ * EmailParserTest.javaMailParseSimpleEmail             avgt    5  1678.353 ± 1087.262  ns/op
+ * EmailParserTest.regexParseEmailWithDisplayName       avgt    5  3011.731 ±   99.699  ns/op
+ * EmailParserTest.regexParseSimpleEmail                avgt    5  2611.682 ±  263.736  ns/op
+ * </pre>
+ */
 @RunWith(TestParameterInjector.class)
 public class EmailAddressTest {
   private static final Pattern HTML5_EMAIL_PATTERN =
@@ -280,6 +295,11 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_localPartWithDoubleDot(@TestParameter ParseStrategy parser) {
     parser.assertParsesTo("test..foo@example.com", EmailAddress.of("test..foo", "example.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_domainWithDoubleDot(@TestParameter ParseStrategy parser) {
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("foo@example..com"));
   }
 
   @Test
