@@ -300,20 +300,20 @@ public class EmailAddressTest {
 
   @Test
   public void testEmailAddressParsing_localPartStartsWithDot(@TestParameter ParseStrategy parser) {
-    assume().that(parser).isNoneOf(ParseStrategy.JAKARTA, ParseStrategy.JMAIL);
-    parser.assertParsesTo(".test@example.com", EmailAddress.of(".test", "example.com"));
+    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse(".test@example.com"));
   }
 
   @Test
   public void testEmailAddressParsing_localPartEndsWithDot(@TestParameter ParseStrategy parser) {
-    assume().that(parser).isNoneOf(ParseStrategy.JAKARTA, ParseStrategy.JMAIL);
-    parser.assertParsesTo("test.@example.com", EmailAddress.of("test.", "example.com"));
+    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("test.@example.com"));
   }
 
   @Test
   public void testEmailAddressParsing_localPartWithDoubleDot(@TestParameter ParseStrategy parser) {
-    assume().that(parser).isNoneOf(ParseStrategy.JAKARTA, ParseStrategy.JMAIL);
-    parser.assertParsesTo("test..foo@example.com", EmailAddress.of("test..foo", "example.com"));
+    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("test..foo@example.com"));
   }
 
   @Test
@@ -570,6 +570,7 @@ public class EmailAddressTest {
     JMAIL {
       @Override
       EmailAddress parse(String email) {
+        JMail.validate(email);
         return JMail.tryParse(email)
             .map(result -> {
               EmailAddress address = EmailAddress.of(result.localPart(), result.domain());

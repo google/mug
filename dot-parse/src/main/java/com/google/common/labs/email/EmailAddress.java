@@ -25,6 +25,7 @@ import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.Substring.all;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.net.IDN;
@@ -172,7 +173,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     CharPredicate letterOrDigit = Character::isLetterOrDigit;
     CharPredicate isoControl = Character::isISOControl;
     Parser<String> localPart =
-        consecutive(letterOrDigit.or("!#$%&'*+-/=?^_`{|}~.").precomputeForAscii(), "local part");
+        consecutive(letterOrDigit.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii(), "local part")
+            .atLeastOnceDelimitedBy(".", joining("."));
     Parser<String> domain =
         consecutive(letterOrDigit.or("-.").precomputeForAscii(), "domain label chars");
     Parser<EmailAddress> address =
