@@ -39,10 +39,13 @@ import com.google.mu.util.StringFormat;
 
 /**
  * Represents an email address according to RFC 5322, designed as a modern,
- * type-safe replacement for {@code javax.mail.InternetAddress}.
+ * light-weight alternative API to {@code javax.mail.InternetAddress}.
  *
  * <p>For example: <pre>{@code
- * EmailAddress emailAddress = EmailAddress.parse("john-doe@gmail.com");
+ * EmailAddress address = EmailAddress.parse("J.R.R. Tolkien <tolkien@lotr.org>");
+ * assertThat(address.displayName()).hasValue("J.R.R. Tolkien");
+ * assertThat(address.localPart()).isEqualTo("tolkien");
+ * assertThat(address.domain()).isEqualTo("lotr.org");
  * }</pre>
  *
  * <h3>RFC 5322 Compliance Profile</h3>
@@ -64,8 +67,7 @@ import com.google.mu.util.StringFormat;
  * <table border="1">
  *   <tr><th>Feature</th><th>{@code InternetAddress}</th><th>{@code EmailAddress}</th></tr>
  *   <tr><td><b>Immutability</b></td><td>Mutable pojo</td><td>Immutable {@code record}</td></tr>
- *   <tr><td><b>DNS labels</b></td><td>Permissive (allows illegal hyphens)</td><td>Strict (RFC 1035/1123 63-char limit)</td></tr>
- *   <tr><td><b>Validation</b></td><td>Lazy – need to call {@code validate()}</td><td>Eager – {@code parse()} throws if invalid</td></tr>
+ *   <tr><td><b>DNS labels</b></td><td>Permissive (allows illegal hyphens)</td><td>Rejects {@code wrong-@.com}</td></tr>
  *   <tr><td><b>I18n</b></td><td>Often requires Encoded-Words</td><td>Native BMP support</td></tr>
  * </table>
  *
@@ -80,6 +82,9 @@ import com.google.mu.util.StringFormat;
  *   <li><b>Obsolete Syntax:</b> (RFC 5322 §4) - Legacy syntax like "quoted-pairs" in unquoted names.
  * </ul>
  *
+ * @param displayName the {@code "J.R.R. Tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
+ * @param localPart the {@code "tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
+ * @param domain the {@code "lotr.org"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
  * @since 9.9.4
  */
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
