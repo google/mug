@@ -61,6 +61,8 @@ import com.google.mu.util.StringFormat;
  *       while allowing periods for real-world usability (e.g., "J.R.R. Tolkien").</li>
  *   <li><b>Folding White Space (FWS):</b> Supports optional whitespace
  *       between the display name and the angle-bracketed address.</li>
+ *   <li><b>Address-List:</b> Supports semicolon as separators; allows real-world
+ *       variations like trailing commas, two-commas-in-a-row etc.</li>
  * </ul>
  *
  * <h3>Comparison with {@code javax.mail.InternetAddress}</h3>
@@ -79,7 +81,6 @@ import com.google.mu.util.StringFormat;
  *   <li><b>Quoted Local-Parts:</b> (e.g., {@code "john doe"@domain}) - Deprecated in practice.
  *   <li><b>Comments (CFWS):</b> (e.g., {@code name(comment) <addr>}) - De facto obsolete.
  *   <li><b>Domain Literals:</b> (e.g., {@code user@[192.168.1.1]}) - IP routing is rarely supported.
- *   <li><b>Obsolete Syntax:</b> (RFC 5322 §4) - Legacy syntax like "quoted-pairs" in unquoted names.
  * </ul>
  *
  * @param displayName the {@code "J.R.R. Tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
