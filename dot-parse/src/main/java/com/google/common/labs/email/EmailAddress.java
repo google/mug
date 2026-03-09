@@ -155,7 +155,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * Parses {@code addressList} according to RFC 5322 and returns an immutable list of {@link
    * EmailAddress}.
    *
-   * <p>Both colon ({@code ,}) and semicolon ({@code ;}) are supported as delimiters, with
+   * <p>Both comma ({@code ,}) and semicolon ({@code ;}) are supported as delimiters, with
    * whitespaces ignored. Trailing delimiters are allowed.
    *
    * <p>Empty input will result in an empty list being returned.
