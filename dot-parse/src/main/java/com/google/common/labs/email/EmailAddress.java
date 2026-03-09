@@ -43,9 +43,9 @@ import com.google.mu.util.StringFormat;
  *
  * <p>For example: <pre>{@code
  * EmailAddress address = EmailAddress.parse("J.R.R. Tolkien <tolkien@lotr.org>");
- * assertThat(address.displayName()).hasValue("J.R.R. Tolkien");
- * assertThat(address.localPart()).isEqualTo("tolkien");
- * assertThat(address.domain()).isEqualTo("lotr.org");
+ * // address.displayName() => "J.R.R. Tolkien"
+ * // address.localPart()) => "tolkien"
+ * // address.domain() => "lotr.org"
  * }</pre>
  *
  * <h3>RFC 5322 Compliance Profile</h3>
