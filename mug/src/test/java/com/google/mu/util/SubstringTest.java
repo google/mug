@@ -6,6 +6,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.BEGINNING;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.after;
+import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
@@ -1119,6 +1120,37 @@ public class SubstringTest {
     assertThat(first(Pattern.compile("(a*)(b*)"), 2).in("c").get().toString()).isEmpty();
     assertThat(first(Pattern.compile("(a*)(b*)"), 1).in("aa").get().toString()).isEqualTo("aa");
     assertThat(first(Pattern.compile("(a*)(b*)"), 2).in("aa").get().toString()).isEmpty();
+  }
+
+  @Test public void all_regex_multipleOccurrences() {
+    assertThat(all(Pattern.compile("\\w+")).from("foo > bar = baz"))
+        .containsExactly("foo", "bar", "baz")
+        .inOrder();
+  }
+
+  @Test public void all_regex_oneOccurrence() {
+    assertThat(all(Pattern.compile("\\w+")).from("<foo..>"))
+        .containsExactly("foo")
+        .inOrder();
+  }
+
+  @Test public void all_regex_noOccurrence() {
+    assertThat(all(Pattern.compile("\\w+")).from("<...>")).isEmpty();
+  }
+
+  @Test public void all_regex_withAnchors() {
+    assertThat(all(Pattern.compile("^\\w+")).from("foo.bar/baz"))
+        .containsExactly("foo")
+        .inOrder();
+    assertThat(all(Pattern.compile("\\w+$")).from("foo.bar/baz"))
+        .containsExactly("baz")
+        .inOrder();
+  }
+
+  @Test public void all_regex_withGroups() {
+    assertThat(all(Pattern.compile("(\\w+)")).from("<foo.bar/baz>"))
+        .containsExactly("foo", "bar", "baz")
+        .inOrder();
   }
 
   @Test public void lastSnippet_toString() {

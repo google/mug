@@ -746,6 +746,16 @@ public final class Substring {
   }
 
   /**
+   * Returns a {@link RepeatingPattern} for all occurrences that match {@code pattern} in
+   * the input string. It's equivalent to {@code first(pattern).repeatedly()}.
+   *
+   * @since 9.9.5
+   */
+  public static RepeatingPattern all(java.util.regex.Pattern pattern) {
+    return first(pattern).repeatedly();
+  }
+
+  /**
    * Returns a repeating pattern representing all the top-level groups from {@code regexPattern}.
    * If {@code regexPattern} has no capture group, the entire pattern is considered the only group.
    *
