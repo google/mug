@@ -848,8 +848,8 @@ public final class Substring {
         Matcher matcher = regexPattern.matcher(input);
         if (matcher.find(fromIndex)) {
           int start = matcher.start(group);
-          // Check if the group participated in the match (e.g., not an optional group that didn't match)
           if (start >= 0) {
+            // If the group is optional and didn't participate in the match, don't include.
             return Match.backtrackable(1, input, start, matcher.end(group) - start);
           }
         }
