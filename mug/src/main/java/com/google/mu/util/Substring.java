@@ -2176,9 +2176,8 @@ public final class Substring {
                 Match result = Match.nonBacktrackable(string, next, string.length() - next);
                 next = -1;
                 return result;
-              } else {
-                return null;
               }
+              return null;
             }
           });
     }
@@ -2233,11 +2232,10 @@ public final class Substring {
                   Match result = Match.nonBacktrackable(string, next, delimiter.index() - next);
                   next = delimiter.endIndex;
                   return result;
-                } else {
-                  Match result = Match.nonBacktrackable(string, next, string.length() - next);
-                  next = -1;
-                  return result;
                 }
+                Match result = Match.nonBacktrackable(string, next, string.length() - next);
+                next = -1;
+                return result;
               }
               // should return delimiter
               Match result = delimiter;
