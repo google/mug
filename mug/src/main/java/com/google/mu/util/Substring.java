@@ -736,7 +736,7 @@ public final class Substring {
   }
 
   /**
-   * Returns a {@link RepeatingPattern} that matches all characters that match {@code matcher} in
+   * Returns a {@link RepeatingPattern} for all characters that match {@code matcher} in
    * the input string. It's equivalent to {@code first(matcher).repeatedly()}.
    *
    * @since 8.6
