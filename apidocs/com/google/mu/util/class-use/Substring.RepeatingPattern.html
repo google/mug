@@ -87,7 +87,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color"><code>static <a href="../Substring.RepeatingPattern.html" title="class in com.google.mu.util">Substring.RepeatingPattern</a></code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">Substring.</span><code><a href="../Substring.html#all(com.google.mu.util.CharPredicate)" class="member-name-link">all</a><wbr>(<a href="../CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;matcher)</code></div>
 <div class="col-last odd-row-color">
-<div class="block">Returns a <a href="../Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> that matches all characters that match <code>matcher</code> in
+<div class="block">Returns a <a href="../Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> for all characters that match <code>matcher</code> in
  the input string.</div>
 </div>
 <div class="col-first even-row-color"><code>static <a href="../Substring.RepeatingPattern.html" title="class in com.google.mu.util">Substring.RepeatingPattern</a></code></div>
@@ -96,15 +96,21 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a <a href="../Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> that matches all occurrences of <code>substr</code> in the input
  string.</div>
 </div>
-<div class="col-first odd-row-color"><code><a href="../Substring.RepeatingPattern.html" title="class in com.google.mu.util">Substring.RepeatingPattern</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">Substring.Pattern.</span><code><a href="../Substring.Pattern.html#repeatedly()" class="member-name-link">repeatedly</a>()</code></div>
+<div class="col-first odd-row-color"><code>static <a href="../Substring.RepeatingPattern.html" title="class in com.google.mu.util">Substring.RepeatingPattern</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">Substring.</span><code><a href="../Substring.html#all(java.util.regex.Pattern)" class="member-name-link">all</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/regex/Pattern.html" title="class or interface in java.util.regex" class="external-link">Pattern</a>&nbsp;pattern)</code></div>
 <div class="col-last odd-row-color">
+<div class="block">Returns a <a href="../Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> for all occurrences that match <code>pattern</code> in
+ the input string.</div>
+</div>
+<div class="col-first even-row-color"><code><a href="../Substring.RepeatingPattern.html" title="class in com.google.mu.util">Substring.RepeatingPattern</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">Substring.Pattern.</span><code><a href="../Substring.Pattern.html#repeatedly()" class="member-name-link">repeatedly</a>()</code></div>
+<div class="col-last even-row-color">
 <div class="block">Returns a <a href="../Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> that applies this pattern repeatedly against the input
  string.</div>
 </div>
-<div class="col-first even-row-color"><code>static <a href="../Substring.RepeatingPattern.html" title="class in com.google.mu.util">Substring.RepeatingPattern</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">Substring.</span><code><a href="../Substring.html#topLevelGroups(java.util.regex.Pattern)" class="member-name-link">topLevelGroups</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/regex/Pattern.html" title="class or interface in java.util.regex" class="external-link">Pattern</a>&nbsp;regexPattern)</code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>static <a href="../Substring.RepeatingPattern.html" title="class in com.google.mu.util">Substring.RepeatingPattern</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">Substring.</span><code><a href="../Substring.html#topLevelGroups(java.util.regex.Pattern)" class="member-name-link">topLevelGroups</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/regex/Pattern.html" title="class or interface in java.util.regex" class="external-link">Pattern</a>&nbsp;regexPattern)</code></div>
+<div class="col-last odd-row-color">
 <div class="block">Returns a repeating pattern representing all the top-level groups from <code>regexPattern</code>.</div>
 </div>
 </div>
