@@ -621,9 +621,7 @@ public final class Substring {
       @Override Match match(String input, int fromIndex) {
         int len = 0;
         for (int i = fromIndex; i < input.length(); i++, len++) {
-          if (!matcher.test(input.charAt(i))) {
-            break;
-          }
+          if (!matcher.test(input.charAt(i))) break;
         }
         return len == 0 ? null : Match.nonBacktrackable(input, fromIndex, len);
       }
@@ -648,9 +646,7 @@ public final class Substring {
       @Override Match match(String input, int fromIndex) {
         int len = 0;
         for (int i = input.length() - 1; i >= fromIndex; i--, len++) {
-          if (!matcher.test(input.charAt(i))) {
-            break;
-          }
+          if (!matcher.test(input.charAt(i))) break;
         }
         return len == 0 ? null : Match.suffix(input, len);
       }
@@ -696,9 +692,7 @@ public final class Substring {
           if (matcher.test(input.charAt(i))) {
             int len = 1;
             for (int j = i + 1; j < end; j++, len++) {
-              if (!matcher.test(input.charAt(j))) {
-                break;
-              }
+              if (!matcher.test(input.charAt(j))) break;
             }
             return Match.backtrackable(len, input, i, len);
           }
@@ -777,39 +771,32 @@ public final class Substring {
     requireNonNull(regexPattern);
     return new RepeatingPattern() {
       @Override public Stream<Match> match(String input, int fromIndex) {
-        if (fromIndex > input.length()) {
-          return Stream.empty();
-        }
+        if (fromIndex > input.length()) return Stream.empty();
         Matcher matcher = regexPattern.matcher(input);
-        if (!matcher.find(fromIndex)) {
-          return Stream.empty();
-        }
+        if (!matcher.find(fromIndex)) return Stream.empty();
         int groups = matcher.groupCount();
         if (groups == 0) {
           return Stream.of(
               Match.backtrackable(1, input, matcher.start(), matcher.end() - matcher.start()));
-        } else {
-          return MoreStreams.whileNotNull(new Supplier<Match>() {
-            private int next = fromIndex;
-            private int g = 1;
-
-            @Override public Match get() {
-              for (; g <= groups; g++) {
-                // Skip groups that didn't participate in the match (e.g., optional groups)
-                if (matcher.group(g) == null) {
-                  continue;
-                }
-                int start = matcher.start(g);
-                int end = matcher.end(g);
-                if (start >= next) {
-                  next = end;
-                  return Match.backtrackable(1, input, start, end - start);
-                }
-              }
-              return null;
-            }
-          });
         }
+        return MoreStreams.whileNotNull(new Supplier<Match>() {
+          private int next = fromIndex;
+          private int g = 1;
+
+          @Override public Match get() {
+            for (; g <= groups; g++) {
+              // Skip groups that didn't participate in the match (e.g., optional groups)
+              if (matcher.group(g) == null) continue;
+              int start = matcher.start(g);
+              int end = matcher.end(g);
+              if (start >= next) {
+                next = end;
+                return Match.backtrackable(1, input, start, end - start);
+              }
+            }
+            return null;
+          }
+        });
       }
 
       @Override public String toString() {
@@ -842,9 +829,7 @@ public final class Substring {
     }
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
-        if (fromIndex > input.length()) {
-          return null;
-        }
+        if (fromIndex > input.length()) return null;
         Matcher matcher = regexPattern.matcher(input);
         for (int i = fromIndex; matcher.find(i); i = matcher.end()) {
           int start = matcher.start(group);
@@ -852,9 +837,7 @@ public final class Substring {
             // If the group is optional and didn't participate in the match, don't include.
             return Match.backtrackable(1, input, start, matcher.end(group) - start);
           }
-          if (i >= matcher.end()) {  // guard against infinite loop
-            break;
-          }
+          if (i >= matcher.end()) break;  // guard against infinite loop
         }
         return null;
       }
@@ -940,12 +923,8 @@ public final class Substring {
               Match best = null;
               for (Pattern candidate : candidates) {
                 Match match = candidate.match(input, fromIndex);
-                if (match == null) {
-                  continue;
-                }
-                if (match.index() == fromIndex) { // First occurrence for sure.
-                  return match;
-                }
+                if (match == null) continue;
+                if (match.index() == fromIndex) return match; // First occurrence for sure.
                 if (best == null || match.index() < best.index()) {
                   best = match;
                 }
@@ -966,9 +945,7 @@ public final class Substring {
               return MoreStreams.whileNotNull(
                   () -> {
                     final Occurrence occurrence = occurrences.poll();
-                    if (occurrence == null) {
-                      return null;
-                    }
+                    if (occurrence == null) return null;
                     final Match match = occurrence.match;
 
                     // For allOccurrencesOf([before(first('/')), first('/')]) against input = "foo/bar",
@@ -981,9 +958,7 @@ public final class Substring {
                     }
                     for (final int waterMark = match.endIndex; ;) {
                       Occurrence nextInLine = occurrences.peek();
-                      if (nextInLine == null || nextInLine.match.index() >= waterMark) {
-                        return match;
-                      }
+                      if (nextInLine == null || nextInLine.match.index() >= waterMark) return match;
                       occurrences.remove().enqueueNextOccurrence(input, waterMark, occurrences);
                     }
                   });
@@ -1062,9 +1037,7 @@ public final class Substring {
 
   /** Returns a {@code Pattern} that matches the last occurrence of {@code str}. */
   public static Pattern last(String str) {
-    if (str.length() == 1) {
-      return last(str.charAt(0));
-    }
+    if (str.length() == 1) return last(str.charAt(0));
     return new Last() {
       @Override Match match(String input, int fromIndex, int endIndex) {
         int index = str.isEmpty() ? endIndex : input.lastIndexOf(str, endIndex - 1);
@@ -1262,13 +1235,9 @@ public final class Substring {
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
         Match left = open.match(input, fromIndex);
-        if (left == null) {
-          return null;
-        }
+        if (left == null) return null;
         Match right = close.match(input, left.endIndex);
-        if (right == null) {
-          return null;
-        }
+        if (right == null) return null;
         int startIndex = openBound == BoundStyle.INCLUSIVE ? left.startIndex : left.endIndex;
         int len = (closeBound == BoundStyle.INCLUSIVE ? right.endIndex : right.startIndex) - startIndex;
         // Include the closing delimiter in the next iteration. This allows delimiters in
@@ -1522,13 +1491,9 @@ public final class Substring {
       return new Pattern() {
         @Override Match match(String input, int fromIndex) {
           Match preceding = base.match(input, fromIndex);
-          if (preceding == null) {
-            return null;
-          }
+          if (preceding == null) return null;
           Match next = following.match(input, preceding.endIndex);
-          if (next == null) {
-            return null;
-          }
+          if (next == null) return null;
           // Keep the repetitionStartIndex strictly increasing to avoid the next iteration
           // in repeatedly() to be stuck with no progress.
           return next.repetitionStartIndex < preceding.repetitionStartIndex
@@ -1589,9 +1554,7 @@ public final class Substring {
       return new Pattern() {
         @Override Match match(String input, int fromIndex) {
           Match preceding = base.match(input, fromIndex);
-          if (preceding == null) {
-            return null;
-          }
+          if (preceding == null) return null;
           return following.match(input, preceding.endIndex) == null ? null : preceding;
         }
 
@@ -1644,9 +1607,7 @@ public final class Substring {
               continue; // The current position cannot possibly be the beginning of match.
             }
             Match match = target.match(input, fromIndex);
-            if (match == null) {
-              return null;
-            }
+            if (match == null) return null;
             if (match.startIndex == fromIndex // Already checked boundaryBefore
                 || separatorBefore.test(input.charAt(match.startIndex - 1))) {
               int boundaryIndex = match.endIndex;
@@ -1709,9 +1670,7 @@ public final class Substring {
       Pattern withLookaround = lookaround(lookbehind, lookahead);
       int behind = requireNonNull(lookbehindBound) == BoundStyle.INCLUSIVE ? lookbehind.length() : 0;
       int ahead = requireNonNull(lookaheadBound) == BoundStyle.INCLUSIVE ? lookahead.length() : 0;
-      if (behind == 0 && ahead == 0) {
-        return withLookaround;
-      }
+      if (behind == 0 && ahead == 0) return withLookaround;
       Pattern original = this;
       return new Pattern() {
         @Override
@@ -1849,13 +1808,9 @@ public final class Substring {
       return new Pattern() {
         @Override Match match(String input, int fromIndex) {
           Match preceding = base.match(input, fromIndex);
-          if (preceding == null) {
-            return null;
-          }
+          if (preceding == null) return null;
           Match next = following.match(input, preceding.endIndex);
-          if (next == null) {
-            return null;
-          }
+          if (next == null) return null;
           return new Match(
               input,
               preceding.startIndex,
@@ -2022,13 +1977,9 @@ public final class Substring {
             private int nextIndex = fromIndex;
 
             @Override public Match get() {
-              if (nextIndex > end) {
-                return null;
-              }
+              if (nextIndex > end) return null;
               Match match = match(input, nextIndex);
-              if (match == null) {
-                return null;
-              }
+              if (match == null) return null;
               if (match.endIndex == end) { // We've consumed the entire string.
                 nextIndex = Integer.MAX_VALUE;
               } else if (match.repetitionStartIndex > nextIndex) {
@@ -2179,9 +2130,7 @@ public final class Substring {
         String string, Function<? super Match, ? extends CharSequence> replacementFunction) {
       requireNonNull(replacementFunction);
       Iterator<Match> matches = match(string).iterator();
-      if (!matches.hasNext()) {
-        return string;
-      }
+      if (!matches.hasNext()) return string;
       // Add the chars between the previous and current match.
       StringBuilder builder = new StringBuilder(string.length());
       int index = 0;
@@ -2277,9 +2226,7 @@ public final class Substring {
 
             @Override
             public Match get() {
-              if (next == -1) {
-                return null;
-              }
+              if (next == -1) return null;
               if (delimiter == null) { // Should return the substring before the next delimiter.
                 if (delimiters.hasNext()) {
                   delimiter = delimiters.next();
@@ -2472,18 +2419,12 @@ public final class Substring {
      * @since 5.7
      */
     public boolean isIn(CharSequence source) {
-      if (source instanceof String) {
-        return ((String) source).startsWith(prefix);
-      }
+      if (source instanceof String) return ((String) source).startsWith(prefix);
       int prefixChars = prefix.length();
       int existingChars = source.length();
-      if (existingChars < prefixChars) {
-        return false;
-      }
+      if (existingChars < prefixChars) return false;
       for (int i = 0; i < prefixChars; i++) {
-        if (prefix.charAt(i) != source.charAt(i)) {
-          return false;
-        }
+        if (prefix.charAt(i) != source.charAt(i)) return false;
       }
       return true;
     }
@@ -2519,9 +2460,7 @@ public final class Substring {
      * @since 6.5
      */
     public CharSequence hideFrom(String source) {
-      if (length() == 0) {
-        return requireNonNull(source);
-      }
+      if (length() == 0) return requireNonNull(source);
       Match match = match(source, 0);
       return match == null ? source : match.following();
     }
@@ -2625,18 +2564,12 @@ public final class Substring {
      * @since 5.7
      */
     public boolean isIn(CharSequence source) {
-      if (source instanceof String) {
-        return ((String) source).endsWith(suffix);
-      }
+      if (source instanceof String) return ((String) source).endsWith(suffix);
       int suffixChars = suffix.length();
       int existingChars = source.length();
-      if (existingChars < suffixChars) {
-        return false;
-      }
+      if (existingChars < suffixChars) return false;
       for (int i = 1; i <= suffixChars; i++) {
-        if (suffix.charAt(suffixChars - i) != source.charAt(existingChars - i)) {
-          return false;
-        }
+        if (suffix.charAt(suffixChars - i) != source.charAt(existingChars - i)) return false;
       }
       return true;
     }
@@ -2686,9 +2619,7 @@ public final class Substring {
      * @since 6.5
      */
     public CharSequence hideFrom(String source) {
-      if (length() == 0) {
-        return requireNonNull(source);
-      }
+      if (length() == 0) return requireNonNull(source);
       Match match = match(source, 0);
       return match == null ? source : match.preceding();
     }
@@ -2849,13 +2780,8 @@ public final class Substring {
      */
     public String remove() {
       // Minimize string concatenation.
-      if (endIndex == context.length()) {
-        return before();
-      } else if (startIndex == 0) {
-        return after();
-      } else {
-        return before() + after();
-      }
+      if (endIndex == context.length()) return before();
+      return startIndex == 0  ? after() : before() + after();
     }
 
     /**
@@ -3161,9 +3087,7 @@ public final class Substring {
         @Override Match match(String input, int fromIndex, int endIndex) {
           for (int i = endIndex; i >= fromIndex; ) {
             Match match = original.match(input, fromIndex, i);
-            if (match == null || condition.test(match)) {
-              return match;
-            }
+            if (match == null || condition.test(match)) return match;
             i = min(match.endIndex - 1, i - 1);
           }
           return null;
