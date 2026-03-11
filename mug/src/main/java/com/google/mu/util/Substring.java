@@ -852,6 +852,9 @@ public final class Substring {
             // If the group is optional and didn't participate in the match, don't include.
             return Match.backtrackable(1, input, start, matcher.end(group) - start);
           }
+          if (i >= matcher.end()) {  // guard against infinite loop
+            break;
+          }
         }
         return null;
       }

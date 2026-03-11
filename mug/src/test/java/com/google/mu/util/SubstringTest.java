@@ -1130,10 +1130,26 @@ public class SubstringTest {
     // Pattern with * quantifier that can match zero times
     // a*b* - both can match zero times (but still participate)
     // When pattern matches but group is empty, it should still return a match
-    assertThat(first(Pattern.compile("(a*)(b*)"), 1).in("c").get().toString()).isEmpty();
-    assertThat(first(Pattern.compile("(a*)(b*)"), 2).in("c").get().toString()).isEmpty();
-    assertThat(first(Pattern.compile("(a*)(b*)"), 1).in("aa").get().toString()).isEqualTo("aa");
-    assertThat(first(Pattern.compile("(a*)(b*)"), 2).in("aa").get().toString()).isEmpty();
+    assertThat(first(Pattern.compile("(a*)(b*)"), 1).from("c")).hasValue("");
+    assertThat(first(Pattern.compile("(a*)(b*)"), 2).from("c")).hasValue("");
+    assertThat(first(Pattern.compile("(a*)(b*)"), 1).from("aa")).hasValue("aa");
+    assertThat(first(Pattern.compile("(a*)(b*)"), 2).from("aa")).hasValue("");
+  }
+
+  @Test public void all_regexGroup_zeroLengthMatch() {
+    // Pattern with * quantifier that can match zero times
+    // a*b* - both can match zero times (but still participate)
+    // When pattern matches but group is empty, it should still return a match
+    assertThat(first(Pattern.compile("(a*)(b*)"), 1).repeatedly().from("c"))
+        .containsExactly("", "");
+  }
+
+  @Test public void all_regexGroup_optionalGroup_zeroLengthMatch() {
+    // Pattern with * quantifier that can match zero times
+    // a*b* - both can match zero times (but still participate)
+    // When pattern matches but group is empty, it should still return a match
+    assertThat(first(Pattern.compile("((a)?)"), 2).repeatedly().from("c"))
+        .isEmpty();
   }
 
   @Test public void all_regex_multipleOccurrences() {
