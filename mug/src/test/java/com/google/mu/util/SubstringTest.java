@@ -1145,6 +1145,9 @@ public class SubstringTest {
     assertThat(all(Pattern.compile("\\w+$")).from("foo.bar/baz"))
         .containsExactly("baz")
         .inOrder();
+    assertThat(all(Pattern.compile("\\b\\w+\\b")).from("foo.bar/baz"))
+        .containsExactly("foo", "bar", "baz")
+        .inOrder();
   }
 
   @Test public void all_regex_withGroups() {
