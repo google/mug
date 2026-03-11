@@ -846,7 +846,7 @@ public final class Substring {
           return null;
         }
         Matcher matcher = regexPattern.matcher(input);
-        if (matcher.find(fromIndex)) {
+        for (int i = fromIndex; matcher.find(i); i = matcher.end()) {
           int start = matcher.start(group);
           if (start >= 0) {
             // If the group is optional and didn't participate in the match, don't include.
