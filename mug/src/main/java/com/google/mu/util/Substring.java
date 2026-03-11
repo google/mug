@@ -466,7 +466,9 @@ public final class Substring {
 
   /** Returns a {@code Pattern} that matches the first occurrence of {@code str}. */
   public static Pattern first(String str) {
-    if (str.length() == 1) return first(str.charAt(0));
+    if (str.length() == 1) {
+      return first(str.charAt(0));
+    }
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
         int index = input.indexOf(str, fromIndex);
@@ -956,7 +958,9 @@ public final class Substring {
                     }
                     for (final int waterMark = match.endIndex; ;) {
                       Occurrence nextInLine = occurrences.peek();
-                      if (nextInLine == null || nextInLine.match.index() >= waterMark) return match;
+                      if (nextInLine == null || nextInLine.match.index() >= waterMark) {
+                        return match;
+                      }
                       occurrences.remove().enqueueNextOccurrence(input, waterMark, occurrences);
                     }
                   });
@@ -1035,7 +1039,9 @@ public final class Substring {
 
   /** Returns a {@code Pattern} that matches the last occurrence of {@code str}. */
   public static Pattern last(String str) {
-    if (str.length() == 1) return last(str.charAt(0));
+    if (str.length() == 1) {
+      return last(str.charAt(0));
+    }
     return new Last() {
       @Override Match match(String input, int fromIndex, int endIndex) {
         int index = str.isEmpty() ? endIndex : input.lastIndexOf(str, endIndex - 1);
@@ -2415,7 +2421,9 @@ public final class Substring {
      * @since 5.7
      */
     public boolean isIn(CharSequence source) {
-      if (source instanceof String) return ((String) source).startsWith(prefix);
+      if (source instanceof String) {
+        return ((String) source).startsWith(prefix);
+      }
       int prefixChars = prefix.length();
       int existingChars = source.length();
       if (existingChars < prefixChars) return false;
@@ -2560,12 +2568,16 @@ public final class Substring {
      * @since 5.7
      */
     public boolean isIn(CharSequence source) {
-      if (source instanceof String) return ((String) source).endsWith(suffix);
+      if (source instanceof String) {
+        return ((String) source).endsWith(suffix);
+      }
       int suffixChars = suffix.length();
       int existingChars = source.length();
       if (existingChars < suffixChars) return false;
       for (int i = 1; i <= suffixChars; i++) {
-        if (suffix.charAt(suffixChars - i) != source.charAt(existingChars - i)) return false;
+        if (suffix.charAt(suffixChars - i) != source.charAt(existingChars - i)) {
+          return false;
+        }
       }
       return true;
     }
@@ -3083,7 +3095,9 @@ public final class Substring {
         @Override Match match(String input, int fromIndex, int endIndex) {
           for (int i = endIndex; i >= fromIndex; ) {
             Match match = original.match(input, fromIndex, i);
-            if (match == null || condition.test(match)) return match;
+            if (match == null || condition.test(match)) {
+              return match;
+            }
             i = min(match.endIndex - 1, i - 1);
           }
           return null;
