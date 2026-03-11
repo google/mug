@@ -847,12 +847,11 @@ public final class Substring {
         }
         Matcher matcher = regexPattern.matcher(input);
         if (matcher.find(fromIndex)) {
-          // Check if the group participated in the match (e.g., not an optional group that didn't match)
-          if (matcher.group(group) == null) {
-            return null;
-          }
           int start = matcher.start(group);
-          return Match.backtrackable(1, input, start, matcher.end(group) - start);
+          // Check if the group participated in the match (e.g., not an optional group that didn't match)
+          if (start >= 0) {
+            return Match.backtrackable(1, input, start, matcher.end(group) - start);
+          }
         }
         return null;
       }
