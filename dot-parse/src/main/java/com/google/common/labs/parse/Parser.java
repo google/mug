@@ -144,13 +144,12 @@ public abstract class Parser<T> {
 
   private static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
     requireNonNull(name);
-    CharPredicate precomputed = matcher.precomputeForAscii();
     return new Parser<>() {
       @Override MatchResult<Void> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         int end = start;
-        for (; input.isInRange(end) && precomputed.test(input.charAt(end)); end++) {}
+        for (; input.isInRange(end) && matcher.test(input.charAt(end)); end++) {}
         return end > start
             ? new MatchResult.Success<>(start, end, null)
             : context.expecting(name, end);
