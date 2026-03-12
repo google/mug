@@ -1337,6 +1337,84 @@ public class ParserTest {
   }
 
   @Test
+  public void sequence3_success() {
+    Parser<String> parser = sequence(string("a"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+    assertThat(parser.matches("abc")).isTrue();
+    assertThat(parser.parseToStream("abc")).containsExactly("abc");
+    assertThat(parser.probe("abc")).containsExactly("abc");
+    assertThat(parser.parseToStream("")).isEmpty();
+    assertThat(parser.probe("")).isEmpty();
+  }
+
+  @Test
+  public void sequence3_success_source() {
+    Parser<String> parser = sequence(string("a"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(parser.source().parse("abc")).isEqualTo("abc");
+    assertThat(parser.source().matches("abc")).isTrue();
+    assertThat(parser.source().parseToStream("abc")).containsExactly("abc");
+    assertThat(parser.source().probe("abc")).containsExactly("abc");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+    assertThat(parser.source().probe("")).isEmpty();
+  }
+
+  @Test
+  public void sequence3_failure() {
+    Parser<String> parser = sequence(string("a"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThrows(ParseException.class, () -> parser.parse("xbc"));
+    assertThrows(ParseException.class, () -> parser.parse("axc"));
+    assertThrows(ParseException.class, () -> parser.parse("abx"));
+    assertThat(parser.matches("xbc")).isFalse();
+    assertThat(parser.matches("axc")).isFalse();
+    assertThat(parser.matches("abx")).isFalse();
+    assertThat(parser.probe("xbc")).isEmpty();
+    assertThat(parser.probe("axc")).isEmpty();
+    assertThat(parser.probe("abx")).isEmpty();
+  }
+
+  @Test
+  public void sequence4_success() {
+    Parser<String> parser =
+        sequence(string("a"), string("b"), string("c"), string("d"), (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.parse("abcd")).isEqualTo("abcd");
+    assertThat(parser.matches("abcd")).isTrue();
+    assertThat(parser.parseToStream("abcd")).containsExactly("abcd");
+    assertThat(parser.probe("abcd")).containsExactly("abcd");
+    assertThat(parser.parseToStream("")).isEmpty();
+    assertThat(parser.probe("")).isEmpty();
+  }
+
+  @Test
+  public void sequence4_success_source() {
+    Parser<String> parser =
+        sequence(string("a"), string("b"), string("c"), string("d"), (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.source().parse("abcd")).isEqualTo("abcd");
+    assertThat(parser.source().matches("abcd")).isTrue();
+    assertThat(parser.source().parseToStream("abcd")).containsExactly("abcd");
+    assertThat(parser.source().probe("abcd")).containsExactly("abcd");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+    assertThat(parser.source().probe("")).isEmpty();
+  }
+
+  @Test
+  public void sequence4_failure() {
+    Parser<String> parser =
+        sequence(string("a"), string("b"), string("c"), string("d"), (a, b, c, d) -> a + b + c + d);
+    assertThrows(ParseException.class, () -> parser.parse("xbcd"));
+    assertThrows(ParseException.class, () -> parser.parse("axcd"));
+    assertThrows(ParseException.class, () -> parser.parse("abxd"));
+    assertThrows(ParseException.class, () -> parser.parse("abcx"));
+    assertThat(parser.matches("xbcd")).isFalse();
+    assertThat(parser.matches("axcd")).isFalse();
+    assertThat(parser.matches("abxd")).isFalse();
+    assertThat(parser.matches("abcx")).isFalse();
+    assertThat(parser.probe("xbcd")).isEmpty();
+    assertThat(parser.probe("axcd")).isEmpty();
+    assertThat(parser.probe("abxd")).isEmpty();
+    assertThat(parser.probe("abcx")).isEmpty();
+  }
+
+  @Test
   public void orEmpty_delimitedBy_bothSides() {
     assertThat(word().orElse("").delimitedBy(",").parse("foo,bar"))
         .containsExactly("foo", "bar")
