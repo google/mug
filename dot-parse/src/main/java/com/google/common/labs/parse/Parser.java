@@ -143,6 +143,7 @@ public abstract class Parser<T> {
   }
 
   private static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
+    requireNonNull(matcher);
     requireNonNull(name);
     return new Parser<>() {
       @Override MatchResult<Void> skipAndMatch(
@@ -1273,7 +1274,8 @@ public abstract class Parser<T> {
    * @since 9.9.5
    */
   public final boolean isPrefixOf(String input) {
-    return probe(input).findFirst().isPresent();
+    CharInput charInput = CharInput.from(input);
+    return match(charInput, 0, new ErrorContext(charInput)) instanceof MatchResult.Success;
   }
 
   /**
