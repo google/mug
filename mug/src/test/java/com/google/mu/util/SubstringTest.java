@@ -1058,13 +1058,13 @@ public class SubstringTest {
     // Input: "b" - group 1 doesn't participate, should return empty Optional
     assertThat(first(Pattern.compile("(a)?(b)"), 1).in("b")).isEmpty();
     // Group 2 still participates
-    assertThat(first(Pattern.compile("(a)?(b)"), 2).in("b").get().toString()).isEqualTo("b");
+    assertThat(first(Pattern.compile("(a)?(b)"), 2).in("b").map(Match::index)).hasValue(0);
   }
 
   @Test public void regexGroup_optionalGroupParticipates() {
     // When optional group does participate
-    assertThat(first(Pattern.compile("(a)?(b)"), 1).in("ab").get().toString()).isEqualTo("a");
-    assertThat(first(Pattern.compile("(a)?(b)"), 2).in("ab").get().toString()).isEqualTo("b");
+    assertThat(first(Pattern.compile("(a)?(b)"), 1).in("ab").map(Match::index)).hasValue(0);
+    assertThat(first(Pattern.compile("(a)?(b)"), 2).in("ab").map(Match::index)).hasValue(1);
   }
 
   @Test public void regexGroup_optionalGroupNotParticipating_repeatedly() {
@@ -1089,13 +1089,16 @@ public class SubstringTest {
   @Test public void regexGroup_multipleOptionalGroups() {
     // Pattern: (a)?(b)?(c) - two optional groups
     // Only group 3 participates
-    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 1).in("c")).isEmpty();
-    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 2).in("c")).isEmpty();
-    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 3).in("c").get().toString()).isEqualTo("c");
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 1).from("c")).isEmpty();
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 2).from("c")).isEmpty();
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 3).in("c").map(Match::index))
+        .hasValue(0);
     // Groups 1 and 3 participate, group 2 doesn't
-    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 1).in("ac").get().toString()).isEqualTo("a");
-    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 2).in("ac")).isEmpty();
-    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 3).in("ac").get().toString()).isEqualTo("c");
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 1).in("ac").map(Match::index))
+        .hasValue(0);
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 2).from("ac")).isEmpty();
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 3).in("ac").map(Match::index))
+        .hasValue(1);
   }
 
   @Test public void regexGroup_nestedOptionalGroups() {
@@ -1107,19 +1110,46 @@ public class SubstringTest {
   @Test public void regexGroup_alternationWithOptionalGroup() {
     // Pattern: (a)?b|c - group 1 is optional in first alternative
     assertThat(first(Pattern.compile("(a)?b|c"), 1).in("b")).isEmpty();
-    assertThat(first(Pattern.compile("(a)?b|c"), 1).in("ab").get().toString()).isEqualTo("a");
+    assertThat(first(Pattern.compile("(a)?b|c"), 1).in("ab").map(Match::index)).hasValue(0);
     // "c" matches second alternative, group 1 doesn't participate
     assertThat(first(Pattern.compile("(a)?b|c"), 1).in("c")).isEmpty();
+  }
+
+  @Test public void regexGroup_secondMatchHasOptionalGroup() {
+    assertThat(first(Pattern.compile("(a)?b|c"), 1).in("bab").map(Match::index))
+        .hasValue(1);
+  }
+
+  @Test public void all_regexGroup_secondAndFourthMatchHasOptionalGroup() {
+    assertThat(first(Pattern.compile("(a)?(b|c)"), 1).repeatedly().match("babcac").map(Match::index))
+        .containsExactly(1, 4)
+        .inOrder();
   }
 
   @Test public void regexGroup_zeroLengthMatch() {
     // Pattern with * quantifier that can match zero times
     // a*b* - both can match zero times (but still participate)
     // When pattern matches but group is empty, it should still return a match
-    assertThat(first(Pattern.compile("(a*)(b*)"), 1).in("c").get().toString()).isEmpty();
-    assertThat(first(Pattern.compile("(a*)(b*)"), 2).in("c").get().toString()).isEmpty();
-    assertThat(first(Pattern.compile("(a*)(b*)"), 1).in("aa").get().toString()).isEqualTo("aa");
-    assertThat(first(Pattern.compile("(a*)(b*)"), 2).in("aa").get().toString()).isEmpty();
+    assertThat(first(Pattern.compile("(a*)(b*)"), 1).from("c")).hasValue("");
+    assertThat(first(Pattern.compile("(a*)(b*)"), 2).from("c")).hasValue("");
+    assertThat(first(Pattern.compile("(a*)(b*)"), 1).from("aa")).hasValue("aa");
+    assertThat(first(Pattern.compile("(a*)(b*)"), 2).from("aa")).hasValue("");
+  }
+
+  @Test public void all_regexGroup_zeroLengthMatch() {
+    // Pattern with * quantifier that can match zero times
+    // a*b* - both can match zero times (but still participate)
+    // When pattern matches but group is empty, it should still return a match
+    assertThat(first(Pattern.compile("(a*)(b*)"), 1).repeatedly().from("c"))
+        .containsExactly("", "");
+  }
+
+  @Test public void all_regexGroup_optionalGroup_zeroLengthMatch() {
+    // Pattern with * quantifier that can match zero times
+    // a*b* - both can match zero times (but still participate)
+    // When pattern matches but group is empty, it should still return a match
+    assertThat(first(Pattern.compile("((a)?)"), 2).repeatedly().from("c"))
+        .isEmpty();
   }
 
   @Test public void all_regex_multipleOccurrences() {

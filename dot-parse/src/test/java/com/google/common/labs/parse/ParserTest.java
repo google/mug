@@ -4596,6 +4596,29 @@ public class ParserTest {
   }
 
   @Test
+  public void isPrefixOf_matchesPrefix() {
+    assertThat(Parser.string("a").isPrefixOf("a")).isTrue();
+    assertThat(Parser.string("a").isPrefixOf("ab")).isTrue();
+    assertThat(Parser.string("b").isPrefixOf("ab")).isFalse();
+    assertThat(Parser.string("a").isPrefixOf("")).isFalse();
+  }
+
+  @Test
+  public void isPrefixOf_emptyString() {
+    assertThat(Parser.string("a").isPrefixOf("")).isFalse();
+  }
+
+  @Test
+  public void isPrefixOf_exactMatch() {
+    assertThat(Parser.string("abc").isPrefixOf("abc")).isTrue();
+  }
+
+  @Test
+  public void isPrefixOf_notAPrefix() {
+    assertThat(Parser.string("abc").isPrefixOf("ab")).isFalse();
+  }
+
+  @Test
   public void skipping_probeCharPredicate_emptyInput_returnsEmpty() {
     assertThat(string("foo").skipping(Character::isWhitespace).probe(" ")).isEmpty();
   }

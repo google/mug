@@ -1269,6 +1269,15 @@ public abstract class Parser<T> {
   }
 
   /**
+   * Returns true if this parser represents a non-empty prefix of the given {@code input}.
+   *
+   * @since 9.9.5
+   */
+  public final boolean isPrefixOf(String input) {
+    return probe(input).findFirst().isPresent();
+  }
+
+  /**
    * Returns true if this parser matches the entirety of the {@code input}. It's similar to the
    * regex {@code Matcher.matches(String)} method.
    *
