@@ -9,7 +9,7 @@
   <name>Concurrency Testing Utils</name>
 
   <properties>
-    <module.name>concurrent.testing</module.name>
+    <module.name>concurrenttesting</module.name>
   </properties>
   
   <build>
