@@ -3,7 +3,8 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>9.9.5-SNAPSHOT</version>
+    <version>9.9.7-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-safesql-java16tests</artifactId>
   <packaging>jar</packaging>

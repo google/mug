@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>9.9.5-SNAPSHOT</version>
+    <version>9.9.7-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-safesql</artifactId>
@@ -13,6 +13,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <module.name>safesq1</module.name>
     <maven.compiler.parameters>true</maven.compiler.parameters>
+    <!-- Reproducible builds: fixed timestamp for build artifacts -->
+    <project.build.outputTimestamp>2026-03-14T06:28:36Z</project.build.outputTimestamp>
   </properties>
   <build>
     <pluginManagement>
