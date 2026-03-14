@@ -6,7 +6,7 @@
 
   <groupId>com.google.mug</groupId>
   <artifactId>mug-bom</artifactId>
-  <version>9.9.5-SNAPSHOT</version>
+  <version>9.9.7-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Mug Bill of Materials</name>
