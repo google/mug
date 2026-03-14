@@ -270,13 +270,6 @@ public final class Happenstance<K> {
   }
 
   @FormatMethod
-  private static void checkArgument(boolean condition, String message, Object... args) {
-    if (!condition) {
-      throw new IllegalArgumentException(String.format(message, args));
-    }
-  }
-
-  @FormatMethod
   private static void checkArgument(boolean condition, String message, Object arg) {
     if (!condition) {
       throw new IllegalArgumentException(String.format(message, arg));
