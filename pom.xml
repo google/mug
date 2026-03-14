@@ -34,7 +34,6 @@
     <url>http://github.com/google/mug</url>
     <connection>scm:git:git@github.com:google/mug.git</connection>
     <developerConnection>scm:git:git@github.com:google/mug.git</developerConnection>
-    <tag>mug-root-1.0</tag>
   </scm>
 
   <developers>

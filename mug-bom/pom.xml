@@ -128,6 +128,9 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
             <version>3.2.8</version>
+            <configuration>
+              <arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
+            </configuration>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -135,9 +138,6 @@
                 <goals>
                   <goal>sign</goal>
                 </goals>
-                <configuration>
-                  <arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
-                </configuration>
               </execution>
             </executions>
           </plugin>
