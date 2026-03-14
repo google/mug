@@ -159,6 +159,8 @@ loadScripts(document, 'script');</script>
  <code>sequence("A", "B", "C")</code> specifies that sequence points "A", "B", and "C" must
  be completed in that order ("A" before "B", and "B" before "C").
 
+ <p>NOTE that no order is implied across subsequent <code>sequence()</code> calls.
+
  <p>This method should be called to define all sequence point orders before <a href="#build()"><code>build()</code></a> is
  called.</div>
 <dl class="notes">
