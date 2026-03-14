@@ -179,7 +179,6 @@
           <version>3.2.0</version>
           <configuration>
             <arguments>-pl !mug-safesql-java16tests</arguments>
-            <projectBuildOutputTimestampPolicy>always</projectBuildOutputTimestampPolicy>
             <autoVersionSubmodules>true</autoVersionSubmodules>
             <useReleaseProfile>false</useReleaseProfile>
             <releaseProfiles>release</releaseProfiles>
