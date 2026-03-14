@@ -121,8 +121,7 @@ final class Placeholder {
    * Returns human readable excerpt with the surrounding text on the line that includes the
    * placeholder.
    */
-  @Override
-  public String toString() {
+  @Override public String toString() {
     String context = match.fullString();
 
     // Find the full line surrounding the placeholder.

@@ -974,8 +974,7 @@ public class WalkerAsTraverserTest {
     final ImmutableMultimap<Character, Character> graphMap = graphMapBuilder.build();
 
     return new SuccessorsFunction<Character>() {
-      @Override
-      public Iterable<? extends Character> successors(Character node) {
+      @Override public Iterable<? extends Character> successors(Character node) {
         checkArgument(
             graphMap.containsKey(node) || graphMap.containsValue(node),
             "Node %s is not an element of this graph",
@@ -1005,8 +1004,7 @@ public class WalkerAsTraverserTest {
       this.delegate = checkNotNull(delegate);
     }
 
-    @Override
-    public Iterable<? extends Character> successors(Character node) {
+    @Override public Iterable<? extends Character> successors(Character node) {
       requestedNodes.add(node);
       return delegate.successors(node);
     }

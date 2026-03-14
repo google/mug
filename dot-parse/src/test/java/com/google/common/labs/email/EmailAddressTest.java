@@ -534,8 +534,7 @@ public class EmailAddressTest {
 
   private enum ParseStrategy {
     REGEX {
-      @Override
-      EmailAddress parse(String email) {
+      @Override EmailAddress parse(String email) {
         Matcher matcher = HTML5_EMAIL_PATTERN.matcher(email);
         checkArgument(matcher.matches(), "Invalid email address: %s", email);
         Optional<String> displayName =
@@ -547,14 +546,12 @@ public class EmailAddressTest {
       }
     },
     COMBINATOR {
-      @Override
-      EmailAddress parse(String email) {
+      @Override EmailAddress parse(String email) {
         return EmailAddress.parse(email);
       }
     },
     JAKARTA {
-      @Override
-      EmailAddress parse(String email) {
+      @Override EmailAddress parse(String email) {
         try {
           InternetAddress internetAddress = new InternetAddress(email, /* strict= */ true);
           EmailAddress emailAddress =
@@ -568,8 +565,7 @@ public class EmailAddressTest {
       }
     },
     JMAIL {
-      @Override
-      EmailAddress parse(String email) {
+      @Override EmailAddress parse(String email) {
         JMail.validate(email);
         return JMail.tryParse(email)
             .map(result -> {

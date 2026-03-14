@@ -158,8 +158,7 @@ public sealed interface RegexPattern
       checkArgument(elements.size() > 0, "elements cannot be empty");
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return elements.stream().map(Object::toString).collect(joining());
     }
   }
@@ -170,16 +169,14 @@ public sealed interface RegexPattern
       checkArgument(alternatives.size() > 0, "alternatives cannot be empty");
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return alternatives.stream().map(Object::toString).collect(joining("|"));
     }
   }
 
   /** Represents a regex pattern that is modified by a quantifier. */
   record Quantified(RegexPattern element, Quantifier quantifier) implements RegexPattern {
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return element instanceof Sequence
               || element instanceof Alternation
               || element instanceof Quantified
@@ -198,8 +195,7 @@ public sealed interface RegexPattern
 
     Quantifier possessive();
 
-    @Override
-    default Quantified apply(RegexPattern pattern) {
+    @Override default Quantified apply(RegexPattern pattern) {
       return new Quantified(pattern, this);
     }
 
@@ -236,18 +232,15 @@ public sealed interface RegexPattern
 
   /** Represents a quantifier with a minimum bound, like {@code {min,}}, {@code *}, or {@code +}. */
   record AtLeast(int min, boolean isReluctant, boolean isPossessive) implements Quantifier {
-    @Override
-    public AtLeast reluctant() {
+    @Override public AtLeast reluctant() {
       return new AtLeast(min, true, isPossessive);
     }
 
-    @Override
-    public AtLeast possessive() {
+    @Override public AtLeast possessive() {
       return new AtLeast(min, isReluctant, true);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       StringBuilder builder =
           new StringBuilder((min == 0) ? "*" : (min == 1) ? "+" : "{" + min + ",}");
       if (isReluctant) {
@@ -265,18 +258,15 @@ public sealed interface RegexPattern
    * ?}.
    */
   record AtMost(int max, boolean isReluctant, boolean isPossessive) implements Quantifier {
-    @Override
-    public AtMost reluctant() {
+    @Override public AtMost reluctant() {
       return new AtMost(max, true, isPossessive);
     }
 
-    @Override
-    public AtMost possessive() {
+    @Override public AtMost possessive() {
       return new AtMost(max, isReluctant, true);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       StringBuilder builder = new StringBuilder((max == 1) ? "?" : "{0," + max + "}");
       if (isReluctant) {
         builder.append('?');
@@ -293,18 +283,15 @@ public sealed interface RegexPattern
    * {min,max}}.
    */
   record Limited(int min, int max, boolean isReluctant, boolean isPossessive) implements Quantifier {
-    @Override
-    public Limited reluctant() {
+    @Override public Limited reluctant() {
       return new Limited(min, max, true, isPossessive);
     }
 
-    @Override
-    public Limited possessive() {
+    @Override public Limited possessive() {
       return new Limited(min, max, isReluctant, true);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       StringBuilder builder =
           new StringBuilder((min == max) ? "{" + min + "}" : "{" + min + "," + max + "}");
       if (isReluctant) {
@@ -323,24 +310,21 @@ public sealed interface RegexPattern
 
     /** A capturing group, like {@code (a)}. */
     record Capturing(RegexPattern content) implements Group {
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "(" + content + ")";
       }
     }
 
     /** A non-capturing group, like {@code (?:a)}. */
     record NonCapturing(RegexPattern content) implements Group {
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "(?:" + content + ")";
       }
     }
 
     /** A named capturing group, like {@code (?<name>a)}. */
     record Named(String name, RegexPattern content) implements Group {
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "(?<" + name + ">" + content + ")";
       }
     }
@@ -350,8 +334,7 @@ public sealed interface RegexPattern
   record Literal(String value) implements RegexPattern {
     private static final CharPredicate META_CHARS = CharPredicate.anyOf(".[]{}()*+-?^$|\\");
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       StringBuilder builder = new StringBuilder();
       for (int i = 0; i < value.length(); i++) {
         char c = value.charAt(i);
@@ -380,8 +363,7 @@ public sealed interface RegexPattern
       this.pattern = pattern;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return pattern;
     }
   }
@@ -396,8 +378,7 @@ public sealed interface RegexPattern
         checkArgument(elements.size() > 0, "elements cannot be empty");
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "[" + elements.stream().map(Object::toString).collect(joining()) + "]";
       }
     }
@@ -408,8 +389,7 @@ public sealed interface RegexPattern
         checkArgument(elements.size() > 0, "elements cannot be empty");
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "[^" + elements.stream().map(Object::toString).collect(joining()) + "]";
       }
     }
@@ -424,8 +404,7 @@ public sealed interface RegexPattern
 
   /** Represents a single literal character within a character class. */
   record LiteralChar(char value) implements CharSetElement {
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return switch (value) {
         case '\n' -> "\\n";
         case '\r' -> "\\r";
@@ -440,8 +419,7 @@ public sealed interface RegexPattern
 
   /** Represents a range of characters within a character class, e.g., 'a-z'. */
   record CharRange(char start, char end) implements CharSetElement {
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return new LiteralChar(start) + "-" + new LiteralChar(end);
     }
   }
@@ -457,8 +435,7 @@ public sealed interface RegexPattern
 
     /** Represents a negated character property, like {@code \P{Lower}}. */
     record Negated(CharacterProperty property) implements CharSetElement, RegexPattern {
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "\\P{" + property.propertyName() + "}";
       }
     }
@@ -488,8 +465,7 @@ public sealed interface RegexPattern
       this.javaStyleName = alias;
     }
 
-    @Override
-    public String propertyName() {
+    @Override public String propertyName() {
       return posixName;
     }
 
@@ -502,16 +478,14 @@ public sealed interface RegexPattern
       return Stream.of(posixName, javaStyleName).collect(toUnmodifiableSet());
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "\\p{" + posixName + "}";
     }
   }
 
   /** Represents a Unicode property class: e.g. \p{Nd} */
   record UnicodeProperty(String propertyName) implements CharacterProperty {
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "\\p{" + propertyName + "}";
     }
   }
@@ -532,8 +506,7 @@ public sealed interface RegexPattern
       this.pattern = pattern;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return pattern;
     }
   }
@@ -550,32 +523,28 @@ public sealed interface RegexPattern
 
     /** Positive lookahead: {@code (?=pattern)}. */
     record Lookahead(RegexPattern target) implements Lookaround {
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "(?=" + target + ")";
       }
     }
 
     /** Negative lookahead: {@code (?!pattern)}. */
     record NegativeLookahead(RegexPattern target) implements Lookaround {
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "(?!" + target + ")";
       }
     }
 
     /** Positive lookbehind: {@code (?<=pattern)}. */
     record Lookbehind(RegexPattern target) implements Lookaround {
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "(?<=" + target + ")";
       }
     }
 
     /** Negative lookbehind: {@code (?<!pattern)}. */
     record NegativeLookbehind(RegexPattern target) implements Lookaround {
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "(?<!" + target + ")";
       }
     }

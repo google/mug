@@ -917,8 +917,7 @@ public final class Substring {
         toImmutableList(),
         candidates -> {
           return new Pattern() {
-            @Override
-            Match match(String input, int fromIndex) {
+            @Override Match match(String input, int fromIndex) {
               requireNonNull(input);
               Match best = null;
               for (Pattern candidate : candidates) {
@@ -1008,8 +1007,7 @@ public final class Substring {
                   .collect(firstOccurrence());
             }
 
-            @Override
-            public String toString() {
+            @Override public String toString() {
               return "firstOccurrenceOf(" + candidates + ")";
             }
           };
@@ -1518,8 +1516,7 @@ public final class Substring {
           return base.then(following.lookaround(lookbehind, lookahead));
         }
 
-        @Override
-        public Pattern negativeLookaround(String lookbehind, String lookahead) {
+        @Override public Pattern negativeLookaround(String lookbehind, String lookahead) {
           return base.then(following.negativeLookaround(lookbehind, lookahead));
         }
 
@@ -1677,14 +1674,12 @@ public final class Substring {
       if (behind == 0 && ahead == 0) return withLookaround;
       Pattern original = this;
       return new Pattern() {
-        @Override
-        Match match(String input, int fromIndex) {
+        @Override Match match(String input, int fromIndex) {
           Match match = withLookaround.match(input, fromIndex);
           return match == null ? null : match.expand(behind, ahead);
         }
 
-        @Override
-        public String toString() {
+        @Override public String toString() {
           return original
               + ".immediatelyBetween('"
               + lookbehind
@@ -2227,8 +2222,7 @@ public final class Substring {
             Match delimiter = null;
             int next = 0;
 
-            @Override
-            public Match get() {
+            @Override public Match get() {
               if (next == -1) return null;
               if (delimiter == null) { // Should return the substring before the next delimiter.
                 if (delimiters.hasNext()) {

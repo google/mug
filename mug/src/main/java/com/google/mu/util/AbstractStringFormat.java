@@ -1398,8 +1398,7 @@ abstract class AbstractStringFormat {
           private int inputIndex = 0;
           private boolean done = false;
 
-          @Override
-          public List<Substring.Match> get() {
+          @Override public List<Substring.Match> get() {
             if (done) {
               return null;
             }

@@ -351,8 +351,7 @@ public final class MoreCollectors {
       MapFrom7<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
-      @Override
-      R reduce(List<? extends T> list) {
+      @Override R reduce(List<? extends T> list) {
         return mapper.map(
             list.get(0),
             list.get(1),
@@ -363,8 +362,7 @@ public final class MoreCollectors {
             list.get(6));
       }
 
-      @Override
-      int arity() {
+      @Override int arity() {
         return 7;
       }
     };
@@ -385,8 +383,7 @@ public final class MoreCollectors {
       MapFrom8<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
-      @Override
-      R reduce(List<? extends T> list) {
+      @Override R reduce(List<? extends T> list) {
         return mapper.map(
             list.get(0),
             list.get(1),
@@ -398,8 +395,7 @@ public final class MoreCollectors {
             list.get(7));
       }
 
-      @Override
-      int arity() {
+      @Override int arity() {
         return 8;
       }
     };

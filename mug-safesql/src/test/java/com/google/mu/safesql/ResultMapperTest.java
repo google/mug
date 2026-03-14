@@ -23,8 +23,7 @@ public class ResultMapperTest {
   }
 
   private static final class SampleClassesProvider implements TestParameterValuesProvider {
-    @Override
-    public List<?> provideValues() {
+    @Override public List<?> provideValues() {
       return Stream.concat(
               Primitives.allPrimitiveTypes().stream(),
               Primitives.allWrapperTypes().stream())

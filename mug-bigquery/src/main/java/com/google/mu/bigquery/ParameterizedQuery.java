@@ -406,13 +406,11 @@ public final class ParameterizedQuery {
     }
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     return Objects.hash(query, parameters);
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (obj instanceof ParameterizedQuery) {
       ParameterizedQuery that = (ParameterizedQuery) obj;
       return query.equals(that.query) && parameters.equals(that.parameters);
@@ -420,8 +418,7 @@ public final class ParameterizedQuery {
     return false;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return query;
   }
 

@@ -257,24 +257,20 @@ public final class Happenstance<K> {
 
   private enum Ordering {
     HAPPENS_BEFORE {
-      @Override
-      int read(int[] statuses, int index) {
+      @Override int read(int[] statuses, int index) {
         return (int) CHECKIN_STATUS_HANDLE.getAcquire(statuses, index);
       }
 
-      @Override
-      void write(int[] statuses, int index, int value) {
+      @Override void write(int[] statuses, int index, int value) {
         CHECKIN_STATUS_HANDLE.setRelease(statuses, index, value);
       }
     },
     TEMPORAL {
-      @Override
-      int read(int[] statuses, int index) {
+      @Override int read(int[] statuses, int index) {
         return (int) CHECKIN_STATUS_HANDLE.getOpaque(statuses, index);
       }
 
-      @Override
-      void write(int[] statuses, int index, int value) {
+      @Override void write(int[] statuses, int index, int value) {
         CHECKIN_STATUS_HANDLE.setOpaque(statuses, index, value);
       }
     };

@@ -53,14 +53,12 @@ public final class StringFormatPlaceholderNamesCheck extends AbstractBugChecker
   /** Currently allowed special placeholder names. */
   private static final ImmutableSet<String> SPECIAL_PLACEHOLDER_NAMES = ImmutableSet.of("...");
 
-  @Override
-  public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
+  @Override public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
       throws ErrorReport {
     doCheck(tree, state);
   }
 
-  @Override
-  public void checkConstructorCall(NewClassTree tree, VisitorState state) throws ErrorReport {
+  @Override public void checkConstructorCall(NewClassTree tree, VisitorState state) throws ErrorReport {
     doCheck(tree, state);
   }
 

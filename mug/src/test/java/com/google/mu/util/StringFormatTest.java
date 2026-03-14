@@ -2162,8 +2162,7 @@ public class StringFormatTest {
           .replaceAllFrom(s, c -> "\\" + c);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return query;
     }
   }

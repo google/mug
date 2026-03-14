@@ -43,8 +43,7 @@ public final class DateTimeExampleStringCheck extends AbstractBugChecker
   private static final Matcher<ExpressionTree> MATCHER =
       staticMethod().onClass("com.google.mu.time.DateTimeFormats").named("formatOf");
 
-  @Override
-  public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
+  @Override public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
       throws ErrorReport {
     if (!MATCHER.matches(tree, state) || tree.getArguments().isEmpty()) {
       return;

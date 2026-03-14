@@ -213,19 +213,16 @@ public final class InsertionPoint<C extends Comparable<C>> implements Comparable
     return floor == null;
   }
 
-  @Override
-  public int compareTo(InsertionPoint<C> that) {
+  @Override public int compareTo(InsertionPoint<C> that) {
     return ComparisonChain.start().compare(floor, that.floor, NULL_FIRST).compare(ceiling, that.ceiling, NULL_LAST)
         .result();
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     return Objects.hashCode(floor) * 31 + Objects.hashCode(ceiling);
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (obj instanceof InsertionPoint) {
       InsertionPoint<?> that = ((InsertionPoint<?>) obj);
       return Objects.equals(floor, that.floor) && Objects.equals(ceiling, that.ceiling);
@@ -234,8 +231,7 @@ public final class InsertionPoint<C extends Comparable<C>> implements Comparable
   }
 
   /** Returns a human-readable string representation of this insertion point. */
-  @Override
-  public String toString() {
+  @Override public String toString() {
     if (floor == null) {
       return Range.lessThan(ceiling).toString();
     }

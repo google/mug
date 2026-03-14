@@ -368,8 +368,7 @@ public final class BiStreamFunctionEvaluationTest {
 
   private static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
     Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K, V>>() {
-      @Override
-      public <E> Collector<E, ?, Multimap<K, V>> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
+      @Override public <E> Collector<E, ?, Multimap<K, V>> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
         return BiStreamFunctionEvaluationTest.toLinkedListMultimap(toKey,toValue);
       }
     });

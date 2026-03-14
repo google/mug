@@ -212,14 +212,12 @@ public final class StringFormat extends AbstractStringFormat {
     requireNonNull(creator);
     StringFormat fmt = new StringFormat(format);
     return new Template<T>() {
-      @Override
-      @SuppressWarnings("StringFormatArgsCheck")
+      @Override @SuppressWarnings("StringFormatArgsCheck")
       public T with(Object... params) {
         return creator.apply(fmt.format(params));
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return format;
       }
     };
@@ -263,15 +261,13 @@ public final class StringFormat extends AbstractStringFormat {
     List<Substring.Match> placeholders =
         PLACEHOLDERS.match(template).collect(toImmutableList());
     return new Template<T>() {
-      @Override
-      public T with(Object... params) {
+      @Override public T with(Object... params) {
         formatter.checkFormatArgs(params);
         return interpolator.interpolate(
             formatter.fragments, BiStream.zip(placeholders.stream(), Arrays.stream(params)));
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return template;
       }
     };
@@ -295,8 +291,7 @@ public final class StringFormat extends AbstractStringFormat {
     T with(Object... params);
 
     /** Returns the string representation of the format. */
-    @Override
-    public abstract String toString();
+    @Override public abstract String toString();
   }
 
   /**

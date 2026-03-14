@@ -131,8 +131,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
   private static final TypeName OPTIONAL_TYPE = TypeName.of(Optional.class);
   private static final TypeName COLLECTION_TYPE = TypeName.of(Collection.class);
 
-  @Override
-  public void checkMemberReference(MemberReferenceTree tree, VisitorState state)
+  @Override public void checkMemberReference(MemberReferenceTree tree, VisitorState state)
       throws ErrorReport {
     checkingOn(tree)
         .require(!isTemplateFormatMethod(ASTHelpers.getSymbol(tree), state), FORMAT_STRING_NOT_FOUND);
@@ -172,8 +171,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     }
   }
 
-  @Override
-  public void checkConstructorCall(NewClassTree tree, VisitorState state) throws ErrorReport {
+  @Override public void checkConstructorCall(NewClassTree tree, VisitorState state) throws ErrorReport {
     MethodSymbol method = ASTHelpers.getSymbol(tree);
     if (isTemplateFormatMethod(method, state)) {
       checkTemplateFormatArgs(
@@ -185,8 +183,7 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     }
   }
 
-  @Override
-  public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
+  @Override public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
       throws ErrorReport {
     MethodSymbol method = ASTHelpers.getSymbol(tree);
     if (isTemplateFormatMethod(method, state)) {

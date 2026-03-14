@@ -172,8 +172,7 @@ public class JavaTypeParserTest {
       return parser.parseSkipping(Character::isWhitespace, type);
     }
 
-    @Override
-    abstract String toString();
+    @Override abstract String toString();
   }
 
   /** A type name, such as {@code java.lang.String}, {@code T} or {@code int}. */
@@ -182,32 +181,28 @@ public class JavaTypeParserTest {
 
   /** A fully qualified class name, such as {@code java.lang.String}. */
   record FullyQualifiedClassName(String packageName, String className) implements TypeName {
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return packageName + "." + className;
     }
   }
 
   /** A simple type name, such as {@code String}, {@code T} or {@code int}. */
   record SimpleTypeName(String name) implements TypeName {
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return name;
     }
   }
 
   /** A nested type name, such as {@code java.lang.String.Inner}. */
   record NestedTypeName(TypeDeclaration enclosingType, String name) implements TypeName {
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return enclosingType + "." + name;
     }
   }
 
   /** An array type, such as {@code java.lang.String[]}. */
   record ArrayType(TypeDeclaration elementType) implements TypeDeclaration {
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return elementType + "[]";
     }
   }
@@ -215,8 +210,7 @@ public class JavaTypeParserTest {
   /** A parameterized type, such as {@code List<T>} or {@code Map<K, V>}. */
   record ParameterizedType(TypeDeclaration rawType, List<TypeParameter> typeParameters)
       implements TypeDeclaration {
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return rawType
           + "<"
           + typeParameters.stream().map(TypeParameter::toString).collect(joining(", "))
@@ -226,8 +220,7 @@ public class JavaTypeParserTest {
 
   /** A type parameter, such as {@code T} or {@code ? extends Number}. */
   sealed interface TypeParameter permits Wildcard, TypeDeclaration {
-    @Override
-    abstract String toString();
+    @Override abstract String toString();
   }
 
   /** A wildcard type, such as {@code ?}, {@code ? extends Number} or {@code ? super String}. */
@@ -244,8 +237,7 @@ public class JavaTypeParserTest {
       this(List.of(upperBound));
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "? extends "
           + upperBounds.stream().map(TypeDeclaration::toString).collect(joining("&"));
     }
@@ -253,16 +245,14 @@ public class JavaTypeParserTest {
 
   /** A wildcard type with lower bounds, such as {@code ? super String}. */
   record LowerBoundedWildcard(TypeDeclaration lowerBound) implements Wildcard {
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "? super " + lowerBound;
     }
   }
 
   /** An unbounded wildcard type, such as {@code ?}. */
   record UnboundedWildcard() implements Wildcard {
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "?";
     }
   }

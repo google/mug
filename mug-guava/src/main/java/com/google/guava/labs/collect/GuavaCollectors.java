@@ -87,8 +87,7 @@ public final class GuavaCollectors {
       BinaryOperator<V> valueMerger) {
     requireNonNull(valueMerger);
     return new BiCollector<K, V, ImmutableMap<K, V>>() {
-      @Override
-      public <E> Collector<E, ?, ImmutableMap<K, V>> collectorOf(
+      @Override public <E> Collector<E, ?, ImmutableMap<K, V>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return ImmutableMap.toImmutableMap(toKey, toValue, valueMerger);
       }
@@ -158,8 +157,7 @@ public final class GuavaCollectors {
     requireNonNull(comparator);
     requireNonNull(valueMerger);
     return new BiCollector<K, V, ImmutableSortedMap<K, V>>() {
-      @Override
-      public <E> Collector<E, ?, ImmutableSortedMap<K, V>> collectorOf(
+      @Override public <E> Collector<E, ?, ImmutableSortedMap<K, V>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return ImmutableSortedMap.toImmutableSortedMap(comparator, toKey, toValue, valueMerger);
       }
@@ -174,8 +172,7 @@ public final class GuavaCollectors {
       Comparator<? super K> comparator) {
     requireNonNull(comparator);
     return new BiCollector<K, V, ImmutableSortedMap<K, V>>() {
-      @Override
-      public <E> Collector<E, ?, ImmutableSortedMap<K, V>> collectorOf(
+      @Override public <E> Collector<E, ?, ImmutableSortedMap<K, V>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return ImmutableSortedMap.toImmutableSortedMap(comparator, toKey, toValue);
       }
@@ -190,8 +187,7 @@ public final class GuavaCollectors {
       Supplier<M> multimapSupplier) {
     requireNonNull(multimapSupplier);
     return new BiCollector<K, V, M>() {
-      @Override
-      public <E> Collector<E, ?, M> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
+      @Override public <E> Collector<E, ?, M> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
         return Multimaps.toMultimap(toKey, toValue, multimapSupplier);
       }
     };
@@ -268,8 +264,7 @@ public final class GuavaCollectors {
       ToIntFunction<? super V> countFunction) {
     requireNonNull(countFunction);
     return new BiCollector<K, V, ImmutableMultiset<K>>() {
-      @Override
-      public <E> Collector<E, ?, ImmutableMultiset<K>> collectorOf(
+      @Override public <E> Collector<E, ?, ImmutableMultiset<K>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return ImmutableMultiset.toImmutableMultiset(
             toKey, input -> countFunction.applyAsInt(toValue.apply(input)));

@@ -443,8 +443,7 @@ public class BiStreamInvariantsTest {
   @Test public void collect_toImmutableListMultimapWithInflexibleMapperTypes() {
     ImmutableListMultimap<String, Integer> multimap =
         of("one", 1, "one", 10, "two", 2).collect(new BiCollector<String, Integer, ImmutableListMultimap<String, Integer>>() {
-          @Override
-          public <E> Collector<E, ?, ImmutableListMultimap<String, Integer>> collectorOf(Function<E, String> toKey, Function<E, Integer> toValue) {
+          @Override public <E> Collector<E, ?, ImmutableListMultimap<String, Integer>> collectorOf(Function<E, String> toKey, Function<E, Integer> toValue) {
             return BiStreamInvariantsTest.toImmutableMultimap(toKey,toValue);
           }
         });
@@ -816,8 +815,7 @@ public void testMaxBy_notFound() {
 
   static<K, V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
     Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K,V>>() {
-      @Override
-      public <E> Collector<E, ?, Multimap<K, V>> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
+      @Override public <E> Collector<E, ?, Multimap<K, V>> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
         return BiStreamInvariantsTest.toLinkedListMultimap(toKey,toValue);
       }
     });
@@ -866,70 +864,58 @@ public void testMaxBy_notFound() {
   /** Different ways of creating a logical {@code BiStream}. */
   private enum BiStreamFactory {
     DEFAULT {
-      @Override
-      <K, V> BiStream<K, V> newBiStream() {
+      @Override <K, V> BiStream<K, V> newBiStream() {
         return BiStream.empty();
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K key, V value) {
+      @Override <K, V> BiStream<K, V> newBiStream(K key, V value) {
         return BiStream.of(key, value);
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
         return BiStream.of(k1, v1, k2, v2);
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
         return BiStream.of(k1, v1, k2, v2, k3, v3);
       }
     },
     FROM_BUILDER {
-      @Override
-      <K, V> BiStream<K, V> newBiStream() {
+      @Override <K, V> BiStream<K, V> newBiStream() {
         return BiStream.<K, V>builder().build();
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K key, V value) {
+      @Override <K, V> BiStream<K, V> newBiStream(K key, V value) {
         return BiStream.<K, V>builder().add(key, value).build();
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
         return BiStream.<K, V>builder().add(k1, v1).add(k2, v2).build();
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
         return BiStream.<K, V>builder().add(k1, v1).add(k2, v2).add(k3, v3).build();
       }
     },
     FROM_GENERIC_ENTRY_STREAM {
-      @Override
-      <K, V> BiStream<K, V> newBiStream() {
+      @Override <K, V> BiStream<K, V> newBiStream() {
         return BiStream.from(
             ImmutableListMultimap.<K, V>of().entries().stream(),
             Map.Entry::getKey,
             Map.Entry::getValue);
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K key, V value) {
+      @Override <K, V> BiStream<K, V> newBiStream(K key, V value) {
         return BiStream.from(
             keyValues(value, key).entries().stream(), Map.Entry::getValue, Map.Entry::getKey);
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
         return BiStream.from(
             keyValues(k1, v1, k2, v2).entries().stream(), Map.Entry::getKey, Map.Entry::getValue);
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
         return BiStream.from(
             keyValues(k1, v1, k2, v2, k3, v3).entries().stream(),
             Map.Entry::getKey,
@@ -937,72 +923,60 @@ public void testMaxBy_notFound() {
       }
     },
     COLLECTED_FROM_GENERIC_ENTRY_STREAM {
-      @Override
-      <K, V> BiStream<K, V> newBiStream() {
+      @Override <K, V> BiStream<K, V> newBiStream() {
         return ImmutableListMultimap.<K, V>of().entries().stream()
             .collect(toBiStream(Map.Entry::getKey, Map.Entry::getValue));
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K key, V value) {
+      @Override <K, V> BiStream<K, V> newBiStream(K key, V value) {
         return keyValues(value, key).entries().stream()
             .collect(toBiStream(Map.Entry::getValue, Map.Entry::getKey));
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
         return keyValues(k1, v1, k2, v2).entries().stream()
             .collect(toBiStream(Map.Entry::getKey, Map.Entry::getValue));
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
         return keyValues(k1, v1, k2, v2, k3, v3).entries().stream()
             .collect(toBiStream(Map.Entry::getKey, Map.Entry::getValue));
       }
     },
     FROM_PAIRS {
-      @Override
-      <K, V> BiStream<K, V> newBiStream() {
+      @Override <K, V> BiStream<K, V> newBiStream() {
         return BiStream.from(Stream.<Both<K, V>>empty());
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K key, V value) {
+      @Override <K, V> BiStream<K, V> newBiStream(K key, V value) {
         return BiStream.from(Stream.of(both(key, value)));
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
         return BiStream.from(Stream.of(both(k1, v1), both(k2, v2)));
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
         return BiStream.from(Stream.of(both(k1, v1), both(k2, v2), both(k3, v3)));
       }
     },
     COLLECTED_FROM_PAIRS {
-      @Override
-      <K, V> BiStream<K, V> newBiStream() {
+      @Override <K, V> BiStream<K, V> newBiStream() {
         return ImmutableListMultimap.<K, V>of().entries().stream()
             .collect(toBiStream(this::fromEntry));
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K key, V value) {
+      @Override <K, V> BiStream<K, V> newBiStream(K key, V value) {
         return keyValues(key, value).entries().stream()
             .collect(toBiStream(this::fromEntry));
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
         return keyValues(k1, v1, k2, v2).entries().stream()
             .collect(toBiStream(this::fromEntry));
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
         return keyValues(k1, v1, k2, v2, k3, v3).entries().stream()
             .collect(toBiStream(this::fromEntry));
       }
@@ -1012,48 +986,40 @@ public void testMaxBy_notFound() {
       }
     },
     FROM_COLLECTION {
-      @Override
-      <K, V> BiStream<K, V> newBiStream() {
+      @Override <K, V> BiStream<K, V> newBiStream() {
         return BiStream.from(
             ImmutableListMultimap.<K, V>of().entries(), Map.Entry::getKey, Map.Entry::getValue);
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K key, V value) {
+      @Override <K, V> BiStream<K, V> newBiStream(K key, V value) {
         return BiStream.from(
             keyValues(value, key).entries(), Map.Entry::getValue, Map.Entry::getKey);
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
         return BiStream.from(
             keyValues(k1, v1, k2, v2).entries(), Map.Entry::getKey, Map.Entry::getValue);
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
         return BiStream.from(
             keyValues(k1, v1, k2, v2, k3, v3).entries(), Map.Entry::getKey, Map.Entry::getValue);
       }
     },
     FROM_ZIP {
-      @Override
-      <K, V> BiStream<K, V> newBiStream() {
+      @Override <K, V> BiStream<K, V> newBiStream() {
         return BiStream.zip(ImmutableList.of(), ImmutableList.of());
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K key, V value) {
+      @Override <K, V> BiStream<K, V> newBiStream(K key, V value) {
         return BiStream.zip(asList(key), asList(value));
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2) {
         return BiStream.zip(asList(k1, k2), asList(v1, v2));
       }
 
-      @Override
-      <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
+      @Override <K, V> BiStream<K, V> newBiStream(K k1, V v1, K k2, V v2, K k3, V v3) {
         return BiStream.zip(Stream.of(k1, k2, k3), Stream.of(v1, v2, v3));
       }
     },
@@ -1071,86 +1037,72 @@ public void testMaxBy_notFound() {
   /** Different variants of a logically equivalent {@code BiStream}. */
   private enum Variant {
     DEFAULT {
-      @Override
-      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+      @Override <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
         return stream;
       }
     },
     PARALLEL_THEN_SEQUENTIAL {
-      @Override
-      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+      @Override <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
         return BiStream.fromEntries(stream.mapToEntry().parallel().sequential());
       }
     },
     INVERSE_OF_INVERSE {
-      @Override
-      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+      @Override <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
         return stream.inverse().inverse();
       }
     },
     VERY_LARGE_LIMIT {
-      @Override
-      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+      @Override <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
         return stream.limit(Integer.MAX_VALUE);
       }
     },
     SKIP_ZERO {
-      @Override
-      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+      @Override <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
         return stream.skip(0);
       }
     },
     MAP_KEY_TO_SELF {
-      @Override
-      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+      @Override <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
         return stream.mapKeys(identity());
       }
     },
     MAP_VALUE_TO_SELF {
-      @Override
-      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+      @Override <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
         return stream.mapValues(identity());
       }
     },
     MAP_KEY_AND_VALUE_TO_SELF {
-      @Override
-      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+      @Override <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
         return stream.map((k, v) -> k, (k, v) -> v);
       }
     },
     TRIVIAL_FILTER {
-      @Override
-      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+      @Override <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
         return stream.filter((k, v) -> true);
       }
     },
     TRIVIAL_FILTER_KEY {
-      @Override
-      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+      @Override <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
         return stream.filterKeys(k -> true);
       }
     },
     TRIVIAL_FILTER_VALUE {
-      @Override
-      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+      @Override <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
         return stream.filterValues(k -> true);
       }
     },
     TRIVIAL_SKIP_IF {
-      @Override
-      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+      @Override <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
         return stream.skipIf((k, v) -> false);
       }
     },
     TRIVIAL_SKIP_KEYS_IF {
-      @Override
-      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+      @Override <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
         return stream.skipKeysIf(k -> false);
       }
     },
     TRIVIAL_SKIP_VALUES_IF {
-      @Override
-      <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
+      @Override <K, V> BiStream<K, V> wrap(BiStream<K, V> stream) {
         return stream.skipValuesIf(k -> false);
       }
     },

@@ -439,8 +439,7 @@ public final class CharInputTest {
       super(str);
     }
 
-    @Override
-    public int read(char[] cbuf) throws IOException {
+    @Override public int read(char[] cbuf) throws IOException {
       loadCount++;
       return super.read(cbuf);
     }

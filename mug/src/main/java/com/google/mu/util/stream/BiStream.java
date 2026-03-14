@@ -1942,8 +1942,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
         super(Long.MAX_VALUE, characteristics);
       }
 
-      @Override
-      public boolean tryAdvance(Consumer<? super R> action) {
+      @Override public boolean tryAdvance(Consumer<? super R> action) {
         while (iterator.tryAdvance(this)) {
           if (hasRunResult) {
             action.accept(runResult);
@@ -1961,8 +1960,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
         return true;
       }
 
-      @Override
-      public void accept(K key, V value) {
+      @Override public void accept(K key, V value) {
         if (currentRun == null) {
           start();
         } else if (!sameGroup.test(previousKey, key)) {

@@ -77,8 +77,7 @@ public final class PrefixSearchTable<K, V> {
               private int index = 0;
               private Map<K, Node<K, V>> remaining = nodes;
 
-              @Override
-              public Map.Entry<List<K>, V> get() {
+              @Override public Map.Entry<List<K>, V> get() {
                 while (remaining != null && index < compoundKey.size()) {
                   Node<K, V> node = remaining.get(requireNonNull(compoundKey.get(index)));
                   if (node == null) {
