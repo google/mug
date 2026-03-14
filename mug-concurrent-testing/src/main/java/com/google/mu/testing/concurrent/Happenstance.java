@@ -122,6 +122,8 @@ public final class Happenstance<K> {
      * {@code sequence("A", "B", "C")} specifies that sequence points "A", "B", and "C" must
      * be completed in that order ("A" before "B", and "B" before "C").
      *
+     * <p>NOTE that no order is implied across subsequent {@code sequence()} calls.
+     *
      * <p>This method should be called to define all sequence point orders before {@link #build} is
      * called.
      *
