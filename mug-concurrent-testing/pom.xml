@@ -4,12 +4,13 @@
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
     <version>9.9.5-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-concurrent-testing</artifactId>
   <name>Concurrency Testing Utils</name>
-
+  <packaging>jar</packaging>
   <properties>
-    <module.name>concurrenttesting</module.name>
+    <module.name>testing.concurrent</module.name>
   </properties>
   
   <build>
