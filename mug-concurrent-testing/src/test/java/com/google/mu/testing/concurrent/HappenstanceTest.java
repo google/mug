@@ -40,14 +40,14 @@ public class HappenstanceTest {
 
   @Test
   public void inOrder_singlePoint() {
-    Happenstance<String> happens = Happenstance.<String>builder().happenInOrder("A").build();
+    Happenstance<String> happens = Happenstance.<String>builder().sequence("A").build();
     happens.checkpoint("A");
   }
 
   @Test
   public void inOrder_oneCall() {
     Happenstance<String> happens =
-        Happenstance.<String>builder().happenInOrder("A", "B", "C").build();
+        Happenstance.<String>builder().sequence("A", "B", "C").build();
     happens.checkpoint("A");
     happens.checkpoint("B");
     happens.checkpoint("C");
@@ -56,7 +56,7 @@ public class HappenstanceTest {
   @Test
   public void inOrder_multipleCalls() {
     Happenstance<String> happens =
-        Happenstance.<String>builder().happenInOrder("A", "B").happenInOrder("B", "C").build();
+        Happenstance.<String>builder().sequence("A", "B").sequence("B", "C").build();
     happens.checkpoint("A");
     happens.checkpoint("B");
     happens.checkpoint("C");
@@ -65,7 +65,7 @@ public class HappenstanceTest {
   @Test
   public void inOrder_redundantEdge() {
     Happenstance<String> happens =
-        Happenstance.<String>builder().happenInOrder("A", "B", "C").happenInOrder("A", "B").build();
+        Happenstance.<String>builder().sequence("A", "B", "C").sequence("A", "B").build();
     happens.checkpoint("A");
     happens.checkpoint("B");
     happens.checkpoint("C");
@@ -75,8 +75,8 @@ public class HappenstanceTest {
   public void inOrder_diamond() {
     Happenstance<String> happens =
         Happenstance.<String>builder()
-            .happenInOrder("A", "B1", "C")
-            .happenInOrder("A", "B2", "C")
+            .sequence("A", "B1", "C")
+            .sequence("A", "B2", "C")
             .build();
     happens.checkpoint("A");
     happens.checkpoint("B1");
@@ -86,42 +86,42 @@ public class HappenstanceTest {
 
   @Test
   public void inOrder_cycle_throwsIllegalArgumentException() {
-    Happenstance.Builder<String> builder = Happenstance.<String>builder().happenInOrder("A", "B");
+    Happenstance.Builder<String> builder = Happenstance.<String>builder().sequence("A", "B");
     IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class, () -> builder.happenInOrder("B", "A").build());
+        IllegalArgumentException.class, () -> builder.sequence("B", "A").build());
     assertThat(thrown).hasMessageThat().contains("A -> B -> A");
   }
 
   @Test
   public void inOrder_longCycle_throwsIllegalArgumentException() {
     Happenstance.Builder<String> builder =
-        Happenstance.<String>builder().happenInOrder("A", "B", "C");
+        Happenstance.<String>builder().sequence("A", "B", "C");
     IllegalArgumentException thrown = assertThrows(
-        IllegalArgumentException.class, () -> builder.happenInOrder("C", "A").build());
+        IllegalArgumentException.class, () -> builder.sequence("C", "A").build());
     assertThat(thrown).hasMessageThat().contains("A -> B -> C -> A");
   }
 
   @Test
   public void inOrder_selfCycle_isIgnored() {
-    Happenstance<String> happens = Happenstance.<String>builder().happenInOrder("A", "A").build();
+    Happenstance<String> happens = Happenstance.<String>builder().sequence("A", "A").build();
     happens.checkpoint("A");
   }
 
   @Test
   public void inOrder_noParameters() {
-    assertThat(Happenstance.<String>builder().happenInOrder().build()).isNotNull();
+    assertThat(Happenstance.<String>builder().sequence().build()).isNotNull();
   }
 
   @Test
   public void checkpoint_alreadyCompleted_throwsIllegalStateException() {
-    Happenstance<String> happens = Happenstance.<String>builder().happenInOrder("A").build();
+    Happenstance<String> happens = Happenstance.<String>builder().sequence("A").build();
     happens.checkpoint("A");
     assertThrows(IllegalStateException.class, () -> happens.checkpoint("A"));
   }
 
   @Test
   public void join_alreadyCompleted_throwsIllegalStateException() {
-    Happenstance<String> happens = Happenstance.<String>builder().happenInOrder("A").build();
+    Happenstance<String> happens = Happenstance.<String>builder().sequence("A").build();
     happens.join("A");
     assertThrows(IllegalStateException.class, () -> happens.join("A"));
   }
@@ -138,10 +138,10 @@ public class HappenstanceTest {
   }
 
   @Test
-  public void builder_points_then_happenInOrder() throws Exception {
+  public void builder_points_then_sequence() throws Exception {
     Happenstance<String> happens =
         Happenstance.<String>builder("A done", "B start")
-            .happenInOrder("A done", "B start")
+            .sequence("A done", "B start")
             .build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
@@ -167,7 +167,7 @@ public class HappenstanceTest {
   @Test
   public void checkpoint_singleThread_respectsOrder() throws Exception {
     Happenstance<String> happens =
-        Happenstance.<String>builder().happenInOrder("1", "2", "3").build();
+        Happenstance.<String>builder().sequence("1", "2", "3").build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     Thread t =
         new Thread(
@@ -187,7 +187,7 @@ public class HappenstanceTest {
   @Test
   public void join_singleThread_respectsOrder() throws Exception {
     Happenstance<String> happens =
-        Happenstance.<String>builder().happenInOrder("1", "2", "3").build();
+        Happenstance.<String>builder().sequence("1", "2", "3").build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     Thread t =
         new Thread(
@@ -207,7 +207,7 @@ public class HappenstanceTest {
   @Test
   public void checkpoint_twoThreads_enforcedOrder() throws Exception {
     Happenstance<String> happens =
-        Happenstance.<String>builder().happenInOrder("A done", "B start").build();
+        Happenstance.<String>builder().sequence("A done", "B start").build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
       Future<?> futureB =
@@ -235,7 +235,7 @@ public class HappenstanceTest {
   @Test
   public void join_twoThreads_enforcedOrder() throws Exception {
     Happenstance<String> happens =
-        Happenstance.<String>builder().happenInOrder("A done", "B start").build();
+        Happenstance.<String>builder().sequence("A done", "B start").build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
       Future<?> futureB =
@@ -261,9 +261,9 @@ public class HappenstanceTest {
   }
 
   @Test
-  public void builder_happenInOrderAddsNewPoint() throws Exception {
+  public void builder_sequenceAddsNewPoint() throws Exception {
     Happenstance<String> happens =
-        Happenstance.<String>builder("A done").happenInOrder("A done", "B start").build();
+        Happenstance.<String>builder("A done").sequence("A done", "B start").build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
       Future<?> futureB =
@@ -289,8 +289,8 @@ public class HappenstanceTest {
   public void checkpoint_threeThreads_enforcedOrder() throws Exception {
     Happenstance<String> happens =
         Happenstance.<String>builder()
-            .happenInOrder("A done", "B start")
-            .happenInOrder("B done", "C start")
+            .sequence("A done", "B start")
+            .sequence("B done", "C start")
             .build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     try (ExecutorService executor = Executors.newFixedThreadPool(3)) {
@@ -327,8 +327,8 @@ public class HappenstanceTest {
   public void join_threeThreads_enforcedOrder() throws Exception {
     Happenstance<String> happens =
         Happenstance.<String>builder()
-            .happenInOrder("A done", "B start")
-            .happenInOrder("B done", "C start")
+            .sequence("A done", "B start")
+            .sequence("B done", "C start")
             .build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     try (ExecutorService executor = Executors.newFixedThreadPool(3)) {
@@ -365,8 +365,8 @@ public class HappenstanceTest {
   public void checkpoint_diamondGraph_enforcedOrder() throws Exception {
     Happenstance<String> happens =
         Happenstance.<String>builder()
-            .happenInOrder("A", "B1", "C")
-            .happenInOrder("A", "B2", "C")
+            .sequence("A", "B1", "C")
+            .sequence("A", "B2", "C")
             .build();
     List<String> completed = Collections.synchronizedList(new ArrayList<>());
     try (ExecutorService executor = Executors.newFixedThreadPool(4)) {
@@ -414,8 +414,8 @@ public class HappenstanceTest {
   public void join_diamondGraph_enforcedOrder() throws Exception {
     Happenstance<String> happens =
         Happenstance.<String>builder()
-            .happenInOrder("A", "B1", "C")
-            .happenInOrder("A", "B2", "C")
+            .sequence("A", "B1", "C")
+            .sequence("A", "B2", "C")
             .build();
     AtomicLong stateA = new AtomicLong();
     AtomicLong stateB1 = new AtomicLong();
@@ -463,7 +463,7 @@ public class HappenstanceTest {
   public void stressTest() throws Exception {
     int numThreads = 10;
     Happenstance<String> happens =
-        Happenstance.<String>builder().happenInOrder("A", "B", "C", "D", "E").build();
+        Happenstance.<String>builder().sequence("A", "B", "C", "D", "E").build();
     try (ExecutorService executor = Executors.newFixedThreadPool(numThreads)) {
       List<Future<?>> futures = new ArrayList<>();
       List<String> points = new ArrayList<>(Arrays.asList("A", "B", "C", "D", "E"));
@@ -487,7 +487,7 @@ public class HappenstanceTest {
   public void join_stressTest() throws Exception {
     int numThreads = 10;
     Happenstance<String> happens =
-        Happenstance.<String>builder().happenInOrder("A", "B", "C", "D", "E").build();
+        Happenstance.<String>builder().sequence("A", "B", "C", "D", "E").build();
     try (ExecutorService executor = Executors.newFixedThreadPool(numThreads)) {
       List<Future<?>> futures = new ArrayList<>();
       List<String> points = new ArrayList<>(Arrays.asList("A", "B", "C", "D", "E"));
@@ -544,9 +544,9 @@ public class HappenstanceTest {
         MyList<Integer> list = MyList.of(elements);
         Happenstance<String> sequencer =
             Happenstance.<String>builder()
-                .happenInOrder("a2", "b")
-                .happenInOrder("b", "b2")
-                .happenInOrder("a", "a2")
+                .sequence("a2", "b")
+                .sequence("b", "b2")
+                .sequence("a", "a2")
                 .build();
         Future<String> f1 =
             executor.submit(
@@ -607,7 +607,7 @@ public class HappenstanceTest {
       for (int i = 0; i < 100000; i++) {
         BuggySut sut = new BuggySut();
         Happenstance<String> sequencer =
-            Happenstance.<String>builder().happenInOrder("W", "R").build();
+            Happenstance.<String>builder().sequence("W", "R").build();
         AtomicLong result = new AtomicLong();
         Future<?> readFuture =
             executor.submit(
@@ -642,8 +642,8 @@ public class HappenstanceTest {
         BuggySut sut = new BuggySut();
         Happenstance<String> sequencer =
             Happenstance.<String>builder()
-                .happenInOrder("W", "R")
-                .happenInOrder("Done Writing", "Done Reading")
+                .sequence("W", "R")
+                .sequence("Done Writing", "Done Reading")
                 .build();
         AtomicLong result = new AtomicLong();
         Future<?> readFuture =
@@ -669,7 +669,7 @@ public class HappenstanceTest {
     }
     assertThat(races).isNotEmpty();
   }
-  
+
   @Test public void testNulls() {
     new NullPointerTester().testAllPublicStaticMethods(Happenstance.class);
     new NullPointerTester().testAllPublicInstanceMethods(Happenstance.builder());

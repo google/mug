@@ -31,8 +31,8 @@ import com.google.mu.util.stream.Joiner;
  *   public void testConcurrent() {
  *     var happens =
  *         Happenstance.<String>builder()
- *             .happenInOrder("writtenB", "readingA", "writtenA")
- *             .happenInOrder("readingB", "writtenB")
+ *             .sequence("writtenB", "readingA", "writtenA")
+ *             .sequence("readingB", "writtenB")
  *             .build();
  *     Stream.of("A", "B")
  *         .parallel()
@@ -56,7 +56,7 @@ import com.google.mu.util.stream.Joiner;
  * predecessor is still not ready, {@link Thread#yield} is called to prevent deadlocks or extreme
  * performance degradation in I/O-bound or heavily over-provisioned environments.
  *
- * <p>The {@link Builder#happenInOrder} method is intended to be called from the main thread to set
+ * <p>The {@link Builder#sequence} method is intended to be called from the main thread to set
  * up the DAG of relationships between sequence points before the {@code checkpoint()} or {@code
  * join()} method is called from any threads.
  *
@@ -84,7 +84,7 @@ public final class Happenstance<K> {
   /**
    * Returns a new {@link Builder} initialized with {@code sequencePoints}.
    * No order is defined among these sequence points, until you explicitly
-   * call {@link Builder#happenInOrder}.
+   * call {@link Builder#sequence}.
    */
   @SafeVarargs
   public static <K> Builder<K> builder(K... sequencePoints) {
@@ -94,7 +94,7 @@ public final class Happenstance<K> {
   /**
    * Returns a new {@link Builder} initialized with {@code sequencePoints}.
    * No order is defined among these sequence points, until you explicitly
-   * call {@link Builder#happenInOrder}.
+   * call {@link Builder#sequence}.
    */
   public static <K> Builder<K> builder(Iterable<? extends K> sequencePoints) {
     Builder<K> builder = new Builder<>();
@@ -119,15 +119,17 @@ public final class Happenstance<K> {
 
     /**
      * Defines a ordering between consecutive {@code sequencePoints}. For example,
-     * {@code happenInOrder("A", "B", "C")} specifies that sequence points "A", "B", and "C" must
+     * {@code sequence("A", "B", "C")} specifies that sequence points "A", "B", and "C" must
      * be completed in that order ("A" before "B", and "B" before "C").
      *
      * <p>This method should be called to define all sequence point orders before {@link #build} is
      * called.
+     *
+     * @since 9.9.7
      */
     @CanIgnoreReturnValue
     @SafeVarargs
-    public final Builder<K> happenInOrder(K... sequencePoints) {
+    public final Builder<K> sequence(K... sequencePoints) {
       for (K point : sequencePoints) {
         declareSequencePoint(point);
       }
@@ -169,6 +171,17 @@ public final class Happenstance<K> {
             return index;
           });
     }
+
+    /**
+     * @deprecated Use {@link #sequence} instead. Chained {@code happenInOrder()} calls can read
+     *     misleading as defining an order across subsequent calls.
+     */
+    @CanIgnoreReturnValue
+    @SafeVarargs
+    @Deprecated
+    public final Builder<K> happenInOrder(K... sequencePoints) {
+      return sequence(sequencePoints);
+    }
   }
 
   /**
@@ -177,7 +190,7 @@ public final class Happenstance<K> {
    *
    * <p>This method differs from {@link #checkpoint} in that it establishes happens-before
    * relationship between sequence points, which means writes happening before {@code join(A)} are
-   * visible to code after {@code join(B)} as long as {@code happenInOrder(A, B)} is specified.
+   * visible to code after {@code join(B)} as long as {@code sequence(A, B)} is specified.
    *
    * <p><em>Warning:</em>Using {@code join()} inappropriately may result in false negative tests if
    * the SUT has a bug that writes to non-volatile state, because the {@code join()} call will
@@ -185,7 +198,7 @@ public final class Happenstance<K> {
    *
    * @param sequencePoint the sequence point to wait for and mark as completed.
    * @throws IllegalArgumentException if {@code sequencePoint} wasn't defined via {@link
-   *     Builder#happenInOrder}.
+   *     Builder#sequence}.
    * @throws IllegalStateException if {@code sequencePoint} has already been marked as completed.
    */
   public void join(K sequencePoint) {
@@ -199,7 +212,7 @@ public final class Happenstance<K> {
    * <p>To avoid introducing unintended memory barriers, this method only establishes temporal
    * ordering; no additional happens-before relationship between sequence points is established,
    * which means writes before the checkpoint A may still be invisible to reads after checkpoint B
-   * even with {@code happenInOrder(A, B)}. The SUT itself should establish happens-before
+   * even with {@code sequence(A, B)}. The SUT itself should establish happens-before
    * relationship if necessary.
    *
    * <p>If extra memory barrier doesn't defeat your concurrency tests, and you need to establish
@@ -207,7 +220,7 @@ public final class Happenstance<K> {
    *
    * @param sequencePoint the sequence point to wait for and mark as completed.
    * @throws IllegalArgumentException if {@code sequencePoint} wasn't defined via {@link
-   *     Builder#happenInOrder}.
+   *     Builder#sequence}.
    * @throws IllegalStateException if {@code sequencePoint} has already been marked as completed.
    */
   public void checkpoint(K sequencePoint) {
@@ -236,7 +249,7 @@ public final class Happenstance<K> {
   private int uponSequencePoint(K sequencePoint) {
     Integer index = pointToIndex.get(sequencePoint);
     checkArgument(
-        index != null, "sequencePoint '%s' not defined in happenInOrder()", sequencePoint);
+        index != null, "sequencePoint '%s' not defined in sequence()", sequencePoint);
     return index;
   }
 
