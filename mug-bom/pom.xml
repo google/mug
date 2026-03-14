@@ -1,19 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.google.mug</groupId>
   <artifactId>mug-bom</artifactId>
-  <version>9.9.5-SNAPSHOT</version>
+  <version>9.9.5</version>
   <packaging>pom</packaging>
 
   <name>Mug Bill of Materials</name>
   <description>Dependency version alignment for all Mug modules</description>
   <url>http://github.com/google/mug</url>
   <properties>
-    <project.build.outputTimestamp>2026-03-09T04:22:21Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-03-14T04:43:28Z</project.build.outputTimestamp>
   </properties>
 
   <licenses>
@@ -27,6 +25,7 @@
     <url>http://github.com/google/mug</url>
     <connection>scm:git:git@github.com:google/mug.git</connection>
     <developerConnection>scm:git:git@github.com:google/mug.git</developerConnection>
+    <tag>mug-root-9.9.5</tag>
   </scm>
 
   <developers>
