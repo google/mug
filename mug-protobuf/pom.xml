@@ -11,6 +11,8 @@
   <name>Protobuf utils</name>
   <properties>
     <module.name>protobuf</module.name>
+    <!-- Reproducible builds: fixed timestamp for build artifacts -->
+    <project.build.outputTimestamp>2026-03-14T06:28:36Z</project.build.outputTimestamp>
   </properties>
   <build>
     <pluginManagement>

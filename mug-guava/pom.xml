@@ -13,6 +13,8 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <module.name>guava</module.name>
+    <!-- Reproducible builds: fixed timestamp for build artifacts -->
+    <project.build.outputTimestamp>2026-03-14T06:28:36Z</project.build.outputTimestamp>
   </properties>
   <build>
     <pluginManagement>
