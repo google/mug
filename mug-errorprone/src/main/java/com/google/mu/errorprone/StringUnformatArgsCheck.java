@@ -270,8 +270,7 @@ public final class StringUnformatArgsCheck extends AbstractBugChecker
   private static int expectedNumPlaceholders(Type type, VisitorState state) {
     Types types = state.getTypes();
     if (types.isFunctionalInterface(type)) {
-      Type descriptorType = types.findDescriptorType(type);
-      return descriptorType.getParameterTypes().size();
+      return types.findDescriptorType(type).getParameterTypes().size();
     }
     return BiStream.from(UNFORMAT_MAPPER_TYPES)
         .filterKeys(mapperType -> mapperType.isSameType(type, state))
