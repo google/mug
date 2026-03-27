@@ -37,9 +37,9 @@ final class SourceUtils {
   private static final Substring.Pattern ARG_COMMENT =
       Substring.spanningInOrder("/*", "*/")
           .or(Substring.between(first("//"), suffix('\n').or(END)));
- 
+
   static boolean hasArgComment(String source) {
-	return ARG_COMMENT.in(source).isPresent();
+	  return ARG_COMMENT.in(source).isPresent();
   }
 
   static ImmutableList<String> normalizeForComparison(Collection<String> codes) {
