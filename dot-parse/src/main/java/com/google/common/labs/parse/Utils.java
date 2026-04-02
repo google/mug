@@ -28,12 +28,11 @@ class Utils {
 
   static Set<String> caseInsensitivePrefixes(String string, int maxLength) {
     checkArgument(maxLength >= 0, "maxLength (%s) must not be negative", maxLength);
-    int chars = min(maxLength, string.length());
     Set<String> prefixes = new LinkedHashSet<>();
-    char[] buffer = new char[chars];
+    char[] buffer = new char[min(maxLength, string.length())];
     new Object() {
       void from(int index) {
-        if (index >= chars) {
+        if (index >= buffer.length) {
           prefixes.add(new String(buffer));
           return;
         }
