@@ -36,6 +36,7 @@ import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
@@ -79,6 +80,7 @@ import com.google.mu.util.stream.Joiner;
  * can cause StackOverflowError.
  */
 public abstract class Parser<T> {
+  static final Set<String> NO_PREFIX = Set.of("");
   /**
    * Only use in context where input consumption is guaranteed. Do not use within a loop, like
    * atLeastOnce(), zeroOrMore()!
@@ -90,6 +92,14 @@ public abstract class Parser<T> {
       return input.isEof(start)
           ? new MatchResult.Success<>(start, start, null)
           : context.expecting("EOF", start);
+    }
+
+    @Override boolean honorsSkipping() {
+      return true;
+    }
+
+    @Override public Set<String> getPrefixes() {
+      return NO_PREFIX;
     }
   };
 
@@ -126,6 +136,14 @@ public abstract class Parser<T> {
         return input.isInRange(start) && matcher.test(input.charAt(start))
             ? new MatchResult.Success<>(start, start + 1, input.charAt(start))
             : context.expecting(name, start);
+      }
+
+      @Override boolean honorsSkipping() {
+        return true;
+      }
+
+      @Override public Set<String> getPrefixes() {
+        return NO_PREFIX;
       }
     };
   }
@@ -164,6 +182,14 @@ public abstract class Parser<T> {
             ? new MatchResult.Success<>(start, end, null)
             : context.expecting(name, end);
       }
+
+      @Override boolean honorsSkipping() {
+        return true;
+      }
+
+      @Override public Set<String> getPrefixes() {
+        return NO_PREFIX;
+      }
     };
   }
 
@@ -182,6 +208,14 @@ public abstract class Parser<T> {
         return input.isInRange(start + n - 1)
             ? new MatchResult.Success<>(start, start + n, input.snippet(start, n))
             : context.expecting(name, start);
+      }
+
+      @Override boolean honorsSkipping() {
+        return true;
+      }
+
+      @Override public Set<String> getPrefixes() {
+        return NO_PREFIX;
       }
     };
   }
@@ -258,6 +292,14 @@ public abstract class Parser<T> {
             ? new MatchResult.Success<>(found, found + target.length(), target)
             : context.expecting(target, skipIfAny(skip, input, start));
       }
+
+      @Override boolean honorsSkipping() {
+        return false;
+      }
+
+      @Override public Set<String> getPrefixes() {
+        return NO_PREFIX;
+      }
     };
   }
 
@@ -271,6 +313,14 @@ public abstract class Parser<T> {
         return input.startsWith(string, start)
             ? new MatchResult.Success<>(start, start + string.length(), string)
             : context.expecting(string, start);
+      }
+
+      @Override boolean honorsSkipping() {
+        return true;
+      }
+
+      @Override public Set<String> getPrefixes() {
+        return Set.of(string);
       }
     };
   }
@@ -292,6 +342,14 @@ public abstract class Parser<T> {
         return input.startsWithCaseInsensitive(string, start)
             ? new MatchResult.Success<>(start, start + string.length(), string)
             : context.expecting(string, start);
+      }
+
+      @Override boolean honorsSkipping() {
+        return true;
+      }
+
+      @Override public Set<String> getPrefixes() {
+        return NO_PREFIX;
       }
     };
   }
@@ -349,6 +407,14 @@ public abstract class Parser<T> {
                       start, success.tail(), input.snippet(start, success.head() - start));
               case MatchResult.Failure<?> failure -> failure.safeCast();
             };
+          }
+
+          @Override boolean honorsSkipping() {
+            return false;
+          }
+
+          @Override public Set<String> getPrefixes() {
+            return before.getPrefixes();
           }
         });
   }
@@ -540,31 +606,7 @@ public abstract class Parser<T> {
   public static <T> Collector<Parser<? extends T>, ?, Parser<T>> or() {
     return collectingAndThen(
         toUnmodifiableList(),
-        parsers -> {
-          checkArgument(parsers.size() > 0, "parsers cannot be empty");
-          if (parsers.size() == 1) {
-            return covariant(parsers.get(0));
-          }
-          return new Parser<T>() {
-            @Override MatchResult<T> skipAndMatch(
-                Parser<?> skip, CharInput input, int start, ErrorContext context) {
-              MatchResult.Failure<?> farthestFailure = null;
-              for (Parser<? extends T> parser : parsers) {
-                switch (parser.skipAndMatch(skip, input, start, context)) {
-                  case MatchResult.Success(int head, int tail, T value) -> {
-                    return new MatchResult.Success<>(head, tail, value);
-                  }
-                  case MatchResult.Failure<?> failure -> {
-                    if (farthestFailure == null || farthestFailure.at() < failure.at()) {
-                      farthestFailure = failure;
-                    }
-                  }
-                }
-              }
-              return farthestFailure.safeCast();
-            }
-          };
-        });
+        parsers -> parsers.size() == 1 ? covariant(parsers.get(0)) : new OrParser<>(parsers));
   }
 
   /** Matches if {@code this} or {@code that} matches. */
@@ -628,6 +670,14 @@ public abstract class Parser<T> {
             return failure.safeCast();
           }
         }
+      }
+
+      @Override boolean honorsSkipping() {
+        return self.honorsSkipping();
+      }
+
+      @Override public Set<String> getPrefixes() {
+        return self.getPrefixes();
       }
     };
   }
@@ -757,7 +807,7 @@ public abstract class Parser<T> {
    *
    * <pre>{@code
    * consecutive(ALPHA, "item")
-   *     .zeroOrMoreDelimitedBy(",", toImmutableSet())
+   *     .zeroOrMoreDelimitedBy(",", toSet())
    *     .between("[", "]")
    * }</pre>
    */
@@ -953,6 +1003,14 @@ public abstract class Parser<T> {
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
+
+      @Override boolean honorsSkipping() {
+        return self.honorsSkipping();
+      }
+
+      @Override public Set<String> getPrefixes() {
+        return self.getPrefixes();
+      }
     };
   }
 
@@ -974,6 +1032,14 @@ public abstract class Parser<T> {
               };
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
+      }
+
+      @Override boolean honorsSkipping() {
+        return self.honorsSkipping();
+      }
+
+      @Override public Set<String> getPrefixes() {
+        return self.getPrefixes();
       }
     };
   }
@@ -1021,6 +1087,14 @@ public abstract class Parser<T> {
         return result instanceof MatchResult.Success<T> success && !condition.test(success.value())
             ? context.expecting(name, success.head())
             : result;
+      }
+
+      @Override boolean honorsSkipping() {
+        return self.honorsSkipping();
+      }
+
+      @Override public Set<String> getPrefixes() {
+        return self.getPrefixes();
       }
     };
   }
@@ -1117,6 +1191,14 @@ public abstract class Parser<T> {
           case MatchResult.Failure<T> failure -> failure;
         };
       }
+
+      @Override boolean honorsSkipping() {
+        return self.honorsSkipping();
+      }
+
+      @Override public Set<String> getPrefixes() {
+        return self.getPrefixes();
+      }
     };
   }
 
@@ -1176,6 +1258,14 @@ public abstract class Parser<T> {
           case MatchResult.Failure<T> failure -> failure.safeCast();
         };
       }
+
+      @Override boolean honorsSkipping() {
+        return self.honorsSkipping();
+      }
+
+      @Override public Set<String> getPrefixes() {
+        return self.getPrefixes();
+      }
     };
   }
 
@@ -1190,6 +1280,14 @@ public abstract class Parser<T> {
       @Override MatchResult<T> skipAndMatch(
           Parser<?> ignored, CharInput input, int start, ErrorContext context) {
         return parser.skipAndMatch(null, input, start, context);
+      }
+
+      @Override boolean honorsSkipping() {
+        return false;
+      }
+
+      @Override public Set<String> getPrefixes() {
+        return parser.getPrefixes();
       }
     };
   }
@@ -1633,6 +1731,14 @@ public abstract class Parser<T> {
             default -> new MatchResult.Success<>(start, start, computeDefaultValue());
           };
         }
+
+        @Override boolean honorsSkipping() {
+          return notEmpty().honorsSkipping();
+        }
+
+        @Override public Set<String> getPrefixes() {
+          return notEmpty().getPrefixes();
+        }
       };
     }
   }
@@ -1782,6 +1888,14 @@ public abstract class Parser<T> {
             case MatchResult.Failure<T> failure -> failure;
           };
         }
+
+        @Override boolean honorsSkipping() {
+          return self.honorsSkipping();
+        }
+
+        @Override public Set<String> getPrefixes() {
+          return self.getPrefixes();
+        }
       };
     }
   }
@@ -1829,6 +1943,14 @@ public abstract class Parser<T> {
   public static final class Rule<T> extends Parser<T> {
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
 
+    @Override boolean honorsSkipping() {
+      return false;
+    }
+
+    @Override public Set<String> getPrefixes() {
+      return NO_PREFIX;
+    }
+
     @Override MatchResult<T> skipAndMatch(
         Parser<?> skip, CharInput input, int start, ErrorContext context) {
       Parser<T> p = ref.get();
@@ -1864,6 +1986,15 @@ public abstract class Parser<T> {
       return index;
     }
   }
+
+  /** If true, skippable characters can be skipped before applying this parser. */
+  abstract boolean honorsSkipping();
+
+  /**
+   * Returns metadata about the prefixes that can be used to prune out this parser, if the input
+   * doesn't start with any of the prefixes. Return NO_PREFIX to indicate no pruning is applicable.
+   */
+  abstract Set<String> getPrefixes();
 
   /**
    * Matches the input string starting at the given position.
@@ -1908,7 +2039,7 @@ public abstract class Parser<T> {
     }
   }
 
-  private static final class ErrorContext {
+  static final class ErrorContext {
     private final CharInput input;
     private MatchResult.Failure<?> farthestFailure = null;
 
