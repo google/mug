@@ -21,6 +21,8 @@ import static com.google.common.labs.parse.Utils.checkState;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
+import static java.lang.Character.toLowerCase;
+import static java.lang.Character.toUpperCase;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.UnaryOperator.identity;
@@ -34,6 +36,7 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.AbstractMap;
 import java.util.ArrayDeque;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -350,7 +353,10 @@ public abstract class Parser<T> {
       }
 
       @Override public Set<String> getPrefixes() {
-        return NO_PREFIX;
+        // Prune only by the first character to avoid tree explosion.
+        char c0 = string.charAt(0);
+        return Stream.of(Character.toString(toLowerCase(c0)), Character.toString(toUpperCase(c0)))
+            .collect(toCollection(LinkedHashSet::new));
       }
     };
   }
