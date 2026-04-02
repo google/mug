@@ -33,11 +33,11 @@ class Utils {
   static Set<String> caseInsensitivePrefixes(String string, int maxLength) {
     checkArgument(maxLength >= 0, "maxLength (%s) must not be negative", maxLength);
     int chars = min(maxLength, string.length());
-    class Enumeration extends Iteration<String> {
+    class Enumerate extends Iteration<String> {
       private final char[] buffer = new char[chars];
 
       @CanIgnoreReturnValue
-      Enumeration from(int index) {
+      Enumerate from(int index) {
         if (index >= chars) {
           emit(new String(buffer));
           return this;
@@ -52,6 +52,6 @@ class Utils {
         return this;
       }
     }
-    return new Enumeration().from(0).iterate().collect(toCollection(LinkedHashSet::new));
+    return new Enumerate().from(0).iterate().collect(toCollection(LinkedHashSet::new));
   }
 }
