@@ -81,6 +81,7 @@ import com.google.mu.util.stream.Joiner;
  */
 public abstract class Parser<T> {
   static final Set<String> NO_PREFIX = Set.of("");
+
   /**
    * Only use in context where input consumption is guaranteed. Do not use within a loop, like
    * atLeastOnce(), zeroOrMore()!

@@ -1,6 +1,7 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Utils.checkArgument;
+import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
@@ -72,14 +73,11 @@ final class OrParser<T> extends Parser<T> {
     }
     List<String> prefixes = new ArrayList<>();
     for (String prefix :
-        parsers.stream()
-            .flatMap(parser -> parser.getPrefixes().stream())
-            .sorted() // sort lexicographically
-            .toList()) {
+        iterateOnce(parsers.stream().flatMap(parser -> parser.getPrefixes().stream()).sorted())) {
       if (prefix.isEmpty()) { // short circuit upon no prefix.
         return NO_PREFIX;
       }
-      // If "a" is a prefix, "an", "any" are redundant.
+      // prefixes are sorted lexicographically, so if "a" is a prefix, "an", "any" are redundant.
       if (prefixes.isEmpty() || !prefix.startsWith(prefixes.getLast())) {
         prefixes.add(prefix);
       }
