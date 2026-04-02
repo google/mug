@@ -1804,17 +1804,17 @@ public class ParserTest {
             string("a7"),
             string("a8"),
             string("a9"),
-            caseInsensitive("foo").source(),
+            digits(),
             chars(2));
 
     assertThat(parser.parse("a1")).isEqualTo("a1");
     assertThat(parser.parse("a9")).isEqualTo("a9");
     assertThat(parser.parse("xy")).isEqualTo("xy"); // chars(2)
-    assertThat(parser.parse("fOo")).isEqualTo("fOo"); // caseInsensitive("foo")
+    assertThat(parser.parse("123")).isEqualTo("123"); // digits()
 
     // Failure with pruning. farthestFailure is the first candidate ("a1")
     ParseException e1 = assertThrows(ParseException.class, () -> parser.parse("a"));
-    assertThat(e1).hasMessageThat().contains("expecting <foo>");
+    assertThat(e1).hasMessageThat().contains("expecting <digits>");
 
     // Failure with completely mismatched input. "ba" matches chars(2), leftovers "r" causes EOF
     // error.
@@ -2065,8 +2065,8 @@ public class ParserTest {
 
   @Test
   public void anyOf_pruning_withOneNestedCandidateHavingNoPrefix() {
-    // Nested anyOf where one candidate has no prefix (caseInsensitive)
-    Parser<String> nested = anyOf(string("a"), caseInsensitive("b")).map(Object::toString);
+    // Nested anyOf where one candidate has no prefix (digits)
+    Parser<String> nested = anyOf(string("a"), digits()).map(Object::toString);
     assertThat(nested.getPrefixes()).containsExactly("");
 
     List<Parser<String>> parsers =
@@ -2074,8 +2074,32 @@ public class ParserTest {
     Parser<String> outer = parsers.stream().collect(or());
 
     assertThat(outer.parse("a")).isEqualTo("a");
-    assertThat(outer.parse("B")).isEqualTo("b");
+    assertThat(outer.parse("123")).isEqualTo("123");
     assertThat(outer.parse("x1")).isEqualTo("x1");
+  }
+
+  @Test
+  public void anyOf_pruning_withCaseInsensitive() {
+    List<Parser<String>> parsers =
+        range(0, 10).mapToObj(i -> caseInsensitive("a" + i).map(Object::toString)).toList();
+    Parser<String> parser = parsers.stream().collect(or());
+
+    assertThat(parser.parse("A5")).isEqualTo("a5");
+    assertThat(parser.parse("a5")).isEqualTo("a5");
+    // verify pruning by providing an input that doesn't start with any 'a' or 'A'
+    assertThrows(ParseException.class, () -> parser.parse("B1"));
+  }
+
+  @Test
+  public void anyOf_pruning_withCaseInsensitiveWord() {
+    List<Parser<String>> parsers =
+        range(0, 10).mapToObj(i -> caseInsensitiveWord("word" + i).map(Object::toString)).toList();
+    Parser<String> parser = parsers.stream().collect(or());
+
+    assertThat(parser.parse("WORD5")).isEqualTo("word5");
+    assertThat(parser.parse("word5")).isEqualTo("word5");
+    // verify pruning
+    assertThrows(ParseException.class, () -> parser.parse("A1"));
   }
 
   @Test

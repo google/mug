@@ -69,13 +69,13 @@ final class OrParser<T> extends Parser<T> {
   @Override public Set<String> getPrefixes() {
     if (!hasConsistentSkippingMode(parsers)) {
       // inconsistent skipping means the candidate prefixes aren't usable.
-      return NO_PREFIX;
+      return super.getPrefixes();
     }
     List<String> prefixes = new ArrayList<>();
     for (String prefix :
         iterateOnce(parsers.stream().flatMap(parser -> parser.getPrefixes().stream()).sorted())) {
       if (prefix.isEmpty()) { // short circuit upon no prefix.
-        return NO_PREFIX;
+        return super.getPrefixes();
       }
       // prefixes are sorted lexicographically, so if "a" is a prefix, "an", "any" are redundant.
       if (prefixes.isEmpty() || !prefix.startsWith(prefixes.getLast())) {

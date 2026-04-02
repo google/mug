@@ -83,7 +83,7 @@ import com.google.mu.util.stream.Joiner;
  * can cause StackOverflowError.
  */
 public abstract class Parser<T> {
-  static final Set<String> NO_PREFIX = Set.of("");
+  private static final Set<String> NO_PREFIX = Set.of("");
 
   /**
    * Only use in context where input consumption is guaranteed. Do not use within a loop, like
@@ -100,10 +100,6 @@ public abstract class Parser<T> {
 
     @Override boolean honorsSkipping() {
       return true;
-    }
-
-    @Override public Set<String> getPrefixes() {
-      return NO_PREFIX;
     }
   };
 
@@ -144,10 +140,6 @@ public abstract class Parser<T> {
 
       @Override boolean honorsSkipping() {
         return true;
-      }
-
-      @Override public Set<String> getPrefixes() {
-        return NO_PREFIX;
       }
     };
   }
@@ -190,10 +182,6 @@ public abstract class Parser<T> {
       @Override boolean honorsSkipping() {
         return true;
       }
-
-      @Override public Set<String> getPrefixes() {
-        return NO_PREFIX;
-      }
     };
   }
 
@@ -216,10 +204,6 @@ public abstract class Parser<T> {
 
       @Override boolean honorsSkipping() {
         return true;
-      }
-
-      @Override public Set<String> getPrefixes() {
-        return NO_PREFIX;
       }
     };
   }
@@ -300,10 +284,6 @@ public abstract class Parser<T> {
       @Override boolean honorsSkipping() {
         return false;
       }
-
-      @Override public Set<String> getPrefixes() {
-        return NO_PREFIX;
-      }
     };
   }
 
@@ -353,7 +333,7 @@ public abstract class Parser<T> {
       }
 
       @Override public Set<String> getPrefixes() {
-        // Prune only by the first character to avoid tree explosion.
+        // Prune only by the first character to avoid prefix tree explosion.
         char c0 = string.charAt(0);
         return Stream.of(Character.toString(toLowerCase(c0)), Character.toString(toUpperCase(c0)))
             .collect(toCollection(LinkedHashSet::new));
@@ -418,10 +398,6 @@ public abstract class Parser<T> {
 
           @Override boolean honorsSkipping() {
             return false;
-          }
-
-          @Override public Set<String> getPrefixes() {
-            return before.getPrefixes();
           }
         });
   }
@@ -652,17 +628,16 @@ public abstract class Parser<T> {
    */
   public final <A, R> Parser<R> atLeastOnce(Collector<? super T, A, ? extends R> collector) {
     requireNonNull(collector);
-    Parser<T> self = this;
-    return new Parser<>() {
+    return new SamePrefix<>() {
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         A buffer = collector.supplier().get();
         var accumulator = collector.accumulator();
-        switch (self.skipAndMatch(skip, input, start, context)) {
+        switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success(int head, int tail, T value) -> {
             accumulator.accept(buffer, value);
             for (int from = tail; ; ) {
-              switch (self.skipAndMatch(skip, input, from, context)) {
+              switch (left().skipAndMatch(skip, input, from, context)) {
                 case MatchResult.Success(int head2, int tail2, T value2) -> {
                   accumulator.accept(buffer, value2);
                   from = tail2;
@@ -677,14 +652,6 @@ public abstract class Parser<T> {
             return failure.safeCast();
           }
         }
-      }
-
-      @Override boolean honorsSkipping() {
-        return self.honorsSkipping();
-      }
-
-      @Override public Set<String> getPrefixes() {
-        return self.getPrefixes();
       }
     };
   }
@@ -1012,23 +979,14 @@ public abstract class Parser<T> {
   /** If this parser matches, returns the result of applying the given function to the match. */
   public final <R> Parser<R> map(Function<? super T, ? extends R> f) {
     requireNonNull(f);
-    Parser<T> self = this;
-    return new Parser<>() {
+    return new SamePrefix<>() {
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        return switch (self.skipAndMatch(skip, input, start, context)) {
+        return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success(int head, int tail, T value) ->
               new MatchResult.Success<>(head, tail, f.apply(value));
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
-      }
-
-      @Override boolean honorsSkipping() {
-        return self.honorsSkipping();
-      }
-
-      @Override public Set<String> getPrefixes() {
-        return self.getPrefixes();
       }
     };
   }
@@ -1038,11 +996,10 @@ public abstract class Parser<T> {
    */
   public final <R> Parser<R> flatMap(Function<? super T, Parser<R>> f) {
     requireNonNull(f);
-    Parser<T> self = this;
-    return new Parser<>() {
+    return new SamePrefix<>() {
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        return switch (self.skipAndMatch(skip, input, start, context)) {
+        return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success(int head, int tail, T value) ->
               switch (f.apply(value).skipAndMatch(skip, input, tail, context)) {
                 case MatchResult.Success(int head2, int tail2, R value2) ->
@@ -1051,14 +1008,6 @@ public abstract class Parser<T> {
               };
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
-      }
-
-      @Override boolean honorsSkipping() {
-        return self.honorsSkipping();
-      }
-
-      @Override public Set<String> getPrefixes() {
-        return self.getPrefixes();
       }
     };
   }
@@ -1098,22 +1047,13 @@ public abstract class Parser<T> {
   public final Parser<T> suchThat(Predicate<? super T> condition, String name) {
     requireNonNull(condition);
     requireNonNull(name);
-    Parser<T> self = this;
-    return new Parser<>() {
+    return new SamePrefix<>() {
       @Override MatchResult<T> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        var result = self.skipAndMatch(skip, input, start, context);
+        var result = left().skipAndMatch(skip, input, start, context);
         return result instanceof MatchResult.Success<T> success && !condition.test(success.value())
             ? context.expecting(name, success.head())
             : result;
-      }
-
-      @Override boolean honorsSkipping() {
-        return self.honorsSkipping();
-      }
-
-      @Override public Set<String> getPrefixes() {
-        return self.getPrefixes();
       }
     };
   }
@@ -1193,11 +1133,10 @@ public abstract class Parser<T> {
   public final Parser<T> notFollowedBy(Parser<?> suffix, String name) {
     requireNonNull(suffix);
     requireNonNull(name);
-    Parser<T> self = this;
-    return new Parser<>() {
+    return new SamePrefix<>() {
       @Override MatchResult<T> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        return switch (self.skipAndMatch(skip, input, start, context)) {
+        return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<T> success -> {
             ErrorContext lookaheadContext = new ErrorContext(input);
             yield switch (suffix.skipAndMatch(skip, input, success.tail(), lookaheadContext)) {
@@ -1209,14 +1148,6 @@ public abstract class Parser<T> {
           }
           case MatchResult.Failure<T> failure -> failure;
         };
-      }
-
-      @Override boolean honorsSkipping() {
-        return self.honorsSkipping();
-      }
-
-      @Override public Set<String> getPrefixes() {
-        return self.getPrefixes();
       }
     };
   }
@@ -1267,23 +1198,14 @@ public abstract class Parser<T> {
 
   /** Returns a parser that matches {@code this} pattern and returns the matched string. */
   public final Parser<String> source() {
-    Parser<T> self = this;
-    return new Parser<String>() {
+    return new SamePrefix<>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        return switch (self.skipAndMatch(skip, input, start, context)) {
+        return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<T>(int head, int tail, T value) ->
               new MatchResult.Success<>(head, tail, input.snippet(head, tail - head));
           case MatchResult.Failure<T> failure -> failure.safeCast();
         };
-      }
-
-      @Override boolean honorsSkipping() {
-        return self.honorsSkipping();
-      }
-
-      @Override public Set<String> getPrefixes() {
-        return self.getPrefixes();
       }
     };
   }
@@ -1295,18 +1217,14 @@ public abstract class Parser<T> {
    */
   public static <T> Parser<T> literally(Parser<T> parser) {
     requireNonNull(parser);
-    return new Parser<T>() {
+    return parser.new SamePrefix<>() {
       @Override MatchResult<T> skipAndMatch(
           Parser<?> ignored, CharInput input, int start, ErrorContext context) {
-        return parser.skipAndMatch(null, input, start, context);
+        return left().skipAndMatch(null, input, start, context);
       }
 
       @Override boolean honorsSkipping() {
         return false;
-      }
-
-      @Override public Set<String> getPrefixes() {
-        return parser.getPrefixes();
       }
     };
   }
@@ -1742,21 +1660,13 @@ public abstract class Parser<T> {
      * in a loop and must be carefully composed with a parser that does consume!
      */
     private Parser<T> asUnsafeZeroWidthParser() {
-      return new Parser<T>() {
+      return notEmpty().new SamePrefix<>() {
         @Override MatchResult<T> skipAndMatch(
             Parser<?> skip, CharInput input, int start, ErrorContext context) {
-          return switch (notEmpty().skipAndMatch(skip, input, start, context)) {
+          return switch (left().skipAndMatch(skip, input, start, context)) {
             case MatchResult.Success<T> success -> success;
             default -> new MatchResult.Success<>(start, start, computeDefaultValue());
           };
-        }
-
-        @Override boolean honorsSkipping() {
-          return notEmpty().honorsSkipping();
-        }
-
-        @Override public Set<String> getPrefixes() {
-          return notEmpty().getPrefixes();
         }
       };
     }
@@ -1893,11 +1803,10 @@ public abstract class Parser<T> {
     }
 
     private Parser<T> forTokens() {
-      Parser<T> self = Parser.this;
-      return new Parser<T>() {
+      return new SamePrefix<>() {
         @Override MatchResult<T> skipAndMatch(
             Parser<?> ignored, CharInput input, int start, ErrorContext context) {
-          return self.skipAndMatch(toSkip, input, start, context);
+          return left().skipAndMatch(toSkip, input, start, context);
         }
 
         @Override MatchResult<T> match(CharInput input, int start, ErrorContext context) {
@@ -1906,14 +1815,6 @@ public abstract class Parser<T> {
                 new MatchResult.Success<>(head, skipIfAny(toSkip, input, tail), value);
             case MatchResult.Failure<T> failure -> failure;
           };
-        }
-
-        @Override boolean honorsSkipping() {
-          return self.honorsSkipping();
-        }
-
-        @Override public Set<String> getPrefixes() {
-          return self.getPrefixes();
         }
       };
     }
@@ -1966,10 +1867,6 @@ public abstract class Parser<T> {
       return false;
     }
 
-    @Override public Set<String> getPrefixes() {
-      return NO_PREFIX;
-    }
-
     @Override MatchResult<T> skipAndMatch(
         Parser<?> skip, CharInput input, int start, ErrorContext context) {
       Parser<T> p = ref.get();
@@ -2013,7 +1910,9 @@ public abstract class Parser<T> {
    * Returns metadata about the prefixes that can be used to prune out this parser, if the input
    * doesn't start with any of the prefixes. Return NO_PREFIX to indicate no pruning is applicable.
    */
-  abstract Set<String> getPrefixes();
+  Set<String> getPrefixes() {
+    return NO_PREFIX;
+  }
 
   /**
    * Matches the input string starting at the given position.
@@ -2035,6 +1934,21 @@ public abstract class Parser<T> {
       case MatchResult.Success<?> success -> success.tail();
       case MatchResult.Failure<?> failure -> start;
     };
+  }
+
+  /** A derived parser, with {@code this} being the left-most rule. */
+  private abstract class SamePrefix<R> extends Parser<R> {
+    @Override boolean honorsSkipping() {
+      return left().honorsSkipping();
+    }
+
+    @Override public Set<String> getPrefixes() {
+      return left().getPrefixes();
+    }
+
+    final Parser<T> left() {
+      return Parser.this;
+    }
   }
 
   sealed interface MatchResult<V> permits MatchResult.Success, MatchResult.Failure {
