@@ -303,7 +303,7 @@ public abstract class Parser<T> {
         return true;
       }
 
-      @Override public Set<String> getPrefixes() {
+      @Override Set<String> getPrefixes() {
         return Set.of(string);
       }
     };
@@ -332,7 +332,7 @@ public abstract class Parser<T> {
         return true;
       }
 
-      @Override public Set<String> getPrefixes() {
+      @Override Set<String> getPrefixes() {
         // Prune only by the first character to avoid prefix tree explosion.
         char c0 = string.charAt(0);
         return Stream.of(Character.toString(toLowerCase(c0)), Character.toString(toUpperCase(c0)))
@@ -1942,7 +1942,7 @@ public abstract class Parser<T> {
       return left().honorsSkipping();
     }
 
-    @Override public Set<String> getPrefixes() {
+    @Override Set<String> getPrefixes() {
       return left().getPrefixes();
     }
 
