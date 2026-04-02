@@ -740,6 +740,18 @@ public abstract class Parser<T> {
   }
 
   /**
+   * Starts a fluent chain for matching consecutive characters in the {@code characterSet} zero or
+   * more times. If no such character is found, empty string is the result.
+   *
+   * <p>For example: {@code zeroOrMore(charsIn("[a-zA-Z0-9_-]"))}.
+   *
+   * @since 9.9.9
+   */
+  public static Parser<String>.OrEmpty zeroOrMore(CharacterSet characterSet) {
+    return zeroOrMore(characterSet, characterSet.toString());
+  }
+
+  /**
    * Starts a fluent chain for matching consecutive {@code charsToMatch} zero or more times. If no
    * such character is found, empty string is the result.
    *

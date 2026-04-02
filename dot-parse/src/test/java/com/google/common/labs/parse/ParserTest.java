@@ -1,5 +1,7 @@
 package com.google.common.labs.parse;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.bmpCodeUnit;
 import static com.google.common.labs.parse.Parser.caseInsensitive;
@@ -10,6 +12,7 @@ import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.first;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
+import static com.google.common.labs.parse.Parser.or;
 import static com.google.common.labs.parse.Parser.quotedBy;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
@@ -18,22 +21,21 @@ import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.common.labs.parse.Parser.zeroOrMoreDelimited;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.util.CharPredicate.ANY;
+import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.CharPredicate.noneOf;
-import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.range;
+import static java.util.stream.Stream.concat;
 import static org.junit.Assert.assertThrows;
 
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -42,7 +44,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.labs.parse.Parser.ParseException;
 import com.google.common.testing.NullPointerTester;
@@ -51,7 +55,7 @@ import com.google.mu.util.CharPredicate;
 
 @RunWith(JUnit4.class)
 public class ParserTest {
-  private static final CharPredicate DIGIT = CharPredicate.range('0', '9');
+  private static final CharacterSet DIGIT = charsIn("[0-9]");
 
   @Test
   public void first_atBeginning_followedBy() {
@@ -95,8 +99,8 @@ public class ParserTest {
 
   @Test
   public void first_skippingWhitespace() {
-    assertThat(first(" foo").skipping(Character::isWhitespace).parse("    foo")).isEqualTo(" foo");
-    assertThat(first(" foo").skipping(Character::isWhitespace).matches("    foo")).isTrue();
+    assertThat(first(" foo").skipping(whitespace()).parse("    foo")).isEqualTo(" foo");
+    assertThat(first(" foo").skipping(whitespace()).matches("    foo")).isTrue();
   }
 
   @Test
@@ -231,22 +235,22 @@ public class ParserTest {
 
   @Test
   public void word_skipping_success() {
-    assertThat(word("foo").skipping(Character::isWhitespace).parseToStream("foo")).containsExactly("foo");
-    assertThat(word("foo").skipping(Character::isWhitespace).parseToStream("foo foo"))
+    assertThat(word("foo").skipping(whitespace()).parseToStream("foo")).containsExactly("foo");
+    assertThat(word("foo").skipping(whitespace()).parseToStream("foo foo"))
         .containsExactly("foo", "foo");
-    assertThat(word("foo").skipping(Character::isWhitespace).probe(" foo-foo")).containsExactly("foo");
+    assertThat(word("foo").skipping(whitespace()).probe(" foo-foo")).containsExactly("foo");
   }
 
   @Test
   public void word_skipping_failIfFollowedByWordChar() {
-    assertThrows(ParseException.class, () -> word("foo").parseSkipping(Character::isWhitespace, "foobar"));
-    assertThat(word("foo").skipping(Character::isWhitespace).matches("foobar")).isFalse();
-    assertThrows(ParseException.class, () -> word("foo").parseSkipping(Character::isWhitespace, "foo_bar"));
-    assertThat(word("foo").skipping(Character::isWhitespace).matches("foo_bar")).isFalse();
-    assertThrows(ParseException.class, () -> word("foo").parseSkipping(Character::isWhitespace, "foo1"));
-    assertThat(word("foo").skipping(Character::isWhitespace).matches("foo1")).isFalse();
-    assertThrows(ParseException.class, () -> word("foo").parseSkipping(Character::isWhitespace, " foo1"));
-    assertThat(word("foo").skipping(Character::isWhitespace).matches(" foo1")).isFalse();
+    assertThrows(ParseException.class, () -> word("foo").parseSkipping(whitespace(), "foobar"));
+    assertThat(word("foo").skipping(whitespace()).matches("foobar")).isFalse();
+    assertThrows(ParseException.class, () -> word("foo").parseSkipping(whitespace(), "foo_bar"));
+    assertThat(word("foo").skipping(whitespace()).matches("foo_bar")).isFalse();
+    assertThrows(ParseException.class, () -> word("foo").parseSkipping(whitespace(), "foo1"));
+    assertThat(word("foo").skipping(whitespace()).matches("foo1")).isFalse();
+    assertThrows(ParseException.class, () -> word("foo").parseSkipping(whitespace(), " foo1"));
+    assertThat(word("foo").skipping(whitespace()).matches(" foo1")).isFalse();
   }
 
   @Test
@@ -273,11 +277,11 @@ public class ParserTest {
 
   @Test
   public void caseInsensitiveWord_skipping_success() {
-    assertThat(caseInsensitiveWord("foo").source().skipping(Character::isWhitespace).parseToStream("fOo"))
+    assertThat(caseInsensitiveWord("foo").source().skipping(whitespace()).parseToStream("fOo"))
         .containsExactly("fOo");
-    assertThat(caseInsensitiveWord("foo").source().skipping(Character::isWhitespace).parseToStream("FoO fOO"))
+    assertThat(caseInsensitiveWord("foo").source().skipping(whitespace()).parseToStream("FoO fOO"))
         .containsExactly("FoO", "fOO");
-    assertThat(caseInsensitiveWord("foo").source().skipping(Character::isWhitespace).probe(" FoO-fOo"))
+    assertThat(caseInsensitiveWord("foo").source().skipping(whitespace()).probe(" FoO-fOo"))
         .containsExactly("FoO");
   }
 
@@ -285,19 +289,19 @@ public class ParserTest {
   public void caseInsensitiveWord_skipping_failIfFollowedByWordChar() {
     assertThrows(
         ParseException.class,
-        () -> caseInsensitiveWord("foo").parseSkipping(Character::isWhitespace, "FoObar"));
-    assertThat(caseInsensitiveWord("foo").skipping(Character::isWhitespace).matches("FoObar")).isFalse();
+        () -> caseInsensitiveWord("foo").parseSkipping(whitespace(), "FoObar"));
+    assertThat(caseInsensitiveWord("foo").skipping(whitespace()).matches("FoObar")).isFalse();
     assertThrows(
         ParseException.class,
-        () -> caseInsensitiveWord("foo").parseSkipping(Character::isWhitespace, "FoO_bar"));
-    assertThat(caseInsensitiveWord("foo").skipping(Character::isWhitespace).matches("FoO_bar")).isFalse();
+        () -> caseInsensitiveWord("foo").parseSkipping(whitespace(), "FoO_bar"));
+    assertThat(caseInsensitiveWord("foo").skipping(whitespace()).matches("FoO_bar")).isFalse();
     assertThrows(
-        ParseException.class, () -> caseInsensitiveWord("foo").parseSkipping(Character::isWhitespace, "FoO1"));
-    assertThat(caseInsensitiveWord("foo").skipping(Character::isWhitespace).matches("FoO1")).isFalse();
+        ParseException.class, () -> caseInsensitiveWord("foo").parseSkipping(whitespace(), "FoO1"));
+    assertThat(caseInsensitiveWord("foo").skipping(whitespace()).matches("FoO1")).isFalse();
     assertThrows(
         ParseException.class,
-        () -> caseInsensitiveWord("foo").parseSkipping(Character::isWhitespace, " FoO1"));
-    assertThat(caseInsensitiveWord("foo").skipping(Character::isWhitespace).matches(" FoO1")).isFalse();
+        () -> caseInsensitiveWord("foo").parseSkipping(whitespace(), " FoO1"));
+    assertThat(caseInsensitiveWord("foo").skipping(whitespace()).matches(" FoO1")).isFalse();
   }
 
   @Test
@@ -340,11 +344,11 @@ public class ParserTest {
 
   @Test
   public void quotedBy_withSkipping() {
-    assertThat(quotedBy('{', '}').parseSkipping(Character::isWhitespace, " { foo } ")).isEqualTo(" foo ");
-    assertThat(quotedBy('{', '}').skipping(Character::isWhitespace).matches(" { foo } ")).isTrue();
-    assertThat(quotedBy('{', '}').source().parseSkipping(Character::isWhitespace, " { foo } "))
+    assertThat(quotedBy('{', '}').parseSkipping(whitespace(), " { foo } ")).isEqualTo(" foo ");
+    assertThat(quotedBy('{', '}').skipping(whitespace()).matches(" { foo } ")).isTrue();
+    assertThat(quotedBy('{', '}').source().parseSkipping(whitespace(), " { foo } "))
         .isEqualTo("{ foo }");
-    assertThat(quotedBy('{', '}').source().skipping(Character::isWhitespace).matches(" { foo } ")).isTrue();
+    assertThat(quotedBy('{', '}').source().skipping(whitespace()).matches(" { foo } ")).isTrue();
   }
 
   @Test
@@ -389,11 +393,11 @@ public class ParserTest {
 
   @Test
   public void quotedBy_stringDelimiters_withSkipping() {
-    assertThat(quotedBy("{{", "}}").parseSkipping(Character::isWhitespace, " {{ foo }} ")).isEqualTo(" foo ");
-    assertThat(quotedBy("{{", "}}").skipping(Character::isWhitespace).matches(" {{ foo }} ")).isTrue();
-    assertThat(quotedBy("{{", "}}").source().parseSkipping(Character::isWhitespace, " {{ foo }} "))
+    assertThat(quotedBy("{{", "}}").parseSkipping(whitespace(), " {{ foo }} ")).isEqualTo(" foo ");
+    assertThat(quotedBy("{{", "}}").skipping(whitespace()).matches(" {{ foo }} ")).isTrue();
+    assertThat(quotedBy("{{", "}}").source().parseSkipping(whitespace(), " {{ foo }} "))
         .isEqualTo("{{ foo }}");
-    assertThat(quotedBy("{{", "}}").source().skipping(Character::isWhitespace).matches(" {{ foo }} "))
+    assertThat(quotedBy("{{", "}}").source().skipping(whitespace()).matches(" {{ foo }} "))
         .isTrue();
   }
 
@@ -509,9 +513,9 @@ public class ParserTest {
   public void quotedByWithEscapes_markdownLinkWithEscape() {
     record MarkdownLink(String text, String url) {}
     Parser<String> escapedChar =
-        Parser.one(CharPredicate.anyOf("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~\\"), "escapable char")
+        Parser.one(anyOf("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~\\"), "escapable char")
             .map(c -> Character.toString(c))
-            .or(one(CharPredicate.ANY, "non-escapable char").map(c -> "\\" + c));
+            .or(one(ANY, "non-escapable char").map(c -> "\\" + c));
     Parser<MarkdownLink> parser =
         Parser.sequence(
             Parser.quotedByWithEscapes("![", ']', escapedChar),
@@ -531,7 +535,7 @@ public class ParserTest {
   }
 
   @Test
-  public void testNulls() {
+  public void testNulls() throws Exception {
     NullPointerTester tester =
         new NullPointerTester()
             .setDefault(Parser.class, string("a"))
@@ -539,6 +543,10 @@ public class ParserTest {
             .setDefault(String.class, "test")
             .setDefault(char.class, '`');
     tester.testAllPublicStaticMethods(Parser.class);
+    tester
+        .ignore(Parser.class.getMethod("orElse", Object.class))
+        .ignore(Parser.class.getMethod("thenReturn", Object.class))
+        .testAllPublicInstanceMethods(string("a"));
   }
 
   @Test
@@ -646,11 +654,11 @@ public class ParserTest {
 
   @Test
   public void suchThat_conditionSucceeds() {
-    Set<String> magicNumbers = Set.of("888", "911");
+    ImmutableSet<String> magicNumbers = ImmutableSet.of("888", "911");
     Parser<String> parser = digits().suchThat(magicNumbers::contains, "magic");
     assertThat(parser.parse("888")).isEqualTo("888");
     assertThat(parser.matches("888")).isTrue();
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("911 888"))
+    assertThat(parser.skipping(whitespace()).parseToStream("911 888"))
         .containsExactly("911", "888")
         .inOrder();
     assertThat(parser.parseToStream("")).isEmpty();
@@ -1015,13 +1023,13 @@ public class ParserTest {
             string("a")
                 .notImmediatelyFollowedBy(is('b'), "b")
                 .followedBy("b")
-                .parseSkipping(Character::isWhitespace, "a b"))
+                .parseSkipping(whitespace(), "a b"))
         .isEqualTo("a");
     assertThat(
             string("a")
                 .notImmediatelyFollowedBy(is('b'), "b")
                 .followedBy("b")
-                .skipping(Character::isWhitespace)
+                .skipping(whitespace())
                 .matches("a b"))
         .isTrue();
   }
@@ -1033,14 +1041,14 @@ public class ParserTest {
                 .notImmediatelyFollowedBy(is('b'), "b")
                 .followedBy("b")
                 .source()
-                .parseSkipping(Character::isWhitespace, "a b"))
+                .parseSkipping(whitespace(), "a b"))
         .isEqualTo("a b");
     assertThat(
             string("a")
                 .notImmediatelyFollowedBy(is('b'), "b")
                 .followedBy("b")
                 .source()
-                .skipping(Character::isWhitespace)
+                .skipping(whitespace())
                 .matches("a b"))
         .isTrue();
   }
@@ -1049,29 +1057,29 @@ public class ParserTest {
   public void notFollowedBy_skipping_suffixFollows() {
     assertThrows(
         ParseException.class,
-        () -> string("a").notFollowedBy("b").parseSkipping(Character::isWhitespace, "a b"));
-    assertThat(string("a").notFollowedBy("b").skipping(Character::isWhitespace).matches("a b")).isFalse();
+        () -> string("a").notFollowedBy("b").parseSkipping(whitespace(), "a b"));
+    assertThat(string("a").notFollowedBy("b").skipping(whitespace()).matches("a b")).isFalse();
   }
 
   @Test
   public void notFollowedBy_skipping_suffixDoesNotFollow() {
-    assertThat(string("a").notFollowedBy("b").parseSkipping(Character::isWhitespace, "a")).isEqualTo("a");
-    assertThat(string("a").notFollowedBy("b").skipping(Character::isWhitespace).matches("a")).isTrue();
+    assertThat(string("a").notFollowedBy("b").parseSkipping(whitespace(), "a")).isEqualTo("a");
+    assertThat(string("a").notFollowedBy("b").skipping(whitespace()).matches("a")).isTrue();
     assertThrows(
         ParseException.class,
-        () -> string("a").notFollowedBy("b").parseSkipping(Character::isWhitespace, "a c"));
-    assertThat(string("a").notFollowedBy("b").skipping(Character::isWhitespace).matches("a c")).isFalse();
+        () -> string("a").notFollowedBy("b").parseSkipping(whitespace(), "a c"));
+    assertThat(string("a").notFollowedBy("b").skipping(whitespace()).matches("a c")).isFalse();
   }
 
   @Test
   public void notFollowedBy_skipping_suffixDoesNotFollow_source() {
     Parser<String> parser = string("a").notFollowedBy("b");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "a")).isEqualTo("a");
-    assertThat(parser.source().skipping(Character::isWhitespace).matches("a")).isTrue();
+    assertThat(parser.source().parseSkipping(whitespace(), "a")).isEqualTo("a");
+    assertThat(parser.source().skipping(whitespace()).matches("a")).isTrue();
     assertThrows(
         ParseException.class,
-        () -> string("a").notFollowedBy("b").parseSkipping(Character::isWhitespace, "a c"));
-    assertThat(string("a").notFollowedBy("b").skipping(Character::isWhitespace).matches("a c")).isFalse();
+        () -> string("a").notFollowedBy("b").parseSkipping(whitespace(), "a c"));
+    assertThat(string("a").notFollowedBy("b").skipping(whitespace()).matches("a c")).isFalse();
   }
 
   @Test
@@ -1095,7 +1103,8 @@ public class ParserTest {
     Parser<Integer> parser = simpleCalculator();
     ParseException thrown =
         assertThrows(
-            ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "(1 + \n( 2 + 3)"));
+            ParseException.class, () -> parser.parseSkipping(whitespace(), "(1 + \n( 2 + 3)"));
+    assertThat(parser.skipping(whitespace()).matches("(1 + \n( 2 + 3)")).isFalse();
     assertThat(thrown).hasMessageThat().contains("at 2:9: expecting <)>, encountered <EOF>.");
   }
 
@@ -1104,7 +1113,8 @@ public class ParserTest {
     Parser<Integer> parser = simpleCalculator();
     ParseException thrown =
         assertThrows(
-            ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "(1 + \n( 2 ? 3)"));
+            ParseException.class, () -> parser.parseSkipping(whitespace(), "(1 + \n( 2 ? 3)"));
+    assertThat(parser.skipping(whitespace()).matches("(1 + \n( 2 ? 3)")).isFalse();
     assertThat(thrown).hasMessageThat().contains("at 2:5");
     assertThat(thrown).hasMessageThat().contains("encountered [?...].");
   }
@@ -1444,7 +1454,7 @@ public class ParserTest {
   }
 
   @Test
-  public void orEmpty_delimitedBy_one_source() {
+  public void orEmpty_delimitedBy_single_source() {
     assertThat(word().source().orElse("").delimitedBy(",").parse("foo")).containsExactly("foo");
     assertThat(word().source().orElse("").delimitedBy(",").matches("foo")).isTrue();
     assertThat(word().source().orElse("").delimitedBy(",").notEmpty().parse("foo"))
@@ -1591,91 +1601,91 @@ public class ParserTest {
   @Test
   public void orEmpty_parseSkipping_emptyInput() {
     Parser<String>.OrEmpty parser = string("foo").orElse("bar");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "")).isEqualTo("bar");
-    assertThat(parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), "")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(whitespace(), "")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), "")).isEqualTo("bar");
   }
 
   @Test
   public void orEmpty_parseSkipping_emptyInput_source() {
     Parser<String>.OrEmpty parser = string("foo").source().orElse("bar");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "")).isEqualTo("bar");
-    assertThat(parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), "")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(whitespace(), "")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), "")).isEqualTo("bar");
   }
 
   @Test
   public void orEmpty_parseSkipping_inputWithSingleSkip() {
     Parser<String>.OrEmpty parser = string("foo").orElse("bar");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " ")).isEqualTo("bar");
-    assertThat(parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), " ")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(whitespace(), " ")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), " ")).isEqualTo("bar");
   }
 
   @Test
   public void orEmpty_parseSkipping_inputWithSingleSkip_source() {
     Parser<String>.OrEmpty parser = string("foo").source().orElse("bar");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " ")).isEqualTo("bar");
-    assertThat(parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), " ")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(whitespace(), " ")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), " ")).isEqualTo("bar");
   }
 
   @Test
   public void orEmpty_parseSkipping_inputWithMultipleSkips() {
     Parser<String>.OrEmpty parser = string("foo").orElse("bar");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "   ")).isEqualTo("bar");
-    assertThat(parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), "   ")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(whitespace(), "   ")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), "   ")).isEqualTo("bar");
   }
 
   @Test
   public void orEmpty_parseSkipping_inputWithMultipleSkips_source() {
     Parser<String>.OrEmpty parser = string("foo").source().orElse("bar");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "   ")).isEqualTo("bar");
-    assertThat(parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), "   ")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(whitespace(), "   ")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), "   ")).isEqualTo("bar");
   }
 
   @Test
   public void orEmpty_parseSkipping_inputWithSkipsAndValue() {
     Parser<String>.OrEmpty parser = string("foo").orElse("bar");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " foo ")).isEqualTo("foo");
-    assertThat(parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), " foo ")).isEqualTo("foo");
+    assertThat(parser.parseSkipping(whitespace(), " foo ")).isEqualTo("foo");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), " foo ")).isEqualTo("foo");
   }
 
   @Test
   public void orEmpty_parseSkipping_inputWithSkipsAndValue_source() {
     Parser<String>.OrEmpty parser = string("foo").source().orElse("bar");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " foo ")).isEqualTo("foo");
-    assertThat(parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), " foo ")).isEqualTo("foo");
+    assertThat(parser.parseSkipping(whitespace(), " foo ")).isEqualTo("foo");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), " foo ")).isEqualTo("foo");
   }
 
   @Test
   public void orEmpty_parseSkipping_invalidInputWithoutSkips() {
     Parser<String>.OrEmpty parser = string("foo").orElse("bar");
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "fo"));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "fo"));
     assertThrows(
-        ParseException.class, () -> parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), "fo"));
+        ParseException.class, () -> parser.parseSkipping(consecutive(whitespace(), "skip"), "fo"));
   }
 
   @Test
   public void orEmpty_parseSkipping_invalidInputWithoutSkips_source() {
     Parser<String>.OrEmpty parser = string("foo").source().orElse("bar");
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "fo"));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "fo"));
     assertThrows(
-        ParseException.class, () -> parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), "fo"));
+        ParseException.class, () -> parser.parseSkipping(consecutive(whitespace(), "skip"), "fo"));
   }
 
   @Test
   public void orEmpty_parseSkipping_invalidInputWithSkips() {
     Parser<String>.OrEmpty parser = string("foo").orElse("bar");
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " fo "));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " fo "));
     assertThrows(
         ParseException.class,
-        () -> parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), " fo "));
+        () -> parser.parseSkipping(consecutive(whitespace(), "skip"), " fo "));
   }
 
   @Test
   public void orEmpty_parseSkipping_invalidInputWithSkips_source() {
     Parser<String>.OrEmpty parser = string("foo").source().orElse("bar");
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " fo "));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " fo "));
     assertThrows(
         ParseException.class,
-        () -> parser.parseSkipping(consecutive(Character::isWhitespace, "skip"), " fo "));
+        () -> parser.parseSkipping(consecutive(whitespace(), "skip"), " fo "));
   }
 
   @Test
@@ -1777,6 +1787,329 @@ public class ParserTest {
     Parser<String> parser = anyOf(string("one"), string("two"), string("three"));
     assertThrows(ParseException.class, () -> parser.parse("four"));
     assertThrows(ParseException.class, () -> parser.parseToStream("four").toList());
+  }
+
+  @Test
+  public void anyOf_pruningTriggered_withTwoNonPrunableCandidates() {
+    // 9 prunable strings + 2 non-prunable candidates = 11 total.
+    // Pruning should be triggered because numSurvivors(3) * 2 < 11.
+    Parser<String> parser =
+        anyOf(
+            string("a1"),
+            string("a2"),
+            string("a3"),
+            string("a4"),
+            string("a5"),
+            string("a6"),
+            string("a7"),
+            string("a8"),
+            string("a9"),
+            caseInsensitive("foo").source(),
+            chars(2));
+
+    assertThat(parser.parse("a1")).isEqualTo("a1");
+    assertThat(parser.parse("a9")).isEqualTo("a9");
+    assertThat(parser.parse("xy")).isEqualTo("xy"); // chars(2)
+    assertThat(parser.parse("fOo")).isEqualTo("fOo"); // caseInsensitive("foo")
+
+    // Failure with pruning. farthestFailure is the first candidate ("a1")
+    ParseException e1 = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(e1).hasMessageThat().contains("expecting <foo>");
+
+    // Failure with completely mismatched input. "ba" matches chars(2), leftovers "r" causes EOF
+    // error.
+    ParseException e2 = assertThrows(ParseException.class, () -> parser.parse("bar"));
+    assertThat(e2).hasMessageThat().contains("expecting <EOF>");
+  }
+
+  @Test
+  public void anyOf_pruningSuppressed_withManyNonPrunableCandidates() {
+    // 3 prunable strings + 8 non-prunable candidates = 11 total.
+    // Pruning NOT triggered because numSurvivors(9) * 2 > 11.
+    Parser<String> parser =
+        anyOf(
+            string("a1"),
+            string("a2"),
+            string("a3"),
+            chars(8),
+            chars(7),
+            chars(6),
+            chars(5),
+            chars(4),
+            chars(3),
+            chars(2),
+            chars(1));
+
+    assertThat(parser.parse("a1")).isEqualTo("a1");
+    assertThat(parser.parse("a")).isEqualTo("a"); // chars(1)
+    assertThat(parser.parse("abcdefgh")).isEqualTo("abcdefgh"); // chars(8)
+
+    // Failure without pruning. Reporting the first candidate ("a1").
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThat(e).hasMessageThat().contains("expecting <a1>");
+  }
+
+  @Test
+  public void anyOf_pruningSuppressed_withMixedSkippingBehavior() {
+    // 10 prunable skippable strings + 1 non-prunable non-skippable candidate = 11 total.
+    // Pruning NOT triggered because honorsSkipping varies among candidates.
+    Parser<String> parser =
+        anyOf(
+            string("a1"),
+            string("a2"),
+            string("a3"),
+            string("a4"),
+            string("a5"),
+            string("a6"),
+            string("a7"),
+            string("a8"),
+            string("a9"),
+            string("a10"),
+            literally(string("b")));
+
+    assertThat(parser.parse("a1")).isEqualTo("a1");
+    assertThat(parser.parse("b")).isEqualTo("b");
+
+    // Failure with mixed skipping. Reporting the first candidate ("a1").
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("c"));
+    assertThat(e).hasMessageThat().contains("expecting <a1>");
+  }
+
+  @Test
+  public void anyOf_commonPrefixPruning() {
+    // 11 candidates sharing a common prefix "prefix".
+    // Use prefix01...prefix11 so none is a prefix of another.
+    Parser<String> parser =
+        anyOf(
+            string("prefix01"),
+            string("prefix02"),
+            string("prefix03"),
+            string("prefix04"),
+            string("prefix05"),
+            string("prefix06"),
+            string("prefix07"),
+            string("prefix08"),
+            string("prefix09"),
+            string("prefix10"),
+            string("prefix11"));
+
+    assertThat(parser.parse("prefix01")).isEqualTo("prefix01");
+    assertThat(parser.parse("prefix11")).isEqualTo("prefix11");
+
+    // Failure with common prefix. Reporting the first candidate "prefix01" because pruning is used.
+    ParseException e1 = assertThrows(ParseException.class, () -> parser.parse("prefix"));
+    assertThat(e1).hasMessageThat().contains("expecting <prefix01>");
+
+    // Failure with completely different input.
+    ParseException e2 = assertThrows(ParseException.class, () -> parser.parse("other"));
+    assertThat(e2).hasMessageThat().contains("expecting <prefix01>");
+  }
+
+  @Test
+  public void anyOf_orderSensitivityWithPruning() {
+    // 11 candidates, where some are prefixes of others to test order sensitivity.
+    Parser<String> parser =
+        anyOf(
+            string("abc").followedBy("d"),
+            string("ab").followedBy("cd").thenReturn("ab_cd"),
+            string("a"),
+            string("x1"),
+            string("x2"),
+            string("x3"),
+            string("x4"),
+            string("x5"),
+            string("x6"),
+            string("x7"),
+            string("x8"));
+
+    assertThat(parser.parse("abcd")).isEqualTo("abc");
+
+    // "ab" followed by "cd" would match "abcd" too, but "abc" is earlier.
+    // If input is "ax", "a" matches but followed by leftover "x", so it fails.
+    assertThrows(ParseException.class, () -> parser.parse("ax"));
+
+    // Test that "ab_cd" can be matched if the first one fails.
+    assertThat(
+            anyOf(
+                    string("abc").followedBy("e"),
+                    string("ab").followedBy("cd").thenReturn("ab_cd"),
+                    string("a"))
+                .parse("abcd"))
+        .isEqualTo("ab_cd");
+  }
+
+  @Test
+  public void anyOf_nestedAnyOf_nonePrunable() {
+    Parser<String> nested = anyOf(caseInsensitive("foo"), chars(2)).map(Object::toString);
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("a" + i)), Stream.of(nested)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("a1")).isEqualTo("a1");
+    assertThat(outer.parse("a9")).isEqualTo("a9");
+    assertThat(outer.parse("bc")).isEqualTo("bc");
+    assertThat(outer.parse("FOO")).isEqualTo("foo");
+
+    ParseException e = assertThrows(ParseException.class, () -> outer.parse("x"));
+    assertThat(e).hasMessageThat().contains("expecting <foo>");
+  }
+
+  @Test
+  public void anyOf_nestedAnyOf_oneNotPrunable() {
+    Parser<String> nested = anyOf(chars(2), string("b")).map(Object::toString);
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("a" + i)), Stream.of(nested)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("a1")).isEqualTo("a1");
+    assertThat(outer.parse("b ")).isEqualTo("b ");
+    assertThat(outer.parse("bc")).isEqualTo("bc");
+
+    ParseException e = assertThrows(ParseException.class, () -> outer.parse("x"));
+    assertThat(e).hasMessageThat().contains("expecting <2 char(s)>");
+  }
+
+  @Test
+  public void anyOf_nestedAnyOf_allPrunable() {
+    List<Parser<String>> parsers =
+        concat(
+                range(0, 10).mapToObj(i -> string("a" + i)),
+                Stream.of(anyOf(string("b1"), string("b2")).map(Object::toString)))
+            .toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("a1")).isEqualTo("a1");
+    assertThat(outer.parse("b1")).isEqualTo("b1");
+    assertThat(outer.parse("b2")).isEqualTo("b2");
+
+    ParseException e = assertThrows(ParseException.class, () -> outer.parse("b3"));
+    assertThat(e).hasMessageThat().contains("expecting <a0>");
+  }
+
+  @Test
+  public void anyOf_nestedAnyOf_allHonorSkipping() {
+    Parser<String> nested = anyOf(string("b1"), string("b2")).map(Object::toString);
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("a" + i)), Stream.of(nested)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parseSkipping(whitespace(), "  b1")).isEqualTo("b1");
+    assertThat(outer.parseSkipping(whitespace(), "  a1")).isEqualTo("a1");
+  }
+
+  @Test
+  public void anyOf_nestedAnyOf_mixedSkippingSuppressesPruning() {
+    Parser<String> nested = anyOf(literally(string("b1")), string("b2")).map(Object::toString);
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("a" + i)), Stream.of(nested)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parseSkipping(whitespace(), "  b2")).isEqualTo("b2");
+    assertThat(outer.parseSkipping(whitespace(), "b1")).isEqualTo("b1");
+    assertThrows(ParseException.class, () -> outer.parseSkipping(whitespace(), "  b1"));
+  }
+
+  @Test
+  public void anyOf_nestedAnyOf_allLiterallyPrunable() {
+    Parser<String> nested =
+        anyOf(literally(string("b1")), literally(string("b2"))).map(Object::toString);
+    List<Parser<String>> parsers =
+        concat(
+                range(0, 10).mapToObj(i -> literally(string("a" + i)).map(Object::toString)),
+                Stream.of(nested))
+            .toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("b1")).isEqualTo("b1");
+    assertThat(outer.parse("a1")).isEqualTo("a1");
+    assertThrows(ParseException.class, () -> outer.parseSkipping(whitespace(), "  b1"));
+    assertThrows(ParseException.class, () -> outer.parseSkipping(whitespace(), "  a1"));
+  }
+
+  @Test
+  public void anyOf_pruning_propagatesThroughSequence() {
+    Parser<String> p = sequence(string("a"), string("b"), (a, b) -> a + b);
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("x" + i)), Stream.of(p)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("ab")).isEqualTo("ab");
+    assertThat(outer.parse("x1")).isEqualTo("x1");
+    assertThrows(ParseException.class, () -> outer.parse("ac"));
+  }
+
+  @Test
+  public void anyOf_pruning_propagatesThroughAtLeastOnce() {
+    Parser<String> p = string("a").atLeastOnce().map(list -> list.get(0));
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("x" + i)), Stream.of(p)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("aaa")).isEqualTo("a");
+    assertThat(outer.parse("x1")).isEqualTo("x1");
+  }
+
+  @Test
+  public void anyOf_pruning_withLargeNestedPrefixSet() {
+    // Nested anyOf with multiple prefixes: ["a", "b"]
+    Parser<String> nested = anyOf(string("a"), string("b")).map(Object::toString);
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("x" + i)), Stream.of(nested)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("a")).isEqualTo("a");
+    assertThat(outer.parse("b")).isEqualTo("b");
+    assertThat(outer.parse("x1")).isEqualTo("x1");
+    assertThrows(ParseException.class, () -> outer.parse("c"));
+  }
+
+  @Test
+  public void anyOf_pruning_withOneNestedCandidateHavingNoPrefix() {
+    // Nested anyOf where one candidate has no prefix (caseInsensitive)
+    Parser<String> nested = anyOf(string("a"), caseInsensitive("b")).map(Object::toString);
+    assertThat(nested.getPrefixes()).containsExactly("");
+
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("x" + i)), Stream.of(nested)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("a")).isEqualTo("a");
+    assertThat(outer.parse("B")).isEqualTo("b");
+    assertThat(outer.parse("x1")).isEqualTo("x1");
+  }
+
+  @Test
+  public void anyOf_pruning_withLongInputAndShortPrefix() {
+    List<Parser<String>> parsers = range(0, 100).mapToObj(i -> string("a" + i)).toList();
+    Parser<String> parser = parsers.stream().collect(or());
+
+    // Very long trailing data should not affect prefix pruning efficiency.
+    String longInput = "a1" + "z".repeat(10000);
+    Parser<String> p = parser.followedBy(zeroOrMore(is('z'), "z"));
+    assertThat(p.parse(longInput)).isEqualTo("a1");
+  }
+
+  @Test
+  public void anyOf_pruning_withWord() {
+    List<Parser<String>> parsers = range(0, 10).mapToObj(i -> word("word" + i)).toList();
+    Parser<String> parser = parsers.stream().collect(or());
+
+    assertThat(parser.parse("word5")).isEqualTo("word5");
+    // verify that word("word5") doesn't match "word5x"
+    assertThrows(ParseException.class, () -> parser.parse("word5x"));
+    // verify that word("word5") works as a prefix for "word5 "
+    assertThat(parser.parseSkipping(whitespace(), "word5 ")).isEqualTo("word5");
+  }
+
+  @Test
+  public void anyOf_pruning_withOneChar() {
+    List<Parser<Character>> parsers = range(0, 20).mapToObj(i -> one((char) ('a' + i))).toList();
+    Parser<Character> parser = parsers.stream().collect(or());
+
+    assertThat(parser.parse("f")).isEqualTo('f');
+    assertThat(parser.parse("s")).isEqualTo('s');
+    assertThrows(ParseException.class, () -> parser.parse("z"));
+    assertThrows(ParseException.class, () -> parser.parse("!"));
   }
 
   @Test
@@ -2359,29 +2692,6 @@ public class ParserTest {
   }
 
   @Test
-  public void zeroOrMoreDelimitedBy_parserDelimiter_success() {
-    var parser = digits().zeroOrMoreDelimitedBy(consecutive(is('.'), "dot"), toList());
-    assertThat(parser.parse("1")).containsExactly("1");
-    assertThat(parser.parse("1.2")).containsExactly("1", "2").inOrder();
-    assertThat(parser.parse("1..2")).containsExactly("1", "2").inOrder();
-    assertThat(parser.parse("1...2..3")).containsExactly("1", "2", "3").inOrder();
-  }
-
-  @Test
-  public void zeroOrMoreDelimitedBy_parserDelimiter_empty() {
-    var parser = digits().zeroOrMoreDelimitedBy(consecutive(is('.'), "dot"), toList());
-    assertThat(parser.parse("")).isEmpty();
-  }
-
-  @Test
-  public void zeroOrMoreDelimitedBy_parserDelimiter_failure() {
-    var parser = digits().zeroOrMoreDelimitedBy(consecutive(is('.'), "dot"), toList());
-    assertThrows(ParseException.class, () -> parser.parse("1_2"));
-    assertThrows(ParseException.class, () -> parser.parse("."));
-    assertThrows(ParseException.class, () -> parser.parse("1."));
-  }
-
-  @Test
   public void zeroOrMoreDelimited_empty() {
     Parser<ImmutableListMultimap<String, String>> parser =
         zeroOrMoreDelimited(
@@ -2428,9 +2738,10 @@ public class ParserTest {
                 ",",
                 ImmutableListMultimap::toImmutableListMultimap)
             .between("{", "}");
-    assertThat(parser.skipping(Character::isWhitespace).parse(" { k1 : \"v1\" , k2 : \"v2\" } "))
+    assertThat(parser.skipping(whitespace()).parse(" { k1 : \"v1\" , k2 : \"v2\" } "))
         .containsExactly("k1", "v1", "k2", "v2")
         .inOrder();
+    assertThat(parser.skipping(whitespace()).matches(" { k1 : \"v1\" , k2 : \"v2\" } ")).isTrue();
   }
 
   @Test
@@ -2443,87 +2754,88 @@ public class ParserTest {
                 ImmutableListMultimap::toImmutableListMultimap)
             .followedBy(string(",").optional())
             .between("{", "}");
-    assertThat(parser.skipping(Character::isWhitespace).parse(" { k1 : \"v1\" , k2 : \"v2\", } "))
+    assertThat(parser.skipping(whitespace()).parse(" { k1 : \"v1\" , k2 : \"v2\", } "))
         .containsExactly("k1", "v1", "k2", "v2")
         .inOrder();
+    assertThat(parser.skipping(whitespace()).matches(" { k1 : \"v1\" , k2 : \"v2\", } ")).isTrue();
   }
 
   @Test
   public void zeroOrMoreDelimited_withOptionalValue_empty() {
-    Parser<Map<String, Integer>> parser =
+    Parser<ImmutableMap<String, Integer>> parser =
         zeroOrMoreDelimited(
                 word(),
                 string("=").then(digits()).map(Integer::parseInt).orElse(0),
                 ",",
-                toMap())
+                ImmutableMap::toImmutableMap)
             .between("{", "}");
     assertThat(parser.parse("{}")).isEmpty();
   }
 
   @Test
   public void zeroOrMoreDelimited_withOptionalValue_singleWithNoValue() {
-    Parser<Map<String, Integer>> parser =
+    Parser<ImmutableMap<String, Integer>> parser =
         zeroOrMoreDelimited(
                 word(),
                 string("=").then(digits()).map(Integer::parseInt).orElse(0),
                 ",",
-                toMap())
+                ImmutableMap::toImmutableMap)
             .between("{", "}");
     assertThat(parser.parse("{a}")).containsExactly("a", 0);
   }
 
   @Test
   public void zeroOrMoreDelimited_withOptionalValue_singleWithValue() {
-    Parser<Map<String, Integer>> parser =
+    Parser<ImmutableMap<String, Integer>> parser =
         zeroOrMoreDelimited(
                 word(),
                 string("=").then(digits()).map(Integer::parseInt).orElse(0),
                 ",",
-                toMap())
+                ImmutableMap::toImmutableMap)
             .between("{", "}");
     assertThat(parser.parse("{a=1}")).containsExactly("a", 1);
   }
 
   @Test
   public void zeroOrMoreDelimited_withOptionalValue_multiple() {
-    Parser<Map<String, Integer>> parser =
+    Parser<ImmutableMap<String, Integer>> parser =
         zeroOrMoreDelimited(
                 word(),
                 string("=").then(digits()).map(Integer::parseInt).orElse(0),
                 ",",
-                toMap())
+                ImmutableMap::toImmutableMap)
             .between("{", "}");
     assertThat(parser.parse("{a=1,b,c=3}")).containsExactly("a", 1, "b", 0, "c", 3);
   }
 
   @Test
   public void zeroOrMoreDelimited_withOptionalValue_skippingWhitespace() {
-    Parser<Map<String, Integer>> parser =
+    Parser<ImmutableMap<String, Integer>> parser =
         zeroOrMoreDelimited(
                 word(),
                 string("=").then(digits()).map(Integer::parseInt).orElse(0),
                 ",",
-                toMap())
+                ImmutableMap::toImmutableMap)
             .between("{", "}");
-    assertThat(parser.skipping(Character::isWhitespace).parse(" { a=1 , b , c=3 } "))
+    assertThat(parser.skipping(whitespace()).parse(" { a=1 , b , c=3 } "))
         .containsExactly("a", 1, "b", 0, "c", 3);
-    assertThat(parser.skipping(Character::isWhitespace).matches(" { a=1 , b , c=3 } "))
-        .isTrue();
+    assertThat(parser.skipping(whitespace()).matches(" { a=1 , b , c=3 } ")).isTrue();
   }
 
   @Test
   public void zeroOrMoreDelimited_withOptionalValue_withTrailingComma() {
-    Parser<Map<String, Integer>> parser =
+    Parser<ImmutableMap<String, Integer>> parser =
         zeroOrMoreDelimited(
                 word(),
                 string("=").then(digits()).map(Integer::parseInt).orElse(0),
                 ",",
-                toMap())
+                ImmutableMap::toImmutableMap)
             .followedBy(string(",").optional())
             .between("{", "}");
-    assertThat(parser.skipping(Character::isWhitespace).parse(" { a=1 , b , c=3, } "))
+    assertThat(parser.skipping(whitespace()).parse(" { a=1 , b , c=3, } "))
         .containsExactly("a", 1, "b", 0, "c", 3)
         .inOrder();
+    assertThat(parser.skipping(whitespace()).matches(" { a=1 , b , c=3, } ")).isTrue();
   }
 
   @Test
@@ -2965,9 +3277,32 @@ public class ParserTest {
   }
 
   @Test
+  public void zeroOrMoreDelimitedBy_parserDelimiter_success() {
+    var parser = digits().zeroOrMoreDelimitedBy(consecutive(is('.'), "dot"), toImmutableList());
+    assertThat(parser.parse("1")).containsExactly("1");
+    assertThat(parser.parse("1.2")).containsExactly("1", "2").inOrder();
+    assertThat(parser.parse("1..2")).containsExactly("1", "2").inOrder();
+    assertThat(parser.parse("1...2..3")).containsExactly("1", "2", "3").inOrder();
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_parserDelimiter_empty() {
+    var parser = digits().zeroOrMoreDelimitedBy(consecutive(is('.'), "dot"), toImmutableList());
+    assertThat(parser.parse("")).isEmpty();
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_parserDelimiter_failure() {
+    var parser = digits().zeroOrMoreDelimitedBy(consecutive(is('.'), "dot"), toImmutableList());
+    assertThrows(ParseException.class, () -> parser.parse("1_2"));
+    assertThrows(ParseException.class, () -> parser.parse("."));
+    assertThrows(ParseException.class, () -> parser.parse("1."));
+  }
+
+  @Test
   public void atLeastOnceDelimitedBy_parserDelimiter_success() {
     Parser<List<String>> parser =
-        digits().atLeastOnceDelimitedBy(consecutive(is('.'), "dot"), toList());
+        digits().atLeastOnceDelimitedBy(consecutive(is('.'), "dot"), toImmutableList());
     assertThat(parser.parse("1")).containsExactly("1");
     assertThat(parser.parse("1.2")).containsExactly("1", "2").inOrder();
     assertThat(parser.parse("1..2")).containsExactly("1", "2").inOrder();
@@ -2977,7 +3312,7 @@ public class ParserTest {
   @Test
   public void atLeastOnceDelimitedBy_parserDelimiter_failure() {
     Parser<List<String>> parser =
-        digits().atLeastOnceDelimitedBy(consecutive(is('.'), "dot"), toList());
+        digits().atLeastOnceDelimitedBy(consecutive(is('.'), "dot"), toImmutableList());
     assertThrows(ParseException.class, () -> parser.parse("1_2"));
     assertThrows(ParseException.class, () -> parser.parse("1."));
   }
@@ -3031,7 +3366,7 @@ public class ParserTest {
   public void between_orEmpty_success() {
     Parser<String> parser =
         string("content")
-            .between(zeroOrMore(Character::isWhitespace, "ignore"), zeroOrMore(Character::isWhitespace, "ignore"));
+            .between(zeroOrMore(whitespace(), "ignore"), zeroOrMore(whitespace(), "ignore"));
     assertThat(parser.parse("content")).isEqualTo("content");
     assertThat(parser.parse(" content")).isEqualTo("content");
     assertThat(parser.parse("content ")).isEqualTo("content");
@@ -3043,7 +3378,7 @@ public class ParserTest {
   public void between_orEmpty_success_source() {
     Parser<String> parser =
         string("content")
-            .between(zeroOrMore(Character::isWhitespace, "ignore"), zeroOrMore(Character::isWhitespace, "ignore"));
+            .between(zeroOrMore(whitespace(), "ignore"), zeroOrMore(whitespace(), "ignore"));
     assertThat(parser.source().parse("content")).isEqualTo("content");
     assertThat(parser.source().parse(" content")).isEqualTo(" content");
     assertThat(parser.source().parse("content ")).isEqualTo("content ");
@@ -3055,7 +3390,7 @@ public class ParserTest {
   public void between_orEmpty_failure() {
     Parser<String> parser =
         string("content")
-            .between(zeroOrMore(Character::isWhitespace, "ignore"), zeroOrMore(Character::isWhitespace, "ignore"));
+            .between(zeroOrMore(whitespace(), "ignore"), zeroOrMore(whitespace(), "ignore"));
     assertThrows(ParseException.class, () -> parser.parse("Content"));
     assertThrows(ParseException.class, () -> parser.parse(" contentX"));
   }
@@ -3064,7 +3399,7 @@ public class ParserTest {
   public void orEmpty_between_orEmpty_success() {
     Parser<String>.OrEmpty parser =
         zeroOrMore(is('a'), "a's")
-            .between(zeroOrMore(Character::isWhitespace, "ignore"), zeroOrMore(Character::isWhitespace, "ignore"));
+            .between(zeroOrMore(whitespace(), "ignore"), zeroOrMore(whitespace(), "ignore"));
     assertThat(parser.parse("aa")).isEqualTo("aa");
     assertThat(parser.parse(" aa")).isEqualTo("aa");
     assertThat(parser.parse("aa ")).isEqualTo("aa");
@@ -3077,7 +3412,7 @@ public class ParserTest {
   public void orEmpty_between_orEmpty_failure() {
     Parser<String>.OrEmpty parser =
         zeroOrMore(is('a'), "a's")
-            .between(zeroOrMore(Character::isWhitespace, "ignore"), zeroOrMore(Character::isWhitespace, "ignore"));
+            .between(zeroOrMore(whitespace(), "ignore"), zeroOrMore(whitespace(), "ignore"));
     assertThrows(ParseException.class, () -> parser.parse("a a"));
     assertThat(parser.matches("a a")).isFalse();
   }
@@ -3121,44 +3456,49 @@ public class ParserTest {
   @Test
   public void orEmpty_immediatelyBetween_withSkipping_aroundQuotes() {
     Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " [foo] ")).isEqualTo("foo");
+    assertThat(parser.parseSkipping(whitespace(), " [foo] ")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).matches(" [foo] ")).isTrue();
   }
 
   @Test
   public void orEmpty_immediatelyBetween_withSkipping_aroundQuotes_source() {
     Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " [foo] ")).isEqualTo("[foo]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [foo] ")).isEqualTo("[foo]");
+    assertThat(parser.source().skipping(whitespace()).matches(" [foo] ")).isTrue();
   }
 
   @Test
   public void orEmpty_immediatelyBetween_withSkipping_spacesInsideQuotes() {
     Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " [ foo ] ")).isEqualTo(" foo ");
+    assertThat(parser.parseSkipping(whitespace(), " [ foo ] ")).isEqualTo(" foo ");
+    assertThat(parser.skipping(whitespace()).matches(" [ foo ] ")).isTrue();
   }
 
   @Test
   public void orEmpty_immediatelyBetween_withSkipping_spacesInsideQuotes_source() {
     Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " [ foo ] ")).isEqualTo("[ foo ]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [ foo ] ")).isEqualTo("[ foo ]");
+    assertThat(parser.source().skipping(whitespace()).matches(" [ foo ] ")).isTrue();
   }
 
   @Test
   public void orEmpty_immediatelyBetween_withSkipping_spaceFollowingPrefixNotIgnored() {
     Parser<String> parser = zeroOrMore(noneOf("[ ]"), "content").immediatelyBetween("[", "]");
     ParseException thrown =
-        assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " [ foo] "));
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " [ foo] "));
     assertThat(thrown).hasMessageThat().contains("1:3");
     assertThat(thrown).hasMessageThat().contains("encountered [ foo]...");
+    assertThat(parser.skipping(whitespace()).matches(" [ foo] ")).isFalse();
   }
 
   @Test
   public void orEmpty_immediatelyBetween_withSkipping_spacePrecedingSuffixNotIgnored() {
     Parser<String> parser = zeroOrMore(noneOf("[ ]"), "content").immediatelyBetween("[", "]");
     ParseException thrown =
-        assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " [foo ] "));
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " [foo ] "));
     assertThat(thrown).hasMessageThat().contains("1:6");
     assertThat(thrown).hasMessageThat().contains("encountered [ ]...");
-    assertThat(parser.skipping(Character::isWhitespace).matches(" [foo ] ")).isFalse();
+    assertThat(parser.skipping(whitespace()).matches(" [foo ] ")).isFalse();
   }
 
   @Test
@@ -3211,47 +3551,84 @@ public class ParserTest {
   @Test
   public void parser_immediatelyBetween_withSkipping_aroundQuotes() {
     Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " [foo] ")).isEqualTo("foo");
+    assertThat(parser.parseSkipping(whitespace(), " [foo] ")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).matches(" [foo] ")).isTrue();
   }
 
   @Test
   public void parser_immediatelyBetween_withSkipping_aroundQuotes_source() {
     Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " [foo] ")).isEqualTo("[foo]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [foo] ")).isEqualTo("[foo]");
+    assertThat(parser.source().skipping(whitespace()).matches(" [foo] ")).isTrue();
   }
 
   @Test
   public void parser_immediatelyBetween_withSkipping_spacesInsideQuotes() {
     Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " [ foo ] ")).isEqualTo(" foo ");
+    assertThat(parser.parseSkipping(whitespace(), " [ foo ] ")).isEqualTo(" foo ");
+    assertThat(parser.skipping(whitespace()).matches(" [ foo ] ")).isTrue();
   }
 
   @Test
   public void parser_immediatelyBetween_withSkipping_spacesInsideQuotes_source() {
     Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " [ foo ] ")).isEqualTo("[ foo ]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [ foo ] ")).isEqualTo("[ foo ]");
+    assertThat(parser.source().skipping(whitespace()).matches(" [ foo ] ")).isTrue();
   }
 
   @Test
   public void parser_immediatelyBetween_withSkipping_spaceFollowingPrefixNotIgnored() {
     Parser<String> parser = consecutive(noneOf("[ ]"), "content").immediatelyBetween("[", "]");
     ParseException thrown =
-        assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " [ foo] "));
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " [ foo] "));
     assertThat(thrown).hasMessageThat().contains("1:3");
     assertThat(thrown).hasMessageThat().contains("encountered [ foo]...");
+    assertThat(parser.skipping(whitespace()).matches(" [ foo] ")).isFalse();
   }
 
   @Test
   public void parser_immediatelyBetween_withSkipping_spacePrecedingSuffixNotIgnored() {
     Parser<String> parser = consecutive(noneOf("[ ]"), "content").immediatelyBetween("[", "]");
     ParseException thrown =
-        assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " [foo ] "));
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " [foo ] "));
     assertThat(thrown).hasMessageThat().contains("1:6");
     assertThat(thrown).hasMessageThat().contains("encountered [ ]...");
+    assertThat(parser.skipping(whitespace()).matches(" [foo ] ")).isFalse();
   }
 
   @Test
-  public void one_charPredicate_success() {
+  public void one_char_success() {
+    Parser<Character> parser = one('x');
+    assertThat(parser.parse("x")).isEqualTo('x');
+    assertThat(parser.parseToStream("x")).containsExactly('x');
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test
+  public void one_char_success_source() {
+    Parser<Character> parser = one('x');
+    assertThat(parser.source().parse("x")).isEqualTo("x");
+    assertThat(parser.source().parseToStream("x")).containsExactly("x");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test
+  public void one_char_failure_withLeftover() {
+    Parser<Character> parser = one('x');
+    assertThrows(ParseException.class, () -> parser.parse("xy"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("xy").toList());
+  }
+
+  @Test
+  public void one_char_failure() {
+    Parser<Character> parser = one('x');
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("a").toList());
+    assertThrows(ParseException.class, () -> parser.parse("xx"));
+  }
+
+  @Test
+  public void one_success() {
     Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.parse("1")).isEqualTo('1');
     assertThat(parser.parseToStream("1")).containsExactly('1');
@@ -3261,7 +3638,7 @@ public class ParserTest {
   }
 
   @Test
-  public void one_charPredicate_success_source() {
+  public void one_success_source() {
     Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.source().parse("1")).isEqualTo("1");
     assertThat(parser.source().parseToStream("1")).containsExactly("1");
@@ -3271,46 +3648,15 @@ public class ParserTest {
   }
 
   @Test
-  public void one_charPredicate_failure_withLeftover() {
+  public void one_failure_withLeftover() {
     Parser<Character> parser = one(DIGIT, "digit");
     assertThrows(ParseException.class, () -> parser.parse("1a"));
     assertThrows(ParseException.class, () -> parser.parseToStream("1a").toList());
   }
 
   @Test
-  public void one_charPredicate_failure() {
+  public void one_failure() {
     Parser<Character> parser = one(DIGIT, "digit");
-    assertThrows(ParseException.class, () -> parser.parse("a"));
-    assertThrows(ParseException.class, () -> parser.parseToStream("a").toList());
-    assertThrows(ParseException.class, () -> parser.parse("12"));
-  }
-
-  @Test
-  public void one_char_success() {
-    Parser<Character> parser = one('1');
-    assertThat(parser.parse("1")).isEqualTo('1');
-    assertThat(parser.parseToStream("1")).containsExactly('1');
-  }
-
-  @Test
-  public void one_char_success_source() {
-    Parser<Character> parser = one('1');
-    assertThat(parser.source().parse("1")).isEqualTo("1");
-    assertThat(parser.source().parseToStream("1")).containsExactly("1");
-  }
-
-  @Test
-  public void one_char_failure_withLeftover() {
-    Parser<Character> parser = one('1');
-    assertThrows(ParseException.class, () -> parser.parse("1a"));
-    assertThrows(ParseException.class, () -> parser.parseToStream("1a").toList());
-    assertThrows(ParseException.class, () -> parser.parse("2"));
-    assertThrows(ParseException.class, () -> parser.parseToStream("2").toList());
-  }
-
-  @Test
-  public void one_char_failure() {
-    Parser<Character> parser = one('1');
     assertThrows(ParseException.class, () -> parser.parse("a"));
     assertThrows(ParseException.class, () -> parser.parseToStream("a").toList());
     assertThrows(ParseException.class, () -> parser.parse("12"));
@@ -3349,6 +3695,45 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> digits().parse("12a"));
     assertThrows(ParseException.class, () -> digits().parseToStream("12a").toList());
     assertThrows(ParseException.class, () -> digits().parse(""));
+  }
+
+  @Test
+  public void consecutive_charClass_success() {
+    assertThat(consecutive(charsIn("[0-9]")).parse("1")).isEqualTo("1");
+    assertThat(consecutive(charsIn("[0-9]")).parseToStream("1")).containsExactly("1");
+    assertThat(consecutive(charsIn("[0-9]")).parse("123")).isEqualTo("123");
+    assertThat(consecutive(charsIn("[0-9]")).parseToStream("123")).containsExactly("123");
+    assertThat(consecutive(charsIn("[0-9]")).parseToStream("")).isEmpty();
+  }
+
+  @Test
+  public void consecutive_charClass_success_source() {
+    assertThat(consecutive(charsIn("[0-9]")).source().parse("1")).isEqualTo("1");
+    assertThat(consecutive(charsIn("[0-9]")).source().parseToStream("1")).containsExactly("1");
+    assertThat(consecutive(charsIn("[0-9]")).source().parse("123")).isEqualTo("123");
+    assertThat(consecutive(charsIn("[0-9]")).source().parseToStream("123")).containsExactly("123");
+    assertThat(consecutive(charsIn("[0-9]")).source().parseToStream("")).isEmpty();
+  }
+
+  @Test
+  public void consecutive_charClass_failure_withLeftover() {
+    assertThrows(ParseException.class, () -> consecutive(charsIn("[0-9]")).parse("1a"));
+    assertThrows(
+        ParseException.class, () -> consecutive(charsIn("[0-9]")).parseToStream("1a").toList());
+    assertThrows(ParseException.class, () -> consecutive(charsIn("[0-9]")).parse("123a"));
+    assertThrows(
+        ParseException.class, () -> consecutive(charsIn("[0-9]")).parseToStream("123a").toList());
+  }
+
+  @Test
+  public void consecutive_charClass_failure() {
+    assertThrows(ParseException.class, () -> consecutive(charsIn("[0-9]")).parse("a"));
+    assertThrows(
+        ParseException.class, () -> consecutive(charsIn("[0-9]")).parseToStream("a").toList());
+    assertThrows(ParseException.class, () -> consecutive(charsIn("[0-9]")).parse("12a"));
+    assertThrows(
+        ParseException.class, () -> consecutive(charsIn("[0-9]")).parseToStream("12a").toList());
+    assertThrows(ParseException.class, () -> consecutive(charsIn("[0-9]")).parse(""));
   }
 
   @Test
@@ -3392,11 +3777,11 @@ public class ParserTest {
 
   @Test
   public void chars_skipping() {
-    assertThat(chars(2).skipping(Character::isWhitespace).parseToStream(" ab cd"))
+    assertThat(chars(2).skipping(whitespace()).parseToStream(" ab cd"))
         .containsExactly("ab", "cd")
         .inOrder();
     assertThat(chars(2).parseToStream(" ab cd")).containsExactly(" a", "b ", "cd").inOrder();
-    assertThat(literally(chars(2)).skipping(Character::isWhitespace).parseToStream(" ab cd"))
+    assertThat(literally(chars(2)).skipping(whitespace()).parseToStream(" ab cd"))
         .containsExactly(" a", "b ", "cd")
         .inOrder();
   }
@@ -3579,79 +3964,79 @@ public class ParserTest {
   public void parse_fromIndex() {
     assertThat(string("bar").parse("foobar", 3)).isEqualTo("bar");
     assertThat(string("bar").source().parse("foobar", 3)).isEqualTo("bar");
-    assertThat(digits().skipping(Character::isWhitespace).parse("a 123", 1)).isEqualTo("123");
-    assertThat(digits().source().skipping(Character::isWhitespace).parse("a 123", 1)).isEqualTo("123");
+    assertThat(digits().skipping(whitespace()).parse("a 123", 1)).isEqualTo("123");
+    assertThat(digits().source().skipping(whitespace()).parse("a 123", 1)).isEqualTo("123");
   }
 
   @Test
   public void parse_fromIndex_atEnd() {
     assertThrows(ParseException.class, () -> string("a").parse("a", 1));
-    assertThrows(ParseException.class, () -> string("a").skipping(Character::isWhitespace).parse("a  ", 1));
+    assertThrows(ParseException.class, () -> string("a").skipping(whitespace()).parse("a  ", 1));
   }
 
   @Test
   public void parse_fromIndex_outOfBounds() {
     assertThrows(IndexOutOfBoundsException.class, () -> string("a").parse("a", 2));
     assertThrows(
-        IndexOutOfBoundsException.class, () -> string("a").skipping(Character::isWhitespace).parse("a", 2));
+        IndexOutOfBoundsException.class, () -> string("a").skipping(whitespace()).parse("a", 2));
   }
 
   @Test
   public void skipping_aroundIdentifier() {
     Parser<String> parser = string("foo");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "foo")).isEqualTo("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("foo")).containsExactly("foo");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " foo")).isEqualTo("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" foo")).containsExactly("foo");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "foo \n ")).isEqualTo("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("foo \n  ")).containsExactly("foo");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " foo ")).isEqualTo("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" foo ")).containsExactly("foo");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "   foo   ")).isEqualTo("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("   foo   ")).containsExactly("foo");
+    assertThat(parser.parseSkipping(whitespace(), "foo")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream("foo")).containsExactly("foo");
+    assertThat(parser.parseSkipping(whitespace(), " foo")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(" foo")).containsExactly("foo");
+    assertThat(parser.parseSkipping(whitespace(), "foo \n ")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream("foo \n  ")).containsExactly("foo");
+    assertThat(parser.parseSkipping(whitespace(), " foo ")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(" foo ")).containsExactly("foo");
+    assertThat(parser.parseSkipping(whitespace(), "   foo   ")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream("   foo   ")).containsExactly("foo");
   }
 
   @Test
   public void skipping_aroundIdentifier_withReader() {
     Parser<String> parser = string("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(new StringReader("foo")))
+    assertThat(parser.skipping(whitespace()).parseToStream(new StringReader("foo")))
         .containsExactly("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(new StringReader(" foo")))
+    assertThat(parser.skipping(whitespace()).parseToStream(new StringReader(" foo")))
         .containsExactly("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(new StringReader("foo \n  ")))
+    assertThat(parser.skipping(whitespace()).parseToStream(new StringReader("foo \n  ")))
         .containsExactly("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(new StringReader(" foo ")))
+    assertThat(parser.skipping(whitespace()).parseToStream(new StringReader(" foo ")))
         .containsExactly("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(new StringReader("   foo   ")))
+    assertThat(parser.skipping(whitespace()).parseToStream(new StringReader("   foo   ")))
         .containsExactly("foo");
   }
 
   @Test
   public void skipping_aroundIdentifier_source() {
     Parser<String> parser = string("foo");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "foo")).isEqualTo("foo");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("foo")).containsExactly("foo");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " foo")).isEqualTo("foo");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" foo")).containsExactly("foo");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "foo \n ")).isEqualTo("foo");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("foo \n  "))
+    assertThat(parser.source().parseSkipping(whitespace(), "foo")).isEqualTo("foo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foo")).containsExactly("foo");
+    assertThat(parser.source().parseSkipping(whitespace(), " foo")).isEqualTo("foo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" foo")).containsExactly("foo");
+    assertThat(parser.source().parseSkipping(whitespace(), "foo \n ")).isEqualTo("foo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foo \n  "))
         .containsExactly("foo");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " foo ")).isEqualTo("foo");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" foo "))
+    assertThat(parser.source().parseSkipping(whitespace(), " foo ")).isEqualTo("foo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" foo "))
         .containsExactly("foo");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "   foo   ")).isEqualTo("foo");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("   foo   "))
+    assertThat(parser.source().parseSkipping(whitespace(), "   foo   ")).isEqualTo("foo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("   foo   "))
         .containsExactly("foo");
   }
 
   @Test
   public void skipping_parseToStream_allCharactersSkipped() {
-    assertThat(digits().skipping(Character::isWhitespace).parseToStream("     ")).isEmpty();
+    assertThat(digits().skipping(whitespace()).parseToStream("     ")).isEmpty();
   }
 
   @Test
   public void skipping_parseToStream_reader_allCharactersSkipped() {
-    assertThat(digits().skipping(Character::isWhitespace).parseToStream(new StringReader("     "))).isEmpty();
+    assertThat(digits().skipping(whitespace()).parseToStream(new StringReader("     "))).isEmpty();
   }
 
   @Test
@@ -3681,14 +4066,14 @@ public class ParserTest {
   @Test
   public void skipping_aroundIdentifier_failure() {
     Parser<String> parser = string("foo");
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " foobar "));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " foobar "));
     assertThrows(
         ParseException.class,
-        () -> parser.skipping(Character::isWhitespace).parseToStream(" foobar ").toList());
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " foo bar "));
+        () -> parser.skipping(whitespace()).parseToStream(" foobar ").toList());
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " foo bar "));
     assertThrows(
         ParseException.class,
-        () -> parser.skipping(Character::isWhitespace).parseToStream(" foo bar ").toList());
+        () -> parser.skipping(whitespace()).parseToStream(" foo bar ").toList());
   }
 
   @Test
@@ -3696,25 +4081,25 @@ public class ParserTest {
     Parser<String> parser = string("foo");
     assertThrows(
         ParseException.class,
-        () -> parser.skipping(Character::isWhitespace).parseToStream(new StringReader(" foobar ")).toList());
+        () -> parser.skipping(whitespace()).parseToStream(new StringReader(" foobar ")).toList());
     assertThrows(
         ParseException.class,
-        () -> parser.skipping(Character::isWhitespace).parseToStream(new StringReader(" foo bar ")).toList());
+        () -> parser.skipping(whitespace()).parseToStream(new StringReader(" foo bar ")).toList());
   }
 
   @Test
   public void skipping_withAnyOf() {
     Parser<String> foobar = anyOf(string("foo"), string("bar"));
-    assertThat(foobar.parseSkipping(Character::isWhitespace, " foo ")).isEqualTo("foo");
-    assertThat(foobar.skipping(Character::isWhitespace).parseToStream(" foo bar "))
+    assertThat(foobar.parseSkipping(whitespace(), " foo ")).isEqualTo("foo");
+    assertThat(foobar.skipping(whitespace()).parseToStream(" foo bar "))
         .containsExactly("foo", "bar");
   }
 
   @Test
   public void skipping_withAnyOf_source() {
     Parser<String> foobar = anyOf(string("foo"), string("bar"));
-    assertThat(foobar.source().parseSkipping(Character::isWhitespace, " foo ")).isEqualTo("foo");
-    assertThat(foobar.source().skipping(Character::isWhitespace).parseToStream(" foo bar "))
+    assertThat(foobar.source().parseSkipping(whitespace(), " foo ")).isEqualTo("foo");
+    assertThat(foobar.source().skipping(whitespace()).parseToStream(" foo bar "))
         .containsExactly("foo", "bar");
   }
 
@@ -3723,10 +4108,10 @@ public class ParserTest {
     Parser<String> foo = string("foo");
     Parser<String> bar = string("bar");
     Parser<String> parser = foo.or(bar);
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("foobar")).containsExactly("foo", "bar");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("foo bar"))
+    assertThat(parser.skipping(whitespace()).parseToStream("foobar")).containsExactly("foo", "bar");
+    assertThat(parser.skipping(whitespace()).parseToStream("foo bar"))
         .containsExactly("foo", "bar");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" foo bar "))
+    assertThat(parser.skipping(whitespace()).parseToStream(" foo bar "))
         .containsExactly("foo", "bar");
   }
 
@@ -3735,9 +4120,9 @@ public class ParserTest {
     Parser<String> foo = string("foo");
     Parser<String> bar = string("bar");
     Parser<String> parser = foo.or(bar);
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("foobar"))
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foobar"))
         .containsExactly("foo", "bar");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("foo bar"))
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foo bar"))
         .containsExactly("foo", "bar");
   }
 
@@ -3746,14 +4131,14 @@ public class ParserTest {
     Parser<String> foo = string("foo");
     Parser<String> bar = string("bar");
     Parser<String> parser = sequence(foo, bar, (f, b) -> f + b);
-    assertThat(parser.parseSkipping(Character::isWhitespace, "foobar")).isEqualTo("foobar");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("foobar")).containsExactly("foobar");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "foo bar")).isEqualTo("foobar");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("foo bar")).containsExactly("foobar");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " foo bar ")).isEqualTo("foobar");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" foo bar ")).containsExactly("foobar");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " foo   bar ")).isEqualTo("foobar");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" foo   bar "))
+    assertThat(parser.parseSkipping(whitespace(), "foobar")).isEqualTo("foobar");
+    assertThat(parser.skipping(whitespace()).parseToStream("foobar")).containsExactly("foobar");
+    assertThat(parser.parseSkipping(whitespace(), "foo bar")).isEqualTo("foobar");
+    assertThat(parser.skipping(whitespace()).parseToStream("foo bar")).containsExactly("foobar");
+    assertThat(parser.parseSkipping(whitespace(), " foo bar ")).isEqualTo("foobar");
+    assertThat(parser.skipping(whitespace()).parseToStream(" foo bar ")).containsExactly("foobar");
+    assertThat(parser.parseSkipping(whitespace(), " foo   bar ")).isEqualTo("foobar");
+    assertThat(parser.skipping(whitespace()).parseToStream(" foo   bar "))
         .containsExactly("foobar");
   }
 
@@ -3762,82 +4147,82 @@ public class ParserTest {
     Parser<String> foo = string("foo");
     Parser<String> bar = string("bar");
     Parser<String> parser = sequence(foo, bar, (f, b) -> f + b);
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "foobar")).isEqualTo("foobar");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("foobar"))
+    assertThat(parser.source().parseSkipping(whitespace(), "foobar")).isEqualTo("foobar");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foobar"))
         .containsExactly("foobar");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "foo bar")).isEqualTo("foo bar");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("foo bar"))
+    assertThat(parser.source().parseSkipping(whitespace(), "foo bar")).isEqualTo("foo bar");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foo bar"))
         .containsExactly("foo bar");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " foo bar ")).isEqualTo("foo bar");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" foo bar "))
+    assertThat(parser.source().parseSkipping(whitespace(), " foo bar ")).isEqualTo("foo bar");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" foo bar "))
         .containsExactly("foo bar");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " foo   bar ")).isEqualTo("foo   bar");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" foo   bar "))
+    assertThat(parser.source().parseSkipping(whitespace(), " foo   bar ")).isEqualTo("foo   bar");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" foo   bar "))
         .containsExactly("foo   bar");
   }
 
   @Test
   public void skipping_propagatesThroughConsecutive() {
-    assertThat(digits().parseSkipping(Character::isWhitespace, "123")).isEqualTo("123");
-    assertThat(digits().skipping(Character::isWhitespace).parseToStream("123")).containsExactly("123");
-    assertThat(digits().parseSkipping(Character::isWhitespace, " 123 ")).isEqualTo("123");
-    assertThat(digits().skipping(Character::isWhitespace).parseToStream(" 123 ")).containsExactly("123");
-    assertThrows(ParseException.class, () -> digits().parseSkipping(Character::isWhitespace, "123a"));
-    assertThrows(ParseException.class, () -> digits().parseSkipping(Character::isWhitespace, "1 23"));
+    assertThat(digits().parseSkipping(whitespace(), "123")).isEqualTo("123");
+    assertThat(digits().skipping(whitespace()).parseToStream("123")).containsExactly("123");
+    assertThat(digits().parseSkipping(whitespace(), " 123 ")).isEqualTo("123");
+    assertThat(digits().skipping(whitespace()).parseToStream(" 123 ")).containsExactly("123");
+    assertThrows(ParseException.class, () -> digits().parseSkipping(whitespace(), "123a"));
+    assertThrows(ParseException.class, () -> digits().parseSkipping(whitespace(), "1 23"));
   }
 
   @Test
   public void skipping_propagatesThroughConsecutive_source() {
-    assertThat(digits().source().parseSkipping(Character::isWhitespace, "123")).isEqualTo("123");
-    assertThat(digits().source().skipping(Character::isWhitespace).parseToStream("123"))
+    assertThat(digits().source().parseSkipping(whitespace(), "123")).isEqualTo("123");
+    assertThat(digits().source().skipping(whitespace()).parseToStream("123"))
         .containsExactly("123");
-    assertThat(digits().source().parseSkipping(Character::isWhitespace, " 123 ")).isEqualTo("123");
-    assertThat(digits().source().skipping(Character::isWhitespace).parseToStream(" 123 "))
+    assertThat(digits().source().parseSkipping(whitespace(), " 123 ")).isEqualTo("123");
+    assertThat(digits().source().skipping(whitespace()).parseToStream(" 123 "))
         .containsExactly("123");
-    assertThrows(ParseException.class, () -> digits().source().parseSkipping(Character::isWhitespace, "123a"));
-    assertThrows(ParseException.class, () -> digits().source().parseSkipping(Character::isWhitespace, "1 23"));
+    assertThrows(ParseException.class, () -> digits().source().parseSkipping(whitespace(), "123a"));
+    assertThrows(ParseException.class, () -> digits().source().parseSkipping(whitespace(), "1 23"));
   }
 
   @Test
   public void skipping_propagatesThroughSingle() {
     Parser<Character> parser = one(DIGIT, "digit");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "1")).isEqualTo('1');
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("1")).containsExactly('1');
-    assertThat(parser.parseSkipping(Character::isWhitespace, " 1 ")).isEqualTo('1');
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" 1 ")).containsExactly('1');
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "12"));
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "a"));
+    assertThat(parser.parseSkipping(whitespace(), "1")).isEqualTo('1');
+    assertThat(parser.skipping(whitespace()).parseToStream("1")).containsExactly('1');
+    assertThat(parser.parseSkipping(whitespace(), " 1 ")).isEqualTo('1');
+    assertThat(parser.skipping(whitespace()).parseToStream(" 1 ")).containsExactly('1');
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "12"));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "a"));
   }
 
   @Test
   public void skipping_propagatesThroughSingle_source() {
     Parser<Character> parser = one(DIGIT, "digit");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "1")).isEqualTo("1");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("1")).containsExactly("1");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " 1 ")).isEqualTo("1");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" 1 ")).containsExactly("1");
-    assertThrows(ParseException.class, () -> parser.source().parseSkipping(Character::isWhitespace, "12"));
-    assertThrows(ParseException.class, () -> parser.source().parseSkipping(Character::isWhitespace, "a"));
+    assertThat(parser.source().parseSkipping(whitespace(), "1")).isEqualTo("1");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("1")).containsExactly("1");
+    assertThat(parser.source().parseSkipping(whitespace(), " 1 ")).isEqualTo("1");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" 1 ")).containsExactly("1");
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), "12"));
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), "a"));
   }
 
   @Test
   public void skipping_propagatesThroughAtLeastOnce() {
     Parser<String> foo = string("foo");
     Parser<List<String>> parser = foo.atLeastOnce();
-    assertThat(parser.parseSkipping(Character::isWhitespace, "foofoo"))
+    assertThat(parser.parseSkipping(whitespace(), "foofoo"))
         .containsExactly("foo", "foo")
         .inOrder();
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("foofoo"))
+    assertThat(parser.skipping(whitespace()).parseToStream("foofoo"))
         .containsExactly(List.of("foo", "foo"));
-    assertThat(parser.parseSkipping(Character::isWhitespace, "foo foo"))
+    assertThat(parser.parseSkipping(whitespace(), "foo foo"))
         .containsExactly("foo", "foo")
         .inOrder();
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("foo foo"))
+    assertThat(parser.skipping(whitespace()).parseToStream("foo foo"))
         .containsExactly(List.of("foo", "foo"));
-    assertThat(parser.parseSkipping(Character::isWhitespace, " foo   foo "))
+    assertThat(parser.parseSkipping(whitespace(), " foo   foo "))
         .containsExactly("foo", "foo")
         .inOrder();
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" foo   foo "))
+    assertThat(parser.skipping(whitespace()).parseToStream(" foo   foo "))
         .containsExactly(List.of("foo", "foo"));
   }
 
@@ -3845,53 +4230,53 @@ public class ParserTest {
   public void skipping_propagatesThroughAtLeastOnce_source() {
     Parser<String> foo = string("foo");
     Parser<List<String>> parser = foo.atLeastOnce();
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "foofoo")).isEqualTo("foofoo");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("foofoo"))
+    assertThat(parser.source().parseSkipping(whitespace(), "foofoo")).isEqualTo("foofoo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foofoo"))
         .containsExactly("foofoo");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "foo foo")).isEqualTo("foo foo");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("foo foo"))
+    assertThat(parser.source().parseSkipping(whitespace(), "foo foo")).isEqualTo("foo foo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foo foo"))
         .containsExactly("foo foo");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " foo   foo ")).isEqualTo("foo   foo");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" foo   foo "))
+    assertThat(parser.source().parseSkipping(whitespace(), " foo   foo ")).isEqualTo("foo   foo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" foo   foo "))
         .containsExactly("foo   foo");
   }
 
   @Test
   public void skipping_propagatesThroughDelimitedBy() {
     Parser<List<String>> parser = word().atLeastOnceDelimitedBy(",");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "foo,bar"))
+    assertThat(parser.parseSkipping(whitespace(), "foo,bar"))
         .containsExactly("foo", "bar")
         .inOrder();
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("foo,bar"))
+    assertThat(parser.skipping(whitespace()).parseToStream("foo,bar"))
         .containsExactly(List.of("foo", "bar"));
-    assertThat(parser.parseSkipping(Character::isWhitespace, " foo, bar "))
+    assertThat(parser.parseSkipping(whitespace(), " foo, bar "))
         .containsExactly("foo", "bar")
         .inOrder();
-    assertThat(parser.parseSkipping(Character::isWhitespace, " foo , bar "))
+    assertThat(parser.parseSkipping(whitespace(), " foo , bar "))
         .containsExactly("foo", "bar")
         .inOrder();
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" foo, bar "))
+    assertThat(parser.skipping(whitespace()).parseToStream(" foo, bar "))
         .containsExactly(List.of("foo", "bar"));
-    assertThat(parser.parseSkipping(Character::isWhitespace, " bar,foo, bar "))
+    assertThat(parser.parseSkipping(whitespace(), " bar,foo, bar "))
         .containsExactly("bar", "foo", "bar")
         .inOrder();
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" bar,foo, bar "))
+    assertThat(parser.skipping(whitespace()).parseToStream(" bar,foo, bar "))
         .containsExactly(List.of("bar", "foo", "bar"));
   }
 
   @Test
   public void skipping_propagatesThroughDelimitedBy_source() {
     Parser<List<String>> parser = word().atLeastOnceDelimitedBy(",");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "foo,bar")).isEqualTo("foo,bar");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("foo,bar"))
+    assertThat(parser.source().parseSkipping(whitespace(), "foo,bar")).isEqualTo("foo,bar");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foo,bar"))
         .containsExactly("foo,bar");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " foo, bar ")).isEqualTo("foo, bar");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " foo , bar ")).isEqualTo("foo , bar");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" foo, bar "))
+    assertThat(parser.source().parseSkipping(whitespace(), " foo, bar ")).isEqualTo("foo, bar");
+    assertThat(parser.source().parseSkipping(whitespace(), " foo , bar ")).isEqualTo("foo , bar");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" foo, bar "))
         .containsExactly("foo, bar");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " bar,foo, bar "))
+    assertThat(parser.source().parseSkipping(whitespace(), " bar,foo, bar "))
         .isEqualTo("bar,foo, bar");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" bar,foo, bar "))
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" bar,foo, bar "))
         .containsExactly("bar,foo, bar");
   }
 
@@ -3899,119 +4284,119 @@ public class ParserTest {
   public void skipping_propagatesThroughFlatMap() {
     Parser<Integer> parser =
         digits().flatMap(number -> string("=").then(string(number).map(Integer::parseInt)));
-    assertThat(parser.parseSkipping(Character::isWhitespace, "123=123")).isEqualTo(123);
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("123=123")).containsExactly(123);
-    assertThat(parser.parseSkipping(Character::isWhitespace, "123 =123")).isEqualTo(123);
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("123 =123")).containsExactly(123);
-    assertThat(parser.parseSkipping(Character::isWhitespace, "123 = 123 ")).isEqualTo(123);
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("123 = 123 ")).containsExactly(123);
-    assertThat(parser.parseSkipping(Character::isWhitespace, " 123  =123 ")).isEqualTo(123);
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" 123  =123 ")).containsExactly(123);
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "123 == 123"));
+    assertThat(parser.parseSkipping(whitespace(), "123=123")).isEqualTo(123);
+    assertThat(parser.skipping(whitespace()).parseToStream("123=123")).containsExactly(123);
+    assertThat(parser.parseSkipping(whitespace(), "123 =123")).isEqualTo(123);
+    assertThat(parser.skipping(whitespace()).parseToStream("123 =123")).containsExactly(123);
+    assertThat(parser.parseSkipping(whitespace(), "123 = 123 ")).isEqualTo(123);
+    assertThat(parser.skipping(whitespace()).parseToStream("123 = 123 ")).containsExactly(123);
+    assertThat(parser.parseSkipping(whitespace(), " 123  =123 ")).isEqualTo(123);
+    assertThat(parser.skipping(whitespace()).parseToStream(" 123  =123 ")).containsExactly(123);
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "123 == 123"));
     assertThrows(
         ParseException.class,
-        () -> parser.skipping(Character::isWhitespace).parseToStream("123 == 123").toList());
+        () -> parser.skipping(whitespace()).parseToStream("123 == 123").toList());
   }
 
   @Test
   public void skipping_propagatesThroughFlatMap_source() {
     Parser<Integer> parser =
         digits().flatMap(number -> string("=").then(string(number).map(Integer::parseInt)));
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "123=123")).isEqualTo("123=123");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("123=123"))
+    assertThat(parser.source().parseSkipping(whitespace(), "123=123")).isEqualTo("123=123");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("123=123"))
         .containsExactly("123=123");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "123 =123")).isEqualTo("123 =123");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("123 =123"))
+    assertThat(parser.source().parseSkipping(whitespace(), "123 =123")).isEqualTo("123 =123");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("123 =123"))
         .containsExactly("123 =123");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "123 = 123 ")).isEqualTo("123 = 123");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("123 = 123 "))
+    assertThat(parser.source().parseSkipping(whitespace(), "123 = 123 ")).isEqualTo("123 = 123");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("123 = 123 "))
         .containsExactly("123 = 123");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " 123  =123 ")).isEqualTo("123  =123");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" 123  =123 "))
+    assertThat(parser.source().parseSkipping(whitespace(), " 123  =123 ")).isEqualTo("123  =123");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" 123  =123 "))
         .containsExactly("123  =123");
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "123 == 123"));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "123 == 123"));
     assertThrows(
         ParseException.class,
-        () -> parser.skipping(Character::isWhitespace).parseToStream("123 == 123").toList());
+        () -> parser.skipping(whitespace()).parseToStream("123 == 123").toList());
   }
 
   @Test
   public void skipping_propagatesThroughOrElse() {
     Parser<String> foo = string("foo");
     Parser<String> parser = foo.orElse("default").between("[", "]");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[foo]")).isEqualTo("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[foo]")).containsExactly("foo");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " [ foo ] ")).isEqualTo("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" [ foo ] ")).containsExactly("foo");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[]")).isEqualTo("default");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[]")).containsExactly("default");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[ ]")).isEqualTo("default");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[ ]")).containsExactly("default");
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, ""));
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " "));
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "[bar]"));
+    assertThat(parser.parseSkipping(whitespace(), "[foo]")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream("[foo]")).containsExactly("foo");
+    assertThat(parser.parseSkipping(whitespace(), " [ foo ] ")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(" [ foo ] ")).containsExactly("foo");
+    assertThat(parser.parseSkipping(whitespace(), "[]")).isEqualTo("default");
+    assertThat(parser.skipping(whitespace()).parseToStream("[]")).containsExactly("default");
+    assertThat(parser.parseSkipping(whitespace(), "[ ]")).isEqualTo("default");
+    assertThat(parser.skipping(whitespace()).parseToStream("[ ]")).containsExactly("default");
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), ""));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " "));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "[bar]"));
   }
 
   @Test
   public void skipping_propagatesThroughOrElse_source() {
     Parser<String> foo = string("foo");
     Parser<String> parser = foo.orElse("default").between("[", "]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[foo]")).isEqualTo("[foo]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[foo]"))
+    assertThat(parser.source().parseSkipping(whitespace(), "[foo]")).isEqualTo("[foo]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[foo]"))
         .containsExactly("[foo]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " [ foo ] ")).isEqualTo("[ foo ]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" [ foo ] "))
+    assertThat(parser.source().parseSkipping(whitespace(), " [ foo ] ")).isEqualTo("[ foo ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [ foo ] "))
         .containsExactly("[ foo ]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[]")).isEqualTo("[]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[]")).containsExactly("[]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[ ]")).isEqualTo("[ ]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[ ]")).containsExactly("[ ]");
-    assertThrows(ParseException.class, () -> parser.source().parseSkipping(Character::isWhitespace, ""));
-    assertThrows(ParseException.class, () -> parser.source().parseSkipping(Character::isWhitespace, " "));
-    assertThrows(ParseException.class, () -> parser.source().parseSkipping(Character::isWhitespace, "[bar]"));
+    assertThat(parser.source().parseSkipping(whitespace(), "[]")).isEqualTo("[]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[]")).containsExactly("[]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ ]")).isEqualTo("[ ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ ]")).containsExactly("[ ]");
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), ""));
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), " "));
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), "[bar]"));
   }
 
   @Test
   public void skipping_propagatesThroughZeroOrMore() {
     Parser<String> foo = string("foo");
     Parser<List<String>> parser = foo.zeroOrMore().between("[", "]");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[foo foo]"))
+    assertThat(parser.parseSkipping(whitespace(), "[foo foo]"))
         .containsExactly("foo", "foo")
         .inOrder();
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[foo foo]"))
+    assertThat(parser.skipping(whitespace()).parseToStream("[foo foo]"))
         .containsExactly(List.of("foo", "foo"));
-    assertThat(parser.parseSkipping(Character::isWhitespace, " [ foo foo ] "))
+    assertThat(parser.parseSkipping(whitespace(), " [ foo foo ] "))
         .containsExactly("foo", "foo")
         .inOrder();
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" [ foo foo ] "))
+    assertThat(parser.skipping(whitespace()).parseToStream(" [ foo foo ] "))
         .containsExactly(List.of("foo", "foo"));
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[]")).isEmpty();
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[]"))
+    assertThat(parser.parseSkipping(whitespace(), "[]")).isEmpty();
+    assertThat(parser.skipping(whitespace()).parseToStream("[]"))
         .containsExactly(List.of());
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[ ]")).isEmpty();
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[ ]"))
+    assertThat(parser.parseSkipping(whitespace(), "[ ]")).isEmpty();
+    assertThat(parser.skipping(whitespace()).parseToStream("[ ]"))
         .containsExactly(List.of());
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, ""));
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " "));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), ""));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " "));
   }
 
   @Test
   public void skipping_propagatesThroughZeroOrMore_source() {
     Parser<String> foo = string("foo");
     Parser<List<String>> parser = foo.zeroOrMore().between("[", "]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[foo foo]")).isEqualTo("[foo foo]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[foo foo]"))
+    assertThat(parser.source().parseSkipping(whitespace(), "[foo foo]")).isEqualTo("[foo foo]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[foo foo]"))
         .containsExactly("[foo foo]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " [ foo foo ] "))
+    assertThat(parser.source().parseSkipping(whitespace(), " [ foo foo ] "))
         .isEqualTo("[ foo foo ]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" [ foo foo ] "))
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [ foo foo ] "))
         .containsExactly("[ foo foo ]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[]")).isEqualTo("[]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[]")).containsExactly("[]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[ ]")).isEqualTo("[ ]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[ ]")).containsExactly("[ ]");
-    assertThrows(ParseException.class, () -> parser.source().parseSkipping(Character::isWhitespace, ""));
-    assertThrows(ParseException.class, () -> parser.source().parseSkipping(Character::isWhitespace, " "));
+    assertThat(parser.source().parseSkipping(whitespace(), "[]")).isEqualTo("[]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[]")).containsExactly("[]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ ]")).isEqualTo("[ ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ ]")).containsExactly("[ ]");
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), ""));
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), " "));
   }
 
   @Test
@@ -4019,8 +4404,8 @@ public class ParserTest {
     Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
     assertThat(parser.parse("[]")).isEmpty();
     assertThat(parser.parseToStream("[]")).containsExactly("");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[ ]")).isEmpty();
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[ ]")).containsExactly("");
+    assertThat(parser.parseSkipping(whitespace(), "[ ]")).isEmpty();
+    assertThat(parser.skipping(whitespace()).parseToStream("[ ]")).containsExactly("");
   }
 
   @Test
@@ -4028,8 +4413,8 @@ public class ParserTest {
     Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
     assertThat(parser.source().parse("[]")).isEqualTo("[]");
     assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[ ]")).isEqualTo("[ ]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[ ]")).containsExactly("[ ]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ ]")).isEqualTo("[ ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ ]")).containsExactly("[ ]");
   }
 
   @Test
@@ -4037,8 +4422,8 @@ public class ParserTest {
     Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
     assertThat(parser.parse("[1]")).isEqualTo("1");
     assertThat(parser.parseToStream("[1]")).containsExactly("1");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[ 1 ]")).isEqualTo("1");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[ 1 ]")).containsExactly("1");
+    assertThat(parser.parseSkipping(whitespace(), "[ 1 ]")).isEqualTo("1");
+    assertThat(parser.skipping(whitespace()).parseToStream("[ 1 ]")).containsExactly("1");
   }
 
   @Test
@@ -4046,8 +4431,8 @@ public class ParserTest {
     Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
     assertThat(parser.source().parse("[1]")).isEqualTo("[1]");
     assertThat(parser.source().parseToStream("[1]")).containsExactly("[1]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[ 1 ]")).isEqualTo("[ 1 ]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[ 1 ]"))
+    assertThat(parser.source().parseSkipping(whitespace(), "[ 1 ]")).isEqualTo("[ 1 ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ 1 ]"))
         .containsExactly("[ 1 ]");
   }
 
@@ -4056,8 +4441,8 @@ public class ParserTest {
     Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
     assertThat(parser.parse("[123]")).isEqualTo("123");
     assertThat(parser.parseToStream("[123]")).containsExactly("123");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[ 123 ]")).isEqualTo("123");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[ 123 ]")).containsExactly("123");
+    assertThat(parser.parseSkipping(whitespace(), "[ 123 ]")).isEqualTo("123");
+    assertThat(parser.skipping(whitespace()).parseToStream("[ 123 ]")).containsExactly("123");
   }
 
   @Test
@@ -4065,8 +4450,64 @@ public class ParserTest {
     Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
     assertThat(parser.source().parse("[123]")).isEqualTo("[123]");
     assertThat(parser.source().parseToStream("[123]")).containsExactly("[123]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[ 123 ]")).isEqualTo("[ 123 ]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[ 123 ]"))
+    assertThat(parser.source().parseSkipping(whitespace(), "[ 123 ]")).isEqualTo("[ 123 ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ 123 ]"))
+        .containsExactly("[ 123 ]");
+  }
+
+  @Test
+  public void zeroOrMore_characterClass_matchesZeroTimes() {
+    Parser<String> parser = zeroOrMore(charsIn("[0-9]")).between("[", "]");
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]")).containsExactly("");
+    assertThat(parser.parseSkipping(whitespace(), "[ ]")).isEmpty();
+    assertThat(parser.skipping(whitespace()).parseToStream("[ ]")).containsExactly("");
+  }
+
+  @Test
+  public void zeroOrMore_characterClass_matchesZeroTimes_source() {
+    Parser<String> parser = zeroOrMore(charsIn("[0-9]")).between("[", "]");
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+    assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ ]")).isEqualTo("[ ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ ]")).containsExactly("[ ]");
+  }
+
+  @Test
+  public void zeroOrMore_characterClass_matchesOneTime() {
+    Parser<String> parser = zeroOrMore(charsIn("[0-9]")).between("[", "]");
+    assertThat(parser.parse("[1]")).isEqualTo("1");
+    assertThat(parser.parseToStream("[1]")).containsExactly("1");
+    assertThat(parser.parseSkipping(whitespace(), "[ 1 ]")).isEqualTo("1");
+    assertThat(parser.skipping(whitespace()).parseToStream("[ 1 ]")).containsExactly("1");
+  }
+
+  @Test
+  public void zeroOrMore_characterClass_matchesOneTime_source() {
+    Parser<String> parser = zeroOrMore(charsIn("[0-9]")).between("[", "]");
+    assertThat(parser.source().parse("[1]")).isEqualTo("[1]");
+    assertThat(parser.source().parseToStream("[1]")).containsExactly("[1]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ 1 ]")).isEqualTo("[ 1 ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ 1 ]"))
+        .containsExactly("[ 1 ]");
+  }
+
+  @Test
+  public void zeroOrMore_characterClass_matchesMultipleTimes() {
+    Parser<String> parser = zeroOrMore(charsIn("[0-9]")).between("[", "]");
+    assertThat(parser.parse("[123]")).isEqualTo("123");
+    assertThat(parser.parseToStream("[123]")).containsExactly("123");
+    assertThat(parser.parseSkipping(whitespace(), "[ 123 ]")).isEqualTo("123");
+    assertThat(parser.skipping(whitespace()).parseToStream("[ 123 ]")).containsExactly("123");
+  }
+
+  @Test
+  public void zeroOrMore_characterClass_matchesMultipleTimes_source() {
+    Parser<String> parser = zeroOrMore(charsIn("[0-9]")).between("[", "]");
+    assertThat(parser.source().parse("[123]")).isEqualTo("[123]");
+    assertThat(parser.source().parseToStream("[123]")).containsExactly("[123]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ 123 ]")).isEqualTo("[ 123 ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ 123 ]"))
         .containsExactly("[ 123 ]");
   }
 
@@ -4074,39 +4515,39 @@ public class ParserTest {
   public void skipping_propagatesThroughOptional() {
     Parser<String> foo = string("foo");
     Parser<Optional<String>> parser = foo.optional().between("[", "]");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[foo]")).hasValue("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[foo]"))
+    assertThat(parser.parseSkipping(whitespace(), "[foo]")).hasValue("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream("[foo]"))
         .containsExactly(Optional.of("foo"));
-    assertThat(parser.parseSkipping(Character::isWhitespace, " [ foo ] ")).hasValue("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" [ foo ] "))
+    assertThat(parser.parseSkipping(whitespace(), " [ foo ] ")).hasValue("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(" [ foo ] "))
         .containsExactly(Optional.of("foo"));
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[]")).isEmpty();
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[]")).containsExactly(Optional.empty());
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[ ]")).isEmpty();
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[ ]"))
+    assertThat(parser.parseSkipping(whitespace(), "[]")).isEmpty();
+    assertThat(parser.skipping(whitespace()).parseToStream("[]")).containsExactly(Optional.empty());
+    assertThat(parser.parseSkipping(whitespace(), "[ ]")).isEmpty();
+    assertThat(parser.skipping(whitespace()).parseToStream("[ ]"))
         .containsExactly(Optional.empty());
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, ""));
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, " "));
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "[bar]"));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), ""));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " "));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "[bar]"));
   }
 
   @Test
   public void skipping_propagatesThroughOptional_source() {
     Parser<String> foo = string("foo");
     Parser<Optional<String>> parser = foo.optional().between("[", "]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[foo]")).isEqualTo("[foo]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[foo]"))
+    assertThat(parser.source().parseSkipping(whitespace(), "[foo]")).isEqualTo("[foo]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[foo]"))
         .containsExactly("[foo]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " [ foo ] ")).isEqualTo("[ foo ]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" [ foo ] "))
+    assertThat(parser.source().parseSkipping(whitespace(), " [ foo ] ")).isEqualTo("[ foo ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [ foo ] "))
         .containsExactly("[ foo ]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[]")).isEqualTo("[]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[]")).containsExactly("[]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[ ]")).isEqualTo("[ ]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[ ]")).containsExactly("[ ]");
-    assertThrows(ParseException.class, () -> parser.source().parseSkipping(Character::isWhitespace, ""));
-    assertThrows(ParseException.class, () -> parser.source().parseSkipping(Character::isWhitespace, " "));
-    assertThrows(ParseException.class, () -> parser.source().parseSkipping(Character::isWhitespace, "[bar]"));
+    assertThat(parser.source().parseSkipping(whitespace(), "[]")).isEqualTo("[]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[]")).containsExactly("[]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ ]")).isEqualTo("[ ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ ]")).containsExactly("[ ]");
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), ""));
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), " "));
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), "[bar]"));
   }
 
   @Test
@@ -4120,7 +4561,7 @@ public class ParserTest {
             .between("/*", "*/");
     Parser<String> quotedLiteral = zeroOrMore(isNot('\''), "quoted").immediatelyBetween("'", "'");
     Parser<String> language = anyOf(quotedLiteral, digits(), word(), string("("), string(")"));
-    Parser<?> skippable = anyOf(consecutive(Character::isWhitespace, "whitespace"), lineComment, blockComment);
+    Parser<?> skippable = anyOf(consecutive(whitespace(), "whitespace"), lineComment, blockComment);
 
     assertThat(language.skipping(skippable).parseToStream("foo123(bar)"))
         .containsExactly("foo123", "(", "bar", ")")
@@ -4151,7 +4592,7 @@ public class ParserTest {
             .between("/*", "*/");
     Parser<String> quotedLiteral = zeroOrMore(isNot('\''), "quoted").immediatelyBetween("'", "'");
     Parser<String> language = anyOf(quotedLiteral, digits(), word(), string("("), string(")"));
-    Parser<?> skippable = anyOf(consecutive(Character::isWhitespace, "whitespace"), lineComment, blockComment);
+    Parser<?> skippable = anyOf(consecutive(whitespace(), "whitespace"), lineComment, blockComment);
 
     assertThat(language.source().skipping(skippable).parseToStream("foo123(bar)"))
         .containsExactly("foo123", "(", "bar", ")")
@@ -4174,136 +4615,136 @@ public class ParserTest {
 
   @Test
   public void literally_doesNotSkip() {
-    assertThat(literally(digits()).parseSkipping(Character::isWhitespace, "123")).isEqualTo("123");
-    assertThat(literally(digits()).parseSkipping(Character::isWhitespace, "123 ")).isEqualTo("123");
+    assertThat(literally(digits()).parseSkipping(whitespace(), "123")).isEqualTo("123");
+    assertThat(literally(digits()).parseSkipping(whitespace(), "123 ")).isEqualTo("123");
     assertThrows(
-        ParseException.class, () -> literally(digits()).parseSkipping(Character::isWhitespace, " 123"));
+        ParseException.class, () -> literally(digits()).parseSkipping(whitespace(), " 123"));
     assertThrows(
-        ParseException.class, () -> literally(digits()).parseSkipping(Character::isWhitespace, " 123 "));
+        ParseException.class, () -> literally(digits()).parseSkipping(whitespace(), " 123 "));
 
     Parser<List<String>> numbers = literally(digits()).atLeastOnceDelimitedBy(",");
-    assertThat(numbers.skipping(Character::isWhitespace).parseToStream("1,23"))
+    assertThat(numbers.skipping(whitespace()).parseToStream("1,23"))
         .containsExactly(List.of("1", "23"));
     assertThrows(
         ParseException.class,
-        () -> numbers.skipping(Character::isWhitespace).parseToStream("1 , 23").toList());
+        () -> numbers.skipping(whitespace()).parseToStream("1 , 23").toList());
     assertThrows(
         ParseException.class,
-        () -> numbers.skipping(Character::isWhitespace).parseToStream(" 1 , 23 ").toList());
+        () -> numbers.skipping(whitespace()).parseToStream(" 1 , 23 ").toList());
   }
 
   @Test
   public void literally_doesNotSkip_source() {
-    assertThat(literally(digits()).source().parseSkipping(Character::isWhitespace, "123")).isEqualTo("123");
-    assertThat(literally(digits()).source().parseSkipping(Character::isWhitespace, "123 ")).isEqualTo("123");
+    assertThat(literally(digits()).source().parseSkipping(whitespace(), "123")).isEqualTo("123");
+    assertThat(literally(digits()).source().parseSkipping(whitespace(), "123 ")).isEqualTo("123");
     assertThrows(
         ParseException.class,
-        () -> literally(digits()).source().parseSkipping(Character::isWhitespace, " 123"));
+        () -> literally(digits()).source().parseSkipping(whitespace(), " 123"));
     assertThrows(
         ParseException.class,
-        () -> literally(digits()).source().parseSkipping(Character::isWhitespace, " 123 "));
+        () -> literally(digits()).source().parseSkipping(whitespace(), " 123 "));
 
     Parser<List<String>> numbers =
         literally(digits()).source().atLeastOnceDelimitedBy(",");
-    assertThat(numbers.parseSkipping(Character::isWhitespace, "1,23")).containsExactly("1", "23").inOrder();
-    assertThat(numbers.skipping(Character::isWhitespace).parseToStream("1,23"))
+    assertThat(numbers.parseSkipping(whitespace(), "1,23")).containsExactly("1", "23").inOrder();
+    assertThat(numbers.skipping(whitespace()).parseToStream("1,23"))
         .containsExactly(asList("1", "23"));
     assertThrows(
         ParseException.class,
-        () -> numbers.source().skipping(Character::isWhitespace).parseToStream("1 , 23").toList());
+        () -> numbers.source().skipping(whitespace()).parseToStream("1 , 23").toList());
     assertThrows(
         ParseException.class,
-        () -> numbers.source().skipping(Character::isWhitespace).parseToStream(" 1 , 23 ").toList());
+        () -> numbers.source().skipping(whitespace()).parseToStream(" 1 , 23 ").toList());
   }
 
   @Test
   public void zeroOrMoreChars_literally_between_zeroMatch() {
     Parser<String> parser = literally(zeroOrMore(noneOf("[]"), "name")).between("[", "]");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[]")).isEmpty();
-    assertThat(parser.parseSkipping(Character::isWhitespace, " [] ")).isEmpty();
-    assertThat(parser.parseSkipping(Character::isWhitespace, " [ ] ")).isEqualTo(" ");
+    assertThat(parser.parseSkipping(whitespace(), "[]")).isEmpty();
+    assertThat(parser.parseSkipping(whitespace(), " [] ")).isEmpty();
+    assertThat(parser.parseSkipping(whitespace(), " [ ] ")).isEqualTo(" ");
 
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[]")).containsExactly("");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" [] ")).containsExactly("");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" [  ] ")).containsExactly("  ");
+    assertThat(parser.skipping(whitespace()).parseToStream("[]")).containsExactly("");
+    assertThat(parser.skipping(whitespace()).parseToStream(" [] ")).containsExactly("");
+    assertThat(parser.skipping(whitespace()).parseToStream(" [  ] ")).containsExactly("  ");
   }
 
   @Test
   public void zeroOrMoreChars_literally_between_zeroMatch_source() {
     Parser<String> parser = literally(zeroOrMore(noneOf("[]"), "name")).between("[", "]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[]")).isEqualTo("[]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " [] ")).isEqualTo("[]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " [ ] ")).isEqualTo("[ ]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[]")).isEqualTo("[]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [] ")).isEqualTo("[]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [ ] ")).isEqualTo("[ ]");
 
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[]")).containsExactly("[]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" [] ")).containsExactly("[]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" [  ] "))
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[]")).containsExactly("[]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [] ")).containsExactly("[]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [  ] "))
         .containsExactly("[  ]");
   }
 
   @Test
   public void zeroOrMoreChars_literally_between_oneMatch() {
     Parser<String> parser = literally(zeroOrMore(noneOf("[]"), "name")).between("[", "]");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[foo]")).isEqualTo("foo");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " [foo] ")).isEqualTo("foo");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " [ foo ] ")).isEqualTo(" foo ");
+    assertThat(parser.parseSkipping(whitespace(), "[foo]")).isEqualTo("foo");
+    assertThat(parser.parseSkipping(whitespace(), " [foo] ")).isEqualTo("foo");
+    assertThat(parser.parseSkipping(whitespace(), " [ foo ] ")).isEqualTo(" foo ");
 
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[foo]")).containsExactly("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" [foo] ")).containsExactly("foo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" [ foo ] ")).containsExactly(" foo ");
+    assertThat(parser.skipping(whitespace()).parseToStream("[foo]")).containsExactly("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(" [foo] ")).containsExactly("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(" [ foo ] ")).containsExactly(" foo ");
   }
 
   @Test
   public void zeroOrMoreChars_literally_between_oneMatch_source() {
     Parser<String> parser = literally(zeroOrMore(noneOf("[]"), "name")).between("[", "]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[foo]")).isEqualTo("[foo]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " [foo] ")).isEqualTo("[foo]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " [ foo ] ")).isEqualTo("[ foo ]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[foo]")).isEqualTo("[foo]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [foo] ")).isEqualTo("[foo]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [ foo ] ")).isEqualTo("[ foo ]");
 
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[foo]"))
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[foo]"))
         .containsExactly("[foo]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" [foo] "))
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [foo] "))
         .containsExactly("[foo]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" [ foo ] "))
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [ foo ] "))
         .containsExactly("[ foo ]");
   }
 
   @Test
   public void zeroOrMoreChars_literally_between_multipleMatches() {
     Parser<String> parser = literally(word().orElse("")).between("[", "]");
-    assertThat(parser.parseSkipping(Character::isWhitespace, "[foofoo]")).isEqualTo("foofoo");
-    assertThat(parser.parseSkipping(Character::isWhitespace, " [foofoo] ")).isEqualTo("foofoo");
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "[ foofoo]"));
-    assertThrows(ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, "[foo foo]"));
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream("[foofoo]")).containsExactly("foofoo");
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" [foofoo] ")).containsExactly("foofoo");
+    assertThat(parser.parseSkipping(whitespace(), "[foofoo]")).isEqualTo("foofoo");
+    assertThat(parser.parseSkipping(whitespace(), " [foofoo] ")).isEqualTo("foofoo");
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "[ foofoo]"));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "[foo foo]"));
+    assertThat(parser.skipping(whitespace()).parseToStream("[foofoo]")).containsExactly("foofoo");
+    assertThat(parser.skipping(whitespace()).parseToStream(" [foofoo] ")).containsExactly("foofoo");
     assertThrows(
         ParseException.class,
-        () -> parser.skipping(Character::isWhitespace).parseToStream("[ foofoo]").toList());
+        () -> parser.skipping(whitespace()).parseToStream("[ foofoo]").toList());
     assertThrows(
         ParseException.class,
-        () -> parser.skipping(Character::isWhitespace).parseToStream("[foo foo]").toList());
+        () -> parser.skipping(whitespace()).parseToStream("[foo foo]").toList());
   }
 
   @Test
   public void zeroOrMoreChars_literally_between_multipleMatches_source() {
     Parser<String> parser = literally(word().orElse("")).between("[", "]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, "[foofoo]")).isEqualTo("[foofoo]");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " [foofoo] ")).isEqualTo("[foofoo]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[foofoo]")).isEqualTo("[foofoo]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [foofoo] ")).isEqualTo("[foofoo]");
     assertThrows(
-        ParseException.class, () -> parser.source().parseSkipping(Character::isWhitespace, "[ foofoo]"));
+        ParseException.class, () -> parser.source().parseSkipping(whitespace(), "[ foofoo]"));
     assertThrows(
-        ParseException.class, () -> parser.source().parseSkipping(Character::isWhitespace, "[foo foo]"));
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream("[foofoo]"))
+        ParseException.class, () -> parser.source().parseSkipping(whitespace(), "[foo foo]"));
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[foofoo]"))
         .containsExactly("[foofoo]");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" [foofoo] "))
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [foofoo] "))
         .containsExactly("[foofoo]");
     assertThrows(
         ParseException.class,
-        () -> parser.source().skipping(Character::isWhitespace).parseToStream("[ foofoo]").toList());
+        () -> parser.source().skipping(whitespace()).parseToStream("[ foofoo]").toList());
     assertThrows(
         ParseException.class,
-        () -> parser.source().skipping(Character::isWhitespace).parseToStream("[foo foo]").toList());
+        () -> parser.source().skipping(whitespace()).parseToStream("[foo foo]").toList());
   }
 
   @Test
@@ -4371,19 +4812,19 @@ public class ParserTest {
 
   @Test
   public void skipping_anyOfWithLiterally() {
-    assertThat(anyOf(string("foo"), literally(digits())).parseSkipping(Character::isWhitespace, " foo"))
+    assertThat(anyOf(string("foo"), literally(digits())).parseSkipping(whitespace(), " foo"))
         .isEqualTo("foo");
     assertThat(
-            anyOf(string("foo"), literally(digits())).skipping(Character::isWhitespace).parseToStream(" foo"))
+            anyOf(string("foo"), literally(digits())).skipping(whitespace()).parseToStream(" foo"))
         .containsExactly("foo");
     assertThrows(
         ParseException.class,
-        () -> anyOf(string("foo"), literally(digits())).parseSkipping(Character::isWhitespace, " 123"));
+        () -> anyOf(string("foo"), literally(digits())).parseSkipping(whitespace(), " 123"));
     assertThrows(
         ParseException.class,
         () ->
             anyOf(string("foo"), literally(digits()))
-                .skipping(Character::isWhitespace)
+                .skipping(whitespace())
                 .parseToStream(" 123")
                 .toList());
   }
@@ -4391,69 +4832,69 @@ public class ParserTest {
   @Test
   public void skipping_anyOfWithLiterally_source() {
     assertThat(
-            anyOf(string("foo"), literally(digits())).source().parseSkipping(Character::isWhitespace, " foo"))
+            anyOf(string("foo"), literally(digits())).source().parseSkipping(whitespace(), " foo"))
         .isEqualTo("foo");
     assertThat(
             anyOf(string("foo"), literally(digits()))
                 .source()
-                .skipping(Character::isWhitespace)
+                .skipping(whitespace())
                 .parseToStream(" foo"))
         .containsExactly("foo");
     assertThrows(
         ParseException.class,
         () ->
-            anyOf(string("foo"), literally(digits())).source().parseSkipping(Character::isWhitespace, " 123"));
+            anyOf(string("foo"), literally(digits())).source().parseSkipping(whitespace(), " 123"));
     assertThrows(
         ParseException.class,
         () ->
             anyOf(string("foo"), literally(digits()))
                 .source()
-                .skipping(Character::isWhitespace)
+                .skipping(whitespace())
                 .parseToStream(" 123")
                 .toList());
   }
 
   @Test
   public void skipping_anyOfWithoutLiterally() {
-    assertThat(anyOf(string("foo"), digits()).parseSkipping(Character::isWhitespace, " foo")).isEqualTo("foo");
-    assertThat(anyOf(string("foo"), digits()).skipping(Character::isWhitespace).parseToStream(" foo"))
+    assertThat(anyOf(string("foo"), digits()).parseSkipping(whitespace(), " foo")).isEqualTo("foo");
+    assertThat(anyOf(string("foo"), digits()).skipping(whitespace()).parseToStream(" foo"))
         .containsExactly("foo");
-    assertThat(anyOf(string("foo"), digits()).parseSkipping(Character::isWhitespace, " 123")).isEqualTo("123");
-    assertThat(anyOf(string("foo"), digits()).skipping(Character::isWhitespace).parseToStream(" 123"))
+    assertThat(anyOf(string("foo"), digits()).parseSkipping(whitespace(), " 123")).isEqualTo("123");
+    assertThat(anyOf(string("foo"), digits()).skipping(whitespace()).parseToStream(" 123"))
         .containsExactly("123");
   }
 
   @Test
   public void skipping_anyOfWithoutLiterally_source() {
-    assertThat(anyOf(string("foo"), digits()).source().parseSkipping(Character::isWhitespace, " foo"))
+    assertThat(anyOf(string("foo"), digits()).source().parseSkipping(whitespace(), " foo"))
         .isEqualTo("foo");
-    assertThat(anyOf(string("foo"), digits()).source().skipping(Character::isWhitespace).parseToStream(" foo"))
+    assertThat(anyOf(string("foo"), digits()).source().skipping(whitespace()).parseToStream(" foo"))
         .containsExactly("foo");
-    assertThat(anyOf(string("foo"), digits()).source().parseSkipping(Character::isWhitespace, " 123"))
+    assertThat(anyOf(string("foo"), digits()).source().parseSkipping(whitespace(), " 123"))
         .isEqualTo("123");
-    assertThat(anyOf(string("foo"), digits()).source().skipping(Character::isWhitespace).parseToStream(" 123"))
+    assertThat(anyOf(string("foo"), digits()).source().skipping(whitespace()).parseToStream(" 123"))
         .containsExactly("123");
   }
 
   @Test
   public void skipping_propagatesThroughRuleParser() {
     Parser<Integer> parser = simpleCalculator();
-    assertThat(parser.parseSkipping(Character::isWhitespace, " ( 2 ) + 3 ")).isEqualTo(5);
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" ( 2 ) + 3 ")).containsExactly(5);
-    assertThat(parser.parseSkipping(Character::isWhitespace, " ( 2 + ( 3 + 4 ) ) ")).isEqualTo(9);
-    assertThat(parser.skipping(Character::isWhitespace).parseToStream(" ( 2 + ( 3 + 4 ) ) "))
+    assertThat(parser.parseSkipping(whitespace(), " ( 2 ) + 3 ")).isEqualTo(5);
+    assertThat(parser.skipping(whitespace()).parseToStream(" ( 2 ) + 3 ")).containsExactly(5);
+    assertThat(parser.parseSkipping(whitespace(), " ( 2 + ( 3 + 4 ) ) ")).isEqualTo(9);
+    assertThat(parser.skipping(whitespace()).parseToStream(" ( 2 + ( 3 + 4 ) ) "))
         .containsExactly(9);
   }
 
   @Test
   public void skipping_propagatesThroughRuleParser_source() {
     Parser<Integer> parser = simpleCalculator();
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " ( 2 ) + 3 ")).isEqualTo("( 2 ) + 3");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" ( 2 ) + 3 "))
+    assertThat(parser.source().parseSkipping(whitespace(), " ( 2 ) + 3 ")).isEqualTo("( 2 ) + 3");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" ( 2 ) + 3 "))
         .containsExactly("( 2 ) + 3");
-    assertThat(parser.source().parseSkipping(Character::isWhitespace, " ( 2 + ( 3 + 4 ) ) "))
+    assertThat(parser.source().parseSkipping(whitespace(), " ( 2 + ( 3 + 4 ) ) "))
         .isEqualTo("( 2 + ( 3 + 4 ) )");
-    assertThat(parser.source().skipping(Character::isWhitespace).parseToStream(" ( 2 + ( 3 + 4 ) ) "))
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" ( 2 + ( 3 + 4 ) ) "))
         .containsExactly("( 2 + ( 3 + 4 ) )");
   }
 
@@ -4554,7 +4995,7 @@ public class ParserTest {
     ParseException e =
         assertThrows(
             ParseException.class,
-            () -> digits().skipping(Character::isWhitespace).parseToStream(input, 0).count());
+            () -> digits().skipping(whitespace()).parseToStream(input, 0).count());
     assertThat(e).hasMessageThat().contains("at 17: expecting <digits>, encountered [x]");
   }
 
@@ -4581,7 +5022,7 @@ public class ParserTest {
   @Test
   public void parseToStream_fromIndex_atEnd() {
     assertThat(digits().parseToStream("123", 3)).isEmpty();
-    assertThat(digits().skipping(Character::isWhitespace).parseToStream("123  ", 3)).isEmpty();
+    assertThat(digits().skipping(whitespace()).parseToStream("123  ", 3)).isEmpty();
   }
 
   @Test
@@ -4589,7 +5030,7 @@ public class ParserTest {
     assertThrows(IndexOutOfBoundsException.class, () -> digits().parseToStream("123", 4));
     assertThrows(
         IndexOutOfBoundsException.class,
-        () -> digits().skipping(Character::isWhitespace).parseToStream("123 ", 5));
+        () -> digits().skipping(whitespace()).parseToStream("123 ", 5));
   }
 
   @Test
@@ -4664,14 +5105,14 @@ public class ParserTest {
   @Test
   public void probe_fromIndex_atEnd() {
     assertThat(digits().probe("123", 3)).isEmpty();
-    assertThat(digits().skipping(Character::isWhitespace).probe("123  ", 3)).isEmpty();
+    assertThat(digits().skipping(whitespace()).probe("123  ", 3)).isEmpty();
   }
 
   @Test
   public void probe_fromIndex_outOfBounds() {
     assertThrows(IndexOutOfBoundsException.class, () -> digits().probe("123", 4));
     assertThrows(
-        IndexOutOfBoundsException.class, () -> digits().skipping(Character::isWhitespace).probe("123 ", 5));
+        IndexOutOfBoundsException.class, () -> digits().skipping(whitespace()).probe("123 ", 5));
   }
 
   @Test
@@ -4729,134 +5170,134 @@ public class ParserTest {
 
   @Test
   public void skipping_probeCharPredicate_emptyInput_returnsEmpty() {
-    assertThat(string("foo").skipping(Character::isWhitespace).probe(" ")).isEmpty();
+    assertThat(string("foo").skipping(whitespace()).probe(" ")).isEmpty();
   }
 
   @Test
   public void skipping_probeReader_emptyInput_returnsEmpty() {
-    assertThat(string("foo").skipping(Character::isWhitespace).probe(new StringReader(" "))).isEmpty();
+    assertThat(string("foo").skipping(whitespace()).probe(new StringReader(" "))).isEmpty();
   }
 
   @Test
   public void skipping_probeCharPredicate_emptyInput_returnsEmpty_source() {
-    assertThat(string("foo").source().skipping(Character::isWhitespace).probe(" ")).isEmpty();
+    assertThat(string("foo").source().skipping(whitespace()).probe(" ")).isEmpty();
   }
 
   @Test
   public void skipping_probeCharPredicate_singleMatch_returnsValue() {
-    assertThat(string("foo").skipping(Character::isWhitespace).probe(" foo ")).containsExactly("foo");
+    assertThat(string("foo").skipping(whitespace()).probe(" foo ")).containsExactly("foo");
   }
 
   @Test
   public void skipping_probeReader_singleMatch_returnsValue() {
-    assertThat(string("foo").skipping(Character::isWhitespace).probe(new StringReader(" foo ")))
+    assertThat(string("foo").skipping(whitespace()).probe(new StringReader(" foo ")))
         .containsExactly("foo");
   }
 
   @Test
   public void skipping_probeCharPredicate_singleMatch_returnsValue_source() {
-    assertThat(string("foo").source().skipping(Character::isWhitespace).probe(" foo ")).containsExactly("foo");
+    assertThat(string("foo").source().skipping(whitespace()).probe(" foo ")).containsExactly("foo");
   }
 
   @Test
   public void skipping_probeCharPredicate_multipleMatches_returnsValues() {
-    assertThat(digits().skipping(Character::isWhitespace).probe(" 123  456 "))
+    assertThat(digits().skipping(whitespace()).probe(" 123  456 "))
         .containsExactly("123", "456")
         .inOrder();
   }
 
   @Test
   public void skipping_probeReader_multipleMatches_returnsValues() {
-    assertThat(digits().skipping(Character::isWhitespace).probe(new StringReader(" 123  456 ")))
+    assertThat(digits().skipping(whitespace()).probe(new StringReader(" 123  456 ")))
         .containsExactly("123", "456")
         .inOrder();
   }
 
   @Test
   public void skipping_probeCharPredicate_multipleMatches_returnsValues_source() {
-    assertThat(digits().source().skipping(Character::isWhitespace).probe(" 123  456 "))
+    assertThat(digits().source().skipping(whitespace()).probe(" 123  456 "))
         .containsExactly("123", "456")
         .inOrder();
   }
 
   @Test
   public void skipping_probeCharPredicate_prefixMatchWithSkipping_returnsValue() {
-    assertThat(string("foo").skipping(Character::isWhitespace).probe(" foobar ")).containsExactly("foo");
+    assertThat(string("foo").skipping(whitespace()).probe(" foobar ")).containsExactly("foo");
   }
 
   @Test
   public void skipping_probeReader_prefixMatchWithSkipping_returnsValue() {
-    assertThat(string("foo").skipping(Character::isWhitespace).probe(new StringReader(" foobar ")))
+    assertThat(string("foo").skipping(whitespace()).probe(new StringReader(" foobar ")))
         .containsExactly("foo");
   }
 
   @Test
   public void skipping_probeCharPredicate_prefixMatchWithSkipping_returnsValue_source() {
-    assertThat(string("foo").source().skipping(Character::isWhitespace).probe(" foobar "))
+    assertThat(string("foo").source().skipping(whitespace()).probe(" foobar "))
         .containsExactly("foo");
   }
 
   @Test
   public void skipping_probeCharPredicate_noMatch_returnsEmpty() {
-    assertThat(string("foo").skipping(Character::isWhitespace).probe("bar")).isEmpty();
+    assertThat(string("foo").skipping(whitespace()).probe("bar")).isEmpty();
   }
 
   @Test
   public void skipping_probeReader_noMatch_returnsEmpty() {
-    assertThat(string("foo").skipping(Character::isWhitespace).probe(new StringReader("bar"))).isEmpty();
+    assertThat(string("foo").skipping(whitespace()).probe(new StringReader("bar"))).isEmpty();
   }
 
   @Test
   public void skipping_probeCharPredicate_noMatch_returnsEmpty_source() {
-    assertThat(string("foo").source().skipping(Character::isWhitespace).probe("bar")).isEmpty();
+    assertThat(string("foo").source().skipping(whitespace()).probe("bar")).isEmpty();
   }
 
   @Test
   public void skipping_probeParser_singleMatch_returnsValue() {
-    assertThat(string("foo").skipping(consecutive(Character::isWhitespace, "skip")).probe(" \n foo "))
+    assertThat(string("foo").skipping(consecutive(whitespace(), "skip")).probe(" \n foo "))
         .containsExactly("foo");
   }
 
   @Test
   public void skipping_probeParser_singleMatch_returnsValue_source() {
-    assertThat(string("foo").source().skipping(consecutive(Character::isWhitespace, "skip")).probe(" \n foo "))
+    assertThat(string("foo").source().skipping(consecutive(whitespace(), "skip")).probe(" \n foo "))
         .containsExactly("foo");
   }
 
   @Test
   public void skipping_probeParser_multipleMatches() {
-    assertThat(word().skipping(consecutive(Character::isWhitespace, "skip")).probe(" \n foo 123"))
+    assertThat(word().skipping(consecutive(whitespace(), "skip")).probe(" \n foo 123"))
         .containsExactly("foo", "123")
         .inOrder();
   }
 
   @Test
   public void skipping_probeParser_multipleMatches_source() {
-    assertThat(word().source().skipping(consecutive(Character::isWhitespace, "skip")).probe(" \n foo 123"))
+    assertThat(word().source().skipping(consecutive(whitespace(), "skip")).probe(" \n foo 123"))
         .containsExactly("foo", "123")
         .inOrder();
   }
 
   @Test
   public void skipping_probeParser_prefixMatchWithSkipping_returnsValue() {
-    assertThat(string("foo").skipping(consecutive(Character::isWhitespace, "skip")).probe(" foobar "))
+    assertThat(string("foo").skipping(consecutive(whitespace(), "skip")).probe(" foobar "))
         .containsExactly("foo");
   }
 
   @Test
   public void skipping_probeParser_prefixMatchWithSkipping_returnsValue_source() {
-    assertThat(string("foo").source().skipping(consecutive(Character::isWhitespace, "skip")).probe(" foobar "))
+    assertThat(string("foo").source().skipping(consecutive(whitespace(), "skip")).probe(" foobar "))
         .containsExactly("foo");
   }
 
   @Test
   public void skipping_probeParser_noMatch_returnsEmpty() {
-    assertThat(string("foo").skipping(consecutive(Character::isWhitespace, "skip")).probe("bar")).isEmpty();
+    assertThat(string("foo").skipping(consecutive(whitespace(), "skip")).probe("bar")).isEmpty();
   }
 
   @Test
   public void skipping_probeParser_noMatch_returnsEmpty_source() {
-    assertThat(string("foo").source().skipping(consecutive(Character::isWhitespace, "skip")).probe("bar"))
+    assertThat(string("foo").source().skipping(consecutive(whitespace(), "skip")).probe("bar"))
         .isEmpty();
   }
 
@@ -4865,15 +5306,15 @@ public class ParserTest {
     Parser<String> parser = string("foo");
     IndexOutOfBoundsException e =
         assertThrows(IndexOutOfBoundsException.class, () -> parser.parse("foo", -1));
-    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0, 3]");
+    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0..3]");
   }
 
   @Test
   public void parse_fromIndex_negative_skipping_throws() {
-    Parser<String>.Lexical lexical = string("foo").skipping(Character::isWhitespace);
+    Parser<String>.Lexical lexical = string("foo").skipping(whitespace());
     IndexOutOfBoundsException e =
         assertThrows(IndexOutOfBoundsException.class, () -> lexical.parse("foo", -1));
-    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0, 3]");
+    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0..3]");
   }
 
   @Test
@@ -4881,12 +5322,12 @@ public class ParserTest {
     Parser<String> parser = string("foo");
     IndexOutOfBoundsException e =
         assertThrows(IndexOutOfBoundsException.class, () -> parser.parseToStream("foo", -1));
-    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0, 3]");
+    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0..3]");
   }
 
   @Test
   public void parseToStream_fromIndex_negative_skipping_throws() {
-    Parser<String>.Lexical lexical = string("foo").skipping(Character::isWhitespace);
+    Parser<String>.Lexical lexical = string("foo").skipping(whitespace());
     IndexOutOfBoundsException e =
         assertThrows(IndexOutOfBoundsException.class, () -> lexical.parseToStream("foo", -1));
     assertThat(e).hasMessageThat().contains("fromIndex (-1)");
@@ -4897,15 +5338,15 @@ public class ParserTest {
     Parser<String> parser = string("foo");
     IndexOutOfBoundsException e =
         assertThrows(IndexOutOfBoundsException.class, () -> parser.probe("foo", -1));
-    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0, 3]");
+    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0..3]");
   }
 
   @Test
   public void probe_fromIndex_negative_skipping_throws() {
-    Parser<String>.Lexical lexical = string("foo").skipping(Character::isWhitespace);
+    Parser<String>.Lexical lexical = string("foo").skipping(whitespace());
     IndexOutOfBoundsException e =
         assertThrows(IndexOutOfBoundsException.class, () -> lexical.probe("foo", -1));
-    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0, 3]");
+    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0..3]");
   }
 
   @Test
@@ -4937,7 +5378,7 @@ public class ParserTest {
     record Placeholder(String name, Format format) {}
 
     static class Builder {
-      private final List<Placeholder> placeholders = new ArrayList<>();
+      private final ImmutableList.Builder<Placeholder> placeholders = ImmutableList.builder();
       private final StringBuilder template = new StringBuilder();
 
       @CanIgnoreReturnValue
@@ -4956,19 +5397,18 @@ public class ParserTest {
       @CanIgnoreReturnValue
       Builder addAll(Builder that) {
         template.append(that.template);
-        placeholders.addAll(that.placeholders);
+        placeholders.addAll(that.placeholders.build());
         return this;
       }
 
       Format build() {
-        return new Format(template.toString(), placeholders);
+        return new Format(template.toString(), placeholders.build());
       }
     }
 
     static Parser<Format> parser() {
       Parser.Rule<Format> rule = new Parser.Rule<>();
-      Parser<String> placeholderName =
-          consecutive(CharPredicate.range('a', 'z'), "placeholder name");
+      Parser<String> placeholderName = consecutive(charsIn("[a-z]"));
       Parser<Placeholder> placeholder =
           Parser.sequence(placeholderName.followedBy("="), rule, Placeholder::new)
               .between("{", "}");
@@ -4977,7 +5417,7 @@ public class ParserTest {
                   placeholder,
                   Parser.string("{{").thenReturn("{"), // escape {
                   Parser.string("}}").thenReturn("}"), // escape }
-                  Parser.consecutive(CharPredicate.noneOf("{}"), "literal text"))
+                  consecutive(noneOf("{}"), "literal text"))
               .atLeastOnce(
                   Collector.of(
                       Format.Builder::new,
@@ -5138,4 +5578,9 @@ public class ParserTest {
     assertThat(ResourceNamePattern.parser().source().parse(input)).isEqualTo(input);
     assertThat(ResourceNamePattern.parser().source().matches(input)).isTrue();
   }
+
+  private static CharPredicate whitespace() {
+    return Character::isWhitespace;
+  }
 }
+

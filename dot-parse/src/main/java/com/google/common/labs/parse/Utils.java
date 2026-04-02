@@ -16,7 +16,7 @@ class Utils {
   static int checkPositionIndex(int index, int size, String name) {
     if (index < 0 || index > size) {
       throw new IndexOutOfBoundsException(
-         String.format("%s (%s) must be in range of [0, %s]", name, index, size));
+         String.format("%s (%s) must be in range of [0..%s]", name, index, size));
     }
     return index;
   }
