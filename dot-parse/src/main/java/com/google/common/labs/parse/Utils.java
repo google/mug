@@ -1,13 +1,9 @@
 package com.google.common.labs.parse;
 
 import static java.lang.Math.min;
-import static java.util.stream.Collectors.toCollection;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
-
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.mu.util.stream.Iteration;
 
 class Utils {
   static void checkArgument(boolean condition, String message, Object... args) {
@@ -33,25 +29,21 @@ class Utils {
   static Set<String> caseInsensitivePrefixes(String string, int maxLength) {
     checkArgument(maxLength >= 0, "maxLength (%s) must not be negative", maxLength);
     int chars = min(maxLength, string.length());
-    class Enumerate extends Iteration<String> {
-      private final char[] buffer = new char[chars];
-
-      @CanIgnoreReturnValue
-      Enumerate from(int index) {
+    Set<String> prefixes = new LinkedHashSet<>();
+    char[] buffer = new char[chars];
+    new Object() {
+      void from(int index) {
         if (index >= chars) {
-          emit(new String(buffer));
-          return this;
+          prefixes.add(new String(buffer));
+          return;
         }
         char c = string.charAt(index);
         buffer[index] = Character.toLowerCase(c);
         from(index + 1);
-        lazily(() -> {
-          buffer[index] = Character.toUpperCase(c);
-          from(index + 1);
-        });
-        return this;
+        buffer[index] = Character.toUpperCase(c);
+        from(index + 1);
       }
-    }
-    return new Enumerate().from(0).iterate().collect(toCollection(LinkedHashSet::new));
+    }.from(0);
+    return prefixes;
   }
 }
