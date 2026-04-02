@@ -3251,7 +3251,7 @@ public class ParserTest {
   }
 
   @Test
-  public void single_success() {
+  public void one_charPredicate_success() {
     Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.parse("1")).isEqualTo('1');
     assertThat(parser.parseToStream("1")).containsExactly('1');
@@ -3261,7 +3261,7 @@ public class ParserTest {
   }
 
   @Test
-  public void single_success_source() {
+  public void one_charPredicate_success_source() {
     Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.source().parse("1")).isEqualTo("1");
     assertThat(parser.source().parseToStream("1")).containsExactly("1");
@@ -3271,15 +3271,46 @@ public class ParserTest {
   }
 
   @Test
-  public void single_failure_withLeftover() {
+  public void one_charPredicate_failure_withLeftover() {
     Parser<Character> parser = one(DIGIT, "digit");
     assertThrows(ParseException.class, () -> parser.parse("1a"));
     assertThrows(ParseException.class, () -> parser.parseToStream("1a").toList());
   }
 
   @Test
-  public void single_failure() {
+  public void one_charPredicate_failure() {
     Parser<Character> parser = one(DIGIT, "digit");
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("a").toList());
+    assertThrows(ParseException.class, () -> parser.parse("12"));
+  }
+
+  @Test
+  public void one_char_success() {
+    Parser<Character> parser = one('1');
+    assertThat(parser.parse("1")).isEqualTo('1');
+    assertThat(parser.parseToStream("1")).containsExactly('1');
+  }
+
+  @Test
+  public void one_char_success_source() {
+    Parser<Character> parser = one('1');
+    assertThat(parser.source().parse("1")).isEqualTo("1");
+    assertThat(parser.source().parseToStream("1")).containsExactly("1");
+  }
+
+  @Test
+  public void one_char_failure_withLeftover() {
+    Parser<Character> parser = one('1');
+    assertThrows(ParseException.class, () -> parser.parse("1a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("1a").toList());
+    assertThrows(ParseException.class, () -> parser.parse("2"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("2").toList());
+  }
+
+  @Test
+  public void one_char_failure() {
+    Parser<Character> parser = one('1');
     assertThrows(ParseException.class, () -> parser.parse("a"));
     assertThrows(ParseException.class, () -> parser.parseToStream("a").toList());
     assertThrows(ParseException.class, () -> parser.parse("12"));

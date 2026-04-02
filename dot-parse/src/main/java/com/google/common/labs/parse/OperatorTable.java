@@ -198,8 +198,7 @@ public final class OperatorTable<T> {
 
   /** Builds a parser with the configured operators applied to the given operand. */
   public Parser<T> build(Parser<? extends T> operand) {
-    @SuppressWarnings("unchecked") // Parser is covariant
-    Parser<T> result = (Parser<T>) operand;
+    Parser<T> result = Parser.covariant(operand);
     // higher precedence first and then stable order by
     // prefix -> postfix -> infixl - > infixn - > infixr
     for (OperatorGroup<T> group :

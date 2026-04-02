@@ -103,6 +103,15 @@ public abstract class Parser<T> {
   }
 
   /**
+   * Matches the given character {@code c}.
+   *
+   * @since 9.9.9
+   */
+  public static Parser<Character> one(char c) {
+    return string(Character.toString(c)).thenReturn(c);
+  }
+
+  /**
    * Matches a character as specified by {@code matcher}.
    *
    * @since 9.9.3
@@ -534,9 +543,7 @@ public abstract class Parser<T> {
         parsers -> {
           checkArgument(parsers.size() > 0, "parsers cannot be empty");
           if (parsers.size() == 1) {
-            @SuppressWarnings("unchecked") // Parser is covariant
-            Parser<T> parser = (Parser<T>) parsers.get(0);
-            return parser;
+            return covariant(parsers.get(0));
           }
           return new Parser<T>() {
             @Override MatchResult<T> skipAndMatch(
@@ -1797,9 +1804,7 @@ public abstract class Parser<T> {
   public static <T> Parser<T> define(
       Function<? super Parser<T>, ? extends Parser<? extends T>> definition) {
     Rule<T> rule = new Rule<>();
-    @SuppressWarnings("unchecked") // Parser<T> is covariant
-    Parser<T> parser = (Parser<T>) rule.definedAs(definition.apply(rule));
-    return parser;
+    return Parser.<T>covariant(rule.definedAs(definition.apply(rule)));
   }
 
   /**
@@ -1832,11 +1837,10 @@ public abstract class Parser<T> {
     }
 
     /** Define this rule as {@code parser} and returns it. */
-    @SuppressWarnings("unchecked")  // Parser<T> is covariant
     public <S extends T> Parser<S> definedAs(Parser<S> parser) {
       requireNonNull(parser);
       checkArgument(!(parser instanceof Rule), "Do not delegate to a Rule parser");
-      checkState(ref.compareAndSet(null, (Parser<T>) parser), "definedAs() already called");
+      checkState(ref.compareAndSet(null, covariant(parser)), "definedAs() already called");
       return parser;
     }
   }
@@ -1930,6 +1934,11 @@ public abstract class Parser<T> {
           ? failure.toException(input)
           : farthestFailure.toException(input);
     }
+  }
+
+  @SuppressWarnings("unchecked") // Parser<T> is covariant
+  static <T> Parser<T> covariant(Parser<? extends T> parser) {
+    return (Parser<T>) parser;
   }
 
   static <S, T> Parser<UnaryOperator<T>> asPostfixOperator(
