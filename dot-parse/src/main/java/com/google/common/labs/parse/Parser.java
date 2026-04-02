@@ -331,8 +331,8 @@ public abstract class Parser<T> {
       }
 
       @Override Set<String> getPrefixes() {
-        // Prune by up to 5 chars (32 combinations) to avoid prefix tree explosion.
-        return caseInsensitivePrefixes(string, 5);
+        // Prune by up to 4 chars (16 combinations) to avoid prefix tree explosion.
+        return caseInsensitivePrefixes(string, 4);
       }
     };
   }
