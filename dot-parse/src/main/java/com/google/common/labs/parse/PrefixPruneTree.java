@@ -1,5 +1,6 @@
 package com.google.common.labs.parse;
 
+import static java.lang.Math.min;
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
@@ -66,11 +67,15 @@ record PrefixPruneTree<V>(
       survivors.add(new Ordered<>(candidate, sequence.getAndIncrement()));
     }
 
-    /** Adds a candidate that requires the input to start with {@code prefix}. */
+    /**
+     * Adds a candidate that requires the input to start with {@code prefix}, but only up to {@code
+     * maxChars} characters are used for pruning.
+     */
     @CanIgnoreReturnValue
-    Builder<V> addPrefix(String prefix, V candidate) {
+    Builder<V> addPrefix(String prefix, int maxChars, V candidate) {
       Builder<V> node = this;
-      for (int i = 0; i < prefix.length(); i++) {
+      int length = min(prefix.length(), maxChars);
+      for (int i = 0; i < length; i++) {
         int c = prefix.charAt(i);
         if (c >= 128) { // out of range, stop.
           break;

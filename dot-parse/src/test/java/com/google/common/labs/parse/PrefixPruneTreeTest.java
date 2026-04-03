@@ -20,7 +20,7 @@ public final class PrefixPruneTreeTest {
   @Test
   public void treeWithOnlyEmptyPrefix() {
     PrefixPruneTree<String> tree =
-        new PrefixPruneTree.Builder<String>().addPrefix("", "default").build();
+        new PrefixPruneTree.Builder<String>().addPrefix("", 100, "default").build();
     assertThat(tree.pruneByPrefix(CharInput.from(""), 0)).containsExactly("default");
     assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).containsExactly("default");
     assertThat(tree.pruneByPrefix(CharInput.from("abc"), 0)).containsExactly("default");
@@ -30,9 +30,9 @@ public final class PrefixPruneTreeTest {
   public void multipleCandidatesForSamePrefix() {
     PrefixPruneTree<String> tree =
         new PrefixPruneTree.Builder<String>()
-            .addPrefix("", "default")
-            .addPrefix("a", "candidate1")
-            .addPrefix("a", "candidate2")
+            .addPrefix("", 100, "default")
+            .addPrefix("a", 100, "candidate1")
+            .addPrefix("a", 100, "candidate2")
             .build();
     assertThat(tree.pruneByPrefix(CharInput.from("a"), 0))
         .containsExactly("default", "candidate1", "candidate2");
@@ -43,8 +43,8 @@ public final class PrefixPruneTreeTest {
   public void disjunctPrefixes() {
     PrefixPruneTree<String> tree =
         new PrefixPruneTree.Builder<String>()
-            .addPrefix("a", "candidateA")
-            .addPrefix("b", "candidateB")
+            .addPrefix("a", 100, "candidateA")
+            .addPrefix("b", 100, "candidateB")
             .build();
     assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).containsExactly("candidateA");
     assertThat(tree.pruneByPrefix(CharInput.from("b"), 0)).containsExactly("candidateB");
@@ -55,9 +55,9 @@ public final class PrefixPruneTreeTest {
   public void overlappingPrefixes() {
     PrefixPruneTree<String> tree =
         new PrefixPruneTree.Builder<String>()
-            .addPrefix("", "default")
-            .addPrefix("a", "candidateA")
-            .addPrefix("an", "candidateAn")
+            .addPrefix("", 100, "default")
+            .addPrefix("a", 100, "candidateA")
+            .addPrefix("an", 100, "candidateAn")
             .build();
     assertThat(tree.pruneByPrefix(CharInput.from("a"), 0))
         .containsExactly("default", "candidateA")
@@ -72,8 +72,8 @@ public final class PrefixPruneTreeTest {
   public void overlappingPrefixes_longer() {
     PrefixPruneTree<String> tree =
         new PrefixPruneTree.Builder<String>()
-            .addPrefix("there", "candidateThere")
-            .addPrefix("the", "candidateThe")
+            .addPrefix("there", 100, "candidateThere")
+            .addPrefix("the", 100, "candidateThe")
             .build();
     assertThat(tree.pruneByPrefix(CharInput.from("the"), 0)).containsExactly("candidateThe");
     assertThat(tree.pruneByPrefix(CharInput.from("there"), 0))
@@ -85,7 +85,7 @@ public final class PrefixPruneTreeTest {
   @Test
   public void nonAsciiInPrefix_ignored() {
     PrefixPruneTree<String> tree =
-        new PrefixPruneTree.Builder<String>().addPrefix("a" + (char) 128, "candidate").build();
+        new PrefixPruneTree.Builder<String>().addPrefix("a" + (char) 128, 100, "candidate").build();
     assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).containsExactly("candidate");
     assertThat(tree.pruneByPrefix(CharInput.from("a" + (char) 128), 0))
         .containsExactly("candidate");
@@ -94,7 +94,7 @@ public final class PrefixPruneTreeTest {
   @Test
   public void firstCharIsNonAsciiInPrefix_sameAsEmptyPrefix() {
     PrefixPruneTree<String> tree =
-        new PrefixPruneTree.Builder<String>().addPrefix((char) 128 + "a", "candidate").build();
+        new PrefixPruneTree.Builder<String>().addPrefix((char) 128 + "a", 100, "candidate").build();
     assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).containsExactly("candidate");
     assertThat(tree.pruneByPrefix(CharInput.from(""), 0)).containsExactly("candidate");
   }
@@ -103,8 +103,8 @@ public final class PrefixPruneTreeTest {
   public void pruneByPrefix_emptyInput() {
     PrefixPruneTree<String> tree =
         new PrefixPruneTree.Builder<String>()
-            .addPrefix("", "default")
-            .addPrefix("a", "candidateA")
+            .addPrefix("", 100, "default")
+            .addPrefix("a", 100, "candidateA")
             .build();
     assertThat(tree.pruneByPrefix(CharInput.from(""), 0)).containsExactly("default");
   }
@@ -113,8 +113,8 @@ public final class PrefixPruneTreeTest {
   public void pruneByPrefix_indexAtEnd() {
     PrefixPruneTree<String> tree =
         new PrefixPruneTree.Builder<String>()
-            .addPrefix("", "default")
-            .addPrefix("a", "candidateA")
+            .addPrefix("", 100, "default")
+            .addPrefix("a", 100, "candidateA")
             .build();
     assertThat(tree.pruneByPrefix(CharInput.from("a"), 1)).containsExactly("default");
   }
@@ -123,8 +123,8 @@ public final class PrefixPruneTreeTest {
   public void pruneByPrefix_respectsIndex() {
     PrefixPruneTree<String> tree =
         new PrefixPruneTree.Builder<String>()
-            .addPrefix("", "default")
-            .addPrefix("a", "candidateA")
+            .addPrefix("", 100, "default")
+            .addPrefix("a", 100, "candidateA")
             .build();
     assertThat(tree.pruneByPrefix(CharInput.from("ba"), 1))
         .containsExactly("default", "candidateA")
@@ -134,7 +134,7 @@ public final class PrefixPruneTreeTest {
   @Test
   public void singlePrefixPath() {
     PrefixPruneTree<String> tree =
-        new PrefixPruneTree.Builder<String>().addPrefix("abc", "val").build();
+        new PrefixPruneTree.Builder<String>().addPrefix("abc", 100, "val").build();
     assertThat(tree.pruneByPrefix(CharInput.from("abc"), 0)).containsExactly("val");
     assertThat(tree.pruneByPrefix(CharInput.from("ab"), 0)).isEmpty();
     assertThat(tree.pruneByPrefix(CharInput.from("abcd"), 0)).containsExactly("val");
@@ -144,8 +144,8 @@ public final class PrefixPruneTreeTest {
   public void twoSubPaths() {
     PrefixPruneTree<String> tree =
         new PrefixPruneTree.Builder<String>()
-            .addPrefix("ab1", "val1")
-            .addPrefix("ac1", "val2")
+            .addPrefix("ab1", 100, "val1")
+            .addPrefix("ac1", 100, "val2")
             .build();
     assertThat(tree.pruneByPrefix(CharInput.from("ab1"), 0)).containsExactly("val1");
     assertThat(tree.pruneByPrefix(CharInput.from("ac1"), 0)).containsExactly("val2");
@@ -156,9 +156,9 @@ public final class PrefixPruneTreeTest {
   public void threeSubPaths() {
     PrefixPruneTree<String> tree =
         new PrefixPruneTree.Builder<String>()
-            .addPrefix("ab1", "val1")
-            .addPrefix("ac1", "val2")
-            .addPrefix("ad1", "val3")
+            .addPrefix("ab1", 100, "val1")
+            .addPrefix("ac1", 100, "val2")
+            .addPrefix("ad1", 100, "val3")
             .build();
     assertThat(tree.pruneByPrefix(CharInput.from("ab1"), 0)).containsExactly("val1");
     assertThat(tree.pruneByPrefix(CharInput.from("ac1"), 0)).containsExactly("val2");
@@ -170,7 +170,7 @@ public final class PrefixPruneTreeTest {
   public void manySubPaths() {
     PrefixPruneTree.Builder<String> builder = new PrefixPruneTree.Builder<>();
     for (int i = 0; i < 50; i++) {
-      builder.addPrefix("a" + (char) (' ' + i) + "1", "val" + i);
+      builder.addPrefix("a" + (char) (' ' + i) + "1", 100, "val" + i);
     }
     PrefixPruneTree<String> tree = builder.build();
     for (int i = 0; i < 50; i++) {
@@ -178,5 +178,23 @@ public final class PrefixPruneTreeTest {
           .containsExactly("val" + i);
     }
     assertThat(tree.pruneByPrefix(CharInput.from("aZ1"), 0)).isEmpty();
+  }
+
+  @Test
+  public void maxCharsLowerThanPrefixLength() {
+    PrefixPruneTree<String> tree =
+        new PrefixPruneTree.Builder<String>().addPrefix("abcdef", 3, "val").build();
+    // Pruned only by "abc"
+    assertThat(tree.pruneByPrefix(CharInput.from("abcd"), 0)).containsExactly("val");
+    assertThat(tree.pruneByPrefix(CharInput.from("abcx"), 0)).containsExactly("val");
+    assertThat(tree.pruneByPrefix(CharInput.from("abx"), 0)).isEmpty();
+  }
+
+  @Test
+  public void maxCharsLargerThanPrefixLength() {
+    PrefixPruneTree<String> tree =
+        new PrefixPruneTree.Builder<String>().addPrefix("abc", 10, "val").build();
+    assertThat(tree.pruneByPrefix(CharInput.from("abc"), 0)).containsExactly("val");
+    assertThat(tree.pruneByPrefix(CharInput.from("ab"), 0)).isEmpty();
   }
 }
