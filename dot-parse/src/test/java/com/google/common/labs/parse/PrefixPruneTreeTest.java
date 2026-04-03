@@ -136,8 +136,26 @@ public final class PrefixPruneTreeTest {
     PrefixPruneTree<String> tree =
         new PrefixPruneTree.Builder<String>().addPrefix("abc", 100, "val").build();
     assertThat(tree.pruneByPrefix(CharInput.from("abc"), 0)).containsExactly("val");
-    assertThat(tree.pruneByPrefix(CharInput.from("ab"), 0)).isEmpty();
-    assertThat(tree.pruneByPrefix(CharInput.from("abcd"), 0)).containsExactly("val");
+    assertThat(tree.pruneByPrefix(CharInput.from("ab"), 0)).containsExactly("val");
+    assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).containsExactly("val");
+    assertThat(tree.pruneByPrefix(CharInput.from(""), 0)).containsExactly("val");
+    assertThat(tree.pruneByPrefix(CharInput.from("x"), 0)).containsExactly("val");
+  }
+
+  @Test
+  public void maxCharsLowerThanPrefixLength() {
+    PrefixPruneTree<String> tree =
+        new PrefixPruneTree.Builder<String>().addPrefix("abc", 1, "val").build();
+    assertThat(tree.pruneByPrefix(CharInput.from("abc"), 0)).containsExactly("val");
+    assertThat(tree.pruneByPrefix(CharInput.from("x"), 0)).containsExactly("val");
+  }
+
+  @Test
+  public void maxCharsLargerThanPrefixLength() {
+    PrefixPruneTree<String> tree =
+        new PrefixPruneTree.Builder<String>().addPrefix("abc", 10, "val").build();
+    assertThat(tree.pruneByPrefix(CharInput.from("abc"), 0)).containsExactly("val");
+    assertThat(tree.pruneByPrefix(CharInput.from("x"), 0)).containsExactly("val");
   }
 
   @Test
@@ -181,20 +199,52 @@ public final class PrefixPruneTreeTest {
   }
 
   @Test
-  public void maxCharsLowerThanPrefixLength() {
+  public void collapseLongChain() {
     PrefixPruneTree<String> tree =
-        new PrefixPruneTree.Builder<String>().addPrefix("abcdef", 3, "val").build();
-    // Pruned only by "abc"
-    assertThat(tree.pruneByPrefix(CharInput.from("abcd"), 0)).containsExactly("val");
-    assertThat(tree.pruneByPrefix(CharInput.from("abcx"), 0)).containsExactly("val");
-    assertThat(tree.pruneByPrefix(CharInput.from("abx"), 0)).isEmpty();
+        new PrefixPruneTree.Builder<String>().addPrefix("abcdef", 100, "val").build();
+    // Path Root -> 'a' -> 'b' -> 'c' -> 'd' -> 'e' -> 'f' (val)
+    // Collapses to Root (leaf)
+    // Always matches
+    assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).containsExactly("val");
+    assertThat(tree.pruneByPrefix(CharInput.from("x"), 0)).containsExactly("val");
+    assertThat(tree.pruneByPrefix(CharInput.from(""), 0)).containsExactly("val");
   }
 
   @Test
-  public void maxCharsLargerThanPrefixLength() {
+  public void collapseDivergentPaths() {
     PrefixPruneTree<String> tree =
-        new PrefixPruneTree.Builder<String>().addPrefix("abc", 10, "val").build();
-    assertThat(tree.pruneByPrefix(CharInput.from("abc"), 0)).containsExactly("val");
-    assertThat(tree.pruneByPrefix(CharInput.from("ab"), 0)).isEmpty();
+        new PrefixPruneTree.Builder<String>()
+            .addPrefix("abcde", 100, "val1")
+            .addPrefix("ax", 100, "val2")
+            .build();
+    // Path Root -> 'a' -> {'b' -> 'c' -> 'd' -> 'e' (val1), 'x' (val2)}
+    // 'b', 'c', 'd' all collapse with 'e', so 'a' points to 'b' (leaf) and 'x' (leaf)
+    // Root does NOT merge with 'a' because 'a' is NOT a leaf.
+    assertThat(tree.pruneByPrefix(CharInput.from("abcde"), 0)).containsExactly("val1");
+    assertThat(tree.pruneByPrefix(CharInput.from("abcd"), 0)).containsExactly("val1");
+    assertThat(tree.pruneByPrefix(CharInput.from("abc"), 0)).containsExactly("val1");
+    assertThat(tree.pruneByPrefix(CharInput.from("ab"), 0)).containsExactly("val1"); // loose
+    assertThat(tree.pruneByPrefix(CharInput.from("ax"), 0)).containsExactly("val2");
+    assertThat(tree.pruneByPrefix(CharInput.from("abcx"), 0)).containsExactly("val1");
+    assertThat(tree.pruneByPrefix(CharInput.from("abx"), 0)).containsExactly("val1");
+    assertThat(tree.pruneByPrefix(CharInput.from("ac"), 0)).isEmpty();
+    assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).isEmpty();
+    assertThat(tree.pruneByPrefix(CharInput.from("bc"), 0)).isEmpty(); // No merge with 'a'
+  }
+
+  @Test
+  public void collapseStoppedBySurvivors() {
+    PrefixPruneTree<String> tree =
+        new PrefixPruneTree.Builder<String>()
+            .addPrefix("a", 100, "val1")
+            .addPrefix("abc", 100, "val2")
+            .build();
+    // Path Root -> 'a' (val1) -> 'b' -> 'c' (val1, val2)
+    // 'b' collapses with 'c' (leaf). Node 'a' now has survivors and child 'b' (leaf).
+    // Root has only 1 child 'a'. 'a' is NOT a leaf. Root does NOT merge.
+    assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).containsExactly("val1");
+    // "ab" leads to 'b' (leaf)
+    assertThat(tree.pruneByPrefix(CharInput.from("ab"), 0)).containsExactly("val1", "val2");
+    assertThat(tree.pruneByPrefix(CharInput.from("x"), 0)).isEmpty();
   }
 }

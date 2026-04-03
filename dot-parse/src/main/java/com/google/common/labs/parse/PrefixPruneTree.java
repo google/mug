@@ -108,13 +108,16 @@ record PrefixPruneTree<V>(
       if (children.isEmpty()) {
         return new PrefixPruneTree<>(effectiveSurvivors, null);
       }
-      return new PrefixPruneTree<>(
-          effectiveSurvivors,
-          Trie.from(
-              BiStream.from(children)
-                 .mapValues(
-                     builder -> builder.buildWithHierarchy(ancestorsIncludingMe, effectiveSurvivors))
-                 .toMap()));
+      var subtrees = BiStream.from(children)
+          .mapValues(c -> c.buildWithHierarchy(ancestorsIncludingMe, effectiveSurvivors))
+          .toMap();
+      if (subtrees.size() == 1 && survivors.isEmpty()) { // collapse lone leaf child
+        PrefixPruneTree<V> loneChild = subtrees.values().iterator().next();
+        if (loneChild.isLeaf()) {
+          return loneChild;
+        }
+      }
+      return new PrefixPruneTree<>(effectiveSurvivors, Trie.from(subtrees));
     }
   }
 
@@ -128,10 +131,7 @@ record PrefixPruneTree<V>(
    */
   List<V> pruneByPrefix(CharInput input, int index) {
     PrefixPruneTree<V> node = this;
-    for (int i = index; !input.isEof(i); i++) {
-      if (node.children == null) {
-        break;
-      }
+    for (int i = index; !node.isLeaf() && !input.isEof(i); i++) {
       PrefixPruneTree<V> child = node.children.child(input.charAt(i));
       if (child == null) {
         break;
@@ -139,6 +139,10 @@ record PrefixPruneTree<V>(
       node = child;
     }
     return node.survivors;
+  }
+
+  private boolean isLeaf() {
+    return children == null;
   }
 
   @Immutable(containerOf = "V")
