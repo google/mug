@@ -39,6 +39,11 @@ import com.google.mu.util.stream.BiStream;
  *      // [chars(4), word("the")]
  * }</pre>
  *
+ * <p>Note that false negatives (pruning a parser that shouldn't be pruned) can't happen, but false
+ * positive is possible: a parser may still be returned even if strictly its prefix doesn't match
+ * the input. If for example you have only one prefix, pruning by pre-scanning the input doesn't
+ * really pay off so it's better to be "loose" and not scan any input at all.
+ *
  * <p>Only ASCII characters are used for pruning. Non-ASCII characters and characters after a ASCII
  * character are ignored.
  */
