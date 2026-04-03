@@ -1,13 +1,17 @@
 package com.google.common.labs.parse;
 
+import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.lang.Math.min;
 import static java.util.Comparator.comparingInt;
+import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -115,7 +119,10 @@ record PrefixPruneTree<V>(
       }
       var subtrees = BiStream.from(children)
           .mapValues(c -> c.buildWithHierarchy(ancestorsIncludingMe, effectiveSurvivors))
-          .toMap();
+          // lower-case -> upper-case -> digits.
+          // For the comparison (x == c1 ? child1 : x == c2 ? child2 : null), we want
+          // c1 to occur more frequently than c2 for more effective short-circuiting.
+          .collect(toMap(() -> new TreeMap<Integer, PrefixPruneTree<V>>(reverseOrder())));
       if (subtrees.size() == 1 && survivors.isEmpty()) { // collapse lone leaf child
         PrefixPruneTree<V> loneChild = subtrees.values().iterator().next();
         if (loneChild.isLeaf()) {
@@ -154,7 +161,7 @@ record PrefixPruneTree<V>(
   private interface Trie<V> {
     PrefixPruneTree<V> child(char c);
 
-    static <V> Trie<V> from(Map<Integer, PrefixPruneTree<V>> children) {
+    static <V> Trie<V> from(SortedMap<Integer, PrefixPruneTree<V>> children) {
       return switch (children.size()) {
         case 1 -> singleChild(children);
         case 2 -> twoChildren(children);
@@ -188,13 +195,13 @@ record PrefixPruneTree<V>(
       return of(map.keySet().iterator().next(), map.values().iterator().next());
     }
 
-    static <V> Trie<V> twoChildren(Map<Integer, PrefixPruneTree<V>> map) {
+    static <V> Trie<V> twoChildren(SortedMap<Integer, PrefixPruneTree<V>> map) {
       var keys = map.keySet().iterator();
       var values = map.values().iterator();
       return of(keys.next(), values.next(), keys.next(), values.next());
     }
 
-    static <V> Trie<V> threeChildren(Map<Integer, PrefixPruneTree<V>> map) {
+    static <V> Trie<V> threeChildren(SortedMap<Integer, PrefixPruneTree<V>> map) {
       var keys = map.keySet().iterator();
       var values = map.values().iterator();
       return of(keys.next(), values.next(), keys.next(), values.next(), keys.next(), values.next());
