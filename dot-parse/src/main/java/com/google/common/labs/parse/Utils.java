@@ -1,9 +1,12 @@
 package com.google.common.labs.parse;
 
+import static java.lang.Character.toLowerCase;
+import static java.lang.Character.toUpperCase;
 import static java.lang.Math.min;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.stream.Stream;
 
 class Utils {
   static void checkArgument(boolean condition, String message, Object... args) {
@@ -36,11 +39,13 @@ class Utils {
           prefixes.add(new String(buffer));
           return;
         }
-        char c = string.charAt(index);
-        buffer[index] = Character.toLowerCase(c);
-        from(index + 1);
-        buffer[index] = Character.toUpperCase(c);
-        from(index + 1);
+        char chr = string.charAt(index);
+        Stream.of(toLowerCase(chr), toUpperCase(chr))
+            .distinct()
+            .forEach(c -> {
+              buffer[index] = c;
+              from(index + 1);
+            });
       }
     }.from(0);
     return prefixes;
