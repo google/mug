@@ -32,7 +32,7 @@ class Utils {
     char[] buffer = new char[min(maxLength, string.length())];
     new Object() {
       void from(int index) {
-        if (index >= buffer.length) {
+        if (index == buffer.length) {
           prefixes.add(new String(buffer));
           return;
         }
