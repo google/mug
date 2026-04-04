@@ -2333,6 +2333,36 @@ public class ParserTest {
   }
 
   @Test
+  public void anyOf_pruning_withMixedPrunableAndUnprunable() {
+    Parser<String> unprunable = one(c -> c == 'u', "u").map(Object::toString);
+    Parser<String> prunable = string("p");
+    
+    // 8 consecutive("[]") + 1 unprunable + 1 prunable = 10 total.
+    Parser<String> parser =
+        anyOf(
+            unprunable,
+            consecutive(charsIn("[]")),
+            consecutive(charsIn("[]")),
+            consecutive(charsIn("[]")),
+            consecutive(charsIn("[]")),
+            consecutive(charsIn("[]")),
+            consecutive(charsIn("[]")),
+            consecutive(charsIn("[]")),
+            consecutive(charsIn("[]")),
+            prunable);
+
+    // Prunable succeeds.
+    assertThat(parser.parse("p")).isEqualTo("p");
+    
+    // Unprunable succeeds because it's the first candidate and used as fallback when no prefix matches.
+    assertThat(parser.parse("u")).isEqualTo("u");
+    
+    // Failure case. Falls back to first candidate (unprunable) and fails.
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
+    assertThat(e).hasMessageThat().contains("expecting <u>");
+  }
+
+  @Test
   public void anyOf_pruning_withCaseInsensitive() {
     List<Parser<String>> parsers =
         range(0, 10).mapToObj(i -> caseInsensitive("a" + i).map(Object::toString)).toList();
