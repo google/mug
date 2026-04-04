@@ -83,7 +83,7 @@ import com.google.mu.util.stream.Joiner;
  * can cause StackOverflowError.
  */
 public abstract class Parser<T> {
-  private static final Set<String> NO_PREFIX = Set.of("");
+  private static final Set<String> EMPTY_PREFIX = Set.of("");
 
   /**
    * Only use in context where input consumption is guaranteed. Do not use within a loop, like
@@ -187,9 +187,9 @@ public abstract class Parser<T> {
         if (matcher instanceof CharacterSet cset) {
           return cset.candidateCharsIfAscii()
               .map(chars -> chars.stream().map(Object::toString).collect(toUnmodifiableSet()))
-              .orElse(NO_PREFIX);
+              .orElse(EMPTY_PREFIX);
         }
-        return NO_PREFIX;
+        return EMPTY_PREFIX;
       }
     };
   }
@@ -1918,7 +1918,7 @@ public abstract class Parser<T> {
    * doesn't start with any of the prefixes. Return NO_PREFIX to indicate no pruning is applicable.
    */
   Set<String> getPrefixes() {
-    return NO_PREFIX;
+    return EMPTY_PREFIX;
   }
 
   /**

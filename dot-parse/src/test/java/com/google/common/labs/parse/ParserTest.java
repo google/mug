@@ -2185,6 +2185,93 @@ public class ParserTest {
   }
 
   @Test
+  public void anyOf_pruning_withConsecutiveRange_matching() {
+    // 10 prunable strings + consecutive("[a-a]") = 11 total.
+    // Pruning should be triggered.
+    Parser<String> parser =
+        anyOf(
+            string("b1"),
+            string("b2"),
+            string("b3"),
+            string("b4"),
+            string("b5"),
+            string("b6"),
+            string("b7"),
+            string("b8"),
+            string("b9"),
+            string("b10"),
+            consecutive(charsIn("[a-a]")));
+
+    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThat(parser.parse("aa")).isEqualTo("aa");
+    
+    // Failure with completely mismatched input.
+    // Should fallback to first candidate because of pruning.
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("x"));
+    assertThat(e).hasMessageThat().contains("expecting <b1>");
+  }
+
+  @Test
+  public void anyOf_pruning_withConsecutiveRange_neverMatching() {
+    // 10 prunable strings + consecutive("[1-0]") = 11 total.
+    // consecutive("[1-0]") should never match.
+    // Pruning should be triggered for the other 10.
+    Parser<String> parser =
+        anyOf(
+            string("a1"),
+            string("a2"),
+            string("a3"),
+            string("a4"),
+            string("a5"),
+            string("a6"),
+            string("a7"),
+            string("a8"),
+            string("a9"),
+            string("a10"),
+            consecutive(charsIn("[1-0]")));
+
+    // "a1" should be matched by string("a1")
+    assertThat(parser.parse("a1")).isEqualTo("a1");
+    
+    // "1" should fail and report the first candidate because of pruning.
+    ParseException e1 = assertThrows(ParseException.class, () -> parser.parse("1"));
+    assertThat(e1).hasMessageThat().contains("expecting <a1>");
+    
+    // "b" fails all.
+    ParseException e2 = assertThrows(ParseException.class, () -> parser.parse("b"));
+    assertThat(e2).hasMessageThat().contains("expecting <a1>");
+  }
+
+  @Test
+  public void anyOf_pruning_withConsecutiveSet_containingCaret() {
+    // 10 prunable strings + consecutive("[ab^c]") = 11 total.
+    // Pruning should be triggered.
+    Parser<String> parser =
+        anyOf(
+            string("x1"),
+            string("x2"),
+            string("x3"),
+            string("x4"),
+            string("x5"),
+            string("x6"),
+            string("x7"),
+            string("x8"),
+            string("x9"),
+            string("x10"),
+            consecutive(charsIn("[ab^c]")));
+
+    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThat(parser.parse("b")).isEqualTo("b");
+    assertThat(parser.parse("^")).isEqualTo("^");
+    assertThat(parser.parse("c")).isEqualTo("c");
+    
+    // Failure with completely mismatched input.
+    // Should fallback to first candidate because of pruning.
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("y"));
+    assertThat(e).hasMessageThat().contains("expecting <x1>");
+  }
+
+  @Test
   public void anyOf_pruning_withCaseInsensitive() {
     List<Parser<String>> parsers =
         range(0, 10).mapToObj(i -> caseInsensitive("a" + i).map(Object::toString)).toList();
