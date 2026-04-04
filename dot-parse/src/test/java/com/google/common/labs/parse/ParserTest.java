@@ -2157,6 +2157,34 @@ public class ParserTest {
   }
 
   @Test
+  public void anyOf_pruning_withNegativeCharacterSet() {
+    // 10 prunable strings + consecutive(negativeCharacterSet) = 11 total.
+    // Pruning should be triggered.
+    Parser<String> parser =
+        anyOf(
+            string("a1"),
+            string("a2"),
+            string("a3"),
+            string("a4"),
+            string("a5"),
+            string("a6"),
+            string("a7"),
+            string("a8"),
+            string("a9"),
+            string("a10"),
+            consecutive(charsIn("[^a]"), "not-a"));
+
+    // "b" is not 'a'. It should be matched by consecutive(charsIn("[^a]"))
+    assertThat(parser.parse("b")).isEqualTo("b");
+    
+    // "a1" should be matched by string("a1")
+    assertThat(parser.parse("a1")).isEqualTo("a1");
+    
+    // "a" followed by nothing fails all.
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+  }
+
+  @Test
   public void anyOf_pruning_withCaseInsensitive() {
     List<Parser<String>> parsers =
         range(0, 10).mapToObj(i -> caseInsensitive("a" + i).map(Object::toString)).toList();

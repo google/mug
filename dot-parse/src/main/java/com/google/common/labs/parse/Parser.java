@@ -184,13 +184,12 @@ public abstract class Parser<T> {
       }
 
       @Override Set<String> getPrefixes() {
-        return matcher instanceof CharacterSet cset
-            ? cset.candidateCharsIfAscii()
-                .stream()
-                .flatMap(Set::stream)
-                .map(Object::toString)
-                .collect(toUnmodifiableSet())
-            : NO_PREFIX;
+        if (matcher instanceof CharacterSet cset) {
+          return cset.candidateCharsIfAscii()
+              .map(chars -> chars.stream().map(Object::toString).collect(toUnmodifiableSet()))
+              .orElse(NO_PREFIX);
+        }
+        return NO_PREFIX;
       }
     };
   }
