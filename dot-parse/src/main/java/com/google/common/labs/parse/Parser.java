@@ -122,6 +122,15 @@ public abstract class Parser<T> {
   }
 
   /**
+   * Matches a character in {@code characterSet}.
+   *
+   * @since 9.9.9
+   */
+  public static Parser<Character> one(CharacterSet characterSet) {
+    return one(characterSet, characterSet.toString());
+  }
+
+  /**
    * Matches a character as specified by {@code matcher}.
    *
    * @since 9.9.3
@@ -140,6 +149,10 @@ public abstract class Parser<T> {
 
       @Override boolean honorsSkipping() {
         return true;
+      }
+
+      @Override Set<String> getPrefixes() {
+        return prefixesIfAscii(matcher);
       }
     };
   }
@@ -184,12 +197,7 @@ public abstract class Parser<T> {
       }
 
       @Override Set<String> getPrefixes() {
-        if (matcher instanceof CharacterSet cset) {
-          return cset.candidateCharsIfAscii()
-              .map(chars -> chars.stream().map(Object::toString).collect(toUnmodifiableSet()))
-              .orElse(EMPTY_PREFIX);
-        }
-        return EMPTY_PREFIX;
+        return prefixesIfAscii(matcher);
       }
     };
   }
@@ -1918,6 +1926,15 @@ public abstract class Parser<T> {
    * doesn't start with any of the prefixes. Return NO_PREFIX to indicate no pruning is applicable.
    */
   Set<String> getPrefixes() {
+    return EMPTY_PREFIX;
+  }
+
+  private static Set<String> prefixesIfAscii(CharPredicate predicate) {
+    if (predicate instanceof CharacterSet cset) {
+      return cset.candidateCharsIfAscii()
+          .map(chars -> chars.stream().map(Object::toString).collect(toUnmodifiableSet()))
+          .orElse(EMPTY_PREFIX);
+    }
     return EMPTY_PREFIX;
   }
 

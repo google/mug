@@ -2289,6 +2289,50 @@ public class ParserTest {
   }
 
   @Test
+  public void anyOf_pruning_withOneCharacterSet_matching() {
+    Parser<Character> parser =
+        anyOf(
+            one('0'),
+            one('1'),
+            one('2'),
+            one('3'),
+            one('4'),
+            one('5'),
+            one('6'),
+            one('7'),
+            one('8'),
+            one('9'),
+            one(charsIn("[a-a]")));
+
+    assertThat(parser.parse("a")).isEqualTo('a');
+    
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("b"));
+    assertThat(e).hasMessageThat().contains("expecting <0>");
+  }
+
+  @Test
+  public void anyOf_pruning_withOneCharacterSet_neverMatching() {
+    Parser<Character> parser =
+        anyOf(
+            one('0'),
+            one('1'),
+            one('2'),
+            one('3'),
+            one('4'),
+            one('5'),
+            one('6'),
+            one('7'),
+            one('8'),
+            one('9'),
+            one(charsIn("[1-0]"))); // never matches
+
+    assertThat(parser.parse("0")).isEqualTo('0');
+    
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(e).hasMessageThat().contains("expecting <0>");
+  }
+
+  @Test
   public void anyOf_pruning_withCaseInsensitive() {
     List<Parser<String>> parsers =
         range(0, 10).mapToObj(i -> caseInsensitive("a" + i).map(Object::toString)).toList();
@@ -3894,6 +3938,22 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.parse("a"));
     assertThrows(ParseException.class, () -> parser.parseToStream("a").toList());
     assertThrows(ParseException.class, () -> parser.parse("12"));
+  }
+
+  @Test
+  public void one_characterSet_success() {
+    Parser<Character> parser = one(charsIn("[0-9]"));
+    assertThat(parser.parse("1")).isEqualTo('1');
+    assertThat(parser.parseToStream("1")).containsExactly('1');
+    assertThat(parser.parse("9")).isEqualTo('9');
+    assertThat(parser.parseToStream("9")).containsExactly('9');
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test
+  public void one_characterSet_failure() {
+    Parser<Character> parser = one(charsIn("[0-9]"));
+    assertThrows(ParseException.class, () -> parser.parse("a"));
   }
 
   @Test
