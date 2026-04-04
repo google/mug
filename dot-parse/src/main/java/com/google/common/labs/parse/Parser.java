@@ -15,6 +15,7 @@
  *****************************************************************************/
 package com.google.common.labs.parse;
 
+import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Utils.caseInsensitivePrefixes;
 import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.common.labs.parse.Utils.checkPositionIndex;
@@ -30,6 +31,7 @@ import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import java.io.Reader;
 import java.io.UncheckedIOException;
@@ -180,6 +182,16 @@ public abstract class Parser<T> {
       @Override boolean honorsSkipping() {
         return true;
       }
+
+      @Override Set<String> getPrefixes() {
+        return matcher instanceof CharacterSet cset
+            ? cset.candidateCharsIfAscii()
+                .stream()
+                .flatMap(Set::stream)
+                .map(Object::toString)
+                .collect(toUnmodifiableSet())
+            : NO_PREFIX;
+      }
     };
   }
 
@@ -221,7 +233,7 @@ public abstract class Parser<T> {
    * @since 9.4
    */
   public static Parser<String> word() {
-    return consecutive(CharPredicate.WORD, "word");
+    return consecutive(charsIn("[a-zA-Z0-9_]"), "word");
   }
 
   /**
@@ -230,7 +242,7 @@ public abstract class Parser<T> {
    * @since 9.4
    */
   public static Parser<String> digits() {
-    return consecutive(CharPredicate.range('0', '9'), "digits");
+    return consecutive(charsIn("[0-9]"), "digits");
   }
 
   /**

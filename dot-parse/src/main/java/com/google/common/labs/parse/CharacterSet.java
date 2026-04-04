@@ -19,7 +19,13 @@ import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.prefix;
+import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.reducing;
+import static java.util.stream.Collectors.toUnmodifiableSet;
+
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 import com.google.mu.util.CharPredicate;
 
@@ -125,5 +131,25 @@ public final class CharacterSet implements CharPredicate {
     Parser<CharPredicate> negativeSet =
         Parser.string("^").then(positiveSet).map(CharPredicate::not);
     return negativeSet.or(positiveSet).between("[", "]").parse(characterSet).precomputeForAscii();
+  }
+
+  Optional<Set<Character>> candidateCharsIfAscii() {
+    if (string.startsWith("[^")) {
+      return Optional.empty();
+    }
+    Parser<Character> asciiChar = Parser.one(c -> c != ']' && c < 128, "ascii char");
+    Parser<Set<Character>> range =
+        Parser.sequence(asciiChar.followedBy("-"), asciiChar, CharacterSet::charsInRange);
+    return Parser.anyOf(range, asciiChar.map(Set::of))
+        .zeroOrMore(flatMapping(Set::stream, toUnmodifiableSet()))
+        .between("[", "]")
+        .probe(string)
+        .findFirst();
+  }
+
+  private static Set<Character> charsInRange(char c1, char c2) {
+    return IntStream.rangeClosed(c1, c2)
+      .mapToObj(c -> (char) c)
+      .collect(toUnmodifiableSet());
   }
 }

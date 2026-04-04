@@ -1814,7 +1814,7 @@ public class ParserTest {
 
     // Failure with pruning. farthestFailure is the first candidate ("a1")
     ParseException e1 = assertThrows(ParseException.class, () -> parser.parse("a"));
-    assertThat(e1).hasMessageThat().contains("expecting <digits>");
+    assertThat(e1).hasMessageThat().contains("expecting <2 char(s)>");
 
     // Failure with completely mismatched input. "ba" matches chars(2), leftovers "r" causes EOF
     // error.
@@ -2065,9 +2065,11 @@ public class ParserTest {
 
   @Test
   public void anyOf_pruning_withOneNestedCandidateHavingNoPrefix() {
-    // Nested anyOf where one candidate has no prefix (digits)
+    // Nested anyOf where one candidate used to have no prefix (digits)
+    // Now digits() exposes prefixes '0'-'9'.
     Parser<String> nested = anyOf(string("a"), digits()).map(Object::toString);
-    assertThat(nested.getPrefixes()).containsExactly("");
+    assertThat(nested.getPrefixes())
+        .containsExactly("a", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
 
     List<Parser<String>> parsers =
         concat(range(0, 10).mapToObj(i -> string("x" + i)), Stream.of(nested)).toList();
@@ -2076,6 +2078,82 @@ public class ParserTest {
     assertThat(outer.parse("a")).isEqualTo("a");
     assertThat(outer.parse("123")).isEqualTo("123");
     assertThat(outer.parse("x1")).isEqualTo("x1");
+  }
+
+  @Test
+  public void anyOf_pruning_withDigits() {
+    Parser<String> parser = anyOf(digits(), string("abc"));
+    assertThat(parser.getPrefixes())
+        .containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "abc");
+    assertThat(parser.parse("123")).isEqualTo("123");
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+    assertThrows(ParseException.class, () -> parser.parse("x"));
+  }
+
+  @Test
+  public void anyOf_pruningTriggered_withDigits() {
+    // 10 prunable strings + digits() = 11 total candidates.
+    // Pruning should be triggered.
+    Parser<String> parser =
+        anyOf(
+            string("a"),
+            string("b"),
+            string("c"),
+            string("d"),
+            string("e"),
+            string("f"),
+            string("g"),
+            string("h"),
+            string("i"),
+            string("j"),
+            digits());
+
+    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThat(parser.parse("123")).isEqualTo("123");
+
+    // Failure with pruning. Should report the first candidate ("a").
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("x"));
+    assertThat(e).hasMessageThat().contains("expecting <a>");
+  }
+
+  @Test
+  public void anyOf_pruning_withWordNoArg() {
+    Parser<String> parser = anyOf(word(), string("!"));
+    assertThat(parser.getPrefixes()).contains("a");
+    assertThat(parser.getPrefixes()).contains("Z");
+    assertThat(parser.getPrefixes()).contains("0");
+    assertThat(parser.getPrefixes()).contains("_");
+    assertThat(parser.getPrefixes()).contains("!");
+
+    assertThat(parser.parse("hello")).isEqualTo("hello");
+    assertThat(parser.parse("!")).isEqualTo("!");
+
+    assertThrows(ParseException.class, () -> parser.parse("@"));
+  }
+
+  @Test
+  public void anyOf_commonPrefixPruning_withWord() {
+    // 11 candidates sharing a common prefix "word".
+    Parser<String> parser =
+        anyOf(
+            word("word01"),
+            word("word02"),
+            word("word03"),
+            word("word04"),
+            word("word05"),
+            word("word06"),
+            word("word07"),
+            word("word08"),
+            word("word09"),
+            word("word10"),
+            word("word11"));
+
+    assertThat(parser.parse("word01")).isEqualTo("word01");
+    assertThat(parser.parse("word11")).isEqualTo("word11");
+
+    // Failure with common prefix. Should report the first candidate "word01".
+    ParseException e1 = assertThrows(ParseException.class, () -> parser.parse("word"));
+    assertThat(e1).hasMessageThat().contains("expecting <word01>");
   }
 
   @Test
@@ -5394,6 +5472,10 @@ public class ParserTest {
   public void testNestedPlaceholderGrammar_source() {
     String input = "a{b=xy{foo=bar}z}d{e=f}{{not a placeholder}}";
     assertThat(Format.parser().source().parse(input)).isEqualTo(input);
+  }
+
+  @Test public void testDigits_getPrefixes() {
+    assertThat(Parser.digits().getPrefixes()).containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
   }
 
   /** An example nested placeholder grammar for demo purpose. */
