@@ -13,6 +13,8 @@
   <properties>
     <maven.javadoc.skip>true</maven.javadoc.skip>
     <module.name>benchmarks</module.name>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
   </properties>
 
   <build>
@@ -48,6 +50,12 @@
     </dependency>
 
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>dot-parse</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
     </dependency>
@@ -63,6 +71,11 @@
     </dependency>
 
     <dependency>
+      <groupId>com.google.truth.extensions</groupId>
+      <artifactId>truth-java8-extension</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
@@ -70,6 +83,18 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava-testlib</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.openjdk.jmh</groupId>
+      <artifactId>jmh-core</artifactId>
+      <version>1.37</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.openjdk.jmh</groupId>
+      <artifactId>jmh-generator-annprocess</artifactId>
+      <version>1.37</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
