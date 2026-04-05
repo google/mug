@@ -273,3 +273,9 @@ Parser<TypeDecl> typeDecl =
   - **Exception**: If you use `CharacterSet` overloads like
     `consecutive(charsIn("[a-z]"))`, the character set string is automatically
     used, so you don't need to pass a name parameter.
+- **Avoid Type Casts**: Never use type casts like `.map(e -> (Part) e)` to
+  satisfy type inference in `anyOf()`.
+  - **Option 1**: Explicitly define the local variable holding the result of
+    `anyOf()`, e.g., `Parser<Part> p = anyOf(elementPart, groupPart);`.
+  - **Option 2**: Use explicit type witness like
+    `Parser.<SuperType>anyOf(...)`.
