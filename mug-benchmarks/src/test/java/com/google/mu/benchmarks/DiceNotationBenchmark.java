@@ -33,7 +33,8 @@ import com.google.common.labs.parse.Parser;
 
 /**
  * Benchmark for Dice Notation Parser.
- * See spec: https://dice-roller.github.io/documentation/guide/notation/
+ *
+ * <p>See <a href="https://dice-roller.github.io/documentation/guide/notation/">spec</a>.
  *
  * <p>Results:
  *

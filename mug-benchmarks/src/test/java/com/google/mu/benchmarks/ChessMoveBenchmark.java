@@ -33,6 +33,8 @@ import com.google.common.labs.parse.Parser;
 /**
  * Benchmark comparing using {@link Parser} vs. regex to parse chess move notations.
  *
+ * <p>See <a href="https://en.wikipedia.org/wiki/Algebraic_notation_(chess)">spec</a>.
+ *
  * <p>The regex parser is looser than Parser because realistically you wouldn't bother creating a
  * strict regex. It's too complicated.
  *
@@ -56,9 +58,6 @@ public class ChessMoveBenchmark {
   private static final int SCALE = 100;
 
   private static final String LARGE_INPUT = Collections.nCopies(SCALE, INPUT).stream().collect(joining(" "));
-
-  private static final Pattern MOVE_REGEX = Pattern.compile(
-      "(O-O-O|O-O)|(?:([NBRQK])?([a-h]|[1-8]|[a-h][1-8])?(x)?([a-h][1-8])(?:=([NBRQ]))?([+#])?)");
 
   private static final Parser<Move> PARSER = moveParser();
 
@@ -176,6 +175,9 @@ public class ChessMoveBenchmark {
             Castling.queenside()
         );
   }
+
+  private static final Pattern MOVE_REGEX = Pattern.compile(
+      "(O-O-O|O-O)|(?:([NBRQK])?([a-h]|[1-8]|[a-h][1-8])?(x)?([a-h][1-8])(?:=([NBRQ]))?([+#])?)");
 
   @Test
   public void testRegex() {

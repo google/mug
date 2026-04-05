@@ -31,7 +31,8 @@ import com.google.common.labs.parse.Parser;
 
 /**
  * Benchmark for ABC Music Notation Note Parser.
- * See spec: http://abcnotation.com/wiki/abc:standard:v2.1#notes
+ *
+ * <p>See <a href="http://abcnotation.com/wiki/abc:standard:v2.1#notes">spec</a>.
  *
  * <p>Results:
  *
@@ -49,9 +50,6 @@ import com.google.common.labs.parse.Parser;
 @Fork(1)
 public class AbcNoteBenchmark {
   private static final String INPUT = "^C,,2 _c'1/2 =D3/2 E F G A B";
-
-  private static final Pattern NOTE_PATTERN = Pattern.compile(
-      "(\\^\\^|\\^|__|_|=)?(?:([ABCDEFG])(,*)|([abcdefg])('*))(\\d*(?:/\\d*)?)?");
 
   // Parsers
   private static final Parser<Integer> NUM = digits().map(Integer::parseInt);
@@ -161,6 +159,9 @@ public class AbcNoteBenchmark {
   public List<AbcNote> dotParse() {
     return PARSER.parseToStream(INPUT).toList();
   }
+
+  private static final Pattern NOTE_PATTERN = Pattern.compile(
+      "(\\^\\^|\\^|__|_|=)?(?:([ABCDEFG])(,*)|([abcdefg])('*))(\\d*(?:/\\d*)?)?");
 
   @Benchmark
   public List<AbcNote> regex() {
