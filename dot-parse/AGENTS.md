@@ -133,16 +133,19 @@ Parser<TypeDecl> typeDecl =
 
 ## 5. Idiomatic Combinators
 - **Prefer** `thenReturn(value)` over `.map(unused -> value)` when mapping a successful match to a constant.
+
   ```java
   // Good
   string("true").thenReturn(true)
   ```
 - **Prefer** `Parser.sequence(...)` static method over awkwardly plumbing data through chained `.map()` and `.flatMap()` when handling 2-4 sequential rules.
+
   ```java
   // Good
   sequence(owner, nested, args, (o, n, a) -> ...);
   ```
 - **Use** `Parser.followedBy(suffix)` to ignore a suffix when nested in a `sequence()` call. Then you won't need to declare an unused lambda parameter for that ignored suffix.
+
   ```java
   // Good
   sequence(owner.followedBy("."), nested, args, (o, n, a) -> ...);
@@ -155,7 +158,7 @@ Parser<TypeDecl> typeDecl =
 
 ## 7. Performance
 
-- **Prefer** `string("c")` or `one('c')` over `one(is('c'))`. They avoid parse-time allocation and are more friendly to prefix-based pruning.
+- **Prefer** `string("c")` or `one('c')` over `one(is('c'))`. They avoid parse-time allocation (they just return the passed-in string as is) and are more friendly to prefix-based pruning.
 - **Prefer** `consecutive(CharacterSet.charsIn("[a-fA-F0-9]"))` over `consecutive(CharPredicate predicate, String name)` because the latter is more verbose and doesn't enable prefix-based pruning.
 - **Prefer** `p1.optionallyFollowedBy(p2, The::wither)` over `anyOf(sequence(p1, p2, ...), p1)`. `optionallyFollowedBy()` is both more readable and more efficient.
 
