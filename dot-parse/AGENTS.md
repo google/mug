@@ -11,14 +11,14 @@ When generating or refactoring code using the `dot-parse` library, you MUST foll
   - The convenience factory method should assume that default value, and an incremental "wither" should be used to attach it optionally.
 - This enables clean functional chaining with combinators like `optionallyFollowedBy(..., DomainType::withProperty)`.
   ```java
-  public record AbcNote(Accidental accidental, char pitch, int octave, Duration duration) {
+  public record AbcNote(Accidental accidental, char pitch, int octave, NoteDuration duration) {
     // Factory assumes default duration
     public static AbcNote of(char pitch, int octave) {
-      return new AbcNote(Accidental.NONE, pitch, octave, Duration.of(1));
+      return new AbcNote(Accidental.NONE, pitch, octave, NoteDuration.of(1));
     }
     
     // Wither attaches it optionally
-    public AbcNote withDuration(Duration duration) {
+    public AbcNote withDuration(NoteDuration duration) {
       return new AbcNote(accidental, pitch, octave, duration);
     }
   }
@@ -37,18 +37,38 @@ When generating or refactoring code using the `dot-parse` library, you MUST foll
 
 Unlike most parser combinator libraries, Dot-Parse deliberately outlaws zero-width parsers because it's too easy to shoot yourself in the foot, running into an infinite loop by sneakily nesting it within a repetition parser.
 
-The `Parser.optional()`, `Parser.orElse()` and `Parser.zeroOrMore()` are only to be used in safe places like `Parser.followedBy()`, `Parser.then()`, `Parser.between()` where the composite parser is guaranteed to consume input.
+The `optional()`, `orElse()` and `zeroOrMore()` are only to be used in safe places like `followedBy()`, `then()`, `between()`, `immediatelyBetween()` etc. where the composite parser is guaranteed to consume input.
 
-Do not attempt to compose an optional Parser in `sequence()` or `anyOf()`. Instead, consider:
+**Do not** attempt to compose an optional Parser in `sequence()` or `anyOf()`. 
+
+While it may feel tempting to want to do something like this:
+
+```java
+// Won't compile!
+Parser<String> optionalComma = string(",").optional();
+Parser<List<String>> list = word().followedBy(optionalComma).zeroOrMore();
+```
+
+It would have opened a can of worms named infinite loops, if the API have allowed it. That's why in the `dot-parse` API, the code above would not compile (because `optional()` returns a special `OrEmpty` type, not a `Parser`). So don't try it! You are forced to complete the fluent chain using methods on `OrEmpty` that ensure safety.
+
+Instead, consider:
+- For an optional suffix that may be present zero or one time, use `optionallyFollowedBy()`:
+
+  ```java
+  Parser<String> wordAllowingTrailingComma = word().optionallyFollowedBy(",");
+  Parser<Note> noteWithOptionalOctave = note.optionallyFollowedBy(octave, Note::withOctave);
+  ```
+- For suffix that may occur zero or many times, use `followedBy(suffix.zeroOrMore())`.
+- If an optional suffix string doesn't change the result, use `optionallyFollowedBy(suffixString)`..
 - For an optional prefix, split the rule into two choices, such as:
 
   ```java
   anyOf(
-      sequence(accidental, note, (a, n) -> n.withAccidendal(a)),  // with prefix
+      sequence(accidental, note, (a, n) -> n.withAccidental(a)),  // with prefix
       note)  // without prefix
   ```
   But remember to put the with prefix choice as the first.
-- If the prefix can show zero or more times, and each time incrementally modifies the result but returns the same type, use `Parser.withPrefixes()`:
+- If the prefix can show zero or more times, and each time incrementally modifies the result but returns the same type, use `withPrefixes()`:
 
   ```java
   note.withPrefixes(accidental, (a, n) -> n.withAccidental(a))
@@ -60,13 +80,6 @@ Do not attempt to compose an optional Parser in `sequence()` or `anyOf()`. Inste
       sequence(accidental.atLeastOnce(), note, (a, n) -> n.withAccidentals(a)),  // with non-empty prefixes
       note);  // no prefix
   ```
-- For an optional suffix that may be present zero or one time, use `Parser.optionallyFollowedBy()`:
-
-  ```java
-  note.optionallyFollowedBy(octave, Note::withOctave);
-  ```
-- For suffix that may occur zero or many times, use `Parser.followedby(suffix.zeroOrMore())`.
-- If an optional suffix string doesn't change the result, use `Parser.optionallyFollowedBy(suffixString)`.
 - For a grammar with prefixes, postfixes, and infix operators, particularly with different precedents, use `OperatorTable` class to define them declaratively.
 
 ## 4. Optional Suffixes
@@ -75,8 +88,8 @@ Do not attempt to compose an optional Parser in `sequence()` or `anyOf()`. Inste
 
   ```java
   // Good: Expresses intent clearly ("A number, optionally followed by a denominator")
-  NUM.map(Duration::of)
-      .optionallyFollowedBy(DURATION_DENOMINATOR, Duration::withDenominator)
+  NUM.map(NoteDuration::of)
+      .optionallyFollowedBy(DURATION_DENOMINATOR, NoteDuration::withDenominator)
   ```
 
 ## 5. Left Recursion
@@ -92,7 +105,7 @@ The typical way to parse these naturally left-recursive grammars is to model it 
 Parser<Expr> literal = anyOf(
     quotedByWithEscapes('"', '"', chars(1)).map(StringLiteral::new),
     digits().map(IntLiteral::new));
-Parser<Expr> atomic = anyOf(word().map(Variable:new), literal);
+Parser<Expr> atomic = anyOf(word().map(Variable::new), literal);
 Parser<Expr> expr = Parser.define(self ->
     new OperatorTable<Expr>()
       .postfix(
