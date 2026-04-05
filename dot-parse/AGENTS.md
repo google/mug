@@ -53,36 +53,36 @@ Parser<List<String>> list = word().followedBy(optionalComma).zeroOrMore();
 
 It would have opened a can of worms named infinite loops, if the API have allowed it. That's why in the `dot-parse` API, the code above would not compile (because `optional()` returns a special `OrEmpty` type, not a `Parser`). So don't try it! You are forced to complete the fluent chain using methods on `OrEmpty` that ensure safety.
 
-Instead, consider:
-- For an optional suffix that may be present zero or one time, use `optionallyFollowedBy()`:
+Instead, consider these safe patterns:
+- **Prefer** `optionallyFollowedBy()` for an optional suffix that may be present zero or one time:
 
   ```java
   Parser<String> wordAllowingTrailingComma = word().optionallyFollowedBy(",");
   Parser<Note> noteWithOptionalOctave = note.optionallyFollowedBy(octave, Note::withOctave);
   ```
-- For suffix that may occur zero or many times, use `followedBy(suffix.zeroOrMore())`.
-- If an optional suffix string doesn't change the result, use `optionallyFollowedBy(suffixString)`..
-- For an optional prefix, split the rule into two choices, such as:
+- **Use** `followedBy(suffix.zeroOrMore())` for a suffix that may occur zero or many times.
+- **Use** `optionallyFollowedBy(suffixString)` if an optional suffix string doesn't change the result.
+- **Use** `anyOf()` to split the rule into two choices for an optional prefix:
 
   ```java
   anyOf(
       sequence(accidental, note, (a, n) -> n.withAccidental(a)),  // with prefix
       note)  // without prefix
   ```
-  But remember to put the with prefix choice as the first.
-- If the prefix can show zero or more times, and each time incrementally modifies the result but returns the same type, use `withPrefixes()`:
+  But remember to put the choice with the prefix first.
+- **Use** `withPrefixes()` if the prefix can show zero or more times, and each time incrementally modifies the result but returns the same type:
 
   ```java
   note.withPrefixes(accidental, (a, n) -> n.withAccidental(a))
   ```
-- If the prefixes are supposed to be accumulated into a collection like a `List`, split the rule into two choices again:
+- **Use** `anyOf()` again if the prefixes are supposed to be accumulated into a collection like a `List`:
 
   ```java
   anyOf(
       sequence(accidental.atLeastOnce(), note, (a, n) -> n.withAccidentals(a)),  // with non-empty prefixes
       note);  // no prefix
   ```
-- For a grammar with prefixes, postfixes, and infix operators, particularly with different precedents, use `OperatorTable` class to define them declaratively.
+- **Use** `OperatorTable` class to define a grammar with prefixes, postfixes, and infix operators declaratively, particularly when they have different precedents.
 
 ## 4. Optional Suffixes
 - For optional suffix rules, **always prefer** `optionallyFollowedBy()`.
@@ -160,10 +160,10 @@ Parser<TypeDecl> typeDecl =
 - **Never** guess or invent methods on `Parser`. AI agents tend to hallucinate methods like `many()` or `sepBy1()` from other libraries. In `dot-parse`, use `atLeastOnce()`, `atLeastOnceDelimitedBy()`, `zeroOrMore()` and `zeroOrMoreDelimitedBy()` instance methods, and `consecutive()` and `zeroOrMore()` static factory methods.
 - **Always** verify the existence of a method in `Parser.java`, `CharPredicate.java` or `CharacterSet.java`, `OperatorTable.java` before generating code using it.
 - **Whitelist of Common Methods** to keep you grounded:
-  - Primitives: `string(s)`, `one(char)`, `one(charsIn(...))`, `digits()`, `word()`, `consecutive(charsIn(...))`
-  - Combinators: `anyOf(...)`, `sequence(...)`, `zeroOrMore()`, `atLeastOnce()`, `zeroOrMoreDelimitedBy()`, `atLeastOnceDelimitedBy()`
-  - Safe Optionals: `optionallyFollowedBy(...)`, `withPrefixes(...)`, `withPostfixes(...)`
-  - Boundaries: `between(...)`, `immediatelyBetween(...)`, `followedBy(...)`, `then(...)`
+  - **Use** primitives: `string(s)`, `one(char)`, `one(charsIn(...))`, `digits()`, `word()`, `consecutive(charsIn(...))`
+  - **Use** combinators: `anyOf(...)`, `sequence(...)`, `zeroOrMore()`, `atLeastOnce()`, `zeroOrMoreDelimitedBy()`, `atLeastOnceDelimitedBy()`
+  - **Use** safe optionals: `optionallyFollowedBy(...)`, `withPrefixes(...)`, `withPostfixes(...)`
+  - **Use** boundaries: `between(...)`, `immediatelyBetween(...)`, `followedBy(...)`, `then(...)`
 - If you need a method not listed above, you MUST open and read `Parser.java` to check if it exists.
 
 
