@@ -206,11 +206,11 @@ public class ChessMoveBenchmark {
   public sealed interface Move permits Castling, PieceMove {}
 
   record Castling(boolean isKingside) implements Move {
-    public static Castling kingside() {
+    static Castling kingside() {
       return new Castling(true);
     }
 
-    public static Castling queenside() {
+    static Castling queenside() {
       return new Castling(false);
     }
   }
@@ -224,27 +224,27 @@ public class ChessMoveBenchmark {
       String checkOrMate
   ) implements Move {
 
-    public static PieceMove move(String piece, String destination) {
+    static PieceMove move(String piece, String destination) {
       return new PieceMove(piece, null, false, destination, null, null);
     }
 
-    public static PieceMove capture(String piece, String destination) {
+    static PieceMove capture(String piece, String destination) {
       return new PieceMove(piece, null, true, destination, null, null);
     }
 
-    public static PieceMove moveWithDisambiguation(String piece, String disambiguation, String destination) {
+    static PieceMove moveWithDisambiguation(String piece, String disambiguation, String destination) {
       return new PieceMove(piece, disambiguation, false, destination, null, null);
     }
 
-    public static PieceMove captureWithDisambiguation(String piece, String disambiguation, String destination) {
+    static PieceMove captureWithDisambiguation(String piece, String disambiguation, String destination) {
       return new PieceMove(piece, disambiguation, true, destination, null, null);
     }
 
-    public static PieceMove pawnMove(String destination) {
+    static PieceMove pawnMove(String destination) {
       return new PieceMove(null, null, false, destination, null, null);
     }
 
-    public static PieceMove pawnCapture(String file, String destination) {
+    static PieceMove pawnCapture(String file, String destination) {
       return new PieceMove(null, file, true, destination, null, null);
     }
 
