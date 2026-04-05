@@ -10,7 +10,8 @@ When generating or refactoring code using the `dot-parse` library, you MUST foll
   - The language to be parsed represents the user's mental model.
   - If in the mental model, the data can be expressed with or without a property (which usually has a default value), the data model should reflect that.
   - The convenience factory method should assume that default value, and an incremental "wither" should be used to attach it optionally.
-- This enables clean functional chaining with combinators like `optionallyFollowedBy(..., DomainType::withProperty)`.
+- This enables clean functional chaining using **method references** (e.g., `AbcNote::withDuration`) rather than lambdas.
+- **Prefer** method references over lambdas when using withers in combinators like `optionallyFollowedBy()` and `sequence()`.
 
   ```java
   public record AbcNote(Accidental accidental, char pitch, int octave, NoteDuration duration) {
