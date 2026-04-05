@@ -154,3 +154,21 @@ Parser<TypeDecl> typeDecl =
 - **Prefer** `string("c")` or `one('c')` over `one(is('c'))`. They avoid parse-time allocation and are more friendly to prefix-based pruning.
 - **Prefer** `consecutive(CharacterSet.charsIn("[a-fA-F0-9]"))` over `consecutive(CharPredicate predicate, String name)` because the latter is more verbose and doesn't enable prefix-based pruning.
 - **Prefer** `p1.optionallyFollowedBy(p2, The::wither)` over `anyOf(sequence(p1, p2, ...), p1)`. `optionallyFollowedBy()` is both more readable and more efficient.
+
+
+## 8. Avoiding API Hallucination
+- **Never** guess or invent methods on `Parser`. AI agents tend to hallucinate methods like `many()` or `sepBy1()` from other libraries. In `dot-parse`, use `atLeastOnce()`, `atLeastOnceDelimitedBy()`, `zeroOrMore()` and `zeroOrMoreDelimitedBy()` instance methods, and `consecutive()` and `zeroOrMore()` static factory methods.
+- **Always** verify the existence of a method in `Parser.java`, `CharPredicate.java` or `CharacterSet.java`, `OperatorTable.java` before generating code using it.
+- **Whitelist of Common Methods** to keep you grounded:
+  - Primitives: `string(s)`, `one(char)`, `one(charsIn(...))`, `digits()`, `word()`, `consecutive(charsIn(...))`
+  - Combinators: `anyOf(...)`, `sequence(...)`, `zeroOrMore()`, `atLeastOnce()`, `zeroOrMoreDelimitedBy()`, `atLeastOnceDelimitedBy()`
+  - Safe Optionals: `optionallyFollowedBy(...)`, `withPrefixes(...)`, `withPostfixes(...)`
+  - Boundaries: `between(...)`, `immediatelyBetween(...)`, `followedBy(...)`, `then(...)`
+- If you need a method not listed above, you MUST open and read `Parser.java` to check if it exists.
+
+
+## 9. Common Pitfalls & Guardrails
+- **CharacterSet Syntax**: `CharacterSet.charsIn()` expects a string enclosed in square brackets, mimicking regex character classes.
+  - **Never** use `charsIn("abc")`. Always use `charsIn("[abc]")`.
+- **Greedy Matching**: `zeroOrMore` and `atLeastOnce` are greedy. They will consume as much as possible and do not automatically backtrack to give back characters to a suffix parser.
+  - **Example**: If you want to parse a word ending with 's' (like "words"), `word().followedBy("s")` will fail because `word()` consumes the 's' and leaves nothing for `followedBy("s")`.
