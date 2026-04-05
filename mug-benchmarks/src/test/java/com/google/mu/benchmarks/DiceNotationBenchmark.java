@@ -138,7 +138,7 @@ public class DiceNotationBenchmark {
   public long regex() {
     try (Scanner scanner = new Scanner(LARGE_INPUT)) {
       return scanner.findAll(REGEX)
-          .map(DiceNotationBenchmark::mapMatch)
+          .map(DiceNotationBenchmark::fromRegexMatch)
           .count();
     }
   }
@@ -199,7 +199,7 @@ public class DiceNotationBenchmark {
 
     try (Scanner scanner = new Scanner(input)) {
       List<DiceRoll> regexMatched = scanner.findAll(REGEX)
-          .map(DiceNotationBenchmark::mapMatch)
+          .map(DiceNotationBenchmark::fromRegexMatch)
           .toList();
       assertThat(regexMatched).containsExactly(expected);
     }
@@ -208,7 +208,7 @@ public class DiceNotationBenchmark {
   private static final Pattern MOD_PATTERN = Pattern.compile("(!!|!p|!|ro|r)(?:(>=|<=|!=|<>|>|<|=)(\\d+))?|(kh|kl|k|dh|dl|d)(\\d*)");
   private static final Pattern CP_PATTERN = Pattern.compile("(>=|<=|!=|<>|>|<|=)(\\d+)");
 
-  private static DiceRoll mapMatch(java.util.regex.MatchResult mr) {
+  private static DiceRoll fromRegexMatch(java.util.regex.MatchResult mr) {
     int num = mr.group(1) != null ? Integer.parseInt(mr.group(1)) : 1;
     int sides = Integer.parseInt(mr.group(2));
     DiceRoll roll = DiceRoll.of(num, sides);
