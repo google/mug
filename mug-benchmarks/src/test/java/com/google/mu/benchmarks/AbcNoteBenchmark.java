@@ -64,10 +64,11 @@ public class AbcNoteBenchmark {
 
   private static final Parser<Integer> DURATION_DENOMINATOR =
       string("/").thenReturn(2).optionallyFollowedBy(NUM, (d, denominator) -> denominator);
-  private static final Parser<Duration> DURATION_WITH_NUMERATOR =
-      NUM.map(Duration::of).optionallyFollowedBy(DURATION_DENOMINATOR, Duration::withDenominator);
-  private static final Parser<Duration> DURATION_DEFAULT_NUMERATOR =
-      DURATION_DENOMINATOR.map(d -> new Duration(1, d));
+  private static final Parser<Duration> DURATION =
+      anyOf(
+          NUM.map(Duration::of)
+              .optionallyFollowedBy(DURATION_DENOMINATOR, Duration::withDenominator),
+          DURATION_DENOMINATOR.map(d -> new Duration(1, d)));
 
   private static final Parser<AbcNote> NOTE =
       anyOf(
@@ -80,8 +81,7 @@ public class AbcNoteBenchmark {
 
   private static final Parser<AbcNote> PARSER =
       anyOf(sequence(ACCIDENTAL, NOTE, (acc, note) -> note.withAccidental(acc)), NOTE)
-          .optionallyFollowedBy(
-              anyOf(DURATION_WITH_NUMERATOR, DURATION_DEFAULT_NUMERATOR), AbcNote::withDuration)
+          .optionallyFollowedBy(DURATION, AbcNote::withDuration)
           .followedBy(zeroOrMore(charsIn("[ \r\n\t]")));
 
   // Tests
