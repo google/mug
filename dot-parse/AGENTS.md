@@ -3,6 +3,7 @@
 When generating or refactoring code using the `dot-parse` library, you MUST follow these rules to ensure safety, performance, and idiomatic style.
 
 ## 1. Data Model Design
+
 - **Always** make the domain data model immutable (e.g., using Java `record`s).
 - **Use "wither" methods** (methods that return a new instance with the updated property) for optional properties or modifiers.
 - **Rule of thumb for withers**:
@@ -10,6 +11,7 @@ When generating or refactoring code using the `dot-parse` library, you MUST foll
   - If in the mental model, the data can be expressed with or without a property (which usually has a default value), the data model should reflect that.
   - The convenience factory method should assume that default value, and an incremental "wither" should be used to attach it optionally.
 - This enables clean functional chaining with combinators like `optionallyFollowedBy(..., DomainType::withProperty)`.
+
   ```java
   public record AbcNote(Accidental accidental, char pitch, int octave, NoteDuration duration) {
     // Factory assumes default duration
@@ -25,11 +27,13 @@ When generating or refactoring code using the `dot-parse` library, you MUST foll
   ```
 
 ## 2. Static Import
+
 - **Always** static import `dot-parse` factory methods from the `Parser` class and `CharPredicate` classes.
-- Do NOT use `Parser.one()`, `Parser.anyOf()`, etc. Use `one()`, `anyOf()` directly.
+- Do NOT use `Parser.consecutive()`, `Parser.anyOf()`, etc. Use `consecutive()`, `anyOf()` directly.
+
   ```java
   import static com.google.common.labs.parse.Parser.anyOf;
-  import static com.google.common.labs.parse.Parser.one;
+  import static com.google.common.labs.parse.Parser.consecutive;
   import static com.google.common.labs.parse.Parser.string;
   ```
 
