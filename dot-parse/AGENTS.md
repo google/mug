@@ -175,8 +175,16 @@ Parser<TypeDecl> typeDecl =
     simpleType.withPostfixes(string(".").then(word()), TypeDecl::nested);
 ```
 
-## 5. Idiomatic Combinators
+## 6. Idiomatic Combinators
 
+- **Always use** `.parseSkipping(CharPredicate, String)` or
+  `.skipping(charPredicate).parse(String)` to omit whitespace and comments.
+- **Never** try to skip them manually in the grammar (e.g., using
+  `.followedBy(zeroOrMore(whitespace()))`).
+- **Prefer** attaching `simplerParser.suchThat(customPredicate, name)` over
+  encoding a complex parser.
+  - **Example**: `word().suchThat(w -> w.length() < 8, "short word")`, as
+    opposed to constructing a more complex parser.
 - **Prefer** `thenReturn(value)` over `.map(unused -> value)` when mapping a
   successful match to a constant.
 
@@ -185,8 +193,7 @@ Parser<TypeDecl> typeDecl =
   string("true").thenReturn(true)
   ```
 - **Prefer** `Parser.sequence(...)` static method over awkwardly plumbing data
-  through chained `.map()` and `.flatMap()` when handling 2-4 sequential
-  rules.
+  through chained `.flatMap()` when handling 2-4 sequential rules.
 
   ```java
   // Good
@@ -203,14 +210,14 @@ Parser<TypeDecl> typeDecl =
 - **Use** `prefix.then(parser)` to ignore a prefix when nested in a
   `sequence()` call.
 
-## 6. Coding Style
+## 7. Coding Style
 
 - **Avoid** long lambdas. Consider if the lambda or the majority of the lambda
   body should live in the domain record itself (often the logic benefits
   direct callers even when not parsing).
 
 
-## 7. Performance
+## 8. Performance
 
 - **Prefer** `string("c")` or `one('c')` over `one(is('c'))`. They avoid
   parse-time allocation (they just return the passed-in string as is) and are
@@ -223,7 +230,7 @@ Parser<TypeDecl> typeDecl =
   readable and more efficient.
 
 
-## 8. Avoiding API Hallucination
+## 9. Avoiding API Hallucination
 
 - **Never** guess or invent methods on `Parser`. AI agents tend to hallucinate
   methods like `many()` or `sepBy1()` from other libraries. In `dot-parse`,
@@ -246,7 +253,7 @@ Parser<TypeDecl> typeDecl =
   to check if it exists.
 
 
-## 9. Common Pitfalls & Guardrails
+## 10. Common Pitfalls & Guardrails
 
 - **CharacterSet Syntax**: `CharacterSet.charsIn()` expects a string enclosed
   in square brackets, mimicking regex character classes.
