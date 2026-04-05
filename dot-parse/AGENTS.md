@@ -37,7 +37,7 @@ When generating or refactoring code using the `dot-parse` library, you MUST foll
 
 Unlike most parser combinator libraries, Dot-Parse deliberately outlaws zero-width parsers because it's too easy to shoot yourself in the foot, running into an infinite loop by sneakily nesting it within a repetition parser.
 
-You don't see parser people talk about it often but when it happens, the program hangs. And even if you take a thread dump, the dump would only show that it failed in a loop deeply inside the `many()` library method body, but giving you no idea which of *your* grammar had incorrectly used a zero-width parser! It's like saying: "Yeah man, look: you died, it was bad, death was bad.", but just won't tell you what killed you.
+You don't see parser people talk about it often but when it happens, the program hangs. And even if you manually kill the VM and take a thread dump, the dump would only show that it failed in a loop deeply inside the `many()` library method body, but giving you no idea which of *your* grammar had incorrectly used a zero-width parser, because that parser object construction code is somewhere in the wild, just not in the stack trace of the `parse()` call! It's like saying: "Yeah man, look: you died, it was bad, death was bad.", but just won't tell you what killed you.
 
 The `optional()`, `orElse()` and `zeroOrMore()` are only to be used in safe places like `followedBy()`, `then()`, `between()`, `immediatelyBetween()` etc. where the composite parser is guaranteed to consume input.
 
