@@ -172,3 +172,6 @@ Parser<TypeDecl> typeDecl =
   - **Never** use `charsIn("abc")`. Always use `charsIn("[abc]")`.
 - **Greedy Matching**: `zeroOrMore` and `atLeastOnce` are greedy. They will consume as much as possible and do not automatically backtrack to give back characters to a suffix parser.
   - **Example**: If you want to parse a word ending with 's' (like "words"), `word().followedBy("s")` will fail because `word()` consumes the 's' and leaves nothing for `followedBy("s")`.
+- **Predicate Names in Error Messages**: When passing a `CharPredicate` to methods like `one()`, `consecutive()`, `zeroOrMore()`, or using `suchThat()`, you **must** provide a descriptive name parameter for error messages.
+  - **Example**: `consecutive(Character::isDigit, "digit")` or `suchThat(p -> p.isValid(), "valid item")`.
+  - **Exception**: If you use `CharacterSet` overloads like `consecutive(charsIn("[a-z]"))`, the character set string is automatically used, so you don't need to pass a name parameter.
