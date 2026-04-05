@@ -42,7 +42,7 @@ public class ChemicalNotationBenchmark {
 
   private static final Parser<String> SYMBOL =
       one(charsIn("[A-Z]"))
-          .optionallyFollowedBy(one(charsIn("[a-z]")), (upper, lower) -> null)
+          .followedBy(one(charsIn("[a-z]")).optional())
           .source();
 
   private static final Parser<Formula> FORMULA = Parser.define(self -> {

@@ -194,11 +194,45 @@ Parser<TypeDecl> typeDecl =
   ```
 - **Prefer** `Parser.sequence(...)` static method over awkwardly plumbing data
   through chained `.flatMap()` when handling 2-4 sequential rules.
+  - **Example**: `sequence(owner, nested, args, (o, n, a) -> ...);`
 
-  ```java
-  // Good
-  sequence(owner, nested, args, (o, n, a) -> ...);
-  ```
+-   **When handling more than 4 sequential rules**, you have two options:
+
+    -   **Option 1 (Reduce Cardinality)**: If some rules don't produce a value
+        (or the value is ignored), use `.followedBy(unusedRule)` or
+        `prefix.then(parser)` to reduce the number of values passed to
+        `sequence()`.
+    -   **Option 2 (Custom Helper)**: Create the corresponding functional
+        interface (assume it's named `Fun6`). Then create a custom `sequence()`
+        helper that nests calls using `Map::entry` to pair up results, and then
+        unpacks them in a final mapper.
+
+	    ```java
+	    static <R> Parser<R> sequence(
+	        Parser<A> a, Parser<B> b, Parser<C> c,
+	        Parser<D> d, Parser<E> e, Parser<F> f,
+	        Fun6<? super A, ? super B, ? super C,
+	             ? super D, ? super E, ? super F,
+	             ? extends R> mapper) {
+	      return sequence(
+	          sequence(a, b, Map::entry),
+	          sequence(c, d, Map::entry),
+	          sequence(e, f, Map::entry),
+	          (p1, p2, p3) ->
+	               mapper.apply(
+	                   p1.getKey(), p1.getValue(),
+	                   p2.getKey(), p2.getValue(),
+	                   p3.getKey(), p3.getValue()));
+	    }
+	    ```
+	
+	    And then just use it (e.g., to parse a Java method definition):
+	
+	    ```java {.good}
+	    sequence(
+	        modifier, access, returnType, methodName, args, throwsSpec,
+	        MethodDef::new);
+    ```
 - **Use** `Parser.followedBy(suffix)` to ignore a suffix when nested in a
   `sequence()` call. Then you won't need to declare an unused lambda parameter
   for that ignored suffix.
