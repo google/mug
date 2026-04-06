@@ -8,6 +8,8 @@ import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.common.truth.Truth.assertThat;
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.reverseOrder;
 
 import java.util.Arrays;
 import java.util.List;
@@ -54,10 +56,7 @@ public class AbcNoteBenchmark {
 
   // Parsers
   private static final Parser<Integer> NUM = digits().map(Integer::parseInt);
-  private static final Parser<Accidental> ACCIDENTAL =
-      Arrays.stream(Accidental.values())
-          .map(v -> string(v.toString()).thenReturn(v))
-          .collect(Parser.or());
+  private static final Parser<Accidental> ACCIDENTAL = Parser.byStrings(Accidental.values());
 
   private static final Parser<Integer> DURATION_DENOMINATOR =
       string("/").thenReturn(2).optionallyFollowedBy(NUM, (d, denominator) -> denominator);

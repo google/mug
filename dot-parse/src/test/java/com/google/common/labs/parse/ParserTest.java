@@ -5923,6 +5923,117 @@ public class ParserTest {
     assertThat(ResourceNamePattern.parser().source().matches(input)).isTrue();
   }
 
+  @Test
+  public void byStrings_success() {
+    Parser<IntOperator> parser = Parser.byStrings(IntOperator.values());
+    assertThat(parser.parse("+")).isEqualTo(IntOperator.PLUS);
+    assertThat(parser.parse("-")).isEqualTo(IntOperator.MINUS);
+    assertThat(parser.parse("++")).isEqualTo(IntOperator.INCREMENT);
+    assertThat(parser.parse("--")).isEqualTo(IntOperator.DECREMENT);
+  }
+
+  @Test
+  public void byStrings_failure() {
+    Parser<IntOperator> parser = Parser.byStrings(IntOperator.values());
+    assertThrows(ParseException.class, () -> parser.parse("="));
+  }
+
+  @Test
+  public void byStrings_pruning() {
+    Parser<IntOperator> parser = Parser.byStrings(IntOperator.values());
+    assertThat(parser.getPrefixes()).containsExactly("+", "-", "*", "/");
+
+    Parser<Object> anyOfParser = anyOf(string("x1"), parser, chars(4));
+
+    // Input "+" should match Operator.PLUS.
+    assertThat(anyOfParser.parse("+")).isEqualTo(IntOperator.PLUS);
+
+    // Input "z" should prune x1 and parser. Only chars(4) tried.
+    ParseException e = assertThrows(ParseException.class, () -> anyOfParser.parse("z"));
+    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
+  }
+
+  @Test
+  public void byStrings_shuffled_success() {
+    // Specifically shuffle them so that we have ++ before + but -- after -
+    Parser<IntOperator> parser =
+        Parser.byStrings(
+            IntOperator.INCREMENT,
+            IntOperator.PLUS,
+            IntOperator.DIVIDE,
+            IntOperator.MINUS,
+            IntOperator.DECREMENT,
+            IntOperator.MULTIPLY);
+    assertThat(parser.parse("++")).isEqualTo(IntOperator.INCREMENT);
+    assertThat(parser.parse("+")).isEqualTo(IntOperator.PLUS);
+    assertThat(parser.parse("--")).isEqualTo(IntOperator.DECREMENT);
+    assertThat(parser.parse("-")).isEqualTo(IntOperator.MINUS);
+    assertThat(parser.parse("*")).isEqualTo(IntOperator.MULTIPLY);
+    assertThat(parser.parse("/")).isEqualTo(IntOperator.DIVIDE);
+  }
+
+  @Test
+  public void byStrings_nonEnum_success() {
+    Parser<Integer> parser = Parser.byStrings(1, 10, 100);
+    assertThat(parser.parse("1")).isEqualTo(1);
+    assertThat(parser.parse("10")).isEqualTo(10);
+    assertThat(parser.parse("100")).isEqualTo(100);
+  }
+
+  @Test
+  public void byStrings_oneElement_success() {
+    Parser<String> parser = Parser.byStrings("foo");
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+    assertThrows(ParseException.class, () -> parser.parse("bar"));
+    assertThat(parser.getPrefixes()).containsExactly("foo");
+  }
+
+  @Test
+  public void byStrings_emptyString_failure() {
+    assertThrows(IllegalArgumentException.class, () -> Parser.byStrings(""));
+  }
+
+  @Test
+  public void byStrings_anyEmptyString_failure() {
+    assertThrows(IllegalArgumentException.class, () -> Parser.byStrings("foo", ""));
+  }
+
+  @Test
+  public void byStrings_duplicate_failure() {
+    assertThrows(IllegalArgumentException.class, () -> Parser.byStrings(100, 100));
+  }
+
+  @Test
+  public void byStrings_empty_failure() {
+    assertThrows(IllegalArgumentException.class, () -> Parser.byStrings());
+  }
+
+  @Test
+  public void byStrings_nullValue_failure() {
+    assertThrows(NullPointerException.class, () -> Parser.byStrings(null, 100));
+  }
+
+  private enum IntOperator {
+    PLUS("+"),
+    MINUS("-"),
+    MULTIPLY("*"),
+    DIVIDE("/"),
+    INCREMENT("++"),
+    DECREMENT("--"),
+    ;
+
+    private final String s;
+
+    IntOperator(String s) {
+      this.s = s;
+    }
+
+    @Override
+    public String toString() {
+      return s;
+    }
+  }
+
   private static CharPredicate whitespace() {
     return Character::isWhitespace;
   }

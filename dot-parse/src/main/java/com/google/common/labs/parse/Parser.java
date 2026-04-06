@@ -21,9 +21,11 @@ import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.common.labs.parse.Utils.checkPositionIndex;
 import static com.google.common.labs.parse.Utils.checkState;
 import static com.google.mu.util.CharPredicate.isNot;
+import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.stream;
+import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -38,8 +40,10 @@ import java.io.UncheckedIOException;
 import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
@@ -57,6 +61,7 @@ import com.google.mu.util.Both;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.Joiner;
 
 /**
@@ -595,6 +600,44 @@ public abstract class Parser<T> {
   /** Matches if any of the given {@code parsers} match. */
   @SafeVarargs public static <T> Parser<T> anyOf(Parser<? extends T>... parsers) {
     return stream(parsers).collect(or());
+  }
+
+  /**
+   * Returns a parser that matches any of the given {@code values} by their {@link Object#toString}.
+   *
+   * <p>For example if you want to parse all operators defined in an enum:
+   *
+   * <pre>{@code
+   * enum Operator {
+   *   PLUS("+"),
+   *   MINUS("-"),
+   *   INCREMENT("++"),
+   *   DECREMENT("--");
+   *   ...
+   * }
+   * }</pre>
+   *
+   * You can parse all of the operators with a one-liner:
+   *
+   * <pre>{@code
+   * Parser<Operator> operatorParser = Parser.byStrings(Operator.values());
+   * }</pre>
+   *
+   * @throws IllegalArgumentException if {@code values} is empty or {@link Object#toString} returns
+   *     empty string, or are not unique.
+   * @throws NullPointerException if {@code values} is null or any element is null.
+   * @since 9.9.9
+   */
+  @SafeVarargs
+  public static <T> Parser<T> byStrings(T... values) {
+    checkArgument(values.length > 0, "values cannot be empty");
+    Map<String, T> longerFirst = BiStream.biStream(stream(values))
+            .mapKeys(Object::toString)
+            // reverse alphabetical order, so that we parse "++" before "+"
+            .collect(toMap(() -> new TreeMap<>(reverseOrder())));
+    return BiStream.from(longerFirst)
+        .mapToObj((s, value) -> string(s).thenReturn(value))
+        .collect(or());
   }
 
   /**

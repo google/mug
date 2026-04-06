@@ -35,6 +35,8 @@ follow these rules to ensure safety, performance, and idiomatic style.
   }
   ```
 
+- **Prefer** creating enums in the data model for reserved words, operators, etc., with their `toString()` returning the canonical form (e.g., `DOUBLE_SHARP("^^")`). This enables building parsers cleanly using `byStrings(MyEnum.values())`.
+
 ## 2. Static Import
 
 - **Always** static import `dot-parse` factory methods from the `Parser` class
@@ -192,6 +194,11 @@ Parser<TypeDecl> typeDecl =
   // Good
   string("true").thenReturn(true)
   ```
+
+- **Prefer** `byStrings(values)` when parsing a fixed set of values (like enum constants or a set of keywords) over manual alternation with `anyOf()`.
+  - **Example**: `byStrings(Accidental.values())`
+  - It automatically handles prefix matching by trying longer strings first (e.g., trying "++" before "+").
+
 - **Prefer** `Parser.sequence(...)` static method over awkwardly plumbing data
   through chained `.flatMap()` when handling 2-4 sequential rules.
   - **Example**: `sequence(owner, nested, args, (o, n, a) -> ...);`
@@ -259,7 +266,6 @@ Parser<TypeDecl> typeDecl =
   body should live in the domain record itself (often the logic benefits
   direct callers even when not parsing).
 
-
 ## 8. Performance
 
 - **Prefer** `string("c")` or `one('c')` over `one(is('c'))`. They avoid
@@ -271,7 +277,6 @@ Parser<TypeDecl> typeDecl =
 - **Prefer** `p1.optionallyFollowedBy(p2, The::wither)` over
   `anyOf(sequence(p1, p2, ...), p1)`. `optionallyFollowedBy()` is both more
   readable and more efficient.
-
 
 ## 9. Avoiding API Hallucination
 
@@ -286,7 +291,7 @@ Parser<TypeDecl> typeDecl =
 - **Whitelist of Common Methods** to keep you grounded:
   - **Use** primitives: `string(s)`, `one(char)`, `one(charsIn(...))`,
     `digits()`, `word()`, `consecutive(charsIn(...))`
-  - **Use** combinators: `anyOf(...)`, `sequence(...)`, `zeroOrMore()`,
+  - **Use** combinators: `anyOf(...)`, `sequence(...)`, `byStrings(...)`, `zeroOrMore()`,
     `atLeastOnce()`, `zeroOrMoreDelimitedBy()`, `atLeastOnceDelimitedBy()`
   - **Use** safe optionals: `optionallyFollowedBy(...)`, `withPrefixes(...)`,
     `withPostfixes(...)`
@@ -294,7 +299,6 @@ Parser<TypeDecl> typeDecl =
     `followedBy(...)`, `then(...)`
 - If you need a method not listed above, you MUST open and read `Parser.java`
   to check if it exists.
-
 
 ## 10. Common Pitfalls & Guardrails
 
