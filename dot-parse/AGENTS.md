@@ -243,6 +243,15 @@ Parser<TypeDecl> typeDecl =
   ```
 - **Use** `prefix.then(parser)` to ignore a prefix when nested in a
   `sequence()` call.
+- **Minimize top-level parsers per domain type**: Ideally, create at most one
+  canonical parser per domain type to ensure consistency and avoid misuse.
+- **Minimize primitive-type parsers**: Avoid creating top-level parsers that
+  return primitive types like `String` or `Integer` unless they are explicitly
+  needed for reuse. Map them to domain types as early as possible to leverage
+  strong typing.
+- **Minimize the lambda body of recursive parsers**: In `Parser.define(self ->
+  ...)`, keep the lambda body as small as possible. Extract out sub-parsers that
+  do not depend on the fixed point `self`.
 
 ## 7. Coding Style
 

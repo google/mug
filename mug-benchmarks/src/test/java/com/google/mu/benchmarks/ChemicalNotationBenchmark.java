@@ -1,6 +1,7 @@
 package com.google.mu.benchmarks;
 
 import static com.google.common.labs.parse.CharacterSet.charsIn;
+import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.truth.Truth.assertThat;
@@ -40,22 +41,18 @@ public class ChemicalNotationBenchmark {
   // Parsers
   private static final Parser<Integer> COUNT = digits().map(Integer::parseInt);
 
-  private static final Parser<String> SYMBOL =
+  private static final Parser<Element> ELEMENT =
       one(charsIn("[A-Z]"))
           .followedBy(one(charsIn("[a-z]")).optional())
-          .source();
+          .source()
+          .map(Element::of)
+          .optionallyFollowedBy(COUNT, Element::withCount);
 
   private static final Parser<Formula> FORMULA = Parser.define(self -> {
-    Parser<Element> elementPart = SYMBOL
-        .map(Element::of)
-        .optionallyFollowedBy(COUNT, Element::withCount);
-
-    Parser<Group> groupPart = self
-        .between("(", ")")
-        .map(Group::of)
-        .optionallyFollowedBy(COUNT, Group::withCount);
-
-    return Parser.<Part>anyOf(elementPart, groupPart).atLeastOnce().map(Formula::new);
+    Parser<Part> part = anyOf(
+        ELEMENT,
+        self.between("(", ")").map(Group::of).optionallyFollowedBy(COUNT, Group::withCount));
+    return part.atLeastOnce().map(Formula::new);
   });
 
   // Tests
