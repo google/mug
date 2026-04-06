@@ -61,7 +61,7 @@ the dump would only show that it failed in a loop deeply inside the `many()`
 library method body, but giving you no idea which of *your* grammar had
 incorrectly used a zero-width parser, because that parser object construction
 code is somewhere in the wild, just not in the stack trace of the `parse()`
-call! It's like saying: "Yeah man, look: you died, it was bad, death was
+call! It's like saying: "Yeah man, you were dead. It was bad, death was
 bad.", but just won't tell you what killed you.
 
 The `optional()`, `orElse()` and `zeroOrMore()` are only to be used in safe
