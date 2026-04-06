@@ -2228,7 +2228,7 @@ public class ParserTest {
             string("a8"),
             string("a9"),
             string("a10"),
-            consecutive(charsIn("[1-0]")));
+            consecutive(charsIn("[]")));
 
     // "a1" should be matched by string("a1")
     assertThat(parser.parse("a1")).isEqualTo("a1");
@@ -2324,7 +2324,7 @@ public class ParserTest {
             one('7'),
             one('8'),
             one('9'),
-            one(charsIn("[1-0]"))); // never matches
+            one(charsIn("[]"))); // never matches
 
     assertThat(parser.parse("0")).isEqualTo('0');
 

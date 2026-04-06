@@ -154,4 +154,11 @@ public class CharacterSetTest {
     CharacterSet set = charsIn("[a-á]");
     assertThat(set.candidateCharsIfAscii()).isEmpty();
   }
+
+  @Test
+  public void invalidRange_throws() {
+    IllegalArgumentException e =
+        assertThrows(IllegalArgumentException.class, () -> charsIn("[1-0]"));
+    assertThat(e).hasMessageThat().contains("[1-0]");
+  }
 }

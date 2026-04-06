@@ -1989,7 +1989,7 @@ public abstract class Parser<T> {
 
   /**
    * Returns metadata about the prefixes that can be used to prune out this parser, if the input
-   * doesn't start with any of the prefixes. Return NO_PREFIX to indicate no pruning is applicable.
+   * doesn't start with any of the prefixes. Return EMPTY_PREFIX to indicate no pruning is applicable.
    */
   Set<String> getPrefixes() {
     return EMPTY_PREFIX;
