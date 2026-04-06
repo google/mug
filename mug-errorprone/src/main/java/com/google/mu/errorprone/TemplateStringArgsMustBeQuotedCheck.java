@@ -53,8 +53,7 @@ public final class TemplateStringArgsMustBeQuotedCheck extends AbstractBugChecke
         AbstractBugChecker.MethodInvocationCheck,
         AbstractBugChecker.ConstructorCallCheck {
 
-  @Override
-  public void checkMethod(MethodTree tree, VisitorState state) throws ErrorReport {
+  @Override public void checkMethod(MethodTree tree, VisitorState state) throws ErrorReport {
     MethodSymbol method = ASTHelpers.getSymbol(tree);
     if (shouldCheck(method, state)) {
       checkingOn(tree)
@@ -66,16 +65,14 @@ public final class TemplateStringArgsMustBeQuotedCheck extends AbstractBugChecke
     }
   }
 
-  @Override
-  public void checkConstructorCall(NewClassTree tree, VisitorState state) throws ErrorReport {
+  @Override public void checkConstructorCall(NewClassTree tree, VisitorState state) throws ErrorReport {
     MethodSymbol method = ASTHelpers.getSymbol(tree);
     if (shouldCheck(method, state)) {
       checkTemplateFormatArgs(method.getParameters(), tree.getArguments(), state);
     }
   }
 
-  @Override
-  public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
+  @Override public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
       throws ErrorReport {
     MethodSymbol method = ASTHelpers.getSymbol(tree);
     if (shouldCheck(method, state)) {

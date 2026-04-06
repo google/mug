@@ -44,21 +44,18 @@ final class TypeName {
     return ASTHelpers.isSubtype(type, memoized.get(state), state);
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (obj instanceof TypeName) {
       return name.equals(((TypeName) obj).name);
     }
     return false;
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     return name.hashCode();
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return name;
   }
 }

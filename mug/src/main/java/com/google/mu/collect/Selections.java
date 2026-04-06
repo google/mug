@@ -25,83 +25,68 @@ import java.util.Set;
 /** Internal implementations of {@link Selection}. */
 enum Selections implements Selection<Object> {
   ALL {
-    @Override
-    public boolean has(Object candidate) {
+    @Override public boolean has(Object candidate) {
       return true;
     }
 
-    @Override
-    public boolean isEmpty() {
+    @Override public boolean isEmpty() {
       return false;
     }
 
-    @Override
-    public Optional<Set<Object>> limited() {
+    @Override public Optional<Set<Object>> limited() {
       return Optional.empty();
     }
 
-    @Override
-    public Selection<Object> intersect(Selection<Object> that) {
+    @Override public Selection<Object> intersect(Selection<Object> that) {
       return requireNonNull(that);
     }
 
-    @Override
-    public Selection<Object> intersect(Set<?> set) {
+    @Override public Selection<Object> intersect(Set<?> set) {
       return set.stream().collect(Selection.toSelection());
     }
 
-    @Override
-    public Selection<Object> union(Selection<Object> that) {
+    @Override public Selection<Object> union(Selection<Object> that) {
       requireNonNull(that);
       return this;
     }
 
-    @Override
-    public Selection<Object> union(Set<?> set) {
+    @Override public Selection<Object> union(Set<?> set) {
       requireNonNull(set);
       return this;
     }
   },
   NONE {
-    @Override
-    public boolean has(Object candidate) {
+    @Override public boolean has(Object candidate) {
       return false;
     }
 
-    @Override
-    public boolean isEmpty() {
+    @Override public boolean isEmpty() {
       return true;
     }
 
-    @Override
-    public Optional<Set<Object>> limited() {
+    @Override public Optional<Set<Object>> limited() {
       return Optional.of(emptySet());
     }
 
-    @Override
-    public Selection<Object> intersect(Selection<Object> that) {
+    @Override public Selection<Object> intersect(Selection<Object> that) {
       requireNonNull(that);
       return this;
     }
 
-    @Override
-    public Selection<Object> intersect(Set<?> set) {
+    @Override public Selection<Object> intersect(Set<?> set) {
       requireNonNull(set);
       return this;
     }
 
-    @Override
-    public Selection<Object> union(Selection<Object> that) {
+    @Override public Selection<Object> union(Selection<Object> that) {
       return requireNonNull(that);
     }
 
-    @Override
-    public Selection<Object> union(Set<?> set) {
+    @Override public Selection<Object> union(Set<?> set) {
       return set.stream().collect(Selection.toSelection());
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "[]";
     }
   },
@@ -118,43 +103,35 @@ enum Selections implements Selection<Object> {
       this.choices = choices;
     }
 
-    @Override
-    public boolean has(T candidate) {
+    @Override public boolean has(T candidate) {
       return choices.contains(candidate);
     }
 
-    @Override
-    public boolean isEmpty() {
+    @Override public boolean isEmpty() {
       return choices.isEmpty();
     }
 
-    @Override
-    public Optional<Set<T>> limited() {
+    @Override public Optional<Set<T>> limited() {
       return Optional.of(choices);
     }
 
-    @Override
-    public Selection<T> intersect(Selection<T> that) {
+    @Override public Selection<T> intersect(Selection<T> that) {
       return that.limited().map(this::intersect).orElse(this);
     }
 
-    @Override
-    public Selection<T> intersect(Set<? extends T> set) {
+    @Override public Selection<T> intersect(Set<? extends T> set) {
       return explicit(setIntersection(choices, set));
     }
 
-    @Override
-    public Selection<T> union(Selection<T> that) {
+    @Override public Selection<T> union(Selection<T> that) {
       return that.limited().map(this::union).orElse(that);
     }
 
-    @Override
-    public Selection<T> union(Set<? extends T> set) {
+    @Override public Selection<T> union(Set<? extends T> set) {
       return explicit(setUnion(choices, set));
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
       if (obj instanceof Limited) {
         Limited<?> that = (Limited<?>) obj;
         return choices.equals(that.choices);
@@ -162,13 +139,11 @@ enum Selections implements Selection<Object> {
       return false;
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
       return choices.hashCode();
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return choices.toString();
     }
   }

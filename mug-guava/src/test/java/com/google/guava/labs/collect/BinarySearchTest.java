@@ -1671,8 +1671,7 @@ public class BinarySearchTest {
   }
 
   static class NegativeValues implements TestParameter.TestParameterValuesProvider {
-    @Override
-    public List<?> provideValues() {
+    @Override public List<?> provideValues() {
       return ImmutableList.of(
           Integer.MIN_VALUE,
           Integer.MIN_VALUE + 1,
@@ -1685,8 +1684,7 @@ public class BinarySearchTest {
   }
 
   static class NegativeLongValues implements TestParameter.TestParameterValuesProvider {
-    @Override
-    public List<?> provideValues() {
+    @Override public List<?> provideValues() {
       return ImmutableList.of(
           Long.MIN_VALUE,
           Long.MIN_VALUE + 1,
@@ -1699,8 +1697,7 @@ public class BinarySearchTest {
   }
 
   static class NonNegativeValues implements TestParameter.TestParameterValuesProvider {
-    @Override
-    public List<?> provideValues() {
+    @Override public List<?> provideValues() {
       return ImmutableList.of(
           0,
           1,
@@ -1716,8 +1713,7 @@ public class BinarySearchTest {
   }
 
   static class NonNegativeLongValues implements TestParameter.TestParameterValuesProvider {
-    @Override
-    public List<?> provideValues() {
+    @Override public List<?> provideValues() {
       return ImmutableList.of(
           0L,
           1L,
@@ -1733,8 +1729,7 @@ public class BinarySearchTest {
   }
 
   static class IntValues implements TestParameter.TestParameterValuesProvider {
-    @Override
-    public List<?> provideValues() {
+    @Override public List<?> provideValues() {
       return ImmutableList.builder()
           .addAll(new NegativeValues().provideValues())
           .addAll(new NonNegativeValues().provideValues())
@@ -1743,8 +1738,7 @@ public class BinarySearchTest {
   }
 
   static class LongValues implements TestParameter.TestParameterValuesProvider {
-    @Override
-    public List<?> provideValues() {
+    @Override public List<?> provideValues() {
       return ImmutableList.builder()
           .addAll(new NegativeLongValues().provideValues())
           .addAll(new NonNegativeLongValues().provideValues())
@@ -1753,8 +1747,7 @@ public class BinarySearchTest {
   }
 
   static class DoubleValues implements TestParameter.TestParameterValuesProvider {
-    @Override
-    public List<?> provideValues() {
+    @Override public List<?> provideValues() {
       return ImmutableList.of(
           -Long.MAX_VALUE,
           -Long.MAX_VALUE / 2,

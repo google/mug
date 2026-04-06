@@ -34,8 +34,7 @@ public class HowToConcatenateMapsTest {
     ImmutableMap<Integer, String> spanish = ImmutableMap.of(1, "uno", 2, "dos");
     ImmutableSetMultimap<Integer, String> combined = concat(english, spanish)
         .collect(new BiCollector<Integer, String, ImmutableSetMultimap<Integer, String>>() {
-          @Override
-          public <E> Collector<E, ?, ImmutableSetMultimap<Integer, String>> collectorOf(Function<E, Integer> toKey, Function<E, String> toValue) {
+          @Override public <E> Collector<E, ?, ImmutableSetMultimap<Integer, String>> collectorOf(Function<E, Integer> toKey, Function<E, String> toValue) {
             return ImmutableSetMultimap.toImmutableSetMultimap(toKey,toValue);
           }
         });

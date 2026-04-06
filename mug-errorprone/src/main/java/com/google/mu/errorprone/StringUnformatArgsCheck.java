@@ -101,8 +101,7 @@ public final class StringUnformatArgsCheck extends AbstractBugChecker
           .collect(toImmutableMap());
   private static final String NONCAPTURING_PLACEHOLDER = "...";
 
-  @Override
-  public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
+  @Override public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
       throws ErrorReport {
     if (!MATCHER.matches(tree, state)) {
       return;

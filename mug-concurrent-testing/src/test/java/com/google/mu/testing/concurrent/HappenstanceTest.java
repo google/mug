@@ -590,8 +590,7 @@ public class HappenstanceTest {
       return new MyList<>(elements);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       String s = string;
       if (s == null) {
         string = s = Arrays.toString(elements);

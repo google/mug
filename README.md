@@ -1,4 +1,4 @@
-Disclaimer: This is not an official Google product.
+/isclaimer: This is not an official Google product.
 
 # Mug (![Coverage](.github/badges/mug-coverage.svg))
 A small Java 8+ string processing and streams library ([javadoc](http://google.github.io/mug/apidocs/index.html)), widely used in Google's internal Java codebase, with **0 deps** (Proto, BigQuery, Guava addons are in separate artifacts). ![](https://travis-ci.org/google/mug.svg?branch=master)
@@ -43,7 +43,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>9.9.6</version>
+    <version>9.9.8</version>
   </dependency>
 ```
 
@@ -65,7 +65,7 @@ Add `mug-errorprone` to your annotationProcessorPaths:
               <path>
                 <groupId>com.google.mug</groupId>
                 <artifactId>mug-errorprone</artifactId>
-                <version>9.9.6</version>
+                <version>9.9.8</version>
               </path>
             </annotationProcessorPaths>
           </configuration>
@@ -79,7 +79,7 @@ SafeSql ([javadoc](https://google.github.io/mug/apidocs/com/google/mu/safesql/pa
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-safesql</artifactId>
-    <version>9.9.6</version>
+    <version>9.9.8</version>
   </dependency>
 ```
 
@@ -89,7 +89,7 @@ Dot Parse Combinators ([javadoc](https://google.github.io/mug/apidocs/com/google
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>dot-parse</artifactId>
-    <version>9.9.6</version>
+    <version>9.9.8</version>
   </dependency>
 ```
 
@@ -98,7 +98,7 @@ Protobuf utils ([javadoc](https://google.github.io/mug/apidocs/com/google/mu/pro
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-protobuf</artifactId>
-    <version>9.9.6</version>
+    <version>9.9.8</version>
   </dependency>
 ```
 
@@ -106,11 +106,11 @@ Protobuf utils ([javadoc](https://google.github.io/mug/apidocs/com/google/mu/pro
 
 Add to build.gradle:
 ```
-  implementation 'com.google.mug:mug:9.9.6'
-  implementation 'com.google.mug:mug-safesql:9.9.6'
-  implementation 'com.google.mug:dot-parse:9.9.6'
-  implementation 'com.google.mug:mug-guava:9.9.6'
-  implementation 'com.google.mug:mug-protobuf:9.9.6'
+  implementation 'com.google.mug:mug:9.9.8'
+  implementation 'com.google.mug:mug-safesql:9.9.8'
+  implementation 'com.google.mug:dot-parse:9.9.8'
+  implementation 'com.google.mug:mug-guava:9.9.8'
+  implementation 'com.google.mug:mug-protobuf:9.9.8'
 ```
 </details>
 

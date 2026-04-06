@@ -37,8 +37,7 @@ import com.sun.tools.javac.code.Type;
 @SuppressWarnings("restriction")
 public final class TemplateStringAnnotationCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodCheck {
-  @Override
-  public void checkMethod(MethodTree tree, VisitorState state) throws ErrorReport {
+  @Override public void checkMethod(MethodTree tree, VisitorState state) throws ErrorReport {
     List<VariableTree> templateStringParams =
         tree.getParameters().stream()
             .filter(param -> ASTHelpers.hasAnnotation(

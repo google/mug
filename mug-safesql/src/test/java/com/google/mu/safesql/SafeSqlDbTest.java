@@ -50,8 +50,7 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
     SafeSql.of("TRUNCATE TABLE ITEMS").update(connection());
   }
 
-  @Override
-  protected DataSource getDataSource() {
+  @Override protected DataSource getDataSource() {
       JdbcDataSource dataSource = new JdbcDataSource();
       dataSource.setURL(
         "jdbc:h2:mem:default;MODE=LEGACY;DB_CLOSE_DELAY=-1;init=runscript from 'classpath:/com/google/mu/safesql/schema.sql'");
@@ -60,18 +59,15 @@ public class SafeSqlDbTest extends DataSourceBasedDBTestCase {
       return dataSource;
   }
 
-  @Override
-  protected IDataSet getDataSet() throws Exception {
+  @Override protected IDataSet getDataSet() throws Exception {
     return new FlatXmlDataSetBuilder().build(new ByteArrayInputStream(new byte[0]));
   }
 
-  @Override
-  protected DatabaseOperation getSetUpOperation() {
+  @Override protected DatabaseOperation getSetUpOperation() {
       return DatabaseOperation.REFRESH;
   }
 
-  @Override
-  protected DatabaseOperation getTearDownOperation() {
+  @Override protected DatabaseOperation getTearDownOperation() {
       return DatabaseOperation.TRUNCATE_TABLE;
   }
 

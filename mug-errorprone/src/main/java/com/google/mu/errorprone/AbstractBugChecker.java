@@ -46,8 +46,7 @@ abstract class AbstractBugChecker extends BugChecker {
    */
   interface ConstructorCallCheck extends NewClassTreeMatcher {
     /** DO NOT override this method. Implement {@link #checkConstructorCall} instead. */
-    @Override
-    public default Description matchNewClass(NewClassTree tree, VisitorState state) {
+    @Override public default Description matchNewClass(NewClassTree tree, VisitorState state) {
       return ErrorReport.checkAndReportError(tree, state, this::checkConstructorCall);
     }
 
@@ -60,8 +59,7 @@ abstract class AbstractBugChecker extends BugChecker {
    */
   interface MemberReferenceCheck extends MemberReferenceTreeMatcher {
     /** DO NOT override this method. Implement {@link #checkMemberReference} instead. */
-    @Override
-    public default Description matchMemberReference(MemberReferenceTree tree, VisitorState state) {
+    @Override public default Description matchMemberReference(MemberReferenceTree tree, VisitorState state) {
       return ErrorReport.checkAndReportError(tree, state, this::checkMemberReference);
     }
 
@@ -74,8 +72,7 @@ abstract class AbstractBugChecker extends BugChecker {
    */
   interface MethodInvocationCheck extends MethodInvocationTreeMatcher {
     /** DO NOT override this method. Implement {@link #checkMethodInvocation} instead. */
-    @Override
-    public default Description matchMethodInvocation(
+    @Override public default Description matchMethodInvocation(
         MethodInvocationTree tree, VisitorState state) {
       return ErrorReport.checkAndReportError(tree, state, this::checkMethodInvocation);
     }
@@ -89,8 +86,7 @@ abstract class AbstractBugChecker extends BugChecker {
    */
   interface MethodCheck extends MethodTreeMatcher {
     /** DO NOT override this method. Implement {@link #checkMethod} instead. */
-    @Override
-    public default Description matchMethod(MethodTree tree, VisitorState state) {
+    @Override public default Description matchMethod(MethodTree tree, VisitorState state) {
       return ErrorReport.checkAndReportError(tree, state, this::checkMethod);
     }
 

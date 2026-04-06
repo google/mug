@@ -260,14 +260,12 @@ public abstract class BiOptional<A, B> {
 
   private static final BiOptional<Object, Object> EMPTY =
       new BiOptional<Object, Object>() {
-        @Override
-        public <T> Optional<T> map(BiFunction<Object, Object, ? extends T> mapper) {
+        @Override public <T> Optional<T> map(BiFunction<Object, Object, ? extends T> mapper) {
           requireNonNull(mapper);
           return Optional.empty();
         }
 
-        @Override
-        public <A2, B2> BiOptional<A2, B2> map(
+        @Override public <A2, B2> BiOptional<A2, B2> map(
             BiFunction<Object, Object, ? extends A2> aMapper,
             BiFunction<Object, Object, ? extends B2> bMapper) {
           requireNonNull(aMapper);
@@ -275,77 +273,64 @@ public abstract class BiOptional<A, B> {
           return empty();
         }
 
-        @Override
-        public <A2, B2> BiOptional<A2, B2> map(
+        @Override public <A2, B2> BiOptional<A2, B2> map(
             Function<Object, ? extends A2> aMapper, Function<Object, ? extends B2> bMapper) {
           requireNonNull(aMapper);
           requireNonNull(bMapper);
           return empty();
         }
 
-        @Override
-        public <T> Optional<T> flatMap(
+        @Override public <T> Optional<T> flatMap(
             BiFunction<Object, Object, ? extends Optional<? extends T>> mapper) {
           requireNonNull(mapper);
           return Optional.empty();
         }
 
-        @Override
-        public BiOptional<Object, Object> filter(BiPredicate<Object, Object> predicate) {
+        @Override public BiOptional<Object, Object> filter(BiPredicate<Object, Object> predicate) {
           requireNonNull(predicate);
           return this;
         }
 
-        @Override
-        public boolean matches(BiPredicate<Object, Object> condition) {
+        @Override public boolean matches(BiPredicate<Object, Object> condition) {
           requireNonNull(condition);
           return false;
         }
 
-        @Override
-        public BiOptional<Object, Object> or(Supplier<? extends BiOptional<?, ?>> alternative) {
+        @Override public BiOptional<Object, Object> or(Supplier<? extends BiOptional<?, ?>> alternative) {
           return covariant(alternative.get());
         }
 
-        @Override
-        public Both<Object, Object> orElse(Object a, Object b) {
+        @Override public Both<Object, Object> orElse(Object a, Object b) {
           return new Present<>(a, b);
         }
 
-        @Override
-        public Both<Object, Object> orElseThrow() {
+        @Override public Both<Object, Object> orElseThrow() {
           throw new NoSuchElementException();
         }
 
-        @Override
-        public <E extends Throwable> Both<Object, Object> orElseThrow(Supplier<E> exceptionSupplier)
+        @Override public <E extends Throwable> Both<Object, Object> orElseThrow(Supplier<E> exceptionSupplier)
             throws E {
           throw exceptionSupplier.get();
         }
 
-        @Override
-        public BiOptional<Object, Object> peek(BiConsumer<Object, Object> consumer) {
+        @Override public BiOptional<Object, Object> peek(BiConsumer<Object, Object> consumer) {
           requireNonNull(consumer);
           return this;
         }
 
-        @Override
-        public void ifPresent(BiConsumer<Object, Object> consumer) {
+        @Override public void ifPresent(BiConsumer<Object, Object> consumer) {
           requireNonNull(consumer);
         }
 
-        @Override
-        public boolean isPresent() {
+        @Override public boolean isPresent() {
           return false;
         }
 
-        @Override
-        public BiStream<Object, Object> stream() {
+        @Override public BiStream<Object, Object> stream() {
           return BiStream.empty();
         }
 
-        @Override
-        public String toString() {
+        @Override public String toString() {
           return "empty()";
         }
       };
@@ -359,13 +344,11 @@ public abstract class BiOptional<A, B> {
       this.b = b;
     }
 
-    @Override
-    public <T> Optional<T> map(BiFunction<? super A, ? super B, ? extends T> mapper) {
+    @Override public <T> Optional<T> map(BiFunction<? super A, ? super B, ? extends T> mapper) {
       return Optional.ofNullable(mapper.apply(a, b));
     }
 
-    @Override
-    public <A2, B2> BiOptional<A2, B2> map(
+    @Override public <A2, B2> BiOptional<A2, B2> map(
         BiFunction<? super A, ? super B, ? extends A2> aMapper,
         BiFunction<? super A, ? super B, ? extends B2> bMapper) {
       requireNonNull(aMapper);
@@ -381,8 +364,7 @@ public abstract class BiOptional<A, B> {
       return of(a2, b2);
     }
 
-    @Override
-    public <A2, B2> BiOptional<A2, B2> map(
+    @Override public <A2, B2> BiOptional<A2, B2> map(
         Function<? super A, ? extends A2> aMapper, Function<? super B, ? extends B2> bMapper) {
       requireNonNull(aMapper);
       requireNonNull(bMapper);
@@ -397,68 +379,56 @@ public abstract class BiOptional<A, B> {
       return of(a2, b2);
     }
 
-    @Override
-    public <T> Optional<T> flatMap(
+    @Override public <T> Optional<T> flatMap(
         BiFunction<? super A, ? super B, ? extends Optional<? extends T>> mapper) {
       return covariant(mapper.apply(a, b));
     }
 
-    @Override
-    public BiOptional<A, B> filter(BiPredicate<? super A, ? super B> predicate) {
+    @Override public BiOptional<A, B> filter(BiPredicate<? super A, ? super B> predicate) {
       return predicate.test(a, b) ? this : empty();
     }
 
-    @Override
-    public boolean matches(BiPredicate<? super A, ? super B> predicate) {
+    @Override public boolean matches(BiPredicate<? super A, ? super B> predicate) {
       return predicate.test(a, b);
     }
 
-    @Override
-    public BiOptional<A, B> or(
+    @Override public BiOptional<A, B> or(
         Supplier<? extends BiOptional<? extends A, ? extends B>> alternative) {
       requireNonNull(alternative);
       return this;
     }
 
-    @Override
-    public Both<A, B> orElse(A a, B b) {
+    @Override public Both<A, B> orElse(A a, B b) {
       return this;
     }
 
-    @Override
-    public Both<A, B> orElseThrow() {
+    @Override public Both<A, B> orElseThrow() {
       return this;
     }
 
-    @Override
-    public <E extends Throwable> Both<A, B> orElseThrow(Supplier<E> exceptionSupplier) {
+    @Override public <E extends Throwable> Both<A, B> orElseThrow(Supplier<E> exceptionSupplier) {
       requireNonNull(exceptionSupplier);
       return this;
     }
 
-    @Override
-    public Present<A, B> peek(BiConsumer<? super A, ? super B> consumer) {
+    @Override public Present<A, B> peek(BiConsumer<? super A, ? super B> consumer) {
       consumer.accept(a, b);
       return this;
     }
 
-    @Override
-    public void ifPresent(BiConsumer<? super A, ? super B> consumer) {
+    @Override public void ifPresent(BiConsumer<? super A, ? super B> consumer) {
       consumer.accept(a, b);
     }
 
-    @Override
-    public boolean isPresent() {
+    @Override public boolean isPresent() {
       return true;
     }
 
-    @Override
-    public BiStream<A, B> stream() {
+    @Override public BiStream<A, B> stream() {
       return BiStream.of(a, b);
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
       if (obj instanceof Present<?, ?>) {
         Present<?, ?> that = (Present<?, ?>) obj;
         return Objects.equals(a, that.a) && Objects.equals(b, that.b);
@@ -466,18 +436,15 @@ public abstract class BiOptional<A, B> {
       return false;
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
       return Objects.hash(a, b);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "of(" + a + ", " + b + ")";
     }
 
-    @Override
-    public <T> T andThen(BiFunction<? super A, ? super B, T> combiner) {
+    @Override public <T> T andThen(BiFunction<? super A, ? super B, T> combiner) {
       return combiner.apply(a, b);
     }
   }

@@ -31,8 +31,7 @@ public class HowToDoGroupingFluentlyTest {
     Map<Integer, ImmutableSet<Integer>> byLeastSignificantDigit = Stream.of(1, 2, 11, 32)
         .collect(groupingBy(n -> n % 10, toImmutableSet()))
         .collect(new BiCollector<Integer, ImmutableSet<Integer>, ImmutableMap<Integer, ImmutableSet<Integer>>>() {
-          @Override
-          public <E> Collector<E, ?, ImmutableMap<Integer, ImmutableSet<Integer>>> collectorOf(Function<E, Integer> toKey, Function<E, ImmutableSet<Integer>> toValue) {
+          @Override public <E> Collector<E, ?, ImmutableMap<Integer, ImmutableSet<Integer>>> collectorOf(Function<E, Integer> toKey, Function<E, ImmutableSet<Integer>> toValue) {
             return ImmutableMap.toImmutableMap(toKey,toValue);
           }
         });

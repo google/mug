@@ -50,8 +50,7 @@ public abstract class StructuredConcurrencyExecutorPlugin {
     APPLICATION_SPECIFIC,
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return getClass().getName();
   }
 }
