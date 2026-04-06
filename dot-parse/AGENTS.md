@@ -23,11 +23,16 @@ follow these rules to ensure safety, performance, and idiomatic style.
   ```java
   public record AbcNote(
       Accidental accidental, char pitch, int octave, NoteDuration duration) {
-    // Factory assumes default duration
-    public static AbcNote of(char pitch, int octave) {
-      return new AbcNote(Accidental.NONE, pitch, octave, NoteDuration.of(1));
+    // Factory assumes default duration and octave = 0
+    public static AbcNote middle(char pitch) {
+      return new AbcNote(null, pitch, 0, NoteDuration.of(1));
     }
-    
+  
+    // Factory assumes default duration and octave = 1
+    public static AbcNote high(char pitch) {
+      return new AbcNote(null, pitch, 1, NoteDuration.of(1));
+    }
+
     // Wither attaches it optionally
     public AbcNote withDuration(NoteDuration duration) {
       return new AbcNote(accidental, pitch, octave, duration);

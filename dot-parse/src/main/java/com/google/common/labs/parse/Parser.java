@@ -634,7 +634,7 @@ public abstract class Parser<T> {
     Map<String, T> longerFirst = BiStream.biStream(stream(values))
             .mapKeys(Object::toString)
             // reverse alphabetical order, so that we parse "++" before "+"
-            .collect(toMap(() -> new TreeMap<>(reverseOrder())));
+            .collect(toMap(() -> new TreeMap<String, T>(reverseOrder())));
     return BiStream.from(longerFirst)
         .mapToObj((s, value) -> string(s).thenReturn(value))
         .collect(or());
