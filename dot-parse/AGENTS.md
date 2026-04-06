@@ -205,7 +205,14 @@ Parser<TypeDecl> typeDecl =
 - **Prefer** `byStringsFrom(values)` when parsing a fixed set of values (like enum
   constants or a set of keywords) over manual alternation with `anyOf()`.
   - **Example**: `byStringsFrom(Accidental.values())`
-  - It automatically handles prefix matching by trying longer strings first (e.g., trying "++" before "+").
+  - It automatically handles prefix matching by trying longer strings first
+    (e.g., trying "++" before "+").
+
+- **Use** `then()` with `orElse(defaultValue)` when a parser is followed by an
+  optional component that should fall back to a default value if missing.
+  - The `then()` method accepts both a standard `Parser` and a `Parser.OrEmpty`
+    (returned by `orElse()`).
+  - **Example**: `string("/").then(NUM.orElse(2))`
 
 - **Prefer** `Parser.sequence(...)` static method over awkwardly plumbing data
   through chained `.flatMap()` when handling 2-4 sequential rules.
@@ -299,8 +306,9 @@ Parser<TypeDecl> typeDecl =
 - **Whitelist of Common Methods** to keep you grounded:
   - **Use** primitives: `string(s)`, `one(char)`, `one(charsIn(...))`,
     `digits()`, `word()`, `consecutive(charsIn(...))`
-  - **Use** combinators: `anyOf(...)`, `sequence(...)`, `byStringsFrom(...)`, `zeroOrMore()`,
-    `atLeastOnce()`, `zeroOrMoreDelimitedBy()`, `atLeastOnceDelimitedBy()`
+  - **Use** combinators: `anyOf(...)`, `sequence(...)`, `byStringsFrom(...)`,
+    `zeroOrMore()`, `atLeastOnce()`, `zeroOrMoreDelimitedBy()`,
+    `atLeastOnceDelimitedBy()`
   - **Use** safe optionals: `optionallyFollowedBy(...)`, `withPrefixes(...)`,
     `withPostfixes(...)`
   - **Use** boundaries: `between(...)`, `immediatelyBetween(...)`,
