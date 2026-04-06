@@ -8,10 +8,7 @@ import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.common.truth.Truth.assertThat;
-import static java.util.Comparator.comparing;
-import static java.util.Comparator.reverseOrder;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.MatchResult;
