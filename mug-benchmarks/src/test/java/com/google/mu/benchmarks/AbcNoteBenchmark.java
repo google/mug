@@ -55,13 +55,12 @@ public class AbcNoteBenchmark {
   private static final Parser<Integer> NUM = digits().map(Integer::parseInt);
   private static final Parser<Accidental> ACCIDENTAL = Parser.byStringsFrom(Accidental.values());
 
-  private static final Parser<Integer> DURATION_DENOMINATOR =
-      string("/").thenReturn(2).optionallyFollowedBy(NUM, (d, denominator) -> denominator);
-  private static final Parser<Duration> DURATION =
+  private static final Parser<Integer> DURATION_DENOMINATOR = string("/").then(NUM.orElse(2));
+  private static final Parser<NoteDuration> DURATION =
       anyOf(
-          NUM.map(Duration::of)
-              .optionallyFollowedBy(DURATION_DENOMINATOR, Duration::withDenominator),
-          DURATION_DENOMINATOR.map(d -> new Duration(1, d)));
+          NUM.map(NoteDuration::of)
+              .optionallyFollowedBy(DURATION_DENOMINATOR, NoteDuration::withDenominator),
+          DURATION_DENOMINATOR.map(d -> new NoteDuration(1, d)));
 
   private static final Parser<AbcNote> NOTE =
       anyOf(
@@ -97,10 +96,10 @@ public class AbcNoteBenchmark {
 
   @Test
   public void testNoteWithDuration() {
-    assertThat(PARSER.parse("C2")).isEqualTo(AbcNote.of('C', 0).withDuration(Duration.of(2)));
-    assertThat(PARSER.parse("C/2")).isEqualTo(AbcNote.of('C', 0).withDuration(new Duration(1, 2)));
-    assertThat(PARSER.parse("C/")).isEqualTo(AbcNote.of('C', 0).withDuration(new Duration(1, 2)));
-    assertThat(PARSER.parse("C3/2")).isEqualTo(AbcNote.of('C', 0).withDuration(new Duration(3, 2)));
+    assertThat(PARSER.parse("C2")).isEqualTo(AbcNote.of('C', 0).withDuration(NoteDuration.of(2)));
+    assertThat(PARSER.parse("C/2")).isEqualTo(AbcNote.of('C', 0).withDuration(new NoteDuration(1, 2)));
+    assertThat(PARSER.parse("C/")).isEqualTo(AbcNote.of('C', 0).withDuration(new NoteDuration(1, 2)));
+    assertThat(PARSER.parse("C3/2")).isEqualTo(AbcNote.of('C', 0).withDuration(new NoteDuration(3, 2)));
   }
 
   @Test
@@ -108,7 +107,7 @@ public class AbcNoteBenchmark {
     assertThat(PARSER.parse("^C,,2")).isEqualTo(
         AbcNote.of('C', -2)
             .withAccidental(Accidental.SHARP)
-            .withDuration(Duration.of(2)));
+            .withDuration(NoteDuration.of(2)));
   }
 
   @Test
@@ -122,9 +121,9 @@ public class AbcNoteBenchmark {
   @Test
   public void testDotParseBenchmark() {
     assertThat(dotParse()).containsExactly(
-        AbcNote.of('C', -2).withAccidental(Accidental.SHARP).withDuration(Duration.of(2)),
-        AbcNote.of('C', 2).withAccidental(Accidental.FLAT).withDuration(new Duration(1, 2)),
-        AbcNote.of('D', 0).withAccidental(Accidental.NATURAL).withDuration(new Duration(3, 2)),
+        AbcNote.of('C', -2).withAccidental(Accidental.SHARP).withDuration(NoteDuration.of(2)),
+        AbcNote.of('C', 2).withAccidental(Accidental.FLAT).withDuration(new NoteDuration(1, 2)),
+        AbcNote.of('D', 0).withAccidental(Accidental.NATURAL).withDuration(new NoteDuration(3, 2)),
         AbcNote.of('E', 0),
         AbcNote.of('F', 0),
         AbcNote.of('G', 0),
@@ -135,9 +134,9 @@ public class AbcNoteBenchmark {
   @Test
   public void testRegexBenchmark() {
     assertThat(regex()).containsExactly(
-        AbcNote.of('C', -2).withAccidental(Accidental.SHARP).withDuration(Duration.of(2)),
-        AbcNote.of('C', 2).withAccidental(Accidental.FLAT).withDuration(new Duration(1, 2)),
-        AbcNote.of('D', 0).withAccidental(Accidental.NATURAL).withDuration(new Duration(3, 2)),
+        AbcNote.of('C', -2).withAccidental(Accidental.SHARP).withDuration(NoteDuration.of(2)),
+        AbcNote.of('C', 2).withAccidental(Accidental.FLAT).withDuration(new NoteDuration(1, 2)),
+        AbcNote.of('D', 0).withAccidental(Accidental.NATURAL).withDuration(new NoteDuration(3, 2)),
         AbcNote.of('E', 0),
         AbcNote.of('F', 0),
         AbcNote.of('G', 0),
@@ -185,12 +184,12 @@ public class AbcNoteBenchmark {
     }
   }
 
-  public record Duration(int numerator, int denominator) {
-    static Duration of(int num) { return new Duration(num, 1); }
-    Duration withDenominator(int den) { return new Duration(this.numerator, den); }
+  public record NoteDuration(int numerator, int denominator) {
+    static NoteDuration of(int num) { return new NoteDuration(num, 1); }
+    NoteDuration withDenominator(int den) { return new NoteDuration(this.numerator, den); }
   }
 
-  public record AbcNote(Accidental accidental, char pitch, int octave, Duration duration) {
+  public record AbcNote(Accidental accidental, char pitch, int octave, NoteDuration duration) {
 
     public static AbcNote middle(char pitch) {
       return of(pitch, 0);
@@ -201,7 +200,7 @@ public class AbcNoteBenchmark {
     }
 
     private static AbcNote of(char pitch, int octave) {
-      return new AbcNote(null, pitch, octave, Duration.of(1));
+      return new AbcNote(null, pitch, octave, NoteDuration.of(1));
     }
 
     AbcNote withAccidental(Accidental accidental) {
@@ -216,7 +215,7 @@ public class AbcNoteBenchmark {
       return new AbcNote(this.accidental, this.pitch, this.octave - 1, this.duration);
     }
 
-    AbcNote withDuration(Duration duration) {
+    AbcNote withDuration(NoteDuration duration) {
       return new AbcNote(this.accidental, this.pitch, this.octave, duration);
     }
   }
@@ -258,15 +257,15 @@ public class AbcNoteBenchmark {
       }
     }
 
-    Duration duration = Duration.of(1);
+    NoteDuration duration = NoteDuration.of(1);
     if (durationStr != null && !durationStr.isEmpty()) {
       if (durationStr.contains("/")) {
         String[] parts = durationStr.split("/", -1);
         int num = parts[0].isEmpty() ? 1 : Integer.parseInt(parts[0]);
         int den = parts[1].isEmpty() ? 2 : Integer.parseInt(parts[1]);
-        duration = new Duration(num, den);
+        duration = new NoteDuration(num, den);
       } else {
-        duration = Duration.of(Integer.parseInt(durationStr));
+        duration = NoteDuration.of(Integer.parseInt(durationStr));
       }
     }
 
