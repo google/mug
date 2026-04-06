@@ -22,6 +22,7 @@ import static com.google.common.labs.parse.Utils.checkPositionIndex;
 import static com.google.common.labs.parse.Utils.checkState;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.stream;
@@ -635,7 +636,7 @@ public abstract class Parser<T> {
   @SafeVarargs
   public static <T extends Enum<?>> Parser<T> anyOf(T... values) {
     checkArgument(values.length > 0, "values cannot be empty");
-    Map<String, T> longerFirst = BiStream.biStream(stream(values))
+    Map<String, T> longerFirst = biStream(stream(values))
             .mapKeys(Object::toString)
             // reverse alphabetical order, so that we parse "++" before "+"
             .collect(toMap(() -> new TreeMap<String, T>(reverseOrder())));
