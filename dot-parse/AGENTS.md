@@ -93,6 +93,16 @@ compile (because `optional()` returns a special `OrEmpty` type, not a
 `Parser`). So don't try it! You are forced to complete the fluent chain using
 methods on `OrEmpty` that ensure safety.
 
+- **Chaining Optional Parsers**: Optional parsers (e.g., from `.optional()`,
+  `.orElse()`, `.zeroOrMore()`) return a `Parser.OrEmpty` instance. You can
+  chain them using `OrEmpty` methods like `.then()`, `.followedBy()`, and
+  `.delimitedBy()`, which continue to return `OrEmpty`.
+- **Exiting the Unsafe Zone**: To convert an `OrEmpty` chain back into a
+  standard `Parser`, you must eventually attach it to a non-empty `Parser`
+  using methods like `Parser.then()`, `Parser.followedBy()`, or
+  `OrEmpty.between()` / `OrEmpty.immediatelyBetween()`. This ensures the
+  composite parser is guaranteed to consume input.
+
 Instead, consider these safe patterns:
 - **Prefer** `optionallyFollowedBy()` for an optional suffix that may be
   present zero or one time:
