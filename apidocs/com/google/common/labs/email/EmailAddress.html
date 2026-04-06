@@ -81,6 +81,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#of(java.lang.String,java.lang.String)" tabindex="0">of(String, String)</a></li>
 <li><a href="#address()" tabindex="0">address()</a></li>
 <li><a href="#toString()" tabindex="0">toString()</a></li>
+<li><a href="#of(java.lang.String)" tabindex="0">of(String)</a></li>
 <li><a href="#parse(java.lang.String)" tabindex="0">parse(String)</a></li>
 <li><a href="#parseAddressList(java.lang.String)" tabindex="0">parseAddressList(String)</a></li>
 <li><a href="#hashCode()" tabindex="0">hashCode()</a></li>
@@ -241,30 +242,35 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns the value of the <a href="#param-localPart"><code>localPart</code></a> record component.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(java.lang.String,java.lang.String)" class="member-name-link">of</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;localPart,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;domain)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(java.lang.String)" class="member-name-link">of</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;address)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">For example: <code>EmailAddress.of("user", "mycompany.com")</code>.</div>
-</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#parse(java.lang.String)" class="member-name-link">parse</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;address)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Parses <code>address</code> and throws <a href="../parse/Parser.ParseException.html" title="class in com.google.common.labs.parse"><code>Parser.ParseException</code></a> if failed.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a><wbr>&lt;<a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#parseAddressList(java.lang.String)" class="member-name-link">parseAddressList</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;addressList)</code></div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(java.lang.String,java.lang.String)" class="member-name-link">of</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;localPart,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;domain)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">For example: <code>EmailAddress.of("user", "mycompany.com")</code>.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#parse(java.lang.String)" class="member-name-link">parse</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;address)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Parses <code>address</code> and throws <a href="../parse/Parser.ParseException.html" title="class in com.google.common.labs.parse"><code>Parser.ParseException</code></a> if failed.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a><wbr>&lt;<a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#parseAddressList(java.lang.String)" class="member-name-link">parseAddressList</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;addressList)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Parses <code>addressList</code> according to RFC 5322 and returns an immutable list of <a href="EmailAddress.html" title="class in com.google.common.labs.email"><code>EmailAddress</code></a>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#toString()" class="member-name-link">toString</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#toString()" class="member-name-link">toString</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns the full email address, in the form of <code>local-part@domain</code> or
  <code>"display name" &lt;local-part@domain&gt;</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#withDisplayName(java.lang.String)" class="member-name-link">withDisplayName</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;displayName)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#withDisplayName(java.lang.String)" class="member-name-link">withDisplayName</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;displayName)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns an otherwise equivalent <a href="EmailAddress.html" title="class in com.google.common.labs.email"><code>EmailAddress</code></a> but with <code>displayName</code>.</div>
 </div>
 </div>
@@ -370,11 +376,26 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
+<section class="detail" id="of(java.lang.String)">
+<h3>of</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></span>&nbsp;<span class="element-name">of</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;address)</span></div>
+<div class="block">Parses <code>address</code> and throws <a href="../parse/Parser.ParseException.html" title="class in com.google.common.labs.parse"><code>Parser.ParseException</code></a> if failed.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>9.9.8</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
 <section class="detail" id="parse(java.lang.String)">
 <h3>parse</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></span>&nbsp;<span class="element-name">parse</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;address)</span></div>
-<div class="block">Parses <code>address</code> and throws <a href="../parse/Parser.ParseException.html" title="class in com.google.common.labs.parse"><code>Parser.ParseException</code></a> if failed.</div>
+<div class="block">Parses <code>address</code> and throws <a href="../parse/Parser.ParseException.html" title="class in com.google.common.labs.parse"><code>Parser.ParseException</code></a> if failed.
+
+ <p>Equivalent to <code>EmailAddress.of(address)</code>.</div>
 </div>
 </section>
 </li>
