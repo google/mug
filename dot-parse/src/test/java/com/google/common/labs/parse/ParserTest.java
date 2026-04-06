@@ -5924,8 +5924,8 @@ public class ParserTest {
   }
 
   @Test
-  public void byStringsFrom_success() {
-    Parser<IntOperator> parser = Parser.byStringsFrom(IntOperator.values());
+  public void anyOfEnum_success() {
+    Parser<IntOperator> parser = Parser.anyOf(IntOperator.values());
     assertThat(parser.parse("+")).isEqualTo(IntOperator.PLUS);
     assertThat(parser.parse("-")).isEqualTo(IntOperator.MINUS);
     assertThat(parser.parse("++")).isEqualTo(IntOperator.INCREMENT);
@@ -5933,14 +5933,14 @@ public class ParserTest {
   }
 
   @Test
-  public void byStringsFrom_failure() {
-    Parser<IntOperator> parser = Parser.byStringsFrom(IntOperator.values());
+  public void anyOfEnum_failure() {
+    Parser<IntOperator> parser = Parser.anyOf(IntOperator.values());
     assertThrows(ParseException.class, () -> parser.parse("="));
   }
 
   @Test
-  public void byStringsFrom_pruning() {
-    Parser<IntOperator> parser = Parser.byStringsFrom(IntOperator.values());
+  public void anyOfEnum_pruning() {
+    Parser<IntOperator> parser = Parser.anyOf(IntOperator.values());
     assertThat(parser.getPrefixes()).containsExactly("+", "-", "*", "/");
 
     Parser<Object> anyOfParser = anyOf(string("x1"), parser, chars(4));
@@ -5954,10 +5954,10 @@ public class ParserTest {
   }
 
   @Test
-  public void byStringsFrom_shuffled_success() {
+  public void anyOfEnum_shuffled_success() {
     // Specifically shuffle them so that we have ++ before + but -- after -
     Parser<IntOperator> parser =
-        Parser.byStringsFrom(
+        Parser.anyOf(
             IntOperator.INCREMENT,
             IntOperator.PLUS,
             IntOperator.DIVIDE,
@@ -5973,44 +5973,59 @@ public class ParserTest {
   }
 
   @Test
-  public void byStringsFrom_nonEnum_success() {
-    Parser<Integer> parser = Parser.byStringsFrom(1, 10, 100);
-    assertThat(parser.parse("1")).isEqualTo(1);
-    assertThat(parser.parse("10")).isEqualTo(10);
-    assertThat(parser.parse("100")).isEqualTo(100);
+  public void anyOfEnum_nonEnum_success() {
+    enum NumberEnum {
+      ONE(1), TEN(10), HUNDRED(100);
+      private final int val;
+      NumberEnum(int val) { this.val = val; }
+      @Override public String toString() { return String.valueOf(val); }
+    }
+    Parser<NumberEnum> parser = Parser.anyOf(NumberEnum.ONE, NumberEnum.TEN, NumberEnum.HUNDRED);
+    assertThat(parser.parse("1")).isEqualTo(NumberEnum.ONE);
+    assertThat(parser.parse("10")).isEqualTo(NumberEnum.TEN);
+    assertThat(parser.parse("100")).isEqualTo(NumberEnum.HUNDRED);
   }
 
   @Test
-  public void byStringsFrom_oneElement_success() {
-    Parser<String> parser = Parser.byStringsFrom("foo");
-    assertThat(parser.parse("foo")).isEqualTo("foo");
+  public void anyOfEnum_oneElement_success() {
+    enum TestEnum {
+      FOO("foo");
+      private final String s;
+      TestEnum(String s) { this.s = s; }
+      @Override public String toString() { return s; }
+    }
+    Parser<TestEnum> parser = Parser.anyOf(TestEnum.FOO);
+    assertThat(parser.parse("foo")).isEqualTo(TestEnum.FOO);
     assertThrows(ParseException.class, () -> parser.parse("bar"));
     assertThat(parser.getPrefixes()).containsExactly("foo");
   }
 
   @Test
-  public void byStringsFrom_emptyString_failure() {
-    assertThrows(IllegalArgumentException.class, () -> Parser.byStringsFrom(""));
+  public void anyOfEnum_anyEmptyString_failure() {
+    enum TestEnum {
+      FOO("foo"), EMPTY("");
+      private final String s;
+      TestEnum(String s) { this.s = s; }
+      @Override public String toString() { return s; }
+    }
+    assertThrows(IllegalArgumentException.class, () -> Parser.anyOf(TestEnum.FOO, TestEnum.EMPTY));
   }
 
   @Test
-  public void byStringsFrom_anyEmptyString_failure() {
-    assertThrows(IllegalArgumentException.class, () -> Parser.byStringsFrom("foo", ""));
+  public void anyOfEnum_duplicate_failure() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Parser.anyOf(IntOperator.PLUS, IntOperator.PLUS));
   }
 
   @Test
-  public void byStringsFrom_duplicate_failure() {
-    assertThrows(IllegalArgumentException.class, () -> Parser.byStringsFrom(100, 100));
+  public void anyOfEnum_empty_failure() {
+    assertThrows(IllegalArgumentException.class, () -> Parser.anyOf(new IntOperator[0]));
   }
 
   @Test
-  public void byStringsFrom_empty_failure() {
-    assertThrows(IllegalArgumentException.class, () -> Parser.byStringsFrom());
-  }
-
-  @Test
-  public void byStringsFrom_nullValue_failure() {
-    assertThrows(NullPointerException.class, () -> Parser.byStringsFrom(null, 100));
+  public void anyOfEnum_nullValue_failure() {
+    assertThrows(NullPointerException.class, () -> Parser.anyOf(null, IntOperator.PLUS));
   }
 
   private enum IntOperator {

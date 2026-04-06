@@ -603,7 +603,8 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a parser that matches any of the given {@code values} by their {@link Object#toString}.
+   * Returns a parser that matches any of the given enum {@code values} by their
+   * {@link Enum#toString}.
    *
    * <p>For example if you want to parse all operators defined in an enum:
    *
@@ -620,7 +621,7 @@ public abstract class Parser<T> {
    * You can parse all of the operators with a one-liner:
    *
    * <pre>{@code
-   * Parser<Operator> operatorParser = Parser.byStringsFrom(Operator.values());
+   * Parser<Operator> operatorParser = anyOf(Operator.values());
    * }</pre>
    *
    * @throws IllegalArgumentException if {@code values} is empty or {@link Object#toString} returns
@@ -629,7 +630,7 @@ public abstract class Parser<T> {
    * @since 9.9.9
    */
   @SafeVarargs
-  public static <T> Parser<T> byStringsFrom(T... values) {
+  public static <T extends Enum<?>> Parser<T> anyOf(T... values) {
     checkArgument(values.length > 0, "values cannot be empty");
     Map<String, T> longerFirst = BiStream.biStream(stream(values))
             .mapKeys(Object::toString)

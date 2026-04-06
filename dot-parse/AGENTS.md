@@ -42,7 +42,8 @@ follow these rules to ensure safety, performance, and idiomatic style.
 
 - **Prefer** creating enums in the data model for reserved words, operators, etc.,
   with their `toString()` returning the canonical form (e.g., `DOUBLE_SHARP("^^")`).
-  This enables building parsers cleanly using `byStringsFrom(MyEnum.values())`.
+  This enables building parsers cleanly using the `anyOf(Enum[])` overload (e.g.,
+  `anyOf(MyEnum.values())`).
 
 ## 2. Static Import
 
@@ -212,11 +213,13 @@ Parser<TypeDecl> typeDecl =
   string("true").thenReturn(true)
   ```
 
-- **Prefer** `byStringsFrom(values)` when parsing a fixed set of values (like enum
-  constants or a set of keywords) over manual alternation with `anyOf()`.
-  - **Example**: `byStringsFrom(Accidental.values())`
-  - It automatically handles prefix matching by trying longer strings first
-    (e.g., trying "++" before "+").
+-   **Prefer** the `anyOf(Enum[])` overload (passing `Enum.values()`) when
+    parsing a fixed set of enum values over manual alternation of string parsers
+    using `anyOf(Parser...)`.
+
+    -   **Example**: `anyOf(Accidental.values())`
+    -   It automatically handles prefix matching by trying longer strings first
+        (e.g., trying "++" before "+").
 
 - **Use** `then()` with `orElse(defaultValue)` when a parser is followed by an
   optional component that should fall back to a default value if missing.
@@ -316,9 +319,8 @@ Parser<TypeDecl> typeDecl =
 - **Whitelist of Common Methods** to keep you grounded:
   - **Use** primitives: `string(s)`, `one(char)`, `one(charsIn(...))`,
     `digits()`, `word()`, `consecutive(charsIn(...))`
-  - **Use** combinators: `anyOf(...)`, `sequence(...)`, `byStringsFrom(...)`,
-    `zeroOrMore()`, `atLeastOnce()`, `zeroOrMoreDelimitedBy()`,
-    `atLeastOnceDelimitedBy()`
+  - **Use** combinators: `anyOf(...)`, `sequence(...)`, `zeroOrMore()`,
+    `atLeastOnce()`, `zeroOrMoreDelimitedBy()`, `atLeastOnceDelimitedBy()`
   - **Use** safe optionals: `optionallyFollowedBy(...)`, `withPrefixes(...)`,
     `withPostfixes(...)`
   - **Use** boundaries: `between(...)`, `immediatelyBetween(...)`,
