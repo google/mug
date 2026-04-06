@@ -554,8 +554,9 @@ public class EmailAddressTest {
       @Override EmailAddress parse(String email) {
         try {
           InternetAddress internetAddress = new InternetAddress(email, /* strict= */ true);
-          EmailAddress emailAddress =
-              ADDR_SPEC.parseOrThrow(internetAddress.getAddress(), EmailAddress::of);
+          EmailAddress emailAddress = ADDR_SPEC.parseOrThrow(
+              internetAddress.getAddress(),
+              (localPart, domain) -> EmailAddress.of(localPart, domain));
           return ofNullable(internetAddress.getPersonal())
               .map(emailAddress::withDisplayName)
               .orElse(emailAddress);

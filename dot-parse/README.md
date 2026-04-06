@@ -38,6 +38,13 @@ For brevity, all unqualified methods are assumed to be static imported from the
 If you were to build a regex fluent builder, the API will likely look very
 similar.
 
+
+---
+
+## Tl;Dr
+
+If you are in a hurry, just feed the [`AGENTS.md`](./AGENTS.md) file to your AI assistant and let it generate parser for your grammar using idiomatic Dot Parse!
+
 ---
 
 ## Whitespace — one switch at the entry point

@@ -21,11 +21,6 @@ import static com.google.guava.labs.collect.GuavaCollectors.toImmutableMap;
 import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
 
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collector;
 
 import com.google.auto.service.AutoService;
@@ -39,15 +34,9 @@ import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.LinkType;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
-import com.google.errorprone.matchers.method.MethodMatchers.MethodClassMatcher;
+import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.util.ASTHelpers;
 import com.google.guava.labs.base.CaseFormats;
-import com.google.mu.function.MapFrom3;
-import com.google.mu.function.MapFrom4;
-import com.google.mu.function.MapFrom5;
-import com.google.mu.function.MapFrom6;
-import com.google.mu.function.MapFrom7;
-import com.google.mu.function.MapFrom8;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 import com.sun.source.tree.ExpressionTree;
@@ -58,6 +47,7 @@ import com.sun.source.tree.MethodTree;
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.Types;
 
 /**
  * Checks that the "unformat" methods (methods that parse an input string according to a predefined
@@ -75,7 +65,7 @@ import com.sun.tools.javac.code.Type;
 @SuppressWarnings("restriction")
 public final class StringUnformatArgsCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck {
-  private static final MethodClassMatcher MATCHER =
+  private static final Matcher<ExpressionTree> MATCHER =
       instanceMethod().onDescendantOf("com.google.mu.util.StringFormat");
   private static final TypeName CHAR_SEQUENCE_TYPE = TypeName.of(CharSequence.class);
   private static final CharMatcher ALPHA_NUM =
@@ -83,20 +73,7 @@ public final class StringUnformatArgsCheck extends AbstractBugChecker
           .or(CharMatcher.inRange('A', 'Z'))
           .or(CharMatcher.inRange('0', '9'));
   private static final ImmutableMap<TypeName, Integer> UNFORMAT_MAPPER_TYPES =
-      BiStream.of(
-              Consumer.class, 1,
-              BiConsumer.class, 2,
-              Function.class, 1,
-              BiFunction.class, 2,
-              BinaryOperator.class, 2)
-          .append(MapFrom3.class, 3)
-          .append(MapFrom4.class, 4)
-          .append(MapFrom5.class, 5)
-          .append(MapFrom6.class, 6)
-          .append(MapFrom7.class, 7)
-          .append(MapFrom8.class, 8)
-          .append(Collector.class, 1)
-          .append(BiCollector.class, 2)
+      BiStream.of(Collector.class, 1, BiCollector.class, 2)
           .mapKeys(TypeName::of)
           .collect(toImmutableMap());
   private static final String NONCAPTURING_PLACEHOLDER = "...";
@@ -291,6 +268,10 @@ public final class StringUnformatArgsCheck extends AbstractBugChecker
   }
 
   private static int expectedNumPlaceholders(Type type, VisitorState state) {
+    Types types = state.getTypes();
+    if (types.isFunctionalInterface(type)) {
+      return types.findDescriptorType(type).getParameterTypes().size();
+    }
     return BiStream.from(UNFORMAT_MAPPER_TYPES)
         .filterKeys(mapperType -> mapperType.isSameType(type, state))
         .values()

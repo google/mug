@@ -3742,4 +3742,22 @@ public final class StringFormatArgsCheckTest {
             "}")
         .doTest();
   }
+
+  @Test
+  public void reproduceMessedUpFormat() {
+    helper
+    .addSourceLines(
+        "Test.java",
+        "import com.google.mu.util.StringFormat;",
+        "class Test {",
+        "  private static final StringFormat FORMAT =",
+        "      new StringFormat(\"{foo}={foo}\");",
+        "  void test() {",
+        "    FORMAT.format(",
+        "         /* foo */ 1, /* foo expected to be the same */",
+        "         1);",
+        "  }",
+        "}")
+    .doTest();
+  }
 }

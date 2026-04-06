@@ -1,10 +1,31 @@
+/*****************************************************************************
+ * Copyright (C) google.com                                                  *
+ * ------------------------------------------------------------------------- *
+ * Licensed under the Apache License, Version 2.0 (the "License");           *
+ * you may not use this file except in compliance with the License.          *
+ * You may obtain a copy of the License at                                   *
+ *                                                                           *
+ * http://www.apache.org/licenses/LICENSE-2.0                                *
+ *                                                                           *
+ * Unless required by applicable law or agreed to in writing, software       *
+ * distributed under the License is distributed on an "AS IS" BASIS,         *
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+ * See the License for the specific language governing permissions and       *
+ * limitations under the License.                                            *
+ *****************************************************************************/
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.prefix;
+import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.reducing;
+import static java.util.stream.Collectors.toUnmodifiableSet;
+
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 import com.google.mu.util.CharPredicate;
 
@@ -110,5 +131,25 @@ public final class CharacterSet implements CharPredicate {
     Parser<CharPredicate> negativeSet =
         Parser.string("^").then(positiveSet).map(CharPredicate::not);
     return negativeSet.or(positiveSet).between("[", "]").parse(characterSet).precomputeForAscii();
+  }
+
+  Optional<Set<Character>> candidateCharsIfAscii() {
+    if (string.startsWith("[^")) {
+      return Optional.empty();
+    }
+    Parser<Character> asciiChar = Parser.one(c -> c != ']' && c < 128, "ascii char");
+    Parser<Set<Character>> range =
+        Parser.sequence(asciiChar.followedBy("-"), asciiChar, CharacterSet::charsInRange);
+    return Parser.anyOf(range, asciiChar.map(Set::of))
+        .zeroOrMore(flatMapping(Set::stream, toUnmodifiableSet()))
+        .between("[", "]")
+        .probe(string)
+        .findFirst();
+  }
+
+  private static Set<Character> charsInRange(char c1, char c2) {
+    return IntStream.rangeClosed(c1, c2)
+      .mapToObj(c -> (char) c)
+      .collect(toUnmodifiableSet());
   }
 }

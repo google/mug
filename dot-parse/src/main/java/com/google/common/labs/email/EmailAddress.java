@@ -147,7 +147,20 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         .orElseGet(this::address);
   }
 
-  /** Parses {@code address} and throws {@link Parser.ParseException} if failed. */
+  /**
+   * Parses {@code address} and throws {@link Parser.ParseException} if failed.
+   *
+   * @since 9.9.8
+   */
+  public static EmailAddress of(String address) {
+    return parse(address);
+  }
+
+  /**
+   * Parses {@code address} and throws {@link Parser.ParseException} if failed.
+   *
+   * <p>Equivalent to {@code EmailAddress.of(address)}.
+   */
   public static EmailAddress parse(String address) {
     return PARSER.parseSkipping(Character::isWhitespace, address);
   }

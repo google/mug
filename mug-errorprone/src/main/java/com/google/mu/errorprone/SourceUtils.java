@@ -34,12 +34,12 @@ import com.sun.source.tree.LineMap;
 
 @SuppressWarnings("restriction")
 final class SourceUtils {
-  private static final Substring.Pattern ARG_COMMENT =
-      Substring.spanningInOrder("/*", "*/")
-          .or(Substring.between(first("//"), suffix('\n').or(END)));
- 
+  private static final Substring.Pattern BLOCK_COMMENT = Substring.spanningInOrder("/*", "*/");
+  private static final Substring.Pattern LINE_COMMENT =
+      Substring.between(first("//"), suffix('\n').or(END));
+
   static boolean hasArgComment(String source) {
-	return ARG_COMMENT.in(source).isPresent();
+	  return BLOCK_COMMENT.or(LINE_COMMENT).in(source).isPresent();
   }
 
   static ImmutableList<String> normalizeForComparison(Collection<String> codes) {
@@ -79,7 +79,15 @@ final class SourceUtils {
         return ImmutableList.of();
       }
       boolean lastArgOfLine = i == args.size() - 1 || argLines.get(i) < argLines.get(i + 1);
-      int end = isMultiline && lastArgOfLine ? locateLineEnd(state.getSourceCode(), next) : next;
+      int end = next;
+      if (isMultiline && lastArgOfLine) {
+        int lineEnd = locateLineEnd(state.getSourceCode(), next);
+        if (LINE_COMMENT
+            .in(state.getSourceCode().subSequence(end, lineEnd).toString())
+            .isPresent()) {
+          end = lineEnd;
+        }
+      }
       builder.add(state.getSourceCode().subSequence(position, end).toString());
       position = end;
     }
