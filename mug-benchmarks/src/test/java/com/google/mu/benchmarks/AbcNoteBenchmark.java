@@ -9,6 +9,7 @@ import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.MatchResult;
@@ -53,12 +54,10 @@ public class AbcNoteBenchmark {
 
   // Parsers
   private static final Parser<Integer> NUM = digits().map(Integer::parseInt);
-  private static final Parser<Accidental> ACCIDENTAL = anyOf(
-      string("^^").thenReturn(Accidental.DOUBLE_SHARP),
-      string("^").thenReturn(Accidental.SHARP),
-      string("__").thenReturn(Accidental.DOUBLE_FLAT),
-      string("_").thenReturn(Accidental.FLAT),
-      string("=").thenReturn(Accidental.NATURAL));
+  private static final Parser<Accidental> ACCIDENTAL =
+      Arrays.stream(Accidental.values())
+          .map(v -> string(v.toString()).thenReturn(v))
+          .collect(Parser.or());
 
   private static final Parser<Integer> DURATION_DENOMINATOR =
       string("/").thenReturn(2).optionallyFollowedBy(NUM, (d, denominator) -> denominator);
@@ -173,7 +172,21 @@ public class AbcNoteBenchmark {
 
   // Domain Records
   public enum Accidental {
-    SHARP, DOUBLE_SHARP, FLAT, DOUBLE_FLAT, NATURAL, NONE
+    DOUBLE_SHARP("^^"),
+    SHARP("^"),
+    DOUBLE_FLAT("__"),
+    FLAT("_"),
+    NATURAL("=");
+
+    private final String symbol;
+
+    Accidental(String symbol) {
+      this.symbol = symbol;
+    }
+
+    @Override public String toString() {
+      return symbol;
+    }
   }
 
   public record Duration(int numerator, int denominator) {
@@ -192,7 +205,7 @@ public class AbcNoteBenchmark {
     }
 
     private static AbcNote of(char pitch, int octave) {
-      return new AbcNote(Accidental.NONE, pitch, octave, Duration.of(1));
+      return new AbcNote(null, pitch, octave, Duration.of(1));
     }
 
     AbcNote withAccidental(Accidental accidental) {
@@ -221,7 +234,7 @@ public class AbcNoteBenchmark {
     String apostrophes = matcher.group(5);
     String durationStr = matcher.group(6);
 
-    Accidental accidental = Accidental.NONE;
+    Accidental accidental = null;
     if (accStr != null) {
       accidental = switch (accStr) {
         case "^^" -> Accidental.DOUBLE_SHARP;
@@ -229,7 +242,7 @@ public class AbcNoteBenchmark {
         case "__" -> Accidental.DOUBLE_FLAT;
         case "_" -> Accidental.FLAT;
         case "=" -> Accidental.NATURAL;
-        default -> Accidental.NONE;
+        default -> null;
       };
     }
 
