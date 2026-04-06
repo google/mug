@@ -35,7 +35,9 @@ follow these rules to ensure safety, performance, and idiomatic style.
   }
   ```
 
-- **Prefer** creating enums in the data model for reserved words, operators, etc., with their `toString()` returning the canonical form (e.g., `DOUBLE_SHARP("^^")`). This enables building parsers cleanly using `byStrings(MyEnum.values())`.
+- **Prefer** creating enums in the data model for reserved words, operators, etc.,
+  with their `toString()` returning the canonical form (e.g., `DOUBLE_SHARP("^^")`).
+  This enables building parsers cleanly using `byStrings(MyEnum.values())`.
 
 ## 2. Static Import
 
@@ -195,7 +197,8 @@ Parser<TypeDecl> typeDecl =
   string("true").thenReturn(true)
   ```
 
-- **Prefer** `byStrings(values)` when parsing a fixed set of values (like enum constants or a set of keywords) over manual alternation with `anyOf()`.
+- **Prefer** `byStrings(values)` when parsing a fixed set of values (like enum
+  constants or a set of keywords) over manual alternation with `anyOf()`.
   - **Example**: `byStrings(Accidental.values())`
   - It automatically handles prefix matching by trying longer strings first (e.g., trying "++" before "+").
 
