@@ -938,6 +938,24 @@ public abstract class Parser<T> {
     return withPostfixes(asPostfixOperator(operator, postfixFunction));
   }
 
+  /**
+   * Returns a parser that after this parser succeeds, applies the {@code operator} parser zero or
+   * more times and applies the result unary operator function iteratively. For example:
+   *
+   * <pre>{@code
+   * Parser<AbcNote> middleNote = one(charsIn("[ABCDEFG]"))
+   *     .map(AbcNote::middle)
+   *     .withPostfixes(",", AbcNote::down);
+   * }</pre>
+   *
+   * <p>For infix operator support, consider using {@link OperatorTable}.
+   *
+   * @since 9.9.9
+   */
+  public final Parser<T> withPostfixes(String operator, UnaryOperator<T> postfixFunction) {
+    return withPostfixes(string(operator).thenReturn(requireNonNull(postfixFunction)));
+  }
+
   /** @deprecated Use {@link #withPrefixes} instead. */
   @Deprecated
   public final Parser<T> prefix(Parser<? extends UnaryOperator<T>> operator) {

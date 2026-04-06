@@ -2176,10 +2176,10 @@ public class ParserTest {
 
     // "b" is not 'a'. It should be matched by consecutive(charsIn("[^a]"))
     assertThat(parser.parse("b")).isEqualTo("b");
-    
+
     // "a1" should be matched by string("a1")
     assertThat(parser.parse("a1")).isEqualTo("a1");
-    
+
     // "a" followed by nothing fails all.
     assertThrows(ParseException.class, () -> parser.parse("a"));
   }
@@ -2204,7 +2204,7 @@ public class ParserTest {
 
     assertThat(parser.parse("a")).isEqualTo("a");
     assertThat(parser.parse("aa")).isEqualTo("aa");
-    
+
     // Failure with completely mismatched input.
     // Should fallback to first candidate because of pruning.
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("x"));
@@ -2232,11 +2232,11 @@ public class ParserTest {
 
     // "a1" should be matched by string("a1")
     assertThat(parser.parse("a1")).isEqualTo("a1");
-    
+
     // "1" should fail and report the first candidate because of pruning.
     ParseException e1 = assertThrows(ParseException.class, () -> parser.parse("1"));
     assertThat(e1).hasMessageThat().contains("expecting <a1>");
-    
+
     // "b" fails all.
     ParseException e2 = assertThrows(ParseException.class, () -> parser.parse("b"));
     assertThat(e2).hasMessageThat().contains("expecting <a1>");
@@ -2264,7 +2264,7 @@ public class ParserTest {
     assertThat(parser.parse("b")).isEqualTo("b");
     assertThat(parser.parse("^")).isEqualTo("^");
     assertThat(parser.parse("c")).isEqualTo("c");
-    
+
     // Failure with completely mismatched input.
     // Should fallback to first candidate because of pruning.
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("y"));
@@ -2305,7 +2305,7 @@ public class ParserTest {
             one(charsIn("[a-a]")));
 
     assertThat(parser.parse("a")).isEqualTo('a');
-    
+
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("b"));
     assertThat(e).hasMessageThat().contains("expecting <0>");
   }
@@ -2327,7 +2327,7 @@ public class ParserTest {
             one(charsIn("[1-0]"))); // never matches
 
     assertThat(parser.parse("0")).isEqualTo('0');
-    
+
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("a"));
     assertThat(e).hasMessageThat().contains("expecting <0>");
   }
@@ -2336,7 +2336,7 @@ public class ParserTest {
   public void anyOf_pruning_withMixedPrunableAndUnprunable() {
     Parser<String> unprunable = one(c -> c == 'u', "u").map(Object::toString);
     Parser<String> prunable = string("p");
-    
+
     // 8 consecutive("[]") + 1 unprunable + 1 prunable = 10 total.
     Parser<String> parser =
         anyOf(
@@ -2353,10 +2353,10 @@ public class ParserTest {
 
     // Prunable succeeds.
     assertThat(parser.parse("p")).isEqualTo("p");
-    
+
     // Unprunable succeeds because it's the first candidate and used as fallback when no prefix matches.
     assertThat(parser.parse("u")).isEqualTo("u");
-    
+
     // Failure case. Falls back to first candidate (unprunable) and fails.
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
     assertThat(e).hasMessageThat().contains("expecting <u>");
@@ -4282,6 +4282,22 @@ public class ParserTest {
     Parser<Integer> parser =
         digits().map(Integer::parseInt).withPostfixes(string("!").map(s -> 1), (a, b) -> a + b);
     assertThrows(ParseException.class, () -> parser.parse("10!a"));
+  }
+
+  @Test
+  public void withPostfixes_unaryOperator_success() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<Integer> parser = number.withPostfixes("++", i -> i + 1);
+    assertThat(parser.parse("10")).isEqualTo(10);
+    assertThat(parser.parse("10++")).isEqualTo(11);
+    assertThat(parser.parse("10++++")).isEqualTo(12);
+  }
+
+  @Test
+  public void withPostfixes_unaryOperator_failure() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<Integer> parser = number.withPostfixes("++", i -> i + 1);
+    assertThrows(ParseException.class, () -> parser.parse("10++a"));
   }
 
   @Test

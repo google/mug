@@ -70,12 +70,8 @@ public class AbcNoteBenchmark {
 
   private static final Parser<AbcNote> NOTE =
       anyOf(
-          one(charsIn("[ABCDEFG]"))
-              .map(c -> AbcNote.of(c, 0))
-              .withPostfixes(string(",").thenReturn(AbcNote::down)),
-          one(charsIn("[abcdefg]"))
-              .map(c -> AbcNote.of(Character.toUpperCase(c), 1))
-              .withPostfixes(string("'").thenReturn(AbcNote::up)));
+          one(charsIn("[ABCDEFG]")).map(AbcNote::middle).withPostfixes(",", AbcNote::down),
+          one(charsIn("[abcdefg]")).map(AbcNote::high).withPostfixes("'", AbcNote::up));
 
   private static final Parser<AbcNote> PARSER =
       anyOf(sequence(ACCIDENTAL, NOTE, (acc, note) -> note.withAccidental(acc)), NOTE)
@@ -186,7 +182,16 @@ public class AbcNoteBenchmark {
   }
 
   public record AbcNote(Accidental accidental, char pitch, int octave, Duration duration) {
-    static AbcNote of(char pitch, int octave) {
+
+    public static AbcNote middle(char pitch) {
+      return of(pitch, 0);
+    }
+
+    public static AbcNote high(char pitch) {
+      return of(Character.toUpperCase(pitch), 1);
+    }
+
+    private static AbcNote of(char pitch, int octave) {
       return new AbcNote(Accidental.NONE, pitch, octave, Duration.of(1));
     }
 
