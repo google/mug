@@ -37,7 +37,7 @@ follow these rules to ensure safety, performance, and idiomatic style.
 
 - **Prefer** creating enums in the data model for reserved words, operators, etc.,
   with their `toString()` returning the canonical form (e.g., `DOUBLE_SHARP("^^")`).
-  This enables building parsers cleanly using `byStrings(MyEnum.values())`.
+  This enables building parsers cleanly using `byStringsFrom(MyEnum.values())`.
 
 ## 2. Static Import
 
@@ -197,9 +197,9 @@ Parser<TypeDecl> typeDecl =
   string("true").thenReturn(true)
   ```
 
-- **Prefer** `byStrings(values)` when parsing a fixed set of values (like enum
+- **Prefer** `byStringsFrom(values)` when parsing a fixed set of values (like enum
   constants or a set of keywords) over manual alternation with `anyOf()`.
-  - **Example**: `byStrings(Accidental.values())`
+  - **Example**: `byStringsFrom(Accidental.values())`
   - It automatically handles prefix matching by trying longer strings first (e.g., trying "++" before "+").
 
 - **Prefer** `Parser.sequence(...)` static method over awkwardly plumbing data
@@ -294,7 +294,7 @@ Parser<TypeDecl> typeDecl =
 - **Whitelist of Common Methods** to keep you grounded:
   - **Use** primitives: `string(s)`, `one(char)`, `one(charsIn(...))`,
     `digits()`, `word()`, `consecutive(charsIn(...))`
-  - **Use** combinators: `anyOf(...)`, `sequence(...)`, `byStrings(...)`, `zeroOrMore()`,
+  - **Use** combinators: `anyOf(...)`, `sequence(...)`, `byStringsFrom(...)`, `zeroOrMore()`,
     `atLeastOnce()`, `zeroOrMoreDelimitedBy()`, `atLeastOnceDelimitedBy()`
   - **Use** safe optionals: `optionallyFollowedBy(...)`, `withPrefixes(...)`,
     `withPostfixes(...)`

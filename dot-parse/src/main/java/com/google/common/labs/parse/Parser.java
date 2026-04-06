@@ -620,7 +620,7 @@ public abstract class Parser<T> {
    * You can parse all of the operators with a one-liner:
    *
    * <pre>{@code
-   * Parser<Operator> operatorParser = Parser.byStrings(Operator.values());
+   * Parser<Operator> operatorParser = Parser.byStringsFrom(Operator.values());
    * }</pre>
    *
    * @throws IllegalArgumentException if {@code values} is empty or {@link Object#toString} returns
@@ -629,7 +629,7 @@ public abstract class Parser<T> {
    * @since 9.9.9
    */
   @SafeVarargs
-  public static <T> Parser<T> byStrings(T... values) {
+  public static <T> Parser<T> byStringsFrom(T... values) {
     checkArgument(values.length > 0, "values cannot be empty");
     Map<String, T> longerFirst = BiStream.biStream(stream(values))
             .mapKeys(Object::toString)

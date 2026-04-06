@@ -56,7 +56,7 @@ public class AbcNoteBenchmark {
 
   // Parsers
   private static final Parser<Integer> NUM = digits().map(Integer::parseInt);
-  private static final Parser<Accidental> ACCIDENTAL = Parser.byStrings(Accidental.values());
+  private static final Parser<Accidental> ACCIDENTAL = Parser.byStringsFrom(Accidental.values());
 
   private static final Parser<Integer> DURATION_DENOMINATOR =
       string("/").thenReturn(2).optionallyFollowedBy(NUM, (d, denominator) -> denominator);
