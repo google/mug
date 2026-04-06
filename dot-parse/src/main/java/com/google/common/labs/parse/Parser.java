@@ -624,6 +624,9 @@ public abstract class Parser<T> {
    * Parser<Operator> operatorParser = anyOf(Operator.values());
    * }</pre>
    *
+   * <p>Unlike {@link #anyOf(Parser[])}, the order of the enum values isn't important as the parser
+   * will automatically choose the longest match.
+   *
    * @throws IllegalArgumentException if {@code values} is empty or {@link Object#toString} returns
    *     empty string, or are not unique.
    * @throws NullPointerException if {@code values} is null or any element is null.
