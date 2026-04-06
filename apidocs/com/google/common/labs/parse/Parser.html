@@ -93,7 +93,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,com.google.mu.function.TriFunction)" tabindex="0">sequence(Parser, Parser, Parser, TriFunction)</a></li>
 <li><a href="#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,com.google.mu.function.Function4)" tabindex="0">sequence(Parser, Parser, Parser, Parser, Function4)</a></li>
 <li><a href="#anyOf(com.google.common.labs.parse.Parser...)" tabindex="0">anyOf(Parser...)</a></li>
-<li><a href="#byStrings(T...)" tabindex="0">byStrings(T...)</a></li>
+<li><a href="#byStringsFrom(T...)" tabindex="0">byStringsFrom(T...)</a></li>
 <li><a href="#or()" tabindex="0">or()</a></li>
 <li><a href="#or(com.google.common.labs.parse.Parser)" tabindex="0">or(Parser)</a></li>
 <li><a href="#or(com.google.common.labs.parse.Parser.OrEmpty)" tabindex="0">or(Parser.OrEmpty)</a></li>
@@ -320,7 +320,7 @@ loadScripts(document, 'script');</script>
 <div class="block">Parses a 4-digit hex BMP code unit.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;T&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#byStrings(T...)" class="member-name-link">byStrings</a><wbr>(T...&nbsp;values)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#byStringsFrom(T...)" class="member-name-link">byStringsFrom</a><wbr>(T...&nbsp;values)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a parser that matches any of the given <code>values</code> by their <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#toString()" title="class or interface in java.lang" class="external-link"><code>Object.toString()</code></a>.</div>
 </div>
@@ -1289,11 +1289,11 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
-<section class="detail" id="byStrings(T...)">
-<h3 id="byStrings(java.lang.Object[])">byStrings</h3>
+<section class="detail" id="byStringsFrom(T...)">
+<h3 id="byStringsFrom(java.lang.Object[])">byStringsFrom</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/SafeVarargs.html" title="class or interface in java.lang" class="external-link">@SafeVarargs</a>
-</span><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;</span>&nbsp;<span class="element-name">byStrings</span><wbr><span class="parameters">(T...&nbsp;values)</span></div>
+</span><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;</span>&nbsp;<span class="element-name">byStringsFrom</span><wbr><span class="parameters">(T...&nbsp;values)</span></div>
 <div class="block">Returns a parser that matches any of the given <code>values</code> by their <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#toString()" title="class or interface in java.lang" class="external-link"><code>Object.toString()</code></a>.
 
  <p>For example if you want to parse all operators defined in an enum:
@@ -1311,7 +1311,7 @@ loadScripts(document, 'script');</script>
  You can parse all of the operators with a one-liner:
 
  <pre><code>
- Parser&lt;Operator&gt; operatorParser = Parser.byStrings(Operator.values());
+ Parser&lt;Operator&gt; operatorParser = Parser.byStringsFrom(Operator.values());
  </code></pre></div>
 <dl class="notes">
 <dt>Throws:</dt>
