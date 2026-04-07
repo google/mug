@@ -228,30 +228,30 @@ Parser<TypeDecl> typeDecl =
 
   - **Simple case** (any character can be escaped): Pass `chars(1)` as the `escaped` parser.
 
-    ```java
-    quotedByWithEscapes('"', '"', chars(1))
-    ```
+      ```java
+      quotedByWithEscapes('"', '"', chars(1))
+      ```
 
   - **C-style escaping** (handle `\n`, `\t`, `\r` etc.):
 
-    ```java
-    Parser<String> cStyleEscape = anyOf(
-        string("n").thenReturn("\n"),
-        string("t").thenReturn("\t"),
-        string("r").thenReturn("\r"),
-        chars(1)); // fallback for other escaped chars
-    Parser<String> quoted = quotedByWithEscapes('"', '"', cStyleEscape);
-    ```
+      ```java
+      Parser<String> cStyleEscape = anyOf(
+          string("n").thenReturn("\n"),
+          string("t").thenReturn("\t"),
+          string("r").thenReturn("\r"),
+          chars(1)); // fallback for other escaped chars
+      Parser<String> quoted = quotedByWithEscapes('"', '"', cStyleEscape);
+      ```
 
   - **Unicode escaping** (e.g., `\u1234`): Use `bmpCodeUnit()` to parse the 4-digit hex code.
 
-    ```java
-    Parser<String> unicodeEscape = string("u")
-        .then(bmpCodeUnit())
-        .map(Character::toString);
-    Parser<String> escaped = anyOf(unicodeEscape, chars(1));
-    Parser<String> quoted = quotedByWithEscapes('"', '"', escaped);
-    ```
+      ```java
+      Parser<String> unicodeEscape = string("u")
+          .then(bmpCodeUnit())
+          .map(Character::toString);
+      Parser<String> escaped = anyOf(unicodeEscape, chars(1));
+      Parser<String> quoted = quotedByWithEscapes('"', '"', escaped);
+      ```
 
 - **Use** `then()` with `orElse(defaultValue)` when a parser is followed by an
   optional component that should fall back to a default value if missing.
