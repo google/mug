@@ -26,24 +26,12 @@ to ensure safety against SQL injection and maintain readability.
     subquery, it must be another `SafeSql`.
 7.  **List Expansion**:
 
-    -   **Identifiers**: Backtick-quote the placeholder to expand a list of
-        identifiers.
-
-        ```
-        `{columns}`
-        ```
+    -   **Identifiers**: Backtick-quote the placeholder (e.g., `` `{columns}` ``)
+        to expand a list of identifiers.
     -   **Values (Strings in IN clause)**: You can single-quote the placeholder
-        inside an `IN` clause for a list of strings.
-
-        ```
-        IN ('{names}')
-        ```
-    -   **Values (Numbers or general)**: Leave the placeholder unquoted to
-        expand a list of values (like integers) into parameters.
-
-        ```
-        IN ({ids})
-        ```
+        inside an `IN` clause (e.g., `IN ('{names}')`) for a list of strings.
+    -   **Values (Numbers or general)**: Leave the placeholder unquoted (e.g.,
+        `IN ({ids})`) to expand a list of values (like integers) into parameters.
 
     **Examples**:
 
@@ -204,6 +192,17 @@ to ensure safety against SQL injection and maintain readability.
 
     -   **Avoid Over-Commenting**: Don't blindly comment for every argument when
         they already match naturally (e.g., `/* user_id */ user.id()` is silly).
+    -   **Trailing Comments**: When passing one placeholder parameter per line,
+        and you need to use a comment, use the trailing style:
+
+        ```java
+        SafeSql.of(
+            """
+            ...
+            """,
+            1, // id
+            100); // size
+        ```
 
 ### 5. Guardrails
 
@@ -229,29 +228,15 @@ to ensure safety against SQL injection and maintain readability.
 -   **No Nesting in Conditionals**: Within a conditional clause
     `{placeholder? -> ...}`, do NOT use curly braces again for the placeholder
     expansion on the right side of the arrow. There is only one set of curly
-    braces, which encloses the entire placeholder. Use `placeholder?` directly:
+    braces, which encloses the entire placeholder. Use `placeholder?` directly
+    (e.g., `{ids? -> id in ('ids?')}`). Nesting curly braces will cause parsing
+    errors.
 
-    ```
-    {ids? -> id in ('ids?')}
-    ```
-
-    Nesting curly braces will cause parsing errors.
-
--   **Quoting Strings and Lists**: **Always** use single or double quotes for
-    string values:
-
-    ```
-    '{user_id}'
-    ```
-
-    And backticks for string identifiers or lists of strings:
-
-    ```
-    `{column}`
-    ```
-
-    Forgetting these quotes is a common mistake and will be caught as a
-    compilation error to prevent SQL injection.
+-   **Quoting Strings and Lists**: **Always** use single or double quotes
+    (e.g., `'{user_id}'`) for string values and backticks (e.g.,
+    `` `{column}` ``) for string identifiers or lists of strings. Forgetting
+    these quotes is a common mistake and will be caught as a compilation error
+    to prevent SQL injection.
 
 ### 6. Execution and Integration
 
