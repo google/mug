@@ -41,9 +41,10 @@ follow these rules to ensure safety, performance, and idiomatic style.
   }
   ```
 
-- **Prefer** creating enums in the data model for reserved words, operators, etc.,
-  with their `toString()` returning the canonical form (e.g., `DOUBLE_SHARP("^^")`).
-  This enables building parsers cleanly using the `anyOf(Enum[])` overload (e.g.,
+- **Prefer** creating enums in the data model for reserved words, operators,
+  etc., with their `toString()` returning the canonical form (e.g.,
+  `DOUBLE_SHARP("^^")`). This enables building parsers cleanly using the
+  `anyOf(Enum[])` overload (e.g.,
   `anyOf(MyEnum.values())`).
 
 ## 2. Static Import
@@ -112,7 +113,8 @@ Instead, consider these safe patterns:
 
   ```java
   Parser<String> wordAllowingTrailingComma = word().optionallyFollowedBy(",");
-  Parser<Note> noteWithOptionalOctave = note.optionallyFollowedBy(octave, Note::withOctave);
+  Parser<Note> noteWithOptionalOctave =
+      note.optionallyFollowedBy(octave, Note::withOctave);
   ```
 - **Use** `followedBy(suffix.zeroOrMore())` for a suffix that may occur zero
   or many times.
@@ -138,7 +140,9 @@ Instead, consider these safe patterns:
 
   ```java
   anyOf(
-      sequence(accidental.atLeastOnce(), note, (a, n) -> n.withAccidentals(a)),  // with non-empty prefixes
+      sequence(
+          accidental.atLeastOnce(), note,
+          (a, n) -> n.withAccidentals(a)), // with non-empty prefixes
       note);  // no prefix
   ```
 - **Use** `OperatorTable` class to define a grammar with prefixes, postfixes,
@@ -152,7 +156,8 @@ Instead, consider these safe patterns:
   more readable and intentional code than listing alternatives using `anyOf`:
 
   ```java
-  // Good: Expresses intent clearly ("A number, optionally followed by a denominator")
+  // Good: Expresses intent clearly ("A number, optionally followed by a
+  // denominator")
   NUM.map(NoteDuration::of)
       .optionallyFollowedBy(DURATION_DENOMINATOR, NoteDuration::withDenominator)
   ```
@@ -182,7 +187,8 @@ Parser<Expr> expr = Parser.define(self ->
     new OperatorTable<Expr>()
       .postfix(
           sequence(
-              string(".").then(word()), self.zeroOrMoreDelimitedBy(",").between("(", ")"),
+              string(".").then(word()),
+              self.zeroOrMoreDelimitedBy(",").between("(", ")"),
               UnqualifiedMethodCall::new),
           (receiver, call) -> call.withReceiver(receiver))
       // ...
@@ -223,13 +229,15 @@ Parser<TypeDecl> typeDecl =
     -   It automatically handles prefix matching by trying longer strings first
         (e.g., trying "++" before "+").
 
-- **Use** `quotedBy(before, after)` and `quotedByWithEscapes(before, after, escaped)`
+- **Use** `quotedBy(before, after)` and
+  `quotedByWithEscapes(before, after, escaped)`
   to parse quoted strings instead of reinventing the wheel.
 
   - `quotedBy` is for simple cases where no escaping is needed.
   - `quotedByWithEscapes` handles backslash escapes. The `escaped` parser
     parameter defines what happens *after* the backslash.
-  - **Simple case** (any character can be escaped): Pass `chars(1)` as the `escaped` parser.
+  - **Simple case** (any character can be escaped): Pass `chars(1)` as the
+    `escaped` parser.
 
       ```java
       quotedByWithEscapes('"', '"', chars(1))
@@ -244,7 +252,8 @@ Parser<TypeDecl> typeDecl =
           chars(1)); // fallback for other escaped chars
       Parser<String> quoted = quotedByWithEscapes('"', '"', cStyleEscape);
       ```
-  - **Unicode escaping** (e.g., `\u1234`): Use `bmpCodeUnit()` to parse the 4-digit hex code.
+  - **Unicode escaping** (e.g., `\u1234`): Use `bmpCodeUnit()` to parse the
+    4-digit hex code.
 
       ```java
       Parser<String> unicodeEscape = string("u")
@@ -295,11 +304,13 @@ Parser<TypeDecl> typeDecl =
       quotes as a `String`.
     - `","`: Specifies that the key-value pairs are separated by commas.
     - `BiCollectors.toMap()`: collects the pairs into a `Map<String, String>`.
-      You can also use **method reference** (not direct method calls) of standard
+      You can also use **method reference** (not direct method calls) of
+      standard
       JDK collectors as long as their signatures have two function parameters to
       extract the key and the value, such as `Collectors::toUnmodifiableMap`.
     - `.followedBy(string(",").optional())`: An optional suffix that allows a
-      trailing comma after the last pair. Only if you need to support trailing comma.
+      trailing comma after the last pair. Only if you need to support
+      trailing comma.
     - `.between("{", "}")`: Ensures the entire map is enclosed in curly braces.
   - **Note on Whitespace**: Whitespaces will be skipped automatically between
     tokens when calling `parseSkipping(Character::isWhitespace, ...)` or
