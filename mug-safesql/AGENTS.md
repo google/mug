@@ -183,10 +183,11 @@ to ensure safety against SQL injection and maintain readability.
     locate the issue in long queries.
 
 -   **SQL Injection Prevention**: All placeholders, unless backtick-or-double
-    quoted, will have their values passed as `PreparedStatement` parameters to
-    avoid SQL injection. Identifier placeholders quoted by backtick or double
-    quote will have the identifier string sanity checked to ensure there are no
-    dangerous characters that can cause injection.
+    quoted, or is itself a `SafeSql`, will have their values passed as
+    `PreparedStatement` parameters to avoid SQL injection. Identifier
+    placeholders quoted by backtick or double quote will have the identifier
+    string sanity checked to ensure there are no dangerous characters that can
+    cause injection.
 
 -   **No Nesting in Conditionals**: Within a conditional clause `{placeholder?
     -> ...}`, do NOT use curly braces again for the placeholder expansion on the
