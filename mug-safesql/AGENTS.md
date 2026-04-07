@@ -14,19 +14,19 @@ to ensure safety against SQL injection and maintain readability.
 3.  **String Values Should Be Quoted**: String placeholders intended to be
     values should be quoted by single quotes like `'{user_id}'`. While not
     strictly required, it makes the intent more explicit to the code readers.
-4.  **Identifiers Must Be Backticked**: String placeholders intended to be
-    identifiers should be quoted by backticks. They will be sanity checked to
-    ensure no dangerous characters are used.
+4.  **Identifiers Must Be Quoted by Double Quotes**: String placeholders
+    intended to be identifiers should be quoted by double quotes (or backticks).
+    They will be sanity checked to ensure no dangerous characters are used.
 5.  **Query Composition**: `SafeSql` itself can be passed as placeholder
     values. This allows arbitrarily complex and dynamic query composition.
     All compositions are done through templating.
 6.  **Raw SQL and Symbols**: Parameters, except if the placeholder is
-    backtick-or-double quoted as identifier, are by default passed as
+    double-or-backtick quoted as identifier, are by default passed as
     `PreparedStatement` parameters. If you must pass a trusted raw string or
     subquery, it must be another `SafeSql`.
 7.  **List Expansion**:
 
-    -   **Identifiers**: Backtick-quote the placeholder (e.g., `` `{columns}` ``)
+    -   **Identifiers**: Double-quote the placeholder (e.g., `"{columns}"`)
         to expand a list of identifiers.
     -   **Values (Strings in IN clause)**: You can single-quote the placeholder
         inside an `IN` clause (e.g., `IN ('{names}')`) for a list of strings.
@@ -38,7 +38,7 @@ to ensure safety against SQL injection and maintain readability.
     ```java
     // Expanding identifiers
     SafeSql query =
-        SafeSql.of("SELECT `{columns}` FROM Users", asList("id", "name"));
+        SafeSql.of("SELECT \"{columns}\" FROM Users", asList("id", "name"));
     // Expands to: SELECT `id`, `name` FROM Users
 
     // Expanding values (unquoted)
@@ -218,10 +218,10 @@ to ensure safety against SQL injection and maintain readability.
     number of the corresponding placeholder in the template, making it easy to
     locate the issue in long queries.
 
--   **SQL Injection Prevention**: All placeholders, unless backtick-or-double
+-   **SQL Injection Prevention**: All placeholders, unless double-or-backtick
     quoted, or is itself a `SafeSql`, will have their values passed as
     `PreparedStatement` parameters to avoid SQL injection. Identifier
-    placeholders quoted by backtick or double quote will have the identifier
+    placeholders quoted by double quote or backtick will have the identifier
     string sanity checked to ensure there are no dangerous characters that can
     cause injection.
 
@@ -233,8 +233,8 @@ to ensure safety against SQL injection and maintain readability.
     errors.
 
 -   **Quoting Strings and Lists**: **Always** use single or double quotes
-    (e.g., `'{user_id}'`) for string values and backticks (e.g.,
-    `` `{column}` ``) for string identifiers or lists of strings. Forgetting
+    (e.g., `'{user_id}'`) for string values and double quotes (e.g.,
+    `"{column}"`) for string identifiers or lists of strings. Forgetting
     these quotes is a common mistake and will be caught as a compilation error
     to prevent SQL injection.
 
