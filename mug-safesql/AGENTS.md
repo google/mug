@@ -9,24 +9,21 @@ to ensure safety against SQL injection and maintain readability.
 
 1.  **Placeholder Syntax**: `{placeholder}` is the syntax to interpolate into
     the query template, using the `SafeSql.of()` static factory method.
-2.  **Supported Types**: Primitive type numbers and `Enum`s (the `name()` will
-    be interpolated) are supported directly. `java.time.Instant` is supported if
-    the placeholder is quoted (e.g., `'{start_time}'`).
-3.  **String Values Must Be Quoted**: String placeholders intended to be values
-    must be quoted by single quotes like `'{user_id}'`. Directly interpolating
-    strings is subject to SQL injection and thus disallowed. Single quotes are
-    preferred for values to maintain consistency, although double quotes are
-    also supported by the library.
+2.  **Supported Types**: Primitive type numbers, strings, `java.time.Instant`,
+    `java.time.LocalDate`, `java.time.ZonedDateTime`, and `List` thereof.
+3.  **String Values Should Be Quoted**: String placeholders intended to be values
+    should be quoted by single quotes like `'{user_id}'`. While not strictly
+    required, it makes the intent more explicit to the code readers.
 4.  **Identifiers Must Be Backticked**: String placeholders intended to be
     identifiers should be quoted by backticks. They will be sanity checked to
     ensure no dangerous characters are used.
 5.  **Query Composition**: `SafeSql` itself can be passed as placeholder
     values. This allows arbitrarily complex and dynamic query composition.
     All compositions are done through templating.
-6.  **Raw SQL and Symbols**: Unquoted placeholders are assumed to be symbols or
-    subqueries. Raw `String` or `Character` values CANNOT be passed to unquoted
-    placeholders. If you must pass a trusted raw string or subquery, it must be
-    another `SafeSql`.
+6.  **Raw SQL and Symbols**: Parameters, except if the placeholder is
+    backtick-or-double quoted as identifier, are by default passed as
+    `PreparedStatement` parameters. If you must pass a trusted raw string or
+    subquery, it must be another `SafeSql`.
 7.  **List Expansion**:
     -   **Identifiers**: Backtick-quote the placeholder (e.g., `` `{columns}` ``)
         to expand a list of identifiers.
@@ -293,8 +290,8 @@ For cases where you need to reuse statements or perform batch operations,
 
     ```java
     try (Connection conn = dataSource.getConnection()) {
-      var query =
-          SafeSql.prepareToQuery(conn, "SELECT * FROM Users WHERE name = {name}", User.class);
+      var query = SafeSql.prepareToQuery(
+          conn, "SELECT * FROM Users WHERE name = {name}", User.class);
       List<User> users1 = query.with("Alice");
       List<User> users2 = query.with("Bob");
     }
@@ -304,7 +301,8 @@ For cases where you need to reuse statements or perform batch operations,
 
     ```java
     try (Connection conn = dataSource.getConnection()) {
-      var insertUser = SafeSql.prepareToBatch(conn, "INSERT INTO Users(id, name) VALUES({id}, '{name}')");
+      var insertUser = SafeSql.prepareToBatch(
+          conn, "INSERT INTO Users(id, name) VALUES({id}, '{name}')");
       Set<Statement> batches = users.stream()
           .map(user -> insertUser.with(user.id(), user.name()))
           .collect(toUnmodifiableSet());
