@@ -62,7 +62,7 @@ public final class BoundedConcurrency {
   }
 
   /**
-   * Returns a {@link BoundedConcurrency} using {@code maxConcurrency} and {@code threadFactor}.
+   * Returns a {@link BoundedConcurrency} using {@code maxConcurrency} and {@code threadFactory}.
    *
    * @throws IllegalArgumentException if {@code maxConcurrency <= 0}
    */
