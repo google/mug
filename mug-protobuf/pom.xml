@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>9.9.9-SNAPSHOT</version>
+    <version>10.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-protobuf</artifactId>
@@ -12,7 +12,7 @@
   <properties>
     <module.name>protobuf</module.name>
     <!-- Reproducible builds: fixed timestamp for build artifacts -->
-    <project.build.outputTimestamp>2026-03-15T16:41:57Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-04-07T21:19:38Z</project.build.outputTimestamp>
   </properties>
   <build>
     <pluginManagement>

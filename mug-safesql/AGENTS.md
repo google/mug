@@ -11,21 +11,22 @@ to ensure safety against SQL injection and maintain readability.
     the query template, using the `SafeSql.of()` static factory method.
 2.  **Supported Types**: Primitive type numbers, strings, `java.time.Instant`,
     `java.time.LocalDate`, `java.time.ZonedDateTime`, and `List` thereof.
-3.  **String Values Should Be Quoted**: String placeholders intended to be values
-    should be quoted by single quotes like `'{user_id}'`. While not strictly
-    required, it makes the intent more explicit to the code readers.
-4.  **Identifiers Must Be Backticked**: String placeholders intended to be
-    identifiers should be quoted by backticks. They will be sanity checked to
-    ensure no dangerous characters are used.
+3.  **String Values Should Be Quoted**: String placeholders intended to be
+    values should be quoted by single quotes like `'{user_id}'`. While not
+    strictly required, it makes the intent more explicit to the code readers.
+4.  **Identifiers Must Be Quoted by Double Quotes**: String placeholders
+    intended to be identifiers should be quoted by double quotes (or backticks).
+    They will be sanity checked to ensure no dangerous characters are used.
 5.  **Query Composition**: `SafeSql` itself can be passed as placeholder
     values. This allows arbitrarily complex and dynamic query composition.
     All compositions are done through templating.
 6.  **Raw SQL and Symbols**: Parameters, except if the placeholder is
-    backtick-or-double quoted as identifier, are by default passed as
+    double-or-backtick quoted as identifier, are by default passed as
     `PreparedStatement` parameters. If you must pass a trusted raw string or
     subquery, it must be another `SafeSql`.
 7.  **List Expansion**:
-    -   **Identifiers**: Backtick-quote the placeholder (e.g., `` `{columns}` ``)
+
+    -   **Identifiers**: Double-quote the placeholder (e.g., `"{columns}"`)
         to expand a list of identifiers.
     -   **Values (Strings in IN clause)**: You can single-quote the placeholder
         inside an `IN` clause (e.g., `IN ('{names}')`) for a list of strings.
@@ -36,25 +37,44 @@ to ensure safety against SQL injection and maintain readability.
 
     ```java
     // Expanding identifiers
-    SafeSql query = SafeSql.of("SELECT `{columns}` FROM Users", asList("id", "name"));
+    SafeSql query =
+        SafeSql.of("SELECT \"{columns}\" FROM Users", asList("id", "name"));
     // Expands to: SELECT `id`, `name` FROM Users
 
     // Expanding values (unquoted)
-    SafeSql query = SafeSql.of("SELECT * FROM Users WHERE id IN ({ids})", asList(1, 2, 3));
+    SafeSql query =
+        SafeSql.of("SELECT * FROM Users WHERE id IN ({ids})", asList(1, 2, 3));
     // Expands to: SELECT * FROM Users WHERE id IN (?, ?, ?)
     ```
-8.  **Conditional Clause**: `SafeSql.of("select {shows_id? -> id,} name from
-    Users", showsId())` will include the `"id,"` only if `showsId()` is true.
-9.  **Optional and Nullable Parameters**: `SafeSql.of("select .. where {id? ->
-    id = 'id?'}", id())` will generate `"where id = 'foo'"` if `id()` returns
+8.  **Conditional Clause**: Use conditional placeholders to include snippets
+    based on a boolean.
+
+    ```java
+    SafeSql.of("select {shows_id? -> id,} name from Users", showsId())
+    ```
+
+    This will include the `"id,"` only if `showsId()` is true.
+9.  **Optional and Nullable Parameters**: Use conditional placeholders with
+    optional or nullable values.
+
+    ```java
+    SafeSql.of("select .. where {id? -> id = 'id?'}", id())
+    ```
+
+    This will generate `"where id = 'foo'"` if `id()` returns
     `Optional.of("foo")` or simply `"foo"`. It will omit the snippet if `id()`
     returns `Optional.empty()` or is `null`. Null values are treated the same
     as `Optional.empty()`, allowing you to use nullable variables directly in
     conditional placeholders without wrapping them in `Optional`.
-10. **Collection Parameters in Conditionals**: Collection parameters can also be
-    used in conditional queries. For example, `SafeSql.of("... where {ids? ->
-    id in 'ids?'}", ids())` will generate `"id in ('a', 'b')"` if `ids()`
-    returns `[a, b]`, but if `ids()` returns `[]`, it will be omitted.
+10. **Collection Parameters in Conditionals**: Collection parameters can also
+    be used in conditional queries.
+
+    ```java
+    SafeSql.of("... WHERE {ids? -> id IN ('ids?')}", ids())
+    ```
+
+    This will generate `"id in ('a', 'b')"` if `ids()` returns `[a, b]`, but if
+    `ids()` returns `[]`, it will be omitted.
 11. **Positional Parameters**: The placeholder values are passed in positionally
     like `String.format()`. Their correctness will be checked such that the
     placeholder value expression must contain all the words in the placeholder
@@ -64,7 +84,8 @@ to ensure safety against SQL injection and maintain readability.
     name. Then the compiler will ensure the same expression is passed for these
     placeholders.
 13. **LIKE Clauses and Wildcards**: When using the `LIKE` operator, use the
-    syntax `LIKE '%{placeholder}%'` (or `'%{placeholder}'`, `'{placeholder}%'`).
+    syntax `LIKE '%{placeholder}%'` (or `'%{placeholder}'`,
+    `'{placeholder}%'`).
     The query goes through `PreparedStatement` parameterization (using `?`), so
     no SQL injection is possible. The library automatically handles wildcards by
     prefixing `%`, `_`, and `^` in the parameter value with `^`, and appends
@@ -74,7 +95,8 @@ to ensure safety against SQL injection and maintain readability.
     **Example**:
 
     ```java
-    SafeSql query = SafeSql.of("SELECT * FROM Users WHERE name LIKE '%{name}%'", name);
+    SafeSql query =
+        SafeSql.of("SELECT * FROM Users WHERE name LIKE '%{name}%'", name);
     // Generated SQL: SELECT * FROM Users WHERE name LIKE ? ESCAPE '^'
     ```
 
@@ -82,7 +104,8 @@ to ensure safety against SQL injection and maintain readability.
 
 -   **`SafeSql.when(boolean, String, Object...)`**: Use this method when an
     entire query snippet should be guarded on a condition.
--   It can be chained with `.orElse(String, Object...)` or `.orElse(SafeSql)`.
+-   It can be chained with `.orElse(String, Object...)` or
+    `.orElse(SafeSql)`.
 -   **Example**:
 
     ```java
@@ -93,7 +116,8 @@ to ensure safety against SQL injection and maintain readability.
 -   Both `when()` and `orElse()` support the exact same template interpolation
     syntax as `SafeSql.of()`.
 
--   **Instance `when(boolean)`**: Alternatively, if you already have a `SafeSql`
+-   **Instance `when(boolean)`**: Alternatively, if you already have a
+    `SafeSql`
     instance, you can use the instance method `.when(boolean)` to conditionally
     include it. It returns the instance if true, or `SafeSql.EMPTY` if false.
     This allows for fluent chaining:
@@ -146,7 +170,8 @@ to ensure safety against SQL injection and maintain readability.
     ```
 
 -   **Line Wrapping in Conditionals**: Newlines are supported to the right of
-    the arrow operator (`->`) in conditional clauses. Use line wrapping properly
+    the arrow operator (`->`) in conditional clauses. Use line wrapping
+    properly
     to help readability of long conditional snippets.
 
 -   **Naming Convention and Placeholder Matching**: By default, the
@@ -167,6 +192,17 @@ to ensure safety against SQL injection and maintain readability.
 
     -   **Avoid Over-Commenting**: Don't blindly comment for every argument when
         they already match naturally (e.g., `/* user_id */ user.id()` is silly).
+    -   **Trailing Comments**: When passing one placeholder parameter per line,
+        and you need to use a comment, use the trailing style:
+
+        ```java
+        SafeSql.of(
+            """
+            ...
+            """,
+            1, // id
+            100); // size
+        ```
 
 ### 5. Guardrails
 
@@ -182,23 +218,25 @@ to ensure safety against SQL injection and maintain readability.
     number of the corresponding placeholder in the template, making it easy to
     locate the issue in long queries.
 
--   **SQL Injection Prevention**: All placeholders, unless backtick-or-double
+-   **SQL Injection Prevention**: All placeholders, unless double-or-backtick
     quoted, or is itself a `SafeSql`, will have their values passed as
     `PreparedStatement` parameters to avoid SQL injection. Identifier
-    placeholders quoted by backtick or double quote will have the identifier
+    placeholders quoted by double quote or backtick will have the identifier
     string sanity checked to ensure there are no dangerous characters that can
     cause injection.
 
--   **No Nesting in Conditionals**: Within a conditional clause `{placeholder?
-    -> ...}`, do NOT use curly braces again for the placeholder expansion on the
-    right side of the arrow. There is only one set of curly braces, which
-    encloses the entire placeholder. Use `placeholder?` directly (e.g., `{ids?
-    -> id in 'ids?'}`). Nesting curly braces will cause parsing errors.
+-   **No Nesting in Conditionals**: Within a conditional clause
+    `{placeholder? -> ...}`, do NOT use curly braces again for the placeholder
+    expansion on the right side of the arrow. There is only one set of curly
+    braces, which encloses the entire placeholder. Use `placeholder?` directly
+    (e.g., `{ids? -> id in ('ids?')}`). Nesting curly braces will cause parsing
+    errors.
 
--   **Quoting Strings and Lists**: **Always** use single or double quotes (e.g.,
-    `'{user_id}'`) for string values and backticks (e.g., `` `{column}` ``) for
-    string identifiers or lists of strings. Forgetting these quotes is a common
-    mistake and will be caught as a compilation error to prevent SQL injection.
+-   **Quoting Strings and Lists**: **Always** use single or double quotes
+    (e.g., `'{user_id}'`) for string values and double quotes (e.g.,
+    `"{column}"`) for string identifiers or lists of strings. Forgetting
+    these quotes is a common mistake and will be caught as a compilation error
+    to prevent SQL injection.
 
 ### 6. Execution and Integration
 
@@ -249,7 +287,8 @@ management.
     `DELETE` statements. It returns the number of affected rows.
 
     ```java
-    SafeSql query = SafeSql.of("UPDATE Users SET status = 'ACTIVE' WHERE id = {id}", userId);
+    SafeSql query =
+        SafeSql.of("UPDATE Users SET status = 'ACTIVE' WHERE id = {id}", userId);
     int rowsUpdated = query.update(dataSource);
     ```
 

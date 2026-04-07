@@ -25,9 +25,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
-import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import com.google.mu.util.stream.Iteration.Continuation;
 
 /**
  * Transforms eager, recursive algorithms into <em>lazy</em> streams.
@@ -342,83 +343,6 @@ public class Iteration<T> {
      * Runs the continuation. It will be called at most once throughout the stream.
      */
     void run();
-  }
-
-  /** @deprecated Use {@link #emit(Object)} instead. */
-  @Deprecated
-  public final Iteration<T> generate(T element) {
-    emit(element);
-    return this;
-  }
-
-  /** @deprecated Use {@link #emit(Iterable)} instead. */
-  @Deprecated
-  public final Iteration<T> generate(Iterable<? extends T> elements) {
-    emit(elements);
-    return this;
-  }
-
-  /**
-   * @deprecated Use {@link #lazily(Continuation)} instead
-   */
-  @Deprecated
-  public final Iteration<T> yield(Continuation continuation) {
-    lazily(continuation);
-    return this;
-  }
-
-  /**
-   * Lazily generate into the stream the result of {@code computation}. Upon evaluation, also
-   * passes the computation result to {@code consumer}. Useful when the
-   * computation result of a recursive call is needed. For example, if you have a
-   * recursive algorithm to sum all node values of a tree:
-   *
-   * <pre>
-   * {@code
-   * int sumNodeValues(Tree tree) {
-   *   if (tree == null) return 0;
-   *   return tree.value + sumNodeValues(tree.left) + sumNodeValues(tree.right);
-   * }
-   * }
-   * </pre>
-   *
-   * It can be transformed to iterative stream as in:
-   *
-   * <pre>
-   * {@code
-   * class SumNodeValues extends Iteration<Integer> {
-   *   SumNodeValues sum(Tree tree, AtomicInteger result) {
-   *     if (tree == null) return this;
-   *     AtomicInteger leftSum = new AtomicInteger();
-   *     AtomicInteger rightSum = new AtomicInteger();
-   *     lazily(() -> sum(tree.left, leftSum));
-   *     lazily(() -> sum(tree.right, rightSum));
-   *     this.yield(() -> tree.value + leftSum.get() + rightSum.get(), result::set);
-   *     return this;
-   *   }
-   * }
-   *
-   * Stream<Integer> sums =
-   *     new SumNodeValues()
-   *         .sum((root: 1, left: 2, right: 3), new AtomicInteger())
-   *         .iterate();
-   *
-   *     => [2, 3, 6]
-   * }
-   * </pre>
-   *
-   * @deprecated too niche
-   */
-  @Deprecated
-  public final Iteration<T> yield(Supplier<? extends T> computation, Consumer<? super T> consumer) {
-    requireNonNull(computation);
-    requireNonNull(consumer);
-    lazily(() -> {
-      T result = computation.get();
-      consumer.accept(result);
-      emit(result);
-    });
-    return this;
   }
 
   private T nextOrNull() {

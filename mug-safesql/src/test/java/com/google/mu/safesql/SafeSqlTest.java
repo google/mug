@@ -365,7 +365,7 @@ public class SafeSqlTest {
   public void backquotedEnumParameter() {
     SafeSql sql = SafeSql.of(
         "select `{column}` from Users",
-        /* columns */ Pii.EMAIL);
+        Pii.EMAIL);  // columns
     assertThat(sql.toString()).isEqualTo("select `email` from Users");
     assertThat(sql.debugString()).isEqualTo("select `email` from Users");
   }
@@ -383,7 +383,7 @@ public class SafeSqlTest {
   public void listOfBackquotedEnumParameters() {
     SafeSql sql = SafeSql.of(
         "select `{columns}` from Users",
-        /* columns */ asList(Pii.values()));
+        asList(Pii.values()));  // columns
     assertThat(sql.toString()).isEqualTo("select `ssn`, `email` from Users");
     assertThat(sql.debugString()).isEqualTo("select `ssn`, `email` from Users");
   }

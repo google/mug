@@ -173,17 +173,6 @@ public final class Happenstance<K> {
             return index;
           });
     }
-
-    /**
-     * @deprecated Use {@link #sequence} instead. Chained {@code happenInOrder()} calls can read
-     *     misleading as defining an order across subsequent calls.
-     */
-    @CanIgnoreReturnValue
-    @SafeVarargs
-    @Deprecated
-    public final Builder<K> happenInOrder(K... sequencePoints) {
-      return sequence(sequencePoints);
-    }
   }
 
   /**
