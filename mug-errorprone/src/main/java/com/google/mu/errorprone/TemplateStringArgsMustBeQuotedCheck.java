@@ -118,8 +118,7 @@ public final class TemplateStringArgsMustBeQuotedCheck extends AbstractBugChecke
                 "or as a string expression. Consider one of the following alternatives:\n" +
                 "  1) quote the placeholder with backticks (`%s`) if it should be an identifier;\n" +
                 "  2) or, quote the placeholder with single quotes ('%s') if it should be a\n" +
-                "     string expression.\n" +
-                "  3) or, wrap it inside TrustedSqlString for it to be directly embedded.\n",
+                "     string expression.\n",
                 placeholder.match(),
                 placeholder.match(),
                 placeholder.match());

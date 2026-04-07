@@ -127,7 +127,7 @@ public final class CharacterSet implements CharPredicate {
         Parser.sequence(validChar.followedBy("-"), validChar,
             (c1, c2) -> {
               checkArgument(
-                  c1 <= c2, "Invalid range [%s-%s] in character set %s", c1, c2, characterSet);
+                  c1 <= c2, "invalid range [%s-%s] in character set %s", c1, c2, characterSet);
               return CharPredicate.range(c1, c2);
             });
     Parser<CharPredicate>.OrEmpty positiveSet =
