@@ -297,7 +297,7 @@ Parser<TypeDecl> typeDecl =
     - `toMap()`: A `BiCollector` (imported from `com.google.mu.util.stream.BiCollectors`)
       that collects the pairs into a `Map<String, String>`.
     - `.followedBy(string(",").optional())`: An optional suffix that allows a
-      trailing comma after the last pair.
+      trailing comma after the last pair. Only if you need to support trailing comma.
     - `.between("{", "}")`: Ensures the entire map is enclosed in curly braces.
   - **Note on Whitespace**: Whitespaces will be skipped automatically between
     tokens when calling `parseSkipping(Character::isWhitespace, ...)` or
