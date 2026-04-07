@@ -87,11 +87,5 @@
       <artifactId>test-parameter-injector</artifactId>
       <scope>test</scope>
     </dependency>
-    
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava-testlib</artifactId>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 </project>
