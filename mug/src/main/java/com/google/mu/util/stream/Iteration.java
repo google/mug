@@ -28,8 +28,6 @@ import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import com.google.mu.util.stream.Iteration.Continuation;
-
 /**
  * Transforms eager, recursive algorithms into <em>lazy</em> streams.
  * {@link #emit emit()} is used to <a href=
@@ -58,8 +56,8 @@ import com.google.mu.util.stream.Iteration.Continuation;
  * }</pre>
  *
  * To turn the above code into a lazy stream using Iteration, the key is to wrap
- * the recursive calls into a lambda and pass it to {@link #yield(Continuation)
- * yield(() -> recursiveCall())}. This allows callers to short-circuit when they
+ * the recursive calls into a lambda and pass it to {@link #lazily(Continuation)
+ * lazily(() -> recursiveCall())}. This allows callers to short-circuit when they
  * need to:
  *
  * <pre>{@code
@@ -97,7 +95,7 @@ import com.google.mu.util.stream.Iteration.Continuation;
  * Instead of traversing eagerly and hard coding {@code System.out.println()},
  * it can be intuitively transformed to a lazy stream, again, by wrapping the
  * recursive {@code inOrder()} calls in a lambda and passing it to
- * {@code yield()}:
+ * {@code lazily()}:
  *
  * <pre>{@code
  * class DepthFirst<T> extends Iteration<T> {
@@ -175,23 +173,22 @@ import com.google.mu.util.stream.Iteration.Continuation;
  * execution is deferred.
  *
  * <p>
- * While not required, users are encouraged to create a subclass and then be
- * able to call {@code
- * yield()} as if it were a keyword.
+ * While not required, users are encouraged to create a subclass because you need a
+ * class to define recursive methods anyways.
  *
  * <p>
  * Keep in mind that, unlike {@code return} or {@code System.out.println()},
- * {@code yield()} is lazy and does not evaluate until the stream iterates over
+ * {@code lazily()} is lazy and does not evaluate until the stream iterates over
  * it. So it's critical that <em>all side effects</em> should be wrapped inside
- * {@code Continuation} objects passed to {@code yield()}.
+ * {@code Continuation} objects passed to {@code lazily()} or {@code forEachLazily()}.
  *
  * <p>
- * Unlike Python's yield statement or C#'s yield return, this {@code yield()} is
+ * Unlike Python's yield statement or C#'s yield return, the {@code lazily()} is
  * a normal Java method. It doesn't "return" execution to the caller. Laziness
  * is achieved by wrapping code block inside the {@code Continuation} lambda.
  *
  * <p>
- * Like most manual iterative adaptation of recursive algorithms, yielding is
+ * Like most manual iterative adaptation of recursive algorithms, laziness is
  * implemented using a stack. No threads or synchronization is used.
  *
  * <p>
@@ -332,10 +329,10 @@ public class Iteration<T> {
    * Encapsulates recursive iteration or a lazy block of code with side-effect.
    *
    * <p>
-   * Note that if after a {@link #yield(Continuation) yielded} recursive
-   * iteration, the subsequent code expects state change (for example, the nodes
+   * Note that if after a {@link #lazily(Continuation) lazy} recursive call,
+   * the subsequent code expects state change (for example, the nodes
    * being visited will keep changing during graph traversal), the subsequent code
-   * also needs to be yielded to be able to observe the expected state change.
+   * also needs to be lazy to be able to observe the expected state change.
    */
   @FunctionalInterface
   public interface Continuation {
