@@ -294,8 +294,10 @@ Parser<TypeDecl> typeDecl =
       string, handling backslash escapes. It returns the content inside the
       quotes as a `String`.
     - `","`: Specifies that the key-value pairs are separated by commas.
-    - `toMap()`: A `BiCollector` (imported from `com.google.mu.util.stream.BiCollectors`)
-      that collects the pairs into a `Map<String, String>`.
+    - `BiCollectors.toMap()`: collects the pairs into a `Map<String, String>`.
+      You can also use **method reference** (not direct method calls) of standard
+      JDK collectors as long as their signatures have two function parameters to
+      extract the key and the value, such as `Collectors::toUnmodifiableMap`.
     - `.followedBy(string(",").optional())`: An optional suffix that allows a
       trailing comma after the last pair. Only if you need to support trailing comma.
     - `.between("{", "}")`: Ensures the entire map is enclosed in curly braces.
