@@ -9,6 +9,7 @@ follow these rules to ensure safety, performance, and idiomatic style.
 - **Use "wither" methods** (methods that return a new instance with the updated
   property) for optional properties or modifiers.
 - **Rule of thumb for withers**:
+
   - The language to be parsed represents the user's mental model.
   - If in the mental model, the data can be expressed with or without a
     property (which usually has a default value), the data model should
@@ -23,11 +24,16 @@ follow these rules to ensure safety, performance, and idiomatic style.
   ```java
   public record AbcNote(
       Accidental accidental, char pitch, int octave, NoteDuration duration) {
-    // Factory assumes default duration
-    public static AbcNote of(char pitch, int octave) {
-      return new AbcNote(Accidental.NONE, pitch, octave, NoteDuration.of(1));
+    // Factory assumes default duration and octave = 0
+    public static AbcNote middle(char pitch) {
+      return new AbcNote(null, pitch, 0, NoteDuration.of(1));
     }
-    
+  
+    // Factory assumes default duration and octave = 1
+    public static AbcNote high(char pitch) {
+      return new AbcNote(null, pitch, 1, NoteDuration.of(1));
+    }
+
     // Wither attaches it optionally
     public AbcNote withDuration(NoteDuration duration) {
       return new AbcNote(accidental, pitch, octave, duration);
@@ -37,7 +43,8 @@ follow these rules to ensure safety, performance, and idiomatic style.
 
 - **Prefer** creating enums in the data model for reserved words, operators, etc.,
   with their `toString()` returning the canonical form (e.g., `DOUBLE_SHARP("^^")`).
-  This enables building parsers cleanly using `byStringsFrom(MyEnum.values())`.
+  This enables building parsers cleanly using the `anyOf(Enum[])` overload (e.g.,
+  `anyOf(MyEnum.values())`).
 
 ## 2. Static Import
 
@@ -88,7 +95,18 @@ compile (because `optional()` returns a special `OrEmpty` type, not a
 `Parser`). So don't try it! You are forced to complete the fluent chain using
 methods on `OrEmpty` that ensure safety.
 
+- **Chaining Optional Parsers**: Optional parsers (e.g., from `.optional()`,
+  `.orElse()`, `.zeroOrMore()`) return a `Parser.OrEmpty` instance. You can
+  chain them using `OrEmpty` methods like `.then()`, `.followedBy()`, and
+  `.delimitedBy()`, which continue to return `OrEmpty`.
+- **Exiting the Unsafe Zone**: To convert an `OrEmpty` chain back into a
+  standard `Parser`, you must eventually attach it to a non-empty `Parser`
+  using methods like `Parser.then()`, `Parser.followedBy()`, or
+  `OrEmpty.between()` / `OrEmpty.immediatelyBetween()`. This ensures the
+  composite parser is guaranteed to consume input.
+
 Instead, consider these safe patterns:
+
 - **Prefer** `optionallyFollowedBy()` for an optional suffix that may be
   present zero or one time:
 
@@ -197,15 +215,102 @@ Parser<TypeDecl> typeDecl =
   string("true").thenReturn(true)
   ```
 
-- **Prefer** `byStringsFrom(values)` when parsing a fixed set of values (like enum
-  constants or a set of keywords) over manual alternation with `anyOf()`.
-  - **Example**: `byStringsFrom(Accidental.values())`
-  - It automatically handles prefix matching by trying longer strings first (e.g., trying "++" before "+").
+-   **Prefer** the `anyOf(Enum[])` overload (passing `Enum.values()`) when
+    parsing a fixed set of enum values over manual alternation of string parsers
+    using `anyOf(Parser...)`.
 
+    -   **Example**: `anyOf(Accidental.values())`
+    -   It automatically handles prefix matching by trying longer strings first
+        (e.g., trying "++" before "+").
+
+- **Use** `quotedBy(before, after)` and `quotedByWithEscapes(before, after, escaped)`
+  to parse quoted strings instead of reinventing the wheel.
+
+  - `quotedBy` is for simple cases where no escaping is needed.
+  - `quotedByWithEscapes` handles backslash escapes. The `escaped` parser
+    parameter defines what happens *after* the backslash.
+  - **Simple case** (any character can be escaped): Pass `chars(1)` as the `escaped` parser.
+
+      ```java
+      quotedByWithEscapes('"', '"', chars(1))
+      ```
+  - **C-style escaping** (handle `\n`, `\t`, `\r` etc.):
+
+      ```java
+      Parser<String> cStyleEscape = anyOf(
+          string("n").thenReturn("\n"),
+          string("t").thenReturn("\t"),
+          string("r").thenReturn("\r"),
+          chars(1)); // fallback for other escaped chars
+      Parser<String> quoted = quotedByWithEscapes('"', '"', cStyleEscape);
+      ```
+  - **Unicode escaping** (e.g., `\u1234`): Use `bmpCodeUnit()` to parse the 4-digit hex code.
+
+      ```java
+      Parser<String> unicodeEscape = string("u")
+          .then(bmpCodeUnit())
+          .map(Character::toString);
+      Parser<String> escaped = anyOf(unicodeEscape, chars(1));
+      Parser<String> quoted = quotedByWithEscapes('"', '"', escaped);
+      ```
+- **Prefer** `parser.between("(", ")")` over the more verbose
+  `string("(").then(parser).followedBy(")")` when parsing content enclosed in
+  delimiters.
+
+  - It is more readable and concise.
+  - **Example**:
+
+      ```java
+      Parser<Expr> parenthesized = expr.between("(", ")");
+      ```
+- **Parsing Key-Value Pairs with Optional Trailing Comma**: Use the static
+  `zeroOrMoreDelimited()` method to parse pairs into a map, and use
+  `.followedBy(string(",").optional())` to handle the trailing comma.
+
+  - This is more idiomatic and concise when collecting into a map.
+  - **Example**:
+
+      ```java
+      import static com.google.mu.util.stream.BiCollectors.toMap;
+
+      Parser<Map<String, String>> mapParser =
+          zeroOrMoreDelimited(
+              word().followedBy(":"),
+              quotedByWithEscapes('"', '"', chars(1)),
+              ",",
+              toMap())
+          .followedBy(string(",").optional())
+          .between("{", "}");
+      ```
+  - **Line-by-line breakdown**:
+
+    - `zeroOrMoreDelimited(...)`: A static factory method specifically designed
+      to parse pairs of items separated by a delimiter and collect them using a
+      `BiCollector`.
+    - `word().followedBy(":")`: Parses the key (a word) and requires it to be
+      followed by `:`. The `:` is ignored in the output, so this parser returns
+      the key as a `String`.
+    - `quotedByWithEscapes('"', '"', chars(1))`: Parses the value as a quoted
+      string, handling backslash escapes. It returns the content inside the
+      quotes as a `String`.
+    - `","`: Specifies that the key-value pairs are separated by commas.
+    - `toMap()`: A `BiCollector` (imported from `com.google.mu.util.stream.BiCollectors`)
+      that collects the pairs into a `Map<String, String>`.
+    - `.followedBy(string(",").optional())`: An optional suffix that allows a
+      trailing comma after the last pair. Only if you need to support trailing comma.
+    - `.between("{", "}")`: Ensures the entire map is enclosed in curly braces.
+  - **Note on Whitespace**: Whitespaces will be skipped automatically between
+    tokens when calling `parseSkipping(Character::isWhitespace, ...)` or
+    `skipping(Character::isWhitespace)`. This is why the grammar above doesn't
+    need to explicitly handle whitespace between tokens.
+- **Use** `then()` with `orElse(defaultValue)` when a parser is followed by an
+  optional component that should fall back to a default value if missing.
+  - The `then()` method accepts both a standard `Parser` and a `Parser.OrEmpty`
+    (returned by `orElse()`).
+  - **Example**: `string("/").then(NUM.orElse(2))`
 - **Prefer** `Parser.sequence(...)` static method over awkwardly plumbing data
   through chained `.flatMap()` when handling 2-4 sequential rules.
   - **Example**: `sequence(owner, nested, args, (o, n, a) -> ...);`
-
 -   **When handling more than 4 sequential rules**, you have two options:
 
     -   **Option 1 (Reduce Cardinality)**: If some rules don't produce a value
@@ -292,9 +397,10 @@ Parser<TypeDecl> typeDecl =
   `CharPredicate.java` or `CharacterSet.java`, `OperatorTable.java` before
   generating code using it.
 - **Whitelist of Common Methods** to keep you grounded:
+
   - **Use** primitives: `string(s)`, `one(char)`, `one(charsIn(...))`,
     `digits()`, `word()`, `consecutive(charsIn(...))`
-  - **Use** combinators: `anyOf(...)`, `sequence(...)`, `byStringsFrom(...)`, `zeroOrMore()`,
+  - **Use** combinators: `anyOf(...)`, `sequence(...)`, `zeroOrMore()`,
     `atLeastOnce()`, `zeroOrMoreDelimitedBy()`, `atLeastOnceDelimitedBy()`
   - **Use** safe optionals: `optionallyFollowedBy(...)`, `withPrefixes(...)`,
     `withPostfixes(...)`
@@ -307,10 +413,12 @@ Parser<TypeDecl> typeDecl =
 
 - **CharacterSet Syntax**: `CharacterSet.charsIn()` expects a string enclosed
   in square brackets, mimicking regex character classes.
+
   - **Never** use `charsIn("abc")`. Always use `charsIn("[abc]")`.
 - **Greedy Matching**: `zeroOrMore` and `atLeastOnce` are greedy. They will
   consume as much as possible and do not automatically backtrack to give back
   characters to a suffix parser.
+
   - **Example**: If you want to parse a word ending with 's' (like "words"),
     `word().followedBy("s")` will fail because `word()` consumes the 's' and
     leaves nothing for `followedBy("s")`.
@@ -318,6 +426,7 @@ Parser<TypeDecl> typeDecl =
   methods like `one()`, `consecutive()`, `zeroOrMore()`, or using
   `suchThat()`, you **must** provide a descriptive name parameter for error
   messages.
+
   - **Example**: `consecutive(Character::isDigit, "digit")` or `suchThat(p ->
     p.isValid(), "valid item")`.
   - **Exception**: If you use `CharacterSet` overloads like
@@ -325,6 +434,7 @@ Parser<TypeDecl> typeDecl =
     used, so you don't need to pass a name parameter.
 - **Avoid Type Casts**: Never use type casts like `.map(e -> (Part) e)` to
   satisfy type inference in `anyOf()`.
+
   - **Option 1**: Explicitly define the local variable holding the result of
     `anyOf()`, e.g., `Parser<Part> p = anyOf(elementPart, groupPart);`.
   - **Option 2**: Use explicit type witness like

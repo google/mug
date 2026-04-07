@@ -124,7 +124,12 @@ public final class CharacterSet implements CharPredicate {
         characterSet);
     Parser<Character> validChar = Parser.one(isNot(']'), "character");
     Parser<CharPredicate> range =
-        Parser.sequence(validChar.followedBy("-"), validChar, CharPredicate::range);
+        Parser.sequence(validChar.followedBy("-"), validChar,
+            (c1, c2) -> {
+              checkArgument(
+                  c1 <= c2, "invalid range [%s-%s] in character set %s", c1, c2, characterSet);
+              return CharPredicate.range(c1, c2);
+            });
     Parser<CharPredicate>.OrEmpty positiveSet =
         Parser.anyOf(range, validChar.map(CharPredicate::is))
             .zeroOrMore(reducing(CharPredicate.NONE, CharPredicate::or));

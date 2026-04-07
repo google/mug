@@ -22,6 +22,7 @@ import static com.google.common.labs.parse.Utils.checkPositionIndex;
 import static com.google.common.labs.parse.Utils.checkState;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.stream;
@@ -603,7 +604,8 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a parser that matches any of the given {@code values} by their {@link Object#toString}.
+   * Returns a parser that matches any of the given enum {@code values} by their
+   * {@link Enum#toString}.
    *
    * <p>For example if you want to parse all operators defined in an enum:
    *
@@ -620,8 +622,11 @@ public abstract class Parser<T> {
    * You can parse all of the operators with a one-liner:
    *
    * <pre>{@code
-   * Parser<Operator> operatorParser = Parser.byStringsFrom(Operator.values());
+   * Parser<Operator> operatorParser = anyOf(Operator.values());
    * }</pre>
+   *
+   * <p>Unlike {@link #anyOf(Parser[])}, the order of the enum values isn't important as the parser
+   * will automatically choose the longest match.
    *
    * @throws IllegalArgumentException if {@code values} is empty or {@link Object#toString} returns
    *     empty string, or are not unique.
@@ -629,12 +634,12 @@ public abstract class Parser<T> {
    * @since 9.9.9
    */
   @SafeVarargs
-  public static <T> Parser<T> byStringsFrom(T... values) {
+  public static <T extends Enum<?>> Parser<T> anyOf(T... values) {
     checkArgument(values.length > 0, "values cannot be empty");
-    Map<String, T> longerFirst = BiStream.biStream(stream(values))
+    Map<String, T> longerFirst = biStream(stream(values))
             .mapKeys(Object::toString)
             // reverse alphabetical order, so that we parse "++" before "+"
-            .collect(toMap(() -> new TreeMap<>(reverseOrder())));
+            .collect(toMap(() -> new TreeMap<String, T>(reverseOrder())));
     return BiStream.from(longerFirst)
         .mapToObj((s, value) -> string(s).thenReturn(value))
         .collect(or());
@@ -1984,7 +1989,7 @@ public abstract class Parser<T> {
 
   /**
    * Returns metadata about the prefixes that can be used to prune out this parser, if the input
-   * doesn't start with any of the prefixes. Return NO_PREFIX to indicate no pruning is applicable.
+   * doesn't start with any of the prefixes. Return EMPTY_PREFIX to indicate no pruning is applicable.
    */
   Set<String> getPrefixes() {
     return EMPTY_PREFIX;
