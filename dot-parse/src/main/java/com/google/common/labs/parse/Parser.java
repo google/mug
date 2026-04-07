@@ -109,15 +109,6 @@ public abstract class Parser<T> {
     }
   };
 
-  /** Matches a character as specified by {@code matcher}.
-   *
-   * @deprecated Use {@link #one} instead.
-   */
-  @Deprecated
-  public static Parser<Character> single(CharPredicate matcher, String name) {
-    return one(matcher, name);
-  }
-
   /**
    * Matches the given character {@code c}.
    *
@@ -477,19 +468,6 @@ public abstract class Parser<T> {
     return anyOf(consecutive(isNot(after).and(isNot('\\')), "quoted chars"), escape)
         .zeroOrMore(Collectors.joining())
         .immediatelyBetween(before, Character.toString(after));
-  }
-
-  /** @deprecated Use {@link #quotedByWithEscapes} instead */
-  @Deprecated
-  public static Parser<String> quotedStringWithEscapes(
-      char quoteChar, Parser<? extends CharSequence> escaped) {
-    return quotedByWithEscapes(quoteChar, quoteChar, escaped);
-  }
-
-  /** @deprecated Use {@link #bmpCodeUnit} instead.  */
-  @Deprecated
-  public static Parser<Integer> codePoint() {
-    return bmpCodeUnit();
   }
 
   /**
@@ -1002,25 +980,6 @@ public abstract class Parser<T> {
    */
   public final Parser<T> withPostfixes(String operator, UnaryOperator<T> postfixFunction) {
     return withPostfixes(string(operator).thenReturn(requireNonNull(postfixFunction)));
-  }
-
-  /** @deprecated Use {@link #withPrefixes} instead. */
-  @Deprecated
-  public final Parser<T> prefix(Parser<? extends UnaryOperator<T>> operator) {
-    return withPrefixes(operator);
-  }
-
-  /** @deprecated Use {@link #withPostfixes(Parser)} instead. */
-  @Deprecated
-  public final Parser<T> postfix(Parser<? extends UnaryOperator<T>> operator) {
-    return withPostfixes(operator);
-  }
-
-
-  /** @deprecated Use {@link #withPostfixes(Parser, BiFunction)} instead. */
-  public final <S> Parser<T> postfix(
-      Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
-    return withPostfixes(operator, postfixFunction);
   }
 
   /**
