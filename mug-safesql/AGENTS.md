@@ -172,7 +172,7 @@ to ensure safety against SQL injection and maintain readability.
 
 -   **ErrorProne Recommendation**: While not strictly required, it's strongly
     recommended to use `SafeSql` with ErrorProne in the
-    `annotationProcessorPath`. This helps to guard against SQL injection and
+    `annotationProcessorPaths`. This helps to guard against SQL injection and
     ensures the semantic correctness of template parameters at compile time.
 
 -   **Compilation Errors**: Compilation errors will point to the offending
