@@ -123,12 +123,7 @@ loadScripts(document, 'script');</script>
  </code></pre>
 
  To turn the above code into a lazy stream using Iteration, the key is to wrap
- the recursive calls into a lambda and pass it to 
-<details class="invalid-tag">
-<summary>invalid reference</summary>
-<pre><code>yield(() -&gt; recursiveCall())</code></pre>
-</details>
-. This allows callers to short-circuit when they
+ the recursive calls into a lambda and pass it to <a href="#lazily(com.google.mu.util.stream.Iteration.Continuation)"><code>lazily(() -&gt; recursiveCall())</code></a>. This allows callers to short-circuit when they
  need to:
 
  <pre><code>
@@ -166,7 +161,7 @@ loadScripts(document, 'script');</script>
  Instead of traversing eagerly and hard coding <code>System.out.println()</code>,
  it can be intuitively transformed to a lazy stream, again, by wrapping the
  recursive <code>inOrder()</code> calls in a lambda and passing it to
- <code>yield()</code>:
+ <code>lazily()</code>:
 
  <pre><code>
  class DepthFirst&lt;T&gt; extends Iteration&lt;T&gt; {
@@ -244,23 +239,22 @@ loadScripts(document, 'script');</script>
  execution is deferred.
 
  <p>
- While not required, users are encouraged to create a subclass and then be
- able to call <code>
- yield()</code> as if it were a keyword.
+ While not required, users are encouraged to create a subclass because you need a
+ class to define recursive methods anyways.
 
  <p>
  Keep in mind that, unlike <code>return</code> or <code>System.out.println()</code>,
- <code>yield()</code> is lazy and does not evaluate until the stream iterates over
+ <code>lazily()</code> is lazy and does not evaluate until the stream iterates over
  it. So it's critical that <em>all side effects</em> should be wrapped inside
- <code>Continuation</code> objects passed to <code>yield()</code>.
+ <code>Continuation</code> objects passed to <code>lazily()</code> or <code>forEachLazily()</code>.
 
  <p>
- Unlike Python's yield statement or C#'s yield return, this <code>yield()</code> is
+ Unlike Python's yield statement or C#'s yield return, the <code>lazily()</code> is
  a normal Java method. It doesn't "return" execution to the caller. Laziness
  is achieved by wrapping code block inside the <code>Continuation</code> lambda.
 
  <p>
- Like most manual iterative adaptation of recursive algorithms, yielding is
+ Like most manual iterative adaptation of recursive algorithms, laziness is
  implemented using a stack. No threads or synchronization is used.
 
  <p>

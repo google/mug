@@ -92,15 +92,10 @@ loadScripts(document, 'script');</script>
 <div class="block">Encapsulates recursive iteration or a lazy block of code with side-effect.
 
  <p>
- Note that if after a 
-<details class="invalid-tag">
-<summary>invalid reference</summary>
-<pre><code>yielded</code></pre>
-</details>
- recursive
- iteration, the subsequent code expects state change (for example, the nodes
+ Note that if after a <a href="Iteration.html#lazily(com.google.mu.util.stream.Iteration.Continuation)"><code>lazy</code></a> recursive call,
+ the subsequent code expects state change (for example, the nodes
  being visited will keep changing during graph traversal), the subsequent code
- also needs to be yielded to be able to observe the expected state change.</div>
+ also needs to be lazy to be able to observe the expected state change.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>4.4</dd>
