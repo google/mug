@@ -445,10 +445,14 @@ Parser<TypeDecl> typeDecl =
   - **Exception**: If you use `CharacterSet` overloads like
     `consecutive(charsIn("[a-z]"))`, the character set string is automatically
     used, so you don't need to pass a name parameter.
-- **Avoid Type Casts**: Never use type casts like `.map(e -> (Part) e)` to
-  satisfy type inference in `anyOf()`.
-
-  - **Option 1**: Explicitly define the local variable holding the result of
-    `anyOf()`, e.g., `Parser<Part> p = anyOf(elementPart, groupPart);`.
-  - **Option 2**: Use explicit type witness like
-    `Parser.<SuperType>anyOf(...)`.
+- **Covariance in `anyOf()` and `Parser.or()`**: Both `anyOf()` and the
+  `Parser.or()` collector support covariance.
+  - **PREFER** defining a parser of a subtype as `Parser<Subtype>` instead of
+    widening it to `Parser<SuperType>`.
+  - **AVOID** using type casts or `.map(sub -> (SuperType) sub)` to satisfy type
+    inference.
+  - To resolve type inference issues in `anyOf()` when mixing subtypes:
+    - **Option 1**: Explicitly define the local variable holding the result,
+      e.g., `Parser<SuperType> p = anyOf(subtypeParser1, subtypeParser2);`.
+    - **Option 2**: Use an explicit type witness, e.g.,
+      `Parser.<SuperType>anyOf(subtypeParser1, subtypeParser2)`.
