@@ -105,6 +105,19 @@ This gives the caller the flexibility to either allow duplicates (by using
 `toImmutableListMultimap()`, for example) or reject duplicates (by using
 `toMap()`).
 
+Another example where `BiCollector` is used as a strategy is to scan key-value
+pairs using `StringFormat`.
+
+For example:
+
+```java {.good}
+new StringFormat("({key}: {value})")
+    .scanAndCollectFrom(
+        "...(name: Jing) and (year: 2024)...", Collectors::toUnmodifiableMap);
+```
+
+This will return `Map.of("name", "Jing", "year", "2024")`.
+
 ### Guardrails
 
 *   **PREFER `BiCollectors.groupingBy()` over JDK `Collectors.groupingBy()`**:
