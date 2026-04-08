@@ -3,10 +3,10 @@ package com.google.mu.benchmarks;
 import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.digits;
+import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
-import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.util.List;
@@ -69,8 +69,7 @@ public class AbcNoteBenchmark {
 
   private static final Parser<AbcNote> PARSER =
       anyOf(sequence(ACCIDENTAL, NOTE, (acc, note) -> note.withAccidental(acc)), NOTE)
-          .optionallyFollowedBy(DURATION, AbcNote::withDuration)
-          .followedBy(zeroOrMore(charsIn("[ \r\n\t]")));
+          .optionallyFollowedBy(DURATION, AbcNote::withDuration);
 
   // Tests
   @Test
@@ -147,7 +146,7 @@ public class AbcNoteBenchmark {
   // Benchmarks
   @Benchmark
   public List<AbcNote> dotParse() {
-    return PARSER.parseToStream(INPUT).toList();
+    return literally(PARSER).skipping(Character::isWhitespace).parseToStream(INPUT).toList();
   }
 
   private static final Pattern NOTE_PATTERN = Pattern.compile(
