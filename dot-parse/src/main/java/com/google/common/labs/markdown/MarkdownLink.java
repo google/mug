@@ -10,6 +10,7 @@ import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.noneOf;
+import static java.util.Objects.requireNonNull;
 
 import java.io.Reader;
 import java.util.stream.Stream;
@@ -36,6 +37,11 @@ import com.google.common.labs.parse.Parser;
  * @since 10.0
  */
 public record MarkdownLink(String label, String url) {
+  public MarkdownLink {
+    requireNonNull(label);
+    requireNonNull(url);
+  }
+
   /**
    * Parser for a {@link MarkdownLink}.
    *

@@ -85,5 +85,6 @@ public class MarkdownLinkTest {
 
   @Test public void testNulls() {
     new NullPointerTester().testAllPublicStaticMethods(MarkdownLink.class);
+    new NullPointerTester().testAllPublicConstructors(MarkdownLink.class);
   }
 }
