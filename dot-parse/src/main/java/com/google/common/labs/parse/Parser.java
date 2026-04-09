@@ -266,10 +266,8 @@ public abstract class Parser<T> {
    * Parser<String> codeBlock =
    *     // one or more consecutive backticks starts a code block
    *     consecutive(is('`'), "backticks")
-   *         // the same number of backticks conclude the code block
-   *         .flatMap(Parser::first)
-   *         // Span the full ```code block```
-   *         .source();
+   *         .flatMap(Parser::first) // the same number of backticks conclude the code block
+   *         .source();              // span the full ```code block```
    * }</pre>
    *
    * @since 9.5
