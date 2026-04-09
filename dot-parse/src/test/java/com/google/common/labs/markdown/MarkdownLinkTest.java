@@ -50,6 +50,18 @@ public class MarkdownLinkTest {
   }
 
   @Test
+  public void testEmptyLabel(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("this is an empty label link: [](url)"))
+        .containsExactly(new MarkdownLink("", "url"));
+  }
+
+  @Test
+  public void testBlankCodeLabel(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("this is an empty code label link: [` `](url)"))
+        .containsExactly(new MarkdownLink("` `", "url"));
+  }
+
+  @Test
   public void testIgnoreDoubleBacktickCodeSpan(@TestParameter Scanner scanner) {
     assertThat(scanner.scan("``[text](url)``")).isEmpty();
   }
@@ -80,6 +92,18 @@ public class MarkdownLinkTest {
   public void testEscaping(@TestParameter Scanner scanner) {
     assertThat(scanner.scan("[x\\[y\\]](url)"))
         .containsExactly(new MarkdownLink("x[y]", "url"));
+  }
+
+  @Test
+  public void testNestedSquareBrackets(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("[x\\[y[?]\\]](url)"))
+        .containsExactly(new MarkdownLink("x[y[?]]", "url"));
+  }
+
+  @Test
+  public void testNestedEmptySquareBrackets(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("[x\\[y[[]]\\]](url)"))
+        .containsExactly(new MarkdownLink("x[y[[]]]", "url"));
   }
 
   @Test

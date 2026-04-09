@@ -22,10 +22,10 @@ import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
-import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.noneOf;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 import java.io.Reader;
 import java.util.stream.Stream;
@@ -57,6 +57,14 @@ public record MarkdownLink(String label, String url) {
     requireNonNull(url);
   }
 
+  private static final Parser<String> ESCAPE = one(is('\\'), "escape").then(Parser.chars(1));
+  private static final Parser<String> CODE =
+      consecutive(is('`'), "backticks").flatMap(Parser::first).source();
+  private static final Parser<String> NON_EMPTY_LABEL = Parser.define(
+      nested -> anyOf(CODE, ESCAPE, consecutive(noneOf("\\[]`"), "label chars"), bracketed(nested))
+          .atLeastOnce(joining()));
+
+
   /**
    * Parser for a {@link MarkdownLink}.
    *
@@ -64,14 +72,11 @@ public record MarkdownLink(String label, String url) {
    * for extracting multiple links. This constant is meant to be composed with more complex parsers.
    */
   public static final Parser<MarkdownLink> PARSER = sequence(
-      quotedByWithEscapes('[', ']', chars(1)),
+      NON_EMPTY_LABEL.orElse("").immediatelyBetween("[", "]"),
       literally(quotedByWithEscapes('(', ')', chars(1))),
       MarkdownLink::new);
 
-  private static final Parser<?> IGNORED = anyOf(
-      one(is('\\'), "escape").followedBy(Parser.one(ANY, "escaped")),
-      consecutive(is('`'), "backticks").flatMap(Parser::first),
-      one(noneOf("\\[`"), "ignored char"));
+  private static final Parser<?> IGNORED = anyOf(ESCAPE, CODE, one(noneOf("\\[`"), "ignored char"));
 
   /**
    * Parses {@code link} into a {@link MarkdownLink}.
@@ -99,5 +104,9 @@ public record MarkdownLink(String label, String url) {
    */
   public static Stream<MarkdownLink> scan(Reader markdown) {
     return PARSER.skipping(IGNORED).probe(markdown);
+  }
+
+  private static Parser<String> bracketed(Parser<String> parser) {
+    return parser.orElse("").immediatelyBetween("[", "]").map(s -> "[" + s + "]");
   }
 }
