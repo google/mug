@@ -256,17 +256,17 @@ public abstract class Parser<T> {
    * <p>Useful when you need to skip characters until a particular anchor point, something awkward
    * to express in regex.
    *
-   * <p>For example, markdown supports using any number of backticks to start a code block, but
-   * requires the code block to be ended by the same number of backticks. This can be parsed
-   * trivially using {@code first()}:
+   * <p>For example, markdown supports using any number of backticks to start a code block. The
+   * code block then ends with the same number of backticks. You can parse it trivially using
+   * {@code first()}:
    *
    * <pre>{@code
    * import static com.google.mu.util.CharPredicate.is;
    *
    * Parser<String> codeBlock =
-   *     // one or more consecutive backticks marks the beginning of a code block
+   *     // one or more consecutive backticks starts a code block
    *     consecutive(is('`'), "backticks")
-   *         // local the same number of backticks as the end of the code block
+   *         // the same number of backticks conclude the code block
    *         .flatMap(Parser::first)
    *         // Span the full ```code block```
    *         .source();
