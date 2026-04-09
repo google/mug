@@ -18,7 +18,8 @@ import com.google.common.labs.parse.Parser;
 /**
  * Represents a markdown link in the format of {@code [label](url)}.
  *
- * <p>Properly handles escaping and ignores code and code blocks.
+ * <p>Offers a light-weight parser for quickly extracting markdown links from a markdown text.
+ * Properly handles escaping and ignores link-like syntax inside code or code blocks.
  *
  * @since 10.0
  */
