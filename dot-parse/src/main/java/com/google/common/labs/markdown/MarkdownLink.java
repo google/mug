@@ -46,8 +46,8 @@ import com.google.common.labs.parse.Parser;
  * }</pre>
  *
  * The parser properly handles escaping inside and outside of the link, and won't mistakenly
- * extract link-like syntax from backtick-quoted code or code blocks (recognizing
- * single backtick, double, triple or any number of consecutive backticks around code blocks).
+ * extract link-like syntax from backtick-quoted code or code blocks (recognizing code blocks
+ * quoted by single backtick, double, triple or any number of consecutive backticks).
  *
  * @since 10.0
  */
