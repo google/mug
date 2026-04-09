@@ -264,7 +264,7 @@ public abstract class Parser<T> {
    * import static com.google.mu.util.CharPredicate.is;
    *
    * Parser<String> codeBlock =
-   *     // one or more consecutive backticks starts a code block
+   *     // one or more consecutive backticks start a code block
    *     consecutive(is('`'), "backticks")
    *         .flatMap(Parser::first) // the same number of backticks conclude the code block
    *         .source();              // span the full ```code block```
