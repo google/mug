@@ -11,6 +11,7 @@ import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.noneOf;
 
+import java.io.Reader;
 import java.util.stream.Stream;
 
 import com.google.common.labs.parse.Parser;
@@ -18,8 +19,19 @@ import com.google.common.labs.parse.Parser;
 /**
  * Represents a markdown link in the format of {@code [label](url)}.
  *
- * <p>Offers a light-weight parser for quickly extracting markdown links from a markdown text.
- * Properly handles escaping and ignores link-like syntax inside code or code blocks.
+ * <p>This class offers a light-weight parser to quickly {@link #scan extract}
+ * markdown links from a markdown text or file.
+ *
+ * <p>While roughly equivalent to <pre>{@code
+ * import com.google.mu.util.StringFormat;
+ *
+ * new StringFormat("[{label}]({url})")
+ *     .scan(markdown, MarkdownLink::new);
+ * }</pre>
+ *
+ * The parser properly handles escaping inside and outside of the link, and won't mistakenly
+ * extract link-like syntax from backtick-quoted code or code blocks (recognizing
+ * single backtick, double, triple or any number of consecutive backticks around code blocks).
  *
  * @since 10.0
  */
@@ -56,6 +68,15 @@ public record MarkdownLink(String label, String url) {
    * @throws NullPointerException if {@code link} is null
    */
   public static Stream<MarkdownLink> scan(String markdown) {
+    return PARSER.skipping(IGNORED).probe(markdown);
+  }
+
+  /**
+   * Scans {@code markdown} and <em>lazily</em> extracts all markdown links.
+   *
+   * @throws NullPointerException if {@code link} is null
+   */
+  public static Stream<MarkdownLink> scan(Reader markdown) {
     return PARSER.skipping(IGNORED).probe(markdown);
   }
 }
