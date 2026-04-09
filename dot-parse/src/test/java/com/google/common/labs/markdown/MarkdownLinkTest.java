@@ -2,89 +2,108 @@ package com.google.common.labs.markdown;
 
 import static com.google.common.truth.Truth8.assertThat;
 
+import java.io.StringReader;
+import java.util.stream.Stream;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 import com.google.common.testing.NullPointerTester;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
-@RunWith(JUnit4.class)
+@RunWith(TestParameterInjector.class)
 public class MarkdownLinkTest {
 
   @Test
-  public void testParseLink() {
+  public void testParseLink(@TestParameter Scanner scanner) {
     assertThat(MarkdownLink.scan("[text](url)"))
         .containsExactly(new MarkdownLink("text", "url"));
   }
 
   @Test
-  public void testBackticksInsideCode() {
-    assertThat(MarkdownLink.scan("`` `foo` `` [text](url)"))
+  public void testBackticksInsideCode(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("`` `foo` `` [text](url)"))
         .containsExactly(new MarkdownLink("text", "url"));
   }
 
   @Test
-  public void testBackticksInsideLinkText() {
-    assertThat(MarkdownLink.scan("this is a link: [`text`](url)"))
+  public void testBackticksInsideLinkText(@TestParameter Scanner scanner) {
+   assertThat(scanner.scan("this is a link: [`text`](url)"))
         .containsExactly(new MarkdownLink("`text`", "url"));
   }
 
   @Test
-  public void testLinkAfterEscapedBacktick() {
-    assertThat(MarkdownLink.scan("\\`[`text`](url)"))
+  public void testLinkAfterEscapedBacktick(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("\\`[`text`](url)"))
         .containsExactly(new MarkdownLink("`text`", "url"));
   }
 
   @Test
-  public void testIgnoreCodeBlock() {
-    assertThat(MarkdownLink.scan("```[text](url)```")).isEmpty();
+  public void testIgnoreCodeBlock(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("```[text](url)```")).isEmpty();
   }
 
   @Test
-  public void testIgnoreCodeSpan() {
-    assertThat(MarkdownLink.scan("`[text](url)`")).isEmpty();
+  public void testIgnoreCodeSpan(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("`[text](url)`")).isEmpty();
   }
 
   @Test
-  public void testIgnoreDoubleBacktickCodeSpan() {
-    assertThat(MarkdownLink.scan("``[text](url)``")).isEmpty();
+  public void testIgnoreDoubleBacktickCodeSpan(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("``[text](url)``")).isEmpty();
   }
 
   @Test
-  public void testIgnoreArbitraryBacktickCodeSpan() {
-    assertThat(MarkdownLink.scan("````[text](url)````")).isEmpty();
+  public void testIgnoreArbitraryBacktickCodeSpan(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("````[text](url)````")).isEmpty();
   }
 
   @Test
-  public void testQuotedMarkdownLink() {
-    assertThat(MarkdownLink.scan("\"[text](url)\""))
+  public void testQuotedMarkdownLink(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("\"[text](url)\""))
         .containsExactly(new MarkdownLink("text", "url"));
   }
 
   @Test
-  public void testEscapeThenMarkdownLink() {
-    assertThat(MarkdownLink.scan("\\[text](url)\"")).isEmpty();
+  public void testEscapeThenMarkdownLink(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("\\[text](url)\"")).isEmpty();
   }
 
   @Test
-  public void testDoubleEscapeThenMarkdownLink() {
-    assertThat(MarkdownLink.scan("\\\\[text](url)\""))
+  public void testDoubleEscapeThenMarkdownLink(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("\\\\[text](url)\""))
         .containsExactly(new MarkdownLink("text", "url"));
   }
 
   @Test
-  public void testEscaping() {
-    assertThat(MarkdownLink.scan("[x\\[y\\]](url)"))
+  public void testEscaping(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("[x\\[y\\]](url)"))
         .containsExactly(new MarkdownLink("x[y]", "url"));
   }
 
   @Test
-  public void testUnclosedBackticks() {
-    assertThat(MarkdownLink.scan("`unclosed [link](url)")).isEmpty();
+  public void testUnclosedBackticks(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("`unclosed [link](url)")).isEmpty();
   }
 
   @Test public void testNulls() {
     new NullPointerTester().testAllPublicStaticMethods(MarkdownLink.class);
     new NullPointerTester().testAllPublicConstructors(MarkdownLink.class);
+  }
+
+  private enum Scanner {
+    FROM_STRING {
+      @Override Stream<MarkdownLink> scan(String markdown) {
+        return MarkdownLink.scan(markdown);
+      }
+    },
+    FROM_READER {
+      @Override Stream<MarkdownLink> scan(String markdown) {
+        return MarkdownLink.scan(new StringReader(markdown));
+      }
+    };
+
+    abstract Stream<MarkdownLink> scan(String markdown);
   }
 }
