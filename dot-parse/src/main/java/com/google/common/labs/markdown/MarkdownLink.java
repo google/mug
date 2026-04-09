@@ -39,8 +39,8 @@ public record MarkdownLink(String label, String url) {
   /**
    * Parser for a {@link MarkdownLink}.
    *
-   * <p>Prefer using {@link #of} for parsing a single link.
-   * This constant is meant to be composed with more complex parsers.
+   * <p>Prefer using {@link #of} for parsing a single link and {@link # scan}
+   * for extracting multiple links. This constant is meant to be composed with more complex parsers.
    */
   public static final Parser<MarkdownLink> PARSER = sequence(
       quotedByWithEscapes('[', ']', chars(1)),
