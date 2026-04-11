@@ -1152,6 +1152,33 @@ public abstract class Parser<T> {
     return optionalPostfix(suffix.map(s -> p -> op.apply(p, s)));
   }
 
+  /**
+   * With optional {@code prefix}, after this parser matches, apply the {@code op} function
+   * only if the prefix is present.
+   *
+   * @since 10.0
+   */
+  public final <S> Parser<T> optionallyPrecededBy(
+      String prefix, Function<? super T, ? extends T> op) {
+    return optionalPrefix(string(prefix).thenReturn(op::apply));
+  }
+
+  /**
+   * With optional {@code prefix}, after this parser matches, apply the {@code op} function
+   * only if the prefix is present.
+   *
+   * @since 10.0
+   */
+  public final <S> Parser<T> optionallyPrecededBy(
+      Parser<S> prefix, BiFunction<? super T, ? super S, ? extends T> op) {
+    requireNonNull(op);
+    return optionalPrefix(prefix.map(s -> p -> op.apply(p, s)));
+  }
+
+  final Parser<T> optionalPrefix(Parser<UnaryOperator<T>> prefix) {
+    return sequence(prefix.orElse(identity()), this, (op, operand) -> op.apply(operand));
+  }
+
   final Parser<T> optionalPostfix(Parser<UnaryOperator<T>> suffix) {
     return sequence(this, suffix.orElse(identity()), (operand, op) -> op.apply(operand));
   }

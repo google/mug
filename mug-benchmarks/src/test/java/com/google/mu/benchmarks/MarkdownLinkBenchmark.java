@@ -16,8 +16,6 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import com.google.common.labs.markdown.MarkdownLink;
-
 @RunWith(JUnit4.class)
 @State(Scope.Thread)
 @BenchmarkMode(Mode.Throughput)

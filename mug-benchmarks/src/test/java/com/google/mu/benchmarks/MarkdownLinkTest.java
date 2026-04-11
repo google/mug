@@ -1,4 +1,4 @@
-package com.google.common.labs.markdown;
+package com.google.mu.benchmarks;
 
 import static com.google.common.truth.Truth8.assertThat;
 
