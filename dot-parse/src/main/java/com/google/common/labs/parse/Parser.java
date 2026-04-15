@@ -56,6 +56,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.google.errorprone.annotations.ThreadSafe;
 import com.google.mu.function.Function4;
 import com.google.mu.function.TriFunction;
 import com.google.mu.util.Both;
@@ -1901,6 +1902,7 @@ public abstract class Parser<T> {
    * <p>For simple definitions, you could use the {@link #define} method with a lambda
    * to elide the need of an explicit forward declaration.
    */
+  @ThreadSafe
   public static final class Rule<T> extends Parser<T> {
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
     private volatile boolean validating = false;
