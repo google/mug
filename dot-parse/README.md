@@ -28,7 +28,7 @@ For brevity, all unqualified methods are assumed to be static imported from the
 8   | `\[(\w+(,\w+)*)?\]`| `word().zeroOrMoreDelimitedBy(",").between("[", "]")`       | Comma-delimited list of words inside square brackets.
 9   | `if\b`             | `word("if")`                                                | Matches the whole word "if".
 10  | `\d+(?!\.)`        | `digits().notFollowedBy(".")`                               | Matches digits not immediately followed by a dot.
-11  | `foo?`             | `string("foo").optional()`                                  | Matches "foo" zero or one time.
+11  | `(?:foo)?`         | `string("foo").optional()`                                  | Matches "foo" zero or one time.
 12  | `\s+`              | `consecutive(Character::isWhitespace)`                      | Matches one or more whitespace characters.
 13  | `[ \t\r\n]*`       | `zeroOrMore(Character::isWhitespace)`                       | Matches zero or more whitespace characters.
 14  | `(group)(?:bar)`   | `groupParser.followedBy(barParser)`                         | Capture a group before a suffix pattern.
