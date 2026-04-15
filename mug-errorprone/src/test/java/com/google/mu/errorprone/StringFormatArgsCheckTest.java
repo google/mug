@@ -170,6 +170,61 @@ public final class StringFormatArgsCheckTest {
   }
 
   @Test
+  public void templateFormatMethod_good_onMethod_noDebugInfo() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    report(\"{foo}-{bar_id}-{camelCase}\", foo, barId, camelCase);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .setArgs("-g:none")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_argsOutOfOrder_noDebugInfo_passed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, String barId) {",
+            "    report(\"{foo}-{bar_id}\", barId, foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .setArgs("-g:none")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_tooFewArgs_noDebugInfo_stillFails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo) {",
+            "    // BUG: Diagnostic contains: 2 placeholders defined; 1 provided",
+            "    report(\"{foo}-{bar_id}\", foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .setArgs("-g:none")
+        .doTest();
+  }
+
+  @Test
   public void templateFormatMethod_good_onConstructor() {
     helper
         .addSourceLines(
@@ -2716,6 +2771,54 @@ public final class StringFormatArgsCheckTest {
             "    new StringFormat(\"{foo}-{bar_id}\").format(foo);",
             "  }",
             "}")
+        .doTest();
+  }
+
+  @Test
+  public void format_good_noDebugInfo() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final StringFormat FORMAT =",
+            "      new StringFormat(\"{foo}-{bar_id}-{camelCase}\");",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    FORMAT.format(foo, barId, camelCase);",
+            "  }",
+            "}")
+        .setArgs("-g:none")
+        .doTest();
+  }
+
+  @Test
+  public void format_argsOutOfOrder_noDebugInfo_passed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo, String barId) {",
+            "    new StringFormat(\"{foo}-{bar_id}\").format(barId, foo);",
+            "  }",
+            "}")
+        .setArgs("-g:none")
+        .doTest();
+  }
+
+  @Test
+  public void format_tooFewArgs_noDebugInfo_stillFails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo) {",
+            "    // BUG: Diagnostic contains: 2 placeholders defined; 1 provided",
+            "    new StringFormat(\"{foo}-{bar_id}\").format(foo);",
+            "  }",
+            "}")
+        .setArgs("-g:none")
         .doTest();
   }
 
