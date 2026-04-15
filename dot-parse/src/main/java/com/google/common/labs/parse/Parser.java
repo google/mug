@@ -1903,7 +1903,7 @@ public abstract class Parser<T> {
    */
   public static final class Rule<T> extends Parser<T> {
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
-    private boolean validating = false;
+    private volatile boolean validating = false;
 
     @Override boolean honorsSkipping() {
       return false;
