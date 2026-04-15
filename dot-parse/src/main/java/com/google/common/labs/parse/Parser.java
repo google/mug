@@ -89,6 +89,7 @@ import com.google.mu.util.stream.Joiner;
  * Parser.Rule}, maliciously crafted input (think of 10K left parens in an expression parser)
  * can cause StackOverflowError.
  */
+@ThreadSafe
 public abstract class Parser<T> {
   private static final Set<String> EMPTY_PREFIX = Set.of("");
 
