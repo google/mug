@@ -510,7 +510,8 @@ public abstract class Parser<T> {
    * default value is passed to the {@code combiner} function.
    */
   public static <A, B, C> Parser<C> sequence(
-      Parser<A> left, Parser<B>.OrEmpty right, BiFunction<? super A, ? super B, ? extends C> combiner) {
+      Parser<A> left, Parser<B>.OrEmpty right,
+      BiFunction<? super A, ? super B, ? extends C> combiner) {
     return sequence(left, right.asUnsafeZeroWidthParser(), combiner);
   }
 
@@ -520,7 +521,8 @@ public abstract class Parser<T> {
    * corresponding default value is passed to the {@code combiner} function.
    */
   public static <A, B, C> Parser<C>.OrEmpty sequence(
-      Parser<A>.OrEmpty left, Parser<B>.OrEmpty right, BiFunction<? super A, ? super B, ? extends C> combiner) {
+      Parser<A>.OrEmpty left, Parser<B>.OrEmpty right,
+      BiFunction<? super A, ? super B, ? extends C> combiner) {
     return anyOf(
         sequence(left.notEmpty(), right, combiner),
         right.notEmpty().map(v2 -> combiner.apply(left.computeDefaultValue(), v2)))
@@ -531,9 +533,12 @@ public abstract class Parser<T> {
    * Sequentially matches {@code left} (which is allowed to be optional), then {@code right}, and
    * then combines the results using the {@code combiner} function. If {@code left} is empty, the
    * default value is passed to the {@code combiner} function.
+   *
+   * @since 10.0
    */
-  static <A, B, C> Parser<C> sequence(
-      Parser<A>.OrEmpty left, Parser<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
+  public static <A, B, C> Parser<C> sequence(
+      Parser<A>.OrEmpty left, Parser<B> right,
+      BiFunction<? super A, ? super B, ? extends C> combiner) {
     return sequence(left.asUnsafeZeroWidthParser(), right, combiner);
   }
 
@@ -1152,33 +1157,6 @@ public abstract class Parser<T> {
     return optionalPostfix(suffix.map(s -> p -> op.apply(p, s)));
   }
 
-  /**
-   * With optional {@code prefix}, after this parser matches, apply the {@code op} function
-   * only if the prefix is present.
-   *
-   * @since 10.0
-   */
-  public final <S> Parser<T> optionallyPrecededBy(
-      String prefix, Function<? super T, ? extends T> op) {
-    return optionalPrefix(string(prefix).thenReturn(op::apply));
-  }
-
-  /**
-   * With optional {@code prefix}, after this parser matches, apply the {@code op} function
-   * only if the prefix is present.
-   *
-   * @since 10.0
-   */
-  public final <S> Parser<T> optionallyPrecededBy(
-      Parser<S> prefix, BiFunction<? super T, ? super S, ? extends T> op) {
-    requireNonNull(op);
-    return optionalPrefix(prefix.map(s -> p -> op.apply(p, s)));
-  }
-
-  final Parser<T> optionalPrefix(Parser<UnaryOperator<T>> prefix) {
-    return sequence(prefix.orElse(identity()), this, (op, operand) -> op.apply(operand));
-  }
-
   final Parser<T> optionalPostfix(Parser<UnaryOperator<T>> suffix) {
     return sequence(this, suffix.orElse(identity()), (operand, op) -> op.apply(operand));
   }
@@ -1625,8 +1603,10 @@ public abstract class Parser<T> {
 
     /**
      * After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.
+     *
+     * @since 10.0
      */
-    <S> Parser<S> then(Parser<S> suffix) {
+    public <S> Parser<S> then(Parser<S> suffix) {
       return sequence(this, suffix, (a, b) -> b);
     }
 
@@ -1649,8 +1629,10 @@ public abstract class Parser<T> {
 
     /**
      * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
+     *
+     * @since 10.0
      */
-    Parser<T> followedBy(Parser<?> suffix) {
+    public Parser<T> followedBy(Parser<?> suffix) {
       return sequence(this, suffix, (a, b) -> a);
     }
 
@@ -1921,6 +1903,7 @@ public abstract class Parser<T> {
    */
   public static final class Rule<T> extends Parser<T> {
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
+    private boolean validating = false;
 
     @Override boolean honorsSkipping() {
       return false;
@@ -1928,6 +1911,7 @@ public abstract class Parser<T> {
 
     @Override MatchResult<T> skipAndMatch(
         Parser<?> skip, CharInput input, int start, ErrorContext context) {
+      checkState (start > 0 || !validating, "left recursion unsupported!");
       Parser<T> p = ref.get();
       checkState(p != null, "definedAs() should have been called before parse()");
       return p.skipAndMatch(skip, input, start, context);
@@ -1938,6 +1922,12 @@ public abstract class Parser<T> {
       requireNonNull(parser);
       checkArgument(!(parser instanceof Rule), "Do not delegate to a Rule parser");
       checkState(ref.compareAndSet(null, covariant(parser)), "definedAs() already called");
+      validating = true;
+      try {
+        checkState(!parser.matches(""), "parser must not match empty string");
+      } finally {
+        validating = false;
+      }
       return parser;
     }
   }

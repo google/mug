@@ -947,97 +947,6 @@ public class ParserTest {
   }
 
   @Test
-  public void optionallyPrecededBy_parserPrefix_prefixExists() {
-    Parser<Integer> parser =
-        digits()
-            .map(Integer::parseInt)
-            .optionallyPrecededBy(
-                string("-"), (n, minus) -> -n);
-    assertThat(parser.parse("-123")).isEqualTo(-123);
-    assertThat(parser.matches("-123")).isTrue();
-    assertThat(parser.parseToStream("-123")).containsExactly(-123);
-  }
-
-  @Test
-  public void optionallyPrecededBy_parserPrefix_prefixDoesNotExist() {
-    Parser<Integer> parser =
-        digits()
-            .map(Integer::parseInt)
-            .optionallyPrecededBy(
-                string("-"), (n, minus) -> -n);
-    assertThat(parser.parse("123")).isEqualTo(123);
-    assertThat(parser.matches("123")).isTrue();
-    assertThat(parser.parseToStream("123")).containsExactly(123);
-    assertThat(parser.parseToStream("")).isEmpty();
-  }
-
-  @Test
-  public void optionallyPrecededBy_parserPrefix_prefixExists_source() {
-    Parser<Integer> parser =
-        digits()
-            .map(Integer::parseInt)
-            .optionallyPrecededBy(
-                string("-"), (n, minus) -> -n);
-    assertThat(parser.source().parse("-123")).isEqualTo("-123");
-    assertThat(parser.source().matches("-123")).isTrue();
-    assertThat(parser.source().parseToStream("-123")).containsExactly("-123");
-  }
-
-  @Test
-  public void optionallyPrecededBy_parserPrefix_prefixDoesNotExist_source() {
-    Parser<Integer> parser =
-        digits()
-            .map(Integer::parseInt)
-            .optionallyPrecededBy(
-                string("-"), (n, minus) -> -n);
-    assertThat(parser.source().parse("123")).isEqualTo("123");
-    assertThat(parser.source().matches("123")).isTrue();
-    assertThat(parser.source().parseToStream("123")).containsExactly("123");
-  }
-
-  @Test
-  public void optionallyPrecededBy_prefixCannotBeEmpty() {
-    assertThrows(IllegalArgumentException.class, () -> string("123").optionallyPrecededBy("", n -> n));
-  }
-
-  @Test
-  public void optionallyPrecededBy_success() {
-    Parser<Integer> parser =
-        digits().map(Integer::parseInt).optionallyPrecededBy("-", n -> -n);
-    assertThat(parser.parse("-123")).isEqualTo(-123);
-    assertThat(parser.matches("-123")).isTrue();
-    assertThat(parser.parseToStream("-123")).containsExactly(-123);
-    assertThat(parser.parse("123")).isEqualTo(123);
-    assertThat(parser.matches("123")).isTrue();
-    assertThat(parser.parseToStream("123")).containsExactly(123);
-    assertThat(parser.parseToStream("")).isEmpty();
-  }
-
-  @Test
-  public void optionallyPrecededBy_success_source() {
-    Parser<Integer> parser =
-        digits().map(Integer::parseInt).optionallyPrecededBy("-", n -> -n);
-    assertThat(parser.source().parse("-123")).isEqualTo("-123");
-    assertThat(parser.source().matches("-123")).isTrue();
-    assertThat(parser.source().parseToStream("-123")).containsExactly("-123");
-    assertThat(parser.source().parse("123")).isEqualTo("123");
-    assertThat(parser.source().matches("123")).isTrue();
-    assertThat(parser.source().parseToStream("123")).containsExactly("123");
-    assertThat(parser.source().parseToStream("")).isEmpty();
-  }
-
-  @Test
-  public void optionallyPrecededBy_failedToMatch() {
-    Parser<Integer> parser =
-        digits().map(Integer::parseInt).optionallyPrecededBy("-", n -> -n);
-    Parser.ParseException thrown =
-        assertThrows(Parser.ParseException.class, () -> parser.parse("abc"));
-    assertThat(parser.matches("abc")).isFalse();
-    assertThat(thrown).hasMessageThat().contains("at 1:1: expecting <digits>, encountered [abc]");
-    assertThrows(ParseException.class, () -> parser.parseToStream("abc").toList());
-  }
-
-  @Test
   public void notFollowedBy_emptySuffix_throws() {
     assertThrows(IllegalArgumentException.class, () -> string("a").notFollowedBy(""));
   }
@@ -5394,6 +5303,28 @@ public class ParserTest {
     Parser.Rule<String> rule = new Parser.Rule<>();
     Parser<String> actuallyRule = rule;
     assertThrows(IllegalArgumentException.class, () -> rule.definedAs(actuallyRule));
+  }
+
+  @Test
+  public void define_leftRecursive_throws() {
+    assertThrows(
+        IllegalStateException.class,
+        () -> Parser.<String>define(self -> string("/").orElse("").then(self)));
+  }
+
+  @Test
+  public void rule_recursiveParser_parseCorrectly() {
+    var rule = new Parser.Rule<Integer>();
+    Parser<Integer> num = Parser.one(CharPredicate.range('0', '9'), "digit").map(c -> c - '0');
+    Parser<Integer> atomic = rule.between("(", ")").or(num);
+    Parser<Integer> expr =
+        atomic.atLeastOnceDelimitedBy("+")
+            .map(nums -> nums.stream().mapToInt(n -> n).sum());
+    rule.definedAs(expr);
+
+    assertThat(rule.parse("1+2")).isEqualTo(3);
+    assertThat(rule.parse("(1+2)+3")).isEqualTo(6);
+    assertThat(rule.parse("((1+2)+3)+4")).isEqualTo(10);
   }
 
   @Test
