@@ -79,7 +79,6 @@ import com.google.mu.util.stream.Joiner;
  * {@link #orElse orElse()} and {@link #optional optional()} fluent chains.
  *
  * <p>For simplicity, {@link #or or()} and {@link #anyOf anyOf()} will always backtrack upon failure.
- * But it's more efficient to factor out common left prefix. For example instead of {@code
  * anyOf(expr.followedBy(";"), expr)}, use {@code expr.optionallyFollowedBy(";")} instead.
  *
  * <p>WARNING: A poorly-written grammar with long common prefixes among {@code anyOf()} choices
@@ -1914,7 +1913,10 @@ public abstract class Parser<T> {
 
     @Override MatchResult<T> skipAndMatch(
         Parser<?> skip, CharInput input, int start, ErrorContext context) {
-      checkState (start > 0 || !validating, "left recursion unsupported!");
+      checkState(
+          start > 0 || !validating,
+          "Left recursion not supported! Consider using withPostfixes() or the OperatorTable class"
+              + " to define the left recursive grammar.");
       Parser<T> p = ref.get();
       checkState(p != null, "definedAs() should have been called before parse()");
       return p.skipAndMatch(skip, input, start, context);

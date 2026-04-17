@@ -275,9 +275,9 @@ public final class StringFormatArgsCheck extends AbstractBugChecker
     for (ExpressionTree arg : args) {
       checkArgFormattability(arg, state);
     }
-    if (argSources.size() > 0) { // skip if we failed to get the arg sources or if there are 0 args.
+    LineMap lineMap = state.getPath().getCompilationUnit().getLineMap();
+    if (argSources.size() > 0 && lineMap != null) { // skip if we failed to get the arg sources or if there are 0 args.
       ImmutableList<String> normalizedArgTexts = normalizeForComparison(argSources);
-      LineMap lineMap = state.getPath().getCompilationUnit().getLineMap();
       for (int i = 0; i < placeholders.size(); i++) {
         Placeholder placeholder = placeholders.get(i);
         NodeCheck onPlaceholder = checkingOn(() -> placeholder.sourcePosition(formatExpression, state));
