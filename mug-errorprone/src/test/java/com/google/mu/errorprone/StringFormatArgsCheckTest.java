@@ -1494,6 +1494,26 @@ public final class StringFormatArgsCheckTest {
   }
 
   @Test
+  public void templateFormatMethod_noArgProvided_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "",
+            "class Test {",
+            "  void test(String foo) {",
+            "    // BUG: Diagnostic contains: No value is provided for placeholder {foo}",
+            "    report(\"{foo}-{bar_id}\");",
+            "  }",
+            "",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void templateFormatMethod_tooFewArgs_onConstructor() {
     helper
         .addSourceLines(
