@@ -36,7 +36,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -52,10 +51,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.labs.parse.Parser.ParseException;
 import com.google.common.testing.NullPointerTester;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.mu.function.Function4;
-import com.google.mu.function.TriFunction;
 import com.google.mu.util.CharPredicate;
-import com.google.mu.util.stream.BiCollector;
 
 @RunWith(JUnit4.class)
 public class ParserTest {
@@ -545,13 +541,9 @@ public class ParserTest {
             .setDefault(Parser.class, string("a"))
             .setDefault(Parser.OrEmpty.class, string("a").orElse("default"))
             .setDefault(String.class, "test")
-            .setDefault(char.class, '`');
-    tester
-        .ignore(Parser.class.getMethod("sequence", Parser.class, Production.class, BiFunction.class))
-        .ignore(Parser.class.getMethod("sequence", Parser.class, Production.class, Production.class, TriFunction.class))
-        .ignore(Parser.class.getMethod("sequence", Parser.class, Production.class, Production.class, Production.class, Function4.class))
-        .ignore(Parser.class.getMethod("zeroOrMoreDelimited", Parser.class, Production.class, String.class, BiCollector.class))
-        .testAllPublicStaticMethods(Parser.class);
+            .setDefault(char.class, '`')
+            .setDefault(Production.class, Parser.zeroOrMore(charsIn("[]")));
+    tester.testAllPublicStaticMethods(Parser.class);
     tester
         .ignore(Parser.class.getMethod("orElse", Object.class))
         .ignore(Parser.class.getMethod("thenReturn", Object.class))
