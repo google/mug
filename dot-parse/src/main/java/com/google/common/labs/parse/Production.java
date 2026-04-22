@@ -55,6 +55,22 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
   }
 
   /**
+   * The current production must be enclosed between non-empty {@code prefix} and {@code suffix}
+   * that may be empty.
+   */
+  default Parser<T> between(Parser<?> prefix, Parser<?>.OrEmpty suffix) {
+    return prefix.then(Parser.allowZeroWidth(this.followedBy(suffix)));
+  }
+
+  /**
+   * The current production must be enclosed between {@code prefix} that may be empty and {@code
+   * suffix} that may not be empty.
+   */
+  default Parser<T> between(Parser<?>.OrEmpty prefix, Parser<?> suffix) {
+    return prefix.then(this.followedBy(suffix));
+  }
+
+  /**
    * Returns a parser that matches {@code this} pattern enclosed between {@code prefix} and {@code suffix},
    * both allowed to be empty.
    *

@@ -3727,6 +3727,86 @@ public class ParserTest {
   }
 
   @Test
+  public void parser_between_parser_orEmpty_suffixPresent() {
+    Parser<String> parser = string("content").between(string("["), string("]").orElse(null));
+    assertThat(parser.parse("[content]")).isEqualTo("content");
+  }
+
+  @Test
+  public void parser_between_parser_orEmpty_suffixAbsent() {
+    Parser<String> parser = string("content").between(string("["), string("]").orElse(null));
+    assertThat(parser.parse("[content")).isEqualTo("content");
+  }
+
+  @Test
+  public void orEmpty_between_parser_orEmpty_bothPresent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("["), string("]").orElse(null));
+    assertThat(parser.parse("[aa]")).isEqualTo("aa");
+  }
+
+  @Test
+  public void orEmpty_between_parser_orEmpty_rulePresent_suffixAbsent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("["), string("]").orElse(null));
+    assertThat(parser.parse("[aa")).isEqualTo("aa");
+  }
+
+  @Test
+  public void orEmpty_between_parser_orEmpty_ruleAbsent_suffixPresent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("["), string("]").orElse(null));
+    assertThat(parser.parse("[]")).isEqualTo("");
+  }
+
+  @Test
+  public void orEmpty_between_parser_orEmpty_bothAbsent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("["), string("]").orElse(null));
+    assertThat(parser.parse("[")).isEqualTo("");
+  }
+
+  @Test
+  public void parser_between_orEmpty_parser_prefixPresent() {
+    Parser<String> parser = string("content").between(string("[").orElse(null), string("]"));
+    assertThat(parser.parse("[content]")).isEqualTo("content");
+  }
+
+  @Test
+  public void parser_between_orEmpty_parser_prefixAbsent() {
+    Parser<String> parser = string("content").between(string("[").orElse(null), string("]"));
+    assertThat(parser.parse("content]")).isEqualTo("content");
+  }
+
+  @Test
+  public void orEmpty_between_orEmpty_parser_bothPresent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("[").orElse(null), string("]"));
+    assertThat(parser.parse("[aa]")).isEqualTo("aa");
+  }
+
+  @Test
+  public void orEmpty_between_orEmpty_parser_rulePresent_prefixAbsent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("[").orElse(null), string("]"));
+    assertThat(parser.parse("aa]")).isEqualTo("aa");
+  }
+
+  @Test
+  public void orEmpty_between_orEmpty_parser_ruleAbsent_prefixPresent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("[").orElse(null), string("]"));
+    assertThat(parser.parse("[]")).isEqualTo("");
+  }
+
+  @Test
+  public void orEmpty_between_orEmpty_parser_bothAbsent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("[").orElse(null), string("]"));
+    assertThat(parser.parse("]")).isEqualTo("");
+  }
+
+  @Test
   public void orEmpty_immediatelyBetween_success() {
     Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
     assertThat(parser.parse("[foo]")).isEqualTo("foo");

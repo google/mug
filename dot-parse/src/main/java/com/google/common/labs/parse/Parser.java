@@ -1914,7 +1914,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
-  private static <T> Parser<T> allowZeroWidth(Production<T> production) {
+  static <T> Parser<T> allowZeroWidth(Production<T> production) {
     return switch (production) {
       case Parser<T> parser -> parser;
       case Parser<T>.OrEmpty orEmpty -> orEmpty.asUnsafeZeroWidthParser();
