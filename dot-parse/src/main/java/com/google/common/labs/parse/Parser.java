@@ -497,23 +497,23 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /**
    * Sequentially matches {@code left} then {@code right}, and then combines the results using the
    * {@code combiner} function.
-   *
-   * @since 10.0
-   */
-  public static <A, B, C> Parser<C> sequence(
-      Parser<A> left, Production<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
-    return sequence(left, maybeZeroWidth(right), combiner);
-  }
-
-  /**
-   * Sequentially matches {@code left} then {@code right}, and then combines the results using the
-   * {@code combiner} function.
    */
   public static <A, B, C> Parser<C> sequence(
       Parser<A> left, Parser<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
     requireNonNull(right);
     requireNonNull(combiner);
     return left.flatMap(v1 -> right.map(v2 -> combiner.apply(v1, v2)));
+  }
+
+  /**
+   * Sequentially matches {@code left} then {@code right}, and then combines the results using the
+   * {@code combiner} function.
+   *
+   * @since 10.0
+   */
+  public static <A, B, C> Parser<C> sequence(
+      Parser<A> left, Production<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
+    return sequence(left, maybeZeroWidth(right), combiner);
   }
 
   /**

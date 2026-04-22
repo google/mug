@@ -3,7 +3,6 @@ package com.google.common.labs.parse;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import com.google.common.labs.parse.Parser.OrEmpty;
 import com.google.common.labs.parse.Parser.ParseException;
 import com.google.mu.util.CharPredicate;
 
@@ -16,7 +15,7 @@ import com.google.mu.util.CharPredicate;
  *
  * @since 10.0
  */
-public sealed interface Production<T> permits Parser, OrEmpty {
+public sealed interface Production<T> permits Parser, Parser.OrEmpty {
 
   /**
    * Parses the entire input string and returns the result. Upon successful return, the {@code
