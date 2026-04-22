@@ -54,7 +54,10 @@ public sealed interface Grammar<T> permits Parser, Parser.OrEmpty {
 
   /**
    * Returns a parser that matches {@code this} pattern enclosed between {@code prefix} and {@code suffix},
-   * both allowed to be empty
+   * both allowed to be empty.
+   *
+   * <p>Note that the {@link Parser} and {@link Parser.OrEmpty} implementations are declared to return the more specific
+   * {@code Parser<T>} or {@code Parser<T>.OrEmpty} subtypes respectively.
    */
   Grammar<T> between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix);
 
@@ -75,7 +78,12 @@ public sealed interface Grammar<T> permits Parser, Parser.OrEmpty {
     return Parser.sequence(Parser.maybeZeroWidth(this), suffix, (a, b) -> b);
   }
 
-  /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
+  /**
+   * After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.
+   *
+   * <p>Note that the {@link Parser} and {@link Parser.OrEmpty} implementations are declared to
+   * return the more specific {@code Parser<S>} or {@code Parser<S>.OrEmpty} subtypes respectively.
+   */
   <S> Grammar<S> then(Parser<S>.OrEmpty suffix);
 
   /** The current grammar must be followed by non-empty {@code suffix}. */
@@ -88,15 +96,28 @@ public sealed interface Grammar<T> permits Parser, Parser.OrEmpty {
     return Parser.sequence(Parser.maybeZeroWidth(this), suffix, (a, b) -> a);
   }
 
-  /** The current grammar may optionally be followed by {@code suffix}.  */
+  /**
+   * The current grammar may optionally be followed by {@code suffix}.
+   *
+   * <p>Note that the {@link Parser} and {@link Parser.OrEmpty} implementations are declared to
+   * return the more specific {@code Parser<T>} or {@code Parser<T>.OrEmpty} subtypes respectively.
+   */
   <S> Grammar<T> followedBy(Parser<S>.OrEmpty suffix);
 
-  /** Returns an equivalent grammar except it allows {@code suffix} if present. */
+  /**
+   * Returns an equivalent grammar except it allows {@code suffix} if present.
+   *
+   * <p>Note that the {@link Parser} and {@link Parser.OrEmpty} implementations are declared to
+   * return the more specific {@code Parser<T>} or {@code Parser<T>.OrEmpty} subtypes respectively.
+   */
   Grammar<T> optionallyFollowedBy(String suffix);
 
   /**
    * If this parser matches, optionally applies the {@code op} function if this grammar is followed
    * by {@code suffix}.
+   *
+   * <p>Note that the {@link Parser} and {@link Parser.OrEmpty} implementations are declared to
+   * return the more specific {@code Parser<T>} or {@code Parser<T>.OrEmpty} subtypes respectively.
    */
   Grammar<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op);
 
@@ -104,13 +125,8 @@ public sealed interface Grammar<T> permits Parser, Parser.OrEmpty {
    * If this grammar matches, optionally matches {@code suffix} with the {@code op} BiFunction
    * to transform the current grammar's result.
    *
-   * <p>For example:
-   *
-   * <pre>{@code
-   * Parser<MarkdownLink> link = ...;
-   * Parser<String> title = ...;
-   * Parser<MarkdownLink> parser = link.optionallyFollowedBy(title, MarkdownLink::withTitle);
-   * }</pre>
+   * <p>Note that the {@link Parser} and {@link Parser.OrEmpty} implementations are declared to
+   * return the more specific {@code Parser<T>} or {@code Parser<T>.OrEmpty} subtypes respectively.
    */
   <S> Grammar<T> optionallyFollowedBy(
       Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> op);
