@@ -1000,12 +1000,6 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
     return map(unused -> result);
   }
 
-  /** If this parser matches, applies the given parser on the remaining input. */
-  public final <R> Parser<R> then(Parser<R> next) {
-    requireNonNull(next);
-    return flatMap(unused -> next);
-  }
-
   /**
    * If this parser matches, applies the given optional (or zero-or-more) parser on the remaining
    * input.
@@ -1041,16 +1035,6 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
             : result;
       }
     };
-  }
-
-  /** If this parser matches, continue to match {@code suffix}. */
-  public final Parser<T> followedBy(String suffix) {
-    return followedBy(string(suffix));
-  }
-
-  /** If this parser matches, continue to match {@code suffix}. */
-  public final Parser<T> followedBy(Parser<?> suffix) {
-    return sequence(this, suffix, (value, unused) -> value);
   }
 
   /** If this parser matches, continue to match the optional {@code suffix}. */
