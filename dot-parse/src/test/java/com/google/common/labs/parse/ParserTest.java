@@ -1384,6 +1384,46 @@ public class ParserTest {
   }
 
   @Test
+  public void sequence3_secondRuleOptional_optionalRuleMatches() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b").orElse("default-b"),
+        string("c"),
+        (a, b, c) -> a + b + c);
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test
+  public void sequence3_secondRuleOptional_optionalRuleMatchesEmpty() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b").orElse("default-b"),
+        string("c"),
+        (a, b, c) -> a + b + c);
+    assertThat(parser.parse("ac")).isEqualTo("adefault-bc");
+  }
+
+  @Test
+  public void sequence3_thirdRuleOptional_optionalRuleMatches() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b"),
+        string("c").orElse("default-c"),
+        (a, b, c) -> a + b + c);
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test
+  public void sequence3_thirdRuleOptional_optionalRuleMatchesEmpty() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b"),
+        string("c").orElse("default-c"),
+        (a, b, c) -> a + b + c);
+    assertThat(parser.parse("ab")).isEqualTo("abdefault-c");
+  }
+
+  @Test
   public void sequence4_success() {
     Parser<String> parser =
         sequence(string("a"), string("b"), string("c"), string("d"), (a, b, c, d) -> a + b + c + d);
@@ -1423,6 +1463,72 @@ public class ParserTest {
     assertThat(parser.probe("axcd")).isEmpty();
     assertThat(parser.probe("abxd")).isEmpty();
     assertThat(parser.probe("abcx")).isEmpty();
+  }
+
+  @Test
+  public void sequence4_secondRuleOptional_optionalRuleMatches() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b").orElse("default-b"),
+        string("c"),
+        string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.parse("abcd")).isEqualTo("abcd");
+  }
+
+  @Test
+  public void sequence4_secondRuleOptional_optionalRuleMatchesEmpty() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b").orElse("default-b"),
+        string("c"),
+        string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.parse("acd")).isEqualTo("adefault-bcd");
+  }
+
+  @Test
+  public void sequence4_thirdRuleOptional_optionalRuleMatches() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b"),
+        string("c").orElse("default-c"),
+        string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.parse("abcd")).isEqualTo("abcd");
+  }
+
+  @Test
+  public void sequence4_thirdRuleOptional_optionalRuleMatchesEmpty() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b"),
+        string("c").orElse("default-c"),
+        string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.parse("abd")).isEqualTo("abdefault-cd");
+  }
+
+  @Test
+  public void sequence4_fourthRuleOptional_optionalRuleMatches() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b"),
+        string("c"),
+        string("d").orElse("default-d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.parse("abcd")).isEqualTo("abcd");
+  }
+
+  @Test
+  public void sequence4_fourthRuleOptional_optionalRuleMatchesEmpty() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b"),
+        string("c"),
+        string("d").orElse("default-d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.parse("abc")).isEqualTo("abcdefault-d");
   }
 
   @Test
