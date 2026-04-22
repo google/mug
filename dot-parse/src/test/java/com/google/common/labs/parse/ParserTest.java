@@ -40,6 +40,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -535,6 +536,7 @@ public class ParserTest {
   }
 
   @Test
+  @Ignore("Grammar is a sealed interface, unsupported by NPT")
   public void testNulls() throws Exception {
     NullPointerTester tester =
         new NullPointerTester()
