@@ -1066,7 +1066,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
    * by {@code suffix}.
    */
   @Override public final Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
-    return optionalPostfix(string(suffix).thenReturn(op::apply));
+    return optionallyFollowedBy(string(suffix).thenReturn(op::apply));
   }
 
   /**
@@ -1086,10 +1086,10 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
   @Override public final <S> Parser<T> optionallyFollowedBy(
       Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> op) {
     requireNonNull(op);
-    return optionalPostfix(suffix.map(s -> p -> op.apply(p, s)));
+    return optionallyFollowedBy(suffix.map(s -> p -> op.apply(p, s)));
   }
 
-  final Parser<T> optionalPostfix(Parser<UnaryOperator<T>> suffix) {
+  final Parser<T> optionallyFollowedBy(Parser<UnaryOperator<T>> suffix) {
     return sequence(this, suffix.orElse(identity()), (operand, op) -> op.apply(operand));
   }
 
