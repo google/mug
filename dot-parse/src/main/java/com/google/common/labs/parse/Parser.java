@@ -513,7 +513,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public static <A, B, C> Parser<C> sequence(
       Parser<A> left, Production<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
-    return sequence(left, maybeZeroWidth(right), combiner);
+    return sequence(left, allowZeroWidth(right), combiner);
   }
 
   /**
@@ -554,7 +554,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       TriFunction<? super A, ? super B, ? super C, ? extends T> combiner) {
     requireNonNull(combiner);
     return sequence(
-        a, sequence(maybeZeroWidth(b), c, AbstractMap.SimpleImmutableEntry<B, C>::new),
+        a, sequence(allowZeroWidth(b), c, AbstractMap.SimpleImmutableEntry<B, C>::new),
         (v1, bc) -> combiner.apply(v1, bc.getKey(), bc.getValue()));
   }
 
@@ -570,7 +570,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(combiner);
     return sequence(
         sequence(a, b, AbstractMap.SimpleImmutableEntry<A, B>::new),
-        sequence(maybeZeroWidth(c), d, AbstractMap.SimpleImmutableEntry<C, D>::new),
+        sequence(allowZeroWidth(c), d, AbstractMap.SimpleImmutableEntry<C, D>::new),
         (ab, cd) -> combiner.apply(ab.getKey(), ab.getValue(), cd.getKey(), cd.getValue()));
   }
 
@@ -1905,7 +1905,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
-  static <T> Parser<T> maybeZeroWidth(Production<T> production) {
+  static <T> Parser<T> allowZeroWidth(Production<T> production) {
     return switch (production) {
       case Parser<T> parser -> parser;
       case Parser<T>.OrEmpty orEmpty -> orEmpty.asUnsafeZeroWidthParser();

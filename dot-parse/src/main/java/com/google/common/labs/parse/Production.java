@@ -93,7 +93,7 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
 
   /** The current production must be followed by non-empty {@code suffix}. */
   default Parser<T> followedBy(Parser<?> suffix) {
-    return Parser.sequence(Parser.maybeZeroWidth(this), suffix, (a, b) -> a);
+    return Parser.sequence(Parser.allowZeroWidth(this), suffix, (a, b) -> a);
   }
 
   /**
