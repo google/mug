@@ -51,7 +51,7 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
 
   /** The current production must be enclosed between non-empty {@code prefix} and {@code suffix}. */
   default Parser<T> between(Parser<?> prefix, Parser<?> suffix) {
-    return Parser.sequence(prefix, this, (p, t) -> t).followedBy(suffix);
+    return prefix.then(this.followedBy(suffix));
   }
 
   /**
@@ -70,7 +70,7 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
    * {@code zeroOrMore(isNot('"')).immediatelyBetween("\"", "\"")}.
    */
   default Parser<T> immediatelyBetween(String prefix, String suffix) {
-    return Parser.string(prefix).then(Parser.literally(followedBy(suffix)));
+    return Parser.string(prefix).then(Parser.literally(this.followedBy(suffix)));
   }
 
   /**
@@ -92,9 +92,7 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
   }
 
   /** The current production must be followed by non-empty {@code suffix}. */
-  default Parser<T> followedBy(Parser<?> suffix) {
-    return Parser.sequence(Parser.allowZeroWidth(this), suffix, (a, b) -> a);
-  }
+  Parser<T> followedBy(Parser<?> suffix);
 
   /**
    * The current production may optionally be followed by {@code suffix}.

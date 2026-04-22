@@ -1043,8 +1043,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
+  @Override public Parser<T> followedBy(Parser<?> suffix) {
+    requireNonNull(suffix);
+    return flatMap(v -> suffix.thenReturn(v));
+  }
+
   @Override public final <S> Parser<T> followedBy(Parser<S>.OrEmpty suffix) {
-    return sequence(this, suffix, (value, unused) -> value);
+    return followedBy(suffix.asUnsafeZeroWidthParser());
   }
 
   /**
@@ -1512,6 +1517,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return sequence(this, suffix, (a, b) -> b);
     }
 
+    @Override public Parser<T> followedBy(Parser<?> suffix) {
+      return asUnsafeZeroWidthParser().followedBy(suffix);
+    }
+
     /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
     @Override public <S> Parser<T>.OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
       return sequence(this, suffix, (a, b) -> a);
@@ -1905,7 +1914,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
-  static <T> Parser<T> allowZeroWidth(Production<T> production) {
+  private static <T> Parser<T> allowZeroWidth(Production<T> production) {
     return switch (production) {
       case Parser<T> parser -> parser;
       case Parser<T>.OrEmpty orEmpty -> orEmpty.asUnsafeZeroWidthParser();
