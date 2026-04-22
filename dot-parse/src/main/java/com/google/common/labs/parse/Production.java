@@ -76,9 +76,7 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
   /**
    * After matching the current production, proceed to match {@code suffix}.
    */
-  default <S> Parser<S> then(Parser<S> suffix) {
-    return Parser.sequence(Parser.maybeZeroWidth(this), suffix, (a, b) -> b);
-  }
+  <S> Parser<S> then(Parser<S> suffix);
 
   /**
    * After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.

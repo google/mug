@@ -1000,6 +1000,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return map(unused -> result);
   }
 
+  @Override
+  public final <S> Parser<S> then(Parser<S> suffix) {
+    requireNonNull(suffix);
+    return flatMap(unused -> suffix);
+  }
+
   /**
    * If this parser matches, applies the given optional (or zero-or-more) parser on the remaining
    * input.
@@ -1037,7 +1043,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
-  /** If this parser matches, continue to match the optional {@code suffix}. */
   @Override public final <S> Parser<T> followedBy(Parser<S>.OrEmpty suffix) {
     return sequence(this, suffix, (value, unused) -> value);
   }
@@ -1056,15 +1061,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return followedBy(UNSAFE_EOF);
   }
 
-  /** Returns an equivalent parser except it allows {@code suffix} if present. */
   @Override public final Parser<T> optionallyFollowedBy(String suffix) {
     return followedBy(string(suffix).orElse(null));
   }
 
-  /**
-   * If this parser matches, optionally applies the {@code op} function if the pattern is followed
-   * by {@code suffix}.
-   */
   @Override public final Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
     return optionallyFollowedBy(string(suffix).thenReturn(op::apply));
   }
@@ -1502,6 +1502,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return delimitedBy(delimiter, toUnmodifiableList());
     }
 
+    @Override
+    public <S> Parser<S> then(Parser<S> suffix) {
+      return asUnsafeZeroWidthParser().then(suffix);
+    }
+
     /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
     @Override public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
       return sequence(this, suffix, (a, b) -> b);
@@ -1568,6 +1573,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return asUnsafeZeroWidthParser().parse(input);
     }
 
+    /**
+     * Parses the entire input string, ignoring {@code charsToSkip}, and returns the result;
+     * if there's nothing to parse except skippable content, returns the default empty value.
+     */
     @Override public T parseSkipping(CharPredicate charsToSkip, String input) {
       return parseSkipping(Parser.skipConsecutive(charsToSkip, "skipped"), input);
     }
