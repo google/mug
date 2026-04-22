@@ -59,7 +59,7 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
    * that may be empty.
    */
   default Parser<T> between(Parser<?> prefix, Parser<?>.OrEmpty suffix) {
-    return prefix.then(Parser.allowZeroWidth(this.followedBy(suffix)));
+    return prefix.then(Parser.allowZeroWidth(this).followedBy(suffix));
   }
 
   /**
