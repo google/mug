@@ -89,7 +89,7 @@ import com.google.mu.util.stream.Joiner;
  * can cause StackOverflowError.
  */
 @ThreadSafe
-public abstract non-sealed class Parser<T> implements Grammar<T> {
+public abstract non-sealed class Parser<T> implements Production<T> {
   private static final Set<String> EMPTY_PREFIX = Set.of("");
 
   /**
@@ -501,7 +501,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
    * @since 10.0
    */
   public static <A, B, C> Parser<C> sequence(
-      Parser<A> left, Grammar<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
+      Parser<A> left, Production<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
     return sequence(left, maybeZeroWidth(right), combiner);
   }
 
@@ -550,7 +550,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
    * @since 9.5
    */
   public static <A, B, C, T> Parser<T> sequence(
-      Parser<A> a, Grammar<B> b, Grammar<C> c,
+      Parser<A> a, Production<B> b, Production<C> c,
       TriFunction<? super A, ? super B, ? super C, ? extends T> combiner) {
     requireNonNull(combiner);
     return sequence(
@@ -565,7 +565,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
    * @since 9.5
    */
   public static <A, B, C, D, T> Parser<T> sequence(
-      Parser<A> a, Grammar<B> b, Grammar<C> c, Grammar<D> d,
+      Parser<A> a, Production<B> b, Production<C> c, Production<D> d,
       Function4<? super A, ? super B, ? super C, ? super D, ? extends T> combiner) {
     requireNonNull(combiner);
     return sequence(
@@ -877,7 +877,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
    */
   public static <A, B, R> Parser<R>.OrEmpty zeroOrMoreDelimited(
       Parser<A> first,
-      Grammar<B> second,
+      Production<B> second,
       String delimiter,
       BiCollector<? super A, ? super B, R> collector) {
     return sequence(first, second, Both::of)
@@ -1038,7 +1038,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
   }
 
   /** If this parser matches, continue to match the optional {@code suffix}. */
-  public final <S> Parser<T> followedBy(Parser<S>.OrEmpty suffix) {
+  @Override public final <S> Parser<T> followedBy(Parser<S>.OrEmpty suffix) {
     return sequence(this, suffix, (value, unused) -> value);
   }
 
@@ -1229,7 +1229,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
    *
    * <p>Equivalent to {@code skipping(skip).parse(input)}.
    */
-  public final T parseSkipping(Parser<?> skip, String input) {
+  @Override public final T parseSkipping(Parser<?> skip, String input) {
     return skipping(skip).parse(input);
   }
 
@@ -1238,7 +1238,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
    *
    * <p>Equivalent to {@code skipping(charsToSkip).parse(input)}.
    */
-  public final T parseSkipping(CharPredicate charsToSkip, String input) {
+  @Override public final T parseSkipping(CharPredicate charsToSkip, String input) {
     return skipping(charsToSkip).parse(input);
   }
 
@@ -1430,7 +1430,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
    * <p>Besides {@link #between between()} and {@link #followedBy(String) followedBy()}, the {@link
    * Parser#sequence(Parser, Parser.OrEmpty, BiFunction) sequence()} and {@link
    * Parser#followedBy(Parser.OrEmpty)} methods can be used to specify that a {@code Parser.OrEmpty}
-   * grammar rule follows a regular consuming {@code Parser}.
+   * production rule follows a regular consuming {@code Parser}.
    *
    * <p>The following is a simplified example of parsing a CSV line: a comma-separated list of
    * fields with an optional trailing newline. The field values can be empty; empty line results in
@@ -1453,7 +1453,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
    * input in this one stop shop without having to remember to check for emptiness, because this
    * class already knows the default value to use when the input is empty.
    */
-  public final class OrEmpty implements Grammar<T> {
+  public final class OrEmpty implements Production<T> {
     private final Supplier<? extends T> defaultSupplier;
 
     private OrEmpty(Supplier<? extends T> defaultSupplier) {
@@ -1781,7 +1781,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
   }
 
   /**
-   * A forward-declared grammar rule, to be used for recursive grammars.
+   * A forward-declared production rule, to be used for recursive grammars.
    *
    * <p>For example, to create a parser for a simple calculator that supports single-digit numbers,
    * addition, and parentheses, you can write:
@@ -1896,8 +1896,8 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
     };
   }
 
-  static <T> Parser<T> maybeZeroWidth(Grammar<T> grammar) {
-    return switch (grammar) {
+  static <T> Parser<T> maybeZeroWidth(Production<T> production) {
+    return switch (production) {
       case Parser<T> parser -> parser;
       case Parser<T>.OrEmpty orEmpty -> orEmpty.asUnsafeZeroWidthParser();
     };

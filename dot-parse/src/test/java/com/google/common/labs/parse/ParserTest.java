@@ -536,7 +536,7 @@ public class ParserTest {
   }
 
   @Test
-  @Ignore("Grammar is a sealed interface, unsupported by NPT")
+  @Ignore("Production is a sealed interface, unsupported by NPT")
   public void testNulls() throws Exception {
     NullPointerTester tester =
         new NullPointerTester()
@@ -3836,6 +3836,7 @@ public class ParserTest {
         .between("[", "]");
     assertThat(parser.parse("[aa++]")).isEqualTo("aab");
     assertThat(parser.parse("[aa]")).isEqualTo("aa");
+    assertThat(parser.parse("[++]")).isEqualTo("b");
     assertThat(parser.parse("[]")).isEqualTo("");
   }
 
@@ -3848,6 +3849,7 @@ public class ParserTest {
         .between("[", "]");
     assertThat(parser.parse("[aa+123]")).isEqualTo("aa3");
     assertThat(parser.parse("[aa]")).isEqualTo("aa");
+    assertThat(parser.parse("[+123]")).isEqualTo("3");
     assertThat(parser.parse("[]")).isEqualTo("");
   }
 
