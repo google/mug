@@ -1,5 +1,8 @@
 package com.google.common.labs.parse;
 
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
 import com.google.common.labs.parse.Parser.ParseException;
 import com.google.mu.util.CharPredicate;
 
@@ -46,8 +49,14 @@ public sealed interface Grammar<T> permits Parser, Parser.OrEmpty {
 
   /** The current grammar must be enclosed between non-empty {@code prefix} and {@code suffix}. */
   default Parser<T> between(Parser<?> prefix, Parser<?> suffix) {
-    return prefix.then(this).followedBy(suffix);
+    return Parser.sequence(prefix, this, (p, t) -> t).followedBy(suffix);
   }
+
+  /**
+   * Returns a parser that matches {@code this} pattern enclosed between {@code prefix} and {@code suffix},
+   * both allowed to be empty
+   */
+  Grammar<T> between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix);
 
   /**
    * The current grammar must be <em>immediately</em> enclosed between
@@ -67,6 +76,9 @@ public sealed interface Grammar<T> permits Parser, Parser.OrEmpty {
     return Parser.sequence(Parser.maybeZeroWidth(this), suffix, (a, b) -> b);
   }
 
+  /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
+  <S> Grammar<S> then(Parser<S>.OrEmpty suffix);
+
   /** The current grammar must be followed by non-empty {@code suffix}. */
   default Parser<T> followedBy(String suffix) {
     return followedBy(Parser.string(suffix));
@@ -76,4 +88,31 @@ public sealed interface Grammar<T> permits Parser, Parser.OrEmpty {
   default Parser<T> followedBy(Parser<?> suffix) {
     return Parser.sequence(Parser.maybeZeroWidth(this), suffix, (a, b) -> a);
   }
+
+  /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
+  <S> Grammar<T> followedBy(Parser<S>.OrEmpty suffix);
+
+  /** Returns an equivalent grammar except it allows {@code suffix} if present. */
+  Grammar<T> optionallyFollowedBy(String suffix);
+
+  /**
+   * If this parser matches, optionally applies the {@code op} function if the pattern is followed
+   * by {@code suffix}.
+   */
+  Grammar<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op);
+
+  /**
+   * If this parser matches, optionally matches {@code suffix} with the {@code op} BiFunction
+   * to transform the current parser's result.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * Parser<MarkdownLink> link = ...;
+   * Parser<String> title = ...;
+   * Parser<MarkdownLink> parser = link.optionallyFollowedBy(title, MarkdownLink::withTitle);
+   * }</pre>
+   */
+  <S> Grammar<T> optionallyFollowedBy(
+      Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> op);
 }

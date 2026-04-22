@@ -955,7 +955,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
    *
    * @since 9.5
    */
-  public final Parser<T> between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix) {
+  @Override public final Parser<T> between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix) {
     return prefix.then(this).followedBy(suffix);
   }
 
@@ -1006,7 +1006,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
    *
    * @since 10.0
    */
-  public final <R> Parser<R> then(Grammar<R> next) {
+  @Override public final <R> Parser<R> then(Parser<R>.OrEmpty next) {
     return sequence(this, next, (unused, value) -> value);
   }
 
@@ -1038,7 +1038,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
   }
 
   /** If this parser matches, continue to match the optional {@code suffix}. */
-  public final Parser<T> followedBy(Grammar<?> suffix) {
+  public final <S> Parser<T> followedBy(Parser<S>.OrEmpty suffix) {
     return sequence(this, suffix, (value, unused) -> value);
   }
 
@@ -1057,7 +1057,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
   }
 
   /** Returns an equivalent parser except it allows {@code suffix} if present. */
-  public final Parser<T> optionallyFollowedBy(String suffix) {
+  @Override public final Parser<T> optionallyFollowedBy(String suffix) {
     return followedBy(string(suffix).orElse(null));
   }
 
@@ -1065,7 +1065,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
    * If this parser matches, optionally applies the {@code op} function if the pattern is followed
    * by {@code suffix}.
    */
-  public final Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
+  @Override public final Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
     return optionalPostfix(string(suffix).thenReturn(op::apply));
   }
 
@@ -1083,7 +1083,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
    *
    * @since 9.5
    */
-  public final <S> Parser<T> optionallyFollowedBy(
+  @Override public final <S> Parser<T> optionallyFollowedBy(
       Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> op) {
     requireNonNull(op);
     return optionalPostfix(suffix.map(s -> p -> op.apply(p, s)));
@@ -1465,7 +1465,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
      *
      * @since 9.5
      */
-    public final Parser<T>.OrEmpty between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix) {
+    @Override public final Parser<T>.OrEmpty between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix) {
       return prefix.then(this).followedBy(suffix);
     }
 
@@ -1503,12 +1503,12 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
     }
 
     /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
-    public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
+    @Override public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
       return sequence(this, suffix, (a, b) -> b);
     }
 
     /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
-    public <S> Parser<T>.OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
+    @Override public <S> Parser<T>.OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
       return sequence(this, suffix, (a, b) -> a);
     }
 
@@ -1517,8 +1517,34 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
      *
      * @since 9.5
      */
-    public Parser<T>.OrEmpty optionallyFollowedBy(String suffix) {
+    @Override public Parser<T>.OrEmpty optionallyFollowedBy(String suffix) {
       return followedBy(string(suffix).orElse(null));
+    }
+
+    /**
+     * If this parser matches, optionally applies the {@code op} function if the pattern is followed
+     * by {@code suffix}.
+     *
+     * @since 10.0
+     */
+    @Override public final Parser<T>.OrEmpty optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
+      return optionallyFollowedBy(string(suffix).thenReturn(op::apply));
+    }
+
+    /**
+     * If this parser matches, optionally matches {@code suffix} with the {@code op} BiFunction
+     * to transform the current parser's result.
+     *
+     * @since 10.0
+     */
+    @Override public final <S> Parser<T>.OrEmpty optionallyFollowedBy(
+        Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> op) {
+      requireNonNull(op);
+      return optionallyFollowedBy(suffix.map(s -> p -> op.apply(p, s)));
+    }
+
+    private Parser<T>.OrEmpty optionallyFollowedBy(Parser<UnaryOperator<T>> suffix) {
+      return sequence(this, suffix.orElse(identity()), (operand, op) -> op.apply(operand));
     }
 
     /**
@@ -1678,7 +1704,7 @@ public abstract non-sealed class Parser<T> implements Grammar<T> {
      * input is exhausted or matching failed.
      *
      * <p>Note that unlike {@link #parseToStream(String) parseToStream()}, a matching failure
-     * terminates the stream without throwing exception.
+     * terminates the stream out throwing exception.
      *
      * <p>This allows quick probing without fully parsing it.
      */

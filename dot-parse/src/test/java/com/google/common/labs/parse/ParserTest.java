@@ -3830,6 +3830,28 @@ public class ParserTest {
   }
 
   @Test
+  public void orEmpty_optionallyFollowedBy_string_function_success() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .optionallyFollowedBy("++", s -> s + "b")
+        .between("[", "]");
+    assertThat(parser.parse("[aa++]")).isEqualTo("aab");
+    assertThat(parser.parse("[aa]")).isEqualTo("aa");
+    assertThat(parser.parse("[]")).isEqualTo("");
+  }
+
+  @Test
+  public void orEmpty_optionallyFollowedBy_parser_biFunction_success() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .optionallyFollowedBy(
+            string("+").then(digits()).map(String::length),
+            (s, len) -> s + len)
+        .between("[", "]");
+    assertThat(parser.parse("[aa+123]")).isEqualTo("aa3");
+    assertThat(parser.parse("[aa]")).isEqualTo("aa");
+    assertThat(parser.parse("[]")).isEqualTo("");
+  }
+
+  @Test
   public void parser_immediatelyBetween_success() {
     Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
     assertThat(parser.parse("[foo]")).isEqualTo("foo");
