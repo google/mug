@@ -557,9 +557,13 @@ Parser<Expr> expr = Parser.define(
 An expression is either an identifier like variable name, or a field reference
 that may be chained, like `foo.bar.baz`.
 
-Unfortunately if you use it to parse you'll get a `StackOverflowError`
-because an `expr` parser will recursively call into itself which will in turn
-recursively call into itself, over and over again.
+But it's a left recursive grammar. In an naive implementation when you use the `expr`
+parser to parse any input, it will recursively call into itself which will in turn
+recursively call into itself, over and over again, causing a `StackOverflowError`.
+
+The Dot Parse library provides a left recursion guard to catch left recursion errors
+early at parser construction time. The above `define()` method call will throw
+`IllegalStateException`, pointing to the line that creates the left recursion.
 
 Actually, when we built the Mini Search Language above, if we didn't use `OperatorTable`
 to define the `AND` `OR` binary operators, their EBNF would have also been left recursive.
