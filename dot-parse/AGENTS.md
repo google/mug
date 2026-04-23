@@ -80,31 +80,40 @@ The `optional()`, `orElse()` and `zeroOrMore()` are only to be used in safe
 places like `followedBy()`, `then()`, `between()`, `immediatelyBetween()` etc.
 where the composite parser is guaranteed to consume input.
 
-**Do not** attempt to compose an optional Parser in `sequence()` or `anyOf()`.
+**Always** attach optional Parser rules to a Parser that consumes input.
 
 While it may feel tempting to want to do something like this:
 
-```java
+```java {.bad}
 // Won't compile!
-Parser<String> optionalComma = string(",").optional();
-Parser<List<String>> list = word().followedBy(optionalComma).zeroOrMore();
+Parser<String> parent = word().followedBy(".").orElse("this");
+Parser<List<String>> ancestors = parent.atLeastOnce();
 ```
 
-It would have opened a can of worms named infinite loops, if the API have
-allowed it. That's why in the `dot-parse` API, the code above would not
-compile (because `optional()` returns a special `OrEmpty` type, not a
-`Parser`). So don't try it! You are forced to complete the fluent chain using
-methods on `OrEmpty` that ensure safety.
+It would have opened a can of worms named infinite loops, if the API had
+allowed it. That's why in the `Parser` API, the code above would not compile
+(because `orElse()` returns a special `OrEmpty` type, not a `Parser`). So
+don't try it! You are forced to complete the fluent chain using methods on
+`OrEmpty` that ensure safety.
 
-- **Chaining Optional Parsers**: Optional parsers (e.g., from `.optional()`,
-  `.orElse()`, `.zeroOrMore()`) return a `Parser.OrEmpty` instance. You can
-  chain them using `OrEmpty` methods like `.then()`, `.followedBy()`, and
-  `.delimitedBy()`, which continue to return `OrEmpty`.
-- **Exiting the Unsafe Zone**: To convert an `OrEmpty` chain back into a
-  standard `Parser`, you must eventually attach it to a non-empty `Parser`
-  using methods like `Parser.then()`, `Parser.followedBy()`, or
-  `OrEmpty.between()` / `OrEmpty.immediatelyBetween()`. This ensures the
-  composite parser is guaranteed to consume input.
+-   **Chaining Optional Parsers**: Optional parsers (e.g., from `.optional()`,
+    `.orElse()`, `.zeroOrMore()`) return a `Parser.OrEmpty` instance. You can
+    chain them using `OrEmpty` methods like `.then()`, `.followedBy()`, and
+    `.delimitedBy()`, which continue to return `OrEmpty`.
+-   **Exiting the Unsafe Zone**: To convert an `OrEmpty` chain back into a
+    standard `Parser`, you must eventually attach it to a non-empty `Parser`
+    using methods like `Parser.then()`, `Parser.followedBy()`,
+    `Parser.sequence(Parser, Production...)` or `OrEmpty.between()` /
+    `OrEmpty.immediatelyBetween()`. This ensures the composite parser is
+    guaranteed to consume input.
+-   **The `Production` Interface**: Represents either a `Parser` or a
+    `Parser.OrEmpty`. Overloads like `sequence(Parser, Production...)` can take
+    either type for the 2nd production rule and the remaining.
+-   **Common Combinators**: The `Production` interface defines common methods
+    shared by both `Parser` and `OrEmpty`, including `between()`,
+    `immediatelyBetween()`, `then()`, `followedBy()`, and
+    `optionallyFollowedBy()`. Make sure to use them when dealing with either a
+    `Parser` or `OrEmpty`.
 
 Instead, consider these safe patterns:
 

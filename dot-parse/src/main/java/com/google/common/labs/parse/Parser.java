@@ -498,8 +498,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * Sequentially matches {@code left} then {@code right}, and then combines the results using the
    * {@code combiner} function.
    */
-  public static <A, B, C> Parser<C> sequence(
-      Parser<A> left, Parser<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
+  public static <A, B, R> Parser<R> sequence(
+      Parser<A> left, Parser<B> right, BiFunction<? super A, ? super B, ? extends R> combiner) {
     requireNonNull(right);
     requireNonNull(combiner);
     return left.flatMap(v1 -> right.map(v2 -> combiner.apply(v1, v2)));
@@ -511,8 +511,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @since 10.0
    */
-  public static <A, B, C> Parser<C> sequence(
-      Parser<A> left, Production<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
+  public static <A, B, R> Parser<R> sequence(
+      Parser<A> left, Production<B> right, BiFunction<? super A, ? super B, ? extends R> combiner) {
     return sequence(left, allowZeroWidth(right), combiner);
   }
 
@@ -521,9 +521,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * then combines the results using the {@code combiner} function. If either is empty, the
    * corresponding default value is passed to the {@code combiner} function.
    */
-  public static <A, B, C> Parser<C>.OrEmpty sequence(
+  public static <A, B, R> Parser<R>.OrEmpty sequence(
       Parser<A>.OrEmpty left, Parser<B>.OrEmpty right,
-      BiFunction<? super A, ? super B, ? extends C> combiner) {
+      BiFunction<? super A, ? super B, ? extends R> combiner) {
     return anyOf(
         sequence(left.notEmpty(), right, combiner),
         right.notEmpty().map(v2 -> combiner.apply(left.computeDefaultValue(), v2)))
@@ -537,9 +537,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @since 10.0
    */
-  public static <A, B, C> Parser<C> sequence(
+  public static <A, B, R> Parser<R> sequence(
       Parser<A>.OrEmpty left, Parser<B> right,
-      BiFunction<? super A, ? super B, ? extends C> combiner) {
+      BiFunction<? super A, ? super B, ? extends R> combiner) {
     return sequence(left.asUnsafeZeroWidthParser(), right, combiner);
   }
 
@@ -549,9 +549,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @since 9.5
    */
-  public static <A, B, C, T> Parser<T> sequence(
+  public static <A, B, C, R> Parser<R> sequence(
       Parser<A> a, Production<B> b, Production<C> c,
-      TriFunction<? super A, ? super B, ? super C, ? extends T> combiner) {
+      TriFunction<? super A, ? super B, ? super C, ? extends R> combiner) {
     requireNonNull(combiner);
     return sequence(
         a, sequence(allowZeroWidth(b), c, AbstractMap.SimpleImmutableEntry<B, C>::new),
@@ -564,9 +564,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @since 9.5
    */
-  public static <A, B, C, D, T> Parser<T> sequence(
+  public static <A, B, C, D, R> Parser<R> sequence(
       Parser<A> a, Production<B> b, Production<C> c, Production<D> d,
-      Function4<? super A, ? super B, ? super C, ? super D, ? extends T> combiner) {
+      Function4<? super A, ? super B, ? super C, ? super D, ? extends R> combiner) {
     requireNonNull(combiner);
     return sequence(
         sequence(a, b, AbstractMap.SimpleImmutableEntry<A, B>::new),
