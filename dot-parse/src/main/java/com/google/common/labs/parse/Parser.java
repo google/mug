@@ -1099,7 +1099,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   final Parser<T> optionallyFollowedBy(Parser<UnaryOperator<T>> suffix) {
-    return sequence(this, suffix.orElse(identity()), (operand, op) -> op.apply(operand));
+    return flatMap(operand -> suffix.map(op -> op.apply(operand)).orElse(operand));
   }
 
   /** A form of negative lookahead such that the match is rejected if followed by {@code suffix}. */
