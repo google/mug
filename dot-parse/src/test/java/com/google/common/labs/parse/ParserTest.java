@@ -715,6 +715,25 @@ public class ParserTest {
   }
 
   @Test
+  public void flatMap_returningOrEmpty_outerRuleFails() {
+    Parser<String> parser = digits().flatMap(number -> string("=" + number).orElse("default"));
+    assertThrows(ParseException.class, () -> parser.parse("=123"));
+    assertThat(parser.matches("=123")).isFalse();
+  }
+
+  @Test
+  public void flatMap_returningOrEmpty_innerRuleMatches() {
+    Parser<String> parser = digits().flatMap(number -> string("=" + number).orElse("default"));
+    assertThat(parser.parse("123=123")).isEqualTo("=123");
+  }
+
+  @Test
+  public void flatMap_returningOrEmpty_innerRuleMatchesEmpty() {
+    Parser<String> parser = digits().flatMap(number -> string("=" + number).orElse("default"));
+    assertThat(parser.parse("123")).isEqualTo("default");
+  }
+
+  @Test
   public void then_success() {
     Parser<Integer> parser = string("value:").then(string("123").map(Integer::parseInt));
     assertThat(parser.parse("value:123")).isEqualTo(123);
