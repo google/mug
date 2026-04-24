@@ -975,20 +975,23 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * If this parser matches, applies function {@code f} to get the next parser to match in sequence.
+   * If this parser matches, applies function {@code f} to get the next production rule to match
+   * in sequence.
+   *
+   * <p>Starting from v10.0, the function can return either a {@link Parse} that consumes input,
+   * or an {@link OrEmpty} that will succeed even if not matched.
    */
-  public final <R> Parser<R> flatMap(Function<? super T, Parser<R>> f) {
+  public final <R> Parser<R> flatMap(Function<? super T, ? extends Production<? extends R>> f) {
     requireNonNull(f);
     return new SamePrefix<>() {
+      @SuppressWarnings("unchecked")  // MatchResult<R> is covariant
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success(int head, int tail, T value) ->
-              switch (f.apply(value).skipAndMatch(skip, input, tail, context)) {
-                case MatchResult.Success(int head2, int tail2, R value2) ->
-                    new MatchResult.Success<>(head, tail2, value2);
-                case MatchResult.Failure<?> failure -> failure.safeCast();
-              };
+              (MatchResult<R>)
+                  allowZeroWidth(f.apply(value)).skipAndMatch(skip, input, tail, context)
+                      .startingFrom(head);
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
@@ -1012,8 +1015,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @since 10.0
    */
-  @Override public final <R> Parser<R> then(Parser<R>.OrEmpty next) {
-    return sequence(this, next, (unused, value) -> value);
+  @Override public final <R> Parser<R> then(Parser<R>.OrEmpty suffix) {
+    requireNonNull(suffix);
+    return flatMap(unused -> suffix);
   }
 
   /**
@@ -1940,7 +1944,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     /**
      * Represents a successful parse result with a value and the [head, tail) range of the match.
      */
-    record Success<V>(int head, int tail, V value) implements MatchResult<V> {}
+    record Success<V>(int head, int tail, V value) implements MatchResult<V> {
+      @Override public Success<V> startingFrom(int index) {
+        return new MatchResult.Success<>(index, tail, value);
+      }
+    }
 
     /** Represents a partial parse result with a value and the [start, end) range of the match. */
     record Failure<V>(int at, String message, Object[] args) implements MatchResult<V> {
@@ -1954,7 +1962,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             at,
             String.format("at %s: %s", input.sourcePosition(at), String.format(message, args)));
       }
+
+      @Override public Failure<V> startingFrom(int head) {
+        return this;
+      }
     }
+
+    MatchResult<V> startingFrom(int head);
   }
 
   static final class ErrorContext {
