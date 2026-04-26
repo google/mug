@@ -540,7 +540,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public static <A, B, R> Parser<R> sequence(
       Parser<A>.OrEmpty left, Parser<B> right,
       BiFunction<? super A, ? super B, ? extends R> combiner) {
-    return sequence(left.asUnsafeZeroWidthParser(), right, combiner);
+    return sequence(left.unsafeZeroWidthParser, right, combiner);
   }
 
   /**
@@ -978,7 +978,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * If this parser matches, applies function {@code f} to get the next production rule to match
    * in sequence.
    *
-   * <p>Starting from v10.0, the function can return either a {@link Parse} that consumes input,
+   * <p>Starting from v10.0, the function can return either a {@link Parser} that consumes input,
    * or an {@link OrEmpty} that will succeed even if not matched.
    */
   public final <R> Parser<R> flatMap(Function<? super T, ? extends Production<? extends R>> f) {
@@ -1053,7 +1053,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @Override public final <S> Parser<T> followedBy(Parser<S>.OrEmpty suffix) {
-    return followedBy(suffix.asUnsafeZeroWidthParser());
+    return followedBy(suffix.unsafeZeroWidthParser);
   }
 
   /**
@@ -1465,6 +1465,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public final class OrEmpty implements Production<T> {
     private final Supplier<? extends T> defaultSupplier;
 
+    /**
+     * A crippled zero-width parser, not safe to be used in a loop and must be carefully
+     * composed with a parser that does consume!
+     */
+    private final Parser<T> unsafeZeroWidthParser = notEmpty().new SamePrefix<>() {
+      @Override MatchResult<T> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        return switch (left().skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success<T> success -> success;
+          default -> new MatchResult.Success<>(start, start, computeDefaultValue());
+        };
+      }
+    };
+
     private OrEmpty(Supplier<? extends T> defaultSupplier) {
       this.defaultSupplier = defaultSupplier;
     }
@@ -1513,7 +1527,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
     @Override
     public <S> Parser<S> then(Parser<S> suffix) {
-      return asUnsafeZeroWidthParser().then(suffix);
+      return unsafeZeroWidthParser.then(suffix);
     }
 
     /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
@@ -1522,7 +1536,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     @Override public Parser<T> followedBy(Parser<?> suffix) {
-      return asUnsafeZeroWidthParser().followedBy(suffix);
+      return unsafeZeroWidthParser.followedBy(suffix);
     }
 
     /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
@@ -1583,7 +1597,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * empty value.
      */
     @Override public T parse(String input) {
-      return asUnsafeZeroWidthParser().parse(input);
+      return unsafeZeroWidthParser.parse(input);
     }
 
     /**
@@ -1599,7 +1613,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * result; if there's nothing to parse except skippable content, returns the default empty value.
      */
     @Override public T parseSkipping(Parser<?> skip, String input) {
-      return asUnsafeZeroWidthParser().parseSkipping(skip, input);
+      return unsafeZeroWidthParser.parseSkipping(skip, input);
     }
 
     /**
@@ -1609,27 +1623,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * @since 9.9.1
      */
     @Override public boolean matches(String input) {
-      return asUnsafeZeroWidthParser().matches(input);
+      return unsafeZeroWidthParser.matches(input);
     }
 
     T computeDefaultValue() {
       return defaultSupplier.get();
-    }
-
-    /**
-     * Temporarily creates a zero-width success parser. It's a crippled parser, not safe to be used
-     * in a loop and must be carefully composed with a parser that does consume!
-     */
-    private Parser<T> asUnsafeZeroWidthParser() {
-      return notEmpty().new SamePrefix<>() {
-        @Override MatchResult<T> skipAndMatch(
-            Parser<?> skip, CharInput input, int start, ErrorContext context) {
-          return switch (left().skipAndMatch(skip, input, start, context)) {
-            case MatchResult.Success<T> success -> success;
-            default -> new MatchResult.Success<>(start, start, computeDefaultValue());
-          };
-        }
-      };
     }
   }
 
@@ -1921,7 +1919,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   static <T> Parser<T> allowZeroWidth(Production<T> production) {
     return switch (production) {
       case Parser<T> parser -> parser;
-      case Parser<T>.OrEmpty orEmpty -> orEmpty.asUnsafeZeroWidthParser();
+      case Parser<T>.OrEmpty orEmpty -> orEmpty.unsafeZeroWidthParser;
     };
   }
 
