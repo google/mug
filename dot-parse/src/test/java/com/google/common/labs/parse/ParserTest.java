@@ -5574,6 +5574,40 @@ public class ParserTest {
   }
 
   @Test
+  public void rule_indirectLeftRecursion_throws() {
+    Parser.Rule<String> a = new Parser.Rule<>();
+    Parser.Rule<String> b = new Parser.Rule<>();
+
+    a.definedAs(b.or(word()));
+
+    // b = a | digits
+    // This should throw because validation of b will traverse into a, which then traverses back
+    // into b.
+    var e = assertThrows(IllegalStateException.class, () -> b.definedAs(a.or(digits())));
+    assertThat(e).hasMessageThat().contains("Left recursion not supported");
+  }
+
+  @Test
+  public void rule_directLeftRecursion_throws() {
+    Parser.Rule<String> a = new Parser.Rule<>();
+    var e = assertThrows(IllegalStateException.class, () -> a.definedAs(a.or(word())));
+    assertThat(e).hasMessageThat().contains("Left recursion not supported");
+  }
+
+  @Test
+  public void rule_tripleIndirectLeftRecursion_throws() {
+    Parser.Rule<String> a = new Parser.Rule<>();
+    Parser.Rule<String> b = new Parser.Rule<>();
+    Parser.Rule<String> c = new Parser.Rule<>();
+
+    a.definedAs(b.or(word()));
+    b.definedAs(c.or(digits()));
+
+    var e = assertThrows(IllegalStateException.class, () -> c.definedAs(a.or(word())));
+    assertThat(e).hasMessageThat().contains("Left recursion not supported");
+  }
+
+  @Test
   public void parseToStream_success() {
     Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.parseToStream("123")).containsExactly('1', '2', '3').inOrder();

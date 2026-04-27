@@ -1832,11 +1832,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         Parser<?> skip, CharInput input, int start, ErrorContext context) {
       Parser<T> p = ref.get();
       if (start == 0 && input.isEof(0)) {
-        checkState(!validating,
+        checkState(
+            !validating,
             "Left recursion not supported! Consider using withPostfixes() or the OperatorTable class"
                 + " to define the left recursive grammar.");
         if (p == null) { // can happen when validating mutually recursive rules.
-          return context.failAt(0, "empty input"); // Rule is-a Parser and can never match empty.
+          return context.failAt(0, "empty input"); // A Parser must consume input.
         }
       }
       checkState(p != null, "definedAs() should have been called before parse()");
