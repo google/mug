@@ -5558,6 +5558,22 @@ public class ParserTest {
   }
 
   @Test
+  public void rule_mutuallyRecursiveGrammar() {
+    Parser.Rule<String> expr = new Parser.Rule<>();
+    Parser.Rule<String> type = new Parser.Rule<>();
+
+    // expr = type | word
+    expr.definedAs(type.or(word()));
+
+    // type = id < expr, ... >
+    type.definedAs(
+        word().followedBy("<").then(expr.atLeastOnceDelimitedBy(",")).followedBy(">").source());
+
+    assertThat(expr.parse("Foo<Int,Bar<Double>>")).isEqualTo("Foo<Int,Bar<Double>>");
+    assertThat(expr.parse("Int")).isEqualTo("Int");
+  }
+
+  @Test
   public void parseToStream_success() {
     Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.parseToStream("123")).containsExactly('1', '2', '3').inOrder();
