@@ -1,7 +1,7 @@
 {
   "name": "Mug Dot-Parse Playground",
   "image": "mcr.microsoft.com/devcontainers/java:21",
-  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "updateContentCommand": "sudo apt-get update && sudo apt-get install -y maven",
   "features": {
     "ghcr.io/devcontainers/features/java:1": {
         "version": "21",
