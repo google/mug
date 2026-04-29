@@ -1,13 +1,5 @@
 #!/bin/bash
 
-# Ensure Maven is in the path (standard location for devcontainers)
-export PATH=$PATH:/usr/local/sdkman/candidates/maven/current/bin
-
-if ! command -v mvn &> /dev/null; then
-    echo "Error: mvn could not be found. Please wait a moment for the environment to initialize."
-    exit 1
-fi
-
 # 1. Define the submodules you want to include
 MODULES="mug dot-parse mug-guava"
 
@@ -15,7 +7,7 @@ echo "Configuring environment for: $MODULES..."
 
 # 2. Build modules and collect classpaths
 # -pl: project list, -am: also make dependencies
-mvn install -DskipTests -pl $(echo $MODULES | sed 's/ /,/g') -am -q
+mvn install -DskipTests -Dmaven.javadoc.skip=true -pl $(echo $MODULES | sed 's/ /,/g') -am -q
 
 FULL_CP=""
 for MOD in $MODULES; do

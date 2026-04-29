@@ -1,14 +1,13 @@
 {
   "name": "Mug Dot-Parse Playground",
-  "image": "mcr.microsoft.com/devcontainers/java:21",
-  "updateContentCommand": "sudo apt-get update && sudo apt-get install -y maven",
+  "image": "mcr.microsoft.com/devcontainers/java:24",
   "features": {
     "ghcr.io/devcontainers/features/java:1": {
-        "version": "21",
+        "version": "24",
         "installMaven": "true"
     }
   },
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y maven && chmod +x play.sh && mvn install -DskipTests",
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y maven && chmod +x play.sh",
   "customizations": {
     "vscode": {
       "extensions": ["vscjava.vscode-java-pack"]
