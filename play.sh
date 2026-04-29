@@ -1,5 +1,12 @@
 #!/bin/bash
-# play.sh
+
+# Ensure Maven is in the path (standard location for devcontainers)
+export PATH=$PATH:/usr/local/sdkman/candidates/maven/current/bin
+
+if ! command -v mvn &> /dev/null; then
+    echo "Error: mvn could not be found. Please wait a moment for the environment to initialize."
+    exit 1
+fi
 
 # 1. Define the submodules you want to include
 MODULES="mug dot-parse mug-guava"
@@ -21,6 +28,7 @@ done
 # 3. Create a startup script for JShell to handle auto-imports
 STARTUP_FILE=".jshell_startup"
 cat <<EOF > $STARTUP_FILE
+import com.google.mu.time.*
 import com.google.mu.util.*
 import com.google.mu.util.stream.*
 import com.google.common.labs.parse.*

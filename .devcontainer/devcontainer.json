@@ -3,7 +3,10 @@
   "image": "mcr.microsoft.com/devcontainers/java:21",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "features": {
-    "ghcr.io/devcontainers/features/common-utils:1": {}
+    "ghcr.io/devcontainers/features/java:1": {
+        "version": "21",
+        "installMaven": "true"
+    }
   },
   "postCreateCommand": "chmod +x play.sh && mvn install -DskipTests",
   "customizations": {
