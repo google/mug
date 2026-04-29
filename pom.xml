@@ -492,5 +492,23 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>playground</id>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <configuration>
+                <!-- This specifically overrides the '8' set in the main build -->
+                <source>21</source>
+                <target>21</target>
+                <release>21</release>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
   </profiles>
 </project>
