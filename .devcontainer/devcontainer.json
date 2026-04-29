@@ -8,7 +8,7 @@
         "installMaven": "true"
     }
   },
-  "postCreateCommand": "chmod +x play.sh && mvn install -DskipTests",
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y maven && chmod +x play.sh && mvn install -DskipTests",
   "customizations": {
     "vscode": {
       "extensions": ["vscjava.vscode-java-pack"]
