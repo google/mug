@@ -1,0 +1,14 @@
+{
+  "name": "Mug Dot-Parse Playground",
+  "image": "mcr.microsoft.com/devcontainers/java:21",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:1": {}
+  },
+  "postCreateCommand": "chmod +x play.sh && mvn install -DskipTests",
+  "customizations": {
+    "vscode": {
+      "extensions": ["vscjava.vscode-java-pack"]
+    }
+  }
+}
