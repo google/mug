@@ -51,20 +51,24 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
 
   @Override public void checkConstructorCall(NewClassTree tree, VisitorState state)
       throws ErrorReport {
-    checkParameters(
-        ASTHelpers.getSymbol(tree),
-        tree.getArguments(),
-        argsAsTexts(tree.getIdentifier(), tree.getArguments(), state),
-        state);
+    if (isEffectivelyAnnotated(ASTHelpers.getSymbol(tree), state)) {
+      checkParameters(
+          ASTHelpers.getSymbol(tree),
+          tree.getArguments(),
+          argsAsTexts(tree.getIdentifier(), tree.getArguments(), state),
+          state);
+    }
   }
 
   @Override public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
       throws ErrorReport {
-    checkParameters(
-        ASTHelpers.getSymbol(tree),
-        tree.getArguments(),
-        argsAsTexts(tree.getMethodSelect(), tree.getArguments(), state),
-        state);
+    if (isEffectivelyAnnotated(ASTHelpers.getSymbol(tree), state)) {
+      checkParameters(
+          ASTHelpers.getSymbol(tree),
+          tree.getArguments(),
+          argsAsTexts(tree.getMethodSelect(), tree.getArguments(), state),
+          state);
+    }
   }
 
   private void checkParameters(
@@ -73,7 +77,7 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
       List<String> argSources,
       VisitorState state)
       throws ErrorReport {
-    if (argSources.isEmpty() || !isEffectivelyAnnotated(method, state)) {
+    if (argSources.isEmpty()) {
       return;
     }
     boolean methodAnnotated = ASTHelpers.hasAnnotation(method, ANNOTATION_NAME, state);
