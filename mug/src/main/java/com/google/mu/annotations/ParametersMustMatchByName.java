@@ -33,11 +33,11 @@ import java.lang.annotation.Target;
  * }</pre>
  *
  * But if you change the constructor signature to {@code
- * record Profile(String userName, String userId)}. it will fail to compile because the parameter
+ * record Profile(String userName, String userId)}, it will fail to compile because the parameter
  * names no longer match the provided argument expressions, in order.
  *
  * <p>The {@code currentUser.getId()} expression matches the {@code userId} parameter name
- * because the effective tokens of {@code currentUser.getId()} is {@code ["current", "user", "id"]}
+ * because the effective tokens of {@code currentUser.getId()} are {@code ["current", "user", "id"]}
  * ("get" and "is" prefixes are ignored). It includes as a subsequence the {@code ["user", "id"]}
  * tokens from {@code userId}.
  *

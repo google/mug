@@ -17,6 +17,7 @@ import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.util.ASTHelpers;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberReferenceTree;
@@ -49,34 +50,27 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
   private static final String ANNOTATION_NAME =
       "com.google.mu.annotations.ParametersMustMatchByName";
 
-  @Override public void checkConstructorCall(NewClassTree tree, VisitorState state)
-      throws ErrorReport {
-    if (isEffectivelyAnnotated(ASTHelpers.getSymbol(tree), state)) {
-      checkParameters(
-          ASTHelpers.getSymbol(tree),
-          tree.getArguments(),
-          argsAsTexts(tree.getIdentifier(), tree.getArguments(), state),
-          state);
-    }
+  @Override
+  public void checkConstructorCall(NewClassTree tree, VisitorState state) throws ErrorReport {
+    checkParameters(ASTHelpers.getSymbol(tree), tree.getIdentifier(), tree.getArguments(), state);
   }
 
-  @Override public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
+  @Override
+  public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
       throws ErrorReport {
-    if (isEffectivelyAnnotated(ASTHelpers.getSymbol(tree), state)) {
-      checkParameters(
-          ASTHelpers.getSymbol(tree),
-          tree.getArguments(),
-          argsAsTexts(tree.getMethodSelect(), tree.getArguments(), state),
-          state);
-    }
+    checkParameters(ASTHelpers.getSymbol(tree), tree.getMethodSelect(), tree.getArguments(), state);
   }
 
   private void checkParameters(
       MethodSymbol method,
+      ExpressionTree callSite,
       List<? extends ExpressionTree> args,
-      List<String> argSources,
       VisitorState state)
       throws ErrorReport {
+    if (!isEffectivelyAnnotated(method, state)) {
+      return;
+    }
+    List<String> argSources = argsAsTexts(callSite, args, state);
     if (argSources.isEmpty()) {
       return;
     }
@@ -93,7 +87,9 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     for (int i = 0; i < argsToCheck; i++) {
       VarSymbol param = params.get(i);
       ExpressionTree arg = args.get(i);
-      if (normalizedArgTexts.get(i).contains(normalizeForComparison(param.toString()))) {
+      if (normalizedArgTexts
+          .get(i)
+          .contains(normalizeForComparison(param.getSimpleName().toString()))) {
         continue;
       }
       // Literal arg or for class-level annotation where the caller is also in the same class,
@@ -105,6 +101,7 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
               || arg instanceof NewClassTree
               || isClassLiteral(arg)
               || isEnumConstant(arg)
+              || isThis(arg)
               || (!methodAnnotated && method.enclClass().equals(currentClass));
       checkingOn(arg)
           .require(
@@ -129,6 +126,10 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     return tree instanceof LiteralTree
         && tree.getKind() != Tree.Kind.BOOLEAN_LITERAL
         && tree.getKind() != Tree.Kind.NULL_LITERAL;
+  }
+
+  private static boolean isThis(ExpressionTree tree) {
+    return tree instanceof IdentifierTree && ((IdentifierTree) tree).getName().contentEquals("this");
   }
 
   private static boolean isClassLiteral(ExpressionTree tree) {

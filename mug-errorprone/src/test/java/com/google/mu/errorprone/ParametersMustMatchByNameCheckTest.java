@@ -1096,4 +1096,76 @@ public final class ParametersMustMatchByNameCheckTest {
             "}")
         .doTest();
   }
+
+  @Test
+  public void innerClassConstructor_wrongArgOrder_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  class Inner {",
+            "    Inner(int width, int height) {}",
+            "  }",
+            "  void callSite(int height, int width) {",
+            "    new Inner(",
+            "        // BUG: Diagnostic contains: must match",
+            "        height,",
+            "        width);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void innerClassConstructor_correctArgOrder_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  class Inner {",
+            "    Inner(int width, int height) {}",
+            "  }",
+            "  void callSite(int height, int width) {",
+            "    new Inner(width, height);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void innerClassConstructor_annotatedConstructor_correctArgOrder_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  class Inner {",
+            "    @ParametersMustMatchByName Inner(int width, int height) {}",
+            "  }",
+            "  void callSite(int height, int width) {",
+            "    new Inner(width, height);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void thisArgumentWithUniqueType_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test implements Runnable {",
+            "  @ParametersMustMatchByName",
+            "  void test(Runnable cb) {}",
+            "  public void run() {",
+            "    test(this);",
+            "  }",
+            "}")
+        .doTest();
+  }
 }
