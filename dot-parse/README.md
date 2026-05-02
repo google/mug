@@ -597,7 +597,7 @@ This saves you from manually composing and maintaining layers on top of layers o
 
 ## Footprint
 
-- About **1000 lines of Java** (including `OperatorTable`).
+- About **2000 lines of Java** (including `OperatorTable`).
 - Besides Mug core, no other dependencies.
 
 ---
