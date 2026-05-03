@@ -98,11 +98,11 @@ loadScripts(document, 'script');</script>
  </code></pre>
 
  But if you change the constructor signature to <code>
- record Profile(String userName, String userId)</code>. it will fail to compile because the parameter
+ record Profile(String userName, String userId)</code>, it will fail to compile because the parameter
  names no longer match the provided argument expressions, in order.
 
  <p>The <code>currentUser.getId()</code> expression matches the <code>userId</code> parameter name
- because the effective tokens of <code>currentUser.getId()</code> is <code>["current", "user", "id"]</code>
+ because the effective tokens of <code>currentUser.getId()</code> are <code>["current", "user", "id"]</code>
  ("get" and "is" prefixes are ignored). It includes as a subsequence the <code>["user", "id"]</code>
  tokens from <code>userId</code>.
 

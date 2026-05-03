@@ -537,6 +537,11 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns an insertion point in the open range of <code>(floor, ceiling)</code>.</div>
 </dd>
+<dt><a href="com/google/common/labs/parse/Production.html#between(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser)" class="member-name-link">between(Parser.OrEmpty, Parser&lt;?&gt;)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
+<dd>
+<div class="block">The current production must be enclosed between <code>prefix</code> that may be empty and <code>
+ suffix</code> that may not be empty.</div>
+</dd>
 <dt><a href="com/google/common/labs/parse/Parser.html#between(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">between(Parser.OrEmpty, Parser.OrEmpty)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>
 <div class="block">Returns a parser that matches <code>this</code> pattern enclosed between <code>prefix</code> and <code>suffix</code>,
@@ -546,14 +551,19 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">The current parser enclosed between <code>prefix</code> and <code>suffix</code>, both allowed to be empty.</div>
 </dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#between(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser)" class="member-name-link">between(Parser&lt;?&gt;, Parser&lt;?&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dt><a href="com/google/common/labs/parse/Production.html#between(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">between(Parser.OrEmpty, Parser.OrEmpty)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
 <dd>
-<div class="block">Returns a parser that matches <code>this</code> pattern enclosed between <code>prefix</code> and <code>suffix</code>.</div>
+<div class="block">Returns a production rule that matches <code>this</code> pattern enclosed between <code>prefix</code> and
+ <code>suffix</code>,* both allowed to be empty.</div>
 </dd>
-<dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#between(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser)" class="member-name-link">between(Parser&lt;?&gt;, Parser&lt;?&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
+<dt><a href="com/google/common/labs/parse/Production.html#between(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser)" class="member-name-link">between(Parser&lt;?&gt;, Parser&lt;?&gt;)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
 <dd>
-<div class="block">The current optional (or zero-or-more) parser must be enclosed between non-empty <code>
- prefix</code> and <code>suffix</code>.</div>
+<div class="block">The current production must be enclosed between non-empty <code>prefix</code> and <code>suffix</code>.</div>
+</dd>
+<dt><a href="com/google/common/labs/parse/Production.html#between(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">between(Parser&lt;?&gt;, Parser.OrEmpty)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
+<dd>
+<div class="block">The current production must be enclosed between non-empty <code>prefix</code> and <code>suffix</code>
+ that may be empty.</div>
 </dd>
 <dt><a href="com/google/mu/util/Substring.html#between(com.google.mu.util.Substring.Pattern,com.google.mu.util.Substring.BoundStyle,com.google.mu.util.Substring.Pattern,com.google.mu.util.Substring.BoundStyle)" class="member-name-link">between(Substring.Pattern, Substring.BoundStyle, Substring.Pattern, Substring.BoundStyle)</a> - Static method in class com.google.mu.util.<a href="com/google/mu/util/Substring.html" title="class in com.google.mu.util">Substring</a></dt>
 <dd>
@@ -571,15 +581,9 @@ loadScripts(document, 'script');</script>
 <div class="block">Similar to <a href="com/google/mu/util/Substring.html#between(java.lang.String,java.lang.String)"><code>Substring.between(String, String)</code></a> but allows to use alternative bound styles
  to include or exclude the delimiters at both ends.</div>
 </dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#between(java.lang.String,java.lang.String)" class="member-name-link">between(String, String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dt><a href="com/google/common/labs/parse/Production.html#between(java.lang.String,java.lang.String)" class="member-name-link">between(String, String)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
 <dd>
-<div class="block">Returns a parser that matches <code>this</code> pattern enclosed between <code>prefix</code> and
- <code>suffix</code>, which are non-empty string delimiters.</div>
-</dd>
-<dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#between(java.lang.String,java.lang.String)" class="member-name-link">between(String, String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
-<dd>
-<div class="block">The current optional (or zero-or-more) parser must be enclosed between non-empty <code>
- prefix</code> and <code>suffix</code>.</div>
+<div class="block">The current production must be enclosed between non-empty <code>prefix</code> and <code>suffix</code>.</div>
 </dd>
 <dt><a href="com/google/mu/util/Substring.html#between(java.lang.String,java.lang.String)" class="member-name-link">between(String, String)</a> - Static method in class com.google.mu.util.<a href="com/google/mu/util/Substring.html" title="class in com.google.mu.util">Substring</a></dt>
 <dd>
@@ -1666,9 +1670,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Maps each pair in this stream to zero or more pairs in another <code>BiStream</code>.</div>
 </dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#flatMap(java.util.function.Function)" class="member-name-link">flatMap(Function&lt;? super T, Parser&lt;R&gt;&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dt><a href="com/google/common/labs/parse/Parser.html#flatMap(java.util.function.Function)" class="member-name-link">flatMap(Function&lt;? super T, ? extends Production&lt;? extends R&gt;&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>
-<div class="block">If this parser matches, applies function <code>f</code> to get the next parser to match in sequence.</div>
+<div class="block">If this parser matches, applies function <code>f</code> to get the next production rule to match
+ in sequence.</div>
 </dd>
 <dt><a href="com/google/mu/util/BiOptional.html#flatMap(java.util.Optional,java.util.function.Function)" class="member-name-link">flatMap(Optional&lt;T&gt;, Function&lt;? super T, ? extends BiOptional&lt;? extends A, ? extends B&gt;&gt;)</a> - Static method in class com.google.mu.util.<a href="com/google/mu/util/BiOptional.html" title="class in com.google.mu.util">BiOptional</a></dt>
 <dd>
@@ -1749,28 +1754,30 @@ loadScripts(document, 'script');</script>
  <code>&gt;=</code> the floor.</div>
 </dd>
 <dt><a href="com/google/common/labs/parse/Parser.html#followedBy(com.google.common.labs.parse.Parser)" class="member-name-link">followedBy(Parser&lt;?&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dd>&nbsp;</dd>
+<dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#followedBy(com.google.common.labs.parse.Parser)" class="member-name-link">followedBy(Parser&lt;?&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
+<dd>&nbsp;</dd>
+<dt><a href="com/google/common/labs/parse/Production.html#followedBy(com.google.common.labs.parse.Parser)" class="member-name-link">followedBy(Parser&lt;?&gt;)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
 <dd>
-<div class="block">If this parser matches, continue to match <code>suffix</code>.</div>
+<div class="block">The current production must be followed by non-empty <code>suffix</code>.</div>
 </dd>
+<dt><a href="com/google/common/labs/parse/Parser.html#followedBy(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">followedBy(Parser.OrEmpty)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#followedBy(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">followedBy(Parser.OrEmpty)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
 <dd>
 <div class="block">The current optional (or zero-or-more) parser may optionally be followed by <code>suffix</code>.</div>
 </dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#followedBy(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">followedBy(Parser.OrEmpty)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dt><a href="com/google/common/labs/parse/Production.html#followedBy(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">followedBy(Parser.OrEmpty)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
 <dd>
-<div class="block">If this parser matches, continue to match the optional <code>suffix</code>.</div>
+<div class="block">The current production may optionally be followed by <code>suffix</code>.</div>
 </dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.html#followedBy(com.google.common.labs.regex.RegexPattern)" class="member-name-link">followedBy(RegexPattern)</a> - Method in interface com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></dt>
 <dd>
 <div class="block">Returns a pattern that matches <code>this</code> only if it is followed by <code>suffix</code>.</div>
 </dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#followedBy(java.lang.String)" class="member-name-link">followedBy(String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dt><a href="com/google/common/labs/parse/Production.html#followedBy(java.lang.String)" class="member-name-link">followedBy(String)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
 <dd>
-<div class="block">If this parser matches, continue to match <code>suffix</code>.</div>
-</dd>
-<dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#followedBy(java.lang.String)" class="member-name-link">followedBy(String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
-<dd>
-<div class="block">The current optional (or zero-or-more) parser must be followed by non-empty <code>suffix</code>.</div>
+<div class="block">The current production must be followed by non-empty <code>suffix</code>.</div>
 </dd>
 <dt><a href="com/google/mu/util/Substring.Pattern.html#followedBy(java.lang.String)" class="member-name-link">followedBy(String)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a></dt>
 <dd>
@@ -2233,15 +2240,10 @@ loadScripts(document, 'script');</script>
 <div class="block">Similar to <a href="com/google/mu/util/Substring.Pattern.html#immediatelyBetween(java.lang.String,java.lang.String)"><code>Substring.Pattern.immediatelyBetween(String, String)</code></a>, but allows including the <code>
  lookbehind</code> and/or <code>lookahead</code> inclusive in the match.</div>
 </dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#immediatelyBetween(java.lang.String,java.lang.String)" class="member-name-link">immediatelyBetween(String, String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dt><a href="com/google/common/labs/parse/Production.html#immediatelyBetween(java.lang.String,java.lang.String)" class="member-name-link">immediatelyBetween(String, String)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
 <dd>
-<div class="block">Returns a parser that matches <code>this</code> pattern <em>immediately</em> enclosed between <code>
- prefix</code> and <code>suffix</code> (no skippable characters as specified by <a href="com/google/common/labs/parse/Parser.html#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> in between).</div>
-</dd>
-<dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#immediatelyBetween(java.lang.String,java.lang.String)" class="member-name-link">immediatelyBetween(String, String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
-<dd>
-<div class="block">The current optional (or zero-or-more) parser must be <em>immediately</em> enclosed between
- non-empty <code>prefix</code> and <code>suffix</code> (no skippable characters as specified by <a href="com/google/common/labs/parse/Parser.OrEmpty.html#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> in between).</div>
+<div class="block">The current production must be <em>immediately</em> enclosed between
+ non-empty <code>prefix</code> and <code>suffix</code> (no skippable characters as specified by <a href="com/google/common/labs/parse/Production.html#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> in between).</div>
 </dd>
 <dt><a href="com/google/mu/util/Substring.Pattern.html#immediatelyBetween(java.lang.String,java.lang.String)" class="member-name-link">immediatelyBetween(String, String)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a></dt>
 <dd>
@@ -2933,6 +2935,10 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns true if this parser matches the entirety of the <code>input</code>, or if the input is
  empty.</div>
 </dd>
+<dt><a href="com/google/common/labs/parse/Production.html#matches(java.lang.String)" class="member-name-link">matches(String)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
+<dd>
+<div class="block">Returns true if this production rule matches the entirety of <code>input</code> string.</div>
+</dd>
 <dt><a href="com/google/mu/util/StringFormat.html#matches(java.lang.String)" class="member-name-link">matches(String)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/StringFormat.html" title="class in com.google.mu.util">StringFormat</a></dt>
 <dd>
 <div class="block">Returns true if this format matches <code>input</code> entirely.</div>
@@ -3388,18 +3394,37 @@ loadScripts(document, 'script');</script>
 <div class="block">If this parser matches, optionally matches <code>suffix</code> with the <code>op</code> BiFunction
  to transform the current parser's result.</div>
 </dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#optionallyFollowedBy(java.lang.String)" class="member-name-link">optionallyFollowedBy(String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#optionallyFollowedBy(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">optionallyFollowedBy(Parser&lt;S&gt;, BiFunction&lt;? super T, ? super S, ? extends T&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
 <dd>
-<div class="block">Returns an equivalent parser except it allows <code>suffix</code> if present.</div>
+<div class="block">If this parser matches, optionally matches <code>suffix</code> with the <code>op</code> BiFunction
+ to transform the current parser's result.</div>
 </dd>
+<dt><a href="com/google/common/labs/parse/Production.html#optionallyFollowedBy(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">optionallyFollowedBy(Parser&lt;S&gt;, BiFunction&lt;? super T, ? super S, ? extends T&gt;)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
+<dd>
+<div class="block">If this production rule matches, optionally matches <code>suffix</code> with the <code>op</code> BiFunction
+ to transform the current production's result.</div>
+</dd>
+<dt><a href="com/google/common/labs/parse/Parser.html#optionallyFollowedBy(java.lang.String)" class="member-name-link">optionallyFollowedBy(String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#optionallyFollowedBy(java.lang.String)" class="member-name-link">optionallyFollowedBy(String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
 <dd>
 <div class="block">The current optional (or zero-or-more) parser may optionally be followed by <code>suffix</code>.</div>
 </dd>
+<dt><a href="com/google/common/labs/parse/Production.html#optionallyFollowedBy(java.lang.String)" class="member-name-link">optionallyFollowedBy(String)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
+<dd>
+<div class="block">Returns an equivalent production except it allows <code>suffix</code> if present.</div>
+</dd>
 <dt><a href="com/google/common/labs/parse/Parser.html#optionallyFollowedBy(java.lang.String,java.util.function.Function)" class="member-name-link">optionallyFollowedBy(String, Function&lt;? super T, ? extends T&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dd>&nbsp;</dd>
+<dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#optionallyFollowedBy(java.lang.String,java.util.function.Function)" class="member-name-link">optionallyFollowedBy(String, Function&lt;? super T, ? extends T&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
 <dd>
 <div class="block">If this parser matches, optionally applies the <code>op</code> function if the pattern is followed
  by <code>suffix</code>.</div>
+</dd>
+<dt><a href="com/google/common/labs/parse/Production.html#optionallyFollowedBy(java.lang.String,java.util.function.Function)" class="member-name-link">optionallyFollowedBy(String, Function&lt;? super T, ? extends T&gt;)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
+<dd>
+<div class="block">If this production rule matches, optionally applies the <code>op</code> function if this production
+ is followed by <code>suffix</code>.</div>
 </dd>
 <dt><a href="com/google/mu/util/Optionals.html" class="type-name-link" title="class in com.google.mu.util">Optionals</a> - Class in <a href="com/google/mu/util/package-summary.html">com.google.mu.util</a></dt>
 <dd>
@@ -3682,6 +3707,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Parses the entire input string and returns the result.</div>
 </dd>
+<dt><a href="com/google/common/labs/parse/Production.html#parse(java.lang.String)" class="member-name-link">parse(String)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
+<dd>
+<div class="block">Parses the entire input string and returns the result.</div>
+</dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.html#parse(java.lang.String)" class="member-name-link">parse(String)</a> - Static method in interface com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></dt>
 <dd>
 <div class="block">Parses the given regular expression string and returns its <a href="com/google/common/labs/regex/RegexPattern.html" title="interface in com.google.common.labs.regex"><code>RegexPattern</code></a> representation.</div>
@@ -3860,7 +3889,7 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/common/labs/parse/Parser.Rule.html" class="type-name-link" title="class in com.google.common.labs.parse">Parser.Rule&lt;T&gt;</a> - Class in <a href="com/google/common/labs/parse/package-summary.html">com.google.common.labs.parse</a></dt>
 <dd>
-<div class="block">A forward-declared grammar rule, to be used for recursive grammars.</div>
+<div class="block">A forward-declared production rule, to be used for recursive grammars.</div>
 </dd>
 <dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)" class="member-name-link">parseSkipping(Parser&lt;?&gt;, String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
 <dd>
@@ -3871,14 +3900,23 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Parses <code>input</code> while skipping patterns matched by <code>skip</code> around atomic matches.</div>
 </dd>
+<dt><a href="com/google/common/labs/parse/Production.html#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)" class="member-name-link">parseSkipping(Parser&lt;?&gt;, String)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
+<dd>
+<div class="block">Parses the entire input string, ignoring patterns matched by <code>skip</code>, and returns the
+ result.</div>
+</dd>
 <dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#parseSkipping(com.google.mu.util.CharPredicate,java.lang.String)" class="member-name-link">parseSkipping(CharPredicate, String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
 <dd>
-<div class="block">Parses the entire input string, ignoring <code>charsToSkip</code>, and returns the result; if
- there's nothing to parse except skippable content, returns the default empty value.</div>
+<div class="block">Parses the entire input string, ignoring <code>charsToSkip</code>, and returns the result;
+ if there's nothing to parse except skippable content, returns the default empty value.</div>
 </dd>
 <dt><a href="com/google/common/labs/parse/Parser.html#parseSkipping(com.google.mu.util.CharPredicate,java.lang.String)" class="member-name-link">parseSkipping(CharPredicate, String)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>
 <div class="block">Parses <code>input</code> while <code>charsToSkip</code> around atomic matches.</div>
+</dd>
+<dt><a href="com/google/common/labs/parse/Production.html#parseSkipping(com.google.mu.util.CharPredicate,java.lang.String)" class="member-name-link">parseSkipping(CharPredicate, String)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
+<dd>
+<div class="block">Parses the entire input string, ignoring <code>charsToSkip</code>, and returns the result.</div>
 </dd>
 <dt><a href="com/google/mu/time/DateTimeFormats.html#parseToInstant(java.lang.String)" class="member-name-link">parseToInstant(String)</a> - Static method in class com.google.mu.time.<a href="com/google/mu/time/DateTimeFormats.html" title="class in com.google.mu.time">DateTimeFormats</a></dt>
 <dd>
@@ -4153,6 +4191,11 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Lazily and iteratively matches <code>input</code> starting from <code>fromIndex</code>, skipping the
  skippable patterns, until the input is exhausted or matching failed.</div>
+</dd>
+<dt><a href="com/google/common/labs/parse/Production.html" class="type-name-link" title="interface in com.google.common.labs.parse">Production&lt;T&gt;</a> - Interface in <a href="com/google/common/labs/parse/package-summary.html">com.google.common.labs.parse</a></dt>
+<dd>
+<div class="block">A sealed interface representing an abstract production rule that can either be an
+ always-consuming <a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a> or an optional <a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse"><code>Parser.OrEmpty</code></a>.</div>
 </dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.CharacterProperty.Negated.html#property()" class="member-name-link">property()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.CharacterProperty.Negated.html" title="class in com.google.common.labs.regex">RegexPattern.CharacterProperty.Negated</a></dt>
 <dd>
@@ -4647,27 +4690,32 @@ loadScripts(document, 'script');</script>
  be the end of the string, or be separated from the rest of the string by the <code>
  separatorAfter</code> character.</div>
 </dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser.OrEmpty,java.util.function.BiFunction)" class="member-name-link">sequence(Parser.OrEmpty, Parser.OrEmpty, BiFunction&lt;? super A, ? super B, ? extends C&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser.OrEmpty,java.util.function.BiFunction)" class="member-name-link">sequence(Parser.OrEmpty, Parser.OrEmpty, BiFunction&lt;? super A, ? super B, ? extends R&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>
 <div class="block">Sequentially matches <code>left</code> then <code>right</code>, with both allowed to be optional, and
  then combines the results using the <code>combiner</code> function.</div>
 </dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser.OrEmpty,java.util.function.BiFunction)" class="member-name-link">sequence(Parser&lt;A&gt;, Parser.OrEmpty, BiFunction&lt;? super A, ? super B, ? extends C&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">sequence(Parser.OrEmpty, Parser&lt;B&gt;, BiFunction&lt;? super A, ? super B, ? extends R&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>
-<div class="block">Sequentially matches <code>left</code> then <code>right</code> (which is allowed to be optional), and
+<div class="block">Sequentially matches <code>left</code> (which is allowed to be optional), then <code>right</code>, and
  then combines the results using the <code>combiner</code> function.</div>
 </dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,com.google.mu.function.Function4)" class="member-name-link">sequence(Parser&lt;A&gt;, Parser&lt;B&gt;, Parser&lt;C&gt;, Parser&lt;D&gt;, Function4&lt;? super A, ? super B, ? super C, ? super D, ? extends T&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">sequence(Parser&lt;A&gt;, Parser&lt;B&gt;, BiFunction&lt;? super A, ? super B, ? extends R&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dd>
+<div class="block">Sequentially matches <code>left</code> then <code>right</code>, and then combines the results using the
+ <code>combiner</code> function.</div>
+</dd>
+<dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production,com.google.mu.function.Function4)" class="member-name-link">sequence(Parser&lt;A&gt;, Production&lt;B&gt;, Production&lt;C&gt;, Production&lt;D&gt;, Function4&lt;? super A, ? super B, ? super C, ? super D, ? extends R&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>
 <div class="block">Sequentially matches <code>a</code>, <code>b</code>, <code>c</code> and <code>d</code>,
  and then combines the results using the <code>combiner</code> function.</div>
 </dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,com.google.mu.function.TriFunction)" class="member-name-link">sequence(Parser&lt;A&gt;, Parser&lt;B&gt;, Parser&lt;C&gt;, TriFunction&lt;? super A, ? super B, ? super C, ? extends T&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production,com.google.mu.function.TriFunction)" class="member-name-link">sequence(Parser&lt;A&gt;, Production&lt;B&gt;, Production&lt;C&gt;, TriFunction&lt;? super A, ? super B, ? super C, ? extends R&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>
 <div class="block">Sequentially matches <code>a</code>, <code>b</code> and <code>c</code>, and then combines the results using the
  <code>combiner</code> function.</div>
 </dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">sequence(Parser&lt;A&gt;, Parser&lt;B&gt;, BiFunction&lt;? super A, ? super B, ? extends C&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.util.function.BiFunction)" class="member-name-link">sequence(Parser&lt;A&gt;, Production&lt;B&gt;, BiFunction&lt;? super A, ? super B, ? extends R&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>
 <div class="block">Sequentially matches <code>left</code> then <code>right</code>, and then combines the results using the
  <code>combiner</code> function.</div>
@@ -5129,18 +5177,26 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/function/CheckedBiPredicate.html#test(A,B)" class="member-name-link">test(A, B)</a> - Method in interface com.google.mu.function.<a href="com/google/mu/function/CheckedBiPredicate.html" title="interface in com.google.mu.function">CheckedBiPredicate</a></dt>
 <dd>&nbsp;</dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#then(com.google.common.labs.parse.Parser)" class="member-name-link">then(Parser&lt;R&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
-<dd>
-<div class="block">If this parser matches, applies the given parser on the remaining input.</div>
-</dd>
 <dt><a href="com/google/common/labs/parse/Parser.html#then(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">then(Parser.OrEmpty)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>
 <div class="block">If this parser matches, applies the given optional (or zero-or-more) parser on the remaining
  input.</div>
 </dd>
+<dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#then(com.google.common.labs.parse.Parser)" class="member-name-link">then(Parser&lt;S&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
+<dd>&nbsp;</dd>
+<dt><a href="com/google/common/labs/parse/Parser.html#then(com.google.common.labs.parse.Parser)" class="member-name-link">then(Parser&lt;S&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dd>&nbsp;</dd>
+<dt><a href="com/google/common/labs/parse/Production.html#then(com.google.common.labs.parse.Parser)" class="member-name-link">then(Parser&lt;S&gt;)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
+<dd>
+<div class="block">After matching the current production, proceed to match <code>suffix</code>.</div>
+</dd>
 <dt><a href="com/google/common/labs/parse/Parser.OrEmpty.html#then(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">then(Parser.OrEmpty)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">Parser.OrEmpty</a></dt>
 <dd>
 <div class="block">After matching the current optional (or zero-or-more) parser, proceed to match <code>suffix</code>.</div>
+</dd>
+<dt><a href="com/google/common/labs/parse/Production.html#then(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">then(Parser.OrEmpty)</a> - Method in interface com.google.common.labs.parse.<a href="com/google/common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a></dt>
+<dd>
+<div class="block">After matching the current production rule, proceed to match <code>suffix</code>.</div>
 </dd>
 <dt><a href="com/google/mu/util/Substring.Pattern.html#then(com.google.mu.util.Substring.Pattern)" class="member-name-link">then(Substring.Pattern)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/Substring.Pattern.html" title="class in com.google.mu.util">Substring.Pattern</a></dt>
 <dd>
@@ -5858,15 +5914,10 @@ the order they are declared.</div>
 <dd>
 <div class="block">Starts a fluent chain for matching the current parser zero or more times.</div>
 </dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#zeroOrMoreDelimited(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser.OrEmpty,java.lang.String,com.google.mu.util.stream.BiCollector)" class="member-name-link">zeroOrMoreDelimited(Parser&lt;A&gt;, Parser.OrEmpty, String, BiCollector&lt;? super A, ? super B, R&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dt><a href="com/google/common/labs/parse/Parser.html#zeroOrMoreDelimited(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.lang.String,com.google.mu.util.stream.BiCollector)" class="member-name-link">zeroOrMoreDelimited(Parser&lt;A&gt;, Production&lt;B&gt;, String, BiCollector&lt;? super A, ? super B, R&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>
 <div class="block">Applies <code>first</code> and the optional <code>second</code> pattern in order, for zero or more
  times, collecting the results using the provided <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a>.</div>
-</dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#zeroOrMoreDelimited(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.lang.String,com.google.mu.util.stream.BiCollector)" class="member-name-link">zeroOrMoreDelimited(Parser&lt;A&gt;, Parser&lt;B&gt;, String, BiCollector&lt;? super A, ? super B, R&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
-<dd>
-<div class="block">Applies <code>first</code> and <code>second</code> patterns in order, for zero or more times, collecting
- the results using the provided <a href="com/google/mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a>.</div>
 </dd>
 <dt><a href="com/google/common/labs/parse/Parser.html#zeroOrMoreDelimitedBy(com.google.common.labs.parse.Parser,java.util.stream.Collector)" class="member-name-link">zeroOrMoreDelimitedBy(Parser&lt;?&gt;, Collector&lt;? super T, A, ? extends R&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>

@@ -66,20 +66,20 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
 <ol class="toc-list">
-<li><a href="#between(java.lang.String,java.lang.String)" tabindex="0">between(String, String)</a></li>
-<li><a href="#between(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser)" tabindex="0">between(Parser, Parser)</a></li>
 <li><a href="#between(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser.OrEmpty)" tabindex="0">between(Parser.OrEmpty, Parser.OrEmpty)</a></li>
-<li><a href="#immediatelyBetween(java.lang.String,java.lang.String)" tabindex="0">immediatelyBetween(String, String)</a></li>
 <li><a href="#delimitedBy(java.lang.String,java.util.stream.Collector)" tabindex="0">delimitedBy(String, Collector)</a></li>
 <li><a href="#delimitedBy(java.lang.String)" tabindex="0">delimitedBy(String)</a></li>
+<li><a href="#then(com.google.common.labs.parse.Parser)" tabindex="0">then(Parser)</a></li>
 <li><a href="#then(com.google.common.labs.parse.Parser.OrEmpty)" tabindex="0">then(Parser.OrEmpty)</a></li>
-<li><a href="#followedBy(java.lang.String)" tabindex="0">followedBy(String)</a></li>
+<li><a href="#followedBy(com.google.common.labs.parse.Parser)" tabindex="0">followedBy(Parser)</a></li>
 <li><a href="#followedBy(com.google.common.labs.parse.Parser.OrEmpty)" tabindex="0">followedBy(Parser.OrEmpty)</a></li>
 <li><a href="#optionallyFollowedBy(java.lang.String)" tabindex="0">optionallyFollowedBy(String)</a></li>
+<li><a href="#optionallyFollowedBy(java.lang.String,java.util.function.Function)" tabindex="0">optionallyFollowedBy(String, Function)</a></li>
+<li><a href="#optionallyFollowedBy(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" tabindex="0">optionallyFollowedBy(Parser, BiFunction)</a></li>
 <li><a href="#notEmpty()" tabindex="0">notEmpty()</a></li>
 <li><a href="#parse(java.lang.String)" tabindex="0">parse(String)</a></li>
-<li><a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)" tabindex="0">parseSkipping(Parser, String)</a></li>
 <li><a href="#parseSkipping(com.google.mu.util.CharPredicate,java.lang.String)" tabindex="0">parseSkipping(CharPredicate, String)</a></li>
+<li><a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)" tabindex="0">parseSkipping(Parser, String)</a></li>
 <li><a href="#matches(java.lang.String)" tabindex="0">matches(String)</a></li>
 </ol>
 </li>
@@ -95,20 +95,30 @@ loadScripts(document, 'script');</script>
 </div>
 <section class="class-description" id="class-description">
 <dl class="notes">
+<dt>All Implemented Interfaces:</dt>
+<dd><code><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;T&gt;</code></dd>
+</dl>
+<dl class="notes">
 <dt>Enclosing class:</dt>
 <dd><code><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></dd>
 </dl>
 <hr>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public final class </span><span class="element-name type-name-label">Parser.OrEmpty</span>
-<span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span></div>
+<span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>
+implements <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;T&gt;</span></div>
 <div class="block">Facilitates a fluent chain for matching the current parser optionally. This is needed because
  we require all parsers to match at least one character. So optionality is only legal when
  combined together with a non-empty prefix, suffix or both, which will be specified by methods
  of this class.
 
- <p>Besides <a href="#between(java.lang.String,java.lang.String)"><code>between()</code></a> and <a href="#followedBy(java.lang.String)"><code>followedBy()</code></a>, the <a href="Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser.OrEmpty,java.util.function.BiFunction)"><code>sequence()</code></a> and <a href="Parser.html#followedBy(com.google.common.labs.parse.Parser.OrEmpty)"><code>Parser.followedBy(Parser.OrEmpty)</code></a> methods can be used to specify that a <code>Parser.OrEmpty</code>
- grammar rule follows a regular consuming <code>Parser</code>.
+ <p>Besides <a href="#between(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser.OrEmpty)"><code>between()</code></a> and <a href="Production.html#followedBy(java.lang.String)"><code>followedBy()</code></a>, the 
+<details class="invalid-tag">
+<summary>invalid reference</summary>
+<pre><code>sequence()</code></pre>
+</details>
+ and <a href="Parser.html#followedBy(com.google.common.labs.parse.Parser.OrEmpty)"><code>Parser.followedBy(Parser.OrEmpty)</code></a> methods can be used to specify that a <code>Parser.OrEmpty</code>
+ production rule follows a regular consuming <code>Parser</code>.
 
  <p>The following is a simplified example of parsing a CSV line: a comma-separated list of
  fields with an optional trailing newline. The field values can be empty; empty line results in
@@ -151,20 +161,6 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">The current parser enclosed between <code>prefix</code> and <code>suffix</code>, both allowed to be empty.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#between(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser)" class="member-name-link">between</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;prefix,
- <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;suffix)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">The current optional (or zero-or-more) parser must be enclosed between non-empty <code>
- prefix</code> and <code>suffix</code>.</div>
-</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#between(java.lang.String,java.lang.String)" class="member-name-link">between</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;prefix,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">The current optional (or zero-or-more) parser must be enclosed between non-empty <code>
- prefix</code> and <code>suffix</code>.</div>
-</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#delimitedBy(java.lang.String)" class="member-name-link">delimitedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;delimiter)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
@@ -176,59 +172,71 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">The current optional parser repeated and delimited by <code>delimiter</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>&lt;S&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedBy(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">followedBy</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;suffix)</code></div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedBy(com.google.common.labs.parse.Parser)" class="member-name-link">followedBy</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;suffix)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">The current production must be followed by non-empty <code>suffix</code>.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>&lt;S&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedBy(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">followedBy</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;suffix)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">The current optional (or zero-or-more) parser may optionally be followed by <code>suffix</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedBy(java.lang.String)" class="member-name-link">followedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">The current optional (or zero-or-more) parser must be followed by non-empty <code>suffix</code>.</div>
-</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#immediatelyBetween(java.lang.String,java.lang.String)" class="member-name-link">immediatelyBetween</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;prefix,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</code></div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#matches(java.lang.String)" class="member-name-link">matches</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">The current optional (or zero-or-more) parser must be <em>immediately</em> enclosed between
- non-empty <code>prefix</code> and <code>suffix</code> (no skippable characters as specified by <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> in between).</div>
-</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#matches(java.lang.String)" class="member-name-link">matches</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns true if this parser matches the entirety of the <code>input</code>, or if the input is
  empty.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#notEmpty()" class="member-name-link">notEmpty</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#notEmpty()" class="member-name-link">notEmpty</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns the otherwise equivalent <code>Parser</code> that will fail instead of returning the
  default value if empty.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;S&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#optionallyFollowedBy(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">optionallyFollowedBy</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>, ? super S, ? extends <a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;op)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">If this parser matches, optionally matches <code>suffix</code> with the <code>op</code> BiFunction
+ to transform the current parser's result.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#optionallyFollowedBy(java.lang.String)" class="member-name-link">optionallyFollowedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">The current optional (or zero-or-more) parser may optionally be followed by <code>suffix</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parse(java.lang.String)" class="member-name-link">parse</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</code></div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#optionallyFollowedBy(java.lang.String,java.util.function.Function)" class="member-name-link">optionallyFollowedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>, ? extends <a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;op)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">If this parser matches, optionally applies the <code>op</code> function if the pattern is followed
+ by <code>suffix</code>.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parse(java.lang.String)" class="member-name-link">parse</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Parses the entire input string and returns the result; if input is empty, returns the default
  empty value.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)" class="member-name-link">parseSkipping</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;skip,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)" class="member-name-link">parseSkipping</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;skip,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Parses the entire input string, ignoring patterns matched by <code>skip</code>, and returns the
  result; if there's nothing to parse except skippable content, returns the default empty value.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parseSkipping(com.google.mu.util.CharPredicate,java.lang.String)" class="member-name-link">parseSkipping</a><wbr>(<a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;charsToSkip,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parseSkipping(com.google.mu.util.CharPredicate,java.lang.String)" class="member-name-link">parseSkipping</a><wbr>(<a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;charsToSkip,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Parses the entire input string, ignoring <code>charsToSkip</code>, and returns the result;
+ if there's nothing to parse except skippable content, returns the default empty value.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>&lt;S&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;S&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#then(com.google.common.labs.parse.Parser)" class="member-name-link">then</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Parses the entire input string, ignoring <code>charsToSkip</code>, and returns the result; if
- there's nothing to parse except skippable content, returns the default empty value.</div>
+<div class="block">After matching the current production, proceed to match <code>suffix</code>.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>&lt;S&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#then(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">then</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;suffix)</code></div>
@@ -241,6 +249,9 @@ loadScripts(document, 'script');</script>
 <div class="inherited-list">
 <h3 id="methods-inherited-from-class-java.lang.Object">Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></h3>
 <code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#clone()" title="class or interface in java.lang" class="external-link">clone</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#equals(java.lang.Object)" title="class or interface in java.lang" class="external-link">equals</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#finalize()" title="class or interface in java.lang" class="external-link">finalize</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#getClass()" title="class or interface in java.lang" class="external-link">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#hashCode()" title="class or interface in java.lang" class="external-link">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#notify()" title="class or interface in java.lang" class="external-link">notify</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#notifyAll()" title="class or interface in java.lang" class="external-link">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#toString()" title="class or interface in java.lang" class="external-link">toString</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#wait()" title="class or interface in java.lang" class="external-link">wait</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#wait(long)" title="class or interface in java.lang" class="external-link">wait</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#wait(long,int)" title="class or interface in java.lang" class="external-link">wait</a></code></div>
+<div class="inherited-list">
+<h3 id="methods-inherited-from-class-com.google.common.labs.parse.Production">Methods inherited from interface&nbsp;com.google.common.labs.parse.<a href="Production.html" title="interface in com.google.common.labs.parse">Production</a></h3>
+<code><a href="Production.html#between(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser)">between</a>, <a href="Production.html#between(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser)">between</a>, <a href="Production.html#between(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser.OrEmpty)">between</a>, <a href="Production.html#between(java.lang.String,java.lang.String)">between</a>, <a href="Production.html#followedBy(java.lang.String)">followedBy</a>, <a href="Production.html#immediatelyBetween(java.lang.String,java.lang.String)">immediatelyBetween</a></code></div>
 </section>
 </li>
 </ul>
@@ -253,28 +264,6 @@ loadScripts(document, 'script');</script>
 <h2>Method Details</h2>
 <ul class="member-list">
 <li>
-<section class="detail" id="between(java.lang.String,java.lang.String)">
-<h3>between</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">between</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;prefix,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</span></div>
-<div class="block">The current optional (or zero-or-more) parser must be enclosed between non-empty <code>
- prefix</code> and <code>suffix</code>.</div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="between(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser)">
-<h3>between</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">between</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;prefix,
- <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;suffix)</span></div>
-<div class="block">The current optional (or zero-or-more) parser must be enclosed between non-empty <code>
- prefix</code> and <code>suffix</code>.</div>
-</div>
-</section>
-</li>
-<li>
 <section class="detail" id="between(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser.OrEmpty)">
 <h3>between</h3>
 <div class="horizontal-scroll">
@@ -282,21 +271,11 @@ loadScripts(document, 'script');</script>
  <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;suffix)</span></div>
 <div class="block">The current parser enclosed between <code>prefix</code> and <code>suffix</code>, both allowed to be empty.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="Production.html#between(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser.OrEmpty)">between</a></code>&nbsp;in interface&nbsp;<code><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></dd>
 <dt>Since:</dt>
 <dd>9.5</dd>
 </dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="immediatelyBetween(java.lang.String,java.lang.String)">
-<h3>immediatelyBetween</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">immediatelyBetween</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;prefix,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</span></div>
-<div class="block">The current optional (or zero-or-more) parser must be <em>immediately</em> enclosed between
- non-empty <code>prefix</code> and <code>suffix</code> (no skippable characters as specified by <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> in between). Useful for matching a literal string, such as
- <code>zeroOrMore(isNot('"')).immediatelyBetween("\"", "\"")</code>.</div>
 </div>
 </section>
 </li>
@@ -333,23 +312,43 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
+<section class="detail" id="then(com.google.common.labs.parse.Parser)">
+<h3>then</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="type-parameters">&lt;S&gt;</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;</span>&nbsp;<span class="element-name">then</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix)</span></div>
+<div class="block"><span class="description-from-type-label">Description copied from interface:&nbsp;<code><a href="Production.html#then(com.google.common.labs.parse.Parser)">Production</a></code></span></div>
+<div class="block">After matching the current production, proceed to match <code>suffix</code>.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="Production.html#then(com.google.common.labs.parse.Parser)">then</a></code>&nbsp;in interface&nbsp;<code><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
 <section class="detail" id="then(com.google.common.labs.parse.Parser.OrEmpty)">
 <h3>then</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="type-parameters">&lt;S&gt;</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></span>&nbsp;<span class="element-name">then</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;suffix)</span></div>
 <div class="block">After matching the current optional (or zero-or-more) parser, proceed to match <code>suffix</code>.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="Production.html#then(com.google.common.labs.parse.Parser.OrEmpty)">then</a></code>&nbsp;in interface&nbsp;<code><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></dd>
+</dl>
 </div>
 </section>
 </li>
 <li>
-<section class="detail" id="followedBy(java.lang.String)">
+<section class="detail" id="followedBy(com.google.common.labs.parse.Parser)">
 <h3>followedBy</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedBy</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</span></div>
-<div class="block">The current optional (or zero-or-more) parser must be followed by non-empty <code>suffix</code>.
-
- <p>Note that there is no <code>after()</code>, but you can use <a href="Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser.OrEmpty,java.util.function.BiFunction)"><code>sequence()</code></a> and <a href="Parser.html#followedBy(com.google.common.labs.parse.Parser.OrEmpty)"><code>Parser.followedBy(Parser.OrEmpty)</code></a> to specify that a <code>Parser.OrEmpty</code> grammar rule
- follows a regular consuming <code>Parser</code>.</div>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedBy</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;suffix)</span></div>
+<div class="block"><span class="description-from-type-label">Description copied from interface:&nbsp;<code><a href="Production.html#followedBy(com.google.common.labs.parse.Parser)">Production</a></code></span></div>
+<div class="block">The current production must be followed by non-empty <code>suffix</code>.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="Production.html#followedBy(com.google.common.labs.parse.Parser)">followedBy</a></code>&nbsp;in interface&nbsp;<code><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></dd>
+</dl>
 </div>
 </section>
 </li>
@@ -359,6 +358,10 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="type-parameters">&lt;S&gt;</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></span>&nbsp;<span class="element-name">followedBy</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;suffix)</span></div>
 <div class="block">The current optional (or zero-or-more) parser may optionally be followed by <code>suffix</code>.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="Production.html#followedBy(com.google.common.labs.parse.Parser.OrEmpty)">followedBy</a></code>&nbsp;in interface&nbsp;<code><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></dd>
+</dl>
 </div>
 </section>
 </li>
@@ -369,8 +372,44 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></span>&nbsp;<span class="element-name">optionallyFollowedBy</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</span></div>
 <div class="block">The current optional (or zero-or-more) parser may optionally be followed by <code>suffix</code>.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="Production.html#optionallyFollowedBy(java.lang.String)">optionallyFollowedBy</a></code>&nbsp;in interface&nbsp;<code><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></dd>
 <dt>Since:</dt>
 <dd>9.5</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="optionallyFollowedBy(java.lang.String,java.util.function.Function)">
+<h3>optionallyFollowedBy</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></span>&nbsp;<span class="element-name">optionallyFollowedBy</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>, ? extends <a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;op)</span></div>
+<div class="block">If this parser matches, optionally applies the <code>op</code> function if the pattern is followed
+ by <code>suffix</code>.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="Production.html#optionallyFollowedBy(java.lang.String,java.util.function.Function)">optionallyFollowedBy</a></code>&nbsp;in interface&nbsp;<code><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></dd>
+<dt>Since:</dt>
+<dd>10.0</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="optionallyFollowedBy(com.google.common.labs.parse.Parser,java.util.function.BiFunction)">
+<h3>optionallyFollowedBy</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="type-parameters">&lt;S&gt;</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></span>&nbsp;<span class="element-name">optionallyFollowedBy</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>, ? super S, ? extends <a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;op)</span></div>
+<div class="block">If this parser matches, optionally matches <code>suffix</code> with the <code>op</code> BiFunction
+ to transform the current parser's result.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="Production.html#optionallyFollowedBy(com.google.common.labs.parse.Parser,java.util.function.BiFunction)">optionallyFollowedBy</a></code>&nbsp;in interface&nbsp;<code><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></dd>
+<dt>Since:</dt>
+<dd>10.0</dd>
 </dl>
 </div>
 </section>
@@ -397,6 +436,25 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></span>&nbsp;<span class="element-name">parse</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</span></div>
 <div class="block">Parses the entire input string and returns the result; if input is empty, returns the default
  empty value.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="Production.html#parse(java.lang.String)">parse</a></code>&nbsp;in interface&nbsp;<code><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="parseSkipping(com.google.mu.util.CharPredicate,java.lang.String)">
+<h3>parseSkipping</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></span>&nbsp;<span class="element-name">parseSkipping</span><wbr><span class="parameters">(<a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;charsToSkip,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</span></div>
+<div class="block">Parses the entire input string, ignoring <code>charsToSkip</code>, and returns the result;
+ if there's nothing to parse except skippable content, returns the default empty value.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="Production.html#parseSkipping(com.google.mu.util.CharPredicate,java.lang.String)">parseSkipping</a></code>&nbsp;in interface&nbsp;<code><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></dd>
+</dl>
 </div>
 </section>
 </li>
@@ -408,17 +466,10 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</span></div>
 <div class="block">Parses the entire input string, ignoring patterns matched by <code>skip</code>, and returns the
  result; if there's nothing to parse except skippable content, returns the default empty value.</div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="parseSkipping(com.google.mu.util.CharPredicate,java.lang.String)">
-<h3>parseSkipping</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Parser.html#type-param-T" title="type parameter in Parser">T</a></span>&nbsp;<span class="element-name">parseSkipping</span><wbr><span class="parameters">(<a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;charsToSkip,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</span></div>
-<div class="block">Parses the entire input string, ignoring <code>charsToSkip</code>, and returns the result; if
- there's nothing to parse except skippable content, returns the default empty value.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="Production.html#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)">parseSkipping</a></code>&nbsp;in interface&nbsp;<code><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></dd>
+</dl>
 </div>
 </section>
 </li>
@@ -430,6 +481,8 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns true if this parser matches the entirety of the <code>input</code>, or if the input is
  empty. It's similar to the regex <code>Matcher.matches(String)</code> method.</div>
 <dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="Production.html#matches(java.lang.String)">matches</a></code>&nbsp;in interface&nbsp;<code><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;<a href="Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></dd>
 <dt>Since:</dt>
 <dd>9.9.1</dd>
 </dl>
