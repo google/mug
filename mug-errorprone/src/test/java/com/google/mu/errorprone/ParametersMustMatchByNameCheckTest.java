@@ -1168,4 +1168,26 @@ public final class ParametersMustMatchByNameCheckTest {
             "}")
         .doTest();
   }
+
+  @Test
+  public void onMethod_multilineArgWithCommentOnFirstLineOfArg() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import static java.util.Arrays.asList;",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "import java.util.List;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(List<Integer> list1, List<Integer> list2) {}",
+            "  void callSite() {",
+            "    test(",
+            "        asList(0, // list1",
+            "               1),",
+            "        asList(2, // list2",
+            "               3));",
+            "  }",
+            "}")
+        .doTest();
+  }
 }
