@@ -63,7 +63,7 @@ final class SourceUtils {
     }
     LineMap lineMap = state.getPath().getCompilationUnit().getLineMap();
     if (lineMap == null) {
-      return ImmutableList.of();
+      return argsAsTextsNoLineNumbers(methodName, args, state);
     }
     long startingLine = lineMap.getLineNumber(position);
     ImmutableList<Long> argLines =
@@ -90,6 +90,21 @@ final class SourceUtils {
       }
       builder.add(state.getSourceCode().subSequence(position, end).toString());
       position = end;
+    }
+    return builder.build();
+  }
+
+  private static ImmutableList<String> argsAsTextsNoLineNumbers(
+      ExpressionTree method, List<? extends ExpressionTree> args, VisitorState state) {
+    int position = state.getEndPosition(method);
+    ImmutableList.Builder<String> builder = ImmutableList.builder();
+    for (ExpressionTree arg : args) {
+      int next = state.getEndPosition(arg);
+      if (next < 0) {
+        return ImmutableList.of();
+      }
+      builder.add(state.getSourceCode().subSequence(position, next).toString());
+      position = next;
     }
     return builder.build();
   }

@@ -541,7 +541,8 @@ public class ParserTest {
             .setDefault(Parser.class, string("a"))
             .setDefault(Parser.OrEmpty.class, string("a").orElse("default"))
             .setDefault(String.class, "test")
-            .setDefault(char.class, '`');
+            .setDefault(char.class, '`')
+            .setDefault(Production.class, Parser.zeroOrMore(charsIn("[]")));
     tester.testAllPublicStaticMethods(Parser.class);
     tester
         .ignore(Parser.class.getMethod("orElse", Object.class))
@@ -711,6 +712,25 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.parse("123=124"));
     assertThat(parser.matches("123=124")).isFalse();
     assertThrows(ParseException.class, () -> parser.parseToStream("123=124").toList());
+  }
+
+  @Test
+  public void flatMap_returningOrEmpty_outerRuleFails() {
+    Parser<String> parser = digits().flatMap(number -> string("=" + number).orElse("default"));
+    assertThrows(ParseException.class, () -> parser.parse("=123"));
+    assertThat(parser.matches("=123")).isFalse();
+  }
+
+  @Test
+  public void flatMap_returningOrEmpty_innerRuleMatches() {
+    Parser<String> parser = digits().flatMap(number -> string("=" + number).orElse("default"));
+    assertThat(parser.parse("123=123")).isEqualTo("=123");
+  }
+
+  @Test
+  public void flatMap_returningOrEmpty_innerRuleMatchesEmpty() {
+    Parser<String> parser = digits().flatMap(number -> string("=" + number).orElse("default"));
+    assertThat(parser.parse("123")).isEqualTo("default");
   }
 
   @Test
@@ -1383,6 +1403,46 @@ public class ParserTest {
   }
 
   @Test
+  public void sequence3_secondRuleOptional_optionalRuleMatches() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b").orElse("default-b"),
+        string("c"),
+        (a, b, c) -> a + b + c);
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test
+  public void sequence3_secondRuleOptional_optionalRuleMatchesEmpty() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b").orElse("default-b"),
+        string("c"),
+        (a, b, c) -> a + b + c);
+    assertThat(parser.parse("ac")).isEqualTo("adefault-bc");
+  }
+
+  @Test
+  public void sequence3_thirdRuleOptional_optionalRuleMatches() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b"),
+        string("c").orElse("default-c"),
+        (a, b, c) -> a + b + c);
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test
+  public void sequence3_thirdRuleOptional_optionalRuleMatchesEmpty() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b"),
+        string("c").orElse("default-c"),
+        (a, b, c) -> a + b + c);
+    assertThat(parser.parse("ab")).isEqualTo("abdefault-c");
+  }
+
+  @Test
   public void sequence4_success() {
     Parser<String> parser =
         sequence(string("a"), string("b"), string("c"), string("d"), (a, b, c, d) -> a + b + c + d);
@@ -1422,6 +1482,72 @@ public class ParserTest {
     assertThat(parser.probe("axcd")).isEmpty();
     assertThat(parser.probe("abxd")).isEmpty();
     assertThat(parser.probe("abcx")).isEmpty();
+  }
+
+  @Test
+  public void sequence4_secondRuleOptional_optionalRuleMatches() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b").orElse("default-b"),
+        string("c"),
+        string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.parse("abcd")).isEqualTo("abcd");
+  }
+
+  @Test
+  public void sequence4_secondRuleOptional_optionalRuleMatchesEmpty() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b").orElse("default-b"),
+        string("c"),
+        string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.parse("acd")).isEqualTo("adefault-bcd");
+  }
+
+  @Test
+  public void sequence4_thirdRuleOptional_optionalRuleMatches() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b"),
+        string("c").orElse("default-c"),
+        string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.parse("abcd")).isEqualTo("abcd");
+  }
+
+  @Test
+  public void sequence4_thirdRuleOptional_optionalRuleMatchesEmpty() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b"),
+        string("c").orElse("default-c"),
+        string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.parse("abd")).isEqualTo("abdefault-cd");
+  }
+
+  @Test
+  public void sequence4_fourthRuleOptional_optionalRuleMatches() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b"),
+        string("c"),
+        string("d").orElse("default-d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.parse("abcd")).isEqualTo("abcd");
+  }
+
+  @Test
+  public void sequence4_fourthRuleOptional_optionalRuleMatchesEmpty() {
+    Parser<String> parser = sequence(
+        string("a"),
+        string("b"),
+        string("c"),
+        string("d").orElse("default-d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.parse("abc")).isEqualTo("abcdefault-d");
   }
 
   @Test
@@ -3726,6 +3852,86 @@ public class ParserTest {
   }
 
   @Test
+  public void parser_between_parser_orEmpty_suffixPresent() {
+    Parser<String> parser = string("content").between(string("["), string("]").orElse(null));
+    assertThat(parser.parse("[content]")).isEqualTo("content");
+  }
+
+  @Test
+  public void parser_between_parser_orEmpty_suffixAbsent() {
+    Parser<String> parser = string("content").between(string("["), string("]").orElse(null));
+    assertThat(parser.parse("[content")).isEqualTo("content");
+  }
+
+  @Test
+  public void orEmpty_between_parser_orEmpty_bothPresent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("["), string("]").orElse(null));
+    assertThat(parser.parse("[aa]")).isEqualTo("aa");
+  }
+
+  @Test
+  public void orEmpty_between_parser_orEmpty_rulePresent_suffixAbsent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("["), string("]").orElse(null));
+    assertThat(parser.parse("[aa")).isEqualTo("aa");
+  }
+
+  @Test
+  public void orEmpty_between_parser_orEmpty_ruleAbsent_suffixPresent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("["), string("]").orElse(null));
+    assertThat(parser.parse("[]")).isEqualTo("");
+  }
+
+  @Test
+  public void orEmpty_between_parser_orEmpty_bothAbsent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("["), string("]").orElse(null));
+    assertThat(parser.parse("[")).isEqualTo("");
+  }
+
+  @Test
+  public void parser_between_orEmpty_parser_prefixPresent() {
+    Parser<String> parser = string("content").between(string("[").orElse(null), string("]"));
+    assertThat(parser.parse("[content]")).isEqualTo("content");
+  }
+
+  @Test
+  public void parser_between_orEmpty_parser_prefixAbsent() {
+    Parser<String> parser = string("content").between(string("[").orElse(null), string("]"));
+    assertThat(parser.parse("content]")).isEqualTo("content");
+  }
+
+  @Test
+  public void orEmpty_between_orEmpty_parser_bothPresent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("[").orElse(null), string("]"));
+    assertThat(parser.parse("[aa]")).isEqualTo("aa");
+  }
+
+  @Test
+  public void orEmpty_between_orEmpty_parser_rulePresent_prefixAbsent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("[").orElse(null), string("]"));
+    assertThat(parser.parse("aa]")).isEqualTo("aa");
+  }
+
+  @Test
+  public void orEmpty_between_orEmpty_parser_ruleAbsent_prefixPresent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("[").orElse(null), string("]"));
+    assertThat(parser.parse("[]")).isEqualTo("");
+  }
+
+  @Test
+  public void orEmpty_between_orEmpty_parser_bothAbsent() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .between(string("[").orElse(null), string("]"));
+    assertThat(parser.parse("]")).isEqualTo("");
+  }
+
+  @Test
   public void orEmpty_immediatelyBetween_success() {
     Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
     assertThat(parser.parse("[foo]")).isEqualTo("foo");
@@ -3825,6 +4031,30 @@ public class ParserTest {
     assertThat(parser.source().parse("[aa]")).isEqualTo("[aa]");
     assertThat(parser.source().parse("[,]")).isEqualTo("[,]");
     assertThat(parser.source().parse("[]")).isEqualTo("[]");
+  }
+
+  @Test
+  public void orEmpty_optionallyFollowedBy_string_function_success() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .optionallyFollowedBy("++", s -> s + "b")
+        .between("[", "]");
+    assertThat(parser.parse("[aa++]")).isEqualTo("aab");
+    assertThat(parser.parse("[aa]")).isEqualTo("aa");
+    assertThat(parser.parse("[++]")).isEqualTo("b");
+    assertThat(parser.parse("[]")).isEqualTo("");
+  }
+
+  @Test
+  public void orEmpty_optionallyFollowedBy_parser_biFunction_success() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's")
+        .optionallyFollowedBy(
+            string("+").then(digits()).map(String::length),
+            (s, len) -> s + len)
+        .between("[", "]");
+    assertThat(parser.parse("[aa+123]")).isEqualTo("aa3");
+    assertThat(parser.parse("[aa]")).isEqualTo("aa");
+    assertThat(parser.parse("[+123]")).isEqualTo("3");
+    assertThat(parser.parse("[]")).isEqualTo("");
   }
 
   @Test
@@ -5306,6 +5536,78 @@ public class ParserTest {
   }
 
   @Test
+  public void define_leftRecursive_throws() {
+    assertThrows(
+        IllegalStateException.class,
+        () -> Parser.<String>define(self -> string("/").orElse("").then(self)));
+  }
+
+  @Test
+  public void rule_recursiveParser_parseCorrectly() {
+    var rule = new Parser.Rule<Integer>();
+    Parser<Integer> num = Parser.one(CharPredicate.range('0', '9'), "digit").map(c -> c - '0');
+    Parser<Integer> atomic = rule.between("(", ")").or(num);
+    Parser<Integer> expr =
+        atomic.atLeastOnceDelimitedBy("+")
+            .map(nums -> nums.stream().mapToInt(n -> n).sum());
+    rule.definedAs(expr);
+
+    assertThat(rule.parse("1+2")).isEqualTo(3);
+    assertThat(rule.parse("(1+2)+3")).isEqualTo(6);
+    assertThat(rule.parse("((1+2)+3)+4")).isEqualTo(10);
+  }
+
+  @Test
+  public void rule_mutuallyRecursiveGrammar() {
+    Parser.Rule<String> expr = new Parser.Rule<>();
+    Parser.Rule<String> type = new Parser.Rule<>();
+
+    // expr = type | word
+    expr.definedAs(type.or(word()));
+
+    // type = id < expr, ... >
+    type.definedAs(
+        word().followedBy("<").then(expr.atLeastOnceDelimitedBy(",")).followedBy(">").source());
+
+    assertThat(expr.parse("Foo<Int,Bar<Double>>")).isEqualTo("Foo<Int,Bar<Double>>");
+    assertThat(expr.parse("Int")).isEqualTo("Int");
+  }
+
+  @Test
+  public void rule_indirectLeftRecursion_throws() {
+    Parser.Rule<String> a = new Parser.Rule<>();
+    Parser.Rule<String> b = new Parser.Rule<>();
+
+    a.definedAs(b.or(word()));
+
+    // b = a | digits
+    // This should throw because validation of b will traverse into a, which then traverses back
+    // into b.
+    var e = assertThrows(IllegalStateException.class, () -> b.definedAs(a.or(digits())));
+    assertThat(e).hasMessageThat().contains("Left recursion not supported");
+  }
+
+  @Test
+  public void rule_directLeftRecursion_throws() {
+    Parser.Rule<String> a = new Parser.Rule<>();
+    var e = assertThrows(IllegalStateException.class, () -> a.definedAs(a.or(word())));
+    assertThat(e).hasMessageThat().contains("Left recursion not supported");
+  }
+
+  @Test
+  public void rule_tripleIndirectLeftRecursion_throws() {
+    Parser.Rule<String> a = new Parser.Rule<>();
+    Parser.Rule<String> b = new Parser.Rule<>();
+    Parser.Rule<String> c = new Parser.Rule<>();
+
+    a.definedAs(b.or(word()));
+    b.definedAs(c.or(digits()));
+
+    var e = assertThrows(IllegalStateException.class, () -> c.definedAs(a.or(word())));
+    assertThat(e).hasMessageThat().contains("Left recursion not supported");
+  }
+
+  @Test
   public void parseToStream_success() {
     Parser<Character> parser = one(DIGIT, "digit");
     assertThat(parser.parseToStream("123")).containsExactly('1', '2', '3').inOrder();
@@ -5812,7 +6114,7 @@ public class ParserTest {
               subpath)
           .atLeastOnceDelimitedBy("/")
           .map(ResourceNamePattern::new)
-          .optionalPostfix(revision.map(v -> pattern -> pattern.withRevision(v)));
+          .optionallyFollowedBy(revision.map(v -> pattern -> pattern.withRevision(v)));
     }
 
     static ResourceNamePattern parse(String path) {

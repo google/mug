@@ -56,6 +56,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.google.errorprone.annotations.ThreadSafe;
 import com.google.mu.function.Function4;
 import com.google.mu.function.TriFunction;
 import com.google.mu.util.Both;
@@ -78,7 +79,6 @@ import com.google.mu.util.stream.Joiner;
  * {@link #orElse orElse()} and {@link #optional optional()} fluent chains.
  *
  * <p>For simplicity, {@link #or or()} and {@link #anyOf anyOf()} will always backtrack upon failure.
- * But it's more efficient to factor out common left prefix. For example instead of {@code
  * anyOf(expr.followedBy(";"), expr)}, use {@code expr.optionallyFollowedBy(";")} instead.
  *
  * <p>WARNING: A poorly-written grammar with long common prefixes among {@code anyOf()} choices
@@ -88,7 +88,8 @@ import com.google.mu.util.stream.Joiner;
  * Parser.Rule}, maliciously crafted input (think of 10K left parens in an expression parser)
  * can cause StackOverflowError.
  */
-public abstract class Parser<T> {
+@ThreadSafe
+public abstract non-sealed class Parser<T> implements Production<T> {
   private static final Set<String> EMPTY_PREFIX = Set.of("");
 
   /**
@@ -175,7 +176,7 @@ public abstract class Parser<T> {
     return consecutive(characterSet, "one or more " + characterSet);
   }
 
-  private static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
+  static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
     requireNonNull(matcher);
     requireNonNull(name);
     return new Parser<>() {
@@ -256,26 +257,18 @@ public abstract class Parser<T> {
    * <p>Useful when you need to skip characters until a particular anchor point, something awkward
    * to express in regex.
    *
-   * <p>For example, if you want to express a tag that looks like {@code <div .... dir='rtl'>}, you
-   * have to use a pattern like: {@code "<div\\s+[^>]*dir\\s*=\\s*'rtl'>"}, or worse {@code
-   * "<div\\s+.*dir\\s*=\\s*'rtl'>"} Such regex is awkward to express and inherently requires
-   * backtracking because {@code [^>]+} can eat up the "dir..." characters so the regex engine would
-   * have to back track in order to match those later patterns.
-   *
-   * <p>With the {@code first()} parser, such pattern can be expressed more straight-forwardly, and
-   * not subject to backtracking:
+   * <p>For example, markdown supports using any number of backticks to start a code block. The
+   * code block then ends with the same number of backticks. You can parse it trivially using
+   * {@code first()}:
    *
    * <pre>{@code
-   * import com.google.mu.util.Substring;
+   * import static com.google.mu.util.CharPredicate.is;
    *
-   * Substring.between("<div", ">").from(html)               // locate the div tag
-   *     .flatMap(tag ->
-   *         Parser.first("dir")                             // find the "dir" inside the tag
-   *             .followedBy("=")
-   *             .then(word().immediatelyBetween("'", "'"))  // ltr or rtl
-   *             .skipping(whitespace())                     // ignore whitespaces
-   *             .probe(tag)                                 // probe, don't throw
-   *             .findFirst());                              // Stream.findFirst()
+   * Parser<String> codeBlock =
+   *     // one or more consecutive backticks start a code block
+   *     consecutive(is('`'), "backticks")
+   *         .flatMap(Parser::first) // the same number of backticks conclude the code block
+   *         .source();              // span the full ```code block```
    * }</pre>
    *
    * @since 9.5
@@ -505,21 +498,22 @@ public abstract class Parser<T> {
    * Sequentially matches {@code left} then {@code right}, and then combines the results using the
    * {@code combiner} function.
    */
-  public static <A, B, C> Parser<C> sequence(
-      Parser<A> left, Parser<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
+  public static <A, B, R> Parser<R> sequence(
+      Parser<A> left, Parser<B> right, BiFunction<? super A, ? super B, ? extends R> combiner) {
     requireNonNull(right);
     requireNonNull(combiner);
     return left.flatMap(v1 -> right.map(v2 -> combiner.apply(v1, v2)));
   }
 
   /**
-   * Sequentially matches {@code left} then {@code right} (which is allowed to be optional), and
-   * then combines the results using the {@code combiner} function. If {@code right} is empty, the
-   * default value is passed to the {@code combiner} function.
+   * Sequentially matches {@code left} then {@code right}, and then combines the results using the
+   * {@code combiner} function.
+   *
+   * @since 10.0
    */
-  public static <A, B, C> Parser<C> sequence(
-      Parser<A> left, Parser<B>.OrEmpty right, BiFunction<? super A, ? super B, ? extends C> combiner) {
-    return sequence(left, right.asUnsafeZeroWidthParser(), combiner);
+  public static <A, B, R> Parser<R> sequence(
+      Parser<A> left, Production<B> right, BiFunction<? super A, ? super B, ? extends R> combiner) {
+    return sequence(left, allowZeroWidth(right), combiner);
   }
 
   /**
@@ -527,8 +521,9 @@ public abstract class Parser<T> {
    * then combines the results using the {@code combiner} function. If either is empty, the
    * corresponding default value is passed to the {@code combiner} function.
    */
-  public static <A, B, C> Parser<C>.OrEmpty sequence(
-      Parser<A>.OrEmpty left, Parser<B>.OrEmpty right, BiFunction<? super A, ? super B, ? extends C> combiner) {
+  public static <A, B, R> Parser<R>.OrEmpty sequence(
+      Parser<A>.OrEmpty left, Parser<B>.OrEmpty right,
+      BiFunction<? super A, ? super B, ? extends R> combiner) {
     return anyOf(
         sequence(left.notEmpty(), right, combiner),
         right.notEmpty().map(v2 -> combiner.apply(left.computeDefaultValue(), v2)))
@@ -539,10 +534,13 @@ public abstract class Parser<T> {
    * Sequentially matches {@code left} (which is allowed to be optional), then {@code right}, and
    * then combines the results using the {@code combiner} function. If {@code left} is empty, the
    * default value is passed to the {@code combiner} function.
+   *
+   * @since 10.0
    */
-  static <A, B, C> Parser<C> sequence(
-      Parser<A>.OrEmpty left, Parser<B> right, BiFunction<? super A, ? super B, ? extends C> combiner) {
-    return sequence(left.asUnsafeZeroWidthParser(), right, combiner);
+  public static <A, B, R> Parser<R> sequence(
+      Parser<A>.OrEmpty left, Parser<B> right,
+      BiFunction<? super A, ? super B, ? extends R> combiner) {
+    return sequence(left.unsafeZeroWidthParser, right, combiner);
   }
 
   /**
@@ -551,12 +549,12 @@ public abstract class Parser<T> {
    *
    * @since 9.5
    */
-  public static <A, B, C, T> Parser<T> sequence(
-      Parser<A> a, Parser<B> b, Parser<C> c,
-      TriFunction<? super A, ? super B, ? super C, ? extends T> combiner) {
+  public static <A, B, C, R> Parser<R> sequence(
+      Parser<A> a, Production<B> b, Production<C> c,
+      TriFunction<? super A, ? super B, ? super C, ? extends R> combiner) {
     requireNonNull(combiner);
     return sequence(
-        a, sequence(b, c, AbstractMap.SimpleImmutableEntry<B, C>::new),
+        a, sequence(allowZeroWidth(b), c, AbstractMap.SimpleImmutableEntry<B, C>::new),
         (v1, bc) -> combiner.apply(v1, bc.getKey(), bc.getValue()));
   }
 
@@ -566,13 +564,13 @@ public abstract class Parser<T> {
    *
    * @since 9.5
    */
-  public static <A, B, C, D, T> Parser<T> sequence(
-      Parser<A> a, Parser<B> b, Parser<C> c, Parser<D> d,
-      Function4<? super A, ? super B, ? super C, ? super D, ? extends T> combiner) {
+  public static <A, B, C, D, R> Parser<R> sequence(
+      Parser<A> a, Production<B> b, Production<C> c, Production<D> d,
+      Function4<? super A, ? super B, ? super C, ? super D, ? extends R> combiner) {
     requireNonNull(combiner);
     return sequence(
         sequence(a, b, AbstractMap.SimpleImmutableEntry<A, B>::new),
-        sequence(c, d, AbstractMap.SimpleImmutableEntry<C, D>::new),
+        sequence(allowZeroWidth(c), d, AbstractMap.SimpleImmutableEntry<C, D>::new),
         (ab, cd) -> combiner.apply(ab.getKey(), ab.getValue(), cd.getKey(), cd.getValue()));
   }
 
@@ -857,37 +855,6 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Applies {@code first} and {@code second} patterns in order, for zero or more times, collecting
-   * the results using the provided {@link BiCollector}.
-   *
-   * <p>Typically used to parse key-value pairs:
-   *
-   * <pre>{@code
-   * import static com.google.mu.util.stream.BiCollectors.toMap;
-   * import static java.util.stream.Collectors.toList;
-   *
-   * Parser<Map<String, List<String>>> jsonMap =
-   *     zeroOrMoreDelimited(
-   *            word().followedBy(":"),
-   *            quotedByWithEscapes('"', '"', chars(1)),
-   *            ",",
-   *            toMap(toList()))
-   *         .followedBy(string(",").optional()) // only if you need to allow trailing comma
-   *         .between("{", "}");
-   * }</pre>
-   *
-   * @since 9.4
-   */
-  public static <A, B, R> Parser<R>.OrEmpty zeroOrMoreDelimited(
-      Parser<A> first,
-      Parser<B> second,
-      String delimiter,
-      BiCollector<? super A, ? super B, R> collector) {
-    return sequence(first, second, Both::of)
-        .zeroOrMoreDelimitedBy(delimiter, mapping(identity(), collector));
-  }
-
-  /**
    * Applies {@code first} and the optional {@code second} pattern in order, for zero or more
    * times, collecting the results using the provided {@link BiCollector}.
    *
@@ -910,7 +877,7 @@ public abstract class Parser<T> {
    */
   public static <A, B, R> Parser<R>.OrEmpty zeroOrMoreDelimited(
       Parser<A> first,
-      Parser<B>.OrEmpty second,
+      Production<B> second,
       String delimiter,
       BiCollector<? super A, ? super B, R> collector) {
     return sequence(first, second, Both::of)
@@ -983,37 +950,13 @@ public abstract class Parser<T> {
   }
 
   /**
-   * Returns a parser that matches {@code this} pattern enclosed between {@code prefix} and
-   * {@code suffix}, which are non-empty string delimiters.
-   */
-  public final Parser<T> between(String prefix, String suffix) {
-    return between(string(prefix), string(suffix));
-  }
-
-  /**
-   * Returns a parser that matches {@code this} pattern enclosed between {@code prefix} and {@code suffix}.
-   */
-  public final Parser<T> between(Parser<?> prefix, Parser<?> suffix) {
-    return prefix.then(this).followedBy(suffix);
-  }
-
-  /**
    * Returns a parser that matches {@code this} pattern enclosed between {@code prefix} and {@code suffix},
    * both allowed to be empty.
    *
    * @since 9.5
    */
-  public final Parser<T> between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix) {
+  @Override public final Parser<T> between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix) {
     return prefix.then(this).followedBy(suffix);
-  }
-
-  /**
-   * Returns a parser that matches {@code this} pattern <em>immediately</em> enclosed between {@code
-   * prefix} and {@code suffix} (no skippable characters as specified by {@link #parseSkipping
-   * parseSkipping()} in between).
-   */
-  public final Parser<T> immediatelyBetween(String prefix, String suffix) {
-    return string(prefix).then(literally(followedBy(suffix)));
   }
 
   /** If this parser matches, returns the result of applying the given function to the match. */
@@ -1032,20 +975,23 @@ public abstract class Parser<T> {
   }
 
   /**
-   * If this parser matches, applies function {@code f} to get the next parser to match in sequence.
+   * If this parser matches, applies function {@code f} to get the next production rule to match
+   * in sequence.
+   *
+   * <p>Starting from v10.0, the function can return either a {@link Parser} that consumes input,
+   * or an {@link OrEmpty} that will succeed even if not matched.
    */
-  public final <R> Parser<R> flatMap(Function<? super T, Parser<R>> f) {
+  public final <R> Parser<R> flatMap(Function<? super T, ? extends Production<? extends R>> f) {
     requireNonNull(f);
     return new SamePrefix<>() {
+      @SuppressWarnings("unchecked")  // MatchResult<R> is covariant
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success(int head, int tail, T value) ->
-              switch (f.apply(value).skipAndMatch(skip, input, tail, context)) {
-                case MatchResult.Success(int head2, int tail2, R value2) ->
-                    new MatchResult.Success<>(head, tail2, value2);
-                case MatchResult.Failure<?> failure -> failure.safeCast();
-              };
+              (MatchResult<R>)
+                  allowZeroWidth(f.apply(value)).skipAndMatch(skip, input, tail, context)
+                      .startingFrom(head);
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
@@ -1057,18 +1003,21 @@ public abstract class Parser<T> {
     return map(unused -> result);
   }
 
-  /** If this parser matches, applies the given parser on the remaining input. */
-  public final <R> Parser<R> then(Parser<R> next) {
-    requireNonNull(next);
-    return flatMap(unused -> next);
+  @Override
+  public final <S> Parser<S> then(Parser<S> suffix) {
+    requireNonNull(suffix);
+    return flatMap(unused -> suffix);
   }
 
   /**
    * If this parser matches, applies the given optional (or zero-or-more) parser on the remaining
    * input.
+   *
+   * @since 10.0
    */
-  public final <R> Parser<R> then(Parser<R>.OrEmpty next) {
-    return sequence(this, next, (unused, value) -> value);
+  @Override public final <R> Parser<R> then(Parser<R>.OrEmpty suffix) {
+    requireNonNull(suffix);
+    return flatMap(unused -> suffix);
   }
 
   /**
@@ -1098,19 +1047,13 @@ public abstract class Parser<T> {
     };
   }
 
-  /** If this parser matches, continue to match {@code suffix}. */
-  public final Parser<T> followedBy(String suffix) {
-    return followedBy(string(suffix));
+  @Override public Parser<T> followedBy(Parser<?> suffix) {
+    requireNonNull(suffix);
+    return flatMap(v -> suffix.thenReturn(v));
   }
 
-  /** If this parser matches, continue to match {@code suffix}. */
-  public final Parser<T> followedBy(Parser<?> suffix) {
-    return sequence(this, suffix, (value, unused) -> value);
-  }
-
-  /** If this parser matches, continue to match the optional {@code suffix}. */
-  public final <X> Parser<T> followedBy(Parser<X>.OrEmpty suffix) {
-    return sequence(this, suffix, (value, unused) -> value);
+  @Override public final <S> Parser<T> followedBy(Parser<S>.OrEmpty suffix) {
+    return followedBy(suffix.unsafeZeroWidthParser);
   }
 
   /**
@@ -1127,17 +1070,12 @@ public abstract class Parser<T> {
     return followedBy(UNSAFE_EOF);
   }
 
-  /** Returns an equivalent parser except it allows {@code suffix} if present. */
-  public final Parser<T> optionallyFollowedBy(String suffix) {
+  @Override public final Parser<T> optionallyFollowedBy(String suffix) {
     return followedBy(string(suffix).orElse(null));
   }
 
-  /**
-   * If this parser matches, optionally applies the {@code op} function if the pattern is followed
-   * by {@code suffix}.
-   */
-  public final Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
-    return optionalPostfix(string(suffix).thenReturn(op::apply));
+  @Override public final Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
+    return optionallyFollowedBy(string(suffix).thenReturn(op::apply));
   }
 
   /**
@@ -1154,14 +1092,14 @@ public abstract class Parser<T> {
    *
    * @since 9.5
    */
-  public final <S> Parser<T> optionallyFollowedBy(
+  @Override public final <S> Parser<T> optionallyFollowedBy(
       Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> op) {
     requireNonNull(op);
-    return optionalPostfix(suffix.map(s -> p -> op.apply(p, s)));
+    return optionallyFollowedBy(suffix.map(s -> p -> op.apply(p, s)));
   }
 
-  final Parser<T> optionalPostfix(Parser<UnaryOperator<T>> suffix) {
-    return sequence(this, suffix.orElse(identity()), (operand, op) -> op.apply(operand));
+  final Parser<T> optionallyFollowedBy(Parser<UnaryOperator<T>> suffix) {
+    return flatMap(operand -> suffix.map(op -> op.apply(operand)).orElse(operand));
   }
 
   /** A form of negative lookahead such that the match is rejected if followed by {@code suffix}. */
@@ -1300,7 +1238,7 @@ public abstract class Parser<T> {
    *
    * <p>Equivalent to {@code skipping(skip).parse(input)}.
    */
-  public final T parseSkipping(Parser<?> skip, String input) {
+  @Override public final T parseSkipping(Parser<?> skip, String input) {
     return skipping(skip).parse(input);
   }
 
@@ -1309,7 +1247,7 @@ public abstract class Parser<T> {
    *
    * <p>Equivalent to {@code skipping(charsToSkip).parse(input)}.
    */
-  public final T parseSkipping(CharPredicate charsToSkip, String input) {
+  @Override public final T parseSkipping(CharPredicate charsToSkip, String input) {
     return skipping(charsToSkip).parse(input);
   }
 
@@ -1319,7 +1257,7 @@ public abstract class Parser<T> {
    *
    * @throws ParseException if the input cannot be parsed.
    */
-  public final T parse(String input) {
+  @Override public final T parse(String input) {
     return parse(CharInput.from(input), 0);
   }
 
@@ -1370,7 +1308,7 @@ public abstract class Parser<T> {
    *
    * @since 9.9.1
    */
-  public final boolean matches(String input) {
+  @Override public final boolean matches(String input) {
     return matches(CharInput.from(input), 0);
   }
 
@@ -1501,7 +1439,7 @@ public abstract class Parser<T> {
    * <p>Besides {@link #between between()} and {@link #followedBy(String) followedBy()}, the {@link
    * Parser#sequence(Parser, Parser.OrEmpty, BiFunction) sequence()} and {@link
    * Parser#followedBy(Parser.OrEmpty)} methods can be used to specify that a {@code Parser.OrEmpty}
-   * grammar rule follows a regular consuming {@code Parser}.
+   * production rule follows a regular consuming {@code Parser}.
    *
    * <p>The following is a simplified example of parsing a CSV line: a comma-separated list of
    * fields with an optional trailing newline. The field values can be empty; empty line results in
@@ -1524,27 +1462,25 @@ public abstract class Parser<T> {
    * input in this one stop shop without having to remember to check for emptiness, because this
    * class already knows the default value to use when the input is empty.
    */
-  public final class OrEmpty {
+  public final class OrEmpty implements Production<T> {
     private final Supplier<? extends T> defaultSupplier;
+
+    /**
+     * A crippled zero-width parser, not safe to be used in a loop and must be carefully
+     * composed with a parser that does consume!
+     */
+    private final Parser<T> unsafeZeroWidthParser = notEmpty().new SamePrefix<>() {
+      @Override MatchResult<T> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        return switch (left().skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success<T> success -> success;
+          default -> new MatchResult.Success<>(start, start, computeDefaultValue());
+        };
+      }
+    };
 
     private OrEmpty(Supplier<? extends T> defaultSupplier) {
       this.defaultSupplier = defaultSupplier;
-    }
-
-    /**
-     * The current optional (or zero-or-more) parser must be enclosed between non-empty {@code
-     * prefix} and {@code suffix}.
-     */
-    public Parser<T> between(String prefix, String suffix) {
-      return between(string(prefix), string(suffix));
-    }
-
-    /**
-     * The current optional (or zero-or-more) parser must be enclosed between non-empty {@code
-     * prefix} and {@code suffix}.
-     */
-    public Parser<T> between(Parser<?> prefix, Parser<?> suffix) {
-      return prefix.then(this).followedBy(suffix);
     }
 
     /**
@@ -1552,18 +1488,8 @@ public abstract class Parser<T> {
      *
      * @since 9.5
      */
-    public final Parser<T>.OrEmpty between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix) {
+    @Override public final Parser<T>.OrEmpty between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix) {
       return prefix.then(this).followedBy(suffix);
-    }
-
-    /**
-     * The current optional (or zero-or-more) parser must be <em>immediately</em> enclosed between
-     * non-empty {@code prefix} and {@code suffix} (no skippable characters as specified by {@link
-     * #parseSkipping parseSkipping()} in between). Useful for matching a literal string, such as
-     * {@code zeroOrMore(isNot('"')).immediatelyBetween("\"", "\"")}.
-     */
-    public final Parser<T> immediatelyBetween(String prefix, String suffix) {
-      return string(prefix).then(literally(followedBy(suffix)));
     }
 
     /**
@@ -1599,39 +1525,22 @@ public abstract class Parser<T> {
       return delimitedBy(delimiter, toUnmodifiableList());
     }
 
+    @Override
+    public <S> Parser<S> then(Parser<S> suffix) {
+      return unsafeZeroWidthParser.then(suffix);
+    }
+
     /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
-    public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
+    @Override public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
       return sequence(this, suffix, (a, b) -> b);
     }
 
-    /**
-     * After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.
-     */
-    <S> Parser<S> then(Parser<S> suffix) {
-      return sequence(this, suffix, (a, b) -> b);
-    }
-
-    /**
-     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
-     *
-     * <p>Note that there is no {@code after()}, but you can use {@link
-     * Parser#sequence(Parser, Parser.OrEmpty, BiFunction) sequence()} and {@link
-     * Parser#followedBy(Parser.OrEmpty)} to specify that a {@code Parser.OrEmpty} grammar rule
-     * follows a regular consuming {@code Parser}.
-     */
-    public Parser<T> followedBy(String suffix) {
-      return followedBy(string(suffix));
+    @Override public Parser<T> followedBy(Parser<?> suffix) {
+      return unsafeZeroWidthParser.followedBy(suffix);
     }
 
     /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
-    public <S> Parser<T>.OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
-      return sequence(this, suffix, (a, b) -> a);
-    }
-
-    /**
-     * The current optional (or zero-or-more) parser must be followed by non-empty {@code suffix}.
-     */
-    Parser<T> followedBy(Parser<?> suffix) {
+    @Override public <S> Parser<T>.OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
       return sequence(this, suffix, (a, b) -> a);
     }
 
@@ -1640,8 +1549,34 @@ public abstract class Parser<T> {
      *
      * @since 9.5
      */
-    public Parser<T>.OrEmpty optionallyFollowedBy(String suffix) {
+    @Override public Parser<T>.OrEmpty optionallyFollowedBy(String suffix) {
       return followedBy(string(suffix).orElse(null));
+    }
+
+    /**
+     * If this parser matches, optionally applies the {@code op} function if the pattern is followed
+     * by {@code suffix}.
+     *
+     * @since 10.0
+     */
+    @Override public final Parser<T>.OrEmpty optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
+      return optionallyFollowedBy(string(suffix).thenReturn(op::apply));
+    }
+
+    /**
+     * If this parser matches, optionally matches {@code suffix} with the {@code op} BiFunction
+     * to transform the current parser's result.
+     *
+     * @since 10.0
+     */
+    @Override public final <S> Parser<T>.OrEmpty optionallyFollowedBy(
+        Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> op) {
+      requireNonNull(op);
+      return optionallyFollowedBy(suffix.map(s -> p -> op.apply(p, s)));
+    }
+
+    private Parser<T>.OrEmpty optionallyFollowedBy(Parser<UnaryOperator<T>> suffix) {
+      return sequence(this, suffix.orElse(identity()), (operand, op) -> op.apply(operand));
     }
 
     /**
@@ -1661,24 +1596,24 @@ public abstract class Parser<T> {
      * Parses the entire input string and returns the result; if input is empty, returns the default
      * empty value.
      */
-    public T parse(String input) {
-      return asUnsafeZeroWidthParser().parse(input);
+    @Override public T parse(String input) {
+      return unsafeZeroWidthParser.parse(input);
+    }
+
+    /**
+     * Parses the entire input string, ignoring {@code charsToSkip}, and returns the result;
+     * if there's nothing to parse except skippable content, returns the default empty value.
+     */
+    @Override public T parseSkipping(CharPredicate charsToSkip, String input) {
+      return parseSkipping(Parser.skipConsecutive(charsToSkip, "skipped"), input);
     }
 
     /**
      * Parses the entire input string, ignoring patterns matched by {@code skip}, and returns the
      * result; if there's nothing to parse except skippable content, returns the default empty value.
      */
-    public T parseSkipping(Parser<?> skip, String input) {
-      return asUnsafeZeroWidthParser().parseSkipping(skip, input);
-    }
-
-    /**
-     * Parses the entire input string, ignoring {@code charsToSkip}, and returns the result; if
-     * there's nothing to parse except skippable content, returns the default empty value.
-     */
-    public T parseSkipping(CharPredicate charsToSkip, String input) {
-      return parseSkipping(skipConsecutive(charsToSkip, "skipped"), input);
+    @Override public T parseSkipping(Parser<?> skip, String input) {
+      return unsafeZeroWidthParser.parseSkipping(skip, input);
     }
 
     /**
@@ -1687,28 +1622,12 @@ public abstract class Parser<T> {
      *
      * @since 9.9.1
      */
-    public boolean matches(String input) {
-      return asUnsafeZeroWidthParser().matches(input);
+    @Override public boolean matches(String input) {
+      return unsafeZeroWidthParser.matches(input);
     }
 
     T computeDefaultValue() {
       return defaultSupplier.get();
-    }
-
-    /**
-     * Temporarily creates a zero-width success parser. It's a crippled parser, not safe to be used
-     * in a loop and must be carefully composed with a parser that does consume!
-     */
-    private Parser<T> asUnsafeZeroWidthParser() {
-      return notEmpty().new SamePrefix<>() {
-        @Override MatchResult<T> skipAndMatch(
-            Parser<?> skip, CharInput input, int start, ErrorContext context) {
-          return switch (left().skipAndMatch(skip, input, start, context)) {
-            case MatchResult.Success<T> success -> success;
-            default -> new MatchResult.Success<>(start, start, computeDefaultValue());
-          };
-        }
-      };
     }
   }
 
@@ -1805,7 +1724,7 @@ public abstract class Parser<T> {
      * input is exhausted or matching failed.
      *
      * <p>Note that unlike {@link #parseToStream(String) parseToStream()}, a matching failure
-     * terminates the stream without throwing exception.
+     * terminates the stream out throwing exception.
      *
      * <p>This allows quick probing without fully parsing it.
      */
@@ -1882,7 +1801,7 @@ public abstract class Parser<T> {
   }
 
   /**
-   * A forward-declared grammar rule, to be used for recursive grammars.
+   * A forward-declared production rule, to be used for recursive grammars.
    *
    * <p>For example, to create a parser for a simple calculator that supports single-digit numbers,
    * addition, and parentheses, you can write:
@@ -1900,8 +1819,10 @@ public abstract class Parser<T> {
    * <p>For simple definitions, you could use the {@link #define} method with a lambda
    * to elide the need of an explicit forward declaration.
    */
+  @ThreadSafe
   public static final class Rule<T> extends Parser<T> {
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
+    private volatile boolean validating = false;
 
     @Override boolean honorsSkipping() {
       return false;
@@ -1910,6 +1831,15 @@ public abstract class Parser<T> {
     @Override MatchResult<T> skipAndMatch(
         Parser<?> skip, CharInput input, int start, ErrorContext context) {
       Parser<T> p = ref.get();
+      if (start == 0 && input.isEof(0)) {
+        checkState(
+            !validating,
+            "Left recursion not supported! Consider using withPostfixes() or the OperatorTable class"
+                + " to define the left recursive grammar.");
+        if (p == null) { // can happen when validating mutually recursive rules.
+          return context.failAt(0, "empty input"); // A Parser must consume input.
+        }
+      }
       checkState(p != null, "definedAs() should have been called before parse()");
       return p.skipAndMatch(skip, input, start, context);
     }
@@ -1918,6 +1848,12 @@ public abstract class Parser<T> {
     public <S extends T> Parser<S> definedAs(Parser<S> parser) {
       requireNonNull(parser);
       checkArgument(!(parser instanceof Rule), "Do not delegate to a Rule parser");
+      validating = true;
+      try {
+        checkState(!parser.matches(""), "parser must not match empty string");
+      } finally {
+        validating = false;
+      }
       checkState(ref.compareAndSet(null, covariant(parser)), "definedAs() already called");
       return parser;
     }
@@ -1985,6 +1921,13 @@ public abstract class Parser<T> {
     };
   }
 
+  static <T> Parser<T> allowZeroWidth(Production<T> production) {
+    return switch (production) {
+      case Parser<T> parser -> parser;
+      case Parser<T>.OrEmpty orEmpty -> orEmpty.unsafeZeroWidthParser;
+    };
+  }
+
   /** A derived parser, with {@code this} being the left-most rule. */
   private abstract class SamePrefix<R> extends Parser<R> {
     @Override boolean honorsSkipping() {
@@ -2004,7 +1947,11 @@ public abstract class Parser<T> {
     /**
      * Represents a successful parse result with a value and the [head, tail) range of the match.
      */
-    record Success<V>(int head, int tail, V value) implements MatchResult<V> {}
+    record Success<V>(int head, int tail, V value) implements MatchResult<V> {
+      @Override public Success<V> startingFrom(int index) {
+        return new MatchResult.Success<>(index, tail, value);
+      }
+    }
 
     /** Represents a partial parse result with a value and the [start, end) range of the match. */
     record Failure<V>(int at, String message, Object[] args) implements MatchResult<V> {
@@ -2018,7 +1965,13 @@ public abstract class Parser<T> {
             at,
             String.format("at %s: %s", input.sourcePosition(at), String.format(message, args)));
       }
+
+      @Override public Failure<V> startingFrom(int head) {
+        return this;
+      }
     }
+
+    MatchResult<V> startingFrom(int head);
   }
 
   static final class ErrorContext {

@@ -1,11 +1,11 @@
 # Mug *dot parse*
 
-Low-ceremony, easiest-to-use Java parser combinator, aimed to replace regex and your everyday one-off parsing tasks.
+Low-ceremony, idiomatic Java parser combinator, aimed to replace regex and your everyday one-off parsing tasks.
 
 - **Easy to use:** a handful of primitives; write parser intuitively.
-- **Hard to misuse:** free of the common footguns like infinite loops caused by `many(optional)` or accidental left recursion.
+- **Hard to misuse:** no footguns like infinite loops caused by `many(optional)` or accidental left recursion.
 - **Idiomatic Java:** modern, first-class Java style API designed for Java users (not a Haskell or Scala port).
-- **Tiny footprint:** ~**1000 LOC** end-to-end — roughly **1/5 jparsec**.
+- **Tiny footprint:** ~**2000 LOC** end-to-end — roughly **1/3 jparsec**.
 
 ---
 
@@ -557,9 +557,13 @@ Parser<Expr> expr = Parser.define(
 An expression is either an identifier like variable name, or a field reference
 that may be chained, like `foo.bar.baz`.
 
-Unfortunately if you use it to parse you'll get a `StackOverflowError`
-because an `expr` parser will recursively call into itself which will in turn
-recursively call into itself, over and over again.
+But it's a left recursive grammar. In an naive implementation when you use the `expr`
+parser to parse any input, it will recursively call into itself which will in turn
+recursively call into itself, over and over again, causing a `StackOverflowError`.
+
+The Dot Parse library provides a left recursion guard to catch left recursion errors
+early at parser construction time. The above `define()` method call will throw
+`IllegalStateException`, pointing to the line that creates the left recursion.
 
 Actually, when we built the Mini Search Language above, if we didn't use `OperatorTable`
 to define the `AND` `OR` binary operators, their EBNF would have also been left recursive.
@@ -593,7 +597,7 @@ This saves you from manually composing and maintaining layers on top of layers o
 
 ## Footprint
 
-- About **1000 lines of Java** (including `OperatorTable`).
+- About **2000 lines of Java** (including `OperatorTable`).
 - Besides Mug core, no other dependencies.
 
 ---

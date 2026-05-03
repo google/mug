@@ -1,9 +1,10 @@
 package com.google.mu.errorprone;
 
-import com.google.errorprone.CompilationTestHelper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import com.google.errorprone.CompilationTestHelper;
 
 @RunWith(JUnit4.class)
 public final class ParametersMustMatchByNameCheckTest {
@@ -460,6 +461,25 @@ public final class ParametersMustMatchByNameCheckTest {
   }
 
   @Test
+  public void onMethod_oneNullAndOneLiteralWithUniqueTypes_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(String name, int value) {}",
+            "  void callSite() {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        null,",
+            "        123);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
   public void onMethod_lambdaOnOneArgAllowed() {
     helper
         .addSourceLines(
@@ -802,7 +822,7 @@ public final class ParametersMustMatchByNameCheckTest {
   }
 
   @Test
-  public void onRecordCanonicalConstructor_sameCalss_parametersWithDistinctTypes_fails() {
+  public void onRecordCanonicalConstructor_sameClass_parametersWithDistinctTypes_fails() {
     helper
         .addSourceLines(
             "Test.java",
@@ -1072,6 +1092,78 @@ public final class ParametersMustMatchByNameCheckTest {
             "  void test(int width, int height) {}",
             "  void callSite(int height, int width) {",
             "    test(height, width);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void innerClassConstructor_wrongArgOrder_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  class Inner {",
+            "    Inner(int width, int height) {}",
+            "  }",
+            "  void callSite(int height, int width) {",
+            "    new Inner(",
+            "        // BUG: Diagnostic contains: must match",
+            "        height,",
+            "        width);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void innerClassConstructor_correctArgOrder_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  class Inner {",
+            "    Inner(int width, int height) {}",
+            "  }",
+            "  void callSite(int height, int width) {",
+            "    new Inner(width, height);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void innerClassConstructor_annotatedConstructor_correctArgOrder_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  class Inner {",
+            "    @ParametersMustMatchByName Inner(int width, int height) {}",
+            "  }",
+            "  void callSite(int height, int width) {",
+            "    new Inner(width, height);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void thisArgumentWithUniqueType_succeeds() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test implements Runnable {",
+            "  @ParametersMustMatchByName",
+            "  void test(Runnable cb) {}",
+            "  public void run() {",
+            "    test(this);",
             "  }",
             "}")
         .doTest();

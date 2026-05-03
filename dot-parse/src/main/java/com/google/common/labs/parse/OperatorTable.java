@@ -236,7 +236,7 @@ public final class OperatorTable<T> {
 
   private static final class Infixn<T> extends Binary<T> {
     @Override public Parser<T> makeExpressionParser(Parser<T> operand) {
-      return operand.optionalPostfix(opWithRightHandSide(operand));
+      return operand.optionallyFollowedBy(opWithRightHandSide(operand));
     }
   }
 

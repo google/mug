@@ -2,10 +2,10 @@ package com.google.mu.benchmarks;
 
 import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
+import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
-import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static java.util.stream.Collectors.joining;
@@ -59,7 +59,7 @@ public class ChessMoveBenchmark {
 
   private static final String LARGE_INPUT = Collections.nCopies(SCALE, INPUT).stream().collect(joining(" "));
 
-  private static final Parser<Move> PARSER = moveParser();
+  private static final Parser<Move> PARSER = literally(moveParser());
 
   private static Parser<Move> moveParser() {
     var file = one(charsIn("[a-h]")).source();
@@ -87,8 +87,7 @@ public class ChessMoveBenchmark {
     Parser<PieceMove> fullPieceMove = pieceMove
         .optionallyFollowedBy(promotion, PieceMove::withPromotion)
         .optionallyFollowedBy(checkOrMate, PieceMove::withCheckOrMate);
-    Parser<Move> move = anyOf(castling, fullPieceMove);
-    return move.followedBy(zeroOrMore(charsIn("[ \t\n\r]")));
+    return anyOf(castling, fullPieceMove);
   }
 
   private static Move mapMatch(java.util.regex.MatchResult mr) {
@@ -116,7 +115,7 @@ public class ChessMoveBenchmark {
 
   @Benchmark
   public long dotParse() {
-    return PARSER.parseToStream(LARGE_INPUT).count();
+    return PARSER.skipping(Character::isWhitespace).parseToStream(LARGE_INPUT).count();
   }
 
   private void assertMove(String moveStr, Move expected) {
@@ -158,7 +157,7 @@ public class ChessMoveBenchmark {
 
   @Test
   public void testDotParse() {
-    assertThat(PARSER.parseToStream(INPUT))
+    assertThat(PARSER.skipping(Character::isWhitespace).parseToStream(INPUT))
         .containsExactly(
             PieceMove.pawnMove("e4"),
             PieceMove.move("N", "f3"),

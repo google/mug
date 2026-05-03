@@ -1,6 +1,5 @@
 package com.google.mu.benchmarks;
 
-import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.sequence;
@@ -15,7 +14,6 @@ import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,28 +52,17 @@ public class DiceNotationBenchmark {
 
   // Parsers
   private static final Parser<Integer> NUM = digits().map(Integer::parseInt);
-  private static final Parser<ComparisonPoint> COMPARISON_POINT = sequence(
-      Stream.of(">=", "<=", "!=", "<>", ">", "<", "=").map(Parser::string).collect(Parser.or()),
-      NUM, ComparisonPoint::new);
-  private static final Parser<Modifier> EXPLODING = Stream.of("!!", "!p", "!")
-      .map(type -> string(type).map(Exploding::ofType).optionallyFollowedBy(COMPARISON_POINT, Exploding::withComparison))
-      .collect(Parser.or());
-  private static final Parser<Modifier> REROLL = Stream.of("ro", "r")
-      .map(type -> string(type).map(Reroll::ofType).optionallyFollowedBy(COMPARISON_POINT, Reroll::withComparison))
-      .collect(Parser.or());
-  private static final Parser<Modifier> KEEP = Stream.of("kh", "kl", "k")
-      .map(type -> string(type).map(Keep::ofType).optionallyFollowedBy(NUM, Keep::withCount))
-      .collect(Parser.or());
-  private static final Parser<Modifier> DROP = Stream.of("dh", "dl", "d")
-      .map(type -> string(type).map(Drop::ofType).optionallyFollowedBy(NUM, Drop::withCount))
-      .collect(Parser.or());
-  private static final Parser<Modifier> MODIFIER = anyOf(EXPLODING, REROLL, KEEP, DROP);
-  private static final Parser<DiceRoll> DICE_WITH_NUM = sequence(NUM.followedBy("d"), NUM, DiceRoll::of);
-  private static final Parser<DiceRoll> DICE_WITHOUT_NUM = string("d").then(NUM).map(DiceRoll::of);
-  static final Parser<DiceRoll> PARSER = anyOf(DICE_WITH_NUM, DICE_WITHOUT_NUM)
+  private static final Parser<Bound> BOUND = sequence(anyOf(Comparison.values()), NUM, Bound::new);
+  private static final Parser<Modifier> MODIFIER = anyOf(
+      anyOf(Exploding.Type.values()).map(Exploding::of).optionallyFollowedBy(BOUND, Exploding::withBound),
+      anyOf(Reroll.Type.values()).map(Reroll::of).optionallyFollowedBy(BOUND, Reroll::withBound),
+      anyOf(Keep.Type.values()).map(Keep::of).optionallyFollowedBy(NUM, Keep::withCount),
+      anyOf(Drop.Type.values()).map(Drop::of).optionallyFollowedBy(NUM, Drop::withCount));
+  static final Parser<DiceRoll> PARSER = anyOf(
+          sequence(NUM.followedBy("d"), NUM, DiceRoll::of),
+          string("d").then(NUM).map(DiceRoll::of))
       .optionallyFollowedBy(MODIFIER.atLeastOnce(), DiceRoll::withModifiers)
-      .optionallyFollowedBy(COMPARISON_POINT, DiceRoll::withTargetSuccess)
-      .followedBy(Parser.zeroOrMore(charsIn("[ \r\n\t]")));
+      .optionallyFollowedBy(BOUND, DiceRoll::withTargetSuccess);
 
   // Tests
   @Test
@@ -85,35 +72,35 @@ public class DiceNotationBenchmark {
 
   @Test
   public void testDiceWithTarget() {
-    assertRoll("5d10>7", DiceRoll.of(5, 10).withTargetSuccess(new ComparisonPoint(">", 7)));
+    assertRoll("5d10>7", DiceRoll.of(5, 10).withTargetSuccess(new Bound(Comparison.GT, 7)));
   }
 
   @Test
   public void testDiceWithExploding() {
-    assertRoll("4d6!", DiceRoll.of(4, 6).withModifiers(List.of(Exploding.ofType("!"))));
+    assertRoll("4d6!", DiceRoll.of(4, 6).withModifiers(List.of(Exploding.of(Exploding.Type.STANDARD))));
   }
 
   @Test
   public void testDiceWithComplexExploding() {
-    assertRoll("4d6!>=5", DiceRoll.of(4, 6).withModifiers(List.of(Exploding.ofType("!").withComparison(new ComparisonPoint(">=", 5)))));
+    assertRoll("4d6!>=5", DiceRoll.of(4, 6).withModifiers(List.of(Exploding.of(Exploding.Type.STANDARD).withBound(new Bound(Comparison.GE, 5)))));
   }
 
   @Test
   public void testDiceWithReroll() {
-    assertRoll("2d20ro<3", DiceRoll.of(2, 20).withModifiers(List.of(Reroll.ofType("ro").withComparison(new ComparisonPoint("<", 3)))));
+    assertRoll("2d20ro<3", DiceRoll.of(2, 20).withModifiers(List.of(Reroll.of(Reroll.Type.ONCE).withBound(new Bound(Comparison.LT, 3)))));
   }
 
   @Test
   public void testDiceWithKeepDrop() {
-    assertRoll("4d6kh3", DiceRoll.of(4, 6).withModifiers(List.of(Keep.ofType("kh").withCount(3))));
+    assertRoll("4d6kh3", DiceRoll.of(4, 6).withModifiers(List.of(Keep.of(Keep.Type.HIGHEST).withCount(3))));
   }
 
   @Test
   public void testMultipleModifiers() {
     assertRoll("4d6!ro<3kh3", DiceRoll.of(4, 6).withModifiers(List.of(
-        Exploding.ofType("!"),
-        Reroll.ofType("ro").withComparison(new ComparisonPoint("<", 3)),
-        Keep.ofType("kh").withCount(3))));
+        Exploding.of(Exploding.Type.STANDARD),
+        Reroll.of(Reroll.Type.ONCE).withBound(new Bound(Comparison.LT, 3)),
+        Keep.of(Keep.Type.HIGHEST).withCount(3))));
   }
 
   @Test
@@ -129,7 +116,7 @@ public class DiceNotationBenchmark {
 
   @Benchmark
   public long dotParse() {
-    return PARSER.parseToStream(LARGE_INPUT).count();
+    return PARSER.skipping(Character::isWhitespace).parseToStream(LARGE_INPUT).count();
   }
 
   private static final Pattern REGEX = Pattern.compile(
@@ -157,31 +144,150 @@ public class DiceNotationBenchmark {
   }
 
   // Domain Records
-  record ComparisonPoint(String operator, int value) {}
+  enum Comparison {
+    GE(">="), LE("<="), NE("!="), NE2("<>"), GT(">"), LT("<"), EQ("=");
+
+    private final String symbol;
+
+    Comparison(String symbol) {
+      this.symbol = symbol;
+    }
+
+    @Override
+    public String toString() {
+      return symbol;
+    }
+
+    static Comparison fromSymbol(String symbol) {
+      return switch (symbol) {
+        case ">=" -> GE;
+        case "<=" -> LE;
+        case "!=" -> NE;
+        case "<>" -> NE2;
+        case ">" -> GT;
+        case "<" -> LT;
+        case "=" -> EQ;
+        default -> throw new IllegalArgumentException("Unknown symbol: " + symbol);
+      };
+    }
+  }
+
+  record Bound(Comparison operator, int value) {}
 
   interface Modifier {}
 
-  record Exploding(String type, Optional<ComparisonPoint> cp) implements Modifier {
-    static Exploding ofType(String type) { return new Exploding(type, Optional.empty()); }
-    Exploding withComparison(ComparisonPoint cp) { return new Exploding(this.type, Optional.of(cp)); }
+  record Exploding(Exploding.Type type, Optional<Bound> cp) implements Modifier {
+    enum Type {
+      DOUBLE("!!"), PENETRATING("!p"), STANDARD("!");
+
+      private final String symbol;
+
+      Type(String symbol) {
+        this.symbol = symbol;
+      }
+
+      @Override
+      public String toString() {
+        return symbol;
+      }
+
+      static Type fromSymbol(String symbol) {
+        return switch (symbol) {
+          case "!!" -> DOUBLE;
+          case "!p" -> PENETRATING;
+          case "!" -> STANDARD;
+          default -> throw new IllegalArgumentException("Unknown symbol: " + symbol);
+        };
+      }
+    }
+    static Exploding of(Exploding.Type type) { return new Exploding(type, Optional.empty()); }
+    Exploding withBound(Bound cp) { return new Exploding(this.type, Optional.of(cp)); }
   }
 
-  record Reroll(String type, Optional<ComparisonPoint> cp) implements Modifier {
-    static Reroll ofType(String type) { return new Reroll(type, Optional.empty()); }
-    Reroll withComparison(ComparisonPoint cp) { return new Reroll(this.type, Optional.of(cp)); }
+  record Reroll(Reroll.Type type, Optional<Bound> cp) implements Modifier {
+    enum Type {
+      ONCE("ro"), FOREVER("r");
+
+      private final String symbol;
+
+      Type(String symbol) {
+        this.symbol = symbol;
+      }
+
+      @Override
+      public String toString() {
+        return symbol;
+      }
+
+      static Type fromSymbol(String symbol) {
+        return switch (symbol) {
+          case "ro" -> ONCE;
+          case "r" -> FOREVER;
+          default -> throw new IllegalArgumentException("Unknown symbol: " + symbol);
+        };
+      }
+    }
+    static Reroll of(Reroll.Type type) { return new Reroll(type, Optional.empty()); }
+    Reroll withBound(Bound cp) { return new Reroll(this.type, Optional.of(cp)); }
   }
 
-  record Keep(String type, Optional<Integer> count) implements Modifier {
-    static Keep ofType(String type) { return new Keep(type, Optional.empty()); }
+  record Keep(Keep.Type type, Optional<Integer> count) implements Modifier {
+    enum Type {
+      HIGHEST("kh"), LOWEST("kl"), ALL("k");
+
+      private final String symbol;
+
+      Type(String symbol) {
+        this.symbol = symbol;
+      }
+
+      @Override
+      public String toString() {
+        return symbol;
+      }
+
+      static Type fromSymbol(String symbol) {
+        return switch (symbol) {
+          case "kh" -> HIGHEST;
+          case "kl" -> LOWEST;
+          case "k" -> ALL;
+          default -> throw new IllegalArgumentException("Unknown symbol: " + symbol);
+        };
+      }
+    }
+    static Keep of(Keep.Type type) { return new Keep(type, Optional.empty()); }
     Keep withCount(int n) { return new Keep(this.type, Optional.of(n)); }
   }
 
-  record Drop(String type, Optional<Integer> count) implements Modifier {
-    static Drop ofType(String type) { return new Drop(type, Optional.empty()); }
+  record Drop(Drop.Type type, Optional<Integer> count) implements Modifier {
+    enum Type {
+      HIGHEST("dh"), LOWEST("dl"), ALL("d");
+
+      private final String symbol;
+
+      Type(String symbol) {
+        this.symbol = symbol;
+      }
+
+      @Override
+      public String toString() {
+        return symbol;
+      }
+
+      static Type fromSymbol(String symbol) {
+        return switch (symbol) {
+          case "dh" -> HIGHEST;
+          case "dl" -> LOWEST;
+          case "d" -> ALL;
+          default -> throw new IllegalArgumentException("Unknown symbol: " + symbol);
+        };
+      }
+    }
+    static Drop of(Drop.Type type) { return new Drop(type, Optional.empty()); }
     Drop withCount(int n) { return new Drop(this.type, Optional.of(n)); }
   }
 
-  record DiceRoll(int number, int sides, List<Modifier> modifiers, Optional<ComparisonPoint> targetSuccess) {
+  record DiceRoll(int number, int sides, List<Modifier> modifiers, Optional<Bound> targetSuccess) {
     static DiceRoll of(int number, int sides) { return new DiceRoll(number, sides, List.of(), Optional.empty()); }
     static DiceRoll of(int sides) { return new DiceRoll(1, sides, List.of(), Optional.empty()); }
 
@@ -189,7 +295,7 @@ public class DiceNotationBenchmark {
       return new DiceRoll(this.number, this.sides, mods, this.targetSuccess);
     }
 
-    DiceRoll withTargetSuccess(ComparisonPoint cp) {
+    DiceRoll withTargetSuccess(Bound cp) {
       return new DiceRoll(this.number, this.sides, this.modifiers, Optional.of(cp));
     }
   }
@@ -222,28 +328,28 @@ public class DiceNotationBenchmark {
         String type = matcher.group(1);
         if (type != null) {
           if (type.startsWith("!")) {
-            Exploding exploding = Exploding.ofType(type);
+            Exploding exploding = Exploding.of(Exploding.Type.fromSymbol(type));
             if (matcher.group(2) != null) {
-              exploding = exploding.withComparison(new ComparisonPoint(matcher.group(2), Integer.parseInt(matcher.group(3))));
+              exploding = exploding.withBound(new Bound(Comparison.fromSymbol(matcher.group(2)), Integer.parseInt(matcher.group(3))));
             }
             modifiers.add(exploding);
           } else {
-            Reroll reroll = Reroll.ofType(type);
+            Reroll reroll = Reroll.of(Reroll.Type.fromSymbol(type));
             if (matcher.group(2) != null) {
-              reroll = reroll.withComparison(new ComparisonPoint(matcher.group(2), Integer.parseInt(matcher.group(3))));
+              reroll = reroll.withBound(new Bound(Comparison.fromSymbol(matcher.group(2)), Integer.parseInt(matcher.group(3))));
             }
             modifiers.add(reroll);
           }
         } else {
           type = matcher.group(4);
           if (type.startsWith("k")) {
-            Keep keep = Keep.ofType(type);
+            Keep keep = Keep.of(Keep.Type.fromSymbol(type));
             if (matcher.group(5) != null && !matcher.group(5).isEmpty()) {
               keep = keep.withCount(Integer.parseInt(matcher.group(5)));
             }
             modifiers.add(keep);
           } else {
-            Drop drop = Drop.ofType(type);
+            Drop drop = Drop.of(Drop.Type.fromSymbol(type));
             if (matcher.group(5) != null && !matcher.group(5).isEmpty()) {
               drop = drop.withCount(Integer.parseInt(matcher.group(5)));
             }
@@ -258,7 +364,7 @@ public class DiceNotationBenchmark {
     if (targetStr != null) {
       Matcher matcher = CP_PATTERN.matcher(targetStr);
       if (matcher.find()) {
-        roll = roll.withTargetSuccess(new ComparisonPoint(matcher.group(1), Integer.parseInt(matcher.group(2))));
+        roll = roll.withTargetSuccess(new Bound(Comparison.fromSymbol(matcher.group(1)), Integer.parseInt(matcher.group(2))));
       }
     }
 
