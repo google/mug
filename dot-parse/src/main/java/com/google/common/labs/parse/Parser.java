@@ -1469,19 +1469,24 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * A crippled zero-width parser, not safe to be used in a loop and must be carefully
      * composed with a parser that does consume!
      */
-    private final Parser<T> unsafeZeroWidthParser = notEmpty().new SamePrefix<>() {
-      @Override MatchResult<T> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success<T> success -> success;
-          default -> new MatchResult.Success<>(start, start, computeDefaultValue());
-        };
-      }
+    private final Parser<T> unsafeZeroWidthParser =
+        new Parser<T>() {
+          @Override MatchResult<T> skipAndMatch(
+              Parser<?> skip, CharInput input, int start, ErrorContext context) {
+            return switch (notEmpty().skipAndMatch(skip, input, start, context)) {
+              case MatchResult.Success<T> success -> success;
+              default -> new MatchResult.Success<>(start, start, computeDefaultValue());
+            };
+          }
 
-      @Override Set<String> getPrefixes() {
-        return EMPTY_PREFIX;
-      }
-    };
+          @Override  Set<String> getPrefixes() {
+            return EMPTY_PREFIX;  // optional prefix no longer safe in prefix pruning.
+          }
+
+          @Override boolean honorsSkipping() {
+            return notEmpty().honorsSkipping();
+          }
+        };
 
     private OrEmpty(Supplier<? extends T> defaultSupplier) {
       this.defaultSupplier = defaultSupplier;
