@@ -1477,6 +1477,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           default -> new MatchResult.Success<>(start, start, computeDefaultValue());
         };
       }
+
+      @Override Set<String> getPrefixes() {
+        return EMPTY_PREFIX;
+      }
     };
 
     private OrEmpty(Supplier<? extends T> defaultSupplier) {

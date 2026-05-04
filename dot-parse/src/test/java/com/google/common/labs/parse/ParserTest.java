@@ -1367,6 +1367,26 @@ public class ParserTest {
   }
 
   @Test
+  public void optionalPrefixPruning() {
+    Parser<String> arm1 = word("X").map(s -> "X");
+    Parser<String> arm2 = word("Y").map(s -> "Y");
+    Parser<String> arm3 = word("Z").map(s -> "Z");
+
+    // Optional "a" prefix in front of a required "B".
+    Parser<String> arm4 =
+        sequence(word("a").orElse(""), word("B"), (a, b) -> a.isEmpty() ? b : a + " " + b);
+
+    // Four or more alternatives triggers the prune tree
+    // (see OrParser.makePruneTreeIfUseful).
+    Parser<String> dispatch = anyOf(arm1, arm2, arm3, arm4);
+
+    assertThat(dispatch.parseSkipping(whitespace(), "a B")).isEqualTo("a B");
+    // Returns "a B" — `arm4` succeeds with the optional consumed.
+
+    assertThat(dispatch.parseSkipping(whitespace(), "B")).isEqualTo("B");
+  }
+
+  @Test
   public void sequence3_success() {
     Parser<String> parser = sequence(string("a"), string("b"), string("c"), (a, b, c) -> a + b + c);
     assertThat(parser.parse("abc")).isEqualTo("abc");
