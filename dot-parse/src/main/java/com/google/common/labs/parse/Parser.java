@@ -25,6 +25,7 @@ import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
+import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.requireNonNull;
@@ -635,7 +636,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Matches if {@code this} or {@code that} matches. */
   public final Parser<T> or(Parser<? extends T> that) {
-    return anyOf(this, that);
+    return new OrParser<T>(asList(this, that));
   }
 
   /**
