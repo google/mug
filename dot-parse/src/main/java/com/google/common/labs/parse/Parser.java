@@ -105,7 +105,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           : context.expecting("EOF", start);
     }
 
-    @Override boolean honorsSkipping() {
+    @Override boolean allowsPreSkipping() {
       return true;
     }
   };
@@ -145,7 +145,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(name, start);
       }
 
-      @Override boolean honorsSkipping() {
+      @Override boolean allowsPreSkipping() {
         return true;
       }
 
@@ -190,7 +190,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(name, end);
       }
 
-      @Override boolean honorsSkipping() {
+      @Override boolean allowsPreSkipping() {
         return true;
       }
 
@@ -217,7 +217,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(name, start);
       }
 
-      @Override boolean honorsSkipping() {
+      @Override boolean allowsPreSkipping() {
         return true;
       }
     };
@@ -288,7 +288,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(target, skipIfAny(skip, input, start));
       }
 
-      @Override boolean honorsSkipping() {
+      @Override boolean allowsPreSkipping() {
         return false;
       }
     };
@@ -306,7 +306,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(string, start);
       }
 
-      @Override boolean honorsSkipping() {
+      @Override boolean allowsPreSkipping() {
         return true;
       }
 
@@ -335,7 +335,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(string, start);
       }
 
-      @Override boolean honorsSkipping() {
+      @Override boolean allowsPreSkipping() {
         return true;
       }
 
@@ -401,7 +401,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             };
           }
 
-          @Override boolean honorsSkipping() {
+          @Override boolean allowsPreSkipping() {
             return false;
           }
         });
@@ -1201,7 +1201,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return left().skipAndMatch(null, input, start, context);
       }
 
-      @Override boolean honorsSkipping() {
+      @Override boolean allowsPreSkipping() {
         return false;
       }
     };
@@ -1483,7 +1483,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             return EMPTY_PREFIX;  // optional prefix no longer safe in prefix pruning.
           }
 
-          @Override boolean honorsSkipping() {
+          @Override boolean allowsPreSkipping() {
             return false;
           }
         };
@@ -1833,7 +1833,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
     private volatile boolean validating = false;
 
-    @Override boolean honorsSkipping() {
+    @Override boolean allowsPreSkipping() {
       return false;
     }
 
@@ -1889,7 +1889,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /** If true, skippable characters can be skipped before applying this parser. */
-  abstract boolean honorsSkipping();
+  abstract boolean allowsPreSkipping();
 
   /**
    * Returns metadata about the prefixes that can be used to prune out this parser, if the input
@@ -1939,8 +1939,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** A derived parser, with {@code this} being the left-most rule. */
   private abstract class SamePrefix<R> extends Parser<R> {
-    @Override boolean honorsSkipping() {
-      return left().honorsSkipping();
+    @Override boolean allowsPreSkipping() {
+      return left().allowsPreSkipping();
     }
 
     @Override Set<String> getPrefixes() {

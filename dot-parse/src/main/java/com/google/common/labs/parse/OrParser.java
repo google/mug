@@ -41,7 +41,7 @@ final class OrParser<T> extends Parser<T> {
                     : Stream.of(p))
             .map(Parser::<T>covariant)
             .collect(toUnmodifiableList());
-    this.honorsSkipping = parsers.stream().allMatch(Parser::honorsSkipping);
+    this.honorsSkipping = parsers.stream().allMatch(Parser::allowsPreSkipping);
     this.pruneTree = makePruneTreeIfUseful(parsers);
   }
 
@@ -77,7 +77,7 @@ final class OrParser<T> extends Parser<T> {
     return farthestFailure.safeCast();
   }
 
-  @Override boolean honorsSkipping() {
+  @Override boolean allowsPreSkipping() {
     return honorsSkipping;
   }
 
@@ -122,7 +122,7 @@ final class OrParser<T> extends Parser<T> {
   }
 
   private static boolean hasConsistentSkippingMode(List<? extends Parser<?>> parsers) {
-    return parsers.stream().allMatch(Parser::honorsSkipping)
-        || parsers.stream().noneMatch(Parser::honorsSkipping);
+    return parsers.stream().allMatch(Parser::allowsPreSkipping)
+        || parsers.stream().noneMatch(Parser::allowsPreSkipping);
   }
 }
