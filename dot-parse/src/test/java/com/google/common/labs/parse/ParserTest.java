@@ -1387,6 +1387,19 @@ public class ParserTest {
   }
 
   @Test
+  public void optionalPrefixPruning_sequenceWithLiteralDoesNotHonorSkipping() {
+    Parser<String> arm1 = string("foo");
+    Parser<String> arm2 = string("bar");
+    Parser<String> arm3 = string("zoo");
+    Parser<String> seq = sequence(string("baz").orElse(""), literally(string(" ")), String::concat);
+    Parser<String> parser = anyOf(arm1, arm2, arm3, seq);
+    assertThat(parser.parseSkipping(whitespace(), " foo")).isEqualTo("foo");
+    assertThat(parser.parseSkipping(whitespace(), "bar ")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(whitespace(), " baz ")).isEqualTo("baz ");
+    assertThat(parser.parseSkipping(whitespace(), " ")).isEqualTo(" ");
+  }
+
+  @Test
   public void sequence3_success() {
     Parser<String> parser = sequence(string("a"), string("b"), string("c"), (a, b, c) -> a + b + c);
     assertThat(parser.parse("abc")).isEqualTo("abc");

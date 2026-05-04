@@ -1484,7 +1484,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           }
 
           @Override boolean honorsSkipping() {
-            return notEmpty().honorsSkipping();
+            return false;
           }
         };
 
