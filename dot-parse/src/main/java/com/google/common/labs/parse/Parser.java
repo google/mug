@@ -540,7 +540,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public static <A, B, R> Parser<R> sequence(
       Parser<A>.OrEmpty left, Parser<B> right,
       BiFunction<? super A, ? super B, ? extends R> combiner) {
-    return sequence(left.unsafeZeroWidthParser, right, combiner);
+    return anyOf(
+        sequence(left.notEmpty(), right, combiner),
+        right.map(v2 -> combiner.apply(left.computeDefaultValue(), v2)));
   }
 
   /**
@@ -1477,10 +1479,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
               case MatchResult.Success<T> success -> success;
               default -> new MatchResult.Success<>(start, start, computeDefaultValue());
             };
-          }
-
-          @Override  Set<String> getPrefixes() {
-            return EMPTY_PREFIX;  // optional prefix no longer safe in prefix pruning.
           }
 
           @Override boolean allowsPreSkipping() {
