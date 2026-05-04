@@ -548,7 +548,7 @@ But except ANTLR, few parsers report left recursion errors at parser definition 
 
 In Haskell Parsec, you'd get an infinite loop when parsing.
 In a recursive descent parser combinator, you'd typically get a `StackOverflowError`
-with a useless tack trace pointing to hundreds of frames of framework internal code.
+with a useless stack trace pointing to hundreds of frames of framework internal code.
 
 Dot Parse reports left recursion errors early on at time of parse definition - an `IllegalStateException`
 will be thrown from the recursive `Parser` creation code.
@@ -556,7 +556,22 @@ will be thrown from the recursive `Parser` creation code.
 And the stack trace points to the problematic recursive Parser definition.
 
 But left associative operators, such as left associative binary operators and postifx operators,
-are legitimate left recursive grammars. If left recursion can't be used to define them, what can?
+are legitimate left recursive grammars.
+
+For example, the following left recursive grammar represents a field reference expression following EBNS:
+
+```java {.bad}
+Parser<Expr> expr = Parser.define(
+    rule -> Parser.anyOf(
+        identifier.map(IdentifierRef::new), // "foo" is an expression
+        Parser.sequence(
+            rule, string(".").then(identifier), FieldRef::new)));  // left recursive ❌
+```
+
+An expression is either an identifier like variable name, or a field reference
+that may be chained, like `foo.bar.baz`.
+
+If left recursion can't be used to define them, what can?
 
 The right way, which is also the easier way to create a left recursive grammar is to use predefined
 combinators such as `OperatorTable` to define left associative binary operators and postfix operators:
