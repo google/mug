@@ -551,9 +551,8 @@ In a recursive descent parser combinator, you'd typically get a `StackOverflowEr
 with a useless stack trace pointing to hundreds of frames of framework internal code.
 
 Dot Parse reports left recursion errors early on at time of parse definition - an `IllegalStateException`
-will be thrown from the recursive `Parser` creation code.
-
-And the stack trace points to the problematic recursive Parser definition.
+will be thrown from the recursive `Parser` creation code with the stack trace pointing to the problematic
+recursive Parser definition.
 
 But left associative operators, such as left associative binary operators and postifx operators,
 are legitimate left recursive grammars.
