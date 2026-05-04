@@ -542,33 +542,24 @@ Similarly, you can never run into **accidental left recursion** (which causes `S
 
 ## Left Recursions
 
-Similar to other parser combinator frameworks, left recursions are not allowed.
+Most parsers don't allow left recursions. Dot Parse disallows left recursions too.
 
-For example, the following code attempts to parse a field reference expression following EBNS:
+But except ANTLR, few parsers report left recursion errors at parser definition time.
 
-```java {.bad}
-Parser<Expr> expr = Parser.define(
-    rule -> Parser.anyOf(
-        identifier.map(IdentifierRef::new), // "foo" is an expression
-        Parser.sequence(
-            rule, string(".").then(identifier), FieldRef::new)));  // ❌
-```
+In Haskell Parsec, you'd get an infinite loop when parsing.
+In a recursive descent parser combinator, you'd typically get a `StackOverflowError`
+with a useless tack trace pointing to hundreds of frames of framework internal code.
 
-An expression is either an identifier like variable name, or a field reference
-that may be chained, like `foo.bar.baz`.
+Dot Parse reports left recursion errors early on at time of parse definition - an `IllegalStateException`
+will be thrown from the recursive `Parser` creation code.
 
-But it's a left recursive grammar. In an naive implementation when you use the `expr`
-parser to parse any input, it will recursively call into itself which will in turn
-recursively call into itself, over and over again, causing a `StackOverflowError`.
+And the stack trace points to the problematic recursive Parser definition.
 
-The Dot Parse library provides a left recursion guard to catch left recursion errors
-early at parser construction time. The above `define()` method call will throw
-`IllegalStateException`, pointing to the line that creates the left recursion.
+But left associative operators, such as left associative binary operators and postifx operators,
+are legitimate left recursive grammars. If left recursion can't be used to define them, what can?
 
-Actually, when we built the Mini Search Language above, if we didn't use `OperatorTable`
-to define the `AND` `OR` binary operators, their EBNF would have also been left recursive.
-
-The solution?
+The right way, which is also the easier way to create a left recursive grammar is to use predefined
+combinators such as `OperatorTable` to define left associative binary operators and postfix operators:
 
 > [!TIP]
 > Use `OperatorTable` for left recursive grammars.
@@ -581,6 +572,7 @@ Using `OperatorTable`, the left recursive grammar becomes a declarative postfix 
 ```java {.good}
 Parser<Expr> expr = new OperatorTable<Expr>()
     .postfix(string(".").then(identifier), FieldRef::new, 10)
+    ...
     .build(identifier.map(IdentifierRef::new));
 ```
 
@@ -592,6 +584,13 @@ in the language, and use the precedence number (the larger the higher precedence
 precedence across regular operators and the abstract operators, all in the same consistent syntax.
 
 This saves you from manually composing and maintaining layers on top of layers of sub-rules just to encode precedences.
+
+If you have only one left associative operator with no other operato the same result:
+
+```java {.good}
+Parser<Expr> expr = identifier.map(IdentifierRef::new)
+    .withPostfixes(string(".").then(identifier), FieldRef::new);
+```
 
 ---
 
