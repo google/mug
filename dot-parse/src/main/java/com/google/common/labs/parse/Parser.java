@@ -1534,7 +1534,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
     @Override
     public <S> Parser<S> then(Parser<S> suffix) {
-      return unsafeZeroWidthParser.then(suffix);
+      return sequence(this, suffix, (a, b) -> b);
     }
 
     /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
@@ -1543,7 +1543,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     @Override public Parser<T> followedBy(Parser<?> suffix) {
-      return unsafeZeroWidthParser.followedBy(suffix);
+      return sequence(this, suffix, (a, b) -> a);
     }
 
     /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
