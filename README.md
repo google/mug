@@ -20,7 +20,7 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
 <summary>More tools</summary>
  
 - [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md) – parse datetimes by example  
-  → `DateTimeFormatter format = formatOf("2024-03-14 10:00:00.123 America/New_York")`
+  → `DateTimeFormatter format = formatOf("2024-03-14 10.0.10:00.123 America/New_York")`
 - [`Iteration`](./mug/wiki/Iteration-Explained) - implement lazy stream with recursive code
 - [`BinarySearch`](./mug-guava/src/main/java/com/google/guava/labs/collect/README.md) - solve LeetCode binary search problems  
   → `BinarySearch.inSortedArrayWithTolerance(doubleArray, 0.0001).find(target)`
@@ -43,7 +43,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>10.0</version>
+    <version>10.0.1</version>
   </dependency>
 ```
 
@@ -65,7 +65,7 @@ Add `mug-errorprone` to your annotationProcessorPaths:
               <path>
                 <groupId>com.google.mug</groupId>
                 <artifactId>mug-errorprone</artifactId>
-                <version>10.0</version>
+                <version>10.0.1</version>
               </path>
             </annotationProcessorPaths>
           </configuration>
@@ -79,7 +79,7 @@ SafeSql ([javadoc](https://google.github.io/mug/apidocs/com/google/mu/safesql/pa
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-safesql</artifactId>
-    <version>10.0</version>
+    <version>10.0.1</version>
   </dependency>
 ```
 
@@ -89,7 +89,7 @@ Dot Parse Combinators ([javadoc](https://google.github.io/mug/apidocs/com/google
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>dot-parse</artifactId>
-    <version>10.0</version>
+    <version>10.0.1</version>
   </dependency>
 ```
 
@@ -98,7 +98,7 @@ Protobuf utils ([javadoc](https://google.github.io/mug/apidocs/com/google/mu/pro
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-protobuf</artifactId>
-    <version>10.0</version>
+    <version>10.0.1</version>
   </dependency>
 ```
 
@@ -106,11 +106,11 @@ Protobuf utils ([javadoc](https://google.github.io/mug/apidocs/com/google/mu/pro
 
 Add to build.gradle:
 ```
-  implementation 'com.google.mug:mug:10.0'
-  implementation 'com.google.mug:mug-safesql:10.0'
-  implementation 'com.google.mug:dot-parse:10.0'
-  implementation 'com.google.mug:mug-guava:10.0'
-  implementation 'com.google.mug:mug-protobuf:10.0'
+  implementation 'com.google.mug:mug:10.0.1'
+  implementation 'com.google.mug:mug-safesql:10.0.1'
+  implementation 'com.google.mug:dot-parse:10.0.1'
+  implementation 'com.google.mug:mug-guava:10.0.1'
+  implementation 'com.google.mug:mug-protobuf:10.0.1'
 ```
 </details>
 
