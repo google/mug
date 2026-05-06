@@ -41,7 +41,6 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.AbstractMap;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -504,7 +503,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       Parser<A> left, Parser<B> right, BiFunction<? super A, ? super B, ? extends R> combiner) {
     requireNonNull(right);
     requireNonNull(combiner);
-    return left.flatMap(v1 -> right.map(v2 -> combiner.apply(v1, v2)));
+    return left.new SamePrefix<>() {
+      @Override  MatchResult<R> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        return switch (left().skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success(int head, int tail, A v1) ->
+              switch (right.skipAndMatch(skip, input, tail, context)) {
+                case MatchResult.Success(int head2, int tail2, B v2) ->
+                    new MatchResult.Success<>(head, tail2, combiner.apply(v1, v2));
+                case MatchResult.Failure<?> failure -> failure.safeCast();
+              };
+          case MatchResult.Failure<?> failure -> failure.safeCast();
+        };
+      }
+    };
   }
 
   /**
@@ -1009,8 +1021,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   @Override
   public final <S> Parser<S> then(Parser<S> suffix) {
-    requireNonNull(suffix);
-    return flatMap(unused -> suffix);
+    return sequence(this, suffix, (a, b) -> b);
   }
 
   /**
@@ -1020,8 +1031,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.0
    */
   @Override public final <R> Parser<R> then(Parser<R>.OrEmpty suffix) {
-    requireNonNull(suffix);
-    return flatMap(unused -> suffix);
+    return sequence(this, suffix, (a, b) -> b);
   }
 
   /**
@@ -1052,8 +1062,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @Override public Parser<T> followedBy(Parser<?> suffix) {
-    requireNonNull(suffix);
-    return flatMap(v -> suffix.thenReturn(v));
+    return sequence(this, suffix, (a, b) -> a);
   }
 
   @Override public final <S> Parser<T> followedBy(Parser<S>.OrEmpty suffix) {
@@ -1103,7 +1112,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   final Parser<T> optionallyFollowedBy(Parser<UnaryOperator<T>> suffix) {
-    return flatMap(operand -> suffix.map(op -> op.apply(operand)).orElse(operand));
+    return sequence(this, suffix.orElse(identity()), (a, op) -> op.apply(a));
   }
 
   /** A form of negative lookahead such that the match is rejected if followed by {@code suffix}. */
