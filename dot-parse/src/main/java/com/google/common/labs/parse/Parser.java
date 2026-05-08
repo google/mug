@@ -490,7 +490,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public static Parser<Integer> bmpCodeUnit() {
     return chars(4)
         .suchThat(
-            CharPredicate.range('0', '9').orRange('A', 'F').orRange('a', 'f')::matchesAllOf,
+            CharPredicate.range('0', '9').orRange('A', 'F').orRange('a', 'f').precomputeForAscii()
+                ::matchesAllOf,
             "4 hex digits UTF-16 code unit")
         .map(digits -> Integer.parseInt(digits, 16));
   }
