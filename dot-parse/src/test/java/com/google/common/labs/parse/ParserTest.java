@@ -1584,6 +1584,45 @@ public class ParserTest {
   }
 
   @Test
+  public void sequence_noResultLambda_firstParserFails() {
+    Parser<?> parser = sequence(string("a"), string("b"), string("c"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("xbc"));
+    assertThat(parser.matches("xbc")).isFalse();
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <a>");
+  }
+
+  @Test
+  public void sequence_noResultLambda_secondParserFails() {
+    Parser<?> parser = sequence(string("a"), string("b"), string("c"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("axc"));
+    assertThat(parser.matches("axc")).isFalse();
+    assertThat(thrown).hasMessageThat().contains("1:2");
+    assertThat(thrown).hasMessageThat().contains("expecting <b>");
+  }
+
+  @Test
+  public void sequence_noResultLambda_optionalParserDoesNotMatch() {
+    Parser<?> parser = sequence(string("a"), string("b").optional(), string("c"));
+    assertThat(parser.source().parse("ac")).isEqualTo("ac");
+    assertThat(parser.matches("ac")).isTrue();
+  }
+
+  @Test
+  public void sequence_noResultLambda_optionalParserMatches() {
+    Parser<?> parser = sequence(string("a"), string("b").optional(), string("c"));
+    assertThat(parser.source().parse("abc")).isEqualTo("abc");
+    assertThat(parser.matches("abc")).isTrue();
+  }
+
+  @Test
+  public void sequence_noResultLambda_allMatch() {
+    Parser<?> parser = sequence(string("a"), string("b"), string("c"));
+    assertThat(parser.source().parse("abc")).isEqualTo("abc");
+    assertThat(parser.matches("abc")).isTrue();
+  }
+
+  @Test
   public void orEmpty_delimitedBy_bothSides() {
     assertThat(word().orElse("").delimitedBy(",").parse("foo,bar"))
         .containsExactly("foo", "bar")

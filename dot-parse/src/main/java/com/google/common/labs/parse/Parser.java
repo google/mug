@@ -591,6 +591,26 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         (ab, cd) -> combiner.apply(ab.getKey(), ab.getValue(), cd.getKey(), cd.getValue()));
   }
 
+  /**
+   * Sequentially matches {@code first} followed by {@code more} parsers, disregarding the return
+   * values, suitable when you only care about matching but not extracting data.
+   *
+   * <p>{@code sequence(a, b, c, d)} is equivalent to {@code a.then(b).then(c).then(d)} but
+   * syntactically less noisy.
+   *
+   * <p>The returned parser's result spans all of the constituent parsers. To access the matched
+   * source, use {@code #source}.
+   *
+   * @since 10.1
+   */
+  public static Parser<?> sequence(Parser<?> first, Production<?>... more) {
+    Parser<?> result = requireNonNull(first);
+    for (Production<?> p : more) {
+      result = result.then(allowZeroWidth(p));
+    }
+    return result;
+  }
+
   /** Matches if any of the given {@code parsers} match. */
   @SafeVarargs public static <T> Parser<T> anyOf(Parser<? extends T>... parsers) {
     return stream(parsers).collect(or());
