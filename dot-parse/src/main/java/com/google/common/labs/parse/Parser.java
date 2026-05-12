@@ -604,11 +604,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.1
    */
   public static Parser<?> sequence(Parser<?> first, Production<?>... more) {
-    Parser<?> result = requireNonNull(first);
+    Parser<?> parser = requireNonNull(first);
     for (Production<?> p : more) {
-      result = result.then(allowZeroWidth(p));
+      parser = parser.then(allowZeroWidth(p));
     }
-    return result;
+    return parser;
   }
 
   /** Matches if any of the given {@code parsers} match. */
