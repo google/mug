@@ -598,8 +598,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * <p>{@code sequence(a, b, c, d)} is equivalent to {@code a.then(b).then(c).then(d)} but
    * syntactically less noisy.
    *
-   * <p>The returned parser's result spans all of the constituent parsers. To access the matched
-   * source, use {@code #source}.
+   * <p>The returned parser's match spans all of the constituent parsers. To access the matched
+   * source, use {@link #source}.
    *
    * @since 10.1
    */
