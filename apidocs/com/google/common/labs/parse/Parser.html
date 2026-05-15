@@ -570,8 +570,8 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production...)" class="member-name-link">sequence</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;first,
  <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;...&nbsp;more)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Sequentially matches <code>first</code> followed by <code>more</code> (always-consuming <a href="Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a>s
- or optional <a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse"><code>Parser.OrEmpty</code></a>s), disregarding the return values, suitable when you only
+<div class="block">Sequentially matches <code>first</code> followed by <code>more</code> (always-consuming <a href="Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a>'s
+ or optional <a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse"><code>Parser.OrEmpty</code></a>'s), disregarding the return values, suitable when you only
  care about matching but not extracting data.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;A,<wbr>B,<wbr>R&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
@@ -1195,12 +1195,17 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;</span>&nbsp;<span class="element-name">sequence</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;first,
  <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;...&nbsp;more)</span></div>
-<div class="block">Sequentially matches <code>first</code> followed by <code>more</code> (always-consuming <a href="Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a>s
- or optional <a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse"><code>Parser.OrEmpty</code></a>s), disregarding the return values, suitable when you only
+<div class="block">Sequentially matches <code>first</code> followed by <code>more</code> (always-consuming <a href="Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a>'s
+ or optional <a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse"><code>Parser.OrEmpty</code></a>'s), disregarding the return values, suitable when you only
  care about matching but not extracting data.
 
- <p><code>sequence(digits(), string("-"), digits())</code> is equivalent to <code>
- digits().then(string("-")).then(digits())</code> but syntactically less noisy.
+ <p>For instance,
+
+ <pre><code>sequence(digits(), string("-"), digits())</code></pre>
+
+ is a much more concise equivalent of
+
+ <pre><code>digits().then(string("-")).then(digits())</code></pre>
 
  <p>If you need to ensure no skipping between the constituent sub-parsers even when <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.common.labs.parse.Parser)"><code>skipping()</code></a> is used, wrap the returned
  sequence with <a href="#literally(com.google.common.labs.parse.Parser)"><code>literally()</code></a>.
