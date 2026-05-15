@@ -100,7 +100,7 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
    * {@code zeroOrMore(isNot('"')).immediatelyBetween("\"", "\"")}.
    */
   default Parser<T> immediatelyBetween(String prefix, String suffix) {
-    return Parser.string(prefix).then(Parser.literally(this.followedBy(suffix)));
+    return Parser.literally(between(prefix, suffix));
   }
 
   /**

@@ -380,6 +380,37 @@ Parser<TypeDecl> typeDecl =
   ```
 - **Use** `prefix.then(parser)` to ignore a prefix when nested in a
   `sequence()` call.
+
+-   **Use** `Parser.sequence(Parser, Production...)` for regex DFA-style rules
+    when matching a sequence of rules as a single whole. This is cleaner and
+    less error-prone than awkwardly chaining `.then()` and `.followedBy()`.
+
+    For example:
+
+    ```java {.good}
+    // Good: Clear, linear representation of the sequential components
+    Parser<String> usPhoneNumber =
+        sequence(digits(3), string("-"), digits(3), string("-"), digits(4))
+            .source();
+
+    private static Parser<String> digits(int n) {
+      return chars(n)
+          .suchThat(CharPredicate.range('0', '9')::matchesAllOf, n + " digits");
+    }
+    ```
+
+    It avoids the syntactic clutter and cognitive load of chaining combinators:
+
+    ```java {.bad}
+    // Bad: Harder to read and verify due to alternating then/followedBy calls
+    Parser<String> usPhoneNumber =
+        digits(3)
+            .followedBy("-")
+            .then(digits(3))
+            .followedBy("-")
+            .then(digits(4))
+            .source();
+    ```
 - **Minimize top-level parsers per domain type**: Ideally, create at most one
   canonical parser per domain type to ensure consistency and avoid misuse.
 - **Minimize primitive-type parsers**: Avoid creating top-level parsers that

@@ -105,10 +105,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           ? new MatchResult.Success<>(start, start, null)
           : context.expecting("EOF", start);
     }
-
-    @Override boolean allowsPreSkipping() {
-      return true;
-    }
   };
 
   /**
@@ -144,10 +140,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return input.isInRange(start) && matcher.test(input.charAt(start))
             ? new MatchResult.Success<>(start, start + 1, input.charAt(start))
             : context.expecting(name, start);
-      }
-
-      @Override boolean allowsPreSkipping() {
-        return true;
       }
 
       @Override Set<String> getPrefixes() {
@@ -191,10 +183,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(name, end);
       }
 
-      @Override boolean allowsPreSkipping() {
-        return true;
-      }
-
       @Override Set<String> getPrefixes() {
         return prefixesIfAscii(matcher);
       }
@@ -216,10 +204,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return input.isInRange(start + n - 1)
             ? new MatchResult.Success<>(start, start + n, input.snippet(start, n))
             : context.expecting(name, start);
-      }
-
-      @Override boolean allowsPreSkipping() {
-        return true;
       }
     };
   }
@@ -288,10 +272,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             ? new MatchResult.Success<>(found, found + target.length(), target)
             : context.expecting(target, skipIfAny(skip, input, start));
       }
-
-      @Override boolean allowsPreSkipping() {
-        return false;
-      }
     };
   }
 
@@ -305,10 +285,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return input.startsWith(string, start)
             ? new MatchResult.Success<>(start, start + string.length(), string)
             : context.expecting(string, start);
-      }
-
-      @Override boolean allowsPreSkipping() {
-        return true;
       }
 
       @Override Set<String> getPrefixes() {
@@ -334,10 +310,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return input.startsWithCaseInsensitive(string, start)
             ? new MatchResult.Success<>(start, start + string.length(), string)
             : context.expecting(string, start);
-      }
-
-      @Override boolean allowsPreSkipping() {
-        return true;
       }
 
       @Override Set<String> getPrefixes() {
@@ -400,10 +372,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
                       start, success.tail(), input.snippet(start, success.head() - start));
               case MatchResult.Failure<?> failure -> failure.safeCast();
             };
-          }
-
-          @Override boolean allowsPreSkipping() {
-            return false;
           }
         });
   }
@@ -1171,7 +1139,14 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * string("if").notImmediatelyFollowedBy(IDENTIFIER_CHAR, "identifier char")}.
    */
   public final Parser<T> notImmediatelyFollowedBy(CharPredicate predicate, String name) {
-    return notFollowedBy(literally(one(predicate, name)), name);
+    return notFollowedBy(
+        one(predicate, name).new SamePrefix<Character>() {
+          @Override MatchResult<Character> skipAndMatch(
+              Parser<?> ignored, CharInput input, int start, ErrorContext context) {
+            return left().skipAndMatch(null, input, start, context);
+          }
+        },
+        name);
   }
 
   /**
@@ -1229,14 +1204,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public static <T> Parser<T> literally(Parser<T> parser) {
     requireNonNull(parser);
-    return parser.new SamePrefix<>() {
+    return parser.new SamePrefix<T>() {
       @Override MatchResult<T> skipAndMatch(
-          Parser<?> ignored, CharInput input, int start, ErrorContext context) {
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
         return left().skipAndMatch(null, input, start, context);
-      }
-
-      @Override boolean allowsPreSkipping() {
-        return false;
       }
     };
   }
@@ -1511,10 +1483,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
               case MatchResult.Success<T> success -> success;
               default -> new MatchResult.Success<>(start, start, computeDefaultValue());
             };
-          }
-
-          @Override boolean allowsPreSkipping() {
-            return false;
           }
         };
 
@@ -1863,10 +1831,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
     private volatile boolean validating = false;
 
-    @Override boolean allowsPreSkipping() {
-      return false;
-    }
-
     @Override MatchResult<T> skipAndMatch(
         Parser<?> skip, CharInput input, int start, ErrorContext context) {
       Parser<T> p = ref.get();
@@ -1918,9 +1882,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
   }
 
-  /** If true, skippable characters can be skipped before applying this parser. */
-  abstract boolean allowsPreSkipping();
-
   /**
    * Returns metadata about the prefixes that can be used to prune out this parser, if the input
    * doesn't start with any of the prefixes. Return EMPTY_PREFIX to indicate no pruning is applicable.
@@ -1969,10 +1930,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** A derived parser, with {@code this} being the left-most rule. */
   private abstract class SamePrefix<R> extends Parser<R> {
-    @Override boolean allowsPreSkipping() {
-      return left().allowsPreSkipping();
-    }
-
     @Override Set<String> getPrefixes() {
       return left().getPrefixes();
     }

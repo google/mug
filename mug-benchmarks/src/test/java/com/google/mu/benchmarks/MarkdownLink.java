@@ -71,10 +71,11 @@ public record MarkdownLink(String label, String url) {
    * <p>Prefer using {@link #of} for parsing a single link and {@link # scan}
    * for extracting multiple links. This constant is meant to be composed with more complex parsers.
    */
-  public static final Parser<MarkdownLink> PARSER = sequence(
-      NON_EMPTY_LABEL.orElse("").immediatelyBetween("[", "]"),
-      literally(quotedByWithEscapes('(', ')', chars(1))),
-      MarkdownLink::new);
+  public static final Parser<MarkdownLink> PARSER = literally(
+      sequence(
+          NON_EMPTY_LABEL.orElse("").between("[", "]"),
+          quotedByWithEscapes('(', ')', chars(1)),
+      MarkdownLink::new));
 
   private static final Parser<?> IGNORED = anyOf(ESCAPE, CODE, one(noneOf("\\[`"), "ignored char"));
 

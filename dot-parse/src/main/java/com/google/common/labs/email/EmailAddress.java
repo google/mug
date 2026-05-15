@@ -191,7 +191,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<String> domain =
         consecutive(letterOrDigit.or("-.").precomputeForAscii(), "domain label chars");
     Parser<EmailAddress> address =
-        sequence(localPart, literally(string("@").then(domain)), EmailAddress::of);
+        literally(sequence(localPart, string("@").then(domain), EmailAddress::of));
     Parser<String> quotedDisplayName = Parser.quotedByWithEscapes(
         '"', '"', chars(1).suchThat(isoControl::matchesNoneOf, "escapable char"));
     Parser<String> unquotedDisplayName = consecutive(
