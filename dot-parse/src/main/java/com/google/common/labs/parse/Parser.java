@@ -566,11 +566,17 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <p>For instance,
    *
-   * <pre>{@code sequence(digits(), string("-"), digits())}</pre>
+   * <pre>{@code sequence(digits(), string("-"), digits(), string("-"), digits())}</pre>
    *
    * is a much more concise equivalent of
    *
-   * <pre>{@code digits().then(string("-")).then(digits())}</pre>
+   * <pre>{@code
+   * digits()
+   *     .then(string("-"))
+   *     .then(digits())
+   *     .then(string("-"))
+   *     .then(digits())
+   * }</pre>
    *
    * <p>If you need to ensure no skipping between the constituent sub-parsers even when {@link
    * #parseSkipping parseSkipping()} or {@link #skipping skipping()} is used, wrap the returned
