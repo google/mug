@@ -45,6 +45,7 @@ final class OrParser<T> extends Parser<T> {
 
   @Override MatchResult<T> skipAndMatch(
       Parser<?> skip, CharInput input, int start, ErrorContext context) {
+    // All top-level parsers allow input to apply pre-skipping.
     start = skipIfAny(skip, input, start);
     List<Parser<T>> candidates = parsers;
     if (pruneTree != null) {
@@ -93,8 +94,6 @@ final class OrParser<T> extends Parser<T> {
     if (parsers.size() < 4) { // too few candidates, not worth it.
       return null;
     }
-    // If none skips, the prefixes can match literally.
-    // If they all skip, we should have already applied skipping before pruning starts.
     var builder = new PrefixPruneTree.Builder<Parser<T>>();
     for (Parser<T> parser : parsers) {
       for (String prefix : parser.getPrefixes()) {
