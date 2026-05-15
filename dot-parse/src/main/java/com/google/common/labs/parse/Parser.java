@@ -560,12 +560,17 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Sequentially matches {@code first} followed by {@code more} (always-consuming {@link Parser}s
-   * or optional {@link Parser.OrEmpty}s), disregarding the return values, suitable when you only
+   * Sequentially matches {@code first} followed by {@code more} (always-consuming {@link Parser}'s
+   * or optional {@link Parser.OrEmpty}'s), disregarding the return values, suitable when you only
    * care about matching but not extracting data.
    *
-   * <p>{@code sequence(digits(), string("-"), digits())} is equivalent to {@code
-   * digits().then(string("-")).then(digits())} but syntactically less noisy.
+   * <p>For instance,
+   *
+   * <pre>{@code sequence(digits(), string("-"), digits())}</pre>
+   *
+   * is a much more concise equivalent of
+   *
+   * <pre>{@code digits().then(string("-")).then(digits())}</pre>
    *
    * <p>If you need to ensure no skipping between the constituent sub-parsers even when {@link
    * #parseSkipping parseSkipping()} or {@link #skipping skipping()} is used, wrap the returned
