@@ -28,7 +28,6 @@ import java.util.stream.Stream;
 /** Implements {@link Parser#anyOf}. */
 final class OrParser<T> extends Parser<T> {
   private final List<Parser<T>> parsers;
-  private final boolean honorsSkipping;
   private final PrefixPruneTree<Parser<T>> pruneTree;
 
   OrParser(List<? extends Parser<? extends T>> candidates) {
@@ -41,15 +40,12 @@ final class OrParser<T> extends Parser<T> {
                     : Stream.of(p))
             .map(Parser::<T>covariant)
             .collect(toUnmodifiableList());
-    this.honorsSkipping = parsers.stream().allMatch(Parser::honorsSkipping);
     this.pruneTree = makePruneTreeIfUseful(parsers);
   }
 
   @Override MatchResult<T> skipAndMatch(
       Parser<?> skip, CharInput input, int start, ErrorContext context) {
-    if (honorsSkipping) {
-      start = skipIfAny(skip, input, start);
-    }
+    start = skipIfAny(skip, input, start);
     List<Parser<T>> candidates = parsers;
     if (pruneTree != null) {
       candidates = pruneTree.pruneByPrefix(input, start);
@@ -77,15 +73,7 @@ final class OrParser<T> extends Parser<T> {
     return farthestFailure.safeCast();
   }
 
-  @Override boolean honorsSkipping() {
-    return honorsSkipping;
-  }
-
   @Override public Set<String> getPrefixes() {
-    if (!hasConsistentSkippingMode(parsers)) {
-      // inconsistent skipping means the candidate prefixes aren't usable.
-      return super.getPrefixes();
-    }
     List<String> prefixes = new ArrayList<>();
     for (String prefix :
         iterateOnce(parsers.stream().flatMap(parser -> parser.getPrefixes().stream()).sorted())) {
@@ -105,24 +93,17 @@ final class OrParser<T> extends Parser<T> {
     if (parsers.size() < 4) { // too few candidates, not worth it.
       return null;
     }
-    if (hasConsistentSkippingMode(parsers)) {
-      // If none skips, the prefixes can match literally.
-      // If they all skip, we should have already applied skipping before pruning starts.
-      var builder = new PrefixPruneTree.Builder<Parser<T>>();
-      for (Parser<T> parser : parsers) {
-        for (String prefix : parser.getPrefixes()) {
-          builder.addPrefix(prefix, 8, parser); // peek for up to 8 chars lest diminishing return.
-        }
-      }
-      if (builder.numSurvivors() * 2 < parsers.size()) { // with sufficient pruning power.
-        return builder.build();
+    // If none skips, the prefixes can match literally.
+    // If they all skip, we should have already applied skipping before pruning starts.
+    var builder = new PrefixPruneTree.Builder<Parser<T>>();
+    for (Parser<T> parser : parsers) {
+      for (String prefix : parser.getPrefixes()) {
+        builder.addPrefix(prefix, 8, parser); // peek for up to 8 chars lest diminishing return.
       }
     }
+    if (builder.numSurvivors() * 2 < parsers.size()) { // with sufficient pruning power.
+      return builder.build();
+    }
     return null;
-  }
-
-  private static boolean hasConsistentSkippingMode(List<? extends Parser<?>> parsers) {
-    return parsers.stream().allMatch(Parser::honorsSkipping)
-        || parsers.stream().noneMatch(Parser::honorsSkipping);
   }
 }

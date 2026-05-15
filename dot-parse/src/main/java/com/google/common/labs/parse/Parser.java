@@ -25,6 +25,7 @@ import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
+import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.requireNonNull;
@@ -104,10 +105,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           ? new MatchResult.Success<>(start, start, null)
           : context.expecting("EOF", start);
     }
-
-    @Override boolean honorsSkipping() {
-      return true;
-    }
   };
 
   /**
@@ -143,10 +140,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return input.isInRange(start) && matcher.test(input.charAt(start))
             ? new MatchResult.Success<>(start, start + 1, input.charAt(start))
             : context.expecting(name, start);
-      }
-
-      @Override boolean honorsSkipping() {
-        return true;
       }
 
       @Override Set<String> getPrefixes() {
@@ -190,10 +183,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(name, end);
       }
 
-      @Override boolean honorsSkipping() {
-        return true;
-      }
-
       @Override Set<String> getPrefixes() {
         return prefixesIfAscii(matcher);
       }
@@ -215,10 +204,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return input.isInRange(start + n - 1)
             ? new MatchResult.Success<>(start, start + n, input.snippet(start, n))
             : context.expecting(name, start);
-      }
-
-      @Override boolean honorsSkipping() {
-        return true;
       }
     };
   }
@@ -287,10 +272,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             ? new MatchResult.Success<>(found, found + target.length(), target)
             : context.expecting(target, skipIfAny(skip, input, start));
       }
-
-      @Override boolean honorsSkipping() {
-        return false;
-      }
     };
   }
 
@@ -304,10 +285,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return input.startsWith(string, start)
             ? new MatchResult.Success<>(start, start + string.length(), string)
             : context.expecting(string, start);
-      }
-
-      @Override boolean honorsSkipping() {
-        return true;
       }
 
       @Override Set<String> getPrefixes() {
@@ -333,10 +310,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return input.startsWithCaseInsensitive(string, start)
             ? new MatchResult.Success<>(start, start + string.length(), string)
             : context.expecting(string, start);
-      }
-
-      @Override boolean honorsSkipping() {
-        return true;
       }
 
       @Override Set<String> getPrefixes() {
@@ -399,10 +372,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
                       start, success.tail(), input.snippet(start, success.head() - start));
               case MatchResult.Failure<?> failure -> failure.safeCast();
             };
-          }
-
-          @Override boolean honorsSkipping() {
-            return false;
           }
         });
   }
@@ -489,7 +458,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public static Parser<Integer> bmpCodeUnit() {
     return chars(4)
         .suchThat(
-            CharPredicate.range('0', '9').orRange('A', 'F').orRange('a', 'f')::matchesAllOf,
+            CharPredicate.range('0', '9').orRange('A', 'F').orRange('a', 'f').precomputeForAscii()
+                ::matchesAllOf,
             "4 hex digits UTF-16 code unit")
         .map(digits -> Integer.parseInt(digits, 16));
   }
@@ -502,7 +472,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       Parser<A> left, Parser<B> right, BiFunction<? super A, ? super B, ? extends R> combiner) {
     requireNonNull(right);
     requireNonNull(combiner);
-    return left.flatMap(v1 -> right.map(v2 -> combiner.apply(v1, v2)));
+    return left.new SamePrefix<>() {
+      @Override  MatchResult<R> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        return switch (left().skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success(int head, int tail, A v1) ->
+              switch (right.skipAndMatch(skip, input, tail, context)) {
+                case MatchResult.Success(int head2, int tail2, B v2) ->
+                    new MatchResult.Success<>(head, tail2, combiner.apply(v1, v2));
+                case MatchResult.Failure<?> failure -> failure.safeCast();
+              };
+          case MatchResult.Failure<?> failure -> failure.safeCast();
+        };
+      }
+    };
   }
 
   /**
@@ -540,7 +523,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public static <A, B, R> Parser<R> sequence(
       Parser<A>.OrEmpty left, Parser<B> right,
       BiFunction<? super A, ? super B, ? extends R> combiner) {
-    return sequence(left.unsafeZeroWidthParser, right, combiner);
+    return anyOf(
+        sequence(left.notEmpty(), right, combiner),
+        right.map(v2 -> combiner.apply(left.computeDefaultValue(), v2)));
   }
 
   /**
@@ -572,6 +557,26 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         sequence(a, b, AbstractMap.SimpleImmutableEntry<A, B>::new),
         sequence(allowZeroWidth(c), d, AbstractMap.SimpleImmutableEntry<C, D>::new),
         (ab, cd) -> combiner.apply(ab.getKey(), ab.getValue(), cd.getKey(), cd.getValue()));
+  }
+
+  /**
+   * Sequentially matches {@code first} followed by {@code more} parsers, disregarding the return
+   * values, suitable when you only care about matching but not extracting data.
+   *
+   * <p>{@code sequence(a, b, c, d)} is equivalent to {@code a.then(b).then(c).then(d)} but
+   * syntactically less noisy.
+   *
+   * <p>The returned parser's match spans all of the constituent parsers. To access the matched
+   * source, use {@link #source}.
+   *
+   * @since 10.1
+   */
+  public static Parser<?> sequence(Parser<?> first, Production<?>... more) {
+    Parser<?> parser = requireNonNull(first);
+    for (Production<?> p : more) {
+      parser = parser.then(allowZeroWidth(p));
+    }
+    return parser;
   }
 
   /** Matches if any of the given {@code parsers} match. */
@@ -633,7 +638,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Matches if {@code this} or {@code that} matches. */
   public final Parser<T> or(Parser<? extends T> that) {
-    return anyOf(this, that);
+    return new OrParser<T>(asList(this, that));
   }
 
   /**
@@ -1005,8 +1010,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   @Override
   public final <S> Parser<S> then(Parser<S> suffix) {
-    requireNonNull(suffix);
-    return flatMap(unused -> suffix);
+    return sequence(this, suffix, (a, b) -> b);
   }
 
   /**
@@ -1016,8 +1020,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.0
    */
   @Override public final <R> Parser<R> then(Parser<R>.OrEmpty suffix) {
-    requireNonNull(suffix);
-    return flatMap(unused -> suffix);
+    return sequence(this, suffix, (a, b) -> b);
   }
 
   /**
@@ -1048,8 +1051,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @Override public Parser<T> followedBy(Parser<?> suffix) {
-    requireNonNull(suffix);
-    return flatMap(v -> suffix.thenReturn(v));
+    return sequence(this, suffix, (a, b) -> a);
   }
 
   @Override public final <S> Parser<T> followedBy(Parser<S>.OrEmpty suffix) {
@@ -1099,7 +1101,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   final Parser<T> optionallyFollowedBy(Parser<UnaryOperator<T>> suffix) {
-    return flatMap(operand -> suffix.map(op -> op.apply(operand)).orElse(operand));
+    return sequence(this, suffix.orElse(identity()), (a, op) -> op.apply(a));
   }
 
   /** A form of negative lookahead such that the match is rejected if followed by {@code suffix}. */
@@ -1137,7 +1139,14 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * string("if").notImmediatelyFollowedBy(IDENTIFIER_CHAR, "identifier char")}.
    */
   public final Parser<T> notImmediatelyFollowedBy(CharPredicate predicate, String name) {
-    return notFollowedBy(literally(one(predicate, name)), name);
+    return notFollowedBy(
+        one(predicate, name).new SamePrefix<Character>() {
+          @Override MatchResult<Character> skipAndMatch(
+              Parser<?> ignored, CharInput input, int start, ErrorContext context) {
+            return left().skipAndMatch(null, input, start, context);
+          }
+        },
+        name);
   }
 
   /**
@@ -1195,14 +1204,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public static <T> Parser<T> literally(Parser<T> parser) {
     requireNonNull(parser);
-    return parser.new SamePrefix<>() {
+    return parser.new SamePrefix<T>() {
       @Override MatchResult<T> skipAndMatch(
-          Parser<?> ignored, CharInput input, int start, ErrorContext context) {
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
         return left().skipAndMatch(null, input, start, context);
-      }
-
-      @Override boolean honorsSkipping() {
-        return false;
       }
     };
   }
@@ -1469,15 +1475,16 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * A crippled zero-width parser, not safe to be used in a loop and must be carefully
      * composed with a parser that does consume!
      */
-    private final Parser<T> unsafeZeroWidthParser = notEmpty().new SamePrefix<>() {
-      @Override MatchResult<T> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success<T> success -> success;
-          default -> new MatchResult.Success<>(start, start, computeDefaultValue());
+    private final Parser<T> unsafeZeroWidthParser =
+        new Parser<T>() {
+          @Override MatchResult<T> skipAndMatch(
+              Parser<?> skip, CharInput input, int start, ErrorContext context) {
+            return switch (notEmpty().skipAndMatch(skip, input, start, context)) {
+              case MatchResult.Success<T> success -> success;
+              default -> new MatchResult.Success<>(start, start, computeDefaultValue());
+            };
+          }
         };
-      }
-    };
 
     private OrEmpty(Supplier<? extends T> defaultSupplier) {
       this.defaultSupplier = defaultSupplier;
@@ -1527,7 +1534,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
     @Override
     public <S> Parser<S> then(Parser<S> suffix) {
-      return unsafeZeroWidthParser.then(suffix);
+      return sequence(this, suffix, (a, b) -> b);
     }
 
     /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
@@ -1536,7 +1543,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     @Override public Parser<T> followedBy(Parser<?> suffix) {
-      return unsafeZeroWidthParser.followedBy(suffix);
+      return sequence(this, suffix, (a, b) -> a);
     }
 
     /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
@@ -1824,10 +1831,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
     private volatile boolean validating = false;
 
-    @Override boolean honorsSkipping() {
-      return false;
-    }
-
     @Override MatchResult<T> skipAndMatch(
         Parser<?> skip, CharInput input, int start, ErrorContext context) {
       Parser<T> p = ref.get();
@@ -1879,9 +1882,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
   }
 
-  /** If true, skippable characters can be skipped before applying this parser. */
-  abstract boolean honorsSkipping();
-
   /**
    * Returns metadata about the prefixes that can be used to prune out this parser, if the input
    * doesn't start with any of the prefixes. Return EMPTY_PREFIX to indicate no pruning is applicable.
@@ -1930,10 +1930,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** A derived parser, with {@code this} being the left-most rule. */
   private abstract class SamePrefix<R> extends Parser<R> {
-    @Override boolean honorsSkipping() {
-      return left().honorsSkipping();
-    }
-
     @Override Set<String> getPrefixes() {
       return left().getPrefixes();
     }
