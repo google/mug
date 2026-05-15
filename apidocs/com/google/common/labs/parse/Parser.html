@@ -1201,11 +1201,17 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 
  <p>For instance,
 
- <pre><code>sequence(digits(), string("-"), digits())</code></pre>
+ <pre><code>sequence(digits(), string("-"), digits(), string("-"), digits())</code></pre>
 
  is a much more concise equivalent of
 
- <pre><code>digits().then(string("-")).then(digits())</code></pre>
+ <pre><code>
+ digits()
+     .then(string("-"))
+     .then(digits())
+     .then(string("-"))
+     .then(digits())
+ </code></pre>
 
  <p>If you need to ensure no skipping between the constituent sub-parsers even when <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.common.labs.parse.Parser)"><code>skipping()</code></a> is used, wrap the returned
  sequence with <a href="#literally(com.google.common.labs.parse.Parser)"><code>literally()</code></a>.
