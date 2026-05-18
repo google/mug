@@ -6,7 +6,7 @@ Low-ceremony, idiomatic Java parser combinator, aimed to replace regex and your 
 - **Hard to misuse:** no footguns like infinite loops caused by `many(optional)` or accidental left recursion.
 - **Idiomatic Java:** modern, first-class Java style API designed for Java users (not a Haskell or Scala port).
 - **Performant:** `anyOf()` optimized by prefix pruning. Faster than regex.
-- **Just works:** No "committing" or "cut" surprises. Your grammar always works as intended.
+- **Just works:** No "committing" or "cut" complexities. Your grammar looks right? Then it works right.
 
 ---
 
