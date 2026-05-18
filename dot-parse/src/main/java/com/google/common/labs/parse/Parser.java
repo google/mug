@@ -236,7 +236,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Returns a parser that finds the first literal {@code string} that may start from the current
+   * Returns a parser that finds the first {@code needle} string that may start from the current
    * position or after any number of characters.
    *
    * <p>Useful when you need to skip characters until a particular anchor point, something awkward
@@ -258,19 +258,16 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @since 9.5
    */
-  public static Parser<String> first(String target) {
-    checkArgument(target.length() > 0, "target cannot be empty");
+  public static Parser<String> first(String needle) {
+    checkArgument(needle.length() > 0, "needle cannot be empty");
     return new Parser<>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        // Unlike other parsers, first() doesn't apply the skip parser first. Its job is to find the
-        // value string, and the characters it skips are simply non-matching characters. Applying
-        // skip could cause the match to fail if value itself contains characters that
-        // would be skipped (e.g. whitespace).
-        int found = input.indexOf(target, start);
+        start = skipIfAny(skip, input, start);
+        int found = input.indexOf(needle, start);
         return found >= 0
-            ? new MatchResult.Success<>(found, found + target.length(), target)
-            : context.expecting(target, skipIfAny(skip, input, start));
+            ? new MatchResult.Success<>(found, found + needle.length(), needle)
+            : context.expecting(needle, skipIfAny(skip, input, start));
       }
     };
   }
