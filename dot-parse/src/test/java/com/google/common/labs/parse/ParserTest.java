@@ -102,7 +102,8 @@ public class ParserTest {
   @Test
   public void first_skippingCommentsAndWhitespace() {
     Parser<String> ignored = anyOf(quotedBy("/*", "*/"), consecutive(whitespace(), "whitespace"));
-    assertThat(first("*").parseSkipping(ignored, "/* comment */ *")).isEqualTo("*");
+    assertThat(first("*").parseSkipping(ignored, "/* comment */ * /* comment again */"))
+        .isEqualTo("*");
   }
 
   @Test
