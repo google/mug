@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.MoreStreams.groupConsecutive;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
+import static com.google.mu.util.stream.MoreStreams.mergeConsecutive;
 import static com.google.mu.util.stream.MoreStreams.runLengthEncode;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.asList;
@@ -359,6 +360,57 @@ public class MoreStreamsTest {
     assertThat(groupConsecutive(Stream.of(10, 20, 9, 8, 10), i -> i % 2, Integer::sum))
         .containsExactly(30, 9, 18)
         .inOrder();
+  }
+
+  @Test
+  public void testMergeConsecutive() {
+    Stream<Number> stream = Stream.of(1, 2, 3.0, 4, 5);
+    assertThat(mergeConsecutive(stream, Integer.class, Integer::sum).collect(toList()))
+        .containsExactly(3, 3.0, 9)
+        .inOrder();
+  }
+
+  @Test
+  public void testMergeConsecutive_emptyStream() {
+    Stream<Number> stream = Stream.empty();
+    assertThat(mergeConsecutive(stream, Integer.class, Integer::sum).collect(toList()))
+        .isEmpty();
+  }
+
+  @Test
+  public void testMergeConsecutive_singleElementMatching() {
+    Stream<Number> stream = Stream.of(1);
+    assertThat(mergeConsecutive(stream, Integer.class, Integer::sum).collect(toList()))
+        .containsExactly(1);
+  }
+
+  @Test
+  public void testMergeConsecutive_singleElementNonMatching() {
+    Stream<Number> stream = Stream.of(3.0);
+    assertThat(mergeConsecutive(stream, Integer.class, Integer::sum).collect(toList()))
+        .containsExactly(3.0);
+  }
+
+  @Test
+  public void testMergeConsecutive_noConsecutiveMatching() {
+    Stream<Number> stream = Stream.of(1, 2.0, 3, 4.0);
+    assertThat(mergeConsecutive(stream, Integer.class, Integer::sum).collect(toList()))
+        .containsExactly(1, 2.0, 3, 4.0)
+        .inOrder();
+  }
+
+  @Test
+  public void testMergeConsecutive_nullType() {
+    assertThrows(
+        NullPointerException.class,
+        () -> mergeConsecutive(Stream.of(1), null, (a, b) -> a));
+  }
+
+  @Test
+  public void testMergeConsecutive_nullMergeFunction() {
+    assertThrows(
+        NullPointerException.class,
+        () -> mergeConsecutive(Stream.of(1), Integer.class, null));
   }
 
   @Test public void testRunLengthEncode() {

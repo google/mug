@@ -201,6 +201,30 @@ public final class MoreStreams {
   }
 
   /**
+   * Merges consecutive elements of {@code mergedType} from {@code stream} lazily using {@code
+   * mergeFunction}.
+   *
+   * <p>For example, you can merge consecutive literals from an abstract syntax tree:
+   *
+   * <pre>{@code
+   * List<AstNode> merged =
+   *     mergeConsecutive(astNodes, LiteralNode.class, (a, b) -> new LiteralNode(a.value + b.value))
+   *         .toList());
+   * }</pre>
+   *
+   * @since 10.2
+   */
+  public static <T, S extends T> Stream<T> mergeConsecutive(
+      Stream<T> stream, Class<S> mergedType, BinaryOperator<S> mergeFunction) {
+    requireNonNull(mergedType);
+    requireNonNull(mergeFunction);
+    return groupConsecutive(
+        stream,
+        (a, b) -> mergedType.isInstance(a) && mergedType.isInstance(b),
+        (a, b) -> mergeFunction.apply(mergedType.cast(a), mergedType.cast(b)));
+  }
+
+  /**
    * Groups consecutive items in {@code stream} using the {@code sameGroup} predicate, along with
    * the group's run length (number of items).
    *
