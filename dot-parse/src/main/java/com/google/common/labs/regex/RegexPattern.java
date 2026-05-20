@@ -17,7 +17,7 @@ package com.google.common.labs.regex;
 import static com.google.common.labs.regex.InternalUtils.checkArgument;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.prefix;
-import static com.google.mu.util.stream.MoreStreams.groupConsecutive;
+import static com.google.mu.util.stream.MoreStreams.mergeConsecutive;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -76,10 +76,7 @@ public sealed interface RegexPattern
                   .flatMap(p -> p instanceof Sequence seq ? seq.elements().stream() : Stream.of(p));
           // Then merge adjacent literals
           List<RegexPattern> segments =
-              groupConsecutive(
-                      flattened,
-                      (a, b) -> a instanceof Literal && b instanceof Literal,
-                      (a, b) -> new Literal(((Literal) a).value() + ((Literal) b).value()))
+              mergeConsecutive(flattened, Literal.class, (a, b) -> new Literal(a.value() + b.value()))
                   .collect(toUnmodifiableList());
           // Wrap in sequence if needed.
           return segments.size() == 1 ? segments.get(0) : new Sequence(segments);
