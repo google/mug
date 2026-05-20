@@ -126,6 +126,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
+   * Matches a character in {@code characterClass}.
+   *
+   * <p>For example: {@code one("[a-z]")} is equivalent to {@code one(charsIn("[a-z]"))}.
+   *
+   * @param characterClass a regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
+   *        See {@link CharacterSet} for more details.
+   * @since 10.2
+   */
+  @SuppressWarnings("CharacterSetLiteralCheck")
+  public static Parser<Character> one(String characterClass) {
+    return one(charsIn(characterClass));
+  }
+
+  /**
    * Matches a character as specified by {@code matcher}.
    *
    * @since 9.9.3
@@ -167,6 +181,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public static Parser<String> consecutive(CharacterSet characterSet) {
     return consecutive(characterSet, "one or more " + characterSet);
+  }
+
+  /**
+   * Matches one or more consecutive characters contained in {@code characterClass}.
+   *
+   * <p>For example: {@code consecutive("[0-9]")} is equivalent to {@code consecutive(charsIn("[0-9]"))}.
+   *
+   * @param characterClass a regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
+   *        See {@link CharacterSet} for more details.
+   * @since 10.2
+   */
+  @SuppressWarnings("CharacterSetLiteralCheck")
+  public static Parser<String> consecutive(String characterClass) {
+    return consecutive(charsIn(characterClass));
   }
 
   static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
@@ -780,6 +808,21 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public static Parser<String>.OrEmpty zeroOrMore(CharacterSet characterSet) {
     return zeroOrMore(characterSet, characterSet.toString());
+  }
+
+  /**
+   * Starts a fluent chain for matching consecutive characters in the {@code characterClass} zero or
+   * more times. If no such character is found, empty string is the result.
+   *
+   * <p>For example: {@code zeroOrMore("[0-9]")} is equivalent to {@code zeroOrMore(charsIn("[0-9]"))}.
+   *
+   * @param characterClass a regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
+   *        See {@link CharacterSet} for more details.
+   * @since 10.2
+   */
+  @SuppressWarnings("CharacterSetLiteralCheck")
+  public static Parser<String>.OrEmpty zeroOrMore(String characterClass) {
+    return zeroOrMore(charsIn(characterClass));
   }
 
   /**
