@@ -16,7 +16,6 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Utils.checkArgument;
-import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.prefix;
 import static java.util.stream.Collectors.flatMapping;
@@ -67,8 +66,8 @@ public final class CharacterSet implements CharPredicate {
    *
    * @param characterSet A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}),
    *        but disallows backslash so doesn't support escaping.
-   *        If your character set includes special characters like literal backslash
-   *        or right bracket, use {@link CharPredicate} directly.
+   *        If your character set includes special characters like literal backslash,
+   *        use {@link CharPredicate} directly.
    * @throws IllegalArgumentException if {@code characterSet} includes backslash
    *         or the right bracket (except the outmost pairs of {@code []}).
    */
@@ -124,7 +123,7 @@ public final class CharacterSet implements CharPredicate {
         !characterSet.contains("\\"),
         "Escaping (%s) not supported in a character set. Please use CharePredicate instead.",
         characterSet);
-    Parser<Character> validChar = Parser.one(isNot(']'), "character");
+    Parser<Character> validChar = Parser.one(ANY, "literal char").notFollowedByEof();
     Parser<CharPredicate> range =
         Parser.sequence(validChar.followedBy("-"), validChar,
             (c1, c2) -> {
@@ -144,7 +143,7 @@ public final class CharacterSet implements CharPredicate {
     if (string.startsWith("[^")) {
       return Optional.empty();
     }
-    Parser<Character> asciiChar = Parser.one(c -> c != ']' && c < 128, "ascii char");
+    Parser<Character> asciiChar = Parser.one(c -> c < 128, "ascii char").notFollowedByEof();
     Parser<Set<Character>> range =
         Parser.sequence(asciiChar.followedBy("-"), asciiChar, CharacterSet::charsInRange);
     return Parser.anyOf(range, asciiChar.map(Set::of))

@@ -1,9 +1,10 @@
 package com.google.mu.errorprone;
 
-import com.google.errorprone.CompilationTestHelper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import com.google.errorprone.CompilationTestHelper;
 
 @RunWith(JUnit4.class)
 public final class CharacterSetLiteralCheckTest {
@@ -126,6 +127,32 @@ public final class CharacterSetLiteralCheckTest {
             "  void test(Parser parser) {",
             "    parser.foo(\"a-z\");",
             "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void allowsRightBracketAsFirstChar() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.CharacterSet;",
+            "class Test {",
+            "  private static final CharacterSet CHARS1 = CharacterSet.charsIn(\"[]]\");",
+            "  private static final CharacterSet CHARS2 = CharacterSet.charsIn(\"[^]]\");",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void canUseRightBracketIfNotFirstChar() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.CharacterSet;",
+            "class Test {",
+            "  private static final CharacterSet CHARS = CharacterSet.charsIn(",
+            "      \"[a-z]]\");",
             "}")
         .doTest();
   }

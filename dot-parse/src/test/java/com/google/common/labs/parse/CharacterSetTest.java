@@ -55,10 +55,18 @@ public class CharacterSetTest {
 
   @Test
   @SuppressWarnings("CharacterSetLiteralCheck")
-  public void test_closingBracketNotAllowed_throws() {
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> charsIn("[]]"));
-    assertThat(thrown).hasMessageThat().contains("encountered []]");
+  public void test_rightBracketAsFirstChar_parseSuccess() {
+    CharacterSet set1 = charsIn("[]]");
+    assertThat(set1.contains(']')).isTrue();
+    assertThat(set1.contains('a')).isFalse();
+    assertThat(set1.toString()).isEqualTo("[]]");
+    assertThat(set1.candidateCharsIfAscii().get()).containsExactly(']');
+
+    CharacterSet set2 = charsIn("[^]]");
+    assertThat(set2.contains(']')).isFalse();
+    assertThat(set2.contains('a')).isTrue();
+    assertThat(set2.toString()).isEqualTo("[^]]");
+    assertThat(set2.candidateCharsIfAscii()).isEmpty();
   }
 
   @Test
