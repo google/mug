@@ -1,6 +1,5 @@
 package com.google.mu.benchmarks;
 
-import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.literally;
@@ -64,8 +63,8 @@ public class AbcNoteBenchmark {
 
   private static final Parser<AbcNote> NOTE =
       anyOf(
-          one(charsIn("[ABCDEFG]")).map(AbcNote::middle).withPostfixes(",", AbcNote::down),
-          one(charsIn("[abcdefg]")).map(AbcNote::high).withPostfixes("'", AbcNote::up));
+          one("[ABCDEFG]").map(AbcNote::middle).withPostfixes(",", AbcNote::down),
+          one("[abcdefg]").map(AbcNote::high).withPostfixes("'", AbcNote::up));
 
   private static final Parser<AbcNote> PARSER =
       anyOf(sequence(ACCIDENTAL, NOTE, (acc, note) -> note.withAccidental(acc)), NOTE)

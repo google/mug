@@ -119,7 +119,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /**
    * Matches a character in {@code characterSet}.
    *
-   * @deprecated Use {@link #one(String}} instead
+   * @deprecated Use {@link #one(String)} instead
    * @since 9.9.9
    */
   @Deprecated
@@ -179,7 +179,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /**
    * Matches one or more consecutive characters contained in {@code characterSet}.
    *
-   * @deprecated Use {@link #consecutive(String) instead
+   * @deprecated Use {@link #consecutive(String)} instead
    * @since 9.4
    */
   @Deprecated

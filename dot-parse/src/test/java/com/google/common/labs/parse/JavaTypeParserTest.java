@@ -1,6 +1,5 @@
 package com.google.common.labs.parse;
 
-import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.sequence;
@@ -134,7 +133,7 @@ public class JavaTypeParserTest {
   }
 
   private static final Parser<String> PACKAGE =
-      consecutive(charsIn("[a-z0-9_]")).atLeastOnceDelimitedBy(".", joining("."));
+      consecutive("[a-z0-9_]").atLeastOnceDelimitedBy(".", joining("."));
   private static final Parser<String> IDENTIFIER =
       consecutive(Character::isJavaIdentifierPart, "identifier part");
   private static final Parser<TypeName> TYPE_NAME =
