@@ -119,8 +119,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /**
    * Matches a character in {@code characterSet}.
    *
+   * @deprecated Use {@link #one(String}} instead
    * @since 9.9.9
    */
+  @Deprecated
   public static Parser<Character> one(CharacterSet characterSet) {
     return one(characterSet, characterSet.toString());
   }
@@ -130,13 +132,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <p>For example: {@code one("[a-z]")} is equivalent to {@code one(charsIn("[a-z]"))}.
    *
-   * @param characterClass a regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   *        See {@link CharacterSet} for more details.
+   * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
+   * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
+   *
+   * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}),
+   *        but disallows backslash so doesn't support escaping.
+   *        If your character class includes special characters like literal backslash
+   *        or right bracket, use {@link CharPredicate} directly.
+   *        You can also use {@code '^'} to get negative character set like:
+   *        {@code charsIn("[^a-zA-Z]")}, which is any non-alphabet character.
    * @since 10.2
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
   public static Parser<Character> one(String characterClass) {
-    return one(charsIn(characterClass));
+    return one(charsIn(characterClass), characterClass);
   }
 
   /**
@@ -177,8 +186,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *     .map(hex -> Integer.parseInt(hex, 16));
    * }</pre>
    *
+   * @deprecated Use {@link #consecutive(String) instead
    * @since 9.4
    */
+  @Deprecated
   public static Parser<String> consecutive(CharacterSet characterSet) {
     return consecutive(characterSet, "one or more " + characterSet);
   }
@@ -188,13 +199,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <p>For example: {@code consecutive("[0-9]")} is equivalent to {@code consecutive(charsIn("[0-9]"))}.
    *
-   * @param characterClass a regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   *        See {@link CharacterSet} for more details.
+   * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
+   * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
+   *
+   * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}),
+   *        but disallows backslash so doesn't support escaping.
+   *        If your character class includes special characters like literal backslash
+   *        or right bracket, use {@link CharPredicate} directly.
+   *        You can also use {@code '^'} to get negative character set like:
+   *        {@code charsIn("[^a-zA-Z]")}, which is any non-alphabet character.
    * @since 10.2
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
   public static Parser<String> consecutive(String characterClass) {
-    return consecutive(charsIn(characterClass));
+    return consecutive(charsIn(characterClass), "one or more " + characterClass);
   }
 
   static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
@@ -804,8 +822,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <p>For example: {@code zeroOrMore(charsIn("[a-zA-Z0-9_-]"))}.
    *
+   * @deprecated Use {@link #zeroOrMore(String)} instead.
    * @since 9.9.9
    */
+  @Deprecated
   public static Parser<String>.OrEmpty zeroOrMore(CharacterSet characterSet) {
     return zeroOrMore(characterSet, characterSet.toString());
   }
@@ -816,13 +836,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <p>For example: {@code zeroOrMore("[0-9]")} is equivalent to {@code zeroOrMore(charsIn("[0-9]"))}.
    *
-   * @param characterClass a regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   *        See {@link CharacterSet} for more details.
+   * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
+   * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
+   *
+   * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}),
+   *        but disallows backslash so doesn't support escaping.
+   *        If your character class includes special characters like literal backslash
+   *        or right bracket, use {@link CharPredicate} directly.
+   *        You can also use {@code '^'} to get negative character set like:
+   *        {@code charsIn("[^a-zA-Z]")}, which is any non-alphabet character.
    * @since 10.2
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
   public static Parser<String>.OrEmpty zeroOrMore(String characterClass) {
-    return zeroOrMore(charsIn(characterClass));
+    return zeroOrMore(charsIn(characterClass), "zero or more " + characterClass);
   }
 
   /**
