@@ -179,13 +179,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /**
    * Matches one or more consecutive characters contained in {@code characterSet}.
    *
-   * <p>For example: <pre>{@code
-   * import static com.google.common.labs.parse.CharacterSet.charsIn;
-   *
-   * Parser<Integer> hexNumber = consecutive(charsIn("[0-9A-Fa-f]"))
-   *     .map(hex -> Integer.parseInt(hex, 16));
-   * }</pre>
-   *
    * @deprecated Use {@link #consecutive(String) instead
    * @since 9.4
    */
@@ -817,10 +810,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Starts a fluent chain for matching consecutive characters in the {@code characterSet} zero or
-   * more times. If no such character is found, empty string is the result.
-   *
-   * <p>For example: {@code zeroOrMore(charsIn("[a-zA-Z0-9_-]"))}.
+   * For example: {@code zeroOrMore(charsIn("[a-zA-Z0-9_-]"))}.
    *
    * @deprecated Use {@link #zeroOrMore(String)} instead.
    * @since 9.9.9
