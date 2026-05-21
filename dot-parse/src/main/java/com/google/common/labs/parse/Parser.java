@@ -1141,14 +1141,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return followedBy(anyOf(suffix, UNSAFE_EOF));
   }
 
-  final Parser<T> followedByEof() {
-    return followedBy(UNSAFE_EOF);
-  }
-
-  final Parser<T> notFollowedByEof() {
-    return notFollowedBy(UNSAFE_EOF, "eof");
-  }
-
   @Override public final Parser<T> optionallyFollowedBy(String suffix) {
     return followedBy(string(suffix).orElse(null));
   }
@@ -1207,6 +1199,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         };
       }
     };
+  }
+
+  /**
+   * A form of negative lookahead such that the match is rejected if followed by EOF.
+   *
+   * @since 10.2
+   */
+  public final Parser<T> notFollowedByEof() {
+    return notFollowedBy(UNSAFE_EOF, "eof");
   }
 
   /**

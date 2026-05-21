@@ -1010,6 +1010,38 @@ public class ParserTest {
   }
 
   @Test
+  public void notFollowedByEof_followedByEof() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> string("a").notFollowedByEof().parse("a"));
+    assertThat(string("a").notFollowedByEof().matches("a")).isFalse();
+    assertThat(thrown).hasMessageThat().contains("at 1:2: unexpected `eof` – <EOF>");
+  }
+
+  @Test
+  public void notFollowedByEof_notFollowedByEof() {
+    Parser<String> parser = string("a").notFollowedByEof().then(string("b"));
+    assertThat(parser.parse("ab")).isEqualTo("b");
+    assertThat(parser.matches("ab")).isTrue();
+  }
+
+  @Test
+  public void notFollowedByEof_skipping_success() {
+    Parser<String> parser = string("a").notFollowedByEof().then(string("b"));
+    assertThat(parser.parseSkipping(whitespace(), "a  b")).isEqualTo("b");
+    assertThat(parser.skipping(whitespace()).matches("a  b")).isTrue();
+  }
+
+  @Test
+  public void notFollowedByEof_skipping_failure() {
+    Parser<String> parser = string("a").notFollowedByEof();
+    ParseException thrown =
+        assertThrows(
+            ParseException.class, () -> parser.parseSkipping(whitespace(), "a  "));
+    assertThat(parser.skipping(whitespace()).matches("a  ")).isFalse();
+    assertThat(thrown).hasMessageThat().contains("at 1:2: unexpected `eof` – [  ]");
+  }
+
+  @Test
   public void notImmediatelyFollowedBy_selfFailsToMatch() {
     assertThrows(
         ParseException.class, () -> string("a").notImmediatelyFollowedBy(is('b'), "b").parse("c"));
