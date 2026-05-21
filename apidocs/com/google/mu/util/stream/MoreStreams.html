@@ -70,6 +70,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#groupConsecutive(java.util.stream.Stream,java.util.function.BiPredicate,java.util.function.BinaryOperator)" tabindex="0">groupConsecutive(Stream, BiPredicate, BinaryOperator)</a></li>
 <li><a href="#groupConsecutive(java.util.stream.Stream,java.util.function.Function,java.util.stream.Collector)" tabindex="0">groupConsecutive(Stream, Function, Collector)</a></li>
 <li><a href="#groupConsecutive(java.util.stream.Stream,java.util.function.Function,java.util.function.BinaryOperator)" tabindex="0">groupConsecutive(Stream, Function, BinaryOperator)</a></li>
+<li><a href="#mergeConsecutive(java.util.stream.Stream,java.lang.Class,java.util.function.BinaryOperator)" tabindex="0">mergeConsecutive(Stream, Class, BinaryOperator)</a></li>
 <li><a href="#runLengthEncode(java.util.stream.Stream,java.util.function.BiPredicate)" tabindex="0">runLengthEncode(Stream, BiPredicate)</a></li>
 <li><a href="#iterateOnce(java.util.stream.Stream)" tabindex="0">iterateOnce(Stream)</a></li>
 <li><a href="#iterateThrough(java.util.stream.Stream,com.google.mu.function.CheckedConsumer)" tabindex="0">iterateThrough(Stream, CheckedConsumer)</a></li>
@@ -195,23 +196,31 @@ loadScripts(document, 'script');</script>
 <div class="block">Iterates through <code>stream</code> sequentially and passes each element to <code>consumer</code>
  with exceptions propagated.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;T,<wbr><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Long.html" title="class or interface in java.lang" class="external-link">Long</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#runLengthEncode(java.util.stream.Stream,java.util.function.BiPredicate)" class="member-name-link">runLengthEncode</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;T&gt;&nbsp;stream,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiPredicate.html" title="class or interface in java.util.function" class="external-link">BiPredicate</a>&lt;? super T, ? super T&gt;&nbsp;sameGroup)</code></div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T, S extends T&gt;<br><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;T&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#mergeConsecutive(java.util.stream.Stream,java.lang.Class,java.util.function.BinaryOperator)" class="member-name-link">mergeConsecutive</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;T&gt;&nbsp;stream,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;S&gt;&nbsp;mergedType,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BinaryOperator.html" title="class or interface in java.util.function" class="external-link">BinaryOperator</a>&lt;S&gt;&nbsp;mergeFunction)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Merges consecutive elements of <code>mergedType</code> from <code>stream</code> lazily using <code>
+ mergeFunction</code>.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;T,<wbr><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Long.html" title="class or interface in java.lang" class="external-link">Long</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#runLengthEncode(java.util.stream.Stream,java.util.function.BiPredicate)" class="member-name-link">runLengthEncode</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;T&gt;&nbsp;stream,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiPredicate.html" title="class or interface in java.util.function" class="external-link">BiPredicate</a>&lt;? super T, ? super T&gt;&nbsp;sameGroup)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Groups consecutive items in <code>stream</code> using the <code>sameGroup</code> predicate, along with
  the group's run length (number of items).</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;T&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#whileNotNull(java.util.function.Supplier)" class="member-name-link">whileNotNull</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Supplier.html" title="class or interface in java.util.function" class="external-link">Supplier</a>&lt;? extends T&gt;&nbsp;supplier)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;T&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#whileNotNull(java.util.function.Supplier)" class="member-name-link">whileNotNull</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Supplier.html" title="class or interface in java.util.function" class="external-link">Supplier</a>&lt;? extends T&gt;&nbsp;supplier)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Similar to <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html#generate(java.util.function.Supplier)" title="class or interface in java.util.stream" class="external-link"><code>Stream.generate(java.util.function.Supplier&lt;? extends T&gt;)</code></a>, returns an infinite, sequential, ordered, and non-null
  stream where each element is generated by the provided Supplier.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;T&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#withSideEffect(java.util.stream.Stream,java.util.function.Consumer)" class="member-name-link">withSideEffect</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;T&gt;&nbsp;stream,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;T&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#withSideEffect(java.util.stream.Stream,java.util.function.Consumer)" class="member-name-link">withSideEffect</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;T&gt;&nbsp;stream,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Consumer.html" title="class or interface in java.util.function" class="external-link">Consumer</a>&lt;? super T&gt;&nbsp;sideEffect)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a sequential stream with <code>sideEfect</code> attached on every element.</div>
 </div>
 </div>
@@ -387,6 +396,30 @@ loadScripts(document, 'script');</script>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>5.7</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="mergeConsecutive(java.util.stream.Stream,java.lang.Class,java.util.function.BinaryOperator)">
+<h3>mergeConsecutive</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T, S extends T&gt;</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;T&gt;</span>&nbsp;<span class="element-name">mergeConsecutive</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;T&gt;&nbsp;stream,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;S&gt;&nbsp;mergedType,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BinaryOperator.html" title="class or interface in java.util.function" class="external-link">BinaryOperator</a>&lt;S&gt;&nbsp;mergeFunction)</span></div>
+<div class="block">Merges consecutive elements of <code>mergedType</code> from <code>stream</code> lazily using <code>
+ mergeFunction</code>.
+
+ <p>For example, you can merge consecutive literals from an abstract syntax tree:
+
+ <pre><code>
+ List&lt;AstNode&gt; merged =
+     mergeConsecutive(astNodes, LiteralNode.class, (a, b) -&gt; new LiteralNode(a.value + b.value))
+         .toList());
+ </code></pre></div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.2</dd>
 </dl>
 </div>
 </section>
