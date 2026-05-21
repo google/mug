@@ -130,7 +130,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /**
    * Matches a character in {@code characterClass}.
    *
-   * <p>For example: {@code one("[a-z]")} is equivalent to {@code one(charsIn("[a-z]"))}.
+   * <p>For example: {@code one("[a-z]")} is equivalent to {@code one(range('a', 'z'))}.
    *
    * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
    * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
@@ -140,7 +140,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *        If your character class includes special characters like literal backslash
    *        or right bracket, use {@link CharPredicate} directly.
    *        You can also use {@code '^'} to get negative character set like:
-   *        {@code charsIn("[^a-zA-Z]")}, which is any non-alphabet character.
+   *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
    * @since 10.2
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
@@ -190,7 +190,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /**
    * Matches one or more consecutive characters contained in {@code characterClass}.
    *
-   * <p>For example: {@code consecutive("[0-9]")} is equivalent to {@code consecutive(charsIn("[0-9]"))}.
+   * <p>For example: {@code consecutive("[0-9]")} is equivalent to {@code consecutive(range('0', '9'))}.
    *
    * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
    * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
@@ -200,7 +200,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *        If your character class includes special characters like literal backslash
    *        or right bracket, use {@link CharPredicate} directly.
    *        You can also use {@code '^'} to get negative character set like:
-   *        {@code charsIn("[^a-zA-Z]")}, which is any non-alphabet character.
+   *        {@code consecutive("[^a-zA-Z]")}, which is any non-alphabet character.
    * @since 10.2
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
@@ -824,7 +824,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * Starts a fluent chain for matching consecutive characters in the {@code characterClass} zero or
    * more times. If no such character is found, empty string is the result.
    *
-   * <p>For example: {@code zeroOrMore("[0-9]")} is equivalent to {@code zeroOrMore(charsIn("[0-9]"))}.
+   * <p>For example: {@code zeroOrMore("[0-9]")} is equivalent to {@code zeroOrMore(range('0', '9'))}.
    *
    * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
    * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
@@ -834,7 +834,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *        If your character class includes special characters like literal backslash
    *        or right bracket, use {@link CharPredicate} directly.
    *        You can also use {@code '^'} to get negative character set like:
-   *        {@code charsIn("[^a-zA-Z]")}, which is any non-alphabet character.
+   *        {@code zeroOrMore("[^a-zA-Z]")}, which is any non-alphabet character.
    * @since 10.2
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
@@ -1014,7 +1014,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * more times and applies the result unary operator function iteratively. For example:
    *
    * <pre>{@code
-   * Parser<AbcNote> middleNote = one(charsIn("[ABCDEFG]"))
+   * Parser<AbcNote> middleNote = one("[ABCDEFG]")
    *     .map(AbcNote::middle)
    *     .withPostfixes(",", AbcNote::down);
    * }</pre>
