@@ -836,7 +836,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Character.html" title="class or interface in java.lang" class="external-link">Character</a>&gt;</span>&nbsp;<span class="element-name">one</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;characterClass)</span></div>
 <div class="block">Matches a character in <code>characterClass</code>.
 
- <p>For example: <code>one("[a-z]")</code> is equivalent to <code>one(charsIn("[a-z]"))</code>.
+ <p>For example: <code>one("[a-z]")</code> is equivalent to <code>one(range('a', 'z'))</code>.
 
  <p>Implementation Note: regex isn't used during parsing. The character class string is translated
  to a <a href="../../../mu/util/CharPredicate.html#precomputeForAscii()"><code>precomputed</code></a> <code>CharPredicate</code>, at construction time.</div>
@@ -847,7 +847,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
         If your character class includes special characters like literal backslash
         or right bracket, use <a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> directly.
         You can also use <code>'^'</code> to get negative character set like:
-        <code>charsIn("[^a-zA-Z]")</code>, which is any non-alphabet character.</dd>
+        <code>one("[^a-zA-Z]")</code>, which is any non-alphabet character.</dd>
 <dt>Since:</dt>
 <dd>10.2</dd>
 </dl>
@@ -902,7 +902,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">consecutive</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;characterClass)</span></div>
 <div class="block">Matches one or more consecutive characters contained in <code>characterClass</code>.
 
- <p>For example: <code>consecutive("[0-9]")</code> is equivalent to <code>consecutive(charsIn("[0-9]"))</code>.
+ <p>For example: <code>consecutive("[0-9]")</code> is equivalent to <code>consecutive(range('0', '9'))</code>.
 
  <p>Implementation Note: regex isn't used during parsing. The character class string is translated
  to a <a href="../../../mu/util/CharPredicate.html#precomputeForAscii()"><code>precomputed</code></a> <code>CharPredicate</code>, at construction time.</div>
@@ -913,7 +913,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
         If your character class includes special characters like literal backslash
         or right bracket, use <a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> directly.
         You can also use <code>'^'</code> to get negative character set like:
-        <code>charsIn("[^a-zA-Z]")</code>, which is any non-alphabet character.</dd>
+        <code>consecutive("[^a-zA-Z]")</code>, which is any non-alphabet character.</dd>
 <dt>Since:</dt>
 <dd>10.2</dd>
 </dl>
@@ -1505,7 +1505,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="block">Starts a fluent chain for matching consecutive characters in the <code>characterClass</code> zero or
  more times. If no such character is found, empty string is the result.
 
- <p>For example: <code>zeroOrMore("[0-9]")</code> is equivalent to <code>zeroOrMore(charsIn("[0-9]"))</code>.
+ <p>For example: <code>zeroOrMore("[0-9]")</code> is equivalent to <code>zeroOrMore(range('0', '9'))</code>.
 
  <p>Implementation Note: regex isn't used during parsing. The character class string is translated
  to a <a href="../../../mu/util/CharPredicate.html#precomputeForAscii()"><code>precomputed</code></a> <code>CharPredicate</code>, at construction time.</div>
@@ -1516,7 +1516,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
         If your character class includes special characters like literal backslash
         or right bracket, use <a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> directly.
         You can also use <code>'^'</code> to get negative character set like:
-        <code>charsIn("[^a-zA-Z]")</code>, which is any non-alphabet character.</dd>
+        <code>zeroOrMore("[^a-zA-Z]")</code>, which is any non-alphabet character.</dd>
 <dt>Since:</dt>
 <dd>10.2</dd>
 </dl>
@@ -1727,7 +1727,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  more times and applies the result unary operator function iteratively. For example:
 
  <pre><code>
- Parser&lt;AbcNote&gt; middleNote = one(charsIn("[ABCDEFG]"))
+ Parser&lt;AbcNote&gt; middleNote = one("[ABCDEFG]")
      .map(AbcNote::middle)
      .withPostfixes(",", AbcNote::down);
  </code></pre>
