@@ -95,8 +95,15 @@ public class ParserTest {
 
   @Test
   public void first_skippingWhitespace() {
-    assertThat(first(" foo").skipping(whitespace()).parse("    foo")).isEqualTo(" foo");
-    assertThat(first(" foo").skipping(whitespace()).matches("    foo")).isTrue();
+    assertThat(first("foo").skipping(whitespace()).parse("    foo")).isEqualTo("foo");
+    assertThat(first("foo").skipping(whitespace()).matches("    foo")).isTrue();
+  }
+
+  @Test
+  public void first_skippingCommentsAndWhitespace() {
+    Parser<String> ignored = anyOf(quotedBy("/*", "*/"), consecutive(whitespace(), "whitespace"));
+    assertThat(first("*").parseSkipping(ignored, "/* comment */ +-* /* comment again */"))
+        .isEqualTo("*");
   }
 
   @Test
@@ -6430,7 +6437,7 @@ public class ParserTest {
 
   @SuppressWarnings("CharacterSetLiteralCheck")
   private static Parser<Character> one(String characterClass) {
-    return Parser.one(charsIn(characterClass));
+    return Parser.one(characterClass);
   }
 
   private static Parser<Character> one(char c) {
@@ -6443,7 +6450,7 @@ public class ParserTest {
 
   @SuppressWarnings("CharacterSetLiteralCheck")
   private static Parser<String> consecutive(String characterClass) {
-    return Parser.consecutive(charsIn(characterClass));
+    return Parser.consecutive(characterClass);
   }
 
   private static Parser<String> consecutive(CharPredicate predicate, String name) {
@@ -6452,7 +6459,7 @@ public class ParserTest {
 
   @SuppressWarnings("CharacterSetLiteralCheck")
   private static Parser<String>.OrEmpty zeroOrMore(String characterClass) {
-    return Parser.zeroOrMore(charsIn(characterClass));
+    return Parser.zeroOrMore(characterClass);
   }
 
   private static Parser<String>.OrEmpty zeroOrMore(CharPredicate predicate, String name) {

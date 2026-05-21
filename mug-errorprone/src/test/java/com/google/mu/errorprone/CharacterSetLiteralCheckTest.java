@@ -65,4 +65,68 @@ public final class CharacterSetLiteralCheckTest {
             "}")
         .doTest();
   }
+
+  @Test
+  public void parserParameterCheck_properUsage() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "package com.google.common.labs.parse;",
+            "abstract class Parser {",
+            "  public abstract void foo(String characterClass);",
+            "  void test(Parser parser) {",
+            "    parser.foo(\"[a-z]\");",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void parserParameterCheck_invalidUsage() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "package com.google.common.labs.parse;",
+            "abstract class Parser {",
+            "  public abstract void foo(String characterClass);",
+            "  void test(Parser parser) {",
+            "    parser.foo(",
+            "        // BUG: Diagnostic contains: Use [a-z] instead",
+            "        \"a-z\");",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void parserParameterCheck_nonConstant() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "package com.google.common.labs.parse;",
+            "abstract class Parser {",
+            "  public abstract void foo(String characterClass);",
+            "  void test(Parser parser, String invalid) {",
+            "    parser.foo(",
+            "        // BUG: Diagnostic contains: compile-time string constant expected",
+            "        invalid);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void parserParameterCheck_nonPublicMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "package com.google.common.labs.parse;",
+            "abstract class Parser {",
+            "  abstract void foo(String characterClass);",
+            "  void test(Parser parser) {",
+            "    parser.foo(\"a-z\");",
+            "  }",
+            "}")
+        .doTest();
+  }
 }

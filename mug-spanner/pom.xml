@@ -14,7 +14,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <module.name>spanner</module.name>
     <!-- Reproducible builds: fixed timestamp for build artifacts -->
-    <project.build.outputTimestamp>2026-05-16T00:27:40Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-05-18T15:52:25Z</project.build.outputTimestamp>
   </properties>
   <build>
     <pluginManagement>

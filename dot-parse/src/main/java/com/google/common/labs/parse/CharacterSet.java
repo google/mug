@@ -50,6 +50,8 @@ import com.google.mu.util.CharPredicate;
  * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
  *
  * @since 9.4
+ * @deprecated Use the {@code Parser} overloads that directly take a {@code characterClass} string
+ *     parameter, such as {@link Parser#consecutive(String)}.
  */
 public final class CharacterSet implements CharPredicate {
   private final String string;
