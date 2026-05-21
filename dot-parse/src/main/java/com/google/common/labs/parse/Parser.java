@@ -137,8 +137,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}),
    *        but disallows backslash so doesn't support escaping.
-   *        If your character class includes special characters like literal backslash
-   *        or right bracket, use {@link CharPredicate} directly.
+   *        If your character class includes special characters like literal backslash,
+   *        use {@link CharPredicate} directly.
    *        You can also use {@code '^'} to get negative character set like:
    *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
    * @since 10.2
@@ -197,8 +197,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}),
    *        but disallows backslash so doesn't support escaping.
-   *        If your character class includes special characters like literal backslash
-   *        or right bracket, use {@link CharPredicate} directly.
+   *        If your character class includes special characters like literal backslash,
+   *        use {@link CharPredicate} directly.
    *        You can also use {@code '^'} to get negative character set like:
    *        {@code consecutive("[^a-zA-Z]")}, which is any non-alphabet character.
    * @since 10.2
@@ -831,8 +831,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}),
    *        but disallows backslash so doesn't support escaping.
-   *        If your character class includes special characters like literal backslash
-   *        or right bracket, use {@link CharPredicate} directly.
+   *        If your character class includes special characters like literal backslash,
+   *        use {@link CharPredicate} directly.
    *        You can also use {@code '^'} to get negative character set like:
    *        {@code zeroOrMore("[^a-zA-Z]")}, which is any non-alphabet character.
    * @since 10.2
@@ -1143,6 +1143,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   final Parser<T> followedByEof() {
     return followedBy(UNSAFE_EOF);
+  }
+
+  final Parser<T> notFollowedByEof() {
+    return notFollowedBy(UNSAFE_EOF, "eof");
   }
 
   @Override public final Parser<T> optionallyFollowedBy(String suffix) {
