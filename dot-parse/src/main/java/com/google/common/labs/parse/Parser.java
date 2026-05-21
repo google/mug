@@ -1141,10 +1141,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return followedBy(anyOf(suffix, UNSAFE_EOF));
   }
 
-  final Parser<T> followedByEof() {
-    return followedBy(UNSAFE_EOF);
-  }
-
   @Override public final Parser<T> optionallyFollowedBy(String suffix) {
     return followedBy(string(suffix).orElse(null));
   }
