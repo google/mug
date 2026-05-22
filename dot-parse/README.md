@@ -1,6 +1,6 @@
 # Mug *dot parse*
 
-Low-ceremony, idiomatic Java parser combinator, aimed to replace regex and your everyday one-off parsing tasks.
+Low-boilerplate, idiomatic Java parser combinator, aimed to replace regex and your everyday one-off parsing tasks.
 
 - **Easy to use:** a handful of primitives; write parser intuitively.
 - **Hard to misuse:** compile-time guardrail preventing footguns like infinite loops caused by `many(optional)` or left recursion.
@@ -622,7 +622,7 @@ Parser<Expr> expr = identifier.map(IdentifierRef::new)
 <dependency>
   <groupId>com.google.mug</groupId>
   <artifactId>dot-parse</artifactId>
-  <version>10.1</version>
+  <version>10.1.1</version>
 </dependency>
 ```
 
