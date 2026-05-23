@@ -137,7 +137,13 @@ Instead, consider these safe patterns:
       sequence(accidental, note, (a, n) -> n.withAccidental(a)),  // with prefix
       note)  // without prefix
   ```
+  This works particularly well when you have incremental "withers" or overloaded
+  constructor or factory methods.
   But remember to put the choice with the prefix first.
+  
+  Alternatively, you could also use
+  `sequence(optionalPrefix.orElse(defaultValue), suffix, (a, b) -> ...)`
+  if "wither" or overloaded constructors aren't good fit.
 - **Use** `withPrefixes()` if the prefix can show zero or more times, and each
   time incrementally modifies the result but returns the same type:
 

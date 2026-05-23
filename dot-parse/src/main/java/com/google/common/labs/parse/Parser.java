@@ -262,7 +262,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.4
    */
   public static Parser<String> word() {
-    return consecutive(charsIn("[a-zA-Z0-9_]"), "word");
+    return Constants.WORD;
   }
 
   /**
@@ -271,7 +271,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.4
    */
   public static Parser<String> digits() {
-    return consecutive(charsIn("[0-9]"), "digits");
+    return Constants.DIGITS;
   }
 
   /**
@@ -2118,6 +2118,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
               .toString();
       return "[" + (input.isInRange(at + snippet.length()) ? snippet + "..." : snippet) + "]";
     }
+  }
+
+  private interface Constants {
+    static Parser<String> DIGITS = consecutive(charsIn("[0-9]"), "digits");
+    static Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
   }
 
   Parser() {}

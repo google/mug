@@ -47,6 +47,7 @@ import com.google.common.labs.parse.Parser.ParseException;
 import com.google.common.testing.NullPointerTester;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.mu.util.CharPredicate;
+import com.google.mu.util.stream.BiStream;
 
 @RunWith(JUnit4.class)
 public class ParserTest {
@@ -3089,6 +3090,14 @@ public class ParserTest {
         .containsExactly("a", 1, "b", 0, "c", 3)
         .inOrder();
     assertThat(parser.skipping(whitespace()).matches(" { a=1 , b , c=3, } ")).isTrue();
+  }
+
+  @Test
+  public void zeroOrMoreDelimited_empty_collectorReturnsFreshInstance() {
+    var parser =
+        zeroOrMoreDelimited(word().followedBy(":"), word(), ",", BiStream::toBiStream);
+    assertThat(parser.parse("").toMap()).isEmpty();
+    assertThat(parser.parse("").toMap()).isEmpty();
   }
 
   @Test
