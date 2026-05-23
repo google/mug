@@ -622,7 +622,7 @@ Parser<Expr> expr = identifier.map(IdentifierRef::new)
 <dependency>
   <groupId>com.google.mug</groupId>
   <artifactId>dot-parse</artifactId>
-  <version>10.1.1</version>
+  <version>10.2</version>
 </dependency>
 ```
 
