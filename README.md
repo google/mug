@@ -40,8 +40,6 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
   → `BinarySearch.inSortedArrayWithTolerance(doubleArray, 0.0001).find(target)`
 - [`StructuredConcurrency`](./mug/src/main/java/com/google/mu/util/concurrent/README.md) - simple structured concurrency on virtual threads  
   → `concurrently(() -> fetchArm(), () -> fetchLeg(), (arm, leg) -> makeRobot(arm, leg))`
-- [`MoreStreams`](./mug/apidocs/com/google/mu/util/stream/MoreStreams.html)  
-  → `whileNotNull(queue::poll).filter(...).map(...)`
 - [`Optionals`](./mug/apidocs/com/google/mu/util/Optionals.html)  
   → `return optionally(obj.hasFoo(), obj::getFoo);`
 
