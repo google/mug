@@ -16,7 +16,7 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
         .between("{", "}")         // {k1=100, k2=200, k3=300, ...}
         .parse(input);
     ``` 
-- [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md) – define datetime formats by example  
+- [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md) – define datetime formats by _examples_  
   → `DateTimeFormatter format = formatOf("2024-03-14 10.20:00.123 America/New_York")`
 
 ## Streams
