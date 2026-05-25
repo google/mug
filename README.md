@@ -13,7 +13,7 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
     ```java
     sequence(word().followedBy("="), digits(), Map::entry)
         .zeroOrMoreDelimitedBy(",")
-        .between("{", "}")
+        .between("{", "}")          // {k1=100, k2=200, k3=300, ...}
         .parse(input);
     ```
 
