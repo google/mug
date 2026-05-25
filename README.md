@@ -15,7 +15,9 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
         .zeroOrMoreDelimitedBy(",")
         .between("{", "}")         // {k1=100, k2=200, k3=300, ...}
         .parse(input);
-    ```
+    ``` 
+- [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md) – define datetime formats by example  
+  → `DateTimeFormatter format = formatOf("2024-03-14 10.20:00.123 America/New_York")`
 
 ## Streams
 - ✅ [`BiStream`](./mug/src/main/java/com/google/mu/util/stream/README.md) – streams `Map` and pair-wise collections  
@@ -32,9 +34,7 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
 
 <details>
 <summary>More tools</summary>
- 
-- [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md) – parse datetimes by example  
-  → `DateTimeFormatter format = formatOf("2024-03-14 10.20:00.123 America/New_York")`
+
 - [`Iteration`](./mug/wiki/Iteration-Explained) - implement lazy stream with recursive code
 - [`BinarySearch`](./mug-guava/src/main/java/com/google/guava/labs/collect/README.md) - solve LeetCode binary search problems  
   → `BinarySearch.inSortedArrayWithTolerance(doubleArray, 0.0001).find(target)`
