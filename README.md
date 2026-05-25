@@ -10,7 +10,7 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
 - ✅ [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained) – compile-time-safe bidirectional parsing/formatting  
   → `new StringFormat("/home/{user}/{date}").parse(filePath, (user, date) -> ...)`
 - ✅ [`Parser`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html) – everyday string parsing better than and beyond regex  
-  → `zeroOrMore(noneOf("\\'")).immediatelyBetween("'", "'").parse(input);`
+  → `sequence(word().followedBy("="), digits()).zeroOrMoreDelimitedBy(",").between("{", "}").parse(input);`
 
 ## Streams
 - ✅ [`BiStream`](./mug/src/main/java/com/google/mu/util/stream/README.md) – streams `Map` and pair-wise collections  
