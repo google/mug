@@ -21,7 +21,10 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
 - ✅ [`BiStream`](./mug/src/main/java/com/google/mu/util/stream/README.md) – streams `Map` and pair-wise collections  
   → `BiStream.zip(keys, values).toMap()`
 - ✅ [`MoreStreams`](https://google.github.io/mug/apidocs/com/google/mu/util/stream/MoreStreams.html) – extra stream utilities  
-  → `MoreStreams.groupConsecutive(stockPrices, (p1, p2) -> p1 <= p2, toUnmodifiableList())`
+    ```java
+    Stream<List<Double>> greenDays = MoreStreams.groupConsecutive(
+        stockPrices, (p1, p2) -> p1 <= p2, toUnmodifiableList());
+    ```
 
 ## Others
 - ✅ [`SafeSql`](./mug-safesql/src/main/java/com/google/mu/safesql/README.md) – _library-enforced_ **safe**, **composable** SQL template  
