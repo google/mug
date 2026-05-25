@@ -9,11 +9,11 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
   → `Substring.between("(", ")").from("call(foo)") → "foo"`
 - ✅ [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained) – compile-time-safe bidirectional parsing/formatting  
   → `new StringFormat("/home/{user}/{date}").parse(filePath, (user, date) -> ...)`
-- ✅ [`Parser`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html) – everyday string parsing better than and beyond regex  
+- ✅ [`Parser`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html) – everyday string parsing easier than and beyond regex  
     ```java
     sequence(word().followedBy("="), digits(), Map::entry)
         .zeroOrMoreDelimitedBy(",")
-        .between("{", "}")          // {k1=100, k2=200, k3=300, ...}
+        .between("{", "}")         // {k1=100, k2=200, k3=300, ...}
         .parse(input);
     ```
 
