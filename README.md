@@ -3,16 +3,20 @@ isclaimer: This is not an official Google product.
 # Mug (![Coverage](.github/badges/mug-coverage.svg))
 A small Java 8+ string processing and streams library ([javadoc](http://google.github.io/mug/apidocs/index.html)), widely used in Google's internal Java codebase, with **0 deps** (Proto, BigQuery, Guava addons are in separate artifacts). ![](https://travis-ci.org/google/mug.svg?branch=master)
 
-## Highlights
+## Full Spectrum of String Utils
 
-- ✅ [`Substring`](https://github.com/google/mug/wiki/Substring-Explained) – composable substring extraction & manipulation  
+- ✅ [`Substring`](https://github.com/google/mug/wiki/Substring-Explained) – simple and composable substring extraction & manipulation  
   → `Substring.between("(", ")").from("call(foo)") → "foo"`
 - ✅ [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained) – compile-time-safe bidirectional parsing/formatting  
   → `new StringFormat("/home/{user}/{date}").parse(filePath, (user, date) -> ...)`
-- ✅ [`Parser`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html) – easier and faster than regex  
+- ✅ [`Parser`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html) – everyday string parsing better than and beyond regex  
   → `zeroOrMore(noneOf("\\'")).immediatelyBetween("'", "'").parse(input);`
+
+## Streams
 - ✅ [`BiStream`](./mug/src/main/java/com/google/mu/util/stream/README.md) – streams `Map` and pair-wise collections  
   → `BiStream.zip(keys, values).toMap()`
+
+## Others
 - ✅ [`SafeSql`](./mug-safesql/src/main/java/com/google/mu/safesql/README.md) – _library-enforced_ **safe**, **composable** SQL template  
   → ```SafeSql.of("select id, `{col}` from Users where id = {id}", col, id)```
 
