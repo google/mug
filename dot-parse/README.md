@@ -275,12 +275,12 @@ Parser<Map<String, String>> parser =
 
 ## Example — Parse Regex-like Character Set
 
-The [`CharacterSet.charsIn()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/CharacterSet.html#charsIn(java.lang.String))
+The [`Parser.consecutive(String characterClass)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#consecutive(java.lang.String))
 method accepts a character set string. And you can call it with
-`charsIn("[0-9a-fA-F]")`, `charsIn("[^0-9]")` etc.
+`consecutive("[0-9a-fA-F]")`, `consecutive("[^0-9]")` etc.
 
 It makes it easier to create a primitive parser using a regex-like character set specification
-if you are already familiar with them. For example `var hexDigits = Parser.consecutive(charsIn("[0-9A-F]"))`.
+if you are already familiar with them. For example `var hexDigits = Parser.consecutive("[0-9A-F]")`.
 
 The implementation doesn't use a regex engine during parsing (which would have been expensive),
 instead, it parses the character set and translates it to a [`CharPredicate`](https://google.github.io/mug/apidocs/com/google/mu/util/CharPredicate.html) object.
@@ -382,7 +382,6 @@ as well as escaped double quotes (which are not to start or terminate a string l
 The following code splits the JSON records so you can feed them to GSON (or any other JSON parser of choice):
 
 ```java {.good}
-import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.chars;
 import com.google.common.labs.parse.Parser;
 
@@ -392,7 +391,7 @@ Stream<String> jsonStringsFrom(Reader input) {
   Parser<?> stringLiteral = Parser.quotedByWithEscapes('"', '"', chars(1));
   
   // Outside of string literal, any non-quote, non-brace characters are passed through
-  Parser<?> passThrough = Parser.consecutive(charsIn("[^\"{}]"));  // uses regex-like character set
+  Parser<?> passThrough = Parser.consecutive("[^\"{}]");  // uses regex-like character set
 
   // Between curly braces, you can have string literals, nested JSON records, or passthrough chars
   // For nested curly braces, let's define() it.
@@ -622,7 +621,7 @@ Parser<Expr> expr = identifier.map(IdentifierRef::new)
 <dependency>
   <groupId>com.google.mug</groupId>
   <artifactId>dot-parse</artifactId>
-  <version>10.1.1</version>
+  <version>10.2</version>
 </dependency>
 ```
 

@@ -438,7 +438,7 @@ Parser<TypeDecl> typeDecl =
 - **Prefer** `string("c")` or `one('c')` over `one(is('c'))`. They avoid
   parse-time allocation (they just return the passed-in string as is) and are
   more friendly to prefix-based pruning.
-- **Prefer** `consecutive(CharacterSet.charsIn("[a-fA-F0-9]"))` over
+- **Prefer** `consecutive("[a-fA-F0-9]")` over
   `consecutive(CharPredicate predicate, String name)` because the latter is
   more verbose and doesn't enable prefix-based pruning.
 - **Prefer** `p1.optionallyFollowedBy(p2, The::wither)` over
@@ -457,8 +457,8 @@ Parser<TypeDecl> typeDecl =
   generating code using it.
 - **Whitelist of Common Methods** to keep you grounded:
 
-  - **Use** primitives: `string(s)`, `one(char)`, `one(charsIn(...))`,
-    `digits()`, `word()`, `consecutive(charsIn(...))`
+  - **Use** primitives: `string(s)`, `one(char)`, `one(characterClass)`,
+    `digits()`, `word()`, `consecutive(characterClass)`
   - **Use** combinators: `anyOf(...)`, `sequence(...)`, `zeroOrMore()`,
     `atLeastOnce()`, `zeroOrMoreDelimitedBy()`, `atLeastOnceDelimitedBy()`
   - **Use** safe optionals: `optionallyFollowedBy(...)`, `withPrefixes(...)`,
@@ -470,10 +470,10 @@ Parser<TypeDecl> typeDecl =
 
 ## 10. Common Pitfalls & Guardrails
 
-- **CharacterSet Syntax**: `CharacterSet.charsIn()` expects a string enclosed
+- **CharacterSet Syntax**: `Parser.consecutive(String)` expects a string enclosed
   in square brackets, mimicking regex character classes.
 
-  - **Never** use `charsIn("abc")`. Always use `charsIn("[abc]")`.
+  - **Never** use `consecutive("abc")`. Always use `consecutive("[abc]")`.
 - **Greedy Matching**: `zeroOrMore` and `atLeastOnce` are greedy. They will
   consume as much as possible and do not automatically backtrack to give back
   characters to a suffix parser.
@@ -489,7 +489,7 @@ Parser<TypeDecl> typeDecl =
   - **Example**: `consecutive(Character::isDigit, "digit")` or `suchThat(p ->
     p.isValid(), "valid item")`.
   - **Exception**: If you use `CharacterSet` overloads like
-    `consecutive(charsIn("[a-z]"))`, the character set string is automatically
+    `consecutive("[a-z]")`, the character class string is automatically
     used, so you don't need to pass a name parameter.
 - **Covariance in `anyOf()` and `Parser.or()`**: Both `anyOf()` and the
   `Parser.or()` collector support covariance.

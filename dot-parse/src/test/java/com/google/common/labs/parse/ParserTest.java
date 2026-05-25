@@ -1039,7 +1039,7 @@ public class ParserTest {
         assertThrows(
             ParseException.class, () -> parser.parseSkipping(whitespace(), "a  "));
     assertThat(parser.skipping(whitespace()).matches("a  ")).isFalse();
-    assertThat(thrown).hasMessageThat().contains("at 1:2: unexpected `eof` – [  ]");
+    assertThat(thrown).hasMessageThat().contains("at 1:4: unexpected `eof` – [  ]");
   }
 
   @Test

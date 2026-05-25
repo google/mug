@@ -306,7 +306,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         int found = input.indexOf(needle, start);
         return found >= 0
             ? new MatchResult.Success<>(found, found + needle.length(), needle)
-            : context.expecting(needle, skipIfAny(skip, input, start));
+            : context.expecting(needle, start);
       }
     };
   }
@@ -1191,7 +1191,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             yield switch (suffix.skipAndMatch(skip, input, success.tail(), lookaheadContext)) {
               case MatchResult.Success<?> followed ->
                   lookaheadContext.failAt(
-                      success.tail(), "unexpected `%s` – %s.", name, new Snippet(input, success.tail()));
+                      followed.head(), "unexpected `%s` – %s.", name, new Snippet(input, success.tail()));
               default -> success;
             };
           }
