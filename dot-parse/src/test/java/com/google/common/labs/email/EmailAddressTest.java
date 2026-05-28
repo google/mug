@@ -142,6 +142,16 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_quotedLocalPart_invalid_escapedControlChar(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> parser.parse("\"john\\\ndoe\"@example.com"));
+    assertThat(thrown).hasMessageThat().contains("at 1:7:");
+    assertThat(thrown).hasMessageThat().contains("expecting <escapable char>");
+  }
+
+  @Test
   public void testEmailAddressOf_localPartStartsWithDot() {
     EmailAddress address = EmailAddress.of(".john.doe", "example.com");
     assertThat(address.localPart()).isEqualTo(".john.doe");
