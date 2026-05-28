@@ -128,6 +128,16 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_bothQuotedDisplayNameAndQuotedLocalPart(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    EmailAddress address = parser.parse("\"John Doe\" <\"john doe\"@example.com>");
+    assertThat(address.localPart()).isEqualTo("john doe");
+    assertThat(address.address()).isEqualTo("\"john doe\"@example.com");
+    assertThat(address.displayName()).hasValue("John Doe");
+    assertThat(address.toString()).isEqualTo("\"John Doe\" <\"john doe\"@example.com>");
+  }
+
+  @Test
   public void testEmailAddressOf_localPartNeedsQuoting() {
     EmailAddress address = EmailAddress.of("john\"doe", "example.com");
     assertThat(address.localPart()).isEqualTo("john\"doe");
