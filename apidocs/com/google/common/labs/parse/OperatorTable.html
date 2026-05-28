@@ -315,13 +315,13 @@ loadScripts(document, 'script');</script>
  expression into another expression: <pre><code>
  Parser&lt;Expression&gt; expression = Parser.define(
      rule -&gt; {  // recursive because the parameters are also expressions
-       Parser&lt;FunctionInvocation&gt; methodInvocation = Parser.sequence(
+       Parser&lt;FunctionInvocation&gt; invocation = Parser.sequence(
            word(), rule.zeroOrMoreDelimitedBy(",").between("(", ")"),
            FunctionInvocation::new);
        return new OperatorTable&lt;Expression&gt;()
            // Assuming you have the following constructor:
-           //   MethodInvocation(Expression receiver, FunctionInvocation invocation);
-           .postfix(string(".").then(methodInvocation), MethodInvocation::new, 10)
+           //   MethodCall(Expression receiver, FunctionInvocation invocation);
+           .postfix(string(".").then(invocation), MethodCall::new, 10)
            ... // other operators
            .build();
      });
