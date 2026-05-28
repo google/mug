@@ -172,6 +172,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * whitespaces ignored. Trailing delimiters are allowed.
    *
    * <p>Empty input will result in an empty list being returned.
+   *
+   * @throws Parser.ParseException if {@code addressList} is invalid
    */
   public static List<EmailAddress> parseAddressList(String addressList) {
     Parser<?> delimiter = Parser.one(anyOf(",;"), "delimiter").atLeastOnce(counting());
