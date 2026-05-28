@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.labs.parse.Parser;
+import com.google.errorprone.annotations.Immutable;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiCollector;
@@ -105,6 +106,7 @@ import com.google.mu.util.stream.MoreStreams;
 // CsvBenchmark.dotParseCsvFromString          avgt    5  2867898.182 ±   35946.724  ns/op
 // CsvBenchmark.univocity                      avgt    5  3171410.923 ±  193134.460  ns/op
 // CsvBenchmark.univocityFromString            avgt    5  1388068.463 ±  132654.257  ns/op
+@Immutable
 public final class Csv {
   /** Default CSV parser. Configurable using {@link #withComments} and {@link #withDelimiter}. */
   public static final Csv CSV = new Csv(',', /* allowsComments= */ false);
