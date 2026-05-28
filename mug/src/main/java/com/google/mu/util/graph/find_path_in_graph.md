@@ -34,22 +34,22 @@ But during the traversal, most of the visited pages won't need to reconstruct th
 expensive.
 
 ```java {.good}
-record VisitedPage(String url, ReferredPage referrer) {
+record VisitedPage(String url, VisitedPage referrer) {
   static VisitedPage from(String root) {
     return new VisitedPage(root, null);
   }
 
   /** RPC: explore the links from this page. */
   Stream<VisitedPage> exploreLinks() {
-    return fetchLinks(current).stream()
+    return fetchPageUrls(url).stream()
         .map(child -> new VisitedPage(child, this));
   }
 
   /** Reconstruct the url path from the root. This is O(path length). */
   List<String> urlPath() {
     List<String> path = new ArrayList<>();
-    for (VisitedPage p = this; p != null; p = p.parent) {
-        path.add(p.current);
+    for (VisitedPage p = this; p != null; p = p.referrer) {
+        path.add(p.url);
     }
     Collections.reverse(path);
     return path;
@@ -70,7 +70,7 @@ List<VisitedPage> rootPages = officialCompanyUrls.stream().map(VisitedPage::from
 Optional<VisitedPage> result = Walker.inGraph(VisitedPage::exploreLinks)
     .breadthFirstFrom(rootPages)
     // assume we have a small helper to parse the domain from a url
-    .filter(page -> knownPhishingSites.contains(parseDomain(page))
+    .filter(page -> knownPhishingSites.contains(parseDomain(page.url())))
     .findFirst();
 ```
 
@@ -98,7 +98,7 @@ Optional<VisitedPage> result =
     Walker.inGraph(VisitedPage::exploreLinks, page -> visitedUrls.add(page.url()))
         .breadthFirstFrom(rootPages)
         // assume we have a small helper to parse the domain from a url
-        .filter(page -> knownPhishingSites.contains(parseDomain(page))
+        .filter(page -> knownPhishingSites.contains(parseDomain(page.url())))
         .findFirst();
 ```
 
