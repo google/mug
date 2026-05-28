@@ -35,6 +35,7 @@ import java.util.Optional;
 import com.google.common.labs.parse.Parser;
 import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.FormatString;
+import com.google.errorprone.annotations.Immutable;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
 
@@ -89,6 +90,7 @@ import com.google.mu.util.StringFormat;
  * @param domain the {@code "lotr.org"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
  * @since 9.9.4
  */
+@Immutable
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
 
