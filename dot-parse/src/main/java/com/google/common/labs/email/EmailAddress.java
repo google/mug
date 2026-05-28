@@ -155,16 +155,13 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * @since 9.9.8
    */
   public static EmailAddress of(String address) {
-    return parse(address);
+    return PARSER.parseSkipping(Character::isWhitespace, address);
   }
 
-  /**
-   * Parses {@code address} and throws {@link Parser.ParseException} if failed.
-   *
-   * <p>Equivalent to {@code EmailAddress.of(address)}.
-   */
+  /** @deprecated Use {@link #of(String)} instead */
+  @Deprecated
   public static EmailAddress parse(String address) {
-    return PARSER.parseSkipping(Character::isWhitespace, address);
+    return of(address);
   }
 
   /**

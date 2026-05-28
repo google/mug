@@ -547,7 +547,7 @@ public class EmailAddressTest {
     },
     COMBINATOR {
       @Override EmailAddress parse(String email) {
-        return EmailAddress.parse(email);
+        return EmailAddress.of(email);
       }
     },
     JAKARTA {
