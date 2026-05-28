@@ -38,6 +38,7 @@ import com.google.errorprone.annotations.FormatString;
 import com.google.errorprone.annotations.Immutable;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
+import com.google.mu.util.Substring;
 
 /**
  * Represents an email address according to RFC 5322, designed as a modern,
@@ -54,6 +55,13 @@ import com.google.mu.util.StringFormat;
  * <ul>
  *   <li><b>Address Specification (addr-spec):</b> Supports the standard
  *       {@code local-part@domain} format (RFC 5322 §3.4.1).</li>
+ *   <li><b>Quoted Local-Parts:</b> Fully supports double-quoted local-parts
+ *       (RFC 5322 §3.4.1), with backslash-escaped characters. In order to provide a clean,
+ *       canonical representation, enclosing quotes are automatically stripped and backslash
+ *       escapes are unescaped when stored in the {@code localPart} property (e.g.,
+ *       {@code "john doe" -> "john doe"}). While serializing via {@link #address()} or
+ *       {@link #toString()}, appropriate quotes and escapes are dynamically and safely
+ *       re-introduced if necessary to maintain syntactical validity under RFC 5322 (since v10.3).</li>
  *   <li><b>Name-Addr:</b> Fully supports {@code "display-name" <addr-spec>}
  *       syntax (RFC 5322 §3.4).</li>
  *   <li><b>Quoted-Strings:</b> Complies with RFC 5322 §3.2.4, supporting
@@ -80,7 +88,6 @@ import com.google.mu.util.StringFormat;
  * header injection risks, the following RFC 5322 edge cases are excluded:</p>
  *
  * <ul>
- *   <li><b>Quoted Local-Parts:</b> (e.g., {@code "john doe"@domain}) - Deprecated in practice.
  *   <li><b>Comments (CFWS):</b> (e.g., {@code name(comment) <addr>}) - De facto obsolete.
  *   <li><b>Domain Literals:</b> (e.g., {@code user@[192.168.1.1]}) - IP routing is rarely supported.
  * </ul>
@@ -93,6 +100,8 @@ import com.google.mu.util.StringFormat;
 @Immutable
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
+  private static final CharPredicate UNQUOTED_CHARS =
+      ((CharPredicate) Character::isLetterOrDigit).or("!#$%&'*+-/=?^_`{|}~.").precomputeForAscii();
 
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
@@ -108,7 +117,10 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * Prefer using the {@link #of} factory method. You can call {@link #withDisplayName}
    * to optionally attach a display name.
    */
-  public EmailAddress{
+  public EmailAddress {
+    if (localPart.startsWith("\"") && localPart.endsWith("\"") && localPart.length() >= 2) {
+      localPart = unescape(localPart.substring(1, localPart.length() - 1));
+    }
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
     requireNonNull(displayName);
@@ -135,7 +147,22 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /** Returns the {@code addr-spec}, in the form of {@code user@mycompany.com}. */
   public String address() {
-    return localPart + '@' + domain;
+    return showLocalPart() + '@' + domain;
+  }
+
+  private String showLocalPart() {
+    return localPart.isEmpty()
+        || localPart.startsWith(".")
+        || localPart.endsWith(".")
+        || localPart.contains("..")
+        || !UNQUOTED_CHARS.matchesAllOf(localPart)
+      ? '"' + escape(localPart) + '"'
+      : localPart;
+  }
+
+  private static String unescape(String text) {
+    return Substring.first(java.util.regex.Pattern.compile("\\\\.")).repeatedly()
+        .replaceAllFrom(text, e -> e.subSequence(1, e.length()));
   }
 
   /**
@@ -186,9 +213,11 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   private static Parser<EmailAddress> makeParser() {
     CharPredicate letterOrDigit = Character::isLetterOrDigit;
     CharPredicate isoControl = Character::isISOControl;
-    Parser<String> localPart =
+    Parser<String> localPart = anyOf(
+        Parser.quotedByWithEscapes(
+            '"', '"', chars(1).suchThat(isoControl::matchesNoneOf, "escapable char")),
         consecutive(letterOrDigit.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii(), "local part")
-            .atLeastOnceDelimitedBy(".", joining("."));
+            .atLeastOnceDelimitedBy(".", joining(".")));
     Parser<String> domain =
         consecutive(letterOrDigit.or("-.").precomputeForAscii(), "domain label chars");
     Parser<EmailAddress> address =
