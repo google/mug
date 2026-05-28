@@ -87,6 +87,89 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_quotedLocalPart_simple(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    EmailAddress address = parser.parse("\"john doe\"@example.com");
+    assertThat(address.localPart()).isEqualTo("john doe");
+    assertThat(address.address()).isEqualTo("\"john doe\"@example.com");
+  }
+
+  @Test
+  public void testEmailAddressParsing_quotedLocalPart_withEscapedQuotes(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    EmailAddress address = parser.parse("\"john\\\"doe\"@example.com");
+    assertThat(address.localPart()).isEqualTo("john\"doe");
+    assertThat(address.address()).isEqualTo("\"john\\\"doe\"@example.com");
+  }
+
+  @Test
+  public void testEmailAddressParsing_quotedLocalPart_withEscapedBackslash(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    EmailAddress address = parser.parse("\"john\\\\doe\"@example.com");
+    assertThat(address.localPart()).isEqualTo("john\\doe");
+    assertThat(address.address()).isEqualTo("\"john\\\\doe\"@example.com");
+  }
+
+  @Test
+  public void testEmailAddressParsing_quotedLocalPart_withOtherEscapedChars(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    EmailAddress address = parser.parse("\"john\\=doe\"@example.com");
+    assertThat(address.localPart()).isEqualTo("john=doe");
+    assertThat(address.address()).isEqualTo("john=doe@example.com");
+  }
+
+  @Test
+  public void testEmailAddressParsing_quotedLocalPart_withDisplayName(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    EmailAddress address = parser.parse("John Doe <\"john doe\"@example.com>");
+    assertThat(address.localPart()).isEqualTo("john doe");
+    assertThat(address.address()).isEqualTo("\"john doe\"@example.com");
+    assertThat(address.displayName()).hasValue("John Doe");
+  }
+
+  @Test
+  public void testEmailAddressOf_localPartNeedsQuoting() {
+    EmailAddress address = EmailAddress.of("john\"doe", "example.com");
+    assertThat(address.localPart()).isEqualTo("john\"doe");
+    assertThat(address.toString()).isEqualTo("\"john\\\"doe\"@example.com");
+  }
+
+  @Test
+  public void testEmailAddressOf_localPartNeedsQuoting_withDisplayName() {
+    EmailAddress address = EmailAddress.of("john doe", "example.com").withDisplayName("John Doe");
+    assertThat(address.localPart()).isEqualTo("john doe");
+    assertThat(address.toString()).isEqualTo("\"John Doe\" <\"john doe\"@example.com>");
+  }
+
+  @Test
+  public void testEmailAddressOf_localPartStartsWithDot() {
+    EmailAddress address = EmailAddress.of(".john.doe", "example.com");
+    assertThat(address.localPart()).isEqualTo(".john.doe");
+    assertThat(address.toString()).isEqualTo("\".john.doe\"@example.com");
+  }
+
+  @Test
+  public void testEmailAddressOf_localPartEndsWithDot() {
+    EmailAddress address = EmailAddress.of("john.doe.", "example.com");
+    assertThat(address.localPart()).isEqualTo("john.doe.");
+    assertThat(address.toString()).isEqualTo("\"john.doe.\"@example.com");
+  }
+
+  @Test
+  public void testEmailAddressOf_localPartContainsDoubleDot() {
+    EmailAddress address = EmailAddress.of("john..doe", "example.com");
+    assertThat(address.localPart()).isEqualTo("john..doe");
+    assertThat(address.toString()).isEqualTo("\"john..doe\"@example.com");
+  }
+
+  @Test
+  public void testEmailAddressOf_localPartContainsSingleDotInMiddle() {
+    EmailAddress address = EmailAddress.of("john.doe", "example.com");
+    assertThat(address.localPart()).isEqualTo("john.doe");
+    assertThat(address.toString()).isEqualTo("john.doe@example.com");
+  }
+
+  @Test
   public void testEmailAddressParsing_complex(@TestParameter ParseStrategy parser) {
     parser.assertParsesTo(
         "someone.else+and-another@some.sub-domain.example.co.uk",
