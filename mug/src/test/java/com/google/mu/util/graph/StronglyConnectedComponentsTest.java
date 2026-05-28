@@ -85,6 +85,13 @@ public class StronglyConnectedComponentsTest {
         .containsExactly(asList("baz", "bar", "foo"), asList("zoo"));
   }
 
+  @Test public void stronglyConnectedComponents_crossActiveEdge() {
+    Graph<String> graph = toDirectedGraph(
+        ImmutableListMultimap.of("A", "v", "v", "A", "A", "u", "u", "v"));
+    assertThat(stronglyConnectedFrom(graph, "A"))
+        .containsExactly(asList("u", "v", "A"));
+  }
+
   @Test public void stronglyConnectedComponents_wikipedia() {
     Graph<String> graph = GraphBuilder.directed()
         .incidentEdgeOrder(ElementOrder.stable())

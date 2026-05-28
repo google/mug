@@ -102,13 +102,13 @@ public final class OperatorTable<T> {
    * expression into another expression: <pre>{@code
    * Parser<Expression> expression = Parser.define(
    *     rule -> {  // recursive because the parameters are also expressions
-   *       Parser<FunctionInvocation> methodInvocation = Parser.sequence(
+   *       Parser<FunctionInvocation> invocation = Parser.sequence(
    *           word(), rule.zeroOrMoreDelimitedBy(",").between("(", ")"),
    *           FunctionInvocation::new);
    *       return new OperatorTable<Expression>()
    *           // Assuming you have the following constructor:
-   *           //   MethodInvocation(Expression receiver, FunctionInvocation invocation);
-   *           .postfix(string(".").then(methodInvocation), MethodInvocation::new, 10)
+   *           //   MethodCall(Expression receiver, FunctionInvocation invocation);
+   *           .postfix(string(".").then(invocation), MethodCall::new, 10)
    *           ... // other operators
    *           .build();
    *     });

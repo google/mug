@@ -9,11 +9,11 @@ In scenarios where the graph is discovered lazily (e.g. via RPC or streaming edg
 `Walker` supports custom node tracker so this can be easily achieved using Guava `BloomFilter`:
 
 ```java
-BloomFilter visited = ...;
+BloomFilter<String> visited = ...;
 Walker<WebPage> walker =
     Walker.inGraph(
         webPage -> webPage.exploreLinks(),
-        page -> visited.mightContain(page.url()));
+        page -> visited.put(page.url()));
 ```
 
 The bloom filter structure offers 0 false-negative so infinite loop is impossible, but the false
