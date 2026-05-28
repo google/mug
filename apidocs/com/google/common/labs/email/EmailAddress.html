@@ -129,6 +129,13 @@ loadScripts(document, 'script');</script>
  <ul>
    <li><b>Address Specification (addr-spec):</b> Supports the standard
        <code>local-part@domain</code> format (RFC 5322 §3.4.1).</li>
+   <li><b>Quoted Local-Parts:</b> Fully supports double-quoted local-parts
+       (RFC 5322 §3.4.1), with backslash-escaped characters. In order to provide a clean,
+       canonical representation, enclosing quotes are automatically stripped and backslash
+       escapes are unescaped when stored in the <code>localPart</code> property (e.g.,
+       <code>"john doe" -&gt; "john doe"</code>). While serializing via <a href="#address()"><code>address()</code></a> or
+       <a href="#toString()"><code>toString()</code></a>, appropriate quotes and escapes are dynamically and safely
+       re-introduced if necessary to maintain syntactical validity under RFC 5322 (since v10.3).</li>
    <li><b>Name-Addr:</b> Fully supports <code>"display-name" &lt;addr-spec&gt;</code>
        syntax (RFC 5322 §3.4).</li>
    <li><b>Quoted-Strings:</b> Complies with RFC 5322 §3.2.4, supporting
@@ -155,7 +162,6 @@ loadScripts(document, 'script');</script>
  header injection risks, the following RFC 5322 edge cases are excluded:</p>
 
  <ul>
-   <li><b>Quoted Local-Parts:</b> (e.g., <code>"john doe"@domain</code>) - Deprecated in practice.
    <li><b>Comments (CFWS):</b> (e.g., <code>name(comment) &lt;addr&gt;</code>) - De facto obsolete.
    <li><b>Domain Literals:</b> (e.g., <code>user@[192.168.1.1]</code>) - IP routing is rarely supported.
  </ul></div>
