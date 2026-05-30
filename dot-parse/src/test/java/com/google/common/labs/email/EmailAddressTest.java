@@ -671,6 +671,8 @@ public class EmailAddressTest {
             EmailAddress.of("c", "d.com"),
             EmailAddress.of("e", "f.com"))
         .inOrder();
+    assertThat(EmailAddress.scanAddressList("invalid1, invalid2; goo.d@address ; @com"))
+        .containsExactly(EmailAddress.of("goo.d", "address"));
   }
 
   @Test

@@ -231,11 +231,11 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * @since 10.3
    */
   public static List<EmailAddress> scanAddressList(String addressList) {
-    CharPredicate whitespace = Character::isWhitespace;
-    Parser<EmailAddress> element = PARSER.notFollowedBy(
-        Parser.one(whitespace.or(ADDRESS_LIST_SEPARATOR_CHAR).not(), "invalid character"),
-        "invalid trailing characters");
-    return anyOf(element, Parser.consecutive(ADDRESS_LIST_SEPARATOR_CHAR.not(), "ignored"))
+    Parser<?> significant = Parser.one(
+        ADDRESS_LIST_SEPARATOR_CHAR.or(Character::isWhitespace).not(), "significant char");
+    return anyOf(
+            PARSER.notFollowedBy(significant, "non-separator"),
+            consecutive(ADDRESS_LIST_SEPARATOR_CHAR.not(), "ignored"))
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses())
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
         .parseSkipping(Character::isWhitespace, addressList);
