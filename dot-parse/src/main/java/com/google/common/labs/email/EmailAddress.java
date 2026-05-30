@@ -235,7 +235,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         ADDRESS_LIST_SEPARATOR_CHAR.or(Character::isWhitespace).not(), "significant char");
     return anyOf(
             PARSER.notFollowedBy(significant, "non-separator"),
-            consecutive(ADDRESS_LIST_SEPARATOR_CHAR.not(), "ignored"))
+            consecutive(ADDRESS_LIST_SEPARATOR_CHAR.not(), "invalid"))
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses())
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
         .parseSkipping(Character::isWhitespace, addressList);
