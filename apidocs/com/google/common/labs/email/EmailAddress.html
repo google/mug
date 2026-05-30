@@ -369,9 +369,12 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type"><a href="../parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a>&gt;</span>&nbsp;<span class="element-name">PARSER</span></div>
 <div class="block">The parser for email address, according to RFC 5322, and supporting BMP characters.
 
- <p>Prefer using the <a href="#parse(java.lang.String)"><code>parse(java.lang.String)</code></a> convenience method. This constant is to be used for
- composition, for example to parse a list of email addresses: <pre><code>
- EmailAddress.PARSER.skipping(whitespace()).parseToStream(emailAddresses).toList();
+ <p>Prefer using the <a href="#of(java.lang.String,java.lang.String)"><code>of(java.lang.String, java.lang.String)</code></a> convenience method. This constant is to be used for
+ composition, for example to parse a group addresses: <pre><code>
+ Parser.sequence(
+     Parser.word().followedBy(":"),
+     EmailAddress.PARSER.zeroOrMoreDelimitedBy(",").followedBy(";"),
+     GroupAddress::new);
  </code></pre></div>
 </div>
 </section>
