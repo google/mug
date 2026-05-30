@@ -23,7 +23,7 @@ combinators. It serves as a lightweight and secure alternative to
 | :--- | :--- | :--- | :--- |
 | **`local-part@domain`** |  **Compliant** |  **Compliant** |  **Compliant** |
 | **Quoted Local Parts** |  **Compliant & Canonical** (Strips quotes; re-escapes on output) |  **Compliant** | ⚠️ **Partially Compliant** (Fails to strip/unescape quotes) |
-| **Unquoted Display Names** |  **Strictly Compliant** (Forbids "specials" to prevent injection) | ⚠️ **Lenient** (Allows invalid special characters) | ⚠️ **Lenient** (Allows invalid special characters) |
+| **Unquoted Display Names** |  **Strictly Compliant** (Forbids special characters `()<>[]:;@\,"` to prevent spoofing) | ⚠️ **Lenient** (Allows special characters unquoted in display names) | ⚠️ **Lenient** (Allows special characters unquoted in display names) |
 | **Group Addresses** (RFC 822) | 🚫 **Intentionally Omitted** (Obsolete, rejected for security) |  **Compliant** (Parses groups as `isGroup()`) | 🚫 **Intentionally Omitted** (Obsolete, rejected for security) |
 | **RFC 2047 Encoded Words** | 🚫 **Intentionally Omitted** (Preserved raw to prevent spoofing) |  **Compliant** (Decodes automatically, posing security risks) | 🚫 **Intentionally Omitted** (Preserved raw to prevent spoofing) |
 | **Comments & Domain Literals** | 🚫 **Intentionally Omitted** (Legacy comments/IP domains skipped) |  **Compliant** (Supports full legacy feature set) | 🚫 **Intentionally Omitted** (Legacy comments/IP domains skipped) |
@@ -35,7 +35,7 @@ combinators. It serves as a lightweight and secure alternative to
 | Attack Vector / Vulnerability | `EmailAddress` (Combinator) | `InternetAddress` (Jakarta Mail) | JMail |
 | :--- | :--- | :--- | :--- |
 | **Parsing Differentials** (Split Bug) |  **Immune** (Strictly rejects unconsumed trailing characters) | ❌ **Vulnerable** (Silently discards trailing parts like `<a@b>c@d`) |  **Immune** (Natively rejects) |
-| **Display Name Spoofing** (Phishing) |  **Immune** (Preserves raw headers; forbids literal `@` or `<` in unquoted display names) | ❌ **Vulnerable** (Automatically decodes spoofed visual headers) | ❌ **Vulnerable** (Allows arbitrary addresses in display name fields) |
+| **Display Name Spoofing** (Phishing) |  **Immune** (Strictly rejects unquoted `@` or `<` in display names) | ❌ **Vulnerable** (Decodes and accepts unquoted `@` and `<` in display names) | ❌ **Vulnerable** (Accepts unquoted `@` in display names) |
 | **Group Syntax Abuse** (List splitting) |  **Immune** (obsolete RFC 822 group constructs are strictly rejected) | ❌ **Vulnerable** (Accepts group syntax, bypassing single-recipient controls) |  **Immune** (Natively rejects groups) |
 
 ---
@@ -139,6 +139,6 @@ Parser<GroupAddress> groupParser = Parser.sequence(
     GroupAddress::new);
 ```
 
-This composable architecture keeps the core domain model strictly secure and
+This composable architecture keeps the core domain model secure and
 simple, while providing open extensibility for application-specific
 protocols.

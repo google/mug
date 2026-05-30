@@ -960,6 +960,8 @@ public class EmailAddressTest {
 
 
 
+
+
   @Test
   public void testJMailValidation_rejectsGroupAddress_good() {
     // Proves JMail correctly rejects group address formats.
