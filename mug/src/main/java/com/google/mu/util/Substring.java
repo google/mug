@@ -592,11 +592,11 @@ public final class Substring {
    * Instead, you should use {@code word("cat")} to skip over "cathie".
    *
    * <p>If your word boundary isn't equivalent to the regex {@code \W} character class, you can
-   * define your own word boundary {@code CharMatcher} and then use {@link Pattern#separatedBy}
+   * define your own word boundary {@code CharPredicate} and then use {@link Pattern#separatedBy}
    * instead. Say, if your word is lower-case alpha with dash ('-'), then:
    *
    * <pre>{@code
-   * CharMatcher boundary = CharMatcher.inRange('a', 'z').or(CharMatcher.is('-')).negate();
+   * CharPredicate boundary = CharPredicate.range('a', 'z').or('-').negate();
    * Substring.Pattern petFriendly = first("pet-friendly").separatedBy(boundary);
    * }</pre>
    *
@@ -2396,7 +2396,7 @@ public final class Substring {
    *   <li>directly prepend a prefix as in {@code HOME_PREFIX + path};
    *   <li>or prepend it into a {@code StringBuilder}: {@code builder.insert(0, HOME_PREFIX)};
    *   <li>pass it to any CharSequence-accepting APIs such as {@code
-   *       CharMatcher.anyOf(...).matchesAnyOf(MY_PREFIX)}, {@code
+   *       CharPredicate.anyOf(...).matchesAnyOf(MY_PREFIX)}, {@code
    *       Substring.first(':').splitThenTrim(MY_PREFIX)} etc.
    * </ul>
    *
@@ -2543,7 +2543,7 @@ public final class Substring {
    *   <li>directly append a suffix as in {@code path + SHARD_SUFFIX};
    *   <li>or append the suffix into a {@code StringBuilder}: {@code builder.append(SHARD_SUFFIX)}};
    *   <li>pass it to any CharSequence-accepting APIs such as {@code
-   *       CharMatcher.anyOf(...).matchesAnyOf(MY_PREFIX)}, {@code
+   *       CharPredicate.anyOf(...).matchesAnyOf(MY_PREFIX)}, {@code
    *       Substring.first(':').splitThenTrim(MY_PREFIX)} etc.
    * </ul>
    *

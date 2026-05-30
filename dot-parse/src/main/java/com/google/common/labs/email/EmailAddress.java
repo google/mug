@@ -26,12 +26,15 @@ import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.Substring.all;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.filtering;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.net.IDN;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import com.google.common.labs.parse.Parser;
 import com.google.errorprone.annotations.FormatMethod;
@@ -105,6 +108,9 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   private static final CharPredicate ATEXT =
       LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii();
   private static final CharPredicate DOMAIN_CHARS = LETTER_OR_DIGIT.or("-.").precomputeForAscii();
+  private static final CharPredicate ADDRESS_LIST_SEPARATOR_CHAR = anyOf(",;").precomputeForAscii();
+  private static final Parser<?> ADDRESS_LIST_DELIMITER =
+      Parser.one(ADDRESS_LIST_SEPARATOR_CHAR, "delimiter").atLeastOnce(counting());
 
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
@@ -199,13 +205,37 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    *
    * <p>Empty input will result in an empty list being returned.
    *
+   * <p>Note that if your address list may contain invalid entries, and you'd want to ignore them
+   * instead of failing, use {@link #scanAddressList}.
+   *
    * @throws Parser.ParseException if {@code addressList} is invalid
    */
   public static List<EmailAddress> parseAddressList(String addressList) {
-    Parser<?> delimiter = Parser.one(anyOf(",;"), "delimiter").atLeastOnce(counting());
     return PARSER
-        .zeroOrMoreDelimitedBy(delimiter, toUnmodifiableList())
-        .followedBy(delimiter.orElse(null))
+        .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
+        .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
+        .parseSkipping(Character::isWhitespace, addressList);
+  }
+
+  /**
+   * Scans {@code addressList} according to RFC 5322 and returns an immutable list of {@link
+   * EmailAddress}, ignoring invalid entries.
+   *
+   * <p>Both comma ({@code ,}) and semicolon ({@code ;}) are supported as delimiters, with
+   * whitespaces ignored. Trailing delimiters are allowed.
+   *
+   * <p>Empty input will result in an empty list being returned.
+   *
+   * @since 10.3
+   */
+  public static List<EmailAddress> scanAddressList(String addressList) {
+    CharPredicate whitespace = Character::isWhitespace;
+    Parser<EmailAddress> element = PARSER.notFollowedBy(
+        Parser.one(whitespace.or(ADDRESS_LIST_SEPARATOR_CHAR).not(), "invalid character"),
+        "invalid trailing characters");
+    return anyOf(element, Parser.consecutive(ADDRESS_LIST_SEPARATOR_CHAR.not(), "ignored"))
+        .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses())
+        .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
         .parseSkipping(Character::isWhitespace, addressList);
   }
 
@@ -227,6 +257,13 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         bracketedAddress,
         address,
         sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)));
+  }
+
+  private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses() {
+    return filtering(
+        e -> e instanceof EmailAddress,
+        Collectors.mapping(e -> (EmailAddress) e, toUnmodifiableList()));
+
   }
 
   private static String escape(String name) {

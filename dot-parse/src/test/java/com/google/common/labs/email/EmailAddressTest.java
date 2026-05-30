@@ -646,6 +646,85 @@ public class EmailAddressTest {
         .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
   }
 
+  @Test
+  public void testScanAddressList_emptyString() {
+    assertThat(EmailAddress.scanAddressList("")).isEmpty();
+    assertThat(EmailAddress.scanAddressList("   ")).isEmpty();
+    assertThat(EmailAddress.scanAddressList(",,  ;; , ")).isEmpty();
+  }
+
+  @Test
+  public void testScanAddressList_allValid() {
+    assertThat(EmailAddress.scanAddressList("a@b.com, c@d.com; e@f.com"))
+        .containsExactly(
+            EmailAddress.of("a", "b.com"),
+            EmailAddress.of("c", "d.com"),
+            EmailAddress.of("e", "f.com"))
+        .inOrder();
+  }
+
+  @Test
+  public void testScanAddressList_withInvalidEntries_middle() {
+    assertThat(EmailAddress.scanAddressList("a@b.com, invalid-address, c@d.com; wrong@@domain.com, e@f.com"))
+        .containsExactly(
+            EmailAddress.of("a", "b.com"),
+            EmailAddress.of("c", "d.com"),
+            EmailAddress.of("e", "f.com"))
+        .inOrder();
+  }
+
+  @Test
+  public void testScanAddressList_withInvalidEntries_beginning() {
+    assertThat(EmailAddress.scanAddressList("invalid-address, a@b.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"));
+  }
+
+  @Test
+  public void testScanAddressList_withInvalidEntries_end() {
+    assertThat(EmailAddress.scanAddressList("a@b.com, invalid-address"))
+        .containsExactly(EmailAddress.of("a", "b.com"));
+  }
+
+  @Test
+  public void testScanAddressList_multipleConsecutiveInvalidEntries() {
+    assertThat(EmailAddress.scanAddressList("a@b.com, invalid1; invalid2, c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"))
+        .inOrder();
+  }
+
+  @Test
+  public void testScanAddressList_allInvalid() {
+    assertThat(EmailAddress.scanAddressList("invalid1, invalid2; wrong@address@com")).isEmpty();
+  }
+
+  @Test
+  public void testScanAddressList_delimitersAndWhitespace() {
+    assertThat(EmailAddress.scanAddressList("  a@b.com  ,,;  c@d.com ; ; invalid , e@f.com , "))
+        .containsExactly(
+            EmailAddress.of("a", "b.com"),
+            EmailAddress.of("c", "d.com"),
+            EmailAddress.of("e", "f.com"))
+        .inOrder();
+  }
+
+  @Test
+  public void testScanAddressList_delimitersInQuotedDisplayName() {
+    assertThat(EmailAddress.scanAddressList("\"John, Doe\" <john@example.com>, \"Smith; Jane\" <jane@example.com>"))
+        .containsExactly(
+            EmailAddress.of("john", "example.com").withDisplayName("John, Doe"),
+            EmailAddress.of("jane", "example.com").withDisplayName("Smith; Jane"))
+        .inOrder();
+  }
+
+  @Test
+  public void testScanAddressList_delimitersInQuotedLocalPart() {
+    assertThat(EmailAddress.scanAddressList("\"john,doe\"@example.com; \"jane;smith\"@example.com"))
+        .containsExactly(
+            EmailAddress.of("john,doe", "example.com"),
+            EmailAddress.of("jane;smith", "example.com"))
+        .inOrder();
+  }
+
   private static String unescape(String text) {
     return ESCAPED_CHARS.replaceAllFrom(text, e -> e.subSequence(1, e.length()));
   }
