@@ -12,8 +12,8 @@ combinators. It serves as a lightweight and secure alternative to
 | Feature / Property | `EmailAddress` (Combinator) | `InternetAddress` (Jakarta Mail) | JMail | Apache `EmailValidator` |
 | :--- | :--- | :--- | :--- | :--- |
 | **Domain Mutability** | **Immutable Record** (Thread-safe, robust as Map keys) | ❌ **Mutable POJO** (Exposes setters, prone to side effects) | **Immutable Value Object** (Thread-safe) | N/A |
-| **Footprint & Deps** | **Lightweight** (Zero external dependencies; built on `dot-parse` combinators) | ❌ **Heavy EE stack** (Transitive dependencies) | **Lightweight** (Minor standalone deps) | **Lightweight** (Part of commons-validator) |
-| **Value Extraction** | **Canonical** (Quotes stripped, escapes unescaped) | ⚠️ **Mixed** (Canonical personal name; raw local part) | ❌ **Raw** (Quotes and backslashes left intact) | N/A |
+| **Footprint & Deps** | **Lightweight** (Zero external dependencies; built on `dot-parse` combinators) | ⚠️ **Heavy EE stack** (Transitive dependencies) | **Lightweight** (Minor standalone deps) | **Lightweight** (Part of commons-validator) |
+| **Value Extraction** | **Canonical** (Quotes stripped, escapes unescaped) | ⚠️ **Mixed** (Canonical personal name; raw local part) | ⚠️ **Raw** (Quotes and backslashes left intact) | N/A |
 
 ---
 
