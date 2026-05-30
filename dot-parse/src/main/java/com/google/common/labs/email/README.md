@@ -23,6 +23,7 @@ combinators. It serves as a lightweight and secure alternative to
 | :--- | :--- | :--- | :--- | :--- |
 | **`local-part@domain`** |  **Compliant** |  **Compliant** |  **Compliant** |  **Compliant** |
 | **Quoted Local Parts** |  **Compliant & Canonical** (Strips quotes; re-escapes on output) |  **Compliant** | ⚠️ **Partially Compliant** (Fails to strip/unescape quotes) |  **Compliant** |
+| **Folding White Space** (FWS) |  **Compliant** (Parses and canonicalizes them away safely) |  **Compliant** (Supports standard FWS) | ⚠️ **Partially Compliant** (Fails on FWS directly after angle bracket) | 🚫 **Rejected** (Rejects them completely) |
 | **Unquoted Display Names** |  **Strictly Compliant** (Forbids special characters `()<>[]:;@\,"` to prevent spoofing) | ⚠️ **Lenient** (Allows special characters unquoted in display names) | ⚠️ **Lenient** (Allows special characters unquoted in display names) | 🚫 **Rejected** (Rejects display names completely, returns `false`) |
 | **Group Addresses** (RFC 822) | 🚫 **Intentionally Omitted** (Obsolete, rejected for security) |  **Compliant** (Parses groups as `isGroup()`) | 🚫 **Intentionally Omitted** (Obsolete, rejected for security) | 🚫 **Rejected** (Rejects group syntax completely) |
 | **RFC 2047 Encoded Words** | 🚫 **Intentionally Omitted** (Preserved raw to prevent spoofing) |  **Compliant** (Decodes automatically, posing security risks) | 🚫 **Intentionally Omitted** (Preserved raw to prevent spoofing) | 🚫 **Rejected** (Rejects encoded words completely) |
