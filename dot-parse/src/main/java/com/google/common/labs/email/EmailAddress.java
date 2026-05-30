@@ -49,6 +49,9 @@ import com.google.mu.util.StringFormat;
  * Represents a strictly validated email address according to RFC 5322, designed as a modern,
  * light-weight alternative API to {@code javax.mail.InternetAddress}.
  *
+ * <p>See <a href="README.md">README.md</a> for a comprehensive architectural, security,
+ * and performance comparison against Jakarta Mail and JMail.
+ *
  * <p>For example: <pre>{@code
  * EmailAddress address = EmailAddress.parse("J.R.R. Tolkien <tolkien@lotr.org>");
  * // address.displayName() => "J.R.R. Tolkien"

@@ -64,7 +64,6 @@ combinators. It serves as a lightweight and secure alternative to
   tokenizing an address list for JMail requires developers to implement their
   own custom parser.
 
-  > [!NOTE]
   > **Why not use a regular expression to tokenize?**
   > 
   > While a developer's first instinct might be to use a regular expression
@@ -82,6 +81,7 @@ combinators. It serves as a lightweight and secure alternative to
   > * **Lack of Graceful Recovery**: A regex-based tokenizer cannot isolate
   >   individual corrupt elements and continue parsing the rest of the list
   >   cleanly.
+
 
 ### B. Lenient vs. Strict Parsing Modes
 
@@ -129,7 +129,7 @@ larger, custom parsers to support specialized requirements. For instance, if
 an application specifically needs to support legacy RFC 822 group address
 syntax, developers can define a custom group parser:
 
-```java
+```java {.good}
 // Example: Composing EmailAddress.PARSER to support group address lists
 Parser<GroupAddress> groupParser = Parser.sequence(
     Parser.word().followedBy(":"),                  // Group name (e.g. "admin")
