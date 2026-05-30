@@ -103,6 +103,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
   private static final CharPredicate UNQUOTED_CHARS =
       ((CharPredicate) Character::isLetterOrDigit).or("!#$%&'*+-/=?^_`{|}~.").precomputeForAscii();
+  private static final CharPredicate DOMAIN_CHARS =
+      ((CharPredicate) Character::isLetterOrDigit).or("-.").precomputeForAscii();
 
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
@@ -119,12 +121,17 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * to optionally attach a display name.
    */
   public EmailAddress {
-    if (localPart.startsWith("\"") && localPart.endsWith("\"") && localPart.length() >= 2) {
-      localPart = unescape(localPart.substring(1, localPart.length() - 1));
-    }
+    requireNonNull(displayName);
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
-    requireNonNull(displayName);
+    checkArgument(
+        DOMAIN_CHARS.matchesAllOf(domain), "domain '%s' contains invalid characters", domain);
+    all('.').split(domain).forEach(label ->
+        checkArgument(
+            !label.startsWith("-") && !label.endsWith("-"),
+            "domain label '%s' must not start or end with a hyphen",
+            label));
+    String idnValidated = IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED);
   }
 
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
@@ -137,13 +144,16 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     checkArgument(
         localPart.length() + domain.length() + 1 <= 254,
         "<%s@%s> must be <= 254 chars", localPart, domain);
-    all('.').split(domain).forEach(label ->
-        checkArgument(
-            !label.startsWith("-") && !label.endsWith("-"),
-            "domain label '%s' must not start or end with a hyphen",
-            label));
-    String idnValidated = IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED);
     return new EmailAddress(Optional.empty(), localPart, domain);
+  }
+
+  /**
+   * Parses {@code address} and throws {@link Parser.ParseException} if failed.
+   *
+   * @since 9.9.8
+   */
+  public static EmailAddress of(String address) {
+    return PARSER.parseSkipping(Character::isWhitespace, address);
   }
 
   /** Returns the {@code addr-spec}, in the form of {@code user@mycompany.com}. */
@@ -175,15 +185,6 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     return displayName
         .map(name -> WITH_DISPLAY_NAME.format(escape(name), address()))
         .orElseGet(this::address);
-  }
-
-  /**
-   * Parses {@code address} and throws {@link Parser.ParseException} if failed.
-   *
-   * @since 9.9.8
-   */
-  public static EmailAddress of(String address) {
-    return PARSER.parseSkipping(Character::isWhitespace, address);
   }
 
   /** @deprecated Use {@link #of(String)} instead */
@@ -221,7 +222,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         consecutive(letterOrDigit.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii(), "local part")
             .atLeastOnceDelimitedBy(".", joining(".")));
     Parser<String> domain =
-        consecutive(letterOrDigit.or("-.").precomputeForAscii(), "domain label chars");
+        consecutive(DOMAIN_CHARS, "domain label chars");
     Parser<EmailAddress> address =
         literally(sequence(localPart, string("@").then(domain), EmailAddress::of));
     Parser<String> unquotedDisplayName = consecutive(

@@ -190,6 +190,27 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressOf_validDomainChars() {
+    EmailAddress address = EmailAddress.of("test", "bücher.de");
+    assertThat(address.domain()).isEqualTo("bücher.de");
+  }
+
+  @Test
+  public void testEmailAddressOf_invalidDomainChars_space() {
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "example .com"));
+  }
+
+  @Test
+  public void testEmailAddressOf_invalidDomainChars_atSign() {
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "example@com"));
+  }
+
+  @Test
+  public void testEmailAddressOf_invalidDomainChars_underscore() {
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "exam_ple.com"));
+  }
+
+  @Test
   public void testEmailAddressParsing_complex(@TestParameter ParseStrategy parser) {
     parser.assertParsesTo(
         "someone.else+and-another@some.sub-domain.example.co.uk",
