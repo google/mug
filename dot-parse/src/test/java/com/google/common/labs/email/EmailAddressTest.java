@@ -154,6 +154,14 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressWithDisplayName_null() {
+    EmailAddress address = EmailAddress.of("john.doe", "example.com").withDisplayName("John Doe");
+    EmailAddress cleared = address.withDisplayName(null);
+    assertThat(cleared.displayName()).isEmpty();
+    assertThat(cleared.toString()).isEqualTo("john.doe@example.com");
+  }
+
+  @Test
   public void testEmailAddressParsing_quotedLocalPart_invalid_escapedControlChar(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);

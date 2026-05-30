@@ -41,6 +41,7 @@ import com.google.common.labs.parse.Parser;
 import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.FormatString;
 import com.google.errorprone.annotations.Immutable;
+import com.google.errorprone.annotations.InlineMe;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
 
@@ -178,8 +179,6 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
       : localPart;
   }
 
-
-
   /**
    * Returns the full email address, in the form of {@code local-part@domain} or
    * {@code "display name" <local-part@domain>}. Backslashes and double quotes in
@@ -193,6 +192,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /** @deprecated Use {@link #of(String)} instead */
   @Deprecated
+  @InlineMe(replacement = "EmailAddress.of(address)", imports = "com.google.common.labs.email.EmailAddress")
   public static EmailAddress parse(String address) {
     return of(address);
   }
