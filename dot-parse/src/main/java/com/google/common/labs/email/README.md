@@ -9,34 +9,36 @@ combinators. It serves as a lightweight and secure alternative to
 
 ## 1. Feature & API Design Comparison
 
-| Feature / Property | `EmailAddress` (Combinator) | `InternetAddress` (Jakarta Mail) | JMail |
-| :--- | :--- | :--- | :--- |
-| **Domain Mutability** | **Immutable Record** (Thread-safe, robust as Map keys) | ❌ **Mutable POJO** (Exposes setters, prone to side effects) | **Immutable Value Object** (Thread-safe) |
-| **Footprint & Deps** | **Zero external dependencies** (Uses `dot-parse` combinators) | ❌ **Heavy EE stack** (Transitive dependencies) | **Lightweight** (Minor standalone deps) |
-| **Value Extraction** | **Canonical** (Quotes stripped, escapes unescaped) | ⚠️ **Mixed** (Canonical personal name; raw local part) | ❌ **Raw** (Quotes and backslashes left intact) |
+| Feature / Property | `EmailAddress` (Combinator) | `InternetAddress` (Jakarta Mail) | JMail | Apache `EmailValidator` |
+| :--- | :--- | :--- | :--- | :--- |
+| **Domain Mutability** | **Immutable Record** (Thread-safe, robust as Map keys) | ❌ **Mutable POJO** (Exposes setters, prone to side effects) | **Immutable Value Object** (Thread-safe) | N/A |
+| **Footprint & Deps** | **Lightweight** (Zero external dependencies; built on `dot-parse` combinators) | ⚠️ **Heavy EE stack** (Transitive dependencies) | **Lightweight** (Minor standalone deps) | **Lightweight** (Part of commons-validator) |
+| **Value Extraction** | **Canonical** (Quotes stripped, escapes unescaped) | ⚠️ **Mixed** (Canonical personal name; raw local part) | ⚠️ **Raw** (Quotes and backslashes left intact) | N/A |
 
 ---
 
-## 2. RFC Compliance Comparison
+## 2. RFC Compliance
 
-| RFC Feature / Section | `EmailAddress` | `InternetAddress` (Jakarta Mail) | JMail |
-| :--- | :--- | :--- | :--- |
-| **`local-part@domain`** |  **Compliant** |  **Compliant** |  **Compliant** |
-| **Quoted Local Parts** |  **Compliant & Canonical** (Strips quotes; re-escapes on output) |  **Compliant** | ⚠️ **Partially Compliant** (Fails to strip/unescape quotes) |
-| **Unquoted Display Names** |  **Strictly Compliant** (Forbids special characters `()<>[]:;@\,"` to prevent spoofing) | ⚠️ **Lenient** (Allows special characters unquoted in display names) | ⚠️ **Lenient** (Allows special characters unquoted in display names) |
-| **Group Addresses** (RFC 822) | 🚫 **Intentionally Omitted** (Obsolete, rejected for security) |  **Compliant** (Parses groups as `isGroup()`) | 🚫 **Intentionally Omitted** (Obsolete, rejected for security) |
-| **RFC 2047 Encoded Words** | 🚫 **Intentionally Omitted** (Preserved raw to prevent spoofing) |  **Compliant** (Decodes automatically, posing security risks) | 🚫 **Intentionally Omitted** (Preserved raw to prevent spoofing) |
-| **Comments & Domain Literals** | 🚫 **Intentionally Omitted** (Legacy comments/IP domains skipped) |  **Compliant** (Supports full legacy feature set) | 🚫 **Intentionally Omitted** (Legacy comments/IP domains skipped) |
+| RFC Feature / Section | `EmailAddress` | `InternetAddress` (Jakarta Mail) | JMail | Apache `EmailValidator` |
+| :--- | :--- | :--- | :--- | :--- |
+| **`local-part@domain`** |  **Compliant** |  **Compliant** |  **Compliant** |  **Compliant** |
+| **Quoted Local Parts** |  **Compliant & Canonical** (Strips quotes; re-escapes on output) |  **Compliant** | ⚠️ **Partially Compliant** (Fails to strip/unescape quotes) |  **Compliant** |
+| **Folding White Space** (FWS) |  **Compliant** (Parses and canonicalizes them away safely) |  **Compliant** (Supports standard FWS) | ⚠️ **Partially Compliant** (Fails on FWS directly after angle bracket) | 🚫 **Rejected** (Rejects them completely) |
+| **Unquoted Display Names** |  **Strictly Compliant** (Forbids special characters `()<>[]:;@\,"` to prevent spoofing) | ⚠️ **Lenient** (Allows special characters unquoted in display names) | ⚠️ **Lenient** (Allows special characters unquoted in display names) | 🚫 **Rejected** (Rejects display names completely, returns `false`) |
+| **Group Addresses** (RFC 822) | 🚫 **Intentionally Omitted** (Obsolete, rejected for security) |  **Compliant** (Parses groups as `isGroup()`) | 🚫 **Intentionally Omitted** (Obsolete, rejected for security) | 🚫 **Rejected** (Rejects group syntax completely) |
+| **RFC 2047 Encoded Words** | 🚫 **Intentionally Omitted** (Preserved raw to prevent spoofing) |  **Compliant** (Decodes automatically, posing security risks) | 🚫 **Intentionally Omitted** (Preserved raw to prevent spoofing) | 🚫 **Rejected** (Rejects encoded words completely) |
+| **Comments & Domain Literals** | 🚫 **Intentionally Omitted** (Legacy comments/IP domains skipped) |  **Compliant** (Supports full legacy feature set) | 🚫 **Intentionally Omitted** (Legacy comments/IP domains skipped) | ⚠️ **Partially Compliant** (Supports IP literals, rejects comments) |
 
 ---
 
-## 3. Security Comparison & Hardening
+## 3. Security & Hardening
 
-| Attack Vector / Vulnerability | `EmailAddress` (Combinator) | `InternetAddress` (Jakarta Mail) | JMail |
-| :--- | :--- | :--- | :--- |
-| **Parsing Differentials** (Split Bug) |  **Immune** (Strictly rejects unconsumed trailing characters) | ❌ **Vulnerable** (Silently discards trailing parts like `<a@b>c@d`) |  **Immune** (Natively rejects) |
-| **Display Name Spoofing** (Phishing) |  **Immune** (Strictly rejects unquoted `@` or `<` in display names) | ❌ **Vulnerable** (Decodes and accepts unquoted `@` and `<` in display names) | ❌ **Vulnerable** (Accepts unquoted `@` in display names) |
-| **Group Syntax Abuse** (List splitting) |  **Immune** (obsolete RFC 822 group constructs are strictly rejected) | ❌ **Vulnerable** (Accepts group syntax, bypassing single-recipient controls) |  **Immune** (Natively rejects groups) |
+| Attack Vector / Vulnerability | `EmailAddress` (Combinator) | `InternetAddress` (Jakarta Mail) | JMail | Apache `EmailValidator` |
+| :--- | :--- | :--- | :--- | :--- |
+| **Parsing Differentials** (Split Bug) |  **Immune** (Strictly rejects unconsumed trailing characters) | ❌ **Vulnerable** (Silently discards trailing parts like `<a@b>c@d`) |  **Immune** (Natively rejects) |  **Immune** (Rejects display names completely, avoiding parsing differentials) |
+| **Display Name Spoofing** (Phishing) |  **Immune** (Strictly rejects unquoted `@` or `<` in display names) | ❌ **Vulnerable** (Decodes and accepts unquoted `@` and `<` in display names) | ❌ **Vulnerable** (Accepts unquoted `@` in display names) | ⚠️ N/A (Rejects all display names) |
+| **Group Syntax Abuse** (List splitting) |  **Immune** (obsolete RFC 822 group constructs are strictly rejected) | ❌ **Vulnerable** (Accepts group syntax, bypassing single-recipient controls) |  **Immune** (Natively rejects groups) |  **Immune** (Rejects all group formats) |
+
 
 ---
 
@@ -81,6 +83,9 @@ combinators. It serves as a lightweight and secure alternative to
   > * **Lack of Graceful Recovery**: A regex-based tokenizer cannot isolate
   >   individual corrupt elements and continue parsing the rest of the list
   >   cleanly.
+
+* **Apache `EmailValidator`**: Same as JMail; has no support for list parsing.
+
 
 
 ### B. Lenient vs. Strict Parsing Modes

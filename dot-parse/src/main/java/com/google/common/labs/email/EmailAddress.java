@@ -166,7 +166,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   private static final CharPredicate LETTER_OR_DIGIT = Character::isLetterOrDigit;
   private static final CharPredicate ATEXT =
       LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii();
-  private static final CharPredicate DOMAIN_LABEL_CHARS = LETTER_OR_DIGIT.or("-").precomputeForAscii();
+  private static final CharPredicate DOMAIN_LABEL_CHARS = LETTER_OR_DIGIT.or('-').precomputeForAscii();
   private static final CharPredicate ADDRESS_LIST_SEPARATOR_CHAR = anyOf(",;");
   private static final Parser<?> ADDRESS_LIST_DELIMITER =
       Parser.one(ADDRESS_LIST_SEPARATOR_CHAR, "delimiter").atLeastOnce(counting());
@@ -174,9 +174,12 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
    *
-   * <p>Prefer using the {@link #parse} convenience method. This constant is to be used for
-   * composition, for example to parse a list of email addresses: <pre>{@code
-   * EmailAddress.PARSER.skipping(whitespace()).parseToStream(emailAddresses).toList();
+   * <p>Prefer using the {@link #of} convenience method. This constant is to be used for
+   * composition, for example to parse a group addresses: <pre>{@code
+   * Parser.sequence(
+   *     Parser.word().followedBy(":"),
+   *     EmailAddress.PARSER.zeroOrMoreDelimitedBy(",").followedBy(";"),
+   *     GroupAddress::new);
    * }</pre>
    */
   public static final Parser<EmailAddress> PARSER = makeParser();
