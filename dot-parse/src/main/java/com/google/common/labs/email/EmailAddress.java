@@ -105,11 +105,12 @@ import com.google.mu.util.StringFormat;
 @Immutable
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
+  private static final CharPredicate WHITESPACE = Character::isWhitespace;
   private static final CharPredicate ISO_CONTROL = Character::isISOControl;
   private static final CharPredicate LETTER_OR_DIGIT = Character::isLetterOrDigit;
   private static final CharPredicate ATEXT =
       LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii();
-  private static final CharPredicate DOMAIN_CHARS = LETTER_OR_DIGIT.or("-.").precomputeForAscii();
+  private static final CharPredicate DOMAIN_LABEL_CHARS = LETTER_OR_DIGIT.or("-").precomputeForAscii();
   private static final CharPredicate ADDRESS_LIST_SEPARATOR_CHAR = anyOf(",;");
   private static final Parser<?> ADDRESS_LIST_DELIMITER =
       Parser.one(ADDRESS_LIST_SEPARATOR_CHAR, "delimiter").atLeastOnce(counting());
@@ -132,13 +133,18 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     requireNonNull(displayName);
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
-    checkArgument(
-        DOMAIN_CHARS.matchesAllOf(domain), "domain '%s' contains invalid characters", domain);
-    all('.').split(domain).forEach(label ->
+    all('.').split(domain).forEach(label -> {
         checkArgument(
             !label.startsWith("-") && !label.endsWith("-"),
             "domain label '%s' must not start or end with a hyphen",
-            label));
+            label);
+        checkArgument(
+            DOMAIN_LABEL_CHARS.matchesAllOf(label),
+            "domain label '%s' contains invalid characters", label);
+        });
+    checkArgument(
+        localPart.length() + domain.length() + 1 <= 254,
+        "<%s@%s> must be <= 254 chars", localPart, domain);
     IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED);
   }
 
@@ -149,9 +155,6 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
   public static EmailAddress of(String localPart, String domain) {
-    checkArgument(
-        localPart.length() + domain.length() + 1 <= 254,
-        "<%s@%s> must be <= 254 chars", localPart, domain);
     return new EmailAddress(Optional.empty(), localPart, domain);
   }
 
@@ -161,7 +164,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * @since 9.9.8
    */
   public static EmailAddress of(String address) {
-    return PARSER.parseSkipping(Character::isWhitespace, address);
+    return PARSER.parseSkipping(WHITESPACE, address);
   }
 
   /** Returns the {@code addr-spec}, in the form of {@code user@mycompany.com}. */
@@ -215,7 +218,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     return PARSER
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
-        .parseSkipping(Character::isWhitespace, addressList);
+        .parseSkipping(WHITESPACE, addressList);
   }
 
   /**
@@ -238,10 +241,10 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<?> significant = Parser.one(ADDRESS_LIST_SEPARATOR_CHAR.not(), "significant char");
     return anyOf(
             PARSER.notFollowedBy(significant, "non-separator"),  // don't extract a@b from a@b@c
-            consecutive(ADDRESS_LIST_SEPARATOR_CHAR.or(Character::isWhitespace).not(), "invalid"))
+            consecutive(ADDRESS_LIST_SEPARATOR_CHAR.not(), "invalid").map(String::trim))
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(ifInvalid))
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
-        .parseSkipping(Character::isWhitespace, addressList);
+        .parseSkipping(WHITESPACE, addressList);
   }
 
   private static Parser<EmailAddress> makeParser() {
@@ -250,7 +253,9 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<String> localPart = anyOf(
         quoted,
         consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")));
-    Parser<String> domain = consecutive(DOMAIN_CHARS, "domain label chars");
+    Parser<String> domain = consecutive(DOMAIN_LABEL_CHARS, "domain label chars")
+        .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
+        .atLeastOnceDelimitedBy(".", joining("."));
     Parser<EmailAddress> address =
         literally(sequence(localPart, string("@").then(domain), EmailAddress::of));
     Parser<String> unquotedDisplayName = consecutive(

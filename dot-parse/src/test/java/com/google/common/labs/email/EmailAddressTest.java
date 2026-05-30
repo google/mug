@@ -752,6 +752,27 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testParseAddressList_withConsumer_invalidDomainHyphen() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(
+            EmailAddress.parseAddressList(
+                "a@b.com, c@-d.com, e@f.com; g@h-.com, i@j.com", invalid::add))
+        .containsExactly(
+            EmailAddress.of("a", "b.com"),
+            EmailAddress.of("e", "f.com"),
+            EmailAddress.of("i", "j.com"))
+        .inOrder();
+    assertThat(invalid).containsExactly("c@-d.com", "g@h-.com").inOrder();
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_invalidDomainWithSpacesAroundDot() {
+    List<String> invalid = new ArrayList<>();
+    EmailAddress.parseAddressList("a@b.com, c@d . com, e@f.com", invalid::add);
+    assertThat(invalid).containsExactly("c@d . com").inOrder();
+  }
+
+  @Test
   public void testParseAddressList_withConsumer_allInvalid() {
     List<String> invalid = new ArrayList<>();
     assertThat(EmailAddress.parseAddressList("invalid1, invalid2; wrong@address@com", invalid::add)).isEmpty();
