@@ -11,7 +11,6 @@ The `com.google.common.labs.email` package provides a modern, declarative, and s
 | **Domain Mutability** | **Immutable Record** (Thread-safe, robust as Map keys) | ❌ **Mutable POJO** (Exposes setters, prone to side effects) | **Immutable Value Object** (Thread-safe) |
 | **Footprint & Deps** | **Zero external dependencies** (Uses `dot-parse` combinators) | ❌ **Heavy EE stack** (Transitive dependencies) | **Lightweight** (Minor standalone deps) |
 | **Value Extraction** | **Canonical** (Quotes stripped, escapes unescaped) | ⚠️ **Mixed** (Canonical personal name; raw local part) | ❌ **Raw** (Quotes and backslashes left intact) |
-| **Fluent Modifiers** |  **Supported** (e.g., `.withDisplayName(...)`) | ❌ **None** (Requires manual mutations) | ❌ **None** |
 
 ---
 
@@ -43,7 +42,7 @@ The `com.google.common.labs.email` package provides a modern, declarative, and s
 ### A. Bulk / Address List Parsing
 * **`EmailAddress`**: Fully supports robust list parsing.
   - `parseAddressList(String)`: Parses a comma- or semicolon-delimited list.
-  - `parseAddressList(String, Consumer<? super String>)`: Parses list leniently, returning valid elements while collecting invalid entries in a callback (ideal for logging or user feedback).
+  - `parseAddressList(String, Consumer<? super String>)`: Parses list fault tolerantly, returning valid elements while collecting invalid entries in a callback (ideal for logging or user feedback).
 * **`InternetAddress`**: Supports list parsing via `InternetAddress.parse(String)`. However, it lacks graceful error accumulation (either throws `AddressException` on the whole string or returns silently truncated/corrupted addresses).
 * **JMail**: No built-in list parsing capabilities. Validation must be performed individually by tokenizing the string manually beforehand.
 
@@ -54,7 +53,8 @@ The `com.google.common.labs.email` package provides a modern, declarative, and s
 
 ### C. Features Omitted in `EmailAddress` (Supported by Others)
 To maintain compatibility with modern MTAs and guarantee safety, `EmailAddress` intentionally omits several obsolete features:
-1. **RFC 822 Group Address Lists** (e.g., `group-name:addr1@b.com,addr2@c.com;`): Supported by Jakarta Mail. Omitted by `EmailAddress` to enforce a secure single-recipient mailbox paradigm.
-2. **Nested Parenthetical Comments** (e.g., `john(comment)@example.com`): Supported by Jakarta Mail. Omitted by `EmailAddress` because comments are obsolete and increase downstream parsing complexity.
-3. **Domain IP Literals** (e.g., `user@[192.168.1.1]`): Supported by Jakarta Mail and JMail. Omitted by `EmailAddress` to align with modern secure routing where IP-based email routing is practically obsolete.
-4. **Dynamic MIME Header Decoding (RFC 2047)**: Supported by Jakarta Mail. Omitted by `EmailAddress` to completely prevent phishing and visual spoofing vectors.
+1. **RFC 822 Group Address Lists** (e.g., `group-name:addr1@b.com,addr2@c.com;`): Supported by Jakarta Mail. Omitted by both `EmailAddress` and JMail to enforce a secure single-recipient mailbox paradigm.
+2. **Nested Parenthetical Comments** (e.g., `john(comment)@example.com`): Supported by Jakarta Mail. Omitted by both `EmailAddress` and JMail because comments are obsolete and increase downstream parsing complexity.
+3. **Domain IP Literals** (e.g., `user@[192.168.1.1]`): Supported by both Jakarta Mail and JMail. Omitted by `EmailAddress` to align with modern secure routing where IP-based email routing is practically obsolete.
+4. **Dynamic MIME Header Decoding (RFC 2047)**: Supported by Jakarta Mail (which decodes automatically, exposing visual spoofing risks). Omitted by both `EmailAddress` and JMail to prevent spoofing; however, JMail still accepts display names containing unquoted `@` characters in encoded blocks, whereas `EmailAddress` strictly rejects them.
+
