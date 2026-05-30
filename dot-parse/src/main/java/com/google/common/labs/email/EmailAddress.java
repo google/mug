@@ -54,7 +54,7 @@ import com.google.mu.util.StringFormat;
  * and performance comparison against Jakarta Mail and JMail.
  *
  * <p>For example: <pre>{@code
- * EmailAddress address = EmailAddress.parse("J.R.R. Tolkien <tolkien@lotr.org>");
+ * EmailAddress address = EmailAddress.of("J.R.R. Tolkien <tolkien@lotr.org>");
  * // address.displayName() => "J.R.R. Tolkien"
  * // address.localPart()) => "tolkien"
  * // address.domain() => "lotr.org"
