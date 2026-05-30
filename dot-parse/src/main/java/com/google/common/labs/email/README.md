@@ -86,17 +86,16 @@ combinators. It serves as a lightweight and secure alternative to
 ### B. Lenient vs. Strict Parsing Modes
 
 * **`EmailAddress`**: Follows **Strict-by-Default** architecture. All primary
-  parsing endpoints (`of`, `PARSER`) enforce strict syntax. Lenient
-  filtering is supported exclusively at the collection level
-  (`parseAddressList`) to prevent single invalid entries from corrupting bulk
-  inputs.
+  parsing endpoints (`of()`, `PARSER`) enforce strict validation.
+  Fault tolerant parsing for `parseAddressList()` to prevent a single invalid entry
+  from defeating the list parsing.
 
 * **`InternetAddress`**: Supports both strict and lenient modes via
   `new InternetAddress(address, strict)`. However, even its "strict" mode
   remains highly vulnerable to parsing differentials and spoofing attacks.
 
-* **JMail**: Implements rules-based strict validation without standard
-  lenient parsing alternatives.
+* **JMail**: Strictly validates single email strings. No list parsing.
+
 
 ### C. Features Omitted in `EmailAddress` (Supported by Others)
 
