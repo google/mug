@@ -219,7 +219,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   }
 
   /**
-   * Parsers {@code addressList} according to RFC 5322 and returns an immutable list of {@link
+   * Parses {@code addressList} according to RFC 5322 and returns an immutable list of {@link
    * EmailAddress}, with invalid entries passed to the {@code invalid} consumer.
    *
    * <p>For example, <pre>{@code
