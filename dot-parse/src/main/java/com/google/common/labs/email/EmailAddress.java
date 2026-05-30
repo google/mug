@@ -263,11 +263,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses() {
     return filtering(
         e -> {
-          boolean isEmailAddress = e instanceof EmailAddress;
-          if (!isEmailAddress) {
-            logger.info("invalid email address: " + e);
-          }
-          return isEmailAddress;
+          if (e instanceof String) logger.info("invalid email address: " + e);
+          return e instanceof EmailAddress;
         },
         mapping(e -> (EmailAddress) e, toUnmodifiableList()));
 
