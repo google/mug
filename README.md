@@ -32,7 +32,7 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
 - ✅ [`@ParametersMustMatchByName`](https://google.github.io/mug/apidocs/com/google/mu/annotations/ParametersMustMatchByName.html)```record Profile(String userId, String userName) {}``` 
   - `new Profile(user.id(), user.name())`   Compiles ✅
   - `new Profile(user.name(), user.id())` Does Not Compile ❌
-- ✅ [`SafeSql`](./mug-safesql/src/main/java/com/google/mu/safesql/README.md) – _library-enforced_ **safe**, **composable** SQL template  
+- ✅ [`SafeSql`](./mug-safesql/src/main/java/com/google/mu/safesql/README.md) – _compile-time-enforced_ **safe**, **composable** SQL template  
   → ```SafeSql.of("select id, `{col}` from Users where id = {id}", col, id)```
 
 <details>
