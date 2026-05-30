@@ -19,18 +19,23 @@ import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
+import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.Substring.all;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.filtering;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.net.IDN;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.Collector;
 
 import com.google.common.labs.parse.Parser;
 import com.google.errorprone.annotations.FormatMethod;
@@ -38,7 +43,6 @@ import com.google.errorprone.annotations.FormatString;
 import com.google.errorprone.annotations.Immutable;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
-import com.google.mu.util.Substring;
 
 /**
  * Represents an email address according to RFC 5322, designed as a modern,
@@ -100,8 +104,14 @@ import com.google.mu.util.Substring;
 @Immutable
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
-  private static final CharPredicate UNQUOTED_CHARS =
-      ((CharPredicate) Character::isLetterOrDigit).or("!#$%&'*+-/=?^_`{|}~.").precomputeForAscii();
+  private static final CharPredicate ISO_CONTROL = Character::isISOControl;
+  private static final CharPredicate LETTER_OR_DIGIT = Character::isLetterOrDigit;
+  private static final CharPredicate ATEXT =
+      LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii();
+  private static final CharPredicate DOMAIN_CHARS = LETTER_OR_DIGIT.or("-.").precomputeForAscii();
+  private static final CharPredicate ADDRESS_LIST_SEPARATOR_CHAR = anyOf(",;").precomputeForAscii();
+  private static final Parser<?> ADDRESS_LIST_DELIMITER =
+      Parser.one(ADDRESS_LIST_SEPARATOR_CHAR, "delimiter").atLeastOnce(counting());
 
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
@@ -118,12 +128,17 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * to optionally attach a display name.
    */
   public EmailAddress {
-    if (localPart.startsWith("\"") && localPart.endsWith("\"") && localPart.length() >= 2) {
-      localPart = unescape(localPart.substring(1, localPart.length() - 1));
-    }
+    requireNonNull(displayName);
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
-    requireNonNull(displayName);
+    checkArgument(
+        DOMAIN_CHARS.matchesAllOf(domain), "domain '%s' contains invalid characters", domain);
+    all('.').split(domain).forEach(label ->
+        checkArgument(
+            !label.startsWith("-") && !label.endsWith("-"),
+            "domain label '%s' must not start or end with a hyphen",
+            label));
+    IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED);
   }
 
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
@@ -136,13 +151,16 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     checkArgument(
         localPart.length() + domain.length() + 1 <= 254,
         "<%s@%s> must be <= 254 chars", localPart, domain);
-    all('.').split(domain).forEach(label ->
-        checkArgument(
-            !label.startsWith("-") && !label.endsWith("-"),
-            "domain label '%s' must not start or end with a hyphen",
-            label));
-    String idnValidated = IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED);
     return new EmailAddress(Optional.empty(), localPart, domain);
+  }
+
+  /**
+   * Parses {@code address} and throws {@link Parser.ParseException} if failed.
+   *
+   * @since 9.9.8
+   */
+  public static EmailAddress of(String address) {
+    return PARSER.parseSkipping(Character::isWhitespace, address);
   }
 
   /** Returns the {@code addr-spec}, in the form of {@code user@mycompany.com}. */
@@ -155,15 +173,12 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         || localPart.startsWith(".")
         || localPart.endsWith(".")
         || localPart.contains("..")
-        || !UNQUOTED_CHARS.matchesAllOf(localPart)
+        || !ATEXT.or('.').matchesAllOf(localPart)
       ? '"' + escape(localPart) + '"'
       : localPart;
   }
 
-  private static String unescape(String text) {
-    return Substring.first(java.util.regex.Pattern.compile("\\\\.")).repeatedly()
-        .replaceAllFrom(text, e -> e.subSequence(1, e.length()));
-  }
+
 
   /**
    * Returns the full email address, in the form of {@code local-part@domain} or
@@ -174,15 +189,6 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     return displayName
         .map(name -> WITH_DISPLAY_NAME.format(escape(name), address()))
         .orElseGet(this::address);
-  }
-
-  /**
-   * Parses {@code address} and throws {@link Parser.ParseException} if failed.
-   *
-   * @since 9.9.8
-   */
-  public static EmailAddress of(String address) {
-    return PARSER.parseSkipping(Character::isWhitespace, address);
   }
 
   /** @deprecated Use {@link #of(String)} instead */
@@ -200,38 +206,73 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    *
    * <p>Empty input will result in an empty list being returned.
    *
+   * <p>Note that if your address list may contain invalid entries, and you'd want to ignore them
+   * instead of failing, use {@link #parseAddressList(String, Consumer)}.
+   *
    * @throws Parser.ParseException if {@code addressList} is invalid
    */
   public static List<EmailAddress> parseAddressList(String addressList) {
-    Parser<?> delimiter = Parser.one(anyOf(",;"), "delimiter").atLeastOnce(counting());
     return PARSER
-        .zeroOrMoreDelimitedBy(delimiter, toUnmodifiableList())
-        .followedBy(delimiter.orElse(null))
+        .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
+        .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
+        .parseSkipping(Character::isWhitespace, addressList);
+  }
+
+  /**
+   * Parsers {@code addressList} according to RFC 5322 and returns an immutable list of {@link
+   * EmailAddress}, with invalid entries passed to the {@code invalid} consumer.
+   *
+   * <p>For example, <pre>{@code
+   * List<EmailAddress> addresses = parseAddressList(inputAddressList, logger::log);
+   * }</pre>
+   *
+   * <p>Both comma ({@code ,}) and semicolon ({@code ;}) are supported as delimiters, with
+   * whitespaces ignored. Trailing delimiters are allowed.
+   *
+   * <p>Empty input will result in an empty list being returned.
+   *
+   * @since 10.3
+   */
+  public static List<EmailAddress> parseAddressList(
+      String addressList, Consumer<? super String> invalid) {
+    Parser<?> significant = Parser.one(ADDRESS_LIST_SEPARATOR_CHAR.not(), "significant char");
+    return anyOf(
+            PARSER.notFollowedBy(significant, "non-separator"),  // don't extract a@b from a@b@c
+            consecutive(ADDRESS_LIST_SEPARATOR_CHAR.or(Character::isWhitespace).not(), "invalid"))
+        .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(invalid))
+        .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
         .parseSkipping(Character::isWhitespace, addressList);
   }
 
   private static Parser<EmailAddress> makeParser() {
-    CharPredicate letterOrDigit = Character::isLetterOrDigit;
-    CharPredicate isoControl = Character::isISOControl;
+    Parser<String> quoted = quotedByWithEscapes(
+        '"', '"', chars(1).suchThat(ISO_CONTROL::matchesNoneOf, "escapable char"));
     Parser<String> localPart = anyOf(
-        Parser.quotedByWithEscapes(
-            '"', '"', chars(1).suchThat(isoControl::matchesNoneOf, "escapable char")),
-        consecutive(letterOrDigit.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii(), "local part")
-            .atLeastOnceDelimitedBy(".", joining(".")));
-    Parser<String> domain =
-        consecutive(letterOrDigit.or("-.").precomputeForAscii(), "domain label chars");
+        quoted,
+        consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")));
+    Parser<String> domain = consecutive(DOMAIN_CHARS, "domain label chars");
     Parser<EmailAddress> address =
         literally(sequence(localPart, string("@").then(domain), EmailAddress::of));
-    Parser<String> quotedDisplayName = Parser.quotedByWithEscapes(
-        '"', '"', chars(1).suchThat(isoControl::matchesNoneOf, "escapable char"));
     Parser<String> unquotedDisplayName = consecutive(
-        isoControl.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
+        ISO_CONTROL.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
-    Parser<String> displayName = anyOf(quotedDisplayName, unquotedDisplayName.map(String::trim));
+    Parser<String> displayName = anyOf(quoted, unquotedDisplayName.map(String::trim));
     return anyOf(
-        address,
         bracketedAddress,
+        address,
         sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)));
+  }
+
+  private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses(
+      Consumer<? super String> invalid) {
+    requireNonNull(invalid);
+    return filtering(
+        e -> {
+          if (e instanceof String s) invalid.accept(s);
+          return e instanceof EmailAddress;
+        },
+        mapping(e -> (EmailAddress) e, toUnmodifiableList()));
+
   }
 
   private static String escape(String name) {

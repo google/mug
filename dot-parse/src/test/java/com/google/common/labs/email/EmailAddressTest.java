@@ -9,6 +9,8 @@ import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static org.junit.Assert.assertThrows;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -128,6 +130,16 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_bothQuotedDisplayNameAndQuotedLocalPart(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    EmailAddress address = parser.parse("\"John Doe\" <\"john doe\"@example.com>");
+    assertThat(address.localPart()).isEqualTo("john doe");
+    assertThat(address.address()).isEqualTo("\"john doe\"@example.com");
+    assertThat(address.displayName()).hasValue("John Doe");
+    assertThat(address.toString()).isEqualTo("\"John Doe\" <\"john doe\"@example.com>");
+  }
+
+  @Test
   public void testEmailAddressOf_localPartNeedsQuoting() {
     EmailAddress address = EmailAddress.of("john\"doe", "example.com");
     assertThat(address.localPart()).isEqualTo("john\"doe");
@@ -139,6 +151,16 @@ public class EmailAddressTest {
     EmailAddress address = EmailAddress.of("john doe", "example.com").withDisplayName("John Doe");
     assertThat(address.localPart()).isEqualTo("john doe");
     assertThat(address.toString()).isEqualTo("\"John Doe\" <\"john doe\"@example.com>");
+  }
+
+  @Test
+  public void testEmailAddressParsing_quotedLocalPart_invalid_escapedControlChar(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> parser.parse("\"john\\\ndoe\"@example.com"));
+    assertThat(thrown).hasMessageThat().contains("at 1:7:");
+    assertThat(thrown).hasMessageThat().contains("expecting <escapable char>");
   }
 
   @Test
@@ -167,6 +189,27 @@ public class EmailAddressTest {
     EmailAddress address = EmailAddress.of("john.doe", "example.com");
     assertThat(address.localPart()).isEqualTo("john.doe");
     assertThat(address.toString()).isEqualTo("john.doe@example.com");
+  }
+
+  @Test
+  public void testEmailAddressOf_validDomainChars() {
+    EmailAddress address = EmailAddress.of("test", "bücher.de");
+    assertThat(address.domain()).isEqualTo("bücher.de");
+  }
+
+  @Test
+  public void testEmailAddressOf_invalidDomainChars_space() {
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "example .com"));
+  }
+
+  @Test
+  public void testEmailAddressOf_invalidDomainChars_atSign() {
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "example@com"));
+  }
+
+  @Test
+  public void testEmailAddressOf_invalidDomainChars_underscore() {
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "exam_ple.com"));
   }
 
   @Test
@@ -603,6 +646,131 @@ public class EmailAddressTest {
         .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
     assertThat(parseAddressList("a@b.com,\n;\r\nc@d.com"))
         .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_emptyString() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList("", invalid::add)).isEmpty();
+    assertThat(invalid).isEmpty();
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_whitespaceOnlyString() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList("   ", invalid::add)).isEmpty();
+    assertThat(invalid).isEmpty();
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_delimitersOnlyString() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList(",,  ;; , ", invalid::add)).isEmpty();
+    assertThat(invalid).isEmpty();
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_allValid() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList("a@b.com, c@d.com; e@f.com", invalid::add))
+        .containsExactly(
+            EmailAddress.of("a", "b.com"),
+            EmailAddress.of("c", "d.com"),
+            EmailAddress.of("e", "f.com"))
+        .inOrder();
+    assertThat(invalid).isEmpty();
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_withInvalidEntries_middle() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(
+            EmailAddress.parseAddressList(
+                "a@b.com, invalid-address, c@d.com; wrong@@domain.com , e@f.com", invalid::add))
+        .containsExactly(
+            EmailAddress.of("a", "b.com"),
+            EmailAddress.of("c", "d.com"),
+            EmailAddress.of("e", "f.com"))
+        .inOrder();
+    assertThat(invalid).containsExactly("invalid-address", "wrong@@domain.com").inOrder();
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_withInvalidEntries_scattered() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList("invalid1, invalid2; goo.d@address ; @com", invalid::add))
+        .containsExactly(EmailAddress.of("goo.d", "address"));
+    assertThat(invalid).containsExactly("invalid1", "invalid2", "@com").inOrder();
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_withInvalidEntries_beginning() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList("invalid-address, a@b.com", invalid::add))
+        .containsExactly(EmailAddress.of("a", "b.com"));
+    assertThat(invalid).containsExactly("invalid-address");
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_withInvalidEntries_end() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList("a@b.com, invalid-address", invalid::add))
+        .containsExactly(EmailAddress.of("a", "b.com"));
+    assertThat(invalid).containsExactly("invalid-address");
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_multipleConsecutiveInvalidEntries() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList("a@b.com, invalid1; invalid2, c@d.com", invalid::add))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"))
+        .inOrder();
+    assertThat(invalid).containsExactly("invalid1", "invalid2").inOrder();
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_allInvalid() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList("invalid1, invalid2; wrong@address@com", invalid::add)).isEmpty();
+    assertThat(invalid).containsExactly("invalid1", "invalid2", "wrong@address@com").inOrder();
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_delimitersAndWhitespace() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList("  a@b.com  ,,;  c@d.com ; ; invalid , e@f.com , ", invalid::add))
+        .containsExactly(
+            EmailAddress.of("a", "b.com"),
+            EmailAddress.of("c", "d.com"),
+            EmailAddress.of("e", "f.com"))
+        .inOrder();
+    assertThat(invalid).containsExactly("invalid");
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_delimitersInQuotedDisplayName() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(
+            EmailAddress.parseAddressList(
+                "\"John, Doe\" <john@example.com>, \"Smith; Jane\" <jane@example.com>", invalid::add))
+        .containsExactly(
+            EmailAddress.of("john", "example.com").withDisplayName("John, Doe"),
+            EmailAddress.of("jane", "example.com").withDisplayName("Smith; Jane"))
+        .inOrder();
+    assertThat(invalid).isEmpty();
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_delimitersInQuotedLocalPart() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(
+            EmailAddress.parseAddressList(
+                "\"john,doe\"@example.com; \"jane;smith\"@example.com", invalid::add))
+        .containsExactly(
+            EmailAddress.of("john,doe", "example.com"),
+            EmailAddress.of("jane;smith", "example.com"))
+        .inOrder();
+    assertThat(invalid).isEmpty();
   }
 
   private static String unescape(String text) {
