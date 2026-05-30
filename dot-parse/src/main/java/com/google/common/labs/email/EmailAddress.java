@@ -101,10 +101,10 @@ import com.google.mu.util.Substring;
 @Immutable
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
+  private static final CharPredicate LETTER_OR_DIGIT = Character::isLetterOrDigit;
   private static final CharPredicate UNQUOTED_CHARS =
-      ((CharPredicate) Character::isLetterOrDigit).or("!#$%&'*+-/=?^_`{|}~.").precomputeForAscii();
-  private static final CharPredicate DOMAIN_CHARS =
-      ((CharPredicate) Character::isLetterOrDigit).or("-.").precomputeForAscii();
+      LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~.").precomputeForAscii();
+  private static final CharPredicate DOMAIN_CHARS = LETTER_OR_DIGIT.or("-.").precomputeForAscii();
 
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
