@@ -817,6 +817,93 @@ public class EmailAddressTest {
     assertThat(invalid).isEmpty();
   }
 
+  @Test
+  public void testEmailAddressParsing_jakartaDifferential_rejectedByCombinator(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("<aaa@bbb.com>ccc@ddd.com"));
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("<legitimate@trusted.com>attacker@evil.com"));
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("<attacker@evil.com>@trusted.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_jakartaDifferential_acceptedByJakarta(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.JAKARTA);
+    assertThat(parser.parse("<aaa@bbb.com>ccc@ddd.com").address()).isEqualTo("aaa@bbb.com");
+    assertThat(parser.parse("<legitimate@trusted.com>attacker@evil.com").address()).isEqualTo("legitimate@trusted.com");
+    assertThat(parser.parse("<attacker@evil.com>@trusted.com").address()).isEqualTo("attacker@evil.com");
+  }
+
+  @Test
+  public void testParseAddressList_withJakartaDifferential() {
+    List<String> invalid = new ArrayList<>();
+    List<EmailAddress> parsed = EmailAddress.parseAddressList(
+        "<aaa@bbb.com>ccc@ddd.com, legitimate@trusted.com, <attacker@evil.com>@trusted.com",
+        invalid::add);
+    assertThat(parsed).containsExactly(EmailAddress.of("legitimate", "trusted.com"));
+    assertThat(invalid).containsExactly("<aaa@bbb.com>ccc@ddd.com", "<attacker@evil.com>@trusted.com");
+  }
+
+  @Test
+  public void testEmailAddressParsing_groupAddress(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("group-name:addr1@b.com,addr2@c.com;"));
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("group-name:addr1@b.com;"));
+  }
+
+  @Test
+  public void testParseAddressList_withGroupAddress() {
+    List<String> invalid = new ArrayList<>();
+    List<EmailAddress> parsed = EmailAddress.parseAddressList(
+        "group-name:addr1@b.com,addr2@c.com;",
+        invalid::add);
+    assertThat(parsed).containsExactly(EmailAddress.of("addr2", "c.com"));
+    assertThat(invalid).containsExactly("group-name:addr1@b.com");
+  }
+
+  @Test
+  public void testEmailAddressParsing_multiAtLocalPart(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    // Double quoted local part is allowed to contain '@' under RFC 5322.
+    EmailAddress parsed = parser.parse("\"attacker@evil.com\"@trusted.com");
+    assertThat(parsed.localPart()).isEqualTo("attacker@evil.com");
+    assertThat(parsed.domain()).isEqualTo("trusted.com");
+
+    // Unquoted local part cannot contain multiple '@' signs.
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("attacker@evil.com@trusted.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_rfc2047EncodedWord_withAt_rejectedByCombinator(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> parser.parse("=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_rfc2047EncodedWord_withAt_acceptedByJakarta(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.JAKARTA);
+    EmailAddress parsed = parser.parse("=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>");
+    assertThat(parsed.displayName()).hasValue("Administrator <admin@example.com>");
+    assertThat(parsed.address()).isEqualTo("attacker@evil.com");
+  }
+
+  @Test
+  public void testEmailAddressParsing_rfc2047EncodedWord_withoutAt_parsedByCombinator(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    EmailAddress parsed = parser.parse("=?UTF-8?Q?Administrator?= <attacker@evil.com>");
+    assertThat(parsed.displayName()).hasValue("=?UTF-8?Q?Administrator?=");
+    assertThat(parsed.address()).isEqualTo("attacker@evil.com");
+  }
+
+  @Test
+  public void testEmailAddressParsing_rfc2047EncodedWord_withoutAt_decodedByJakarta(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.JAKARTA);
+    EmailAddress parsed = parser.parse("=?UTF-8?Q?Administrator?= <attacker@evil.com>");
+    assertThat(parsed.displayName()).hasValue("Administrator");
+    assertThat(parsed.address()).isEqualTo("attacker@evil.com");
+  }
+
   private static String unescape(String text) {
     return ESCAPED_CHARS.replaceAllFrom(text, e -> e.subSequence(1, e.length()));
   }

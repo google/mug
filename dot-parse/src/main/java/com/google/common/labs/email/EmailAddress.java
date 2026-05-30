@@ -46,7 +46,7 @@ import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
 
 /**
- * Represents an email address according to RFC 5322, designed as a modern,
+ * Represents a strictly validated email address according to RFC 5322, designed as a modern,
  * light-weight alternative API to {@code javax.mail.InternetAddress}.
  *
  * <p>For example: <pre>{@code
@@ -80,12 +80,65 @@ import com.google.mu.util.StringFormat;
  *       variations like trailing commas, two-commas-in-a-row etc.</li>
  * </ul>
  *
- * <h3>Comparison with {@code javax.mail.InternetAddress}</h3>
+ * <h3>Security-First Parser & Domain Model Validation</h3>
+ * <p>Unlike legacy {@code javax.mail.InternetAddress} from Java/Jakarta Mail, this class is
+ * backed by a strict, grammar-based parser combinator and a validated domain model. This ensures
+ * that input strings are fully parsed and validated, preventing common email parsing exploits
+ * such as:
+ * <ul>
+ *   <li><b>Email Parsing Differentials:</b> Inputs like
+ *       {@code <legitimate@trusted.com>attacker@evil.com} are strictly rejected instead of being
+ *       silently truncated or partially parsed, preventing privilege escalation or routing
+ *       bypasses.</li>
+ *   <li><b>Display Name Spoofing (RFC 2047):</b> Display names containing encoded email
+ *       addresses are preserved literally rather than being automatically decoded, eliminating
+ *       visual spoofing/phishing side-channels.</li>
+ *   <li><b>Group Addresses and Multi-@ Local-Parts:</b> Group address syntaxes and unquoted
+ *       multi-@ injections are strictly disallowed.</li>
+ * </ul>
+ *
+ * <h3>Comparison with {@code javax.mail.InternetAddress} (Java / Jakarta Mail)</h3>
  * <table border="1">
- *   <tr><th>Feature</th><th>{@code InternetAddress}</th><th>{@code EmailAddress}</th></tr>
- *   <tr><td><b>Immutability</b></td><td>Mutable pojo</td><td>Immutable {@code record}</td></tr>
- *   <tr><td><b>DNS labels</b></td><td>Permissive (allows illegal hyphens)</td><td>Rejects {@code wrong-@.com}</td></tr>
- *   <tr><td><b>I18n</b></td><td>Often requires Encoded-Words</td><td>Native BMP support</td></tr>
+ *   <tr>
+ *     <th>Feature/Security Aspect</th>
+ *     <th>{@code InternetAddress}</th>
+ *     <th>{@code EmailAddress}</th>
+ *   </tr>
+ *   <tr>
+ *     <td><b>Immutability</b></td>
+ *     <td>Mutable POJO</td>
+ *     <td>Immutable {@code record}</td>
+ *   </tr>
+ *   <tr>
+ *     <td><b>DNS labels</b></td>
+ *     <td>Permissive (allows illegal hyphens)</td>
+ *     <td>Rejects invalid/misplaced hyphens</td>
+ *   </tr>
+ *   <tr>
+ *     <td><b>I18n</b></td>
+ *     <td>Often requires Encoded-Words</td>
+ *     <td>Native BMP support</td>
+ *   </tr>
+ *   <tr>
+ *     <td><b>Parsing Differential</b></td>
+ *     <td>Vulnerable (silently discards trailing parts like {@code <a@b.com>c@d.com})</td>
+ *     <td>Secure (strictly rejects trailing unconsumed text via parser exceptions)</td>
+ *   </tr>
+ *   <tr>
+ *     <td><b>Group Addresses</b></td>
+ *     <td>Permissive (parses RFC-822 group syntax implicitly)</td>
+ *     <td>Strictly rejected (enforces single address structure)</td>
+ *   </tr>
+ *   <tr>
+ *     <td><b>RFC 2047 Decoding</b></td>
+ *     <td>Automatic (decodes encoded words in display name, risking address spoofing)</td>
+ *     <td>Preserved literally (no dynamic decoding side-channels)</td>
+ *   </tr>
+ *   <tr>
+ *     <td><b>Multi-@ Local-Parts</b></td>
+ *     <td>Inconsistent (allows unquoted {@code @} in local-part)</td>
+ *     <td>Strictly rejected (unquoted {@code @} is forbidden)</td>
+ *   </tr>
  * </table>
  *
  * <h3>Intentionally Omitted Legacy Features</h3>
