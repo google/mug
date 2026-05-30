@@ -118,7 +118,7 @@ To maintain compatibility with modern MTAs and guarantee safety,
    accepts display names containing unquoted `@` characters in encoded
    blocks, whereas `EmailAddress` strictly rejects them.
 
-### D. Parser Composability & Extensibility
+### D. Composability & Extensibility
 
 Unlike Jakarta Mail and JMail, where the parsing code is closed and
 hard-coded inside static methods, `EmailAddress` exposes the underlying
