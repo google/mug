@@ -115,7 +115,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
    <li>directly append a suffix as in <code>path + SHARD_SUFFIX</code>;
    <li>or append the suffix into a <code>StringBuilder</code>: <code>builder.append(SHARD_SUFFIX)</code>};
    <li>pass it to any CharSequence-accepting APIs such as <code>
-       CharMatcher.anyOf(...).matchesAnyOf(MY_PREFIX)</code>, <code>
+       CharPredicate.anyOf(...).matchesAnyOf(MY_PREFIX)</code>, <code>
        Substring.first(':').splitThenTrim(MY_PREFIX)</code> etc.
  </ul></div>
 <dl class="notes">
