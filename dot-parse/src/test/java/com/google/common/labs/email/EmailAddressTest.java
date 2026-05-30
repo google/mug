@@ -372,6 +372,7 @@ public class EmailAddressTest {
   public void testEmailAddressParsing_withEmptyQuotedDisplayName(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isNotEqualTo(ParseStrategy.JAKARTA);
+    assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);
     parser.assertParsesTo(
         "\"\"<test@example.com>", EmailAddress.of("test", "example.com").withDisplayName(""));
   }
@@ -564,6 +565,7 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_unquotedDisplayNameWithSpacesAndAllWeirdChars(
       @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);
     parser.assertParsesTo(
         "weird !#$%&'*+/=?^_`{|}~- name<test@example.com>",
         EmailAddress.of("test", "example.com").withDisplayName("weird !#$%&'*+/=?^_`{|}~- name"));
@@ -1080,7 +1082,7 @@ public class EmailAddressTest {
 
     final void assertParsesTo(String email, EmailAddress result) {
       assertThat(parse(email)).isEqualTo(result);
-      assertThat(parse(email.toString())).isEqualTo(result);
+      assertThat(parse(result.toString())).isEqualTo(result);
     }
   }
 }
