@@ -41,6 +41,7 @@ import com.google.common.labs.parse.Parser;
 import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.FormatString;
 import com.google.errorprone.annotations.Immutable;
+import com.google.errorprone.annotations.InlineMe;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
 
@@ -178,8 +179,6 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
       : localPart;
   }
 
-
-
   /**
    * Returns the full email address, in the form of {@code local-part@domain} or
    * {@code "display name" <local-part@domain>}. Backslashes and double quotes in
@@ -193,6 +192,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /** @deprecated Use {@link #of(String)} instead */
   @Deprecated
+  @InlineMe(replacement = "EmailAddress.of(address)", imports = "com.google.common.labs.email.EmailAddress")
   public static EmailAddress parse(String address) {
     return of(address);
   }
@@ -220,7 +220,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /**
    * Parses {@code addressList} according to RFC 5322 and returns an immutable list of {@link
-   * EmailAddress}, with invalid entries passed to the {@code invalid} consumer.
+   * EmailAddress}, with invalid entries passed to the {@code ifInvalid} consumer.
    *
    * <p>For example, <pre>{@code
    * List<EmailAddress> addresses = parseAddressList(inputAddressList, logger::log);
@@ -234,12 +234,12 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * @since 10.3
    */
   public static List<EmailAddress> parseAddressList(
-      String addressList, Consumer<? super String> invalid) {
+      String addressList, Consumer<? super String> ifInvalid) {
     Parser<?> significant = Parser.one(ADDRESS_LIST_SEPARATOR_CHAR.not(), "significant char");
     return anyOf(
             PARSER.notFollowedBy(significant, "non-separator"),  // don't extract a@b from a@b@c
             consecutive(ADDRESS_LIST_SEPARATOR_CHAR.or(Character::isWhitespace).not(), "invalid"))
-        .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(invalid))
+        .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(ifInvalid))
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
         .parseSkipping(Character::isWhitespace, addressList);
   }
@@ -264,11 +264,11 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   }
 
   private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses(
-      Consumer<? super String> invalid) {
-    requireNonNull(invalid);
+      Consumer<? super String> ifInvalid) {
+    requireNonNull(ifInvalid);
     return filtering(
         e -> {
-          if (e instanceof String s) invalid.accept(s);
+          if (e instanceof String s) ifInvalid.accept(s);
           return e instanceof EmailAddress;
         },
         mapping(e -> (EmailAddress) e, toUnmodifiableList()));
