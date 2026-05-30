@@ -1,6 +1,9 @@
 # Strict Email Address Parsing & Domain Model
 
-The `com.google.common.labs.email` package provides a modern, declarative, and secure email address parser and domain model built using compact parser combinators. It serves as a lightweight and secure alternative to `javax.mail.InternetAddress` and standard rule-based validators.
+The `com.google.common.labs.email` package provides a modern, declarative,
+and secure email address parser and domain model built using compact parser
+combinators. It serves as a lightweight and secure alternative to
+`javax.mail.InternetAddress` and standard rule-based validators.
 
 ---
 
@@ -40,21 +43,102 @@ The `com.google.common.labs.email` package provides a modern, declarative, and s
 ## 4. Detailed API Functionality Comparison
 
 ### A. Bulk / Address List Parsing
+
 * **`EmailAddress`**: Fully supports robust list parsing.
-  - `parseAddressList(String)`: Parses a comma- or semicolon-delimited list.
-  - `parseAddressList(String, Consumer<? super String>)`: Parses list fault tolerantly, returning valid elements while collecting invalid entries in a callback (ideal for logging or user feedback).
-* **`InternetAddress`**: Supports list parsing via `InternetAddress.parse(String)`. However, it lacks graceful error accumulation (either throws `AddressException` on the whole string or returns silently truncated/corrupted addresses).
-* **JMail**: No built-in list parsing capabilities. Validation must be performed individually by tokenizing the string manually beforehand.
+
+  * `parseAddressList(String)`: Parses a comma- or semicolon-delimited list.
+  * `parseAddressList(String, Consumer<? super String>)`: Parses list
+    fault-tolerantly, returning valid elements while collecting invalid
+    entries in a callback (ideal for logging or user feedback).
+
+* **`InternetAddress`**: Supports list parsing via
+  `InternetAddress.parse(String)`. However, it lacks graceful error
+  accumulation (either throws `AddressException` on the whole string or
+  returns silently truncated/corrupted addresses).
+
+* **JMail**: No built-in list parsing or tokenization capabilities. Because
+  delimiters (commas `,` and semicolons `;`) can legally reside inside
+  double-quoted display names (e.g., `"John, Doe" <john@example.com>`) or
+  double-quoted local-parts (e.g., `"john,doe"`), a naive string split
+  (`split(",")`) is infeasible and will corrupt valid addresses. Correctly
+  tokenizing an address list for JMail requires developers to implement their
+  own custom parser.
+
+  > [!NOTE]
+  > **Why not use a regular expression to tokenize?**
+  > 
+  > While a developer's first instinct might be to use a regular expression
+  > to match tokens while ignoring delimiters inside quotes, this is highly
+  > fragile and discouraged:
+  > 
+  > * **Handling Escapes is Complex**: A correct regex must handle nested
+  >   combinations of escaped quotes (`\"`), double backslashes (`\\`), and
+  >   unclosed quotes. This makes the pattern extremely complex and
+  >   difficult to read or debug.
+  > * **Security Risk (Catastrophic Backtracking)**: Complex regular
+  >   expressions with nested quantifiers are highly vulnerable to Regular
+  >   Expression Denial of Service (ReDoS) attacks, where malicious or
+  >   extremely long malformed inputs can easily freeze the JVM thread.
+  > * **Lack of Graceful Recovery**: A regex-based tokenizer cannot isolate
+  >   individual corrupt elements and continue parsing the rest of the list
+  >   cleanly.
 
 ### B. Lenient vs. Strict Parsing Modes
-* **`EmailAddress`**: Follows **Strict-by-Default** architecture. All primary parsing endpoints (`of`, `PARSER`) enforce strict syntax. Lenient filtering is supported exclusively at the collection level (`parseAddressList`) to prevent single invalid entries from corrupting bulk inputs.
-* **`InternetAddress`**: Supports both strict and lenient modes via `new InternetAddress(address, strict)`. However, even its "strict" mode remains highly vulnerable to parsing differentials and spoofing attacks.
-* **JMail**: Implements rules-based strict validation without standard lenient parsing alternatives.
+
+* **`EmailAddress`**: Follows **Strict-by-Default** architecture. All primary
+  parsing endpoints (`of`, `PARSER`) enforce strict syntax. Lenient
+  filtering is supported exclusively at the collection level
+  (`parseAddressList`) to prevent single invalid entries from corrupting bulk
+  inputs.
+
+* **`InternetAddress`**: Supports both strict and lenient modes via
+  `new InternetAddress(address, strict)`. However, even its "strict" mode
+  remains highly vulnerable to parsing differentials and spoofing attacks.
+
+* **JMail**: Implements rules-based strict validation without standard
+  lenient parsing alternatives.
 
 ### C. Features Omitted in `EmailAddress` (Supported by Others)
-To maintain compatibility with modern MTAs and guarantee safety, `EmailAddress` intentionally omits several obsolete features:
-1. **RFC 822 Group Address Lists** (e.g., `group-name:addr1@b.com,addr2@c.com;`): Supported by Jakarta Mail. Omitted by both `EmailAddress` and JMail to enforce a secure single-recipient mailbox paradigm.
-2. **Nested Parenthetical Comments** (e.g., `john(comment)@example.com`): Supported by Jakarta Mail. Omitted by both `EmailAddress` and JMail because comments are obsolete and increase downstream parsing complexity.
-3. **Domain IP Literals** (e.g., `user@[192.168.1.1]`): Supported by both Jakarta Mail and JMail. Omitted by `EmailAddress` to align with modern secure routing where IP-based email routing is practically obsolete.
-4. **Dynamic MIME Header Decoding (RFC 2047)**: Supported by Jakarta Mail (which decodes automatically, exposing visual spoofing risks). Omitted by both `EmailAddress` and JMail to prevent spoofing; however, JMail still accepts display names containing unquoted `@` characters in encoded blocks, whereas `EmailAddress` strictly rejects them.
 
+To maintain compatibility with modern MTAs and guarantee safety,
+`EmailAddress` intentionally omits several obsolete features:
+
+1. **RFC 822 Group Address Lists** (e.g.,
+   `group-name:addr1@b.com,addr2@c.com;`): Supported by Jakarta Mail.
+   Omitted by both `EmailAddress` and JMail to enforce a secure
+   single-recipient mailbox paradigm.
+2. **Nested Parenthetical Comments** (e.g., `john(comment)@example.com`):
+   Supported by Jakarta Mail. Omitted by both `EmailAddress` and JMail
+   because comments are obsolete and increase downstream parsing complexity.
+3. **Domain IP Literals** (e.g., `user@[192.168.1.1]`): Supported by both
+   Jakarta Mail and JMail. Omitted by `EmailAddress` to align with modern
+   secure routing where IP-based email routing is practically obsolete.
+4. **Dynamic MIME Header Decoding (RFC 2047)**: Supported by Jakarta Mail
+   (which decodes automatically, exposing visual spoofing risks). Omitted by
+   both `EmailAddress` and JMail to prevent spoofing; however, JMail still
+   accepts display names containing unquoted `@` characters in encoded
+   blocks, whereas `EmailAddress` strictly rejects them.
+
+### D. Parser Composability & Extensibility
+
+Unlike Jakarta Mail and JMail, where the parsing code is closed and
+hard-coded inside static methods, `EmailAddress` exposes the underlying
+combinator parser as `public static final Parser<EmailAddress> PARSER`.
+
+This allows developers to effortlessly compose `EmailAddress.PARSER` inside
+larger, custom parsers to support specialized requirements. For instance, if
+an application specifically needs to support legacy RFC 822 group address
+syntax, developers can define a custom group parser:
+
+```java
+// Example: Composing EmailAddress.PARSER to support group address lists
+Parser<GroupAddress> groupParser = Parser.sequence(
+    Parser.word().followedBy(":"),                  // Group name (e.g. "admin")
+    EmailAddress.PARSER.zeroOrMoreDelimitedBy(",")
+        .followedBy(";"),                           // Core email parser for members
+    GroupAddress::new);
+```
+
+This composable architecture keeps the core domain model strictly secure and
+simple, while providing open extensibility for application-specific
+protocols.
