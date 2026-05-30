@@ -39,7 +39,6 @@ import com.google.errorprone.annotations.FormatString;
 import com.google.errorprone.annotations.Immutable;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
-import com.google.mu.util.Substring;
 
 /**
  * Represents an email address according to RFC 5322, designed as a modern,
@@ -101,9 +100,10 @@ import com.google.mu.util.Substring;
 @Immutable
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
+  private static final CharPredicate ISO_CONTROL = Character::isISOControl;
   private static final CharPredicate LETTER_OR_DIGIT = Character::isLetterOrDigit;
-  private static final CharPredicate UNQUOTED_CHARS =
-      LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~.").precomputeForAscii();
+  private static final CharPredicate ATEXT =
+      LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii();
   private static final CharPredicate DOMAIN_CHARS = LETTER_OR_DIGIT.or("-.").precomputeForAscii();
 
   /**
@@ -131,7 +131,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             !label.startsWith("-") && !label.endsWith("-"),
             "domain label '%s' must not start or end with a hyphen",
             label));
-    String idnValidated = IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED);
+    IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED);
   }
 
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
@@ -166,15 +166,12 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         || localPart.startsWith(".")
         || localPart.endsWith(".")
         || localPart.contains("..")
-        || !UNQUOTED_CHARS.matchesAllOf(localPart)
+        || !ATEXT.or('.').matchesAllOf(localPart)
       ? '"' + escape(localPart) + '"'
       : localPart;
   }
 
-  private static String unescape(String text) {
-    return Substring.first(java.util.regex.Pattern.compile("\\\\.")).repeatedly()
-        .replaceAllFrom(text, e -> e.subSequence(1, e.length()));
-  }
+
 
   /**
    * Returns the full email address, in the form of {@code local-part@domain} or
@@ -213,20 +210,17 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   }
 
   private static Parser<EmailAddress> makeParser() {
-    CharPredicate letterOrDigit = Character::isLetterOrDigit;
-    CharPredicate isoControl = Character::isISOControl;
     Parser<String> quoted = quotedByWithEscapes(
-        '"', '"', chars(1).suchThat(isoControl::matchesNoneOf, "escapable char"));
+        '"', '"', chars(1).suchThat(ISO_CONTROL::matchesNoneOf, "escapable char"));
     Parser<String> localPart = anyOf(
         quoted,
-        consecutive(letterOrDigit.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii(), "local part")
-            .atLeastOnceDelimitedBy(".", joining(".")));
+        consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")));
     Parser<String> domain =
         consecutive(DOMAIN_CHARS, "domain label chars");
     Parser<EmailAddress> address =
         literally(sequence(localPart, string("@").then(domain), EmailAddress::of));
     Parser<String> unquotedDisplayName = consecutive(
-        isoControl.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
+        ISO_CONTROL.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
     Parser<String> displayName = anyOf(quoted, unquotedDisplayName.map(String::trim));
     return anyOf(
