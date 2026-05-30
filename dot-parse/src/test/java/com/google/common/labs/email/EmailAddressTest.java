@@ -858,15 +858,18 @@ public class EmailAddressTest {
         invalid::add);
     assertThat(parsed).containsExactly(EmailAddress.of("addr2", "c.com"));
     assertThat(invalid).containsExactly("group-name:addr1@b.com");
+  }
 
-    List<String> invalidComplex = new ArrayList<>();
-    List<EmailAddress> parsedComplex = EmailAddress.parseAddressList(
+  @Test
+  public void testParseAddressList_withGroupAddressAndComments() {
+    List<String> invalid = new ArrayList<>();
+    List<EmailAddress> parsed = EmailAddress.parseAddressList(
         "a:(aaa@bbb.com)ccc@ddd.com,eee@fff.com,ggg@hhh.com;",
-        invalidComplex::add);
-    assertThat(parsedComplex).containsExactly(
+        invalid::add);
+    assertThat(parsed).containsExactly(
         EmailAddress.of("eee", "fff.com"),
         EmailAddress.of("ggg", "hhh.com"));
-    assertThat(invalidComplex).containsExactly("a:(aaa@bbb.com)ccc@ddd.com");
+    assertThat(invalid).containsExactly("a:(aaa@bbb.com)ccc@ddd.com");
   }
 
   @Test
