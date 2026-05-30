@@ -124,7 +124,7 @@ loadScripts(document, 'script');</script>
  and performance comparison against Jakarta Mail and JMail.
 
  <p>For example: <pre><code>
- EmailAddress address = EmailAddress.parse("J.R.R. Tolkien &lt;tolkien@lotr.org&gt;");
+ EmailAddress address = EmailAddress.of("J.R.R. Tolkien &lt;tolkien@lotr.org&gt;");
  // address.displayName() =&gt; "J.R.R. Tolkien"
  // address.localPart()) =&gt; "tolkien"
  // address.domain() =&gt; "lotr.org"
