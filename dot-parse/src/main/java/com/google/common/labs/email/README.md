@@ -87,7 +87,7 @@ combinators. It serves as a lightweight and secure alternative to
 
 * **`EmailAddress`**: Follows **Strict-by-Default** architecture. All primary
   parsing endpoints (`of()`, `PARSER`) enforce strict validation.
-  Fault tolerant parsing for `parseAddressList()` to prevent a single invalid entry
+  `parseAddressList()` supports fault tolerance mode to prevent a single invalid entry
   from defeating the list parsing.
 
 * **`InternetAddress`**: Supports both strict and lenient modes via
