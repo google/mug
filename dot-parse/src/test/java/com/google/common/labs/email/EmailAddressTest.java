@@ -221,6 +221,15 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressOf_idnToAsciiThrows() {
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "aא.com"));
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test@aא.com"));
+    assertThat(thrown).hasMessageThat().contains("aא");
+    assertThat(thrown).hasMessageThat().ignoringCase().contains("BiDi");
+  }
+
+  @Test
   public void testEmailAddressParsing_complex(@TestParameter ParseStrategy parser) {
     parser.assertParsesTo(
         "someone.else+and-another@some.sub-domain.example.co.uk",
