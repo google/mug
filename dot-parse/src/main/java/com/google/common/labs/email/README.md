@@ -17,7 +17,7 @@ combinators. It serves as a lightweight and secure alternative to
 
 ---
 
-## 2. RFC Compliance Comparison
+## 2. RFC Compliance
 
 | RFC Feature / Section | `EmailAddress` | `InternetAddress` (Jakarta Mail) | JMail |
 | :--- | :--- | :--- | :--- |
@@ -30,7 +30,7 @@ combinators. It serves as a lightweight and secure alternative to
 
 ---
 
-## 3. Security Comparison & Hardening
+## 3. Security & Hardening
 
 | Attack Vector / Vulnerability | `EmailAddress` (Combinator) | `InternetAddress` (Jakarta Mail) | JMail |
 | :--- | :--- | :--- | :--- |
