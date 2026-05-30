@@ -957,11 +957,6 @@ public class EmailAddressTest {
     assertThat(parsed.get().localPart()).isEqualTo("\"attacker@evil.com\"");
   }
 
-
-
-
-
-
   @Test
   public void testJMailValidation_rejectsGroupAddress_good() {
     // Proves JMail correctly rejects group address formats.
