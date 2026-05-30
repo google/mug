@@ -28,13 +28,14 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.filtering;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.net.IDN;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import com.google.common.labs.parse.Parser;
 import com.google.errorprone.annotations.FormatMethod;
@@ -102,6 +103,7 @@ import com.google.mu.util.StringFormat;
  */
 @Immutable
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
+  private static final Logger logger = Logger.getLogger(EmailAddress.class.getName());
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
   private static final CharPredicate ISO_CONTROL = Character::isISOControl;
   private static final CharPredicate LETTER_OR_DIGIT = Character::isLetterOrDigit;
@@ -261,8 +263,14 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses() {
     return filtering(
-        e -> e instanceof EmailAddress,
-        Collectors.mapping(e -> (EmailAddress) e, toUnmodifiableList()));
+        e -> {
+          boolean isEmailAddress = e instanceof EmailAddress;
+          if (!isEmailAddress) {
+            logger.info("invalid email address: " + e);
+          }
+          return isEmailAddress;
+        },
+        mapping(e -> (EmailAddress) e, toUnmodifiableList()));
 
   }
 
