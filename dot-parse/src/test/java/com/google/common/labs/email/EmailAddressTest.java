@@ -818,15 +818,15 @@ public class EmailAddressTest {
   }
 
   @Test
-  public void testEmailAddressParsing_jakartaDifferential_rejectedByCombinator(@TestParameter ParseStrategy parser) {
-    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+  public void testEmailAddressParsing_jakartaDifferential_rejected(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JAKARTA);
     assertThrows(IllegalArgumentException.class, () -> parser.parse("<aaa@bbb.com>ccc@ddd.com"));
     assertThrows(IllegalArgumentException.class, () -> parser.parse("<legitimate@trusted.com>attacker@evil.com"));
     assertThrows(IllegalArgumentException.class, () -> parser.parse("<attacker@evil.com>@trusted.com"));
   }
 
   @Test
-  public void testEmailAddressParsing_jakartaDifferential_acceptedByJakarta(@TestParameter ParseStrategy parser) {
+  public void testEmailAddressParsing_jakartaDifferential_acceptedByJakarta_bad(@TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.JAKARTA);
     assertThat(parser.parse("<aaa@bbb.com>ccc@ddd.com").address()).isEqualTo("aaa@bbb.com");
     assertThat(parser.parse("<legitimate@trusted.com>attacker@evil.com").address()).isEqualTo("legitimate@trusted.com");
@@ -844,8 +844,8 @@ public class EmailAddressTest {
   }
 
   @Test
-  public void testEmailAddressParsing_groupAddress(@TestParameter ParseStrategy parser) {
-    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+  public void testEmailAddressParsing_groupAddress_rejected(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.JAKARTA);
     assertThrows(IllegalArgumentException.class, () -> parser.parse("group-name:addr1@b.com,addr2@c.com;"));
     assertThrows(IllegalArgumentException.class, () -> parser.parse("group-name:addr1@b.com;"));
   }
@@ -895,7 +895,7 @@ public class EmailAddressTest {
   }
 
   @Test
-  public void testEmailAddressParsing_rfc2047EncodedWord_withAt_rejectedByCombinator(@TestParameter ParseStrategy parser) {
+  public void testEmailAddressParsing_rfc2047EncodedWord_withAt_rejected(@TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
     assertThrows(
         IllegalArgumentException.class,
@@ -903,7 +903,7 @@ public class EmailAddressTest {
   }
 
   @Test
-  public void testEmailAddressParsing_rfc2047EncodedWord_withAt_acceptedByJakarta(@TestParameter ParseStrategy parser) {
+  public void testEmailAddressParsing_rfc2047EncodedWord_withAt_acceptedByJakarta_bad(@TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.JAKARTA);
     EmailAddress parsed = parser.parse("=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>");
     assertThat(parsed.displayName()).hasValue("Administrator <admin@example.com>");
@@ -919,7 +919,7 @@ public class EmailAddressTest {
   }
 
   @Test
-  public void testEmailAddressParsing_rfc2047EncodedWord_withoutAt_decodedByJakarta(@TestParameter ParseStrategy parser) {
+  public void testEmailAddressParsing_rfc2047EncodedWord_withoutAt_decodedByJakarta_bad(@TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.JAKARTA);
     EmailAddress parsed = parser.parse("=?UTF-8?Q?Administrator?= <attacker@evil.com>");
     assertThat(parsed.displayName()).hasValue("Administrator");
@@ -940,6 +940,85 @@ public class EmailAddressTest {
     assertThat(invalid).containsExactly(
         "=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>");
   }
+
+  @Test
+  public void testJMailValidation_acceptsEncodedWordPhishing_bad() {
+    // Proves JMail fails to reject RFC 2047 display name address injection,
+    // accepting a display name containing an unquoted '@' character.
+    assertThat(JMail.tryParse("=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>").isPresent())
+        .isTrue();
+  }
+
+  @Test
+  public void testJMailValidation_doesNotStripQuotes_bad() {
+    // Proves JMail fails to strip or unescape double quotes from the local part.
+    var parsed = JMail.tryParse("\"attacker@evil.com\"@trusted.com");
+    assertThat(parsed.isPresent()).isTrue();
+    assertThat(parsed.get().localPart()).isEqualTo("\"attacker@evil.com\"");
+  }
+
+
+
+
+  @Test
+  public void testJMailValidation_rejectsGroupAddress_good() {
+    // Proves JMail correctly rejects group address formats.
+    assertThat(JMail.tryParse("group-name:addr1@b.com,addr2@c.com;").isPresent()).isFalse();
+    assertThat(JMail.tryParse("group-name:addr1@b.com;").isPresent()).isFalse();
+  }
+
+  @Test
+  public void testJMailValidation_rejectsJakartaDifferential_good() {
+    // Proves JMail correctly rejects Jakarta parsing differential injections.
+    assertThat(JMail.tryParse("<aaa@bbb.com>ccc@ddd.com").isPresent()).isFalse();
+    assertThat(JMail.tryParse("<legitimate@trusted.com>attacker@evil.com").isPresent()).isFalse();
+    assertThat(JMail.tryParse("<attacker@evil.com>@trusted.com").isPresent()).isFalse();
+  }
+
+  @Test
+  public void testJakartaValidation_acceptsEncodedWordPhishing_bad() throws Exception {
+    // Proves Jakarta Mail accepts RFC 2047 display name address injection, decoding it.
+    InternetAddress address =
+        new InternetAddress(
+            "=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>",
+            /* strict= */ true);
+    assertThat(address.getPersonal()).isEqualTo("Administrator <admin@example.com>");
+    assertThat(address.getAddress()).isEqualTo("attacker@evil.com");
+  }
+
+  @Test
+  public void testJakartaValidation_decodesEncodedWordWithoutAt_bad() throws Exception {
+    // Proves Jakarta Mail automatically decodes RFC 2047 encoded display names.
+    InternetAddress address =
+        new InternetAddress("=?UTF-8?Q?Administrator?= <attacker@evil.com>", /* strict= */ true);
+    assertThat(address.getPersonal()).isEqualTo("Administrator");
+    assertThat(address.getAddress()).isEqualTo("attacker@evil.com");
+  }
+
+  @Test
+  public void testJakartaValidation_acceptsDifferential_bad() throws Exception {
+    // Proves Jakarta Mail parses/accepts differential injection, returning only nested address.
+    InternetAddress address =
+        new InternetAddress("<aaa@bbb.com>ccc@ddd.com", /* strict= */ true);
+    assertThat(address.getAddress()).isEqualTo("aaa@bbb.com");
+  }
+
+  @Test
+  public void testJakartaValidation_acceptsGroupAddress_bad() throws Exception {
+    // Proves Jakarta Mail accepts group address formats.
+    InternetAddress address =
+        new InternetAddress("group-name:addr1@b.com,addr2@c.com;", /* strict= */ true);
+    assertThat(address.isGroup()).isTrue();
+  }
+
+  @Test
+  public void testJakartaValidation_rejectsInvalidAddresses_good() {
+    // Proves Jakarta Mail correctly rejects basic invalid formats under strict validation.
+    assertThrows(AddressException.class, () -> new InternetAddress("testexample.com", true));
+    assertThrows(AddressException.class, () -> new InternetAddress("test@", true));
+    assertThrows(AddressException.class, () -> new InternetAddress("@example.com", true));
+  }
+
 
   private static String unescape(String text) {
     return ESCAPED_CHARS.replaceAllFrom(text, e -> e.subSequence(1, e.length()));
