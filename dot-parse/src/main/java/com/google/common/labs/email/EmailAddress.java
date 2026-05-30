@@ -247,8 +247,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<String> localPart = anyOf(
         quoted,
         consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")));
-    Parser<String> domain =
-        consecutive(DOMAIN_CHARS, "domain label chars");
+    Parser<String> domain = consecutive(DOMAIN_CHARS, "domain label chars");
     Parser<EmailAddress> address =
         literally(sequence(localPart, string("@").then(domain), EmailAddress::of));
     Parser<String> unquotedDisplayName = consecutive(
