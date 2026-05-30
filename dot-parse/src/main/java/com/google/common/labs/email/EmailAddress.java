@@ -34,7 +34,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import java.net.IDN;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
+import java.util.function.Consumer;
 import java.util.stream.Collector;
 
 import com.google.common.labs.parse.Parser;
@@ -103,7 +103,6 @@ import com.google.mu.util.StringFormat;
  */
 @Immutable
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
-  private static final Logger logger = Logger.getLogger(EmailAddress.class.getName());
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
   private static final CharPredicate ISO_CONTROL = Character::isISOControl;
   private static final CharPredicate LETTER_OR_DIGIT = Character::isLetterOrDigit;
@@ -208,7 +207,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * <p>Empty input will result in an empty list being returned.
    *
    * <p>Note that if your address list may contain invalid entries, and you'd want to ignore them
-   * instead of failing, use {@link #scanAddressList}.
+   * instead of failing, use {@link #parseAddressList(String, Consumer)}.
    *
    * @throws Parser.ParseException if {@code addressList} is invalid
    */
@@ -220,8 +219,12 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   }
 
   /**
-   * Scans {@code addressList} according to RFC 5322 and returns an immutable list of {@link
-   * EmailAddress}, ignoring invalid entries.
+   * Parsers {@code addressList} according to RFC 5322 and returns an immutable list of {@link
+   * EmailAddress}, with invalid entries passed to the {@code invalid} consumer.
+   *
+   * <p>For example, <pre>{@code
+   * List<EmailAddress> addresses = parseAddressList(inputAddressList, logger::log);
+   * }</pre>
    *
    * <p>Both comma ({@code ,}) and semicolon ({@code ;}) are supported as delimiters, with
    * whitespaces ignored. Trailing delimiters are allowed.
@@ -230,12 +233,13 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    *
    * @since 10.3
    */
-  public static List<EmailAddress> scanAddressList(String addressList) {
+  public static List<EmailAddress> parseAddressList(
+      String addressList, Consumer<? super String> invalid) {
     Parser<?> significant = Parser.one(ADDRESS_LIST_SEPARATOR_CHAR.not(), "significant char");
     return anyOf(
             PARSER.notFollowedBy(significant, "non-separator"),  // don't extract a@b from a@b@c
-            consecutive(ADDRESS_LIST_SEPARATOR_CHAR.not(), "invalid"))
-        .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses())
+            consecutive(ADDRESS_LIST_SEPARATOR_CHAR.or(Character::isWhitespace).not(), "invalid"))
+        .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(invalid))
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
         .parseSkipping(Character::isWhitespace, addressList);
   }
@@ -259,10 +263,12 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)));
   }
 
-  private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses() {
+  private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses(
+      Consumer<? super String> invalid) {
+    requireNonNull(invalid);
     return filtering(
         e -> {
-          if (e instanceof String) logger.info("invalid email address: " + e);
+          if (e instanceof String s) invalid.accept(s);
           return e instanceof EmailAddress;
         },
         mapping(e -> (EmailAddress) e, toUnmodifiableList()));
