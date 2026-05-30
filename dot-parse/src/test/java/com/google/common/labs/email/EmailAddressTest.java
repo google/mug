@@ -858,6 +858,15 @@ public class EmailAddressTest {
         invalid::add);
     assertThat(parsed).containsExactly(EmailAddress.of("addr2", "c.com"));
     assertThat(invalid).containsExactly("group-name:addr1@b.com");
+
+    List<String> invalidComplex = new ArrayList<>();
+    List<EmailAddress> parsedComplex = EmailAddress.parseAddressList(
+        "a:(aaa@bbb.com)ccc@ddd.com,eee@fff.com,ggg@hhh.com;",
+        invalidComplex::add);
+    assertThat(parsedComplex).containsExactly(
+        EmailAddress.of("eee", "fff.com"),
+        EmailAddress.of("ggg", "hhh.com"));
+    assertThat(invalidComplex).containsExactly("a:(aaa@bbb.com)ccc@ddd.com");
   }
 
   @Test
@@ -870,6 +879,16 @@ public class EmailAddressTest {
 
     // Unquoted local part cannot contain multiple '@' signs.
     assertThrows(IllegalArgumentException.class, () -> parser.parse("attacker@evil.com@trusted.com"));
+  }
+
+  @Test
+  public void testParseAddressList_withMultiAtLocalPart() {
+    List<String> invalid = new ArrayList<>();
+    List<EmailAddress> parsed = EmailAddress.parseAddressList(
+        "\"attacker@evil.com\"@trusted.com, attacker@evil.com@trusted.com",
+        invalid::add);
+    assertThat(parsed).containsExactly(EmailAddress.of("attacker@evil.com", "trusted.com"));
+    assertThat(invalid).containsExactly("attacker@evil.com@trusted.com");
   }
 
   @Test
@@ -902,6 +921,21 @@ public class EmailAddressTest {
     EmailAddress parsed = parser.parse("=?UTF-8?Q?Administrator?= <attacker@evil.com>");
     assertThat(parsed.displayName()).hasValue("Administrator");
     assertThat(parsed.address()).isEqualTo("attacker@evil.com");
+  }
+
+  @Test
+  public void testParseAddressList_withRfc2047EncodedWord() {
+    List<String> invalid = new ArrayList<>();
+    List<EmailAddress> parsed = EmailAddress.parseAddressList(
+        "=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>, "
+            + "=?UTF-8?Q?Administrator?= <attacker@evil.com>",
+        invalid::add);
+    // The first one has an '@' in the unquoted display name, so it's treated as invalid.
+    // The second one is valid, parsing literally without decoding.
+    assertThat(parsed).containsExactly(
+        EmailAddress.of("attacker", "evil.com").withDisplayName("=?UTF-8?Q?Administrator?="));
+    assertThat(invalid).containsExactly(
+        "=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>");
   }
 
   private static String unescape(String text) {
