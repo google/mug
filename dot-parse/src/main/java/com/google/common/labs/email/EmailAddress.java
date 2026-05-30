@@ -231,10 +231,9 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * @since 10.3
    */
   public static List<EmailAddress> scanAddressList(String addressList) {
-    Parser<?> significant = Parser.one(
-        ADDRESS_LIST_SEPARATOR_CHAR.or(Character::isWhitespace).not(), "significant char");
+    Parser<?> significant = Parser.one(ADDRESS_LIST_SEPARATOR_CHAR.not(), "significant char");
     return anyOf(
-            PARSER.notFollowedBy(significant, "non-separator"),
+            PARSER.notFollowedBy(significant, "non-separator"),  // don't extract a@b from a@b@c
             consecutive(ADDRESS_LIST_SEPARATOR_CHAR.not(), "invalid"))
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses())
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
