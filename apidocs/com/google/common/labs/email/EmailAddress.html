@@ -150,11 +150,10 @@ loadScripts(document, 'script');</script>
        variations like trailing commas, two-commas-in-a-row etc.</li>
  </ul>
 
- <h3 id="security-first-parser-domain-model-validation-heading">Security-First Parser <span class="invalid-tag">invalid input: '&amp;'</span> Domain Model Validation</h3>
+ <h3 id="strict-validation-heading">Strict Validation</h3>
  <p>Unlike legacy <code>javax.mail.InternetAddress</code> from Java/Jakarta Mail, this class is
- backed by a strict, grammar-based parser combinator and a validated domain model. This ensures
- that input strings are fully parsed and validated, preventing common email parsing exploits
- such as:
+ backed by a strict parser and a validated domain model. This improves security,
+ preventing common email parsing exploits such as:
  <ul>
    <li><b>Email Parsing Differentials:</b> Inputs like
        <code>&lt;legitimate@trusted.com&gt;attacker@evil.com</code> are strictly rejected instead of being
