@@ -499,6 +499,12 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_i18n_rtlDomainPart(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
+    parser.assertParsesTo("test@גוגל.com", EmailAddress.of("test", "גוגל.com"));
+  }
+
+  @Test
   public void testEmailAddressParsing_i18n_domainPart(@TestParameter ParseStrategy parser) {
     assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
     parser.assertParsesTo("test@bücher.de", EmailAddress.of("test", "bücher.de"));
