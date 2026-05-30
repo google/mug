@@ -80,11 +80,10 @@ import com.google.mu.util.StringFormat;
  *       variations like trailing commas, two-commas-in-a-row etc.</li>
  * </ul>
  *
- * <h3>Security-First Parser & Domain Model Validation</h3>
+ * <h3>Strict Validation</h3>
  * <p>Unlike legacy {@code javax.mail.InternetAddress} from Java/Jakarta Mail, this class is
- * backed by a strict, grammar-based parser combinator and a validated domain model. This ensures
- * that input strings are fully parsed and validated, preventing common email parsing exploits
- * such as:
+ * backed by a strict parser and a validated domain model. This improves security,
+ * preventing common email parsing exploits such as:
  * <ul>
  *   <li><b>Email Parsing Differentials:</b> Inputs like
  *       {@code <legitimate@trusted.com>attacker@evil.com} are strictly rejected instead of being
