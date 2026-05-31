@@ -280,7 +280,12 @@ public class EmailAddressTest {
             IllegalArgumentException.class,
             () -> EmailAddress.of("test", "example.123"));
     assertThat(thrown).hasMessageThat().contains("numeric (123)");
+  }
+
+  @Test
+  public void testConstructor_notAllNumericTld() {
     assertThat(EmailAddress.of("test", "123.com").address()).isEqualTo("test@123.com");
+    assertThat(EmailAddress.of("test", "123.c1").address()).isEqualTo("test@123.c1");
   }
 
   @Test
@@ -911,6 +916,19 @@ public class EmailAddressTest {
     List<String> invalid = new ArrayList<>();
     assertThat(EmailAddress.parseAddressList("a@b.com junk", invalid::add)).isEmpty();
     assertThat(invalid).containsExactly("a@b.com junk");
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_allNumericTld_rejected() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(
+            EmailAddress.parseAddressList(
+                "good@example.com, bad@example.123, fine@example.org", invalid::add))
+        .containsExactly(
+            EmailAddress.of("good", "example.com"),
+            EmailAddress.of("fine", "example.org"))
+        .inOrder();
+    assertThat(invalid).containsExactly("bad@example.123");
   }
 
   @Test

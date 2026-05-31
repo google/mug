@@ -44,6 +44,7 @@ import com.google.errorprone.annotations.Immutable;
 import com.google.errorprone.annotations.InlineMe;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
+import com.google.mu.util.stream.Joiner;
 
 /**
  * Represents a strictly validated email address according to RFC 5322, designed as a modern,
@@ -162,6 +163,7 @@ import com.google.mu.util.StringFormat;
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
   private static final CharPredicate WHITESPACE = Character::isWhitespace;
+  private static final CharPredicate NUMERIC = CharPredicate.range('0', '9');
   private static final CharPredicate ISO_CONTROL = Character::isISOControl;
 
   // While most letters and digits are supplementary chars, using it is strictly better than
@@ -223,7 +225,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             "domain label '%s' contains invalid characters", label);
         checkArgument(
             label.index() + label.length() < domain.length()  // not TLD
-                || !CharPredicate.range('0', '9').matchesAllOf(label),
+                || !NUMERIC.matchesAllOf(label),
             "TLD name cannot be all numeric (%s)", label);
     });
     checkArgument(
@@ -338,7 +340,9 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")));
     Parser<String> domain = consecutive(DOMAIN_LABEL_CHARS, "domain label chars")
         .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
-        .atLeastOnceDelimitedBy(".", joining("."));
+        .atLeastOnceDelimitedBy(".")
+        .suchThat(labels -> !NUMERIC.matchesAllOf(labels.getLast()), "tld name")
+        .map(Joiner.on('.')::join);
     Parser<EmailAddress> address =
         literally(sequence(localPart, string("@").then(domain), EmailAddress::of));
     Parser<String> unquotedDisplayName = consecutive(
