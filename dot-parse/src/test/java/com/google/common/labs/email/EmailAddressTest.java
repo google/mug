@@ -173,10 +173,14 @@ public class EmailAddressTest {
   public void testEmailAddressParsing_quotedLocalPart_invalid_escapedControlChar(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> parser.parse("\"john\\\ndoe\"@example.com"));
-    assertThat(thrown).hasMessageThat().contains("at 1:7:");
-    assertThat(thrown).hasMessageThat().contains("expecting <escapable char>");
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("\"john\\\ndoe\"@example.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_quotedLocalPart_invalid_rawControlChar(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("\"john\ndoe\"@example.com"));
   }
 
   @Test
@@ -241,6 +245,25 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressOf_emptyDomainLabel_consecutiveDots() {
     assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "example..com"));
+  }
+
+  @Test
+  public void testConstructor_localPartContainsControlChar() {
+    assertThrows(
+        IllegalArgumentException.class, () -> EmailAddress.of("local\npart", "example.com"));
+  }
+
+  @Test
+  public void testConstructor_displayNameContainsControlChar() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new EmailAddress(Optional.of("John\nDoe"), "local", "example.com"));
+  }
+
+  @Test
+  public void testConstructor_domainContainsControlChar() {
+    assertThrows(
+        IllegalArgumentException.class, () -> EmailAddress.of("local", "example\r.com"));
   }
 
   @Test

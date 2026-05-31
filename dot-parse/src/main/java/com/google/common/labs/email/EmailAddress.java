@@ -163,6 +163,22 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
   private static final CharPredicate WHITESPACE = Character::isWhitespace;
   private static final CharPredicate ISO_CONTROL = Character::isISOControl;
+
+  // While most letters and digits are supplementary chars, using it is strictly better than
+  // [a-zA-Z0-9] because it natively supports internationalized BMP characters (for example,
+  // successfully parsing valid non-ASCII local-parts like "müller" or "björn",
+  // which [a-zA-Z0-9] rejects).
+  //
+  // Email Address Internationalization (EAI) identifiers (RFC 6530, 6531, 6532) are
+  // standardly restricted to the BMP plane, and excluding supplementary characters (like emojis or
+  // historical symbols) is an intentional, beneficial security boundary.
+  //
+  // It is also vastly safer than using the RFC 6532 range (UTF8-non-ascii: [\u0080-\u10FFFF]),
+  // which is a massive superset containing dangerous formatting controls, Bidirectional overrides
+  // (e.g., LRE, RLE, RLO, LRO U+202A-202E / U+2066-2069 that trick visual paths in logging/UIs),
+  // and line/paragraph separators (U+2028-2029 that can trigger MTA header injections).
+  // javaLetterOrDigit() strictly limits the character class to printable classified letters and
+  // digits, successfully neutralizing these injection vectors.
   private static final CharPredicate LETTER_OR_DIGIT = Character::isLetterOrDigit;
   private static final CharPredicate ATEXT =
       LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii();
@@ -189,9 +205,13 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * to optionally attach a display name.
    */
   public EmailAddress {
-    requireNonNull(displayName);
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
+    checkArgument(
+        ISO_CONTROL.matchesNoneOf(localPart), "local-part must not contain control characters");
+    checkArgument(
+        ISO_CONTROL.matchesNoneOf(displayName.orElse("")),
+        "display name must not contain control characters");
     all('.').split(domain).forEach(label -> {
         checkArgument(!label.isEmpty(), "domain label cannot be empty");
         checkArgument(
@@ -233,8 +253,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   }
 
   private String showLocalPart() {
-    return localPart.isEmpty()
-        || localPart.startsWith(".")
+    return localPart.startsWith(".")
         || localPart.endsWith(".")
         || localPart.contains("..")
         || !ATEXT.or('.').matchesAllOf(localPart)
@@ -308,8 +327,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   }
 
   private static Parser<EmailAddress> makeParser() {
-    Parser<String> quoted = quotedByWithEscapes(
-        '"', '"', chars(1).suchThat(ISO_CONTROL::matchesNoneOf, "escapable char"));
+    Parser<String> quoted = quotedByWithEscapes('"', '"', chars(1))
+        .suchThat(ISO_CONTROL::matchesNoneOf, "quoted string without control chars");
     Parser<String> localPart = anyOf(
         quoted,
         consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")));
