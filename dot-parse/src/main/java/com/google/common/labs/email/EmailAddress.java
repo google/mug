@@ -341,7 +341,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<String> domain = consecutive(DOMAIN_LABEL_CHARS, "domain label chars")
         .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
         .atLeastOnceDelimitedBy(".")
-        .suchThat(labels -> !NUMERIC.matchesAllOf(labels.getLast()), "tld name")
+        .suchThat(labels -> !NUMERIC.matchesAllOf(labels.getLast()), "domain with valid TLD")
         .map(Joiner.on('.')::join);
     Parser<EmailAddress> address =
         literally(sequence(localPart, string("@").then(domain), EmailAddress::of));
