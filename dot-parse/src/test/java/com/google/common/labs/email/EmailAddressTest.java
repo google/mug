@@ -267,6 +267,45 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testConstructor_domainLabelTooLong() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EmailAddress.of("test", "1234567890123456789012345678901234567890123456789012345678901234.com"));
+  }
+
+  @Test
+  public void testConstructor_allNumericTld() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EmailAddress.of("test", "example.123"));
+    assertThat(EmailAddress.of("test", "123.com").address()).isEqualTo("test@123.com");
+  }
+
+  @Test
+  public void testEmailAddressParsing_unseparatedQuotedStrings(
+      @TestParameter ParseStrategy parser) {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> parser.parse("\"first\"last\"@test.org"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_unquotedSpaceInLocalPart(
+      @TestParameter ParseStrategy parser) {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> parser.parse("hello world@test.org"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_unquotedSpecialsInLocalPart(
+      @TestParameter ParseStrategy parser) {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> parser.parse("()[]\\;:,><@test.org"));
+  }
+
+  @Test
   public void testEmailAddressOf_idnToAsciiThrows() {
     assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "aא.com"));
     IllegalArgumentException thrown =

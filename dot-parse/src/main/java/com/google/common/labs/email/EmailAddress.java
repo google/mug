@@ -221,7 +221,11 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         checkArgument(
             DOMAIN_LABEL_CHARS.matchesAllOf(label),
             "domain label '%s' contains invalid characters", label);
-        });
+        checkArgument(
+            label.index() + label.length() < domain.length()  // not TLD
+                || !CharPredicate.range('0', '9').matchesAllOf(label),
+            "TLD name cannot be all numeric (%s)", label);
+    });
     checkArgument(
         localPart.length() + domain.length() + 1 <= 254,
         "<%s@%s> must be <= 254 chars", localPart, domain);
