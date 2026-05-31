@@ -193,6 +193,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
     all('.').split(domain).forEach(label -> {
+        checkArgument(!label.isEmpty(), "domain label cannot be empty");
         checkArgument(
             !label.startsWith("-") && !label.endsWith("-"),
             "domain label '%s' must not start or end with a hyphen",

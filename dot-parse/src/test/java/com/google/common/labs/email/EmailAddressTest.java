@@ -162,6 +162,14 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressWithDisplayName_needsEscaping() {
+    EmailAddress address = EmailAddress.of("test", "example.com").withDisplayName("A \"B\" \\ C");
+    assertThat(address.toString()).isEqualTo("\"A \\\"B\\\" \\\\ C\" <test@example.com>");
+    EmailAddress parsed = EmailAddress.of(address.toString());
+    assertThat(parsed.displayName()).hasValue("A \"B\" \\ C");
+  }
+
+  @Test
   public void testEmailAddressParsing_quotedLocalPart_invalid_escapedControlChar(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
@@ -218,6 +226,21 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressOf_invalidDomainChars_underscore() {
     assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "exam_ple.com"));
+  }
+
+  @Test
+  public void testEmailAddressOf_emptyDomainLabel_startsWithDot() {
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", ".example.com"));
+  }
+
+  @Test
+  public void testEmailAddressOf_emptyDomainLabel_endsWithDot() {
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "example.com."));
+  }
+
+  @Test
+  public void testEmailAddressOf_emptyDomainLabel_consecutiveDots() {
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "example..com"));
   }
 
   @Test
@@ -817,6 +840,13 @@ public class EmailAddressTest {
             EmailAddress.of("jane;smith", "example.com"))
         .inOrder();
     assertThat(invalid).isEmpty();
+  }
+
+  @Test
+  public void testParseAddressList_withTrailingJunk_rejected() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList("a@b.com junk", invalid::add)).isEmpty();
+    assertThat(invalid).containsExactly("a@b.com junk");
   }
 
   @Test
