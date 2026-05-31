@@ -170,6 +170,21 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressOf_roundtrip_localPartNeedsQuoting_withDisplayName() {
+    EmailAddress address =
+        EmailAddress.of("john,doe;part", "example.com")
+            .withDisplayName("John [Doe] (Name)");
+    String serialized = address.toString();
+    assertThat(serialized)
+        .isEqualTo("\"John [Doe] (Name)\" <\"john,doe;part\"@example.com>");
+    EmailAddress parsed = EmailAddress.of(serialized);
+    assertThat(parsed.displayName()).hasValue("John [Doe] (Name)");
+    assertThat(parsed.localPart()).isEqualTo("john,doe;part");
+    assertThat(parsed.domain()).isEqualTo("example.com");
+    assertThat(parsed.toString()).isEqualTo(serialized);
+  }
+
+  @Test
   public void testEmailAddressParsing_quotedLocalPart_invalid_escapedControlChar(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
