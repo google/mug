@@ -275,9 +275,11 @@ public class EmailAddressTest {
 
   @Test
   public void testConstructor_allNumericTld() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> EmailAddress.of("test", "example.123"));
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> EmailAddress.of("test", "example.123"));
+    assertThat(thrown).hasMessageThat().contains("numeric (123)");
     assertThat(EmailAddress.of("test", "123.com").address()).isEqualTo("test@123.com");
   }
 
