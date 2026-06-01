@@ -354,6 +354,25 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testUserAndAlias() {
+    EmailAddress addr1 = EmailAddress.of("someone.else+and-another", "example.com");
+    assertThat(addr1.user()).isEqualTo("someone.else");
+    assertThat(addr1.alias()).hasValue("and-another");
+
+    EmailAddress addr2 = EmailAddress.of("john.doe", "example.com");
+    assertThat(addr2.user()).isEqualTo("john.doe");
+    assertThat(addr2.alias()).isEmpty();
+
+    EmailAddress addr3 = EmailAddress.of("+tag", "example.com");
+    assertThat(addr3.user()).isEmpty();
+    assertThat(addr3.alias()).hasValue("tag");
+
+    EmailAddress addr4 = EmailAddress.of("user+", "example.com");
+    assertThat(addr4.user()).isEqualTo("user");
+    assertThat(addr4.alias()).hasValue("");
+  }
+
+  @Test
   public void testEmailAddressParsing_singleLetterLocalPartAndDomain(
       @TestParameter ParseStrategy parser) {
     parser.assertParsesTo("a@b", EmailAddress.of("a", "b"));
