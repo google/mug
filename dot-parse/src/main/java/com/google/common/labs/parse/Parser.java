@@ -496,16 +496,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         if (!input.startsWith(before, start)) {
           return context.expecting(before, start);
         }
-        for (int index = start + before.length(), depth = 1; ; ) {
+        final int from = start + before.length();
+        for (int index = from, depth = 1; ; ) {
           if (input.isEof(index)) {
             return context.expecting(after, index); // Unclosed block
           }
           if (input.startsWith(after, index)) {
             if (--depth == 0) {
               return new MatchResult.Success<>(
-                  start,
-                  index + after.length(),
-                  input.snippet(start + before.length(), index - start - before.length()));
+                  start,  index + after.length(), input.snippet(from, index - from));
             }
             index += after.length();
           } else if (input.startsWith(before, index)) {
@@ -516,6 +515,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           }
         }
       }
+
+      @Override Set<String> getPrefixes() {
+        return Set.of(before);
+      }
     };
   }
 
@@ -523,8 +526,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * Matches the characters nested by {@code before} and {@code after} with backslash escapes,
    * supporting balanced nesting, and returns the unescaped nested string in between.
    *
-   * <p>For example, {@code nestedByWithEscapes('(', ')').parse("(a\\(b(c)d)")} returns
-   * {@code "a(b(c)d"}.
+   * <p>For example, you can use it to parse markdown link urls, which supports balanced parentheses
+   * with escapes:
+   *
+   * <pre>{@code
+   * Parser<String> markdownLinkUrl = nestedByWithEscapes('(', ')');
+   * markdownLinkUrl.parse("(a\\(b(c)d)"); // => "a(b(c)d"
+   * }</pre>
    *
    * @since 10.3
    */
@@ -532,19 +540,19 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(before != '\\', "before cannot be '\\'");
     checkArgument(after != '\\', "after cannot be '\\'");
     checkArgument(before != after, "before and after must be different for nesting");
-    String beforeStr = Character.toString(before);
-    String afterStr = Character.toString(after);
+    String prefix = Character.toString(before);
+    String suffix = Character.toString(after);
     return new Parser<String>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         if (input.isEof(start) || input.charAt(start) != before) {
-          return context.expecting(beforeStr, start);
+          return context.expecting(prefix, start);
         }
         StringBuilder builder = new StringBuilder();
         for (int index = start + 1, depth = 1; ; index++) {
           if (input.isEof(index)) {
-            return context.expecting(afterStr, index); // Unclosed block
+            return context.expecting(suffix, index); // Unclosed block
           }
           char c = input.charAt(index);
           if (c == after) {
@@ -564,6 +572,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             builder.append(c);
           }
         }
+      }
+
+      @Override Set<String> getPrefixes() {
+        return Set.of(prefix);
       }
     };
   }
