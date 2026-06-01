@@ -920,6 +920,8 @@ loadScripts(document, 'script');</script>
 <div class="block">A strict, i18n-compliant email address parser (requires dot-parse artifact)
 <br></div>
 </dd>
+<dt><a href="com/google/common/labs/markdown/package-summary.html">com.google.common.labs.markdown</a> - package com.google.common.labs.markdown</dt>
+<dd>&nbsp;</dd>
 <dt><a href="com/google/common/labs/parse/package-summary.html">com.google.common.labs.parse</a> - package com.google.common.labs.parse</dt>
 <dd>
 <div class="block">Parser combinator that's free from infinite loop or accidental left recursion (requires dot-parse artifact)
@@ -1373,6 +1375,10 @@ loadScripts(document, 'script');</script>
  with the names wrapped in ParameterizedQuery.</div>
 </dd>
 <dt><a href="com/google/common/labs/email/EmailAddress.html#equals(java.lang.Object)" class="member-name-link">equals(Object)</a> - Method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
+<dd>
+<div class="block">Indicates whether some other object is "equal to" this one.</div>
+</dd>
+<dt><a href="com/google/common/labs/markdown/MarkdownLink.html#equals(java.lang.Object)" class="member-name-link">equals(Object)</a> - Method in record class com.google.common.labs.markdown.<a href="com/google/common/labs/markdown/MarkdownLink.html" title="class in com.google.common.labs.markdown">MarkdownLink</a></dt>
 <dd>
 <div class="block">Indicates whether some other object is "equal to" this one.</div>
 </dd>
@@ -2109,6 +2115,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns a hash code value for this object.</div>
 </dd>
+<dt><a href="com/google/common/labs/markdown/MarkdownLink.html#hashCode()" class="member-name-link">hashCode()</a> - Method in record class com.google.common.labs.markdown.<a href="com/google/common/labs/markdown/MarkdownLink.html" title="class in com.google.common.labs.markdown">MarkdownLink</a></dt>
+<dd>
+<div class="block">Returns a hash code value for this object.</div>
+</dd>
 <dt><a href="com/google/common/labs/parse/CharacterSet.html#hashCode()" class="member-name-link">hashCode()</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/CharacterSet.html" title="class in com.google.common.labs.parse">CharacterSet</a></dt>
 <dd>
 <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
@@ -2625,6 +2635,10 @@ loadScripts(document, 'script');</script>
 </dl>
 <h2 class="title" id="I:L">L</h2>
 <dl class="index">
+<dt><a href="com/google/common/labs/markdown/MarkdownLink.html#label()" class="member-name-link">label()</a> - Method in record class com.google.common.labs.markdown.<a href="com/google/common/labs/markdown/MarkdownLink.html" title="class in com.google.common.labs.markdown">MarkdownLink</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>label</code> record component.</div>
+</dd>
 <dt><a href="com/google/mu/util/Substring.html#last(char)" class="member-name-link">last(char)</a> - Static method in class com.google.mu.util.<a href="com/google/mu/util/Substring.html" title="class in com.google.mu.util">Substring</a></dt>
 <dd>
 <div class="block">Returns a <code>Pattern</code> that matches the last occurrence of <code>character</code>.</div>
@@ -2927,6 +2941,14 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Given <code>valueMapping</code> that maps values of type <code>V</code> to result values of type <code>
  V2</code>, returns a <code>BiStream</code> of type <code>&lt;K, V2&gt;</code>.</div>
+</dd>
+<dt><a href="com/google/common/labs/markdown/MarkdownLink.html" class="type-name-link" title="class in com.google.common.labs.markdown">MarkdownLink</a> - Record Class in <a href="com/google/common/labs/markdown/package-summary.html">com.google.common.labs.markdown</a></dt>
+<dd>
+<div class="block">Represents a markdown link in the format of <code>[label](url)</code>.</div>
+</dd>
+<dt><a href="com/google/common/labs/markdown/MarkdownLink.html#%3Cinit%3E(java.lang.String,java.lang.String)" class="member-name-link">MarkdownLink(String, String)</a> - Constructor for record class com.google.common.labs.markdown.<a href="com/google/common/labs/markdown/MarkdownLink.html" title="class in com.google.common.labs.markdown">MarkdownLink</a></dt>
+<dd>
+<div class="block">Creates an instance of a <code>MarkdownLink</code> record class.</div>
 </dd>
 <dt><a href="com/google/mu/util/Substring.RepeatingPattern.html#match(java.lang.String)" class="member-name-link">match(String)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/Substring.RepeatingPattern.html" title="class in com.google.mu.util">Substring.RepeatingPattern</a></dt>
 <dd>
@@ -3271,6 +3293,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/common/labs/email/EmailAddress.html#of(java.lang.String)" class="member-name-link">of(String)</a> - Static method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
 <dd>
 <div class="block">Parses <code>address</code> and throws <a href="com/google/common/labs/parse/Parser.ParseException.html" title="class in com.google.common.labs.parse"><code>Parser.ParseException</code></a> if failed.</div>
+</dd>
+<dt><a href="com/google/common/labs/markdown/MarkdownLink.html#of(java.lang.String)" class="member-name-link">of(String)</a> - Static method in record class com.google.common.labs.markdown.<a href="com/google/common/labs/markdown/MarkdownLink.html" title="class in com.google.common.labs.markdown">MarkdownLink</a></dt>
+<dd>
+<div class="block">Parses <code>link</code> into a <a href="com/google/common/labs/markdown/MarkdownLink.html" title="class in com.google.common.labs.markdown"><code>MarkdownLink</code></a>.</div>
 </dd>
 <dt><a href="com/google/mu/bigquery/ParameterizedQuery.html#of(java.lang.String,java.lang.Object...)" class="member-name-link">of(String, Object...)</a> - Static method in class com.google.mu.bigquery.<a href="com/google/mu/bigquery/ParameterizedQuery.html" title="class in com.google.mu.bigquery">ParameterizedQuery</a></dt>
 <dd>
@@ -3922,6 +3948,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/common/labs/email/EmailAddress.html#PARSER" class="member-name-link">PARSER</a> - Static variable in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
 <dd>
 <div class="block">The parser for email address, according to RFC 5322, and supporting BMP characters.</div>
+</dd>
+<dt><a href="com/google/common/labs/markdown/MarkdownLink.html#PARSER" class="member-name-link">PARSER</a> - Static variable in record class com.google.common.labs.markdown.<a href="com/google/common/labs/markdown/MarkdownLink.html" title="class in com.google.common.labs.markdown">MarkdownLink</a></dt>
+<dd>
+<div class="block">Parser for a <a href="com/google/common/labs/markdown/MarkdownLink.html" title="class in com.google.common.labs.markdown"><code>MarkdownLink</code></a>.</div>
 </dd>
 <dt><a href="com/google/common/labs/parse/Parser.Lexical.html" class="type-name-link" title="class in com.google.common.labs.parse">Parser.Lexical</a> - Class in <a href="com/google/common/labs/parse/package-summary.html">com.google.common.labs.parse</a></dt>
 <dd>
@@ -4666,6 +4696,14 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/safesql/SafeSql.html" class="type-name-link" title="class in com.google.mu.safesql">SafeSql</a> - Class in <a href="com/google/mu/safesql/package-summary.html">com.google.mu.safesql</a></dt>
 <dd>
 <div class="block">An injection-safe <em>dynamic SQL</em>, constructed using compile-time enforced templates.</div>
+</dd>
+<dt><a href="com/google/common/labs/markdown/MarkdownLink.html#scan(java.io.Reader)" class="member-name-link">scan(Reader)</a> - Static method in record class com.google.common.labs.markdown.<a href="com/google/common/labs/markdown/MarkdownLink.html" title="class in com.google.common.labs.markdown">MarkdownLink</a></dt>
+<dd>
+<div class="block">Scans <code>markdown</code> and <em>lazily</em> extracts all markdown links.</div>
+</dd>
+<dt><a href="com/google/common/labs/markdown/MarkdownLink.html#scan(java.lang.String)" class="member-name-link">scan(String)</a> - Static method in record class com.google.common.labs.markdown.<a href="com/google/common/labs/markdown/MarkdownLink.html" title="class in com.google.common.labs.markdown">MarkdownLink</a></dt>
+<dd>
+<div class="block">Scans <code>markdown</code> and <em>lazily</em> extracts all markdown links.</div>
 </dd>
 <dt><a href="com/google/mu/util/StringFormat.html#scan(java.lang.String,com.google.mu.function.MapFrom3)" class="member-name-link">scan(String, MapFrom3&lt;? super String, ? extends R&gt;)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/StringFormat.html" title="class in com.google.mu.util">StringFormat</a></dt>
 <dd>
@@ -5517,6 +5555,10 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns the full email address, in the form of <code>local-part@domain</code> or
  <code>"display name" &lt;local-part@domain&gt;</code>.</div>
 </dd>
+<dt><a href="com/google/common/labs/markdown/MarkdownLink.html#toString()" class="member-name-link">toString()</a> - Method in record class com.google.common.labs.markdown.<a href="com/google/common/labs/markdown/MarkdownLink.html" title="class in com.google.common.labs.markdown">MarkdownLink</a></dt>
+<dd>
+<div class="block">Returns a string representation of this record class.</div>
+</dd>
 <dt><a href="com/google/common/labs/parse/CharacterSet.html#toString()" class="member-name-link">toString()</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/CharacterSet.html" title="class in com.google.common.labs.parse">CharacterSet</a></dt>
 <dd>
 <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
@@ -5751,6 +5793,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns a <code>Pattern</code> that will match from the beginning of the original string up to the
  substring matched by <code>pattern</code> <em>inclusively</em>.</div>
+</dd>
+<dt><a href="com/google/common/labs/markdown/MarkdownLink.html#url()" class="member-name-link">url()</a> - Method in record class com.google.common.labs.markdown.<a href="com/google/common/labs/markdown/MarkdownLink.html" title="class in com.google.common.labs.markdown">MarkdownLink</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>url</code> record component.</div>
 </dd>
 <dt><a href="com/google/mu/util/StringFormat.html#using(java.lang.String,java.lang.Object...)" class="member-name-link">using(String, Object...)</a> - Static method in class com.google.mu.util.<a href="com/google/mu/util/StringFormat.html" title="class in com.google.mu.util">StringFormat</a></dt>
 <dd>
