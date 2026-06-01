@@ -278,7 +278,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * @since 10.3
    */
   public Optional<String> alias() {
-    return after(first('+')).from(localPart);
+    return after(first('+')).from(localPart).filter(a -> !a.isEmpty());
   }
 
   private String showLocalPart() {

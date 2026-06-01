@@ -369,11 +369,19 @@ public class EmailAddressTest {
 
     EmailAddress addr4 = EmailAddress.of("user+", "example.com");
     assertThat(addr4.user()).isEqualTo("user");
-    assertThat(addr4.alias()).hasValue("");
+    assertThat(addr4.alias()).isEmpty();
 
     EmailAddress addr5 = EmailAddress.of("someone+else+another", "example.com");
     assertThat(addr5.user()).isEqualTo("someone");
     assertThat(addr5.alias()).hasValue("else+another");
+
+    EmailAddress addr6 = EmailAddress.of("+", "example.com");
+    assertThat(addr6.user()).isEmpty();
+    assertThat(addr6.alias()).isEmpty();
+
+    EmailAddress addr7 = EmailAddress.of("++", "example.com");
+    assertThat(addr7.user()).isEmpty();
+    assertThat(addr7.alias()).hasValue("+");
   }
 
   @Test
