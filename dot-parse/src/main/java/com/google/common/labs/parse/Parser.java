@@ -526,8 +526,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * Matches the characters nested by {@code before} and {@code after} with backslash escapes,
    * supporting balanced nesting, and returns the unescaped nested string in between.
    *
-   * <p>For example, {@code nestedByWithEscapes('(', ')').parse("(a\\(b(c)d)")} returns
-   * {@code "a(b(c)d"}.
+   * <p>For example, you can use it to parse markdown link urls, which supports balanced parentheses
+   * with escapes:
+   *
+   * <pre>{@code
+   * Parser<String> markdownLinkUrl = nestedByWithEscapes('(', ')');
+   * markdownLinkUrl.parse("(a\\(b(c)d)"); // => "a(b(c)d"
+   * }</pre>
    *
    * @since 10.3
    */
