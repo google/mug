@@ -468,6 +468,100 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         .immediatelyBetween(before, Character.toString(after));
   }
 
+
+  /**
+   * Matches the characters nested by {@code prefix} and {@code suffix}, supporting balanced
+   * nesting.
+   *
+   * <p>Unlike {@link #quotedBy(String, String)}, which stops at the first occurrence of the {@code
+   * suffix} delimiter, {@code nestedBy()} tracks the nesting depth of the {@code prefix} and {@code
+   * suffix} delimiters and only succeeds when the nesting is balanced.
+   *
+   * <p>For example, {@code nestedBy("(", ")").source().parse("(a(b)c)")} returns {@code "(a(b)c)"}.
+   * In contrast, {@code quotedBy("(", ")").parse("(a(b)c)")} would return {@code "a(b"}.
+   *
+   * <p>Does not support escaping. If the delimiters can be escaped by backslashes, use {@link
+   * #nestedByWithEscapes} instead.
+   *
+   * <p>This parser doesn't return the matched text. Use {@link #source()} if you need the matched
+   * string.
+   *
+   * @since 10.3
+   */
+  public static Parser<Void> nestedBy(String prefix, String suffix) {
+    checkArgument(!prefix.isEmpty(), "prefix cannot be empty");
+    checkArgument(!suffix.isEmpty(), "suffix cannot be empty");
+    checkArgument(!prefix.equals(suffix), "prefix and suffix must be different for nesting");
+    return new Parser<Void>() {
+      @Override MatchResult<Void> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        if (!input.startsWith(prefix, start)) {
+          return context.expecting(prefix, start);
+        }
+        for (int index = start + prefix.length(), depth = 1; ; ) {
+          if (input.isEof(index)) {
+            return context.expecting(suffix, index); // Unclosed block
+          }
+          if (input.startsWith(suffix, index)) {
+            if (--depth == 0) {
+              return new MatchResult.Success<>(start, index + suffix.length(), null);
+            }
+            index += suffix.length();
+          } else if (input.startsWith(prefix, index)) {
+            depth++;
+            index += prefix.length();
+          } else {
+            index++;
+          }
+        }
+      }
+    };
+  }
+
+  /**
+   * Matches the characters nested by {@code prefix} and {@code suffix} with backslash escapes,
+   * supporting balanced nesting.
+   *
+   * <p>For example, {@code nestedByWithEscapes('(', ')').source().parse("(a\\(b(c)d)")} returns
+   * {@code "(a\\(b(c)d)"}.
+   *
+   * <p>This parser doesn't return the matched text. Use {@link #source()} if you need the matched
+   * string.
+   *
+   * @since 10.3
+   */
+  public static Parser<Void> nestedByWithEscapes(char prefix, char suffix) {
+    checkArgument(prefix != '\\', "prefix cannot be '\\'");
+    checkArgument(suffix != '\\', "suffix cannot be '\\'");
+    checkArgument(prefix != suffix, "prefix and suffix must be different for nesting");
+    String before = Character.toString(prefix);
+    return new Parser<Void>() {
+      @Override MatchResult<Void> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        if (input.isEof(start) || input.charAt(start) != prefix) {
+          return context.expecting(before, start);
+        }
+        for (int index = start + 1, depth = 1; ; index++) {
+          if (input.isEof(index)) {
+            return context.expecting(Character.toString(suffix), index); // Unclosed block
+          }
+          char c = input.charAt(index);
+          if (c == suffix) {
+            if (--depth == 0) {
+              return new MatchResult.Success<>(start, index + 1, null);
+            }
+          } else if (c == prefix) {
+            depth++;
+          } else if (c == '\\' && input.isEof(++index)) {
+            return context.expecting("escaped char", index); // Dangling escape
+          }
+        }
+      }
+    };
+  }
+
   /**
    * Parses a 4-digit hex BMP code unit. The following example parses a surrogate pair of two UTF-16
    * code units and will return the emoji {@code 😀}:
