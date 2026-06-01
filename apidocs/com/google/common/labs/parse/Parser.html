@@ -1195,8 +1195,13 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="block">Matches the characters nested by <code>before</code> and <code>after</code> with backslash escapes,
  supporting balanced nesting, and returns the unescaped nested string in between.
 
- <p>For example, <code>nestedByWithEscapes('(', ')').parse("(a\\(b(c)d)")</code> returns
- <code>"a(b(c)d"</code>.</div>
+ <p>For example, you can use it to parse markdown link urls, which supports balanced parentheses
+ with escapes:
+
+ <pre><code>
+ Parser&lt;String&gt; markdownLinkUrl = nestedByWithEscapes('(', ')');
+ markdownLinkUrl.parse("(a\\(b(c)d)"); // =&gt; "a(b(c)d"
+ </code></pre></div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>10.3</dd>
