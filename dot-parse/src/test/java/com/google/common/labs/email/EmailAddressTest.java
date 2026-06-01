@@ -344,6 +344,16 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_dotAfterPlus(@TestParameter ParseStrategy parser) {
+    parser.assertParsesTo(
+        "someone+else.and-another@example.com",
+        EmailAddress.of("someone+else.and-another", "example.com"));
+    parser.assertParsesTo(
+        "someone+.else@example.com",
+        EmailAddress.of("someone+.else", "example.com"));
+  }
+
+  @Test
   public void testEmailAddressParsing_singleLetterLocalPartAndDomain(
       @TestParameter ParseStrategy parser) {
     parser.assertParsesTo("a@b", EmailAddress.of("a", "b"));
