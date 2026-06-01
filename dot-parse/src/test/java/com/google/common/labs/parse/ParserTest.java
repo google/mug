@@ -640,6 +640,36 @@ public class ParserTest {
     assertThat(parser.parse(input)).isEqualTo("(".repeat(depth - 1) + "foo" + ")".repeat(depth - 1));
   }
 
+  @Test
+  public void nestedBy_insideAnyOfWithOtherCandidates_success() {
+    Parser<String> parser =
+        anyOf(
+            string("foo"),
+            string("bar"),
+            string("baz"),
+            string("qux"),
+            string("etc"),
+            Parser.nestedBy("(", ")"));
+    assertThat(parser.parse("(abc)")).isEqualTo("abc");
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+    assertThat(parser.parse("bar")).isEqualTo("bar");
+  }
+
+  @Test
+  public void nestedByWithEscapes_insideAnyOfWithOtherCandidates_success() {
+    Parser<String> parser =
+        anyOf(
+            string("foo"),
+            string("bar"),
+            string("baz"),
+            string("qux"),
+            string("etc"),
+            Parser.nestedByWithEscapes('(', ')'));
+    assertThat(parser.parse("(abc)")).isEqualTo("abc");
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+    assertThat(parser.parse("bar")).isEqualTo("bar");
+  }
+
 
   @Test
   public void bmpCodeUnit_emoji() {
