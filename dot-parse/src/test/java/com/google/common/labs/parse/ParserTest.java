@@ -514,7 +514,7 @@ public class ParserTest {
   }
 
   @Test
-  public void quotedByWithEscapes_markdownLinkWithEscape() {
+  public void nestedByWithEscapes_markdownLink() {
     record MarkdownLink(String text, String url) {}
     Parser<String> escapedChar =
         Parser.one(anyOf("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~\\"), "escapable char")
@@ -523,59 +523,63 @@ public class ParserTest {
     Parser<MarkdownLink> parser =
         Parser.sequence(
             Parser.quotedByWithEscapes("![", ']', escapedChar),
-            Parser.quotedByWithEscapes("(http://", ')', escapedChar),
+            Parser.nestedByWithEscapes('(', ')'),
             MarkdownLink::new);
-    assertThat(parser.parse("![text](http://\\)url)")).isEqualTo(new MarkdownLink("text", ")url"));
+    assertThat(parser.parse("![text](http://\\)url)")).isEqualTo(new MarkdownLink("text", "http://)url"));
     assertThat(parser.parse("![text\\a](http://\\)url)"))
-        .isEqualTo(new MarkdownLink("text\\a", ")url"));
+        .isEqualTo(new MarkdownLink("text\\a", "http://)url"));
+    assertThat(parser.parse("![text](http://foo(bar)baz)"))
+        .isEqualTo(new MarkdownLink("text", "http://foo(bar)baz"));
+    assertThat(parser.parse("![text](http://foo(bar(baz))qux)"))
+        .isEqualTo(new MarkdownLink("text", "http://foo(bar(baz))qux"));
   }
 
   @Test
   public void nestedByWithEscapes_charDelimiters_success() {
-    Parser<?> parser = Parser.nestedByWithEscapes('(', ')');
-    assertThat(parser.source().parse("()")).isEqualTo("()");
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')');
+    assertThat(parser.parse("()")).isEqualTo("");
     assertThat(parser.matches("()")).isTrue();
-    assertThat(parser.source().parse("(foo)")).isEqualTo("(foo)");
+    assertThat(parser.parse("(foo)")).isEqualTo("foo");
     assertThat(parser.matches("(foo)")).isTrue();
-    assertThat(parser.source().parse("(foo (bar) baz)")).isEqualTo("(foo (bar) baz)");
+    assertThat(parser.parse("(foo (bar) baz)")).isEqualTo("foo (bar) baz");
     assertThat(parser.matches("(foo (bar) baz)")).isTrue();
-    assertThat(parser.source().parse("(foo (bar (baz) qux) etc)")).isEqualTo("(foo (bar (baz) qux) etc)");
+    assertThat(parser.parse("(foo (bar (baz) qux) etc)")).isEqualTo("foo (bar (baz) qux) etc");
     assertThat(parser.matches("(foo (bar (baz) qux) etc)")).isTrue();
-    assertThat(parser.source().parse("(foo \\( bar \\(baz\\) )")).isEqualTo("(foo \\( bar \\(baz\\) )");
+    assertThat(parser.parse("(foo \\( bar \\(baz\\) )")).isEqualTo("foo ( bar (baz) ");
     assertThat(parser.matches("(foo \\( bar \\(baz\\) )")).isTrue();
-    assertThat(parser.source().parse("(foo \\\\bar)")).isEqualTo("(foo \\\\bar)");
+    assertThat(parser.parse("(foo \\\\bar)")).isEqualTo("foo \\bar");
     assertThat(parser.matches("(foo \\\\bar)")).isTrue();
   }
 
   @Test
   public void nestedBy_charDelimiters_success() {
-    Parser<?> parser = Parser.nestedBy("(", ")");
-    assertThat(parser.source().parse("()")).isEqualTo("()");
+    Parser<String> parser = Parser.nestedBy("(", ")");
+    assertThat(parser.parse("()")).isEqualTo("");
     assertThat(parser.matches("()")).isTrue();
-    assertThat(parser.source().parse("(foo)")).isEqualTo("(foo)");
+    assertThat(parser.parse("(foo)")).isEqualTo("foo");
     assertThat(parser.matches("(foo)")).isTrue();
-    assertThat(parser.source().parse("(foo (bar) baz)")).isEqualTo("(foo (bar) baz)");
+    assertThat(parser.parse("(foo (bar) baz)")).isEqualTo("foo (bar) baz");
     assertThat(parser.matches("(foo (bar) baz)")).isTrue();
-    assertThat(parser.source().parse("(foo (bar (baz) qux) etc)")).isEqualTo("(foo (bar (baz) qux) etc)");
+    assertThat(parser.parse("(foo (bar (baz) qux) etc)")).isEqualTo("foo (bar (baz) qux) etc");
     assertThat(parser.matches("(foo (bar (baz) qux) etc)")).isTrue();
   }
 
   @Test
   public void nestedBy_stringDelimiters_success() {
-    Parser<?> parser = Parser.nestedBy("<<", ">>");
-    assertThat(parser.source().parse("<<>>")).isEqualTo("<<>>");
+    Parser<String> parser = Parser.nestedBy("<<", ">>");
+    assertThat(parser.parse("<<>>")).isEqualTo("");
     assertThat(parser.matches("<<>>")).isTrue();
-    assertThat(parser.source().parse("<<foo>>")).isEqualTo("<<foo>>");
+    assertThat(parser.parse("<<foo>>")).isEqualTo("foo");
     assertThat(parser.matches("<<foo>>")).isTrue();
-    assertThat(parser.source().parse("<<foo <<bar>> baz>>")).isEqualTo("<<foo <<bar>> baz>>");
+    assertThat(parser.parse("<<foo <<bar>> baz>>")).isEqualTo("foo <<bar>> baz");
     assertThat(parser.matches("<<foo <<bar>> baz>>")).isTrue();
-    assertThat(parser.source().parse("<<foo <<bar <<baz>> qux>> etc>>")).isEqualTo("<<foo <<bar <<baz>> qux>> etc>>");
+    assertThat(parser.parse("<<foo <<bar <<baz>> qux>> etc>>")).isEqualTo("foo <<bar <<baz>> qux>> etc");
     assertThat(parser.matches("<<foo <<bar <<baz>> qux>> etc>>")).isTrue();
   }
 
   @Test
   public void nestedByWithEscapes_failures() {
-    Parser<?> parser = Parser.nestedByWithEscapes('(', ')');
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')');
     assertThrows(ParseException.class, () -> parser.parse("(foo (bar)")); // unclosed outer
     assertThat(parser.matches("(foo (bar)")).isFalse();
     assertThrows(ParseException.class, () -> parser.parse("(foo (bar))baz")); // leftover
@@ -588,7 +592,7 @@ public class ParserTest {
 
   @Test
   public void nestedBy_failures() {
-    Parser<?> parser = Parser.nestedBy("(", ")");
+    Parser<String> parser = Parser.nestedBy("(", ")");
     assertThrows(ParseException.class, () -> parser.parse("(foo (bar)")); // unclosed outer
     assertThat(parser.matches("(foo (bar)")).isFalse();
     assertThrows(ParseException.class, () -> parser.parse("(foo (bar))baz")); // leftover
@@ -621,16 +625,16 @@ public class ParserTest {
   public void nestedByWithEscapes_deepNesting_noStackOverflow() {
     int depth = 10000;
     String input = "(".repeat(depth) + "foo" + ")".repeat(depth);
-    Parser<?> parser = Parser.nestedByWithEscapes('(', ')');
-    assertThat(parser.source().parse(input)).isEqualTo(input);
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')');
+    assertThat(parser.parse(input)).isEqualTo("(".repeat(depth - 1) + "foo" + ")".repeat(depth - 1));
   }
 
   @Test
   public void nestedBy_deepNesting_noStackOverflow() {
     int depth = 10000;
     String input = "(".repeat(depth) + "foo" + ")".repeat(depth);
-    Parser<?> parser = Parser.nestedBy("(", ")");
-    assertThat(parser.source().parse(input)).isEqualTo(input);
+    Parser<String> parser = Parser.nestedBy("(", ")");
+    assertThat(parser.parse(input)).isEqualTo("(".repeat(depth - 1) + "foo" + ")".repeat(depth - 1));
   }
 
 

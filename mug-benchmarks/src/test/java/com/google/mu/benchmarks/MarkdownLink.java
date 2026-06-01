@@ -20,7 +20,7 @@ import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
-import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
+import static com.google.common.labs.parse.Parser.nestedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.noneOf;
@@ -74,7 +74,7 @@ public record MarkdownLink(String label, String url) {
   public static final Parser<MarkdownLink> PARSER = literally(
       sequence(
           NON_EMPTY_LABEL.orElse("").between("[", "]"),
-          quotedByWithEscapes('(', ')', chars(1)),
+          nestedByWithEscapes('(', ')'),
       MarkdownLink::new));
 
   private static final Parser<?> IGNORED = anyOf(ESCAPE, CODE, one(noneOf("\\[`"), "ignored char"));

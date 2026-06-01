@@ -470,47 +470,47 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
 
   /**
-   * Matches the characters nested by {@code prefix} and {@code suffix}, supporting balanced
-   * nesting.
+   * Matches the characters nested by {@code before} and {@code after}, supporting balanced
+   * nesting, and returns the nested string in between.
    *
    * <p>Unlike {@link #quotedBy(String, String)}, which stops at the first occurrence of the {@code
-   * suffix} delimiter, {@code nestedBy()} tracks the nesting depth of the {@code prefix} and {@code
-   * suffix} delimiters and only succeeds when the nesting is balanced.
+   * after} delimiter, {@code nestedBy()} tracks the nesting depth of the {@code before} and {@code
+   * after} delimiters and only succeeds when the nesting is balanced.
    *
-   * <p>For example, {@code nestedBy("(", ")").source().parse("(a(b)c)")} returns {@code "(a(b)c)"}.
+   * <p>For example, {@code nestedBy("(", ")").parse("(a(b)c)")} returns {@code "a(b)c"}.
    * In contrast, {@code quotedBy("(", ")").parse("(a(b)c)")} would return {@code "a(b"}.
    *
    * <p>Does not support escaping. If the delimiters can be escaped by backslashes, use {@link
    * #nestedByWithEscapes} instead.
    *
-   * <p>This parser doesn't return the matched text. Use {@link #source()} if you need the matched
-   * string.
-   *
    * @since 10.3
    */
-  public static Parser<Void> nestedBy(String prefix, String suffix) {
-    checkArgument(!prefix.isEmpty(), "prefix cannot be empty");
-    checkArgument(!suffix.isEmpty(), "suffix cannot be empty");
-    checkArgument(!prefix.equals(suffix), "prefix and suffix must be different for nesting");
-    return new Parser<Void>() {
-      @Override MatchResult<Void> skipAndMatch(
+  public static Parser<String> nestedBy(String before, String after) {
+    checkArgument(!before.isEmpty(), "before cannot be empty");
+    checkArgument(!after.isEmpty(), "after cannot be empty");
+    checkArgument(!before.equals(after), "before and after must be different for nesting");
+    return new Parser<String>() {
+      @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-        if (!input.startsWith(prefix, start)) {
-          return context.expecting(prefix, start);
+        if (!input.startsWith(before, start)) {
+          return context.expecting(before, start);
         }
-        for (int index = start + prefix.length(), depth = 1; ; ) {
+        for (int index = start + before.length(), depth = 1; ; ) {
           if (input.isEof(index)) {
-            return context.expecting(suffix, index); // Unclosed block
+            return context.expecting(after, index); // Unclosed block
           }
-          if (input.startsWith(suffix, index)) {
+          if (input.startsWith(after, index)) {
             if (--depth == 0) {
-              return new MatchResult.Success<>(start, index + suffix.length(), null);
+              return new MatchResult.Success<>(
+                  start,
+                  index + after.length(),
+                  input.snippet(start + before.length(), index - start - before.length()));
             }
-            index += suffix.length();
-          } else if (input.startsWith(prefix, index)) {
+            index += after.length();
+          } else if (input.startsWith(before, index)) {
             depth++;
-            index += prefix.length();
+            index += before.length();
           } else {
             index++;
           }
@@ -520,42 +520,48 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Matches the characters nested by {@code prefix} and {@code suffix} with backslash escapes,
-   * supporting balanced nesting.
+   * Matches the characters nested by {@code before} and {@code after} with backslash escapes,
+   * supporting balanced nesting, and returns the unescaped nested string in between.
    *
-   * <p>For example, {@code nestedByWithEscapes('(', ')').source().parse("(a\\(b(c)d)")} returns
-   * {@code "(a\\(b(c)d)"}.
-   *
-   * <p>This parser doesn't return the matched text. Use {@link #source()} if you need the matched
-   * string.
+   * <p>For example, {@code nestedByWithEscapes('(', ')').parse("(a\\(b(c)d)")} returns
+   * {@code "a(b(c)d"}.
    *
    * @since 10.3
    */
-  public static Parser<Void> nestedByWithEscapes(char prefix, char suffix) {
-    checkArgument(prefix != '\\', "prefix cannot be '\\'");
-    checkArgument(suffix != '\\', "suffix cannot be '\\'");
-    checkArgument(prefix != suffix, "prefix and suffix must be different for nesting");
-    String before = Character.toString(prefix);
-    return new Parser<Void>() {
-      @Override MatchResult<Void> skipAndMatch(
+  public static Parser<String> nestedByWithEscapes(char before, char after) {
+    checkArgument(before != '\\', "before cannot be '\\'");
+    checkArgument(after != '\\', "after cannot be '\\'");
+    checkArgument(before != after, "before and after must be different for nesting");
+    String beforeStr = Character.toString(before);
+    String afterStr = Character.toString(after);
+    return new Parser<String>() {
+      @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-        if (input.isEof(start) || input.charAt(start) != prefix) {
-          return context.expecting(before, start);
+        if (input.isEof(start) || input.charAt(start) != before) {
+          return context.expecting(beforeStr, start);
         }
+        StringBuilder builder = new StringBuilder();
         for (int index = start + 1, depth = 1; ; index++) {
           if (input.isEof(index)) {
-            return context.expecting(Character.toString(suffix), index); // Unclosed block
+            return context.expecting(afterStr, index); // Unclosed block
           }
           char c = input.charAt(index);
-          if (c == suffix) {
+          if (c == after) {
             if (--depth == 0) {
-              return new MatchResult.Success<>(start, index + 1, null);
+              return new MatchResult.Success<>(start, index + 1, builder.toString());
             }
-          } else if (c == prefix) {
+            builder.append(c);
+          } else if (c == before) {
             depth++;
-          } else if (c == '\\' && input.isEof(++index)) {
-            return context.expecting("escaped char", index); // Dangling escape
+            builder.append(c);
+          } else if (c == '\\') {
+            if (input.isEof(++index)) {
+              return context.expecting("escaped char", index); // Dangling escape
+            }
+            builder.append(input.charAt(index));
+          } else {
+            builder.append(c);
           }
         }
       }
