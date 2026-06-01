@@ -532,7 +532,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * <pre>{@code
    * Parser<MarkdownLink> markdownLinkUrl = sequence(
    *     nestedByWithEscapes('[', ']'),
-   *     nestedByWithEscapes('(', ')',
+   *     nestedByWithEscapes('(', ')'),
    *     MarkdownLink::new);
    * markdownLinkUrl.parse("[x[y]z](a\\(b(c)d)"); // => MarkdownLink("x[y]z", "a(b(c)d")
    * }</pre>
