@@ -111,6 +111,24 @@ public class MarkdownLinkTest {
     assertThat(scanner.scan("`unclosed [link](url)")).isEmpty();
   }
 
+  @Test
+  public void testNestedParenthesesInUrl(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("[text](http://foo(bar)baz)"))
+        .containsExactly(new MarkdownLink("text", "http://foo(bar)baz"));
+  }
+
+  @Test
+  public void testDeeplyNestedParenthesesInUrl(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("[text](http://foo(bar(baz))qux)"))
+        .containsExactly(new MarkdownLink("text", "http://foo(bar(baz))qux"));
+  }
+
+  @Test
+  public void testEscapedParenthesisInUrl(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("[text](http://foo\\)bar)"))
+        .containsExactly(new MarkdownLink("text", "http://foo)bar"));
+  }
+
   @Test public void testNulls() {
     new NullPointerTester().testAllPublicStaticMethods(MarkdownLink.class);
     new NullPointerTester().testAllPublicConstructors(MarkdownLink.class);
