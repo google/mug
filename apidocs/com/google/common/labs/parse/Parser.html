@@ -85,6 +85,8 @@ loadScripts(document, 'script');</script>
 <li><a href="#quotedBy(java.lang.String,java.lang.String)" tabindex="0">quotedBy(String, String)</a></li>
 <li><a href="#quotedByWithEscapes(char,char,com.google.common.labs.parse.Parser)" tabindex="0">quotedByWithEscapes(char, char, Parser)</a></li>
 <li><a href="#quotedByWithEscapes(java.lang.String,char,com.google.common.labs.parse.Parser)" tabindex="0">quotedByWithEscapes(String, char, Parser)</a></li>
+<li><a href="#nestedBy(java.lang.String,java.lang.String)" tabindex="0">nestedBy(String, String)</a></li>
+<li><a href="#nestedByWithEscapes(char,char)" tabindex="0">nestedByWithEscapes(char, char)</a></li>
 <li><a href="#bmpCodeUnit()" tabindex="0">bmpCodeUnit()</a></li>
 <li><a href="#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.util.function.BiFunction)" tabindex="0">sequence(Parser, Parser, BiFunction)</a></li>
 <li><a href="#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.util.function.BiFunction)" tabindex="0">sequence(Parser, Production, BiFunction)</a></li>
@@ -409,6 +411,20 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#matches(java.lang.String)" class="member-name-link">matches</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns true if this parser matches the entirety of the <code>input</code>.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Void.html" title="class or interface in java.lang" class="external-link">Void</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#nestedBy(java.lang.String,java.lang.String)" class="member-name-link">nestedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;prefix,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Matches the characters nested by <code>prefix</code> and <code>suffix</code>, supporting balanced
+ nesting.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Void.html" title="class or interface in java.lang" class="external-link">Void</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#nestedByWithEscapes(char,char)" class="member-name-link">nestedByWithEscapes</a><wbr>(char&nbsp;prefix,
+ char&nbsp;suffix)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Matches the characters nested by <code>prefix</code> and <code>suffix</code> with backslash escapes,
+ supporting balanced nesting.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#notFollowedBy(com.google.common.labs.parse.Parser,java.lang.String)" class="member-name-link">notFollowedBy</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;suffix,
@@ -1142,6 +1158,54 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.9.3</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="nestedBy(java.lang.String,java.lang.String)">
+<h3>nestedBy</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Void.html" title="class or interface in java.lang" class="external-link">Void</a>&gt;</span>&nbsp;<span class="element-name">nestedBy</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;prefix,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</span></div>
+<div class="block">Matches the characters nested by <code>prefix</code> and <code>suffix</code>, supporting balanced
+ nesting.
+
+ <p>Unlike <a href="#quotedBy(java.lang.String,java.lang.String)"><code>quotedBy(String, String)</code></a>, which stops at the first occurrence of the <code>
+ suffix</code> delimiter, <code>nestedBy()</code> tracks the nesting depth of the <code>prefix</code> and <code>
+ suffix</code> delimiters and only succeeds when the nesting is balanced.
+
+ <p>For example, <code>nestedBy("(", ")").source().parse("(a(b)c)")</code> returns <code>"(a(b)c)"</code>.
+ In contrast, <code>quotedBy("(", ")").parse("(a(b)c)")</code> would return <code>"a(b"</code>.
+
+ <p>Does not support escaping. If the delimiters can be escaped by backslashes, use <a href="#nestedByWithEscapes(char,char)"><code>nestedByWithEscapes(char, char)</code></a> instead.
+
+ <p>This parser doesn't return the matched text. Use <a href="#source()"><code>source()</code></a> if you need the matched
+ string.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.3</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="nestedByWithEscapes(char,char)">
+<h3>nestedByWithEscapes</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Void.html" title="class or interface in java.lang" class="external-link">Void</a>&gt;</span>&nbsp;<span class="element-name">nestedByWithEscapes</span><wbr><span class="parameters">(char&nbsp;prefix,
+ char&nbsp;suffix)</span></div>
+<div class="block">Matches the characters nested by <code>prefix</code> and <code>suffix</code> with backslash escapes,
+ supporting balanced nesting.
+
+ <p>For example, <code>nestedByWithEscapes('(', ')').source().parse("(a\\(b(c)d)")</code> returns
+ <code>"(a\\(b(c)d)"</code>.
+
+ <p>This parser doesn't return the matched text. Use <a href="#source()"><code>source()</code></a> if you need the matched
+ string.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.3</dd>
 </dl>
 </div>
 </section>
