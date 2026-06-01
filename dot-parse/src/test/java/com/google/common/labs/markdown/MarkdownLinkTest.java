@@ -1,4 +1,4 @@
-package com.google.mu.benchmarks;
+package com.google.common.labs.markdown;
 
 import static com.google.common.truth.Truth8.assertThat;
 
@@ -127,6 +127,30 @@ public class MarkdownLinkTest {
   public void testEscapedParenthesisInUrl(@TestParameter Scanner scanner) {
     assertThat(scanner.scan("[text](http://foo\\)bar)"))
         .containsExactly(new MarkdownLink("text", "http://foo)bar"));
+  }
+
+  @Test
+  public void testUnescapedNestedSquareBracketsInLabel(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("[x[y[?]]](url)"))
+        .containsExactly(new MarkdownLink("x[y[?]]", "url"));
+  }
+
+  @Test
+  public void testParenthesesInsideLinkLabel(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("[text(label)](url)"))
+        .containsExactly(new MarkdownLink("text(label)", "url"));
+  }
+
+  @Test
+  public void testSquareBracketsInsideLinkUrl(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("[text](http://foo[bar]baz)"))
+        .containsExactly(new MarkdownLink("text", "http://foo[bar]baz"));
+  }
+
+  @Test
+  public void testNestedBracketsAndParensInsideLinkUrl(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("[text](http://foo[bar(baz)]qux)"))
+        .containsExactly(new MarkdownLink("text", "http://foo[bar(baz)]qux"));
   }
 
   @Test public void testNulls() {

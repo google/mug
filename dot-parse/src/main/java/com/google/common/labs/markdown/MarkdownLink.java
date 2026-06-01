@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and       *
  * limitations under the License.                                            *
  *****************************************************************************/
-package com.google.mu.benchmarks;
+package com.google.common.labs.markdown;
 
 import static com.google.common.labs.parse.Parser.anyOf;
-import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
-import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.nestedByWithEscapes;
+import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.noneOf;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
 
 import java.io.Reader;
 import java.util.stream.Stream;
@@ -49,7 +47,7 @@ import com.google.common.labs.parse.Parser;
  * extract link-like syntax from backtick-quoted code or code blocks (recognizing code blocks
  * quoted by single backtick, double, triple or any number of consecutive backticks).
  *
- * @since 10.0
+ * @since 10.3
  */
 public record MarkdownLink(String label, String url) {
   public MarkdownLink {
@@ -60,9 +58,6 @@ public record MarkdownLink(String label, String url) {
   private static final Parser<String> ESCAPE = one(is('\\'), "escape").then(Parser.chars(1));
   private static final Parser<String> CODE =
       consecutive(is('`'), "backticks").flatMap(Parser::first).source();
-  private static final Parser<String> NON_EMPTY_LABEL = Parser.define(
-      nested -> anyOf(CODE, ESCAPE, consecutive(noneOf("\\[]`"), "label chars"), bracketed(nested))
-          .atLeastOnce(joining()));
 
 
   /**
@@ -72,9 +67,7 @@ public record MarkdownLink(String label, String url) {
    * for extracting multiple links. This constant is meant to be composed with more complex parsers.
    */
   public static final Parser<MarkdownLink> PARSER = literally(
-      sequence(
-          NON_EMPTY_LABEL.orElse("").between("[", "]"),
-          nestedByWithEscapes('(', ')'),
+      sequence(nestedByWithEscapes('[', ']'), nestedByWithEscapes('(', ')'),
       MarkdownLink::new));
 
   private static final Parser<?> IGNORED = anyOf(ESCAPE, CODE, one(noneOf("\\[`"), "ignored char"));
@@ -105,9 +98,5 @@ public record MarkdownLink(String label, String url) {
    */
   public static Stream<MarkdownLink> scan(Reader markdown) {
     return PARSER.skipping(IGNORED).probe(markdown);
-  }
-
-  private static Parser<String> bracketed(Parser<String> parser) {
-    return parser.orElse("").immediatelyBetween("[", "]").map(s -> "[" + s + "]");
   }
 }
