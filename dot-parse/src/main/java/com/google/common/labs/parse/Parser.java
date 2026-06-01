@@ -516,6 +516,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           }
         }
       }
+
+      @Override Set<String> getPrefixes() {
+        return Set.of(before);
+      }
     };
   }
 
@@ -532,19 +536,19 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(before != '\\', "before cannot be '\\'");
     checkArgument(after != '\\', "after cannot be '\\'");
     checkArgument(before != after, "before and after must be different for nesting");
-    String beforeStr = Character.toString(before);
-    String afterStr = Character.toString(after);
+    String prefix = Character.toString(before);
+    String suffix = Character.toString(after);
     return new Parser<String>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         if (input.isEof(start) || input.charAt(start) != before) {
-          return context.expecting(beforeStr, start);
+          return context.expecting(prefix, start);
         }
         StringBuilder builder = new StringBuilder();
         for (int index = start + 1, depth = 1; ; index++) {
           if (input.isEof(index)) {
-            return context.expecting(afterStr, index); // Unclosed block
+            return context.expecting(suffix, index); // Unclosed block
           }
           char c = input.charAt(index);
           if (c == after) {
@@ -564,6 +568,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             builder.append(c);
           }
         }
+      }
+
+      @Override Set<String> getPrefixes() {
+        return Set.of(prefix);
       }
     };
   }

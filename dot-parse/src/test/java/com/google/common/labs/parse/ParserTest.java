@@ -537,6 +537,7 @@ public class ParserTest {
   @Test
   public void nestedByWithEscapes_charDelimiters_success() {
     Parser<String> parser = Parser.nestedByWithEscapes('(', ')');
+    assertThat(parser.getPrefixes()).containsExactly("(");
     assertThat(parser.parse("()")).isEqualTo("");
     assertThat(parser.matches("()")).isTrue();
     assertThat(parser.parse("(foo)")).isEqualTo("foo");
@@ -554,6 +555,7 @@ public class ParserTest {
   @Test
   public void nestedBy_charDelimiters_success() {
     Parser<String> parser = Parser.nestedBy("(", ")");
+    assertThat(parser.getPrefixes()).containsExactly("(");
     assertThat(parser.parse("()")).isEqualTo("");
     assertThat(parser.matches("()")).isTrue();
     assertThat(parser.parse("(foo)")).isEqualTo("foo");
@@ -567,6 +569,7 @@ public class ParserTest {
   @Test
   public void nestedBy_stringDelimiters_success() {
     Parser<String> parser = Parser.nestedBy("<<", ">>");
+    assertThat(parser.getPrefixes()).containsExactly("<<");
     assertThat(parser.parse("<<>>")).isEqualTo("");
     assertThat(parser.matches("<<>>")).isTrue();
     assertThat(parser.parse("<<foo>>")).isEqualTo("foo");
