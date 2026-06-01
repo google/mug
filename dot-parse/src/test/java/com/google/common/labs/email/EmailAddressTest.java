@@ -370,6 +370,10 @@ public class EmailAddressTest {
     EmailAddress addr4 = EmailAddress.of("user+", "example.com");
     assertThat(addr4.user()).isEqualTo("user");
     assertThat(addr4.alias()).hasValue("");
+
+    EmailAddress addr5 = EmailAddress.of("someone+else+another", "example.com");
+    assertThat(addr5.user()).isEqualTo("someone");
+    assertThat(addr5.alias()).hasValue("else+another");
   }
 
   @Test
