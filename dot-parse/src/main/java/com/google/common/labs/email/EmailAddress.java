@@ -23,6 +23,7 @@ import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.mu.util.CharPredicate.anyOf;
+import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
 import static java.util.Objects.requireNonNull;
@@ -45,7 +46,6 @@ import com.google.errorprone.annotations.Immutable;
 import com.google.errorprone.annotations.InlineMe;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
-import com.google.mu.util.Substring;
 import com.google.mu.util.stream.Joiner;
 
 /**
@@ -278,7 +278,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    * @since 10.3
    */
   public Optional<String> alias() {
-    return Substring.after(first('+')).from(localPart);
+    return after(first('+')).from(localPart);
   }
 
   private String showLocalPart() {
