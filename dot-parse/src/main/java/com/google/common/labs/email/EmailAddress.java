@@ -273,7 +273,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /**
    * Returns the "alias" (or "detail") part of the local-part after the first {@code +} separator,
-   * according to RFC 5233 subaddressing. If no {@code +} is present, {@code Optional.empty()} is returned.
+   * according to RFC 5233 subaddressing. If no {@code +} is present, or if the {@code +} is the
+   * last character of the local-part, {@code Optional.empty()} is returned.
    *
    * @since 10.3
    */
