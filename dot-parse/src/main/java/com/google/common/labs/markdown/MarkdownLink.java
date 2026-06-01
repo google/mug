@@ -85,7 +85,7 @@ public record MarkdownLink(String label, String url) {
   /**
    * Scans {@code markdown} and <em>lazily</em> extracts all markdown links.
    *
-   * @throws NullPointerException if {@code link} is null
+   * @throws NullPointerException if {@code markdown} is null
    */
   public static Stream<MarkdownLink> scan(String markdown) {
     return PARSER.skipping(IGNORED).probe(markdown);
@@ -94,7 +94,7 @@ public record MarkdownLink(String label, String url) {
   /**
    * Scans {@code markdown} and <em>lazily</em> extracts all markdown links.
    *
-   * @throws NullPointerException if {@code link} is null
+   * @throws NullPointerException if {@code markdown} is null
    */
   public static Stream<MarkdownLink> scan(Reader markdown) {
     return PARSER.skipping(IGNORED).probe(markdown);
