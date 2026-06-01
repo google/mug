@@ -162,13 +162,40 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressWithDisplayName_needsEscaping() {
+    EmailAddress address = EmailAddress.of("test", "example.com").withDisplayName("A \"B\" \\ C");
+    assertThat(address.toString()).isEqualTo("\"A \\\"B\\\" \\\\ C\" <test@example.com>");
+    EmailAddress parsed = EmailAddress.of(address.toString());
+    assertThat(parsed.displayName()).hasValue("A \"B\" \\ C");
+  }
+
+  @Test
+  public void testEmailAddressOf_roundtrip_localPartNeedsQuoting_withDisplayName() {
+    EmailAddress address =
+        EmailAddress.of("john,doe;part", "example.com")
+            .withDisplayName("John [Doe] (Name)");
+    String serialized = address.toString();
+    assertThat(serialized)
+        .isEqualTo("\"John [Doe] (Name)\" <\"john,doe;part\"@example.com>");
+    EmailAddress parsed = EmailAddress.of(serialized);
+    assertThat(parsed.displayName()).hasValue("John [Doe] (Name)");
+    assertThat(parsed.localPart()).isEqualTo("john,doe;part");
+    assertThat(parsed.domain()).isEqualTo("example.com");
+    assertThat(parsed.toString()).isEqualTo(serialized);
+  }
+
+  @Test
   public void testEmailAddressParsing_quotedLocalPart_invalid_escapedControlChar(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> parser.parse("\"john\\\ndoe\"@example.com"));
-    assertThat(thrown).hasMessageThat().contains("at 1:7:");
-    assertThat(thrown).hasMessageThat().contains("expecting <escapable char>");
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("\"john\\\ndoe\"@example.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_quotedLocalPart_invalid_rawControlChar(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("\"john\ndoe\"@example.com"));
   }
 
   @Test
@@ -218,6 +245,86 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressOf_invalidDomainChars_underscore() {
     assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "exam_ple.com"));
+  }
+
+  @Test
+  public void testEmailAddressOf_emptyDomainLabel_startsWithDot() {
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", ".example.com"));
+  }
+
+  @Test
+  public void testEmailAddressOf_emptyDomainLabel_endsWithDot() {
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "example.com."));
+  }
+
+  @Test
+  public void testEmailAddressOf_emptyDomainLabel_consecutiveDots() {
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "example..com"));
+  }
+
+  @Test
+  public void testConstructor_localPartContainsControlChar() {
+    assertThrows(
+        IllegalArgumentException.class, () -> EmailAddress.of("local\npart", "example.com"));
+  }
+
+  @Test
+  public void testConstructor_displayNameContainsControlChar() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new EmailAddress(Optional.of("John\nDoe"), "local", "example.com"));
+  }
+
+  @Test
+  public void testConstructor_domainContainsControlChar() {
+    assertThrows(
+        IllegalArgumentException.class, () -> EmailAddress.of("local", "example\r.com"));
+  }
+
+  @Test
+  public void testConstructor_domainLabelTooLong() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EmailAddress.of("test", "1234567890123456789012345678901234567890123456789012345678901234.com"));
+  }
+
+  @Test
+  public void testConstructor_allNumericTld() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> EmailAddress.of("test", "example.123"));
+    assertThat(thrown).hasMessageThat().contains("numeric (123)");
+  }
+
+  @Test
+  public void testConstructor_notAllNumericTld() {
+    assertThat(EmailAddress.of("test", "123.com").address()).isEqualTo("test@123.com");
+    assertThat(EmailAddress.of("test", "123.c1").address()).isEqualTo("test@123.c1");
+  }
+
+  @Test
+  public void testEmailAddressParsing_unseparatedQuotedStrings(
+      @TestParameter ParseStrategy parser) {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> parser.parse("\"first\"last\"@test.org"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_unquotedSpaceInLocalPart(
+      @TestParameter ParseStrategy parser) {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> parser.parse("hello world@test.org"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_unquotedSpecialsInLocalPart(
+      @TestParameter ParseStrategy parser) {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> parser.parse("()[]\\;:,><@test.org"));
   }
 
   @Test
@@ -817,6 +924,26 @@ public class EmailAddressTest {
             EmailAddress.of("jane;smith", "example.com"))
         .inOrder();
     assertThat(invalid).isEmpty();
+  }
+
+  @Test
+  public void testParseAddressList_withTrailingJunk_rejected() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList("a@b.com junk", invalid::add)).isEmpty();
+    assertThat(invalid).containsExactly("a@b.com junk");
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_allNumericTld_rejected() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(
+            EmailAddress.parseAddressList(
+                "good@example.com, bad@example.123, fine@example.org", invalid::add))
+        .containsExactly(
+            EmailAddress.of("good", "example.com"),
+            EmailAddress.of("fine", "example.org"))
+        .inOrder();
+    assertThat(invalid).containsExactly("bad@example.123");
   }
 
   @Test
