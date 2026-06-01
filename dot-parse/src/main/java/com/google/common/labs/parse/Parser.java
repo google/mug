@@ -496,16 +496,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         if (!input.startsWith(before, start)) {
           return context.expecting(before, start);
         }
-        for (int index = start + before.length(), depth = 1; ; ) {
+        final int from = start + before.length();
+        for (int index = from, depth = 1; ; ) {
           if (input.isEof(index)) {
             return context.expecting(after, index); // Unclosed block
           }
           if (input.startsWith(after, index)) {
             if (--depth == 0) {
               return new MatchResult.Success<>(
-                  start,
-                  index + after.length(),
-                  input.snippet(start + before.length(), index - start - before.length()));
+                  start,  index + after.length(), input.snippet(from, index - from));
             }
             index += after.length();
           } else if (input.startsWith(before, index)) {
