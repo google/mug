@@ -59,7 +59,6 @@ public record MarkdownLink(String label, String url) {
   private static final Parser<String> CODE =
       consecutive(is('`'), "backticks").flatMap(Parser::first).source();
 
-
   /**
    * Parser for a {@link MarkdownLink}.
    *
@@ -67,8 +66,7 @@ public record MarkdownLink(String label, String url) {
    * for extracting multiple links. This constant is meant to be composed in larger parsers.
    */
   public static final Parser<MarkdownLink> PARSER = literally(
-      sequence(nestedByWithEscapes('[', ']'), nestedByWithEscapes('(', ')'),
-      MarkdownLink::new));
+      sequence(nestedByWithEscapes('[', ']'), nestedByWithEscapes('(', ')'), MarkdownLink::new));
 
   private static final Parser<?> IGNORED = anyOf(ESCAPE, CODE, one(noneOf("\\[`"), "ignored char"));
 
