@@ -483,7 +483,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * after} delimiters and only succeeds when the nesting is balanced.
    *
    * <p>For example, {@code nestedBy("(", ")").parse("(a(b)c)")} returns {@code "a(b)c"}.
-   * In contrast, {@code quotedBy("(", ")").parse("(a(b)c)")} would return {@code "a(b"}.
+   * In contrast, {@code quotedBy("(", ")")} will match {@code "(a(b)"}.
    *
    * <p>Does not support escaping. If the delimiters can be escaped by backslashes, use {@link
    * #nestedByWithEscapes} instead.
