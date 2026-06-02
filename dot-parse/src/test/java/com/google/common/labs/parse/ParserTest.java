@@ -683,6 +683,32 @@ public class ParserTest {
   }
 
   @Test
+  public void nestedBy_emojiDelimitersAndContentSharingHighSurrogate() {
+    // before: 🚀 (\uD83D\uDE80)
+    // after: 🙏 (\uD83D\uDE4F)
+    // content: 😀 (\uD83D\uDE00)
+    // All three share the high surrogate '\uD83D'!
+    Parser<String> parser = Parser.nestedBy("🚀", "🙏");
+    assertThat(parser.parse("🚀😀🙏")).isEqualTo("😀");
+    assertThat(parser.matches("🚀😀🙏")).isTrue();
+
+    // With nesting
+    assertThat(parser.parse("🚀😀🚀🍕🙏🙏")).isEqualTo("😀🚀🍕🙏");
+    assertThat(parser.matches("🚀😀🚀🍕🙏🙏")).isTrue();
+  }
+
+  @Test
+  public void quotedBy_emojiDelimitersAndContentSharingHighSurrogate() {
+    // before: 🚀 (\uD83D\uDE80)
+    // after: 🙏 (\uD83D\uDE4F)
+    // content: 😀 (\uD83D\uDE00)
+    // All three share the high surrogate '\uD83D'!
+    Parser<String> parser = Parser.quotedBy("🚀", "🙏");
+    assertThat(parser.parse("🚀😀🙏")).isEqualTo("😀");
+    assertThat(parser.matches("🚀😀🙏")).isTrue();
+  }
+
+  @Test
   public void nestedByWithEscapes_deepNesting_noStackOverflow() {
     int depth = 10000;
     String input = "(".repeat(depth) + "foo" + ")".repeat(depth);
