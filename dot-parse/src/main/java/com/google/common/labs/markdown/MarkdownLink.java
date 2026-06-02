@@ -58,7 +58,7 @@ public record MarkdownLink(String label, String url) {
   }
 
   private static final Parser<String> ESCAPED =
-      one(anyOf("[!\"#$%&'()*+,-./:;<=>?@[\\\\]^_`{|}~]"), "escapable punctuation")
+      one(anyOf("!\"#$%&'()*+,-./:;<=>?@[\\\\]^_`{|}~"), "escapable punctuation")
           .map(String::valueOf)
           .or(chars(1).map("\\"::concat));  // if the char isn't escapable
 
