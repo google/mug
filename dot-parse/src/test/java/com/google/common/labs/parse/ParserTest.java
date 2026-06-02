@@ -470,6 +470,32 @@ public class ParserTest {
   }
 
   @Test
+  public void quotedByWithEscapes_throwsOnHighSurrogateBefore() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('\uD83D', '"', chars(1)));
+  }
+
+  @Test
+  public void quotedByWithEscapes_throwsOnLowSurrogateAfter() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('"', '\uDE80', chars(1)));
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes("begin:", '\uDE80', chars(1)));
+  }
+
+  @Test
+  public void quotedBy_throwsOnHighSurrogateBefore() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedBy('\uD83D', '"'));
+  }
+
+  @Test
+  public void quotedBy_throwsOnLowSurrogateAfter() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedBy('"', '\uDE80'));
+  }
+
+  @Test
   public void quotedByWithEscapes_unicodeEscape_success() {
     Parser<String> unicodeEscaped = string("u").then(bmpCodeUnit()).map(Character::toString);
     Parser<String> quotedString =
@@ -615,6 +641,18 @@ public class ParserTest {
   }
 
   @Test
+  public void nestedByWithEscapes_throwsOnHighSurrogateBefore() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('\uD83D', ')'));
+  }
+
+  @Test
+  public void nestedByWithEscapes_throwsOnLowSurrogateAfter() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('(', '\uDE80'));
+  }
+
+  @Test
   public void nestedBy_invalidQuoteChar_throws() {
     assertThrows(
         IllegalArgumentException.class, () -> Parser.nestedBy("", ")"));
@@ -622,6 +660,26 @@ public class ParserTest {
         IllegalArgumentException.class, () -> Parser.nestedBy("(", ""));
     assertThrows(
         IllegalArgumentException.class, () -> Parser.nestedBy("(", "("));
+  }
+
+  @Test
+  public void nestedByWithEscapes_utf32CodePoints() {
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')');
+    // Regular UTF-32 code point: rocket emoji 🚀 (\uD83D\uDE80)
+    assertThat(parser.parse("(foo 🚀 bar)")).isEqualTo("foo 🚀 bar");
+
+    // Escaped UTF-32 code point: \🚀
+    assertThat(parser.parse("(foo \\🚀 bar)")).isEqualTo("foo 🚀 bar");
+
+    // UTF-32 characters nested
+    assertThat(parser.parse("(foo 🚀 (bar 🍕) baz)")).isEqualTo("foo 🚀 (bar 🍕) baz");
+  }
+
+  @Test
+  public void nestedBy_utf32CodePoints() {
+    Parser<String> parser = Parser.nestedBy("(", ")");
+    assertThat(parser.parse("(foo 🚀 bar)")).isEqualTo("foo 🚀 bar");
+    assertThat(parser.parse("(foo 🚀 (bar 🍕) baz)")).isEqualTo("foo 🚀 (bar 🍕) baz");
   }
 
   @Test

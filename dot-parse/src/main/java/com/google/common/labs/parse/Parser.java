@@ -376,6 +376,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.5
    */
   public static Parser<String> quotedBy(char before, char after) {
+    checkArgument(!Character.isSurrogate(before), "before cannot be a surrogate character");
+    checkArgument(!Character.isSurrogate(after), "after cannot be a surrogate character");
     return quotedBy(Character.toString(before), Character.toString(after));
   }
 
@@ -439,6 +441,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public static Parser<String> quotedByWithEscapes(
       char before, char after, Parser<? extends CharSequence> escaped) {
+    checkArgument(!Character.isSurrogate(before), "before cannot be a surrogate character");
+    checkArgument(!Character.isSurrogate(after), "after cannot be a surrogate character");
     return quotedByWithEscapes(Character.toString(before), after, escaped);
   }
 
@@ -463,6 +467,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     var escape = string("\\").then(escaped);
     checkArgument(after != '\\', "quoteChar cannot be '\\'");
     checkArgument(!Character.isISOControl(after), "quoteChar cannot be a control character");
+    checkArgument(!Character.isSurrogate(after), "quoteChar cannot be a surrogate character");
     return anyOf(consecutive(isNot(after).and(isNot('\\')), "quoted chars"), escape)
         .zeroOrMore(Collectors.joining())
         .immediatelyBetween(before, Character.toString(after));
@@ -543,6 +548,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(before != '\\', "before cannot be '\\'");
     checkArgument(after != '\\', "after cannot be '\\'");
     checkArgument(before != after, "before and after must be different for nesting");
+    checkArgument(!Character.isSurrogate(before), "before cannot be a surrogate character");
+    checkArgument(!Character.isSurrogate(after), "after cannot be a surrogate character");
     String prefix = Character.toString(before);
     String suffix = Character.toString(after);
     return new Parser<String>() {
