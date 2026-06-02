@@ -62,7 +62,6 @@ public record MarkdownLink(String label, String url) {
           .map(String::valueOf)
           .or(chars(1).map("\\"::concat));  // if the char isn't escapable
 
-  private static final Parser<String> ESCAPE = one(is('\\'), "escape").then(Parser.chars(1));
   private static final Parser<String> CODE =
       consecutive(is('`'), "backticks").flatMap(Parser::first).source();
 
@@ -78,7 +77,10 @@ public record MarkdownLink(String label, String url) {
           nestedByWithEscapes('(', ')', ESCAPED),
           MarkdownLink::new));
 
-  private static final Parser<?> IGNORED = anyOf(ESCAPE, CODE, one(noneOf("\\[`"), "ignored char"));
+  private static final Parser<?> IGNORED = anyOf(
+      one(is('\\'), "escape").then(chars(1)),
+      CODE,
+      one(noneOf("\\[`"), "ignored char"));
 
   /**
    * Parses {@code link} into a {@link MarkdownLink}.
