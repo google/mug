@@ -23,7 +23,9 @@ import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.mu.util.CharPredicate.anyOf;
+import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
+import static com.google.mu.util.Substring.first;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.filtering;
@@ -256,6 +258,28 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   /** Returns the {@code addr-spec}, in the form of {@code user@mycompany.com}. */
   public String address() {
     return showLocalPart() + '@' + domain;
+  }
+
+  /**
+   * Returns the "user" part of the local-part before the first {@code +} separator,
+   * according to RFC 5233 subaddressing. If no {@code +} is present, the full
+   * {@code localPart} is returned.
+   *
+   * @since 10.3
+   */
+  public String user() {
+    return first('+').toEnd().removeFrom(localPart);
+  }
+
+  /**
+   * Returns the "alias" (or "detail") part of the local-part after the first {@code +} separator,
+   * according to RFC 5233 subaddressing. If no {@code +} is present, or if the {@code +} is the
+   * last character of the local-part, {@code Optional.empty()} is returned.
+   *
+   * @since 10.3
+   */
+  public Optional<String> alias() {
+    return after(first('+')).from(localPart).filter(a -> !a.isEmpty());
   }
 
   private String showLocalPart() {

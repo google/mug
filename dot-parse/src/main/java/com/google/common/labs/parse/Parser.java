@@ -532,7 +532,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * <pre>{@code
    * Parser<MarkdownLink> markdownLinkUrl = sequence(
    *     nestedByWithEscapes('[', ']'),
-   *     nestedByWithEscapes('(', ')',
+   *     nestedByWithEscapes('(', ')'),
    *     MarkdownLink::new);
    * markdownLinkUrl.parse("[x[y]z](a\\(b(c)d)"); // => MarkdownLink("x[y]z", "a(b(c)d")
    * }</pre>
@@ -804,6 +804,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /** Matches if {@code this} or {@code that} matches. */
+  @Deprecated
   public final Parser<T> or(Parser<? extends T> that) {
     return new OrParser<T>(asList(this, that));
   }

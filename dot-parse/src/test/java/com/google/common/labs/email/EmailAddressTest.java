@@ -344,6 +344,47 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_dotAfterPlus(@TestParameter ParseStrategy parser) {
+    parser.assertParsesTo(
+        "someone+else.and-another@example.com",
+        EmailAddress.of("someone+else.and-another", "example.com"));
+    parser.assertParsesTo(
+        "someone+.else@example.com",
+        EmailAddress.of("someone+.else", "example.com"));
+  }
+
+  @Test
+  public void testUserAndAlias() {
+    EmailAddress addr1 = EmailAddress.of("someone.else+and-another", "example.com");
+    assertThat(addr1.user()).isEqualTo("someone.else");
+    assertThat(addr1.alias()).hasValue("and-another");
+
+    EmailAddress addr2 = EmailAddress.of("john.doe", "example.com");
+    assertThat(addr2.user()).isEqualTo("john.doe");
+    assertThat(addr2.alias()).isEmpty();
+
+    EmailAddress addr3 = EmailAddress.of("+tag", "example.com");
+    assertThat(addr3.user()).isEmpty();
+    assertThat(addr3.alias()).hasValue("tag");
+
+    EmailAddress addr4 = EmailAddress.of("user+", "example.com");
+    assertThat(addr4.user()).isEqualTo("user");
+    assertThat(addr4.alias()).isEmpty();
+
+    EmailAddress addr5 = EmailAddress.of("someone+else+another", "example.com");
+    assertThat(addr5.user()).isEqualTo("someone");
+    assertThat(addr5.alias()).hasValue("else+another");
+
+    EmailAddress addr6 = EmailAddress.of("+", "example.com");
+    assertThat(addr6.user()).isEmpty();
+    assertThat(addr6.alias()).isEmpty();
+
+    EmailAddress addr7 = EmailAddress.of("++", "example.com");
+    assertThat(addr7.user()).isEmpty();
+    assertThat(addr7.alias()).hasValue("+");
+  }
+
+  @Test
   public void testEmailAddressParsing_singleLetterLocalPartAndDomain(
       @TestParameter ParseStrategy parser) {
     parser.assertParsesTo("a@b", EmailAddress.of("a", "b"));
