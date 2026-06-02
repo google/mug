@@ -539,7 +539,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <pre>{@code
    * Parser<String> comment = nestedByWithEscapes('(', ')', chars(1));
-   * comment.parse("(comment with \\(nested\\) parens)");
+   * comment.parse("(comment with (nested) parens)");
    * }</pre>
    *
    * will return {@code "comment with (nested) parens"}.
