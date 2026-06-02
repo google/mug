@@ -549,7 +549,7 @@ public class ParserTest {
     Parser<MarkdownLink> parser =
         Parser.sequence(
             Parser.quotedByWithEscapes("![", ']', escapedChar),
-            Parser.nestedByWithEscapes('(', ')'),
+            Parser.nestedByWithEscapes('(', ')', chars(1)),
             MarkdownLink::new);
     assertThat(parser.parse("![text](http://\\)url)")).isEqualTo(new MarkdownLink("text", "http://)url"));
     assertThat(parser.parse("![text\\a](http://\\)url)"))
@@ -562,7 +562,7 @@ public class ParserTest {
 
   @Test
   public void nestedByWithEscapes_charDelimiters_success() {
-    Parser<String> parser = Parser.nestedByWithEscapes('(', ')');
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', chars(1));
     assertThat(parser.getPrefixes()).containsExactly("(");
     assertThat(parser.parse("()")).isEqualTo("");
     assertThat(parser.matches("()")).isTrue();
@@ -608,7 +608,7 @@ public class ParserTest {
 
   @Test
   public void nestedByWithEscapes_failures() {
-    Parser<String> parser = Parser.nestedByWithEscapes('(', ')');
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', chars(1));
     assertThrows(ParseException.class, () -> parser.parse("(foo (bar)")); // unclosed outer
     assertThat(parser.matches("(foo (bar)")).isFalse();
     assertThrows(ParseException.class, () -> parser.parse("(foo (bar))baz")); // leftover
@@ -633,23 +633,23 @@ public class ParserTest {
   @Test
   public void nestedByWithEscapes_invalidQuoteChar_throws() {
     assertThrows(
-        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('\\', ')'));
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('\\', ')', chars(1)));
     assertThrows(
-        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('(', '\\'));
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('(', '\\', chars(1)));
     assertThrows(
-        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('(', '('));
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('(', '(', chars(1)));
   }
 
   @Test
   public void nestedByWithEscapes_throwsOnHighSurrogateBefore() {
     assertThrows(
-        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('\uD83D', ')'));
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('\uD83D', ')', chars(1)));
   }
 
   @Test
   public void nestedByWithEscapes_throwsOnLowSurrogateAfter() {
     assertThrows(
-        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('(', '\uDE80'));
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('(', '\uDE80', chars(1)));
   }
 
   @Test
@@ -664,7 +664,7 @@ public class ParserTest {
 
   @Test
   public void nestedByWithEscapes_utf32CodePoints() {
-    Parser<String> parser = Parser.nestedByWithEscapes('(', ')');
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', chars(1));
     // Regular UTF-32 code point: rocket emoji 🚀 (\uD83D\uDE80)
     assertThat(parser.parse("(foo 🚀 bar)")).isEqualTo("foo 🚀 bar");
 
@@ -673,6 +673,21 @@ public class ParserTest {
 
     // UTF-32 characters nested
     assertThat(parser.parse("(foo 🚀 (bar 🍕) baz)")).isEqualTo("foo 🚀 (bar 🍕) baz");
+  }
+
+  @Test
+  public void nestedByWithEscapes_customEscapedParser_success() {
+    // Only allow '(' and ')' to be escaped by backslash.
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', Parser.one("[()]").map(c -> String.valueOf(c)));
+    assertThat(parser.parse("(foo \\( bar \\) baz)")).isEqualTo("foo ( bar ) baz");
+  }
+
+  @Test
+  public void nestedByWithEscapes_customEscapedParser_failure() {
+    // Only allow '(' and ')' to be escaped by backslash.
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', Parser.one("[()]").map(c -> String.valueOf(c)));
+    // '\a' is not a valid escape in this custom parser, so parsing should fail!
+    assertThrows(ParseException.class, () -> parser.parse("(foo \\a bar)"));
   }
 
   @Test
@@ -712,7 +727,7 @@ public class ParserTest {
   public void nestedByWithEscapes_deepNesting_noStackOverflow() {
     int depth = 10000;
     String input = "(".repeat(depth) + "foo" + ")".repeat(depth);
-    Parser<String> parser = Parser.nestedByWithEscapes('(', ')');
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', chars(1));
     assertThat(parser.parse(input)).isEqualTo("(".repeat(depth - 1) + "foo" + ")".repeat(depth - 1));
   }
 
@@ -748,7 +763,7 @@ public class ParserTest {
             string("baz"),
             string("qux"),
             string("etc"),
-            Parser.nestedByWithEscapes('(', ')'));
+            Parser.nestedByWithEscapes('(', ')', chars(1)));
     assertThat(parser.parse("(abc)")).isEqualTo("abc");
     assertThat(parser.parse("foo")).isEqualTo("foo");
     assertThat(parser.parse("bar")).isEqualTo("bar");

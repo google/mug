@@ -531,20 +531,24 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * Matches the characters nested by {@code before} and {@code after} with backslash escapes,
    * supporting balanced nesting, and returns the unescaped nested string in between.
    *
-   * <p>For example, you can use it to parse markdown links, which allows balanced brackets
-   * and parentheses with escapes:
+   * <p>When a backslash is encountered, the {@code escaped} parser is used to parse the escaped
+   * character(s). If the {@code escaped} parser fails, the entire parsing fails.
+   *
+   * <p>For example, to parse RFC 5322 email comments which allow nested comments and escaped
+   * characters (where any character following a backslash is considered literal):
    *
    * <pre>{@code
-   * Parser<MarkdownLink> markdownLink = sequence(
-   *     nestedByWithEscapes('[', ']'),
-   *     nestedByWithEscapes('(', ')'),
-   *     MarkdownLink::new);
-   * markdownLink.parse("[x[y]z](a\\(b(c)d)"); // => MarkdownLink("x[y]z", "a(b(c)d")
+   * Parser<String> comment = nestedByWithEscapes('(', ')', chars(1));
+   * comment.parse("(comment with \\(nested\\) parens)");
    * }</pre>
+   *
+   * will return {@code "comment with (nested) parens"}.
    *
    * @since 10.3
    */
-  public static Parser<String> nestedByWithEscapes(char before, char after) {
+  public static Parser<String> nestedByWithEscapes(
+      char before, char after, Parser<? extends CharSequence> escaped) {
+    requireNonNull(escaped);
     checkArgument(before != '\\', "before cannot be '\\'");
     checkArgument(after != '\\', "after cannot be '\\'");
     checkArgument(before != after, "before and after must be different for nesting");
@@ -560,7 +564,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           return context.expecting(prefix, start);
         }
         StringBuilder builder = new StringBuilder();
-        for (int index = start + 1, depth = 1; ; index++) {
+        for (int index = start + 1, depth = 1; ; ) {
           if (input.isEof(index)) {
             return context.expecting(suffix, index); // Unclosed block
           }
@@ -570,16 +574,24 @@ public abstract non-sealed class Parser<T> implements Production<T> {
               return new MatchResult.Success<>(start, index + 1, builder.toString());
             }
             builder.append(c);
+            index++;
           } else if (c == before) {
             depth++;
             builder.append(c);
+            index++;
           } else if (c == '\\') {
-            if (input.isEof(++index)) {
-              return context.expecting("escaped char", index); // Dangling escape
+            switch (escaped.skipAndMatch(null, input, index + 1, context)) {
+              case MatchResult.Success(int head, int tail, CharSequence value) -> {
+                builder.append(value);
+                index = tail;
+              }
+              case MatchResult.Failure<?> failure -> {
+                return failure.safeCast();
+              }
             }
-            builder.append(input.charAt(index));
           } else {
             builder.append(c);
+            index++;
           }
         }
       }
@@ -811,7 +823,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /** Matches if {@code this} or {@code that} matches. */
-  @Deprecated
   public final Parser<T> or(Parser<? extends T> that) {
     return new OrParser<T>(asList(this, that));
   }

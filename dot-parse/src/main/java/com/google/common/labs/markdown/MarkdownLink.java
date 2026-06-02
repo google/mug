@@ -16,11 +16,13 @@
 package com.google.common.labs.markdown;
 
 import static com.google.common.labs.parse.Parser.anyOf;
+import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.nestedByWithEscapes;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
+import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.noneOf;
 import static java.util.Objects.requireNonNull;
@@ -55,6 +57,11 @@ public record MarkdownLink(String label, String url) {
     requireNonNull(url);
   }
 
+  private static final Parser<String> ESCAPED =
+      one(anyOf("[!\"#$%&'()*+,-./:;<=>?@[\\\\]^_`{|}~]"), "escapable punctuation")
+          .map(String::valueOf)
+          .or(chars(1).map("\\"::concat));  // if the char isn't escapable
+
   private static final Parser<String> ESCAPE = one(is('\\'), "escape").then(Parser.chars(1));
   private static final Parser<String> CODE =
       consecutive(is('`'), "backticks").flatMap(Parser::first).source();
@@ -66,7 +73,10 @@ public record MarkdownLink(String label, String url) {
    * for extracting multiple links. This constant is meant to be composed in larger parsers.
    */
   public static final Parser<MarkdownLink> PARSER = literally(
-      sequence(nestedByWithEscapes('[', ']'), nestedByWithEscapes('(', ')'), MarkdownLink::new));
+      sequence(
+          nestedByWithEscapes('[', ']', ESCAPED),
+          nestedByWithEscapes('(', ')', ESCAPED),
+          MarkdownLink::new));
 
   private static final Parser<?> IGNORED = anyOf(ESCAPE, CODE, one(noneOf("\\[`"), "ignored char"));
 

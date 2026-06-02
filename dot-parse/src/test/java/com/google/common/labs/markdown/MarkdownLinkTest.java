@@ -89,6 +89,34 @@ public class MarkdownLinkTest {
   }
 
   @Test
+  public void testNonPunctuationEscapeInLinkLabel_preserved_asciiAlphanumeric(@TestParameter Scanner scanner) {
+    // '\a' is not a punctuation, so backslash must be preserved!
+    assertThat(scanner.scan("[x\\ay](url)"))
+        .containsExactly(new MarkdownLink("x\\ay", "url"));
+  }
+
+  @Test
+  public void testNonPunctuationEscapeInLinkLabel_preserved_nonAscii(@TestParameter Scanner scanner) {
+    // '\🚀' is not a punctuation, so backslash must be preserved!
+    assertThat(scanner.scan("[x\\🚀y](url)"))
+        .containsExactly(new MarkdownLink("x\\🚀y", "url"));
+  }
+
+  @Test
+  public void testNonPunctuationEscapeInLinkUrl_preserved_asciiAlphanumeric(@TestParameter Scanner scanner) {
+    // '\a' is not a punctuation, so backslash must be preserved!
+    assertThat(scanner.scan("[text](http://foo\\abar)"))
+        .containsExactly(new MarkdownLink("text", "http://foo\\abar"));
+  }
+
+  @Test
+  public void testNonPunctuationEscapeInLinkUrl_preserved_nonAscii(@TestParameter Scanner scanner) {
+    // '\🚀' is not a punctuation, so backslash must be preserved!
+    assertThat(scanner.scan("[text](http://foo\\🚀bar)"))
+        .containsExactly(new MarkdownLink("text", "http://foo\\🚀bar"));
+  }
+
+  @Test
   public void testEscaping(@TestParameter Scanner scanner) {
     assertThat(scanner.scan("[x\\[y\\]](url)"))
         .containsExactly(new MarkdownLink("x[y]", "url"));
@@ -151,6 +179,11 @@ public class MarkdownLinkTest {
   public void testNestedBracketsAndParensInsideLinkUrl(@TestParameter Scanner scanner) {
     assertThat(scanner.scan("[text](http://foo[bar(baz)]qux)"))
         .containsExactly(new MarkdownLink("text", "http://foo[bar(baz)]qux"));
+  }
+
+  @Test
+  public void testIgnoreSpaceBetweenBracketAndParenthesis(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("[text] (url)")).isEmpty();
   }
 
   @Test public void testNulls() {
