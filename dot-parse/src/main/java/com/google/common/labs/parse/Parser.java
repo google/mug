@@ -535,11 +535,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * and parentheses with escapes:
    *
    * <pre>{@code
-   * Parser<MarkdownLink> markdownLinkUrl = sequence(
+   * Parser<MarkdownLink> markdownLink = sequence(
    *     nestedByWithEscapes('[', ']'),
    *     nestedByWithEscapes('(', ')'),
    *     MarkdownLink::new);
-   * markdownLinkUrl.parse("[x[y]z](a\\(b(c)d)"); // => MarkdownLink("x[y]z", "a(b(c)d")
+   * markdownLink.parse("[x[y]z](a\\(b(c)d)"); // => MarkdownLink("x[y]z", "a(b(c)d")
    * }</pre>
    *
    * @since 10.3
