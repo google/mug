@@ -337,6 +337,12 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_invalidEmail_domainLiterals() {
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test@[192.168.1.1]"));
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test@192.168.1.1"));
+  }
+
+  @Test
   public void testEmailAddressParsing_complex(@TestParameter ParseStrategy parser) {
     parser.assertParsesTo(
         "someone.else+and-another@some.sub-domain.example.co.uk",
