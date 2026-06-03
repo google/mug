@@ -548,7 +548,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public static Parser<String> nestedByWithEscapes(
       char before, char after, Production<? extends CharSequence> escaped) {
-    requireNonNull(escaped);
+    Parser<? extends CharSequence> followingEscape = allowZeroWidth(escaped);
     checkArgument(before != '\\', "before cannot be '\\'");
     checkArgument(after != '\\', "after cannot be '\\'");
     checkArgument(before != after, "before and after must be different for nesting");
@@ -556,7 +556,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(!Character.isSurrogate(after), "after cannot be a surrogate character");
     String prefix = Character.toString(before);
     String suffix = Character.toString(after);
-    Parser<? extends CharSequence> followingEscape = allowZeroWidth(escaped);
     return new Parser<String>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
