@@ -215,6 +215,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     checkArgument(
         ISO_CONTROL.matchesNoneOf(displayName.orElse("")),
         "display name must not contain control characters");
+    checkArgument(domain.contains("."), "domain must contain at least one dot: %s", domain);
     all('.').split(domain).forEach(label -> {
         checkArgument(!label.isEmpty(), "domain label cannot be empty");
         checkArgument(
@@ -364,6 +365,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<String> domain = consecutive(DOMAIN_LABEL_CHARS, "domain label chars")
         .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
         .atLeastOnceDelimitedBy(".")
+        .suchThat(labels -> labels.size() > 1, "domain name with at least one dot")
         .suchThat(labels -> !NUMERIC.matchesAllOf(labels.getLast()), "domain with valid TLD")
         .map(Joiner.on('.')::join);
     Parser<EmailAddress> address =

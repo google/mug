@@ -233,6 +233,11 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressOf_dotlessDomain_throws() {
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "localhost"));
+  }
+
+  @Test
   public void testEmailAddressOf_invalidDomainChars_space() {
     assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test", "example .com"));
   }
@@ -393,12 +398,12 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_singleLetterLocalPartAndDomain(
       @TestParameter ParseStrategy parser) {
-    parser.assertParsesTo("a@b", EmailAddress.of("a", "b"));
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("a@b"));
   }
 
   @Test
   public void testEmailAddressParsing_domainWithoutTld(@TestParameter ParseStrategy parser) {
-    parser.assertParsesTo("test@example", EmailAddress.of("test", "example"));
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("test@example"));
   }
 
   @Test
@@ -429,6 +434,11 @@ public class EmailAddressTest {
   public void testEmailAddressParsing_invalidEmail_multipleAtSigns(
       @TestParameter ParseStrategy parser) {
     assertThrows(IllegalArgumentException.class, () -> parser.parse("test@example@com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_localhost(@TestParameter ParseStrategy parser) {
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("test@localhost"));
   }
 
   @Test
@@ -878,8 +888,8 @@ public class EmailAddressTest {
   public void testParseAddressList_withConsumer_withInvalidEntries_scattered() {
     List<String> invalid = new ArrayList<>();
     assertThat(EmailAddress.parseAddressList("invalid1, invalid2; goo.d@address ; @com", invalid::add))
-        .containsExactly(EmailAddress.of("goo.d", "address"));
-    assertThat(invalid).containsExactly("invalid1", "invalid2", "@com").inOrder();
+        .isEmpty();
+    assertThat(invalid).containsExactly("invalid1", "invalid2", "goo.d@address", "@com").inOrder();
   }
 
   @Test
