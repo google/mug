@@ -32,6 +32,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -54,7 +55,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.errorprone.annotations.ThreadSafe;
@@ -469,7 +469,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(!Character.isISOControl(after), "quoteChar cannot be a control character");
     checkArgument(!Character.isSurrogate(after), "quoteChar cannot be a surrogate character");
     return anyOf(consecutive(isNot(after).and(isNot('\\')), "quoted chars"), escape)
-        .zeroOrMore(Collectors.joining())
+        .zeroOrMore(joining())
         .immediatelyBetween(before, Character.toString(after));
   }
 
