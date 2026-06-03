@@ -473,7 +473,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         .immediatelyBetween(before, Character.toString(after));
   }
 
-
   /**
    * Matches the characters nested by {@code before} and {@code after}, supporting balanced
    * nesting, and returns the nested string in between.
@@ -573,26 +572,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             if (--depth == 0) {
               return new MatchResult.Success<>(start, index + 1, builder.toString());
             }
-            builder.append(c);
-            index++;
           } else if (c == before) {
             depth++;
-            builder.append(c);
-            index++;
           } else if (c == '\\') {
             switch (followingEscape.skipAndMatch(null, input, index + 1, context)) {
               case MatchResult.Success(int head, int tail, CharSequence value) -> {
                 builder.append(value);
                 index = tail;
+                continue;
               }
               case MatchResult.Failure<?> failure -> {
                 return failure.safeCast();
               }
             }
-          } else {
-            builder.append(c);
-            index++;
           }
+          builder.append(c);
+          index++;
         }
       }
 
