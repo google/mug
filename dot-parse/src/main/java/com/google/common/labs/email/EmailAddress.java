@@ -21,7 +21,6 @@ import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
-import static com.google.common.labs.parse.Parser.string;
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
@@ -368,7 +367,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         .suchThat(labels -> !NUMERIC.matchesAllOf(labels.getLast()), "domain with valid TLD")
         .map(Joiner.on('.')::join);
     Parser<EmailAddress> address =
-        literally(sequence(localPart, string("@").then(domain), EmailAddress::of));
+        literally(sequence(localPart.followedBy("@"), domain, EmailAddress::of));
     Parser<String> unquotedDisplayName = consecutive(
         ISO_CONTROL.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
