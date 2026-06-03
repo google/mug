@@ -490,40 +490,31 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.3
    */
   public static Parser<String> nestedBy(String before, String after) {
-    checkArgument(!before.isEmpty(), "before cannot be empty");
     checkArgument(!after.isEmpty(), "after cannot be empty");
     checkArgument(!before.equals(after), "before and after must be different for nesting");
-    return new Parser<String>() {
-      @Override MatchResult<String> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        if (!input.startsWith(before, start)) {
-          return context.expecting(before, start);
-        }
-        final int from = start + before.length();
-        for (int index = from, depth = 1; ; ) {
-          if (input.isEof(index)) {
-            return context.expecting(after, index); // Unclosed block
-          }
-          if (input.startsWith(after, index)) {
-            if (--depth == 0) {
-              return new MatchResult.Success<>(
-                  start,  index + after.length(), input.snippet(from, index - from));
+    return string(before).then(
+        new Parser<String>() {
+          @Override MatchResult<String> skipAndMatch(
+              Parser<?> skip, CharInput input, final int start, ErrorContext context) {
+            for (int index = start, depth = 1; ; ) {
+              if (input.isEof(index)) {
+                return context.expecting(after, index); // Unclosed block
+              }
+              if (input.startsWith(after, index)) {
+                if (--depth == 0) {
+                  return new MatchResult.Success<>(
+                      start,  index + after.length(), input.snippet(start, index - start));
+                }
+                index += after.length();
+              } else if (input.startsWith(before, index)) {
+                depth++;
+                index += before.length();
+              } else {
+                index++;
+              }
             }
-            index += after.length();
-          } else if (input.startsWith(before, index)) {
-            depth++;
-            index += before.length();
-          } else {
-            index++;
           }
-        }
-      }
-
-      @Override Set<String> getPrefixes() {
-        return Set.of(before);
-      }
-    };
+        });
   }
 
   /**
@@ -553,47 +544,39 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(before != after, "before and after must be different for nesting");
     checkArgument(!Character.isSurrogate(before), "before cannot be a surrogate character");
     checkArgument(!Character.isSurrogate(after), "after cannot be a surrogate character");
-    String prefix = Character.toString(before);
     String suffix = Character.toString(after);
-    return new Parser<String>() {
-      @Override MatchResult<String> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        if (input.isEof(start) || input.charAt(start) != before) {
-          return context.expecting(prefix, start);
-        }
-        StringBuilder builder = new StringBuilder();
-        for (int index = start + 1, depth = 1; ; ) {
-          if (input.isEof(index)) {
-            return context.expecting(suffix, index); // Unclosed block
-          }
-          char c = input.charAt(index++);
-          if (c == after) {
-            if (--depth == 0) {
-              return new MatchResult.Success<>(start, index, builder.toString());
-            }
-          } else if (c == before) {
-            depth++;
-          } else if (c == '\\') {
-            switch (followingEscape.skipAndMatch(null, input, index, context)) {
-              case MatchResult.Success(int head, int tail, CharSequence value) -> {
-                builder.append(value);
-                index = tail;
-                continue;
+    return one(before).then(
+        new Parser<String>() {
+          @Override MatchResult<String> skipAndMatch(
+              Parser<?> skip, CharInput input, final int start, ErrorContext context) {
+            StringBuilder builder = new StringBuilder();
+            for (int index = start, depth = 1; ; ) {
+              if (input.isEof(index)) {
+                return context.expecting(suffix, index); // Unclosed block
               }
-              case MatchResult.Failure<?> failure -> {
-                return failure.safeCast();
+              char c = input.charAt(index++);
+              if (c == after) {
+                if (--depth == 0) {
+                  return new MatchResult.Success<>(start, index, builder.toString());
+                }
+              } else if (c == before) {
+                depth++;
+              } else if (c == '\\') {
+                switch (followingEscape.skipAndMatch(null, input, index, context)) {
+                  case MatchResult.Success(int head, int tail, CharSequence value) -> {
+                    builder.append(value);
+                    index = tail;
+                    continue;
+                  }
+                  case MatchResult.Failure<?> failure -> {
+                    return failure.safeCast();
+                  }
+                }
               }
+              builder.append(c);
             }
           }
-          builder.append(c);
-        }
-      }
-
-      @Override Set<String> getPrefixes() {
-        return Set.of(prefix);
-      }
-    };
+        });
   }
 
   /**
