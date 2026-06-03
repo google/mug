@@ -440,7 +440,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.5
    */
   public static Parser<String> quotedByWithEscapes(
-      char before, char after, Parser<? extends CharSequence> escaped) {
+      char before, char after, Production<? extends CharSequence> escaped) {
     checkArgument(!Character.isSurrogate(before), "before cannot be a surrogate character");
     checkArgument(!Character.isSurrogate(after), "after cannot be a surrogate character");
     return quotedByWithEscapes(Character.toString(before), after, escaped);
@@ -463,8 +463,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.9.3
    */
   public static Parser<String> quotedByWithEscapes(
-      String before, char after, Parser<? extends CharSequence> escaped) {
-    var escape = string("\\").then(escaped);
+      String before, char after, Production<? extends CharSequence> escaped) {
+    var escape = string("\\").then(allowZeroWidth(escaped));
     checkArgument(after != '\\', "quoteChar cannot be '\\'");
     checkArgument(!Character.isISOControl(after), "quoteChar cannot be a control character");
     checkArgument(!Character.isSurrogate(after), "quoteChar cannot be a surrogate character");
@@ -547,7 +547,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.3
    */
   public static Parser<String> nestedByWithEscapes(
-      char before, char after, Parser<? extends CharSequence> escaped) {
+      char before, char after, Production<? extends CharSequence> escaped) {
     requireNonNull(escaped);
     checkArgument(before != '\\', "before cannot be '\\'");
     checkArgument(after != '\\', "after cannot be '\\'");
@@ -556,6 +556,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(!Character.isSurrogate(after), "after cannot be a surrogate character");
     String prefix = Character.toString(before);
     String suffix = Character.toString(after);
+    Parser<? extends CharSequence> followingEscape = allowZeroWidth(escaped);
     return new Parser<String>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
@@ -580,7 +581,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             builder.append(c);
             index++;
           } else if (c == '\\') {
-            switch (escaped.skipAndMatch(null, input, index + 1, context)) {
+            switch (followingEscape.skipAndMatch(null, input, index + 1, context)) {
               case MatchResult.Success(int head, int tail, CharSequence value) -> {
                 builder.append(value);
                 index = tail;

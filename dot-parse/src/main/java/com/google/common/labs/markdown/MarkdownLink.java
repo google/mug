@@ -57,10 +57,10 @@ public record MarkdownLink(String label, String url) {
     requireNonNull(url);
   }
 
-  private static final Parser<String> ESCAPED =
+  private static final Parser<String>.OrEmpty ESCAPED =
       one(anyOf("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"), "escapable punctuation")
           .map(String::valueOf)
-          .or(chars(1).map("\\"::concat));  // if the char isn't escapable
+          .orElse("\\");  // if the char isn't escapable
 
   /**
    * Parser for a {@link MarkdownLink}.
