@@ -567,15 +567,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           if (input.isEof(index)) {
             return context.expecting(suffix, index); // Unclosed block
           }
-          char c = input.charAt(index);
+          char c = input.charAt(index++);
           if (c == after) {
             if (--depth == 0) {
-              return new MatchResult.Success<>(start, index + 1, builder.toString());
+              return new MatchResult.Success<>(start, index, builder.toString());
             }
           } else if (c == before) {
             depth++;
           } else if (c == '\\') {
-            switch (followingEscape.skipAndMatch(null, input, index + 1, context)) {
+            switch (followingEscape.skipAndMatch(null, input, index, context)) {
               case MatchResult.Success(int head, int tail, CharSequence value) -> {
                 builder.append(value);
                 index = tail;
@@ -587,7 +587,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             }
           }
           builder.append(c);
-          index++;
         }
       }
 
