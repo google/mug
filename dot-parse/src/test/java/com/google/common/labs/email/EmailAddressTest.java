@@ -230,16 +230,25 @@ public class EmailAddressTest {
   public void testEmailAddressOf_validDomainChars() {
     EmailAddress address = EmailAddress.of("test", "bücher.de");
     assertThat(address.domain()).isEqualTo("xn--bcher-kva.de");
+    assertThat(address.unicodeDomain()).isEqualTo("bücher.de");
   }
 
   @Test
   public void testEmailAddressOf_domainCaseFolding() {
     // Standard ASCII case folding
-    assertThat(EmailAddress.of("test", "Example.Com").domain()).isEqualTo("example.com");
+    EmailAddress address1 = EmailAddress.of("test", "Example.Com");
+    assertThat(address1.domain()).isEqualTo("example.com");
+    assertThat(address1.unicodeDomain()).isEqualTo("example.com");
+
     // IDN case folding (converts capital B to lowercase b and maps to punycode)
-    assertThat(EmailAddress.of("test", "Bücher.De").domain()).isEqualTo("xn--bcher-kva.de");
+    EmailAddress address2 = EmailAddress.of("test", "Bücher.De");
+    assertThat(address2.domain()).isEqualTo("xn--bcher-kva.de");
+    assertThat(address2.unicodeDomain()).isEqualTo("bücher.de");
+
     // Parse case folding
-    assertThat(EmailAddress.of("test@Example.Com").domain()).isEqualTo("example.com");
+    EmailAddress address3 = EmailAddress.of("test@Example.Com");
+    assertThat(address3.domain()).isEqualTo("example.com");
+    assertThat(address3.unicodeDomain()).isEqualTo("example.com");
   }
 
   @Test

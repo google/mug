@@ -21,6 +21,7 @@ import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
+import static com.google.mu.util.CharPredicate.ASCII;
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
@@ -219,6 +220,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     checkArgument(
         ISO_CONTROL.matchesNoneOf(displayName.orElse("")),
         "display name must not contain control characters");
+    checkArgument(ASCII.matchesAllOf(domain), "domain must be ASCII: %s", domain);
     all('.').split(domain).forEach(label -> {
         checkArgument(!label.isEmpty(), "domain label cannot be empty");
         checkArgument(
@@ -234,7 +236,6 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     checkArgument(
         localPart.length() + domain.length() + 1 <= 254,
         "<%s@%s> must be <= 254 chars", localPart, domain);
-    checkArgument(CharPredicate.ASCII.matchesAllOf(domain), "domain must be ASCII: %s", domain);
   }
 
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
@@ -286,6 +287,15 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    */
   public Optional<String> alias() {
     return after(first('+')).from(localPart).filter(a -> !a.isEmpty());
+  }
+
+  /**
+   * Returns the domain in Unicode.
+   *
+   * @since 10.3
+   */
+  public String unicodeDomain() {
+    return IDN.toUnicode(domain, IDN.ALLOW_UNASSIGNED);
   }
 
   private String showLocalPart() {
