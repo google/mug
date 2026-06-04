@@ -32,6 +32,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -54,7 +55,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.errorprone.annotations.ThreadSafe;
@@ -376,6 +376,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.5
    */
   public static Parser<String> quotedBy(char before, char after) {
+    checkArgument(!Character.isSurrogate(before), "before cannot be a surrogate character");
+    checkArgument(!Character.isSurrogate(after), "after cannot be a surrogate character");
     return quotedBy(Character.toString(before), Character.toString(after));
   }
 
@@ -438,7 +440,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.5
    */
   public static Parser<String> quotedByWithEscapes(
-      char before, char after, Parser<? extends CharSequence> escaped) {
+      char before, char after, Production<? extends CharSequence> escaped) {
+    checkArgument(!Character.isSurrogate(before), "before cannot be a surrogate character");
+    checkArgument(!Character.isSurrogate(after), "after cannot be a surrogate character");
     return quotedByWithEscapes(Character.toString(before), after, escaped);
   }
 
@@ -459,15 +463,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.9.3
    */
   public static Parser<String> quotedByWithEscapes(
-      String before, char after, Parser<? extends CharSequence> escaped) {
-    var escape = string("\\").then(escaped);
+      String before, char after, Production<? extends CharSequence> escaped) {
+    var escape = string("\\").then(allowZeroWidth(escaped));
     checkArgument(after != '\\', "quoteChar cannot be '\\'");
     checkArgument(!Character.isISOControl(after), "quoteChar cannot be a control character");
+    checkArgument(!Character.isSurrogate(after), "quoteChar cannot be a surrogate character");
     return anyOf(consecutive(isNot(after).and(isNot('\\')), "quoted chars"), escape)
-        .zeroOrMore(Collectors.joining())
+        .zeroOrMore(joining())
         .immediatelyBetween(before, Character.toString(after));
   }
-
 
   /**
    * Matches the characters nested by {@code before} and {@code after}, supporting balanced
@@ -478,7 +482,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * after} delimiters and only succeeds when the nesting is balanced.
    *
    * <p>For example, {@code nestedBy("(", ")").parse("(a(b)c)")} returns {@code "a(b)c"}.
-   * In contrast, {@code quotedBy("(", ")").parse("(a(b)c)")} would return {@code "a(b"}.
+   * In contrast, {@code quotedBy("(", ")")} will match {@code "(a(b)"}.
    *
    * <p>Does not support escaping. If the delimiters can be escaped by backslashes, use {@link
    * #nestedByWithEscapes} instead.
@@ -486,101 +490,93 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.3
    */
   public static Parser<String> nestedBy(String before, String after) {
-    checkArgument(!before.isEmpty(), "before cannot be empty");
     checkArgument(!after.isEmpty(), "after cannot be empty");
     checkArgument(!before.equals(after), "before and after must be different for nesting");
-    return new Parser<String>() {
-      @Override MatchResult<String> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        if (!input.startsWith(before, start)) {
-          return context.expecting(before, start);
-        }
-        final int from = start + before.length();
-        for (int index = from, depth = 1; ; ) {
-          if (input.isEof(index)) {
-            return context.expecting(after, index); // Unclosed block
-          }
-          if (input.startsWith(after, index)) {
-            if (--depth == 0) {
-              return new MatchResult.Success<>(
-                  start,  index + after.length(), input.snippet(from, index - from));
+    return string(before).then(
+        new Parser<String>() {
+          @Override MatchResult<String> skipAndMatch(
+              Parser<?> skip, CharInput input, final int start, ErrorContext context) {
+            for (int index = start, depth = 1; ; ) {
+              if (input.isEof(index)) {
+                return context.expecting(after, index); // Unclosed block
+              }
+              if (input.startsWith(after, index)) {
+                if (--depth == 0) {
+                  return new MatchResult.Success<>(
+                      start,  index + after.length(), input.snippet(start, index - start));
+                }
+                index += after.length();
+              } else if (input.startsWith(before, index)) {
+                depth++;
+                index += before.length();
+              } else {
+                index++;
+              }
             }
-            index += after.length();
-          } else if (input.startsWith(before, index)) {
-            depth++;
-            index += before.length();
-          } else {
-            index++;
           }
-        }
-      }
-
-      @Override Set<String> getPrefixes() {
-        return Set.of(before);
-      }
-    };
+        });
   }
 
   /**
    * Matches the characters nested by {@code before} and {@code after} with backslash escapes,
    * supporting balanced nesting, and returns the unescaped nested string in between.
    *
-   * <p>For example, you can use it to parse markdown links, which allows balanced brackets
-   * and parentheses with escapes:
+   * <p>When a backslash is encountered, the {@code escaped} parser is used to parse the escaped
+   * character(s). If the {@code escaped} parser fails, the entire parsing fails.
+   *
+   * <p>For example, to parse RFC 5322 email comments which allow nested comments and escaped
+   * characters (where any character following a backslash is considered literal):
    *
    * <pre>{@code
-   * Parser<MarkdownLink> markdownLinkUrl = sequence(
-   *     nestedByWithEscapes('[', ']'),
-   *     nestedByWithEscapes('(', ')'),
-   *     MarkdownLink::new);
-   * markdownLinkUrl.parse("[x[y]z](a\\(b(c)d)"); // => MarkdownLink("x[y]z", "a(b(c)d")
+   * Parser<String> comment = nestedByWithEscapes('(', ')', chars(1));
+   * comment.parse("(comment with (nested) parens)");
    * }</pre>
+   *
+   * will return {@code "comment with (nested) parens"}.
    *
    * @since 10.3
    */
-  public static Parser<String> nestedByWithEscapes(char before, char after) {
+  public static Parser<String> nestedByWithEscapes(
+      char before, char after, Production<? extends CharSequence> escaped) {
+    Parser<? extends CharSequence> followingEscape = allowZeroWidth(escaped);
     checkArgument(before != '\\', "before cannot be '\\'");
     checkArgument(after != '\\', "after cannot be '\\'");
     checkArgument(before != after, "before and after must be different for nesting");
-    String prefix = Character.toString(before);
+    checkArgument(!Character.isSurrogate(before), "before cannot be a surrogate character");
+    checkArgument(!Character.isSurrogate(after), "after cannot be a surrogate character");
     String suffix = Character.toString(after);
-    return new Parser<String>() {
-      @Override MatchResult<String> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        if (input.isEof(start) || input.charAt(start) != before) {
-          return context.expecting(prefix, start);
-        }
-        StringBuilder builder = new StringBuilder();
-        for (int index = start + 1, depth = 1; ; index++) {
-          if (input.isEof(index)) {
-            return context.expecting(suffix, index); // Unclosed block
-          }
-          char c = input.charAt(index);
-          if (c == after) {
-            if (--depth == 0) {
-              return new MatchResult.Success<>(start, index + 1, builder.toString());
+    return one(before).then(
+        new Parser<String>() {
+          @Override MatchResult<String> skipAndMatch(
+              Parser<?> skip, CharInput input, final int start, ErrorContext context) {
+            StringBuilder builder = new StringBuilder();
+            for (int index = start, depth = 1; ; ) {
+              if (input.isEof(index)) {
+                return context.expecting(suffix, index); // Unclosed block
+              }
+              char c = input.charAt(index++);
+              if (c == after) {
+                if (--depth == 0) {
+                  return new MatchResult.Success<>(start, index, builder.toString());
+                }
+              } else if (c == before) {
+                depth++;
+              } else if (c == '\\') {
+                switch (followingEscape.skipAndMatch(null, input, index, context)) {
+                  case MatchResult.Success(int head, int tail, CharSequence value) -> {
+                    builder.append(value);
+                    index = tail;
+                    continue;
+                  }
+                  case MatchResult.Failure<?> failure -> {
+                    return failure.safeCast();
+                  }
+                }
+              }
+              builder.append(c);
             }
-            builder.append(c);
-          } else if (c == before) {
-            depth++;
-            builder.append(c);
-          } else if (c == '\\') {
-            if (input.isEof(++index)) {
-              return context.expecting("escaped char", index); // Dangling escape
-            }
-            builder.append(input.charAt(index));
-          } else {
-            builder.append(c);
           }
-        }
-      }
-
-      @Override Set<String> getPrefixes() {
-        return Set.of(prefix);
-      }
-    };
+        });
   }
 
   /**
@@ -804,7 +800,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /** Matches if {@code this} or {@code that} matches. */
-  @Deprecated
   public final Parser<T> or(Parser<? extends T> that) {
     return new OrParser<T>(asList(this, that));
   }

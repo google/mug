@@ -16,11 +16,13 @@
 package com.google.common.labs.markdown;
 
 import static com.google.common.labs.parse.Parser.anyOf;
+import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.nestedByWithEscapes;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
+import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.noneOf;
 import static java.util.Objects.requireNonNull;
@@ -43,9 +45,10 @@ import com.google.common.labs.parse.Parser;
  *     .scan(markdown, MarkdownLink::new);
  * }</pre>
  *
- * The parser properly handles escaping inside and outside of the link, and won't mistakenly
- * extract link-like syntax from backtick-quoted code or code blocks (recognizing code blocks
- * quoted by single backtick, double, triple or any number of consecutive backticks).
+ * The parser properly handles escaping inside and outside of the link; nesting within the link
+ * label and link url; and won't mistakenly extract link-like syntax from backtick-quoted code
+ * or code blocks (recognizing code blocks quoted by single backtick, double, triple or any number
+ * of consecutive backticks).
  *
  * @since 10.3
  */
@@ -55,9 +58,10 @@ public record MarkdownLink(String label, String url) {
     requireNonNull(url);
   }
 
-  private static final Parser<String> ESCAPE = one(is('\\'), "escape").then(Parser.chars(1));
-  private static final Parser<String> CODE =
-      consecutive(is('`'), "backticks").flatMap(Parser::first).source();
+  private static final Parser<String>.OrEmpty ESCAPED =
+      one(anyOf("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"), "escapable punctuation")
+          .map(String::valueOf)
+          .orElse("\\");  // if the char isn't escapable
 
   /**
    * Parser for a {@link MarkdownLink}.
@@ -66,9 +70,15 @@ public record MarkdownLink(String label, String url) {
    * for extracting multiple links. This constant is meant to be composed in larger parsers.
    */
   public static final Parser<MarkdownLink> PARSER = literally(
-      sequence(nestedByWithEscapes('[', ']'), nestedByWithEscapes('(', ')'), MarkdownLink::new));
+      sequence(
+          nestedByWithEscapes('[', ']', ESCAPED),
+          nestedByWithEscapes('(', ')', ESCAPED),
+          MarkdownLink::new));
 
-  private static final Parser<?> IGNORED = anyOf(ESCAPE, CODE, one(noneOf("\\[`"), "ignored char"));
+  private static final Parser<?> IGNORED = anyOf(
+      consecutive(noneOf("\\[`"), "ignored chars"),
+      consecutive("[`]").flatMap(Parser::first),
+      one(is('\\'), "escape").then(chars(1)));
 
   /**
    * Parses {@code link} into a {@link MarkdownLink}.

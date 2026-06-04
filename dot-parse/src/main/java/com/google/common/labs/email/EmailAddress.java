@@ -21,11 +21,12 @@ import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
-import static com.google.common.labs.parse.Parser.string;
+import static com.google.mu.util.CharPredicate.ASCII;
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.Substring.last;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.filtering;
@@ -164,6 +165,9 @@ import com.google.mu.util.stream.Joiner;
 @Immutable
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
+  private static final StringFormat.Template<IllegalArgumentException> DOTLESS_DOMAIN_BANNED =
+      StringFormat.to(
+          IllegalArgumentException::new, "domain must contain at least one dot: {domain}");
   private static final CharPredicate WHITESPACE = Character::isWhitespace;
   private static final CharPredicate NUMERIC = CharPredicate.range('0', '9');
   private static final CharPredicate ISO_CONTROL = Character::isISOControl;
@@ -216,6 +220,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     checkArgument(
         ISO_CONTROL.matchesNoneOf(displayName.orElse("")),
         "display name must not contain control characters");
+    checkArgument(ASCII.matchesAllOf(domain), "domain must be ASCII: %s", domain);
     all('.').split(domain).forEach(label -> {
         checkArgument(!label.isEmpty(), "domain label cannot be empty");
         checkArgument(
@@ -225,15 +230,12 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         checkArgument(
             DOMAIN_LABEL_CHARS.matchesAllOf(label),
             "domain label '%s' contains invalid characters", label);
-        checkArgument(
-            label.index() + label.length() < domain.length()  // not TLD
-                || !NUMERIC.matchesAllOf(label),
-            "TLD name cannot be all numeric (%s)", label);
     });
+    var tld = after(last('.')).in(domain).orElseThrow(() -> DOTLESS_DOMAIN_BANNED.with(domain));
+    checkArgument(!NUMERIC.matchesAllOf(tld), "TLD name cannot be all numeric (%s)", tld);
     checkArgument(
         localPart.length() + domain.length() + 1 <= 254,
         "<%s@%s> must be <= 254 chars", localPart, domain);
-    IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED);
   }
 
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
@@ -243,7 +245,12 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
   public static EmailAddress of(String localPart, String domain) {
-    return new EmailAddress(Optional.empty(), localPart, domain);
+    requireNonNull(localPart);
+    requireNonNull(domain);
+    return new EmailAddress(
+        Optional.empty(),
+        localPart,
+        IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(java.util.Locale.ROOT));
   }
 
   /**
@@ -280,6 +287,15 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    */
   public Optional<String> alias() {
     return after(first('+')).from(localPart).filter(a -> !a.isEmpty());
+  }
+
+  /**
+   * Returns the domain in Unicode.
+   *
+   * @since 10.3
+   */
+  public String unicodeDomain() {
+    return IDN.toUnicode(domain, IDN.ALLOW_UNASSIGNED);
   }
 
   private String showLocalPart() {
@@ -365,10 +381,11 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<String> domain = consecutive(DOMAIN_LABEL_CHARS, "domain label chars")
         .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
         .atLeastOnceDelimitedBy(".")
+        .suchThat(labels -> labels.size() > 1, "domain name with at least one dot")
         .suchThat(labels -> !NUMERIC.matchesAllOf(labels.getLast()), "domain with valid TLD")
         .map(Joiner.on('.')::join);
     Parser<EmailAddress> address =
-        literally(sequence(localPart, string("@").then(domain), EmailAddress::of));
+        literally(sequence(localPart.followedBy("@"), domain, EmailAddress::of));
     Parser<String> unquotedDisplayName = consecutive(
         ISO_CONTROL.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");

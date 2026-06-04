@@ -470,6 +470,32 @@ public class ParserTest {
   }
 
   @Test
+  public void quotedByWithEscapes_throwsOnHighSurrogateBefore() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('\uD83D', '"', chars(1)));
+  }
+
+  @Test
+  public void quotedByWithEscapes_throwsOnLowSurrogateAfter() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('"', '\uDE80', chars(1)));
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes("begin:", '\uDE80', chars(1)));
+  }
+
+  @Test
+  public void quotedBy_throwsOnHighSurrogateBefore() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedBy('\uD83D', '"'));
+  }
+
+  @Test
+  public void quotedBy_throwsOnLowSurrogateAfter() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedBy('"', '\uDE80'));
+  }
+
+  @Test
   public void quotedByWithEscapes_unicodeEscape_success() {
     Parser<String> unicodeEscaped = string("u").then(bmpCodeUnit()).map(Character::toString);
     Parser<String> quotedString =
@@ -514,6 +540,19 @@ public class ParserTest {
   }
 
   @Test
+  public void quotedByWithEscapes_orEmpty_success() {
+    Parser<String> parser = Parser.quotedByWithEscapes(
+        "[", ']',
+        Parser.one(anyOf("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"), "escapable punctuation")
+            .map(String::valueOf)
+            .orElse("\\"));
+    // Escapable punctuation gets resolved:
+    assertThat(parser.parse("[a\\!b]")).isEqualTo("a!b");
+    // Non-escapable character gets resolved to the default value (only backslash consumed)
+    assertThat(parser.parse("[a\\xb]")).isEqualTo("a\\xb");
+  }
+
+  @Test
   public void nestedByWithEscapes_markdownLink() {
     record MarkdownLink(String text, String url) {}
     Parser<String> escapedChar =
@@ -523,7 +562,7 @@ public class ParserTest {
     Parser<MarkdownLink> parser =
         Parser.sequence(
             Parser.quotedByWithEscapes("![", ']', escapedChar),
-            Parser.nestedByWithEscapes('(', ')'),
+            Parser.nestedByWithEscapes('(', ')', chars(1)),
             MarkdownLink::new);
     assertThat(parser.parse("![text](http://\\)url)")).isEqualTo(new MarkdownLink("text", "http://)url"));
     assertThat(parser.parse("![text\\a](http://\\)url)"))
@@ -536,7 +575,7 @@ public class ParserTest {
 
   @Test
   public void nestedByWithEscapes_charDelimiters_success() {
-    Parser<String> parser = Parser.nestedByWithEscapes('(', ')');
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', chars(1));
     assertThat(parser.getPrefixes()).containsExactly("(");
     assertThat(parser.parse("()")).isEqualTo("");
     assertThat(parser.matches("()")).isTrue();
@@ -550,6 +589,12 @@ public class ParserTest {
     assertThat(parser.matches("(foo \\( bar \\(baz\\) )")).isTrue();
     assertThat(parser.parse("(foo \\\\bar)")).isEqualTo("foo \\bar");
     assertThat(parser.matches("(foo \\\\bar)")).isTrue();
+  }
+
+  @Test
+  public void nestedByWithEscapes_source_success() {
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', chars(1)).source();
+    assertThat(parser.parse("(foo \\(bar\\))")).isEqualTo("(foo \\(bar\\))");
   }
 
   @Test
@@ -581,8 +626,14 @@ public class ParserTest {
   }
 
   @Test
+  public void nestedBy_source_success() {
+    Parser<String> parser = Parser.nestedBy("(", ")").source();
+    assertThat(parser.parse("(foo (bar) baz)")).isEqualTo("(foo (bar) baz)");
+  }
+
+  @Test
   public void nestedByWithEscapes_failures() {
-    Parser<String> parser = Parser.nestedByWithEscapes('(', ')');
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', chars(1));
     assertThrows(ParseException.class, () -> parser.parse("(foo (bar)")); // unclosed outer
     assertThat(parser.matches("(foo (bar)")).isFalse();
     assertThrows(ParseException.class, () -> parser.parse("(foo (bar))baz")); // leftover
@@ -607,11 +658,23 @@ public class ParserTest {
   @Test
   public void nestedByWithEscapes_invalidQuoteChar_throws() {
     assertThrows(
-        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('\\', ')'));
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('\\', ')', chars(1)));
     assertThrows(
-        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('(', '\\'));
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('(', '\\', chars(1)));
     assertThrows(
-        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('(', '('));
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('(', '(', chars(1)));
+  }
+
+  @Test
+  public void nestedByWithEscapes_throwsOnHighSurrogateBefore() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('\uD83D', ')', chars(1)));
+  }
+
+  @Test
+  public void nestedByWithEscapes_throwsOnLowSurrogateAfter() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('(', '\uDE80', chars(1)));
   }
 
   @Test
@@ -625,10 +688,71 @@ public class ParserTest {
   }
 
   @Test
+  public void nestedByWithEscapes_utf32CodePoints() {
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', chars(1));
+    // Regular UTF-32 code point: rocket emoji 🚀 (\uD83D\uDE80)
+    assertThat(parser.parse("(foo 🚀 bar)")).isEqualTo("foo 🚀 bar");
+
+    // Escaped UTF-32 code point: \🚀
+    assertThat(parser.parse("(foo \\🚀 bar)")).isEqualTo("foo 🚀 bar");
+
+    // UTF-32 characters nested
+    assertThat(parser.parse("(foo 🚀 (bar 🍕) baz)")).isEqualTo("foo 🚀 (bar 🍕) baz");
+  }
+
+  @Test
+  public void nestedByWithEscapes_customEscapedParser_success() {
+    // Only allow '(' and ')' to be escaped by backslash.
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', Parser.one("[()]").map(c -> String.valueOf(c)));
+    assertThat(parser.parse("(foo \\( bar \\) baz)")).isEqualTo("foo ( bar ) baz");
+  }
+
+  @Test
+  public void nestedByWithEscapes_customEscapedParser_failure() {
+    // Only allow '(' and ')' to be escaped by backslash.
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', Parser.one("[()]").map(c -> String.valueOf(c)));
+    // '\a' is not a valid escape in this custom parser, so parsing should fail!
+    assertThrows(ParseException.class, () -> parser.parse("(foo \\a bar)"));
+  }
+
+  @Test
+  public void nestedBy_utf32CodePoints() {
+    Parser<String> parser = Parser.nestedBy("(", ")");
+    assertThat(parser.parse("(foo 🚀 bar)")).isEqualTo("foo 🚀 bar");
+    assertThat(parser.parse("(foo 🚀 (bar 🍕) baz)")).isEqualTo("foo 🚀 (bar 🍕) baz");
+  }
+
+  @Test
+  public void nestedBy_emojiDelimitersAndContentSharingHighSurrogate() {
+    // before: 🚀 (\uD83D\uDE80)
+    // after: 🙏 (\uD83D\uDE4F)
+    // content: 😀 (\uD83D\uDE00)
+    // All three share the high surrogate '\uD83D'!
+    Parser<String> parser = Parser.nestedBy("🚀", "🙏");
+    assertThat(parser.parse("🚀😀🙏")).isEqualTo("😀");
+    assertThat(parser.matches("🚀😀🙏")).isTrue();
+
+    // With nesting
+    assertThat(parser.parse("🚀😀🚀🍕🙏🙏")).isEqualTo("😀🚀🍕🙏");
+    assertThat(parser.matches("🚀😀🚀🍕🙏🙏")).isTrue();
+  }
+
+  @Test
+  public void quotedBy_emojiDelimitersAndContentSharingHighSurrogate() {
+    // before: 🚀 (\uD83D\uDE80)
+    // after: 🙏 (\uD83D\uDE4F)
+    // content: 😀 (\uD83D\uDE00)
+    // All three share the high surrogate '\uD83D'!
+    Parser<String> parser = Parser.quotedBy("🚀", "🙏");
+    assertThat(parser.parse("🚀😀🙏")).isEqualTo("😀");
+    assertThat(parser.matches("🚀😀🙏")).isTrue();
+  }
+
+  @Test
   public void nestedByWithEscapes_deepNesting_noStackOverflow() {
     int depth = 10000;
     String input = "(".repeat(depth) + "foo" + ")".repeat(depth);
-    Parser<String> parser = Parser.nestedByWithEscapes('(', ')');
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', chars(1));
     assertThat(parser.parse(input)).isEqualTo("(".repeat(depth - 1) + "foo" + ")".repeat(depth - 1));
   }
 
@@ -664,10 +788,23 @@ public class ParserTest {
             string("baz"),
             string("qux"),
             string("etc"),
-            Parser.nestedByWithEscapes('(', ')'));
+            Parser.nestedByWithEscapes('(', ')', chars(1)));
     assertThat(parser.parse("(abc)")).isEqualTo("abc");
     assertThat(parser.parse("foo")).isEqualTo("foo");
     assertThat(parser.parse("bar")).isEqualTo("bar");
+  }
+
+  @Test
+  public void nestedByWithEscapes_orEmpty_success() {
+    Parser<String> parser = Parser.nestedByWithEscapes(
+        '(', ')',
+        Parser.one(anyOf("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"), "escapable punctuation")
+            .map(String::valueOf)
+            .orElse("\\"));
+    // Escapable punctuation gets resolved:
+    assertThat(parser.parse("(a\\!b)")).isEqualTo("a!b");
+    // Non-escapable character gets resolved to the default value (only backslash consumed)
+    assertThat(parser.parse("(a\\xb)")).isEqualTo("a\\xb");
   }
 
 
