@@ -234,7 +234,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     checkArgument(
         localPart.length() + domain.length() + 1 <= 254,
         "<%s@%s> must be <= 254 chars", localPart, domain);
-    IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED);
+    checkArgument(CharPredicate.ASCII.matchesAllOf(domain), "domain must be ASCII: %s", domain);
   }
 
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
@@ -244,7 +244,12 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
   public static EmailAddress of(String localPart, String domain) {
-    return new EmailAddress(Optional.empty(), localPart, domain);
+    requireNonNull(localPart);
+    requireNonNull(domain);
+    return new EmailAddress(
+        Optional.empty(),
+        localPart,
+        IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(java.util.Locale.ROOT));
   }
 
   /**
