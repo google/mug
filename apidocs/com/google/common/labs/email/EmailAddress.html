@@ -83,6 +83,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#address()" tabindex="0">address()</a></li>
 <li><a href="#user()" tabindex="0">user()</a></li>
 <li><a href="#alias()" tabindex="0">alias()</a></li>
+<li><a href="#unicodeDomain()" tabindex="0">unicodeDomain()</a></li>
 <li><a href="#toString()" tabindex="0">toString()</a></li>
 <li><a href="#parse(java.lang.String)" tabindex="0">parse(String)</a></li>
 <li><a href="#parseAddressList(java.lang.String)" tabindex="0">parseAddressList(String)</a></li>
@@ -349,14 +350,19 @@ loadScripts(document, 'script');</script>
  <code>"display name" &lt;local-part@domain&gt;</code>.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#user()" class="member-name-link">user</a>()</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#unicodeDomain()" class="member-name-link">unicodeDomain</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Returns the domain in Unicode.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#user()" class="member-name-link">user</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns the "user" part of the local-part before the first <code>+</code> separator,
  according to RFC 5233 subaddressing.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#withDisplayName(java.lang.String)" class="member-name-link">withDisplayName</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;displayName)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#withDisplayName(java.lang.String)" class="member-name-link">withDisplayName</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;displayName)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns an otherwise equivalent <a href="EmailAddress.html" title="class in com.google.common.labs.email"><code>EmailAddress</code></a> but with <code>displayName</code>.</div>
 </div>
 </div>
@@ -485,6 +491,19 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns the "alias" (or "detail") part of the local-part after the first <code>+</code> separator,
  according to RFC 5233 subaddressing. If no <code>+</code> is present, or if the <code>+</code> is the
  last character of the local-part, <code>Optional.empty()</code> is returned.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.3</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="unicodeDomain()">
+<h3>unicodeDomain</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">unicodeDomain</span>()</div>
+<div class="block">Returns the domain in Unicode.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>10.3</dd>

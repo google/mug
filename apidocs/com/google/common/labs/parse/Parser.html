@@ -83,10 +83,10 @@ loadScripts(document, 'script');</script>
 <li><a href="#caseInsensitiveWord(java.lang.String)" tabindex="0">caseInsensitiveWord(String)</a></li>
 <li><a href="#quotedBy(char,char)" tabindex="0">quotedBy(char, char)</a></li>
 <li><a href="#quotedBy(java.lang.String,java.lang.String)" tabindex="0">quotedBy(String, String)</a></li>
-<li><a href="#quotedByWithEscapes(char,char,com.google.common.labs.parse.Parser)" tabindex="0">quotedByWithEscapes(char, char, Parser)</a></li>
-<li><a href="#quotedByWithEscapes(java.lang.String,char,com.google.common.labs.parse.Parser)" tabindex="0">quotedByWithEscapes(String, char, Parser)</a></li>
+<li><a href="#quotedByWithEscapes(char,char,com.google.common.labs.parse.Production)" tabindex="0">quotedByWithEscapes(char, char, Production)</a></li>
+<li><a href="#quotedByWithEscapes(java.lang.String,char,com.google.common.labs.parse.Production)" tabindex="0">quotedByWithEscapes(String, char, Production)</a></li>
 <li><a href="#nestedBy(java.lang.String,java.lang.String)" tabindex="0">nestedBy(String, String)</a></li>
-<li><a href="#nestedByWithEscapes(char,char)" tabindex="0">nestedByWithEscapes(char, char)</a></li>
+<li><a href="#nestedByWithEscapes(char,char,com.google.common.labs.parse.Production)" tabindex="0">nestedByWithEscapes(char, char, Production)</a></li>
 <li><a href="#bmpCodeUnit()" tabindex="0">bmpCodeUnit()</a></li>
 <li><a href="#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.util.function.BiFunction)" tabindex="0">sequence(Parser, Parser, BiFunction)</a></li>
 <li><a href="#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.util.function.BiFunction)" tabindex="0">sequence(Parser, Production, BiFunction)</a></li>
@@ -420,8 +420,9 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  nesting, and returns the nested string in between.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#nestedByWithEscapes(char,char)" class="member-name-link">nestedByWithEscapes</a><wbr>(char&nbsp;before,
- char&nbsp;after)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#nestedByWithEscapes(char,char,com.google.common.labs.parse.Production)" class="member-name-link">nestedByWithEscapes</a><wbr>(char&nbsp;before,
+ char&nbsp;after,
+ <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>&gt;&nbsp;escaped)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Matches the characters nested by <code>before</code> and <code>after</code> with backslash escapes,
  supporting balanced nesting, and returns the unescaped nested string in between.</div>
@@ -503,10 +504,10 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="block">Returns a collector that results in a parser that matches if any of the input <code>parsers</code>
  match.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#or(com.google.common.labs.parse.Parser)" class="member-name-link">or</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;that)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6">
-<div class="block"><span class="deprecated-label">Deprecated.</span></div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#or(com.google.common.labs.parse.Parser)" class="member-name-link">or</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;that)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Matches if <code>this</code> or <code>that</code> matches.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#or(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">or</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;that)</code></div>
@@ -592,16 +593,16 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  between.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#quotedByWithEscapes(char,char,com.google.common.labs.parse.Parser)" class="member-name-link">quotedByWithEscapes</a><wbr>(char&nbsp;before,
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#quotedByWithEscapes(char,char,com.google.common.labs.parse.Production)" class="member-name-link">quotedByWithEscapes</a><wbr>(char&nbsp;before,
  char&nbsp;after,
- <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>&gt;&nbsp;escaped)</code></div>
+ <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>&gt;&nbsp;escaped)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">String literal quoted by <code>before</code> and <code>after</code> with backslash escapes.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#quotedByWithEscapes(java.lang.String,char,com.google.common.labs.parse.Parser)" class="member-name-link">quotedByWithEscapes</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;before,
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#quotedByWithEscapes(java.lang.String,char,com.google.common.labs.parse.Production)" class="member-name-link">quotedByWithEscapes</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;before,
  char&nbsp;after,
- <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>&gt;&nbsp;escaped)</code></div>
+ <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>&gt;&nbsp;escaped)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">String literal quoted by <code>before</code> and <code>after</code> with backslash escapes.</div>
 </div>
@@ -1075,7 +1076,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="block">Matches the characters quoted by <code>before</code> and <code>after</code>, and returns the string in
  between. For example: <code>quotedBy('&lt;', '&gt;').parse("&lt;foo&gt;")</code> will return <code>"foo"</code>.
 
- <p>If you need to support backslash escapes, use <a href="#quotedByWithEscapes(char,char,com.google.common.labs.parse.Parser)"><code>quotedByWithEscapes(char, char, com.google.common.labs.parse.Parser&lt;? extends java.lang.CharSequence&gt;)</code></a> instead.</div>
+ <p>If you need to support backslash escapes, use <a href="#quotedByWithEscapes(char,char,com.google.common.labs.parse.Production)"><code>quotedByWithEscapes(char, char, com.google.common.labs.parse.Production&lt;? extends java.lang.CharSequence&gt;)</code></a> instead.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.5</dd>
@@ -1093,7 +1094,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  between. For example: <code>quotedBy("&lt;!--", "--&gt;").parse("&lt;!--comment--&gt;")</code> will return
  <code>"comment"</code>.
 
- <p>If you need to support backslash escapes, use <a href="#quotedByWithEscapes(char,char,com.google.common.labs.parse.Parser)"><code>quotedByWithEscapes(char, char, com.google.common.labs.parse.Parser&lt;? extends java.lang.CharSequence&gt;)</code></a> instead.</div>
+ <p>If you need to support backslash escapes, use <a href="#quotedByWithEscapes(char,char,com.google.common.labs.parse.Production)"><code>quotedByWithEscapes(char, char, com.google.common.labs.parse.Production&lt;? extends java.lang.CharSequence&gt;)</code></a> instead.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.5</dd>
@@ -1102,12 +1103,12 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 </section>
 </li>
 <li>
-<section class="detail" id="quotedByWithEscapes(char,char,com.google.common.labs.parse.Parser)">
+<section class="detail" id="quotedByWithEscapes(char,char,com.google.common.labs.parse.Production)">
 <h3>quotedByWithEscapes</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">quotedByWithEscapes</span><wbr><span class="parameters">(char&nbsp;before,
  char&nbsp;after,
- <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>&gt;&nbsp;escaped)</span></div>
+ <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>&gt;&nbsp;escaped)</span></div>
 <div class="block">String literal quoted by <code>before</code> and <code>after</code> with backslash escapes.
 
  <p>When a backslash is encountered, the <code>escaped</code> parser is used to parse the escaped
@@ -1137,12 +1138,12 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 </section>
 </li>
 <li>
-<section class="detail" id="quotedByWithEscapes(java.lang.String,char,com.google.common.labs.parse.Parser)">
+<section class="detail" id="quotedByWithEscapes(java.lang.String,char,com.google.common.labs.parse.Production)">
 <h3>quotedByWithEscapes</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">quotedByWithEscapes</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;before,
  char&nbsp;after,
- <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>&gt;&nbsp;escaped)</span></div>
+ <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>&gt;&nbsp;escaped)</span></div>
 <div class="block">String literal quoted by <code>before</code> and <code>after</code> with backslash escapes.
 
  <p>When a backslash is encountered, the <code>escaped</code> parser is used to parse the escaped
@@ -1176,9 +1177,9 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  after</code> delimiters and only succeeds when the nesting is balanced.
 
  <p>For example, <code>nestedBy("(", ")").parse("(a(b)c)")</code> returns <code>"a(b)c"</code>.
- In contrast, <code>quotedBy("(", ")").parse("(a(b)c)")</code> would return <code>"a(b"</code>.
+ In contrast, <code>quotedBy("(", ")")</code> will match <code>"(a(b)"</code>.
 
- <p>Does not support escaping. If the delimiters can be escaped by backslashes, use <a href="#nestedByWithEscapes(char,char)"><code>nestedByWithEscapes(char, char)</code></a> instead.</div>
+ <p>Does not support escaping. If the delimiters can be escaped by backslashes, use <a href="#nestedByWithEscapes(char,char,com.google.common.labs.parse.Production)"><code>nestedByWithEscapes(char, char, com.google.common.labs.parse.Production&lt;? extends java.lang.CharSequence&gt;)</code></a> instead.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>10.3</dd>
@@ -1187,24 +1188,27 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 </section>
 </li>
 <li>
-<section class="detail" id="nestedByWithEscapes(char,char)">
+<section class="detail" id="nestedByWithEscapes(char,char,com.google.common.labs.parse.Production)">
 <h3>nestedByWithEscapes</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">nestedByWithEscapes</span><wbr><span class="parameters">(char&nbsp;before,
- char&nbsp;after)</span></div>
+ char&nbsp;after,
+ <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/CharSequence.html" title="class or interface in java.lang" class="external-link">CharSequence</a>&gt;&nbsp;escaped)</span></div>
 <div class="block">Matches the characters nested by <code>before</code> and <code>after</code> with backslash escapes,
  supporting balanced nesting, and returns the unescaped nested string in between.
 
- <p>For example, you can use it to parse markdown links, which allows balanced brackets
- and parentheses with escapes:
+ <p>When a backslash is encountered, the <code>escaped</code> parser is used to parse the escaped
+ character(s). If the <code>escaped</code> parser fails, the entire parsing fails.
+
+ <p>For example, to parse RFC 5322 email comments which allow nested comments and escaped
+ characters (where any character following a backslash is considered literal):
 
  <pre><code>
- Parser&lt;MarkdownLink&gt; markdownLinkUrl = sequence(
-     nestedByWithEscapes('[', ']'),
-     nestedByWithEscapes('(', ')'),
-     MarkdownLink::new);
- markdownLinkUrl.parse("[x[y]z](a\\(b(c)d)"); // =&gt; MarkdownLink("x[y]z", "a(b(c)d")
- </code></pre></div>
+ Parser&lt;String&gt; comment = nestedByWithEscapes('(', ')', chars(1));
+ comment.parse("(comment with (nested) parens)");
+ </code></pre>
+
+ will return <code>"comment with (nested) parens"</code>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>10.3</dd>
@@ -1231,7 +1235,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  in place of JDK <code>Collectors.joining(delimiter)</code> because <code>Joiner</code> optimizes for single-string
  input, which is a common case in the context of parsing.
 
- <p>You can also compose it with <a href="#quotedByWithEscapes(char,char,com.google.common.labs.parse.Parser)"><code>quotedByWithEscapes(char, char, com.google.common.labs.parse.Parser&lt;? extends java.lang.CharSequence&gt;)</code></a>:
+ <p>You can also compose it with <a href="#quotedByWithEscapes(char,char,com.google.common.labs.parse.Production)"><code>quotedByWithEscapes(char, char, com.google.common.labs.parse.Production&lt;? extends java.lang.CharSequence&gt;)</code></a>:
 
  <pre><code>
  quotedByWithEscapes('"', '"', string("u").then(bmpCodeUnit()).map(Character::toString));
@@ -1437,9 +1441,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <section class="detail" id="or(com.google.common.labs.parse.Parser)">
 <h3>or</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
-</span><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">or</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;that)</span></div>
-<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">or</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;that)</span></div>
 <div class="block">Matches if <code>this</code> or <code>that</code> matches.</div>
 </div>
 </section>

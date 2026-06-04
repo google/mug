@@ -116,9 +116,10 @@ loadScripts(document, 'script');</script>
      .scan(markdown, MarkdownLink::new);
  </code></pre>
 
- The parser properly handles escaping inside and outside of the link, and won't mistakenly
- extract link-like syntax from backtick-quoted code or code blocks (recognizing code blocks
- quoted by single backtick, double, triple or any number of consecutive backticks).</div>
+ The parser properly handles escaping inside and outside of the link; nesting within the link
+ label and link url; and won't mistakenly extract link-like syntax from backtick-quoted code
+ or code blocks (recognizing code blocks quoted by single backtick, double, triple or any number
+ of consecutive backticks).</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>10.3</dd>
