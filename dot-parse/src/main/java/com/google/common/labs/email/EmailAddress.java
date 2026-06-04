@@ -36,6 +36,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.net.IDN;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collector;
@@ -250,7 +251,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     return new EmailAddress(
         Optional.empty(),
         localPart,
-        IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(java.util.Locale.ROOT));
+        IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.ROOT));
   }
 
   /**
