@@ -23,6 +23,7 @@ import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.mu.util.CharPredicate.ASCII;
 import static com.google.mu.util.CharPredicate.anyOf;
+import static com.google.mu.util.CharPredicate.range;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
@@ -169,7 +170,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
       StringFormat.to(
           IllegalArgumentException::new, "domain must contain at least one dot: {domain}");
   private static final CharPredicate WHITESPACE = Character::isWhitespace;
-  private static final CharPredicate NUMERIC = CharPredicate.range('0', '9');
+  private static final CharPredicate NUMERIC = range('0', '9');
   private static final CharPredicate ISO_CONTROL = Character::isISOControl;
 
   // While most letters and digits are supplementary chars, using it is strictly better than
@@ -220,7 +221,9 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     checkArgument(
         ISO_CONTROL.matchesNoneOf(displayName.orElse("")),
         "display name must not contain control characters");
-    checkArgument(ASCII.matchesAllOf(domain), "domain must be ASCII: %s", domain);
+    checkArgument(
+        ASCII.and(range('A', 'Z').not()).matchesAllOf(domain),
+        "domain must be lowe-case ASCII: %s", domain);
     all('.').split(domain).forEach(label -> {
         checkArgument(!label.isEmpty(), "domain label cannot be empty");
         checkArgument(
