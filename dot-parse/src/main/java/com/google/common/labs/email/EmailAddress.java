@@ -302,7 +302,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   }
 
   /**
-   * Returns true if this address has an internationalized domain.
+   * Returns true if this address has an internationalized domain, in which case {@link #domain()}
+   * will be puny-coded.
    *
    * @since 10.3
    */
