@@ -299,11 +299,11 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   }
 
   /**
-   * Returns true if this address uses internationalized domain.
+   * Returns true if this address has an internationalized domain.
    *
    * @since 10.3
    */
-  public boolean isI18nDomain() {
+  public boolean hasI18nDomain() {
     return all('.').split(domain).anyMatch(label -> label.startsWith("xn--"));
   }
 

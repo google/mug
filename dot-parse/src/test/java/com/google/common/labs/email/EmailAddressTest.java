@@ -252,25 +252,25 @@ public class EmailAddressTest {
   }
 
   @Test
-  public void testIsI18nDomain() {
+  public void testHasI18nDomain() {
     // Standard ASCII domain
-    assertThat(EmailAddress.of("test", "example.com").isI18nDomain()).isFalse();
+    assertThat(EmailAddress.of("test", "example.com").hasI18nDomain()).isFalse();
 
     // IDN domain (Punycode in second-level domain)
-    assertThat(EmailAddress.of("test", "bücher.de").isI18nDomain()).isTrue();
+    assertThat(EmailAddress.of("test", "bücher.de").hasI18nDomain()).isTrue();
 
     // IDN subdomain (Punycode in subdomain)
-    assertThat(EmailAddress.of("test", "bücher.google.com").isI18nDomain()).isTrue();
+    assertThat(EmailAddress.of("test", "bücher.google.com").hasI18nDomain()).isTrue();
 
     // IDN TLD (Punycode in TLD)
-    assertThat(EmailAddress.of("test", "google.рус").isI18nDomain()).isTrue();
+    assertThat(EmailAddress.of("test", "google.рус").hasI18nDomain()).isTrue();
 
     // Raw Punycode input (lowercase)
-    assertThat(EmailAddress.of("test", "xn--bcher-kva.de").isI18nDomain()).isTrue();
+    assertThat(EmailAddress.of("test", "xn--bcher-kva.de").hasI18nDomain()).isTrue();
 
     // Raw Punycode input (uppercase/mixed-case)
-    assertThat(EmailAddress.of("test", "Xn--bcher-kva.de").isI18nDomain()).isTrue();
-    assertThat(EmailAddress.of("test", "XN--bcher-kva.de").isI18nDomain()).isTrue();
+    assertThat(EmailAddress.of("test", "Xn--bcher-kva.de").hasI18nDomain()).isTrue();
+    assertThat(EmailAddress.of("test", "XN--bcher-kva.de").hasI18nDomain()).isTrue();
   }
 
   @Test
