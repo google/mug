@@ -249,6 +249,11 @@ public class EmailAddressTest {
     EmailAddress address3 = EmailAddress.of("test@Example.Com");
     assertThat(address3.domain()).isEqualTo("example.com");
     assertThat(address3.unicodeDomain()).isEqualTo("example.com");
+
+    // Raw Punycode case folding (converts uppercase XN-- to lowercase xn--)
+    EmailAddress address4 = EmailAddress.of("test", "XN--bcher-kva.de");
+    assertThat(address4.domain()).isEqualTo("xn--bcher-kva.de");
+    assertThat(address4.unicodeDomain()).isEqualTo("bücher.de");
   }
 
   @Test
