@@ -229,7 +229,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             label);
         checkArgument(
             DOMAIN_LABEL_CHARS.and(ASCII).and(range('A', 'Z').not()).matchesAllOf(label),
-            "domain label '%s' must be all lower case alpha-num", label);
+            "domain label '%s' must be all lowercase alpha-numeric or hyphen", label);
     });
     var tld = after(last('.')).in(domain).orElseThrow(() -> DOTLESS_DOMAIN_BANNED.with(domain));
     checkArgument(!NUMERIC.matchesAllOf(tld), "TLD name cannot be all numeric (%s)", tld);
