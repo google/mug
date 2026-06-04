@@ -21,7 +21,6 @@ import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
-import static com.google.mu.util.CharPredicate.ASCII;
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.range;
 import static com.google.mu.util.Substring.after;
@@ -192,6 +191,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   private static final CharPredicate ATEXT =
       LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii();
   private static final CharPredicate DOMAIN_LABEL_CHARS = LETTER_OR_DIGIT.or('-').precomputeForAscii();
+  private static final CharPredicate ASCII_DOMAIN_LABEL_CHARS = range('a', 'z').orRange('0', '9').or('-');
   private static final CharPredicate ADDRESS_LIST_SEPARATOR_CHAR = anyOf(",;");
   private static final Parser<?> ADDRESS_LIST_DELIMITER =
       Parser.one(ADDRESS_LIST_SEPARATOR_CHAR, "delimiter").atLeastOnce(counting());
@@ -228,7 +228,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             "domain label '%s' must not start or end with a hyphen",
             label);
         checkArgument(
-            DOMAIN_LABEL_CHARS.and(ASCII).and(range('A', 'Z').not()).matchesAllOf(label),
+            ASCII_DOMAIN_LABEL_CHARS.matchesAllOf(label),
             "domain label '%s' must be all lowercase alpha-numeric or hyphen", label);
     });
     var tld = after(last('.')).in(domain).orElseThrow(() -> DOTLESS_DOMAIN_BANNED.with(domain));
