@@ -221,9 +221,6 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     checkArgument(
         ISO_CONTROL.matchesNoneOf(displayName.orElse("")),
         "display name must not contain control characters");
-    checkArgument(
-        ASCII.and(range('A', 'Z').not()).matchesAllOf(domain),
-        "domain must be lowe-case ASCII: %s", domain);
     all('.').split(domain).forEach(label -> {
         checkArgument(!label.isEmpty(), "domain label cannot be empty");
         checkArgument(
@@ -231,8 +228,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             "domain label '%s' must not start or end with a hyphen",
             label);
         checkArgument(
-            DOMAIN_LABEL_CHARS.matchesAllOf(label),
-            "domain label '%s' contains invalid characters", label);
+            DOMAIN_LABEL_CHARS.and(ASCII).and(range('A', 'Z').not()).matchesAllOf(label),
+            "domain label '%s' must be all lower case alpha-num", label);
     });
     var tld = after(last('.')).in(domain).orElseThrow(() -> DOTLESS_DOMAIN_BANNED.with(domain));
     checkArgument(!NUMERIC.matchesAllOf(tld), "TLD name cannot be all numeric (%s)", tld);
