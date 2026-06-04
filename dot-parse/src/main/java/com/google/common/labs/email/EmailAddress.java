@@ -25,6 +25,7 @@ import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
+import static com.google.mu.util.Substring.last;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.filtering;
@@ -163,6 +164,9 @@ import com.google.mu.util.stream.Joiner;
 @Immutable
 public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
+  private static final StringFormat.Template<IllegalArgumentException> DOTLESS_DOMAIN_BANNED =
+      StringFormat.to(
+          IllegalArgumentException::new, "domain must contain at least one dot: {domain}");
   private static final CharPredicate WHITESPACE = Character::isWhitespace;
   private static final CharPredicate NUMERIC = CharPredicate.range('0', '9');
   private static final CharPredicate ISO_CONTROL = Character::isISOControl;
@@ -215,7 +219,6 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     checkArgument(
         ISO_CONTROL.matchesNoneOf(displayName.orElse("")),
         "display name must not contain control characters");
-    checkArgument(domain.contains("."), "domain must contain at least one dot: %s", domain);
     all('.').split(domain).forEach(label -> {
         checkArgument(!label.isEmpty(), "domain label cannot be empty");
         checkArgument(
@@ -225,11 +228,9 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         checkArgument(
             DOMAIN_LABEL_CHARS.matchesAllOf(label),
             "domain label '%s' contains invalid characters", label);
-        checkArgument(
-            label.index() + label.length() < domain.length()  // not TLD
-                || !NUMERIC.matchesAllOf(label),
-            "TLD name cannot be all numeric (%s)", label);
     });
+    var tld = after(last('.')).in(domain).orElseThrow(() -> DOTLESS_DOMAIN_BANNED.with(domain));
+    checkArgument(!NUMERIC.matchesAllOf(tld), "TLD name cannot be all numeric (%s)", tld);
     checkArgument(
         localPart.length() + domain.length() + 1 <= 254,
         "<%s@%s> must be <= 254 chars", localPart, domain);
