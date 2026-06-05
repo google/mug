@@ -197,6 +197,28 @@ public class BiStreamInvariantsTest {
         .isEmpty();
   }
 
+  @Test public void mapKeysIfNotNull_nonNull() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapKeysIfNotNull(k -> "found:" + k))
+        .containsExactly("found:uno", 1, "found:dos", 2)
+        .inOrder();
+  }
+
+  @Test public void mapKeysIfNotNull_null() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapKeysIfNotNull(k -> null))
+        .isEmpty();
+  }
+
+  @Test public void mapKeysIfNotNull_biFunction_nonNull() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapKeysIfNotNull((k, v) -> k + "->" + v))
+        .containsExactly("uno->1", 1, "dos->2", 2)
+        .inOrder();
+  }
+
+  @Test public void mapKeysIfNotNull_biFunction_null() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapKeysIfNotNull((k, v) -> null))
+        .isEmpty();
+  }
+
   @Test public void flatMapValues() {
     assertKeyValues(of("one", 1).flatMapValues((k, v) -> Stream.of(k, v)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", "one", "one", 1))
@@ -242,6 +264,28 @@ public class BiStreamInvariantsTest {
 
   @Test public void mapValuesIfPresent_biFunction_absent() {
     assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapValuesIfPresent((k, v) -> Optional.empty()))
+        .isEmpty();
+  }
+
+  @Test public void mapValuesIfNotNull_nonNull() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapValuesIfNotNull(v -> "found:" + v))
+        .containsExactly("uno", "found:1", "dos", "found:2")
+        .inOrder();
+  }
+
+  @Test public void mapValuesIfNotNull_null() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapValuesIfNotNull(v -> null))
+        .isEmpty();
+  }
+
+  @Test public void mapValuesIfNotNull_biFunction_nonNull() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapValuesIfNotNull((k, v) -> k + "->" + v))
+        .containsExactly("uno", "uno->1", "dos", "dos->2")
+        .inOrder();
+  }
+
+  @Test public void mapValuesIfNotNull_biFunction_null() {
+    assertKeyValues(BiStream.of("uno", 1, "dos", 2).mapValuesIfNotNull((k, v) -> null))
         .isEmpty();
   }
 

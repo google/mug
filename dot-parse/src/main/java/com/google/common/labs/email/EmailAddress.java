@@ -187,6 +187,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   private static final CharPredicate WHITESPACE = Character::isWhitespace;
   private static final CharPredicate NUMERIC = range('0', '9');
   private static final CharPredicate ISO_CONTROL = Character::isISOControl;
+  private static final CharPredicate ILLEGAL_CHARS =
+      ISO_CONTROL.or(anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069"));
 
   // While most letters and digits are supplementary chars, using it is strictly better than
   // [a-zA-Z0-9] because it natively supports internationalized BMP characters (for example,
@@ -233,10 +235,11 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
     checkArgument(
-        ISO_CONTROL.matchesNoneOf(localPart), "local-part must not contain control characters");
+        ILLEGAL_CHARS.matchesNoneOf(localPart),
+        "local-part must not contain control or formatting characters");
     checkArgument(
-        ISO_CONTROL.matchesNoneOf(displayName.orElse("")),
-        "display name must not contain control characters");
+        ILLEGAL_CHARS.matchesNoneOf(displayName.orElse("")),
+        "display name must not contain control or formatting characters");
     all('.').split(domain).forEach(label -> {
         checkArgument(!label.isEmpty(), "domain label cannot be empty");
         checkArgument(
@@ -406,7 +409,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   private static Parser<EmailAddress> makeParser() {
     Parser<String> quoted = quotedByWithEscapes('"', '"', chars(1))
-        .suchThat(ISO_CONTROL::matchesNoneOf, "quoted string without control chars");
+        .suchThat(ILLEGAL_CHARS::matchesNoneOf, "quoted string without control or formatting chars");
     Parser<String> localPart = anyOf(
         quoted,
         consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")));
@@ -419,7 +422,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<EmailAddress> address =
         literally(sequence(localPart.followedBy("@"), domain, EmailAddress::of));
     Parser<String> unquotedDisplayName = consecutive(
-        ISO_CONTROL.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
+        ILLEGAL_CHARS.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
     Parser<String> displayName = anyOf(quoted, unquotedDisplayName.map(String::trim));
     return anyOf(

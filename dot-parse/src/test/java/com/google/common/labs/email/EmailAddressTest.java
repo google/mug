@@ -199,6 +199,28 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddress_dangerousUnicodeRejected(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    
+    // Line/Paragraph separators inside quoted local part
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("\"john\u2028doe\"@example.com"));
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("\"john\u2029doe\"@example.com"));
+
+    // BiDi control chars inside quoted local part
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("\"john\u202Edoe\"@example.com"));
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("\"john\u202Adoe\"@example.com"));
+
+    // BiDi control chars inside display name (quoted and unquoted)
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("\"John\u202EDoe\" <john@example.com>"));
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("John\u202EDoe <john@example.com>"));
+
+    // Constructor validation checks
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("john\u202Edoe", "example.com"));
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("john", "example.com").withDisplayName("John\u202EDoe"));
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("john\u2028doe", "example.com"));
+  }
+
+  @Test
   public void testEmailAddressOf_localPartStartsWithDot() {
     EmailAddress address = EmailAddress.of(".john.doe", "example.com");
     assertThat(address.localPart()).isEqualTo(".john.doe");
