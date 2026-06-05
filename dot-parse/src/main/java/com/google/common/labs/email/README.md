@@ -11,9 +11,9 @@ combinators. It serves as a lightweight and secure alternative to
 
 | Feature / Property | `EmailAddress` (Combinator) | `InternetAddress` (Jakarta Mail) | JMail | Apache `EmailValidator` |
 | :--- | :--- | :--- | :--- | :--- |
-| **Domain Mutability** | **Immutable Record** (Thread-safe, robust as Map keys) | ❌ **Mutable POJO** (Exposes setters, prone to side effects) | **Immutable Value Object** (Thread-safe) | N/A |
-| **Footprint & Deps** | **Lightweight** (Zero external dependencies; built on `dot-parse` combinators) | ⚠️ **Heavy EE stack** (Transitive dependencies) | **Lightweight** (Minor standalone deps) | **Lightweight** (Part of commons-validator) |
-| **Value Extraction** | **Canonical** (Quotes stripped, escapes unescaped) | ⚠️ **Mixed** (Canonical personal name; raw local part) | ⚠️ **Raw** (Quotes and backslashes left intact) | N/A |
+| **Domain Mutability** | **Immutable Record** (Thread-safe) | **Mutable POJO** (Exposes setters) | **Immutable Value Object** (Thread-safe) | N/A |
+| **Footprint & Deps** | **Lightweight** (Zero external dependencies; built on `dot-parse`) | **Standard API** (Part of Jakarta Mail API) | **Lightweight** (Minor standalone deps) | **Lightweight** (Part of commons-validator) |
+| **Value Extraction** | **Canonical** (Quotes stripped, escapes unescaped) | **Mixed** (Canonical personal name; raw local part) | **Literal / Raw** (Quotes and backslashes preserved) | N/A |
 
 ---
 
@@ -21,24 +21,24 @@ combinators. It serves as a lightweight and secure alternative to
 
 | RFC Feature / Section | `EmailAddress` | `InternetAddress` (Jakarta Mail) | JMail | Apache `EmailValidator` |
 | :--- | :--- | :--- | :--- | :--- |
-| **`local-part@domain`** |  **Compliant** |  **Compliant** |  **Compliant** |  **Compliant** |
-| **Quoted Local Parts** |  **Compliant & Canonical** (Strips quotes; re-escapes on output) |  **Compliant** | ⚠️ **Partially Compliant** (Fails to strip/unescape quotes) |  **Compliant** |
-| **Folding White Space** (FWS) | ⚠️ **Partially Compliant** (Restricted to horizontal whitespace in `of()` to prevent CRLF injection; lists support newlines) |  **Compliant** (Supports standard FWS with CR/LF) | ⚠️ **Partially Compliant** (Fails on FWS directly after angle bracket) | 🚫 **Rejected** (Rejects them completely) |
-| **Unquoted Display Names** |  **Strictly Compliant** (Forbids special characters `()<>[]:;@\,"` to prevent spoofing) | ⚠️ **Lenient** (Allows special characters unquoted in display names) | ⚠️ **Lenient** (Allows special characters unquoted in display names) | 🚫 **Rejected** (Rejects display names completely, returns `false`) |
-| **Group Addresses** (RFC 822) | 🚫 **Intentionally Omitted** (Obsolete, rejected for security) |  **Compliant** (Parses groups as `isGroup()`) | 🚫 **Intentionally Omitted** (Obsolete, rejected for security) | 🚫 **Rejected** (Rejects group syntax completely) |
-| **RFC 2047 Encoded Words** | 🚫 **Intentionally Omitted** (Preserved raw to prevent spoofing) |  **Compliant** (Decodes automatically, posing security risks) | 🚫 **Intentionally Omitted** (Preserved raw to prevent spoofing) | 🚫 **Rejected** (Rejects encoded words completely) |
-| **Comments & Domain Literals** | 🚫 **Intentionally Omitted** (Legacy comments/IP domains skipped) |  **Compliant** (Supports full legacy feature set) | 🚫 **Intentionally Omitted** (Legacy comments/IP domains skipped) | ⚠️ **Partially Compliant** (Supports IP literals, rejects comments) |
+| **`local-part@domain`** |  **Supported** |  **Supported** |  **Supported** |  **Supported** |
+| **Quoted Local Parts** |  **Canonical** (Strips quotes; re-escapes on output) |  **Supported (Raw)** (Preserves quotes) |  **Supported (Raw)** (Preserves quotes) |  **Supported** |
+| **Folding White Space** (FWS) | ⚠️ **Restricted** (Only horizontal whitespace allowed in `of()`; lists support newlines) |  **Full Support** (Supports standard FWS with CR/LF) | ⚠️ **Partial Support** (Fails on FWS directly after angle bracket) | 🚫 **Not Supported** (Rejects FWS completely) |
+| **Unquoted Display Names** |  **Strict** (Forbids special characters `()<>[]:;@\,"` to prevent spoofing) |  **Lenient** (Allows special characters unquoted) |  **Lenient** (Allows special characters unquoted) | 🚫 **Not Supported** (Rejects display names) |
+| **Group Addresses** (RFC 822) | 🚫 **Omitted** (Intentionally omitted) |  **Supported** (Parses groups as `isGroup()`) | 🚫 **Omitted** (Intentionally omitted) | 🚫 **Not Supported** (Rejects group syntax) |
+| **RFC 2047 Encoded Words** | 🚫 **Omitted** (Preserved raw) |  **Supported** (Decodes automatically) | 🚫 **Omitted** (Preserved raw) | 🚫 **Not Supported** (Rejects encoded words) |
+| **Comments & Domain Literals** | 🚫 **Omitted** (Obsolete comments/IP domains skipped) |  **Supported** (Supports full legacy features) | 🚫 **Omitted** (Obsolete comments/IP domains skipped) | ⚠️ **Partial Support** (Supports IP literals, rejects comments) |
 
 ---
 
-## 3. Security & Hardening
+## 3. Security & Validation Profiles
 
-| Attack Vector / Vulnerability | `EmailAddress` (Combinator) | `InternetAddress` (Jakarta Mail) | JMail | Apache `EmailValidator` |
+| Input Vector / Behavior | `EmailAddress` (Combinator) | `InternetAddress` (Jakarta Mail) | JMail | Apache `EmailValidator` |
 | :--- | :--- | :--- | :--- | :--- |
-| **Parsing Differentials** (Split Bug) |  **Immune** (Strictly rejects unconsumed trailing characters) | ❌ **Vulnerable** (Silently discards trailing parts like `<a@b>c@d`) |  **Immune** (Natively rejects) |  **Immune** (Rejects display names completely, avoiding parsing differentials) |
-| **Display Name Spoofing** (Phishing) |  **Immune** (Strictly rejects unquoted `@` or `<` in display names) | ❌ **Vulnerable** (Decodes and accepts unquoted `@` and `<` in display names) | ❌ **Vulnerable** (Accepts unquoted `@` in display names) | ⚠️ N/A (Rejects all display names) |
-| **Group Syntax Abuse** (List splitting) |  **Immune** (obsolete RFC 822 group constructs are strictly rejected) | ❌ **Vulnerable** (Accepts group syntax, bypassing single-recipient controls) |  **Immune** (Natively rejects groups) |  **Immune** (Rejects all group formats) |
-| **CRLF / SMTP Command Injection** |  **Immune** (Strictly rejects newlines inside single-address parser and constructor fields) | ❌ **Vulnerable** (Allows CR/LF newlines in folding whitespace, risking header/command injection) |  **Immune** (Rejects newlines in addresses) |  **Immune** (Rejects newlines) |
+| **Trailing Unconsumed Input** |  **Strictly Rejected** (EOF-enforced) |  **Permissive** (Discards trailing parts like `<a@b>c@d`) |  **Strictly Rejected** (EOF-enforced) |  **Strictly Rejected** (EOF-enforced) |
+| **Unquoted Specials in Display Name** |  **Strictly Rejected** (Throws exception) |  **Permissive** (Allows unquoted `@` and `<`) |  **Permissive** (Allows unquoted `@`) | ⚠️ N/A (Rejects all display names) |
+| **RFC 822 Group Addresses** |  **Strictly Rejected** (Throws exception) |  **Permissive** (Accepted as group) |  **Strictly Rejected** (Throws exception) |  **Strictly Rejected** (Throws exception) |
+| **CRLF / SMTP Command Injection** |  **Strictly Rejected** (Newlines forbidden in `of()` and fields) |  **Permissive** (Allows folding CR/LF newlines) |  **Strictly Rejected** (Newlines forbidden in fields) |  **Strictly Rejected** (Newlines forbidden) |
 
 
 ---
