@@ -520,6 +520,19 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_whitespace(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    // Spaces and tabs are skipped
+    assertThat(EmailAddress.of(" test@example.com ")).isEqualTo(EmailAddress.of("test", "example.com"));
+    assertThat(EmailAddress.of("\ttest@example.com\t")).isEqualTo(EmailAddress.of("test", "example.com"));
+
+    // Newlines are NOT skipped and cause failure
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("\ntest@example.com"));
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test@example.com\n"));
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test@example.com\r\n"));
+  }
+
+  @Test
   public void testEmailAddressParsing_displayNameAndNoAngleBrackets(
       @TestParameter ParseStrategy parser) {
     assertThrows(IllegalArgumentException.class, () -> parser.parse("John Doe test@example.com"));
@@ -848,6 +861,15 @@ public class EmailAddressTest {
   public void testParseAddressList_twoAddressesWithWhitespaces() {
     assertThat(parseAddressList(" a@b.com , c@d.com "))
         .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+  }
+
+  @Test
+  public void testParseAddressList_withNewlines() {
+    assertThat(parseAddressList("a@b.com,\nc@d.com\r\n, e@f.com"))
+        .containsExactly(
+            EmailAddress.of("a", "b.com"),
+            EmailAddress.of("c", "d.com"),
+            EmailAddress.of("e", "f.com"));
   }
 
   @Test
