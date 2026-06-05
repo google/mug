@@ -231,6 +231,10 @@ public class EmailAddressTest {
     EmailAddress address = EmailAddress.of("test", "bücher.de");
     assertThat(address.domain()).isEqualTo("xn--bcher-kva.de");
     assertThat(address.unicodeDomain()).isEqualTo("bücher.de");
+
+    // Standard ASCII valid domain characters: letters, digits, and hyphens in the middle
+    EmailAddress asciiAddress = EmailAddress.of("test", "abcdefghijklmnopqrstuvwxyz-1234567890.com");
+    assertThat(asciiAddress.domain()).isEqualTo("abcdefghijklmnopqrstuvwxyz-1234567890.com");
   }
 
   @Test
