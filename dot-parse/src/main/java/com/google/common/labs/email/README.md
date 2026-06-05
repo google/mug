@@ -35,10 +35,10 @@ combinators. It serves as a lightweight and secure alternative to
 
 | Input Vector / Behavior | `EmailAddress` (Combinator) | `InternetAddress` (Jakarta Mail) | JMail | Apache `EmailValidator` |
 | :--- | :--- | :--- | :--- | :--- |
-| **Trailing Unconsumed Input** |  **Strictly Rejected** (EOF-enforced) |  **Permissive** (Discards trailing parts like `<a@b>c@d`) |  **Strictly Rejected** (EOF-enforced) |  **Strictly Rejected** (EOF-enforced) |
-| **Unquoted Specials in Display Name** |  **Strictly Rejected** (Throws exception) |  **Permissive** (Allows unquoted `@` and `<`) |  **Permissive** (Allows unquoted `@`) | ⚠️ N/A (Rejects all display names) |
-| **RFC 822 Group Addresses** |  **Strictly Rejected** (Throws exception) |  **Permissive** (Accepted as group) |  **Strictly Rejected** (Throws exception) |  **Strictly Rejected** (Throws exception) |
-| **CRLF / SMTP Command Injection** |  **Strictly Rejected** (Newlines forbidden in `of()` and fields) |  **Permissive** (Allows folding CR/LF newlines) |  **Strictly Rejected** (Newlines forbidden in fields) |  **Strictly Rejected** (Newlines forbidden) |
+| **Trailing Unconsumed Input** |  **Rejected** (EOF-enforced) |  **Permissive** (Discards trailing parts like `<a@b>c@d`) |  **Rejected** (EOF-enforced) |  **Rejected** (EOF-enforced) |
+| **Unquoted Specials in Display Name** |  **Rejected** (Throws exception) |  **Permissive** (Allows unquoted `@` and `<`) |  **Permissive** (Allows unquoted `@`) | ⚠️ N/A (Rejects all display names) |
+| **RFC 822 Group Addresses** |  **Rejected** (Throws exception) |  **Permissive** (Accepted as group) |  **Rejected** (Throws exception) |  **Rejected** (Throws exception) |
+| **CRLF / SMTP Command Injection** |  **Rejected** (Newlines forbidden in `of()` and fields) |  **Permissive** (Allows folding CR/LF newlines) |  **Rejected** (Newlines forbidden in fields) |  **Rejected** (Newlines forbidden) |
 
 
 ---
