@@ -23,7 +23,7 @@ combinators. It serves as a lightweight and secure alternative to
 | :--- | :--- | :--- | :--- | :--- |
 | **`local-part@domain`** |  **Compliant** |  **Compliant** |  **Compliant** |  **Compliant** |
 | **Quoted Local Parts** |  **Compliant & Canonical** (Strips quotes; re-escapes on output) |  **Compliant** | ⚠️ **Partially Compliant** (Fails to strip/unescape quotes) |  **Compliant** |
-| **Folding White Space** (FWS) |  **Compliant** (Parses and canonicalizes them away safely) |  **Compliant** (Supports standard FWS) | ⚠️ **Partially Compliant** (Fails on FWS directly after angle bracket) | 🚫 **Rejected** (Rejects them completely) |
+| **Folding White Space** (FWS) | ⚠️ **Partially Compliant** (Restricted to horizontal whitespace in `of()` to prevent CRLF injection; lists support newlines) |  **Compliant** (Supports standard FWS with CR/LF) | ⚠️ **Partially Compliant** (Fails on FWS directly after angle bracket) | 🚫 **Rejected** (Rejects them completely) |
 | **Unquoted Display Names** |  **Strictly Compliant** (Forbids special characters `()<>[]:;@\,"` to prevent spoofing) | ⚠️ **Lenient** (Allows special characters unquoted in display names) | ⚠️ **Lenient** (Allows special characters unquoted in display names) | 🚫 **Rejected** (Rejects display names completely, returns `false`) |
 | **Group Addresses** (RFC 822) | 🚫 **Intentionally Omitted** (Obsolete, rejected for security) |  **Compliant** (Parses groups as `isGroup()`) | 🚫 **Intentionally Omitted** (Obsolete, rejected for security) | 🚫 **Rejected** (Rejects group syntax completely) |
 | **RFC 2047 Encoded Words** | 🚫 **Intentionally Omitted** (Preserved raw to prevent spoofing) |  **Compliant** (Decodes automatically, posing security risks) | 🚫 **Intentionally Omitted** (Preserved raw to prevent spoofing) | 🚫 **Rejected** (Rejects encoded words completely) |
@@ -38,6 +38,7 @@ combinators. It serves as a lightweight and secure alternative to
 | **Parsing Differentials** (Split Bug) |  **Immune** (Strictly rejects unconsumed trailing characters) | ❌ **Vulnerable** (Silently discards trailing parts like `<a@b>c@d`) |  **Immune** (Natively rejects) |  **Immune** (Rejects display names completely, avoiding parsing differentials) |
 | **Display Name Spoofing** (Phishing) |  **Immune** (Strictly rejects unquoted `@` or `<` in display names) | ❌ **Vulnerable** (Decodes and accepts unquoted `@` and `<` in display names) | ❌ **Vulnerable** (Accepts unquoted `@` in display names) | ⚠️ N/A (Rejects all display names) |
 | **Group Syntax Abuse** (List splitting) |  **Immune** (obsolete RFC 822 group constructs are strictly rejected) | ❌ **Vulnerable** (Accepts group syntax, bypassing single-recipient controls) |  **Immune** (Natively rejects groups) |  **Immune** (Rejects all group formats) |
+| **CRLF / SMTP Command Injection** |  **Immune** (Strictly rejects newlines inside single-address parser and constructor fields) | ❌ **Vulnerable** (Allows CR/LF newlines in folding whitespace, risking header/command injection) |  **Immune** (Rejects newlines in addresses) |  **Immune** (Rejects newlines) |
 
 
 ---
@@ -122,10 +123,16 @@ To maintain compatibility with modern MTAs and guarantee safety,
    both `EmailAddress` and JMail to prevent spoofing; however, JMail still
    accepts display names containing unquoted `@` characters in encoded
    blocks, whereas `EmailAddress` strictly rejects them.
+5. **Folding White Space containing CR/LF in Single Address Parser**: Although
+   RFC 5322 allows line folding (CR/LF) in folding whitespace, it is prohibited
+   in `EmailAddress.of(String)` to prevent SMTP command injection and avoid
+   asynchronous transport delivery failures. Multi-line address lists parsed
+   via `parseAddressList(String)` continue to support CR/LF as element
+   separators.
 
 ### D. Composability & Extensibility
 
-Unlike Jakarta Mail and JMail, where the parsing code is closed and
+Unlike Jakarta Mail, where the parsing code is closed and
 hard-coded inside static methods, `EmailAddress` exposes the underlying
 combinator parser as `public static final Parser<EmailAddress> PARSER`.
 
