@@ -25,7 +25,7 @@ combinators. It serves as a lightweight and secure alternative to
 | **Quoted Local Parts** |  **Canonical** (Strips quotes; re-escapes on output) |  **Supported (Raw)** (Preserves quotes) |  **Supported (Raw)** (Preserves quotes) |  **Supported** |
 | **Folding White Space** (FWS) | ⚠️ **Restricted** (Only horizontal whitespace allowed in `of()`; lists support newlines) |  **Full Support** (Supports standard FWS with CR/LF) | ⚠️ **Partial Support** (Fails on FWS directly after angle bracket) | 🚫 **Not Supported** (Rejects FWS completely) |
 | **Unquoted Display Names** |  **Strict** (Forbids special characters `()<>[]:;@\,"` to prevent spoofing) |  **Lenient** (Allows special characters unquoted) |  **Lenient** (Allows special characters unquoted) | 🚫 **Not Supported** (Rejects display names) |
-| **Group Addresses** (RFC 822) | 🚫 **Omitted** (Intentionally omitted) |  **Supported** (Parses groups as `isGroup()`) | 🚫 **Omitted** (Intentionally omitted) | 🚫 **Not Supported** (Rejects group syntax) |
+| **Group Addresses** (RFC 822) | 🚫 **Omitted** |  **Supported** (Parses groups as `isGroup()`) | 🚫 **Omitted** | 🚫 **Not Supported** (Rejects group syntax) |
 | **RFC 2047 Encoded Words** | 🚫 **Omitted** (Preserved raw) |  **Supported** (Decodes automatically) | 🚫 **Omitted** (Preserved raw) | 🚫 **Not Supported** (Rejects encoded words) |
 | **Comments & Domain Literals** | 🚫 **Omitted** (Obsolete comments/IP domains skipped) |  **Supported** (Supports full legacy features) | 🚫 **Omitted** (Obsolete comments/IP domains skipped) | ⚠️ **Partial Support** (Supports IP literals, rejects comments) |
 
