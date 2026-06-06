@@ -21,8 +21,8 @@ import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
-import static com.google.mu.util.CharPredicate.ASCII;
 import static com.google.mu.util.CharPredicate.anyOf;
+import static com.google.mu.util.CharPredicate.range;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
@@ -36,6 +36,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.net.IDN;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collector;
@@ -146,6 +147,11 @@ import com.google.mu.util.stream.Joiner;
  *     <td>Inconsistent (allows unquoted {@code @} in local-part)</td>
  *     <td>Strictly rejected (unquoted {@code @} is forbidden)</td>
  *   </tr>
+ *   <tr>
+ *     <td><b>CR/LF / Newlines</b></td>
+ *     <td>Permissive (allows leading/trailing and inner newlines as folding whitespace)</td>
+ *     <td>Strictly rejected in {@link #of(String)} to prevent CRLF injection; allowed only in address lists.</td>
+ *   </tr>
  * </table>
  *
  * <h3>Intentionally Omitted Legacy Features</h3>
@@ -155,6 +161,16 @@ import com.google.mu.util.stream.Joiner;
  * <ul>
  *   <li><b>Comments (CFWS):</b> (e.g., {@code name(comment) <addr>}) - De facto obsolete.
  *   <li><b>Domain Literals:</b> (e.g., {@code user@[192.168.1.1]}) - IP routing is rarely supported.
+ *   <li><b>Folding White Space (FWS) containing CR/LF:</b> Although RFC 5322 allows line folding
+ *       (inserting CR/LF followed by whitespace) to format long headers across multiple lines, this
+ *       format is prohibited at the SMTP transport layer (RFC 5321) for actual transmission
+ *       (e.g., in {@code RCPT TO} commands). In modern application layers (user signup, database
+ *       storage, API gateways), email addresses are universally processed in their unfolded,
+ *       single-line form. Restricting the single-address parser {@link #of(String)} to horizontal
+ *       whitespace prevents SMTP command injection (where CR/LF characters could split a single
+ *       address into multiple SMTP protocol commands) and avoids asynchronous delivery failures.
+ *       Multi-line address lists (via {@link #parseAddressList(String)}) continue to permit newlines
+ *       as element separators.</li>
  * </ul>
  *
  * @param displayName the {@code "J.R.R. Tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
@@ -169,8 +185,10 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
       StringFormat.to(
           IllegalArgumentException::new, "domain must contain at least one dot: {domain}");
   private static final CharPredicate WHITESPACE = Character::isWhitespace;
-  private static final CharPredicate NUMERIC = CharPredicate.range('0', '9');
+  private static final CharPredicate NUMERIC = range('0', '9');
   private static final CharPredicate ISO_CONTROL = Character::isISOControl;
+  private static final CharPredicate REJECTED_CHARS =
+      ISO_CONTROL.or(anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069"));
 
   // While most letters and digits are supplementary chars, using it is strictly better than
   // [a-zA-Z0-9] because it natively supports internationalized BMP characters (for example,
@@ -190,7 +208,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
   private static final CharPredicate LETTER_OR_DIGIT = Character::isLetterOrDigit;
   private static final CharPredicate ATEXT =
       LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii();
-  private static final CharPredicate DOMAIN_LABEL_CHARS = LETTER_OR_DIGIT.or('-').precomputeForAscii();
+  private static final CharPredicate I18N_DOMAIN_LABEL_CHARS = LETTER_OR_DIGIT.or('-').precomputeForAscii();
+  private static final CharPredicate ASCII_DOMAIN_LABEL_CHARS = range('a', 'z').orRange('0', '9').or('-');
   private static final CharPredicate ADDRESS_LIST_SEPARATOR_CHAR = anyOf(",;");
   private static final Parser<?> ADDRESS_LIST_DELIMITER =
       Parser.one(ADDRESS_LIST_SEPARATOR_CHAR, "delimiter").atLeastOnce(counting());
@@ -216,11 +235,11 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
     checkArgument(
-        ISO_CONTROL.matchesNoneOf(localPart), "local-part must not contain control characters");
+        REJECTED_CHARS.matchesNoneOf(localPart),
+        "local-part must not contain control or formatting characters");
     checkArgument(
-        ISO_CONTROL.matchesNoneOf(displayName.orElse("")),
-        "display name must not contain control characters");
-    checkArgument(ASCII.matchesAllOf(domain), "domain must be ASCII: %s", domain);
+        REJECTED_CHARS.matchesNoneOf(displayName.orElse("")),
+        "display name must not contain control or formatting characters");
     all('.').split(domain).forEach(label -> {
         checkArgument(!label.isEmpty(), "domain label cannot be empty");
         checkArgument(
@@ -228,8 +247,8 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             "domain label '%s' must not start or end with a hyphen",
             label);
         checkArgument(
-            DOMAIN_LABEL_CHARS.matchesAllOf(label),
-            "domain label '%s' contains invalid characters", label);
+            ASCII_DOMAIN_LABEL_CHARS.matchesAllOf(label),
+            "domain label '%s' must be all lowercase alpha-numeric or hyphen", label);
     });
     var tld = after(last('.')).in(domain).orElseThrow(() -> DOTLESS_DOMAIN_BANNED.with(domain));
     checkArgument(!NUMERIC.matchesAllOf(tld), "TLD name cannot be all numeric (%s)", tld);
@@ -250,16 +269,22 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     return new EmailAddress(
         Optional.empty(),
         localPart,
-        IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(java.util.Locale.ROOT));
+        IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.ROOT));
   }
 
   /**
    * Parses {@code address} and throws {@link Parser.ParseException} if failed.
    *
+   * <p>Note: Unlike {@link #parseAddressList(String)}, this method only permits horizontal
+   * whitespace (spaces and tabs) to be skipped at the start and end of the address. Any leading or
+   * trailing line breaks (CR/LF, e.g., {@code \n} or {@code \r\n}) will result in a parsing
+   * exception. This strictness protects against HTTP and SMTP header injection vulnerabilities in
+   * downstream systems that may log or concatenate the raw input string.
+   *
    * @since 9.9.8
    */
   public static EmailAddress of(String address) {
-    return PARSER.parseSkipping(WHITESPACE, address);
+    return PARSER.parseSkipping(anyOf(" \t"), address);
   }
 
   /** Returns the {@code addr-spec}, in the form of {@code user@mycompany.com}. */
@@ -296,6 +321,16 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
    */
   public String unicodeDomain() {
     return IDN.toUnicode(domain, IDN.ALLOW_UNASSIGNED);
+  }
+
+  /**
+   * Returns true if this address has an internationalized domain, in which case {@link #domain()}
+   * will be puny-coded.
+   *
+   * @since 10.3
+   */
+  public boolean hasI18nDomain() {
+    return all('.').split(domain).anyMatch(label -> label.startsWith("xn--"));
   }
 
   private String showLocalPart() {
@@ -374,11 +409,11 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   private static Parser<EmailAddress> makeParser() {
     Parser<String> quoted = quotedByWithEscapes('"', '"', chars(1))
-        .suchThat(ISO_CONTROL::matchesNoneOf, "quoted string without control chars");
+        .suchThat(REJECTED_CHARS::matchesNoneOf, "quoted string without control or formatting chars");
     Parser<String> localPart = anyOf(
         quoted,
         consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")));
-    Parser<String> domain = consecutive(DOMAIN_LABEL_CHARS, "domain label chars")
+    Parser<String> domain = consecutive(I18N_DOMAIN_LABEL_CHARS, "domain label chars")
         .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
         .atLeastOnceDelimitedBy(".")
         .suchThat(labels -> labels.size() > 1, "domain name with at least one dot")
@@ -387,7 +422,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     Parser<EmailAddress> address =
         literally(sequence(localPart.followedBy("@"), domain, EmailAddress::of));
     Parser<String> unquotedDisplayName = consecutive(
-        ISO_CONTROL.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
+        REJECTED_CHARS.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
     Parser<String> displayName = anyOf(quoted, unquotedDisplayName.map(String::trim));
     return anyOf(

@@ -199,6 +199,28 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddress_dangerousUnicodeRejected(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    
+    // Line/Paragraph separators inside quoted local part
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("\"john\u2028doe\"@example.com"));
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("\"john\u2029doe\"@example.com"));
+
+    // BiDi control chars inside quoted local part
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("\"john\u202Edoe\"@example.com"));
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("\"john\u202Adoe\"@example.com"));
+
+    // BiDi control chars inside display name (quoted and unquoted)
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("\"John\u202EDoe\" <john@example.com>"));
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("John\u202EDoe <john@example.com>"));
+
+    // Constructor validation checks
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("john\u202Edoe", "example.com"));
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("john", "example.com").withDisplayName("John\u202EDoe"));
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("john\u2028doe", "example.com"));
+  }
+
+  @Test
   public void testEmailAddressOf_localPartStartsWithDot() {
     EmailAddress address = EmailAddress.of(".john.doe", "example.com");
     assertThat(address.localPart()).isEqualTo(".john.doe");
@@ -231,6 +253,10 @@ public class EmailAddressTest {
     EmailAddress address = EmailAddress.of("test", "bücher.de");
     assertThat(address.domain()).isEqualTo("xn--bcher-kva.de");
     assertThat(address.unicodeDomain()).isEqualTo("bücher.de");
+
+    // Standard ASCII valid domain characters: letters, digits, and hyphens in the middle
+    EmailAddress asciiAddress = EmailAddress.of("test", "abcdefghijklmnopqrstuvwxyz-1234567890.com");
+    assertThat(asciiAddress.domain()).isEqualTo("abcdefghijklmnopqrstuvwxyz-1234567890.com");
   }
 
   @Test
@@ -249,6 +275,33 @@ public class EmailAddressTest {
     EmailAddress address3 = EmailAddress.of("test@Example.Com");
     assertThat(address3.domain()).isEqualTo("example.com");
     assertThat(address3.unicodeDomain()).isEqualTo("example.com");
+
+    // Raw Punycode case folding (converts uppercase XN-- to lowercase xn--)
+    EmailAddress address4 = EmailAddress.of("test", "XN--bcher-kva.de");
+    assertThat(address4.domain()).isEqualTo("xn--bcher-kva.de");
+    assertThat(address4.unicodeDomain()).isEqualTo("bücher.de");
+  }
+
+  @Test
+  public void testHasI18nDomain() {
+    // Standard ASCII domain
+    assertThat(EmailAddress.of("test", "example.com").hasI18nDomain()).isFalse();
+
+    // IDN domain (Punycode in second-level domain)
+    assertThat(EmailAddress.of("test", "bücher.de").hasI18nDomain()).isTrue();
+
+    // IDN subdomain (Punycode in subdomain)
+    assertThat(EmailAddress.of("test", "bücher.google.com").hasI18nDomain()).isTrue();
+
+    // IDN TLD (Punycode in TLD)
+    assertThat(EmailAddress.of("test", "google.рус").hasI18nDomain()).isTrue();
+
+    // Raw Punycode input (lowercase)
+    assertThat(EmailAddress.of("test", "xn--bcher-kva.de").hasI18nDomain()).isTrue();
+
+    // Raw Punycode input (uppercase/mixed-case)
+    assertThat(EmailAddress.of("test", "Xn--bcher-kva.de").hasI18nDomain()).isTrue();
+    assertThat(EmailAddress.of("test", "XN--bcher-kva.de").hasI18nDomain()).isTrue();
   }
 
   @Test
@@ -297,6 +350,13 @@ public class EmailAddressTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> new EmailAddress(Optional.of("John\nDoe"), "local", "example.com"));
+  }
+
+  @Test
+  public void testConstructor_domainContainsUppercaseChar_throws() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new EmailAddress(Optional.empty(), "local", "Example.com"));
   }
 
   @Test
@@ -479,6 +539,19 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_angleBracketEmailOnly(@TestParameter ParseStrategy parser) {
     parser.assertParsesTo("<test@example.com>", EmailAddress.of("test", "example.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_whitespace(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    // Spaces and tabs are skipped
+    assertThat(EmailAddress.of(" test@example.com ")).isEqualTo(EmailAddress.of("test", "example.com"));
+    assertThat(EmailAddress.of("\ttest@example.com\t")).isEqualTo(EmailAddress.of("test", "example.com"));
+
+    // Newlines are NOT skipped and cause failure
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("\ntest@example.com"));
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test@example.com\n"));
+    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test@example.com\r\n"));
   }
 
   @Test
@@ -810,6 +883,15 @@ public class EmailAddressTest {
   public void testParseAddressList_twoAddressesWithWhitespaces() {
     assertThat(parseAddressList(" a@b.com , c@d.com "))
         .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+  }
+
+  @Test
+  public void testParseAddressList_withNewlines() {
+    assertThat(parseAddressList("a@b.com,\nc@d.com\r\n, e@f.com"))
+        .containsExactly(
+            EmailAddress.of("a", "b.com"),
+            EmailAddress.of("c", "d.com"),
+            EmailAddress.of("e", "f.com"));
   }
 
   @Test
