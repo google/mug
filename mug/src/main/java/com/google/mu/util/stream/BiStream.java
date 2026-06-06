@@ -966,6 +966,18 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns a {@code Stream} consisting of the non-null results of applying {@code mapper} to each
+   * pair in this {@code BiStream}. If {@code mapper} function returns {@code null}, the pair is
+   * discarded.
+   *
+   * @since 10.3
+   */
+  public final <T> Stream<T> mapToObjIfNotNull(
+      BiFunction<? super K, ? super V, ? extends T> mapper) {
+    return this.<T>mapToObj(mapper).filter(Objects::nonNull);
+  }
+
+  /**
    * Returns a {@code BiStream} consisting of the results of applying {@code keyMapper} and {@code
    * valueMapper} to the pairs in this {@code BiStream}.
    */
