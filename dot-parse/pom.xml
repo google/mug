@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>10.3</version>
+    <version>10.4-SNAPSHOT</version>
   </parent>
   <artifactId>dot-parse</artifactId>
   <name>Compact Parser Combinators</name>
