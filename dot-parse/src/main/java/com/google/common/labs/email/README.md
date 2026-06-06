@@ -94,10 +94,10 @@ combinators. It serves as a lightweight and secure alternative to
 
 ### B. Lenient vs. Strict Parsing Modes
 
-* **`EmailAddress`**: Follows **Strict-by-Default** architecture. All primary
-  parsing endpoints (`of()`, `PARSER`) enforce strict validation.
-  `parseAddressList()` supports fault tolerance mode to prevent a single invalid entry
-  from defeating the list parsing.
+* **`EmailAddress`**: A trustable data model. Any code operating on an
+  `EmailAddress` can be assured that it's fully validated and secure
+  solely on the basis of its compile-time type, regardless of how, where,
+  or from what input the instance was constructed.
 
 * **`InternetAddress`**: Supports both strict and lenient modes via
   `new InternetAddress(address, strict)`. However, even its "strict" mode
