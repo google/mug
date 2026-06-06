@@ -187,11 +187,11 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   private static final StringFormat.Template<IllegalArgumentException> DOTLESS_DOMAIN_BANNED =
       StringFormat.to(
           IllegalArgumentException::new, "domain must contain at least one dot: {domain}");
-  private static final CharPredicate WHITESPACE = Character::isWhitespace;
-  private static final CharPredicate NUMERIC = range('0', '9');
-  private static final CharPredicate ISO_CONTROL = Character::isISOControl;
-  private static final CharPredicate REJECTED_CHARS =
-      ISO_CONTROL.or(anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069"));
+  private static final CharPredicate NON_DIGIT = range('0', '9').not();
+  private static final CharPredicate DANGEROUS =
+      anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069")
+          .or(Character::isISOControl)
+          .precomputeForAscii();
 
   // While most letters and digits are supplementary chars, using it is strictly better than
   // [a-zA-Z0-9] because it natively supports internationalized BMP characters (for example,
@@ -238,10 +238,10 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
     checkArgument(
-        REJECTED_CHARS.matchesNoneOf(localPart),
+        DANGEROUS.matchesNoneOf(localPart),
         "local-part must not contain control or formatting characters");
     checkArgument(
-        REJECTED_CHARS.matchesNoneOf(displayName.orElse("")),
+        DANGEROUS.matchesNoneOf(displayName.orElse("")),
         "display name must not contain control or formatting characters");
     all('.').split(domain).forEach(label -> {
         checkArgument(!label.isEmpty(), "domain label cannot be empty");
@@ -254,7 +254,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
             "domain label '%s' must be all lowercase alpha-numeric or hyphen", label);
     });
     var tld = after(last('.')).in(domain).orElseThrow(() -> DOTLESS_DOMAIN_BANNED.with(domain));
-    checkArgument(!NUMERIC.matchesAllOf(tld), "TLD name cannot be all numeric (%s)", tld);
+    checkArgument(NON_DIGIT.matchesAnyOf(tld), "TLD name cannot be all numeric (%s)", tld);
     checkArgument(
         localPart.length() + domain.length() + 1 <= 254,
         "<%s@%s> must be <= 254 chars", localPart, domain);
@@ -381,7 +381,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
     return PARSER
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
-        .parseSkipping(WHITESPACE, addressList);
+        .parseSkipping(Character::isWhitespace, addressList);
   }
 
   /**
@@ -407,12 +407,12 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
             consecutive(ADDRESS_LIST_SEPARATOR_CHAR.not(), "invalid").map(String::trim))
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(ifInvalid))
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
-        .parseSkipping(WHITESPACE, addressList);
+        .parseSkipping(Character::isWhitespace, addressList);
   }
 
   private static Parser<EmailAddress> makeParser() {
     Parser<String> quoted = quotedByWithEscapes('"', '"', chars(1))
-        .suchThat(REJECTED_CHARS::matchesNoneOf, "quoted string without control or formatting chars");
+        .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
     Parser<String> localPart = anyOf(
         quoted,
         consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")));
@@ -420,12 +420,12 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
         .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
         .atLeastOnceDelimitedBy(".")
         .suchThat(labels -> labels.size() > 1, "domain name with at least one dot")
-        .suchThat(labels -> !NUMERIC.matchesAllOf(labels.getLast()), "domain with valid TLD")
+        .suchThat(labels -> NON_DIGIT.matchesAnyOf(labels.getLast()), "domain with valid TLD")
         .map(Joiner.on('.')::join);
     Parser<EmailAddress> address =
         literally(sequence(localPart.followedBy("@"), domain, EmailAddress::of));
     Parser<String> unquotedDisplayName = consecutive(
-        REJECTED_CHARS.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
+        DANGEROUS.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
     Parser<String> displayName = anyOf(quoted, unquotedDisplayName.map(String::trim));
     return anyOf(
