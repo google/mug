@@ -544,14 +544,11 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddressParsing_whitespace(@TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
-    // Spaces and tabs are skipped
+    // Spaces, tabs, and newlines are skipped
     assertThat(EmailAddress.of(" test@example.com ")).isEqualTo(EmailAddress.of("test", "example.com"));
     assertThat(EmailAddress.of("\ttest@example.com\t")).isEqualTo(EmailAddress.of("test", "example.com"));
-
-    // Newlines are NOT skipped and cause failure
-    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("\ntest@example.com"));
-    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test@example.com\n"));
-    assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test@example.com\r\n"));
+    assertThat(EmailAddress.of("\ntest@example.com\n")).isEqualTo(EmailAddress.of("test", "example.com"));
+    assertThat(EmailAddress.of("\r\ntest@example.com\r\n")).isEqualTo(EmailAddress.of("test", "example.com"));
   }
 
   @Test

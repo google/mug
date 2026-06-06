@@ -147,11 +147,6 @@ import com.google.mu.util.stream.Joiner;
  *     <td>Inconsistent (allows unquoted {@code @} in local-part)</td>
  *     <td>Strictly rejected (unquoted {@code @} is forbidden)</td>
  *   </tr>
- *   <tr>
- *     <td><b>CR/LF / Newlines</b></td>
- *     <td>Permissive (allows leading/trailing and inner newlines as folding whitespace)</td>
- *     <td>Strictly rejected in {@link #of(String)} to prevent CRLF injection; allowed only in address lists.</td>
- *   </tr>
  * </table>
  *
  * <h3>Intentionally Omitted Legacy Features</h3>
@@ -161,17 +156,6 @@ import com.google.mu.util.stream.Joiner;
  * <ul>
  *   <li><b>Comments (CFWS):</b> (e.g., {@code name(comment) <addr>}) - De facto obsolete.
  *   <li><b>Domain Literals:</b> (e.g., {@code user@[192.168.1.1]}) - IP routing is rarely supported.
- *   <li><b>Folding White Space (FWS) containing CR/LF:</b> Although RFC 5322 allows line folding
- *       (inserting CR/LF followed by whitespace) to format long headers across multiple lines, this
- *       format is prohibited at the SMTP transport layer (RFC 5321) for actual transmission
- *       (e.g., in {@code RCPT TO} commands). In modern application layers (user signup, database
- *       storage, API gateways), email addresses are universally processed in their unfolded,
- *       single-line form. Restricting the single-address parser {@link #of(String)} to horizontal
- *       whitespace prevents SMTP command injection (where CR/LF characters could split a single
- *       address into multiple SMTP protocol commands) and avoids asynchronous delivery failures.
- *       For MIME applications where CR/LF folded headers are expected, use the {@link #PARSER}
- *       constant as in {@code PARSER.parseSkipping(Character::isWhitespace, input)}. It allows
- *       newlines between the display name and the address spec.
  * </ul>
  *
  * @param localPart the {@code "tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
@@ -277,16 +261,10 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   /**
    * Parses {@code address} and throws {@link Parser.ParseException} if failed.
    *
-   * <p>Note: Unlike {@link #parseAddressList(String)}, this method only permits horizontal
-   * whitespace (spaces and tabs) to be skipped at the start and end of the address. Any leading or
-   * trailing line breaks (CR/LF, e.g., {@code \n} or {@code \r\n}) will result in a parsing
-   * exception. This strictness protects against HTTP and SMTP header injection vulnerabilities in
-   * downstream systems that may log or concatenate the raw input string.
-   *
    * @since 9.9.8
    */
   public static EmailAddress of(String address) {
-    return PARSER.parseSkipping(anyOf(" \t"), address);
+    return PARSER.parseSkipping(Character::isWhitespace, address);
   }
 
   /** Returns the {@code addr-spec}, in the form of {@code user@mycompany.com}. */
