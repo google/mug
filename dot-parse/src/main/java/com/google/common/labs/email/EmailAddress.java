@@ -169,8 +169,9 @@ import com.google.mu.util.stream.Joiner;
  *       single-line form. Restricting the single-address parser {@link #of(String)} to horizontal
  *       whitespace prevents SMTP command injection (where CR/LF characters could split a single
  *       address into multiple SMTP protocol commands) and avoids asynchronous delivery failures.
- *       Multi-line address lists (via {@link #parseAddressList(String)}) continue to permit newlines
- *       as element separators.</li>
+ *       For MIME applications where CR/LF folded headers are expected, use the {@link #PARSER}
+ *       constant as in {@code PARSER.parseSkipping(Character::isWhitespace, input)}. It allows
+ *       newlines between the display name and the address spec.
  * </ul>
  *
  * @param localPart the {@code "tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
