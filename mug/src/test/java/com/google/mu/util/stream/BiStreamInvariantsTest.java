@@ -470,6 +470,17 @@ public class BiStreamInvariantsTest {
         .isEmpty();
   }
 
+  @Test public void testMapToObjIfNotNull_nonNull() {
+    assertThat(of("one", 1, "two", 2).mapToObjIfNotNull((k, v) -> k + ":" + v))
+        .containsExactly("one:1", "two:2")
+        .inOrder();
+  }
+
+  @Test public void testMapToObjIfNotNull_null() {
+    assertThat(of("one", 1, "two", 2).mapToObjIfNotNull((k, v) -> null))
+        .isEmpty();
+  }
+
   @Test public void collectToMap() {
     assertThat(of("one", 1, "two", 2).collect(toMap())).containsExactly("one", 1, "two", 2);
   }
