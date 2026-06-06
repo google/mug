@@ -61,7 +61,7 @@ import com.google.mu.util.stream.Joiner;
  * <p>For example: <pre>{@code
  * EmailAddress address = EmailAddress.of("J.R.R. Tolkien <tolkien@lotr.org>");
  * // address.displayName() => "J.R.R. Tolkien"
- * // address.localPart()) => "tolkien"
+ * // address.localPart() => "tolkien"
  * // address.domain() => "lotr.org"
  * }</pre>
  *
@@ -173,9 +173,12 @@ import com.google.mu.util.stream.Joiner;
  *       as element separators.</li>
  * </ul>
  *
- * @param displayName the {@code "J.R.R. Tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
  * @param localPart the {@code "tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
- * @param domain the {@code "lotr.org"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
+ * @param domain the {@code "lotr.org"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}.
+ *     Note that for internationalized domain, this is the punycode in ASCII. You can
+ *     use {@link #unicodeDomain} to access the non-encoded domain. {@link #hasI18nDomain}
+ *     can be used to check if the domain is internationalized.
+ * @param displayName the {@code "J.R.R. Tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
  * @since 9.9.4
  */
 @Immutable
