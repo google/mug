@@ -113,6 +113,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#fromEntries(java.util.stream.Stream)" tabindex="0">fromEntries(Stream)</a></li>
 <li><a href="#mapToObj(java.util.function.BiFunction)" tabindex="0">mapToObj(BiFunction)</a></li>
 <li><a href="#mapToObjIfPresent(java.util.function.BiFunction)" tabindex="0">mapToObjIfPresent(BiFunction)</a></li>
+<li><a href="#mapToObjIfNotNull(java.util.function.BiFunction)" tabindex="0">mapToObjIfNotNull(BiFunction)</a></li>
 <li><a href="#map(java.util.function.BiFunction,java.util.function.BiFunction)" tabindex="0">map(BiFunction, BiFunction)</a></li>
 <li><a href="#map(java.util.function.BiFunction)" tabindex="0">map(BiFunction)</a></li>
 <li><a href="#mapIfPresent(java.util.function.BiFunction)" tabindex="0">mapIfPresent(BiFunction)</a></li>
@@ -729,82 +730,88 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  this <code>BiStream</code>.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;T&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapToObjIfPresent(java.util.function.BiFunction)" class="member-name-link">mapToObjIfPresent</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;? extends T&gt;&gt;&nbsp;mapper)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapToObjIfNotNull(java.util.function.BiFunction)" class="member-name-link">mapToObjIfNotNull</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends T&gt;&nbsp;mapper)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Returns a <code>Stream</code> consisting of the non-null results of applying <code>mapper</code> to each
+ pair in this <code>BiStream</code>.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;T&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapToObjIfPresent(java.util.function.BiFunction)" class="member-name-link">mapToObjIfPresent</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;? extends T&gt;&gt;&nbsp;mapper)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a <code>Stream</code> consisting of the results of applying <code>mapper</code> to each pair in
  this <code>BiStream</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>&lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapValues(java.util.function.BiFunction)" class="member-name-link">mapValues</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends V2&gt;&nbsp;valueMapper)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>&lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapValues(java.util.function.BiFunction)" class="member-name-link">mapValues</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends V2&gt;&nbsp;valueMapper)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Maps each value to another value of type <code>V2</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>abstract &lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#mapValues(java.util.function.Function)" class="member-name-link">mapValues</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends V2&gt;&nbsp;valueMapper)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>abstract &lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#mapValues(java.util.function.Function)" class="member-name-link">mapValues</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends V2&gt;&nbsp;valueMapper)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">Maps each value to another value of type <code>V2</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapValuesIfNotNull(java.util.function.BiFunction)" class="member-name-link">mapValuesIfNotNull</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends V2&gt;&nbsp;valueMapper)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapValuesIfNotNull(java.util.function.BiFunction)" class="member-name-link">mapValuesIfNotNull</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends V2&gt;&nbsp;valueMapper)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> of pairs whose values are the result of applying <code>valueMapper</code>
  to each pair in this <code>BiStream</code>, and whose keys are unchanged.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapValuesIfNotNull(java.util.function.Function)" class="member-name-link">mapValuesIfNotNull</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends V2&gt;&nbsp;valueMapper)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapValuesIfNotNull(java.util.function.Function)" class="member-name-link">mapValuesIfNotNull</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends V2&gt;&nbsp;valueMapper)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> of pairs whose values are the result of applying <code>valueMapper</code>
  to the value of each pair in this <code>BiStream</code>, and whose keys are unchanged.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapValuesIfPresent(java.util.function.BiFunction)" class="member-name-link">mapValuesIfPresent</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;? extends V2&gt;&gt;&nbsp;valueMapper)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapValuesIfPresent(java.util.function.BiFunction)" class="member-name-link">mapValuesIfPresent</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;? extends V2&gt;&gt;&nbsp;valueMapper)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> of pairs whose values are the result of applying <code>valueMapper</code>
  to each pair in this <code>BiStream</code>, and whose keys are unchanged.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapValuesIfPresent(java.util.function.Function)" class="member-name-link">mapValuesIfPresent</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;? extends V2&gt;&gt;&nbsp;valueMapper)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapValuesIfPresent(java.util.function.Function)" class="member-name-link">mapValuesIfPresent</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;? extends V2&gt;&gt;&nbsp;valueMapper)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> of pairs whose values are the result of applying <code>valueMapper</code>
  to the value of each pair in this <code>BiStream</code>, and whose keys are unchanged.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapValuesIfPresent(java.util.Map)" class="member-name-link">mapValuesIfPresent</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends V2&gt;&nbsp;valueMapping)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapValuesIfPresent(java.util.Map)" class="member-name-link">mapValuesIfPresent</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends V2&gt;&nbsp;valueMapping)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Given <code>valueMapping</code> that maps values of type <code>V</code> to result values of type <code>
  V2</code>, returns a <code>BiStream</code> of type <code>&lt;K, V2&gt;</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final boolean</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#noneMatch(java.util.function.BiPredicate)" class="member-name-link">noneMatch</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiPredicate.html" title="class or interface in java.util.function" class="external-link">BiPredicate</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;&nbsp;predicate)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final boolean</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#noneMatch(java.util.function.BiPredicate)" class="member-name-link">noneMatch</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiPredicate.html" title="class or interface in java.util.function" class="external-link">BiPredicate</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;&nbsp;predicate)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns true if no pairs in this stream match <code>predicate</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V)" class="member-name-link">of</a><wbr>(K&nbsp;key,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V)" class="member-name-link">of</a><wbr>(K&nbsp;key,
  V&nbsp;value)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> of a single pair containing <code>key</code> and <code>value</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
  V&nbsp;v1,
  K&nbsp;k2,
  V&nbsp;v2)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> of two pairs, containing the supplied keys and values.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
  V&nbsp;v1,
  K&nbsp;k2,
  V&nbsp;v2,
  K&nbsp;k3,
  V&nbsp;v3)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> of three pairs, containing the supplied keys and values.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
  V&nbsp;v1,
  K&nbsp;k2,
  V&nbsp;v2,
@@ -812,11 +819,11 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  V&nbsp;v3,
  K&nbsp;k4,
  V&nbsp;v4)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> of 4 pairs, containing the supplied keys and values.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
  V&nbsp;v1,
  K&nbsp;k2,
  V&nbsp;v2,
@@ -826,11 +833,11 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  V&nbsp;v4,
  K&nbsp;k5,
  V&nbsp;v5)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> of 5 pairs, containing the supplied keys and values.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V,K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V,K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
  V&nbsp;v1,
  K&nbsp;k2,
  V&nbsp;v2,
@@ -842,11 +849,11 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  V&nbsp;v5,
  K&nbsp;k6,
  V&nbsp;v6)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> of 6 pairs, containing the supplied keys and values.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V,K,V,K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V,K,V,K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
  V&nbsp;v1,
  K&nbsp;k2,
  V&nbsp;v2,
@@ -860,11 +867,11 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  V&nbsp;v6,
  K&nbsp;k7,
  V&nbsp;v7)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> of 7 pairs, containing the supplied keys and values.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V,K,V,K,V,K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V,K,V,K,V,K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
  V&nbsp;v1,
  K&nbsp;k2,
  V&nbsp;v2,
@@ -880,11 +887,11 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  V&nbsp;v7,
  K&nbsp;k8,
  V&nbsp;v8)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> of 8 pairs, containing the supplied keys and values.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V,K,V,K,V,K,V,K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V,K,V,K,V,K,V,K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
  V&nbsp;v1,
  K&nbsp;k2,
  V&nbsp;v2,
@@ -902,11 +909,11 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  V&nbsp;v8,
  K&nbsp;k9,
  V&nbsp;v9)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> of 9 pairs, containing the supplied keys and values.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V,K,V,K,V,K,V,K,V,K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;K,<wbr>V&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K,<wbr>V&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#of(K,V,K,V,K,V,K,V,K,V,K,V,K,V,K,V,K,V,K,V)" class="member-name-link">of</a><wbr>(K&nbsp;k1,
  V&nbsp;v1,
  K&nbsp;k2,
  V&nbsp;v2,
@@ -926,118 +933,118 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
  V&nbsp;v9,
  K&nbsp;k10,
  V&nbsp;v10)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> of 10 pairs, containing the supplied keys and values.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#peek(java.util.function.BiConsumer)" class="member-name-link">peek</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiConsumer.html" title="class or interface in java.util.function" class="external-link">BiConsumer</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;&nbsp;action)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#peek(java.util.function.BiConsumer)" class="member-name-link">peek</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiConsumer.html" title="class or interface in java.util.function" class="external-link">BiConsumer</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;&nbsp;action)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> consisting of the pairs of this stream, additionally invoking <code>
  action</code> on each pair as pairs are consumed from the resulting stream.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;I,<wbr>O&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;I,<wbr>O&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#repeat(java.util.function.Function,I,java.util.function.BiFunction)" class="member-name-link">repeat</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super I, ? extends O&gt;&nbsp;work,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;I,<wbr>O&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;I,<wbr>O&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#repeat(java.util.function.Function,I,java.util.function.BiFunction)" class="member-name-link">repeat</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super I, ? extends O&gt;&nbsp;work,
  I&nbsp;initial,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super I, ? super O, ? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;? extends I&gt;&gt;&nbsp;increment)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a stream of the inputs and outputs from repeated applications of the <code>work</code>
  function.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>abstract <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#skip(int)" class="member-name-link">skip</a><wbr>(int&nbsp;n)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>abstract <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#skip(int)" class="member-name-link">skip</a><wbr>(int&nbsp;n)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">Returns a <code>BiStream</code> consisting of the remaining pairs from this stream, after discarding
  the first <code>n</code> pairs.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#skipIf(java.util.function.BiPredicate)" class="member-name-link">skipIf</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiPredicate.html" title="class or interface in java.util.function" class="external-link">BiPredicate</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;&nbsp;predicate)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#skipIf(java.util.function.BiPredicate)" class="member-name-link">skipIf</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiPredicate.html" title="class or interface in java.util.function" class="external-link">BiPredicate</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;&nbsp;predicate)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Filter this stream to exclude pairs matching <code>predicate</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#skipKeysIf(java.util.function.Predicate)" class="member-name-link">skipKeysIf</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Predicate.html" title="class or interface in java.util.function" class="external-link">Predicate</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>&gt;&nbsp;predicate)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#skipKeysIf(java.util.function.Predicate)" class="member-name-link">skipKeysIf</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Predicate.html" title="class or interface in java.util.function" class="external-link">Predicate</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>&gt;&nbsp;predicate)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Filter this stream to exclude pairs whose key matches <code>predicate</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#skipValuesIf(java.util.function.Predicate)" class="member-name-link">skipValuesIf</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Predicate.html" title="class or interface in java.util.function" class="external-link">Predicate</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;&nbsp;predicate)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#skipValuesIf(java.util.function.Predicate)" class="member-name-link">skipValuesIf</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Predicate.html" title="class or interface in java.util.function" class="external-link">Predicate</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;&nbsp;predicate)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Filter this stream to exclude pairs whose value matches <code>predicate</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sorted(java.util.Comparator,java.util.Comparator)" class="member-name-link">sorted</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Comparator.html" title="class or interface in java.util" class="external-link">Comparator</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>&gt;&nbsp;byKey,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sorted(java.util.Comparator,java.util.Comparator)" class="member-name-link">sorted</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Comparator.html" title="class or interface in java.util" class="external-link">Comparator</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>&gt;&nbsp;byKey,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Comparator.html" title="class or interface in java.util" class="external-link">Comparator</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;&nbsp;byValue)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> consisting of the pairs in this stream, in the order produced by
  applying the <code>byKey</code> comparator on the keys of each pair, and then the <code>byValue</code>
  comparator on the values of pairs with equal keys.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;T&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sortedBy(java.util.function.BiFunction,java.util.Comparator)" class="member-name-link">sortedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, T&gt;&nbsp;sortKeyFunction,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;T&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sortedBy(java.util.function.BiFunction,java.util.Comparator)" class="member-name-link">sortedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, T&gt;&nbsp;sortKeyFunction,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Comparator.html" title="class or interface in java.util" class="external-link">Comparator</a>&lt;? super T&gt;&nbsp;comparator)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> consisting of the pairs in this stream, in the order produced by
  applying <code>comparator</code> on the result of applying the <code>sortKeyFunction</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sortedByKeys(java.util.Comparator)" class="member-name-link">sortedByKeys</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Comparator.html" title="class or interface in java.util" class="external-link">Comparator</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>&gt;&nbsp;comparator)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sortedByKeys(java.util.Comparator)" class="member-name-link">sortedByKeys</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Comparator.html" title="class or interface in java.util" class="external-link">Comparator</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>&gt;&nbsp;comparator)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> consisting of the pairs in this stream, in the order produced by
  applying <code>comparator</code> on the keys of each pair.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sortedByValues(java.util.Comparator)" class="member-name-link">sortedByValues</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Comparator.html" title="class or interface in java.util" class="external-link">Comparator</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;&nbsp;comparator)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sortedByValues(java.util.Comparator)" class="member-name-link">sortedByValues</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Comparator.html" title="class or interface in java.util" class="external-link">Comparator</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;&nbsp;comparator)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> consisting of the pairs in this stream, in the order produced by
  applying <code>comparator</code> on the values of each pair.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;T, ?, <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;T,<wbr>T&gt;&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#toAdjacentPairs()" class="member-name-link">toAdjacentPairs</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;T, ?, <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;T,<wbr>T&gt;&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#toAdjacentPairs()" class="member-name-link">toAdjacentPairs</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a <code>Collector</code> that accumulates every neighboring pair of elements into a new
  <code>BiStream</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;T, ?, <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;T,<wbr>T&gt;&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#toBiStream()" class="member-name-link">toBiStream</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;T, ?, <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;T,<wbr>T&gt;&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#toBiStream()" class="member-name-link">toBiStream</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a <code>Collector</code> that copies each input element as a pair of itself into an equivalent
  <code>BiStream</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;E,<wbr>K,<wbr>V&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;E, ?, <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;K,<wbr>V&gt;&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#toBiStream(java.util.function.Function)" class="member-name-link">toBiStream</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super E, ? extends <a href="../Both.html" title="interface in com.google.mu.util">Both</a>&lt;? extends K, ? extends V&gt;&gt;&nbsp;toPair)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Returns a <code>Collector</code> that splits each input element as a pair and collects them into a
- <a href="BiStream.html" title="class in com.google.mu.util.stream"><code>BiStream</code></a>.</div>
-</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;E,<wbr>K,<wbr>V&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;E, ?, <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;K,<wbr>V&gt;&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#toBiStream(java.util.function.Function,java.util.function.Function)" class="member-name-link">toBiStream</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super E, ? extends K&gt;&nbsp;toKey,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super E, ? extends V&gt;&nbsp;toValue)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#toBiStream(java.util.function.Function)" class="member-name-link">toBiStream</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super E, ? extends <a href="../Both.html" title="interface in com.google.mu.util">Both</a>&lt;? extends K, ? extends V&gt;&gt;&nbsp;toPair)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a <code>Collector</code> that splits each input element as a pair and collects them into a
  <a href="BiStream.html" title="class in com.google.mu.util.stream"><code>BiStream</code></a>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#toMap()" class="member-name-link">toMap</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;E,<wbr>K,<wbr>V&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a><wbr>&lt;E, ?, <a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;K,<wbr>V&gt;&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#toBiStream(java.util.function.Function,java.util.function.Function)" class="member-name-link">toBiStream</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super E, ? extends K&gt;&nbsp;toKey,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super E, ? extends V&gt;&nbsp;toValue)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Returns a <code>Collector</code> that splits each input element as a pair and collects them into a
+ <a href="BiStream.html" title="class in com.google.mu.util.stream"><code>BiStream</code></a>.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#toMap()" class="member-name-link">toMap</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns an immutable <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link"><code>Map</code></a> that is the result of collecting the pairs in this stream.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;<a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#values()" class="member-name-link">values</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;<a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#values()" class="member-name-link">values</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a <code>Stream</code> consisting of only the values from each pair in this stream.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;L,<wbr>R&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;L,<wbr>R&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#zip(java.util.Collection,java.util.Collection)" class="member-name-link">zip</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;? extends L&gt;&nbsp;left,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;L,<wbr>R&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;L,<wbr>R&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#zip(java.util.Collection,java.util.Collection)" class="member-name-link">zip</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;? extends L&gt;&nbsp;left,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;? extends R&gt;&nbsp;right)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> in which the first element in <code>left</code> is paired with the first
  element in <code>right</code>; the second paired with the corresponding second and the third with
  the corresponding third etc.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;L,<wbr>R&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;L,<wbr>R&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#zip(java.util.stream.Stream,java.util.stream.Stream)" class="member-name-link">zip</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends L&gt;&nbsp;left,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;L,<wbr>R&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;L,<wbr>R&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#zip(java.util.stream.Stream,java.util.stream.Stream)" class="member-name-link">zip</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends L&gt;&nbsp;left,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;? extends R&gt;&nbsp;right)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> in which the first element in <code>left</code> is paired with the first
  element in <code>right</code>; the second paired with the corresponding second and the third with
  the corresponding third etc.</div>
@@ -2039,6 +2046,21 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <dl class="notes">
 <dt>Since:</dt>
 <dd>4.7</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="mapToObjIfNotNull(java.util.function.BiFunction)">
+<h3>mapToObjIfNotNull</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;T&gt;</span>&nbsp;<span class="element-name">mapToObjIfNotNull</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends T&gt;&nbsp;mapper)</span></div>
+<div class="block">Returns a <code>Stream</code> consisting of the non-null results of applying <code>mapper</code> to each
+ pair in this <code>BiStream</code>. If <code>mapper</code> function returns <code>null</code>, the pair is
+ discarded.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.3</dd>
 </dl>
 </div>
 </section>
