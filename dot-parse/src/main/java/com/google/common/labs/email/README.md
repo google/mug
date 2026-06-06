@@ -23,7 +23,7 @@ combinators. It serves as a lightweight and secure alternative to
 | :--- | :--- | :--- | :--- | :--- |
 | **`local-part@domain`** |  **Supported** |  **Supported** |  **Supported** |  **Supported** |
 | **Quoted Local Parts** |  **Canonical** (Strips quotes; re-escapes on output) |  **Supported (Raw)** (Preserves quotes) |  **Supported (Raw)** (Preserves quotes) |  **Supported** |
-| **Folding White Space** (FWS) | ⚠️ **Restricted** (Only horizontal whitespace allowed in `of()`; lists support newlines) |  **Full Support** (Supports standard FWS with CR/LF) | ⚠️ **Partial Support** (Fails on FWS directly after angle bracket) | 🚫 **Not Supported** (Rejects FWS completely) |
+| **Folding White Space** (FWS) |  **Full Support** (Supports standard FWS with CR/LF) |  **Full Support** (Supports standard FWS with CR/LF) | ⚠️ **Partial Support** (Fails on FWS directly after angle bracket) | 🚫 **Not Supported** (Rejects FWS completely) |
 | **Unquoted Display Names** |  **Strict** (Forbids special characters `()<>[]:;@\,"` to prevent spoofing) |  **Lenient** (Allows special characters unquoted) |  **Lenient** (Allows special characters unquoted) | 🚫 **Not Supported** (Rejects display names) |
 | **Group Addresses** (RFC 822) | 🚫 **Omitted** |  **Supported** (Parses groups as `isGroup()`) | 🚫 **Omitted** | 🚫 **Not Supported** (Rejects group syntax) |
 | **RFC 2047 Encoded Words** | 🚫 **Omitted** (Preserved raw) |  **Supported** (Decodes automatically) | 🚫 **Omitted** (Preserved raw) | 🚫 **Not Supported** (Rejects encoded words) |
@@ -38,7 +38,7 @@ combinators. It serves as a lightweight and secure alternative to
 | **Trailing Unconsumed Input** |  **Rejected** (EOF-enforced) |  **Permissive** (Discards trailing parts like `<a@b>c@d`) |  **Rejected** (EOF-enforced) |  **Rejected** (EOF-enforced) |
 | **Unquoted Specials in Display Name** |  **Rejected** (Throws exception) |  **Permissive** (Allows unquoted `@` and `<`) |  **Permissive** (Allows unquoted `@`) | ⚠️ N/A (Rejects all display names) |
 | **RFC 822 Group Addresses** |  **Rejected** (Throws exception) |  **Permissive** (Accepted as group) |  **Rejected** (Throws exception) |  **Rejected** (Throws exception) |
-| **CRLF / SMTP Command Injection** |  **Rejected** (Newlines forbidden in `of()` and fields) |  **Permissive** (Allows folding CR/LF newlines) |  **Rejected** (Newlines forbidden in fields) |  **Rejected** (Newlines forbidden) |
+| **CRLF / SMTP Command Injection** |  **Permissive** (Allows folding CR/LF newlines) |  **Permissive** (Allows folding CR/LF newlines) | ⚠️ **Partial Support** (Allows folding newlines in whitespace; rejects them inside local-part/domain) |  **Rejected** (Newlines forbidden) |
 
 
 ---
@@ -126,29 +126,6 @@ To maintain compatibility with modern MTAs and guarantee safety,
    both `EmailAddress` and JMail to prevent spoofing; however, JMail still
    accepts display names containing unquoted `@` characters in encoded
    blocks, whereas `EmailAddress` strictly rejects them.
-5. **Folding White Space containing CR/LF**: Although RFC 5322 allows line
-   folding (CR/LF followed by whitespace) to split a single address across
-   multiple lines, this is prohibited in `EmailAddress.of(String)` to prevent
-   SMTP command injection and protect downstream systems (like loggers or
-   databases) from raw newline leaks. 
-
-   **Parsing Folded MIME Headers Safely**: 
-   When handling raw folded headers in email processing systems, developers often
-   resort to coarse preprocessors like `MimeUtility.unfold()`. However,
-   `MimeUtility.unfold()` is blind to quotes and will silently strip newlines
-   inside quoted display names (e.g. converting `"John\r\n Doe"` to
-   `"John Doe"`), bypassing strict validation checks.
-   
-   To parse a folded header safely while preserving strict, context-aware
-   validation (e.g., rejecting newlines inside quoted strings), use the
-   exposed parser directly with a whitespace-skipping strategy:
-   
-   ```java
-   // Allows folding newlines between parts, but still strictly rejects
-   // newlines inside quoted strings or display names.
-   EmailAddress address = EmailAddress.PARSER.parseSkipping(
-       Character::isWhitespace, rawFoldedHeader);
-   ```
 
 ### D. Composability & Extensibility
 
