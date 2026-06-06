@@ -123,12 +123,29 @@ To maintain compatibility with modern MTAs and guarantee safety,
    both `EmailAddress` and JMail to prevent spoofing; however, JMail still
    accepts display names containing unquoted `@` characters in encoded
    blocks, whereas `EmailAddress` strictly rejects them.
-5. **Folding White Space containing CR/LF in Single Address Parser**: Although
-   RFC 5322 allows line folding (CR/LF) in folding whitespace, it is prohibited
-   in `EmailAddress.of(String)` to prevent SMTP command injection and avoid
-   asynchronous transport delivery failures. Multi-line address lists parsed
-   via `parseAddressList(String)` continue to support CR/LF as element
-   separators.
+5. **Folding White Space containing CR/LF**: Although RFC 5322 allows line
+   folding (CR/LF followed by whitespace) to split a single address across
+   multiple lines, this is prohibited in `EmailAddress.of(String)` to prevent
+   SMTP command injection and protect downstream systems (like loggers or
+   databases) from raw newline leaks. 
+
+   **Parsing Folded MIME Headers Safely**: 
+   When handling raw folded headers in email processing systems, developers often
+   resort to coarse preprocessors like `MimeUtility.unfold()`. However,
+   `MimeUtility.unfold()` is blind to quotes and will silently strip newlines
+   inside quoted display names (e.g. converting `"John\r\n Doe"` to
+   `"John Doe"`), bypassing strict validation checks.
+   
+   To parse a folded header safely while preserving strict, context-aware
+   validation (e.g., rejecting newlines inside quoted strings), use the
+   exposed parser directly with a whitespace-skipping strategy:
+   
+   ```java
+   // Allows folding newlines between parts, but still strictly rejects
+   // newlines inside quoted strings or display names.
+   EmailAddress address = EmailAddress.PARSER.parseSkipping(
+       Character::isWhitespace, rawFoldedHeader);
+   ```
 
 ### D. Composability & Extensibility
 
