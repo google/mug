@@ -349,14 +349,14 @@ public class EmailAddressTest {
   public void testConstructor_displayNameContainsControlChar() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new EmailAddress(Optional.of("John\nDoe"), "local", "example.com"));
+        () -> new EmailAddress("local", "example.com", Optional.of("John\nDoe")));
   }
 
   @Test
   public void testConstructor_domainContainsUppercaseChar_throws() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new EmailAddress(Optional.empty(), "local", "Example.com"));
+        () -> new EmailAddress("local", "Example.com", Optional.empty()));
   }
 
   @Test

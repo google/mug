@@ -966,18 +966,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code Stream} consisting of the non-null results of applying {@code mapper} to each
-   * pair in this {@code BiStream}. If {@code mapper} function returns {@code null}, the pair is
-   * discarded.
-   *
-   * @since 10.3
-   */
-  public final <T> Stream<T> mapToObjIfNotNull(
-      BiFunction<? super K, ? super V, ? extends T> mapper) {
-    return this.<T>mapToObj(mapper).filter(Objects::nonNull);
-  }
-
-  /**
    * Returns a {@code BiStream} consisting of the results of applying {@code keyMapper} and {@code
    * valueMapper} to the pairs in this {@code BiStream}.
    */
@@ -1226,30 +1214,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
-   * Returns a {@code BiStream} of pairs whose keys are the result of applying {@code keyMapper} to
-   * the key of each pair in this {@code BiStream}, and whose values are unchanged. If {@code
-   * keyMapper} function returns {@code null}, the pair is discarded.
-   *
-   * @since 10.3
-   */
-  public final <K2> BiStream<K2, V> mapKeysIfNotNull(
-      Function<? super K, ? extends K2> keyMapper) {
-    return this.<K2>mapKeys(keyMapper).filterKeys(Objects::nonNull);
-  }
-
-  /**
-   * Returns a {@code BiStream} of pairs whose keys are the result of applying {@code keyMapper} to
-   * each pair in this {@code BiStream}, and whose values are unchanged. If {@code keyMapper}
-   * function returns {@code null}, the pair is discarded.
-   *
-   * @since 10.3
-   */
-  public final <K2> BiStream<K2, V> mapKeysIfNotNull(
-      BiFunction<? super K, ? super V, ? extends K2> keyMapper) {
-    return this.<K2>mapKeys(keyMapper).filterKeys(Objects::nonNull);
-  }
-
-  /**
    * Maps each value to zero or more values of type {@code V2}.
    *
    * <p>If a mapped stream is null, an empty stream is used instead.
@@ -1349,30 +1313,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   public final <V2> BiStream<K, V2> mapValuesIfPresent(
       BiFunction<? super K, ? super V, ? extends Optional<? extends V2>> valueMapper) {
     return mapValues(valueMapper).<V2>mapValues(BiStream::orElseNull).filterValues(Objects::nonNull);
-  }
-
-  /**
-   * Returns a {@code BiStream} of pairs whose values are the result of applying {@code valueMapper}
-   * to the value of each pair in this {@code BiStream}, and whose keys are unchanged. If {@code
-   * valueMapper} function returns {@code null}, the pair is discarded.
-   *
-   * @since 10.3
-   */
-  public final <V2> BiStream<K, V2> mapValuesIfNotNull(
-      Function<? super V, ? extends V2> valueMapper) {
-    return this.<V2>mapValues(valueMapper).filterValues(Objects::nonNull);
-  }
-
-  /**
-   * Returns a {@code BiStream} of pairs whose values are the result of applying {@code valueMapper}
-   * to each pair in this {@code BiStream}, and whose keys are unchanged. If {@code valueMapper}
-   * function returns {@code null}, the pair is discarded.
-   *
-   * @since 10.3
-   */
-  public final <V2> BiStream<K, V2> mapValuesIfNotNull(
-      BiFunction<? super K, ? super V, ? extends V2> valueMapper) {
-    return this.<V2>mapValues(valueMapper).filterValues(Objects::nonNull);
   }
 
   /**

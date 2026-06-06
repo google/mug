@@ -61,7 +61,7 @@ import com.google.mu.util.stream.Joiner;
  * <p>For example: <pre>{@code
  * EmailAddress address = EmailAddress.of("J.R.R. Tolkien <tolkien@lotr.org>");
  * // address.displayName() => "J.R.R. Tolkien"
- * // address.localPart()) => "tolkien"
+ * // address.localPart() => "tolkien"
  * // address.domain() => "lotr.org"
  * }</pre>
  *
@@ -173,22 +173,25 @@ import com.google.mu.util.stream.Joiner;
  *       as element separators.</li>
  * </ul>
  *
- * @param displayName the {@code "J.R.R. Tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
  * @param localPart the {@code "tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
- * @param domain the {@code "lotr.org"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
+ * @param domain the {@code "lotr.org"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}.
+ *     Note that for internationalized domain, this is the punycode in ASCII. You can
+ *     use {@link #unicodeDomain} to access the non-encoded domain. {@link #hasI18nDomain}
+ *     can be used to check if the domain is internationalized.
+ * @param displayName the {@code "J.R.R. Tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
  * @since 9.9.4
  */
 @Immutable
-public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
+public record EmailAddress(String localPart, String domain, Optional<String> displayName) {
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
   private static final StringFormat.Template<IllegalArgumentException> DOTLESS_DOMAIN_BANNED =
       StringFormat.to(
           IllegalArgumentException::new, "domain must contain at least one dot: {domain}");
-  private static final CharPredicate WHITESPACE = Character::isWhitespace;
-  private static final CharPredicate NUMERIC = range('0', '9');
-  private static final CharPredicate ISO_CONTROL = Character::isISOControl;
-  private static final CharPredicate REJECTED_CHARS =
-      ISO_CONTROL.or(anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069"));
+  private static final CharPredicate NON_DIGIT = range('0', '9').not();
+  private static final CharPredicate DANGEROUS =
+      anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069")
+          .or(Character::isISOControl)
+          .precomputeForAscii();
 
   // While most letters and digits are supplementary chars, using it is strictly better than
   // [a-zA-Z0-9] because it natively supports internationalized BMP characters (for example,
@@ -235,10 +238,10 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
     checkArgument(
-        REJECTED_CHARS.matchesNoneOf(localPart),
+        DANGEROUS.matchesNoneOf(localPart),
         "local-part must not contain control or formatting characters");
     checkArgument(
-        REJECTED_CHARS.matchesNoneOf(displayName.orElse("")),
+        DANGEROUS.matchesNoneOf(displayName.orElse("")),
         "display name must not contain control or formatting characters");
     all('.').split(domain).forEach(label -> {
         checkArgument(!label.isEmpty(), "domain label cannot be empty");
@@ -251,7 +254,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             "domain label '%s' must be all lowercase alpha-numeric or hyphen", label);
     });
     var tld = after(last('.')).in(domain).orElseThrow(() -> DOTLESS_DOMAIN_BANNED.with(domain));
-    checkArgument(!NUMERIC.matchesAllOf(tld), "TLD name cannot be all numeric (%s)", tld);
+    checkArgument(NON_DIGIT.matchesAnyOf(tld), "TLD name cannot be all numeric (%s)", tld);
     checkArgument(
         localPart.length() + domain.length() + 1 <= 254,
         "<%s@%s> must be <= 254 chars", localPart, domain);
@@ -259,17 +262,15 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
   public EmailAddress withDisplayName(String displayName) {
-    return new EmailAddress(Optional.ofNullable(displayName), localPart, domain);
+    return new EmailAddress(localPart, domain, Optional.ofNullable(displayName));
   }
 
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
   public static EmailAddress of(String localPart, String domain) {
-    requireNonNull(localPart);
-    requireNonNull(domain);
     return new EmailAddress(
-        Optional.empty(),
         localPart,
-        IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.ROOT));
+        IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.ROOT),
+        Optional.empty());
   }
 
   /**
@@ -378,7 +379,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     return PARSER
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
-        .parseSkipping(WHITESPACE, addressList);
+        .parseSkipping(Character::isWhitespace, addressList);
   }
 
   /**
@@ -404,12 +405,12 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
             consecutive(ADDRESS_LIST_SEPARATOR_CHAR.not(), "invalid").map(String::trim))
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(ifInvalid))
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
-        .parseSkipping(WHITESPACE, addressList);
+        .parseSkipping(Character::isWhitespace, addressList);
   }
 
   private static Parser<EmailAddress> makeParser() {
     Parser<String> quoted = quotedByWithEscapes('"', '"', chars(1))
-        .suchThat(REJECTED_CHARS::matchesNoneOf, "quoted string without control or formatting chars");
+        .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
     Parser<String> localPart = anyOf(
         quoted,
         consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")));
@@ -417,12 +418,12 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
         .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
         .atLeastOnceDelimitedBy(".")
         .suchThat(labels -> labels.size() > 1, "domain name with at least one dot")
-        .suchThat(labels -> !NUMERIC.matchesAllOf(labels.getLast()), "domain with valid TLD")
+        .suchThat(labels -> NON_DIGIT.matchesAnyOf(labels.getLast()), "domain with valid TLD")
         .map(Joiner.on('.')::join);
     Parser<EmailAddress> address =
         literally(sequence(localPart.followedBy("@"), domain, EmailAddress::of));
     Parser<String> unquotedDisplayName = consecutive(
-        REJECTED_CHARS.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
+        DANGEROUS.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
     Parser<String> displayName = anyOf(quoted, unquotedDisplayName.map(String::trim));
     return anyOf(
