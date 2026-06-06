@@ -2227,6 +2227,11 @@ loadScripts(document, 'script');</script>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/util/Substring.Suffix.html#hashCode()" class="member-name-link">hashCode()</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/Substring.Suffix.html" title="class in com.google.mu.util">Substring.Suffix</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="com/google/common/labs/email/EmailAddress.html#hasI18nDomain()" class="member-name-link">hasI18nDomain()</a> - Method in record class com.google.common.labs.email.<a href="com/google/common/labs/email/EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></dt>
+<dd>
+<div class="block">Returns true if this address has an internationalized domain, in which case <a href="com/google/common/labs/email/EmailAddress.html#domain()"><code>EmailAddress.domain()</code></a>
+ will be puny-coded.</div>
+</dd>
 <dt><a href="com/google/mu/util/Substring.Prefix.html#hideFrom(java.lang.String)" class="member-name-link">hideFrom(String)</a> - Method in class com.google.mu.util.<a href="com/google/mu/util/Substring.Prefix.html" title="class in com.google.mu.util">Substring.Prefix</a></dt>
 <dd>
 <div class="block">Returns a <em>view</em> of <code>source</code> with this prefix hidden away if present, or else
@@ -2857,6 +2862,16 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Maps each key to another key of type <code>K2</code>.</div>
 </dd>
+<dt><a href="com/google/mu/util/stream/BiStream.html#mapKeysIfNotNull(java.util.function.BiFunction)" class="member-name-link">mapKeysIfNotNull(BiFunction&lt;? super K, ? super V, ? extends K2&gt;)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
+<dd>
+<div class="block">Returns a <code>BiStream</code> of pairs whose keys are the result of applying <code>keyMapper</code> to
+ each pair in this <code>BiStream</code>, and whose values are unchanged.</div>
+</dd>
+<dt><a href="com/google/mu/util/stream/BiStream.html#mapKeysIfNotNull(java.util.function.Function)" class="member-name-link">mapKeysIfNotNull(Function&lt;? super K, ? extends K2&gt;)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
+<dd>
+<div class="block">Returns a <code>BiStream</code> of pairs whose keys are the result of applying <code>keyMapper</code> to
+ the key of each pair in this <code>BiStream</code>, and whose values are unchanged.</div>
+</dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#mapKeysIfPresent(java.util.function.BiFunction)" class="member-name-link">mapKeysIfPresent(BiFunction&lt;? super K, ? super V, ? extends Optional&lt;? extends K2&gt;&gt;)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
 <div class="block">Returns a <code>BiStream</code> of pairs whose keys are the result of applying <code>keyMapper</code> to
@@ -2934,6 +2949,16 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/util/stream/BiStream.html#mapValues(java.util.function.Function)" class="member-name-link">mapValues(Function&lt;? super V, ? extends V2&gt;)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
 <div class="block">Maps each value to another value of type <code>V2</code>.</div>
+</dd>
+<dt><a href="com/google/mu/util/stream/BiStream.html#mapValuesIfNotNull(java.util.function.BiFunction)" class="member-name-link">mapValuesIfNotNull(BiFunction&lt;? super K, ? super V, ? extends V2&gt;)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
+<dd>
+<div class="block">Returns a <code>BiStream</code> of pairs whose values are the result of applying <code>valueMapper</code>
+ to each pair in this <code>BiStream</code>, and whose keys are unchanged.</div>
+</dd>
+<dt><a href="com/google/mu/util/stream/BiStream.html#mapValuesIfNotNull(java.util.function.Function)" class="member-name-link">mapValuesIfNotNull(Function&lt;? super V, ? extends V2&gt;)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
+<dd>
+<div class="block">Returns a <code>BiStream</code> of pairs whose values are the result of applying <code>valueMapper</code>
+ to the value of each pair in this <code>BiStream</code>, and whose keys are unchanged.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#mapValuesIfPresent(java.util.function.BiFunction)" class="member-name-link">mapValuesIfPresent(BiFunction&lt;? super K, ? super V, ? extends Optional&lt;? extends V2&gt;&gt;)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>

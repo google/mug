@@ -133,11 +133,15 @@ loadScripts(document, 'script');</script>
 <li><a href="#mapKeysIfPresent(java.util.Map)" tabindex="0">mapKeysIfPresent(Map)</a></li>
 <li><a href="#mapKeysIfPresent(java.util.function.Function)" tabindex="0">mapKeysIfPresent(Function)</a></li>
 <li><a href="#mapKeysIfPresent(java.util.function.BiFunction)" tabindex="0">mapKeysIfPresent(BiFunction)</a></li>
+<li><a href="#mapKeysIfNotNull(java.util.function.Function)" tabindex="0">mapKeysIfNotNull(Function)</a></li>
+<li><a href="#mapKeysIfNotNull(java.util.function.BiFunction)" tabindex="0">mapKeysIfNotNull(BiFunction)</a></li>
 <li><a href="#flatMapValues(java.util.function.BiFunction)" tabindex="0">flatMapValues(BiFunction)</a></li>
 <li><a href="#flatMapValues(java.util.function.Function)" tabindex="0">flatMapValues(Function)</a></li>
 <li><a href="#mapValuesIfPresent(java.util.Map)" tabindex="0">mapValuesIfPresent(Map)</a></li>
 <li><a href="#mapValuesIfPresent(java.util.function.Function)" tabindex="0">mapValuesIfPresent(Function)</a></li>
 <li><a href="#mapValuesIfPresent(java.util.function.BiFunction)" tabindex="0">mapValuesIfPresent(BiFunction)</a></li>
+<li><a href="#mapValuesIfNotNull(java.util.function.Function)" tabindex="0">mapValuesIfNotNull(Function)</a></li>
+<li><a href="#mapValuesIfNotNull(java.util.function.BiFunction)" tabindex="0">mapValuesIfNotNull(BiFunction)</a></li>
 <li><a href="#peek(java.util.function.BiConsumer)" tabindex="0">peek(BiConsumer)</a></li>
 <li><a href="#filter(java.util.function.BiPredicate)" tabindex="0">filter(BiPredicate)</a></li>
 <li><a href="#filterKeys(java.util.function.Predicate)" tabindex="0">filterKeys(Predicate)</a></li>
@@ -671,6 +675,18 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="block">Maps each key to another key of type <code>K2</code>.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;K2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K2,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapKeysIfNotNull(java.util.function.BiFunction)" class="member-name-link">mapKeysIfNotNull</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends K2&gt;&nbsp;keyMapper)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Returns a <code>BiStream</code> of pairs whose keys are the result of applying <code>keyMapper</code> to
+ each pair in this <code>BiStream</code>, and whose values are unchanged.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;K2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K2,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapKeysIfNotNull(java.util.function.Function)" class="member-name-link">mapKeysIfNotNull</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? extends K2&gt;&nbsp;keyMapper)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Returns a <code>BiStream</code> of pairs whose keys are the result of applying <code>keyMapper</code> to
+ the key of each pair in this <code>BiStream</code>, and whose values are unchanged.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;K2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;K2,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapKeysIfPresent(java.util.function.BiFunction)" class="member-name-link">mapKeysIfPresent</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;? extends K2&gt;&gt;&nbsp;keyMapper)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a <code>BiStream</code> of pairs whose keys are the result of applying <code>keyMapper</code> to
@@ -727,6 +743,18 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#mapValues(java.util.function.Function)" class="member-name-link">mapValues</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends V2&gt;&nbsp;valueMapper)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">Maps each value to another value of type <code>V2</code>.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapValuesIfNotNull(java.util.function.BiFunction)" class="member-name-link">mapValuesIfNotNull</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends V2&gt;&nbsp;valueMapper)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Returns a <code>BiStream</code> of pairs whose values are the result of applying <code>valueMapper</code>
+ to each pair in this <code>BiStream</code>, and whose keys are unchanged.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapValuesIfNotNull(java.util.function.Function)" class="member-name-link">mapValuesIfNotNull</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends V2&gt;&nbsp;valueMapper)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Returns a <code>BiStream</code> of pairs whose values are the result of applying <code>valueMapper</code>
+ to the value of each pair in this <code>BiStream</code>, and whose keys are unchanged.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;V2&gt;&nbsp;<a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a><wbr>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#mapValuesIfPresent(java.util.function.BiFunction)" class="member-name-link">mapValuesIfPresent</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;? extends V2&gt;&gt;&nbsp;valueMapper)</code></div>
@@ -2307,6 +2335,36 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 </section>
 </li>
 <li>
+<section class="detail" id="mapKeysIfNotNull(java.util.function.Function)">
+<h3>mapKeysIfNotNull</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="type-parameters">&lt;K2&gt;</span>&nbsp;<span class="return-type"><a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;K2,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</span>&nbsp;<span class="element-name">mapKeysIfNotNull</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? extends K2&gt;&nbsp;keyMapper)</span></div>
+<div class="block">Returns a <code>BiStream</code> of pairs whose keys are the result of applying <code>keyMapper</code> to
+ the key of each pair in this <code>BiStream</code>, and whose values are unchanged. If <code>
+ keyMapper</code> function returns <code>null</code>, the pair is discarded.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.3</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="mapKeysIfNotNull(java.util.function.BiFunction)">
+<h3>mapKeysIfNotNull</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="type-parameters">&lt;K2&gt;</span>&nbsp;<span class="return-type"><a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;K2,<wbr><a href="#type-param-V" title="type parameter in BiStream">V</a>&gt;</span>&nbsp;<span class="element-name">mapKeysIfNotNull</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends K2&gt;&nbsp;keyMapper)</span></div>
+<div class="block">Returns a <code>BiStream</code> of pairs whose keys are the result of applying <code>keyMapper</code> to
+ each pair in this <code>BiStream</code>, and whose values are unchanged. If <code>keyMapper</code>
+ function returns <code>null</code>, the pair is discarded.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.3</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
 <section class="detail" id="flatMapValues(java.util.function.BiFunction)">
 <h3>flatMapValues</h3>
 <div class="horizontal-scroll">
@@ -2412,6 +2470,36 @@ implements <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base
 <dl class="notes">
 <dt>Since:</dt>
 <dd>4.7</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="mapValuesIfNotNull(java.util.function.Function)">
+<h3>mapValuesIfNotNull</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="type-parameters">&lt;V2&gt;</span>&nbsp;<span class="return-type"><a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</span>&nbsp;<span class="element-name">mapValuesIfNotNull</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends V2&gt;&nbsp;valueMapper)</span></div>
+<div class="block">Returns a <code>BiStream</code> of pairs whose values are the result of applying <code>valueMapper</code>
+ to the value of each pair in this <code>BiStream</code>, and whose keys are unchanged. If <code>
+ valueMapper</code> function returns <code>null</code>, the pair is discarded.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.3</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="mapValuesIfNotNull(java.util.function.BiFunction)">
+<h3>mapValuesIfNotNull</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="type-parameters">&lt;V2&gt;</span>&nbsp;<span class="return-type"><a href="BiStream.html" title="class in com.google.mu.util.stream">BiStream</a>&lt;<a href="#type-param-K" title="type parameter in BiStream">K</a>,<wbr>V2&gt;</span>&nbsp;<span class="element-name">mapValuesIfNotNull</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-K" title="type parameter in BiStream">K</a>, ? super <a href="#type-param-V" title="type parameter in BiStream">V</a>, ? extends V2&gt;&nbsp;valueMapper)</span></div>
+<div class="block">Returns a <code>BiStream</code> of pairs whose values are the result of applying <code>valueMapper</code>
+ to each pair in this <code>BiStream</code>, and whose keys are unchanged. If <code>valueMapper</code>
+ function returns <code>null</code>, the pair is discarded.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.3</dd>
 </dl>
 </div>
 </section>
