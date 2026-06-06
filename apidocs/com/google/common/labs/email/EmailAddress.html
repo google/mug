@@ -241,8 +241,9 @@ loadScripts(document, 'script');</script>
        single-line form. Restricting the single-address parser <a href="#of(java.lang.String)"><code>of(String)</code></a> to horizontal
        whitespace prevents SMTP command injection (where CR/LF characters could split a single
        address into multiple SMTP protocol commands) and avoids asynchronous delivery failures.
-       Multi-line address lists (via <a href="#parseAddressList(java.lang.String)"><code>parseAddressList(String)</code></a>) continue to permit newlines
-       as element separators.</li>
+       For MIME applications where CR/LF folded headers are expected, use the <a href="#PARSER"><code>PARSER</code></a>
+       constant as in <code>PARSER.parseSkipping(Character::isWhitespace, input)</code>. It allows
+       newlines between the display name and the address spec.
  </ul></div>
 <dl class="notes">
 <dt>Since:</dt>
