@@ -267,8 +267,6 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
 
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
   public static EmailAddress of(String localPart, String domain) {
-    requireNonNull(localPart);
-    requireNonNull(domain);
     return new EmailAddress(
         localPart,
         IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.ROOT),
