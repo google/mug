@@ -219,11 +219,6 @@ loadScripts(document, 'script');</script>
      <td>Inconsistent (allows unquoted <code>@</code> in local-part)</td>
      <td>Strictly rejected (unquoted <code>@</code> is forbidden)</td>
    </tr>
-   <tr>
-     <td><b>CR/LF / Newlines</b></td>
-     <td>Permissive (allows leading/trailing and inner newlines as folding whitespace)</td>
-     <td>Strictly rejected in <a href="#of(java.lang.String)"><code>of(String)</code></a> to prevent CRLF injection; allowed only in address lists.</td>
-   </tr>
  </table>
 
  <h3 id="intentionally-omitted-legacy-features-heading">Intentionally Omitted Legacy Features</h3>
@@ -233,17 +228,6 @@ loadScripts(document, 'script');</script>
  <ul>
    <li><b>Comments (CFWS):</b> (e.g., <code>name(comment) &lt;addr&gt;</code>) - De facto obsolete.
    <li><b>Domain Literals:</b> (e.g., <code>user@[192.168.1.1]</code>) - IP routing is rarely supported.
-   <li><b>Folding White Space (FWS) containing CR/LF:</b> Although RFC 5322 allows line folding
-       (inserting CR/LF followed by whitespace) to format long headers across multiple lines, this
-       format is prohibited at the SMTP transport layer (RFC 5321) for actual transmission
-       (e.g., in <code>RCPT TO</code> commands). In modern application layers (user signup, database
-       storage, API gateways), email addresses are universally processed in their unfolded,
-       single-line form. Restricting the single-address parser <a href="#of(java.lang.String)"><code>of(String)</code></a> to horizontal
-       whitespace prevents SMTP command injection (where CR/LF characters could split a single
-       address into multiple SMTP protocol commands) and avoids asynchronous delivery failures.
-       For MIME applications where CR/LF folded headers are expected, use the <a href="#PARSER"><code>PARSER</code></a>
-       constant as in <code>PARSER.parseSkipping(Character::isWhitespace, input)</code>. It allows
-       newlines between the display name and the address spec.
  </ul></div>
 <dl class="notes">
 <dt>Since:</dt>
@@ -477,13 +461,7 @@ loadScripts(document, 'script');</script>
 <h3>of</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></span>&nbsp;<span class="element-name">of</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;address)</span></div>
-<div class="block">Parses <code>address</code> and throws <a href="../parse/Parser.ParseException.html" title="class in com.google.common.labs.parse"><code>Parser.ParseException</code></a> if failed.
-
- <p>Note: Unlike <a href="#parseAddressList(java.lang.String)"><code>parseAddressList(String)</code></a>, this method only permits horizontal
- whitespace (spaces and tabs) to be skipped at the start and end of the address. Any leading or
- trailing line breaks (CR/LF, e.g., <code>\n</code> or <code>\r\n</code>) will result in a parsing
- exception. This strictness protects against HTTP and SMTP header injection vulnerabilities in
- downstream systems that may log or concatenate the raw input string.</div>
+<div class="block">Parses <code>address</code> and throws <a href="../parse/Parser.ParseException.html" title="class in com.google.common.labs.parse"><code>Parser.ParseException</code></a> if failed.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.9.8</dd>
