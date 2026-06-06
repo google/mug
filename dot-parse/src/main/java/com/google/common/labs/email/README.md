@@ -57,7 +57,10 @@ combinators. It serves as a lightweight and secure alternative to
 * **`InternetAddress`**: Supports list parsing via
   `InternetAddress.parse(String)`. However, it lacks graceful error
   accumulation (either throws `AddressException` on the whole string or
-  returns silently truncated/corrupted addresses).
+  returns silently truncated/corrupted addresses); rejects common and harmless
+  human errors like double comma (`user1@a.com,,user2@a.com`); and offers no
+  support for display names with the period character
+  (`J.R.R. Tolkien <tolkien@lotr.org>`), which is practically common.
 
 * **JMail**: No built-in list parsing or tokenization capabilities. Because
   delimiters (commas `,` and semicolons `;`) can legally reside inside
