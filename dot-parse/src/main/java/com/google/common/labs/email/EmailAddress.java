@@ -179,7 +179,7 @@ import com.google.mu.util.stream.Joiner;
  * @since 9.9.4
  */
 @Immutable
-public record EmailAddress(Optional<String> displayName, String localPart, String domain) {
+public record EmailAddress(String localPart, String domain, Optional<String> displayName) {
   private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
   private static final StringFormat.Template<IllegalArgumentException> DOTLESS_DOMAIN_BANNED =
       StringFormat.to(
@@ -259,7 +259,7 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
 
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
   public EmailAddress withDisplayName(String displayName) {
-    return new EmailAddress(Optional.ofNullable(displayName), localPart, domain);
+    return new EmailAddress(localPart, domain, Optional.ofNullable(displayName));
   }
 
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
@@ -267,9 +267,9 @@ public record EmailAddress(Optional<String> displayName, String localPart, Strin
     requireNonNull(localPart);
     requireNonNull(domain);
     return new EmailAddress(
-        Optional.empty(),
         localPart,
-        IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.ROOT));
+        IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.ROOT),
+        Optional.empty());
   }
 
   /**
