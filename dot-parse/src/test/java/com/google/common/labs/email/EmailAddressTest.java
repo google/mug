@@ -1108,6 +1108,8 @@ public class EmailAddressTest {
     assertThrows(IllegalArgumentException.class, () -> parser.parse("<aaa@bbb.com>ccc@ddd.com"));
     assertThrows(IllegalArgumentException.class, () -> parser.parse("<legitimate@trusted.com>attacker@evil.com"));
     assertThrows(IllegalArgumentException.class, () -> parser.parse("<attacker@evil.com>@trusted.com"));
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("<aaa@aaa.com> (bbb@bbb.com) ccc@ccc.com"));
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("<aaa@aaa.com> bbb@bbb.com"));
     // Single quotes are NOT valid quote boundaries under RFC 5322; this is a Hibernate validator regex vulnerability
     assertThrows(IllegalArgumentException.class, () -> parser.parse("'foo@bar.com'@example.com"));
   }
@@ -1118,6 +1120,8 @@ public class EmailAddressTest {
     assertThat(parser.parse("<aaa@bbb.com>ccc@ddd.com").address()).isEqualTo("aaa@bbb.com");
     assertThat(parser.parse("<legitimate@trusted.com>attacker@evil.com").address()).isEqualTo("legitimate@trusted.com");
     assertThat(parser.parse("<attacker@evil.com>@trusted.com").address()).isEqualTo("attacker@evil.com");
+    assertThat(parser.parse("<aaa@aaa.com> (bbb@bbb.com) ccc@ccc.com").address()).isEqualTo("aaa@aaa.com");
+    assertThat(parser.parse("<aaa@aaa.com> bbb@bbb.com").address()).isEqualTo("aaa@aaa.com");
   }
 
   @Test
