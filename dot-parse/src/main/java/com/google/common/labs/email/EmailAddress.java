@@ -172,6 +172,8 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   private static final StringFormat.Template<IllegalArgumentException> DOTLESS_DOMAIN_BANNED =
       StringFormat.to(
           IllegalArgumentException::new, "domain must contain at least one dot: {domain}");
+  private static final StringFormat ENCODED_WORD =
+      new StringFormat("{...}=?{charset}?{encoding}?{text}?={...}");
   private static final CharPredicate NON_DIGIT = range('0', '9').not();
   private static final CharPredicate DANGEROUS =
       anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069")
@@ -222,6 +224,8 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   public EmailAddress {
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
+    checkArgument(
+        !ENCODED_WORD.matches(localPart), "local-part doesn't allow encoded word (%s)", localPart);
     checkArgument(
         DANGEROUS.matchesNoneOf(localPart),
         "local-part must not contain control or formatting characters");
@@ -391,8 +395,9 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
     Parser<String> quoted = quotedByWithEscapes('"', '"', chars(1))
         .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
     Parser<String> localPart = anyOf(
-        quoted,
-        consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")));
+            quoted,
+            consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")))
+        .suchThat(local -> !ENCODED_WORD.matches(local), "not an encoded word");
     Parser<String> domain = consecutive(I18N_DOMAIN_LABEL_CHARS, "domain label chars")
         .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
         .atLeastOnceDelimitedBy(".")

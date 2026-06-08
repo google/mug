@@ -1229,6 +1229,16 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testParseAddressList_withEncodedWordInLocalPart_doesNotCrash() {
+    List<String> invalid = new ArrayList<>();
+    List<EmailAddress> parsed = EmailAddress.parseAddressList(
+        "=?x?q?=41=42=43collab=40psres.net=3e=20?=@psres.net, safe@example.com",
+        invalid::add);
+    assertThat(parsed).containsExactly(EmailAddress.of("safe", "example.com"));
+    assertThat(invalid).containsExactly("=?x?q?=41=42=43collab=40psres.net=3e=20?=@psres.net");
+  }
+
+  @Test
   public void testJMailValidation_acceptsEncodedWordPhishing_bad() {
     // Proves JMail fails to reject RFC 2047 display name address injection,
     // accepting a display name containing an unquoted '@' character.
@@ -1304,6 +1314,50 @@ public class EmailAddressTest {
     assertThrows(AddressException.class, () -> new InternetAddress("'foo@bar.com'@example.com", true));
   }
 
+  @Test
+  public void testEmailAddressParsing_quotedSpecialsAllowed(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    parser.assertParsesTo("\"@\"@example.com", EmailAddress.of("@", "example.com"));
+    parser.assertParsesTo("\"\\\"\"@example.com", EmailAddress.of("\"", "example.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_commentsRejected(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("(foo)user@example.com"));
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("user@(bar)example.com"));
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("collab%psres.net(@example.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_uucpRejected(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("!#$%&'*+\\/=?^_`{|}~-collab\\@psres.net"));
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("oastify.com!collab\\@example.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_unicodeOverflowsRejected(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    // ŀ (U+0140) must NOT overflow to @ (U+0040)
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("foo\u0140example.com"));
+    // ❀ (U+2740) must NOT overflow to @ (U+0040)
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("foo\u2740example.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_encodedWordInLocalPartRejected(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("=?x?q?=41=42=43collab=40psres.net=3e=20?=@psres.net"));
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("prefix=?x?q?=41=42=43collab=40psres.net=3e=20?=@psres.net"));
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("=?x?q?=41=42=43collab=40psres.net=3e=20?=suffix@psres.net"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_smtpParameterSmugglingRejected(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("\"foo\\\\\"@psres.net> ORCPT=test;admin\"@example.com"));
+  }
 
   private static String unescape(String text) {
     return ESCAPED_CHARS.replaceAllFrom(text, e -> e.subSequence(1, e.length()));
