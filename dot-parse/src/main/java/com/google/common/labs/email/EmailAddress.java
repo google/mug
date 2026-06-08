@@ -138,9 +138,9 @@ import com.google.mu.util.stream.Joiner;
  *     <td>Strictly rejected (enforces single address structure)</td>
  *   </tr>
  *   <tr>
- *     <td><b>RFC 2047 Decoding</b></td>
- *     <td>Automatic (decodes encoded words in display name, risking address spoofing)</td>
- *     <td>Preserved literally (no dynamic decoding side-channels)</td>
+ *     <td><b>RFC 2047 Encoded Words</b></td>
+ *     <td>Automatic or permissive (decodes or accepts encoded words in display name, local-part, or domain, risking address spoofing and routing hijacking)</td>
+ *     <td>Defensively rejected in local-part and domain to block downstream mailer exploits</td>
  *   </tr>
  *   <tr>
  *     <td><b>Multi-@ Local-Parts</b></td>
@@ -156,6 +156,7 @@ import com.google.mu.util.stream.Joiner;
  * <ul>
  *   <li><b>Comments (CFWS):</b> (e.g., {@code name(comment) <addr>}) - De facto obsolete.
  *   <li><b>Domain Literals:</b> (e.g., {@code user@[192.168.1.1]}) - IP routing is rarely supported.
+ *   <li><b>RFC 2047 Encoded Words in address fields:</b> (e.g., {@code =?UTF-8?Q?Admin?=@domain.com}) - Strictly rejected to prevent downstream mailer decoding exploits.
  * </ul>
  *
  * @param localPart the {@code "tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
@@ -396,7 +397,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
         .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
     Parser<String> localPart =
         anyOf(quoted, consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")))
-            .suchThat(local -> !ENCODED_WORD.matches(local), "not an encoded word");
+            .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
     Parser<String> domain = consecutive(I18N_DOMAIN_LABEL_CHARS, "domain label chars")
         .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
         .atLeastOnceDelimitedBy(".")
