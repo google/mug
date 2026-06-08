@@ -513,6 +513,7 @@ public class EmailAddressTest {
   public void testEmailAddressParsing_invalidEmail_multipleAtSigns(
       @TestParameter ParseStrategy parser) {
     assertThrows(IllegalArgumentException.class, () -> parser.parse("test@example@com"));
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("tester@protonmail.com@presidence@elysee.fr"));
   }
 
   @Test
@@ -1107,6 +1108,8 @@ public class EmailAddressTest {
     assertThrows(IllegalArgumentException.class, () -> parser.parse("<aaa@bbb.com>ccc@ddd.com"));
     assertThrows(IllegalArgumentException.class, () -> parser.parse("<legitimate@trusted.com>attacker@evil.com"));
     assertThrows(IllegalArgumentException.class, () -> parser.parse("<attacker@evil.com>@trusted.com"));
+    // Single quotes are NOT valid quote boundaries under RFC 5322; this is a Hibernate validator regex vulnerability
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("'foo@bar.com'@example.com"));
   }
 
   @Test
@@ -1298,6 +1301,7 @@ public class EmailAddressTest {
     assertThrows(AddressException.class, () -> new InternetAddress("testexample.com", true));
     assertThrows(AddressException.class, () -> new InternetAddress("test@", true));
     assertThrows(AddressException.class, () -> new InternetAddress("@example.com", true));
+    assertThrows(AddressException.class, () -> new InternetAddress("'foo@bar.com'@example.com", true));
   }
 
 
