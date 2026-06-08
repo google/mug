@@ -394,10 +394,9 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   private static Parser<EmailAddress> makeParser() {
     Parser<String> quoted = quotedByWithEscapes('"', '"', chars(1))
         .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
-    Parser<String> localPart = anyOf(
-            quoted,
-            consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")))
-        .suchThat(local -> !ENCODED_WORD.matches(local), "not an encoded word");
+    Parser<String> localPart =
+        anyOf(quoted, consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")))
+            .suchThat(local -> !ENCODED_WORD.matches(local), "not an encoded word");
     Parser<String> domain = consecutive(I18N_DOMAIN_LABEL_CHARS, "domain label chars")
         .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
         .atLeastOnceDelimitedBy(".")
