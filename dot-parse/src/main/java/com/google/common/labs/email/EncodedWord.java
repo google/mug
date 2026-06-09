@@ -29,22 +29,22 @@ import com.google.common.labs.parse.Parser;
  */
 record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
   /** Parser that matches a valid RFC 2047 encoded-word. */
-  static final Parser<EncodedWord> PARSER =
+  private static final Parser<EncodedWord> ENCODED =
       sequence(
-          caseInsensitiveBy(Charset::name, US_ASCII, ISO_8859_1, UTF_8).between("=?", "?"),
+          caseInsensitiveBy(Charset::name, US_ASCII, ISO_8859_1, UTF_8).followedBy("?"),
           caseInsensitiveBy(Encoding::name, Encoding.values()).followedBy("?"),
-          zeroOrMore(range('!', '~').and(anyOf("?").not()), "encoded text").followedBy("?="),
+          zeroOrMore(range('!', '~').and(anyOf("?").not()), "encoded text"),
           EncodedWord::new);
 
-  private static final Parser<Object> SEGMENT_PARSER =
+  private static final Parser<Object> SEGMENT =
       anyOf(
-          PARSER,
+          ENCODED.between("=?", "?="),
           consecutive(noneOf("= \t\r\n"), "literal chars"),
           string("="),
           consecutive(anyOf(" \t\r\n"), "linear whitespaces").map(Lws::new));
 
   static String decode(String input) {
-    List<?> segments = SEGMENT_PARSER.zeroOrMore().parse(input);
+    List<?> segments = SEGMENT.zeroOrMore().parse(input);
     StringBuilder builder = new StringBuilder();
     for (int i = 0; i < segments.size(); i++) {
       Object segment = segments.get(i);

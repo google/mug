@@ -1,53 +1,40 @@
 package com.google.common.labs.email;
 
-import static com.google.common.labs.email.EncodedWord.Encoding.Q;
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
-
-import java.nio.charset.StandardCharsets;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.common.labs.parse.Parser.ParseException;
-
 @RunWith(JUnit4.class)
 public class EncodedWordTest {
 
   @Test
-  public void testParseAndDecode_quotedPrintable_utf8() {
-    EncodedWord word = EncodedWord.PARSER.parse("=?UTF-8?Q?John_Doe?=");
-    assertThat(word.charset()).isEqualTo(StandardCharsets.UTF_8);
-    assertThat(word.encoding()).isEqualTo(Q);
-    assertThat(word.encodedText()).isEqualTo("John_Doe");
-    assertThat(word.toString()).isEqualTo("John Doe");
+  public void testDecode_quotedPrintable_utf8() {
+    assertThat(EncodedWord.decode("=?UTF-8?Q?John_Doe?=")).isEqualTo("John Doe");
   }
 
   @Test
-  public void testParseAndDecode_quotedPrintable_hexEscapes() {
-    EncodedWord word = EncodedWord.PARSER.parse("=?ISO-8859-1?q?Ren=E9?=");
-    assertThat(word.toString()).isEqualTo("René");
+  public void testDecode_quotedPrintable_hexEscapes() {
+    assertThat(EncodedWord.decode("=?ISO-8859-1?q?Ren=E9?=")).isEqualTo("René");
   }
 
   @Test
-  public void testParseAndDecode_base64() {
-    EncodedWord word = EncodedWord.PARSER.parse("=?UTF-8?B?Sm9obiBEb2U=?=");
-    assertThat(word.toString()).isEqualTo("John Doe");
+  public void testDecode_base64() {
+    assertThat(EncodedWord.decode("=?UTF-8?B?Sm9obiBEb2U=?=")).isEqualTo("John Doe");
   }
 
   @Test
-  public void testParseAndDecode_emptyText() {
-    EncodedWord word = EncodedWord.PARSER.parse("=?UTF-8?Q??=");
-    assertThat(word.toString()).isEqualTo("");
+  public void testDecode_emptyText() {
+    assertThat(EncodedWord.decode("=?UTF-8?Q??=")).isEqualTo("");
   }
 
   @Test
-  public void testParse_invalidEncodedWord_throws() {
-    assertThrows(ParseException.class, () -> EncodedWord.PARSER.parse("=??Q?text?="));
-    assertThrows(ParseException.class, () -> EncodedWord.PARSER.parse("=?utf-8??text?="));
-    assertThrows(ParseException.class, () -> EncodedWord.PARSER.parse("=?utf-8?X?text?="));
-    assertThrows(ParseException.class, () -> EncodedWord.PARSER.parse("=?utf-8?Q?text"));
+  public void testDecode_invalidEncodedWord_fallback() {
+    assertThat(EncodedWord.decode("=??Q?text?=")).isEqualTo("=??Q?text?=");
+    assertThat(EncodedWord.decode("=?utf-8??text?=")).isEqualTo("=?utf-8??text?=");
+    assertThat(EncodedWord.decode("=?utf-8?X?text?=")).isEqualTo("=?utf-8?X?text?=");
+    assertThat(EncodedWord.decode("=?utf-8?Q?text")).isEqualTo("=?utf-8?Q?text");
   }
 
   @Test
