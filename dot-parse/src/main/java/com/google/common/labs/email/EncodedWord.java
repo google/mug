@@ -1,0 +1,132 @@
+package com.google.common.labs.email;
+
+import static com.google.common.labs.parse.Parser.anyOf;
+import static com.google.common.labs.parse.Parser.caseInsensitive;
+import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.or;
+import static com.google.common.labs.parse.Parser.sequence;
+import static com.google.common.labs.parse.Parser.string;
+import static com.google.common.labs.parse.Parser.zeroOrMore;
+import static com.google.mu.util.CharPredicate.anyOf;
+import static com.google.mu.util.CharPredicate.noneOf;
+import static com.google.mu.util.CharPredicate.range;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.stream;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.Charset;
+import java.util.Base64;
+import java.util.List;
+
+import com.google.common.labs.parse.Parser;
+import com.google.mu.util.CharPredicate;
+
+/**
+ * Representation of an RFC 2047 encoded-word (e.g. {@code =?UTF-8?Q?Admin?=}).
+ * Parses and decodes standard MIME encoding without using regular expressions.
+ */
+record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
+  private static final CharPredicate ENCODED_WORD_CHARS =
+      range('!', '~').and(anyOf("?").not());
+  private static final CharPredicate LWS = anyOf(" \t\r\n");
+  private static final CharPredicate UNENCOED_CHAR = noneOf("= \t\r\n");
+
+  /** Parser that matches a valid RFC 2047 encoded-word. */
+  private static final Parser<EncodedWord> PARSER =
+      sequence(
+          string("=?").then(anyCharset(US_ASCII, ISO_8859_1, UTF_8)).followedBy("?"),
+          anyOf(
+              caseInsensitive("Q").thenReturn(Encoding.Q),
+              caseInsensitive("B").thenReturn(Encoding.B)).followedBy("?"),
+          zeroOrMore(ENCODED_WORD_CHARS, "encoded-text").followedBy("?="),
+          EncodedWord::new);
+
+  private static final Parser<Object> SEGMENT_PARSER =
+      anyOf(
+          PARSER,
+          consecutive(UNENCOED_CHAR, "unencoded text"),
+          string("="),
+          consecutive(LWS, "linear whitespaces").map(Lws::new));
+
+  static EncodedWord from(String encoded) {
+    return PARSER.parse(encoded);
+  }
+
+  static String decode(String input) {
+    List<?> segments = SEGMENT_PARSER.zeroOrMore().parse(input);
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < segments.size(); i++) {
+      Object segment = segments.get(i);
+      if (i > 0 && i < segments.size() - 1
+          && segment instanceof Lws
+          && segments.get(i - 1) instanceof EncodedWord
+          && segments.get(i + 1) instanceof EncodedWord) {
+        continue;
+      }
+      builder.append(segment);
+    }
+    return builder.toString();
+  }
+
+  @Override public String toString() {
+    try {
+      byte[] decodedBytes = encoding.decode(encodedText);
+      return new String(decodedBytes, charset);
+    } catch (Exception e) {
+      // Fallback to the raw format if decoding fails
+      return "=?" + charset.name() + "?" + encoding + "?" + encodedText + "?=";
+    }
+  }
+
+  private static Parser<Charset> anyCharset(Charset... charsets) {
+    return stream(charsets).map(c -> caseInsensitive(c.name()).thenReturn(c)).collect(or());
+  }
+
+  enum Encoding {
+    Q {
+      @Override byte[] decode(String raw) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        for (int i = 0; i < raw.length(); i++) {
+          char c = raw.charAt(i);
+          if (c == '_') {
+            // In Q-encoding, underscores represent spaces
+            out.write(' ');
+          } else if (c == '=') {
+            // Check if there are at least two characters left for a hex escape (e.g. =E9)
+            if (i + 2 < raw.length()) {
+              int high = Character.digit(raw.charAt(i + 1), 16);
+              int low = Character.digit(raw.charAt(i + 2), 16);
+              // Character.digit returns a non-negative value if valid, or -1 if invalid
+              if (high >= 0 && low >= 0) {
+                // Combine the two hex digits (high and low nibbles) into a single byte
+                out.write((high << 4) | low);
+                i += 2; // Skip the two consumed hex digits
+                continue;
+              }
+            }
+            // Fallback: treat '=' as a literal if not a valid hex escape
+            out.write('=');
+          } else {
+            out.write(c);
+          }
+        }
+        return out.toByteArray();
+      }
+    },
+    B {
+      @Override byte[] decode(String raw) {
+        return Base64.getDecoder().decode(raw);
+      }
+    }
+    ;
+    abstract byte[] decode(String raw);
+  }
+
+  private record Lws(String whitespaces) {
+    @Override public String toString() {
+      return whitespaces;
+    }
+  }
+}
