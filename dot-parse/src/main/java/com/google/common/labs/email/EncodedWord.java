@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.List;
+import java.util.function.Function;
 
 import com.google.common.labs.parse.Parser;
 import com.google.mu.util.CharPredicate;
@@ -36,8 +37,8 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
   /** Parser that matches a valid RFC 2047 encoded-word. */
   static final Parser<EncodedWord> PARSER =
       sequence(
-          string("=?").then(anyCharset(US_ASCII, ISO_8859_1, UTF_8)).followedBy("?"),
-          Encoding.PARSER.followedBy("?"),
+          string("=?").then(caseInsensitiveBy(Charset::name, US_ASCII, ISO_8859_1, UTF_8)).followedBy("?"),
+          caseInsensitiveBy(Encoding::name, Encoding.values()).followedBy("?"),
           zeroOrMore(ENCODED_WORD_CHARS, "encoded-text").followedBy("?="),
           EncodedWord::new);
 
@@ -73,8 +74,9 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
     }
   }
 
-  private static Parser<Charset> anyCharset(Charset... charsets) {
-    return stream(charsets).map(c -> caseInsensitive(c.name()).thenReturn(c)).collect(or());
+  @SafeVarargs
+  private static <T> Parser<T> caseInsensitiveBy(Function<? super T, String> getName, T... values) {
+    return stream(values).map(c -> caseInsensitive(getName.apply(c)).thenReturn(c)).collect(or());
   }
 
   enum Encoding {
@@ -106,9 +108,6 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
       }
     }
     ;
-
-    static final Parser<Encoding> PARSER =
-        stream(values()).map(e -> caseInsensitive(e.name()).thenReturn(e)).collect(or());
 
     abstract byte[] decode(String raw);
   }
