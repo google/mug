@@ -22,32 +22,26 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.google.common.labs.parse.Parser;
-import com.google.mu.util.CharPredicate;
 
 /**
  * Representation of an RFC 2047 encoded-word (e.g. {@code =?UTF-8?Q?Admin?=}).
  * Parses and decodes standard MIME encoding without using regular expressions.
  */
 record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
-  private static final CharPredicate ENCODED_WORD_CHARS =
-      range('!', '~').and(anyOf("?").not());
-  private static final CharPredicate LWS = anyOf(" \t\r\n");
-  private static final CharPredicate UNENCOED_CHAR = noneOf("= \t\r\n");
-
   /** Parser that matches a valid RFC 2047 encoded-word. */
   static final Parser<EncodedWord> PARSER =
       sequence(
           caseInsensitiveBy(Charset::name, US_ASCII, ISO_8859_1, UTF_8).between("=?", "?"),
           caseInsensitiveBy(Encoding::name, Encoding.values()).followedBy("?"),
-          zeroOrMore(ENCODED_WORD_CHARS, "encoded-text").followedBy("?="),
+          zeroOrMore(range('!', '~').and(anyOf("?").not()), "encoded text").followedBy("?="),
           EncodedWord::new);
 
   private static final Parser<Object> SEGMENT_PARSER =
       anyOf(
           PARSER,
-          consecutive(UNENCOED_CHAR, "unencoded text"),
+          consecutive(noneOf("= \t\r\n"), "literal chars"),
           string("="),
-          consecutive(LWS, "linear whitespaces").map(Lws::new));
+          consecutive(anyOf(" \t\r\n"), "linear whitespaces").map(Lws::new));
 
   static String decode(String input) {
     List<?> segments = SEGMENT_PARSER.zeroOrMore().parse(input);
