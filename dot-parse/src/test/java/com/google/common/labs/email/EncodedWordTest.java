@@ -17,7 +17,7 @@ public class EncodedWordTest {
 
   @Test
   public void testParseAndDecode_quotedPrintable_utf8() {
-    EncodedWord word = EncodedWord.from("=?UTF-8?Q?John_Doe?=");
+    EncodedWord word = EncodedWord.PARSER.parse("=?UTF-8?Q?John_Doe?=");
     assertThat(word.charset()).isEqualTo(StandardCharsets.UTF_8);
     assertThat(word.encoding()).isEqualTo(Q);
     assertThat(word.encodedText()).isEqualTo("John_Doe");
@@ -26,28 +26,28 @@ public class EncodedWordTest {
 
   @Test
   public void testParseAndDecode_quotedPrintable_hexEscapes() {
-    EncodedWord word = EncodedWord.from("=?ISO-8859-1?q?Ren=E9?=");
+    EncodedWord word = EncodedWord.PARSER.parse("=?ISO-8859-1?q?Ren=E9?=");
     assertThat(word.toString()).isEqualTo("René");
   }
 
   @Test
   public void testParseAndDecode_base64() {
-    EncodedWord word = EncodedWord.from("=?UTF-8?B?Sm9obiBEb2U=?=");
+    EncodedWord word = EncodedWord.PARSER.parse("=?UTF-8?B?Sm9obiBEb2U=?=");
     assertThat(word.toString()).isEqualTo("John Doe");
   }
 
   @Test
   public void testParseAndDecode_emptyText() {
-    EncodedWord word = EncodedWord.from("=?UTF-8?Q??=");
+    EncodedWord word = EncodedWord.PARSER.parse("=?UTF-8?Q??=");
     assertThat(word.toString()).isEqualTo("");
   }
 
   @Test
   public void testParse_invalidEncodedWord_throws() {
-    assertThrows(ParseException.class, () -> EncodedWord.from("=??Q?text?="));
-    assertThrows(ParseException.class, () -> EncodedWord.from("=?utf-8??text?="));
-    assertThrows(ParseException.class, () -> EncodedWord.from("=?utf-8?X?text?="));
-    assertThrows(ParseException.class, () -> EncodedWord.from("=?utf-8?Q?text"));
+    assertThrows(ParseException.class, () -> EncodedWord.PARSER.parse("=??Q?text?="));
+    assertThrows(ParseException.class, () -> EncodedWord.PARSER.parse("=?utf-8??text?="));
+    assertThrows(ParseException.class, () -> EncodedWord.PARSER.parse("=?utf-8?X?text?="));
+    assertThrows(ParseException.class, () -> EncodedWord.PARSER.parse("=?utf-8?Q?text"));
   }
 
   @Test

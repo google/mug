@@ -34,12 +34,10 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
   private static final CharPredicate UNENCOED_CHAR = noneOf("= \t\r\n");
 
   /** Parser that matches a valid RFC 2047 encoded-word. */
-  private static final Parser<EncodedWord> PARSER =
+  static final Parser<EncodedWord> PARSER =
       sequence(
           string("=?").then(anyCharset(US_ASCII, ISO_8859_1, UTF_8)).followedBy("?"),
-          anyOf(
-              caseInsensitive("Q").thenReturn(Encoding.Q),
-              caseInsensitive("B").thenReturn(Encoding.B)).followedBy("?"),
+          Encoding.PARSER.followedBy("?"),
           zeroOrMore(ENCODED_WORD_CHARS, "encoded-text").followedBy("?="),
           EncodedWord::new);
 
@@ -49,10 +47,6 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
           consecutive(UNENCOED_CHAR, "unencoded text"),
           string("="),
           consecutive(LWS, "linear whitespaces").map(Lws::new));
-
-  static EncodedWord from(String encoded) {
-    return PARSER.parse(encoded);
-  }
 
   static String decode(String input) {
     List<?> segments = SEGMENT_PARSER.zeroOrMore().parse(input);
@@ -72,8 +66,7 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
 
   @Override public String toString() {
     try {
-      byte[] decodedBytes = encoding.decode(encodedText);
-      return new String(decodedBytes, charset);
+      return new String(encoding.decode(encodedText), charset);
     } catch (Exception e) {
       // Fallback to the raw format if decoding fails
       return "=?" + charset.name() + "?" + encoding + "?" + encodedText + "?=";
@@ -115,6 +108,10 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
       }
     }
     ;
+
+    static final Parser<Encoding> PARSER =
+        stream(values()).map(e -> caseInsensitive(e.name()).thenReturn(e)).collect(or());
+
     abstract byte[] decode(String raw);
   }
 
