@@ -201,7 +201,7 @@ public class EmailAddressTest {
   @Test
   public void testEmailAddress_dangerousUnicodeRejected(@TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
-    
+
     // Line/Paragraph separators inside quoted local part
     assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("\"john\u2028doe\"@example.com"));
     assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("\"john\u2029doe\"@example.com"));
@@ -835,6 +835,96 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_unquotedDisplayNameWithColon(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    parser.assertParsesTo(
+        "Support: Admin <test@example.com>",
+        EmailAddress.of("test", "example.com").withDisplayName("Support: Admin"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_unquotedDisplayNameWithComma(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    parser.assertParsesTo(
+        "Doe, John <test@example.com>",
+        EmailAddress.of("test", "example.com").withDisplayName("Doe, John"));
+  }
+
+  @Test
+  public void testParseAddressList_withUnquotedDisplayNameDelimiters() {
+    List<EmailAddress> list = EmailAddress.parseAddressList(
+        "Doe, John <john@example.com>, Smith, Jane <jane@example.com>");
+    assertThat(list).containsExactly(
+        EmailAddress.of("john", "example.com").withDisplayName("Doe, John"),
+        EmailAddress.of("jane", "example.com").withDisplayName("Smith, Jane"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_unquotedDisplayNameWithBothCommaAndAt_rejected(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> parser.parse("Doe, John@gmail.com <test@example.com>"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_quotedDisplayNameWithBothCommaAndAt(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    parser.assertParsesTo(
+        "\"Doe, John@gmail.com\" <test@example.com>",
+        EmailAddress.of("test", "example.com").withDisplayName("Doe, John@gmail.com"));
+  }
+
+  @Test
+  public void testParseAddressList_withUnquotedDisplayNameColons() {
+    List<EmailAddress> list = EmailAddress.parseAddressList(
+        "Support: Admin <admin@example.com>, Billing: System <billing@example.com>");
+    assertThat(list).containsExactly(
+        EmailAddress.of("admin", "example.com").withDisplayName("Support: Admin"),
+        EmailAddress.of("billing", "example.com").withDisplayName("Billing: System"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_unquotedDisplayNameWithAt(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    parser.assertParsesTo(
+        "original.sender@gmail.com <forwarder@system.com>",
+        EmailAddress.of("forwarder", "system.com").withDisplayName("original.sender@gmail.com"));
+  }
+
+  @Test
+  public void testParseAddressList_withUnquotedDisplayNameAt() {
+    List<EmailAddress> list = EmailAddress.parseAddressList(
+        "original.sender1@gmail.com <forwarder1@system.com>, original.sender2@gmail.com <forwarder2@system.com>");
+    assertThat(list).containsExactly(
+        EmailAddress.of("forwarder1", "system.com").withDisplayName("original.sender1@gmail.com"),
+        EmailAddress.of("forwarder2", "system.com").withDisplayName("original.sender2@gmail.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_unquotedDisplayNameWithBrackets(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    parser.assertParsesTo(
+        "[JIRA] (PROJ-123) <jira@company.com>",
+        EmailAddress.of("jira", "company.com").withDisplayName("[JIRA] (PROJ-123)"));
+  }
+
+  @Test
+  public void testParseAddressList_withUnquotedDisplayNameBrackets() {
+    List<EmailAddress> list = EmailAddress.parseAddressList(
+        "[GitHub] PR #45 <git@github.com>, [Billing] Invoice Due <billing@company.com>");
+    assertThat(list).containsExactly(
+        EmailAddress.of("git", "github.com").withDisplayName("[GitHub] PR #45"),
+        EmailAddress.of("billing", "company.com").withDisplayName("[Billing] Invoice Due"));
+  }
+
+  @Test
   public void testEmailAddressParsing_aliasLookingLikeAddress(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);
@@ -1186,18 +1276,14 @@ public class EmailAddressTest {
   }
 
   @Test
-  public void testEmailAddressParsing_rfc2047EncodedWord_withAt_rejected(@TestParameter ParseStrategy parser) {
-    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> parser.parse("=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>"));
-  }
-
-  @Test
-  public void testEmailAddressParsing_rfc2047EncodedWord_withAt_acceptedByJakarta_bad(@TestParameter ParseStrategy parser) {
-    assume().that(parser).isEqualTo(ParseStrategy.JAKARTA);
+  public void testEmailAddressParsing_rfc2047EncodedWord_withAt_parsed(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isNoneOf(ParseStrategy.JMAIL, ParseStrategy.REGEX);
     EmailAddress parsed = parser.parse("=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>");
-    assertThat(parsed.displayName()).hasValue("Administrator <admin@example.com>");
+    if (parser == ParseStrategy.JAKARTA) {
+      assertThat(parsed.displayName()).hasValue("Administrator <admin@example.com>");
+    } else {
+      assertThat(parsed.displayName()).hasValue("=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?=");
+    }
     assertThat(parsed.address()).isEqualTo("attacker@evil.com");
   }
 
@@ -1215,21 +1301,6 @@ public class EmailAddressTest {
     EmailAddress parsed = parser.parse("=?UTF-8?Q?Administrator?= <attacker@evil.com>");
     assertThat(parsed.displayName()).hasValue("Administrator");
     assertThat(parsed.address()).isEqualTo("attacker@evil.com");
-  }
-
-  @Test
-  public void testParseAddressList_withRfc2047EncodedWord() {
-    List<String> invalid = new ArrayList<>();
-    List<EmailAddress> parsed = EmailAddress.parseAddressList(
-        "=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>, "
-            + "=?UTF-8?Q?Administrator?= <attacker@evil.com>",
-        invalid::add);
-    // The first one has an '@' in the unquoted display name, so it's treated as invalid.
-    // The second one is valid, parsing literally without decoding.
-    assertThat(parsed).containsExactly(
-        EmailAddress.of("attacker", "evil.com").withDisplayName("=?UTF-8?Q?Administrator?="));
-    assertThat(invalid).containsExactly(
-        "=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>");
   }
 
   @Test
@@ -1385,6 +1456,16 @@ public class EmailAddressTest {
     EmailAddress plain = EmailAddress.of("John Doe <test@example.com>");
     assertThat(plain.displayName()).hasValue("John Doe");
     assertThat(plain.unicodeDisplayName()).hasValue("John Doe");
+
+    // Quoted display name containing raw non-ASCII characters (not RFC 2047 encoded)
+    EmailAddress rawUnicode = EmailAddress.of("\"René\" <test@example.com>");
+    assertThat(rawUnicode.displayName()).hasValue("René");
+    assertThat(rawUnicode.unicodeDisplayName()).hasValue("René");
+
+    // Mixed display name (contains both plain text and RFC 2047 encoded word)
+    EmailAddress mixed = EmailAddress.of("Hello =?UTF-8?Q?John?= <test@example.com>");
+    assertThat(mixed.displayName()).hasValue("Hello =?UTF-8?Q?John?=");
+    assertThat(mixed.unicodeDisplayName()).hasValue("Hello John");
   }
 
   @Test
