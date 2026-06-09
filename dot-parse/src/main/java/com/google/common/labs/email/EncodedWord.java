@@ -87,9 +87,8 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
         .map(name -> name.toLowerCase(Locale.ROOT))
         .distinct()
         .sorted(reverseOrder())
-        .map(Parser::caseInsensitive)
-        .collect(or())
-        .thenReturn(charset);
+        .map(name -> caseInsensitive(name).thenReturn(charset))
+        .collect(or());
   }
 
   private static Stream<String> variationsOf(String name) {
