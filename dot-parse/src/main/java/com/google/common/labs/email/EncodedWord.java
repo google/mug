@@ -33,12 +33,10 @@ import com.google.mu.util.CaseBreaker;
  * Parses and decodes standard MIME encoding without using regular expressions.
  */
 record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
-  private static final Parser<Charset> CHARSET = oneOf(US_ASCII, ISO_8859_1, UTF_8);
-
   /** Parser that matches a valid RFC 2047 encoded-word. */
   private static final Parser<EncodedWord> ENCODED =
       sequence(
-          CHARSET.followedBy("?"),
+          oneOf(US_ASCII, ISO_8859_1, UTF_8).followedBy("?"),
           caseInsensitiveBy(Encoding::name, Encoding.values()).followedBy("?"),
           zeroOrMore(range('!', '~').and(anyOf("?").not()), "encoded text"),
           EncodedWord::new);
