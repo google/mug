@@ -18,6 +18,69 @@ public class EncodedWordTest {
   public void testDecode_quotedPrintable_hexEscapes() {
     assertThat(EncodedWord.decode("=?ISO-8859-1?q?Ren=E9?=")).isEqualTo("René");
   }
+  @Test
+  public void testDecode_quotedPrintable_usAscii() {
+    assertThat(EncodedWord.decode("=?us-ascii?Q?John_Doe?=")).isEqualTo("John Doe");
+    assertThat(EncodedWord.decode("=?US-ASCII?Q?John_Doe?=")).isEqualTo("John Doe");
+    assertThat(EncodedWord.decode("=?US_ASCII?Q?John_Doe?=")).isEqualTo("John Doe");
+    assertThat(EncodedWord.decode("=?US?Q?John_Doe?=")).isEqualTo("John Doe");
+  }
+
+  @Test
+  public void testDecode_aliasAscii() {
+    assertThat(EncodedWord.decode("=?ascii?Q?John_Doe?=")).isEqualTo("John Doe");
+  }
+
+  @Test
+  public void testDecode_aliasUtf8() {
+    assertThat(EncodedWord.decode("=?utf8?Q?John_Doe?=")).isEqualTo("John Doe");
+    assertThat(EncodedWord.decode("=?utf_8?Q?John_Doe?=")).isEqualTo("John Doe");
+  }
+
+  @Test
+  public void testDecode_aliasIso88591Underscore() {
+    assertThat(EncodedWord.decode("=?iso_8859_1?q?Ren=E9?=")).isEqualTo("René");
+  }
+
+  @Test
+  public void testDecode_aliasIso88591NoSeparator() {
+    assertThat(EncodedWord.decode("=?iso88591?q?Ren=E9?=")).isEqualTo("René");
+  }
+
+  @Test
+  public void testDecode_aliasLatin1() {
+    assertThat(EncodedWord.decode("=?latin1?q?Ren=E9?=")).isEqualTo("René");
+    assertThat(EncodedWord.decode("=?latin-1?q?Ren=E9?=")).isEqualTo("René");
+    assertThat(EncodedWord.decode("=?latin_1?q?Ren=E9?=")).isEqualTo("René");
+  }
+
+  @Test
+  public void testDecode_aliasL1() {
+    assertThat(EncodedWord.decode("=?l1?q?Ren=E9?=")).isEqualTo("René");
+  }
+
+  @Test
+  public void testDecode_aliasIso88591Mixed() {
+    assertThat(EncodedWord.decode("=?iso8859-1?q?Ren=E9?=")).isEqualTo("René");
+    assertThat(EncodedWord.decode("=?iso8859_1?q?Ren=E9?=")).isEqualTo("René");
+  }
+
+  @Test
+  public void testDecode_aliasCsAscii() {
+    assertThat(EncodedWord.decode("=?csASCII?Q?John_Doe?=")).isEqualTo("John Doe");
+  }
+
+  @Test
+  public void testDecode_aliasIso646() {
+    assertThat(EncodedWord.decode("=?ISO646-US?Q?John_Doe?=")).isEqualTo("John Doe");
+    assertThat(EncodedWord.decode("=?ISO646_US?Q?John_Doe?=")).isEqualTo("John Doe");
+    assertThat(EncodedWord.decode("=?ISO646US?Q?John_Doe?=")).isEqualTo("John Doe");
+  }
+
+  @Test
+  public void testDecode_aliasUnicode11Utf8() {
+    assertThat(EncodedWord.decode("=?unicode-1-1-utf-8?Q?John_Doe?=")).isEqualTo("John Doe");
+  }
 
   @Test
   public void testDecode_base64() {

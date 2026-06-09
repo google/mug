@@ -14,24 +14,31 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
+import static java.util.Comparator.reverseOrder;
+import static java.util.stream.Collectors.joining;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import com.google.common.labs.parse.Parser;
+import com.google.mu.util.CaseBreaker;
 
 /**
  * Representation of an RFC 2047 encoded-word (e.g. {@code =?UTF-8?Q?Admin?=}).
  * Parses and decodes standard MIME encoding without using regular expressions.
  */
 record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
+  private static final Parser<Charset> CHARSET = oneOf(US_ASCII, ISO_8859_1, UTF_8);
+
   /** Parser that matches a valid RFC 2047 encoded-word. */
   private static final Parser<EncodedWord> ENCODED =
       sequence(
-          caseInsensitiveBy(Charset::name, US_ASCII, ISO_8859_1, UTF_8).followedBy("?"),
+          CHARSET.followedBy("?"),
           caseInsensitiveBy(Encoding::name, Encoding.values()).followedBy("?"),
           zeroOrMore(range('!', '~').and(anyOf("?").not()), "encoded text"),
           EncodedWord::new);
@@ -70,6 +77,33 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
   @SafeVarargs
   private static <T> Parser<T> caseInsensitiveBy(Function<? super T, String> getName, T... values) {
     return stream(values).map(c -> caseInsensitive(getName.apply(c)).thenReturn(c)).collect(or());
+  }
+
+  private static Parser<Charset> oneOf(Charset... charsets) {
+    return stream(charsets).map(EncodedWord::charset).collect(or());
+  }
+
+  private static Parser<Charset> charset(Charset charset) {
+    return Stream.concat(Stream.of(charset.name()), charset.aliases().stream())
+        .flatMap(EncodedWord::variationsOf)
+        .map(name -> name.toLowerCase(Locale.ROOT))
+        .distinct()
+        .sorted(reverseOrder())
+        .map(Parser::caseInsensitive)
+        .collect(or())
+        .thenReturn(charset);
+  }
+
+  private static Stream<String> variationsOf(String name) {
+    var tokens = new CaseBreaker()
+        .withLowerCaseChars(Character::isLowerCase)  // number and letters should separate
+        .breakCase(name)
+        .toList();
+    return Stream.of(
+        name,
+        tokens.stream().collect(joining("-")),
+        tokens.stream().collect(joining("_")),
+        tokens.stream().collect(joining()));
   }
 
   enum Encoding {
