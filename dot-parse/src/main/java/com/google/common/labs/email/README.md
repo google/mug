@@ -26,7 +26,7 @@ combinators. It serves as a lightweight and secure alternative to
 | **Folding White Space** (FWS) |  **Full Support** (Supports standard FWS with CR/LF) |  **Full Support** (Supports standard FWS with CR/LF) | ⚠️ **Partial Support** (Fails on FWS directly after angle bracket) | 🚫 **Not Supported** (Rejects FWS completely) |
 | **Unquoted Display Names** |  **Strict** (Forbids special characters `()<>[]:;@\,"` to prevent spoofing) |  **Lenient** (Allows special characters unquoted) |  **Lenient** (Allows special characters unquoted) | 🚫 **Not Supported** (Rejects display names) |
 | **Group Addresses** (RFC 822) | 🚫 **Omitted** |  **Supported** (Parses groups as `isGroup()`) | 🚫 **Omitted** | 🚫 **Not Supported** (Rejects group syntax) |
-| **RFC 2047 Encoded Words** | 🚫 **Omitted** (Preserved raw) |  **Supported** (Decodes automatically) | 🚫 **Omitted** (Preserved raw) | 🚫 **Not Supported** (Rejects encoded words) |
+| **RFC 2047 Encoded Words in Local Part** | 🚫 **Rejected Defensively** (Rejects `=?`...`?=` inside local-part/domain to prevent downstream spoofing) |  **Supported** (Decodes automatically) | 🚫 **Omitted** (Preserved raw; downstream spoofing) | 🚫 **Not Supported** (Rejects encoded words) |
 | **Comments & Domain Literals** | 🚫 **Omitted** (Obsolete comments/IP domains skipped) |  **Supported** (Supports full legacy features) | 🚫 **Omitted** (Obsolete comments/IP domains skipped) | ⚠️ **Partial Support** (Supports IP literals, rejects comments) |
 
 ---
@@ -122,10 +122,7 @@ To maintain compatibility with modern MTAs and guarantee safety,
    Jakarta Mail and JMail. Omitted by `EmailAddress` to align with modern
    secure routing where IP-based email routing is practically obsolete.
 4. **Dynamic MIME Header Decoding (RFC 2047)**: Supported by Jakarta Mail
-   (which decodes automatically, exposing visual spoofing risks). Omitted by
-   both `EmailAddress` and JMail to prevent spoofing; however, JMail still
-   accepts display names containing unquoted `@` characters in encoded
-   blocks, whereas `EmailAddress` strictly rejects them.
+   (which decodes automatically, exposing visual spoofing risks). Both `EmailAddress` and JMail omit decoding to prevent spoofing. However, to prevent downstream mailer spoofing exploits (where MTAs like Postfix decode these strings even inside address parts), `EmailAddress` **defensively rejects** encoded-words inside the local-part and domain (e.g., `=?UTF-8?Q?...?=`), whereas JMail and Jakarta Mail permit them, exposing applications to routing hijacking. Additionally, JMail still accepts display names containing unquoted `@` characters in encoded blocks, whereas `EmailAddress` strictly rejects them.
 
 ### D. Composability & Extensibility
 

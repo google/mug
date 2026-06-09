@@ -138,9 +138,9 @@ import com.google.mu.util.stream.Joiner;
  *     <td>Strictly rejected (enforces single address structure)</td>
  *   </tr>
  *   <tr>
- *     <td><b>RFC 2047 Decoding</b></td>
- *     <td>Automatic (decodes encoded words in display name, risking address spoofing)</td>
- *     <td>Preserved literally (no dynamic decoding side-channels)</td>
+ *     <td><b>RFC 2047 Encoded Words</b></td>
+ *     <td>Automatic or permissive (decodes or accepts encoded words in display name, local-part, or domain, risking address spoofing and routing hijacking)</td>
+ *     <td>Defensively rejected in local-part and domain to block downstream mailer exploits</td>
  *   </tr>
  *   <tr>
  *     <td><b>Multi-@ Local-Parts</b></td>
@@ -156,6 +156,7 @@ import com.google.mu.util.stream.Joiner;
  * <ul>
  *   <li><b>Comments (CFWS):</b> (e.g., {@code name(comment) <addr>}) - De facto obsolete.
  *   <li><b>Domain Literals:</b> (e.g., {@code user@[192.168.1.1]}) - IP routing is rarely supported.
+ *   <li><b>RFC 2047 Encoded Words in address fields:</b> (e.g., {@code =?UTF-8?Q?Admin?=@domain.com}) - Strictly rejected to prevent downstream mailer decoding exploits.
  * </ul>
  *
  * @param localPart the {@code "tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
@@ -172,6 +173,8 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   private static final StringFormat.Template<IllegalArgumentException> DOTLESS_DOMAIN_BANNED =
       StringFormat.to(
           IllegalArgumentException::new, "domain must contain at least one dot: {domain}");
+  private static final StringFormat ENCODED_WORD =
+      new StringFormat("{...}=?{charset}?{encoding}?{text}?={...}");
   private static final CharPredicate NON_DIGIT = range('0', '9').not();
   private static final CharPredicate DANGEROUS =
       anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069")
@@ -223,6 +226,8 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
     checkArgument(
+        !ENCODED_WORD.matches(localPart), "local-part doesn't allow encoded word (%s)", localPart);
+    checkArgument(
         DANGEROUS.matchesNoneOf(localPart),
         "local-part must not contain control or formatting characters");
     checkArgument(
@@ -248,6 +253,16 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
   public EmailAddress withDisplayName(String displayName) {
     return new EmailAddress(localPart, domain, Optional.ofNullable(displayName));
+  }
+
+  /**
+   * Returns the display name in Unicode (with any RFC 2047 encoded-words decoded),
+   * or {@code Optional.empty()} if no display name is present.
+   *
+   * @since 10.4
+   */
+  public Optional<String> unicodeDisplayName() {
+    return displayName.map(EncodedWord::decode);
   }
 
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
@@ -390,9 +405,9 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   private static Parser<EmailAddress> makeParser() {
     Parser<String> quoted = quotedByWithEscapes('"', '"', chars(1))
         .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
-    Parser<String> localPart = anyOf(
-        quoted,
-        consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")));
+    Parser<String> localPart =
+        anyOf(quoted, consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")))
+            .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
     Parser<String> domain = consecutive(I18N_DOMAIN_LABEL_CHARS, "domain label chars")
         .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
         .atLeastOnceDelimitedBy(".")
