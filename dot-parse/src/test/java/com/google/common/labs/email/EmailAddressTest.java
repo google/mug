@@ -1385,6 +1385,16 @@ public class EmailAddressTest {
     EmailAddress plain = EmailAddress.of("John Doe <test@example.com>");
     assertThat(plain.displayName()).hasValue("John Doe");
     assertThat(plain.unicodeDisplayName()).hasValue("John Doe");
+
+    // Quoted display name containing raw non-ASCII characters (not RFC 2047 encoded)
+    EmailAddress rawUnicode = EmailAddress.of("\"René\" <test@example.com>");
+    assertThat(rawUnicode.displayName()).hasValue("René");
+    assertThat(rawUnicode.unicodeDisplayName()).hasValue("René");
+
+    // Mixed display name (contains both plain text and RFC 2047 encoded word)
+    EmailAddress mixed = EmailAddress.of("Hello =?UTF-8?Q?John?= <test@example.com>");
+    assertThat(mixed.displayName()).hasValue("Hello =?UTF-8?Q?John?=");
+    assertThat(mixed.unicodeDisplayName()).hasValue("Hello John");
   }
 
   @Test
