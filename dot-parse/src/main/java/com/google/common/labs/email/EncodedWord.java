@@ -90,10 +90,7 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         for (int i = 0; i < raw.length(); i++) {
           char c = raw.charAt(i);
-          if (c == '_') {
-            // In Q-encoding, underscores represent spaces
-            out.write(' ');
-          } else if (c == '=') {
+          if (c == '=') {
             // Check if there are at least two characters left for a hex escape (e.g. =E9)
             if (i + 2 < raw.length()) {
               int high = Character.digit(raw.charAt(i + 1), 16);
@@ -106,11 +103,8 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
                 continue;
               }
             }
-            // Fallback: treat '=' as a literal if not a valid hex escape
-            out.write('=');
-          } else {
-            out.write(c);
           }
+          out.write(c == '_' ? ' ' : c);
         }
         return out.toByteArray();
       }
