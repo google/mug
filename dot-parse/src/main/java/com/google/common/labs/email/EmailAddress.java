@@ -429,7 +429,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
     Parser<EmailAddress> address =
         literally(sequence(localPart.followedBy("@"), domain, EmailAddress::of));
     Parser<String> unquotedDisplayName = consecutive(
-        DANGEROUS.or("()<>[]:;@\\,\"").not().precomputeForAscii(), "unquoted display name");
+        DANGEROUS.or("()<>[];@\\\"").not().precomputeForAscii(), "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
     Parser<String> displayName = anyOf(quoted, unquotedDisplayName.map(String::trim));
     return anyOf(

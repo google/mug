@@ -835,6 +835,42 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_unquotedDisplayNameWithComma(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    parser.assertParsesTo(
+        "Doe, John <test@example.com>",
+        EmailAddress.of("test", "example.com").withDisplayName("Doe, John"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_unquotedDisplayNameWithColon(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    parser.assertParsesTo(
+        "Support: Admin <test@example.com>",
+        EmailAddress.of("test", "example.com").withDisplayName("Support: Admin"));
+  }
+
+  @Test
+  public void testParseAddressList_withUnquotedDisplayNameDelimiters() {
+    List<EmailAddress> list = EmailAddress.parseAddressList(
+        "Doe, John <john@example.com>, Smith, Jane <jane@example.com>");
+    assertThat(list).containsExactly(
+        EmailAddress.of("john", "example.com").withDisplayName("Doe, John"),
+        EmailAddress.of("jane", "example.com").withDisplayName("Smith, Jane"));
+  }
+
+  @Test
+  public void testParseAddressList_withUnquotedDisplayNameColons() {
+    List<EmailAddress> list = EmailAddress.parseAddressList(
+        "Support: Admin <admin@example.com>, Billing: System <billing@example.com>");
+    assertThat(list).containsExactly(
+        EmailAddress.of("admin", "example.com").withDisplayName("Support: Admin"),
+        EmailAddress.of("billing", "example.com").withDisplayName("Billing: System"));
+  }
+
+  @Test
   public void testEmailAddressParsing_aliasLookingLikeAddress(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);
