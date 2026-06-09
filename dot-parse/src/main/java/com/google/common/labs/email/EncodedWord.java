@@ -75,7 +75,7 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
   enum Encoding {
     Q {
       @Override byte[] decode(String raw) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream out = new ByteArrayOutputStream(raw.length());
         for (int i = 0; i < raw.length(); i++) {
           char c = raw.charAt(i);
           if (c == '=' && i + 2 < raw.length()) { // is it like =E9?
