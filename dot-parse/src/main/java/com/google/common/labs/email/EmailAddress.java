@@ -255,6 +255,14 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
     return new EmailAddress(localPart, domain, Optional.ofNullable(displayName));
   }
 
+  /**
+   * Returns the display name in Unicode (with any RFC 2047 encoded-words decoded),
+   * or {@code Optional.empty()} if no display name is present.
+   */
+  public Optional<String> unicodeDisplayName() {
+    return displayName.map(EncodedWord::decode);
+  }
+
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
   public static EmailAddress of(String localPart, String domain) {
     return new EmailAddress(

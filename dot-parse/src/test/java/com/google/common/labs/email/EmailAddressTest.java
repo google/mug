@@ -1373,6 +1373,51 @@ public class EmailAddressTest {
         .orElse(displayName);
   }
 
+  @Test
+  public void testUnicodeDisplayName_withEncodedWord() {
+    EmailAddress address = EmailAddress.of("=?UTF-8?Q?John_Doe?= <test@example.com>");
+    assertThat(address.displayName()).hasValue("=?UTF-8?Q?John_Doe?=");
+    assertThat(address.unicodeDisplayName()).hasValue("John Doe");
+  }
+
+  @Test
+  public void testUnicodeDisplayName_withPlainDisplayName() {
+    EmailAddress plain = EmailAddress.of("John Doe <test@example.com>");
+    assertThat(plain.displayName()).hasValue("John Doe");
+    assertThat(plain.unicodeDisplayName()).hasValue("John Doe");
+  }
+
+  @Test
+  public void testUnicodeDisplayName_withoutDisplayName() {
+    EmailAddress noName = EmailAddress.of("test@example.com");
+    assertThat(noName.displayName()).isEmpty();
+    assertThat(noName.unicodeDisplayName()).isEmpty();
+  }
+
+  @Test
+  public void testUnicodeDisplayName_withUnknownCharset() {
+    // Unknown/unsupported charset -> fallback to raw
+    EmailAddress unknownCharset = EmailAddress.of("=?INVALID?Q?John?= <test@example.com>");
+    assertThat(unknownCharset.displayName()).hasValue("=?INVALID?Q?John?=");
+    assertThat(unknownCharset.unicodeDisplayName()).hasValue("=?INVALID?Q?John?=");
+  }
+
+  @Test
+  public void testUnicodeDisplayName_withMalformedEncodingStructure() {
+    // Malformed encoding structure (missing trailing =) -> fallback to raw
+    EmailAddress malformedStructure = EmailAddress.of("=?UTF-8?Q?John? <test@example.com>");
+    assertThat(malformedStructure.displayName()).hasValue("=?UTF-8?Q?John?");
+    assertThat(malformedStructure.unicodeDisplayName()).hasValue("=?UTF-8?Q?John?");
+  }
+
+  @Test
+  public void testUnicodeDisplayName_withDecodingFailure() {
+    // Valid charset but bad base64 payload -> fallback to raw
+    EmailAddress badBase64 = EmailAddress.of("=?UTF-8?B?invalid_base64?= <test@example.com>");
+    assertThat(badBase64.displayName()).hasValue("=?UTF-8?B?invalid_base64?=");
+    assertThat(badBase64.unicodeDisplayName()).hasValue("=?UTF-8?B?invalid_base64?=");
+  }
+
   private enum ParseStrategy {
     REGEX {
       @Override EmailAddress parse(String email) {
