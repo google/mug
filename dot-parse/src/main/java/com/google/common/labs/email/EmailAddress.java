@@ -274,7 +274,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
    * @since 10.4
    */
   public Optional<String> unicodeDisplayName() {
-    return displayName.map(EncodedWord::decode);
+    return displayName.map(EncodedWord::decodeRfc2047);
   }
 
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */

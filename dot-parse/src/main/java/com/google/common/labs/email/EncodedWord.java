@@ -48,7 +48,7 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
           string("="),
           consecutive(anyOf(" \t\r\n"), "linear whitespaces").map(Lws::new));
 
-  static String decode(String input) {
+  static String decodeRfc2047(String input) {
     List<?> segments = SEGMENT.zeroOrMore().parse(input);
     StringBuilder builder = new StringBuilder();
     for (int i = 0; i < segments.size(); i++) {
