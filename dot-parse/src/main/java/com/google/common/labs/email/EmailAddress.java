@@ -173,7 +173,10 @@ import com.google.mu.util.stream.Joiner;
  */
 @Immutable
 public record EmailAddress(String localPart, String domain, Optional<String> displayName) {
-  private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
+  private static final StringFormat WITH_QUOTED_DISPLAY_NAME =
+      new StringFormat("\"{name}\" <{address}>");
+  private static final StringFormat WITH_UNQUOTED_DISPLAY_NAME =
+      new StringFormat("{name} <{address}>");
   private static final StringFormat.Template<IllegalArgumentException> DOTLESS_DOMAIN_BANNED =
       StringFormat.to(
           IllegalArgumentException::new, "domain must contain at least one dot: {domain}");
@@ -184,6 +187,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
       anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069")
           .or(Character::isISOControl)
           .precomputeForAscii();
+  private static final CharPredicate SERIALIZATION_SPECIALS = anyOf("<>;,@:");
 
   // While most letters and digits are supplementary chars, using it is strictly better than
   // [a-zA-Z0-9] because it natively supports internationalized BMP characters (for example,
@@ -357,7 +361,9 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
    */
   @Override public String toString() {
     return displayName
-        .map(name -> WITH_DISPLAY_NAME.format(escape(name), address()))
+        .map(name -> ENCODED_WORD.matches(name)
+            ? WITH_UNQUOTED_DISPLAY_NAME.format(name, address())
+            : WITH_QUOTED_DISPLAY_NAME.format(escape(name), address()))
         .orElseGet(this::address);
   }
 
@@ -431,9 +437,12 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
         literally(sequence(localPart.followedBy("@"), domain, EmailAddress::of));
     Parser<String> unquotedDisplayName =
         consecutive(DANGEROUS.or("<>;\\\"").not().precomputeForAscii(), "unquoted display name")
-            .suchThat(name -> !(name.contains(",") && name.contains("@")), "unambiguous display name");
+            .suchThat(n -> !(n.contains(",") && n.contains("@")), "unambiguous display name")
+            .suchThat(
+                n -> anyOf(",@").matchesNoneOf(n) || !ENCODED_WORD.matches(n), "safe encoded words");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
-    Parser<String> displayName = anyOf(quoted, unquotedDisplayName.map(String::trim));
+    Parser<String> displayName =
+        anyOf(quoted, unquotedDisplayName.map(String::trim)).atLeastOnce(joining(" "));
     return anyOf(
         bracketedAddress,
         sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)),

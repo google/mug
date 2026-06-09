@@ -880,6 +880,74 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_mixedDisplayName_consecutiveQuoted(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    EmailAddress parsed = parser.parse("\"John\" \"Doe\" <test@example.com>");
+    assertThat(parsed.displayName()).hasValue("John Doe");
+    assertThat(parsed.toString()).isEqualTo("\"John Doe\" <test@example.com>");
+  }
+
+  @Test
+  public void testEmailAddressParsing_mixedDisplayName_interleaved(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    EmailAddress parsed = parser.parse("John \"Big\" Doe <test@example.com>");
+    assertThat(parsed.displayName()).hasValue("John Big Doe");
+    assertThat(parsed.toString()).isEqualTo("\"John Big Doe\" <test@example.com>");
+  }
+
+  @Test
+  public void testEmailAddressParsing_mixedDisplayName_multipleSpaces(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    EmailAddress parsed = parser.parse("John   \"Big\"   Doe <test@example.com>");
+    assertThat(parsed.displayName()).hasValue("John Big Doe");
+    assertThat(parsed.toString()).isEqualTo("\"John Big Doe\" <test@example.com>");
+  }
+
+  @Test
+  public void testEmailAddressParsing_mixedDisplayName_withFws(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    EmailAddress parsed = parser.parse("John\r\n \"Big\"\r\n Doe <test@example.com>");
+    assertThat(parsed.displayName()).hasValue("John Big Doe");
+    assertThat(parsed.toString()).isEqualTo("\"John Big Doe\" <test@example.com>");
+  }
+
+  @Test
+  public void testEmailAddressParsing_unquotedEncodedWordWithComma_rejected(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> parser.parse("=?UTF-8?Q?Admin?=, Test <user@domain.com>"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_unquotedEncodedWordWithAt_rejected(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> parser.parse("=?UTF-8?Q?Admin?= @ Test <user@domain.com>"));
+  }
+
+  @Test
+  public void testToString_withRfc2047EncodedWord() {
+    EmailAddress address = EmailAddress.of("user", "domain.com")
+        .withDisplayName("=?UTF-8?Q?Admin?=");
+    assertThat(address.toString()).isEqualTo("=?UTF-8?Q?Admin?= <user@domain.com>");
+  }
+
+  @Test
+  public void testToString_withRfc2047EncodedWord_andSerializationSpecials() {
+    EmailAddress address = EmailAddress.of("user", "domain.com")
+        .withDisplayName("=?UTF-8?Q?Admin?=, Test");
+    assertThat(address.toString()).isEqualTo("=?UTF-8?Q?Admin?=, Test <user@domain.com>");
+  }
+
+  @Test
   public void testParseAddressList_withUnquotedDisplayNameColons() {
     List<EmailAddress> list = EmailAddress.parseAddressList(
         "Support: Admin <admin@example.com>, Billing: System <billing@example.com>");
@@ -1276,14 +1344,18 @@ public class EmailAddressTest {
   }
 
   @Test
-  public void testEmailAddressParsing_rfc2047EncodedWord_withAt_parsed(@TestParameter ParseStrategy parser) {
-    assume().that(parser).isNoneOf(ParseStrategy.JMAIL, ParseStrategy.REGEX);
+  public void testEmailAddressParsing_rfc2047EncodedWord_withAt_rejected(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> parser.parse("=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_rfc2047EncodedWord_withAt_acceptedByJakarta_bad(@TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.JAKARTA);
     EmailAddress parsed = parser.parse("=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>");
-    if (parser == ParseStrategy.JAKARTA) {
-      assertThat(parsed.displayName()).hasValue("Administrator <admin@example.com>");
-    } else {
-      assertThat(parsed.displayName()).hasValue("=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?=");
-    }
+    assertThat(parsed.displayName()).hasValue("Administrator <admin@example.com>");
     assertThat(parsed.address()).isEqualTo("attacker@evil.com");
   }
 
