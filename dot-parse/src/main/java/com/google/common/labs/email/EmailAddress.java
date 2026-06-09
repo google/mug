@@ -237,7 +237,6 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
     checkArgument(
         DANGEROUS.matchesNoneOf(displayName.orElse("")),
         "display name must not contain control or formatting characters");
-
     all('.').split(domain).forEach(label -> {
         checkArgument(!label.isEmpty(), "domain label cannot be empty");
         checkArgument(
@@ -435,8 +434,9 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
     Parser<String> displayName = anyOf(
         quoted,
-        unquotedDisplayName.map(String::trim)
-            .suchThat(name -> !(name.contains(",") && name.contains("@")), "unambiguous display name"));
+        unquotedDisplayName
+            .suchThat(name -> !(name.contains(",") && name.contains("@")), "unambiguous display name")
+            .map(String::trim));
     return anyOf(
         bracketedAddress,
         sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)),
