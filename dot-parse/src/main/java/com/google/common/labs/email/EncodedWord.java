@@ -66,7 +66,7 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
 
   @Override public String toString() {
     try {
-      return new String(encoding.decode(encodedText), charset);
+      return new String(encoding.decodeBytes(encodedText), charset);
     } catch (Exception e) { // Fallback to the raw format if decoding fails
       return "=?" + charset.name() + "?" + encoding + "?" + encodedText + "?=";
     }
@@ -106,7 +106,7 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
 
   enum Encoding {
     Q {
-      @Override byte[] decode(String raw) {
+      @Override byte[] decodeBytes(String raw) {
         ByteArrayOutputStream out = new ByteArrayOutputStream(raw.length());
         for (int i = 0; i < raw.length(); i++) {
           char c = raw.charAt(i);
@@ -127,13 +127,13 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
       }
     },
     B {
-      @Override byte[] decode(String raw) {
+      @Override byte[] decodeBytes(String raw) {
         return Base64.getDecoder().decode(raw);
       }
     }
     ;
 
-    abstract byte[] decode(String raw);
+    abstract byte[] decodeBytes(String raw);
   }
 
   private record Lws(String whitespaces) {
