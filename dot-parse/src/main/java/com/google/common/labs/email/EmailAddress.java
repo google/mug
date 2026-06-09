@@ -81,8 +81,9 @@ import com.google.mu.util.stream.Joiner;
  *   <li><b>Quoted-Strings:</b> Complies with RFC 5322 §3.2.4, supporting
  *       backslash-escaped characters within double-quoted display names.</li>
  *   <li><b>Phrases (unquoted names):</b> Supports RFC 5322 "atoms" in
- *       display names, forbidding "specials", i.e. the {@code ()<>[]:;@\,"} characters,
- *       while allowing periods for real-world usability (e.g., "J.R.R. Tolkien").</li>
+ *       display names, forbidding specials, i.e. the {@code <}, {@code >}, {@code ;},
+ *       {@code \}, and {@code "} characters, while allowing periods, commas, colons,
+ *       brackets, and parentheses for real-world usability (e.g., "[JIRA] (PROJ-123)").</li>
  *   <li><b>Folding White Space (FWS):</b> Supports optional whitespace
  *       between the display name and the angle-bracketed address.</li>
  *   <li><b>Address-List:</b> Supports semicolon as separators; allows real-world
@@ -236,6 +237,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
     checkArgument(
         DANGEROUS.matchesNoneOf(displayName.orElse("")),
         "display name must not contain control or formatting characters");
+
     all('.').split(domain).forEach(label -> {
         checkArgument(!label.isEmpty(), "domain label cannot be empty");
         checkArgument(
@@ -429,13 +431,16 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
     Parser<EmailAddress> address =
         literally(sequence(localPart.followedBy("@"), domain, EmailAddress::of));
     Parser<String> unquotedDisplayName = consecutive(
-        DANGEROUS.or("()<>[];@\\\"").not().precomputeForAscii(), "unquoted display name");
+        DANGEROUS.or("<>;\\\"").not().precomputeForAscii(), "unquoted display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
-    Parser<String> displayName = anyOf(quoted, unquotedDisplayName.map(String::trim));
+    Parser<String> displayName = anyOf(
+        quoted,
+        unquotedDisplayName.map(String::trim)
+            .suchThat(name -> !(name.contains(",") && name.contains("@")), "unambiguous display name"));
     return anyOf(
         bracketedAddress,
-        address,
-        sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)));
+        sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)),
+        address);
   }
 
   private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses(
