@@ -183,12 +183,12 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   private static final StringFormat ENCODED_WORD =
       new StringFormat("{...}=?{charset}?{encoding}?{text}?={...}");
   private static final CharPredicate NON_DIGIT = range('0', '9').not();
-  private static final CharPredicate DANGEROUS_WHITESPACES =
+  private static final CharPredicate DANGEROUS_WHITESPACE =
       anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069");
   private static final CharPredicate DANGEROUS =
-      DANGEROUS_WHITESPACES.or(Character::isISOControl).precomputeForAscii();
+      DANGEROUS_WHITESPACE.or(Character::isISOControl).precomputeForAscii();
   private static final CharPredicate SAFE_WHITESPACE =
-      DANGEROUS_WHITESPACES.not().and(Character::isWhitespace).precomputeForAscii();
+      DANGEROUS_WHITESPACE.not().and(Character::isWhitespace).precomputeForAscii();
 
   // While most letters and digits are supplementary chars, using it is strictly better than
   // [a-zA-Z0-9] because it natively supports internationalized BMP characters (for example,
