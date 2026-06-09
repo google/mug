@@ -37,7 +37,7 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
   /** Parser that matches a valid RFC 2047 encoded-word. */
   static final Parser<EncodedWord> PARSER =
       sequence(
-          string("=?").then(caseInsensitiveBy(Charset::name, US_ASCII, ISO_8859_1, UTF_8)).followedBy("?"),
+          caseInsensitiveBy(Charset::name, US_ASCII, ISO_8859_1, UTF_8).between("=?", "?"),
           caseInsensitiveBy(Encoding::name, Encoding.values()).followedBy("?"),
           zeroOrMore(ENCODED_WORD_CHARS, "encoded-text").followedBy("?="),
           EncodedWord::new);
@@ -68,8 +68,7 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
   @Override public String toString() {
     try {
       return new String(encoding.decode(encodedText), charset);
-    } catch (Exception e) {
-      // Fallback to the raw format if decoding fails
+    } catch (Exception e) { // Fallback to the raw format if decoding fails
       return "=?" + charset.name() + "?" + encoding + "?" + encodedText + "?=";
     }
   }
