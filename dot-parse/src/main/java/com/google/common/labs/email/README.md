@@ -122,12 +122,11 @@ To maintain compatibility with modern MTAs and guarantee safety,
 3. **Domain IP Literals** (e.g., `user@[192.168.1.1]`): Supported by both
    Jakarta Mail and JMail. Omitted by `EmailAddress` to align with modern
    secure routing where IP-based email routing is practically obsolete.
-4. **Safe MIME Header Decoding (RFC 2047)**: Jakarta Mail decodes
-   encoded-words automatically when accessing the display name
-   (`getPersonal()`), which can expose applications to visual spoofing.
-   `EmailAddress` keeps the main `displayName()` returned as the raw
-   transport-safe format, but provides an explicit, safe opt-in
-   `.unicodeDisplayName()` method to decode standard ASCII-compatible
+4. **MIME Header Decoding (RFC 2047)**: Jakarta Mail decodes encoded-words
+   automatically when accessing the display name (`getPersonal()`), optimizing
+   for immediate UI rendering. `EmailAddress` keeps the main `displayName()`
+   returned as the raw transport-safe format, but provides an explicit, safe
+   opt-in `.unicodeDisplayName()` method to decode standard ASCII-compatible
    encodings (like `UTF-8` and `ISO-8859-1`) while strictly defending against
    null-byte injection. Additionally, to prevent downstream mailer hijacking
    exploits, `EmailAddress` strictly **rejects** encoded-words inside the
