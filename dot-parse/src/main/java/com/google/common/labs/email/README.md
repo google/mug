@@ -26,7 +26,7 @@ combinators. It serves as a lightweight and secure alternative to
 | **Folding White Space** (FWS) |  **Full Support** (Supports standard FWS with CR/LF) |  **Full Support** (Supports standard FWS with CR/LF) | ⚠️ **Partial Support** (Fails on FWS directly after angle bracket) | 🚫 **Not Supported** (Rejects FWS completely) |
 | **Unquoted Display Names** |  **Strict** (Forbids special characters `()<>[]:;@\,"` to prevent spoofing) |  **Lenient** (Allows special characters unquoted) |  **Lenient** (Allows special characters unquoted) | 🚫 **Not Supported** (Rejects display names) |
 | **Group Addresses** (RFC 822) | 🚫 **Omitted** |  **Supported** (Parses groups as `isGroup()`) | 🚫 **Omitted** | 🚫 **Not Supported** (Rejects group syntax) |
-| **RFC 2047 Encoded Words** | 🚫 **Rejected Defensively** (Rejects `=?`...`?=` inside local-part/domain to prevent downstream spoofing) |  **Supported** (Decodes automatically) | 🚫 **Omitted** (Preserved raw; vulnerable to downstream spoofing) | 🚫 **Not Supported** (Rejects encoded words) |
+| **RFC 2047 Encoded Words in Local Part** | 🚫 **Rejected Defensively** (Rejects `=?`...`?=` inside local-part/domain to prevent downstream spoofing) |  **Supported** (Decodes automatically) | 🚫 **Omitted** (Preserved raw; downstream spoofing) | 🚫 **Not Supported** (Rejects encoded words) |
 | **Comments & Domain Literals** | 🚫 **Omitted** (Obsolete comments/IP domains skipped) |  **Supported** (Supports full legacy features) | 🚫 **Omitted** (Obsolete comments/IP domains skipped) | ⚠️ **Partial Support** (Supports IP literals, rejects comments) |
 
 ---
