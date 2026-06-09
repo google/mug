@@ -183,10 +183,12 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   private static final StringFormat ENCODED_WORD =
       new StringFormat("{...}=?{charset}?{encoding}?{text}?={...}");
   private static final CharPredicate NON_DIGIT = range('0', '9').not();
+  private static final CharPredicate DANGEROUS_WHITESPACES =
+      anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069");
   private static final CharPredicate DANGEROUS =
-      anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069")
-          .or(Character::isISOControl)
-          .precomputeForAscii();
+      DANGEROUS_WHITESPACES.or(Character::isISOControl).precomputeForAscii();
+  private static final CharPredicate SAFE_WHITESPACE =
+      DANGEROUS_WHITESPACES.not().and(Character::isWhitespace).precomputeForAscii();
 
   // While most letters and digits are supplementary chars, using it is strictly better than
   // [a-zA-Z0-9] because it natively supports internationalized BMP characters (for example,
@@ -295,7 +297,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
    * @since 9.9.8
    */
   public static EmailAddress of(String address) {
-    return PARSER.parseSkipping(Character::isWhitespace, address);
+    return PARSER.parseSkipping(SAFE_WHITESPACE, address);
   }
 
   /** Returns the {@code addr-spec}, in the form of {@code user@mycompany.com}. */
@@ -391,7 +393,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
     return PARSER
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
-        .parseSkipping(Character::isWhitespace, addressList);
+        .parseSkipping(SAFE_WHITESPACE, addressList);
   }
 
   /**
@@ -417,7 +419,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
             consecutive(ADDRESS_LIST_SEPARATOR_CHAR.not(), "invalid").map(String::trim))
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(ifInvalid))
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
-        .parseSkipping(Character::isWhitespace, addressList);
+        .parseSkipping(SAFE_WHITESPACE, addressList);
   }
 
   private static Parser<EmailAddress> makeParser() {
@@ -441,8 +443,9 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
                 n -> anyOf(",@").matchesNoneOf(n) || !ENCODED_WORD.matches(n), "safe encoded words");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
     Parser<String> displayName = anyOf(
-        quoted.suchThat(s -> !ENCODED_WORD.matches(s), "quoted without encoded words"),
-        unquotedDisplayName.map(String::trim)).atLeastOnce(joining(" "));
+            quoted.suchThat(s -> !ENCODED_WORD.matches(s), "quoted without encoded words"),
+            unquotedDisplayName.map(String::trim))
+        .atLeastOnce(joining(" "));
     return anyOf(
         bracketedAddress,
         sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)),

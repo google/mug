@@ -1592,6 +1592,15 @@ public class EmailAddressTest {
     assertThat(badBase64.unicodeDisplayName()).hasValue("=?UTF-8?B?invalid_base64?=");
   }
 
+  @Test
+  public void testEmailAddressParsing_unquotedDisplayName_invalid_dangerousChar(
+      @TestParameter ParseStrategy parser,
+      @TestParameter({"\u2028", "\u2029", "\u202E", "\u2066"}) String dangerousChar) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    String email = "John" + dangerousChar + "Doe <test@example.com>";
+    assertThrows(IllegalArgumentException.class, () -> parser.parse(email));
+  }
+
   private enum ParseStrategy {
     REGEX {
       @Override EmailAddress parse(String email) {
