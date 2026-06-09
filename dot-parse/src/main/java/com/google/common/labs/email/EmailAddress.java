@@ -258,6 +258,8 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   /**
    * Returns the display name in Unicode (with any RFC 2047 encoded-words decoded),
    * or {@code Optional.empty()} if no display name is present.
+   *
+   * @since 10.4
    */
   public Optional<String> unicodeDisplayName() {
     return displayName.map(EncodedWord::decode);
