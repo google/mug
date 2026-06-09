@@ -98,9 +98,9 @@ import com.google.mu.util.stream.Joiner;
  *       {@code <legitimate@trusted.com>attacker@evil.com} are strictly rejected instead of being
  *       silently truncated or partially parsed, preventing privilege escalation or routing
  *       bypasses.</li>
- *   <li><b>Display Name Spoofing (RFC 2047):</b> Display names containing encoded email
- *       addresses are preserved literally rather than being automatically decoded, eliminating
- *       visual spoofing/phishing side-channels.</li>
+ *   <li><b>Display Name Spoofing (RFC 2047):</b> Display names are preserved literally
+ *       in their raw/encoded form by default (preventing visual spoofing/phishing side-channels).
+ *       Safe opt-in decoding is provided explicitly via {@link #unicodeDisplayName()}.</li>
  *   <li><b>Group Addresses and Multi-@ Local-Parts:</b> Group address syntaxes and unquoted
  *       multi-@ injections are strictly disallowed.</li>
  * </ul>
@@ -140,7 +140,7 @@ import com.google.mu.util.stream.Joiner;
  *   <tr>
  *     <td><b>RFC 2047 Encoded Words</b></td>
  *     <td>Automatic or permissive (decodes or accepts encoded words in display name, local-part, or domain, risking address spoofing and routing hijacking)</td>
- *     <td>Defensively rejected in local-part and domain to block downstream mailer exploits</td>
+ *     <td>Defensively rejected in local-part and domain. Supported in display name via safe, explicit opt-in {@link #unicodeDisplayName()}</td>
  *   </tr>
  *   <tr>
  *     <td><b>Multi-@ Local-Parts</b></td>
@@ -156,7 +156,8 @@ import com.google.mu.util.stream.Joiner;
  * <ul>
  *   <li><b>Comments (CFWS):</b> (e.g., {@code name(comment) <addr>}) - De facto obsolete.
  *   <li><b>Domain Literals:</b> (e.g., {@code user@[192.168.1.1]}) - IP routing is rarely supported.
- *   <li><b>RFC 2047 Encoded Words in address fields:</b> (e.g., {@code =?UTF-8?Q?Admin?=@domain.com}) - Strictly rejected to prevent downstream mailer decoding exploits.
+ *   <li><b>RFC 2047 Encoded Words in address fields:</b> (e.g., {@code =?UTF-8?Q?Admin?=@domain.com})
+ *      - Strictly rejected to prevent downstream mailer decoding exploits.
  * </ul>
  *
  * @param localPart the {@code "tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
@@ -164,7 +165,9 @@ import com.google.mu.util.stream.Joiner;
  *     Note that for internationalized domain, this is the punycode in ASCII. You can
  *     use {@link #unicodeDomain} to access the non-encoded domain. {@link #hasI18nDomain}
  *     can be used to check if the domain is internationalized.
- * @param displayName the {@code "J.R.R. Tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
+ * @param displayName the {@code "J.R.R. Tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}.
+ *     Note that this holds the raw transport-safe format (including any RFC 2047 encoded-words).
+ *     You can use {@link #unicodeDisplayName} to access the decoded Unicode representation.
  * @since 9.9.4
  */
 @Immutable
@@ -258,6 +261,15 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   /**
    * Returns the display name in Unicode (with any RFC 2047 encoded-words decoded),
    * or {@code Optional.empty()} if no display name is present.
+   *
+   * <p>To prevent visual spoofing and phishing attacks in standard rendering, the main
+   * {@link #displayName()} component is kept in its raw transport-safe encoded form. This method
+   * provides a safe, explicit opt-in to decode the display name.
+   *
+   * <p>Only standard, ASCII-compatible charsets (specifically UTF-8, ISO-8859-1, and US-ASCII)
+   * are decoded, guarding against null-byte injection exploits in downstream systems.
+   * Unsupported charsets or syntactically malformed encoded-words are safely left in their
+   * encoded form.
    *
    * @since 10.4
    */
