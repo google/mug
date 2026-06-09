@@ -889,6 +889,15 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_mixedDisplayName_consecutiveQuotedNoSpace(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    EmailAddress parsed = parser.parse("\"John\"\"Doe\" <test@example.com>");
+    assertThat(parsed.displayName()).hasValue("John Doe");
+    assertThat(parsed.toString()).isEqualTo("\"John Doe\" <test@example.com>");
+  }
+
+  @Test
   public void testEmailAddressParsing_mixedDisplayName_interleaved(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
@@ -931,6 +940,18 @@ public class EmailAddressTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> parser.parse("=?UTF-8?Q?Admin?= @ Test <user@domain.com>"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_quotedEncodedWord_rejected(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> parser.parse("\"=?UTF-8?Q?Admin?=\" <user@domain.com>"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> parser.parse("\"=?UTF-8?Q?Admin?=, Test\" <user@domain.com>"));
   }
 
   @Test
