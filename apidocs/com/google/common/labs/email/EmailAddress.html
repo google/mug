@@ -78,6 +78,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
 <ol class="toc-list">
 <li><a href="#withDisplayName(java.lang.String)" tabindex="0">withDisplayName(String)</a></li>
+<li><a href="#unicodeDisplayName()" tabindex="0">unicodeDisplayName()</a></li>
 <li><a href="#of(java.lang.String,java.lang.String)" tabindex="0">of(String, String)</a></li>
 <li><a href="#of(java.lang.String)" tabindex="0">of(String)</a></li>
 <li><a href="#address()" tabindex="0">address()</a></li>
@@ -210,9 +211,9 @@ loadScripts(document, 'script');</script>
      <td>Strictly rejected (enforces single address structure)</td>
    </tr>
    <tr>
-     <td><b>RFC 2047 Decoding</b></td>
-     <td>Automatic (decodes encoded words in display name, risking address spoofing)</td>
-     <td>Preserved literally (no dynamic decoding side-channels)</td>
+     <td><b>RFC 2047 Encoded Words</b></td>
+     <td>Automatic or permissive (decodes or accepts encoded words in display name, local-part, or domain, risking address spoofing and routing hijacking)</td>
+     <td>Defensively rejected in local-part and domain to block downstream mailer exploits</td>
    </tr>
    <tr>
      <td><b>Multi-@ Local-Parts</b></td>
@@ -228,6 +229,7 @@ loadScripts(document, 'script');</script>
  <ul>
    <li><b>Comments (CFWS):</b> (e.g., <code>name(comment) &lt;addr&gt;</code>) - De facto obsolete.
    <li><b>Domain Literals:</b> (e.g., <code>user@[192.168.1.1]</code>) - IP routing is rarely supported.
+   <li><b>RFC 2047 Encoded Words in address fields:</b> (e.g., <code>=?UTF-8?Q?Admin?=@domain.com</code>) - Strictly rejected to prevent downstream mailer decoding exploits.
  </ul></div>
 <dl class="notes">
 <dt>Since:</dt>
@@ -359,20 +361,26 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns the full email address, in the form of <code>local-part@domain</code> or
  <code>"display name" &lt;local-part@domain&gt;</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#unicodeDomain()" class="member-name-link">unicodeDomain</a>()</code></div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#unicodeDisplayName()" class="member-name-link">unicodeDisplayName</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns the domain in Unicode.</div>
+<div class="block">Returns the display name in Unicode (with any RFC 2047 encoded-words decoded),
+ or <code>Optional.empty()</code> if no display name is present.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#user()" class="member-name-link">user</a>()</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#unicodeDomain()" class="member-name-link">unicodeDomain</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Returns the domain in Unicode.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#user()" class="member-name-link">user</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns the "user" part of the local-part before the first <code>+</code> separator,
  according to RFC 5233 subaddressing.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#withDisplayName(java.lang.String)" class="member-name-link">withDisplayName</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;displayName)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#withDisplayName(java.lang.String)" class="member-name-link">withDisplayName</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;displayName)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns an otherwise equivalent <a href="EmailAddress.html" title="class in com.google.common.labs.email"><code>EmailAddress</code></a> but with <code>displayName</code>.</div>
 </div>
 </div>
@@ -443,6 +451,20 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="EmailAddress.html" title="class in com.google.common.labs.email">EmailAddress</a></span>&nbsp;<span class="element-name">withDisplayName</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;displayName)</span></div>
 <div class="block">Returns an otherwise equivalent <a href="EmailAddress.html" title="class in com.google.common.labs.email"><code>EmailAddress</code></a> but with <code>displayName</code>.</div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="unicodeDisplayName()">
+<h3>unicodeDisplayName</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Optional.html" title="class or interface in java.util" class="external-link">Optional</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">unicodeDisplayName</span>()</div>
+<div class="block">Returns the display name in Unicode (with any RFC 2047 encoded-words decoded),
+ or <code>Optional.empty()</code> if no display name is present.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.4</dd>
+</dl>
 </div>
 </section>
 </li>
