@@ -312,7 +312,9 @@ public class MoreCollectorsTest {
   }
 
   @Test public void testAllMax_toOnlyElement() {
-    assertThat(Stream.of(1, 1, 1, 1, 1, 1, 2).collect(allMax(naturalOrder(), onlyElement())))
+    assertThat(
+            Stream.of(1, 1, 1, 1, 1, 1, 2).collect(allMax(naturalOrder(), onlyElement(i -> i)))
+                .intValue())
         .isEqualTo(2);
   }
 
@@ -322,12 +324,15 @@ public class MoreCollectorsTest {
   }
 
   @Test public void testAllMin_empty() {
-    assertThat(Stream.<String>empty().collect(MoreCollectors.allMin(naturalOrder(), toImmutableSet())))
+    assertThat(Stream.<String>empty().collect(
+        MoreCollectors.allMin(naturalOrder(), toImmutableSet())))
         .isEmpty();
   }
 
   @Test public void testAllMin_toOnlyElement() {
-    assertThat(Stream.of(2, 2, 2, 2, 2, 2, 1).collect(allMin(naturalOrder(), onlyElement())))
+    assertThat(
+            Stream.of(2, 2, 2, 2, 2, 2, 1).collect(allMin(naturalOrder(), onlyElement(i -> i)))
+                .intValue())
         .isEqualTo(1);
   }
 
