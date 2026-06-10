@@ -38,7 +38,7 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
       sequence(
           oneOf(US_ASCII, ISO_8859_1, UTF_8).followedBy("?"),
           caseInsensitiveBy(Encoding::name, Encoding.values()).followedBy("?"),
-          zeroOrMore(range('!', '~').and(anyOf("?").not()), "encoded text"),
+          zeroOrMore(range('!', '~').and(anyOf("?@,()<>").not()), "encoded text"),
           EncodedWord::new);
 
   private static final Parser<Object> SEGMENT =

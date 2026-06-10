@@ -49,6 +49,7 @@ import com.google.errorprone.annotations.Immutable;
 import com.google.errorprone.annotations.InlineMe;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
+import com.google.mu.util.Substring;
 import com.google.mu.util.stream.Joiner;
 
 /**
@@ -185,6 +186,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   private static final StringFormat ENCODED_WORD =
       new StringFormat("{...}=?{charset}?{encoding}?{text}?={...}");
   private static final CharPredicate NON_DIGIT = range('0', '9').not();
+  private static final CharPredicate INLINE_WHITESPACE = anyOf(" \t");
   private static final CharPredicate DANGEROUS_WHITESPACE =
       anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069");
   private static final CharPredicate DANGEROUS =
@@ -236,6 +238,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   public EmailAddress {
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
+    displayName = displayName.filter(SAFE_WHITESPACE.not()::matchesAnyOf);
     checkArgument(
         !ENCODED_WORD.matches(localPart), "local-part doesn't allow encoded word (%s)", localPart);
     checkArgument(
@@ -364,7 +367,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
    */
   @Override public String toString() {
     return displayName
-        .map(name -> ENCODED_WORD.matches(name)
+        .map(name -> allowsUnquoted(name)
             ? WITH_UNQUOTED_DISPLAY_NAME.format(name, address())
             : WITH_QUOTED_DISPLAY_NAME.format(escape(name), address()))
         .orElseGet(this::address);
@@ -440,12 +443,10 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
         literally(sequence(localPart.followedBy("@"), domain, EmailAddress::of));
     Parser<String> unquotedDisplayName =
         consecutive(DANGEROUS.or("<>;\\\"").not().precomputeForAscii(), "unquoted display name")
-            .suchThat(n -> !(n.contains(",") && n.contains("@")), "unambiguous display name")
-            .suchThat(
-                n -> anyOf(",@").matchesNoneOf(n) || !ENCODED_WORD.matches(n), "safe encoded words");
+            .suchThat(n -> !(n.contains(",") && n.contains("@")), "unambiguous display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
     Parser<String> displayName = anyOf(
-            quoted.suchThat(s -> !ENCODED_WORD.matches(s), "quoted without encoded words"),
+            quoted,
             unquotedDisplayName.map(String::trim))
         .atLeastOnce(joining(" "));
     return anyOf(
@@ -468,6 +469,16 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
 
   private static String escape(String name) {
     return all(anyOf("\"\\")).replaceAllFrom(name, c -> "\\" + c);
+  }
+
+  private static boolean allowsUnquoted(String name) {
+    return !INLINE_WHITESPACE.isPrefixOf(name)
+        && !INLINE_WHITESPACE.isSuffixOf(name)
+        && ATEXT.or(INLINE_WHITESPACE).matchesAllOf(name)
+        && Substring.consecutive(INLINE_WHITESPACE)
+            .repeatedly()
+            .match(name)
+            .noneMatch(ws -> ws.length() > 1);
   }
 
   @FormatMethod

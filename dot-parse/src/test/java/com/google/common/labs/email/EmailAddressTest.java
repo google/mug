@@ -136,7 +136,7 @@ public class EmailAddressTest {
     assertThat(address.localPart()).isEqualTo("john doe");
     assertThat(address.address()).isEqualTo("\"john doe\"@example.com");
     assertThat(address.displayName()).hasValue("John Doe");
-    assertThat(address.toString()).isEqualTo("\"John Doe\" <\"john doe\"@example.com>");
+    assertThat(address.toString()).isEqualTo("John Doe <\"john doe\"@example.com>");
   }
 
   @Test
@@ -150,7 +150,7 @@ public class EmailAddressTest {
   public void testEmailAddressOf_localPartNeedsQuoting_withDisplayName() {
     EmailAddress address = EmailAddress.of("john doe", "example.com").withDisplayName("John Doe");
     assertThat(address.localPart()).isEqualTo("john doe");
-    assertThat(address.toString()).isEqualTo("\"John Doe\" <\"john doe\"@example.com>");
+    assertThat(address.toString()).isEqualTo("John Doe <\"john doe\"@example.com>");
   }
 
   @Test
@@ -627,16 +627,18 @@ public class EmailAddressTest {
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isNotEqualTo(ParseStrategy.JAKARTA);
     assume().that(parser).isNotEqualTo(ParseStrategy.JMAIL);
-    parser.assertParsesTo(
-        "\"\"<test@example.com>", EmailAddress.of("test", "example.com").withDisplayName(""));
+    EmailAddress parsed = parser.parse("\"\"<test@example.com>");
+    assertThat(parsed.displayName()).isEmpty();
+    assertThat(parsed.address()).isEqualTo("test@example.com");
   }
 
   @Test
   public void testEmailAddressParsing_withQuotedDisplayName_onlySpacesInsideQuotes(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isNoneOf(ParseStrategy.JAKARTA, ParseStrategy.JMAIL);
-    parser.assertParsesTo(
-        "\"  \" <test@example.com>", EmailAddress.of("test", "example.com").withDisplayName("  "));
+    EmailAddress parsed = parser.parse("\"  \" <test@example.com>");
+    assertThat(parsed.displayName()).isEmpty();
+    assertThat(parsed.address()).isEqualTo("test@example.com");
   }
 
   @Test
@@ -885,7 +887,7 @@ public class EmailAddressTest {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
     EmailAddress parsed = parser.parse("\"John\" \"Doe\" <test@example.com>");
     assertThat(parsed.displayName()).hasValue("John Doe");
-    assertThat(parsed.toString()).isEqualTo("\"John Doe\" <test@example.com>");
+    assertThat(parsed.toString()).isEqualTo("John Doe <test@example.com>");
   }
 
   @Test
@@ -894,7 +896,7 @@ public class EmailAddressTest {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
     EmailAddress parsed = parser.parse("\"John\"\"Doe\" <test@example.com>");
     assertThat(parsed.displayName()).hasValue("John Doe");
-    assertThat(parsed.toString()).isEqualTo("\"John Doe\" <test@example.com>");
+    assertThat(parsed.toString()).isEqualTo("John Doe <test@example.com>");
   }
 
   @Test
@@ -903,7 +905,7 @@ public class EmailAddressTest {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
     EmailAddress parsed = parser.parse("John \"Big\" Doe <test@example.com>");
     assertThat(parsed.displayName()).hasValue("John Big Doe");
-    assertThat(parsed.toString()).isEqualTo("\"John Big Doe\" <test@example.com>");
+    assertThat(parsed.toString()).isEqualTo("John Big Doe <test@example.com>");
   }
 
   @Test
@@ -912,7 +914,7 @@ public class EmailAddressTest {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
     EmailAddress parsed = parser.parse("John   \"Big\"   Doe <test@example.com>");
     assertThat(parsed.displayName()).hasValue("John Big Doe");
-    assertThat(parsed.toString()).isEqualTo("\"John Big Doe\" <test@example.com>");
+    assertThat(parsed.toString()).isEqualTo("John Big Doe <test@example.com>");
   }
 
   @Test
@@ -921,37 +923,38 @@ public class EmailAddressTest {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
     EmailAddress parsed = parser.parse("John\r\n \"Big\"\r\n Doe <test@example.com>");
     assertThat(parsed.displayName()).hasValue("John Big Doe");
-    assertThat(parsed.toString()).isEqualTo("\"John Big Doe\" <test@example.com>");
+    assertThat(parsed.toString()).isEqualTo("John Big Doe <test@example.com>");
   }
 
   @Test
-  public void testEmailAddressParsing_unquotedEncodedWordWithComma_rejected(
+  public void testEmailAddressParsing_unquotedEncodedWordWithComma_accepted(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> parser.parse("=?UTF-8?Q?Admin?=, Test <user@domain.com>"));
+    EmailAddress parsed = parser.parse("=?UTF-8?Q?Admin?=, Test <user@domain.com>");
+    assertThat(parsed.displayName()).hasValue("=?UTF-8?Q?Admin?=, Test");
+    assertThat(parsed.toString()).isEqualTo("\"=?UTF-8?Q?Admin?=, Test\" <user@domain.com>");
   }
 
   @Test
-  public void testEmailAddressParsing_unquotedEncodedWordWithAt_rejected(
+  public void testEmailAddressParsing_unquotedEncodedWordWithAt_accepted(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> parser.parse("=?UTF-8?Q?Admin?= @ Test <user@domain.com>"));
+    EmailAddress parsed = parser.parse("=?UTF-8?Q?Admin?= @ Test <user@domain.com>");
+    assertThat(parsed.displayName()).hasValue("=?UTF-8?Q?Admin?= @ Test");
+    assertThat(parsed.toString()).isEqualTo("\"=?UTF-8?Q?Admin?= @ Test\" <user@domain.com>");
   }
 
   @Test
-  public void testEmailAddressParsing_quotedEncodedWord_rejected(
+  public void testEmailAddressParsing_quotedEncodedWord_accepted(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> parser.parse("\"=?UTF-8?Q?Admin?=\" <user@domain.com>"));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> parser.parse("\"=?UTF-8?Q?Admin?=, Test\" <user@domain.com>"));
+    EmailAddress parsed1 = parser.parse("\"=?UTF-8?Q?Admin?=\" <user@domain.com>");
+    assertThat(parsed1.displayName()).hasValue("=?UTF-8?Q?Admin?=");
+    assertThat(parsed1.toString()).isEqualTo("=?UTF-8?Q?Admin?= <user@domain.com>");
+
+    EmailAddress parsed2 = parser.parse("\"=?UTF-8?Q?Admin?=, Test\" <user@domain.com>");
+    assertThat(parsed2.displayName()).hasValue("=?UTF-8?Q?Admin?=, Test");
+    assertThat(parsed2.toString()).isEqualTo("\"=?UTF-8?Q?Admin?=, Test\" <user@domain.com>");
   }
 
   @Test
@@ -965,7 +968,28 @@ public class EmailAddressTest {
   public void testToString_withRfc2047EncodedWord_andSerializationSpecials() {
     EmailAddress address = EmailAddress.of("user", "domain.com")
         .withDisplayName("=?UTF-8?Q?Admin?=, Test");
-    assertThat(address.toString()).isEqualTo("=?UTF-8?Q?Admin?=, Test <user@domain.com>");
+    assertThat(address.toString()).isEqualTo("\"=?UTF-8?Q?Admin?=, Test\" <user@domain.com>");
+  }
+
+  @Test
+  public void testToString_unquotedDisqualification() {
+    assertThat(EmailAddress.of("user", "domain.com").withDisplayName(" John").toString())
+        .isEqualTo("\" John\" <user@domain.com>");
+
+    assertThat(EmailAddress.of("user", "domain.com").withDisplayName("John ").toString())
+        .isEqualTo("\"John \" <user@domain.com>");
+
+    assertThat(EmailAddress.of("user", "domain.com").withDisplayName("John  Doe").toString())
+        .isEqualTo("\"John  Doe\" <user@domain.com>");
+
+    assertThat(EmailAddress.of("user", "domain.com").withDisplayName("J.R.R. Tolkien").toString())
+        .isEqualTo("\"J.R.R. Tolkien\" <user@domain.com>");
+
+    assertThat(EmailAddress.of("user", "domain.com").withDisplayName("Doe, John").toString())
+        .isEqualTo("\"Doe, John\" <user@domain.com>");
+
+    assertThat(EmailAddress.of("user", "domain.com").withDisplayName("[JIRA]").toString())
+        .isEqualTo("\"[JIRA]\" <user@domain.com>");
   }
 
   @Test
@@ -1367,11 +1391,11 @@ public class EmailAddressTest {
   }
 
   @Test
-  public void testEmailAddressParsing_rfc2047EncodedWord_withAt_rejected(@TestParameter ParseStrategy parser) {
+  public void testEmailAddressParsing_rfc2047EncodedWord_withAt_accepted(@TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> parser.parse("=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>"));
+    EmailAddress parsed = parser.parse("=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>");
+    assertThat(parsed.displayName()).hasValue("=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?=");
+    assertThat(parsed.address()).isEqualTo("attacker@evil.com");
   }
 
   @Test
