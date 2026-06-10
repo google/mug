@@ -238,7 +238,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   public EmailAddress {
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
-    displayName = displayName.filter(SAFE_WHITESPACE.not()::matchesAnyOf);
+    displayName = displayName.filter(n -> !n.isBlank());
     checkArgument(
         !ENCODED_WORD.matches(localPart), "local-part doesn't allow encoded word (%s)", localPart);
     checkArgument(
