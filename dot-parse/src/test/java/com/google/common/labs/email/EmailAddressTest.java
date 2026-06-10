@@ -1212,7 +1212,9 @@ public class EmailAddressTest {
   @Test
   public void testParseAddressList_withConsumer_invalidDomainWithSpacesAroundDot() {
     List<String> invalid = new ArrayList<>();
-    EmailAddress.parseAddressList("a@b.com, c@d . com, e@f.com", invalid::add);
+    assertThat(EmailAddress.parseAddressList("a@b.com, c@d . com, e@f.com", invalid::add))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("e", "f.com"))
+        .inOrder();
     assertThat(invalid).containsExactly("c@d . com").inOrder();
   }
 

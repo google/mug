@@ -42,6 +42,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collector;
 
 import com.google.common.labs.parse.Parser;
+import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.FormatString;
 import com.google.errorprone.annotations.Immutable;
@@ -172,6 +173,7 @@ import com.google.mu.util.stream.Joiner;
  * @since 9.9.4
  */
 @Immutable
+@CheckReturnValue
 public record EmailAddress(String localPart, String domain, Optional<String> displayName) {
   private static final StringFormat WITH_QUOTED_DISPLAY_NAME =
       new StringFormat("\"{name}\" <{address}>");
