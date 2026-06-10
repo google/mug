@@ -441,14 +441,12 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
         .map(Joiner.on('.')::join);
     Parser<EmailAddress> address =
         literally(sequence(localPart.followedBy("@"), domain, EmailAddress::of));
-    Parser<String> unquotedDisplayName =
+    Parser<String> unquotedAtom =
         consecutive(DANGEROUS.or("<>;\\\"").not().precomputeForAscii(), "unquoted display name")
             .suchThat(n -> !(n.contains(",") && n.contains("@")), "unambiguous display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
-    Parser<String> displayName = anyOf(
-            quoted,
-            unquotedDisplayName.map(String::trim))
-        .atLeastOnce(joining(" "));
+    Parser<String> displayName =
+        anyOf(quoted, unquotedAtom.map(String::trim)).atLeastOnce(joining(" "));
     return anyOf(
         bracketedAddress,
         sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)),
