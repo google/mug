@@ -367,9 +367,9 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
    */
   @Override public String toString() {
     return displayName
-        .map(name -> allowsUnquoted(name)
-            ? WITH_UNQUOTED_DISPLAY_NAME.format(name, address())
-            : WITH_QUOTED_DISPLAY_NAME.format(escape(name), address()))
+        .map(name -> requiresQuoting(name)
+            ? WITH_QUOTED_DISPLAY_NAME.format(escape(name), address())
+            : WITH_UNQUOTED_DISPLAY_NAME.format(name, address()))
         .orElseGet(this::address);
   }
 
@@ -471,14 +471,14 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
     return all(anyOf("\"\\")).replaceAllFrom(name, c -> "\\" + c);
   }
 
-  private static boolean allowsUnquoted(String name) {
-    return !INLINE_WHITESPACE.isPrefixOf(name)
-        && !INLINE_WHITESPACE.isSuffixOf(name)
-        && ATEXT.or(INLINE_WHITESPACE).matchesAllOf(name)
-        && Substring.consecutive(INLINE_WHITESPACE)
+  private static boolean requiresQuoting(String name) {
+    return INLINE_WHITESPACE.isPrefixOf(name)
+        || INLINE_WHITESPACE.isSuffixOf(name)
+        || !ATEXT.or(INLINE_WHITESPACE).matchesAllOf(name)
+        || Substring.consecutive(INLINE_WHITESPACE)
             .repeatedly()
             .match(name)
-            .noneMatch(ws -> ws.length() > 1);
+            .anyMatch(ws -> ws.length() > 1);
   }
 
   @FormatMethod
