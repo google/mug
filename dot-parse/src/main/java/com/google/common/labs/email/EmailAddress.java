@@ -218,6 +218,28 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   private static final Parser<?> ADDRESS_LIST_DELIMITER =
       Parser.one(ADDRESS_LIST_SEPARATOR_CHAR, "delimiter").atLeastOnce(counting());
 
+
+  private static final Parser<String> QUOTED = quotedByWithEscapes('"', '"', chars(1))
+      .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
+  private static final Parser<String> LOCAL_PART =
+      anyOf(QUOTED, consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")))
+          .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
+  private static final Parser<String> DOMAIN = consecutive(I18N_DOMAIN_LABEL_CHARS, "domain label chars")
+      .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
+      .atLeastOnceDelimitedBy(".")
+      .suchThat(labels -> labels.size() > 1, "domain name with at least one dot")
+      .suchThat(labels -> NON_DIGIT.matchesAnyOf(labels.getLast()), "domain with valid TLD")
+      .map(Joiner.on('.')::join);
+
+  /**
+   * Parser that strictly matches only the RFC 5322 {@code addr-spec} (i.e., {@code
+   * local-part@domain}), rejecting display names and angle brackets.
+   *
+   * @since 10.4
+   */
+  public static final Parser<EmailAddress> ADDR_SPEC_PARSER =
+      literally(sequence(LOCAL_PART.followedBy("@"), DOMAIN, EmailAddress::of));
+
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
    *
@@ -428,29 +450,16 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   }
 
   private static Parser<EmailAddress> makeParser() {
-    Parser<String> quoted = quotedByWithEscapes('"', '"', chars(1))
-        .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
-    Parser<String> localPart =
-        anyOf(quoted, consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")))
-            .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
-    Parser<String> domain = consecutive(I18N_DOMAIN_LABEL_CHARS, "domain label chars")
-        .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
-        .atLeastOnceDelimitedBy(".")
-        .suchThat(labels -> labels.size() > 1, "domain name with at least one dot")
-        .suchThat(labels -> NON_DIGIT.matchesAnyOf(labels.getLast()), "domain with valid TLD")
-        .map(Joiner.on('.')::join);
-    Parser<EmailAddress> address =
-        literally(sequence(localPart.followedBy("@"), domain, EmailAddress::of));
     Parser<String> unquotedAtom =
         consecutive(DANGEROUS.or("<>;\\\"").not().precomputeForAscii(), "unquoted display name")
             .suchThat(n -> !(n.contains(",") && n.contains("@")), "unambiguous display name");
-    Parser<EmailAddress> bracketedAddress = address.between("<", ">");
+    Parser<EmailAddress> bracketedAddress = ADDR_SPEC_PARSER.between("<", ">");
     Parser<String> displayName =
-        anyOf(quoted, unquotedAtom.map(String::trim)).atLeastOnce(joining(" "));
+        anyOf(QUOTED, unquotedAtom.map(String::trim)).atLeastOnce(joining(" "));
     return anyOf(
         bracketedAddress,
         sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)),
-        address);
+        ADDR_SPEC_PARSER);
   }
 
   private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses(

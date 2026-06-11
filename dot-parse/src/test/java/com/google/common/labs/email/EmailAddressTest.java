@@ -1063,6 +1063,32 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testAddrSpecParser_valid() {
+    assertThat(EmailAddress.ADDR_SPEC_PARSER.parse("john.smith@example.com"))
+        .isEqualTo(EmailAddress.of("john.smith", "example.com"));
+    assertThat(EmailAddress.ADDR_SPEC_PARSER.parse("\"john smith\"@example.com"))
+        .isEqualTo(EmailAddress.of("john smith", "example.com"));
+    assertThat(EmailAddress.ADDR_SPEC_PARSER.parse("user.name@sub.domain.co.uk"))
+        .isEqualTo(EmailAddress.of("user.name", "sub.domain.co.uk"));
+  }
+
+  @Test
+  public void testAddrSpecParser_invalid() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EmailAddress.ADDR_SPEC_PARSER.parse("<john.smith@example.com>"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EmailAddress.ADDR_SPEC_PARSER.parse("John Smith <john.smith@example.com>"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EmailAddress.ADDR_SPEC_PARSER.parse("john.smith@example.com "));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EmailAddress.ADDR_SPEC_PARSER.parse(" john.smith@example.com"));
+  }
+
+  @Test
   public void testParseAddressList_emptyString() {
     assertThat(parseAddressList("")).isEmpty();
     assertThat(parseAddressList("  ")).isEmpty();
