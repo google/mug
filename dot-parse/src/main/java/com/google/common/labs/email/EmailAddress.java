@@ -238,7 +238,6 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   public EmailAddress {
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
-    displayName = displayName.filter(n -> !n.isBlank());
     checkArgument(
         !ENCODED_WORD.matches(localPart), "local-part doesn't allow encoded word (%s)", localPart);
     checkArgument(
@@ -262,6 +261,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
     checkArgument(
         localPart.length() + domain.length() + 1 <= 254,
         "<%s@%s> must be <= 254 chars", localPart, domain);
+    displayName = displayName.filter(n -> !n.isBlank());
   }
 
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
@@ -282,7 +282,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
    * Unsupported charsets or syntactically malformed encoded-words are safely left in their
    * encoded form.
    *
-   * @since 10.4
+   * @since 10.3.1
    */
   public Optional<String> unicodeDisplayName() {
     return displayName.map(EncodedWord::decodeRfc2047);
@@ -462,7 +462,6 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
           return e instanceof EmailAddress;
         },
         mapping(e -> (EmailAddress) e, toUnmodifiableList()));
-
   }
 
   private static String escape(String name) {
