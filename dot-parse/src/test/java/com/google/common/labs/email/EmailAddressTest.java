@@ -1065,6 +1065,9 @@ public class EmailAddressTest {
 
   @Test
   public void testAddrSpecParser_valid() {
+    assertValidAddrSpec("\"john\"@smith.com");
+    assertValidAddrSpec("john@smith.com");
+    assertValidAddrSpec("ブューシー@例え.テスト");
     assertThat(EmailAddress.ADDR_SPEC_PARSER.parse("john.smith@example.com"))
         .isEqualTo(EmailAddress.of("john.smith", "example.com"));
     assertThat(EmailAddress.ADDR_SPEC_PARSER.parse("\"john smith\"@example.com"))
@@ -1650,6 +1653,11 @@ public class EmailAddressTest {
   private static void assertInvalidAddrSpec(String address) {
     assertThrows(
         Parser.ParseException.class, () -> EmailAddress.ADDR_SPEC_PARSER.parse(address));
+  }
+
+  private static void assertValidAddrSpec(String email) {
+    EmailAddress parsed = EmailAddress.ADDR_SPEC_PARSER.parse(email);
+    assertThat(parsed.displayName()).isEmpty();
   }
 
   private enum ParseStrategy {
