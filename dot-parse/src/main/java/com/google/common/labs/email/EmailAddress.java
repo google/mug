@@ -42,12 +42,14 @@ import java.util.function.Consumer;
 import java.util.stream.Collector;
 
 import com.google.common.labs.parse.Parser;
+import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.FormatString;
 import com.google.errorprone.annotations.Immutable;
 import com.google.errorprone.annotations.InlineMe;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
+import com.google.mu.util.Substring;
 import com.google.mu.util.stream.Joiner;
 
 /**
@@ -172,18 +174,25 @@ import com.google.mu.util.stream.Joiner;
  * @since 9.9.4
  */
 @Immutable
+@CheckReturnValue
 public record EmailAddress(String localPart, String domain, Optional<String> displayName) {
-  private static final StringFormat WITH_DISPLAY_NAME = new StringFormat("\"{name}\" <{address}>");
+  private static final StringFormat WITH_QUOTED_DISPLAY_NAME =
+      new StringFormat("\"{name}\" <{address}>");
+  private static final StringFormat WITH_UNQUOTED_DISPLAY_NAME =
+      new StringFormat("{name} <{address}>");
   private static final StringFormat.Template<IllegalArgumentException> DOTLESS_DOMAIN_BANNED =
       StringFormat.to(
           IllegalArgumentException::new, "domain must contain at least one dot: {domain}");
   private static final StringFormat ENCODED_WORD =
       new StringFormat("{...}=?{charset}?{encoding}?{text}?={...}");
   private static final CharPredicate NON_DIGIT = range('0', '9').not();
+  private static final CharPredicate INLINE_WHITESPACE = anyOf(" \t");
+  private static final CharPredicate DANGEROUS_WHITESPACE =
+      anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069");
   private static final CharPredicate DANGEROUS =
-      anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069")
-          .or(Character::isISOControl)
-          .precomputeForAscii();
+      DANGEROUS_WHITESPACE.or(Character::isISOControl).precomputeForAscii();
+  private static final CharPredicate SAFE_WHITESPACE =
+      DANGEROUS_WHITESPACE.not().and(Character::isWhitespace).precomputeForAscii();
 
   // While most letters and digits are supplementary chars, using it is strictly better than
   // [a-zA-Z0-9] because it natively supports internationalized BMP characters (for example,
@@ -252,6 +261,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
     checkArgument(
         localPart.length() + domain.length() + 1 <= 254,
         "<%s@%s> must be <= 254 chars", localPart, domain);
+    displayName = displayName.filter(n -> !n.isBlank());
   }
 
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
@@ -272,7 +282,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
    * Unsupported charsets or syntactically malformed encoded-words are safely left in their
    * encoded form.
    *
-   * @since 10.4
+   * @since 10.3.1
    */
   public Optional<String> unicodeDisplayName() {
     return displayName.map(EncodedWord::decodeRfc2047);
@@ -292,7 +302,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
    * @since 9.9.8
    */
   public static EmailAddress of(String address) {
-    return PARSER.parseSkipping(Character::isWhitespace, address);
+    return PARSER.parseSkipping(SAFE_WHITESPACE, address);
   }
 
   /** Returns the {@code addr-spec}, in the form of {@code user@mycompany.com}. */
@@ -357,7 +367,9 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
    */
   @Override public String toString() {
     return displayName
-        .map(name -> WITH_DISPLAY_NAME.format(escape(name), address()))
+        .map(name -> requiresQuoting(name)
+            ? WITH_QUOTED_DISPLAY_NAME.format(escape(name), address())
+            : WITH_UNQUOTED_DISPLAY_NAME.format(name, address()))
         .orElseGet(this::address);
   }
 
@@ -386,7 +398,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
     return PARSER
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
-        .parseSkipping(Character::isWhitespace, addressList);
+        .parseSkipping(SAFE_WHITESPACE, addressList);
   }
 
   /**
@@ -412,7 +424,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
             consecutive(ADDRESS_LIST_SEPARATOR_CHAR.not(), "invalid").map(String::trim))
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(ifInvalid))
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
-        .parseSkipping(Character::isWhitespace, addressList);
+        .parseSkipping(SAFE_WHITESPACE, addressList);
   }
 
   private static Parser<EmailAddress> makeParser() {
@@ -429,11 +441,12 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
         .map(Joiner.on('.')::join);
     Parser<EmailAddress> address =
         literally(sequence(localPart.followedBy("@"), domain, EmailAddress::of));
-    Parser<String> unquotedDisplayName =
+    Parser<String> unquotedAtom =
         consecutive(DANGEROUS.or("<>;\\\"").not().precomputeForAscii(), "unquoted display name")
-            .suchThat(name -> !(name.contains(",") && name.contains("@")), "unambiguous display name");
+            .suchThat(n -> !(n.contains(",") && n.contains("@")), "unambiguous display name");
     Parser<EmailAddress> bracketedAddress = address.between("<", ">");
-    Parser<String> displayName = anyOf(quoted, unquotedDisplayName.map(String::trim));
+    Parser<String> displayName =
+        anyOf(quoted, unquotedAtom.map(String::trim)).atLeastOnce(joining(" "));
     return anyOf(
         bracketedAddress,
         sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)),
@@ -449,11 +462,20 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
           return e instanceof EmailAddress;
         },
         mapping(e -> (EmailAddress) e, toUnmodifiableList()));
-
   }
 
   private static String escape(String name) {
     return all(anyOf("\"\\")).replaceAllFrom(name, c -> "\\" + c);
+  }
+
+  private static boolean requiresQuoting(String name) {
+    return INLINE_WHITESPACE.isPrefixOf(name)
+        || INLINE_WHITESPACE.isSuffixOf(name)
+        || !ATEXT.or(INLINE_WHITESPACE).matchesAllOf(name)
+        || Substring.consecutive(INLINE_WHITESPACE)
+            .repeatedly()
+            .match(name)
+            .anyMatch(ws -> ws.length() > 1);
   }
 
   @FormatMethod
