@@ -218,18 +218,19 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   private static final Parser<?> ADDRESS_LIST_DELIMITER =
       Parser.one(ADDRESS_LIST_SEPARATOR_CHAR, "delimiter").atLeastOnce(counting());
 
-
-  private static final Parser<String> QUOTED = quotedByWithEscapes('"', '"', chars(1))
-      .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
+  private static final Parser<String> QUOTED =
+      quotedByWithEscapes('"', '"', chars(1))
+          .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
   private static final Parser<String> LOCAL_PART =
       anyOf(QUOTED, consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")))
           .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
-  private static final Parser<String> DOMAIN = consecutive(I18N_DOMAIN_LABEL_CHARS, "domain label chars")
-      .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
-      .atLeastOnceDelimitedBy(".")
-      .suchThat(labels -> labels.size() > 1, "domain name with at least one dot")
-      .suchThat(labels -> NON_DIGIT.matchesAnyOf(labels.getLast()), "domain with valid TLD")
-      .map(Joiner.on('.')::join);
+  private static final Parser<String> DOMAIN =
+      consecutive(I18N_DOMAIN_LABEL_CHARS, "domain label chars")
+          .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
+          .atLeastOnceDelimitedBy(".")
+          .suchThat(labels -> labels.size() > 1, "domain name with at least one dot")
+          .suchThat(labels -> NON_DIGIT.matchesAnyOf(labels.getLast()), "domain with valid TLD")
+          .map(Joiner.on('.')::join);
 
   /**
    * Parser that strictly matches only the RFC 5322 {@code addr-spec} (i.e., {@code
