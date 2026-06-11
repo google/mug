@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.google.common.labs.parse.Parser;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 import com.google.testing.junit.testparameterinjector.TestParameter;
@@ -1074,18 +1075,11 @@ public class EmailAddressTest {
 
   @Test
   public void testAddrSpecParser_invalid() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> EmailAddress.ADDR_SPEC_PARSER.parse("<john.smith@example.com>"));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> EmailAddress.ADDR_SPEC_PARSER.parse("John Smith <john.smith@example.com>"));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> EmailAddress.ADDR_SPEC_PARSER.parse("john.smith@example.com "));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> EmailAddress.ADDR_SPEC_PARSER.parse(" john.smith@example.com"));
+    assertInvalidAddrSpec("<john@smith.com>");
+    assertInvalidAddrSpec("john");
+    assertInvalidAddrSpec("ブューシー");
+    assertInvalidAddrSpec("\"j smith\" <j.smith@google.com>");
+    assertInvalidAddrSpec("ブュ@シー@例え.テスト");
   }
 
   @Test
@@ -1651,6 +1645,11 @@ public class EmailAddressTest {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
     String email = "John" + dangerousChar + "Doe <test@example.com>";
     assertThrows(IllegalArgumentException.class, () -> parser.parse(email));
+  }
+
+  private static void assertInvalidAddrSpec(String address) {
+    assertThrows(
+        Parser.ParseException.class, () -> EmailAddress.ADDR_SPEC_PARSER.parse(address));
   }
 
   private enum ParseStrategy {
