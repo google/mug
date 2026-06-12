@@ -11,6 +11,7 @@ import static org.junit.Assert.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.google.common.testing.EqualsTester;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -350,14 +351,7 @@ public class EmailAddressTest {
   public void testConstructor_displayNameContainsControlChar() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new EmailAddress("local", "example.com", Optional.of("John\nDoe")));
-  }
-
-  @Test
-  public void testConstructor_domainContainsUppercaseChar_throws() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new EmailAddress("local", "Example.com", Optional.empty()));
+        () -> EmailAddress.of("local", "example.com").withDisplayName("John\nDoe"));
   }
 
   @Test
@@ -1728,5 +1722,26 @@ public class EmailAddressTest {
       assertThat(parse(email)).isEqualTo(result);
       assertThat(parse(result.toString())).isEqualTo(result);
     }
+  }
+
+  @Test
+  public void testEqualsAndHashCode() {
+    new EqualsTester()
+        .addEqualityGroup(
+            EmailAddress.of("user", "example.com"),
+            EmailAddress.of("user", "example.com"))
+        .addEqualityGroup(
+            EmailAddress.of("user2", "example.com"),
+            EmailAddress.of("user2", "example.com"))
+        .addEqualityGroup(
+            EmailAddress.of("user", "example2.com"),
+            EmailAddress.of("user", "example2.com"))
+        .addEqualityGroup(
+            EmailAddress.of("user", "example.com").withDisplayName("display"),
+            EmailAddress.of("user", "example.com").withDisplayName("display"))
+        .addEqualityGroup(
+            EmailAddress.of("user", "example.com").withDisplayName("display2"),
+            EmailAddress.of("user", "example.com").withDisplayName("display2"))
+        .testEquals();
   }
 }
