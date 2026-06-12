@@ -240,13 +240,17 @@ public final class EmailAddress {
    *
    * @since 10.4
    */
+  private static final Parser<AddrSpec> ADDR_SPEC_DATA_PARSER =
+      literally(sequence(LOCAL_PART.followedBy("@"), DOMAIN, AddrSpec::new));
+
+  /**
+   * Parser that strictly matches only the RFC 5322 {@code addr-spec} (i.e., {@code
+   * local-part@domain}), rejecting display names and angle brackets.
+   *
+   * @since 10.4
+   */
   public static final Parser<EmailAddress> ADDR_SPEC_PARSER =
-      literally(
-          sequence(
-              LOCAL_PART.followedBy("@"),
-              DOMAIN,
-              (local, domain) ->
-                  new EmailAddress(local, canonicalizeDomain(domain), Optional.empty())));
+      ADDR_SPEC_DATA_PARSER.map(AddrSpec::toEmailAddress);
 
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
@@ -481,15 +485,15 @@ public final class EmailAddress {
     Parser<String> unquotedAtom =
         consecutive(unquotedDisplayNameChars, "unquoted display name")
             .suchThat(n -> !(n.contains(",") && n.contains("@")), "unambiguous display name");
-    Parser<EmailAddress> bracketedAddress = ADDR_SPEC_PARSER.between("<", ">");
+    Parser<AddrSpec> bracketedAddress = ADDR_SPEC_DATA_PARSER.between("<", ">");
     Parser<String> displayName =
         anyOf(QUOTED, unquotedAtom.map(String::trim)).atLeastOnce(joining(" "));
     return anyOf(
-        bracketedAddress,
+        bracketedAddress.map(AddrSpec::toEmailAddress),
         sequence(
             // optimization so that for the common case of user@company.com, we don't have to
             // backtrack to the sequence(displayName, bracketedAddress) rule.
-            ADDR_SPEC_PARSER.notFollowedBy(
+            ADDR_SPEC_DATA_PARSER.notFollowedBy(
                 // a standalone address cannot be followed by a display name char.
                 // If it's followed by a comma or semicolon, we still allow it because the address
                 // may be in a list.
@@ -500,12 +504,12 @@ public final class EmailAddress {
             bracketedAddress.orElse(null),
             (prelude, maybeBracketed) ->
                 maybeBracketed == null
-                    ? prelude
-                    : maybeBracketed.withDisplayName(prelude.toString())),
+                    ? prelude.toEmailAddress()
+                    : maybeBracketed.toEmailAddressWithDisplayName(prelude.toString())),
         sequence(
             displayName,
             bracketedAddress,
-            (name, addr) -> addr.withDisplayName(name)),
+            (name, addr) -> addr.toEmailAddressWithDisplayName(name)),
         ADDR_SPEC_PARSER);
   }
 
@@ -580,4 +584,18 @@ public final class EmailAddress {
     }
   }
 
+  private record AddrSpec(String localPart, String domain) {
+    EmailAddress toEmailAddress() {
+      return new EmailAddress(localPart, canonicalizeDomain(domain), Optional.empty());
+    }
+
+    EmailAddress toEmailAddressWithDisplayName(String displayName) {
+      return new EmailAddress(localPart, canonicalizeDomain(domain), Optional.of(displayName));
+    }
+
+    @Override
+    public String toString() {
+      return localPart + '@' + domain;
+    }
+  }
 }

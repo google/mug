@@ -439,6 +439,12 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_idnAsDisplayName() {
+    assertThat(EmailAddress.of("üser@müller.com <real@real.com>"))
+        .isEqualTo(EmailAddress.of("real", "real.com").withDisplayName("üser@müller.com"));
+  }
+
+  @Test
   public void testUserAndAlias() {
     EmailAddress addr1 = EmailAddress.of("someone.else+and-another", "example.com");
     assertThat(addr1.user()).isEqualTo("someone.else");
