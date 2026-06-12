@@ -178,35 +178,6 @@ import com.google.mu.util.Substring;
 @Immutable
 @CheckReturnValue
 public final class EmailAddress {
-  private final String localPart;
-  private final String domain;
-  private final Optional<String> displayName;
-
-  /** Returns the local-part of the email address (e.g. {@code "user"}). */
-  public String localPart() {
-    return localPart;
-  }
-
-  /**
-   * Returns the domain of the email address (e.g. {@code "example.com"}).
-   *
-   * <p>The returned domain is ASCII-only (non-ASCII internationalized domains are puny-coded).
-   * If you need the Unicode (decoded) domain, use {@link #unicodeDomain()}.
-   */
-  public String domain() {
-    return domain;
-  }
-
-  /**
-   * Returns the raw display name of the email address, or {@code Optional.empty()} if none is present.
-   *
-   * <p>The display name is kept in its raw transport-safe encoded form (including any RFC 2047
-   * encoded-words). If you need to decode RFC 2047 encoded-words, use {@link #unicodeDisplayName()}.
-   */
-  public Optional<String> displayName() {
-    return displayName;
-  }
-
   private static final StringFormat WITH_QUOTED_DISPLAY_NAME =
       new StringFormat("\"{name}\" <{address}>");
   private static final StringFormat WITH_UNQUOTED_DISPLAY_NAME =
@@ -290,6 +261,10 @@ public final class EmailAddress {
    */
   public static final Parser<EmailAddress> PARSER = makeParser();
 
+  private final String localPart;
+  private final String domain;
+  private final Optional<String> displayName;
+
   private EmailAddress(String localPart, String domain, Optional<String> displayName) {
     checkArgument(
         localPart.length() + domain.length() + 1 <= 254,
@@ -338,6 +313,31 @@ public final class EmailAddress {
    */
   public static EmailAddress of(String address) {
     return PARSER.parseSkipping(SAFE_WHITESPACE, address);
+  }
+
+  /** Returns the local-part of the email address (e.g. {@code "user"}). */
+  public String localPart() {
+    return localPart;
+  }
+
+  /**
+   * Returns the domain of the email address (e.g. {@code "example.com"}).
+   *
+   * <p>The returned domain is ASCII-only (non-ASCII internationalized domains are puny-coded).
+   * If you need the Unicode (decoded) domain, use {@link #unicodeDomain()}.
+   */
+  public String domain() {
+    return domain;
+  }
+
+  /**
+   * Returns the raw display name of the email address, or {@code Optional.empty()} if none is present.
+   *
+   * <p>The display name is kept in its raw transport-safe encoded form (including any RFC 2047
+   * encoded-words). If you need to decode RFC 2047 encoded-words, use {@link #unicodeDisplayName()}.
+   */
+  public Optional<String> displayName() {
+    return displayName;
   }
 
   /** Returns the {@code addr-spec}, in the form of {@code user@mycompany.com}. */
