@@ -488,20 +488,20 @@ public final class EmailAddress {
     Parser<AddrSpec> bracketedAddress = ADDR_SPEC_DATA_PARSER.between("<", ">");
     Parser<String> displayName =
         anyOf(QUOTED, unquotedAtom.map(String::trim)).atLeastOnce(joining(" "));
+    // a standalone address not followed by a display name char.
+    // If it's followed by a comma or semicolon, we still allow it because the address
+    // may be in a list.
+    // If it's not in a list, the left-over comma or semicolon won't match anything
+    // because we don't allow both ',' and '@' co-existing in display name anyways.
+    Parser<AddrSpec> looksLikeAddrSpec =  ADDR_SPEC_DATA_PARSER.notFollowedBy(
+        one(unquotedDisplayNameChars.or('"').and(noneOf(",;")), "display name char"),
+        "part of display name");
     return anyOf(
         bracketedAddress.map(AddrSpec::toEmailAddress),
         sequence(
             // optimization so that for the common case of user@company.com, we don't have to
             // backtrack to the sequence(displayName, bracketedAddress) rule.
-            ADDR_SPEC_DATA_PARSER.notFollowedBy(
-                // a standalone address cannot be followed by a display name char.
-                // If it's followed by a comma or semicolon, we still allow it because the address
-                // may be in a list.
-                // If it's not in a list, the left-over comma or semicolon won't match anything
-                // because we don't allow both ',' and '@' co-existing in display name anyways.
-                one(unquotedDisplayNameChars.or('"').and(noneOf(",;")), "display name char"),
-                "part of display name"),
-            bracketedAddress.orElse(null),
+            looksLikeAddrSpec, bracketedAddress.orElse(null),
             (addrSpecOrDisplayName, maybeBracketed) ->
                 maybeBracketed == null
                     ? addrSpecOrDisplayName.toEmailAddress()
