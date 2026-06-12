@@ -34,14 +34,13 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
-import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.AbstractMap;
-import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -913,11 +912,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(collector);
     return sequence(
         this,
-        delimiter.then(this).zeroOrMore(toCollection(ArrayDeque::new)),
-        (first, deque) -> {
-          deque.addFirst(first);
-          return deque.stream().collect(collector);
-        });
+        delimiter.then(this).zeroOrMore(toList()),
+        (first, remaining) -> collect(first, remaining, collector));
   }
 
   /**
@@ -1700,11 +1696,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     public <R> Parser<R>.OrEmpty delimitedBy(String delimiter, Collector<? super T, ?, R> collector) {
       return sequence(
           this,
-          string(delimiter).then(this).zeroOrMore(toCollection(ArrayDeque::new)),
-          (first, deque) -> {
-            deque.addFirst(first);
-            return deque.stream().collect(collector);
-          });
+          string(delimiter).then(this).zeroOrMore(toList()),
+          (first, remaining) -> collect(first, remaining, collector));
     }
 
     /**
@@ -2209,6 +2202,17 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       operand = op.apply(operand);
     }
     return operand;
+  }
+
+  private static <T, A, R> R collect(
+      T head, List<? extends T> tail, Collector<? super T, A, R> collector) {
+    var buffer = collector.supplier().get();
+    var accumulate = collector.accumulator();
+    accumulate.accept(buffer, head);
+    for (int i = 0; i < tail.size(); i++) {
+      accumulate.accept(buffer, tail.get(i));
+    }
+    return collector.finisher().apply(buffer);
   }
 
   record Snippet(CharInput input, int at) {

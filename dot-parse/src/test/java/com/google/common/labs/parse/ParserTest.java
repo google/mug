@@ -1944,6 +1944,13 @@ public class ParserTest {
   }
 
   @Test
+  public void orEmpty_delimitedBy_withNulls() {
+    Parser<String>.OrEmpty nullParser = string("n").map(x -> (String) null).orElse("");
+    Parser<List<String>> parser = nullParser.delimitedBy(",", java.util.stream.Collectors.toList()).notEmpty();
+    assertThat(parser.parse("n,n")).containsExactly(null, null);
+  }
+
+  @Test
   public void orEmpty_delimitedBy_bothSides_source() {
     assertThat(word().source().orElse("").delimitedBy(",").parse("foo,bar"))
         .containsExactly("foo", "bar")
@@ -2677,6 +2684,20 @@ public class ParserTest {
     assertThat(digits().atLeastOnce().source().parse("1230")).isEqualTo("1230");
     assertThat(digits().atLeastOnce().source().parseToStream("1230")).containsExactly("1230");
     assertThat(digits().atLeastOnce().source().parseToStream("")).isEmpty();
+  }
+
+  @Test
+  public void atLeastOnce_withNulls() {
+    Parser<String> nullParser = string("n").map(x -> (String) null);
+    Parser<List<String>> parser = nullParser.atLeastOnce(java.util.stream.Collectors.toList());
+    assertThat(parser.parse("nn")).containsExactly(null, null);
+  }
+
+  @Test
+  public void atLeastOnceDelimitedBy_withNulls() {
+    Parser<String> nullParser = string("n").map(x -> (String) null);
+    Parser<List<String>> parser = nullParser.atLeastOnceDelimitedBy(",", java.util.stream.Collectors.toList());
+    assertThat(parser.parse("n,n")).containsExactly(null, null);
   }
 
   @Test
