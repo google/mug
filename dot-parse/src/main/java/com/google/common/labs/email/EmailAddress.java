@@ -502,10 +502,10 @@ public final class EmailAddress {
                 one(unquotedDisplayNameChars.or('"').and(noneOf(",;")), "display name char"),
                 "part of display name"),
             bracketedAddress.orElse(null),
-            (prelude, maybeBracketed) ->
+            (addrSpecOrDisplayName, maybeBracketed) ->
                 maybeBracketed == null
-                    ? prelude.toEmailAddress()
-                    : maybeBracketed.toEmailAddressWithDisplayName(prelude.toString())),
+                    ? addrSpecOrDisplayName.toEmailAddress()
+                    : maybeBracketed.toEmailAddressWithDisplayName(addrSpecOrDisplayName.toString())),
         sequence(
             displayName,
             bracketedAddress,
