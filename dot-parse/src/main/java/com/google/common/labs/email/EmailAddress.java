@@ -233,15 +233,8 @@ public final class EmailAddress {
           .suchThat(labels -> labels.size() > 1, "domain name with at least one dot")
           .suchThat(labels -> NON_DIGIT.matchesAnyOf(labels.getLast()), "domain with valid TLD")
           .source();
-
-  /**
-   * Parser that strictly matches only the RFC 5322 {@code addr-spec} (i.e., {@code
-   * local-part@domain}), rejecting display names and angle brackets.
-   *
-   * @since 10.4
-   */
-  private static final Parser<AddrSpec> ADDR_SPEC_DATA_PARSER =
-      literally(sequence(LOCAL_PART.followedBy("@"), DOMAIN, AddrSpec::new));
+  private static final Parser<AddrSpecAlike> ADDR_SPEC_ALIKE =
+      literally(sequence(LOCAL_PART.followedBy("@"), DOMAIN, AddrSpecAlike::new));
 
   /**
    * Parser that strictly matches only the RFC 5322 {@code addr-spec} (i.e., {@code
@@ -250,7 +243,7 @@ public final class EmailAddress {
    * @since 10.4
    */
   public static final Parser<EmailAddress> ADDR_SPEC_PARSER =
-      ADDR_SPEC_DATA_PARSER.map(AddrSpec::toEmailAddress);
+      ADDR_SPEC_ALIKE.map(AddrSpecAlike::toEmailAddress);
 
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
@@ -485,7 +478,7 @@ public final class EmailAddress {
     Parser<String> unquotedAtom =
         consecutive(unquotedDisplayNameChars, "unquoted display name")
             .suchThat(n -> !(n.contains(",") && n.contains("@")), "unambiguous display name");
-    Parser<AddrSpec> bracketedAddress = ADDR_SPEC_DATA_PARSER.between("<", ">");
+    Parser<AddrSpecAlike> bracketedAddress = ADDR_SPEC_ALIKE.between("<", ">");
     Parser<String> displayName =
         anyOf(QUOTED, unquotedAtom.map(String::trim)).atLeastOnce(joining(" "));
     // a standalone address not followed by a display name char.
@@ -493,22 +486,21 @@ public final class EmailAddress {
     // may be in a list.
     // If it's not in a list, the left-over comma or semicolon won't match anything
     // because we don't allow both ',' and '@' co-existing in display name anyways.
-    Parser<AddrSpec> looksLikeAddrSpec =  ADDR_SPEC_DATA_PARSER.notFollowedBy(
+    Parser<AddrSpecAlike> looksLikeAddrSpec =  ADDR_SPEC_ALIKE.notFollowedBy(
         one(unquotedDisplayNameChars.or('"').and(noneOf(",;")), "display name char"),
         "part of display name");
     return anyOf(
-        bracketedAddress.map(AddrSpec::toEmailAddress),
+        bracketedAddress.map(AddrSpecAlike::toEmailAddress),
         sequence(
             // optimization so that for the common case of user@company.com, we don't have to
             // backtrack to the sequence(displayName, bracketedAddress) rule.
             looksLikeAddrSpec, bracketedAddress.orElse(null),
-            (addrSpecOrDisplayName, maybeBracketed) ->
-                maybeBracketed == null
+            (addrSpecOrDisplayName, bracketedOrNull) ->
+                bracketedOrNull == null
                     ? addrSpecOrDisplayName.toEmailAddress()
-                    : maybeBracketed.toEmailAddressWithDisplayName(addrSpecOrDisplayName.toString())),
+                    : bracketedOrNull.toEmailAddressWithDisplayName(addrSpecOrDisplayName.toString())),
         sequence(
-            displayName,
-            bracketedAddress,
+            displayName, bracketedAddress,
             (name, addr) -> addr.toEmailAddressWithDisplayName(name)),
         ADDR_SPEC_PARSER);
   }
@@ -584,7 +576,7 @@ public final class EmailAddress {
     }
   }
 
-  private record AddrSpec(String localPart, String domain) {
+  private record AddrSpecAlike(String localPart, String domain) {
     EmailAddress toEmailAddress() {
       return new EmailAddress(localPart, canonicalizeDomain(domain), Optional.empty());
     }
