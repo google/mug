@@ -1083,6 +1083,10 @@ public class EmailAddressTest {
         .isEqualTo(EmailAddress.of("john smith", "example.com"));
     assertThat(EmailAddress.ADDR_SPEC_PARSER.parse("user.name@sub.domain.co.uk"))
         .isEqualTo(EmailAddress.of("user.name", "sub.domain.co.uk"));
+    assertThat(EmailAddress.ADDR_SPEC_PARSER.parse("john.smith@EXAMPLE.COM"))
+        .isEqualTo(EmailAddress.of("john.smith", "example.com"));
+    assertThat(EmailAddress.ADDR_SPEC_PARSER.parse("john.smith@MÜLLER.de"))
+        .isEqualTo(EmailAddress.of("john.smith", "xn--mller-kva.de"));
   }
 
   @Test
