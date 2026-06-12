@@ -901,6 +901,15 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_mixedDisplayName_addrSpecFollowedByQuoteNoSpace(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    EmailAddress parsed = parser.parse("foo@bar.com\"displayName\" <another@address.com>");
+    assertThat(parsed.displayName()).hasValue("foo@bar.com displayName");
+    assertThat(parsed.address()).isEqualTo("another@address.com");
+  }
+
+  @Test
   public void testEmailAddressParsing_mixedDisplayName_interleaved(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);

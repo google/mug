@@ -19,9 +19,11 @@ import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
+import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.mu.util.CharPredicate.anyOf;
+import static com.google.mu.util.CharPredicate.noneOf;
 import static com.google.mu.util.CharPredicate.range;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
@@ -231,6 +233,8 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
           .suchThat(labels -> labels.size() > 1, "domain name with at least one dot")
           .suchThat(labels -> NON_DIGIT.matchesAnyOf(labels.getLast()), "domain with valid TLD")
           .map(Joiner.on('.')::join);
+  private static final Parser<AddrSpec> ADDR_SPEC_DATA_PARSER =
+      literally(sequence(LOCAL_PART.followedBy("@"), DOMAIN, AddrSpec::new));
 
   /**
    * Parser that strictly matches only the RFC 5322 {@code addr-spec} (i.e., {@code
@@ -239,7 +243,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
    * @since 10.4
    */
   public static final Parser<EmailAddress> ADDR_SPEC_PARSER =
-      literally(sequence(LOCAL_PART.followedBy("@"), DOMAIN, EmailAddress::of));
+      ADDR_SPEC_DATA_PARSER.map(AddrSpec::toEmailAddress);
 
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
@@ -313,10 +317,7 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
 
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
   public static EmailAddress of(String localPart, String domain) {
-    return new EmailAddress(
-        localPart,
-        IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.ROOT),
-        Optional.empty());
+    return new EmailAddress(localPart, canonicalizeDomain(domain), Optional.empty());
   }
 
   /**
@@ -451,15 +452,35 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
   }
 
   private static Parser<EmailAddress> makeParser() {
+    var unquotedDisplayNameChars = DANGEROUS.or("<>;\\\"").not().precomputeForAscii();
     Parser<String> unquotedAtom =
-        consecutive(DANGEROUS.or("<>;\\\"").not().precomputeForAscii(), "unquoted display name")
+        consecutive(unquotedDisplayNameChars, "unquoted display name")
             .suchThat(n -> !(n.contains(",") && n.contains("@")), "unambiguous display name");
-    Parser<EmailAddress> bracketedAddress = ADDR_SPEC_PARSER.between("<", ">");
+    Parser<AddrSpec> bracketedAddress = ADDR_SPEC_DATA_PARSER.between("<", ">");
     Parser<String> displayName =
         anyOf(QUOTED, unquotedAtom.map(String::trim)).atLeastOnce(joining(" "));
     return anyOf(
-        bracketedAddress,
-        sequence(displayName, bracketedAddress, (name, addr) -> addr.withDisplayName(name)),
+        bracketedAddress.map(AddrSpec::toEmailAddress),
+        sequence(
+            // optimization so that for the common case of user@company.com, we don't have to
+            // backtrack to the sequence(displayName, bracketedAddress) rule.
+            ADDR_SPEC_DATA_PARSER.notFollowedBy(
+                // a standalone address cannot be followed by a display name char.
+                // If it's followed by a comma or semicolon, we still allow it because the address
+                // may be in a list.
+                // If it's not in a list, the left-over comma or semicolon won't match anything
+                // because we don't allow both ',' and '@' co-existing in display name anyways.
+                one(unquotedDisplayNameChars.or('"').and(noneOf(",;")), "display name char"),
+                "part of display name"),
+            bracketedAddress.orElse(null),
+            (prelude, maybeBracketed) ->
+                maybeBracketed == null
+                    ? prelude.toEmailAddress()
+                    : maybeBracketed.toEmailAddressWithDisplayName(prelude.toString())),
+        sequence(
+            displayName,
+            bracketedAddress,
+            (name, addr) -> addr.toEmailAddressWithDisplayName(name)),
         ADDR_SPEC_PARSER);
   }
 
@@ -488,11 +509,30 @@ public record EmailAddress(String localPart, String domain, Optional<String> dis
             .anyMatch(ws -> ws.length() > 1);
   }
 
+  private static String canonicalizeDomain(String domain) {
+    return IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.ROOT);
+  }
+
   @FormatMethod
   private static void checkArgument(
       boolean condition, @FormatString String message, Object... args) {
     if (!condition) {
       throw new IllegalArgumentException(String.format(message, args));
+    }
+  }
+
+  private record AddrSpec(String localPart, String domain) {
+    EmailAddress toEmailAddress() {
+      return EmailAddress.of(localPart, domain);
+    }
+
+    EmailAddress toEmailAddressWithDisplayName(String displayName) {
+      return new EmailAddress(localPart, canonicalizeDomain(domain), Optional.of(displayName));
+    }
+
+    @Override
+    public String toString() {
+      return localPart + '@' + domain;
     }
   }
 }
