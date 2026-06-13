@@ -3761,6 +3761,70 @@ public class ParserTest {
   }
 
   @Test
+  public void atLeastOnceDelimitedBy_suchThat_errorReported() {
+    Parser<List<String>> parser =
+        word().atLeastOnceDelimitedBy(",").suchThat(words -> words.size() > 10, "more than 10 words");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("foo,bar"));
+    assertThat(e.getMessage()).contains("more than 10 words");
+    assertThat(e.getMessage()).doesNotContain("expecting <,>");
+  }
+
+  @Test
+  public void atLeastOnceDelimitedBy_remainderInput_errorReported() {
+    Parser<List<String>> parser = word().atLeastOnceDelimitedBy(",");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("foo,bar;baz"));
+    assertThat(e.getMessage()).contains(";baz");
+    assertThat(e.getMessage()).doesNotContain("expecting <,>");
+  }
+
+  @Test
+  public void atLeastOnceDelimitedBy_itemError_errorReported() {
+    Parser<List<String>> parser =
+        sequence(string("a"), digits(), (w, d) -> w + d).atLeastOnceDelimitedBy(",");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("a1,abc?,b2"));
+    assertThat(e.getMessage()).contains("bc?,b2");
+    assertThat(e.getMessage()).doesNotContain("expecting <,>");
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedBy_suchThat_errorReported() {
+    Parser<List<String>> parser =
+        word().zeroOrMoreDelimitedBy(",").notEmpty().suchThat(words -> words.size() > 10, "more than 10 words");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("foo,bar"));
+    assertThat(e.getMessage()).contains("more than 10 words");
+    assertThat(e.getMessage()).doesNotContain("expecting <,>");
+  }
+
+  @Test
+  public void orEmpty_delimitedBy_suchThat_errorReported() {
+    Parser<List<String>> parser =
+        word().orElse("").delimitedBy(",").notEmpty().suchThat(words -> words.size() > 10, "more than 10 words");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("foo,bar"));
+    assertThat(e.getMessage()).contains("more than 10 words");
+    assertThat(e.getMessage()).doesNotContain("expecting <,>");
+  }
+
+  @Test
+  public void atLeastOnceDelimitedByParser_suchThat_errorReported() {
+    Parser<List<String>> parser =
+        word().atLeastOnceDelimitedBy(string(","), toList()).suchThat(words -> words.size() > 10, "more than 10 words");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("foo,bar"));
+    assertThat(e.getMessage()).contains("more than 10 words");
+    assertThat(e.getMessage()).doesNotContain("expecting <,>");
+  }
+
+  @Test
+  public void zeroOrMoreDelimitedByParser_suchThat_errorReported() {
+    Parser<List<String>> parser =
+        word().zeroOrMoreDelimitedBy(string(","), toList()).notEmpty().suchThat(words -> words.size() > 10, "more than 10 words");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("foo,bar"));
+    assertThat(e.getMessage()).contains("more than 10 words");
+    assertThat(e.getMessage()).doesNotContain("expecting <,>");
+  }
+
+
+
+  @Test
   public void atLeastOnceDelimitedBy_cannotBeEmpty() {
     assertThrows(IllegalArgumentException.class, () -> string("a").atLeastOnceDelimitedBy(""));
   }

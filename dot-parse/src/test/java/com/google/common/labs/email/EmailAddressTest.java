@@ -11,7 +11,6 @@ import static org.junit.Assert.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
-import com.google.common.testing.EqualsTester;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,6 +19,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.common.labs.parse.Parser;
+import com.google.common.testing.EqualsTester;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 import com.google.testing.junit.testparameterinjector.TestParameter;
@@ -373,7 +373,7 @@ public class EmailAddressTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> EmailAddress.of("test", "example.123"));
-    assertThat(thrown).hasMessageThat().contains("numeric (123)");
+    assertThat(thrown).hasMessageThat().contains("123");
   }
 
   @Test

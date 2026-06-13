@@ -293,7 +293,7 @@ public final class EmailAddress {
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
   public static EmailAddress of(String localPart, String domain) {
     return new EmailAddress(
-        checkLocalPart(localPart), checkDomain(canonicalizeDomain(domain)), Optional.empty());
+        checkLocalPart(localPart), DOMAIN.parse(canonicalizeDomain(domain)), Optional.empty());
   }
 
   /**
@@ -541,25 +541,6 @@ public final class EmailAddress {
         DANGEROUS.matchesNoneOf(localPart),
         "local-part must not contain control or formatting characters");
     return localPart;
-  }
-
-  private static String checkDomain(String domain) {
-    checkArgument(!domain.isEmpty(), "domain cannot be empty");
-    checkArgument(
-        !domain.startsWith(".") && !domain.endsWith(".") && !domain.contains(".."),
-        "domain labels cannot be empty");
-    // Enforce strict LDH (Letter-Digit-Hyphen) rules for domain labels.
-    // Banning hyphens at boundaries mitigates CLI parameter injection,
-    // visual spoofing, and parsing differentials between validators and MTAs.
-    checkArgument(
-        !hasHyphenBoundary(domain),
-        "domain labels must not start or end with a hyphen");
-    checkArgument(
-        ASCII_DOMAIN_LABEL_CHARS.or('.').matchesAllOf(domain),
-        "domain must contain only lowercase alphanumeric, hyphen, or dot");
-    var tld = topLevelDomainOrThrow(domain);
-    checkArgument(NON_DIGIT.matchesAnyOf(tld), "TLD name cannot be all numeric (%s)", tld);
-    return domain;
   }
 
   private static boolean hasHyphenBoundary(String domain) {
