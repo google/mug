@@ -2150,7 +2150,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
     /** Represents a partial parse result with a value and the [start, end) range of the match. */
     record Failure<V>(int at, int frontier, String message, Object[] args) implements MatchResult<V> {
-      private static final Object[] NO_ARGS = new Object[0];
+      private static final Object[] NO_ARGS = {};
 
       Failure(int at, String message, Object[] args) {
         this(at, at, message, args);
