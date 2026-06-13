@@ -187,6 +187,7 @@ public final class EmailAddress {
       DANGEROUS_WHITESPACE.or(Character::isISOControl).precomputeForAscii();
   private static final CharPredicate SAFE_WHITESPACE =
       DANGEROUS_WHITESPACE.not().and(Character::isWhitespace).precomputeForAscii();
+  private static final Substring.Pattern TLD = after(last('.'));
 
   // While most letters and digits are supplementary chars, using it is strictly better than
   // [a-zA-Z0-9] because it natively supports internationalized BMP characters (for example,
@@ -220,11 +221,11 @@ public final class EmailAddress {
           .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
   private static final Parser<String> DOMAIN =
       consecutive(I18N_DOMAIN_LABEL_CHARS, "domain label chars")
-          .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "valid domain label")
-          .atLeastOnceDelimitedBy(".")
-          .suchThat(labels -> labels.size() > 1, "domain name with at least one dot")
-          .suchThat(labels -> NON_DIGIT.matchesAnyOf(labels.getLast()), "domain with valid TLD")
-          .source();
+          .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "domain without -. or .-")
+          .atLeastOnceDelimitedBy(".", counting())
+          .suchThat(count -> count > 1, "domain name with at least one dot")
+          .source()
+          .suchThat(d -> NON_DIGIT.matchesAnyOf(topLevelDomainOrThrow(d)), "domain with valid TLD");;
   private static final Parser<AddrSpecAlike> ADDR_SPEC_ALIKE =
       literally(sequence(LOCAL_PART.followedBy("@"), DOMAIN, AddrSpecAlike::new));
 
@@ -503,6 +504,10 @@ public final class EmailAddress {
         ADDR_SPEC_PARSER); // fall back when PARSER is combined with other parsers
   }
 
+  private static String topLevelDomainOrThrow(String domain) {
+    return TLD.from(domain).orElseThrow(() -> DOTLESS_DOMAIN_BANNED.with(domain));
+  }
+
   private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses(
       Consumer<? super String> ifInvalid) {
     requireNonNull(ifInvalid);
@@ -540,19 +545,28 @@ public final class EmailAddress {
 
   private static String checkDomain(String domain) {
     checkArgument(!domain.isEmpty(), "domain cannot be empty");
-    all('.').split(domain).forEach(label -> {
-        checkArgument(!label.isEmpty(), "domain label cannot be empty");
-        checkArgument(
-            !label.startsWith("-") && !label.endsWith("-"),
-            "domain label '%s' must not start or end with a hyphen",
-            label);
-        checkArgument(
-            ASCII_DOMAIN_LABEL_CHARS.matchesAllOf(label),
-            "domain label '%s' must be all lowercase alpha-numeric or hyphen", label);
-    });
-    var tld = after(last('.')).in(domain).orElseThrow(() -> DOTLESS_DOMAIN_BANNED.with(domain));
+    checkArgument(
+        !domain.startsWith(".") && !domain.endsWith(".") && !domain.contains(".."),
+        "domain labels cannot be empty");
+    // Enforce strict LDH (Letter-Digit-Hyphen) rules for domain labels.
+    // Banning hyphens at boundaries mitigates CLI parameter injection,
+    // visual spoofing, and parsing differentials between validators and MTAs.
+    checkArgument(
+        !hasHyphenBoundary(domain),
+        "domain labels must not start or end with a hyphen");
+    checkArgument(
+        ASCII_DOMAIN_LABEL_CHARS.or('.').matchesAllOf(domain),
+        "domain must contain only lowercase alphanumeric, hyphen, or dot");
+    var tld = topLevelDomainOrThrow(domain);
     checkArgument(NON_DIGIT.matchesAnyOf(tld), "TLD name cannot be all numeric (%s)", tld);
     return domain;
+  }
+
+  private static boolean hasHyphenBoundary(String domain) {
+    return domain.startsWith("-")
+        || domain.endsWith("-")
+        || domain.contains(".-")
+        || domain.contains("-.");
   }
 
   private static String checkDisplayName(String displayName) {
