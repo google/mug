@@ -329,23 +329,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Equivalent to {@link #string} except that the mismatch error won't s in the farthest error
-   * reporting.
+   * Equivalent to {@link #string} except that not finding the separator isn't an error.
    */
-  private static Parser<?> delimiter(String delim) {
-    String[] missing = {delim};
-    checkArgument(delim.length() > 0, "delim cannot be empty");
+  private static Parser<?> separator(String sep) {
+    String[] missing = {sep};
+    checkArgument(sep.length() > 0, "delim cannot be empty");
     return new Parser<String>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-        return input.startsWith(delim, start)
-            ? new MatchResult.Success<>(start, start + delim.length(), delim)
+        return input.startsWith(sep, start)
+            ? new MatchResult.Success<>(start, start + sep.length(), sep)
             : new MatchResult.Failure<>(start, "expecting %s", missing);
       }
 
       @Override Set<String> getPrefixes() {
-        return Set.of(delim);
+        return Set.of(sep);
       }
     };
   }
@@ -934,7 +933,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final <A, R> Parser<R> atLeastOnceDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
-    return atLeastOnceDelimitedBy(delimiter(delimiter), collector);
+    return atLeastOnceDelimitedBy(separator(delimiter), collector);
   }
 
   /**
@@ -1059,7 +1058,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final <A, R> Parser<R>.OrEmpty zeroOrMoreDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
-    return this.<A, R>zeroOrMoreDelimitedBy(delimiter(delimiter), collector);
+    return this.<A, R>zeroOrMoreDelimitedBy(separator(delimiter), collector);
   }
 
   /**
@@ -1732,7 +1731,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     public <R> Parser<R>.OrEmpty delimitedBy(String delimiter, Collector<? super T, ?, R> collector) {
       return sequence(
           this,
-          delimiter(delimiter).then(this).zeroOrMore(toList()),
+          separator(delimiter).then(this).zeroOrMore(toList()),
           (first, remaining) -> collect(first, remaining, collector));
     }
 
