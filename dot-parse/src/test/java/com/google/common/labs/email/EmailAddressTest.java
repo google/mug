@@ -416,6 +416,14 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressOf_i18nDomain() {
+    EmailAddress address = EmailAddress.of("test", "müller.com");
+    assertThat(address.domain()).isEqualTo("xn--mller-kva.com");
+    assertThat(address.unicodeDomain()).isEqualTo("müller.com");
+    assertThat(address.hasI18nDomain()).isTrue();
+  }
+
+  @Test
   public void testEmailAddressParsing_invalidEmail_domainLiterals() {
     assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test@[192.168.1.1]"));
     assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test@192.168.1.1"));

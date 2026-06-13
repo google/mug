@@ -348,19 +348,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Returns an equivalent parser that's intended to be used as a terminal. Failing to match does
-   * not indicate an error but rather that the repetition is done.
-   */
-  private Parser<T> terminal() {
-    return new SamePrefix<>() {
-      @Override MatchResult<T> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        return left().skipAndMatch(skip, input, start, new ErrorContext(input));
-      }
-    };
-  }
-
-  /**
    * Matches a literal {@code string} case insensitively.
    *
    * <p>If you need to access the input substring that matched case insensitively,
@@ -944,7 +931,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(collector);
     return sequence(
         this,
-        delimiter.terminal().then(this).zeroOrMore(toList()),
+        delimiter.then(this).zeroOrMore(toList()),
         (first, remaining) -> collect(first, remaining, collector));
   }
 
