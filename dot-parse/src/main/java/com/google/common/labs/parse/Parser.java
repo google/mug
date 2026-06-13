@@ -2163,15 +2163,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       ParseException toException(CharInput input) {
         return new ParseException(
             at,
-            String.format("at %s: %s", input.sourcePosition(at), formatMessage()));
+            String.format("at %s: %s", input.sourcePosition(at), String.format(message, args)));
       }
 
       @Override public Failure<V> startingFrom(int head) {
         return this;
-      }
-
-      String formatMessage() {
-        return String.format(message, args);
       }
     }
 
