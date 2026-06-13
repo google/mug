@@ -56,6 +56,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
+import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.mu.function.Function4;
 import com.google.mu.function.TriFunction;
@@ -903,7 +904,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     var supplier = collector.supplier();
     var accumulator = collector.accumulator();
     var finisher = collector.finisher();
-    return new SamePrefix<>() {  // Manual impl instead of using combinator for efficiency
+    return new SamePrefix<>() {  // Manual impl for raw speed
       @Override MatchResult<R> skipAndMatch(
            Parser<?> skip, CharInput input, int start, ErrorContext context) {
         A buffer = supplier.get();
@@ -2193,10 +2194,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return failAt(at, frontier, "expecting <%s>.", name);
     }
 
+    @FormatMethod
     final <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
       return failAt(at, at, message, args);
     }
 
+    @FormatMethod
     <V> MatchResult.Failure<V> failAt(int at, int frontier, String message, Object... args) {
       return new MatchResult.Failure<V>(at, frontier, message, args);
     }
@@ -2214,6 +2217,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return failAt(at, frontier, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
     }
 
+    @FormatMethod
     @Override <V> MatchResult.Failure<V> failAt(int at, int frontier, String message, Object... args) {
       MatchResult.Failure<V> failure = super.failAt(at, frontier, message, args);
       // prefer the farthest then the most recent failure
