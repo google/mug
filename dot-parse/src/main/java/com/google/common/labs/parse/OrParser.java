@@ -65,7 +65,7 @@ final class OrParser<T> extends Parser<T> {
           return new MatchResult.Success<>(head, tail, value);
         }
         case MatchResult.Failure<?> failure -> {
-          if (farthestFailure == null || farthestFailure.at() < failure.at()) {
+          if (farthestFailure == null || farthestFailure.frontier() < failure.frontier()) {
             farthestFailure = failure;
           }
         }
