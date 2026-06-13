@@ -328,24 +328,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
-  /** Equivalent to {@link #string} except that not finding the separator isn't an error. */
-  private static Parser<Void> separator(String sep) {
-    checkArgument(sep.length() > 0, "delim cannot be empty");
-    return new Parser<>() {
-      @Override MatchResult<Void> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        return input.startsWith(sep, start)
-            ? new MatchResult.Success<>(start, start + sep.length(), null)
-            : new MatchResult.Failure<>(start, sep);
-      }
-
-      @Override Set<String> getPrefixes() {
-        return Set.of(sep);
-      }
-    };
-  }
-
   /**
    * Matches a literal {@code string} case insensitively.
    *
@@ -916,7 +898,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final <A, R> Parser<R> atLeastOnceDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
-    return atLeastOnceDelimitedBy(separator(delimiter), collector);
+    return atLeastOnceDelimitedBy(string(delimiter), collector);
   }
 
   /**
@@ -1041,7 +1023,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final <A, R> Parser<R>.OrEmpty zeroOrMoreDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
-    return this.<A, R>zeroOrMoreDelimitedBy(separator(delimiter), collector);
+    return this.<A, R>zeroOrMoreDelimitedBy(string(delimiter), collector);
   }
 
   /**
@@ -1713,7 +1695,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     public <R> Parser<R>.OrEmpty delimitedBy(String delimiter, Collector<? super T, ?, R> collector) {
       return sequence(
           this,
-          separator(delimiter).then(this).zeroOrMore(toList()),
+          string(delimiter).then(this).zeroOrMore(toList()),
           (first, remaining) -> collect(first, remaining, collector));
     }
 
