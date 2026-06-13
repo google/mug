@@ -329,16 +329,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /** Equivalent to {@link #string} except that not finding the separator isn't an error. */
-  private static Parser<?> separator(String sep) {
-    String[] missing = {sep};
+  private static Parser<Void> separator(String sep) {
     checkArgument(sep.length() > 0, "delim cannot be empty");
-    return new Parser<String>() {
-      @Override MatchResult<String> skipAndMatch(
+    return new Parser<>() {
+      @Override MatchResult<Void> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         return input.startsWith(sep, start)
-            ? new MatchResult.Success<>(start, start + sep.length(), sep)
-            : new MatchResult.Failure<>(start, "expecting %s", missing);
+            ? new MatchResult.Success<>(start, start + sep.length(), null)
+            : new MatchResult.Failure<>(start, sep);
       }
 
       @Override Set<String> getPrefixes() {
@@ -2151,8 +2150,14 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
     /** Represents a partial parse result with a value and the [start, end) range of the match. */
     record Failure<V>(int at, int frontier, String message, Object[] args) implements MatchResult<V> {
+      private static final Object[] NO_ARGS = new Object[0];
+
       Failure(int at, String message, Object[] args) {
         this(at, at, message, args);
+      }
+
+      Failure(int at, String message) {
+        this(at, message, NO_ARGS);
       }
 
       @SuppressWarnings("unchecked")
