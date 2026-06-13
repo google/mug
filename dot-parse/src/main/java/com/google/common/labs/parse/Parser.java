@@ -1317,7 +1317,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
               case MatchResult.Success<?> followed ->
                   new MatchResult.Failure<T>(
                       followed.head(), followed.tail(),
-                      "unexpected `%s` – %s.", new Object[] {name, new Snippet(input, success.tail())});
+                      "unexpected `%s` - %s.", new Object[] {name, new Snippet(input, success.tail())});
               default -> success;
             };
           }

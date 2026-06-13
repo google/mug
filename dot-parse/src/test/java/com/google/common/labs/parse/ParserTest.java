@@ -1286,7 +1286,7 @@ public class ParserTest {
     ParseException thrown =
         assertThrows(ParseException.class, () -> string("a").notFollowedBy("b").parse("ab"));
     assertThat(string("a").notFollowedBy("b").matches("ab")).isFalse();
-    assertThat(thrown).hasMessageThat().contains("at 1:2: unexpected `b` – [b]");
+    assertThat(thrown).hasMessageThat().contains("at 1:2: unexpected `b` - [b]");
   }
 
   @Test
@@ -1311,7 +1311,7 @@ public class ParserTest {
     ParseException thrown =
         assertThrows(ParseException.class, () -> string("a").notFollowedByEof().parse("a"));
     assertThat(string("a").notFollowedByEof().matches("a")).isFalse();
-    assertThat(thrown).hasMessageThat().contains("at 1:2: unexpected `eof` – <EOF>");
+    assertThat(thrown).hasMessageThat().contains("at 1:2: unexpected `eof` - <EOF>");
   }
 
   @Test
@@ -1335,7 +1335,7 @@ public class ParserTest {
         assertThrows(
             ParseException.class, () -> parser.parseSkipping(whitespace(), "a  "));
     assertThat(parser.skipping(whitespace()).matches("a  ")).isFalse();
-    assertThat(thrown).hasMessageThat().contains("at 1:4: unexpected `eof` – [  ]");
+    assertThat(thrown).hasMessageThat().contains("at 1:4: unexpected `eof` - [  ]");
   }
 
   @Test
