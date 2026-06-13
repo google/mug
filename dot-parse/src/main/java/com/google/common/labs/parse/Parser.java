@@ -1313,11 +1313,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<T> success -> {
-            ErrorContext lookaheadContext = new ErrorContext(input);
-            yield switch (suffix.skipAndMatch(skip, input, success.tail(), lookaheadContext)) {
+            yield switch (suffix.skipAndMatch(skip, input, success.tail(), new ErrorContext(input))) {
               case MatchResult.Success<?> followed ->
-                  lookaheadContext.failAt(
-                      followed.head(), "unexpected `%s` – %s.", name, new Snippet(input, success.tail()));
+                  new MatchResult.Failure<T>(
+                      followed.head(), followed.tail(),
+                      "unexpected `%s` – %s.", new Object[] {name, new Snippet(input, success.tail())});
               default -> success;
             };
           }

@@ -968,6 +968,15 @@ public class ParserTest {
   }
 
   @Test
+  public void notFollowedBy_farthestFailurePrefersLongerSuffix() {
+    Parser<?> parser = anyOf(
+        string("foo").notFollowedBy("b"),
+        string("foo").notFollowedBy("bar"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("foobar"));
+    assertThat(thrown).hasMessageThat().contains("unexpected `bar`");
+  }
+
+  @Test
   public void flatMap_success() {
     Parser<String> parser = digits().flatMap(number -> string("=" + number));
     assertThat(parser.parse("123=123")).isEqualTo("=123");
