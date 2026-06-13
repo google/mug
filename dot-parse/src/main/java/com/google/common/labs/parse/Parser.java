@@ -1081,7 +1081,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         start = skipIfAny(skip, input, start);
         return input.startsWith(delim, start)
             ? Parser.this.skipAndMatch(skip, input, start + delim.length(), context)
-            : context.failAt(start, "expecting <%>", expected);
+            : ErrorContext.MINIMAL.failAt(start, "expecting <%s>", expected);
       }
 
       @Override Set<String> getPrefixes() {
