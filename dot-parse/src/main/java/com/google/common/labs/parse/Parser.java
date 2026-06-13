@@ -834,34 +834,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * values using {@code collector}.
    */
   public final <A, R> Parser<R> atLeastOnce(Collector<? super T, A, ? extends R> collector) {
-    var supplier = collector.supplier();
-    var accumulator = collector.accumulator();
-    var finisher = collector.finisher();
-    return new SamePrefix<>() {
-      @Override MatchResult<R> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success(int head, int tail, T value) -> {
-            A buffer = supplier.get();
-            accumulator.accept(buffer, value);
-            for (int from = tail; ; ) {
-              switch (left().skipAndMatch(skip, input, from, context)) {
-                case MatchResult.Success(int head2, int tail2, T value2) -> {
-                  accumulator.accept(buffer, value2);
-                  from = tail2;
-                }
-                case MatchResult.Failure<?> failure -> {
-                  return new MatchResult.Success<>(head, from, finisher.apply(buffer));
-                }
-              }
-            }
-          }
-          case MatchResult.Failure<?> failure -> {
-            return failure.safeCast();
-          }
-        }
-      }
-    };
+    return this.andZeroOrMore(this, collector);
   }
 
   /**
@@ -900,39 +873,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final <A, R> Parser<R> atLeastOnceDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
-    checkArgument(delimiter.length() > 0, "delimiter cannot be empty");
-    var supplier = collector.supplier();
-    var accumulator = collector.accumulator();
-    var finisher = collector.finisher();
-    return new SamePrefix<>() {  // Manual impl for raw speed
-      @Override MatchResult<R> skipAndMatch(
-           Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success(int head, int tail, T value) -> {
-            A buffer = supplier.get();
-            accumulator.accept(buffer, value);
-            for (int from = tail; ; ) {
-              int next = skipIfAny(skip, input, from);
-              if (!input.startsWith(delimiter, next)) {
-                return new MatchResult.Success<>(head, from, finisher.apply(buffer));
-              }
-              switch (left().skipAndMatch(skip, input, next + delimiter.length(), context)) {
-                case MatchResult.Success(int head2, int tail2, T value2) -> {
-                  accumulator.accept(buffer, value2);
-                  from = tail2;
-                }
-                case MatchResult.Failure<?> failure -> {
-                  return new MatchResult.Success<>(head, from, finisher.apply(buffer));
-                }
-              }
-            }
-          }
-          case MatchResult.Failure<?> failure -> {
-            return failure.safeCast();
-          }
-        }
-      }
-    };
+    return this.andZeroOrMore(this.afterDelimiter(delimiter), collector);
   }
 
   /**
@@ -943,7 +884,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final <A, R> Parser<R> atLeastOnceDelimitedBy(
       Parser<?> delimiter, Collector<? super T, A, ? extends R> collector) {
-    return sequence(this, delimiter.then(this).zeroOrMore(toList()), using(collector));
+    return this.andZeroOrMore(delimiter.then(this), collector);
   }
 
   /**
@@ -1098,6 +1039,55 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       BiCollector<? super A, ? super B, R> collector) {
     return sequence(first, second, Both::of)
         .zeroOrMoreDelimitedBy(delimiter, mapping(identity(), collector));
+  }
+
+  private <A, R> Parser<R> andZeroOrMore(Parser<? extends T> extra, Collector<? super T, A, ? extends R> collector) {
+    var supplier = collector.supplier();
+    var accumulator = collector.accumulator();
+    var finisher = collector.finisher();
+    return new SamePrefix<>() {
+      @Override MatchResult<R> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        switch (left().skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success(int head, int tail, T value) -> {
+            A buffer = supplier.get();
+            accumulator.accept(buffer, value);
+            for (int index = tail; ; ) {
+              switch (extra.skipAndMatch(skip, input, index, context)) {
+                case MatchResult.Success(int head2, int tail2, T value2) -> {
+                  accumulator.accept(buffer, value2);
+                  index = tail2;
+                }
+                case MatchResult.Failure<?> failure -> {
+                  return new MatchResult.Success<>(head, index, finisher.apply(buffer));
+                }
+              }
+            }
+          }
+          case MatchResult.Failure<?> failure -> {
+            return failure.safeCast();
+          }
+        }
+      }
+    };
+  }
+
+  private Parser<T> afterDelimiter(String delim) {
+    checkArgument(delim.length() > 0, "delim cannot be empty");
+    Object[] expected = {delim};
+    return new Parser<>() {
+      @Override MatchResult<T> skipAndMatch(
+           Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        return input.startsWith(delim, start)
+            ? Parser.this.skipAndMatch(skip, input, start + delim.length(), context)
+            : context.failAt(start, "expecting <%>", expected);
+      }
+
+      @Override Set<String> getPrefixes() {
+        return Set.of(delim);
+      }
+    };
   }
 
   /**
