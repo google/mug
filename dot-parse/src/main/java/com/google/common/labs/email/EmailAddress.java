@@ -500,7 +500,7 @@ public final class EmailAddress {
             displayName, bracketedAddress,
             (name, addr) -> addr.toEmailAddressWithDisplayName(name)),
         bracketedAddress.map(AddrSpecAlike::toEmailAddress),
-        ADDR_SPEC_PARSER);
+        ADDR_SPEC_PARSER); // fall back when PARSER is combined with other parsers
   }
 
   private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses(
