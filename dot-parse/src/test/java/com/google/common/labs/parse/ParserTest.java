@@ -959,6 +959,15 @@ public class ParserTest {
   }
 
   @Test
+  public void suchThat_farthestFailurePrefersSuchThatOverSuffix() {
+    Parser<?> parser = anyOf(
+        word().suchThat(w -> w.length() > 10, "long word"),
+        string("foo").followedBy("d"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("fooled"));
+    assertThat(thrown).hasMessageThat().contains("expecting <long word>");
+  }
+
+  @Test
   public void flatMap_success() {
     Parser<String> parser = digits().flatMap(number -> string("=" + number));
     assertThat(parser.parse("123=123")).isEqualTo("=123");

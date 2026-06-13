@@ -1243,7 +1243,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         var result = left().skipAndMatch(skip, input, start, context);
         return result instanceof MatchResult.Success<T> success && !condition.test(success.value())
-            ? context.expecting(name, success.head())
+            ? context.expecting(name, success.head(), success.tail())
             : result;
       }
     };
@@ -2151,7 +2151,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /** Represents a partial parse result with a value and the [start, end) range of the match. */
-    record Failure<V>(int at, String message, Object[] args) implements MatchResult<V> {
+    record Failure<V>(int at, int frontier, String message, Object[] args) implements MatchResult<V> {
+      public Failure(int at, String message, Object[] args) {
+        this(at, at, message, args);
+      }
+
       @SuppressWarnings("unchecked")
       <X> Failure<X> safeCast() {
         return (Failure<X>) this;
@@ -2180,20 +2184,28 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     <V> MatchResult.Failure<V> expecting(String name, int at) {
-      return failAt(at, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
+      return expecting(name, at, at);
+    }
+
+    <V> MatchResult.Failure<V> expecting(String name, int at, int frontier) {
+      return failAt(at, frontier, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
     }
 
     <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
-      var failure = new MatchResult.Failure<V>(at, message, args);
+      return failAt(at, at, message, args);
+    }
+
+    <V> MatchResult.Failure<V> failAt(int at, int frontier, String message, Object... args) {
+      var failure = new MatchResult.Failure<V>(at, frontier, message, args);
       // prefer the farthest then the most recent failure
-      if (farthestFailure == null || failure.at() >= farthestFailure.at()) {
+      if (farthestFailure == null || failure.frontier() >= farthestFailure.frontier()) {
         farthestFailure = failure;
       }
       return failure;
     }
 
     ParseException report(MatchResult.Failure<?> failure) {
-      return (farthestFailure == null || failure.at() >= farthestFailure.at())
+      return (farthestFailure == null || failure.frontier() >= farthestFailure.frontier())
           ? failure.toException(input)
           : farthestFailure.toException(input);
     }
