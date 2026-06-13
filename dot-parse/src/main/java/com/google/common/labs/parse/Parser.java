@@ -840,9 +840,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return new SamePrefix<>() {
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        A buffer = supplier.get();
         switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success(int head, int tail, T value) -> {
+            A buffer = supplier.get();
             accumulator.accept(buffer, value);
             for (int from = tail; ; ) {
               switch (left().skipAndMatch(skip, input, from, context)) {
@@ -907,9 +907,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return new SamePrefix<>() {  // Manual impl for raw speed
       @Override MatchResult<R> skipAndMatch(
            Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        A buffer = supplier.get();
         switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success(int head, int tail, T value) -> {
+            A buffer = supplier.get();
             accumulator.accept(buffer, value);
             for (int from = tail; ; ) {
               int next = skipIfAny(skip, input, from);
