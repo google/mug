@@ -328,9 +328,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
-  /**
-   * Equivalent to {@link #string} except that not finding the separator isn't an error.
-   */
+  /** Equivalent to {@link #string} except that not finding the separator isn't an error. */
   private static Parser<?> separator(String sep) {
     String[] missing = {sep};
     checkArgument(sep.length() > 0, "delim cannot be empty");
@@ -355,8 +353,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   private Parser<T> terminal() {
     return new SamePrefix<>() {
-      @Override
-      MatchResult<T> skipAndMatch(
+      @Override MatchResult<T> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return left().skipAndMatch(skip, input, start, new ErrorContext(input));
       }
