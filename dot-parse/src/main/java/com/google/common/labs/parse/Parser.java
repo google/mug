@@ -1313,11 +1313,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<T> success -> {
-            yield switch (suffix.skipAndMatch(skip, input, success.tail(), new ErrorContext(input))) {
+            yield switch (suffix.skipAndMatch(skip, input, success.tail(), ErrorContext.MINIMAL)) {
               case MatchResult.Success<?> followed ->
-                  new MatchResult.Failure<T>(
+              ErrorContext.MINIMAL.failAt(
                       followed.head(), followed.tail(),
-                      "unexpected `%s` - %s.", new Object[] {name, new Snippet(input, success.tail())});
+                      "unexpected `%s` - %s.", name, new Snippet(input, success.tail()));
               default -> success;
             };
           }
@@ -1483,7 +1483,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private T parse(CharInput input, int fromIndex) {
-    ErrorContext context = new ErrorContext(input);
+    ErrorState context = new ErrorState(input);
     MatchResult<T> result = match(input, fromIndex, context);
     switch (result) {
       case MatchResult.Success(int head, int tail, T value) -> {
@@ -1505,7 +1505,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final boolean isPrefixOf(String input) {
     CharInput charInput = CharInput.from(input);
-    return match(charInput, 0, new ErrorContext(charInput)) instanceof MatchResult.Success;
+    return match(charInput, 0, ErrorContext.MINIMAL) instanceof MatchResult.Success;
   }
 
   /**
@@ -1523,8 +1523,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private boolean matches(CharInput input, int fromIndex) {
-    ErrorContext context = new ErrorContext(input);
-    return match(input, fromIndex, context) instanceof MatchResult.Success<?> success
+    return match(input, fromIndex, ErrorContext.MINIMAL) instanceof MatchResult.Success<?> success
         && input.isEof(success.tail());
   }
 
@@ -1565,7 +1564,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         if (input.isEof(index)) {
           return null;
         }
-        ErrorContext context = new ErrorContext(input);
+        ErrorState context = new ErrorState(input);
         return switch (match(input, index, context)) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
@@ -1627,7 +1626,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       private int index = fromIndex;
 
       MatchResult.Success<T> nextOrNull() {
-        return switch (match(input, index, new ErrorContext(input))) {
+        return switch (match(input, index, ErrorContext.MINIMAL)) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
             input.markCheckpoint(index);
@@ -1918,7 +1917,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       // forTokens().parseToStream() would only skip the trailing upon success.
       // If everything is skippable, it will fail to match.
       // We use flatMap() to keep the buffer loading lazy upon the returned stream being consumed.
-      return Stream.of(new ErrorContext(input))
+      return Stream.of(ErrorContext.MINIMAL)
           .flatMap(
               context ->
                   toSkip.match(input, fromIndex, context) instanceof MatchResult.Success<?> success
@@ -2116,7 +2115,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     if (skip == null) {
       return start;
     }
-    return switch (skip.match(input, start, new ErrorContext(input))) {
+    return switch (skip.match(input, start, ErrorContext.MINIMAL)) {
       case MatchResult.Success<?> success -> success.tail();
       case MatchResult.Failure<?> failure -> start;
     };
@@ -2164,39 +2163,55 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       ParseException toException(CharInput input) {
         return new ParseException(
             at,
-            String.format("at %s: %s", input.sourcePosition(at), String.format(message, args)));
+            String.format("at %s: %s", input.sourcePosition(at), formatMessage()));
       }
 
       @Override public Failure<V> startingFrom(int head) {
         return this;
+      }
+
+      String formatMessage() {
+        return String.format(message, args);
       }
     }
 
     MatchResult<V> startingFrom(int head);
   }
 
-  static final class ErrorContext {
-    private final CharInput input;
-    private MatchResult.Failure<?> farthestFailure = null;
+  static class ErrorContext {
+    static final ErrorContext MINIMAL = new ErrorContext();
 
-    ErrorContext(CharInput input) {
-      this.input = input;
-    }
-
-    <V> MatchResult.Failure<V> expecting(String name, int at) {
+    final <V> MatchResult.Failure<V> expecting(String name, int at) {
       return expecting(name, at, at);
     }
 
     <V> MatchResult.Failure<V> expecting(String name, int at, int frontier) {
-      return failAt(at, frontier, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
+      return failAt(at, frontier, "expecting <%s>.", name);
     }
 
-    <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
+    final <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
       return failAt(at, at, message, args);
     }
 
     <V> MatchResult.Failure<V> failAt(int at, int frontier, String message, Object... args) {
-      var failure = new MatchResult.Failure<V>(at, frontier, message, args);
+      return new MatchResult.Failure<V>(at, frontier, message, args);
+    }
+  }
+
+  private static final class ErrorState extends ErrorContext {
+    private final CharInput input;
+    private MatchResult.Failure<?> farthestFailure = null;
+
+    ErrorState(CharInput input) {
+      this.input = input;
+    }
+
+    @Override <V> MatchResult.Failure<V> expecting(String name, int at, int frontier) {
+      return failAt(at, frontier, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
+    }
+
+    @Override <V> MatchResult.Failure<V> failAt(int at, int frontier, String message, Object... args) {
+      MatchResult.Failure<V> failure = super.failAt(at, frontier, message, args);
       // prefer the farthest then the most recent failure
       if (farthestFailure == null || failure.frontier() >= farthestFailure.frontier()) {
         farthestFailure = failure;
