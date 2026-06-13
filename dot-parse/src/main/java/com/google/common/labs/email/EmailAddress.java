@@ -208,7 +208,6 @@ public final class EmailAddress {
   private static final CharPredicate ATEXT =
       LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii();
   private static final CharPredicate I18N_DOMAIN_LABEL_CHARS = LETTER_OR_DIGIT.or('-').precomputeForAscii();
-  private static final CharPredicate ASCII_DOMAIN_LABEL_CHARS = range('a', 'z').orRange('0', '9').or('-');
   private static final CharPredicate ADDRESS_LIST_SEPARATOR_CHAR = anyOf(",;");
   private static final Parser<?> ADDRESS_LIST_DELIMITER =
       one(ADDRESS_LIST_SEPARATOR_CHAR, "delimiter").atLeastOnce(counting());
@@ -541,13 +540,6 @@ public final class EmailAddress {
         DANGEROUS.matchesNoneOf(localPart),
         "local-part must not contain control or formatting characters");
     return localPart;
-  }
-
-  private static boolean hasHyphenBoundary(String domain) {
-    return domain.startsWith("-")
-        || domain.endsWith("-")
-        || domain.contains(".-")
-        || domain.contains("-.");
   }
 
   private static String checkDisplayName(String displayName) {
