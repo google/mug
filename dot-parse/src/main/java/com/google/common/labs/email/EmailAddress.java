@@ -165,14 +165,6 @@ import com.google.mu.util.Substring;
  *      - Strictly rejected to prevent downstream mailer decoding exploits.
  * </ul>
  *
- * @param localPart the {@code "tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}
- * @param domain the {@code "lotr.org"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}.
- *     Note that for internationalized domain, this is the punycode in ASCII. You can
- *     use {@link #unicodeDomain} to access the non-encoded domain. {@link #hasI18nDomain}
- *     can be used to check if the domain is internationalized.
- * @param displayName the {@code "J.R.R. Tolkien"} from {@code J.R.R. Tolkien <tolkien@lotr.org>}.
- *     Note that this holds the raw transport-safe format (including any RFC 2047 encoded-words).
- *     You can use {@link #unicodeDisplayName} to access the decoded Unicode representation.
  * @since 9.9.4
  */
 @Immutable
@@ -218,7 +210,7 @@ public final class EmailAddress {
   private static final CharPredicate ASCII_DOMAIN_LABEL_CHARS = range('a', 'z').orRange('0', '9').or('-');
   private static final CharPredicate ADDRESS_LIST_SEPARATOR_CHAR = anyOf(",;");
   private static final Parser<?> ADDRESS_LIST_DELIMITER =
-      Parser.one(ADDRESS_LIST_SEPARATOR_CHAR, "delimiter").atLeastOnce(counting());
+      one(ADDRESS_LIST_SEPARATOR_CHAR, "delimiter").atLeastOnce(counting());
 
   private static final Parser<String> QUOTED =
       quotedByWithEscapes('"', '"', chars(1))
@@ -312,26 +304,32 @@ public final class EmailAddress {
     return PARSER.parseSkipping(SAFE_WHITESPACE, address);
   }
 
-  /** Returns the local-part of the email address (e.g. {@code "user"}). */
+  /**
+   * Returns the local-part of the email address, e.g. the {@code "tolkien"} from
+   * {@code J.R.R. Tolkien <tolkien@lotr.org>}.
+   */
   public String localPart() {
     return localPart;
   }
 
   /**
-   * Returns the domain of the email address (e.g. {@code "example.com"}).
+   * Returns the domain of the email address, e.g. the {@code "lotr.org"} from
+   * {@code J.R.R. Tolkien <tolkien@lotr.org>}.
    *
-   * <p>The returned domain is ASCII-only (non-ASCII internationalized domains are puny-coded).
-   * If you need the Unicode (decoded) domain, use {@link #unicodeDomain()}.
+   * <p>Note that for internationalized domain, this is the punycode in ASCII. You can
+   * use {@link #unicodeDomain} to access the non-encoded domain. {@link #hasI18nDomain}
+   * can be used to check if the domain is internationalized.
    */
   public String domain() {
     return domain;
   }
 
   /**
-   * Returns the raw display name of the email address, or {@code Optional.empty()} if none is present.
+   * Returns the display name of the email address (e.g. the {@code "J.R.R. Tolkien"} from
+   * {@code J.R.R. Tolkien <tolkien@lotr.org>}), or {@code Optional.empty()} if no display name is present.
    *
-   * <p>The display name is kept in its raw transport-safe encoded form (including any RFC 2047
-   * encoded-words). If you need to decode RFC 2047 encoded-words, use {@link #unicodeDisplayName()}.
+   * <p>Note that this holds the raw transport-safe format (including any RFC 2047 encoded-words).
+   * You can use {@link #unicodeDisplayName} to access the decoded Unicode representation.
    */
   public Optional<String> displayName() {
     return displayName;
@@ -450,7 +448,7 @@ public final class EmailAddress {
    */
   public static List<EmailAddress> parseAddressList(
       String addressList, Consumer<? super String> ifInvalid) {
-    Parser<?> significant = Parser.one(ADDRESS_LIST_SEPARATOR_CHAR.not(), "significant char");
+    Parser<?> significant = one(ADDRESS_LIST_SEPARATOR_CHAR.not(), "significant char");
     return anyOf(
             PARSER.notFollowedBy(significant, "non-separator"),  // don't extract a@b from a@b@c
             consecutive(ADDRESS_LIST_SEPARATOR_CHAR.not(), "invalid").map(String::trim))
@@ -490,7 +488,6 @@ public final class EmailAddress {
         one(unquotedDisplayNameChars.or('"').and(noneOf(",;")), "display name char"),
         "part of display name");
     return anyOf(
-        bracketedAddress.map(AddrSpecAlike::toEmailAddress),
         sequence(
             // optimization so that for the common case of user@company.com, we don't have to
             // backtrack to the sequence(displayName, bracketedAddress) rule.
@@ -502,6 +499,7 @@ public final class EmailAddress {
         sequence(
             displayName, bracketedAddress,
             (name, addr) -> addr.toEmailAddressWithDisplayName(name)),
+        bracketedAddress.map(AddrSpecAlike::toEmailAddress),
         ADDR_SPEC_PARSER);
   }
 
