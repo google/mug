@@ -1008,7 +1008,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public final <A, R> Parser<R>.OrEmpty zeroOrMoreDelimitedBy(
       Parser<?> delimiter, Collector<? super T, A, ? extends R> collector) {
     return this.<A, R>atLeastOnceDelimitedBy(delimiter, collector)
-    .new OrEmpty(emptyValueSupplier(collector));
+        .new OrEmpty(emptyValueSupplier(collector));
   }
 
   /**

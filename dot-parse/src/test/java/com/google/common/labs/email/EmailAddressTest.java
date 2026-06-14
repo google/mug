@@ -172,6 +172,20 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressOf_preservesQuotesAndBackslashesLiterally() {
+    EmailAddress address = EmailAddress.of("\"john\"", "example.com");
+    assertThat(address.localPart()).isEqualTo("\"john\"");
+    assertThat(address.toString()).isEqualTo("\"\\\"john\\\"\"@example.com");
+  }
+
+  @Test
+  public void testEmailAddressWithDisplayName_preservesQuotesAndBackslashesLiterally() {
+    EmailAddress address = EmailAddress.of("john", "example.com").withDisplayName("\"John\"");
+    assertThat(address.displayName()).hasValue("\"John\"");
+    assertThat(address.toString()).isEqualTo("\"\\\"John\\\"\" <john@example.com>");
+  }
+
+  @Test
   public void testEmailAddressOf_roundtrip_localPartNeedsQuoting_withDisplayName() {
     EmailAddress address =
         EmailAddress.of("john,doe;part", "example.com")
