@@ -2256,9 +2256,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return (head, tail) -> {
       var buffer = supplier.get();
       accumulator.accept(buffer, head);
-      for (int i = 0; i < tail.size(); i++) {
-        accumulator.accept(buffer, tail.get(i));
-      }
+      tail.forEach(value -> accumulator.accept(buffer, value));
       return finisher.apply(buffer);
     };
   }
