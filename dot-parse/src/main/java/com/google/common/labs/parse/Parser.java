@@ -21,10 +21,12 @@ import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.common.labs.parse.Utils.checkPositionIndex;
 import static com.google.common.labs.parse.Utils.checkState;
 import static com.google.mu.util.CharPredicate.isNot;
+import static com.google.mu.util.Substring.upToIncluding;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
+import static java.lang.Character.isWhitespace;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Comparator.reverseOrder;
@@ -1722,7 +1724,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return sequence(
           this, string(delimiter).then(this).zeroOrMore(toList()),
           (head, tail) -> {
-            var buffer = supplier.get();
+            A buffer = supplier.get();
             accumulator.accept(buffer, head);
             tail.forEach(value -> accumulator.accept(buffer, value));
             R result = finisher.apply(buffer);
@@ -2151,7 +2153,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
   }
 
-  sealed interface MatchResult<V> permits MatchResult.Success, MatchResult.Failure {
+  sealed interface MatchResult<V> {
     /**
      * Represents a successful parse result with a value and the [head, tail) range of the match.
      */
@@ -2270,13 +2272,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       if (input.isEof(at)) {
         return "<EOF>";
       }
-      String snippet =
-          Substring.upToIncluding(Substring.consecutive(c -> !Character.isWhitespace(c)))
-              .limit(50)
-              .or(Substring.BEGINNING.toEnd().limit(3))  // print a few whitespaces then
-              .in(input.snippet(at, 50))
-              .get()
-              .toString();
+      String snippet = upToIncluding(Substring.consecutive(c -> !isWhitespace(c)))
+          .limit(50)
+          .or(Substring.BEGINNING.toEnd().limit(3))  // print a few whitespaces then
+          .in(input.snippet(at, 50))
+          .get()
+          .toString();
       return "[" + (input.isInRange(at + snippet.length()) ? snippet + "..." : snippet) + "]";
     }
   }
