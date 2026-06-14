@@ -1212,8 +1212,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return map(unused -> result);
   }
 
-  @Override
-  public final <S> Parser<S> then(Parser<S> suffix) {
+  @Override public final <S> Parser<S> then(Parser<S> suffix) {
     return sequence(this, suffix, (a, b) -> b);
   }
 
@@ -1746,8 +1745,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return delimitedBy(delimiter, toUnmodifiableList());
     }
 
-    @Override
-    public <S> Parser<S> then(Parser<S> suffix) {
+    @Override public <S> Parser<S> then(Parser<S> suffix) {
       return sequence(this, suffix, (a, b) -> b);
     }
 
