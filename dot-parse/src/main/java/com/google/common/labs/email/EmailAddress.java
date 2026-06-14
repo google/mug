@@ -208,9 +208,7 @@ public final class EmailAddress {
   private static final CharPredicate ATEXT =
       LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii();
   private static final CharPredicate I18N_DOMAIN_LABEL_CHARS = LETTER_OR_DIGIT.or('-').precomputeForAscii();
-  private static final CharPredicate ADDRESS_LIST_SEPARATOR_CHAR = anyOf(",;");
-  private static final Parser<?> ADDRESS_LIST_DELIMITER =
-      one(ADDRESS_LIST_SEPARATOR_CHAR, "delimiter").atLeastOnce(counting());
+  private static final Parser<?> ADDRESS_LIST_DELIMITER = one("[,;]").atLeastOnce(counting());
 
   private static final Parser<String> QUOTED =
       quotedByWithEscapes('"', '"', chars(1))
@@ -448,10 +446,10 @@ public final class EmailAddress {
    */
   public static List<EmailAddress> parseAddressList(
       String addressList, Consumer<? super String> ifInvalid) {
-    Parser<?> significant = one(ADDRESS_LIST_SEPARATOR_CHAR.not(), "significant char");
+    Parser<?> significant = one("[^,;]");
     return anyOf(
             PARSER.notFollowedBy(significant, "non-separator"),  // don't extract a@b from a@b@c
-            consecutive(ADDRESS_LIST_SEPARATOR_CHAR.not(), "invalid").map(String::trim))
+            consecutive("[^,;]").map(String::trim))
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(ifInvalid))
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
         .parseSkipping(SAFE_WHITESPACE, addressList);

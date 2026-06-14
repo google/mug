@@ -1319,9 +1319,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           case MatchResult.Success<T> success -> {
             yield switch (suffix.skipAndMatch(skip, input, success.tail(), ErrorContext.MINIMAL)) {
               case MatchResult.Success<?> followed ->
-              ErrorContext.MINIMAL.failAt(
-                      followed.head(), followed.tail(),
-                      "unexpected `%s` - %s.", name, new Snippet(input, success.tail()));
+                context.failAt(
+                    followed.head(), followed.tail(),
+                    "unexpected `%s` - %s.", name, new Snippet(input, followed.head()));
               default -> success;
             };
           }
