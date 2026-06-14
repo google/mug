@@ -1041,7 +1041,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         .zeroOrMoreDelimitedBy(delimiter, mapping(identity(), collector));
   }
 
-  private <A, R> Parser<R> andZeroOrMore(Parser<? extends T> extra, Collector<? super T, A, ? extends R> collector) {
+  private <A, R> Parser<R> andZeroOrMore(
+      Parser<? extends T> extra, Collector<? super T, A, ? extends R> collector) {
     var supplier = collector.supplier();
     var accumulator = collector.accumulator();
     var finisher = collector.finisher();
@@ -1713,8 +1714,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * <p>Note that it's different from {@link Parser#zeroOrMoreDelimitedBy}, which may produce
      * empty list, but each element is guaranteed to be non-empty.
      */
-    public <R> Parser<R>.OrEmpty delimitedBy(String delimiter, Collector<? super T, ?, R> collector) {
-      return sequence(this, string(delimiter).then(this).zeroOrMore(toList()), using(collector));
+    public <A, R> Parser<R>.OrEmpty delimitedBy(
+        String delimiter, Collector<? super T, A, ? extends R> collector) {
+      var supplier = collector.supplier();
+      var accumulator = collector.accumulator();
+      var finisher = collector.finisher();
+      return sequence(
+          this, string(delimiter).then(this).zeroOrMore(toList()),
+          (head, tail) -> {
+            var buffer = supplier.get();
+            accumulator.accept(buffer, head);
+            tail.forEach(value -> accumulator.accept(buffer, value));
+            R result = finisher.apply(buffer);
+            return result;
+          });
     }
 
     /**
@@ -2246,19 +2259,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       operand = op.apply(operand);
     }
     return operand;
-  }
-
-  private static <T, A, R> BiFunction<? super T, List<? extends T>, R> using(
-      Collector<? super T, A, R> collector) {
-    var supplier = collector.supplier();
-    var accumulator = collector.accumulator();
-    var finisher = collector.finisher();
-    return (head, tail) -> {
-      var buffer = supplier.get();
-      accumulator.accept(buffer, head);
-      tail.forEach(value -> accumulator.accept(buffer, value));
-      return finisher.apply(buffer);
-    };
   }
 
   record Snippet(CharInput input, int at) {
