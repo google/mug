@@ -32,7 +32,6 @@ import static com.google.mu.util.Substring.last;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.filtering;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
@@ -53,6 +52,7 @@ import com.google.errorprone.annotations.InlineMe;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
+import com.google.mu.util.stream.Joiner;
 
 /**
  * Represents a strictly validated email address according to RFC 5322, designed as a modern,
@@ -474,7 +474,7 @@ public final class EmailAddress {
             .suchThat(n -> !(n.contains(",") && n.contains("@")), "unambiguous display name");
     Parser<AddrSpecAlike> bracketedAddress = ADDR_SPEC_ALIKE.between("<", ">");
     Parser<String> displayName =
-        anyOf(unquotedAtom.map(String::trim), QUOTED).atLeastOnce(joining(" "));
+        anyOf(unquotedAtom.map(String::trim), QUOTED).atLeastOnce(Joiner.on(' '));
     // a standalone address not followed by a display name char.
     // If it's followed by a comma or semicolon, we still allow it because the address
     // may be in a list.

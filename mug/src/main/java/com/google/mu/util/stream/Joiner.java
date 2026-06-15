@@ -18,6 +18,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
@@ -109,6 +110,12 @@ public final class Joiner implements Collector<Object, FasterStringJoiner, Strin
    * @since 5.7
    */
   public String join(Collection<?> collection) {
+    if (collection.size() == 1
+        && prefix.isEmpty()
+        && suffix.isEmpty()
+        && collection instanceof List<?>) {  // common path
+      return String.valueOf(((List<?>) collection).get(0));
+    }
     return collection.stream().collect(this);
   }
 
