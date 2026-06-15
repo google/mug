@@ -91,18 +91,12 @@ final class OrParser<T> extends Parser<T> {
 
   private static <T> PrefixPruneTree<Parser<T>> makePruneTreeIfUseful(
       List<Parser<T>> parsers) {
-    if (parsers.size() < 4) { // too few candidates, not worth it.
-      return null;
-    }
     var builder = new PrefixPruneTree.Builder<Parser<T>>();
     for (Parser<T> parser : parsers) {
       for (String prefix : parser.getPrefixes()) {
         builder.addPrefix(prefix, 8, parser); // peek for up to 8 chars lest diminishing return.
       }
     }
-    if (builder.numSurvivors() * 2 < parsers.size()) { // with sufficient pruning power.
-      return builder.build();
-    }
-    return null;
+    return builder.numSurvivors() < parsers.size() ? builder.build() : null;
   }
 }

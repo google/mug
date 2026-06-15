@@ -2356,9 +2356,9 @@ public class ParserTest {
   }
 
   @Test
-  public void anyOf_pruningSuppressed_withManyNonPrunableCandidates() {
+  public void anyOf_pruningEnabled_withManyNonPrunableCandidates() {
     // 3 prunable strings + 8 non-prunable candidates = 11 total.
-    // Pruning NOT triggered because numSurvivors(9) * 2 > 11.
+    // Pruning triggered because numSurvivors(9) < 11.
     Parser<String> parser =
         anyOf(
             string("a1"),
@@ -2377,9 +2377,9 @@ public class ParserTest {
     assertThat(parser.parse("a")).isEqualTo("a"); // chars(1)
     assertThat(parser.parse("abcdefgh")).isEqualTo("abcdefgh"); // chars(8)
 
-    // Failure without pruning. Reporting the first candidate ("a1").
+    // Failure with pruning. Reporting the first survivor candidate ("chars(8)").
     ParseException e = assertThrows(ParseException.class, () -> parser.parse(""));
-    assertThat(e).hasMessageThat().contains("expecting <a1>");
+    assertThat(e).hasMessageThat().contains("expecting <8 char(s)>");
   }
 
   @Test
@@ -2484,7 +2484,7 @@ public class ParserTest {
     assertThat(outer.parse("FOO")).isEqualTo("foo");
 
     ParseException e = assertThrows(ParseException.class, () -> outer.parse("x"));
-    assertThat(e).hasMessageThat().contains("expecting <foo>");
+    assertThat(e).hasMessageThat().contains("expecting <2 char(s)>");
   }
 
   @Test
