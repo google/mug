@@ -214,7 +214,7 @@ public final class EmailAddress {
       quotedByWithEscapes('"', '"', chars(1))
           .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
   private static final Parser<String> LOCAL_PART =
-      anyOf(QUOTED, consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")))
+      anyOf(consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")), QUOTED)
           .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
   private static final Parser<String> DOMAIN =
       consecutive(I18N_DOMAIN_LABEL_CHARS, "domain label chars")
@@ -475,7 +475,7 @@ public final class EmailAddress {
             .suchThat(n -> !(n.contains(",") && n.contains("@")), "unambiguous display name");
     Parser<AddrSpecAlike> bracketedAddress = ADDR_SPEC_ALIKE.between("<", ">");
     Parser<String> displayName =
-        anyOf(QUOTED, unquotedAtom.map(String::trim)).atLeastOnce(joining(" "));
+        anyOf(unquotedAtom.map(String::trim), QUOTED).atLeastOnce(joining(" "));
     // a standalone address not followed by a display name char.
     // If it's followed by a comma or semicolon, we still allow it because the address
     // may be in a list.
