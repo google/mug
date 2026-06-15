@@ -446,9 +446,8 @@ public final class EmailAddress {
    */
   public static List<EmailAddress> parseAddressList(
       String addressList, Consumer<? super String> ifInvalid) {
-    Parser<?> significant = one("[^,;]");
     return anyOf(
-            PARSER.notFollowedBy(significant, "non-separator"),  // don't extract a@b from a@b@c
+            PARSER.notFollowedBy(one("[^,;]"), "non-separator"),  // don't extract a@b from a@b@c
             consecutive("[^,;]").map(String::trim))
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(ifInvalid))
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
