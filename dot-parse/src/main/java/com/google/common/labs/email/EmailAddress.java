@@ -145,7 +145,8 @@ import com.google.mu.util.stream.Joiner;
  *   <tr>
  *     <td><b>RFC 2047 Encoded Words</b></td>
  *     <td>Automatic or permissive (decodes or accepts encoded words in display name, local-part, or domain, risking address spoofing and routing hijacking)</td>
- *     <td>Defensively rejected in local-part and domain. Supported in display name via safe, explicit opt-in {@link #unicodeDisplayName()}</td>
+ *     <td>Defensively rejected in local-part and checkDomain
+ *      Supported in display name via safe, explicit opt-in {@link #unicodeDisplayName()}</td>
  *   </tr>
  *   <tr>
  *     <td><b>Multi-@ Local-Parts</b></td>
@@ -207,8 +208,6 @@ public final class EmailAddress {
   private static final CharPredicate LETTER_OR_DIGIT = Character::isLetterOrDigit;
   private static final CharPredicate ATEXT = LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~");
   private static final CharPredicate ATEXT_OR_DOT = ATEXT.or('.').precomputeForAscii();
-  private static final CharPredicate I18N_DOMAIN_CHARS =
-      LETTER_OR_DIGIT.or(".-").precomputeForAscii();
   private static final Parser<?> ADDRESS_LIST_DELIMITER = one("[,;]").atLeastOnce(counting());
 
   private static final Parser<String> QUOTED =
@@ -220,11 +219,10 @@ public final class EmailAddress {
                   .suchThat(local -> !hasWeirdDots(local), "valid local part"),
               QUOTED)
           .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
+  private static final Parser<String> ASCII_DOMAIN_NAME = consecutive("[a-z0-9.-]");
   private static final Parser<String> DOMAIN =
-      consecutive(I18N_DOMAIN_CHARS, "domain")
-          .suchThat(
-              d -> d.contains(".") && !hasWeirdDots(d) && !hasWeirdHyphen(d), "valid domain")
-          .suchThat(d -> NON_DIGIT.matchesAnyOf(topLevelDomainOrThrow(d)), "domain with valid TLD");
+      consecutive(LETTER_OR_DIGIT.or(anyOf(".-")).precomputeForAscii(), "domain")
+          .suchThat(d -> isValidDomain(d) && hasValidTopLevelDomain(d), "valid domain");
   private static final Parser<AddrSpecAlike> ADDR_SPEC_ALIKE =
       literally(sequence(LOCAL_PART.followedBy("@"), DOMAIN, AddrSpecAlike::new));
 
@@ -291,8 +289,7 @@ public final class EmailAddress {
 
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
   public static EmailAddress of(String localPart, String domain) {
-    return new EmailAddress(
-        checkLocalPart(localPart), DOMAIN.parse(canonicalizeDomain(domain)), Optional.empty());
+    return new EmailAddress(checkLocalPart(localPart), sanitizeDomain(domain), Optional.empty());
   }
 
   /**
@@ -499,10 +496,6 @@ public final class EmailAddress {
         ADDR_SPEC_PARSER); // fall back when PARSER is combined with other parsers
   }
 
-  private static String topLevelDomainOrThrow(String domain) {
-    return TLD.from(domain).orElseThrow(() -> DOTLESS_DOMAIN_BANNED.with(domain));
-  }
-
   private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses(
       Consumer<? super String> ifInvalid) {
     requireNonNull(ifInvalid);
@@ -526,6 +519,22 @@ public final class EmailAddress {
             .repeatedly()
             .match(name)
             .anyMatch(ws -> ws.length() > 1);
+  }
+
+  private static String sanitizeDomain(String domain) {
+    domain = ASCII_DOMAIN_NAME.parse(canonicalizeDomain(domain));
+    checkArgument(isValidDomain(domain), "invalid domain: %s", domain);
+    checkArgument(hasValidTopLevelDomain(domain), "TLD name cannot be all numeric (%s)", domain);
+    return domain;
+  }
+
+  private static boolean isValidDomain(String domain) {
+    return domain.contains(".") && !hasWeirdDots(domain) && !hasWeirdHyphen(domain);
+  }
+
+  private static boolean hasValidTopLevelDomain(String domain) {
+    String tld = TLD.from(domain).orElseThrow(() -> DOTLESS_DOMAIN_BANNED.with(domain));
+    return NON_DIGIT.matchesAnyOf(tld);
   }
 
   private static boolean hasWeirdDots(String s) {
