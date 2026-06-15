@@ -222,7 +222,7 @@ public final class EmailAddress {
   private static final Parser<String> DOMAIN =
       consecutive(I18N_DOMAIN_LABEL_CHARS.or('.'), "domain")
           .suchThat(
-              d -> d.contains(".") && !hasWeirdDots(d) && !hasHyphenBoundary(d), "valid domain")
+              d -> d.contains(".") && !hasWeirdDots(d) && !hasWeirdHyphen(d), "valid domain")
           .suchThat(d -> NON_DIGIT.matchesAnyOf(topLevelDomainOrThrow(d)), "domain with valid TLD");
   private static final Parser<AddrSpecAlike> ADDR_SPEC_ALIKE =
       literally(sequence(LOCAL_PART.followedBy("@"), DOMAIN, AddrSpecAlike::new));
@@ -531,7 +531,7 @@ public final class EmailAddress {
     return s.startsWith(".") || s.endsWith(".") || s.contains("..");
   }
 
-  private static boolean hasHyphenBoundary(String domain) {
+  private static boolean hasWeirdHyphen(String domain) {
     return domain.startsWith("-")
         || domain.endsWith("-")
         || domain.contains(".-")
