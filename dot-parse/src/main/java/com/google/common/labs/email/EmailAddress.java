@@ -214,15 +214,16 @@ public final class EmailAddress {
       quotedByWithEscapes('"', '"', chars(1))
           .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
   private static final Parser<String> LOCAL_PART =
-      anyOf(consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", counting()).source(), QUOTED)
+      anyOf(
+              consecutive(ATEXT.or('.'), "local part")
+                  .suchThat(local -> !hasWeirdDots(local), "valid local part"),
+              QUOTED)
           .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
   private static final Parser<String> DOMAIN =
-      consecutive(I18N_DOMAIN_LABEL_CHARS, "domain label chars")
-          .suchThat(label -> !label.startsWith("-") && !label.endsWith("-"), "domain without -. or .-")
-          .atLeastOnceDelimitedBy(".", counting())
-          .suchThat(count -> count > 1, "domain name with at least one dot")
-          .source()
-          .suchThat(d -> NON_DIGIT.matchesAnyOf(topLevelDomainOrThrow(d)), "domain with valid TLD");;
+      consecutive(I18N_DOMAIN_LABEL_CHARS.or('.'), "domain")
+          .suchThat(
+              d -> d.contains(".") && !hasWeirdDots(d) && !hasHyphenBoundary(d), "valid domain")
+          .suchThat(d -> NON_DIGIT.matchesAnyOf(topLevelDomainOrThrow(d)), "domain with valid TLD");
   private static final Parser<AddrSpecAlike> ADDR_SPEC_ALIKE =
       literally(sequence(LOCAL_PART.followedBy("@"), DOMAIN, AddrSpecAlike::new));
 
@@ -380,12 +381,9 @@ public final class EmailAddress {
   }
 
   private String showLocalPart() {
-    return localPart.startsWith(".")
-        || localPart.endsWith(".")
-        || localPart.contains("..")
-        || !ATEXT.or('.').matchesAllOf(localPart)
-      ? '"' + escape(localPart) + '"'
-      : localPart;
+    return hasWeirdDots(localPart) || !ATEXT.or('.').matchesAllOf(localPart)
+        ? '"' + escape(localPart) + '"'
+        : localPart;
   }
 
   /**
@@ -527,6 +525,17 @@ public final class EmailAddress {
             .repeatedly()
             .match(name)
             .anyMatch(ws -> ws.length() > 1);
+  }
+
+  private static boolean hasWeirdDots(String s) {
+    return s.startsWith(".") || s.endsWith(".") || s.contains("..");
+  }
+
+  private static boolean hasHyphenBoundary(String domain) {
+    return domain.startsWith("-")
+        || domain.endsWith("-")
+        || domain.contains(".-")
+        || domain.contains("-.");
   }
 
   private static String checkLocalPart(String localPart) {
