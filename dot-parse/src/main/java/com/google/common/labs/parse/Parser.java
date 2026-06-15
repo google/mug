@@ -470,7 +470,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(after != '\\', "quoteChar cannot be '\\'");
     checkArgument(!Character.isISOControl(after), "quoteChar cannot be a control character");
     checkArgument(!Character.isSurrogate(after), "quoteChar cannot be a surrogate character");
-    return anyOf(consecutive(isNot(after).and(isNot('\\')), "quoted chars"), escape)
+    return anyOf(consecutive(isNot(after).and(isNot('\\')).precomputeForAscii(), "quoted chars"), escape)
         .zeroOrMore(joining())
         .immediatelyBetween(before, Character.toString(after));
   }
