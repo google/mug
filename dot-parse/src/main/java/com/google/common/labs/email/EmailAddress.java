@@ -531,11 +531,8 @@ public final class EmailAddress {
     return s.startsWith(".") || s.endsWith(".") || s.contains("..");
   }
 
-  private static boolean hasWeirdHyphen(String domain) {
-    return domain.startsWith("-")
-        || domain.endsWith("-")
-        || domain.contains(".-")
-        || domain.contains("-.");
+  private static boolean hasWeirdHyphen(String s) {
+    return s.startsWith("-") || s.endsWith("-") || s.contains(".-") || s.contains("-.");
   }
 
   private static String checkLocalPart(String localPart) {
@@ -559,14 +556,6 @@ public final class EmailAddress {
     return IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.ROOT);
   }
 
-  @FormatMethod
-  private static void checkArgument(
-      boolean condition, @FormatString String message, Object... args) {
-    if (!condition) {
-      throw new IllegalArgumentException(String.format(message, args));
-    }
-  }
-
   private record AddrSpecAlike(String localPart, String domain) {
     EmailAddress toEmailAddress() {
       return new EmailAddress(localPart, canonicalizeDomain(domain), Optional.empty());
@@ -576,9 +565,16 @@ public final class EmailAddress {
       return new EmailAddress(localPart, canonicalizeDomain(domain), Optional.of(displayName));
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return localPart + '@' + domain;
+    }
+  }
+
+  @FormatMethod
+  private static void checkArgument(
+      boolean condition, @FormatString String message, Object... args) {
+    if (!condition) {
+      throw new IllegalArgumentException(String.format(message, args));
     }
   }
 }
