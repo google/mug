@@ -205,9 +205,10 @@ public final class EmailAddress {
   // javaLetterOrDigit() strictly limits the character class to printable classified letters and
   // digits, successfully neutralizing these injection vectors.
   private static final CharPredicate LETTER_OR_DIGIT = Character::isLetterOrDigit;
-  private static final CharPredicate ATEXT =
-      LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~").precomputeForAscii();
-  private static final CharPredicate I18N_DOMAIN_LABEL_CHARS = LETTER_OR_DIGIT.or('-').precomputeForAscii();
+  private static final CharPredicate ATEXT = LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~");
+  private static final CharPredicate ATEXT_OR_DOT = ATEXT.or('.').precomputeForAscii();
+  private static final CharPredicate I18N_DOMAIN_CHARS =
+      LETTER_OR_DIGIT.or(".-").precomputeForAscii();
   private static final Parser<?> ADDRESS_LIST_DELIMITER = one("[,;]").atLeastOnce(counting());
 
   private static final Parser<String> QUOTED =
@@ -215,12 +216,12 @@ public final class EmailAddress {
           .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
   private static final Parser<String> LOCAL_PART =
       anyOf(
-              consecutive(ATEXT.or('.'), "local part")
+              consecutive(ATEXT_OR_DOT, "local part")
                   .suchThat(local -> !hasWeirdDots(local), "valid local part"),
               QUOTED)
           .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
   private static final Parser<String> DOMAIN =
-      consecutive(I18N_DOMAIN_LABEL_CHARS.or('.'), "domain")
+      consecutive(I18N_DOMAIN_CHARS, "domain")
           .suchThat(
               d -> d.contains(".") && !hasWeirdDots(d) && !hasWeirdHyphen(d), "valid domain")
           .suchThat(d -> NON_DIGIT.matchesAnyOf(topLevelDomainOrThrow(d)), "domain with valid TLD");
@@ -381,7 +382,7 @@ public final class EmailAddress {
   }
 
   private String showLocalPart() {
-    return hasWeirdDots(localPart) || !ATEXT.or('.').matchesAllOf(localPart)
+    return hasWeirdDots(localPart) || !ATEXT_OR_DOT.matchesAllOf(localPart)
         ? '"' + escape(localPart) + '"'
         : localPart;
   }
