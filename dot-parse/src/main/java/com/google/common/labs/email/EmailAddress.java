@@ -208,7 +208,6 @@ public final class EmailAddress {
   private static final CharPredicate LETTER_OR_DIGIT = Character::isLetterOrDigit;
   private static final CharPredicate ATEXT = LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~");
   private static final CharPredicate ATEXT_OR_DOT = ATEXT.or('.').precomputeForAscii();
-  private static final Parser<?> ADDRESS_LIST_DELIMITER = one("[,;]").atLeastOnce(counting());
 
   private static final Parser<String> QUOTED =
       quotedByWithEscapes('"', '"', chars(1))
@@ -226,6 +225,10 @@ public final class EmailAddress {
       I18N_DOMAIN_NAME.suchThat(d -> isValidDomain(d) && hasValidTopLevelDomain(d), "valid domain");
   private static final Parser<AddrSpecAlike> ADDR_SPEC_ALIKE =
       literally(sequence(LOCAL_PART.followedBy("@"), DOMAIN, AddrSpecAlike::new));
+
+  private static final Parser<?> ADDRESS_LIST_DELIMITER = one("[,;]").atLeastOnce(counting());
+  private static final Parser<Character> ANY_BUT_LIST_DELIMITER = one("[^,;]");
+  private static final Parser<String> UNTIL_LIST_DELIMITER = consecutive("[^,;]");
 
   /**
    * Parser that strictly matches only the RFC 5322 {@code addr-spec} (i.e., {@code
@@ -444,8 +447,9 @@ public final class EmailAddress {
   public static List<EmailAddress> parseAddressList(
       String addressList, Consumer<? super String> ifInvalid) {
     return anyOf(
-            PARSER.notFollowedBy(one("[^,;]"), "non-separator"),  // don't extract a@b from a@b@c
-            consecutive("[^,;]").map(String::trim))
+            // don't extract a@b from a@b@c
+            PARSER.notFollowedBy(ANY_BUT_LIST_DELIMITER, "non-separator"),
+            UNTIL_LIST_DELIMITER.map(String::trim))
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(ifInvalid))
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
         .parseSkipping(SAFE_WHITESPACE, addressList);
