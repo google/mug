@@ -220,9 +220,10 @@ public final class EmailAddress {
               QUOTED)
           .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
   private static final Parser<String> ASCII_DOMAIN_NAME = consecutive("[a-z0-9.-]");
+  private static final Parser<String> I18N_DOMAIN_NAME =
+      consecutive(LETTER_OR_DIGIT.or(anyOf(".-")).precomputeForAscii(), "domain");
   private static final Parser<String> DOMAIN =
-      consecutive(LETTER_OR_DIGIT.or(anyOf(".-")).precomputeForAscii(), "domain")
-          .suchThat(d -> isValidDomain(d) && hasValidTopLevelDomain(d), "valid domain");
+      I18N_DOMAIN_NAME.suchThat(d -> isValidDomain(d) && hasValidTopLevelDomain(d), "valid domain");
   private static final Parser<AddrSpecAlike> ADDR_SPEC_ALIKE =
       literally(sequence(LOCAL_PART.followedBy("@"), DOMAIN, AddrSpecAlike::new));
 
