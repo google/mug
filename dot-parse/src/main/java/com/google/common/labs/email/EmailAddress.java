@@ -214,7 +214,7 @@ public final class EmailAddress {
       quotedByWithEscapes('"', '"', chars(1))
           .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
   private static final Parser<String> LOCAL_PART =
-      anyOf(consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", joining(".")), QUOTED)
+      anyOf(consecutive(ATEXT, "local part").atLeastOnceDelimitedBy(".", counting()).source(), QUOTED)
           .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
   private static final Parser<String> DOMAIN =
       consecutive(I18N_DOMAIN_LABEL_CHARS, "domain label chars")
