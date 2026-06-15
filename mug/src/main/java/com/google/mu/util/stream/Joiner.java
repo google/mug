@@ -28,8 +28,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import com.google.mu.util.stream.Joiner.FasterStringJoiner;
-
 /**
  * A joiner (and {@code Collector}) that joins strings.
  *
@@ -76,7 +74,7 @@ import com.google.mu.util.stream.Joiner.FasterStringJoiner;
  *
  * @since 5.6
  */
-public final class Joiner implements Collector<Object, FasterStringJoiner, String> {
+public final class Joiner implements Collector<Object, Joiner.FasterStringJoiner, String> {
   private final String prefix;
   private final String delimiter;
   private final String suffix;
