@@ -20,6 +20,8 @@ import static java.util.Objects.requireNonNull;
 import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -47,6 +49,146 @@ import com.google.mu.function.CheckedConsumer;
  * @since 1.1
  */
 public final class MoreStreams {
+  /**
+   * Shorthand for {@code Stream.concat(Stream.of(head), tail)}. For example:
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.stream.MoreStreams.concat;
+   *
+   * concat(sentinel, stream)
+   *     .map(...)
+   *     .collect(...);
+   * }</pre>
+   *
+   * @since 10.4
+   */
+  public static <T> Stream<T> concat(T head, Stream<? extends T> tail) {
+    return Stream.concat(Stream.of(head), tail);
+  }
+
+  /**
+   * Shorthand for {@code Stream.concat(Stream.of(head), tail.stream())}. For example:
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.stream.MoreStreams.concat;
+   *
+   * concat(sentinel, collection)
+   *     .map(...)
+   *     .collect(...);
+   * }</pre>
+   *
+   * @since 10.4
+   */
+  public static <T> Stream<T> concat(T head, Collection<? extends T> tail) {
+    return concat(head, tail.stream());
+  }
+
+  /**
+   * Shorthand for {@code Stream.concat(head, Stream.of(tail))}. For example:
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.stream.MoreStreams.concat;
+   *
+   * concat(stream, sentinel)
+   *     .map(...)
+   *     .collect(...);
+   * }</pre>
+   *
+   * @since 10.4
+   */
+  public static <T> Stream<T> concat(Stream<? extends T> head, T tail) {
+    return Stream.concat(head, Stream.of(tail));
+  }
+
+  /**
+   * Shorthand for {@code Stream.concat(head.stream(), Stream.of(tail))}. For example:
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.stream.MoreStreams.concat;
+   *
+   * concat(collection, sentinel)
+   *     .map(...)
+   *     .collect(...);
+   * }</pre>
+   *
+   * @since 10.4
+   */
+  public static <T> Stream<T> concat(Collection<? extends T> head, T tail) {
+    return concat(head.stream(), tail);
+  }
+
+  /**
+   * Shorthand for {@code Stream.concat(head, Arrays.stream(tail))}. For example:
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.stream.MoreStreams.concat;
+   *
+   * concat(stream, "foo", "bar")
+   *     .map(...)
+   *     .collect(...);
+   * }</pre>
+   *
+   * @since 10.4
+   */
+  @SafeVarargs
+  public static <T> Stream<T> concat(Stream<? extends T> head, T... tail) {
+    return Stream.concat(head, Arrays.stream(tail));
+  }
+
+  /**
+   * Shorthand for {@code Stream.concat(head.stream(), Arrays.stream(tail))}. For example:
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.stream.MoreStreams.concat;
+   *
+   * concat(collection, "foo", "bar")
+   *     .map(...)
+   *     .collect(...);
+   * }</pre>
+   *
+   * @since 10.4
+   */
+  @SafeVarargs
+  public static <T> Stream<T> concat(Collection<? extends T> head, T... tail) {
+    return concat(head.stream(), tail);
+  }
+
+  /**
+   * Shorthand for {@code Stream.concat(head, Stream.concat(shoulder, toe))}. For example:
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.stream.MoreStreams.concat;
+   *
+   * concat(stream1, stream2, stream3)
+   *     .map(...)
+   *     .collect(...);
+   * }</pre>
+   *
+   * @since 10.4
+   */
+  public static <T> Stream<T> concat(
+      Stream<? extends T> head, Stream<? extends T> shoulder, Stream<? extends T> toe) {
+    return Stream.concat(head, Stream.concat(shoulder, toe));
+  }
+
+  /**
+   * Shorthand for {@code Stream.concat(head.stream(), Stream.concat(shoulder.stream(), toe.stream()))}. For example:
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.stream.MoreStreams.concat;
+   *
+   * concat(collection1, collection2, collection3)
+   *     .map(...)
+   *     .collect(...);
+   * }</pre>
+   *
+   * @since 10.4
+   */
+  public static <T> Stream<T> concat(
+      Collection<? extends T> head, Collection<? extends T> shoulder, Collection<? extends T> toe) {
+    return concat(head.stream(), shoulder.stream(), toe.stream());
+  }
+
   /**
    * Returns a Stream produced by iterative application of {@code step} to the initial
    * {@code seed}, producing a Stream consisting of seed, elements of step(seed),

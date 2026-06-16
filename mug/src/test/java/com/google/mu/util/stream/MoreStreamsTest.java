@@ -17,6 +17,7 @@ package com.google.mu.util.stream;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.util.stream.MoreStreams.concat;
 import static com.google.mu.util.stream.MoreStreams.groupConsecutive;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.mergeConsecutive;
@@ -422,10 +423,93 @@ public class MoreStreamsTest {
         .inOrder();
   }
 
+  @Test public void testConcat_headElementAndTailStream() {
+    assertThat(concat("a", Stream.of("b", "c")).collect(toList()))
+        .containsExactly("a", "b", "c")
+        .inOrder();
+  }
+
+  @Test public void testConcat_headStreamAndTailElement() {
+    assertThat(concat(Stream.of("a", "b"), "c").collect(toList()))
+        .containsExactly("a", "b", "c")
+        .inOrder();
+  }
+
+  @Test public void testConcat_headStreamAndTailArray() {
+    assertThat(concat(Stream.of("a", "b"), "c", "d").collect(toList()))
+        .containsExactly("a", "b", "c", "d")
+        .inOrder();
+  }
+
+  @Test public void testConcat_threeStreams() {
+    assertThat(concat(Stream.of("a"), Stream.of("b"), Stream.of("c")).collect(toList()))
+        .containsExactly("a", "b", "c")
+        .inOrder();
+  }
+
+  @Test public void testConcat_headElementAndTailCollection() {
+    assertThat(concat("a", asList("b", "c")).collect(toList()))
+        .containsExactly("a", "b", "c")
+        .inOrder();
+  }
+
+  @Test public void testConcat_headCollectionAndTailElement() {
+    assertThat(concat(asList("a", "b"), "c").collect(toList()))
+        .containsExactly("a", "b", "c")
+        .inOrder();
+  }
+
+  @Test public void testConcat_headCollectionAndTailArray() {
+    assertThat(concat(asList("a", "b"), "c", "d").collect(toList()))
+        .containsExactly("a", "b", "c", "d")
+        .inOrder();
+  }
+
+  @Test public void testConcat_threeCollections() {
+    assertThat(concat(asList("a"), asList("b"), asList("c")).collect(toList()))
+        .containsExactly("a", "b", "c")
+        .inOrder();
+  }
+
+  @Test public void testConcat_emptyCases() {
+    assertThat(concat("a", Stream.empty()).collect(toList()))
+        .containsExactly("a");
+
+    assertThat(concat("a", Collections.emptyList()).collect(toList()))
+        .containsExactly("a");
+
+    assertThat(concat(Stream.empty(), "c").collect(toList()))
+        .containsExactly("c");
+
+    assertThat(concat(Collections.emptyList(), "c").collect(toList()))
+        .containsExactly("c");
+
+    assertThat(concat(Stream.<String>empty()).collect(toList()))
+        .isEmpty();
+        
+    assertThat(concat(Stream.empty(), "c", "d").collect(toList()))
+        .containsExactly("c", "d")
+        .inOrder();
+
+    assertThat(concat(Collections.emptyList()).collect(toList()))
+        .isEmpty();
+
+    assertThat(concat(Collections.emptyList(), "c", "d").collect(toList()))
+        .containsExactly("c", "d")
+        .inOrder();
+
+    assertThat(concat(Stream.empty(), Stream.empty(), Stream.empty()).collect(toList()))
+        .isEmpty();
+
+    assertThat(concat(Collections.emptyList(), Collections.emptyList(), Collections.emptyList()).collect(toList()))
+        .isEmpty();
+  }
+
   @Test public void testNulls() throws Exception {
     NullPointerTester tester = new NullPointerTester();
     asList(MoreStreams.class.getDeclaredMethods()).stream()
-        .filter(m -> m.getName().equals("generate"))
+        .filter(m -> m.getName().equals("generate")
+            || (m.getName().equals("concat") && asList(m.getParameterTypes()).contains(Object.class)))
         .forEach(tester::ignore);
     tester.testAllPublicStaticMethods(MoreStreams.class);
   }
