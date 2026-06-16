@@ -534,6 +534,10 @@ public final class EmailAddress {
     return ascii;
   }
 
+  private static String canonicalizeDomain(String domain) {
+    return IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.ROOT);
+  }
+
   private static boolean isValidDomain(String domain) {
     return domain.contains(".") && !hasWeirdDots(domain) && !hasWeirdHyphen(domain);
   }
@@ -566,10 +570,6 @@ public final class EmailAddress {
         DANGEROUS.matchesNoneOf(displayName),
         "display name must not contain control or formatting characters");
     return displayName;
-  }
-
-  private static String canonicalizeDomain(String domain) {
-    return IDN.toASCII(domain, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.ROOT);
   }
 
   private record AddrSpecAlike(String localPart, String domain) {
