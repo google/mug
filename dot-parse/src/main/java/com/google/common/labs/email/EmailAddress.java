@@ -527,8 +527,9 @@ public final class EmailAddress {
   }
 
   private static String sanitizeDomain(String domain) {
-    domain = ASCII_DOMAIN_NAME.parse(canonicalizeDomain(domain));
-    checkArgument(isValidDomain(domain), "invalid domain: %s", domain);
+    domain = canonicalizeDomain(domain);
+    checkArgument(
+        ASCII_DOMAIN_NAME.matches(domain) && isValidDomain(domain), "invalid domain: %s", domain);
     checkArgument(hasValidTopLevelDomain(domain), "TLD name cannot be all numeric (%s)", domain);
     return domain;
   }
