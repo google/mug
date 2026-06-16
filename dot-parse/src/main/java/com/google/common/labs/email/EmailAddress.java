@@ -527,11 +527,11 @@ public final class EmailAddress {
   }
 
   private static String sanitizeDomain(String domain) {
-    domain = canonicalizeDomain(domain);
+    String canonical = canonicalizeDomain(domain);
     checkArgument(
-        ASCII_DOMAIN_NAME.matches(domain) && isValidDomain(domain), "invalid domain: %s", domain);
-    checkArgument(hasValidTopLevelDomain(domain), "TLD name cannot be all numeric (%s)", domain);
-    return domain;
+        ASCII_DOMAIN_NAME.matches(canonical) && isValidDomain(canonical), "invalid domain: %s", domain);
+    checkArgument(hasValidTopLevelDomain(canonical), "TLD name cannot be all numeric (%s)", domain);
+    return canonical;
   }
 
   private static boolean isValidDomain(String domain) {
