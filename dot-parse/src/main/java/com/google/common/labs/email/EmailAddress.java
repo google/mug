@@ -293,7 +293,7 @@ public final class EmailAddress {
 
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
   public static EmailAddress of(String localPart, String domain) {
-    return new EmailAddress(checkLocalPart(localPart), sanitizeDomain(domain), Optional.empty());
+    return new EmailAddress(checkLocalPart(localPart), toAsciiDomain(domain), Optional.empty());
   }
 
   /**
@@ -526,12 +526,12 @@ public final class EmailAddress {
             .anyMatch(ws -> ws.length() > 1);
   }
 
-  private static String sanitizeDomain(String domain) {
-    String canonical = canonicalizeDomain(domain);
+  private static String toAsciiDomain(String domain) {
+    String ascii = canonicalizeDomain(domain);
     checkArgument(
-        ASCII_DOMAIN_NAME.matches(canonical) && isValidDomain(canonical), "invalid domain: %s", domain);
-    checkArgument(hasValidTopLevelDomain(canonical), "TLD name cannot be all numeric (%s)", domain);
-    return canonical;
+        ASCII_DOMAIN_NAME.matches(ascii) && isValidDomain(ascii), "invalid domain: %s", domain);
+    checkArgument(hasValidTopLevelDomain(ascii), "TLD name cannot be all numeric (%s)", domain);
+    return ascii;
   }
 
   private static boolean isValidDomain(String domain) {
