@@ -15,6 +15,7 @@
 package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableList;
+import static com.google.mu.util.stream.MoreStreams.concat;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -2376,7 +2377,7 @@ public final class Substring {
      * @since 6.1
      */
     public final BiStream<String, String> alternationFrom(String input) {
-      return Stream.concat(match(input), Stream.of(END.in(input).get()))
+      return concat(match(input), END.in(input).get())
           .collect(BiStream.toAdjacentPairs())
           .mapValues((k, k2) -> input.substring(k.index() + k.length(), k2.index()))
           .mapKeys(Match::toString);
