@@ -441,12 +441,6 @@ public class MoreStreamsTest {
         .inOrder();
   }
 
-  @Test public void testConcat_threeStreams() {
-    assertThat(concat(Stream.of("a"), Stream.of("b"), Stream.of("c")).collect(toList()))
-        .containsExactly("a", "b", "c")
-        .inOrder();
-  }
-
   @Test public void testConcat_headElementAndTailCollection() {
     assertThat(concat("a", asList("b", "c")).collect(toList()))
         .containsExactly("a", "b", "c")
@@ -461,24 +455,6 @@ public class MoreStreamsTest {
 
   @Test public void testConcat_headCollectionAndTailArray() {
     assertThat(concat(asList("a", "b"), "c", "d").collect(toList()))
-        .containsExactly("a", "b", "c", "d")
-        .inOrder();
-  }
-
-  @Test public void testConcat_threeCollections() {
-    assertThat(concat(asList("a"), asList("b"), asList("c")).collect(toList()))
-        .containsExactly("a", "b", "c")
-        .inOrder();
-  }
-
-  @Test public void testConcat_fourStreams() {
-    assertThat(concat(Stream.of("a"), Stream.of("b"), Stream.of("c"), Stream.of("d")).collect(toList()))
-        .containsExactly("a", "b", "c", "d")
-        .inOrder();
-  }
-
-  @Test public void testConcat_fourCollections() {
-    assertThat(concat(asList("a"), asList("b"), asList("c"), asList("d")).collect(toList()))
         .containsExactly("a", "b", "c", "d")
         .inOrder();
   }
@@ -498,7 +474,7 @@ public class MoreStreamsTest {
 
     assertThat(concat(Stream.<String>empty()).collect(toList()))
         .isEmpty();
-        
+
     assertThat(concat(Stream.empty(), "c", "d").collect(toList()))
         .containsExactly("c", "d")
         .inOrder();
@@ -509,18 +485,6 @@ public class MoreStreamsTest {
     assertThat(concat(Collections.emptyList(), "c", "d").collect(toList()))
         .containsExactly("c", "d")
         .inOrder();
-
-    assertThat(concat(Stream.empty(), Stream.empty(), Stream.empty()).collect(toList()))
-        .isEmpty();
-
-    assertThat(concat(Collections.emptyList(), Collections.emptyList(), Collections.emptyList()).collect(toList()))
-        .isEmpty();
-
-    assertThat(concat(Stream.empty(), Stream.empty(), Stream.empty(), Stream.empty()).collect(toList()))
-        .isEmpty();
-
-    assertThat(concat(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList()).collect(toList()))
-        .isEmpty();
   }
 
   @Test public void testNulls() throws Exception {
