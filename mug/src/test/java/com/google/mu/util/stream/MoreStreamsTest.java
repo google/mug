@@ -471,6 +471,18 @@ public class MoreStreamsTest {
         .inOrder();
   }
 
+  @Test public void testConcat_fourStreams() {
+    assertThat(concat(Stream.of("a"), Stream.of("b"), Stream.of("c"), Stream.of("d")).collect(toList()))
+        .containsExactly("a", "b", "c", "d")
+        .inOrder();
+  }
+
+  @Test public void testConcat_fourCollections() {
+    assertThat(concat(asList("a"), asList("b"), asList("c"), asList("d")).collect(toList()))
+        .containsExactly("a", "b", "c", "d")
+        .inOrder();
+  }
+
   @Test public void testConcat_emptyCases() {
     assertThat(concat("a", Stream.empty()).collect(toList()))
         .containsExactly("a");
@@ -502,6 +514,12 @@ public class MoreStreamsTest {
         .isEmpty();
 
     assertThat(concat(Collections.emptyList(), Collections.emptyList(), Collections.emptyList()).collect(toList()))
+        .isEmpty();
+
+    assertThat(concat(Stream.empty(), Stream.empty(), Stream.empty(), Stream.empty()).collect(toList()))
+        .isEmpty();
+
+    assertThat(concat(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList()).collect(toList()))
         .isEmpty();
   }
 

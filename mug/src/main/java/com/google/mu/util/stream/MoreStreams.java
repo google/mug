@@ -172,7 +172,27 @@ public final class MoreStreams {
   }
 
   /**
-   * Shorthand for {@code Stream.concat(head.stream(), Stream.concat(shoulder.stream(), toe.stream()))}. For example:
+   * Shorthand for {@code Stream.concat(Stream.concat(a, b), Stream.concat(c, d))}. For example:
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.stream.MoreStreams.concat;
+   *
+   * concat(stream1, stream2, stream3, stream4)
+   *     .map(...)
+   *     .collect(...);
+   * }</pre>
+   *
+   * @since 10.4
+   */
+  public static <T> Stream<T> concat(
+      Stream<? extends T> a, Stream<? extends T> b, Stream<? extends T> c, Stream<? extends T> d) {
+    return Stream.concat(Stream.concat(a, b), Stream.concat(c, d));
+  }
+
+  /**
+   * Shorthand for {@code Stream.concat(head.stream(), Stream.concat(shoulder.stream(), toe.stream()))}.
+   *
+   * <p>For example:
    *
    * <pre>{@code
    * import static com.google.mu.util.stream.MoreStreams.concat;
@@ -187,6 +207,26 @@ public final class MoreStreams {
   public static <T> Stream<T> concat(
       Collection<? extends T> head, Collection<? extends T> shoulder, Collection<? extends T> toe) {
     return concat(head.stream(), shoulder.stream(), toe.stream());
+  }
+
+  /**
+   * Shorthand for {@code Stream.concat(Stream.concat(a.stream(), b.stream()), Stream.concat(c.stream(), d.stream()))}.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * import static com.google.mu.util.stream.MoreStreams.concat;
+   *
+   * concat(collection1, collection2, collection3, collection4)
+   *     .map(...)
+   *     .collect(...);
+   * }</pre>
+   *
+   * @since 10.4
+   */
+  public static <T> Stream<T> concat(
+      Collection<? extends T> a, Collection<? extends T> b, Collection<? extends T> c, Collection<? extends T> d) {
+    return concat(a.stream(), b.stream(), c.stream(), d.stream());
   }
 
   /**
