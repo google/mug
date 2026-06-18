@@ -10,7 +10,7 @@ import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.noneOf;
 import static com.google.mu.util.CharPredicate.range;
-import static com.google.mu.util.stream.MoreStreams.concat;
+import static java.util.stream.Stream.concat;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -83,7 +83,7 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
   }
 
   private static Parser<Charset> charset(Charset charset) {
-    return concat(charset.name(), charset.aliases())
+    return concat(Stream.of(charset.name()), charset.aliases().stream())
         .flatMap(EncodedWord::variationsOf)
         .map(name -> name.toLowerCase(Locale.ROOT))
         .distinct()

@@ -20,8 +20,6 @@ import static java.util.Objects.requireNonNull;
 import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,110 +47,6 @@ import com.google.mu.function.CheckedConsumer;
  * @since 1.1
  */
 public final class MoreStreams {
-  /**
-   * Shorthand for {@code Stream.concat(Stream.of(head), tail)}. For example:
-   *
-   * <pre>{@code
-   * import static com.google.mu.util.stream.MoreStreams.concat;
-   *
-   * concat(sentinel, stream)
-   *     .map(...)
-   *     .collect(...);
-   * }</pre>
-   *
-   * @since 10.4
-   */
-  public static <T> Stream<T> concat(T head, Stream<T> tail) {
-    return Stream.concat(Stream.of(head), tail);
-  }
-
-  /**
-   * Shorthand for {@code Stream.concat(Stream.of(head), tail.stream())}. For example:
-   *
-   * <pre>{@code
-   * import static com.google.mu.util.stream.MoreStreams.concat;
-   *
-   * concat(sentinel, collection)
-   *     .map(...)
-   *     .collect(...);
-   * }</pre>
-   *
-   * @since 10.4
-   */
-  public static <T> Stream<T> concat(T head, Collection<T> tail) {
-    return concat(head, tail.stream());
-  }
-
-  /**
-   * Shorthand for {@code Stream.concat(head, Stream.of(tail))}. For example:
-   *
-   * <pre>{@code
-   * import static com.google.mu.util.stream.MoreStreams.concat;
-   *
-   * concat(stream, sentinel)
-   *     .map(...)
-   *     .collect(...);
-   * }</pre>
-   *
-   * @since 10.4
-   */
-  public static <T> Stream<T> concat(Stream<T> head, T tail) {
-    return Stream.concat(head, Stream.of(tail));
-  }
-
-  /**
-   * Shorthand for {@code Stream.concat(head.stream(), Stream.of(tail))}. For example:
-   *
-   * <pre>{@code
-   * import static com.google.mu.util.stream.MoreStreams.concat;
-   *
-   * concat(collection, sentinel)
-   *     .map(...)
-   *     .collect(...);
-   * }</pre>
-   *
-   * @since 10.4
-   */
-  public static <T> Stream<T> concat(Collection<T> head, T tail) {
-    return concat(head.stream(), tail);
-  }
-
-  /**
-   * Shorthand for {@code Stream.concat(head, Arrays.stream(tail))}. For example:
-   *
-   * <pre>{@code
-   * import static com.google.mu.util.stream.MoreStreams.concat;
-   *
-   * concat(stream, "foo", "bar")
-   *     .map(...)
-   *     .collect(...);
-   * }</pre>
-   *
-   * @since 10.4
-   */
-  @SafeVarargs
-  public static <T> Stream<T> concat(Stream<T> head, T... tail) {
-    return Stream.concat(head, Arrays.stream(tail));
-  }
-
-  /**
-   * Shorthand for {@code Stream.concat(head.stream(), Arrays.stream(tail))}. For example:
-   *
-   * <pre>{@code
-   * import static com.google.mu.util.stream.MoreStreams.concat;
-   *
-   * concat(collection, "foo", "bar")
-   *     .map(...)
-   *     .collect(...);
-   * }</pre>
-   *
-   * @since 10.4
-   */
-  @SafeVarargs
-  public static <T> Stream<T> concat(Collection<T> head, T... tail) {
-    return concat(head.stream(), tail);
-  }
-
   /**
    * Returns a Stream produced by iterative application of {@code step} to the initial
    * {@code seed}, producing a Stream consisting of seed, elements of step(seed),
