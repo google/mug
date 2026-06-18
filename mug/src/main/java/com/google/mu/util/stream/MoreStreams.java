@@ -62,7 +62,7 @@ public final class MoreStreams {
    *
    * @since 10.4
    */
-  public static <T> Stream<T> concat(T head, Stream<? extends T> tail) {
+  public static <T> Stream<T> concat(T head, Stream<T> tail) {
     return Stream.concat(Stream.of(head), tail);
   }
 
@@ -79,7 +79,7 @@ public final class MoreStreams {
    *
    * @since 10.4
    */
-  public static <T> Stream<T> concat(T head, Collection<? extends T> tail) {
+  public static <T> Stream<T> concat(T head, Collection<T> tail) {
     return concat(head, tail.stream());
   }
 
@@ -96,7 +96,7 @@ public final class MoreStreams {
    *
    * @since 10.4
    */
-  public static <T> Stream<T> concat(Stream<? extends T> head, T tail) {
+  public static <T> Stream<T> concat(Stream<T> head, T tail) {
     return Stream.concat(head, Stream.of(tail));
   }
 
@@ -113,7 +113,7 @@ public final class MoreStreams {
    *
    * @since 10.4
    */
-  public static <T> Stream<T> concat(Collection<? extends T> head, T tail) {
+  public static <T> Stream<T> concat(Collection<T> head, T tail) {
     return concat(head.stream(), tail);
   }
 
@@ -131,7 +131,7 @@ public final class MoreStreams {
    * @since 10.4
    */
   @SafeVarargs
-  public static <T> Stream<T> concat(Stream<? extends T> head, T... tail) {
+  public static <T> Stream<T> concat(Stream<T> head, T... tail) {
     return Stream.concat(head, Arrays.stream(tail));
   }
 
@@ -149,7 +149,7 @@ public final class MoreStreams {
    * @since 10.4
    */
   @SafeVarargs
-  public static <T> Stream<T> concat(Collection<? extends T> head, T... tail) {
+  public static <T> Stream<T> concat(Collection<T> head, T... tail) {
     return concat(head.stream(), tail);
   }
 
