@@ -1318,7 +1318,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
               case MatchResult.Success<?> followed ->
                 context.failAt(
                     followed.head(), followed.tail(),
-                    "unexpected `%s`:\n%s", name, Snippet.indented(input, followed.head()));
+                    "unexpected `%s`:%s", name, Snippet.indented(input, followed.head()));
               default -> success;
             };
           }
@@ -2214,7 +2214,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     @Override <V> MatchResult.Failure<V> expecting(String name, int at, int frontier) {
-      return failAt(at, frontier, "expecting <%s>, encountered:\n%s", name, Snippet.indented(input, at));
+      return failAt(at, frontier, "expecting <%s>, encountered:%s", name, Snippet.indented(input, at));
     }
 
     @FormatMethod

@@ -5942,10 +5942,7 @@ public class ParserTest {
         assertThrows(
             ParseException.class,
             () -> digits().skipping(whitespace()).parseToStream(input, 0).count());
-    assertThat(e).hasMessageThat().isEqualTo("""
-        at 17: expecting <digits>, encountered:
-            [x]
-        """);
+    assertThat(e).hasMessageThat().isEqualTo("at 17: expecting <digits>, encountered:    [x]");
   }
 
   @Test

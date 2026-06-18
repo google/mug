@@ -26,15 +26,15 @@ record Snippet(int indentation, CharInput input, int at) {
     if (toShow.isEmpty()) {
       toShow = "<EOF>";
     }
-    return indent() + toShow + "\n" + " ".repeat(indentation + left.length()) + "^\n";
+    return "\n" + indent() + toShow + "\n" + " ".repeat(indentation + left.length()) + "^\n";
   }
 
   private String showForwardOnly() {
     if (input.isEof(at)) {
-      return indent() + "<EOF>\n";
+      return indent() + "<EOF>";
     }
     String snippet = lookForward();
-    return indent() + "[" + (input.isInRange(at + snippet.length()) ? snippet + "..." : snippet) + "]\n";
+    return indent() + "[" + (input.isInRange(at + snippet.length()) ? snippet + "..." : snippet) + "]";
   }
 
   private String lookForward() {
@@ -55,7 +55,7 @@ record Snippet(int indentation, CharInput input, int at) {
         return s.substring(0, maxChars);
       }
       if (chars >= targetChars) {
-        return s.substring(0, chars);
+        return segment.before() + segment;
       }
     }
     return s;
