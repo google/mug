@@ -6,140 +6,129 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.common.labs.parse.Parser.Snippet;
-
 @RunWith(JUnit4.class)
 public class SnippetTest {
 
   @Test
-  public void toString_atEnd_isEof() {
-    assertThat(new Snippet("abc", 3).toString()).isEqualTo("<EOF>");
+  public void toString_atEnd_showsContextBefore() {
+    assertThat(new Snippet(4, CharInput.from("abc"), 3).toString()).isEqualTo("""
+            abc
+               ^
+        """);
   }
 
-  @Test
-  public void toString_pastEnd_isEof() {
-    assertThat(new Snippet("abc", 4).toString()).isEqualTo("<EOF>");
-  }
 
   @Test
   public void toString_emptyString_isEof() {
-    assertThat(new Snippet("", 0).toString()).isEqualTo("<EOF>");
+    assertThat(new Snippet(4, CharInput.from(""), 0).toString()).isEqualTo("""
+            <EOF>
+            ^
+        """);
   }
 
   @Test
   public void toString_shortNonWhitespace_followedByMore() {
-    assertThat(new Snippet("foo bar", 0).toString()).isEqualTo("[foo...]");
+    assertThat(new Snippet(4, CharInput.from("foo bar"), 0).toString()).isEqualTo("""
+            foo bar
+            ^
+        """);
   }
 
   @Test
   public void toString_shortNonWhitespace_atEnd() {
-    assertThat(new Snippet("foo", 0).toString()).isEqualTo("[foo]");
+    assertThat(new Snippet(4, CharInput.from("foo"), 0).toString()).isEqualTo("""
+            foo
+            ^
+        """);
   }
 
   @Test
-  public void toString_shortNonWhitespace_inMiddle_atEnd() {
-    assertThat(new Snippet("bar foo", 4).toString()).isEqualTo("[foo]");
-    assertThat(new Snippet("bar foo", 3).toString()).isEqualTo("[ foo]");
+  public void toString_shortNonWhitespace_inMiddle() {
+    assertThat(new Snippet(4, CharInput.from("bar foo"), 4).toString()).isEqualTo("""
+            bar foo
+                ^
+        """);
+    assertThat(new Snippet(4, CharInput.from("bar foo"), 3).toString()).isEqualTo("""
+            bar foo
+               ^
+        """);
   }
 
   @Test
-  public void toString_longNonWhitespace_isTruncated() {
-    String longString = "a".repeat(60);
-    assertThat(new Snippet(longString, 0).toString()).isEqualTo("[" + "a".repeat(50) + "...]");
+  public void toString_longNonWhitespace_beforeCapped() {
+    String input = "a".repeat(35) + "bar";
+    assertThat(new Snippet(4, CharInput.from(input), 35).toString()).isEqualTo("""
+            aaaaaaaaaaaaaaaaaaaaaaaaabar
+                                     ^
+        """);
   }
 
   @Test
-  public void toString_longNonWhitespace_followedByMore_isTruncated() {
-    String longString = "a".repeat(60) + " bar";
-    assertThat(new Snippet(longString, 0).toString()).isEqualTo("[" + "a".repeat(50) + "...]");
+  public void toString_longNonWhitespace_afterCapped() {
+    String input = "foo" + "a".repeat(60);
+    assertThat(new Snippet(4, CharInput.from(input), 3).toString()).isEqualTo("""
+            fooaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+               ^
+        """);
   }
 
   @Test
-  public void toString_exactly50NonWhitespace_followedByMore_isTruncated() {
-    String longString = "a".repeat(50) + " bar";
-    assertThat(new Snippet(longString, 0).toString()).isEqualTo("[" + "a".repeat(50) + "...]");
+  public void toString_whitespaceSkipping_before() {
+    String input = "a b c d e f g h";
+    assertThat(new Snippet(4, CharInput.from(input), 12).toString()).isEqualTo("""
+            d e f g h
+                  ^
+        """);
   }
 
   @Test
-  public void toString_exactly50NonWhitespace_atEnd() {
-    String longString = "a".repeat(50);
-    assertThat(new Snippet(longString, 0).toString()).isEqualTo("[" + "a".repeat(50) + "]");
+  public void toString_whitespaceSkipping_after() {
+    String input = "f g h i j k l ";
+    assertThat(new Snippet(4, CharInput.from(input), 4).toString()).isEqualTo("""
+            f g h i j
+                ^
+        """);
   }
 
   @Test
-  public void toString_shortWhitespace_followedByMore() {
-    assertThat(new Snippet(" foo", 0).toString()).isEqualTo("[ foo]");
+  public void toString_nextWordTooLong_fallbackToCap_before() {
+    String input = " " + "a".repeat(30) + " " + "foo";
+    assertThat(new Snippet(4, CharInput.from(input), 35).toString()).isEqualTo("""
+            aaaaaaaaaaaaaaaaaaaaa foo
+                                     ^
+        """);
   }
 
   @Test
-  public void toString_shortWhitespace_atEnd() {
-    assertThat(new Snippet(" ", 0).toString()).isEqualTo("[ ]");
+  public void toString_nextWordTooLong_fallbackToCap_after() {
+    String input = "foo " + "a".repeat(60) + " ";
+    assertThat(new Snippet(4, CharInput.from(input), 0).toString()).isEqualTo("""
+            foo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            ^
+        """);
   }
 
   @Test
-  public void toString_shortWhitespace_inMiddle_atEnd() {
-    assertThat(new Snippet("foo ", 3).toString()).isEqualTo("[ ]");
+  public void toStringWithIndent() {
+    assertThat(new Snippet(8, CharInput.from("abc"), 1).toString()).isEqualTo("""
+                abc
+                 ^
+        """);
   }
 
   @Test
-  public void toString_longWhitespace_isTruncated() {
-    String longString = " ".repeat(60);
-    assertThat(new Snippet(longString, 0).toString()).isEqualTo("[   ...]");
-  }
+  public void toString_withCompactedReaderInput() {
+    String text = "012345678901234567890123456789"; // length 30
+    CharInput input = CharInput.from(new java.io.StringReader(text), 30, 5);
+    // Force read up to index 20 so buffer has it.
+    input.charAt(20);
+    // Mark checkpoint at index 20 to trigger compaction.
+    input.markCheckpoint(20);
 
-  @Test
-  public void toString_longWhitespace_followedByMore_isTruncated() {
-    String longString = " ".repeat(60) + "bar";
-    assertThat(new Snippet(longString, 0).toString()).isEqualTo("[   ...]");
-  }
-
-  @Test
-  public void toString_fullString() {
-    assertThat(new Snippet("abc", 0).toString()).isEqualTo("[abc]");
-  }
-
-  @Test
-  public void toString_substring() {
-    assertThat(new Snippet("abc", 1).toString()).isEqualTo("[bc]");
-  }
-
-  @Test
-  public void toString_withNewline() {
-    assertThat(new Snippet("abc\nxyz", 3).toString()).isEqualTo("[\nxyz]");
-  }
-
-  @Test
-  public void toString_pastNewline() {
-    assertThat(new Snippet("abc\nxyz", 4).toString()).isEqualTo("[xyz]");
-  }
-
-  @Test
-  public void toString_oneWhitespace() {
-    assertThat(new Snippet(" ", 0).toString()).isEqualTo("[ ]");
-  }
-
-  @Test
-  public void toString_twoWhitespaces() {
-    assertThat(new Snippet("  ", 0).toString()).isEqualTo("[  ]");
-  }
-
-  @Test
-  public void toString_threeWhitespaces() {
-    assertThat(new Snippet("   ", 0).toString()).isEqualTo("[   ]");
-  }
-
-  @Test
-  public void toString_fourWhitespaces_truncated() {
-    assertThat(new Snippet("    ", 0).toString()).isEqualTo("[   ...]");
-  }
-
-  @Test
-  public void toString_specialWhitespace() {
-    assertThat(new Snippet("\t\r\n", 0).toString()).isEqualTo("[\t\r\n]");
-  }
-
-  @Test
-  public void toString_specialWhitespace_truncated() {
-    assertThat(new Snippet("\t\r\n ", 0).toString()).isEqualTo("[\t\r\n...]");
+    // at = 22. Attempting to scan 25 chars back would read index -3, which is < 20 (compacted).
+    // It should fallback to original toString() behavior.
+    assertThat(new Snippet(4, input, 22).toString()).isEqualTo("""
+            [23456789]
+        """);
   }
 }

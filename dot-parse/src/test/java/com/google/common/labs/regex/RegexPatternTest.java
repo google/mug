@@ -545,7 +545,11 @@ public final class RegexPatternTest {
   public void parse_group_missingRightParen() {
     Parser.ParseException e =
         assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?:a|b"));
-    assertThat(e).hasMessageThat().contains("at 1:7: expecting <)>, encountered <EOF>");
+    assertThat(e).hasMessageThat().isEqualTo("""
+        at 1:7: expecting <)>, encountered:
+            (?:a|b
+                  ^
+        """);
   }
 
   @Test

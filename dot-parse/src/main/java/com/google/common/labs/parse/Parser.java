@@ -21,12 +21,10 @@ import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.common.labs.parse.Utils.checkPositionIndex;
 import static com.google.common.labs.parse.Utils.checkState;
 import static com.google.mu.util.CharPredicate.isNot;
-import static com.google.mu.util.Substring.upToIncluding;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
-import static java.lang.Character.isWhitespace;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Comparator.reverseOrder;
@@ -64,7 +62,6 @@ import com.google.mu.function.Function4;
 import com.google.mu.function.TriFunction;
 import com.google.mu.util.Both;
 import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.Joiner;
@@ -1321,7 +1318,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
               case MatchResult.Success<?> followed ->
                 context.failAt(
                     followed.head(), followed.tail(),
-                    "unexpected `%s` - %s.", name, new Snippet(input, followed.head()));
+                    "unexpected `%s`:\n%s", name, Snippet.indented(input, followed.head()));
               default -> success;
             };
           }
@@ -2217,7 +2214,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     @Override <V> MatchResult.Failure<V> expecting(String name, int at, int frontier) {
-      return failAt(at, frontier, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
+      return failAt(at, frontier, "expecting <%s>, encountered:\n%s", name, Snippet.indented(input, at));
     }
 
     @FormatMethod
@@ -2259,25 +2256,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       operand = op.apply(operand);
     }
     return operand;
-  }
-
-  record Snippet(CharInput input, int at) {
-    Snippet(String input, int at) {
-      this(CharInput.from(input), at);
-    }
-
-    @Override public String toString() {
-      if (input.isEof(at)) {
-        return "<EOF>";
-      }
-      String snippet = upToIncluding(Substring.consecutive(c -> !isWhitespace(c)))
-          .limit(50)
-          .or(Substring.BEGINNING.toEnd().limit(3))  // print a few whitespaces then
-          .in(input.snippet(at, 50))
-          .get()
-          .toString();
-      return "[" + (input.isInRange(at + snippet.length()) ? snippet + "..." : snippet) + "]";
-    }
   }
 
   private interface Constants {

@@ -227,11 +227,15 @@ public final class CsvTest {
     Parser.ParseException thrown =
         assertThrows(
             Parser.ParseException.class, () -> CSV.parseToLists(secondRowInvalid).toList());
-    assertThat(thrown).hasMessageThat().contains("expecting <\">, encountered <EOF>");
+    assertThat(thrown).hasMessageThat().isEqualTo("""
+        at 2:9: expecting <">, encountered:
+            "invalid
+                    ^
+        """);
   }
 
   @Test
-  public void parseToLists_fromReader_lazy_laterInvalidRowsNotScanned() {
+  public void parseToLists_lazy_fromReader_laterInvalidRowsNotScanned() {
     String secondRowInvalid = "abc,1234,5678\n\"invalid";
     assertThat(CSV.parseToLists(new StringReader(secondRowInvalid)).limit(1))
         .containsExactly(ImmutableList.of("abc", "1234", "5678"));
@@ -239,7 +243,11 @@ public final class CsvTest {
         assertThrows(
             Parser.ParseException.class,
             () -> CSV.parseToLists(new StringReader(secondRowInvalid)).toList());
-    assertThat(thrown).hasMessageThat().contains("expecting <\">, encountered <EOF>");
+    assertThat(thrown).hasMessageThat().isEqualTo("""
+        at 2:9: expecting <">, encountered:
+            "invalid
+                    ^
+        """);
   }
 
   @Test
