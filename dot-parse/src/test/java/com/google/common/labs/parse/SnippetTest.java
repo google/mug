@@ -131,4 +131,30 @@ public class SnippetTest {
             [23456789]
         """);
   }
+
+  @Test
+  public void toString_withCompactedReaderInput_atEof() {
+    String text = "012345678901234567890123456789"; // length 30
+    CharInput input = CharInput.from(new java.io.StringReader(text), 30, 5);
+    input.charAt(29);
+    input.markCheckpoint(20);
+
+    // at = 30 (EOF).
+    assertThat(new Snippet(4, input, 30).toString()).isEqualTo("""
+            <EOF>
+        """);
+  }
+
+  @Test
+  public void toString_withCompactedReaderInput_truncated() {
+    String text = "01234567890123456789012345678901234567890123456789012345678901234567890123456789"; // length 80
+    CharInput input = CharInput.from(new java.io.StringReader(text), 80, 5);
+    input.charAt(79);
+    input.markCheckpoint(20);
+
+    // at = 22. snippet scans forward up to 50 characters, which is truncated.
+    assertThat(new Snippet(4, input, 22).toString()).isEqualTo("""
+            [23456789012345678901234567890123456789012345678901...]
+        """);
+  }
 }
