@@ -22,13 +22,10 @@ record Snippet(int indentation, CharInput input, int at) {
       // possible since the input of the last record may have been purged.
       return showForwardOnly();
     }
-
     String toShow = left + lookForward();
-
     if (toShow.isEmpty()) {
       toShow = "<EOF>";
     }
-
     return indent() + toShow + "\n" + " ".repeat(indentation + left.length()) + "^\n";
   }
 
@@ -65,11 +62,7 @@ record Snippet(int indentation, CharInput input, int at) {
   }
 
   private static String reverse(String s) {
-    StringBuilder builder = new StringBuilder(s.length());
-    for (int i = s.length() - 1; i >= 0; i--) {
-      builder.append(s.charAt(i));
-    }
-    return builder.toString();
+    return new StringBuilder(s).reverse().toString();
   }
 
   private String indent() {
