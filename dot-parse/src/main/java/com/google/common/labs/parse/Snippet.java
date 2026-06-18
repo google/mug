@@ -18,6 +18,8 @@ record Snippet(int indentation, CharInput input, int at) {
     try {
       left = lookBackward();
     } catch (IllegalArgumentException e) {
+      // for streaming parsing on top of a Reader, looking back may not be
+      // possible since the input of the last record may have been purged.
       return showForwardOnly();
     }
 
