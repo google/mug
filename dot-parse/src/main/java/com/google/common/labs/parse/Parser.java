@@ -2227,11 +2227,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       this.input = input;
     }
 
-    @Override <V> MatchResult.Failure<V> expecting(String name, int at, int frontier) {
-      return failAt(at, frontier, "expecting <{name}>, encountered: {snippet}", name);
+    @Override <V> MatchResult.Failure<V> expecting(
+        String symbolName, int at, int frontier) {
+      return failAt(at, frontier, "expecting <{name}>, encountered: {snippet}", symbolName);
     }
 
-    @Override <V> MatchResult.Failure<V> failAt(int at, int frontier, String messageTemplate, String symbolName) {
+    @Override <V> MatchResult.Failure<V> failAt(
+        int at, int frontier, String messageTemplate, String symbolName) {
       MatchResult.Failure<V> failure = super.failAt(at, frontier, messageTemplate, symbolName);
       // prefer the farthest then the most recent failure
       if (farthestFailure == null || failure.frontier() >= farthestFailure.frontier()) {
