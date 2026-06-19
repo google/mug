@@ -734,34 +734,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @since 10.1
    */
-  public static <X> Parser<Void> sequence(Parser<X> first, Production<?>... more) {
-    List<Parser<?>> secondaries = stream(more)
-        .map(Parser::allowZeroWidth)
-        .collect(toUnmodifiableList());
-    return first.new SamePrefix<Void>() {
-      @Override MatchResult<Void> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success<?> firstResult -> {
-            int index = firstResult.tail();
-            for (Parser<?> secondary : secondaries) {
-              switch (secondary.skipAndMatch(skip, input, index, context)) {
-                case MatchResult.Success<?> success -> {
-                  index = success.tail();
-                }
-                case MatchResult.Failure<?> failure -> {
-                  return failure.safeCast();
-                }
-              }
-            }
-            return new MatchResult.Success<>(firstResult.head(), index, null);
-          }
-          case MatchResult.Failure<?> failure -> {
-            return failure.safeCast();
-          }
-        }
-      }
-    };
+  public static Parser<?> sequence(Parser<?> first, Production<?>... more) {
+    return first.followedByInOrder(more);
   }
 
   /** Matches if any of the given {@code parsers} match. */
@@ -1288,6 +1262,33 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final Parser<T> followedByOrEof(Parser<?> suffix) {
     return followedBy(anyOf(suffix, UNSAFE_EOF));
+  }
+
+  private Parser<T> followedByInOrder(Production<?>... suffixes) {
+    Parser<?>[] followers =
+        stream(suffixes).map(Parser::allowZeroWidth).toArray(Parser<?>[]::new);
+    return new SamePrefix<T>() {
+      @Override MatchResult<T> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        return switch (left().skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success<T> result -> {
+            int index = result.tail();
+            for (Parser<?> follower : followers) {
+              switch (follower.skipAndMatch(skip, input, index, context)) {
+                case MatchResult.Success<?> success -> {
+                  index = success.tail();
+                }
+                case MatchResult.Failure<?> failure -> {
+                  yield failure.safeCast();
+                }
+              }
+            }
+            yield new MatchResult.Success<T>(result.head(), index, result.value());
+          }
+          case MatchResult.Failure<T> failure -> failure;
+        };
+      }
+    };
   }
 
   @Override public final Parser<T> optionallyFollowedBy(String suffix) {
