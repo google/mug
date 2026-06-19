@@ -2158,7 +2158,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
     }
 
-    /** Represents a partial parse result with a value and the [start, end) range of the match. */
+    /**
+     * Represents failure with an index in the source, and an error message
+     * (with predefined {name} and {snippet} template placeholders to be filled when throwing exception.
+     */
     record Failure<V>(int at, int frontier, String messageTemplate, String symbolName)
         implements MatchResult<V> {
       Failure(int at, String messageTemplate, String symbolName) {
@@ -2172,8 +2175,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
       ParseException toException(CharInput input) {
         return new ParseException(
-            at,
-            String.format("at %s: %s", input.sourcePosition(at), renderMessage(input)));
+            at, String.format("at %s: %s", input.sourcePosition(at), renderMessage(input)));
       }
 
       private String renderMessage(CharInput input) {
