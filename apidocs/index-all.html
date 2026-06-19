@@ -4789,6 +4789,12 @@ loadScripts(document, 'script');</script>
  be the end of the string, or be separated from the rest of the string by the <code>
  separatorAfter</code> character.</div>
 </dd>
+<dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production...)" class="member-name-link">sequence(Parser&lt;?&gt;, Production&lt;?&gt;...)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dd>
+<div class="block">Sequentially matches <code>first</code> followed by <code>more</code> (always-consuming <a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a>'s
+ or optional <a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse"><code>Parser.OrEmpty</code></a>'s), disregarding the return values, suitable when you only
+ care about matching but not extracting data.</div>
+</dd>
 <dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser.OrEmpty,java.util.function.BiFunction)" class="member-name-link">sequence(Parser.OrEmpty, Parser.OrEmpty, BiFunction&lt;? super A, ? super B, ? extends R&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>
 <div class="block">Sequentially matches <code>left</code> then <code>right</code>, with both allowed to be optional, and
@@ -4818,12 +4824,6 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Sequentially matches <code>left</code> then <code>right</code>, and then combines the results using the
  <code>combiner</code> function.</div>
-</dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production...)" class="member-name-link">sequence(Parser&lt;X&gt;, Production&lt;?&gt;...)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
-<dd>
-<div class="block">Sequentially matches <code>first</code> followed by <code>more</code> (always-consuming <a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a>'s
- or optional <a href="com/google/common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse"><code>Parser.OrEmpty</code></a>'s), disregarding the return values, suitable when you only
- care about matching but not extracting data.</div>
 </dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.html#sequence(com.google.common.labs.regex.RegexPattern...)" class="member-name-link">sequence(RegexPattern...)</a> - Static method in interface com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></dt>
 <dd>
