@@ -8,7 +8,6 @@ import static java.lang.Math.min;
 import com.google.mu.util.Substring;
 
 record Snippet(int indentation, CharInput input, int at) {
-
   Snippet(CharInput input, int at) {
     this(4, input, at);
   }
@@ -29,9 +28,7 @@ record Snippet(int indentation, CharInput input, int at) {
   }
 
   private String showForwardOnly() {
-    if (input.isEof(at)) {
-      return "<EOF>";
-    }
+    if (input.isEof(at)) return "<EOF>";
     String ahead = lookForward();
     return "[" + (input.isInRange(at + ahead.length()) ? ahead + "..." : ahead) + "]";
   }
@@ -50,12 +47,8 @@ record Snippet(int indentation, CharInput input, int at) {
     for (Substring.Match segment
         : iterateOnce(consecutive(c -> !isWhitespace(c)).repeatedly().match(s))) {
       int chars = segment.index() + segment.length();
-      if (chars >= maxChars) {
-        return s.substring(0, maxChars);
-      }
-      if (chars >= targetChars) {
-        return segment.before() + segment;
-      }
+      if (chars >= maxChars) return s.substring(0, maxChars);
+      if (chars >= targetChars) return segment.before() + segment;
     }
     return s;
   }
