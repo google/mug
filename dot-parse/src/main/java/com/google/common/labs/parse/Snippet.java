@@ -23,14 +23,9 @@ record Snippet(int indentation, CharInput input, int at) {
       return showForwardOnly();
     }
     String toShow = left + lookForward();
-    if (toShow.isEmpty()) {
-      toShow = "<EOF>";
-    }
-    return "\n" +  indent(indentation) + toShow + "\n" + indent(indentation + left.length()) + "^\n";
-  }
-
-  private static String indent(int chars) {
-    return " ".repeat(chars);
+    return "\n" +  indent(indentation)
+        + (toShow.isEmpty() ? "<EOF>" : toShow) + "\n"
+        + indent(indentation + left.length()) + "^\n";
   }
 
   private String showForwardOnly() {
@@ -64,6 +59,10 @@ record Snippet(int indentation, CharInput input, int at) {
       }
     }
     return s;
+  }
+
+  private static String indent(int chars) {
+    return " ".repeat(chars);
   }
 
   private static String reverse(String s) {
