@@ -715,7 +715,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <pre>{@code sequence(digits(), string("-"), digits(), string("-"), digits())}</pre>
    *
-   * is a much more concise equivalent of
+   * is a much more concise and more efficient equivalent of
    *
    * <pre>{@code
    * digits()
