@@ -1072,20 +1072,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
-  private Parser<T> afterDelimiter(String delim) {
-    checkArgument(delim.length() > 0, "delim cannot be empty");
-    Object[] expected = {delim};
+  private Parser<T> afterDelimiter(String delimiter) {
+    checkArgument(delimiter.length() > 0, "delimiter cannot be empty");
+    Object[] expected = {delimiter};
     return new Parser<>() {
       @Override MatchResult<T> skipAndMatch(
            Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-        return input.startsWith(delim, start)
-            ? Parser.this.skipAndMatch(skip, input, start + delim.length(), context)
+        return input.startsWith(delimiter, start)
+            ? Parser.this.skipAndMatch(skip, input, start + delimiter.length(), context)
             : ErrorContext.MINIMAL.failAt(start, "expecting <%s>", expected);
       }
 
       @Override Set<String> getPrefixes() {
-        return Set.of(delim);
+        return Set.of(delimiter);
       }
     };
   }
