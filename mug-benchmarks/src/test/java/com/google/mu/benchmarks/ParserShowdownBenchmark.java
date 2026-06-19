@@ -1,11 +1,12 @@
 package com.google.mu.benchmarks;
 
-import io.github.parseworks.taker.Result;
-import io.github.parseworks.taker.Taker;
-import io.github.parseworks.taker.CharPredicate;
-import io.github.parseworks.taker.parsers.Numeric;
-import com.google.common.labs.parse.Parser;
-import com.google.common.labs.parse.Production;
+import static io.github.parseworks.taker.parsers.Chars.chr;
+import static io.github.parseworks.taker.parsers.Combinators.oneOf;
+import static io.github.parseworks.taker.parsers.Lexical.string;
+import static io.github.parseworks.taker.parsers.Lexical.stringIgnoreCase;
+
+import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -18,12 +19,13 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
-import java.util.concurrent.TimeUnit;
+import com.google.common.labs.parse.Parser;
+import com.google.common.labs.parse.Production;
 
-import static io.github.parseworks.taker.parsers.Combinators.oneOf;
-import static io.github.parseworks.taker.parsers.Lexical.string;
-import static io.github.parseworks.taker.parsers.Lexical.stringIgnoreCase;
-import static io.github.parseworks.taker.parsers.Chars.chr;
+import io.github.parseworks.taker.CharPredicate;
+import io.github.parseworks.taker.Result;
+import io.github.parseworks.taker.Taker;
+import io.github.parseworks.taker.parsers.Numeric;
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -58,7 +60,7 @@ public class ParserShowdownBenchmark {
         public void setUp() {
             // 1. IP Setup
             simpleIpInput = "192.168.1.1";
-            
+
             takerSimpleIp = Numeric.number
                 .thenSkip(chr('.'))
                 .thenSkip(Numeric.number)
@@ -67,7 +69,7 @@ public class ParserShowdownBenchmark {
                 .thenSkip(chr('.'))
                 .thenSkip(Numeric.number)
                 .map(parts -> "ip");
-                
+
             Parser<?> dot = Parser.string(".");
             dotParseSimpleIp = Parser.sequence(
                 Parser.digits(), dot,
@@ -75,13 +77,13 @@ public class ParserShowdownBenchmark {
                 Parser.digits(), dot,
                 Parser.digits()
             ).thenReturn("ip");
-            
+
             requireMatch("takerSimpleIp", takerSimpleIp.parseAll(simpleIpInput));
             dotParseSimpleIp.parse(simpleIpInput);
 
             // 2. Quoted String Setup
             simpleStringInput = "\"" + "a".repeat(100) + "\"";
-            
+
             takerSimpleString = chr('"')
                 .thenSkip(
                     oneOf(
@@ -91,45 +93,45 @@ public class ParserShowdownBenchmark {
                 )
                 .thenSkip(chr('"'))
                 .map(parts -> "string");
-                
+
             dotParseSimpleString = Parser.quotedByWithEscapes(
-                "\"", '"', 
-                Parser.one(c -> true, "any").map(c -> String.valueOf(c))
+                '"', '"',
+                Parser.chars(1)
             );
-            
+
             requireMatch("takerSimpleString", takerSimpleString.parseAll(simpleStringInput));
             dotParseSimpleString.parse(simpleStringInput);
 
             // 3. Keywords Setup
             simpleKeywordsInput = "limit";
-            
+
             takerSimpleKeywords = oneOf(
                 string("select"), string("insert"), string("update"),
                 string("delete"), string("create"), string("drop"),
                 string("alter"),  string("where"),  string("group"),
                 string("order"),  string("having"), string("limit")
             );
-            
+
             dotParseSimpleKeywords = Parser.anyOf(
                 Parser.string("select"), Parser.string("insert"), Parser.string("update"),
                 Parser.string("delete"), Parser.string("create"), Parser.string("drop"),
                 Parser.string("alter"),  Parser.string("where"),  Parser.string("group"),
                 Parser.string("order"),  Parser.string("having"), Parser.string("limit")
             ).map(Object::toString);
-            
+
             requireMatch("takerSimpleKeywords", takerSimpleKeywords.parseAll(simpleKeywordsInput));
             dotParseSimpleKeywords.parse(simpleKeywordsInput);
 
             // 4. Case-Insensitive Setup
             simpleIgnoreCaseInput = "LIMIT";
-            
+
             takerIgnoreCaseKeywords = oneOf(
                 stringIgnoreCase("select"), stringIgnoreCase("insert"), stringIgnoreCase("update"),
                 stringIgnoreCase("delete"), stringIgnoreCase("create"), stringIgnoreCase("drop"),
                 stringIgnoreCase("alter"),  stringIgnoreCase("where"),  stringIgnoreCase("group"),
                 stringIgnoreCase("order"),  stringIgnoreCase("having"), stringIgnoreCase("limit")
             );
-            
+
             dotParseSimpleIgnoreCase = Parser.anyOf(
                 Parser.caseInsensitive("select"),
                 Parser.caseInsensitive("insert"),
@@ -144,7 +146,7 @@ public class ParserShowdownBenchmark {
                 Parser.caseInsensitive("having"),
                 Parser.caseInsensitive("limit")
             ).map(Object::toString);
-            
+
             requireMatch("takerIgnoreCaseKeywords", takerIgnoreCaseKeywords.parseAll(simpleIgnoreCaseInput));
             dotParseSimpleIgnoreCase.parse(simpleIgnoreCaseInput);
 
