@@ -4,7 +4,7 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>10.4.3-SNAPSHOT</version>
+    <version>10.4.4-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-guava</artifactId>
@@ -14,7 +14,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <module.name>guava</module.name>
     <!-- Reproducible builds: fixed timestamp for build artifacts -->
-    <project.build.outputTimestamp>2026-06-19T09:06:06Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-06-19T14:48:53Z</project.build.outputTimestamp>
   </properties>
   <build>
     <pluginManagement>
