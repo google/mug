@@ -1247,11 +1247,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @Override public Parser<T> followedBy(Parser<?> suffix) {
-    return followedByInOrder(suffix);
+    return sequence(this, suffix, (a, b) -> a);
   }
 
   @Override public final <S> Parser<T> followedBy(Parser<S>.OrEmpty suffix) {
-    return followedByInOrder(suffix);
+    return followedBy(suffix.unsafeZeroWidthParser);
   }
 
   private Parser<T> followedByInOrder(Production<?>... suffixes) {
