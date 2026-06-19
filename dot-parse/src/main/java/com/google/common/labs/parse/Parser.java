@@ -735,11 +735,33 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.1
    */
   public static Parser<?> sequence(Parser<?> first, Production<?>... more) {
-    Parser<?> parser = requireNonNull(first);
-    for (Production<?> p : more) {
-      parser = parser.then(allowZeroWidth(p));
-    }
-    return parser;
+    List<Parser<?>> secondaries = stream(more)
+        .map(Parser::allowZeroWidth)
+        .collect(toUnmodifiableList());
+    return first.new SamePrefix<Object>() {
+      @Override MatchResult<Object> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        switch (left().skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success<?> first -> {
+            int index = first.tail();
+            for (Parser<?> secondary : secondaries) {
+              switch (secondary.skipAndMatch(skip, input, index, context)) {
+                case MatchResult.Success<?> success -> {
+                  index = success.tail();
+                }
+                case MatchResult.Failure<?> failure -> {
+                  return failure.safeCast();
+                }
+              }
+            }
+            return new MatchResult.Success<>(first.head(), index, null);
+          }
+          case MatchResult.Failure<?> failure -> {
+            return failure.safeCast();
+          }
+        }
+      }
+    };
   }
 
   /** Matches if any of the given {@code parsers} match. */
@@ -2274,6 +2296,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     static Parser<String> DIGITS = consecutive(charsIn("[0-9]"), "digits");
     static Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
   }
+
+
 
   Parser() {}
 }
