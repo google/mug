@@ -14,18 +14,18 @@ record Snippet(int indentation, CharInput input, int at) {
   }
 
   @Override public String toString() {
-    String left;
+    String backward;
     try {
-      left = lookBackward();
+      backward = lookBackward();
     } catch (IndexOutOfBoundsException e) {
       // for streaming parsing on top of a Reader, looking back may not be
       // possible since the input of the last record may have been purged.
       return showForwardOnly();
     }
-    String toShow = left + lookForward();
+    String toShow = backward + lookForward();
     return newLineIndentedBy(indentation)
         + (toShow.isEmpty() ? "<EOF>" : toShow)
-        + newLineIndentedBy(indentation + left.length()) + "^\n";
+        + newLineIndentedBy(indentation + backward.length()) + "^\n";
   }
 
   private String showForwardOnly() {
