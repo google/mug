@@ -2157,7 +2157,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
     /**
      * Represents failure with an index in the source, and an error message
-     * (with predefined {name} and {snippet} template placeholders to be filled when throwing exception.
+     * with predefined {name} and {snippet} template placeholders to be filled when throwing exception.
      */
     record Failure<V>(int at, int frontier, String messageTemplate, String symbolName)
         implements MatchResult<V> {
