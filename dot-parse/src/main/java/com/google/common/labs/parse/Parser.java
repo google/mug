@@ -1254,6 +1254,16 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return followedBy(suffix.unsafeZeroWidthParser);
   }
 
+  /**
+   * Specifies that the matched pattern must be either followed by {@code suffix} or EOF.
+   * No other suffixes allowed.
+   *
+   * @since 9.4
+   */
+  public final Parser<T> followedByOrEof(Parser<?> suffix) {
+    return followedBy(anyOf(suffix, UNSAFE_EOF));
+  }
+
   private Parser<T> followedByInOrder(Production<?>... suffixes) {
     Parser<?>[] followers =
         stream(suffixes).map(Parser::allowZeroWidth).toArray(Parser<?>[]::new);
@@ -1279,16 +1289,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         };
       }
     };
-  }
-
-  /**
-   * Specifies that the matched pattern must be either followed by {@code suffix} or EOF.
-   * No other suffixes allowed.
-   *
-   * @since 9.4
-   */
-  public final Parser<T> followedByOrEof(Parser<?> suffix) {
-    return followedBy(anyOf(suffix, UNSAFE_EOF));
   }
 
   @Override public final Parser<T> optionallyFollowedBy(String suffix) {
