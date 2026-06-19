@@ -33,8 +33,7 @@ record Snippet(int indentation, CharInput input, int at) {
       return "<EOF>";
     }
     String ahead = lookForward();
-    String toShow = input.isInRange(at + ahead.length()) ? ahead + "..." : ahead;
-    return "[" + toShow + "]";
+    return "[" + (input.isInRange(at + ahead.length()) ? ahead + "..." : ahead) + "]";
   }
 
   private String lookForward() {
