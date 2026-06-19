@@ -9,8 +9,8 @@ import com.google.mu.util.Substring;
 
 record Snippet(int indentation, CharInput input, int at) {
 
-  static Snippet indented(CharInput input, int at) {
-    return new Snippet(4, input, at);
+  Snippet(CharInput input, int at) {
+    this(4, input, at);
   }
 
   @Override public String toString() {
@@ -26,15 +26,20 @@ record Snippet(int indentation, CharInput input, int at) {
     if (toShow.isEmpty()) {
       toShow = "<EOF>";
     }
-    return "\n" + indent() + toShow + "\n" + " ".repeat(indentation + left.length()) + "^\n";
+    return "\n" +  indent(indentation) + toShow + "\n" + indent(indentation + left.length()) + "^\n";
+  }
+
+  private static String indent(int chars) {
+    return " ".repeat(chars);
   }
 
   private String showForwardOnly() {
     if (input.isEof(at)) {
-      return indent() + "<EOF>";
+      return "<EOF>";
     }
-    String snippet = lookForward();
-    return indent() + "[" + (input.isInRange(at + snippet.length()) ? snippet + "..." : snippet) + "]";
+    String ahead = lookForward();
+    String toShow = input.isInRange(at + ahead.length()) ? ahead + "..." : ahead;
+    return "[" + toShow + "]";
   }
 
   private String lookForward() {
@@ -63,9 +68,5 @@ record Snippet(int indentation, CharInput input, int at) {
 
   private static String reverse(String s) {
     return new StringBuilder(s).reverse().toString();
-  }
-
-  private String indent() {
-    return " ".repeat(indentation);
   }
 }

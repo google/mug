@@ -228,7 +228,7 @@ public final class CsvTest {
         assertThrows(
             Parser.ParseException.class, () -> CSV.parseToLists(secondRowInvalid).toList());
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 2:9: expecting <">, encountered:
+        at 2:9: expecting <">, encountered:\s
             "invalid
                     ^
         """);
@@ -244,7 +244,7 @@ public final class CsvTest {
             Parser.ParseException.class,
             () -> CSV.parseToLists(new StringReader(secondRowInvalid)).toList());
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 2:9: expecting <">, encountered:
+        at 2:9: expecting <">, encountered:\s
             "invalid
                     ^
         """);

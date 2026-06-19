@@ -546,7 +546,7 @@ public final class RegexPatternTest {
     Parser.ParseException e =
         assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?:a|b"));
     assertThat(e).hasMessageThat().isEqualTo("""
-        at 1:7: expecting <)>, encountered:
+        at 1:7: expecting <)>, encountered:\s
             (?:a|b
                   ^
         """);

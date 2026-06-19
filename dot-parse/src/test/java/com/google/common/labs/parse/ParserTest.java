@@ -933,7 +933,7 @@ public class ParserTest {
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("b"));
     assertThat(parser.matches("b")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:1: expecting <keyword>, encountered:
+        at 1:1: expecting <keyword>, encountered:\s
             b
             ^
         """);
@@ -958,7 +958,7 @@ public class ParserTest {
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("23"));
     assertThat(parser.matches("23")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:1: expecting <larger than 100>, encountered:
+        at 1:1: expecting <larger than 100>, encountered:\s
             23
             ^
         """);
@@ -1006,7 +1006,7 @@ public class ParserTest {
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("123=123???"));
     assertThat(parser.matches("123=123???")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:8: expecting <EOF>, encountered:
+        at 1:8: expecting <EOF>, encountered:\s
             123=123???
                    ^
         """);
@@ -1188,7 +1188,7 @@ public class ParserTest {
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("foobaz"));
     assertThat(parser.matches("foobaz")).isFalse();
     assertThat(e).hasMessageThat().isEqualTo("""
-        at 1:4: expecting <bar>, encountered:
+        at 1:4: expecting <bar>, encountered:\s
             foobaz
                ^
         """);
@@ -1241,7 +1241,7 @@ public class ParserTest {
         assertThrows(Parser.ParseException.class, () -> parser.parse("123+"));
     assertThat(parser.matches("123+")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:4: expecting <EOF>, encountered:
+        at 1:4: expecting <EOF>, encountered:\s
             123+
                ^
         """);
@@ -1256,7 +1256,7 @@ public class ParserTest {
         assertThrows(Parser.ParseException.class, () -> parser.parse("abc"));
     assertThat(parser.matches("abc")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:1: expecting <123>, encountered:
+        at 1:1: expecting <123>, encountered:\s
             abc
             ^
         """);
@@ -1299,7 +1299,7 @@ public class ParserTest {
         assertThrows(ParseException.class, () -> string("a").notFollowedBy("b").parse("c"));
     assertThat(string("a").notFollowedBy("b").matches("c")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:1: expecting <a>, encountered:
+        at 1:1: expecting <a>, encountered:\s
             c
             ^
         """);
@@ -1311,7 +1311,7 @@ public class ParserTest {
         assertThrows(ParseException.class, () -> string("a").notFollowedBy("b").parse("ab"));
     assertThat(string("a").notFollowedBy("b").matches("ab")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:2: unexpected `b`:
+        at 1:2: unexpected `b`:\s
             ab
              ^
         """);
@@ -1340,7 +1340,7 @@ public class ParserTest {
         assertThrows(ParseException.class, () -> string("a").notFollowedByEof().parse("a"));
     assertThat(string("a").notFollowedByEof().matches("a")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:2: unexpected `eof`:
+        at 1:2: unexpected `eof`:\s
             a
              ^
         """);
@@ -1368,7 +1368,7 @@ public class ParserTest {
             ParseException.class, () -> parser.parseSkipping(whitespace(), "a  "));
     assertThat(parser.skipping(whitespace()).matches("a  ")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:4: unexpected `eof`:
+        at 1:4: unexpected `eof`:\s
             a \s
                ^
         """);
@@ -1478,7 +1478,7 @@ public class ParserTest {
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse(""));
     assertThat(parser.matches("")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:1: expecting <f>, encountered:
+        at 1:1: expecting <f>, encountered:\s
             <EOF>
             ^
         """);
@@ -1490,7 +1490,7 @@ public class ParserTest {
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("bar"));
     assertThat(parser.matches("bar")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:1: expecting <foo>, encountered:
+        at 1:1: expecting <foo>, encountered:\s
             bar
             ^
         """);
@@ -1502,7 +1502,7 @@ public class ParserTest {
     ParseException thrown =
         assertThrows(ParseException.class, () -> parser.parse("prefix bar suffix"));
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:8: expecting <foo>, encountered:
+        at 1:8: expecting <foo>, encountered:\s
             prefix bar suffix
                    ^
         """);
@@ -1516,7 +1516,7 @@ public class ParserTest {
             ParseException.class, () -> parser.parseSkipping(whitespace(), "(1 + \n( 2 + 3)"));
     assertThat(parser.skipping(whitespace()).matches("(1 + \n( 2 + 3)")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 2:9: expecting <)>, encountered:
+        at 2:9: expecting <)>, encountered:\s
             2 + 3)
                   ^
         """);
@@ -1530,7 +1530,7 @@ public class ParserTest {
             ParseException.class, () -> parser.parseSkipping(whitespace(), "(1 + \n( 2 ? 3)"));
     assertThat(parser.skipping(whitespace()).matches("(1 + \n( 2 ? 3)")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 2:5: expecting <)>, encountered:
+        at 2:5: expecting <)>, encountered:\s
             +\s
         ( 2 ? 3)
                    ^
@@ -3324,7 +3324,7 @@ public class ParserTest {
         digits().zeroOrMoreDelimitedBy(",").followedBy(string(",").optional()).notEmpty();
     ParseException e = assertThrows(ParseException.class, () -> parser.parse(""));
     assertThat(e).hasMessageThat().isEqualTo("""
-        at 1:1: expecting <digits>, encountered:
+        at 1:1: expecting <digits>, encountered:\s
             <EOF>
             ^
         """);
@@ -3631,7 +3631,7 @@ public class ParserTest {
         assertThrows(ParseException.class, () -> string("a").optional().parse("a bc"));
     assertThat(string("a").optional().matches("a bc")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:2: expecting <EOF>, encountered:
+        at 1:2: expecting <EOF>, encountered:\s
             a bc
              ^
         """);
@@ -3961,7 +3961,7 @@ public class ParserTest {
         digits().atLeastOnceDelimitedBy(",").optionallyFollowedBy(",");
     ParseException e = assertThrows(ParseException.class, () -> parser.parse(","));
     assertThat(e).hasMessageThat().isEqualTo("""
-        at 1:1: expecting <digits>, encountered:
+        at 1:1: expecting <digits>, encountered:\s
             ,
             ^
         """);
@@ -3973,7 +3973,7 @@ public class ParserTest {
         digits().atLeastOnceDelimitedBy(",").optionallyFollowedBy(",");
     ParseException e = assertThrows(ParseException.class, () -> parser.parse(""));
     assertThat(e).hasMessageThat().isEqualTo("""
-        at 1:1: expecting <digits>, encountered:
+        at 1:1: expecting <digits>, encountered:\s
             <EOF>
             ^
         """);
@@ -4282,7 +4282,7 @@ public class ParserTest {
     ParseException thrown =
         assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " [ foo] "));
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:3: expecting <content>, encountered:
+        at 1:3: expecting <content>, encountered:\s
              [ foo]
               ^
         """);
@@ -4295,7 +4295,7 @@ public class ParserTest {
     ParseException thrown =
         assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " [foo ] "));
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:6: expecting <]>, encountered:
+        at 1:6: expecting <]>, encountered:\s
              [foo ]\s
                  ^
         """);
@@ -4412,7 +4412,7 @@ public class ParserTest {
     ParseException thrown =
         assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " [ foo] "));
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:3: expecting <content>, encountered:
+        at 1:3: expecting <content>, encountered:\s
              [ foo]
               ^
         """);
@@ -4425,7 +4425,7 @@ public class ParserTest {
     ParseException thrown =
         assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " [foo ] "));
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:6: expecting <]>, encountered:
+        at 1:6: expecting <]>, encountered:\s
              [foo ]\s
                  ^
         """);
@@ -4629,7 +4629,7 @@ public class ParserTest {
     Parser<String> parser = chars(2);
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:1: expecting <2 char(s)>, encountered:
+        at 1:1: expecting <2 char(s)>, encountered:\s
             a
             ^
         """);
@@ -5667,7 +5667,7 @@ public class ParserTest {
         digits().orElse("").delimitedBy(",").followedBy(string(".").optional()).notEmpty();
     ParseException thrown = assertThrows(ParseException.class, () -> numbers.parse("123,a."));
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:5: expecting <EOF>, encountered:
+        at 1:5: expecting <EOF>, encountered:\s
             123,a.
                 ^
         """);
@@ -5683,7 +5683,7 @@ public class ParserTest {
             .notEmpty();
     ParseException thrown = assertThrows(ParseException.class, () -> numbers.parse("abc,1."));
     assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 1:6: expecting <!>, encountered:
+        at 1:6: expecting <!>, encountered:\s
             abc,1.
                  ^
         """);
@@ -5942,7 +5942,7 @@ public class ParserTest {
         assertThrows(
             ParseException.class,
             () -> digits().skipping(whitespace()).parseToStream(input, 0).count());
-    assertThat(e).hasMessageThat().isEqualTo("at 17: expecting <digits>, encountered:    [x]");
+    assertThat(e).hasMessageThat().isEqualTo("at 17: expecting <digits>, encountered: [x]");
   }
 
   @Test

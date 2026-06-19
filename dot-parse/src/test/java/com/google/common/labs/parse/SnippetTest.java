@@ -11,7 +11,7 @@ public class SnippetTest {
 
   @Test
   public void toString_atEnd_showsContextBefore() {
-    assertThat(new Snippet(4, CharInput.from("abc"), 3).toString()).isEqualTo("""
+    assertThat(new Snippet(CharInput.from("abc"), 3).toString()).isEqualTo("""
 
             abc
                ^
@@ -21,7 +21,7 @@ public class SnippetTest {
 
   @Test
   public void toString_emptyString_isEof() {
-    assertThat(new Snippet(4, CharInput.from(""), 0).toString()).isEqualTo("""
+    assertThat(new Snippet(CharInput.from(""), 0).toString()).isEqualTo("""
 
             <EOF>
             ^
@@ -30,7 +30,7 @@ public class SnippetTest {
 
   @Test
   public void toString_shortNonWhitespace_followedByMore() {
-    assertThat(new Snippet(4, CharInput.from("foo bar"), 0).toString()).isEqualTo("""
+    assertThat(new Snippet(CharInput.from("foo bar"), 0).toString()).isEqualTo("""
 
             foo bar
             ^
@@ -39,7 +39,7 @@ public class SnippetTest {
 
   @Test
   public void toString_shortNonWhitespace_atEnd() {
-    assertThat(new Snippet(4, CharInput.from("foo"), 0).toString()).isEqualTo("""
+    assertThat(new Snippet(CharInput.from("foo"), 0).toString()).isEqualTo("""
 
             foo
             ^
@@ -48,12 +48,12 @@ public class SnippetTest {
 
   @Test
   public void toString_shortNonWhitespace_inMiddle() {
-    assertThat(new Snippet(4, CharInput.from("bar foo"), 4).toString()).isEqualTo("""
+    assertThat(new Snippet(CharInput.from("bar foo"), 4).toString()).isEqualTo("""
 
             bar foo
                 ^
         """);
-    assertThat(new Snippet(4, CharInput.from("bar foo"), 3).toString()).isEqualTo("""
+    assertThat(new Snippet(CharInput.from("bar foo"), 3).toString()).isEqualTo("""
 
             bar foo
                ^
@@ -63,7 +63,7 @@ public class SnippetTest {
   @Test
   public void toString_longNonWhitespace_beforeCapped() {
     String input = "a".repeat(35) + "bar";
-    assertThat(new Snippet(4, CharInput.from(input), 35).toString()).isEqualTo("""
+    assertThat(new Snippet(CharInput.from(input), 35).toString()).isEqualTo("""
 
             aaaaaaaaaaaaaaaaaaaaaaaaabar
                                      ^
@@ -73,7 +73,7 @@ public class SnippetTest {
   @Test
   public void toString_longNonWhitespace_afterCapped() {
     String input = "foo" + "a".repeat(60);
-    assertThat(new Snippet(4, CharInput.from(input), 3).toString()).isEqualTo("""
+    assertThat(new Snippet(CharInput.from(input), 3).toString()).isEqualTo("""
 
             fooaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
                ^
@@ -83,7 +83,7 @@ public class SnippetTest {
   @Test
   public void toString_whitespaceSkipping_before() {
     String input = "a b c d e f g h";
-    assertThat(new Snippet(4, CharInput.from(input), 12).toString()).isEqualTo("""
+    assertThat(new Snippet(CharInput.from(input), 12).toString()).isEqualTo("""
 
             d e f g h
                   ^
@@ -93,7 +93,7 @@ public class SnippetTest {
   @Test
   public void toString_whitespaceSkipping_after() {
     String input = "f g h i j k l ";
-    assertThat(new Snippet(4, CharInput.from(input), 4).toString()).isEqualTo("""
+    assertThat(new Snippet(CharInput.from(input), 4).toString()).isEqualTo("""
 
             f g h i j
                 ^
@@ -103,7 +103,7 @@ public class SnippetTest {
   @Test
   public void toString_nextWordTooLong_fallbackToCap_before() {
     String input = " " + "a".repeat(30) + " " + "foo";
-    assertThat(new Snippet(4, CharInput.from(input), 35).toString()).isEqualTo("""
+    assertThat(new Snippet(CharInput.from(input), 35).toString()).isEqualTo("""
 
             aaaaaaaaaaaaaaaaaaaaa foo
                                      ^
@@ -113,7 +113,7 @@ public class SnippetTest {
   @Test
   public void toString_nextWordTooLong_fallbackToCap_after() {
     String input = "foo " + "a".repeat(60) + " ";
-    assertThat(new Snippet(4, CharInput.from(input), 0).toString()).isEqualTo("""
+    assertThat(new Snippet(CharInput.from(input), 0).toString()).isEqualTo("""
 
             foo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
             ^
@@ -140,7 +140,7 @@ public class SnippetTest {
 
     // at = 22. Attempting to scan 25 chars back would read index -3, which is < 20 (compacted).
     // It should fallback to original toString() behavior.
-    assertThat(new Snippet(4, input, 22).toString()).isEqualTo("    [23456789]");
+    assertThat(new Snippet(input, 22).toString()).isEqualTo("[23456789]");
   }
 
   @Test
@@ -151,7 +151,7 @@ public class SnippetTest {
     input.markCheckpoint(20);
 
     // at = 30 (EOF).
-    assertThat(new Snippet(4, input, 30).toString()).isEqualTo("    <EOF>");
+    assertThat(new Snippet(input, 30).toString()).isEqualTo("<EOF>");
   }
 
   @Test
@@ -162,6 +162,6 @@ public class SnippetTest {
     input.markCheckpoint(20);
 
     // at = 22. snippet scans forward up to 50 characters, which is truncated.
-    assertThat(new Snippet(4, input, 22).toString()).isEqualTo("    [23456789012345678901234567890123456789012345678901...]");
+    assertThat(new Snippet(input, 22).toString()).isEqualTo("[23456789012345678901234567890123456789012345678901...]");
   }
 }

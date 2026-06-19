@@ -1483,11 +1483,7 @@ abstract class AbstractStringFormat {
     if (s.length() <= 1) {
       return s;
     }
-    StringBuilder builder = new StringBuilder(s.length());
-    for (int i = s.length() - 1; i >= 0; i--) {
-      builder.append(s.charAt(i));
-    }
-    return builder.toString();
+    return new StringBuilder(s).reverse().toString();
   }
 
   static <T> List<T> reverse(List<T> list) {
