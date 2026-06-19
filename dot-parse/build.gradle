@@ -1,0 +1,17 @@
+plugins {
+    id 'java'
+}
+
+dependencies {
+    implementation project(':mug')
+    implementation 'com.google.errorprone:error_prone_annotations:2.23.0'
+    testImplementation 'com.google.truth:truth:1.1.5'
+    testImplementation 'com.google.truth.extensions:truth-java8-extension:1.1.5'
+    testImplementation 'com.google.testparameterinjector:test-parameter-injector:1.8'
+    testImplementation 'com.google.guava:guava-testlib:33.4.0-jre'
+    testImplementation 'junit:junit:4.13.1'
+}
+
+test {
+    useJUnit()
+}
