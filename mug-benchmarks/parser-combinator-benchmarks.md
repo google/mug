@@ -40,8 +40,10 @@ Throughput was measured in **operations per millisecond** (higher is better):
 * **The Code**: Matches a sequence of four digit blocks separated by dots (e.g., `192.168.1.1`).
 * **Performance**: `fastparse` ($29.4\text{k}$) > `dot-parse` ($17.4\text{k}$) > `cats-parse` ($13.4\text{k}$) > `taker` ($10.8\text{k}$).
 * **Analysis**:
-  * `fastparse` wins because its compile-time macro compiles the sequence into a flat procedural loop, completely avoiding call stack and array-iteration overhead.
-  * In the runtime-combinator battle, **`dot-parse` runs $1.30\text{x}$ faster than `cats-parse`**. Even though both utilize stack-based primitive offsets, `dot-parse`'s Java-based execution flow is significantly lighter.
+  * **Loop Inlining**: `fastparse` compiles the sequence into a flat procedural loop, avoiding method-dispatch and array-iteration overhead.
+  * **Temporary String Allocations (API Design Trade-off)**: A primary driver of `fastparse`'s throughput lead is that it utilizes a non-capturing rule (`P[Unit]`) for digits, allocating **zero strings** during the parse. Conversely, `dot-parse`'s `digits()` API is designed to return the matched digits as a `String`, forcing it to allocate **four temporary String objects** (one for each octet) on every parse. 
+  * This is an intentional **API design trade-off** in `dot-parse` to keep the public API surface lean and simple (by not duplicating primitive parsers into capturing and non-capturing variants), rather than a library architectural disadvantage.
+  * In the runtime-combinator battle, `dot-parse` runs $1.30\text{x}$ faster than `cats-parse` (which also allocates four strings via its `.string` operator), demonstrating a lighter execution path.
 
 ---
 
@@ -73,9 +75,8 @@ Throughput was measured in **operations per millisecond** (higher is better):
     * `cats-parse`'s trie compiler **only supports exact, case-sensitive strings.** When passed `Parser.ignoreCase`, it silently collapses and falls back to a sequential backtracking choice loop, suffering a catastrophic **$18.5\text{x}$ performance drop** ($154\text{k} \rightarrow 8.3\text{k}$).
     * `fastparse`'s `StringIn` macro does not support case-insensitivity, forcing it to fall back to sequential backtracking loops (`|`), running at just $7.3\text{k}\text{ ops/ms}$.
   * **How `dot-parse` won**: 
-    * `dot-parse`'s prefix-trie compiler is exceptionally smart. For case-insensitive strings, **it precomputes all capitalization permutations** of the first 4 characters (e.g., `s`, `S`, `se`, `sE`, `Se`, `SE` ...) at startup.
-    * When composemassive
-     inside `anyOf`, `dot-parse` compiles all these case permutations into its `PrefixPruneTree` trie. At runtime, **it peeks at the input and dispatches to the correct branch in $O(1)$ time**, preserving its blazing-fast trie-dispatch speed!
+    * `dot-parse`'s prefix-trie compiler precomputes all capitalization permutations of the first 4 characters (e.g., `s`, `S`, `se`, `sE`, `Se`, `SE` ...) at startup.
+    * When composed inside `anyOf`, `dot-parse` compiles all these case permutations into its `PrefixPruneTree` trie. At runtime, it peeks at the input and dispatches to the correct branch in $O(1)$ time, preserving its trie-dispatch speed.
 
 ---
 
