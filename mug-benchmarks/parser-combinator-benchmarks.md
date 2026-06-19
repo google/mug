@@ -17,7 +17,7 @@ Our benchmarks reveal a clear set of trade-offs between **compile-time macro cod
 
 * **Sequencing & Bulk Scanning**: `fastparse`'s compile-time macros hold a **$1.6\text{x}$ to $1.7\text{x}$ speed advantage** over `dot-parse` by inlining loops and stripping out unused parsed value allocations at compile-time.
 * **Trie-Based Choice Dispatch**: Both `dot-parse` and `cats-parse` **demolish `fastparse` by more than $2.3\text{x}$**, matching over **150 million choices per second** thanks to superior runtime trie-dispatching algorithms.
-* **Case-Insensitive Choice Dispatch**: **`dot-parse` achieves a historic landslide victory, running $12\text{x}$ to $14\text{x}$ faster than all other engines combined.** While other libraries silently collapse and fall back to slow $O(N)$ backtracking loops under case-insensitivity, `dot-parse`'s prefix-trie compiler precomputes all capitalization permutations to maintain a blazing-fast $O(1)$ dispatch.
+* **Case-Insensitive Choice Dispatch**: **`dot-parse` achieves a clear victory, running $12\text{x}$ to $14\text{x}$ faster than all other engines combined.** While other libraries silently collapse and fall back to slow $O(N)$ backtracking loops under case-insensitivity, `dot-parse`'s prefix-trie compiler precomputes all capitalization permutations to maintain a blazing-fast $O(1)$ dispatch.
 
 ---
 
@@ -43,18 +43,15 @@ Throughput was measured in **operations per millisecond** (higher is better):
   * `fastparse` wins because its compile-time macro compiles the sequence into a flat procedural loop, completely avoiding call stack and array-iteration overhead.
   * In the runtime-combinator battle, **`dot-parse` runs $1.30\text{x}$ faster than `cats-parse`**. Even though both utilize stack-based primitive offsets, `dot-parse`'s Java-based execution flow is significantly lighter.
 
-> [!NOTE]
-> **Our Engine Optimization**: We optimized `Parser.sequence()` in `dot-parse` to return a zero-intermediate-allocation anonymous class. By evaluating child parsers in a flat, compiler-inlined loop, we reduced success object allocations from $O(N)$ to exactly **$O(1)$ at the very end**, yielding a measurable speed boost in sequencing.
-
 ---
 
 ### 2. Quoted String Parsing (Lexical Bulk Scanning)
 * **The Code**: Matches a 100-character double-quoted string with no escape characters (e.g., `"aaa..."`).
 * **Performance**: `fastparse` ($17.5\text{k}$) > `dot-parse` ($10.3\text{k}$) > `cats-parse` ($5.9\text{k}$) > `taker` ($374$).
 * **Analysis**:
-  * All three optimized engines (`fastparse`, `dot-parse`, and `cats-parse`) use native bulk-scanning primitives (`CharsWhile` / `consecutive`) to scan the string in a single JVM-level loop, yielding a massive **$15\text{x}$ to $46\text{x}$ speedup** over Taker's character-by-character backtrack.
+  * All three optimized engines (`fastparse`, `dot-parse`, and `cats-parse`) use native bulk-scanning primitives (`CharsWhile` / `consecutive`) to scan the string in a single JVM-level loop, yielding a **$15\text{x}$ to $46\text{x}$ speedup** over Taker's character-by-character backtrack.
   * `fastparse` wins the top spot because of **compile-time value discarding**: it detects that the rule returns `P[Unit]` and completely strips out any string slice/value allocation at compile-time.
-  * However, **`dot-parse` runs a massive $1.72\text{x}$ faster than `cats-parse`** under the exact same bulk-scanning design, demonstrating the superior speed of Java's core buffer-sweeping execution.
+  * However, **`dot-parse` runs a $1.72\text{x}$ faster than `cats-parse`** under the exact same bulk-scanning design, demonstrating the superior speed of Java's core buffer-sweeping execution.
 
 ---
 
@@ -62,8 +59,8 @@ Throughput was measured in **operations per millisecond** (higher is better):
 * **The Code**: Dispatches matching across a choice list of 12 SQL-like keywords (matching `"limit"`).
 * **Performance**: `cats-parse` ($154\text{k}$) $\approx$ `dot-parse` ($150\text{k}$) > `fastparse` ($64.5\text{k}$) > `taker` ($11\text{k}$).
 * **Analysis**:
-  * **This is a spectacular victory for runtime trie dispatch!** Both `cats-parse` (`oneOf`) and `dot-parse` (`anyOf`) precompute optimized runtime prefix-tries, **completely demolishing `fastparse`'s compile-time `StringIn` trie by more than $2.3\text{x}$**.
-  * Both runtime engines process a staggering **150+ million choices per second** on a single thread.
+  * **This is a compelling victory for runtime trie dispatch!** Both `cats-parse` (`oneOf`) and `dot-parse` (`anyOf`) precompute optimized runtime prefix-tries, **completely demolishing `fastparse`'s compile-time `StringIn` trie by more than $2.3\text{x}$**.
+  * Both runtime engines process **150+ million choices per second** on a single thread.
 
 ---
 
@@ -71,13 +68,14 @@ Throughput was measured in **operations per millisecond** (higher is better):
 * **The Code**: Dispatches matching across a choice list of 12 SQL-like keywords matched **case-insensitively** (matching `"LIMIT"`).
 * **Performance**: `dot-parse` ($107\text{k}$) > Taker ($8.8\text{k}$) > `cats-parse` ($8.3\text{k}$) > `fastparse` ($7.3\text{k}$).
 * **Analysis**:
-  * **This is a landslide architectural victory for `dot-parse`! It runs $12\text{x}$ to $14\text{x}$ faster than all other engines combined.**
+  * **This is a architectural victory for `dot-parse`! It runs $12\text{x}$ to $14\text{x}$ faster than all other engines combined.**
   * **Why other engines collapsed**: 
     * `cats-parse`'s trie compiler **only supports exact, case-sensitive strings.** When passed `Parser.ignoreCase`, it silently collapses and falls back to a sequential backtracking choice loop, suffering a catastrophic **$18.5\text{x}$ performance drop** ($154\text{k} \rightarrow 8.3\text{k}$).
     * `fastparse`'s `StringIn` macro does not support case-insensitivity, forcing it to fall back to sequential backtracking loops (`|`), running at just $7.3\text{k}\text{ ops/ms}$.
   * **How `dot-parse` won**: 
     * `dot-parse`'s prefix-trie compiler is exceptionally smart. For case-insensitive strings, **it precomputes all capitalization permutations** of the first 4 characters (e.g., `s`, `S`, `se`, `sE`, `Se`, `SE` ...) at startup.
-    * When composed inside `anyOf`, `dot-parse` compiles all these case permutations into its `PrefixPruneTree` trie. At runtime, **it peeks at the input and dispatches to the correct branch in $O(1)$ time**, preserving its blazing-fast trie-dispatch speed!
+    * When composemassive
+     inside `anyOf`, `dot-parse` compiles all these case permutations into its `PrefixPruneTree` trie. At runtime, **it peeks at the input and dispatches to the correct branch in $O(1)$ time**, preserving its blazing-fast trie-dispatch speed!
 
 ---
 
