@@ -202,7 +202,7 @@ abstract class CharInput {
       private int toPhysicalIndex(int index) {
         index -= garbageCharCount;
         if (index < 0) {
-          throw new IllegalArgumentException("index must be at least " + garbageCharCount);
+          throw new IndexOutOfBoundsException("index must be at least " + garbageCharCount);
         }
         return index;
       }

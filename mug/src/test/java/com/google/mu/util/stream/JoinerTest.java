@@ -2,6 +2,7 @@ package com.google.mu.util.stream;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -15,6 +16,24 @@ public class JoinerTest {
     assertThat(Joiner.on('=').join("a", null)).isEqualTo("a=null");
     assertThat(Joiner.on('=').join(null, "a")).isEqualTo("null=a");
     assertThat(Joiner.on('=').join(null, null)).isEqualTo("null=null");
+  }
+
+  @Test public void join_collection_singleElement() {
+    List<String> list = List.of("one");
+    assertThat(Joiner.on(',').join(list)).isSameInstanceAs(list.get(0));
+    assertThat(Joiner.on(',').between('(', ')').join(list)).isEqualTo("(one)");
+  }
+
+  @Test public void join_collection_empty() {
+    List<String> empty = List.of();
+    assertThat(Joiner.on(',').join(empty)).isEqualTo("");
+    assertThat(Joiner.on(',').between('(', ')').join(empty)).isEqualTo("()");
+  }
+
+  @Test public void join_collection_multipleElements() {
+    List<String> multiple = List.of("one", "two");
+    assertThat(Joiner.on(',').join(multiple)).isEqualTo("one,two");
+    assertThat(Joiner.on(',').between('(', ')').join(multiple)).isEqualTo("(one,two)");
   }
 
   @Test public void join_bistream() {

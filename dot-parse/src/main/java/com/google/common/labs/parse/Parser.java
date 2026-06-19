@@ -21,6 +21,7 @@ import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.common.labs.parse.Utils.checkPositionIndex;
 import static com.google.common.labs.parse.Utils.checkState;
 import static com.google.mu.util.CharPredicate.isNot;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
@@ -34,14 +35,13 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
-import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.AbstractMap;
-import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -468,7 +468,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(after != '\\', "quoteChar cannot be '\\'");
     checkArgument(!Character.isISOControl(after), "quoteChar cannot be a control character");
     checkArgument(!Character.isSurrogate(after), "quoteChar cannot be a surrogate character");
-    return anyOf(consecutive(isNot(after).and(isNot('\\')), "quoted chars"), escape)
+    return anyOf(consecutive(isNot(after).and(isNot('\\')).precomputeForAscii(), "quoted chars"), escape)
         .zeroOrMore(joining())
         .immediatelyBetween(before, Character.toString(after));
   }
@@ -715,7 +715,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <pre>{@code sequence(digits(), string("-"), digits(), string("-"), digits())}</pre>
    *
-   * is a much more concise equivalent of
+   * is a much more concise and <em>more efficient</em> equivalent of
    *
    * <pre>{@code
    * digits()
@@ -734,12 +734,34 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @since 10.1
    */
-  public static Parser<?> sequence(Parser<?> first, Production<?>... more) {
-    Parser<?> parser = requireNonNull(first);
-    for (Production<?> p : more) {
-      parser = parser.then(allowZeroWidth(p));
-    }
-    return parser;
+  public static <X> Parser<Void> sequence(Parser<X> first, Production<?>... more) {
+    List<Parser<?>> secondaries = stream(more)
+        .map(Parser::allowZeroWidth)
+        .collect(toUnmodifiableList());
+    return first.new SamePrefix<Void>() {
+      @Override MatchResult<Void> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        switch (left().skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success<?> firstResult -> {
+            int index = firstResult.tail();
+            for (Parser<?> secondary : secondaries) {
+              switch (secondary.skipAndMatch(skip, input, index, context)) {
+                case MatchResult.Success<?> success -> {
+                  index = success.tail();
+                }
+                case MatchResult.Failure<?> failure -> {
+                  return failure.safeCast();
+                }
+              }
+            }
+            return new MatchResult.Success<>(firstResult.head(), index, null);
+          }
+          case MatchResult.Failure<?> failure -> {
+            return failure.safeCast();
+          }
+        }
+      }
+    };
   }
 
   /** Matches if any of the given {@code parsers} match. */
@@ -834,33 +856,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * values using {@code collector}.
    */
   public final <A, R> Parser<R> atLeastOnce(Collector<? super T, A, ? extends R> collector) {
-    requireNonNull(collector);
-    return new SamePrefix<>() {
-      @Override MatchResult<R> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        A buffer = collector.supplier().get();
-        var accumulator = collector.accumulator();
-        switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success(int head, int tail, T value) -> {
-            accumulator.accept(buffer, value);
-            for (int from = tail; ; ) {
-              switch (left().skipAndMatch(skip, input, from, context)) {
-                case MatchResult.Success(int head2, int tail2, T value2) -> {
-                  accumulator.accept(buffer, value2);
-                  from = tail2;
-                }
-                case MatchResult.Failure<?> failure -> {
-                  return new MatchResult.Success<>(head, from, collector.finisher().apply(buffer));
-                }
-              }
-            }
-          }
-          case MatchResult.Failure<?> failure -> {
-            return failure.safeCast();
-          }
-        }
-      }
-    };
+    return this.andZeroOrMore(this, collector);
   }
 
   /**
@@ -899,7 +895,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final <A, R> Parser<R> atLeastOnceDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
-    return atLeastOnceDelimitedBy(string(delimiter), collector);
+    return this.andZeroOrMore(this.afterDelimiter(delimiter), collector);
   }
 
   /**
@@ -910,14 +906,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final <A, R> Parser<R> atLeastOnceDelimitedBy(
       Parser<?> delimiter, Collector<? super T, A, ? extends R> collector) {
-    requireNonNull(collector);
-    return sequence(
-        this,
-        delimiter.then(this).zeroOrMore(toCollection(ArrayDeque::new)),
-        (first, deque) -> {
-          deque.addFirst(first);
-          return deque.stream().collect(collector);
-        });
+    return this.andZeroOrMore(delimiter.then(this), collector);
   }
 
   /**
@@ -1027,7 +1016,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final <A, R> Parser<R>.OrEmpty zeroOrMoreDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
-    return this.<A, R>zeroOrMoreDelimitedBy(string(delimiter), collector);
+    return this.<A, R>atLeastOnceDelimitedBy(delimiter, collector)
+        .new OrEmpty(emptyValueSupplier(collector));
   }
 
   /**
@@ -1040,7 +1030,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public final <A, R> Parser<R>.OrEmpty zeroOrMoreDelimitedBy(
       Parser<?> delimiter, Collector<? super T, A, ? extends R> collector) {
     return this.<A, R>atLeastOnceDelimitedBy(delimiter, collector)
-    .new OrEmpty(emptyValueSupplier(collector));
+        .new OrEmpty(emptyValueSupplier(collector));
   }
 
   /**
@@ -1071,6 +1061,55 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       BiCollector<? super A, ? super B, R> collector) {
     return sequence(first, second, Both::of)
         .zeroOrMoreDelimitedBy(delimiter, mapping(identity(), collector));
+  }
+
+  private <A, R> Parser<R> andZeroOrMore(
+      Parser<? extends T> extra, Collector<? super T, A, ? extends R> collector) {
+    var supplier = collector.supplier();
+    var accumulator = collector.accumulator();
+    var finisher = collector.finisher();
+    return new SamePrefix<>() {
+      @Override MatchResult<R> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        switch (left().skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success(int head, int tail, T value) -> {
+            A buffer = supplier.get();
+            accumulator.accept(buffer, value);
+            for (int index = tail; ; ) {
+              switch (extra.skipAndMatch(skip, input, index, context)) {
+                case MatchResult.Success(int head2, int tail2, T value2) -> {
+                  accumulator.accept(buffer, value2);
+                  index = tail2;
+                }
+                case MatchResult.Failure<?> failure -> {
+                  return new MatchResult.Success<>(head, index, finisher.apply(buffer));
+                }
+              }
+            }
+          }
+          case MatchResult.Failure<?> failure -> {
+            return failure.safeCast();
+          }
+        }
+      }
+    };
+  }
+
+  private Parser<T> afterDelimiter(String delimiter) {
+    checkArgument(delimiter.length() > 0, "delimiter cannot be empty");
+    return new Parser<>() {
+      @Override MatchResult<T> skipAndMatch(
+           Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        return input.startsWith(delimiter, start)
+            ? Parser.this.skipAndMatch(skip, input, start + delimiter.length(), context)
+            : ErrorContext.MINIMAL.failAt(start, "expecting <{name}>", delimiter);
+      }
+
+      @Override Set<String> getPrefixes() {
+        return Set.of(delimiter);
+      }
+    };
   }
 
   /**
@@ -1192,8 +1231,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return map(unused -> result);
   }
 
-  @Override
-  public final <S> Parser<S> then(Parser<S> suffix) {
+  @Override public final <S> Parser<S> then(Parser<S> suffix) {
     return sequence(this, suffix, (a, b) -> b);
   }
 
@@ -1228,7 +1266,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         var result = left().skipAndMatch(skip, input, start, context);
         return result instanceof MatchResult.Success<T> success && !condition.test(success.value())
-            ? context.expecting(name, success.head())
+            ? context.expecting(name, success.head(), success.tail())
             : result;
       }
     };
@@ -1298,11 +1336,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<T> success -> {
-            ErrorContext lookaheadContext = new ErrorContext(input);
-            yield switch (suffix.skipAndMatch(skip, input, success.tail(), lookaheadContext)) {
+            yield switch (suffix.skipAndMatch(skip, input, success.tail(), ErrorContext.MINIMAL)) {
               case MatchResult.Success<?> followed ->
-                  lookaheadContext.failAt(
-                      followed.head(), "unexpected `%s` – %s.", name, new Snippet(input, success.tail()));
+                context.failAt(
+                    followed.head(), followed.tail(),
+                    "unexpected `{name}`: {snippet}", name);
               default -> success;
             };
           }
@@ -1468,7 +1506,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private T parse(CharInput input, int fromIndex) {
-    ErrorContext context = new ErrorContext(input);
+    ErrorState context = new ErrorState(input);
     MatchResult<T> result = match(input, fromIndex, context);
     switch (result) {
       case MatchResult.Success(int head, int tail, T value) -> {
@@ -1490,7 +1528,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final boolean isPrefixOf(String input) {
     CharInput charInput = CharInput.from(input);
-    return match(charInput, 0, new ErrorContext(charInput)) instanceof MatchResult.Success;
+    return match(charInput, 0, ErrorContext.MINIMAL) instanceof MatchResult.Success;
   }
 
   /**
@@ -1508,8 +1546,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private boolean matches(CharInput input, int fromIndex) {
-    ErrorContext context = new ErrorContext(input);
-    return match(input, fromIndex, context) instanceof MatchResult.Success<?> success
+    return match(input, fromIndex, ErrorContext.MINIMAL) instanceof MatchResult.Success<?> success
         && input.isEof(success.tail());
   }
 
@@ -1550,7 +1587,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         if (input.isEof(index)) {
           return null;
         }
-        ErrorContext context = new ErrorContext(input);
+        ErrorState context = new ErrorState(input);
         return switch (match(input, index, context)) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
@@ -1612,7 +1649,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       private int index = fromIndex;
 
       MatchResult.Success<T> nextOrNull() {
-        return switch (match(input, index, new ErrorContext(input))) {
+        return switch (match(input, index, ErrorContext.MINIMAL)) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
             input.markCheckpoint(index);
@@ -1697,13 +1734,19 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * <p>Note that it's different from {@link Parser#zeroOrMoreDelimitedBy}, which may produce
      * empty list, but each element is guaranteed to be non-empty.
      */
-    public <R> Parser<R>.OrEmpty delimitedBy(String delimiter, Collector<? super T, ?, R> collector) {
+    public <A, R> Parser<R>.OrEmpty delimitedBy(
+        String delimiter, Collector<? super T, A, ? extends R> collector) {
+      var supplier = collector.supplier();
+      var accumulator = collector.accumulator();
+      var finisher = collector.finisher();
       return sequence(
-          this,
-          string(delimiter).then(this).zeroOrMore(toCollection(ArrayDeque::new)),
-          (first, deque) -> {
-            deque.addFirst(first);
-            return deque.stream().collect(collector);
+          this, string(delimiter).then(this).zeroOrMore(toList()),
+          (head, tail) -> {
+            A buffer = supplier.get();
+            accumulator.accept(buffer, head);
+            tail.forEach(value -> accumulator.accept(buffer, value));
+            R result = finisher.apply(buffer);
+            return result;
           });
     }
 
@@ -1721,8 +1764,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return delimitedBy(delimiter, toUnmodifiableList());
     }
 
-    @Override
-    public <S> Parser<S> then(Parser<S> suffix) {
+    @Override public <S> Parser<S> then(Parser<S> suffix) {
       return sequence(this, suffix, (a, b) -> b);
     }
 
@@ -1906,7 +1948,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       // forTokens().parseToStream() would only skip the trailing upon success.
       // If everything is skippable, it will fail to match.
       // We use flatMap() to keep the buffer loading lazy upon the returned stream being consumed.
-      return Stream.of(new ErrorContext(input))
+      return Stream.of(ErrorContext.MINIMAL)
           .flatMap(
               context ->
                   toSkip.match(input, fromIndex, context) instanceof MatchResult.Success<?> success
@@ -2029,7 +2071,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             "Left recursion not supported! Consider using withPostfixes() or the OperatorTable class"
                 + " to define the left recursive grammar.");
         if (p == null) { // can happen when validating mutually recursive rules.
-          return context.failAt(0, "empty input"); // A Parser must consume input.
+          return context.failAt(0, "empty input", ""); // A Parser must consume input.
         }
       }
       checkState(p != null, "definedAs() should have been called before parse()");
@@ -2104,7 +2146,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     if (skip == null) {
       return start;
     }
-    return switch (skip.match(input, start, new ErrorContext(input))) {
+    return switch (skip.match(input, start, ErrorContext.MINIMAL)) {
       case MatchResult.Success<?> success -> success.tail();
       case MatchResult.Failure<?> failure -> start;
     };
@@ -2128,18 +2170,23 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
   }
 
-  sealed interface MatchResult<V> permits MatchResult.Success, MatchResult.Failure {
-    /**
-     * Represents a successful parse result with a value and the [head, tail) range of the match.
-     */
+  sealed interface MatchResult<V> {
     record Success<V>(int head, int tail, V value) implements MatchResult<V> {
       @Override public Success<V> startingFrom(int index) {
         return new MatchResult.Success<>(index, tail, value);
       }
     }
 
-    /** Represents a partial parse result with a value and the [start, end) range of the match. */
-    record Failure<V>(int at, String message, Object[] args) implements MatchResult<V> {
+    /**
+     * Represents failure with an index in the source, and an error message
+     * with predefined {name} and {snippet} template placeholders to be filled when throwing exception.
+     */
+    record Failure<V>(int at, int frontier, String messageTemplate, String symbolName)
+        implements MatchResult<V> {
+      Failure(int at, String messageTemplate, String symbolName) {
+        this(at, at, messageTemplate, symbolName);
+      }
+
       @SuppressWarnings("unchecked")
       <X> Failure<X> safeCast() {
         return (Failure<X>) this;
@@ -2147,8 +2194,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
       ParseException toException(CharInput input) {
         return new ParseException(
-            at,
-            String.format("at %s: %s", input.sourcePosition(at), String.format(message, args)));
+            at, String.format("at %s: %s", input.sourcePosition(at), renderMessage(input)));
+      }
+
+      private String renderMessage(CharInput input) {
+        return Substring.word()
+            .immediatelyBetween("{", INCLUSIVE, "}", INCLUSIVE)
+            .repeatedly()
+            .replaceAllFrom(
+                messageTemplate,
+                placeholder -> switch (placeholder.toString()) {
+                  case "{name}" -> symbolName;
+                  case "{snippet}" -> new Snippet(input, at).toString();
+                  default -> placeholder;
+                });
       }
 
       @Override public Failure<V> startingFrom(int head) {
@@ -2159,29 +2218,51 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     MatchResult<V> startingFrom(int head);
   }
 
-  static final class ErrorContext {
+  static class ErrorContext {
+    static final ErrorContext MINIMAL = new ErrorContext();
+
+    final <V> MatchResult.Failure<V> expecting(String symbolName, int at) {
+      return expecting(symbolName, at, at);
+    }
+
+    <V> MatchResult.Failure<V> expecting(String symbolName, int at, int frontier) {
+      return failAt(at, frontier, "expecting <{name}>.", symbolName);
+    }
+
+    final <V> MatchResult.Failure<V> failAt(int at, String messageTemplate, String symbolName) {
+      return failAt(at, at, messageTemplate, symbolName);
+    }
+
+    <V> MatchResult.Failure<V> failAt(int at, int frontier, String messageTemplate, String symbolName) {
+      return new MatchResult.Failure<V>(at, frontier, messageTemplate, symbolName);
+    }
+  }
+
+  private static final class ErrorState extends ErrorContext {
     private final CharInput input;
     private MatchResult.Failure<?> farthestFailure = null;
 
-    ErrorContext(CharInput input) {
+    ErrorState(CharInput input) {
       this.input = input;
     }
 
-    <V> MatchResult.Failure<V> expecting(String name, int at) {
-      return failAt(at, "expecting <%s>, encountered %s.", name, new Snippet(input, at));
+    @Override <V> MatchResult.Failure<V> expecting(
+        String symbolName, int at, int frontier) {
+      return failAt(at, frontier, "expecting <{name}>, encountered: {snippet}", symbolName);
     }
 
-    <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
-      var failure = new MatchResult.Failure<V>(at, message, args);
+    @Override <V> MatchResult.Failure<V> failAt(
+        int at, int frontier, String messageTemplate, String symbolName) {
+      MatchResult.Failure<V> failure = super.failAt(at, frontier, messageTemplate, symbolName);
       // prefer the farthest then the most recent failure
-      if (farthestFailure == null || failure.at() >= farthestFailure.at()) {
+      if (farthestFailure == null || failure.frontier() >= farthestFailure.frontier()) {
         farthestFailure = failure;
       }
       return failure;
     }
 
     ParseException report(MatchResult.Failure<?> failure) {
-      return (farthestFailure == null || failure.at() >= farthestFailure.at())
+      return (farthestFailure == null || failure.frontier() >= farthestFailure.frontier())
           ? failure.toException(input)
           : farthestFailure.toException(input);
     }
@@ -2211,30 +2292,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return operand;
   }
 
-  record Snippet(CharInput input, int at) {
-    Snippet(String input, int at) {
-      this(CharInput.from(input), at);
-    }
-
-    @Override public String toString() {
-      if (input.isEof(at)) {
-        return "<EOF>";
-      }
-      String snippet =
-          Substring.upToIncluding(Substring.consecutive(c -> !Character.isWhitespace(c)))
-              .limit(50)
-              .or(Substring.BEGINNING.toEnd().limit(3))  // print a few whitespaces then
-              .in(input.snippet(at, 50))
-              .get()
-              .toString();
-      return "[" + (input.isInRange(at + snippet.length()) ? snippet + "..." : snippet) + "]";
-    }
-  }
-
   private interface Constants {
     static Parser<String> DIGITS = consecutive(charsIn("[0-9]"), "digits");
     static Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
   }
+
+
 
   Parser() {}
 }

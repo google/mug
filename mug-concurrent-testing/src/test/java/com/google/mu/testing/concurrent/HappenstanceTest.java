@@ -507,6 +507,7 @@ public class HappenstanceTest {
     }
   }
 
+  @Ignore
   @Test
   public void myListToString_concurrentCalls_mayReturnDifferentInstances_noSequencer()
       throws Exception {

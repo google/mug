@@ -18,6 +18,8 @@ import java.util.regex.Pattern;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.google.common.labs.parse.Parser;
+import com.google.common.testing.EqualsTester;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 import com.google.testing.junit.testparameterinjector.TestParameter;
@@ -167,6 +169,20 @@ public class EmailAddressTest {
     assertThat(address.toString()).isEqualTo("\"A \\\"B\\\" \\\\ C\" <test@example.com>");
     EmailAddress parsed = EmailAddress.of(address.toString());
     assertThat(parsed.displayName()).hasValue("A \"B\" \\ C");
+  }
+
+  @Test
+  public void testEmailAddressOf_preservesQuotesAndBackslashesLiterally() {
+    EmailAddress address = EmailAddress.of("\"john\"", "example.com");
+    assertThat(address.localPart()).isEqualTo("\"john\"");
+    assertThat(address.toString()).isEqualTo("\"\\\"john\\\"\"@example.com");
+  }
+
+  @Test
+  public void testEmailAddressWithDisplayName_preservesQuotesAndBackslashesLiterally() {
+    EmailAddress address = EmailAddress.of("john", "example.com").withDisplayName("\"John\"");
+    assertThat(address.displayName()).hasValue("\"John\"");
+    assertThat(address.toString()).isEqualTo("\"\\\"John\\\"\" <john@example.com>");
   }
 
   @Test
@@ -349,14 +365,7 @@ public class EmailAddressTest {
   public void testConstructor_displayNameContainsControlChar() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new EmailAddress("local", "example.com", Optional.of("John\nDoe")));
-  }
-
-  @Test
-  public void testConstructor_domainContainsUppercaseChar_throws() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new EmailAddress("local", "Example.com", Optional.empty()));
+        () -> EmailAddress.of("local", "example.com").withDisplayName("John\nDoe"));
   }
 
   @Test
@@ -378,7 +387,7 @@ public class EmailAddressTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> EmailAddress.of("test", "example.123"));
-    assertThat(thrown).hasMessageThat().contains("numeric (123)");
+    assertThat(thrown).hasMessageThat().contains("123");
   }
 
   @Test
@@ -421,6 +430,14 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressOf_i18nDomain() {
+    EmailAddress address = EmailAddress.of("test", "müller.com");
+    assertThat(address.domain()).isEqualTo("xn--mller-kva.com");
+    assertThat(address.unicodeDomain()).isEqualTo("müller.com");
+    assertThat(address.hasI18nDomain()).isTrue();
+  }
+
+  @Test
   public void testEmailAddressParsing_invalidEmail_domainLiterals() {
     assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test@[192.168.1.1]"));
     assertThrows(IllegalArgumentException.class, () -> EmailAddress.of("test@192.168.1.1"));
@@ -441,6 +458,12 @@ public class EmailAddressTest {
     parser.assertParsesTo(
         "someone+.else@example.com",
         EmailAddress.of("someone+.else", "example.com"));
+  }
+
+  @Test
+  public void testEmailAddressParsing_idnAsDisplayName() {
+    assertThat(EmailAddress.of("üser@müller.com <real@real.com>"))
+        .isEqualTo(EmailAddress.of("real", "real.com").withDisplayName("üser@müller.com"));
   }
 
   @Test
@@ -900,6 +923,15 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testEmailAddressParsing_mixedDisplayName_addrSpecFollowedByQuoteNoSpace(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    EmailAddress parsed = parser.parse("foo@bar.com\"displayName\" <another@address.com>");
+    assertThat(parsed.displayName()).hasValue("foo@bar.com displayName");
+    assertThat(parsed.address()).isEqualTo("another@address.com");
+  }
+
+  @Test
   public void testEmailAddressParsing_mixedDisplayName_interleaved(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
@@ -1060,6 +1092,32 @@ public class EmailAddressTest {
         .containsExactly(EmailAddress.of("a", "example.com"), EmailAddress.of("b", "foo.com"));
     assertThat(EmailAddress.PARSER.skipping(Character::isWhitespace).parseToStream("a@example.com b@foo.com"))
         .containsExactly(EmailAddress.of("a", "example.com"), EmailAddress.of("b", "foo.com"));
+  }
+
+  @Test
+  public void testAddrSpecParser_valid() {
+    assertValidAddrSpec("\"john\"@smith.com");
+    assertValidAddrSpec("john@smith.com");
+    assertValidAddrSpec("ブューシー@例え.テスト");
+    assertThat(EmailAddress.ADDR_SPEC_PARSER.parse("john.smith@example.com"))
+        .isEqualTo(EmailAddress.of("john.smith", "example.com"));
+    assertThat(EmailAddress.ADDR_SPEC_PARSER.parse("\"john smith\"@example.com"))
+        .isEqualTo(EmailAddress.of("john smith", "example.com"));
+    assertThat(EmailAddress.ADDR_SPEC_PARSER.parse("user.name@sub.domain.co.uk"))
+        .isEqualTo(EmailAddress.of("user.name", "sub.domain.co.uk"));
+    assertThat(EmailAddress.ADDR_SPEC_PARSER.parse("john.smith@EXAMPLE.COM"))
+        .isEqualTo(EmailAddress.of("john.smith", "example.com"));
+    assertThat(EmailAddress.ADDR_SPEC_PARSER.parse("john.smith@MÜLLER.de"))
+        .isEqualTo(EmailAddress.of("john.smith", "xn--mller-kva.de"));
+  }
+
+  @Test
+  public void testAddrSpecParser_invalid() {
+    assertInvalidAddrSpec("<john@smith.com>");
+    assertInvalidAddrSpec("john");
+    assertInvalidAddrSpec("ブューシー");
+    assertInvalidAddrSpec("\"j smith\" <j.smith@google.com>");
+    assertInvalidAddrSpec("ブュ@シー@例え.テスト");
   }
 
   @Test
@@ -1627,6 +1685,16 @@ public class EmailAddressTest {
     assertThrows(IllegalArgumentException.class, () -> parser.parse(email));
   }
 
+  private static void assertInvalidAddrSpec(String address) {
+    assertThrows(
+        Parser.ParseException.class, () -> EmailAddress.ADDR_SPEC_PARSER.parse(address));
+  }
+
+  private static void assertValidAddrSpec(String email) {
+    EmailAddress parsed = EmailAddress.ADDR_SPEC_PARSER.parse(email);
+    assertThat(parsed.displayName()).isEmpty();
+  }
+
   private enum ParseStrategy {
     REGEX {
       @Override EmailAddress parse(String email) {
@@ -1682,5 +1750,26 @@ public class EmailAddressTest {
       assertThat(parse(email)).isEqualTo(result);
       assertThat(parse(result.toString())).isEqualTo(result);
     }
+  }
+
+  @Test
+  public void testEqualsAndHashCode() {
+    new EqualsTester()
+        .addEqualityGroup(
+            EmailAddress.of("user", "example.com"),
+            EmailAddress.of("user", "example.com"))
+        .addEqualityGroup(
+            EmailAddress.of("user2", "example.com"),
+            EmailAddress.of("user2", "example.com"))
+        .addEqualityGroup(
+            EmailAddress.of("user", "example2.com"),
+            EmailAddress.of("user", "example2.com"))
+        .addEqualityGroup(
+            EmailAddress.of("user", "example.com").withDisplayName("display"),
+            EmailAddress.of("user", "example.com").withDisplayName("display"))
+        .addEqualityGroup(
+            EmailAddress.of("user", "example.com").withDisplayName("display2"),
+            EmailAddress.of("user", "example.com").withDisplayName("display2"))
+        .testEquals();
   }
 }

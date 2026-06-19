@@ -18,6 +18,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
@@ -26,8 +27,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-
-import com.google.mu.util.stream.Joiner.FasterStringJoiner;
 
 /**
  * A joiner (and {@code Collector}) that joins strings.
@@ -75,7 +74,7 @@ import com.google.mu.util.stream.Joiner.FasterStringJoiner;
  *
  * @since 5.6
  */
-public final class Joiner implements Collector<Object, FasterStringJoiner, String> {
+public final class Joiner implements Collector<Object, Joiner.FasterStringJoiner, String> {
   private final String prefix;
   private final String delimiter;
   private final String suffix;
@@ -109,6 +108,12 @@ public final class Joiner implements Collector<Object, FasterStringJoiner, Strin
    * @since 5.7
    */
   public String join(Collection<?> collection) {
+    if (collection.size() == 1
+        && prefix.isEmpty()
+        && suffix.isEmpty()
+        && collection instanceof List<?>) {  // common path
+      return String.valueOf(((List<?>) collection).get(0));
+    }
     return collection.stream().collect(this);
   }
 

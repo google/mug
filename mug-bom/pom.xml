@@ -4,14 +4,14 @@
 
   <groupId>com.google.mug</groupId>
   <artifactId>mug-bom</artifactId>
-  <version>10.4-SNAPSHOT</version>
+  <version>10.4.3-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Mug Bill of Materials</name>
   <description>Dependency version alignment for all Mug modules</description>
   <url>http://github.com/google/mug</url>
   <properties>
-    <project.build.outputTimestamp>2026-06-06T05:00:23Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-06-19T09:06:06Z</project.build.outputTimestamp>
   </properties>
 
   <licenses>

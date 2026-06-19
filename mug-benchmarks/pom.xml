@@ -3,7 +3,7 @@
   <parent>
       <groupId>com.google.mug</groupId>
       <artifactId>mug-root</artifactId>
-      <version>10.4-SNAPSHOT</version>
+      <version>10.4.3-SNAPSHOT</version>
       <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-benchmarks</artifactId>
@@ -34,6 +34,18 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <!-- Exclude the mixed Java/Scala showdown benchmark from default build -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <testExcludes>
+            <exclude>**/ParserShowdownBenchmark.java</exclude>
+          </testExcludes>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
 
   <dependencies>
@@ -104,4 +116,93 @@
     </dependency>
   </dependencies>
 
+  <profiles>
+    <profile>
+      <id>showdown</id>
+      <dependencies>
+        <dependency>
+          <groupId>io.github.parseworks</groupId>
+          <artifactId>taker</artifactId>
+          <version>1.0-SNAPSHOT</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.scala-lang</groupId>
+          <artifactId>scala-library</artifactId>
+          <version>2.13.12</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>com.lihaoyi</groupId>
+          <artifactId>fastparse_2.13</artifactId>
+          <version>3.0.2</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.typelevel</groupId>
+          <artifactId>cats-parse_2.13</artifactId>
+          <version>1.0.0</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <!-- Re-include the showdown benchmark for compilation -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <testExcludes>
+                <exclude>none</exclude>
+              </testExcludes>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.6.0</version>
+            <executions>
+              <execution>
+                <id>add-test-scala-sources</id>
+                <phase>generate-test-sources</phase>
+                <goals>
+                  <goal>add-test-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>src/test/scala</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <version>4.8.1</version>
+            <executions>
+              <execution>
+                <id>scala-compile-first</id>
+                <phase>process-resources</phase>
+                <goals>
+                  <goal>add-source</goal>
+                  <goal>compile</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>scala-test-compile-first</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>testCompile</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <scalaVersion>2.13.12</scalaVersion>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

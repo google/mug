@@ -233,7 +233,7 @@ public final class CharInputTest {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
-    assertThrows(IllegalArgumentException.class, () -> input.charAt(5));
+    assertThrows(IndexOutOfBoundsException.class, () -> input.charAt(5));
   }
 
   @Test
@@ -249,7 +249,7 @@ public final class CharInputTest {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
-    assertThrows(IllegalArgumentException.class, () -> input.isEof(5));
+    assertThrows(IndexOutOfBoundsException.class, () -> input.isEof(5));
   }
 
   @Test
@@ -257,7 +257,7 @@ public final class CharInputTest {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
-    assertThrows(IllegalArgumentException.class, () -> input.startsWith("5", 5));
+    assertThrows(IndexOutOfBoundsException.class, () -> input.startsWith("5", 5));
   }
 
   @Test
@@ -265,7 +265,7 @@ public final class CharInputTest {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
-    assertThrows(IllegalArgumentException.class, () -> input.snippet(5, 1));
+    assertThrows(IndexOutOfBoundsException.class, () -> input.snippet(5, 1));
   }
 
   @Test

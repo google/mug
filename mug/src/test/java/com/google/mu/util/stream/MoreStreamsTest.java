@@ -429,4 +429,10 @@ public class MoreStreamsTest {
         .forEach(tester::ignore);
     tester.testAllPublicStaticMethods(MoreStreams.class);
   }
+
+  void testIt() {
+    cat(List.of(1, 2), List.of(3));
+  }
+  void cat(List<String> a, List<String> b) {}
+  <T> void cat(T a, Iterable<T> b) {}
 }

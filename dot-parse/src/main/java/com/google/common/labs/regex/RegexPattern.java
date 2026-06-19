@@ -43,18 +43,7 @@ import com.google.mu.util.CharPredicate;
  * of regexes.
  */
 // TODO(benyu): Add support for free-spacing mode (?x:...).
-public sealed interface RegexPattern
-    permits RegexPattern.Alternation,
-        RegexPattern.Sequence,
-        RegexPattern.Quantified,
-        RegexPattern.Group,
-        RegexPattern.Literal,
-        RegexPattern.PredefinedCharClass,
-        RegexPattern.CharacterProperty,
-        RegexPattern.CharacterProperty.Negated,
-        RegexPattern.CharacterSet,
-        RegexPattern.Anchor,
-        RegexPattern.Lookaround {
+public sealed interface RegexPattern {
   /** Returns a {@link Sequence} of the given elements. */
   @SafeVarargs
   static Sequence sequence(RegexPattern... elements) {
@@ -183,7 +172,7 @@ public sealed interface RegexPattern
   }
 
   /** Base interface for all quantifier types. */
-  sealed interface Quantifier extends UnaryOperator<RegexPattern> permits AtLeast, AtMost, Limited {
+  sealed interface Quantifier extends UnaryOperator<RegexPattern> {
     boolean isReluctant();
 
     boolean isPossessive();
@@ -302,8 +291,7 @@ public sealed interface RegexPattern
   }
 
   /** Represents a grouping construct in a regex. */
-  sealed interface Group extends RegexPattern
-      permits Group.Capturing, Group.NonCapturing, Group.Named {
+  sealed interface Group extends RegexPattern {
 
     /** A capturing group, like {@code (a)}. */
     record Capturing(RegexPattern content) implements Group {
@@ -366,8 +354,7 @@ public sealed interface RegexPattern
   }
 
   /** Represents a custom character class, like {@code [a-z]} or {@code [^0-9]}. */
-  sealed interface CharacterSet extends RegexPattern
-      permits CharacterSet.AnyOf, CharacterSet.NoneOf {
+  sealed interface CharacterSet extends RegexPattern {
 
     /** A positive character class, like {@code [a-z]}. */
     record AnyOf(List<CharSetElement> elements) implements CharacterSet {
@@ -393,11 +380,7 @@ public sealed interface RegexPattern
   }
 
   /** Base interface for elements within a {@link CharacterSet}. */
-  sealed interface CharSetElement
-      permits LiteralChar, CharRange,
-        CharacterProperty,
-        CharacterProperty.Negated,
-        PredefinedCharClass {}
+  sealed interface CharSetElement {}
 
   /** Represents a single literal character within a character class. */
   record LiteralChar(char value) implements CharSetElement {
@@ -422,8 +405,7 @@ public sealed interface RegexPattern
   }
 
   /** Represents a character property, like {@code \p{Lower}} or {@code \P{Lower}}. */
-  sealed interface CharacterProperty extends CharSetElement, RegexPattern
-      permits PosixCharClass, UnicodeProperty {
+  sealed interface CharacterProperty extends CharSetElement, RegexPattern {
     String propertyName();
 
     default Negated negated() {
@@ -509,11 +491,7 @@ public sealed interface RegexPattern
   }
 
   /** Represents a lookaround assertion: {@code (?=...)}, {@code (?!...)}, {@code (?<=...)}, {@code (?<!...)}. */
-  sealed interface Lookaround extends RegexPattern
-      permits Lookaround.Lookahead,
-          Lookaround.NegativeLookahead,
-          Lookaround.Lookbehind,
-          Lookaround.NegativeLookbehind {
+  sealed interface Lookaround extends RegexPattern {
 
     /** Returns the AST node representing the pattern inside the lookaround. */
     RegexPattern target();
