@@ -1994,6 +1994,19 @@ public class ParserTest {
   }
 
   @Test
+  public void sequence_noResultLambda_thirdParserFails() {
+    Parser<String> first = string("a");
+    Parser<Integer> second = digits().map(Integer::parseInt);
+    Parser<Character> third = string("c").map(s -> s.charAt(0));
+    Parser<?> parser = sequence(first, second, third);
+
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a12x"));
+    assertThat(parser.matches("a12x")).isFalse();
+    assertThat(thrown).hasMessageThat().contains("1:4");
+    assertThat(thrown).hasMessageThat().contains("expecting <c>");
+  }
+
+  @Test
   public void sequence_noResultLambda_optionalParserDoesNotMatch() {
     Parser<?> parser = sequence(string("a"), string("b").optional(), string("c"));
     assertThat(parser.source().parse("ac")).isEqualTo("ac");
