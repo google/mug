@@ -56,12 +56,12 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
-import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.mu.function.Function4;
 import com.google.mu.function.TriFunction;
 import com.google.mu.util.Both;
 import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.Joiner;
@@ -1074,14 +1074,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private Parser<T> afterDelimiter(String delimiter) {
     checkArgument(delimiter.length() > 0, "delimiter cannot be empty");
-    Object[] expected = {delimiter};
     return new Parser<>() {
       @Override MatchResult<T> skipAndMatch(
            Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         return input.startsWith(delimiter, start)
             ? Parser.this.skipAndMatch(skip, input, start + delimiter.length(), context)
-            : ErrorContext.MINIMAL.failAt(start, "expecting <%s>", expected);
+            : ErrorContext.MINIMAL.failAt(start, "expecting <{name}>", delimiter);
       }
 
       @Override Set<String> getPrefixes() {
@@ -1318,7 +1317,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
               case MatchResult.Success<?> followed ->
                 context.failAt(
                     followed.head(), followed.tail(),
-                    "unexpected `%s`: %s", name, new Snippet(input, followed.head()));
+                    "unexpected `{name}`: {snippet}", name);
               default -> success;
             };
           }
@@ -2049,7 +2048,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             "Left recursion not supported! Consider using withPostfixes() or the OperatorTable class"
                 + " to define the left recursive grammar.");
         if (p == null) { // can happen when validating mutually recursive rules.
-          return context.failAt(0, "empty input"); // A Parser must consume input.
+          return context.failAt(0, "empty input", ""); // A Parser must consume input.
         }
       }
       checkState(p != null, "definedAs() should have been called before parse()");
@@ -2159,9 +2158,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /** Represents a partial parse result with a value and the [start, end) range of the match. */
-    record Failure<V>(int at, int frontier, String message, Object[] args) implements MatchResult<V> {
-      Failure(int at, String message, Object[] args) {
-        this(at, at, message, args);
+    record Failure<V>(int at, int frontier, String messageTemplate, String symbolName) implements MatchResult<V> {
+      Failure(int at, String messageTemplate, String symbolName) {
+        this(at, at, messageTemplate, symbolName);
       }
 
       @SuppressWarnings("unchecked")
@@ -2172,7 +2171,21 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       ParseException toException(CharInput input) {
         return new ParseException(
             at,
-            String.format("at %s: %s", input.sourcePosition(at), String.format(message, args)));
+            String.format("at %s: %s", input.sourcePosition(at), renderMessage(input)));
+      }
+
+      private String renderMessage(CharInput input) {
+        Snippet snippet = new Snippet(input, at);
+        return Substring.word()
+            .immediatelyBetween("{", Substring.BoundStyle.INCLUSIVE, "}", Substring.BoundStyle.INCLUSIVE)
+            .repeatedly()
+            .replaceAllFrom(
+                messageTemplate,
+                placeholder -> switch (placeholder.toString()) {
+                  case "{name}" -> symbolName;
+                  case "{snippet}" -> snippet.toString();
+                  default -> placeholder.toString();
+                });
       }
 
       @Override public Failure<V> startingFrom(int head) {
@@ -2186,22 +2199,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   static class ErrorContext {
     static final ErrorContext MINIMAL = new ErrorContext();
 
-    final <V> MatchResult.Failure<V> expecting(String name, int at) {
-      return expecting(name, at, at);
+    final <V> MatchResult.Failure<V> expecting(String symbolName, int at) {
+      return expecting(symbolName, at, at);
     }
 
-    <V> MatchResult.Failure<V> expecting(String name, int at, int frontier) {
-      return failAt(at, frontier, "expecting <%s>.", name);
+    <V> MatchResult.Failure<V> expecting(String symbolName, int at, int frontier) {
+      return failAt(at, frontier, "expecting <{name}>.", symbolName);
     }
 
-    @FormatMethod
-    final <V> MatchResult.Failure<V> failAt(int at, String message, Object... args) {
-      return failAt(at, at, message, args);
+    final <V> MatchResult.Failure<V> failAt(int at, String messageTemplate, String symbolName) {
+      return failAt(at, at, messageTemplate, symbolName);
     }
 
-    @FormatMethod
-    <V> MatchResult.Failure<V> failAt(int at, int frontier, String message, Object... args) {
-      return new MatchResult.Failure<V>(at, frontier, message, args);
+    <V> MatchResult.Failure<V> failAt(int at, int frontier, String messageTemplate, String symbolName) {
+      return new MatchResult.Failure<V>(at, frontier, messageTemplate, symbolName);
     }
   }
 
@@ -2214,12 +2225,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     @Override <V> MatchResult.Failure<V> expecting(String name, int at, int frontier) {
-      return failAt(at, frontier, "expecting <%s>, encountered: %s", name, new Snippet(input, at));
+      return failAt(at, frontier, "expecting <{name}>, encountered: {snippet}", name);
     }
 
-    @FormatMethod
-    @Override <V> MatchResult.Failure<V> failAt(int at, int frontier, String message, Object... args) {
-      MatchResult.Failure<V> failure = super.failAt(at, frontier, message, args);
+    @Override <V> MatchResult.Failure<V> failAt(int at, int frontier, String messageTemplate, String symbolName) {
+      MatchResult.Failure<V> failure = super.failAt(at, frontier, messageTemplate, symbolName);
       // prefer the farthest then the most recent failure
       if (farthestFailure == null || failure.frontier() >= farthestFailure.frontier()) {
         farthestFailure = failure;
