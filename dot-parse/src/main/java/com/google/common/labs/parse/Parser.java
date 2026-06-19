@@ -2149,9 +2149,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   sealed interface MatchResult<V> {
-    /**
-     * Represents a successful parse result with a value and the [head, tail) range of the match.
-     */
     record Success<V>(int head, int tail, V value) implements MatchResult<V> {
       @Override public Success<V> startingFrom(int index) {
         return new MatchResult.Success<>(index, tail, value);
