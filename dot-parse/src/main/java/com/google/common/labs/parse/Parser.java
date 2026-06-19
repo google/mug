@@ -21,6 +21,7 @@ import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.common.labs.parse.Utils.checkPositionIndex;
 import static com.google.common.labs.parse.Utils.checkState;
 import static com.google.mu.util.CharPredicate.isNot;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
@@ -2158,7 +2159,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /** Represents a partial parse result with a value and the [start, end) range of the match. */
-    record Failure<V>(int at, int frontier, String messageTemplate, String symbolName) implements MatchResult<V> {
+    record Failure<V>(int at, int frontier, String messageTemplate, String symbolName)
+        implements MatchResult<V> {
       Failure(int at, String messageTemplate, String symbolName) {
         this(at, at, messageTemplate, symbolName);
       }
@@ -2175,16 +2177,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       private String renderMessage(CharInput input) {
-        Snippet snippet = new Snippet(input, at);
         return Substring.word()
-            .immediatelyBetween("{", Substring.BoundStyle.INCLUSIVE, "}", Substring.BoundStyle.INCLUSIVE)
+            .immediatelyBetween("{", INCLUSIVE, "}", INCLUSIVE)
             .repeatedly()
             .replaceAllFrom(
                 messageTemplate,
                 placeholder -> switch (placeholder.toString()) {
                   case "{name}" -> symbolName;
-                  case "{snippet}" -> snippet.toString();
-                  default -> placeholder.toString();
+                  case "{snippet}" -> new Snippet(input, at).toString();
+                  default -> placeholder;
                 });
       }
 
