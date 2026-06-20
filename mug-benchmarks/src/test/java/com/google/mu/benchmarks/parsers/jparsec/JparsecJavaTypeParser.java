@@ -33,12 +33,6 @@ public final class JparsecJavaTypeParser {
   // 1. Lexer / Tokenizer Scanners
   // =========================================================================
 
-  // Matches double-quoted strings (including C-style escapes and unicode escapes)
-  private static final Parser<String> STRING_LITERAL_SCANNER = Scanners.pattern(
-      Patterns.regex("\"([^\"\\\\]|\\\\.)*\""),
-      "string"
-  ).source();
-
   // Matches decimal and floating-point number literals
   private static final Parser<String> NUMBER_SCANNER = Scanners.pattern(
       Patterns.regex("-?[0-9]+(\\.[0-9]+)?"),
@@ -47,7 +41,7 @@ public final class JparsecJavaTypeParser {
 
   // The master Tokenizer combining our custom tokenizers and JParsec terminals
   private static final Parser<Object> TOKENIZER = Parsers.or(
-      STRING_LITERAL_SCANNER.map(s -> Tokens.fragment(s, "string")),
+      Scanners.DOUBLE_QUOTE_STRING.map(s -> Tokens.fragment(s, "string")),
       NUMBER_SCANNER.map(s -> Tokens.fragment(s, "number")),
       TERMS.tokenizer()
   );
@@ -56,7 +50,7 @@ public final class JparsecJavaTypeParser {
   // 2. Token-level Parsers (Operating on Token Stream)
   // =========================================================================
 
-  // Parses a string literal token and unescapes it
+  // Parses a string literal token and unescapes it manually to support Unicode escapes
   private static final Parser<String> STRING_LITERAL = Parsers.token(token -> {
     if (token.value() instanceof Tokens.Fragment) {
       Tokens.Fragment f = (Tokens.Fragment) token.value();
@@ -231,6 +225,8 @@ public final class JparsecJavaTypeParser {
     }
     return sb.toString();
   }
+
+
 
   /** Parses a JavaType from the given string using JParsec. */
   public static JavaType parse(String input) {
