@@ -121,6 +121,12 @@
       <id>showdown</id>
       <dependencies>
         <dependency>
+          <groupId>com.github.petitparser</groupId>
+          <artifactId>petitparser-core</artifactId>
+          <version>2.3.1</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
           <groupId>io.github.parseworks</groupId>
           <artifactId>taker</artifactId>
           <version>1.0-SNAPSHOT</version>
@@ -268,7 +274,7 @@
               <scalaVersion>2.13.12</scalaVersion>
               <includes>
                 <include>**/*.scala</include>
-                <include>**/BenchmarkInputs.java</include>
+                <include>**/*.java</include>
               </includes>
             </configuration>
           </plugin>
