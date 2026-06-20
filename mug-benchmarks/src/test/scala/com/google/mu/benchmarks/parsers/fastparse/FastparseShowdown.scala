@@ -139,4 +139,22 @@ object FastparseShowdown {
       fastparse.parse(input, IgnoreCaseFixture.ignoreCaseKeywords(_))
     }
   }
+
+  object NestedCommentFixture {
+    private def comment[_: P]: P[Unit] = P( "/*" ~ (comment | !"*/" ~ AnyChar).rep ~ "*/" )
+    def entry[_: P]: P[Unit] = P( Start ~ comment ~ End )
+
+    // Verify
+    fastparse.parse(BenchmarkInputs.NESTED_COMMENT, entry(_)) match {
+      case Parsed.Success((), _) =>
+      case f =>
+        throw new AssertionError(s"fastparse NestedComment verification failed: $f")
+    }
+  }
+
+  class NestedCommentFixture {
+    def run(): Any = {
+      fastparse.parse(BenchmarkInputs.NESTED_COMMENT, NestedCommentFixture.entry(_))
+    }
+  }
 }

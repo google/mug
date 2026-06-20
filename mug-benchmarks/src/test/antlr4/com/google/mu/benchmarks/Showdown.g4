@@ -21,6 +21,9 @@ calcExpr: calcExpr ('*'|'/') calcExpr
         | '-'? INT
         ;
 
+nestedCommentRoot: nestedComment EOF;
+nestedComment: OPEN_COMMENT ( TEXT | nestedComment )* CLOSE_COMMENT;
+
 select_ic: SELECT | SELECT_IC;
 insert_ic: INSERT | INSERT_IC;
 update_ic: UPDATE | UPDATE_IC;
@@ -67,3 +70,8 @@ HAVING_IC: [hH][aA][vV][iI][nN][gG];
 LIMIT_IC: [lL][iI][mM][iI][tT];
 
 WS: [ \t\r\n]+ -> skip;
+
+OPEN_COMMENT: '/*';
+CLOSE_COMMENT: '*/';
+TEXT: [a-zA-Z ]+;
+

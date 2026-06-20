@@ -91,12 +91,27 @@ public final class DotParseShowdown {
                     .build(anyOf(digits().map(Integer::parseInt), expr.between("(", ")"))));
 
     static {
+      // Verify
       int res = PARSER.parseSkipping(Character::isWhitespace, BenchmarkInputs.CALCULATOR);
       assertThat(res).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
     }
 
     public Object run() {
       return PARSER.parseSkipping(Character::isWhitespace, BenchmarkInputs.CALCULATOR);
+    }
+  }
+
+  public static class NestedCommentFixture {
+    private static final Parser<String> PARSER = Parser.nestedBy("/*", "*/");
+
+    static {
+      // Verify
+      assertThat(PARSER.parse(BenchmarkInputs.NESTED_COMMENT))
+          .isEqualTo(BenchmarkInputs.NESTED_COMMENT_EXPECTED_INNER);
+    }
+
+    public Object run() {
+      return PARSER.parse(BenchmarkInputs.NESTED_COMMENT);
     }
   }
 

@@ -16,5 +16,8 @@ public final class BenchmarkInputs {
       " ( 1000+2 * 3000 - 4000 / (500+600) ) * -700 - 8000 / 9000";
   public static final int CALCULATOR_EXPECTED = -4897900;
 
+  public static final String NESTED_COMMENT = "/* comment /* nested */ */";
+  public static final String NESTED_COMMENT_EXPECTED_INNER = " comment /* nested */ ";
+
   private BenchmarkInputs() {}
 }

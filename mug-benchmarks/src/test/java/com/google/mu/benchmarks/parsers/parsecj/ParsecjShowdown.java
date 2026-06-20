@@ -9,12 +9,14 @@ import static org.javafp.parsecj.Combinators.satisfy;
 import static org.javafp.parsecj.Text.chr;
 import static org.javafp.parsecj.Text.intr;
 import static org.javafp.parsecj.Text.regex;
+import static org.javafp.parsecj.Text.string;
 import static org.javafp.parsecj.Text.wspaces;
 
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
 import java.util.function.BinaryOperator;
 import org.javafp.parsecj.Parser;
 import org.javafp.parsecj.Reply;
+import org.javafp.parsecj.Text;
 import org.javafp.parsecj.input.Input;
 
 public final class ParsecjShowdown {
@@ -47,14 +49,24 @@ public final class ParsecjShowdown {
     private static final Parser<Character, ?> PARSER = buildParser();
 
     private static Parser<Character, ?> buildParser() {
-      Parser<Character, Character> escape = chr('\\').then(satisfy(c -> true));
-      Parser<Character, Character> normalChar = satisfy(c -> c != '"' && c != '\\');
-      return chr('"').then(many(or(escape, normalChar))).then(chr('"')).map(x -> "string");
+      Parser<Character, String> escape = chr('\\').then(satisfy((Character c) -> true)).map(c -> "\\" + c);
+      Parser<Character, String> normal = satisfy((Character c) -> c != '"' && c != '\\').map(c -> String.valueOf(c));
+      return choice(normal, escape)
+          .many()
+          .map(x -> "string")
+          .between(chr('"'), chr('"'));
     }
 
     static {
-      assertThat(PARSER.parse(Input.of(BenchmarkInputs.STRING_SIMPLE)).isOk()).isTrue();
-      assertThat(PARSER.parse(Input.of(BenchmarkInputs.STRING_ESCAPED)).isOk()).isTrue();
+      // Verify
+      {
+        Reply<Character, ?> res1 = PARSER.parse(Input.of(BenchmarkInputs.STRING_SIMPLE));
+        assertThat(res1.isOk()).isTrue();
+      }
+      {
+        Reply<Character, ?> res2 = PARSER.parse(Input.of(BenchmarkInputs.STRING_ESCAPED));
+        assertThat(res2.isOk()).isTrue();
+      }
     }
 
     public Object run(String input) {
@@ -67,8 +79,8 @@ public final class ParsecjShowdown {
     private static final Parser<Character, ?> PARSER =
         choice(
             BenchmarkInputs.KEYWORDS.stream()
-                .map(org.javafp.parsecj.Text::string)
-                .map(org.javafp.parsecj.Combinators::attempt)
+                .map(Text::string)
+                .map(Parser::attempt)
                 .toArray(Parser[]::new));
 
     static {
@@ -135,13 +147,38 @@ public final class ParsecjShowdown {
       }
     }
 
-    private static <T> Parser<Character, T> token(Parser<Character, T> p) {
-      return p.bind(a -> wspaces.then(retn(a)));
-    }
-
     public Object run() {
       return PARSER.parse(Input.of(BenchmarkInputs.CALCULATOR));
     }
+  }
+
+  public static class NestedCommentFixture {
+    private static final Parser<Character, ?> PARSER = buildParser();
+
+    @SuppressWarnings("unchecked")
+    private static Parser<Character, ?> buildParser() {
+      Parser.Ref<Character, Object> ref = Parser.ref();
+      Parser<Character, Object> normalChar = satisfy((Character c) -> c != '*' && c != '/').map(c -> c);
+      Parser<Character, Object> plainSlash = chr('/').map(c -> c);
+      Parser<Character, Object> plainStar = chr('*').then(satisfy((Character c) -> c != '/')).map(c -> (Object) c).attempt();
+      Parser<Character, Object> inner = choice(ref, normalChar, plainSlash, plainStar);
+      Parser<Character, ?> comment = string("/*").then(inner.many()).then(string("*/"));
+      ref.set((Parser<Character, Object>) comment);
+      return comment;
+    }
+
+    static {
+      Reply<Character, ?> reply = PARSER.parse(Input.of(BenchmarkInputs.NESTED_COMMENT));
+      assertThat(reply.isOk()).isTrue();
+    }
+
+    public Object run() {
+      return PARSER.parse(Input.of(BenchmarkInputs.NESTED_COMMENT));
+    }
+  }
+
+  private static <T> Parser<Character, T> token(Parser<Character, T> p) {
+    return p.bind(x -> wspaces.then(retn(x)));
   }
 
   private ParsecjShowdown() {}

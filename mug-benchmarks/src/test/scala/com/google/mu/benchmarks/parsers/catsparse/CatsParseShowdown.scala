@@ -125,4 +125,27 @@ object CatsParseShowdown {
       CalculatorFixture.PARSER.parse(BenchmarkInputs.CALCULATOR)
     }
   }
+
+  object NestedCommentFixture {
+    private val PARSER = P.recursive[Unit] { self =>
+      val notDelim = (!P.string("/*") ~ !P.string("*/")).with1 *> P.anyChar
+      val inner = (notDelim.void | self).rep0.void
+      P.string("/*") *> inner <* P.string("*/")
+    }
+
+    // Verify
+    PARSER.parse(BenchmarkInputs.NESTED_COMMENT) match {
+      case Right(("", ())) =>
+      case Right((left, ())) =>
+        throw new AssertionError(s"cats-parse NestedComment verification failed: unparsed: $left")
+      case Left(err) =>
+        throw new AssertionError(s"cats-parse NestedComment verification failed: $err")
+    }
+  }
+
+  class NestedCommentFixture {
+    def run(): Any = {
+      NestedCommentFixture.PARSER.parse(BenchmarkInputs.NESTED_COMMENT)
+    }
+  }
 }

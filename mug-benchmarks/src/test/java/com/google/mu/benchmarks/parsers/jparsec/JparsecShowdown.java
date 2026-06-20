@@ -119,5 +119,18 @@ public final class JparsecShowdown {
     }
   }
 
+  public static class NestedCommentFixture {
+    private static final Parser<Void> PARSER = org.jparsec.Scanners.nestableBlockComment("/*", "*/");
+
+    static {
+      // Verify
+      PARSER.parse(BenchmarkInputs.NESTED_COMMENT);
+    }
+
+    public Object run() {
+      return PARSER.parse(BenchmarkInputs.NESTED_COMMENT);
+    }
+  }
+
   private JparsecShowdown() {}
 }

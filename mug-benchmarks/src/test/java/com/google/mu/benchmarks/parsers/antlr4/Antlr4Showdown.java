@@ -263,5 +263,53 @@ public final class Antlr4Showdown {
     }
   }
 
+  public static class NestedCommentFixture {
+    private static final ThreadLocal<ShowdownLexer> LEXER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownLexer lex = new ShowdownLexer(null);
+              lex.removeErrorListeners();
+              return lex;
+            });
+    private static final ThreadLocal<CommonTokenStream> TOKEN_STREAM =
+        ThreadLocal.withInitial(() -> new CommonTokenStream(LEXER.get()));
+    private static final ThreadLocal<ShowdownParser> PARSER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownParser p = new ShowdownParser(TOKEN_STREAM.get());
+              p.removeErrorListeners();
+              return p;
+            });
+
+    static {
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
+
+      // Verify
+      CharStream charStream = fromString(BenchmarkInputs.NESTED_COMMENT);
+      lexer.setInputStream(charStream);
+      tokenStream.setTokenSource(lexer);
+      parser.setInputStream(tokenStream);
+      parser.reset();
+      parser.nestedCommentRoot();
+      assertThat(parser.getNumberOfSyntaxErrors()).isEqualTo(0);
+    }
+
+    public Object run() {
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
+
+      CharStream charStream = fromString(BenchmarkInputs.NESTED_COMMENT);
+      lexer.setInputStream(charStream);
+      tokenStream.setTokenSource(lexer);
+      parser.setInputStream(tokenStream);
+      parser.reset();
+      parser.nestedCommentRoot();
+      return parser;
+    }
+  }
+
   private Antlr4Showdown() {}
 }

@@ -27,13 +27,13 @@ architectural analysis comparing nine different parser engines on the JVM:
 8. **`antlr4`** (Java):
    The industry-standard LL(*) parser generator.
 
-9. **`taker`** (Java):
-   Google's internal PEG parser engine used as a baseline.
+9. **`taker`** (Scala):
+   An open-source PEG parser engine.
 
 All benchmarks were executed side-by-side on the **same JVM (JDK 24.0.1)** and
-the **same hardware (Apple M1 Max Mac)** to eliminate environmental bias. All
-grammars were strictly verified with assertions ensuring **complete input
-consumption (EOF)**.
+the **same hardware (Apple M1 Max Mac)** to eliminate environmental bias.
+All grammars were strictly verified with assertions ensuring **complete input
+consumption (EOF)** and **structural correctness**.
 
 > [!IMPORTANT]
 > **Scope & Benchmark Nuance**:
@@ -82,6 +82,18 @@ code generation**, **runtime trie dispatching**, and **bytecode generation**:
   ops/sec**), while `jparsec` and `fastparse` lead when handling escaped edge cases
   (**12.1 million** and **11.8 million ops/sec** respectively).
 
+* **Recursive Block Comments**:
+  `dot-parse` completely dominates recursive block comment parsing, reaching
+  **11.6 million operations per second**—outperforming `fastparse` ($2.4\text{x}$
+  slower) and `cats-parse` ($4.5\text{x}$ slower).
+  It achieves this by using a native, flat character scanner that avoids parser
+  combinator object stack framing.
+
+* **Compiled Regex Speedups**:
+  Switching `jjparse`'s SQL keywords from a linear backtracking literal choice
+  to a single compiled regular expression resulted in a spectacular **$21.4\text{x}$
+  throughput speedup** (climbing from **33** to **707 ops/ms**!).
+
 ---
 ## 9-Way Showdown Benchmark Results
 
@@ -93,15 +105,16 @@ Throughput was measured in **operations per millisecond** (higher is better).
 | **IPv4 Address** | $10,260$ | $24,269$ 🚀 | $22,198$ 🚀 | **$24,883$** 🚀 | $10,550$ | $9,308$ | $3,082$ | $706$ | $3,245$ | **`fast / cats / dot`** 🚀 |
 | **Quoted String (Common Case)** | $2,844$ | $3,202$ | **$16,327$** 🚀 | $14,002$ 🚀 | $15,109$ 🚀 | $2,928$ | $2,280$ | $595$ | $7,576$ | **`dot / jparsec / fast`** 🚀 |
 | **Quoted String (Escaped Edge Case)** | $2,275$ | $2,935$ | $5,603$ | $11,873$ 🚀 | **$12,144$** 🚀 | $2,238$ | $1,943$ | $558$ | $7,163$ | **`jparsec / fast`** 🚀 |
-| **Keywords (1st - `select`)** | $81,970$ | $27,569$ | **$191,885$** 🚀 | $10,653$ | $45,474$ | $24,915$ | $75,527$ | $148$ | $10,395$ | **`dot`** 🚀 |
-| **Keywords (4th - `delete`)** | $24,782$ | $25,336$ | **$127,436$** 🚀 | $9,437$ | $26,302$ | $26,217$ | $12,709$ | $91$ | $10,374$ | **`dot`** 🚀 |
-| **Keywords (8th - `where`)** | $14,496$ | $37,060$ | **$158,380$** 🚀 | $8,282$ | $19,670$ | $27,663$ | $4,064$ | $54$ | $10,859$ | **`dot`** 🚀 |
-| **Keywords (12th - `limit`)** | $9,955$ | $38,042$ | **$201,376$** 🚀 | $7,346$ | $14,913$ | $27,062$ | $4,122$ | $36$ | $10,989$ | **`dot`** 🚀 |
+| **Keywords (1st - `select`)** | $81,970$ | $27,569$ | **$191,885$** 🚀 | $10,653$ | $45,474$ | $24,915$ | $75,527$ | $699$ | $10,395$ | **`dot`** 🚀 |
+| **Keywords (4th - `delete`)** | $24,782$ | $25,336$ | **$127,436$** 🚀 | $9,437$ | $26,302$ | $26,217$ | $12,709$ | $780$ | $10,374$ | **`dot`** 🚀 |
+| **Keywords (8th - `where`)** | $14,496$ | $37,060$ | **$158,380$** 🚀 | $8,282$ | $19,670$ | $27,663$ | $4,064$ | $717$ | $10,859$ | **`dot`** 🚀 |
+| **Keywords (12th - `limit`)** | $9,955$ | $38,042$ | **$201,376$** 🚀 | $7,346$ | $14,913$ | $27,062$ | $4,122$ | $707$ | $10,989$ | **`dot`** 🚀 |
 | **Keywords CI (1st)** | $36,625$ | $38,202$ | **$50,984$** 🚀 | $9,213$ | $32,385$ | $12,152$ | $28,608$ | $767$ | $7,523$ | **`dot`** 🚀 |
 | **Keywords CI (4th)** | $11,527$ | $25,305$ | **$50,858$** 🚀 | $8,185$ | $14,378$ | $9,125$ | $24,583$ | $749$ | $7,165$ | **`dot`** 🚀 |
 | **Keywords CI (8th)** | $5,514$ | $15,957$ | **$82,273$** 🚀 | $7,221$ | $15,814$ | $7,294$ | $22,658$ | $762$ | $7,844$ | **`dot`** 🚀 |
 | **Keywords CI (12th)** | $8,048$ | $10,723$ | **$78,284$** 🚀 | $5,578$ | $11,840$ | $5,872$ | $19,642$ | $753$ | $7,942$ | **`dot`** 🚀 |
 | **Calculator** | $458$ | $518$ | $744$ | **$1,237$** 🚀 | $285$ | $352$ | $241$ | $5$ | $459$ | **`fast`** 🚀 |
+| **Nested Block Comment** | $730$ | $2,546$ | **$11,640$** 🚀 | $4,781$ | $1,644$ | $910$ | $805$ | $8.6$ | $2,041$ | **`dot`** 🚀 |
 
 ---
 
@@ -327,6 +340,67 @@ Throughput was measured in **operations per millisecond** (higher is better).
     Every step of the recursion boxes intermediate results and characters into
     monadic wrapper classes (like `Product` or `Reply`), flooding the heap and
     keeping the JVM garbage collector constantly active.
+
+---
+
+### 6. Nested Block Comments (Recursive Structural Parsing)
+
+* **The Code**:
+  Matches a block comment that can contain nested comments recursively (e.g.,
+  `"/* comment /* nested */ */"`).
+
+  Unlike regular flat comments, nested block comments treat backslashes as
+  literal characters rather than escape sequences.
+  Delimiter matching is purely structural, requiring the parser to track nested
+  boundaries.
+
+* **Performance**:
+  `dot-parse` ($11,640$) 🚀 > `fastparse` ($4,781$) > `cats-parse` ($2,546$) >
+  `antlr4` ($2,041$) > `jparsec` ($1,644$) > `parboiled` ($910$) > `parsecj`
+  ($805$) > `taker` ($730$) > `jjparse` ($8.6$).
+
+* **Architectural Insights**:
+
+  * **`dot-parse` Native Flat Character Scan**:
+    `dot-parse` achieves an outstanding **11.6 million operations per second**
+    by utilizing its highly optimized, native `nestedBy("/*", "*/")` primitive.
+
+    Rather than constructing a heavy recursive tree of parser combinator objects
+    that allocate stack frames and box intermediate character results, `nestedBy`
+    scans the character stream in a single flat loop, tracking nesting depth
+    in a primitive integer counter.
+    This eliminates heap allocation entirely on success paths, yielding extreme
+    hardware-level efficiency.
+
+  * **Scala Tail-Recursive Methods**:
+    `fastparse` ($4,781$ ops/ms) finishes a strong second.
+    By using Scala's tail-recursive method definitions, it compiles the recursive
+    comment matching into optimized JVM bytecode loops that avoid stack framing,
+    running only $2.4\text{x}$ slower than `dot-parse`'s native scan.
+
+  * **ANTLR4 Lexer/Parser Separation**:
+    `antlr4` ($2,041$) performs exceptionally well here.
+    Because the lexer tokenizes the input stream into `OPEN_COMMENT`,
+    `CLOSE_COMMENT`, and `TEXT` tokens, the parser only needs to run its ALL(*)
+    lookahead algorithm on a flat, pre-tokenized stream.
+    This bypasses character-level monadic boxing and backtracking checks,
+    allowing ANTLR4 to outperform traditional character-level combinators!
+
+  * **The Backtracking Lookahead Trap**:
+    Monadic engines like `parsecj` ($805$ ops/ms) must be carefully designed to
+    avoid backtracking lookahead bottlenecks.
+    If a parser branch eagerly consumes a delimiter prefix (like `*`) and then
+    fails (because it is followed by `/`, ending the comment), it must backtrack
+    cleanly.
+    Our DFA-style grammar in `parsecj` solves this by explicitly structuring
+    branches (matching normal characters, plain slashes, or stars not followed by
+    slashes) to achieve lookahead-free parsing with zero backtracking overhead.
+
+  * **The Boxing & Monadic Stack Penalty**:
+    `jjparse` ($8.6$ ops/ms) runs over **$1,350\text{x}$ slower** than `dot-parse`.
+    Because it lacks native nesting primitives, every step of the character-level
+    backtracking recursion allocates heap wrappers, creating deep monadic stack
+    frames and keeping the JVM garbage collector continuously active.
 
 ---
 

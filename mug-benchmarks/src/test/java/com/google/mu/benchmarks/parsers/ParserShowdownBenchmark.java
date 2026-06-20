@@ -31,6 +31,7 @@ public class ParserShowdownBenchmark {
     public final TakerShowdown.KeywordsFixture takerKeywords = new TakerShowdown.KeywordsFixture();
     public final TakerShowdown.IgnoreCaseFixture takerIgnoreCase = new TakerShowdown.IgnoreCaseFixture();
     public final TakerShowdown.CalculatorFixture takerCalculator = new TakerShowdown.CalculatorFixture();
+    public final TakerShowdown.NestedCommentFixture takerNestedComment = new TakerShowdown.NestedCommentFixture();
 
     // 2. dot-parse Fixtures
     public final DotParseShowdown.IpFixture dotParseIp = new DotParseShowdown.IpFixture();
@@ -38,6 +39,7 @@ public class ParserShowdownBenchmark {
     public final DotParseShowdown.KeywordsFixture dotParseKeywords = new DotParseShowdown.KeywordsFixture();
     public final DotParseShowdown.IgnoreCaseFixture dotParseIgnoreCase = new DotParseShowdown.IgnoreCaseFixture();
     public final DotParseShowdown.CalculatorFixture dotParseCalculator = new DotParseShowdown.CalculatorFixture();
+    public final DotParseShowdown.NestedCommentFixture dotParseNestedComment = new DotParseShowdown.NestedCommentFixture();
 
     // 3. cats-parse Fixtures
     public final CatsParseShowdown.IpFixture catsParseIp = new CatsParseShowdown.IpFixture();
@@ -45,6 +47,7 @@ public class ParserShowdownBenchmark {
     public final CatsParseShowdown.KeywordsFixture catsParseKeywords = new CatsParseShowdown.KeywordsFixture();
     public final CatsParseShowdown.IgnoreCaseFixture catsParseIgnoreCase = new CatsParseShowdown.IgnoreCaseFixture();
     public final CatsParseShowdown.CalculatorFixture catsParseCalculator = new CatsParseShowdown.CalculatorFixture();
+    public final CatsParseShowdown.NestedCommentFixture catsParseNestedComment = new CatsParseShowdown.NestedCommentFixture();
 
     // 4. fastparse Fixtures
     public final FastparseShowdown.IpFixture fastparseIp = new FastparseShowdown.IpFixture();
@@ -52,6 +55,7 @@ public class ParserShowdownBenchmark {
     public final FastparseShowdown.KeywordsFixture fastparseKeywords = new FastparseShowdown.KeywordsFixture();
     public final FastparseShowdown.IgnoreCaseFixture fastparseIgnoreCase = new FastparseShowdown.IgnoreCaseFixture();
     public final FastparseCalculatorShowdown.CalculatorFixture fastparseCalculator = new FastparseCalculatorShowdown.CalculatorFixture();
+    public final FastparseShowdown.NestedCommentFixture fastparseNestedComment = new FastparseShowdown.NestedCommentFixture();
 
     // 5. jparsec Fixtures
     public final JparsecShowdown.IpFixture jparsecIp = new JparsecShowdown.IpFixture();
@@ -59,6 +63,7 @@ public class ParserShowdownBenchmark {
     public final JparsecShowdown.KeywordsFixture jparsecKeywords = new JparsecShowdown.KeywordsFixture();
     public final JparsecShowdown.IgnoreCaseFixture jparsecIgnoreCase = new JparsecShowdown.IgnoreCaseFixture();
     public final JparsecShowdown.CalculatorFixture jparsecCalculator = new JparsecShowdown.CalculatorFixture();
+    public final JparsecShowdown.NestedCommentFixture jparsecNestedComment = new JparsecShowdown.NestedCommentFixture();
 
     // 6. parboiled Fixtures
     public final ParboiledShowdown.IpFixture parboiledIp = new ParboiledShowdown.IpFixture();
@@ -66,12 +71,14 @@ public class ParserShowdownBenchmark {
     public final ParboiledShowdown.KeywordsFixture parboiledKeywords = new ParboiledShowdown.KeywordsFixture();
     public final ParboiledShowdown.IgnoreCaseFixture parboiledIgnoreCase = new ParboiledShowdown.IgnoreCaseFixture();
     public final ParboiledShowdown.CalculatorFixture parboiledCalculator = new ParboiledShowdown.CalculatorFixture();
+    public final ParboiledShowdown.NestedCommentFixture parboiledNestedComment = new ParboiledShowdown.NestedCommentFixture();
 
     // 7. parsecj Fixtures
     public final ParsecjShowdown.IpFixture parsecjIp = new ParsecjShowdown.IpFixture();
     public final ParsecjShowdown.StringFixture parsecjString = new ParsecjShowdown.StringFixture();
     public final ParsecjShowdown.KeywordsFixture parsecjKeywords = new ParsecjShowdown.KeywordsFixture();
     public final ParsecjShowdown.IgnoreCaseFixture parsecjIgnoreCase = new ParsecjShowdown.IgnoreCaseFixture();
+    public final ParsecjShowdown.NestedCommentFixture parsecjNestedComment = new ParsecjShowdown.NestedCommentFixture();
     public final ParsecjShowdown.CalculatorFixture parsecjCalculator;
 
     // 8. jjparse Fixtures
@@ -80,6 +87,7 @@ public class ParserShowdownBenchmark {
     public final JjparseShowdown.KeywordsFixture jjparseKeywords = new JjparseShowdown.KeywordsFixture();
     public final JjparseShowdown.IgnoreCaseFixture jjparseIgnoreCase = new JjparseShowdown.IgnoreCaseFixture();
     public final JjparseShowdown.CalculatorFixture jjparseCalculator = new JjparseShowdown.CalculatorFixture();
+    public final JjparseShowdown.NestedCommentFixture jjparseNestedComment = new JjparseShowdown.NestedCommentFixture();
 
     // 9. antlr4 Fixtures
     public final Antlr4Showdown.IpFixture antlr4Ip = new Antlr4Showdown.IpFixture();
@@ -87,6 +95,7 @@ public class ParserShowdownBenchmark {
     public final Antlr4Showdown.KeywordsFixture antlr4Keywords = new Antlr4Showdown.KeywordsFixture();
     public final Antlr4Showdown.IgnoreCaseFixture antlr4IgnoreCase = new Antlr4Showdown.IgnoreCaseFixture();
     public final Antlr4Showdown.CalculatorFixture antlr4Calculator = new Antlr4Showdown.CalculatorFixture();
+    public final Antlr4Showdown.NestedCommentFixture antlr4NestedComment = new Antlr4Showdown.NestedCommentFixture();
 
     public BenchmarkState() {
       try {
@@ -95,6 +104,7 @@ public class ParserShowdownBenchmark {
         throw new RuntimeException(e);
       }
     }
+
   }
 
   // =========================================================================
@@ -464,4 +474,17 @@ public class ParserShowdownBenchmark {
   @Benchmark public void parsecj_calculatorPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parsecjCalculator.run()); }
   @Benchmark public void jjparse_calculatorPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.jjparseCalculator.run()); }
   @Benchmark public void antlr4_calculatorPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.antlr4Calculator.run()); }
+
+  // =========================================================================
+  // 6. Nested Comment Benchmarks
+  // =========================================================================
+  @Benchmark public void taker_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.takerNestedComment.run()); }
+  @Benchmark public void dotParse_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.dotParseNestedComment.run()); }
+  @Benchmark public void catsParse_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.catsParseNestedComment.run()); }
+  @Benchmark public void fastparse_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.fastparseNestedComment.run()); }
+  @Benchmark public void jparsec_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.jparsecNestedComment.run()); }
+  @Benchmark public void parboiled_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiledNestedComment.run()); }
+  @Benchmark public void parsecj_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parsecjNestedComment.run()); }
+  @Benchmark public void jjparse_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.jjparseNestedComment.run()); }
+  @Benchmark public void antlr4_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.antlr4NestedComment.run()); }
 }

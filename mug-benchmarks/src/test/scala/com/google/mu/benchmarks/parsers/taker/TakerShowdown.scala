@@ -153,4 +153,28 @@ object TakerShowdown {
   class CalculatorFixture {
     def run(): Any = CalculatorFixture.PARSER.parseAll(BenchmarkInputs.CALCULATOR)
   }
+
+  object NestedCommentFixture {
+    private val PARSER: Taker[Unit] = buildParser()
+
+    private def buildParser(): Taker[Unit] = {
+      val commentRef = Taker.ref[Unit]()
+      val notEnd = Combinators.not(Lexical.string("*/")).skipThen(Combinators.any())
+      val inner = Combinators.oneOf(commentRef, notEnd.map(_ => ())).zeroOrMore()
+      val comment = Lexical.string("/*").then(inner).thenSkip(Lexical.string("*/")).map((_, _) => ())
+      commentRef.set(comment)
+      comment
+    }
+
+    // Verify
+    {
+      val res = PARSER.parseAll(BenchmarkInputs.NESTED_COMMENT)
+      assert(res.matches())
+      assert(res.input().isEof())
+    }
+  }
+
+  class NestedCommentFixture {
+    def run(): Any = NestedCommentFixture.PARSER.parseAll(BenchmarkInputs.NESTED_COMMENT)
+  }
 }

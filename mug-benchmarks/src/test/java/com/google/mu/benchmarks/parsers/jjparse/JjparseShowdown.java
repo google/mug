@@ -101,6 +101,21 @@ public final class JjparseShowdown {
     }
   }
 
+  public static class NestedCommentFixture {
+    private static final JjParserImpl jjParserInstance = new JjParserImpl();
+    private static final Parsing<Character>.Parser<?> PARSER = jjParserInstance.nestedComment;
+
+    static {
+      // Verify
+      var res = jjParserInstance.parse(PARSER, Input.of("jjNestedComment", BenchmarkInputs.NESTED_COMMENT));
+      assertThat(res.isSuccess()).isTrue();
+    }
+
+    public Object run() {
+      return jjParserInstance.parse(PARSER, Input.of("jjNestedComment", BenchmarkInputs.NESTED_COMMENT));
+    }
+  }
+
   // Inner Parser Rules Implementation
   public static class JjParserImpl extends StringParsing {
     public final Parsing<Character>.Parser<String> ip = regex("[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+");
@@ -108,17 +123,20 @@ public final class JjparseShowdown {
 
     @SuppressWarnings("unchecked")
     public final Parsing<Character>.Parser<String> keywords =
-        choice(BenchmarkInputs.KEYWORDS.stream().map(this::literal).toArray(Parser[]::new));
+        regex(String.join("|", BenchmarkInputs.KEYWORDS));
 
     public final Parsing<Character>.Parser<String> keywordsIgnoreCase =
         regex("(?i)" + String.join("|", BenchmarkInputs.KEYWORDS));
 
+    public final Parsing<Character>.Parser<?> nestedComment;
+
     // Calculator Rules
     public final Parsing<Character>.Parser<Integer> calculator;
 
+    @SuppressWarnings("unchecked")
     public JjParserImpl() {
       var number = token(regex("-?[0-9]+").map(Integer::parseInt));
-      var ref = new ParserRef();
+      var ref = new ParserRef<Integer>();
       var atom =
           choice(
               number,
@@ -135,14 +153,21 @@ public final class JjparseShowdown {
       var expr = atom.chainl1(choice(mul, div)).chainl1(choice(add, sub));
       this.calculator = regex("\\s*").andr(expr);
       ref.parser = this.calculator;
+
+      // Nested Comment
+      var commentRef = new ParserRef<Object>();
+      var commentNotEnd = literal("*/").not().andr(regex("."));
+      var commentInner = choice(lazy(() -> commentRef.parser), commentNotEnd).repeat();
+      this.nestedComment = literal("/*").andr(commentInner).andl(literal("*/"));
+      commentRef.parser = (Parsing<Character>.Parser<Object>) this.nestedComment;
     }
 
     private <T> Parsing<Character>.Parser<T> token(Parsing<Character>.Parser<T> p) {
       return p.andl(regex("\\s*"));
     }
 
-    private class ParserRef {
-      Parsing<Character>.Parser<Integer> parser;
+    private class ParserRef<T> {
+      Parsing<Character>.Parser<T> parser;
     }
   }
 

@@ -115,6 +115,25 @@ public final class ParboiledShowdown {
     }
   }
 
+  public static class NestedCommentFixture {
+    private static final BasicParseRunner<Object> RUNNER = buildRunner();
+
+    private static BasicParseRunner<Object> buildRunner() {
+      ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
+      return new BasicParseRunner<>(parser.nestedCommentRoot());
+    }
+
+    static {
+      // Verify
+      ParsingResult<Object> res = RUNNER.run(BenchmarkInputs.NESTED_COMMENT);
+      assertThat(res.matched).isTrue();
+    }
+
+    public Object run() {
+      return RUNNER.run(BenchmarkInputs.NESTED_COMMENT);
+    }
+  }
+
   // Rules implementation for parboiled
   public static class ParboiledParser extends BaseParser<Object> {
     public Rule ipAddress() {
@@ -138,6 +157,16 @@ public final class ParboiledShowdown {
       return Sequence(
           FirstOf(BenchmarkInputs.KEYWORDS.stream().map(this::IgnoreCase).toArray(Rule[]::new)),
           EOI);
+    }
+
+    // Nested Comment Rules
+    @SuppressWarnings("InfiniteRecursion")
+    public Rule nestedComment() {
+      return Sequence("/*", ZeroOrMore(FirstOf(nestedComment(), Sequence(TestNot("*/"), ANY))), "*/");
+    }
+
+    public Rule nestedCommentRoot() {
+      return Sequence(nestedComment(), EOI);
     }
 
     // Calculator Rule
