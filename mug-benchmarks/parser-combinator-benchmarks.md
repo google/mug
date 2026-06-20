@@ -78,8 +78,8 @@ code generation**, **runtime trie dispatching**, and **bytecode generation**:
   `fastparse` and `cats-parse` lead flat sequencing (IPv4) at **24.8 million** and
   **24.2 million operations per second**, with `dot-parse` closely following at
   **22.1 million**.
-  For strings, `dot-parse` dominates simple string scanning (**16.3 million
-  ops/sec**), while `jparsec` and `fastparse` lead escaped string scanning
+  For strings, `dot-parse` dominates the common case with no escapes (**16.3 million
+  ops/sec**), while `jparsec` and `fastparse` lead when handling escaped edge cases
   (**12.1 million** and **11.8 million ops/sec** respectively).
 
 ---
@@ -91,8 +91,8 @@ Throughput was measured in **operations per millisecond** (higher is better).
 | Benchmark Scenario | Taker | `cats-parse` | `dot-parse` | `fastparse` | `jparsec` | `parboiled` | `parsecj` | `jjparse` | `antlr4` | **Winner(s)** |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **IPv4 Address** | $10,260$ | $24,269$ 🚀 | $22,198$ 🚀 | **$24,883$** 🚀 | $10,550$ | $9,308$ | $3,082$ | $706$ | $3,245$ | **`fast / cats / dot`** 🚀 |
-| **Quoted String (Simple)** | $2,844$ | $3,202$ | **$16,327$** 🚀 | $14,002$ 🚀 | $15,109$ 🚀 | $2,928$ | $2,280$ | $595$ | $7,576$ | **`dot / jparsec / fast`** 🚀 |
-| **Quoted String (Escaped)** | $2,275$ | $2,935$ | $5,603$ | $11,873$ 🚀 | **$12,144$** 🚀 | $2,238$ | $1,943$ | $558$ | $7,163$ | **`jparsec / fast`** 🚀 |
+| **Quoted String (Common Case)** | $2,844$ | $3,202$ | **$16,327$** 🚀 | $14,002$ 🚀 | $15,109$ 🚀 | $2,928$ | $2,280$ | $595$ | $7,576$ | **`dot / jparsec / fast`** 🚀 |
+| **Quoted String (Escaped Edge Case)** | $2,275$ | $2,935$ | $5,603$ | $11,873$ 🚀 | **$12,144$** 🚀 | $2,238$ | $1,943$ | $558$ | $7,163$ | **`jparsec / fast`** 🚀 |
 | **Keywords (1st - `select`)** | $81,970$ | $27,569$ | **$191,885$** 🚀 | $10,653$ | $45,474$ | $24,915$ | $75,527$ | $148$ | $10,395$ | **`dot`** 🚀 |
 | **Keywords (4th - `delete`)** | $24,782$ | $25,336$ | **$127,436$** 🚀 | $9,437$ | $26,302$ | $26,217$ | $12,709$ | $91$ | $10,374$ | **`dot`** 🚀 |
 | **Keywords (8th - `where`)** | $14,496$ | $37,060$ | **$158,380$** 🚀 | $8,282$ | $19,670$ | $27,663$ | $4,064$ | $54$ | $10,859$ | **`dot`** 🚀 |
@@ -145,20 +145,23 @@ Throughput was measured in **operations per millisecond** (higher is better).
 
 ---
 
-### 2. Quoted String Parsing (Simple vs. Escaped)
+### 2. Quoted String Parsing (Common Case vs. Escaped Edge Case)
 
 * **The Code**:
-  Matches double-quoted strings under two scenarios:
+  A single parser designed to parse double-quoted strings with backslash escapes,
+  evaluated against two different input datasets:
   
-  1. **Simple**: Without any escape sequences (e.g., `"hello world!"`).
-  2. **Escaped**: Containing backslash escapes (e.g., `"hello \"world\"!"`).
+  1. **Common Case (No Escapes)**: An input string containing no actual escape
+     sequences (e.g., `"hello world!"`).
+  2. **Edge Case (With Escapes)**: An input string containing actual backslash
+     escapes (e.g., `"hello \"world\"!"`).
 
 * **Performance**:
-  * **Simple**: `dot-parse` ($16.3\text{k}$) > `jparsec` ($15.1\text{k}$) >
+  * **Common Case**: `dot-parse` ($16.3\text{k}$) > `jparsec` ($15.1\text{k}$) >
     `fastparse` ($14.0\text{k}$) > `antlr4` ($7.5\text{k}$) > `cats-parse`
     ($3.2\text{k}$) > `parboiled` ($2.9\text{k}$) $\approx$ `taker` ($2.8\text{k}$)
     $\approx$ `parsecj` ($2.2\text{k}$) > `jjparse` ($595$).
-  * **Escaped**: `jparsec` ($12.1\text{k}$) > `fastparse` ($11.8\text{k}$) >
+  * **Escaped Edge Case**: `jparsec` ($12.1\text{k}$) > `fastparse` ($11.8\text{k}$) >
     `antlr4` ($7.1\text{k}$) > `dot-parse` ($5.6\text{k}$) > `cats-parse`
     ($2.9\text{k}$) > `taker` ($2.2\text{k}$) $\approx$ `parboiled` ($2.2\text{k}$)
     $\approx$ `parsecj` ($1.9\text{k}$) > `jjparse` ($558$).
@@ -170,9 +173,10 @@ Throughput was measured in **operations per millisecond** (higher is better).
     `DOUBLE_QUOTE_STRING` scanner) or JVM-optimized loops (like `fastparse`'s)
     bypass individual character matching.
     
-    For escaped strings, `fastparse` and `jparsec` show excellent robustness,
-    retaining high speeds (**11.8k** and **12.1k** ops/ms respectively) due to
-    highly optimized loop structures, while `dot-parse` reaches **5.6k** ops/ms.
+    When actual escape sequences are present in the input (the edge case),
+    `fastparse` and `jparsec` show excellent robustness, retaining high speeds
+    (**11.8k** and **12.1k** ops/ms respectively) due to highly optimized loop
+    structures, while `dot-parse` reaches **5.6k** ops/ms.
 
 ---
 
