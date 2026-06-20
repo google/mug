@@ -59,11 +59,11 @@ consumption (EOF)** and **structural correctness**.
 Our benchmarks reveal a clear set of trade-offs between **compile-time macro
 code generation**, **runtime trie dispatching**, and **bytecode generation**:
 
-* **Prefix Trie Dispatching is King**:
-  For matching choices (like keywords), runtime prefix-trie dispatching
-  completely demolishes traditional backtracking and compile-time macros.
-  `dot-parse` leads the pack, matching over **201 million choices per second**
-  on a single thread.
+* **Trie Dispatching Efficiency**:
+  For keyword dispatches, runtime prefix-trie dispatching significantly
+  outperforms traditional backtracking and compile-time macros.
+  `dot-parse` leads in performance, matching over **201 million choices per
+  second** on a single thread.
 
 * **Case-Insensitive Trie Performance**:
   `dot-parse` is the absolute performance leader in case-insensitive matching,
@@ -78,21 +78,23 @@ code generation**, **runtime trie dispatching**, and **bytecode generation**:
   `fastparse` and `cats-parse` lead flat sequencing (IPv4) at **24.8 million** and
   **24.2 million operations per second**, with `dot-parse` closely following at
   **22.1 million**.
-  For strings, `dot-parse` dominates the common case with no escapes (**16.3 million
-  ops/sec**), while `jparsec` and `fastparse` lead when handling escaped edge cases
-  (**12.1 million** and **11.8 million ops/sec** respectively).
+  For strings, `dot-parse` leads in the common case with no escapes (**16.3
+  million ops/sec**), while `jparsec` and `fastparse` lead when handling
+  escaped edge cases (**12.1 million** and **11.8 million ops/sec**
+  respectively).
 
 * **Recursive Block Comments**:
-  `dot-parse` completely dominates recursive block comment parsing, reaching
-  **11.6 million operations per second**—outperforming `fastparse` ($2.4\text{x}$
-  slower) and `cats-parse` ($4.5\text{x}$ slower).
+  `dot-parse` achieves the highest throughput in recursive block comment
+  parsing, reaching **11.6 million operations per second**—outperforming
+  `fastparse` ($2.4\text{x}$ slower) and `cats-parse` ($4.5\text{x}$ slower).
   It achieves this by using a native, flat character scanner that avoids parser
   combinator object stack framing.
 
-* **Compiled Regex Speedups**:
-  Switching `jjparse`'s SQL keywords from a linear backtracking literal choice
-  to a single compiled regular expression resulted in a spectacular **$21.4\text{x}$
-  throughput speedup** (climbing from **33** to **707 ops/ms**!).
+* **Compiled Regex Acceleration**:
+  Both `parsecj` and `jjparse` leverage Java's native regular expression engine
+  to match SQL keywords, bypassing linear string backtracking.
+  However, `parsecj` significantly outperforms `jjparse` due to lower
+  stream-framing and boxing overhead.
 
 ---
 ## 9-Way Showdown Benchmark Results
@@ -231,10 +233,10 @@ Throughput was measured in **operations per millisecond** (higher is better).
       across all positions.
 
   * **Linear Backtracking Costs**:
-    Backtracking engines like `taker`, `parsecj`, and `jparsec` drop
-    catastrophically from 1st to 12th (e.g., `taker` falls from **81.9k** to
-    **9.9k** ops/ms, an $8.2\text{x}$ drop) because they must perform full $O(N)$
-    sequential string comparisons.
+    Backtracking engines like `taker`, `parsecj`, and `jparsec` show a
+    significant performance decline from 1st to 12th (e.g., `taker` declines
+    from **81.9k** to **9.9k** ops/ms, an $8.2\text{x}$ drop) because they must
+    perform full $O(N)$ sequential string comparisons.
 
 ---
 
@@ -257,22 +259,43 @@ Throughput was measured in **operations per millisecond** (higher is better).
 * **Analysis**:
 
   * **`dot-parse` Case-Insensitive Trie Sweep**:
-    `dot-parse` is the undisputed winner at the 12th keyword, running up to
-    **$4\text{x}$ to $14\text{x}$ faster** than all other engines. Its prefix-trie
-    compiler precomputes all capitalization permutations of the first 4 characters
-    at startup, maintaining a blazing-fast $O(1)$ dispatch.
+    `dot-parse` is the highest-performing engine at the 12th keyword, running
+    **$4\text{x}$ to $14\text{x}$ faster** than all other engines.
+    Its prefix-trie compiler precomputes all capitalization permutations of the
+    first 4 characters at startup, maintaining an optimized $O(1)$ dispatch.
     
   * **Regular Expression Acceleration**:
-    `parsecj` achieves an impressive second-place finish at the 12th keyword
-    (**19.6k ops/ms**) by delegating case-insensitive matching directly to
-    Java's native regular expression engine (`Text.regex("(?i)...")`), which is
-    heavily optimized at the JVM level.
+    Both `parsecj` and `jjparse` leverage Java's native regular expression engine
+    (`Pattern`) to match keywords.
+    However, `parsecj` ($19.6\text{k}$ ops/ms) runs **$26\text{x}$ faster** than
+    `jjparse` ($753$ ops/ms) due to severe stream-framing overhead in `jjparse`:
     
+    * **The Double-Regex Skip Penalty**: `jjparse` is a scanner-less parser
+      that automatically executes a whitespace-skipping parser (`skip(input)`)
+      on *every single* parser application.
+      This means before `jjparse` even attempts to match a keyword, it first
+      executes a separate whitespace-skipping parser (which runs a regex match
+      for `\\s+` and allocates a result object), doubling the regex execution and
+      allocation overhead.
+      
+    * **Heavy Stream State Allocations**: `jjparse` represents stream progress
+      by allocating a fresh `CharacterInput` subsequence object on the heap for
+      every single token matched.
+      In contrast, `parsecj` uses an extremely lightweight, index-based state
+      pointer (`CharInput`) that simply wraps the original string and advances an
+      integer index, avoiding subsequence wrapping.
+      
+    * **Monadic Boxing**: `jjparse` eagerly wraps every result in heavy `Success`
+      or `Error` heap objects, whereas `parsecj` uses a highly optimized
+      `ConsumedT` wrapper that leverages lazy evaluation to minimize allocations on
+      JIT hot-paths.
+
   * **Silent Fallbacks**:
     When faced with case-insensitivity, libraries like `cats-parse` and
-    `fastparse` cannot compile a prefix trie. They silently fall back to slow,
-    sequential backtracking loops, causing a catastrophic performance drop at
-    the 12th keyword (e.g., `cats-parse` falls from **38.2k** down to **10.7k** ops/ms).
+    `fastparse` cannot compile a prefix trie.
+    They silently fall back to slow, sequential backtracking loops, causing a
+    significant performance decline at the 12th keyword (e.g., `cats-parse`
+    falls from **38.2k** down to **10.7k** ops/ms).
 
 ---
 
@@ -335,8 +358,8 @@ Throughput was measured in **operations per millisecond** (higher is better).
 
   * **The Boxing Penalty of Monads**:
     Monadic libraries like `parsecj` ($241$) and especially `jjparse` ($5$) pay
-    a catastrophic penalty on recursive grammars.
-    
+    a severe performance penalty on recursive grammars.
+
     Every step of the recursion boxes intermediate results and characters into
     monadic wrapper classes (like `Product` or `Reply`), flooding the heap and
     keeping the JVM garbage collector constantly active.
