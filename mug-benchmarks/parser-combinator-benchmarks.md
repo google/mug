@@ -85,22 +85,23 @@ code generation**, **runtime trie dispatching**, and **bytecode generation**:
 
 ## 9-Way Showdown Benchmark Results
 
-Throughput was measured in **operations per millisecond** (higher is better):
+Throughput was measured in **operations per millisecond** (higher is better).
+🚀 marks the winner (or neck-and-neck leaders within 15% of the winner):
 
-| Benchmark Scenario | Taker | `cats-parse` | `dot-parse` | `fastparse` | `jparsec` | `parboiled` | `parsecj` | `jjparse` | `antlr4` | **Showdown Winner** |
+| Benchmark Scenario | Taker | `cats-parse` | `dot-parse` | `fastparse` | `jparsec` | `parboiled` | `parsecj` | `jjparse` | `antlr4` | **Showdown Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **IPv4 Address** | $9,722$ | $20,636$ | $21,170$ | **$24,058$** | $9,544$ | $9,365$ | $2,928$ | $626$ | $2,370$ | **`fastparse`** |
-| **Quoted String (Simple)** | $2,701$ | $3,041$ | **$16,016$** | $13,524$ | $14,372$ | $2,624$ | $2,364$ | $544$ | $7,803$ | **`dot-parse`** |
-| **Quoted String (Escaped)** | $2,155$ | $2,980$ | $4,934$ | **$10,945$** | $12,259$ | $2,200$ | $1,798$ | $571$ | $6,736$ | **`fastparse`** |
-| **Keywords (1st - `select`)** | $73,902$ | $107,995$ | **$176,825$** | $10,370$ | $52,916$ | $24,852$ | $46,858$ | $144$ | $9,431$ | **`dot-parse`** |
-| **Keywords (4th - `delete`)** | $22,872$ | $24,169$ | **$148,882$** | $9,224$ | $15,505$ | $25,732$ | $12,744$ | $88$ | $9,876$ | **`dot-parse`** |
-| **Keywords (8th - `where`)** | $13,690$ | $36,865$ | **$195,350$** | $8,103$ | $11,412$ | $26,359$ | $5,392$ | $51$ | $10,497$ | **`dot-parse`** |
-| **Keywords (12th - `limit`)** | $11,049$ | $39,138$ | **$195,137$** | $7,098$ | $8,383$ | $27,288$ | $4,092$ | $32$ | $10,336$ | **`dot-parse`** |
-| **Keywords CI (1st)** | $34,184$ | $36,644$ | **$48,226$** | $8,207$ | $32,063$ | $11,555$ | $33,330$ | $700$ | $6,634$ | **`dot-parse`** |
-| **Keywords CI (4th)** | $9,194$ | $21,380$ | **$44,830$** | $7,332$ | $14,111$ | $8,908$ | $27,602$ | $769$ | $7,059$ | **`dot-parse`** |
-| **Keywords CI (8th)** | $5,460$ | $13,508$ | **$69,423$** | $6,235$ | $9,156$ | $7,104$ | $25,608$ | $753$ | $8,046$ | **`dot-parse`** |
-| **Keywords CI (12th)** | $7,839$ | $9,118$ | **$69,931$** | $5,684$ | $6,730$ | $5,679$ | $21,527$ | $738$ | $7,149$ | **`dot-parse`** |
-| **Calculator** | $465$ | $577$ | $779$ | **$1,248$** | $322$ | $331$ | $233$ | $4$ | $457$ | **`fastparse`** |
+| **IPv4 Address** | $9,722$ | $20,636$ 🚀 | $21,170$ 🚀 | **$24,058$** 🚀 | $9,544$ | $9,365$ | $2,928$ | $626$ | $2,370$ | **`fastparse / dot / cats`** 🚀 |
+| **Quoted String (Simple)** | $2,701$ | $3,041$ | **$16,016$** 🚀 | $13,524$ 🚀 | $14,372$ 🚀 | $2,624$ | $2,364$ | $544$ | $7,803$ | **`dot / jparsec / fast`** 🚀 |
+| **Quoted String (Escaped)** | $2,155$ | $2,980$ | $4,934$ | $10,945$ 🚀 | **$12,259$** 🚀 | $2,200$ | $1,798$ | $571$ | $6,736$ | **`jparsec / fast`** 🚀 |
+| **Keywords (1st - `select`)** | $73,902$ | $107,995$ | **$176,825$** 🚀 | $10,370$ | $52,916$ | $24,852$ | $46,858$ | $144$ | $9,431$ | **`dot-parse`** 🚀 |
+| **Keywords (4th - `delete`)** | $22,872$ | $24,169$ | **$148,882$** 🚀 | $9,224$ | $15,505$ | $25,732$ | $12,744$ | $88$ | $9,876$ | **`dot-parse`** 🚀 |
+| **Keywords (8th - `where`)** | $13,690$ | $36,865$ | **$195,350$** 🚀 | $8,103$ | $11,412$ | $26,359$ | $5,392$ | $51$ | $10,497$ | **`dot-parse`** 🚀 |
+| **Keywords (12th - `limit`)** | $11,049$ | $39,138$ | **$195,137$** 🚀 | $7,098$ | $8,383$ | $27,288$ | $4,092$ | $32$ | $10,336$ | **`dot-parse`** 🚀 |
+| **Keywords CI (1st)** | $34,184$ | $36,644$ | **$48,226$** 🚀 | $8,207$ | $32,063$ | $11,555$ | $33,330$ | $700$ | $6,634$ | **`dot-parse`** 🚀 |
+| **Keywords CI (4th)** | $9,194$ | $21,380$ | **$44,830$** 🚀 | $7,332$ | $14,111$ | $8,908$ | $27,602$ | $769$ | $7,059$ | **`dot-parse`** 🚀 |
+| **Keywords CI (8th)** | $5,460$ | $13,508$ | **$69,423$** 🚀 | $6,235$ | $9,156$ | $7,104$ | $25,608$ | $753$ | $8,046$ | **`dot-parse`** 🚀 |
+| **Keywords CI (12th)** | $7,839$ | $9,118$ | **$69,931$** 🚀 | $5,684$ | $6,730$ | $5,679$ | $21,527$ | $738$ | $7,149$ | **`dot-parse`** 🚀 |
+| **Calculator** | $465$ | $577$ | $779$ | **$1,248$** 🚀 | $322$ | $331$ | $233$ | $4$ | $457$ | **`fastparse`** 🚀 |
 
 ---
 
@@ -181,8 +182,7 @@ Throughput was measured in **operations per millisecond** (higher is better):
     When escape characters are introduced, `fastparse` and `jparsec` show
     excellent robustness, retaining high speeds (**10.9k** and **12.2k** ops/ms
     respectively) due to highly optimized JVM-level loop structures, while
-    `dot-parse` drops to **4.9k** ops/ms due to its internal use of parser
-    compositions and intermediary string allocation and joining.
+    `dot-parse` drops to **4.9k** ops/ms.
 
 ---
 
