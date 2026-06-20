@@ -1456,11 +1456,8 @@ abstract class AbstractStringFormat {
 
   private void checkPlaceholderCount(int expected) {
     if (numCapturingPlaceholders != expected) {
-      throw new IllegalArgumentException(
-          String.format(
-              "format string has %s placeholders; %s expected.",
-              numCapturingPlaceholders,
-              expected));
+      throw new IllegalArgumentException(String.format(
+          "format string has %s placeholders; %s expected.", numCapturingPlaceholders, expected));
     }
   }
 
@@ -1470,11 +1467,8 @@ abstract class AbstractStringFormat {
 
   private void checkFormatArgs(int argsCount) {
     if (argsCount != numPlaceholders()) {
-      throw new IllegalArgumentException(
-          String.format(
-              "format string expects %s placeholders, %s provided",
-              numPlaceholders(),
-              argsCount));
+      throw new IllegalArgumentException(String.format(
+          "format string expects %s placeholders, %s provided", numPlaceholders(), argsCount));
     }
   }
 
