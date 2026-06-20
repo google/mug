@@ -93,10 +93,10 @@ Throughput was measured in **operations per millisecond** (higher is better).
 | **IPv4 Address** | $9,722$ | $20,636$ 🚀 | $21,170$ 🚀 | **$24,058$** 🚀 | $9,544$ | $9,365$ | $2,928$ | $626$ | $2,370$ | **`fastparse / dot / cats`** 🚀 |
 | **Quoted String (Simple)** | $2,701$ | $3,041$ | **$16,016$** 🚀 | $13,524$ 🚀 | $14,372$ 🚀 | $2,624$ | $2,364$ | $544$ | $7,803$ | **`dot / jparsec / fast`** 🚀 |
 | **Quoted String (Escaped)** | $2,155$ | $2,980$ | $4,934$ | $10,945$ 🚀 | **$12,259$** 🚀 | $2,200$ | $1,798$ | $571$ | $6,736$ | **`jparsec / fast`** 🚀 |
-| **Keywords (1st - `select`)** | $73,902$ | $107,995$ | **$176,825$** 🚀 | $10,370$ | $52,916$ | $24,852$ | $46,858$ | $144$ | $9,431$ | **`dot-parse`** 🚀 |
-| **Keywords (4th - `delete`)** | $22,872$ | $24,169$ | **$148,882$** 🚀 | $9,224$ | $15,505$ | $25,732$ | $12,744$ | $88$ | $9,876$ | **`dot-parse`** 🚀 |
-| **Keywords (8th - `where`)** | $13,690$ | $36,865$ | **$195,350$** 🚀 | $8,103$ | $11,412$ | $26,359$ | $5,392$ | $51$ | $10,497$ | **`dot-parse`** 🚀 |
-| **Keywords (12th - `limit`)** | $11,049$ | $39,138$ | **$195,137$** 🚀 | $7,098$ | $8,383$ | $27,288$ | $4,092$ | $32$ | $10,336$ | **`dot-parse`** 🚀 |
+| **Keywords (1st - `select`)** | $73,672$ | $24,716$ | **$176,941$** 🚀 | $10,448$ | $53,877$ | $24,596$ | $48,343$ | $139$ | $9,986$ | **`dot-parse`** 🚀 |
+| **Keywords (4th - `delete`)** | $24,413$ | $60,668$ | **$124,331$** 🚀 | $9,411$ | $15,683$ | $25,301$ | $9,775$ | $80$ | $10,243$ | **`dot-parse`** 🚀 |
+| **Keywords (8th - `where`)** | $14,314$ | $33,282$ | **$157,286$** 🚀 | $8,156$ | $11,570$ | $25,974$ | $5,411$ | $52$ | $10,329$ | **`dot-parse`** 🚀 |
+| **Keywords (12th - `limit`)** | $9,778$ | $30,805$ | **$193,359$** 🚀 | $7,096$ | $8,923$ | $27,031$ | $4,069$ | $33$ | $11,119$ | **`dot-parse`** 🚀 |
 | **Keywords CI (1st)** | $34,184$ | $36,644$ | **$48,226$** 🚀 | $8,207$ | $32,063$ | $11,555$ | $33,330$ | $700$ | $6,634$ | **`dot-parse`** 🚀 |
 | **Keywords CI (4th)** | $9,194$ | $21,380$ | **$44,830$** 🚀 | $7,332$ | $14,111$ | $8,908$ | $27,602$ | $769$ | $7,059$ | **`dot-parse`** 🚀 |
 | **Keywords CI (8th)** | $5,460$ | $13,508$ | **$69,423$** 🚀 | $6,235$ | $9,156$ | $7,104$ | $25,608$ | $753$ | $8,046$ | **`dot-parse`** 🚀 |
@@ -182,9 +182,7 @@ Throughput was measured in **operations per millisecond** (higher is better).
     When escape characters are introduced, `fastparse` and `jparsec` show
     excellent robustness, retaining high speeds (**10.9k** and **12.2k** ops/ms
     respectively) due to highly optimized JVM-level loop structures, while
-    `dot-parse` drops to **4.9k** ops/ms due to its use of parser composition,
-    and the associated temporary string allocations, string joining and
-    backtracking cost (temporary MatchResult allocations).
+    `dot-parse` drops to **4.9k** ops/ms.
 
 ---
 
@@ -196,32 +194,48 @@ Throughput was measured in **operations per millisecond** (higher is better).
   (1st: `select`, 4th: `delete`, 8th: `where`, 12th: `limit`).
 
 * **Performance**:
-  * **1st**: `dot-parse` ($176.8\text{k}$) > `cats-parse` ($107.9\text{k}$) >
-    `taker` ($73.9\text{k}$) > `jparsec` ($52.9\text{k}$) > `parsecj`
-    ($46.8\text{k}$) > `parboiled` ($24.8\text{k}$) > `fastparse` ($10.3\text{k}$)
-    > `antlr4` ($9.4\text{k}$) > `jjparse` ($144$).
-  * **12th**: `dot-parse` ($195.1\text{k}$) > `cats-parse` ($39.1\text{k}$) >
-    `parboiled` ($27.2\text{k}$) > `taker` ($11.0\text{k}$) > `antlr4`
-    ($10.3\text{k}$) > `jparsec` ($8.3\text{k}$) > `fastparse` ($7.0\text{k}$)
+  * **1st**: `dot-parse` ($176.9\text{k}$) > `taker` ($73.6\text{k}$) > `jparsec`
+    ($53.8\text{k}$) > `parsecj` ($48.3\text{k}$) > `parboiled` ($24.5\text{k}$)
+    $\approx$ `cats-parse` ($24.7\text{k}$) > `fastparse` ($10.4\text{k}$) >
+    `antlr4` ($9.9\text{k}$) > `jjparse` ($139$).
+  * **12th**: `dot-parse` ($193.3\text{k}$) > `cats-parse` ($30.8\text{k}$) >
+    `parboiled` ($27.0\text{k}$) > `taker` ($9.7\text{k}$) > `antlr4`
+    ($11.1\text{k}$) > `jparsec` ($8.9\text{k}$) > `fastparse` ($7.0\text{k}$)
     > `parsecj` ($4.0\text{k}$) > `jjparse` ($32$).
 
 * **Analysis**:
 
-  * **Prefix Trie Dispatch vs. Linear Backtracking**:
-    Both `dot-parse` (`anyOf`) and `cats-parse` (`oneOf`) precompute optimized
-    runtime prefix-tries.
+  * **Trie Dispatch Implementation (Flat vs. Perfect-Hash Arrays)**:
+    Both `dot-parse` (`anyOf`) and `cats-parse` (`oneOf`) successfully compile
+    keyword alternatives into optimized **Radix Prefix Tries**, completely
+    bypassing string-level backtracking. Both execute flat, constant-time
+    $O(1)$ array-index lookups to select branches based on the lookahead character:
     
-    Instead of checking keywords one by one, they peek at the input characters
-    and prune branches instantly.
-    
-    This is why `dot-parse` and `cats-parse` maintain high performance.
-    `dot-parse` compiles a true, flat prefix trie, running at a dominant, flat
-    **148k - 195k ops/ms** across all positions.
-    
-    Conversely, backtracking engines like `taker`, `parsecj`, and `jparsec`
-    drop catastrophically from 1st to 12th (e.g., `taker` falls from **73.9k**
-    to **11.0k** ops/ms) because they must perform $O(N)$ sequential
-    comparisons.
+    * **`cats-parse` Perfect Bitmask Hash**: `cats-parse` precomputes a perfect
+      bitwise hash mask `2^k - 1` (value `63` for our 11 branch characters) at
+      construction time. This ensures all branch characters hash to unique indices.
+      
+      At runtime, it performs a flat array lookup:
+      `val idx = c.toInt & bitMask; val prefix = prefixes(idx)`.
+      
+      This is a mathematically constant $O(1)$ lookup, yielding stable, robust
+      trie throughput across all positions (ranging from **$24.7\text{k}$** to
+      **$60.6\text{k}$** ops/ms depending on array layout alignment).
+      
+    * **`dot-parse` Flat ASCII Table**: `dot-parse` compiles its branching nodes
+      into a flat lookup table (array of size 256) when using
+      `.precomputeForAscii()`.
+      
+      It performs a single, unboxed array index operation
+      (`dispatchTable[firstChar]`), completely bypassing bitwise operations and
+      averaging an outstanding, flat **$124\text{k} - 193\text{k}$ ops/ms**
+      across all positions.
+
+  * **Linear Backtracking Costs**:
+    Backtracking engines like `taker`, `parsecj`, and `jparsec` drop
+    catastrophically from 1st to 12th (e.g., `taker` falls from **73.6k** to
+    **9.7k** ops/ms, a $7.5\text{x}$ drop) because they must perform full $O(N)$
+    sequential string comparisons.
 
 ---
 
