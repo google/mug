@@ -15,6 +15,8 @@ import com.google.mu.benchmarks.parsers.antlr4.Antlr4Showdown;
 import com.google.mu.benchmarks.parsers.catsparse.CatsParseShowdown;
 import com.google.mu.benchmarks.parsers.fastparse.FastparseShowdown;
 import com.google.mu.benchmarks.parsers.fastparse.FastparseCalculatorShowdown;
+import com.google.mu.benchmarks.parsers.scalaparser.ScalaParserShowdown;
+import com.google.mu.benchmarks.parsers.parboiled2.Parboiled2Showdown;
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -97,6 +99,22 @@ public class ParserShowdownBenchmark {
     public final Antlr4Showdown.CalculatorFixture antlr4Calculator = new Antlr4Showdown.CalculatorFixture();
     public final Antlr4Showdown.NestedCommentFixture antlr4NestedComment = new Antlr4Showdown.NestedCommentFixture();
 
+    // 10. scala-parser-combinators Fixtures
+    public final ScalaParserShowdown.IpFixture scalaParserIp = new ScalaParserShowdown.IpFixture();
+    public final ScalaParserShowdown.StringFixture scalaParserString = new ScalaParserShowdown.StringFixture();
+    public final ScalaParserShowdown.KeywordsFixture scalaParserKeywords = new ScalaParserShowdown.KeywordsFixture();
+    public final ScalaParserShowdown.IgnoreCaseFixture scalaParserIgnoreCase = new ScalaParserShowdown.IgnoreCaseFixture();
+    public final ScalaParserShowdown.CalculatorFixture scalaParserCalculator = new ScalaParserShowdown.CalculatorFixture();
+    public final ScalaParserShowdown.NestedCommentFixture scalaParserNestedComment = new ScalaParserShowdown.NestedCommentFixture();
+
+    // 11. parboiled2 Fixtures
+    public final Parboiled2Showdown.IpFixture parboiled2Ip = new Parboiled2Showdown.IpFixture();
+    public final Parboiled2Showdown.StringFixture parboiled2String = new Parboiled2Showdown.StringFixture();
+    public final Parboiled2Showdown.KeywordsFixture parboiled2Keywords = new Parboiled2Showdown.KeywordsFixture();
+    public final Parboiled2Showdown.IgnoreCaseFixture parboiled2IgnoreCase = new Parboiled2Showdown.IgnoreCaseFixture();
+    public final Parboiled2Showdown.CalculatorFixture parboiled2Calculator = new Parboiled2Showdown.CalculatorFixture();
+    public final Parboiled2Showdown.NestedCommentFixture parboiled2NestedComment = new Parboiled2Showdown.NestedCommentFixture();
+
     public BenchmarkState() {
       try {
         this.parsecjCalculator = new ParsecjShowdown.CalculatorFixture();
@@ -119,6 +137,8 @@ public class ParserShowdownBenchmark {
   @Benchmark public void parsecj_simpleIpPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parsecjIp.run()); }
   @Benchmark public void jjparse_simpleIpPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.jjparseIp.run()); }
   @Benchmark public void antlr4_simpleIpPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.antlr4Ip.run()); }
+  @Benchmark public void scalaParser_simpleIpPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserIp.run()); }
+  @Benchmark public void parboiled2_simpleIpPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2Ip.run()); }
 
   // =========================================================================
   // 2. Quoted String Benchmarks
@@ -149,6 +169,12 @@ public class ParserShowdownBenchmark {
 
   @Benchmark public void antlr4_simpleStringPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.antlr4String.run(BenchmarkInputs.STRING_SIMPLE)); }
   @Benchmark public void antlr4_escapedStringPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.antlr4String.run(BenchmarkInputs.STRING_ESCAPED)); }
+
+  @Benchmark public void scalaParser_simpleStringPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserString.run(BenchmarkInputs.STRING_SIMPLE)); }
+  @Benchmark public void scalaParser_escapedStringPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserString.run(BenchmarkInputs.STRING_ESCAPED)); }
+
+  @Benchmark public void parboiled2_simpleStringPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2String.run(BenchmarkInputs.STRING_SIMPLE)); }
+  @Benchmark public void parboiled2_escapedStringPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2String.run(BenchmarkInputs.STRING_ESCAPED)); }
 
   // =========================================================================
   // 3. Keywords Benchmarks
@@ -304,6 +330,40 @@ public class ParserShowdownBenchmark {
   @Benchmark
   public void antlr4_simpleKeywords12th(BenchmarkState s, Blackhole bh) {
     bh.consume(s.antlr4Keywords.run(BenchmarkInputs.KEYWORDS.get(11)));
+  }
+
+  @Benchmark
+  public void scalaParser_simpleKeywords1st(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.scalaParserKeywords.run(BenchmarkInputs.KEYWORDS.get(0)));
+  }
+  @Benchmark
+  public void scalaParser_simpleKeywords4th(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.scalaParserKeywords.run(BenchmarkInputs.KEYWORDS.get(3)));
+  }
+  @Benchmark
+  public void scalaParser_simpleKeywords8th(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.scalaParserKeywords.run(BenchmarkInputs.KEYWORDS.get(7)));
+  }
+  @Benchmark
+  public void scalaParser_simpleKeywords12th(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.scalaParserKeywords.run(BenchmarkInputs.KEYWORDS.get(11)));
+  }
+
+  @Benchmark
+  public void parboiled2_simpleKeywords1st(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.parboiled2Keywords.run(BenchmarkInputs.KEYWORDS.get(0)));
+  }
+  @Benchmark
+  public void parboiled2_simpleKeywords4th(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.parboiled2Keywords.run(BenchmarkInputs.KEYWORDS.get(3)));
+  }
+  @Benchmark
+  public void parboiled2_simpleKeywords8th(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.parboiled2Keywords.run(BenchmarkInputs.KEYWORDS.get(7)));
+  }
+  @Benchmark
+  public void parboiled2_simpleKeywords12th(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.parboiled2Keywords.run(BenchmarkInputs.KEYWORDS.get(11)));
   }
 
   // =========================================================================
@@ -462,6 +522,40 @@ public class ParserShowdownBenchmark {
     bh.consume(s.antlr4IgnoreCase.run(BenchmarkInputs.KEYWORDS.get(11).toUpperCase()));
   }
 
+  @Benchmark
+  public void scalaParser_simpleIgnoreCase1st(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.scalaParserIgnoreCase.run(BenchmarkInputs.KEYWORDS.get(0).toUpperCase()));
+  }
+  @Benchmark
+  public void scalaParser_simpleIgnoreCase4th(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.scalaParserIgnoreCase.run(BenchmarkInputs.KEYWORDS.get(3).toUpperCase()));
+  }
+  @Benchmark
+  public void scalaParser_simpleIgnoreCase8th(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.scalaParserIgnoreCase.run(BenchmarkInputs.KEYWORDS.get(7).toUpperCase()));
+  }
+  @Benchmark
+  public void scalaParser_simpleIgnoreCase12th(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.scalaParserIgnoreCase.run(BenchmarkInputs.KEYWORDS.get(11).toUpperCase()));
+  }
+
+  @Benchmark
+  public void parboiled2_simpleIgnoreCase1st(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.parboiled2IgnoreCase.run(BenchmarkInputs.KEYWORDS.get(0).toUpperCase()));
+  }
+  @Benchmark
+  public void parboiled2_simpleIgnoreCase4th(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.parboiled2IgnoreCase.run(BenchmarkInputs.KEYWORDS.get(3).toUpperCase()));
+  }
+  @Benchmark
+  public void parboiled2_simpleIgnoreCase8th(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.parboiled2IgnoreCase.run(BenchmarkInputs.KEYWORDS.get(7).toUpperCase()));
+  }
+  @Benchmark
+  public void parboiled2_simpleIgnoreCase12th(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.parboiled2IgnoreCase.run(BenchmarkInputs.KEYWORDS.get(11).toUpperCase()));
+  }
+
   // =========================================================================
   // 5. Calculator Benchmarks
   // =========================================================================
@@ -474,6 +568,8 @@ public class ParserShowdownBenchmark {
   @Benchmark public void parsecj_calculatorPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parsecjCalculator.run()); }
   @Benchmark public void jjparse_calculatorPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.jjparseCalculator.run()); }
   @Benchmark public void antlr4_calculatorPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.antlr4Calculator.run()); }
+  @Benchmark public void scalaParser_calculatorPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserCalculator.run()); }
+  @Benchmark public void parboiled2_calculatorPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2Calculator.run()); }
 
   // =========================================================================
   // 6. Nested Comment Benchmarks
@@ -487,4 +583,6 @@ public class ParserShowdownBenchmark {
   @Benchmark public void parsecj_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parsecjNestedComment.run()); }
   @Benchmark public void jjparse_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.jjparseNestedComment.run()); }
   @Benchmark public void antlr4_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.antlr4NestedComment.run()); }
+  @Benchmark public void scalaParser_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserNestedComment.run()); }
+  @Benchmark public void parboiled2_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2NestedComment.run()); }
 }
