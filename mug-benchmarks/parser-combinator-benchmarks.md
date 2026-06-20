@@ -182,7 +182,9 @@ Throughput was measured in **operations per millisecond** (higher is better).
     When escape characters are introduced, `fastparse` and `jparsec` show
     excellent robustness, retaining high speeds (**10.9k** and **12.2k** ops/ms
     respectively) due to highly optimized JVM-level loop structures, while
-    `dot-parse` drops to **4.9k** ops/ms.
+    `dot-parse` drops to **4.9k** ops/ms due to its use of parser composition,
+    and the associated temporary string allocations, string joining and
+    backtracking cost (temporary MatchResult allocations).
 
 ---
 
