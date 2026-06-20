@@ -6,82 +6,90 @@ import scala.jdk.CollectionConverters._
 
 object CatsParseShowdown {
 
-  class IpFixture {
+  object IpFixture {
     private val digits = P.charIn('0' to '9').rep.void
-    private val parser = (digits ~ P.char('.') ~ digits ~ P.char('.') ~ digits ~ P.char('.') ~ digits).void
+    private val PARSER = (digits ~ P.char('.') ~ digits ~ P.char('.') ~ digits ~ P.char('.') ~ digits).void
 
     // Verify
-    parser.parse(BenchmarkInputs.IP) match {
+    PARSER.parse(BenchmarkInputs.IP) match {
       case Right(_) =>
       case Left(err) => throw new AssertionError(s"cats-parse IP verification failed: $err")
     }
+  }
 
+  class IpFixture {
     def run(): Any = {
-      parser.parse(BenchmarkInputs.IP)
+      IpFixture.PARSER.parse(BenchmarkInputs.IP)
+    }
+  }
+
+  object StringFixture {
+    private val escape = P.char('\\') *> P.anyChar
+    private val normalChar = (!P.char('"') ~ !P.char('\\')).with1 *> P.anyChar
+    private val PARSER = P.char('"') *> (escape | normalChar).rep.void <* P.char('"')
+
+    // Verify
+    PARSER.parse(BenchmarkInputs.STRING_SIMPLE) match {
+      case Right(_) =>
+      case Left(err) => throw new AssertionError(s"cats-parse String simple verification failed: $err")
+    }
+    PARSER.parse(BenchmarkInputs.STRING_ESCAPED) match {
+      case Right(_) =>
+      case Left(err) => throw new AssertionError(s"cats-parse String escaped verification failed: $err")
     }
   }
 
   class StringFixture {
-    private val escape = P.char('\\') *> P.anyChar
-    private val normalChar = (!P.char('"') ~ !P.char('\\')).with1 *> P.anyChar
-    private val parser = P.char('"') *> (escape | normalChar).rep.void <* P.char('"')
-
-    // Verify
-    parser.parse(BenchmarkInputs.STRING_SIMPLE) match {
-      case Right(_) =>
-      case Left(err) => throw new AssertionError(s"cats-parse String simple verification failed: $err")
-    }
-    parser.parse(BenchmarkInputs.STRING_ESCAPED) match {
-      case Right(_) =>
-      case Left(err) => throw new AssertionError(s"cats-parse String escaped verification failed: $err")
-    }
-
     def run(input: String): Any = {
-      parser.parse(input)
+      StringFixture.PARSER.parse(input)
     }
   }
 
-  class KeywordsFixture {
-    private val parser = P.oneOf(
+  object KeywordsFixture {
+    private val PARSER = P.oneOf(
       BenchmarkInputs.KEYWORDS.asScala.map(P.string).toList
     )
 
     // Verify
     for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
-      parser.parse(keyword) match {
+      PARSER.parse(keyword) match {
         case Right(_) =>
         case Left(err) => throw new AssertionError(s"cats-parse Keywords verification failed for '$keyword': $err")
       }
     }
+  }
 
+  class KeywordsFixture {
     def run(input: String): Any = {
-      parser.parse(input)
+      KeywordsFixture.PARSER.parse(input)
     }
   }
 
-  class IgnoreCaseFixture {
-    private val parser = P.oneOf(
+  object IgnoreCaseFixture {
+    private val PARSER = P.oneOf(
       BenchmarkInputs.KEYWORDS.asScala.map(P.ignoreCase).toList
     )
 
     // Verify
     for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
-      parser.parse(keyword.toUpperCase) match {
+      PARSER.parse(keyword.toUpperCase) match {
         case Right(_) =>
         case Left(err) => throw new AssertionError(s"cats-parse IgnoreCase verification failed for '$keyword': $err")
       }
     }
+  }
 
+  class IgnoreCaseFixture {
     def run(input: String): Any = {
-      parser.parse(input)
+      IgnoreCaseFixture.PARSER.parse(input)
     }
   }
 
-  class CalculatorFixture {
+  object CalculatorFixture {
     private val ws = P.charIn(" \t\r\n").rep0
     private def token[A](p: P[A]): P[A] = p <* ws
 
-    private val parser: cats.parse.Parser0[Int] = ws *> P.recursive[Int] { recurse =>
+    private val PARSER: cats.parse.Parser0[Int] = ws *> P.recursive[Int] { recurse =>
       val num = token((P.char('-').?.with1 ~ P.charIn('0' to '9').rep).string.map(_.toInt))
       val factor = (token(P.char('(')) *> recurse <* token(P.char(')'))) | num
 
@@ -103,16 +111,18 @@ object CatsParseShowdown {
     }
 
     // Verify
-    parser.parse(BenchmarkInputs.CALCULATOR) match {
+    PARSER.parse(BenchmarkInputs.CALCULATOR) match {
       case Right(("", value)) if value == BenchmarkInputs.CALCULATOR_EXPECTED =>
       case Right((left, value)) =>
         throw new AssertionError(s"cats-parse Calculator verification failed. Expected: ${BenchmarkInputs.CALCULATOR_EXPECTED}, got: $value, unparsed: $left")
       case Left(err) =>
         throw new AssertionError(s"cats-parse Calculator verification failed: $err")
     }
+  }
 
+  class CalculatorFixture {
     def run(): Any = {
-      parser.parse(BenchmarkInputs.CALCULATOR)
+      CalculatorFixture.PARSER.parse(BenchmarkInputs.CALCULATOR)
     }
   }
 }

@@ -1,27 +1,40 @@
 package com.google.mu.benchmarks.parsers.antlr4;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.antlr.v4.runtime.CharStreams.fromString;
 
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
 import com.google.mu.benchmarks.ShowdownLexer;
 import com.google.mu.benchmarks.ShowdownParser;
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CommonTokenStream;
 
 public final class Antlr4Showdown {
 
   public static class IpFixture {
-    private final ShowdownLexer lexer = new ShowdownLexer(null);
-    private final CommonTokenStream tokenStream = new CommonTokenStream(lexer);
-    private final ShowdownParser parser = new ShowdownParser(tokenStream);
+    private static final ThreadLocal<ShowdownLexer> LEXER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownLexer lex = new ShowdownLexer(null);
+              lex.removeErrorListeners();
+              return lex;
+            });
+    private static final ThreadLocal<CommonTokenStream> TOKEN_STREAM =
+        ThreadLocal.withInitial(() -> new CommonTokenStream(LEXER.get()));
+    private static final ThreadLocal<ShowdownParser> PARSER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownParser p = new ShowdownParser(TOKEN_STREAM.get());
+              p.removeErrorListeners();
+              return p;
+            });
 
-    public IpFixture() {
-      lexer.removeErrorListeners();
-      parser.removeErrorListeners();
+    static {
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
 
-      // Verify
-      CharStream charStream = CharStreams.fromString(BenchmarkInputs.IP);
+      CharStream charStream = fromString(BenchmarkInputs.IP);
       lexer.setInputStream(charStream);
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
@@ -31,7 +44,11 @@ public final class Antlr4Showdown {
     }
 
     public Object run() {
-      CharStream charStream = CharStreams.fromString(BenchmarkInputs.IP);
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
+
+      CharStream charStream = fromString(BenchmarkInputs.IP);
       lexer.setInputStream(charStream);
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
@@ -42,16 +59,30 @@ public final class Antlr4Showdown {
   }
 
   public static class StringFixture {
-    private final ShowdownLexer lexer = new ShowdownLexer(null);
-    private final CommonTokenStream tokenStream = new CommonTokenStream(lexer);
-    private final ShowdownParser parser = new ShowdownParser(tokenStream);
+    private static final ThreadLocal<ShowdownLexer> LEXER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownLexer lex = new ShowdownLexer(null);
+              lex.removeErrorListeners();
+              return lex;
+            });
+    private static final ThreadLocal<CommonTokenStream> TOKEN_STREAM =
+        ThreadLocal.withInitial(() -> new CommonTokenStream(LEXER.get()));
+    private static final ThreadLocal<ShowdownParser> PARSER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownParser p = new ShowdownParser(TOKEN_STREAM.get());
+              p.removeErrorListeners();
+              return p;
+            });
 
-    public StringFixture() {
-      lexer.removeErrorListeners();
-      parser.removeErrorListeners();
+    static {
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
 
       // Verify Simple
-      CharStream charStream1 = CharStreams.fromString(BenchmarkInputs.STRING_SIMPLE);
+      CharStream charStream1 = fromString(BenchmarkInputs.STRING_SIMPLE);
       lexer.setInputStream(charStream1);
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
@@ -60,7 +91,7 @@ public final class Antlr4Showdown {
       assertThat(parser.getNumberOfSyntaxErrors()).isEqualTo(0);
 
       // Verify Escaped
-      CharStream charStream2 = CharStreams.fromString(BenchmarkInputs.STRING_ESCAPED);
+      CharStream charStream2 = fromString(BenchmarkInputs.STRING_ESCAPED);
       lexer.setInputStream(charStream2);
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
@@ -70,7 +101,11 @@ public final class Antlr4Showdown {
     }
 
     public Object run(String input) {
-      CharStream charStream = CharStreams.fromString(input);
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
+
+      CharStream charStream = fromString(input);
       lexer.setInputStream(charStream);
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
@@ -81,17 +116,31 @@ public final class Antlr4Showdown {
   }
 
   public static class KeywordsFixture {
-    private final ShowdownLexer lexer = new ShowdownLexer(null);
-    private final CommonTokenStream tokenStream = new CommonTokenStream(lexer);
-    private final ShowdownParser parser = new ShowdownParser(tokenStream);
+    private static final ThreadLocal<ShowdownLexer> LEXER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownLexer lex = new ShowdownLexer(null);
+              lex.removeErrorListeners();
+              return lex;
+            });
+    private static final ThreadLocal<CommonTokenStream> TOKEN_STREAM =
+        ThreadLocal.withInitial(() -> new CommonTokenStream(LEXER.get()));
+    private static final ThreadLocal<ShowdownParser> PARSER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownParser p = new ShowdownParser(TOKEN_STREAM.get());
+              p.removeErrorListeners();
+              return p;
+            });
 
-    public KeywordsFixture() {
-      lexer.removeErrorListeners();
-      parser.removeErrorListeners();
+    static {
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
 
       // Verify
       for (String keyword : BenchmarkInputs.KEYWORDS) {
-        CharStream charStream = CharStreams.fromString(keyword);
+        CharStream charStream = fromString(keyword);
         lexer.setInputStream(charStream);
         tokenStream.setTokenSource(lexer);
         parser.setInputStream(tokenStream);
@@ -102,7 +151,11 @@ public final class Antlr4Showdown {
     }
 
     public Object run(String input) {
-      CharStream charStream = CharStreams.fromString(input);
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
+
+      CharStream charStream = fromString(input);
       lexer.setInputStream(charStream);
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
@@ -113,17 +166,31 @@ public final class Antlr4Showdown {
   }
 
   public static class IgnoreCaseFixture {
-    private final ShowdownLexer lexer = new ShowdownLexer(null);
-    private final CommonTokenStream tokenStream = new CommonTokenStream(lexer);
-    private final ShowdownParser parser = new ShowdownParser(tokenStream);
+    private static final ThreadLocal<ShowdownLexer> LEXER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownLexer lex = new ShowdownLexer(null);
+              lex.removeErrorListeners();
+              return lex;
+            });
+    private static final ThreadLocal<CommonTokenStream> TOKEN_STREAM =
+        ThreadLocal.withInitial(() -> new CommonTokenStream(LEXER.get()));
+    private static final ThreadLocal<ShowdownParser> PARSER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownParser p = new ShowdownParser(TOKEN_STREAM.get());
+              p.removeErrorListeners();
+              return p;
+            });
 
-    public IgnoreCaseFixture() {
-      lexer.removeErrorListeners();
-      parser.removeErrorListeners();
+    static {
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
 
       // Verify
       for (String keyword : BenchmarkInputs.KEYWORDS) {
-        CharStream charStream = CharStreams.fromString(keyword.toUpperCase());
+        CharStream charStream = fromString(keyword.toUpperCase());
         lexer.setInputStream(charStream);
         tokenStream.setTokenSource(lexer);
         parser.setInputStream(tokenStream);
@@ -134,7 +201,11 @@ public final class Antlr4Showdown {
     }
 
     public Object run(String input) {
-      CharStream charStream = CharStreams.fromString(input);
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
+
+      CharStream charStream = fromString(input);
       lexer.setInputStream(charStream);
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
@@ -145,16 +216,30 @@ public final class Antlr4Showdown {
   }
 
   public static class CalculatorFixture {
-    private final ShowdownLexer lexer = new ShowdownLexer(null);
-    private final CommonTokenStream tokenStream = new CommonTokenStream(lexer);
-    private final ShowdownParser parser = new ShowdownParser(tokenStream);
+    private static final ThreadLocal<ShowdownLexer> LEXER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownLexer lex = new ShowdownLexer(null);
+              lex.removeErrorListeners();
+              return lex;
+            });
+    private static final ThreadLocal<CommonTokenStream> TOKEN_STREAM =
+        ThreadLocal.withInitial(() -> new CommonTokenStream(LEXER.get()));
+    private static final ThreadLocal<ShowdownParser> PARSER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownParser p = new ShowdownParser(TOKEN_STREAM.get());
+              p.removeErrorListeners();
+              return p;
+            });
 
-    public CalculatorFixture() {
-      lexer.removeErrorListeners();
-      parser.removeErrorListeners();
+    static {
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
 
       // Verify
-      CharStream charStream = CharStreams.fromString(BenchmarkInputs.CALCULATOR);
+      CharStream charStream = fromString(BenchmarkInputs.CALCULATOR);
       lexer.setInputStream(charStream);
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
@@ -164,7 +249,11 @@ public final class Antlr4Showdown {
     }
 
     public Object run() {
-      CharStream charStream = CharStreams.fromString(BenchmarkInputs.CALCULATOR);
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
+
+      CharStream charStream = fromString(BenchmarkInputs.CALCULATOR);
       lexer.setInputStream(charStream);
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);

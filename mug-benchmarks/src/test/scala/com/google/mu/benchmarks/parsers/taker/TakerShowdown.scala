@@ -14,8 +14,8 @@ import scala.jdk.CollectionConverters._
 
 object TakerShowdown {
 
-  class IpFixture {
-    private val parser: Taker[String] = Numeric.number
+  object IpFixture {
+    private val PARSER: Taker[String] = Numeric.number
       .thenSkip(Chars.chr('.'))
       .thenSkip(Numeric.number)
       .thenSkip(Chars.chr('.'))
@@ -25,15 +25,19 @@ object TakerShowdown {
       .map(_ => "ip")
 
     // Verify
-    private val res = parser.parseAll(BenchmarkInputs.IP)
-    assert(res.matches())
-    assert(res.input().isEof())
-
-    def run(): Any = parser.parseAll(BenchmarkInputs.IP)
+    {
+      val res = PARSER.parseAll(BenchmarkInputs.IP)
+      assert(res.matches())
+      assert(res.input().isEof())
+    }
   }
 
-  class StringFixture {
-    private val parser: Taker[String] = Chars.chr('"')
+  class IpFixture {
+    def run(): Any = IpFixture.PARSER.parseAll(BenchmarkInputs.IP)
+  }
+
+  object StringFixture {
+    private val PARSER: Taker[String] = Chars.chr('"')
       .thenSkip(
         Combinators.oneOf(
           Chars.chr('\\').then(Chars.chr(_ => true)).map((_, c) => c),
@@ -45,20 +49,22 @@ object TakerShowdown {
 
     // Verify
     {
-      val res1 = parser.parseAll(BenchmarkInputs.STRING_SIMPLE)
+      val res1 = PARSER.parseAll(BenchmarkInputs.STRING_SIMPLE)
       assert(res1.matches())
       assert(res1.input().isEof())
 
-      val res2 = parser.parseAll(BenchmarkInputs.STRING_ESCAPED)
+      val res2 = PARSER.parseAll(BenchmarkInputs.STRING_ESCAPED)
       assert(res2.matches())
       assert(res2.input().isEof())
     }
-
-    def run(input: String): Any = parser.parseAll(input)
   }
 
-  class KeywordsFixture {
-    private val parser: Taker[String] = Combinators.oneOf(
+  class StringFixture {
+    def run(input: String): Any = StringFixture.PARSER.parseAll(input)
+  }
+
+  object KeywordsFixture {
+    private val PARSER: Taker[String] = Combinators.oneOf(
       BenchmarkInputs.KEYWORDS.asScala
         .map(Lexical.string)
         .toArray: _*
@@ -66,16 +72,18 @@ object TakerShowdown {
 
     // Verify
     for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
-      val res = parser.parseAll(keyword)
+      val res = PARSER.parseAll(keyword)
       assert(res.matches())
       assert(res.input().isEof())
     }
-
-    def run(input: String): Any = parser.parseAll(input)
   }
 
-  class IgnoreCaseFixture {
-    private val parser: Taker[String] = Combinators.oneOf(
+  class KeywordsFixture {
+    def run(input: String): Any = KeywordsFixture.PARSER.parseAll(input)
+  }
+
+  object IgnoreCaseFixture {
+    private val PARSER: Taker[String] = Combinators.oneOf(
       BenchmarkInputs.KEYWORDS.asScala
         .map(Lexical.stringIgnoreCase)
         .toArray: _*
@@ -83,16 +91,20 @@ object TakerShowdown {
 
     // Verify
     for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
-      val res = parser.parseAll(keyword.toUpperCase)
+      val res = PARSER.parseAll(keyword.toUpperCase)
       assert(res.matches())
       assert(res.input().isEof())
     }
-
-    def run(input: String): Any = parser.parseAll(input)
   }
 
-  class CalculatorFixture {
-    private val parser: Taker[Integer] = {
+  class IgnoreCaseFixture {
+    def run(input: String): Any = IgnoreCaseFixture.PARSER.parseAll(input)
+  }
+
+  object CalculatorFixture {
+    private val PARSER: Taker[Integer] = buildParser()
+
+    private def buildParser(): Taker[Integer] = {
       val ws = Chars.chr(Character.isWhitespace(_: Char)).zeroOrMore().map(_ => null.asInstanceOf[Void])
       val takerNum = token(
         Chars.chr('-').optional().then(Numeric.number)
@@ -103,14 +115,11 @@ object TakerShowdown {
         ws
       )
       
-      val takerRef = new Array[Taker[Integer]](1)
-      val takerLazyExpr = new Taker[Integer] {
-        override def apply(input: Input): Result[Integer] = takerRef(0).apply(input)
-      }
+      val takerRef = Taker.ref[Integer]()
       
       val takerAtom = Combinators.oneOf(
         takerNum,
-        token(Chars.chr('('), ws).then(takerLazyExpr).thenSkip(token(Chars.chr(')'), ws))
+        token(Chars.chr('('), ws).then(takerRef).thenSkip(token(Chars.chr(')'), ws))
           .map((_, valOut) => valOut)
       )
       
@@ -124,20 +133,24 @@ object TakerShowdown {
         takerTerm.chainLeftOneOrMore(Combinators.oneOf(takerAdd, takerSub))
       ).map((_, expr) => expr)
           
-      takerRef(0) = takerExpr
+      takerRef.set(takerExpr)
       takerExpr
     }
-
-    // Verify
-    private val res = parser.parseAll(BenchmarkInputs.CALCULATOR)
-    assert(res.matches())
-    assert(res.input().isEof())
-    assert(res.value() == BenchmarkInputs.CALCULATOR_EXPECTED)
 
     private def token[T](p: Taker[T], ws: Taker[Void]): Taker[T] = {
       p.thenSkip(ws)
     }
 
-    def run(): Any = parser.parseAll(BenchmarkInputs.CALCULATOR)
+    // Verify
+    {
+      val res = PARSER.parseAll(BenchmarkInputs.CALCULATOR)
+      assert(res.matches())
+      assert(res.input().isEof())
+      assert(res.value() == BenchmarkInputs.CALCULATOR_EXPECTED)
+    }
+  }
+
+  class CalculatorFixture {
+    def run(): Any = CalculatorFixture.PARSER.parseAll(BenchmarkInputs.CALCULATOR)
   }
 }

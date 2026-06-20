@@ -1,141 +1,146 @@
 package com.google.mu.benchmarks.parsers.parsecj;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.javafp.parsecj.Combinators.choice;
+import static org.javafp.parsecj.Combinators.many;
+import static org.javafp.parsecj.Combinators.or;
+import static org.javafp.parsecj.Combinators.retn;
+import static org.javafp.parsecj.Combinators.satisfy;
+import static org.javafp.parsecj.Text.chr;
+import static org.javafp.parsecj.Text.intr;
+import static org.javafp.parsecj.Text.regex;
+import static org.javafp.parsecj.Text.wspaces;
 
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
 import java.util.function.BinaryOperator;
-import org.javafp.parsecj.Combinators;
 import org.javafp.parsecj.Parser;
 import org.javafp.parsecj.Reply;
-import org.javafp.parsecj.Text;
 import org.javafp.parsecj.input.Input;
 
 public final class ParsecjShowdown {
 
   public static class IpFixture {
-    private final Parser<Character, ?> parser;
+    private static final Parser<Character, ?> PARSER = buildParser();
 
-    public IpFixture() {
-      Parser<Character, String> digits = Text.intr.map(Object::toString);
-      this.parser = digits.then(Text.chr('.'))
-          .then(digits).then(Text.chr('.'))
-          .then(digits).then(Text.chr('.'))
+    private static Parser<Character, ?> buildParser() {
+      Parser<Character, String> digits = intr.map(Object::toString);
+      return digits
+          .then(chr('.'))
+          .then(digits)
+          .then(chr('.'))
+          .then(digits)
+          .then(chr('.'))
           .then(digits)
           .map(x -> "ip");
+    }
 
-      // Verify
-      assertThat(parser.parse(Input.of(BenchmarkInputs.IP)).isOk()).isTrue();
+    static {
+      assertThat(PARSER.parse(Input.of(BenchmarkInputs.IP)).isOk()).isTrue();
     }
 
     public Object run() {
-      return parser.parse(Input.of(BenchmarkInputs.IP));
+      return PARSER.parse(Input.of(BenchmarkInputs.IP));
     }
   }
 
   public static class StringFixture {
-    private final Parser<Character, ?> parser;
+    private static final Parser<Character, ?> PARSER = buildParser();
 
-    public StringFixture() {
-      Parser<Character, Character> escape = Text.chr('\\').then(Combinators.satisfy(c -> true));
-      Parser<Character, Character> normalChar =
-          Combinators.satisfy(c -> c != '"' && c != '\\');
-      this.parser = Text.chr('"')
-          .then(Combinators.many(Combinators.or(escape, normalChar)))
-          .then(Text.chr('"'))
-          .map(x -> "string");
+    private static Parser<Character, ?> buildParser() {
+      Parser<Character, Character> escape = chr('\\').then(satisfy(c -> true));
+      Parser<Character, Character> normalChar = satisfy(c -> c != '"' && c != '\\');
+      return chr('"').then(many(or(escape, normalChar))).then(chr('"')).map(x -> "string");
+    }
 
-      // Verify
-      assertThat(parser.parse(Input.of(BenchmarkInputs.STRING_SIMPLE)).isOk()).isTrue();
-      assertThat(parser.parse(Input.of(BenchmarkInputs.STRING_ESCAPED)).isOk()).isTrue();
+    static {
+      assertThat(PARSER.parse(Input.of(BenchmarkInputs.STRING_SIMPLE)).isOk()).isTrue();
+      assertThat(PARSER.parse(Input.of(BenchmarkInputs.STRING_ESCAPED)).isOk()).isTrue();
     }
 
     public Object run(String input) {
-      return parser.parse(Input.of(input));
+      return PARSER.parse(Input.of(input));
     }
   }
 
   public static class KeywordsFixture {
     @SuppressWarnings("unchecked")
-    private final Parser<Character, ?> parser = Combinators.choice(
-        BenchmarkInputs.KEYWORDS.stream()
-            .map(Text::string)
-            .map(Combinators::attempt)
-            .toArray(Parser[]::new)
-    );
+    private static final Parser<Character, ?> PARSER =
+        choice(
+            BenchmarkInputs.KEYWORDS.stream()
+                .map(org.javafp.parsecj.Text::string)
+                .map(org.javafp.parsecj.Combinators::attempt)
+                .toArray(Parser[]::new));
 
-    public KeywordsFixture() {
-      // Verify
+    static {
       for (String keyword : BenchmarkInputs.KEYWORDS) {
-        assertThat(parser.parse(Input.of(keyword)).isOk()).isTrue();
+        assertThat(PARSER.parse(Input.of(keyword)).isOk()).isTrue();
       }
     }
 
     public Object run(String input) {
-      return parser.parse(Input.of(input));
+      return PARSER.parse(Input.of(input));
     }
   }
 
   public static class IgnoreCaseFixture {
-    private final Parser<Character, ?> parser =
-        Text.regex("(?i)" + String.join("|", BenchmarkInputs.KEYWORDS));
+    private static final Parser<Character, ?> PARSER =
+        regex("(?i)" + String.join("|", BenchmarkInputs.KEYWORDS));
 
-    public IgnoreCaseFixture() {
-      // Verify
+    static {
       for (String keyword : BenchmarkInputs.KEYWORDS) {
-        assertThat(
-            parser.parse(Input.of(keyword.toUpperCase())).isOk()
-        ).isTrue();
+        assertThat(PARSER.parse(Input.of(keyword.toUpperCase())).isOk()).isTrue();
       }
     }
 
     public Object run(String input) {
-      return parser.parse(Input.of(input));
+      return PARSER.parse(Input.of(input));
     }
   }
 
   public static class CalculatorFixture {
-    private final Parser<Character, Integer> parser;
+    private static final Parser<Character, Integer> PARSER = buildParser();
 
-    public CalculatorFixture() throws Exception {
+    private static Parser<Character, Integer> buildParser() {
       Parser<Character, BinaryOperator<Integer>> parsecjMul =
-          token(Text.chr('*')).then(Combinators.retn((a, b) -> a * b));
+          token(chr('*')).then(retn((a, b) -> a * b));
       Parser<Character, BinaryOperator<Integer>> parsecjDiv =
-          token(Text.chr('/')).then(Combinators.retn((a, b) -> a / b));
+          token(chr('/')).then(retn((a, b) -> a / b));
       Parser<Character, BinaryOperator<Integer>> parsecjAdd =
-          token(Text.chr('+')).then(Combinators.retn((a, b) -> a + b));
+          token(chr('+')).then(retn((a, b) -> a + b));
       Parser<Character, BinaryOperator<Integer>> parsecjSub =
-          token(Text.chr('-')).then(Combinators.retn((a, b) -> a - b));
+          token(chr('-')).then(retn((a, b) -> a - b));
 
       Parser.Ref<Character, Integer> parsecjRef = Parser.ref();
-      Parser<Character, Integer> signedInt = Combinators.choice(
-          Text.chr('-').map(c -> -1),
-          Combinators.retn(1)
-      ).bind(sign -> Text.intr.map(n -> sign * n));
+      Parser<Character, Integer> signedInt =
+          choice(chr('-').map(c -> -1), retn(1)).bind(sign -> intr.map(n -> sign * n));
 
-      Parser<Character, Integer> parsecjAtom = Combinators.choice(
-          token(signedInt),
-          parsecjRef.between(token(Text.chr('(')), token(Text.chr(')')))
-      );
+      Parser<Character, Integer> parsecjAtom =
+          choice(token(signedInt), parsecjRef.between(token(chr('(')), token(chr(')'))));
 
       Parser<Character, Integer> expr =
-          parsecjAtom.chainl1(Combinators.or(parsecjMul, parsecjDiv))
-              .chainl1(Combinators.or(parsecjAdd, parsecjSub));
-      
-      this.parser = Text.wspaces.then(expr);
-      parsecjRef.set(this.parser);
+          parsecjAtom.chainl1(or(parsecjMul, parsecjDiv)).chainl1(or(parsecjAdd, parsecjSub));
 
-      // Verify
-      Reply<Character, Integer> reply = parser.parse(Input.of(BenchmarkInputs.CALCULATOR));
-      assertThat(reply.isOk()).isTrue();
-      assertThat(reply.getResult()).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
+      Parser<Character, Integer> parser = wspaces.then(expr);
+      parsecjRef.set(parser);
+      return parser;
+    }
+
+    static {
+      try {
+        Reply<Character, Integer> reply = PARSER.parse(Input.of(BenchmarkInputs.CALCULATOR));
+        assertThat(reply.isOk()).isTrue();
+        assertThat(reply.getResult()).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
     }
 
     private static <T> Parser<Character, T> token(Parser<Character, T> p) {
-      return p.bind(a -> Text.wspaces.then(Combinators.retn(a)));
+      return p.bind(a -> wspaces.then(retn(a)));
     }
 
     public Object run() {
-      return parser.parse(Input.of(BenchmarkInputs.CALCULATOR));
+      return PARSER.parse(Input.of(BenchmarkInputs.CALCULATOR));
     }
   }
 

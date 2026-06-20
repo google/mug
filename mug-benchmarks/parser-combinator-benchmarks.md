@@ -82,26 +82,25 @@ code generation**, **runtime trie dispatching**, and **bytecode generation**:
   ops/sec**).
 
 ---
-
 ## 9-Way Showdown Benchmark Results
 
 Throughput was measured in **operations per millisecond** (higher is better).
 🚀 marks the winner (or neck-and-neck leaders within 15% of the winner):
 
 | Benchmark Scenario | Taker | `cats-parse` | `dot-parse` | `fastparse` | `jparsec` | `parboiled` | `parsecj` | `jjparse` | `antlr4` | **Showdown Winner(s)** |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **IPv4 Address** | $9,722$ | $20,636$ 🚀 | $21,170$ 🚀 | **$24,058$** 🚀 | $9,544$ | $9,365$ | $2,928$ | $626$ | $2,370$ | **`fastparse / dot / cats`** 🚀 |
-| **Quoted String (Simple)** | $2,701$ | $3,041$ | **$16,016$** 🚀 | $13,524$ 🚀 | $14,372$ 🚀 | $2,624$ | $2,364$ | $544$ | $7,803$ | **`dot / jparsec / fast`** 🚀 |
-| **Quoted String (Escaped)** | $2,155$ | $2,980$ | $4,934$ | $10,945$ 🚀 | **$12,259$** 🚀 | $2,200$ | $1,798$ | $571$ | $6,736$ | **`jparsec / fast`** 🚀 |
-| **Keywords (1st - `select`)** | $73,672$ | $24,716$ | **$176,941$** 🚀 | $10,448$ | $53,877$ | $24,596$ | $48,343$ | $139$ | $9,986$ | **`dot-parse`** 🚀 |
-| **Keywords (4th - `delete`)** | $24,413$ | $60,668$ | **$124,331$** 🚀 | $9,411$ | $15,683$ | $25,301$ | $9,775$ | $80$ | $10,243$ | **`dot-parse`** 🚀 |
-| **Keywords (8th - `where`)** | $14,314$ | $33,282$ | **$157,286$** 🚀 | $8,156$ | $11,570$ | $25,974$ | $5,411$ | $52$ | $10,329$ | **`dot-parse`** 🚀 |
-| **Keywords (12th - `limit`)** | $9,778$ | $30,805$ | **$193,359$** 🚀 | $7,096$ | $8,923$ | $27,031$ | $4,069$ | $33$ | $11,119$ | **`dot-parse`** 🚀 |
-| **Keywords CI (1st)** | $34,184$ | $36,644$ | **$48,226$** 🚀 | $8,207$ | $32,063$ | $11,555$ | $33,330$ | $700$ | $6,634$ | **`dot-parse`** 🚀 |
-| **Keywords CI (4th)** | $9,194$ | $21,380$ | **$44,830$** 🚀 | $7,332$ | $14,111$ | $8,908$ | $27,602$ | $769$ | $7,059$ | **`dot-parse`** 🚀 |
-| **Keywords CI (8th)** | $5,460$ | $13,508$ | **$69,423$** 🚀 | $6,235$ | $9,156$ | $7,104$ | $25,608$ | $753$ | $8,046$ | **`dot-parse`** 🚀 |
-| **Keywords CI (12th)** | $7,839$ | $9,118$ | **$69,931$** 🚀 | $5,684$ | $6,730$ | $5,679$ | $21,527$ | $738$ | $7,149$ | **`dot-parse`** 🚀 |
-| **Calculator** | $465$ | $577$ | $779$ | **$1,248$** 🚀 | $322$ | $331$ | $233$ | $4$ | $457$ | **`fastparse`** 🚀 |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **IPv4 Address** | $9,227$ | $15,159$ | $12,705$ | **$22,814$** 🚀 | $11,074$ | $8,879$ | $2,450$ | $684$ | $3,113$ | **`fastparse`** 🚀 |
+| **Quoted String (Simple)** | $2,382$ | $2,527$ | $9,547$ | **$12,867$** 🚀 | $11,868$ 🚀 | $2,530$ | $2,075$ | $649$ | $6,925$ | **`fastparse / jparsec`** 🚀 |
+| **Quoted String (Escaped)** | $2,011$ | $2,432$ | $4,710$ | **$11,711$** 🚀 | $11,117$ 🚀 | $2,154$ | $2,014$ | $615$ | $6,049$ | **`fastparse / jparsec`** 🚀 |
+| **Keywords (1st - `select`)** | $58,719$ | **$88,244$** 🚀 | $69,886$ | $9,425$ | $39,367$ | $22,306$ | $36,593$ | $151$ | $8,392$ | **`cats-parse`** 🚀 |
+| **Keywords (4th - `delete`)** | $22,649$ | $51,968$ 🚀 | **$58,696$** 🚀 | $8,563$ | $19,498$ | $22,736$ | $12,144$ | $92$ | $8,824$ | **`dot-parse / cats`** 🚀 |
+| **Keywords (8th - `where`)** | $12,550$ | **$91,444$** 🚀 | $75,428$ | $7,678$ | $13,145$ | $23,034$ | $5,878$ | $56$ | $8,996$ | **`cats-parse`** 🚀 |
+| **Keywords (12th - `limit`)** | $8,578$ | **$91,569$** 🚀 | $75,185$ | $6,681$ | $9,335$ | $23,553$ | $4,106$ | $37$ | $9,456$ | **`cats-parse`** 🚀 |
+| **Keywords CI (1st)** | $26,710$ | **$50,988$** 🚀 | $18,933$ | $8,360$ | $27,345$ | $9,911$ | $26,203$ | $752$ | $7,070$ | **`cats-parse`** 🚀 |
+| **Keywords CI (4th)** | $10,882$ | **$22,968$** 🚀 | $18,887$ | $7,472$ | $15,355$ | $6,932$ | $20,321$ 🚀 | $747$ | $6,724$ | **`cats-parse / parsecj`** 🚀 |
+| **Keywords CI (8th)** | $10,373$ | $15,276$ | **$19,834$** 🚀 | $6,500$ | $11,632$ | $4,962$ | $16,990$ 🚀 | $741$ | $7,242$ | **`dot-parse / parsecj`** 🚀 |
+| **Keywords CI (12th)** | $7,814$ | $10,493$ | **$19,535$** 🚀 | $5,269$ | $9,474$ | $3,825$ | $13,877$ | $721$ | $7,763$ | **`dot-parse`** 🚀 |
+| **Calculator** | $463$ | $512$ | $716$ | **$1,206$** 🚀 | $257$ | $349$ | $228$ | $5$ | $461$ | **`fastparse`** 🚀 |
 
 ---
 
@@ -114,10 +113,10 @@ Throughput was measured in **operations per millisecond** (higher is better).
   `192.168.1.1`).
 
 * **Performance**:
-  `fastparse` ($24.0\text{k}$) > `dot-parse` ($21.1\text{k}$) $\approx$
-  `cats-parse` ($20.6\text{k}$) > `taker` ($9.7\text{k}$) $\approx$ `jparsec`
-  ($9.5\text{k}$) $\approx$ `parboiled` ($9.3\text{k}$) > `parsecj` ($2.9\text{k}$)
-  > `antlr4` ($2.3\text{k}$) > `jjparse` ($626$).
+  `fastparse` ($22.8\text{k}$) > `cats-parse` ($15.1\text{k}$) >
+  `dot-parse` ($12.7\text{k}$) > `jparsec` ($11.0\text{k}$) > `taker` ($9.2\text{k}$)
+  $\approx$ `parboiled` ($8.8\text{k}$) > `antlr4` ($3.1\text{k}$) > `parsecj` ($2.4\text{k}$)
+  > `jjparse` ($684$).
 
 * **Analysis**:
 
@@ -125,29 +124,23 @@ Throughput was measured in **operations per millisecond** (higher is better).
     Both libraries compile flat sequences into highly optimized, allocation-free
     inner loops.
     
-    `fastparse` leads slightly through macro-rewriting speed, but `dot-parse`
-    achieves an outstanding **21.1 million operations per second** through pure,
-    lightweight Java combinator design.
+    `fastparse` leads through macro-rewriting speed, while `dot-parse`
+    achieves an outstanding **12.7 million operations per second** through pure,
+    lightweight Java combinator design, and `cats-parse` reaches **15.1 million**.
 
   * **The ANTLR4 Two-Phase Allocation Penalty**:
-    `antlr4` ($2.3\text{k}$) is significantly slower here due to its compiler-grade
+    `antlr4` ($3.1\text{k}$) is significantly slower here due to its compiler-grade
     two-phase parsing architecture (Lexer + Parser).
     
     On every micro-input execution, ANTLR4 must allocate a new `CharStream`, a
     new `Lexer`, a new `CommonTokenStream`, a new `Parser`, and individual
-    `CommonToken` objects for every single token scanned (4 numbers, 3 dots, 1
-    EOF = 8 token allocations).
-    
-    This results in a heavy, 12+ object allocation loop per run.
-    
-    Conversely, parser combinators are **scanner-less (single-phase)** and use a
-    **thread-safe static singleton parser** that directly scans the characters
-    from the input string without allocating a single token wrapper.
+    `CommonToken` objects for every single token scanned. This results in a heavy
+    object allocation loop per run, whereas parser combinators are scanner-less
+    and reuse a single thread-safe parser singleton.
 
   * **Monadic Combinator Cost**:
-    Monadic libraries like `parsecj` ($2.9\text{k}$) and `jjparse` ($626$) run
-    miserably slower due to their deep object call stacks and boxing of
-    intermediate character and parser results.
+    Monadic libraries like `parsecj` ($2.4\text{k}$) and `jjparse` ($684$) run
+    slower due to their deep object call stacks and boxing of intermediate results.
 
 ---
 
@@ -160,29 +153,25 @@ Throughput was measured in **operations per millisecond** (higher is better).
   2. **Escaped**: Containing backslash escapes (e.g., `"hello \"world\"!"`).
 
 * **Performance**:
-  * **Simple**: `dot-parse` ($16.0\text{k}$) > `jparsec` ($14.3\text{k}$) >
-    `fastparse` ($13.5\text{k}$) > `antlr4` ($7.8\text{k}$) > `cats-parse`
-    ($3.0\text{k}$) > `taker` ($2.7\text{k}$) $\approx$ `parboiled`
-    ($2.6\text{k}$) $\approx$ `parsecj` ($2.3\text{k}$) > `jjparse` ($544$).
-  * **Escaped**: `jparsec` ($12.2\text{k}$) $\approx$ `fastparse` ($10.9\text{k}$)
-    > `antlr4` ($6.7\text{k}$) > `dot-parse` ($4.9\text{k}$) > `cats-parse`
-    ($2.9\text{k}$) > `parboiled` ($2.2\text{k}$) $\approx$ `taker` ($2.1\text{k}$)
-    > `parsecj` ($1.7\text{k}$) > `jjparse` ($571$).
+  * **Simple**: `fastparse` ($12.8\text{k}$) > `jparsec` ($11.8\text{k}$) >
+    `dot-parse` ($9.5\text{k}$) > `antlr4` ($6.9\text{k}$) > `parboiled`
+    ($2.5\text{k}$) $\approx$ `cats-parse` ($2.5\text{k}$) > `taker` ($2.3\text{k}$)
+    $\approx$ `parsecj` ($2.0\text{k}$) > `jjparse` ($649$).
+  * **Escaped**: `fastparse` ($11.7\text{k}$) > `jparsec` ($11.1\text{k}$) >
+    `antlr4` ($6.0\text{k}$) > `dot-parse` ($4.7\text{k}$) > `cats-parse`
+    ($2.4\text{k}$) > `parboiled` ($2.1\text{k}$) $\approx$ `taker` ($2.0\text{k}$)
+    $\approx$ `parsecj` ($2.0\text{k}$) > `jjparse` ($615$).
 
 * **Analysis**:
 
   * **Bulk Scanning Advantages**:
-    Libraries that support native bulk-scanning primitives (like `dot-parse`'s
-    `quotedByWithEscapes` and `jparsec`'s `DOUBLE_QUOTE_STRING` scanner) bypass
-    individual character matching.
+    Libraries that support native bulk-scanning primitives (like `jparsec`'s
+    `DOUBLE_QUOTE_STRING` scanner) or JVM-optimized loops (like `fastparse`'s)
+    bypass individual character matching.
     
-    For simple strings, `dot-parse` leads the showdown at **16.0 million
-    ops/sec**.
-    
-    When escape characters are introduced, `fastparse` and `jparsec` show
-    excellent robustness, retaining high speeds (**10.9k** and **12.2k** ops/ms
-    respectively) due to highly optimized JVM-level loop structures, while
-    `dot-parse` drops to **4.9k** ops/ms.
+    For escaped strings, `fastparse` and `jparsec` show excellent robustness,
+    retaining high speeds (**11.7k** and **11.1k** ops/ms respectively) due to
+    highly optimized loop structures, while `dot-parse` reaches **4.7k** ops/ms.
 
 ---
 
@@ -194,14 +183,14 @@ Throughput was measured in **operations per millisecond** (higher is better).
   (1st: `select`, 4th: `delete`, 8th: `where`, 12th: `limit`).
 
 * **Performance**:
-  * **1st**: `dot-parse` ($176.9\text{k}$) > `taker` ($73.6\text{k}$) > `jparsec`
-    ($53.8\text{k}$) > `parsecj` ($48.3\text{k}$) > `parboiled` ($24.5\text{k}$)
-    $\approx$ `cats-parse` ($24.7\text{k}$) > `fastparse` ($10.4\text{k}$) >
-    `antlr4` ($9.9\text{k}$) > `jjparse` ($139$).
-  * **12th**: `dot-parse` ($193.3\text{k}$) > `cats-parse` ($30.8\text{k}$) >
-    `parboiled` ($27.0\text{k}$) > `taker` ($9.7\text{k}$) > `antlr4`
-    ($11.1\text{k}$) > `jparsec` ($8.9\text{k}$) > `fastparse` ($7.0\text{k}$)
-    > `parsecj` ($4.0\text{k}$) > `jjparse` ($32$).
+  * **1st**: `cats-parse` ($88.2\text{k}$) > `dot-parse` ($69.8\text{k}$) > `taker`
+    ($58.7\text{k}$) > `jparsec` ($39.3\text{k}$) $\approx$ `parsecj` ($36.5\text{k}$)
+    > `parboiled` ($22.3\text{k}$) > `fastparse` ($9.4\text{k}$) > `antlr4`
+    ($8.3\text{k}$) > `jjparse` ($151$).
+  * **12th**: `cats-parse` ($91.5\text{k}$) > `dot-parse` ($75.1\text{k}$) >
+    `parboiled` ($23.5\text{k}$) > `antlr4` ($9.4\text{k}$) > `jparsec`
+    ($9.3\text{k}$) > `taker` ($8.5\text{k}$) > `fastparse` ($6.6\text{k}$)
+    > `parsecj` ($4.1\text{k}$) > `jjparse` ($37$).
 
 * **Analysis**:
 
@@ -212,29 +201,20 @@ Throughput was measured in **operations per millisecond** (higher is better).
     $O(1)$ array-index lookups to select branches based on the lookahead character:
     
     * **`cats-parse` Perfect Bitmask Hash**: `cats-parse` precomputes a perfect
-      bitwise hash mask `2^k - 1` (value `63` for our 11 branch characters) at
-      construction time. This ensures all branch characters hash to unique indices.
-      
-      At runtime, it performs a flat array lookup:
-      `val idx = c.toInt & bitMask; val prefix = prefixes(idx)`.
-      
-      This is a mathematically constant $O(1)$ lookup, yielding stable, robust
-      trie throughput across all positions (ranging from **$24.7\text{k}$** to
-      **$60.6\text{k}$** ops/ms depending on array layout alignment).
+      bitwise hash mask at construction time. This ensures all branch characters
+      hash to unique indices, yielding stable, robust trie throughput across
+      all positions (ranging from **$88.2\text{k}$** to **$91.5\text{k}$** ops/ms).
       
     * **`dot-parse` Flat ASCII Table**: `dot-parse` compiles its branching nodes
-      into a flat lookup table (array of size 256) when using
-      `.precomputeForAscii()`.
-      
-      It performs a single, unboxed array index operation
-      (`dispatchTable[firstChar]`), completely bypassing bitwise operations and
-      averaging an outstanding, flat **$124\text{k} - 193\text{k}$ ops/ms**
+      into a flat lookup table (array of size 256) when using `.precomputeForAscii()`.
+      It performs a single, unboxed array index operation (`dispatchTable[firstChar]`),
+      averaging an outstanding, flat **$69.8\text{k} - 75.1\text{k}$ ops/ms**
       across all positions.
 
   * **Linear Backtracking Costs**:
     Backtracking engines like `taker`, `parsecj`, and `jparsec` drop
-    catastrophically from 1st to 12th (e.g., `taker` falls from **73.6k** to
-    **9.7k** ops/ms, a $7.5\text{x}$ drop) because they must perform full $O(N)$
+    catastrophically from 1st to 12th (e.g., `taker` falls from **58.7k** to
+    **8.5k** ops/ms, a $6.9\text{x}$ drop) because they must perform full $O(N)$
     sequential string comparisons.
 
 ---
@@ -246,37 +226,34 @@ Throughput was measured in **operations per millisecond** (higher is better).
   **case-insensitively** (e.g., matching `"SELECT"`, `"LIMIT"`).
 
 * **Performance**:
-  * **1st**: `dot-parse` ($48.2\text{k}$) > `cats-parse` ($36.6\text{k}$) >
-    `taker` ($34.1\text{k}$) > `parsecj` ($33.3\text{k}$) > `jparsec` ($32.0\text{k}$)
-    > `parboiled` ($11.5\text{k}$) > `fastparse` ($8.2\text{k}$) > `antlr4`
-    ($6.6\text{k}$) > `jjparse` ($700$).
-  * **12th**: `dot-parse` ($69.9\text{k}$) > `parsecj` ($21.5\text{k}$) >
-    `cats-parse` ($9.1\text{k}$) > `taker` ($7.8\text{k}$) > `antlr4` ($7.1\text{k}$)
-    > `jparsec` ($6.7\text{k}$) > `fastparse` ($5.6\text{k}$) > `parboiled`
-    ($5.6\text{k}$) > `jjparse` ($738$).
+  * **1st**: `cats-parse` ($50.9\text{k}$) > `jparsec` ($27.3\text{k}$) $\approx$
+    `taker` ($26.7\text{k}$) $\approx$ `parsecj` ($26.2\text{k}$) > `dot-parse`
+    ($18.9\text{k}$) > `parboiled` ($9.9\text{k}$) > `fastparse` ($8.3\text{k}$)
+    > `antlr4` ($7.0\text{k}$) > `jjparse` ($752$).
+  * **12th**: `dot-parse` ($19.5\text{k}$) > `parsecj` ($13.8\text{k}$) >
+    `cats-parse` ($10.4\text{k}$) > `jparsec` ($9.4\text{k}$) > `taker`
+    ($7.8\text{k}$) > `antlr4` ($7.7\text{k}$) > `fastparse` ($5.2\text{k}$)
+    > `parboiled` ($3.8\text{k}$) > `jjparse` ($721$).
 
 * **Analysis**:
 
   * **`dot-parse` Case-Insensitive Trie Sweep**:
-    `dot-parse` is the undisputed winner, running up to **$94\text{x}$ faster**
-    than other engines at the 12th keyword.
-    
-    Its prefix-trie compiler precomputes all capitalization permutations of the
-    first 4 characters at startup, maintaining a blazing-fast $O(1)$ dispatch.
+    `dot-parse` is the undisputed winner at the 12th keyword, running up to
+    **$2.7\text{x}$ to $5\text{x}$ faster** than other engines. Its prefix-trie
+    compiler precomputes all capitalization permutations of the first 4 characters
+    at startup, maintaining a blazing-fast $O(1)$ dispatch.
     
   * **Regular Expression Acceleration**:
     `parsecj` achieves an impressive second-place finish at the 12th keyword
-    (**21.5k ops/ms**) by delegating case-insensitive matching directly to
+    (**13.8k ops/ms**) by delegating case-insensitive matching directly to
     Java's native regular expression engine (`Text.regex("(?i)...")`), which is
     heavily optimized at the JVM level.
     
   * **Silent Fallbacks**:
     When faced with case-insensitivity, libraries like `cats-parse` and
-    `fastparse` cannot compile a prefix trie.
-    
-    They silently fall back to slow, sequential backtracking loops, causing a
-    catastrophic performance drop at the 12th keyword (e.g., `cats-parse` falls
-    from **110.9k** down to **9.1k** ops/ms).
+    `fastparse` cannot compile a prefix trie. They silently fall back to slow,
+    sequential backtracking loops, causing a catastrophic performance drop at
+    the 12th keyword (e.g., `cats-parse` falls from **50.9k** down to **10.4k** ops/ms).
 
 ---
 
@@ -288,19 +265,23 @@ Throughput was measured in **operations per millisecond** (higher is better).
   3 levels deep (e.g., `" ( 1000+2 * 3000 - 4000 / (500+600) ) * -700 - 8000 /
   9000"`).
   
-  It evaluates the expression using standard operator precedence
-  (multiplication/division bind tighter than addition/subtraction) and
-  left-associativity.
+  The core purpose of the calculator benchmark is to measure the runtime
+  performance of **recursive grammars** (which represent the ultimate test of a
+  parser's architectural efficiency, evaluating how it resolves dynamic references,
+  manages rule lookahead, and executes rule recursion). Furthermore, because
+  the calculator is the single most popular and standard tutorial example across
+  almost all of these frameworks, it makes it extremely easy to compare the
+  **officially endorsed, idiomatic usage patterns** of each library.
 
 * **Performance**:
-  `fastparse` ($1,248$) leads the pack, followed by `dot-parse` ($778$),
-  `cats-parse` ($576$), `taker` ($465$), `antlr4` ($457$), `parboiled` ($331$),
-  `jparsec` ($322$), `parsecj` ($233$), and `jjparse` ($4$).
+  `fastparse` ($1,206$) leads the pack, followed by `dot-parse` ($716$),
+  `cats-parse` ($512$), `taker` ($463$), `antlr4` ($461$), `parboiled` ($349$),
+  `jparsec` ($257$), `parsecj` ($228$), and `jjparse` ($5$).
 
 * **Architectural Insights**:
 
   * **The `fastparse` Mutable State-Passing Pattern**:
-    `fastparse` ($1,248$ ops/ms) wins by using compile-time macro expansion to
+    `fastparse` ($1,206$ ops/ms) wins by using compile-time macro expansion to
     rewrite declarative combinators into a **single final mutable context object
     passing pattern (`ParsingRun`)**.
     
@@ -315,13 +296,13 @@ Throughput was measured in **operations per millisecond** (higher is better).
     bytecode loop.
     
   * **Traditional Combinator Allocation Penalty**:
-    In contrast, libraries like `dot-parse` ($778$ ops/ms) and `cats-parse`
-    ($576$ ops/ms) must allocate a fresh, temporary `MatchResult` wrapper on
+    In contrast, libraries like `dot-parse` ($716$ ops/ms) and `cats-parse`
+    ($512$ ops/ms) must allocate a fresh, temporary `MatchResult` wrapper on
     every single addition, multiplication, and parenthesis nesting, flooding
     the JVM Young Gen heap and keeping the garbage collector active.
 
   * **ANTLR4 ATN Simulator Overhead**:
-    `antlr4` ($457$) is designed for complex grammar parsing rather than
+    `antlr4` ($461$) is designed for complex grammar parsing rather than
     high-frequency micro-calculations.
     
     Even with reusable instances, ANTLR4's Adaptive LL(*) (ALL(*)) algorithm
@@ -334,7 +315,7 @@ Throughput was measured in **operations per millisecond** (higher is better).
     the parsing time.
 
   * **The Boxing Penalty of Monads**:
-    Monadic libraries like `parsecj` ($233$) and especially `jjparse` ($4$) pay
+    Monadic libraries like `parsecj` ($228$) and especially `jjparse` ($5$) pay
     a catastrophic penalty on recursive grammars.
     
     Every step of the recursion boxes intermediate results and characters into

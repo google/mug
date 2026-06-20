@@ -3,6 +3,7 @@ package com.google.mu.benchmarks.parsers.jjparse;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
+import java.util.function.BiFunction;
 import jjparse.Parsing;
 import jjparse.StringParsing;
 import jjparse.input.Input;
@@ -10,88 +11,93 @@ import jjparse.input.Input;
 public final class JjparseShowdown {
 
   public static class IpFixture {
-    private final JjParserImpl jjParserInstance = new JjParserImpl();
-    private final Parsing<Character>.Parser<?> parser = jjParserInstance.ip;
+    private static final JjParserImpl jjParserInstance = new JjParserImpl();
+    private static final Parsing<Character>.Parser<?> PARSER = jjParserInstance.ip;
 
-    public IpFixture() {
+    static {
       // Verify
-      assertThat(jjParserInstance.parse(parser, Input.of("jjIp", BenchmarkInputs.IP))
-          .isSuccess()).isTrue();
+      assertThat(jjParserInstance.parse(PARSER, Input.of("jjIp", BenchmarkInputs.IP)).isSuccess())
+          .isTrue();
     }
 
     public Object run() {
-      return jjParserInstance.parse(parser, Input.of("jjIp", BenchmarkInputs.IP));
+      return jjParserInstance.parse(PARSER, Input.of("jjIp", BenchmarkInputs.IP));
     }
   }
 
   public static class StringFixture {
-    private final JjParserImpl jjParserInstance = new JjParserImpl();
-    private final Parsing<Character>.Parser<?> parser = jjParserInstance.quotedString;
+    private static final JjParserImpl jjParserInstance = new JjParserImpl();
+    private static final Parsing<Character>.Parser<?> PARSER = jjParserInstance.quotedString;
 
-    public StringFixture() {
+    static {
       // Verify
-      assertThat(jjParserInstance.parse(parser, Input.of("jjStringSimple", BenchmarkInputs.STRING_SIMPLE))
-          .isSuccess()).isTrue();
-      assertThat(jjParserInstance.parse(parser, Input.of("jjStringEscaped", BenchmarkInputs.STRING_ESCAPED))
-          .isSuccess()).isTrue();
+      assertThat(
+              jjParserInstance
+                  .parse(PARSER, Input.of("jjStringSimple", BenchmarkInputs.STRING_SIMPLE))
+                  .isSuccess())
+          .isTrue();
+      assertThat(
+              jjParserInstance
+                  .parse(PARSER, Input.of("jjStringEscaped", BenchmarkInputs.STRING_ESCAPED))
+                  .isSuccess())
+          .isTrue();
     }
 
     public Object run(String input) {
-      return jjParserInstance.parse(parser, Input.of("jjString", input));
+      return jjParserInstance.parse(PARSER, Input.of("jjString", input));
     }
   }
 
   public static class KeywordsFixture {
-    private final JjParserImpl jjParserInstance = new JjParserImpl();
-    private final Parsing<Character>.Parser<?> parser = jjParserInstance.keywords;
+    private static final JjParserImpl jjParserInstance = new JjParserImpl();
+    private static final Parsing<Character>.Parser<?> PARSER = jjParserInstance.keywords;
 
-    public KeywordsFixture() {
+    static {
       // Verify
       for (String keyword : BenchmarkInputs.KEYWORDS) {
-        assertThat(jjParserInstance.parse(parser, Input.of("jjKeywords", keyword))
-            .isSuccess()).isTrue();
+        assertThat(jjParserInstance.parse(PARSER, Input.of("jjKeywords", keyword)).isSuccess())
+            .isTrue();
       }
     }
 
     public Object run(String input) {
-      return jjParserInstance.parse(parser, Input.of("jjKeywords", input));
+      return jjParserInstance.parse(PARSER, Input.of("jjKeywords", input));
     }
   }
 
   public static class IgnoreCaseFixture {
-    private final JjParserImpl jjParserInstance = new JjParserImpl();
-    private final Parsing<Character>.Parser<?> parser = jjParserInstance.keywordsIgnoreCase;
+    private static final JjParserImpl jjParserInstance = new JjParserImpl();
+    private static final Parsing<Character>.Parser<?> PARSER = jjParserInstance.keywordsIgnoreCase;
 
-    public IgnoreCaseFixture() {
+    static {
       // Verify
       for (String keyword : BenchmarkInputs.KEYWORDS) {
         assertThat(
-            jjParserInstance.parse(
-                parser,
-                Input.of("jjIgnoreCase", keyword.toUpperCase())
-            ).isSuccess()
-        ).isTrue();
+                jjParserInstance
+                    .parse(PARSER, Input.of("jjIgnoreCase", keyword.toUpperCase()))
+                    .isSuccess())
+            .isTrue();
       }
     }
 
     public Object run(String input) {
-      return jjParserInstance.parse(parser, Input.of("jjIgnoreCase", input));
+      return jjParserInstance.parse(PARSER, Input.of("jjIgnoreCase", input));
     }
   }
 
   public static class CalculatorFixture {
-    private final JjParserImpl jjParserInstance = new JjParserImpl();
-    private final Parsing<Character>.Parser<Integer> parser = jjParserInstance.calculator;
+    private static final JjParserImpl jjParserInstance = new JjParserImpl();
+    private static final Parsing<Character>.Parser<Integer> PARSER = jjParserInstance.calculator;
 
-    public CalculatorFixture() {
+    static {
       // Verify
-      var res = jjParserInstance.parse(parser, Input.of("jjcalc", BenchmarkInputs.CALCULATOR));
+      var res = jjParserInstance.parse(PARSER, Input.of("jjcalc", BenchmarkInputs.CALCULATOR));
       assertThat(res.isSuccess()).isTrue();
       assertThat((Integer) res.getOrFail()).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
     }
 
     public Object run() {
-      return jjParserInstance.parse(parser, Input.of("jjcalc", BenchmarkInputs.CALCULATOR));
+      return jjParserInstance.parse(PARSER, Input.of("jjcalc", BenchmarkInputs.CALCULATOR));
     }
   }
 
@@ -99,14 +105,11 @@ public final class JjparseShowdown {
   public static class JjParserImpl extends StringParsing {
     public final Parsing<Character>.Parser<String> ip = regex("[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+");
     public final Parsing<Character>.Parser<String> quotedString = regex("\"([^\"\\\\]|\\\\.)*\"");
-    
+
     @SuppressWarnings("unchecked")
-    public final Parsing<Character>.Parser<String> keywords = choice(
-        BenchmarkInputs.KEYWORDS.stream()
-            .map(this::literal)
-            .toArray(Parser[]::new)
-    );
-    
+    public final Parsing<Character>.Parser<String> keywords =
+        choice(BenchmarkInputs.KEYWORDS.stream().map(this::literal).toArray(Parser[]::new));
+
     public final Parsing<Character>.Parser<String> keywordsIgnoreCase =
         regex("(?i)" + String.join("|", BenchmarkInputs.KEYWORDS));
 
@@ -114,23 +117,22 @@ public final class JjparseShowdown {
     public final Parsing<Character>.Parser<Integer> calculator;
 
     public JjParserImpl() {
-      Parsing<Character>.Parser<Integer> number = token(regex("-?[0-9]+").map(Integer::parseInt));
-      final ParserRef ref = new ParserRef();
-      Parsing<Character>.Parser<Integer> atom = choice(
-          number,
-          token(literal("(")).andr(lazy(() -> ref.parser)).andl(token(literal(")")))
-      );
-      Parsing<Character>.Parser<java.util.function.BiFunction<Integer, Integer, Integer>> mul =
+      var number = token(regex("-?[0-9]+").map(Integer::parseInt));
+      var ref = new ParserRef();
+      var atom =
+          choice(
+              number,
+              token(literal("(")).andr(lazy(() -> ref.parser)).andl(token(literal(")"))));
+      Parser<BiFunction<Integer, Integer, Integer>> mul =
           token(literal("*")).andr(success(() -> (a, b) -> a * b));
-      Parsing<Character>.Parser<java.util.function.BiFunction<Integer, Integer, Integer>> div =
+      Parser<BiFunction<Integer, Integer, Integer>> div =
           token(literal("/")).andr(success(() -> (a, b) -> a / b));
-      Parsing<Character>.Parser<java.util.function.BiFunction<Integer, Integer, Integer>> add =
+      Parser<BiFunction<Integer, Integer, Integer>> add =
           token(literal("+")).andr(success(() -> (a, b) -> a + b));
-      Parsing<Character>.Parser<java.util.function.BiFunction<Integer, Integer, Integer>> sub =
+      Parser<BiFunction<Integer, Integer, Integer>> sub =
           token(literal("-")).andr(success(() -> (a, b) -> a - b));
 
-      Parsing<Character>.Parser<Integer> expr =
-          atom.chainl1(choice(mul, div)).chainl1(choice(add, sub));
+      var expr = atom.chainl1(choice(mul, div)).chainl1(choice(add, sub));
       this.calculator = regex("\\s*").andr(expr);
       ref.parser = this.calculator;
     }

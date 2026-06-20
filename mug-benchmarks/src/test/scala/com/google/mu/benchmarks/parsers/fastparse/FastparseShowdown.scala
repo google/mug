@@ -9,7 +9,7 @@ import scala.jdk.CollectionConverters._
 object FastparseCalculatorShowdown {
   import fastparse._, JavaWhitespace._
 
-  class CalculatorFixture {
+  object CalculatorFixture {
     private def number[_: P]: P[Int] = P( (P("-").? ~ CharsWhileIn("0-9")).! ).map(_.toInt)
     private def parens[_: P]: P[Int] = P( "(" ~ expr ~ ")" )
     private def factor[_: P]: P[Int] = P( number | parens )
@@ -35,9 +35,11 @@ object FastparseCalculatorShowdown {
       case f =>
         throw new AssertionError(s"fastparse Calculator verification failed. Expected: ${BenchmarkInputs.CALCULATOR_EXPECTED}, got: $f")
     }
+  }
 
+  class CalculatorFixture {
     def run(): Any = {
-      fastparse.parse(BenchmarkInputs.CALCULATOR, entry(_))
+      fastparse.parse(BenchmarkInputs.CALCULATOR, CalculatorFixture.entry(_))
     }
   }
 }
@@ -48,26 +50,28 @@ object FastparseCalculatorShowdown {
 object FastparseShowdown {
   import fastparse._, NoWhitespace._
 
-  class IpFixture {
+  object IpFixture {
     private def dot[_: P] = P( "." )
     private def digits[_: P] = P( CharsWhileIn("0-9") )
-    private def parser[_: P] = P( digits ~ dot ~ digits ~ dot ~ digits ~ dot ~ digits )
+    def parser[_: P] = P( digits ~ dot ~ digits ~ dot ~ digits ~ dot ~ digits )
 
     // Verify
     fastparse.parse(BenchmarkInputs.IP, parser(_)) match {
       case Parsed.Success(_, _) =>
       case f => throw new AssertionError(s"fastparse IP verification failed: $f")
     }
+  }
 
+  class IpFixture {
     def run(): Any = {
-      fastparse.parse(BenchmarkInputs.IP, parser(_))
+      fastparse.parse(BenchmarkInputs.IP, IpFixture.parser(_))
     }
   }
 
-  class StringFixture {
+  object StringFixture {
     private def escape[_: P] = P( "\\" ~ AnyChar )
     private def normalChar[_: P] = P( CharPred(c => c != '"' && c != '\\') )
-    private def str[_: P] = P( "\"" ~ (escape | normalChar).rep ~ "\"" )
+    def str[_: P] = P( "\"" ~ (escape | normalChar).rep ~ "\"" )
 
     // Verify
     fastparse.parse(BenchmarkInputs.STRING_SIMPLE, str(_)) match {
@@ -78,13 +82,15 @@ object FastparseShowdown {
       case Parsed.Success(_, _) =>
       case f => throw new AssertionError(s"fastparse String escaped verification failed: $f")
     }
+  }
 
+  class StringFixture {
     def run(input: String): Any = {
-      fastparse.parse(input, str(_))
+      fastparse.parse(input, StringFixture.str(_))
     }
   }
 
-  class KeywordsFixture {
+  object KeywordsFixture {
     private def choice[_: P](list: List[String]): P[Unit] = {
       list match {
         case Nil => Fail
@@ -92,7 +98,7 @@ object FastparseShowdown {
       }
     }
 
-    private def keywords[_: P] = P(choice(BenchmarkInputs.KEYWORDS.asScala.toList))
+    def keywords[_: P] = P(choice(BenchmarkInputs.KEYWORDS.asScala.toList))
 
     // Verify
     for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
@@ -101,13 +107,15 @@ object FastparseShowdown {
         case f => throw new AssertionError(s"fastparse Keywords verification failed for '$keyword': $f")
       }
     }
+  }
 
+  class KeywordsFixture {
     def run(input: String): Any = {
-      fastparse.parse(input, keywords(_))
+      fastparse.parse(input, KeywordsFixture.keywords(_))
     }
   }
 
-  class IgnoreCaseFixture {
+  object IgnoreCaseFixture {
     private def choiceIgnoreCase[_: P](list: List[String]): P[Unit] = {
       list match {
         case Nil => Fail
@@ -115,7 +123,7 @@ object FastparseShowdown {
       }
     }
 
-    private def ignoreCaseKeywords[_: P] = P(choiceIgnoreCase(BenchmarkInputs.KEYWORDS.asScala.toList))
+    def ignoreCaseKeywords[_: P] = P(choiceIgnoreCase(BenchmarkInputs.KEYWORDS.asScala.toList))
 
     // Verify
     for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
@@ -124,9 +132,11 @@ object FastparseShowdown {
         case f => throw new AssertionError(s"fastparse IgnoreCase verification failed for '$keyword': $f")
       }
     }
+  }
 
+  class IgnoreCaseFixture {
     def run(input: String): Any = {
-      fastparse.parse(input, ignoreCaseKeywords(_))
+      fastparse.parse(input, IgnoreCaseFixture.ignoreCaseKeywords(_))
     }
   }
 }

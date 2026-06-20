@@ -12,96 +12,106 @@ import org.parboiled.support.ParsingResult;
 public final class ParboiledShowdown {
 
   public static class IpFixture {
-    private final BasicParseRunner<Object> runner;
+    private static final BasicParseRunner<Object> RUNNER = buildRunner();
 
-    public IpFixture() {
+    private static BasicParseRunner<Object> buildRunner() {
       ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
-      this.runner = new BasicParseRunner<>(parser.ipAddress());
+      return new BasicParseRunner<>(parser.ipAddress());
+    }
 
+    static {
       // Verify
-      ParsingResult<Object> res = runner.run(BenchmarkInputs.IP);
+      ParsingResult<Object> res = RUNNER.run(BenchmarkInputs.IP);
       assertThat(res.matched).isTrue();
     }
 
     public Object run() {
-      return runner.run(BenchmarkInputs.IP);
+      return RUNNER.run(BenchmarkInputs.IP);
     }
   }
 
   public static class StringFixture {
-    private final BasicParseRunner<Object> runner;
+    private static final BasicParseRunner<Object> RUNNER = buildRunner();
 
-    public StringFixture() {
+    private static BasicParseRunner<Object> buildRunner() {
       ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
-      this.runner = new BasicParseRunner<>(parser.quotedString());
+      return new BasicParseRunner<>(parser.quotedString());
+    }
 
+    static {
       // Verify
-      ParsingResult<Object> res1 = runner.run(BenchmarkInputs.STRING_SIMPLE);
+      ParsingResult<Object> res1 = RUNNER.run(BenchmarkInputs.STRING_SIMPLE);
       assertThat(res1.matched).isTrue();
 
-      ParsingResult<Object> res2 = runner.run(BenchmarkInputs.STRING_ESCAPED);
+      ParsingResult<Object> res2 = RUNNER.run(BenchmarkInputs.STRING_ESCAPED);
       assertThat(res2.matched).isTrue();
     }
 
     public Object run(String input) {
-      return runner.run(input);
+      return RUNNER.run(input);
     }
   }
 
   public static class KeywordsFixture {
-    private final BasicParseRunner<Object> runner;
+    private static final BasicParseRunner<Object> RUNNER = buildRunner();
 
-    public KeywordsFixture() {
+    private static BasicParseRunner<Object> buildRunner() {
       ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
-      this.runner = new BasicParseRunner<>(parser.keywords());
+      return new BasicParseRunner<>(parser.keywords());
+    }
 
+    static {
       // Verify
       for (String keyword : BenchmarkInputs.KEYWORDS) {
-        ParsingResult<Object> res = runner.run(keyword);
+        ParsingResult<Object> res = RUNNER.run(keyword);
         assertThat(res.matched).isTrue();
       }
     }
 
     public Object run(String input) {
-      return runner.run(input);
+      return RUNNER.run(input);
     }
   }
 
   public static class IgnoreCaseFixture {
-    private final BasicParseRunner<Object> runner;
+    private static final BasicParseRunner<Object> RUNNER = buildRunner();
 
-    public IgnoreCaseFixture() {
+    private static BasicParseRunner<Object> buildRunner() {
       ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
-      this.runner = new BasicParseRunner<>(parser.keywordsIgnoreCase());
+      return new BasicParseRunner<>(parser.keywordsIgnoreCase());
+    }
 
+    static {
       // Verify
       for (String keyword : BenchmarkInputs.KEYWORDS) {
-        ParsingResult<Object> res = runner.run(keyword.toUpperCase());
+        ParsingResult<Object> res = RUNNER.run(keyword.toUpperCase());
         assertThat(res.matched).isTrue();
       }
     }
 
     public Object run(String input) {
-      return runner.run(input);
+      return RUNNER.run(input);
     }
   }
 
   public static class CalculatorFixture {
-    private final BasicParseRunner<Object> runner;
+    private static final BasicParseRunner<Object> RUNNER = buildRunner();
 
-    public CalculatorFixture() {
+    private static BasicParseRunner<Object> buildRunner() {
       ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
-      this.runner = new BasicParseRunner<>(parser.calculator());
+      return new BasicParseRunner<>(parser.calculator());
+    }
 
+    static {
       // Verify
-      ParsingResult<Object> res = runner.run(BenchmarkInputs.CALCULATOR);
+      ParsingResult<Object> res = RUNNER.run(BenchmarkInputs.CALCULATOR);
       assertThat(res.matched).isTrue();
       assertThat(res.valueStack.isEmpty()).isFalse();
       assertThat((Integer) res.valueStack.peek()).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
     }
 
     public Object run() {
-      return runner.run(BenchmarkInputs.CALCULATOR);
+      return RUNNER.run(BenchmarkInputs.CALCULATOR);
     }
   }
 
@@ -117,34 +127,17 @@ public final class ParboiledShowdown {
 
     public Rule quotedString() {
       return Sequence(
-          '"',
-          ZeroOrMore(
-              FirstOf(
-                  Sequence('\\', ANY),
-                  NoneOf("\"\\")
-              )
-          ),
-          '"',
-          EOI
-      );
+          '"', ZeroOrMore(FirstOf(Sequence('\\', ANY), NoneOf("\"\\"))), '"', EOI);
     }
 
     public Rule keywords() {
-      return Sequence(
-          FirstOf(BenchmarkInputs.KEYWORDS.toArray()),
-          EOI
-      );
+      return Sequence(FirstOf(BenchmarkInputs.KEYWORDS.toArray()), EOI);
     }
 
     public Rule keywordsIgnoreCase() {
       return Sequence(
-          FirstOf(
-              BenchmarkInputs.KEYWORDS.stream()
-                  .map(this::IgnoreCase)
-                  .toArray(Rule[]::new)
-          ),
-          EOI
-      );
+          FirstOf(BenchmarkInputs.KEYWORDS.stream().map(this::IgnoreCase).toArray(Rule[]::new)),
+          EOI);
     }
 
     // Calculator Rule
@@ -166,10 +159,7 @@ public final class ParboiledShowdown {
           ZeroOrMore(
               FirstOf(
                   Sequence(ch('+'), term(), push((Integer) pop(1) + (Integer) pop())),
-                  Sequence(ch('-'), term(), push((Integer) pop(1) - (Integer) pop()))
-              )
-          )
-      );
+                  Sequence(ch('-'), term(), push((Integer) pop(1) - (Integer) pop())))));
     }
 
     public Rule term() {
@@ -178,25 +168,18 @@ public final class ParboiledShowdown {
           ZeroOrMore(
               FirstOf(
                   Sequence(ch('*'), factor(), push((Integer) pop(1) * (Integer) pop())),
-                  Sequence(ch('/'), factor(), push((Integer) pop(1) / (Integer) pop()))
-              )
-          )
-      );
+                  Sequence(ch('/'), factor(), push((Integer) pop(1) / (Integer) pop())))));
     }
 
     public Rule factor() {
-      return FirstOf(
-          Sequence(ch('('), expression(), ch(')')),
-          number()
-      );
+      return FirstOf(Sequence(ch('('), expression(), ch(')')), number());
     }
 
     public Rule number() {
       return Sequence(
           Sequence(Optional('-'), OneOrMore(CharRange('0', '9'))),
           push(Integer.parseInt(match())),
-          whitespace()
-      );
+          whitespace());
     }
   }
 
