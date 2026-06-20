@@ -1439,9 +1439,7 @@ abstract class AbstractStringFormat {
       int cardinality, String input, Collector<? super String, ?, R> collector) {
     requireNonNull(input);
     checkPlaceholderCount(cardinality);
-    return scanAsLists(input)
-        .map(values -> collect(values, collector))
-        .filter(v -> v != null);
+    return scanAsLists(input).map(values -> collect(values, collector)).filter(v -> v != null);
   }
 
   private int numPlaceholders() {
@@ -1481,7 +1479,7 @@ abstract class AbstractStringFormat {
   }
 
   private static <A, R> R collect(
-      List<Substring.Match> matches, Collector<? super String, A, R> collector) {
+      List<? extends CharSequence> matches, Collector<? super String, A, R> collector) {
     A container = collector.supplier().get();
     BiConsumer<A, ? super String> accumulator = collector.accumulator();
     matches.forEach(match -> accumulator.accept(container, match.toString()));
