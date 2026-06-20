@@ -88,7 +88,7 @@ code generation**, **runtime trie dispatching**, and **bytecode generation**:
 Throughput was measured in **operations per millisecond** (higher is better).
 🚀 marks the winner (or neck-and-neck leaders within 15% of the winner):
 
-| Benchmark Scenario | Taker | `cats-parse` | `dot-parse` | `fastparse` | `jparsec` | `parboiled` | `parsecj` | `jjparse` | `antlr4` | **Showdown Winner(s)** |
+| Benchmark Scenario | Taker | `cats-parse` | `dot-parse` | `fastparse` | `jparsec` | `parboiled` | `parsecj` | `jjparse` | `antlr4` | **Winner(s)** |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **IPv4 Address** | $10,260$ | $24,269$ 🚀 | $22,198$ 🚀 | **$24,883$** 🚀 | $10,550$ | $9,308$ | $3,082$ | $706$ | $3,245$ | **`fast / cats / dot`** 🚀 |
 | **Quoted String (Simple)** | $2,844$ | $3,202$ | **$16,327$** 🚀 | $14,002$ 🚀 | $15,109$ 🚀 | $2,928$ | $2,280$ | $595$ | $7,576$ | **`dot / jparsec / fast`** 🚀 |
