@@ -67,7 +67,7 @@ All benchmarks were executed side-by-side on the **same JVM (JDK 24.0.1)** and t
      `dot-parse` shows the highest throughput among Java libraries at **$171$ ops/ms** ☕ via its permutation-trie lookup, followed by `jparsec` at **$91$ ops/ms**, while other libraries (like `parsecj` at **$24$ ops/ms**) show significantly lower throughput.
  
  *   **Sequencing & Bulk Scanning**:
-     `parboiled2` shows the highest throughput in flat sequencing (IPv4) at **$18.5\text{M}$ ops/sec**, followed by `fastparse` ($18.0\text{M}$) and `cats-parse` ($15.4\text{M}$), while `parsecj` is the leading Java library at **$14.0\text{M}$ ops/sec** after regex optimization.
+    `parboiled2` leads flat sequencing (IPv4) at **$18.5\text{M}$ ops/sec**, followed by `fastparse` ($18.0\text{M}$) and `cats-parse` ($15.4\text{M}$). Among Java libraries, `parsecj` achieves **$14.0\text{M}$ ops/sec** by delegating the entire sequence scan to a single flat regular expression, which measures Java's native regex engine performance rather than combinator sequencing overhead.
      For strings with no escapes, `cats-parse` and `fastparse` show the highest throughput overall (**$18.1\text{M}$** and **$17.5\text{M}$ ops/sec**), while `dot-parse` leads Java libraries at **$12.2\text{M}$ ops/sec**. For escaped strings, `taker` shows the highest throughput overall at **$9.5\text{M}$ ops/sec** 🚀, followed by `fastparse` ($8.4\text{M}$) and `jparsec` ($5.7\text{M}$).
  
  *   **Recursive Expression & Block Comment Performance**:
@@ -155,10 +155,8 @@ All benchmarks were executed side-by-side on the **same JVM (JDK 24.0.1)** and t
   * **`parboiled2` & `fastparse` Macro Performance**:
     `parboiled2` ($18.5\text{M}$ ops/sec) and `fastparse` ($18.0\text{M}$ ops/sec) show the highest throughput in flat sequencing. By compiling flat sequencing rules directly into character-matching branches in JVM bytecode at compile-time, they bypass parser object stack framing.
 
-  * **Regex Speedups of `parsecj` & `jjparse`**:
-    After replacing character-by-character loops with regular expression matchers, both libraries showed higher throughput:
-    * **`parsecj`**: Increased from $2,939$ to **$14,028$ ops/ms** — a **$4.7\text{x}$ throughput increase**, ranking first among Java libraries in this scenario.
-    * **`jjparse`**: Increased from $669$ to **$5,823$ ops/ms** — an **$8.7\text{x}$ throughput increase**.
+  * **Regex Delegation vs. Combinator Sequencing**:
+    Both `parsecj` ($14,028\text{ ops/ms}$) and `jjparse` ($5,823\text{ ops/ms}$) achieve their throughput by utilizing a single flat regular expression parser (`regex(...)`). This delegates the entire sequence matching to Java's native regular expression engine. While this represents a significant throughput increase, it measures the performance of the JVM's native regex engine rather than the parser combinator's own monadic sequencing overhead. This highlights that delegating to flat regexes is highly efficient for flat patterns, but bypasses the combinator framework's own execution path.
 
   * **`dot-parse` Sequencing**:
     `dot-parse` compiles flat sequences into allocation-free loops, ranking second among Java libraries at **$11.9\text{M}$ ops/sec**.
