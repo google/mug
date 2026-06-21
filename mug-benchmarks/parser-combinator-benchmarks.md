@@ -123,11 +123,11 @@ in **operations per millisecond** (higher is better):
 
 | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `parsecj` | `taker` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Simple Type (`String`)** | $2,226$ | **$8,492$** ☕ | $1,373$ | $3,525$ | **$8,806$** 🚀 | $1,500$ | $2,581$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Fully Qualified** | $1,083$ | **$3,476$** ☕ | $651$ | $2,124$ | **$5,625$** 🚀 | $884$ | $1,524$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Nested Generics** | $278$ | **$762$** ☕ | $153$ | $428$ | **$1,226$** 🚀 | $187$ | $331$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Annotated Array** | $280$ | **$692$** ☕ | $150$ | $422$ | **$1,142$** 🚀 | $200$ | $309$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Complex Annotation** | $210$ | **$277$** ☕ | $103$ | $170$ | **$667$** 🚀 | $83$ | $128$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Simple Type (`String`)** | $2,321$ | **$7,034$** ☕ | $1,390$ | $3,579$ | **$9,240$** 🚀 | $1,571$ | $2,566$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Fully Qualified** | $1,054$ | **$3,845$** ☕ | $651$ | $2,139$ | **$5,786$** 🚀 | $933$ | $1,546$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Nested Generics** | $287$ | **$800$** ☕ | $156$ | $435$ | **$1,247$** 🚀 | $187$ | $330$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Annotated Array** | $296$ | **$662$** ☕ | $150$ | $426$ | **$1,164$** 🚀 | $203$ | $308$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex Annotation** | $207$ | **$337$** ☕ | $103$ | $167$ | **$671$** 🚀 | $84$ | $130$ | **`fast`** 🚀<br>**`dot`** ☕ |
 
 ### Key Takeaways from the Java Type Shootout
 
@@ -155,7 +155,7 @@ in **operations per millisecond** (higher is better):
 *   **`parsecj` vs `jparsec` (The Combinator Battle)**:
     `parsecj` performs moderately and **consistently outperforms `jparsec`**
     in 4 out of 5 scenarios. However, in the **Complex Annotation** scenario,
-    `parsecj` falls slightly behind `jparsec` ($83$ vs $103$ ops/ms). This is
+    `parsecj` falls slightly behind `jparsec` ($84$ vs $103$ ops/ms). This is
     due to the heavy monadic bind (`.bind(...)`) nesting and recursive
     backtracking (`.attempt()`) we had to introduce in `parsecj` to handle
     class literals and array parameters, which incurs significant lambda

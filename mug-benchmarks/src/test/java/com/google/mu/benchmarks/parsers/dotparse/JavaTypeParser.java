@@ -1,7 +1,5 @@
 package com.google.mu.benchmarks.parsers.dotparse;
 
-import com.google.mu.benchmarks.parsers.javatype.*;
-
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.bmpCodeUnit;
 import static com.google.common.labs.parse.Parser.chars;
@@ -13,6 +11,8 @@ import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.common.labs.parse.Parser.zeroOrMoreDelimited;
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.joining;
 
 import java.util.AbstractMap;
 import java.util.List;
@@ -20,6 +20,10 @@ import java.util.Map;
 import java.util.Set;
 
 import com.google.common.labs.parse.Parser;
+import com.google.mu.benchmarks.parsers.javatype.AnnotationValue;
+import com.google.mu.benchmarks.parsers.javatype.JavaAnnotation;
+import com.google.mu.benchmarks.parsers.javatype.JavaType;
+import com.google.mu.benchmarks.parsers.javatype.TypeSegment;
 import com.google.mu.util.stream.BiCollectors;
 
 /** Standalone dot-parse parser for Java Types. */
@@ -37,17 +41,13 @@ public final class JavaTypeParser {
 
   private static final Parser<String> TYPE_NAME = anyOf(
       PRIMITIVE_TYPE,
-      one(Character::isUpperCase, "uppercase")
-          .then(zeroOrMore(Character::isLetterOrDigit, "alphanumeric"))
-          .source()
+      sequence(one("[A-Z]"), zeroOrMore("[a-zA-Z0-9_]")).source()
   );
 
-  private static final Parser<String> PACKAGE_SEGMENT = one(Character::isLowerCase, "lowercase")
-      .then(zeroOrMore(Character::isLetterOrDigit, "alphanumeric"))
+  private static final Parser<String> PACKAGE_SEGMENT = one("[a-z]")
+      .then(zeroOrMore("[a-zA-Z0-9_]"))
       .source()
       .suchThat(s -> !PRIMITIVES.contains(s), "package segment");
-
-  private static final Parser<List<String>>.OrEmpty PACKAGE_PREFIX = PACKAGE_SEGMENT.followedBy(".").zeroOrMore();
 
   // Unicode escape parsing (\u1234)
   private static final Parser<String> UNICODE_ESCAPE = string("u")
@@ -99,9 +99,9 @@ public final class JavaTypeParser {
 
       // Annotation name (e.g. java.lang.SuppressWarnings)
       Parser<String> annotationName = sequence(
-          PACKAGE_SEGMENT.followedBy(".").zeroOrMore(),
-          TYPE_NAME.atLeastOnceDelimitedBy("."),
-          (pkg, types) -> String.join(".", pkg) + (pkg.isEmpty() ? "" : ".") + String.join(".", types)
+          PACKAGE_SEGMENT.followedBy(".").zeroOrMore(joining(".")),
+          TYPE_NAME.atLeastOnceDelimitedBy(".", joining(".")),
+          (pkg, t) -> pkg + (pkg.isEmpty() ? "" : ".") + t
       );
 
       // Annotation parameter values
@@ -163,15 +163,15 @@ public final class JavaTypeParser {
 
     // Prefix and type segments combined using sequence(OrEmpty, Parser, BiFunction)
     Parser<Map.Entry<List<String>, List<TypeSegment>>> prefixAndSegments = sequence(
-        PACKAGE_PREFIX,
+        PACKAGE_SEGMENT.followedBy(".").zeroOrMore(),
         typeSegment.atLeastOnceDelimitedBy("."),
         AbstractMap.SimpleImmutableEntry::new
     );
 
     return sequence(
         prefixAndSegments,
-        string("[]").zeroOrMore(),
-        (entry, dims) -> new JavaType(entry.getKey(), entry.getValue(), dims.size())
+        string("[]").zeroOrMore(counting()),
+        (entry, dims) -> new JavaType(entry.getKey(), entry.getValue(), dims.intValue())
     );
   });
 
