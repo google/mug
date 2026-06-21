@@ -134,9 +134,10 @@ in **operations per millisecond** (higher is better):
 *   **Google's `dot-parse` Leads the Java Division**:
     `dot-parse` is the fastest Java-native parser library, running **$1.3\text{x}$ to $2.4\text{x}$ faster** than the next
     fastest Java contender (`petitparser` / `antlr4`).
-    On simple types, `dot-parse` ($8,492$ ops/ms) runs neck-and-neck with
-    `fastparse` ($8,806$ ops/ms) within 3.6% by leveraging a zero-allocation,
-    pre-allocated tokenizer that avoids object boxing on the hot path.
+    On simple types, `dot-parse` ($7,034$ ops/ms) is the leading Java library,
+    behind Scala's macro-based `fastparse` ($9,240$ ops/ms) by leveraging a
+    zero-allocation, pre-allocated tokenizer that avoids object boxing on
+    the hot path.
 
 *   **Compile-Time vs. Runtime Combinators**:
     Scala's compile-time macro-based `fastparse` leads overall in all
@@ -146,8 +147,8 @@ in **operations per millisecond** (higher is better):
 
 *   **`taker` Delivers Solid, High-Performance PEG Baselines**:
     The `taker` parser performs well, consistently **beating
-    `antlr4`** on fully qualified ($1,524$ vs $1,083$) and nested generic
-    ($331$ vs $278$) signatures. It also **outperforms `parsecj` and `jparsec`
+    `antlr4`** on fully qualified ($1,546$ vs $1,054$) and nested generic
+    ($330$ vs $287$) signatures. It also **outperforms `parsecj` and `jparsec`
     by nearly $2\text{x}$** across almost all scenarios, proving that a lean
     PEG design with optimized applicative builders (`ApplyBuilder3`) is
     highly competitive.
