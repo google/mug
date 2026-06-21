@@ -7,6 +7,7 @@ import org.jparsec.Terminals;
 import org.jparsec.Tokens;
 import org.jparsec.pattern.Patterns;
 import com.google.mu.benchmarks.parsers.javatype.*;
+import com.google.mu.benchmarks.parsers.BenchmarkInputs;
 
 import java.util.AbstractMap;
 import java.util.List;
@@ -55,7 +56,7 @@ public final class JparsecJavaTypeParser {
     if (token.value() instanceof Tokens.Fragment) {
       Tokens.Fragment f = (Tokens.Fragment) token.value();
       if ("string".equals(f.tag())) {
-        return unescapeString(f.text());
+        return BenchmarkInputs.unescape(f.text());
       }
     }
     return null;
@@ -192,39 +193,7 @@ public final class JparsecJavaTypeParser {
     return root.from(TOKENIZER, ignored);
   }
 
-  /** High-performance Java string literal unescaping helper. */
-  private static String unescapeString(String s) {
-    // Strip surrounding quotes
-    String raw = s.substring(1, s.length() - 1);
-    StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < raw.length(); i++) {
-      char c = raw.charAt(i);
-      if (c == '\\' && i + 1 < raw.length()) {
-        char next = raw.charAt(i + 1);
-        if (next == 'u' && i + 5 < raw.length()) {
-          String hex = raw.substring(i + 2, i + 6);
-          sb.append((char) Integer.parseInt(hex, 16));
-          i += 5;
-        } else {
-          switch (next) {
-            case 'n': sb.append('\n'); break;
-            case 't': sb.append('\t'); break;
-            case 'r': sb.append('\r'); break;
-            case 'f': sb.append('\f'); break;
-            case 'b': sb.append('\b'); break;
-            case '"': sb.append('"'); break;
-            case '\'': sb.append('\''); break;
-            case '\\': sb.append('\\'); break;
-            default: sb.append('\\').append(next); break;
-          }
-          i++;
-        }
-      } else {
-        sb.append(c);
-      }
-    }
-    return sb.toString();
-  }
+
 
 
 

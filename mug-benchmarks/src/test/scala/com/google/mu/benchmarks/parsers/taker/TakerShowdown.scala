@@ -1,6 +1,7 @@
 package com.google.mu.benchmarks.parsers.taker
 
 import com.google.mu.benchmarks.parsers.BenchmarkInputs
+import com.google.mu.benchmarks.parsers.BenchmarkInputs.Keyword
 import io.github.parseworks.taker.CharPredicate
 import io.github.parseworks.taker.Input
 import io.github.parseworks.taker.Result
@@ -16,71 +17,89 @@ object TakerShowdown {
 
   object IpFixture {
     private val PARSER: Taker[String] = Numeric.number
-      .thenSkip(Chars.chr('.'))
-      .thenSkip(Numeric.number)
-      .thenSkip(Chars.chr('.'))
-      .thenSkip(Numeric.number)
-      .thenSkip(Chars.chr('.'))
-      .thenSkip(Numeric.number)
-      .map(_ => "ip")
+      .then(Chars.chr('.'))
+      .map((n, _) => n + ".")
+      .then(Numeric.number)
+      .map((s, n) => s + n)
+      .then(Chars.chr('.'))
+      .map((s, _) => s + ".")
+      .then(Numeric.number)
+      .map((s, n) => s + n)
+      .then(Chars.chr('.'))
+      .map((s, _) => s + ".")
+      .then(Numeric.number)
+      .map((s, n) => s + n)
 
     // Verify
     {
       val res = PARSER.parseAll(BenchmarkInputs.IP)
       assert(res.matches())
       assert(res.input().isEof())
+      assert(res.value() == BenchmarkInputs.IP)
     }
   }
 
   class IpFixture {
-    def run(): Any = IpFixture.PARSER.parseAll(BenchmarkInputs.IP)
+    def run(): Result[String] = IpFixture.PARSER.parseAll(BenchmarkInputs.IP)
   }
 
   object StringFixture {
-    private val PARSER: Taker[String] = Chars.chr('"')
-      .thenSkip(
-        Combinators.oneOf(
-          Chars.chr('\\').then(Chars.chr(_ => true)).map((_, c) => c),
-          Chars.chr(CharPredicate.notAnyOf("\"\\"))
-        ).zeroOrMore()
-      )
-      .thenSkip(Chars.chr('"'))
-      .map(_ => "string")
+    private val escapesMap: java.util.Map[java.lang.Character, java.lang.Character] = {
+      val map = new java.util.HashMap[java.lang.Character, java.lang.Character]()
+      map.put('n', '\n')
+      map.put('t', '\t')
+      map.put('r', '\r')
+      map.put('b', '\b')
+      map.put('f', '\f')
+      map.put('"', '"')
+      map.put('\\', '\\')
+      map.put('/', '/')
+      map
+    }
+
+    private val PARSER: Taker[String] = Lexical.escapedString('"', '\\', escapesMap)
 
     // Verify
     {
       val res1 = PARSER.parseAll(BenchmarkInputs.STRING_SIMPLE)
       assert(res1.matches())
       assert(res1.input().isEof())
+      assert(res1.value() == "hello world!")
 
       val res2 = PARSER.parseAll(BenchmarkInputs.STRING_ESCAPED)
       assert(res2.matches())
       assert(res2.input().isEof())
+      assert(res2.value() == "hello \"world\"!")
     }
   }
 
   class StringFixture {
-    def run(input: String): Any = StringFixture.PARSER.parseAll(input)
+    def run(input: String): Result[String] = StringFixture.PARSER.parseAll(input)
   }
 
   object KeywordsFixture {
-    private val KEYWORD: Taker[String] = Combinators.oneOf(
+    private val KEYWORD: Taker[Keyword] = Combinators.oneOf(
       BenchmarkInputs.KEYWORDS.asScala
-        .map(Lexical.string)
+        .map(kw => Lexical.string(kw).map(_ => BenchmarkInputs.KEYWORD_MAP.get(kw)))
         .toArray: _*
     )
-    private val PARSER: Taker[Integer] = KEYWORD
+    private val PARSER: Taker[java.util.List[Keyword]] = KEYWORD
       .then(
         Chars.chr(',').then(KEYWORD).map((_, kw) => kw).zeroOrMore()
       )
-      .map((kw, list) => java.lang.Integer.valueOf(list.size() + 1))
+      .map((first, rest) => {
+        val list = new java.util.ArrayList[Keyword]()
+        list.add(first)
+        list.addAll(rest)
+        list
+      })
 
     // Verify
     {
       val res = PARSER.parseAll(BenchmarkInputs.KEYWORDS_LIST_CS)
       assert(res.matches())
       assert(res.input().isEof())
-      assert(res.value() == 120)
+      assert(res.value().size() == 120)
 
       val resBad = PARSER.parseAll(BenchmarkInputs.KEYWORDS_LIST_INVALID)
       assert(!resBad.matches() || !resBad.input().isEof())
@@ -88,29 +107,34 @@ object TakerShowdown {
   }
 
   class KeywordsFixture {
-    def run(input: String): Any = {
+    def run(input: String): Result[java.util.List[Keyword]] = {
       KeywordsFixture.PARSER.parseAll(input)
     }
   }
 
   object IgnoreCaseFixture {
-    private val KEYWORD: Taker[String] = Combinators.oneOf(
+    private val KEYWORD: Taker[Keyword] = Combinators.oneOf(
       BenchmarkInputs.KEYWORDS.asScala
-        .map(Lexical.stringIgnoreCase)
+        .map(kw => Lexical.stringIgnoreCase(kw).map(_ => BenchmarkInputs.KEYWORD_MAP.get(kw)))
         .toArray: _*
     )
-    private val PARSER: Taker[Integer] = KEYWORD
+    private val PARSER: Taker[java.util.List[Keyword]] = KEYWORD
       .then(
         Chars.chr(',').then(KEYWORD).map((_, kw) => kw).zeroOrMore()
       )
-      .map((kw, list) => java.lang.Integer.valueOf(list.size() + 1))
+      .map((first, rest) => {
+        val list = new java.util.ArrayList[Keyword]()
+        list.add(first)
+        list.addAll(rest)
+        list
+      })
 
     // Verify
     {
       val res = PARSER.parseAll(BenchmarkInputs.KEYWORDS_LIST_CI)
       assert(res.matches())
       assert(res.input().isEof())
-      assert(res.value() == 120)
+      assert(res.value().size() == 120)
 
       val resBad = PARSER.parseAll(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI)
       assert(!resBad.matches() || !resBad.input().isEof())
@@ -118,7 +142,7 @@ object TakerShowdown {
   }
 
   class IgnoreCaseFixture {
-    def run(input: String): Any = IgnoreCaseFixture.PARSER.parseAll(input)
+    def run(input: String): Result[java.util.List[Keyword]] = IgnoreCaseFixture.PARSER.parseAll(input)
   }
 
   object CalculatorFixture {
@@ -171,7 +195,7 @@ object TakerShowdown {
   }
 
   class CalculatorFixture {
-    def run(): Any = CalculatorFixture.PARSER.parseAll(BenchmarkInputs.CALCULATOR)
+    def run(): Result[Integer] = CalculatorFixture.PARSER.parseAll(BenchmarkInputs.CALCULATOR)
   }
 
   object NestedCommentFixture {
@@ -195,6 +219,7 @@ object TakerShowdown {
   }
 
   class NestedCommentFixture {
-    def run(): Any = NestedCommentFixture.PARSER.parseAll(BenchmarkInputs.NESTED_COMMENT)
+    def run(): Result[Unit] = run(BenchmarkInputs.NESTED_COMMENT)
+    def run(input: String): Result[Unit] = NestedCommentFixture.PARSER.parseAll(input)
   }
 }

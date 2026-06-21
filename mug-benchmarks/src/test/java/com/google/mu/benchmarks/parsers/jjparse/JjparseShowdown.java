@@ -3,6 +3,9 @@ package com.google.mu.benchmarks.parsers.jjparse;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
+import com.google.mu.benchmarks.parsers.BenchmarkInputs.Keyword;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiFunction;
 import jjparse.Parsing;
 import jjparse.StringParsing;
@@ -20,7 +23,7 @@ public final class JjparseShowdown {
           .isTrue();
     }
 
-    public Object run() {
+    public Parsing<Character>.Result<?> run() {
       return jjParserInstance.parse(PARSER, Input.of("jjIp", BenchmarkInputs.IP));
     }
   }
@@ -43,14 +46,14 @@ public final class JjparseShowdown {
           .isTrue();
     }
 
-    public Object run(String input) {
+    public Parsing<Character>.Result<?> run(String input) {
       return jjParserInstance.parse(PARSER, Input.of("jjString", input));
     }
   }
 
   public static class KeywordsFixture {
     private static final JjParserImpl jjParserInstance = new JjParserImpl();
-    private static final Parsing<Character>.Parser<Integer> PARSER =
+    private static final Parsing<Character>.Parser<List<Keyword>> PARSER =
         jjParserInstance
             .regex(
                 "("
@@ -58,15 +61,22 @@ public final class JjparseShowdown {
                     + ")(,("
                     + String.join("|", BenchmarkInputs.KEYWORDS)
                     + "))*")
-            .map(str -> (int) str.chars().filter(c -> c == ',').count() + 1);
+            .map(
+                str -> {
+                  List<Keyword> list = new ArrayList<>();
+                  for (String s : str.split(",")) {
+                    list.add(BenchmarkInputs.KEYWORD_MAP.get(s));
+                  }
+                  return list;
+                });
 
     static {
       // Verify
-      assertThat(
-              jjParserInstance
-                  .parse(PARSER, Input.of("jjKeywords", BenchmarkInputs.KEYWORDS_LIST_CS))
-                  .getOrFail())
-          .isEqualTo(120);
+      List<Keyword> result =
+          jjParserInstance
+              .parse(PARSER, Input.of("jjKeywords", BenchmarkInputs.KEYWORDS_LIST_CS))
+              .getOrFail();
+      assertThat(result.size()).isEqualTo(120);
       assertThat(
               jjParserInstance
                   .parse(PARSER, Input.of("jjKeywords", BenchmarkInputs.KEYWORDS_LIST_INVALID))
@@ -74,14 +84,14 @@ public final class JjparseShowdown {
           .isFalse();
     }
 
-    public Object run(String input) {
+    public Parsing<Character>.Result<List<Keyword>> run(String input) {
       return jjParserInstance.parse(PARSER, Input.of("jjKeywords", input));
     }
   }
 
   public static class IgnoreCaseFixture {
     private static final JjParserImpl jjParserInstance = new JjParserImpl();
-    private static final Parsing<Character>.Parser<Integer> PARSER =
+    private static final Parsing<Character>.Parser<List<Keyword>> PARSER =
         jjParserInstance
             .regex(
                 "(?i)("
@@ -89,15 +99,22 @@ public final class JjparseShowdown {
                     + ")(,("
                     + String.join("|", BenchmarkInputs.KEYWORDS)
                     + "))*")
-            .map(str -> (int) str.chars().filter(c -> c == ',').count() + 1);
+            .map(
+                str -> {
+                  List<Keyword> list = new ArrayList<>();
+                  for (String s : str.split(",")) {
+                    list.add(BenchmarkInputs.KEYWORD_MAP.get(s.toLowerCase()));
+                  }
+                  return list;
+                });
 
     static {
       // Verify
-      assertThat(
-              jjParserInstance
-                  .parse(PARSER, Input.of("jjIgnoreCase", BenchmarkInputs.KEYWORDS_LIST_CI))
-                  .getOrFail())
-          .isEqualTo(120);
+      List<Keyword> result =
+          jjParserInstance
+              .parse(PARSER, Input.of("jjIgnoreCase", BenchmarkInputs.KEYWORDS_LIST_CI))
+              .getOrFail();
+      assertThat(result.size()).isEqualTo(120);
       assertThat(
               jjParserInstance
                   .parse(PARSER, Input.of("jjIgnoreCase", BenchmarkInputs.KEYWORDS_LIST_INVALID_CI))
@@ -105,7 +122,7 @@ public final class JjparseShowdown {
           .isFalse();
     }
 
-    public Object run(String input) {
+    public Parsing<Character>.Result<List<Keyword>> run(String input) {
       return jjParserInstance.parse(PARSER, Input.of("jjIgnoreCase", input));
     }
   }
@@ -121,7 +138,7 @@ public final class JjparseShowdown {
       assertThat((Integer) res.getOrFail()).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
     }
 
-    public Object run() {
+    public Parsing<Character>.Result<Integer> run() {
       return jjParserInstance.parse(PARSER, Input.of("jjcalc", BenchmarkInputs.CALCULATOR));
     }
   }
@@ -138,19 +155,21 @@ public final class JjparseShowdown {
       assertThat(res.isSuccess()).isTrue();
     }
 
-    public Object run() {
-      return jjParserInstance.parse(
-          PARSER, Input.of("jjNestedComment", BenchmarkInputs.NESTED_COMMENT));
+    public Parsing<Character>.Result<?> run() {
+      return run(BenchmarkInputs.NESTED_COMMENT);
+    }
+
+    public Parsing<Character>.Result<?> run(String input) {
+      return jjParserInstance.parse(PARSER, Input.of("jjNestedComment", input));
     }
   }
 
   // Inner Parser Rules Implementation
   public static class JjParserImpl extends StringParsing {
-    public final Parsing<Character>.Parser<String> ip = regex("[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+");
-    public final Parsing<Character>.Parser<String> quotedString = regex("\"([^\"\\\\]|\\\\.)*\"");
+    public final Parser<String> ip = regex("[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+");
+    public final Parser<String> quotedString;
 
-    @SuppressWarnings("unchecked")
-    public final Parsing<Character>.Parser<String> keywords =
+    public final Parser<String> keywords =
         regex(
             "("
                 + String.join("|", BenchmarkInputs.KEYWORDS)
@@ -158,7 +177,7 @@ public final class JjparseShowdown {
                 + String.join("|", BenchmarkInputs.KEYWORDS)
                 + "))*");
 
-    public final Parsing<Character>.Parser<String> keywordsIgnoreCase =
+    public final Parser<String> keywordsIgnoreCase =
         regex(
             "(?i)("
                 + String.join("|", BenchmarkInputs.KEYWORDS)
@@ -166,13 +185,19 @@ public final class JjparseShowdown {
                 + String.join("|", BenchmarkInputs.KEYWORDS)
                 + "))*");
 
-    public final Parsing<Character>.Parser<?> nestedComment;
+    public final Parser<?> nestedComment;
 
     // Calculator Rules
-    public final Parsing<Character>.Parser<Integer> calculator;
+    public final Parser<Integer> calculator;
 
     @SuppressWarnings("unchecked")
     public JjParserImpl() {
+      setSkipParser(success(() -> null));
+
+      // Quoted String
+      this.quotedString = regex("\"([^\"\\\\]|\\\\.)*\"")
+          .map(BenchmarkInputs::unescape);
+
       var number = token(regex("-?[0-9]+").map(Integer::parseInt));
       var ref = new ParserRef<Integer>();
       var atom =

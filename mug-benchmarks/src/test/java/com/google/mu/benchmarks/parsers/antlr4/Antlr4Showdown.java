@@ -6,6 +6,9 @@ import static org.antlr.v4.runtime.CharStreams.fromString;
 import com.google.mu.benchmarks.ShowdownLexer;
 import com.google.mu.benchmarks.ShowdownParser;
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
+import com.google.mu.benchmarks.parsers.BenchmarkInputs.Keyword;
+import java.util.ArrayList;
+import java.util.List;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 
@@ -39,11 +42,15 @@ public final class Antlr4Showdown {
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
       parser.reset();
-      parser.ip();
+      String result = parser.ip().getText();
+      if (result.endsWith("<EOF>")) {
+        result = result.substring(0, result.length() - 5);
+      }
+      assertThat(result).isEqualTo(BenchmarkInputs.IP);
       assertThat(parser.getNumberOfSyntaxErrors()).isEqualTo(0);
     }
 
-    public Object run() {
+    public String run() {
       ShowdownLexer lexer = LEXER.get();
       CommonTokenStream tokenStream = TOKEN_STREAM.get();
       ShowdownParser parser = PARSER.get();
@@ -53,8 +60,11 @@ public final class Antlr4Showdown {
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
       parser.reset();
-      parser.ip();
-      return parser;
+      String result = parser.ip().getText();
+      if (result.endsWith("<EOF>")) {
+        result = result.substring(0, result.length() - 5);
+      }
+      return result;
     }
   }
 
@@ -87,8 +97,9 @@ public final class Antlr4Showdown {
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
       parser.reset();
-      parser.quotedString();
+      ShowdownParser.QuotedStringContext ctx1 = parser.quotedString();
       assertThat(parser.getNumberOfSyntaxErrors()).isEqualTo(0);
+      assertThat(BenchmarkInputs.unescape(ctx1.QUOTED_STRING().getText())).isEqualTo("hello world!");
 
       // Verify Escaped
       CharStream charStream2 = fromString(BenchmarkInputs.STRING_ESCAPED);
@@ -96,22 +107,24 @@ public final class Antlr4Showdown {
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
       parser.reset();
-      parser.quotedString();
+      ShowdownParser.QuotedStringContext ctx2 = parser.quotedString();
       assertThat(parser.getNumberOfSyntaxErrors()).isEqualTo(0);
+      assertThat(BenchmarkInputs.unescape(ctx2.QUOTED_STRING().getText())).isEqualTo("hello \"world\"!");
     }
 
-    public Object run(String input) {
+    public String run(String input) {
       ShowdownLexer lexer = LEXER.get();
       CommonTokenStream tokenStream = TOKEN_STREAM.get();
       ShowdownParser parser = PARSER.get();
-
-      CharStream charStream = fromString(input);
-      lexer.setInputStream(charStream);
+      lexer.setInputStream(fromString(input));
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
       parser.reset();
-      parser.quotedString();
-      return parser;
+      ShowdownParser.QuotedStringContext ctx = parser.quotedString();
+      if (parser.getNumberOfSyntaxErrors() > 0) {
+        throw new RuntimeException("Syntax error");
+      }
+      return BenchmarkInputs.unescape(ctx.QUOTED_STRING().getText());
     }
   }
 
@@ -158,7 +171,7 @@ public final class Antlr4Showdown {
       assertThat(parser.getNumberOfSyntaxErrors()).isGreaterThan(0);
     }
 
-    public Object run(String input) {
+    public List<Keyword> run(String input) {
       ShowdownLexer lexer = LEXER.get();
       CommonTokenStream tokenStream = TOKEN_STREAM.get();
       ShowdownParser parser = PARSER.get();
@@ -168,8 +181,15 @@ public final class Antlr4Showdown {
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
       parser.reset();
-      parser.keywords();
-      return parser;
+      ShowdownParser.KeywordsContext ctx = parser.keywords();
+      if (parser.getNumberOfSyntaxErrors() > 0) {
+        throw new RuntimeException("ANTLR4 parsing failed with " + parser.getNumberOfSyntaxErrors() + " syntax errors");
+      }
+      List<Keyword> list = new ArrayList<>();
+      for (ShowdownParser.KeywordContext k : ctx.keyword()) {
+        list.add(BenchmarkInputs.KEYWORD_MAP.get(k.getText()));
+      }
+      return list;
     }
   }
 
@@ -216,7 +236,7 @@ public final class Antlr4Showdown {
       assertThat(parser.getNumberOfSyntaxErrors()).isGreaterThan(0);
     }
 
-    public Object run(String input) {
+    public List<Keyword> run(String input) {
       ShowdownLexer lexer = LEXER.get();
       CommonTokenStream tokenStream = TOKEN_STREAM.get();
       ShowdownParser parser = PARSER.get();
@@ -226,8 +246,15 @@ public final class Antlr4Showdown {
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
       parser.reset();
-      parser.keywordsIgnoreCase();
-      return parser;
+      ShowdownParser.KeywordsIgnoreCaseContext ctx = parser.keywordsIgnoreCase();
+      if (parser.getNumberOfSyntaxErrors() > 0) {
+        throw new RuntimeException("ANTLR4 parsing failed with " + parser.getNumberOfSyntaxErrors() + " syntax errors");
+      }
+      List<Keyword> list = new ArrayList<>();
+      for (ShowdownParser.KeywordIgnoreCaseContext k : ctx.keywordIgnoreCase()) {
+        list.add(BenchmarkInputs.KEYWORD_MAP.get(k.getText().toLowerCase()));
+      }
+      return list;
     }
   }
 
@@ -264,7 +291,7 @@ public final class Antlr4Showdown {
       assertThat(parser.getNumberOfSyntaxErrors()).isEqualTo(0);
     }
 
-    public Object run() {
+    public ShowdownParser run() {
       ShowdownLexer lexer = LEXER.get();
       CommonTokenStream tokenStream = TOKEN_STREAM.get();
       ShowdownParser parser = PARSER.get();
@@ -312,18 +339,25 @@ public final class Antlr4Showdown {
       assertThat(parser.getNumberOfSyntaxErrors()).isEqualTo(0);
     }
 
-    public Object run() {
+    public String run() {
+      return run(BenchmarkInputs.NESTED_COMMENT);
+    }
+
+    public String run(String input) {
       ShowdownLexer lexer = LEXER.get();
       CommonTokenStream tokenStream = TOKEN_STREAM.get();
       ShowdownParser parser = PARSER.get();
 
-      CharStream charStream = fromString(BenchmarkInputs.NESTED_COMMENT);
+      CharStream charStream = fromString(input);
       lexer.setInputStream(charStream);
       tokenStream.setTokenSource(lexer);
       parser.setInputStream(tokenStream);
       parser.reset();
-      parser.nestedCommentRoot();
-      return parser;
+      ShowdownParser.NestedCommentRootContext ctx = parser.nestedCommentRoot();
+      if (parser.getNumberOfSyntaxErrors() > 0) {
+        throw new RuntimeException("ANTLR4 parsing failed with " + parser.getNumberOfSyntaxErrors() + " syntax errors");
+      }
+      return ctx.getText();
     }
   }
 

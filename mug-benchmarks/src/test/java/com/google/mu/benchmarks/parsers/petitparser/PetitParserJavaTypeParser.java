@@ -87,46 +87,8 @@ public final class PetitParserJavaTypeParser {
     return packageSegment().seq(CharacterParser.of('.').trim()).pick(0).star();
   }
 
-  private static Parser unicodeEscape() {
-    Parser hex = CharacterParser.pattern("0-9a-fA-F");
-    return CharacterParser.of('u')
-        .seq(hex.times(4).flatten())
-        .map((List<Object> x) -> {
-          String hexStr = (String) x.get(1);
-          return Character.toString((char) Integer.parseInt(hexStr, 16));
-        });
-  }
-
-  private static Parser cStyleEscape() {
-    return CharacterParser.of('n').map(x -> "\n")
-        .or(CharacterParser.of('t').map(x -> "\t"))
-        .or(CharacterParser.of('r').map(x -> "\r"))
-        .or(CharacterParser.of('f').map(x -> "\f"))
-        .or(CharacterParser.of('b').map(x -> "\b"))
-        .or(CharacterParser.of('"').map(x -> "\""))
-        .or(CharacterParser.of('\'').map(x -> "'"))
-        .or(CharacterParser.of('\\').map(x -> "\\"));
-  }
-
-  private static Parser escapedChar() {
-    return CharacterParser.of('\\')
-        .seq(unicodeEscape().or(cStyleEscape()))
-        .map((List<Object> x) -> (String) x.get(1));
-  }
-
-  private static Parser normalChar() {
-    return CharacterParser.pattern("^\"\\").map(c -> Character.toString((Character) c));
-  }
-
   private static Parser stringLiteral() {
-    return CharacterParser.of('"')
-        .seq(escapedChar().or(normalChar()).star())
-        .seq(CharacterParser.of('"'))
-        .map((List<Object> x) -> {
-          List<String> chars = (List<String>) x.get(1);
-          return String.join("", chars);
-        })
-        .trim();
+    return PetitParserShowdown.StringFixture.PARSER.trim();
   }
 
   private static Parser integerPart() {

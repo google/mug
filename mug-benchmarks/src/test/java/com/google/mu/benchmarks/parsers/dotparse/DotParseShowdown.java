@@ -9,75 +9,83 @@ import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.truth.Truth.assertThat;
-import static java.util.stream.Collectors.counting;
 import static org.junit.Assert.assertThrows;
+
+import java.util.List;
 
 import com.google.common.labs.parse.OperatorTable;
 import com.google.common.labs.parse.Parser;
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
+import com.google.mu.benchmarks.parsers.BenchmarkInputs.Keyword;
 
 public final class DotParseShowdown {
 
   public static class IpFixture {
-    private static final Parser<?> PARSER = buildParser();
+    private static final Parser<String> PARSER = buildParser();
 
-    private static Parser<?> buildParser() {
+    private static Parser<String> buildParser() {
       Parser<?> dot = string(".");
-      return sequence(digits(), dot, digits(), dot, digits(), dot, digits()).thenReturn("ip");
+      return sequence(digits(), dot, digits(), dot, digits(), dot, digits()).source();
     }
 
     static {
-      assertThat(PARSER.parse(BenchmarkInputs.IP)).isNotNull();
+      assertThat(PARSER.parse(BenchmarkInputs.IP)).isEqualTo(BenchmarkInputs.IP);
     }
 
-    public Object run() {
+    public String run() {
       return PARSER.parse(BenchmarkInputs.IP);
     }
   }
 
   public static class StringFixture {
-    private static final Parser<?> PARSER =
-        quotedByWithEscapes("\"", '"', chars(1)).thenReturn("string");
+    private static final Parser<String> PARSER =
+        quotedByWithEscapes("\"", '"', chars(1));
 
     static {
-      assertThat(PARSER.parse(BenchmarkInputs.STRING_SIMPLE)).isNotNull();
-      assertThat(PARSER.parse(BenchmarkInputs.STRING_ESCAPED)).isNotNull();
+      assertThat(PARSER.parse(BenchmarkInputs.STRING_SIMPLE)).isEqualTo("hello world!");
+      assertThat(PARSER.parse(BenchmarkInputs.STRING_ESCAPED)).isEqualTo("hello \"world\"!");
     }
 
-    public Object run(String input) {
+    public String run(String input) {
       return PARSER.parse(input);
     }
   }
 
   public static class KeywordsFixture {
-    private static final Parser<?> KEYWORD =
-        BenchmarkInputs.KEYWORDS.stream().map(Parser::string).collect(or());
-    private static final Parser<Long> PARSER = KEYWORD.atLeastOnceDelimitedBy(",", counting());
+    private static final Parser<Keyword> KEYWORD =
+        BenchmarkInputs.KEYWORDS.stream()
+            .map(kw -> Parser.string(kw).thenReturn(BenchmarkInputs.KEYWORD_MAP.get(kw)))
+            .collect(or());
+    private static final Parser<List<Keyword>> PARSER = KEYWORD.atLeastOnceDelimitedBy(",");
 
     static {
-      assertThat(PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS)).isEqualTo(120L);
+      List<Keyword> result = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS);
+      assertThat(result.size()).isEqualTo(120);
       assertThrows(
           Parser.ParseException.class, () -> PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID));
     }
 
-    public Object run(String input) {
+    public List<Keyword> run(String input) {
       return PARSER.parse(input);
     }
   }
 
   public static class IgnoreCaseFixture {
-    private static final Parser<?> KEYWORD =
-        BenchmarkInputs.KEYWORDS.stream().map(Parser::caseInsensitive).collect(or());
-    private static final Parser<Long> PARSER = KEYWORD.atLeastOnceDelimitedBy(",", counting());
+    private static final Parser<Keyword> KEYWORD =
+        BenchmarkInputs.KEYWORDS.stream()
+            .map(kw -> Parser.caseInsensitive(kw).thenReturn(BenchmarkInputs.KEYWORD_MAP.get(kw)))
+            .collect(or());
+    private static final Parser<List<Keyword>> PARSER = KEYWORD.atLeastOnceDelimitedBy(",");
 
     static {
-      assertThat(PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CI)).isEqualTo(120L);
+      List<Keyword> result = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CI);
+      assertThat(result.size()).isEqualTo(120);
       assertThrows(
           Parser.ParseException.class,
           () -> PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI));
     }
 
-    public Object run(String input) {
+    public List<Keyword> run(String input) {
       return PARSER.parse(input);
     }
   }
@@ -100,7 +108,7 @@ public final class DotParseShowdown {
       assertThat(res).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
     }
 
-    public Object run() {
+    public Integer run() {
       return PARSER.parseSkipping(Character::isWhitespace, BenchmarkInputs.CALCULATOR);
     }
   }
@@ -114,8 +122,12 @@ public final class DotParseShowdown {
           .isEqualTo(BenchmarkInputs.NESTED_COMMENT_EXPECTED_INNER);
     }
 
-    public Object run() {
-      return PARSER.parse(BenchmarkInputs.NESTED_COMMENT);
+    public String run() {
+      return run(BenchmarkInputs.NESTED_COMMENT);
+    }
+
+    public String run(String input) {
+      return PARSER.parse(input);
     }
   }
 

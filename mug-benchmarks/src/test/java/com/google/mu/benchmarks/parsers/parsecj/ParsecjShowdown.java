@@ -13,6 +13,9 @@ import static org.javafp.parsecj.Text.string;
 import static org.javafp.parsecj.Text.wspaces;
 
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
+import com.google.mu.benchmarks.parsers.BenchmarkInputs.Keyword;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BinaryOperator;
 import org.javafp.parsecj.Parser;
 import org.javafp.parsecj.Reply;
@@ -21,106 +24,130 @@ import org.javafp.parsecj.input.Input;
 public final class ParsecjShowdown {
 
   public static class IpFixture {
-    private static final Parser<Character, ?> PARSER = buildParser();
-
-    private static Parser<Character, ?> buildParser() {
-      Parser<Character, String> digits = intr.map(Object::toString);
-      return digits
-          .then(chr('.'))
-          .then(digits)
-          .then(chr('.'))
-          .then(digits)
-          .then(chr('.'))
-          .then(digits)
-          .map(x -> "ip");
-    }
+    private static final Parser<Character, String> PARSER = regex("[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+");
 
     static {
-      assertThat(PARSER.parse(Input.of(BenchmarkInputs.IP)).isOk()).isTrue();
+      try {
+        assertThat(PARSER.parse(Input.of(BenchmarkInputs.IP)).getResult()).isEqualTo(BenchmarkInputs.IP);
+      } catch (Exception e) {
+        throw new AssertionError(e);
+      }
     }
 
-    public Object run() {
+    public Reply<Character, String> run() {
       return PARSER.parse(Input.of(BenchmarkInputs.IP));
     }
   }
 
   public static class StringFixture {
-    private static final Parser<Character, ?> PARSER = buildParser();
+    private static final Parser<Character, String> PARSER = buildParser();
 
-    private static Parser<Character, ?> buildParser() {
-      Parser<Character, String> escape =
-          chr('\\').then(satisfy((Character c) -> true)).map(c -> "\\" + c);
-      Parser<Character, String> normal =
-          satisfy((Character c) -> c != '"' && c != '\\').map(c -> String.valueOf(c));
-      return choice(normal, escape).many().map(x -> "string").between(chr('"'), chr('"'));
+    private static Parser<Character, String> buildParser() {
+      return regex("\"([^\"\\\\]|\\\\.)*\"").map(BenchmarkInputs::unescape);
     }
 
     static {
-      // Verify
-      {
-        Reply<Character, ?> res1 = PARSER.parse(Input.of(BenchmarkInputs.STRING_SIMPLE));
-        assertThat(res1.isOk()).isTrue();
-      }
-      {
-        Reply<Character, ?> res2 = PARSER.parse(Input.of(BenchmarkInputs.STRING_ESCAPED));
-        assertThat(res2.isOk()).isTrue();
+      try {
+        assertThat(PARSER.parse(Input.of(BenchmarkInputs.STRING_SIMPLE)).getResult())
+            .isEqualTo("hello world!");
+        assertThat(PARSER.parse(Input.of(BenchmarkInputs.STRING_ESCAPED)).getResult())
+            .isEqualTo("hello \"world\"!");
+      } catch (Exception e) {
+        throw new AssertionError(e);
       }
     }
 
-    public Object run(String input) {
+    public Reply<Character, String> run(String input) {
       return PARSER.parse(Input.of(input));
     }
   }
 
   public static class KeywordsFixture {
-    private static final Parser<Character, Integer> PARSER =
-        regex(
-                "("
-                    + String.join("|", BenchmarkInputs.KEYWORDS)
-                    + ")(,("
-                    + String.join("|", BenchmarkInputs.KEYWORDS)
-                    + "))*")
-            .map(str -> (int) str.chars().filter(c -> c == ',').count() + 1)
+    @SuppressWarnings("unchecked")
+    private static final Parser<Character, Keyword> KEYWORD =
+        choice(
+            BenchmarkInputs.KEYWORDS.stream()
+                .map(
+                    kw ->
+                        string(kw)
+                            .then(retn(BenchmarkInputs.KEYWORD_MAP.get(kw)))
+                            .attempt())
+                .toArray(Parser[]::new));
+
+    @SuppressWarnings("unchecked")
+    private static final Parser<Character, List<Keyword>> PARSER =
+        KEYWORD
+            .bind(
+                first ->
+                    chr(',')
+                        .then(KEYWORD)
+                        .many()
+                        .map(
+                            rest -> {
+                              List<Keyword> list = new ArrayList<>();
+                              list.add(first);
+                              rest.forEach(list::add);
+                              return list;
+                            }))
             .between(retn(null), eof());
 
     static {
       try {
-        assertThat(PARSER.parse(Input.of(BenchmarkInputs.KEYWORDS_LIST_CS)).getResult())
-            .isEqualTo(120);
+        List<Keyword> result =
+            PARSER.parse(Input.of(BenchmarkInputs.KEYWORDS_LIST_CS)).getResult();
+        assertThat(result.size()).isEqualTo(120);
       } catch (Exception e) {
         throw new AssertionError(e);
       }
       assertThat(PARSER.parse(Input.of(BenchmarkInputs.KEYWORDS_LIST_INVALID)).isOk()).isFalse();
     }
 
-    public Object run(String input) {
+    public Reply<Character, List<Keyword>> run(String input) {
       return PARSER.parse(Input.of(input));
     }
   }
 
   public static class IgnoreCaseFixture {
     @SuppressWarnings("unchecked")
-    private static final Parser<Character, Integer> PARSER =
-        regex(
-                "(?i)("
-                    + String.join("|", BenchmarkInputs.KEYWORDS)
-                    + ")(,("
-                    + String.join("|", BenchmarkInputs.KEYWORDS)
-                    + "))*")
-            .map(str -> (int) str.chars().filter(c -> c == ',').count() + 1)
+    private static final Parser<Character, Keyword> KEYWORD_CI =
+        choice(
+            BenchmarkInputs.KEYWORDS.stream()
+                .map(
+                    kw ->
+                        regex("(?i)" + kw)
+                            .then(retn(BenchmarkInputs.KEYWORD_MAP.get(kw)))
+                            .attempt())
+                .toArray(Parser[]::new));
+
+    @SuppressWarnings("unchecked")
+    private static final Parser<Character, List<Keyword>> PARSER =
+        KEYWORD_CI
+            .bind(
+                first ->
+                    chr(',')
+                        .then(KEYWORD_CI)
+                        .many()
+                        .map(
+                            rest -> {
+                              List<Keyword> list = new ArrayList<>();
+                              list.add(first);
+                              rest.forEach(list::add);
+                              return list;
+                            }))
             .between(retn(null), eof());
 
     static {
       try {
-        assertThat(PARSER.parse(Input.of(BenchmarkInputs.KEYWORDS_LIST_CI)).getResult())
-            .isEqualTo(120);
+        List<Keyword> result =
+            PARSER.parse(Input.of(BenchmarkInputs.KEYWORDS_LIST_CI)).getResult();
+        assertThat(result.size()).isEqualTo(120);
       } catch (Exception e) {
         throw new AssertionError(e);
       }
       assertThat(PARSER.parse(Input.of(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI)).isOk()).isFalse();
     }
 
-    public Object run(String input) {
+    public Reply<Character, List<Keyword>> run(String input) {
       return PARSER.parse(Input.of(input));
     }
   }
@@ -163,7 +190,7 @@ public final class ParsecjShowdown {
       }
     }
 
-    public Object run() {
+    public Reply<Character, Integer> run() {
       return PARSER.parse(Input.of(BenchmarkInputs.CALCULATOR));
     }
   }
@@ -190,8 +217,12 @@ public final class ParsecjShowdown {
       assertThat(reply.isOk()).isTrue();
     }
 
-    public Object run() {
-      return PARSER.parse(Input.of(BenchmarkInputs.NESTED_COMMENT));
+    public Reply<Character, ?> run() {
+      return run(BenchmarkInputs.NESTED_COMMENT);
+    }
+
+    public Reply<Character, ?> run(String input) {
+      return PARSER.parse(Input.of(input));
     }
   }
 

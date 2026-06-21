@@ -1,6 +1,7 @@
 package com.google.mu.benchmarks.parsers.fastparse
 
 import com.google.mu.benchmarks.parsers.BenchmarkInputs
+import com.google.mu.benchmarks.parsers.BenchmarkInputs.Keyword
 import scala.jdk.CollectionConverters._
 
 // =========================================================================
@@ -38,7 +39,7 @@ object FastparseCalculatorShowdown {
   }
 
   class CalculatorFixture {
-    def run(): Any = {
+    def run(): Parsed[Int] = {
       fastparse.parse(BenchmarkInputs.CALCULATOR, CalculatorFixture.entry(_))
     }
   }
@@ -53,59 +54,61 @@ object FastparseShowdown {
   object IpFixture {
     private def dot[_: P] = P( "." )
     private def digits[_: P] = P( CharsWhileIn("0-9") )
-    def parser[_: P] = P( digits ~ dot ~ digits ~ dot ~ digits ~ dot ~ digits )
+    def parser[_: P]: P[String] = P( (digits ~ dot ~ digits ~ dot ~ digits ~ dot ~ digits).! )
 
     // Verify
     fastparse.parse(BenchmarkInputs.IP, parser(_)) match {
-      case Parsed.Success(_, _) =>
+      case Parsed.Success(value, _) if value == BenchmarkInputs.IP =>
       case f => throw new AssertionError(s"fastparse IP verification failed: $f")
     }
   }
 
   class IpFixture {
-    def run(): Any = {
+    def run(): Parsed[String] = {
       fastparse.parse(BenchmarkInputs.IP, IpFixture.parser(_))
     }
   }
 
   object StringFixture {
-    private def escape[_: P] = P( "\\" ~ AnyChar )
-    private def normalChar[_: P] = P( CharPred(c => c != '"' && c != '\\') )
-    def str[_: P] = P( "\"" ~ (escape | normalChar).rep ~ "\"" )
+    private def stringLiteral[_: P]: P[String] = P( "\"" ~ (CharsWhile(c => c != '"' && c != '\\') | "\\" ~ AnyChar).rep ~ "\"" ).!
+    def str[_: P]: P[String] = stringLiteral.map { rawText =>
+      StringContext.processEscapes(rawText.substring(1, rawText.length - 1))
+    }
 
     // Verify
     fastparse.parse(BenchmarkInputs.STRING_SIMPLE, str(_)) match {
-      case Parsed.Success(_, _) =>
+      case Parsed.Success(val1, _) if val1 == "hello world!" =>
       case f => throw new AssertionError(s"fastparse String simple verification failed: $f")
     }
     fastparse.parse(BenchmarkInputs.STRING_ESCAPED, str(_)) match {
-      case Parsed.Success(_, _) =>
+      case Parsed.Success(val2, _) if val2 == "hello \"world\"!" =>
       case f => throw new AssertionError(s"fastparse String escaped verification failed: $f")
     }
   }
 
   class StringFixture {
-    def run(input: String): Any = {
+    def run(input: String): Parsed[String] = {
       fastparse.parse(input, StringFixture.str(_))
     }
   }
 
   object KeywordsFixture {
-    private def choice[_: P](list: List[String]): P[Unit] = {
+    private def choice[_: P](list: List[String]): P[Keyword] = {
       list match {
         case Nil => Fail
-        case head :: tail => P(head | choice(tail))
+        case head :: tail =>
+          val mappedHead = P(head).map(_ => BenchmarkInputs.KEYWORD_MAP.get(head))
+          P(mappedHead | choice(tail))
       }
     }
 
-    private def keyword[_: P] = P(choice(BenchmarkInputs.KEYWORDS.asScala.toList))
-    def keywords[_: P] = P( keyword.rep(sep = ",") )
-    def keywordsList[_: P] = P( keywords ~ End )
-    private def verifyingList[_: P] = P( keywords.! ~ End ).map(_.count(_ == ',') + 1)
+    private def keyword[_: P]: P[Keyword] = P(choice(BenchmarkInputs.KEYWORDS.asScala.toList))
+    def keywords[_: P]: P[Seq[Keyword]] = P( keyword.rep(sep = ",") )
+    def keywordsList[_: P]: P[java.util.List[Keyword]] = P( keywords ~ End ).map(_.asJava)
 
     // Verify
-    fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_CS, verifyingList(_)) match {
-      case Parsed.Success(120, _) =>
+    fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_CS, keywordsList(_)) match {
+      case Parsed.Success(result, _) if result.size() == 120 =>
       case f => throw new AssertionError(s"fastparse Keywords verification failed: $f")
     }
     fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID, keywordsList(_)) match {
@@ -115,27 +118,28 @@ object FastparseShowdown {
   }
 
   class KeywordsFixture {
-    def run(input: String): Any = {
+    def run(input: String): Parsed[java.util.List[Keyword]] = {
       fastparse.parse(input, KeywordsFixture.keywordsList(_))
     }
   }
 
   object IgnoreCaseFixture {
-    private def choiceIgnoreCase[_: P](list: List[String]): P[Unit] = {
+    private def choiceIgnoreCase[_: P](list: List[String]): P[Keyword] = {
       list match {
         case Nil => Fail
-        case head :: tail => P(IgnoreCase(head) | choiceIgnoreCase(tail))
+        case head :: tail =>
+          val mappedHead = P(IgnoreCase(head)).map(_ => BenchmarkInputs.KEYWORD_MAP.get(head))
+          P(mappedHead | choiceIgnoreCase(tail))
       }
     }
 
-    private def ignoreCaseKeyword[_: P] = P(choiceIgnoreCase(BenchmarkInputs.KEYWORDS.asScala.toList))
-    def ignoreCaseKeywords[_: P] = P( ignoreCaseKeyword.rep(sep = ",") )
-    def ignoreCaseKeywordsList[_: P] = P( ignoreCaseKeywords ~ End )
-    private def verifyingList[_: P] = P( ignoreCaseKeywords.! ~ End ).map(_.count(_ == ',') + 1)
+    private def ignoreCaseKeyword[_: P]: P[Keyword] = P(choiceIgnoreCase(BenchmarkInputs.KEYWORDS.asScala.toList))
+    def ignoreCaseKeywords[_: P]: P[Seq[Keyword]] = P( ignoreCaseKeyword.rep(sep = ",") )
+    def ignoreCaseKeywordsList[_: P]: P[java.util.List[Keyword]] = P( ignoreCaseKeywords ~ End ).map(_.asJava)
 
     // Verify
-    fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_CI, verifyingList(_)) match {
-      case Parsed.Success(120, _) =>
+    fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_CI, ignoreCaseKeywordsList(_)) match {
+      case Parsed.Success(result, _) if result.size() == 120 =>
       case f => throw new AssertionError(s"fastparse IgnoreCase verification failed: $f")
     }
     fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI, ignoreCaseKeywordsList(_)) match {
@@ -145,7 +149,7 @@ object FastparseShowdown {
   }
 
   class IgnoreCaseFixture {
-    def run(input: String): Any = {
+    def run(input: String): Parsed[java.util.List[Keyword]] = {
       fastparse.parse(input, IgnoreCaseFixture.ignoreCaseKeywordsList(_))
     }
   }
@@ -163,8 +167,12 @@ object FastparseShowdown {
   }
 
   class NestedCommentFixture {
-    def run(): Any = {
-      fastparse.parse(BenchmarkInputs.NESTED_COMMENT, NestedCommentFixture.entry(_))
+    def run(): Parsed[Unit] = {
+      run(BenchmarkInputs.NESTED_COMMENT)
+    }
+
+    def run(input: String): Parsed[Unit] = {
+      fastparse.parse(input, NestedCommentFixture.entry(_))
     }
   }
 }

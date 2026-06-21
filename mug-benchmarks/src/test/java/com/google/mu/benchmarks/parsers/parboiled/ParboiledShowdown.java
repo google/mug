@@ -3,6 +3,9 @@ package com.google.mu.benchmarks.parsers.parboiled;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
+import com.google.mu.benchmarks.parsers.BenchmarkInputs.Keyword;
+import java.util.ArrayList;
+import java.util.List;
 import org.parboiled.BaseParser;
 import org.parboiled.Parboiled;
 import org.parboiled.Rule;
@@ -23,9 +26,10 @@ public final class ParboiledShowdown {
       // Verify
       ParsingResult<Object> res = RUNNER.run(BenchmarkInputs.IP);
       assertThat(res.matched).isTrue();
+      assertThat(res.resultValue).isEqualTo(BenchmarkInputs.IP);
     }
 
-    public Object run() {
+    public ParsingResult<Object> run() {
       return RUNNER.run(BenchmarkInputs.IP);
     }
   }
@@ -35,19 +39,21 @@ public final class ParboiledShowdown {
 
     private static BasicParseRunner<Object> buildRunner() {
       ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
-      return new BasicParseRunner<>(parser.quotedString());
+      return new BasicParseRunner<>(parser.Sequence(parser.quotedString(), parser.EOI));
     }
 
     static {
       // Verify
       ParsingResult<Object> res1 = RUNNER.run(BenchmarkInputs.STRING_SIMPLE);
       assertThat(res1.matched).isTrue();
+      assertThat(res1.resultValue).isEqualTo("hello world!");
 
       ParsingResult<Object> res2 = RUNNER.run(BenchmarkInputs.STRING_ESCAPED);
       assertThat(res2.matched).isTrue();
+      assertThat(res2.resultValue).isEqualTo("hello \"world\"!");
     }
 
-    public Object run(String input) {
+    public ParsingResult<Object> run(String input) {
       return RUNNER.run(input);
     }
   }
@@ -55,21 +61,29 @@ public final class ParboiledShowdown {
   public static class KeywordsFixture {
     static class KeywordsParser extends BaseParser<Object> {
       public Rule keywords() {
-        return Sequence(keyword(), ZeroOrMore(',', keyword()), EOI);
-      }
-
-      public Rule verifyingKeywords() {
         return Sequence(
-            push(0), keyword(), increment(), ZeroOrMore(',', keyword(), increment()), EOI);
+            push(new ArrayList<Keyword>()),
+            keyword(), pushKeyword(), addKeyword(),
+            ZeroOrMore(',', keyword(), pushKeyword(), addKeyword()),
+            EOI);
       }
 
       public Rule keyword() {
-        Rule[] rules = BenchmarkInputs.KEYWORDS.stream().map(this::String).toArray(Rule[]::new);
-        return FirstOf(rules);
+        return FirstOf(BenchmarkInputs.KEYWORDS.toArray());
       }
 
-      boolean increment() {
-        poke((Integer) peek() + 1);
+      boolean pushKeyword() {
+        String matchedText = match();
+        Keyword kw = BenchmarkInputs.KEYWORD_MAP.get(matchedText.toLowerCase());
+        push(kw);
+        return true;
+      }
+
+      boolean addKeyword() {
+        Keyword kw = (Keyword) pop();
+        @SuppressWarnings("unchecked")
+        List<Keyword> list = (List<Keyword>) peek();
+        list.add(kw);
         return true;
       }
     }
@@ -79,15 +93,15 @@ public final class ParboiledShowdown {
         new BasicParseRunner<>(PARSER.keywords());
 
     static {
-      // Verify using verifying rule
-      var verifyingRunner = new BasicParseRunner<Object>(PARSER.verifyingKeywords());
-      ParsingResult<Object> res = verifyingRunner.run(BenchmarkInputs.KEYWORDS_LIST_CS);
+      ParsingResult<Object> res = RUNNER.run(BenchmarkInputs.KEYWORDS_LIST_CS);
       assertThat(res.matched).isTrue();
-      assertThat(res.resultValue).isEqualTo(120);
-      assertThat(verifyingRunner.run(BenchmarkInputs.KEYWORDS_LIST_INVALID).matched).isFalse();
+      @SuppressWarnings("unchecked")
+      List<Keyword> result = (List<Keyword>) res.resultValue;
+      assertThat(result.size()).isEqualTo(120);
+      assertThat(RUNNER.run(BenchmarkInputs.KEYWORDS_LIST_INVALID).matched).isFalse();
     }
 
-    public Object run(String input) {
+    public ParsingResult<Object> run(String input) {
       return RUNNER.run(input);
     }
   }
@@ -95,21 +109,33 @@ public final class ParboiledShowdown {
   public static class IgnoreCaseFixture {
     static class IgnoreCaseParser extends BaseParser<Object> {
       public Rule keywords() {
-        return Sequence(keyword(), ZeroOrMore(',', keyword()), EOI);
-      }
-
-      public Rule verifyingKeywords() {
         return Sequence(
-            push(0), keyword(), increment(), ZeroOrMore(',', keyword(), increment()), EOI);
+            push(new ArrayList<Keyword>()),
+            keyword(), pushKeyword(), addKeyword(),
+            ZeroOrMore(',', keyword(), pushKeyword(), addKeyword()),
+            EOI);
       }
 
       public Rule keyword() {
-        Rule[] rules = BenchmarkInputs.KEYWORDS.stream().map(this::IgnoreCase).toArray(Rule[]::new);
-        return FirstOf(rules);
+        List<Rule> rules = new ArrayList<>();
+        for (String kw : BenchmarkInputs.KEYWORDS) {
+          rules.add(IgnoreCase(kw));
+        }
+        return FirstOf(rules.toArray(new Rule[0]));
       }
 
-      boolean increment() {
-        poke((Integer) peek() + 1);
+      boolean pushKeyword() {
+        String matchedText = match();
+        Keyword kw = BenchmarkInputs.KEYWORD_MAP.get(matchedText.toLowerCase());
+        push(kw);
+        return true;
+      }
+
+      boolean addKeyword() {
+        Keyword kw = (Keyword) pop();
+        @SuppressWarnings("unchecked")
+        List<Keyword> list = (List<Keyword>) peek();
+        list.add(kw);
         return true;
       }
     }
@@ -119,15 +145,15 @@ public final class ParboiledShowdown {
         new BasicParseRunner<>(PARSER.keywords());
 
     static {
-      // Verify using verifying rule
-      var verifyingRunner = new BasicParseRunner<Object>(PARSER.verifyingKeywords());
-      ParsingResult<Object> res = verifyingRunner.run(BenchmarkInputs.KEYWORDS_LIST_CI);
+      ParsingResult<Object> res = RUNNER.run(BenchmarkInputs.KEYWORDS_LIST_CI);
       assertThat(res.matched).isTrue();
-      assertThat(res.resultValue).isEqualTo(120);
-      assertThat(verifyingRunner.run(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI).matched).isFalse();
+      @SuppressWarnings("unchecked")
+      List<Keyword> result = (List<Keyword>) res.resultValue;
+      assertThat(result.size()).isEqualTo(120);
+      assertThat(RUNNER.run(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI).matched).isFalse();
     }
 
-    public Object run(String input) {
+    public ParsingResult<Object> run(String input) {
       return RUNNER.run(input);
     }
   }
@@ -148,7 +174,7 @@ public final class ParboiledShowdown {
       assertThat((Integer) res.valueStack.peek()).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
     }
 
-    public Object run() {
+    public ParsingResult<Object> run() {
       return RUNNER.run(BenchmarkInputs.CALCULATOR);
     }
   }
@@ -167,15 +193,22 @@ public final class ParboiledShowdown {
       assertThat(res.matched).isTrue();
     }
 
-    public Object run() {
-      return RUNNER.run(BenchmarkInputs.NESTED_COMMENT);
+    public ParsingResult<Object> run() {
+      return run(BenchmarkInputs.NESTED_COMMENT);
+    }
+
+    public ParsingResult<Object> run(String input) {
+      return RUNNER.run(input);
     }
   }
 
   // Rules implementation for parboiled
   public static class ParboiledParser extends BaseParser<Object> {
     public Rule ipAddress() {
-      return Sequence(digits(), '.', digits(), '.', digits(), '.', digits(), EOI);
+      return Sequence(
+          Sequence(digits(), '.', digits(), '.', digits(), '.', digits()),
+          push(match()),
+          EOI);
     }
 
     public Rule digits() {
@@ -183,7 +216,10 @@ public final class ParboiledShowdown {
     }
 
     public Rule quotedString() {
-      return Sequence('"', ZeroOrMore(FirstOf(Sequence('\\', ANY), NoneOf("\"\\"))), '"', EOI);
+      return Sequence(
+          Sequence('"', ZeroOrMore(FirstOf(Sequence('\\', ANY), NoneOf("\"\\"))), '"'),
+          push(BenchmarkInputs.unescape(match()))
+      );
     }
 
     public Rule keywords() {

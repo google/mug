@@ -39,31 +39,8 @@ object CatsParseJavaTypeParser {
     ).string
   )
 
-  // String Unescaping
-  private val hexDigit: P[Char] = P.charIn(('0' to '9') ++ ('a' to 'f') ++ ('A' to 'F'))
-  private val unicodeEscape: P[String] =
-    P.char('u') *> (hexDigit ~ hexDigit ~ hexDigit ~ hexDigit).string.map { hex =>
-    Character.toString(Integer.parseInt(hex, 16).toChar)
-  }
-
-  private val cStyleEscape: P[String] = P.oneOf(List(
-    P.char('n').as("\n"),
-    P.char('t').as("\t"),
-    P.char('r').as("\r"),
-    P.char('f').as("\f"),
-    P.char('b').as("\b"),
-    P.char('"').as("\""),
-    P.char('\'').as("'"),
-    P.char('\\').as("\\")
-  ))
-
-  private val escapedChar: P[String] = P.char('\\') *> (unicodeEscape | cStyleEscape)
-  private val normalChar: P[String] =
-    (!P.char('"') ~ !P.char('\\')).with1 *> P.anyChar.map(_.toString)
-
-  private val stringLiteral: P[String] = token(
-    P.char('"') *> (escapedChar | normalChar).rep0.map(_.mkString) <* P.char('"')
-  )
+  // String Unescaping (reusing the showdown parser)
+  private val stringLiteral: P[String] = token(CatsParseShowdown.StringFixture.PARSER)
 
   // Numbers
   private val integerPart: P[String] = (P.char('-').?.with1 ~ P.charIn('0' to '9').rep).string

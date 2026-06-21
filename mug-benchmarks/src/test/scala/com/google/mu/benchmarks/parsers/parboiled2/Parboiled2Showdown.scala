@@ -1,6 +1,7 @@
 package com.google.mu.benchmarks.parsers.parboiled2
 
 import com.google.mu.benchmarks.parsers.BenchmarkInputs
+import com.google.mu.benchmarks.parsers.BenchmarkInputs.Keyword
 import org.parboiled2._
 import scala.util.{Success, Failure}
 import scala.jdk.CollectionConverters._
@@ -11,73 +12,98 @@ object Parboiled2Showdown {
   class IpParser(val input: ParserInput) extends Parser {
     def digit = rule { oneOrMore(CharPredicate.Digit) }
     def dot = rule { '.' }
-    def ip = rule { digit ~ dot ~ digit ~ dot ~ digit ~ dot ~ digit ~ EOI }
+    def ip: Rule1[String] = rule { capture(digit ~ dot ~ digit ~ dot ~ digit ~ dot ~ digit) ~ EOI }
   }
 
   object IpFixture {
     // Verify
     new IpParser(BenchmarkInputs.IP).ip.run() match {
-      case Success(_) =>
+      case Success(res) if res == BenchmarkInputs.IP =>
       case Failure(err) => throw new AssertionError(s"parboiled2 Ip verification failed: $err")
     }
   }
 
   class IpFixture {
-    def run(): Any = {
+    def run(): scala.util.Try[String] = {
       new IpParser(BenchmarkInputs.IP).ip.run()
     }
   }
 
   // 2. Quoted String
-  class StringParser(val input: ParserInput) extends Parser {
-    def esc = rule { '\\' ~ ANY }
-    def normal = rule { !CharPredicate('"', '\\') ~ ANY }
-    def quotedString = rule { '"' ~ zeroOrMore(esc | normal) ~ '"' ~ EOI }
+  class StringParser(val input: ParserInput) extends Parser with StringBuilding {
+    import CharPredicate.HexDigit
+    val QuoteBackslash = CharPredicate("\"\\")
+    val QuoteSlashBackSlash = QuoteBackslash ++ "/"
+
+    def quotedString: Rule1[String] = rule {
+      '"' ~ clearSB() ~ Characters ~ '"' ~ push(sb.toString) ~ EOI
+    }
+
+    def Characters = rule(zeroOrMore(NormalChar | '\\' ~ EscapedChar))
+
+    def NormalChar = rule(!QuoteBackslash ~ ANY ~ appendSB())
+
+    def EscapedChar =
+      rule(
+        QuoteSlashBackSlash ~ appendSB()
+          | 'b' ~ appendSB('\b')
+          | 'f' ~ appendSB('\f')
+          | 'n' ~ appendSB('\n')
+          | 'r' ~ appendSB('\r')
+          | 't' ~ appendSB('\t')
+          | Unicode ~> { (code: Int) => sb.append(code.toChar); () }
+          | capture(ANY) ~> { (other: String) => sb.append('\\').append(other); () }
+      )
+
+    def Unicode = rule(
+      'u' ~ capture(HexDigit ~ HexDigit ~ HexDigit ~ HexDigit) ~> (java.lang.Integer.parseInt(_, 16))
+    )
   }
 
   object StringFixture {
     // Verify
     new StringParser(BenchmarkInputs.STRING_SIMPLE).quotedString.run() match {
-      case Success(_) =>
-      case Failure(err) => throw new AssertionError(s"parboiled2 StringSimple verification failed: $err")
+      case Success(value) if value == "hello world!" =>
+      case other => throw new AssertionError(s"parboiled2 StringSimple verification failed: $other")
     }
     new StringParser(BenchmarkInputs.STRING_ESCAPED).quotedString.run() match {
-      case Success(_) =>
-      case Failure(err) => throw new AssertionError(s"parboiled2 StringEscaped verification failed: $err")
+      case Success(value) if value == "hello \"world\"!" =>
+      case other => throw new AssertionError(s"parboiled2 StringEscaped verification failed: $other")
     }
   }
 
   class StringFixture {
-    def run(input: String): Any = {
+    def run(input: String): scala.util.Try[String] = {
       new StringParser(input).quotedString.run()
     }
   }
 
   // 3. Keywords (Case-Sensitive)
   class KeywordsParser(val input: ParserInput) extends Parser {
-    def keyword = rule {
-      ( str("select")
-      | str("insert")
-      | str("update")
-      | str("delete")
-      | str("create")
-      | str("drop")
-      | str("alter")
-      | str("where")
-      | str("group")
-      | str("order")
-      | str("having")
-      | str("limit")
+    def keyword: Rule1[Keyword] = rule {
+      ( str("select") ~> (() => BenchmarkInputs.Keyword.SELECT)
+      | str("insert") ~> (() => BenchmarkInputs.Keyword.INSERT)
+      | str("update") ~> (() => BenchmarkInputs.Keyword.UPDATE)
+      | str("delete") ~> (() => BenchmarkInputs.Keyword.DELETE)
+      | str("create") ~> (() => BenchmarkInputs.Keyword.CREATE)
+      | str("drop")   ~> (() => BenchmarkInputs.Keyword.DROP)
+      | str("alter")  ~> (() => BenchmarkInputs.Keyword.ALTER)
+      | str("where")  ~> (() => BenchmarkInputs.Keyword.WHERE)
+      | str("group")  ~> (() => BenchmarkInputs.Keyword.GROUP)
+      | str("order")  ~> (() => BenchmarkInputs.Keyword.ORDER)
+      | str("having") ~> (() => BenchmarkInputs.Keyword.HAVING)
+      | str("limit")  ~> (() => BenchmarkInputs.Keyword.LIMIT)
       )
     }
-    def keywords = rule { oneOrMore(keyword).separatedBy(",") ~ EOI }
-    def verifyingKeywords = rule { capture(oneOrMore(keyword).separatedBy(",")) ~> (str => str.count(_ == ',') + 1) ~ EOI }
+    def keywords: Rule1[java.util.List[Keyword]] = rule {
+      (oneOrMore(keyword).separatedBy(",") ~> ((seq: Seq[Keyword]) => seq.asJava)) ~ EOI
+    }
   }
 
   object KeywordsFixture {
     // Verify
-    new KeywordsParser(BenchmarkInputs.KEYWORDS_LIST_CS).verifyingKeywords.run() match {
-      case Success(120) =>
+    new KeywordsParser(BenchmarkInputs.KEYWORDS_LIST_CS).keywords.run() match {
+      case Success(result: java.util.List[_]) if result.size() == 120 =>
       case other => throw new AssertionError(s"parboiled2 Keywords verification failed: $other")
     }
     new KeywordsParser(BenchmarkInputs.KEYWORDS_LIST_INVALID).keywords.run() match {
@@ -87,36 +113,37 @@ object Parboiled2Showdown {
   }
 
   class KeywordsFixture {
-    def run(input: String): Any = {
+    def run(input: String): scala.util.Try[java.util.List[Keyword]] = {
       new KeywordsParser(input).keywords.run()
     }
   }
 
   // 4. Keywords (Case-Insensitive)
   class IgnoreCaseParser(val input: ParserInput) extends Parser {
-    def keyword = rule {
-      ( ignoreCase("select")
-      | ignoreCase("insert")
-      | ignoreCase("update")
-      | ignoreCase("delete")
-      | ignoreCase("create")
-      | ignoreCase("drop")
-      | ignoreCase("alter")
-      | ignoreCase("where")
-      | ignoreCase("group")
-      | ignoreCase("order")
-      | ignoreCase("having")
-      | ignoreCase("limit")
+    def keyword: Rule1[Keyword] = rule {
+      ( ignoreCase("select") ~> (() => BenchmarkInputs.Keyword.SELECT)
+      | ignoreCase("insert") ~> (() => BenchmarkInputs.Keyword.INSERT)
+      | ignoreCase("update") ~> (() => BenchmarkInputs.Keyword.UPDATE)
+      | ignoreCase("delete") ~> (() => BenchmarkInputs.Keyword.DELETE)
+      | ignoreCase("create") ~> (() => BenchmarkInputs.Keyword.CREATE)
+      | ignoreCase("drop")   ~> (() => BenchmarkInputs.Keyword.DROP)
+      | ignoreCase("alter")  ~> (() => BenchmarkInputs.Keyword.ALTER)
+      | ignoreCase("where")  ~> (() => BenchmarkInputs.Keyword.WHERE)
+      | ignoreCase("group")  ~> (() => BenchmarkInputs.Keyword.GROUP)
+      | ignoreCase("order")  ~> (() => BenchmarkInputs.Keyword.ORDER)
+      | ignoreCase("having") ~> (() => BenchmarkInputs.Keyword.HAVING)
+      | ignoreCase("limit")  ~> (() => BenchmarkInputs.Keyword.LIMIT)
       )
     }
-    def keywords = rule { oneOrMore(keyword).separatedBy(",") ~ EOI }
-    def verifyingKeywords = rule { capture(oneOrMore(keyword).separatedBy(",")) ~> (str => str.count(_ == ',') + 1) ~ EOI }
+    def keywords: Rule1[java.util.List[Keyword]] = rule {
+      (oneOrMore(keyword).separatedBy(",") ~> ((seq: Seq[Keyword]) => seq.asJava)) ~ EOI
+    }
   }
 
   object IgnoreCaseFixture {
     // Verify
-    new IgnoreCaseParser(BenchmarkInputs.KEYWORDS_LIST_CI).verifyingKeywords.run() match {
-      case Success(120) =>
+    new IgnoreCaseParser(BenchmarkInputs.KEYWORDS_LIST_CI).keywords.run() match {
+      case Success(result: java.util.List[_]) if result.size() == 120 =>
       case other => throw new AssertionError(s"parboiled2 IgnoreCase verification failed: $other")
     }
     new IgnoreCaseParser(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI).keywords.run() match {
@@ -126,7 +153,7 @@ object Parboiled2Showdown {
   }
 
   class IgnoreCaseFixture {
-    def run(input: String): Any = {
+    def run(input: String): scala.util.Try[java.util.List[Keyword]] = {
       new IgnoreCaseParser(input).keywords.run()
     }
   }
@@ -159,7 +186,7 @@ object Parboiled2Showdown {
   }
 
   class CalculatorFixture {
-    def run(): Any = {
+    def run(): scala.util.Try[Int] = {
       new CalculatorParser(BenchmarkInputs.CALCULATOR).root.run()
     }
   }
@@ -179,8 +206,12 @@ object Parboiled2Showdown {
   }
 
   class NestedCommentFixture {
-    def run(): Any = {
-      new NestedCommentParser(BenchmarkInputs.NESTED_COMMENT).root.run()
+    def run(): scala.util.Try[Unit] = {
+      run(BenchmarkInputs.NESTED_COMMENT)
+    }
+
+    def run(input: String): scala.util.Try[Unit] = {
+      new NestedCommentParser(input).root.run()
     }
   }
 }

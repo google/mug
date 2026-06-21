@@ -12,31 +12,7 @@ object FastparseJavaTypeParser {
   private object NoWsParser {
     import fastparse._, NoWhitespace._
 
-    def hexDigit[_: P] = P( CharIn("0-9a-fA-F") )
-    
-    def unicodeEscape[_: P]: P[String] = P( "u" ~ hexDigit.rep(exactly = 4).! ).map { hex =>
-      Character.toString(Integer.parseInt(hex, 16).toChar)
-    }
-
-    def cStyleEscape[_: P]: P[String] = P(
-      StringIn("n", "t", "r", "f", "b", "\"", "'", "\\").!
-    ).map {
-      case "n" => "\n"
-      case "t" => "\t"
-      case "r" => "\r"
-      case "f" => "\f"
-      case "b" => "\b"
-      case "\"" => "\""
-      case "'" => "'"
-      case "\\" => "\\\\"
-    }
-
-    def escapedChar[_: P]: P[String] = P( "\\" ~ (unicodeEscape | cStyleEscape) )
-    def normalChar[_: P]: P[String] = P( CharPred(c => c != '"' && c != '\\').! )
-
-    def stringLiteral[_: P]: P[String] = P(
-      "\"" ~ (escapedChar | normalChar).rep ~ "\""
-    ).map(_.mkString)
+    def stringLiteral[_: P]: P[String] = P( FastparseShowdown.StringFixture.str )
 
     def integerPart[_: P]: P[String] = P( (P("-").? ~ CharsWhileIn("0-9")).! )
     

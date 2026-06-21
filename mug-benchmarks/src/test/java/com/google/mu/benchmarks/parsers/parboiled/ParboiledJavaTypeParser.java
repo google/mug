@@ -16,9 +16,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.mu.benchmarks.parsers.parboiled.ParboiledShowdown.ParboiledParser;
+
 /** Parboiled-based parser for Java Types. */
 @BuildParseTree
-public class ParboiledJavaTypeParser extends BaseParser<Object> {
+public class ParboiledJavaTypeParser extends ParboiledParser {
 
   private static final Set<String> PRIMITIVES = Set.of(
       "int", "double", "float", "long", "short", "byte", "char", "boolean", "void"
@@ -42,45 +44,8 @@ public class ParboiledJavaTypeParser extends BaseParser<Object> {
   // =========================================================================
   // 2. String and Number Literals (No whitespace skipping inside)
   // =========================================================================
-  public Rule hexDigit() {
-    return FirstOf(CharRange('0', '9'), CharRange('a', 'f'), CharRange('A', 'F'));
-  }
-
-  public Rule unicodeEscape(Var<StringBuilder> sb) {
-    return Sequence(
-        'u',
-        Sequence(hexDigit(), hexDigit(), hexDigit(), hexDigit()),
-        appendUnicode(sb, match())
-    );
-  }
-
-  public Rule cStyleEscape(Var<StringBuilder> sb) {
-    return Sequence(
-        AnyOf("ntrfb\"'\\"),
-        appendCStyle(sb, match())
-    );
-  }
-
-  public Rule escapedChar(Var<StringBuilder> sb) {
-    return Sequence('\\', FirstOf(unicodeEscape(sb), cStyleEscape(sb)));
-  }
-
-  public Rule normalChar(Var<StringBuilder> sb) {
-    return Sequence(
-        NoneOf("\"\\"),
-        appendNormal(sb, match())
-    );
-  }
-
   public Rule stringLiteral() {
-    Var<StringBuilder> sb = new Var<>(new StringBuilder());
-    return Sequence(
-        '"',
-        ZeroOrMore(FirstOf(escapedChar(sb), normalChar(sb))),
-        '"',
-        push(sb.get().toString()),
-        skip()
-    );
+    return Sequence(quotedString(), skip());
   }
 
   public Rule integerPart() {
@@ -374,29 +339,7 @@ public class ParboiledJavaTypeParser extends BaseParser<Object> {
   // =========================================================================
   // 7. Action Helper Methods
   // =========================================================================
-  boolean appendUnicode(Var<StringBuilder> sb, String hex) {
-    sb.get().append((char) Integer.parseInt(hex, 16));
-    return true;
-  }
 
-  boolean appendCStyle(Var<StringBuilder> sb, String escape) {
-    switch (escape) {
-      case "n": sb.get().append('\n'); break;
-      case "t": sb.get().append('\t'); break;
-      case "r": sb.get().append('\r'); break;
-      case "f": sb.get().append('\f'); break;
-      case "b": sb.get().append('\b'); break;
-      case "\"": sb.get().append('"'); break;
-      case "'": sb.get().append('\''); break;
-      case "\\": sb.get().append('\\'); break;
-    }
-    return true;
-  }
-
-  boolean appendNormal(Var<StringBuilder> sb, String matched) {
-    sb.get().append(matched);
-    return true;
-  }
 
   boolean pushNumber(String matched) {
     if (matched.contains(".")) {

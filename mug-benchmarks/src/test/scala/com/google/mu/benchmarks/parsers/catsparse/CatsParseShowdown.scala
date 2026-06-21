@@ -8,53 +8,51 @@ object CatsParseShowdown {
 
   object IpFixture {
     private val digits = P.charIn('0' to '9').rep.void
-    private val PARSER = (digits ~ P.char('.') ~ digits ~ P.char('.') ~ digits ~ P.char('.') ~ digits).void
+    private val PARSER = (digits ~ P.char('.') ~ digits ~ P.char('.') ~ digits ~ P.char('.') ~ digits).string
 
     // Verify
     PARSER.parse(BenchmarkInputs.IP) match {
-      case Right(_) =>
+      case Right((_, res)) if res == BenchmarkInputs.IP =>
       case Left(err) => throw new AssertionError(s"cats-parse IP verification failed: $err")
     }
   }
 
   class IpFixture {
-    def run(): Any = {
+    def run(): Either[P.Error, (String, String)] = {
       IpFixture.PARSER.parse(BenchmarkInputs.IP)
     }
   }
 
   object StringFixture {
-    private val escape = P.char('\\') *> P.anyChar
-    private val normalChar = (!P.char('"') ~ !P.char('\\')).with1 *> P.anyChar
-    private val PARSER = P.char('"') *> (escape | normalChar).rep.void <* P.char('"')
+    val PARSER = cats.parse.strings.Json.delimited.parser
 
     // Verify
     PARSER.parse(BenchmarkInputs.STRING_SIMPLE) match {
-      case Right(_) =>
-      case Left(err) => throw new AssertionError(s"cats-parse String simple verification failed: $err")
+      case Right(("", value)) if value == "hello world!" =>
+      case other => throw new AssertionError(s"cats-parse String simple verification failed: $other")
     }
     PARSER.parse(BenchmarkInputs.STRING_ESCAPED) match {
-      case Right(_) =>
-      case Left(err) => throw new AssertionError(s"cats-parse String escaped verification failed: $err")
+      case Right(("", value)) if value == "hello \"world\"!" =>
+      case other => throw new AssertionError(s"cats-parse String escaped verification failed: $other")
     }
   }
 
   class StringFixture {
-    def run(input: String): Any = {
+    def run(input: String): Either[P.Error, (String, String)] = {
       StringFixture.PARSER.parse(input)
     }
   }
 
   object KeywordsFixture {
     private val KEYWORD = P.oneOf(
-      BenchmarkInputs.KEYWORDS.asScala.map(P.string).toList
+      BenchmarkInputs.KEYWORDS.asScala.map(kw => P.string(kw).map(_ => BenchmarkInputs.KEYWORD_MAP.get(kw))).toList
     )
     private val EOF = P.not(P.anyChar)
-    private val PARSER = (KEYWORD.repSep(P.char(',')) <* EOF).map(_.size)
+    private val PARSER = (KEYWORD.repSep(P.char(',')) <* EOF).map(_.toList.asJava)
 
     // Verify
     PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS) match {
-      case Right(("", 120)) =>
+      case Right(("", result)) if result.size() == 120 =>
       case other => throw new AssertionError(s"cats-parse Keywords verification failed: $other")
     }
     PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID) match {
@@ -64,21 +62,21 @@ object CatsParseShowdown {
   }
 
   class KeywordsFixture {
-    def run(input: String): Any = {
+    def run(input: String): Either[P.Error, (String, java.util.List[BenchmarkInputs.Keyword])] = {
       KeywordsFixture.PARSER.parse(input)
     }
   }
 
   object IgnoreCaseFixture {
     private val KEYWORD = P.oneOf(
-      BenchmarkInputs.KEYWORDS.asScala.map(P.ignoreCase).toList
+      BenchmarkInputs.KEYWORDS.asScala.map(kw => P.ignoreCase(kw).map(_ => BenchmarkInputs.KEYWORD_MAP.get(kw))).toList
     )
     private val EOF = P.not(P.anyChar)
-    private val PARSER = (KEYWORD.repSep(P.char(',')) <* EOF).map(_.size)
+    private val PARSER = (KEYWORD.repSep(P.char(',')) <* EOF).map(_.toList.asJava)
 
     // Verify
     PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CI) match {
-      case Right(("", 120)) =>
+      case Right(("", result)) if result.size() == 120 =>
       case other => throw new AssertionError(s"cats-parse IgnoreCase verification failed: $other")
     }
     PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI) match {
@@ -88,7 +86,7 @@ object CatsParseShowdown {
   }
 
   class IgnoreCaseFixture {
-    def run(input: String): Any = {
+    def run(input: String): Either[P.Error, (String, java.util.List[BenchmarkInputs.Keyword])] = {
       IgnoreCaseFixture.PARSER.parse(input)
     }
   }
@@ -129,7 +127,7 @@ object CatsParseShowdown {
   }
 
   class CalculatorFixture {
-    def run(): Any = {
+    def run(): Either[P.Error, (String, Int)] = {
       CalculatorFixture.PARSER.parse(BenchmarkInputs.CALCULATOR)
     }
   }
@@ -152,8 +150,12 @@ object CatsParseShowdown {
   }
 
   class NestedCommentFixture {
-    def run(): Any = {
-      NestedCommentFixture.PARSER.parse(BenchmarkInputs.NESTED_COMMENT)
+    def run(): Either[P.Error, (String, Unit)] = {
+      run(BenchmarkInputs.NESTED_COMMENT)
+    }
+
+    def run(input: String): Either[P.Error, (String, Unit)] = {
+      NestedCommentFixture.PARSER.parse(input)
     }
   }
 }

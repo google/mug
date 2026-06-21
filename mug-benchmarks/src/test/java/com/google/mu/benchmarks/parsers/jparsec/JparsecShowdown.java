@@ -10,11 +10,10 @@ import static org.jparsec.Scanners.DOUBLE_QUOTE_STRING;
 import static org.jparsec.Scanners.WHITESPACES;
 import static org.jparsec.Scanners.isChar;
 import static org.jparsec.Scanners.nestableBlockComment;
-import static org.jparsec.Scanners.pattern;
-import static org.jparsec.pattern.Patterns.regex;
 import static org.junit.Assert.assertThrows;
 
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
+import com.google.mu.benchmarks.parsers.BenchmarkInputs.Keyword;
 import java.util.List;
 import org.jparsec.OperatorTable;
 import org.jparsec.Parser;
@@ -25,69 +24,77 @@ import org.jparsec.error.ParserException;
 public final class JparsecShowdown {
 
   public static class IpFixture {
-    private static final Parser<?> PARSER = buildParser();
+    private static final Parser<String> PARSER = buildParser();
 
-    private static Parser<?> buildParser() {
+    private static Parser<String> buildParser() {
       Parser<Void> dot = isChar('.');
       Parser<String> digits = DEC_INTEGER;
-      return sequence(digits, dot, digits, dot, digits, dot, digits).retn("ip");
+      return sequence(digits, dot, digits, dot, digits, dot, digits).source();
     }
 
     static {
-      assertThat(PARSER.parse(BenchmarkInputs.IP)).isNotNull();
+      assertThat(PARSER.parse(BenchmarkInputs.IP)).isEqualTo(BenchmarkInputs.IP);
     }
 
-    public Object run() {
+    public String run() {
       return PARSER.parse(BenchmarkInputs.IP);
     }
   }
 
   public static class StringFixture {
-    private static final Parser<?> PARSER = DOUBLE_QUOTE_STRING;
+    private static final Parser<String> PARSER =
+        DOUBLE_QUOTE_STRING.source().map(BenchmarkInputs::unescape);
 
     static {
-      assertThat(PARSER.parse(BenchmarkInputs.STRING_SIMPLE)).isNotNull();
-      assertThat(PARSER.parse(BenchmarkInputs.STRING_ESCAPED)).isNotNull();
+      assertThat(PARSER.parse(BenchmarkInputs.STRING_SIMPLE)).isEqualTo("hello world!");
+      assertThat(PARSER.parse(BenchmarkInputs.STRING_ESCAPED)).isEqualTo("hello \"world\"!");
     }
 
-    public Object run(String input) {
+    public String run(String input) {
       return PARSER.parse(input);
     }
   }
 
   public static class KeywordsFixture {
-    private static final Parser<?> KEYWORD =
-        or(BenchmarkInputs.KEYWORDS.stream().map(Scanners::string).collect(toList()));
-    private static final Parser<Integer> PARSER = KEYWORD.sepBy(isChar(',')).map(List::size);
+    private static final Parser<Keyword> KEYWORD =
+        or(
+            BenchmarkInputs.KEYWORDS.stream()
+                .map(kw -> Scanners.string(kw).retn(BenchmarkInputs.KEYWORD_MAP.get(kw)))
+                .collect(toList()));
+    private static final Parser<List<Keyword>> PARSER = KEYWORD.sepBy(isChar(','));
 
     static {
-      Integer count = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS);
-      assertThat(count).isEqualTo(120);
+      List<Keyword> result = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS);
+      assertThat(result.size()).isEqualTo(120);
 
       assertThrows(
           ParserException.class, () -> PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID));
     }
 
-    public Object run(String input) {
+    public List<Keyword> run(String input) {
       return PARSER.parse(input);
     }
   }
 
   public static class IgnoreCaseFixture {
-    private static final Parser<?> KEYWORD_CI =
+    private static final Parser<Keyword> KEYWORD_CI =
         or(
             BenchmarkInputs.KEYWORDS.stream()
-                .map(Scanners::stringCaseInsensitive)
+                .map(
+                    kw ->
+                        Scanners.stringCaseInsensitive(kw)
+                            .retn(BenchmarkInputs.KEYWORD_MAP.get(kw)))
                 .collect(toList()));
-    private static final Parser<Integer> PARSER = KEYWORD_CI.sepBy(isChar(',')).map(List::size);
+    private static final Parser<List<Keyword>> PARSER = KEYWORD_CI.sepBy(isChar(','));
 
     static {
-      assertThat(PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CI)).isEqualTo(120);
+      List<Keyword> result = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CI);
+      assertThat(result.size()).isEqualTo(120);
       assertThrows(
           ParserException.class, () -> PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI));
     }
 
-    public Object run(String input) {
+    public List<Keyword> run(String input) {
       return PARSER.parse(input);
     }
   }
@@ -98,9 +105,8 @@ public final class JparsecShowdown {
     private static Parser<Integer> buildParser() {
       var terms = Terminals.operators("+", "-", "*", "/", "(", ")");
       var ignored = WHITESPACES.optional();
-      var myIntegerTokenizer = pattern(regex("[0-9]+"), "integer").source();
 
-      var tokenizer = or(myIntegerTokenizer, terms.tokenizer());
+      var tokenizer = or(DEC_INTEGER, terms.tokenizer());
 
       var number = tokenType(String.class, "integer").map(Integer::parseInt);
       var ref = Parser.<Integer>newReference();
@@ -123,7 +129,7 @@ public final class JparsecShowdown {
       assertThat(res).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
     }
 
-    public Object run() {
+    public Integer run() {
       return PARSER.parse(BenchmarkInputs.CALCULATOR);
     }
   }
@@ -136,8 +142,12 @@ public final class JparsecShowdown {
       PARSER.parse(BenchmarkInputs.NESTED_COMMENT);
     }
 
-    public Object run() {
-      return PARSER.parse(BenchmarkInputs.NESTED_COMMENT);
+    public Void run() {
+      return run(BenchmarkInputs.NESTED_COMMENT);
+    }
+
+    public Void run(String input) {
+      return PARSER.parse(input);
     }
   }
 

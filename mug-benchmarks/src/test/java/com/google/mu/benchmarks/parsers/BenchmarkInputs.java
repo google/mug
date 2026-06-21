@@ -1,6 +1,9 @@
 package com.google.mu.benchmarks.parsers;
 
+import static java.util.Map.entry;
+
 import java.util.List;
+import java.util.Map;
 
 public final class BenchmarkInputs {
   public static final String IP = "192.168.1.1";
@@ -46,6 +49,56 @@ public final class BenchmarkInputs {
 
   public static final String NESTED_COMMENT = "/* comment /* nested */ */";
   public static final String NESTED_COMMENT_EXPECTED_INNER = " comment /* nested */ ";
+  public static final String NESTED_COMMENT_INVALID = "/* comment /* nested */";
+
+  public enum Keyword {
+    SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, WHERE, GROUP, ORDER, HAVING, LIMIT
+  }
+
+  public static final Map<String, Keyword> KEYWORD_MAP =
+      Map.ofEntries(
+          entry("select", Keyword.SELECT),
+          entry("insert", Keyword.INSERT),
+          entry("update", Keyword.UPDATE),
+          entry("delete", Keyword.DELETE),
+          entry("create", Keyword.CREATE),
+          entry("drop", Keyword.DROP),
+          entry("alter", Keyword.ALTER),
+          entry("where", Keyword.WHERE),
+          entry("group", Keyword.GROUP),
+          entry("order", Keyword.ORDER),
+          entry("having", Keyword.HAVING),
+          entry("limit", Keyword.LIMIT));
+
+  public static String unescape(String s) {
+    if (s.length() < 2 || s.charAt(0) != '"' || s.charAt(s.length() - 1) != '"') {
+      return s;
+    }
+    String inner = s.substring(1, s.length() - 1);
+    if (inner.indexOf('\\') == -1) {
+      return inner;
+    }
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < inner.length(); i++) {
+      char c = inner.charAt(i);
+      if (c == '\\' && i + 1 < inner.length() && inner.charAt(i + 1) == 'u') {
+        int uIndex = i + 1;
+        while (uIndex < inner.length() && inner.charAt(uIndex) == 'u') {
+          uIndex++;
+        }
+        if (uIndex + 4 <= inner.length()) {
+          String hex = inner.substring(uIndex, uIndex + 4);
+          sb.append((char) Integer.parseInt(hex, 16));
+          i = uIndex + 3;
+        } else {
+          sb.append(c);
+        }
+      } else {
+        sb.append(c);
+      }
+    }
+    return sb.toString().translateEscapes();
+  }
 
   private BenchmarkInputs() {}
 }

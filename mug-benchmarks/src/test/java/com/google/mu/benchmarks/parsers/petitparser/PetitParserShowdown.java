@@ -2,6 +2,8 @@ package com.google.mu.benchmarks.parsers.petitparser;
 
 import com.google.common.truth.Truth;
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
+import com.google.mu.benchmarks.parsers.BenchmarkInputs.Keyword;
+import java.util.ArrayList;
 import java.util.List;
 import org.petitparser.context.Result;
 import org.petitparser.parser.Parser;
@@ -17,42 +19,42 @@ public final class PetitParserShowdown {
     private static Parser buildParser() {
       Parser digits = CharacterParser.digit().plus().flatten();
       Parser dot = CharacterParser.of('.');
-      return digits.seq(dot).seq(digits).seq(dot).seq(digits).seq(dot).seq(digits).map(x -> "ip");
+      return digits.seq(dot).seq(digits).seq(dot).seq(digits).seq(dot).seq(digits).flatten();
     }
 
     static {
       Result res = PARSER.parse(BenchmarkInputs.IP);
       Truth.assertThat(res.isSuccess()).isTrue();
-      Truth.assertThat((String) res.get()).isEqualTo("ip");
+      Truth.assertThat((String) res.get()).isEqualTo(BenchmarkInputs.IP);
     }
 
-    public Object run() {
+    public Result run() {
       return PARSER.parse(BenchmarkInputs.IP);
     }
   }
 
   public static class StringFixture {
-    private static final Parser PARSER = buildParser();
+    static final Parser PARSER = buildParser();
 
     private static Parser buildParser() {
       Parser open = CharacterParser.of('"');
       Parser close = CharacterParser.of('"');
-      Parser escaped = CharacterParser.of('\\').seq(CharacterParser.any());
-      Parser normal = CharacterParser.pattern("^\"\\");
-      return open.seq(escaped.or(normal).star()).seq(close).flatten();
+      Parser escape = CharacterParser.of('\\').seq(CharacterParser.any());
+      Parser strChars = CharacterParser.pattern("^\"\\");
+      return open.seq(escape.or(strChars).star()).seq(close).flatten().map(BenchmarkInputs::unescape);
     }
 
     static {
       Result resSimple = PARSER.parse(BenchmarkInputs.STRING_SIMPLE);
       Truth.assertThat(resSimple.isSuccess()).isTrue();
-      Truth.assertThat((String) resSimple.get()).isEqualTo(BenchmarkInputs.STRING_SIMPLE);
+      Truth.assertThat((String) resSimple.get()).isEqualTo("hello world!");
 
       Result resEscaped = PARSER.parse(BenchmarkInputs.STRING_ESCAPED);
       Truth.assertThat(resEscaped.isSuccess()).isTrue();
-      Truth.assertThat((String) resEscaped.get()).isEqualTo(BenchmarkInputs.STRING_ESCAPED);
+      Truth.assertThat((String) resEscaped.get()).isEqualTo("hello \"world\"!");
     }
 
-    public Object run(String input) {
+    public Result run(String input) {
       return PARSER.parse(input);
     }
   }
@@ -63,25 +65,34 @@ public final class PetitParserShowdown {
     private static Parser buildParser() {
       Parser keywords = null;
       for (String keyword : BenchmarkInputs.KEYWORDS) {
-        Parser p = StringParser.of(keyword);
+        Parser p = StringParser.of(keyword).map(x -> BenchmarkInputs.KEYWORD_MAP.get(keyword));
         keywords = (keywords == null) ? p : keywords.or(p);
       }
       return keywords
           .separatedBy(CharacterParser.of(','))
-          .map(list -> (((List<?>) list).size() + 1) / 2)
+          .map(list -> {
+            List<Keyword> res = new ArrayList<>();
+            List<?> lst = (List<?>) list;
+            for (int i = 0; i < lst.size(); i += 2) {
+              res.add((Keyword) lst.get(i));
+            }
+            return res;
+          })
           .end();
     }
 
     static {
       Result res = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS);
       Truth.assertThat(res.isSuccess()).isTrue();
-      Truth.assertThat((Integer) res.get()).isEqualTo(120);
+      @SuppressWarnings("unchecked")
+      List<Keyword> result = (List<Keyword>) res.get();
+      Truth.assertThat(result.size()).isEqualTo(120);
 
       Result resBad = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID);
       Truth.assertThat(resBad.isSuccess()).isFalse();
     }
 
-    public Object run(String input) {
+    public Result run(String input) {
       return PARSER.parse(input);
     }
   }
@@ -92,25 +103,34 @@ public final class PetitParserShowdown {
     private static Parser buildParser() {
       Parser keywords = null;
       for (String keyword : BenchmarkInputs.KEYWORDS) {
-        Parser p = StringParser.ofIgnoringCase(keyword);
+        Parser p = StringParser.ofIgnoringCase(keyword).map(x -> BenchmarkInputs.KEYWORD_MAP.get(keyword));
         keywords = (keywords == null) ? p : keywords.or(p);
       }
       return keywords
           .separatedBy(CharacterParser.of(','))
-          .map(list -> (((List<?>) list).size() + 1) / 2)
+          .map(list -> {
+            List<Keyword> res = new ArrayList<>();
+            List<?> lst = (List<?>) list;
+            for (int i = 0; i < lst.size(); i += 2) {
+              res.add((Keyword) lst.get(i));
+            }
+            return res;
+          })
           .end();
     }
 
     static {
       Result res = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CI);
       Truth.assertThat(res.isSuccess()).isTrue();
-      Truth.assertThat((Integer) res.get()).isEqualTo(120);
+      @SuppressWarnings("unchecked")
+      List<Keyword> result = (List<Keyword>) res.get();
+      Truth.assertThat(result.size()).isEqualTo(120);
 
       Result resBad = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI);
       Truth.assertThat(resBad.isSuccess()).isFalse();
     }
 
-    public Object run(String input) {
+    public Result run(String input) {
       return PARSER.parse(input);
     }
   }
@@ -192,7 +212,7 @@ public final class PetitParserShowdown {
       Truth.assertThat((Integer) res.get()).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
     }
 
-    public Object run() {
+    public Result run() {
       return PARSER.parse(BenchmarkInputs.CALCULATOR);
     }
   }
@@ -221,8 +241,12 @@ public final class PetitParserShowdown {
       Truth.assertThat((String) res.get()).isEqualTo(BenchmarkInputs.NESTED_COMMENT);
     }
 
-    public Object run() {
-      return PARSER.parse(BenchmarkInputs.NESTED_COMMENT);
+    public Result run() {
+      return run(BenchmarkInputs.NESTED_COMMENT);
+    }
+
+    public Result run(String input) {
+      return PARSER.parse(input);
     }
   }
 
