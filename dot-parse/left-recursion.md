@@ -267,3 +267,9 @@ If the recursive call `me` is preceded by optional or zero-width rules
 By dividing rules into these two types, `dot-parse` can validate complex
 grammars for left recursion at startup almost for free, without needing to
 perform heavy static analysis or AST scanning.
+
+The left-recursion protection, alongside the compile-time elimination of
+infinite loops, makes `dot-parse` free of the notorious footguns seen in other
+combinator frameworks. Developers can focus on expressing grammars in
+`dot-parse`'s idiomatic and fluent Java API without burning long hours in
+debugging.
