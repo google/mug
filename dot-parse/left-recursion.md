@@ -268,6 +268,8 @@ By dividing rules into these two types, `dot-parse` can validate complex
 grammars for left recursion at startup almost for free, without needing to
 perform heavy static analysis or AST scanning.
 
+## In a Nutshell
+
 The left-recursion protection, alongside the compile-time elimination of
 infinite loops, makes `dot-parse` free of the notorious footguns seen in other
 combinator frameworks. Developers can focus on expressing grammars in
