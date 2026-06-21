@@ -161,6 +161,14 @@ in **operations per millisecond** (higher is better):
     class literals and array parameters, which incurs significant lambda
     allocation overhead.
 
+*   **Scannerless vs. Two-Phase Tokenization**:
+    For small, dense inputs with minimal whitespace (such as Java type
+    signatures), scannerless parsers (`dot-parse`, `taker`, `parsecj`) are a
+    fundamentally better architectural fit than two-phase tokenizing parsers
+    (`jparsec`, `antlr4`). Two-phase parsers pay a high object-allocation penalty
+    to construct intermediate token lists, whereas scannerless parsers operate
+    directly on the character stream with zero token overhead.
+
 ---
 
 ## How to Run the Benchmarks
