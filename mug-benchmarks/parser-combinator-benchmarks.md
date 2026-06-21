@@ -88,13 +88,13 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 
 | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `cats-parse` | `parboiled` | `parboiled2` | `scala-pc` | `parsecj` | `taker` | `jjparse` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **IPv4 Address** | $2,974$ | **$20,807$** ☕ | $13,600$ | $7,655$ | **$24,661$** 🚀 | $23,763$ | $8,907$ | **$27,330$** 🚀 | $3,778$ | $2,939$ | $10,021$ | $669$ | **`parboiled2`** 🚀, **`fastparse`** 🚀<br>Java: **`dot-parse`** ☕ |
-| **Quoted String (Common)** | $5,493$ | **$14,926$** ☕ | $13,833$ | $3,609$ | $13,746$ | $3,150$ | $2,522$ | $2,287$ | $4,832$ | $2,019$ | $2,825$ | $584$ | **`dot-parse`** ☕ |
-| **Quoted String (Escaped)** | $4,966$ | $5,797$ | **$11,111$** ☕ | $3,131$ | **$11,801$** 🚀 | $2,976$ | $2,201$ | $2,217$ | $3,898$ | $1,513$ | $2,208$ | $580$ | **`fastparse`** 🚀<br>Java: **`jparsec`** ☕ |
-| **Keywords (120 CS)** | $76$ | **$364$** ☕ | $138$ | $105$ | $93$ | $424$ | $255$ | **$476$** 🚀 | $110$ | $131$ | $95$ | $73$ | **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **IPv4 Address** | $2,974$ | **$20,807$** ☕ | $13,600$ | $7,655$ | **$24,661$** 🚀 | $23,763$ | $8,907$ | **$27,330$** 🚀 | $3,778$ | $2,939$ | $10,021$ | $669$ | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
+| **Quoted String (Common)** | $5,493$ | **$14,926$** 🚀 | **$13,833$** ☕ | $3,609$ | **$13,746$** 🚀 | $3,150$ | $2,522$ | $2,287$ | $4,832$ | $2,019$ | $2,825$ | $584$ | **`dot`** 🚀, **`jparsec`** ☕<br>Scala: **`fast`** 🚀 |
+| **Quoted String (Escaped)** | $4,966$ | $5,797$ | **$11,111$** ☕ | $3,131$ | **$11,801$** 🚀 | $2,976$ | $2,201$ | $2,217$ | $3,898$ | $1,513$ | $2,208$ | $580$ | **`fast`** 🚀, **`jparsec`** ☕ |
+| **Keywords (120 CS)** | $76$ | **$364$** ☕ | $138$ | $105$ | $93$ | $424$ | $255$ | **$476$** 🚀 | $110$ | $131$ | $95$ | $73$ | **`parboiled2`** 🚀<br>Java: **`dot`** ☕ |
 | **Keywords CI (120 CI)** | $60$ | $129$ | $148$ | $90$ | $91$ | $107$ | $57$ | **$324$** 🚀 | $121$ | **$172$** ☕ | $87$ | $76$ | **`parboiled2`** 🚀<br>Java: **`parsecj`** ☕ |
-| **Calculator** | $400$ | **$701$** ☕ | $264$ | $630$ | $1,224$ | $513$ | $329$ | **$2,094$** 🚀 | $216$ | $231$ | $462$ | $4$ | **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
-| **Nested Block Comment** | $2,085$ | **$11,622$** ☕ | $2,307$ | $1,143$ | $4,587$ | $2,445$ | $912$ | $6,377$ | $361$ | $795$ | $733$ | $9$ | **`dot-parse`** ☕ |
+| **Calculator** | $400$ | **$701$** ☕ | $264$ | $630$ | $1,224$ | $513$ | $329$ | **$2,094$** 🚀 | $216$ | $231$ | $462$ | $4$ | **`parboiled2`** 🚀<br>Java: **`dot`** ☕ |
+| **Nested Block Comment** | $2,085$ | **$11,622$** 🚀 | $2,307$ | $1,143$ | $4,587$ | $2,445$ | $912$ | $6,377$ | $361$ | $795$ | $733$ | $9$ | **`dot`** 🚀 |
 
 ---
 
@@ -115,11 +115,11 @@ Every engine was validated against the **exact same 13 deep structural AST test 
 
 | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `cats-parse` | `parboiled` | `parboiled2` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Simple Type (`String`)** | $2,365$ | **$8,363$** ☕ | $1,524$ | $3,506$ | $9,162$ | $3,310$ | $620$ | **$18,521$** 🚀 | **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
-| **Fully Qualified (`java.lang.String`)** | $934$ | **$3,280$** ☕ | $656$ | $2,083$ | $5,739$ | $2,066$ | $359$ | **$8,080$** 🚀 | **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
-| **Nested Generics (`Map<String, List<Integer>>`)** | $286$ | **$747$** ☕ | $153$ | $446$ | **$1,227$** 🚀 | $439$ | $93$ | **$1,354$** 🚀 | **`parboiled2`** 🚀, **`fastparse`** 🚀<br>Java: **`dot-parse`** ☕ |
-| **Annotated Array (`List<String>[]`)** | $296$ | **$673$** ☕ | $154$ | $426$ | **$1,159$** 🚀 | $364$ | $79$ | **$1,169$** 🚀 | **`parboiled2`** 🚀, **`fastparse`** 🚀<br>Java: **`dot-parse`** ☕ |
-| **Complex (`@MyAnnotation(...) List<Integer>`)** | $217$ | **$281$** ☕ | $103$ | $163$ | **$662$** 🚀 | $235$ | $58$ | **$733$** 🚀 | **`parboiled2`** 🚀, **`fastparse`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **Simple Type (`String`)** | $2,365$ | **$8,363$** ☕ | $1,524$ | $3,506$ | **$9,162$** 🚀 | $3,310$ | $620$ | **$18,521$** 🚀 | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
+| **Fully Qualified (`java.lang.String`)** | $934$ | **$3,280$** ☕ | $656$ | $2,083$ | **$5,739$** 🚀 | $2,066$ | $359$ | **$8,080$** 🚀 | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
+| **Nested Generics (`Map<String, List<Integer>>`)** | $286$ | **$747$** ☕ | $153$ | $446$ | **$1,227$** 🚀 | $439$ | $93$ | **$1,354$** 🚀 | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
+| **Annotated Array (`List<String>[]`)** | $296$ | **$673$** ☕ | $154$ | $426$ | **$1,159$** 🚀 | $364$ | $79$ | **$1,169$** 🚀 | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
+| **Complex (`@MyAnnotation(...) List<Integer>`)** | $217$ | **$281$** ☕ | $103$ | $163$ | **$662$** 🚀 | $235$ | $58$ | **$733$** 🚀 | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
 
 ### Key Takeaways from the Java Type Shootout:
 
