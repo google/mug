@@ -14,10 +14,8 @@ import static org.javafp.parsecj.Text.wspaces;
 
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
 import java.util.function.BinaryOperator;
-import org.javafp.data.IList;
 import org.javafp.parsecj.Parser;
 import org.javafp.parsecj.Reply;
-import org.javafp.parsecj.Text;
 import org.javafp.parsecj.input.Input;
 
 public final class ParsecjShowdown {
@@ -75,19 +73,14 @@ public final class ParsecjShowdown {
   }
 
   public static class KeywordsFixture {
-    @SuppressWarnings("unchecked")
-    private static final Parser<Character, String> KEYWORD =
-        choice(
-            BenchmarkInputs.KEYWORDS.stream()
-                .map(Text::string)
-                .map(Parser::attempt)
-                .toArray(Parser[]::new));
-
-    @SuppressWarnings("unchecked")
     private static final Parser<Character, Integer> PARSER =
-        KEYWORD
-            .then(chr(',').then(KEYWORD).many())
-            .map(list -> ((IList<?>) list).size() + 1)
+        regex(
+                "("
+                    + String.join("|", BenchmarkInputs.KEYWORDS)
+                    + ")(,("
+                    + String.join("|", BenchmarkInputs.KEYWORDS)
+                    + "))*")
+            .map(str -> (int) str.chars().filter(c -> c == ',').count() + 1)
             .between(retn(null), eof());
 
     static {

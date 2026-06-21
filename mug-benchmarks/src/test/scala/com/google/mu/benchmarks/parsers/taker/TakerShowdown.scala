@@ -88,7 +88,9 @@ object TakerShowdown {
   }
 
   class KeywordsFixture {
-    def run(input: String): Any = KeywordsFixture.PARSER.parseAll(input)
+    def run(input: String): Any = {
+      KeywordsFixture.PARSER.parseAll(input)
+    }
   }
 
   object IgnoreCaseFixture {

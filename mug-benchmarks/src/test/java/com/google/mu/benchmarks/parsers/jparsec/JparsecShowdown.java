@@ -61,7 +61,9 @@ public final class JparsecShowdown {
     private static final Parser<Integer> PARSER = KEYWORD.sepBy(isChar(',')).map(List::size);
 
     static {
-      assertThat(PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS)).isEqualTo(120);
+      Integer count = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS);
+      assertThat(count).isEqualTo(120);
+
       assertThrows(
           ParserException.class, () -> PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID));
     }
@@ -72,12 +74,12 @@ public final class JparsecShowdown {
   }
 
   public static class IgnoreCaseFixture {
-    private static final Parser<?> KEYWORD =
+    private static final Parser<?> KEYWORD_CI =
         or(
             BenchmarkInputs.KEYWORDS.stream()
                 .map(Scanners::stringCaseInsensitive)
                 .collect(toList()));
-    private static final Parser<Integer> PARSER = KEYWORD.sepBy(isChar(',')).map(List::size);
+    private static final Parser<Integer> PARSER = KEYWORD_CI.sepBy(isChar(',')).map(List::size);
 
     static {
       assertThat(PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CI)).isEqualTo(120);
