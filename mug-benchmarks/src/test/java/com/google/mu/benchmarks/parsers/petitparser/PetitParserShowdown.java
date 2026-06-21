@@ -1,6 +1,6 @@
 package com.google.mu.benchmarks.parsers.petitparser;
 
-import static com.google.common.truth.Truth.assertThat;
+import com.google.common.truth.Truth;
 
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
 import org.petitparser.context.Result;
@@ -24,7 +24,8 @@ public final class PetitParserShowdown {
 
     static {
       Result res = PARSER.parse(BenchmarkInputs.IP);
-      assertThat(res.isSuccess()).isTrue();
+      Truth.assertThat(res.isSuccess()).isTrue();
+      Truth.assertThat((String) res.get()).isEqualTo("ip");
     }
 
     public Object run() {
@@ -44,8 +45,13 @@ public final class PetitParserShowdown {
     }
 
     static {
-      assertThat(PARSER.parse(BenchmarkInputs.STRING_SIMPLE).isSuccess()).isTrue();
-      assertThat(PARSER.parse(BenchmarkInputs.STRING_ESCAPED).isSuccess()).isTrue();
+      Result resSimple = PARSER.parse(BenchmarkInputs.STRING_SIMPLE);
+      Truth.assertThat(resSimple.isSuccess()).isTrue();
+      Truth.assertThat((String) resSimple.get()).isEqualTo(BenchmarkInputs.STRING_SIMPLE);
+
+      Result resEscaped = PARSER.parse(BenchmarkInputs.STRING_ESCAPED);
+      Truth.assertThat(resEscaped.isSuccess()).isTrue();
+      Truth.assertThat((String) resEscaped.get()).isEqualTo(BenchmarkInputs.STRING_ESCAPED);
     }
 
     public Object run(String input) {
@@ -67,7 +73,9 @@ public final class PetitParserShowdown {
 
     static {
       for (String keyword : BenchmarkInputs.KEYWORDS) {
-        assertThat(PARSER.parse(keyword).isSuccess()).isTrue();
+        Result res = PARSER.parse(keyword);
+        Truth.assertThat(res.isSuccess()).isTrue();
+        Truth.assertThat((String) res.get()).isEqualTo(keyword);
       }
     }
 
@@ -90,7 +98,9 @@ public final class PetitParserShowdown {
 
     static {
       for (String keyword : BenchmarkInputs.KEYWORDS) {
-        assertThat(PARSER.parse(keyword.toUpperCase()).isSuccess()).isTrue();
+        Result res = PARSER.parse(keyword.toUpperCase());
+        Truth.assertThat(res.isSuccess()).isTrue();
+        Truth.assertThat((String) res.get()).isEqualTo(keyword.toUpperCase());
       }
     }
 
@@ -159,8 +169,8 @@ public final class PetitParserShowdown {
 
     static {
       Result res = PARSER.parse(BenchmarkInputs.CALCULATOR);
-      assertThat(res.isSuccess()).isTrue();
-      assertThat((Integer) res.get()).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
+      Truth.assertThat(res.isSuccess()).isTrue();
+      Truth.assertThat((Integer) res.get()).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
     }
 
     public Object run() {
@@ -188,7 +198,8 @@ public final class PetitParserShowdown {
 
     static {
       Result res = PARSER.parse(BenchmarkInputs.NESTED_COMMENT);
-      assertThat(res.isSuccess()).isTrue();
+      Truth.assertThat(res.isSuccess()).isTrue();
+      Truth.assertThat((String) res.get()).isEqualTo(BenchmarkInputs.NESTED_COMMENT);
     }
 
     public Object run() {

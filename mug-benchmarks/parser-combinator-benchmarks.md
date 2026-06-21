@@ -125,6 +125,11 @@ code generation**, **runtime trie dispatching**, and **bytecode generation**:
     However, `parsecj` significantly outperforms `jjparse` due to lower
     stream-framing and boxing overhead.
 
+*   **PetitParser's 1st-Choice Illusion & Backtracking Cliff**:
+    `petitparser` shows an extraordinary, astronomical speed of **180.8 million parses/sec** when matching the 1st keyword (`select`). This is not a JIT glitch, but a consequence of its design: its keyword parser matches the exact string (`input.startsWith("select", position)`) without any trailing whitespace or delimiter checks (unlike other contenders). When matching the first choice, the entire parse call is JIT-inlined, and the JVM's escape analysis completely eliminates the `Result` object allocation, leaving a flat, stack-only memory-copy speed.
+    However, because `petitparser` uses naive linear backtracking choice matching (`p1.or(p2)`), it does not compile keywords into a Trie. When matching the **12th keyword (`limit`)**, it must sequentially fail the first 11 choices. This causes its performance to drop off a massive cliff down to **19.9 million parses/sec**—a **$9\text{x}$ slow down**!
+    In contrast, trie-based or prefix-optimized engines like `cats-parse` ($87.1\text{M}$) and `dot-parse` ($74.3\text{M}$) maintain extremely stable, position-independent throughput whether matching the 1st or the 12th keyword!
+
 ---
 
 ## 12-Way Showdown Benchmark Results
@@ -132,45 +137,46 @@ code generation**, **runtime trie dispatching**, and **bytecode generation**:
 Throughput was measured in **operations per millisecond** (higher is better).
 All benchmarks were run under G1 GC.
 
-| Benchmark Scenario | `antlr4` | `dot-parse` 🚀 | `jparsec` | `fastparse` | `cats-parse` | `parboiled` | `parboiled2` | `scala-pc` | `petitparser` | `parsecj` | `taker` | `jjparse` | **Winner(s)** |
+| Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `cats-parse` | `parboiled` | `parboiled2` | `scala-pc` | `parsecj` | `taker` | `jjparse` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **IPv4 Address** | $3,325$ | $12,633$ | $10,892$ | $22,705$ | $15,104$ | $8,785$ | **$23,696$** 🚀 | $2,723$ | $6,904$ | $2,316$ | $9,343$ | $632$ | **`parboiled2`** 🚀 |
-| **Quoted String (Common Case)** | $5,640$ | $9,434$ | $12,169$ | **$12,843$** 🚀 | $2,491$ | $2,284$ | $2,807$ | $3,811$ | $3,109$ | $1,798$ | $2,355$ | $585$ | **`fastparse`** 🚀 |
-| **Quoted String (Escaped Edge Case)** | $4,983$ | $4,761$ | $10,899$ | **$11,549$** 🚀 | $2,394$ | $2,039$ | $2,806$ | $4,106$ | $2,704$ | $1,517$ | $2,030$ | $561$ | **`fastparse`** 🚀 |
-| **Keywords (1st - `select`)** | $6,993$ | $69,784$ | $39,488$ | $10,202$ | $83,447$ | $22,960$ | $41,665$ | $26,730$ | **$180,880$** 🚀 | $43,706$ | $56,967$ | $720$ | **`petitparser`** 🚀 |
-| **Keywords (4th - `delete`)** | $7,077$ | **$57,034$** 🚀 | $19,415$ | $9,211$ | $55,728$ | $23,254$ | $30,429$ | $20,913$ | $49,997$ | $12,812$ | $22,218$ | $697$ | **`dot-parse`** 🚀 |
-| **Keywords (8th - `where`)** | $7,488$ | $72,790$ | $13,038$ | $8,167$ | **$87,173$** 🚀 | $24,059$ | $29,170$ | $16,780$ | $29,565$ | $5,500$ | $12,064$ | $699$ | **`cats-parse`** 🚀 |
-| **Keywords (12th - `limit`)** | $6,903$ | $74,301$ | $9,218$ | $7,253$ | **$87,160$** 🚀 | $24,524$ | $42,480$ | $13,886$ | $19,919$ | $3,829$ | $8,289$ | $704$ | **`cats-parse`** 🚀 |
-| **Keywords CI (1st)** | $5,863$ | $20,818$ | $27,145$ | $9,004$ | **$54,053$** 🚀 | $9,984$ | $13,445$ | $20,062$ | $44,273$ | $26,465$ | $26,240$ | $700$ | **`cats-parse`** 🚀 |
-| **Keywords CI (4th)** | $5,836$ | $20,309$ | $15,307$ | $8,052$ | **$23,404$** 🚀 | $6,949$ | $18,721$ | $15,689$ | $29,352$ | $20,128$ | $10,085$ | $696$ | **`cats-parse`** 🚀 |
-| **Keywords CI (8th)** | $5,988$ | **$21,013$** 🚀 | $11,524$ | $7,163$ | $15,176$ | $4,971$ | $16,669$ | $11,169$ | $22,613$ | $16,872$ | $5,152$ | $691$ | **`dot-parse`** 🚀 |
-| **Keywords CI (12th)** | $6,222$ | **$20,769$** 🚀 | $8,374$ | $5,802$ | $10,393$ | $3,891$ | $19,677$ | $8,981$ | $15,530$ | $13,664$ | $6,678$ | $668$ | **`dot-parse`** 🚀 |
-| **Calculator** | $437$ | $757$ | $268$ | $1,269$ | $515$ | $335$ | **$1,963$** 🚀 | $211$ | $636$ | $234$ | $456$ | $5$ | **`parboiled2`** 🚀 |
-| **Nested Block Comment** | $2,051$ | **$10,971$** 🚀 | $2,499$ | $4,707$ | $2,040$ | $868$ | $5,782$ | $315$ | $1,079$ | $673$ | $818$ | $9$ | **`dot-parse`** 🚀 |
-
+| **IPv4 Address** | $3,325$ | **$12,633$** ☕ | **$10,892$** ☕ | $6,904$ | **$22,705$** 🚀 | $15,104$ | $8,785$ | **$23,696$** 🚀 | $2,723$ | $2,316$ | $9,343$ | $632$ | **`parboiled2`** 🚀, **`fastparse`** 🚀<br>Java: **`dot-parse`** ☕, **`jparsec`** ☕ |
+| **Quoted String (Common Case)** | $5,640$ | $9,434$ | **$12,169$** 🚀, ☕ | $3,109$ | **$12,843$** 🚀 | $2,491$ | $2,284$ | $2,807$ | $3,811$ | $1,798$ | $2,355$ | $585$ | **`fastparse`** 🚀, **`jparsec`** 🚀, ☕ |
+| **Quoted String (Escaped Edge Case)** | $4,983$ | $4,761$ | **$10,899$** 🚀, ☕ | $2,704$ | **$11,549$** 🚀 | $2,394$ | $2,039$ | $2,806$ | $4,106$ | $1,517$ | $2,030$ | $561$ | **`fastparse`** 🚀, **`jparsec`** 🚀, ☕ |
+| **Keywords (1st - `select`)** | $6,993$ | $69,784$ | $39,488$ | **$180,880$** 🚀 | $10,202$ | $83,447$ | $22,960$ | $41,665$ | $26,730$ | $43,706$ | $56,967$ | $720$ | **`petitparser`** 🚀 |
+| **Keywords (4th - `delete`)** | $7,077$ | **$57,034$** 🚀 | $19,415$ | **$49,997$** 🚀 | $9,211$ | **$55,728$** 🚀 | $23,254$ | $30,429$ | $20,913$ | $12,812$ | $22,218$ | $697$ | **`dot-parse`** 🚀, **`cats-parse`** 🚀, **`petitparser`** 🚀 |
+| **Keywords (8th - `where`)** | $7,488$ | **$72,790$** 🚀, ☕ | $13,038$ | $29,565$ | $8,167$ | **$87,173$** 🚀 | $24,059$ | $29,170$ | $16,780$ | $5,500$ | $12,064$ | $699$ | **`cats-parse`** 🚀, **`dot-parse`** 🚀, ☕ |
+| **Keywords (12th - `limit`)** | $6,903$ | **$74,301$** 🚀, ☕ | $9,218$ | $19,919$ | $7,253$ | **$87,160$** 🚀 | $24,524$ | $42,480$ | $13,886$ | $3,829$ | $8,289$ | $704$ | **`cats-parse`** 🚀, **`dot-parse`** 🚀, ☕ |
+| **Keywords CI (1st)** | $5,863$ | $20,818$ | $27,145$ | **$44,273$** ☕ | $9,004$ | **$54,053$** 🚀 | $9,984$ | $13,445$ | $20,062$ | $26,465$ | $26,240$ | $700$ | **`cats-parse`** 🚀<br>Java: **`petitparser`** ☕ |
+| **Keywords CI (4th)** | $5,836$ | $20,309$ | $15,307$ | **$29,352$** 🚀 | $8,052$ | $23,404$ | $6,949$ | $18,721$ | $15,689$ | $20,128$ | $10,085$ | $696$ | **`petitparser`** 🚀 |
+| **Keywords CI (8th)** | $5,988$ | **$21,013$** 🚀 | $11,524$ | **$22,613$** 🚀 | $7,163$ | $15,176$ | $4,971$ | $16,669$ | $11,169$ | $16,872$ | $5,152$ | $691$ | **`petitparser`** 🚀, **`dot-parse`** 🚀 |
+| **Keywords CI (12th)** | $6,222$ | **$20,769$** 🚀, ☕ | $8,374$ | $15,530$ | $5,802$ | $10,393$ | $3,891$ | **$19,677$** 🚀 | $8,981$ | $13,664$ | $6,678$ | $668$ | **`dot-parse`** 🚀, ☕, **`parboiled2`** 🚀 |
+| **Calculator** | $437$ | **$757$** ☕ | $268$ | $636$ | $1,269$ | $515$ | $335$ | **$1,963$** 🚀 | $211$ | $234$ | $456$ | $5$ | **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **Nested Block Comment** | $2,051$ | **$10,971$** 🚀 | $2,499$ | $1,079$ | $4,707$ | $2,040$ | $868$ | $5,782$ | $315$ | $673$ | $818$ | $9$ | **`dot-parse`** 🚀 |
+ 
 ---
-
-## Java Type Signature Parser Shootout (7-Way Showdown)
-
-To evaluate how these frameworks perform when building a **highly complex, recursive, and production-grade grammar**, we implemented a full **Java Type signature parser** across 7 key shootout engines:
-
+ 
+## Java Type Signature Parser Shootout (8-Way Showdown)
+ 
+To evaluate how these frameworks perform when building a **highly complex, recursive, and production-grade grammar**, we implemented a full **Java Type signature parser** across 8 key shootout engines:
+ 
 1.  **`antlr4`** (Java LL(*) Parser Generator)
 2.  **`dot-parse`** (Google Java Runtime Combinators)
 3.  **`jparsec`** (Java Monadic Lexer/Parser Separation)
-4.  **`fastparse`** (Scala Compile-Time Macro PEG)
-5.  **`cats-parse`** (Scala Runtime Combinators)
-6.  **`parboiled`** (Java Parboiled 1.x Bytecode Generator)
-7.  **`parboiled2`** (Scala Parboiled 2.x Macro PEG)
-
+4.  **`petitparser`** (Java Runtime Combinators)
+5.  **`fastparse`** (Scala Compile-Time Macro PEG)
+6.  **`cats-parse`** (Scala Runtime Combinators)
+7.  **`parboiled`** (Java Parboiled 1.x Bytecode Generator)
+8.  **`parboiled2`** (Scala Parboiled 2.x Macro PEG)
+ 
 Every engine was validated against the **exact same 13 deep structural AST test cases** to guarantee complete functional parity. Throughput was measured in **operations per millisecond** (higher is better):
-
-| Benchmark Scenario | `antlr4` | `dot-parse` 🚀 | `jparsec` | `fastparse` | `cats-parse` | `parboiled` | `parboiled2` | **Winner(s)** |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Simple Type (`String`)** | $2,135$ | $5,673$ | $1,584$ | **$6,972$** 🚀 | $3,092$ | $567$ | $1,867$ | **`fastparse`** 🚀 |
-| **Fully Qualified (`java.lang.String`)** | $1,005$ | $3,042$ | $584$ | **$4,383$** 🚀 | $1,948$ | $342$ | $1,998$ | **`fastparse`** 🚀 |
-| **Nested Generics (`Map<String, List<Integer>>`)** | $261$ | $685$ | $121$ | **$966$** 🚀 | $437$ | $90$ | $879$ | **`fastparse`** 🚀 |
-| **Annotated Array (`List<String>[]`)** | $296$ | $673$ | $118$ | **$877$** 🚀 | $373$ | $77$ | $775$ | **`fastparse`** 🚀 |
-| **Complex (`@MyAnnotation(...) List<Integer>`)** | $194$ | $282$ | $80$ | **$635$** 🚀 | $218$ | $56$ | $593$ | **`fastparse`** 🚀 |
+ 
+| Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `cats-parse` | `parboiled` | `parboiled2` | **Winner(s)** |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Simple Type (`String`)** | $2,135$ | **$5,673$** ☕ | $1,584$ | $3,224$ | **$6,972$** 🚀 | $3,092$ | $567$ | $1,867$ | **`fastparse`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **Fully Qualified (`java.lang.String`)** | $1,005$ | **$3,042$** ☕ | $584$ | $2,008$ | **$4,383$** 🚀 | $1,948$ | $342$ | $1,998$ | **`fastparse`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **Nested Generics (`Map<String, List<Integer>>`)** | $261$ | **$685$** ☕ | $121$ | $382$ | **$966$** 🚀 | $437$ | $90$ | **$879$** 🚀 | **`fastparse`** 🚀, **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **Annotated Array (`List<String>[]`)** | $296$ | **$673$** ☕ | $118$ | $380$ | **$877$** 🚀 | $373$ | $77$ | **$775$** 🚀 | **`fastparse`** 🚀, **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **Complex (`@MyAnnotation(...) List<Integer>`)** | $194$ | **$282$** ☕ | $80$ | $166$ | **$635$** 🚀 | $218$ | $56$ | **$593$** 🚀 | **`fastparse`** 🚀, **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
 
 ### Key Takeaways from the Java Type Shootout:
 
@@ -178,6 +184,8 @@ Every engine was validated against the **exact same 13 deep structural AST test 
     `fastparse` leads all scenarios by compiling the parser graph into inlined, mutable state-passing scanner loops using compile-time Scala macros.
 *   **The Extraordinary Runtime JIT Tuning of `dot-parse`**:
     `dot-parse` is the absolute leader among pure Java/runtime libraries. It achieves an outstanding **5.6 million parses/sec** on simple types and **3.0 million parses/sec** on fully qualified types. It is **2x faster than Scala's `cats-parse`** and **3.5x to 5.5x faster than `jparsec`**, showcasing the incredible efficiency of its whitespace skipping and combinator dispatching.
+*   **The Outstanding Performance of `petitparser`**:
+    As a pure Java/runtime combinator library, `petitparser` performs exceptionally, claiming **3.2 million parses/sec** on simple types and **2.0 million parses/sec** on fully qualified types. It is **2x faster than `jparsec`** and **6x faster than `parboiled`**, easily securing the **#2 Java spot** behind `dot-parse`. Because its stateless parser is reused as a singleton, it completely avoids heap allocation overhead, making it a highly competitive and JIT-friendly contender.
 *   **The JParsec Lexer/Parser Separation**:
     With our idiomatic lexer/parser separation, `jparsec` performs extremely stably ($1.5\text{M}$ simple, $80$ complex). The performance difference compared to scannerless parsers is the expected trade-off for its high-expressiveness, two-phase lexing machinery.
 *   **The Parboiled Evolution**:

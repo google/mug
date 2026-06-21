@@ -10,6 +10,7 @@ import com.google.mu.benchmarks.parsers.fastparse.FastparseJavaTypeParser;
 import com.google.mu.benchmarks.parsers.parboiled.ParboiledJavaTypeParser;
 import com.google.mu.benchmarks.parsers.antlr4.Antlr4JavaTypeParser;
 import com.google.mu.benchmarks.parsers.parboiled2.Parboiled2JavaTypeParser;
+import com.google.mu.benchmarks.parsers.petitparser.PetitParserJavaTypeParser;
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -94,4 +95,13 @@ public class JavaTypeBenchmark {
   @Benchmark public void parboiled2_parseNestedGenerics(Blackhole bh) { bh.consume(Parboiled2JavaTypeParser.parse(NESTED_GENERICS)); }
   @Benchmark public void parboiled2_parseAnnotatedArray(Blackhole bh) { bh.consume(Parboiled2JavaTypeParser.parse(ANNOTATED_ARRAY)); }
   @Benchmark public void parboiled2_parseComplex(Blackhole bh) { bh.consume(Parboiled2JavaTypeParser.parse(COMPLEX)); }
+
+  // =========================================================================
+  // 8. petitparser Benchmarks
+  // =========================================================================
+  @Benchmark public void petitparser_parseSimple(Blackhole bh) { bh.consume(PetitParserJavaTypeParser.parse(SIMPLE)); }
+  @Benchmark public void petitparser_parseFullyQualified(Blackhole bh) { bh.consume(PetitParserJavaTypeParser.parse(FULLY_QUALIFIED)); }
+  @Benchmark public void petitparser_parseNestedGenerics(Blackhole bh) { bh.consume(PetitParserJavaTypeParser.parse(NESTED_GENERICS)); }
+  @Benchmark public void petitparser_parseAnnotatedArray(Blackhole bh) { bh.consume(PetitParserJavaTypeParser.parse(ANNOTATED_ARRAY)); }
+  @Benchmark public void petitparser_parseComplex(Blackhole bh) { bh.consume(PetitParserJavaTypeParser.parse(COMPLEX)); }
 }
