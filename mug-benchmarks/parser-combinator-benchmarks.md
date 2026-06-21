@@ -132,7 +132,7 @@ in **operations per millisecond** (higher is better):
 ### Key Takeaways from the Java Type Shootout
 
 *   **Google's `dot-parse` Leads the Java Division**:
-    `dot-parse` is the fastest Java-native parser library, running **$1.3\text{x}$ to $2.4\text{x}$ faster** than the next
+    `dot-parse` is the fastest Java-native parser library, running **$1.5\text{x}$ to $2.0\text{x}$ faster** than the next
     fastest Java contender (`petitparser` / `antlr4`).
     On simple types, `dot-parse` ($7,034$ ops/ms) is the leading Java library,
     behind Scala's macro-based `fastparse` ($9,240$ ops/ms) by leveraging a
