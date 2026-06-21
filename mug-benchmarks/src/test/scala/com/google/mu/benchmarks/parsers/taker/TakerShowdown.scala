@@ -64,17 +64,26 @@ object TakerShowdown {
   }
 
   object KeywordsFixture {
-    private val PARSER: Taker[String] = Combinators.oneOf(
+    private val KEYWORD: Taker[String] = Combinators.oneOf(
       BenchmarkInputs.KEYWORDS.asScala
         .map(Lexical.string)
         .toArray: _*
     )
+    private val PARSER: Taker[Integer] = KEYWORD
+      .then(
+        Chars.chr(',').then(KEYWORD).map((_, kw) => kw).zeroOrMore()
+      )
+      .map((kw, list) => java.lang.Integer.valueOf(list.size() + 1))
 
     // Verify
-    for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
-      val res = PARSER.parseAll(keyword)
+    {
+      val res = PARSER.parseAll(BenchmarkInputs.KEYWORDS_LIST_CS)
       assert(res.matches())
       assert(res.input().isEof())
+      assert(res.value() == 120)
+
+      val resBad = PARSER.parseAll(BenchmarkInputs.KEYWORDS_LIST_INVALID)
+      assert(!resBad.matches() || !resBad.input().isEof())
     }
   }
 
@@ -83,17 +92,26 @@ object TakerShowdown {
   }
 
   object IgnoreCaseFixture {
-    private val PARSER: Taker[String] = Combinators.oneOf(
+    private val KEYWORD: Taker[String] = Combinators.oneOf(
       BenchmarkInputs.KEYWORDS.asScala
         .map(Lexical.stringIgnoreCase)
         .toArray: _*
     )
+    private val PARSER: Taker[Integer] = KEYWORD
+      .then(
+        Chars.chr(',').then(KEYWORD).map((_, kw) => kw).zeroOrMore()
+      )
+      .map((kw, list) => java.lang.Integer.valueOf(list.size() + 1))
 
     // Verify
-    for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
-      val res = PARSER.parseAll(keyword.toUpperCase)
+    {
+      val res = PARSER.parseAll(BenchmarkInputs.KEYWORDS_LIST_CI)
       assert(res.matches())
       assert(res.input().isEof())
+      assert(res.value() == 120)
+
+      val resBad = PARSER.parseAll(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI)
+      assert(!resBad.matches() || !resBad.input().isEof())
     }
   }
 

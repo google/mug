@@ -48,15 +48,17 @@ object ScalaParserShowdown {
   }
 
   object KeywordsFixture extends RegexParsers {
-    override val skipWhitespace = false
-    val parser = BenchmarkInputs.KEYWORDS.asScala.mkString("|").r
+    private val KEYWORD_REGEX = BenchmarkInputs.KEYWORDS.asScala.mkString("|")
+    private val parser = ("^(" + KEYWORD_REGEX + ")(,(" + KEYWORD_REGEX + "))*$").r ^^ { str => str.count(_ == ',') + 1 }
 
     // Verify
-    for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
-      parse(parser, keyword) match {
-        case Success(_, next) if next.atEnd =>
-        case other => throw new AssertionError(s"scala-parser-combinators Keywords verification failed for $keyword: $other")
-      }
+    parse(parser, BenchmarkInputs.KEYWORDS_LIST_CS) match {
+      case Success(120, next) if next.atEnd =>
+      case other => throw new AssertionError(s"scala-parser-combinators Keywords verification failed: $other")
+    }
+    parse(parser, BenchmarkInputs.KEYWORDS_LIST_INVALID) match {
+      case Success(_, next) if next.atEnd => throw new AssertionError("scala-parser-combinators Keywords should have failed on invalid input")
+      case _ => // expected!
     }
   }
 
@@ -67,15 +69,17 @@ object ScalaParserShowdown {
   }
 
   object IgnoreCaseFixture extends RegexParsers {
-    override val skipWhitespace = false
-    val parser = ("(?i)" + BenchmarkInputs.KEYWORDS.asScala.mkString("|")).r
+    private val KEYWORD_REGEX = BenchmarkInputs.KEYWORDS.asScala.mkString("|")
+    private val parser = ("^(?i)(" + KEYWORD_REGEX + ")(,(" + KEYWORD_REGEX + "))*$").r ^^ { str => str.count(_ == ',') + 1 }
 
     // Verify
-    for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
-      parse(parser, keyword.toUpperCase) match {
-        case Success(_, next) if next.atEnd =>
-        case other => throw new AssertionError(s"scala-parser-combinators IgnoreCase verification failed for $keyword: $other")
-      }
+    parse(parser, BenchmarkInputs.KEYWORDS_LIST_CI) match {
+      case Success(120, next) if next.atEnd =>
+      case other => throw new AssertionError(s"scala-parser-combinators IgnoreCase verification failed: $other")
+    }
+    parse(parser, BenchmarkInputs.KEYWORDS_LIST_INVALID_CI) match {
+      case Success(_, next) if next.atEnd => throw new AssertionError("scala-parser-combinators IgnoreCase should have failed on invalid input")
+      case _ => // expected!
     }
   }
 

@@ -9,13 +9,18 @@ import static org.jparsec.Scanners.DEC_INTEGER;
 import static org.jparsec.Scanners.DOUBLE_QUOTE_STRING;
 import static org.jparsec.Scanners.WHITESPACES;
 import static org.jparsec.Scanners.isChar;
+import static org.jparsec.Scanners.nestableBlockComment;
 import static org.jparsec.Scanners.pattern;
 import static org.jparsec.pattern.Patterns.regex;
+import static org.junit.Assert.assertThrows;
 
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
+import java.util.List;
 import org.jparsec.OperatorTable;
 import org.jparsec.Parser;
+import org.jparsec.Scanners;
 import org.jparsec.Terminals;
+import org.jparsec.error.ParserException;
 
 public final class JparsecShowdown {
 
@@ -51,13 +56,14 @@ public final class JparsecShowdown {
   }
 
   public static class KeywordsFixture {
-    private static final Parser<?> PARSER =
-        or(BenchmarkInputs.KEYWORDS.stream().map(org.jparsec.Scanners::string).collect(toList()));
+    private static final Parser<?> KEYWORD =
+        or(BenchmarkInputs.KEYWORDS.stream().map(Scanners::string).collect(toList()));
+    private static final Parser<Integer> PARSER = KEYWORD.sepBy(isChar(',')).map(List::size);
 
     static {
-      for (String keyword : BenchmarkInputs.KEYWORDS) {
-        PARSER.parse(keyword);
-      }
+      assertThat(PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS)).isEqualTo(120);
+      assertThrows(
+          ParserException.class, () -> PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID));
     }
 
     public Object run(String input) {
@@ -66,16 +72,17 @@ public final class JparsecShowdown {
   }
 
   public static class IgnoreCaseFixture {
-    private static final Parser<?> PARSER =
+    private static final Parser<?> KEYWORD =
         or(
             BenchmarkInputs.KEYWORDS.stream()
-                .map(org.jparsec.Scanners::stringCaseInsensitive)
+                .map(Scanners::stringCaseInsensitive)
                 .collect(toList()));
+    private static final Parser<Integer> PARSER = KEYWORD.sepBy(isChar(',')).map(List::size);
 
     static {
-      for (String keyword : BenchmarkInputs.KEYWORDS) {
-        PARSER.parse(keyword.toUpperCase());
-      }
+      assertThat(PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CI)).isEqualTo(120);
+      assertThrows(
+          ParserException.class, () -> PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI));
     }
 
     public Object run(String input) {
@@ -120,7 +127,7 @@ public final class JparsecShowdown {
   }
 
   public static class NestedCommentFixture {
-    private static final Parser<Void> PARSER = org.jparsec.Scanners.nestableBlockComment("/*", "*/");
+    private static final Parser<Void> PARSER = nestableBlockComment("/*", "*/");
 
     static {
       // Verify

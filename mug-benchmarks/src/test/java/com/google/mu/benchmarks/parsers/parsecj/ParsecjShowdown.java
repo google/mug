@@ -2,7 +2,7 @@ package com.google.mu.benchmarks.parsers.parsecj;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.javafp.parsecj.Combinators.choice;
-import static org.javafp.parsecj.Combinators.many;
+import static org.javafp.parsecj.Combinators.eof;
 import static org.javafp.parsecj.Combinators.or;
 import static org.javafp.parsecj.Combinators.retn;
 import static org.javafp.parsecj.Combinators.satisfy;
@@ -14,6 +14,7 @@ import static org.javafp.parsecj.Text.wspaces;
 
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
 import java.util.function.BinaryOperator;
+import org.javafp.data.IList;
 import org.javafp.parsecj.Parser;
 import org.javafp.parsecj.Reply;
 import org.javafp.parsecj.Text;
@@ -49,12 +50,11 @@ public final class ParsecjShowdown {
     private static final Parser<Character, ?> PARSER = buildParser();
 
     private static Parser<Character, ?> buildParser() {
-      Parser<Character, String> escape = chr('\\').then(satisfy((Character c) -> true)).map(c -> "\\" + c);
-      Parser<Character, String> normal = satisfy((Character c) -> c != '"' && c != '\\').map(c -> String.valueOf(c));
-      return choice(normal, escape)
-          .many()
-          .map(x -> "string")
-          .between(chr('"'), chr('"'));
+      Parser<Character, String> escape =
+          chr('\\').then(satisfy((Character c) -> true)).map(c -> "\\" + c);
+      Parser<Character, String> normal =
+          satisfy((Character c) -> c != '"' && c != '\\').map(c -> String.valueOf(c));
+      return choice(normal, escape).many().map(x -> "string").between(chr('"'), chr('"'));
     }
 
     static {
@@ -76,17 +76,28 @@ public final class ParsecjShowdown {
 
   public static class KeywordsFixture {
     @SuppressWarnings("unchecked")
-    private static final Parser<Character, ?> PARSER =
+    private static final Parser<Character, String> KEYWORD =
         choice(
             BenchmarkInputs.KEYWORDS.stream()
                 .map(Text::string)
                 .map(Parser::attempt)
                 .toArray(Parser[]::new));
 
+    @SuppressWarnings("unchecked")
+    private static final Parser<Character, Integer> PARSER =
+        KEYWORD
+            .then(chr(',').then(KEYWORD).many())
+            .map(list -> ((IList<?>) list).size() + 1)
+            .between(retn(null), eof());
+
     static {
-      for (String keyword : BenchmarkInputs.KEYWORDS) {
-        assertThat(PARSER.parse(Input.of(keyword)).isOk()).isTrue();
+      try {
+        assertThat(PARSER.parse(Input.of(BenchmarkInputs.KEYWORDS_LIST_CS)).getResult())
+            .isEqualTo(120);
+      } catch (Exception e) {
+        throw new AssertionError(e);
       }
+      assertThat(PARSER.parse(Input.of(BenchmarkInputs.KEYWORDS_LIST_INVALID)).isOk()).isFalse();
     }
 
     public Object run(String input) {
@@ -95,13 +106,25 @@ public final class ParsecjShowdown {
   }
 
   public static class IgnoreCaseFixture {
-    private static final Parser<Character, ?> PARSER =
-        regex("(?i)" + String.join("|", BenchmarkInputs.KEYWORDS));
+    @SuppressWarnings("unchecked")
+    private static final Parser<Character, Integer> PARSER =
+        regex(
+                "(?i)("
+                    + String.join("|", BenchmarkInputs.KEYWORDS)
+                    + ")(,("
+                    + String.join("|", BenchmarkInputs.KEYWORDS)
+                    + "))*")
+            .map(str -> (int) str.chars().filter(c -> c == ',').count() + 1)
+            .between(retn(null), eof());
 
     static {
-      for (String keyword : BenchmarkInputs.KEYWORDS) {
-        assertThat(PARSER.parse(Input.of(keyword.toUpperCase())).isOk()).isTrue();
+      try {
+        assertThat(PARSER.parse(Input.of(BenchmarkInputs.KEYWORDS_LIST_CI)).getResult())
+            .isEqualTo(120);
+      } catch (Exception e) {
+        throw new AssertionError(e);
       }
+      assertThat(PARSER.parse(Input.of(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI)).isOk()).isFalse();
     }
 
     public Object run(String input) {
@@ -158,9 +181,11 @@ public final class ParsecjShowdown {
     @SuppressWarnings("unchecked")
     private static Parser<Character, ?> buildParser() {
       Parser.Ref<Character, Object> ref = Parser.ref();
-      Parser<Character, Object> normalChar = satisfy((Character c) -> c != '*' && c != '/').map(c -> c);
+      Parser<Character, Object> normalChar =
+          satisfy((Character c) -> c != '*' && c != '/').map(c -> c);
       Parser<Character, Object> plainSlash = chr('/').map(c -> c);
-      Parser<Character, Object> plainStar = chr('*').then(satisfy((Character c) -> c != '/')).map(c -> (Object) c).attempt();
+      Parser<Character, Object> plainStar =
+          chr('*').then(satisfy((Character c) -> c != '/')).map(c -> (Object) c).attempt();
       Parser<Character, Object> inner = choice(ref, normalChar, plainSlash, plainStar);
       Parser<Character, ?> comment = string("/*").then(inner.many()).then(string("*/"));
       ref.set((Parser<Character, Object>) comment);

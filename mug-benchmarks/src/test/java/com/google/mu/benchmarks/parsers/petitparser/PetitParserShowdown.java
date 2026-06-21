@@ -1,15 +1,13 @@
 package com.google.mu.benchmarks.parsers.petitparser;
 
 import com.google.common.truth.Truth;
-
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
+import java.util.List;
 import org.petitparser.context.Result;
 import org.petitparser.parser.Parser;
 import org.petitparser.parser.combinators.SettableParser;
 import org.petitparser.parser.primitive.CharacterParser;
 import org.petitparser.parser.primitive.StringParser;
-
-import java.util.List;
 
 public final class PetitParserShowdown {
 
@@ -68,15 +66,19 @@ public final class PetitParserShowdown {
         Parser p = StringParser.of(keyword);
         keywords = (keywords == null) ? p : keywords.or(p);
       }
-      return keywords;
+      return keywords
+          .separatedBy(CharacterParser.of(','))
+          .map(list -> (((List<?>) list).size() + 1) / 2)
+          .end();
     }
 
     static {
-      for (String keyword : BenchmarkInputs.KEYWORDS) {
-        Result res = PARSER.parse(keyword);
-        Truth.assertThat(res.isSuccess()).isTrue();
-        Truth.assertThat((String) res.get()).isEqualTo(keyword);
-      }
+      Result res = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS);
+      Truth.assertThat(res.isSuccess()).isTrue();
+      Truth.assertThat((Integer) res.get()).isEqualTo(120);
+
+      Result resBad = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID);
+      Truth.assertThat(resBad.isSuccess()).isFalse();
     }
 
     public Object run(String input) {
@@ -93,15 +95,19 @@ public final class PetitParserShowdown {
         Parser p = StringParser.ofIgnoringCase(keyword);
         keywords = (keywords == null) ? p : keywords.or(p);
       }
-      return keywords;
+      return keywords
+          .separatedBy(CharacterParser.of(','))
+          .map(list -> (((List<?>) list).size() + 1) / 2)
+          .end();
     }
 
     static {
-      for (String keyword : BenchmarkInputs.KEYWORDS) {
-        Result res = PARSER.parse(keyword.toUpperCase());
-        Truth.assertThat(res.isSuccess()).isTrue();
-        Truth.assertThat((String) res.get()).isEqualTo(keyword.toUpperCase());
-      }
+      Result res = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CI);
+      Truth.assertThat(res.isSuccess()).isTrue();
+      Truth.assertThat((Integer) res.get()).isEqualTo(120);
+
+      Result resBad = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI);
+      Truth.assertThat(resBad.isSuccess()).isFalse();
     }
 
     public Object run(String input) {
@@ -115,56 +121,69 @@ public final class PetitParserShowdown {
     private static Parser buildParser() {
       SettableParser expression = CharacterParser.none().settable();
 
-      Parser number = CharacterParser.of('-').optional().seq(CharacterParser.digit().plus()).flatten()
-          .trim()
-          .map(x -> Integer.parseInt((String) x));
+      Parser number =
+          CharacterParser.of('-')
+              .optional()
+              .seq(CharacterParser.digit().plus())
+              .flatten()
+              .trim()
+              .map(x -> Integer.parseInt((String) x));
 
-      Parser factor = CharacterParser.of('(').trim()
-          .seq(expression)
-          .seq(CharacterParser.of(')').trim())
-          .map((List<Object> x) -> (Integer) x.get(1))
-          .or(number);
+      Parser factor =
+          CharacterParser.of('(')
+              .trim()
+              .seq(expression)
+              .seq(CharacterParser.of(')').trim())
+              .map((List<Object> x) -> (Integer) x.get(1))
+              .or(number);
 
       // term = factor ( ('*'|'/') factor )*
-      Parser term = factor.seq(
-          CharacterParser.anyOf("*/").trim().seq(factor).star()
-      ).map((List<Object> x) -> {
-        int val = (Integer) x.get(0);
-        List<List<Object>> rest = (List<List<Object>>) x.get(1);
-        for (List<Object> opAndFactor : rest) {
-          char op = (Character) opAndFactor.get(0);
-          int next = (Integer) opAndFactor.get(1);
-          if (op == '*') {
-            val *= next;
-          } else {
-            val /= next;
-          }
-        }
-        return val;
-      });
+      Parser term =
+          factor
+              .seq(CharacterParser.anyOf("*/").trim().seq(factor).star())
+              .map(
+                  (List<Object> x) -> {
+                    int val = (Integer) x.get(0);
+                    List<List<Object>> rest = (List<List<Object>>) x.get(1);
+                    for (List<Object> opAndFactor : rest) {
+                      char op = (Character) opAndFactor.get(0);
+                      int next = (Integer) opAndFactor.get(1);
+                      if (op == '*') {
+                        val *= next;
+                      } else {
+                        val /= next;
+                      }
+                    }
+                    return val;
+                  });
 
       // expression = term ( ('+'|'-') term )*
-      Parser expr = term.seq(
-          CharacterParser.anyOf("+-").trim().seq(term).star()
-      ).map((List<Object> x) -> {
-        int val = (Integer) x.get(0);
-        List<List<Object>> rest = (List<List<Object>>) x.get(1);
-        for (List<Object> opAndTerm : rest) {
-          char op = (Character) opAndTerm.get(0);
-          int next = (Integer) opAndTerm.get(1);
-          if (op == '+') {
-            val += next;
-          } else {
-            val -= next;
-          }
-        }
-        return val;
-      });
+      Parser expr =
+          term.seq(CharacterParser.anyOf("+-").trim().seq(term).star())
+              .map(
+                  (List<Object> x) -> {
+                    int val = (Integer) x.get(0);
+                    List<List<Object>> rest = (List<List<Object>>) x.get(1);
+                    for (List<Object> opAndTerm : rest) {
+                      char op = (Character) opAndTerm.get(0);
+                      int next = (Integer) opAndTerm.get(1);
+                      if (op == '+') {
+                        val += next;
+                      } else {
+                        val -= next;
+                      }
+                    }
+                    return val;
+                  });
 
       expression.set(expr);
 
       // Skip leading whitespace and match EOI
-      return CharacterParser.whitespace().star().seq(expression).map((List<Object> x) -> x.get(1)).end();
+      return CharacterParser.whitespace()
+          .star()
+          .seq(expression)
+          .map((List<Object> x) -> x.get(1))
+          .end();
     }
 
     static {

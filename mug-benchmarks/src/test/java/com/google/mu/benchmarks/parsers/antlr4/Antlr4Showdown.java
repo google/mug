@@ -139,15 +139,23 @@ public final class Antlr4Showdown {
       ShowdownParser parser = PARSER.get();
 
       // Verify
-      for (String keyword : BenchmarkInputs.KEYWORDS) {
-        CharStream charStream = fromString(keyword);
-        lexer.setInputStream(charStream);
-        tokenStream.setTokenSource(lexer);
-        parser.setInputStream(tokenStream);
-        parser.reset();
-        parser.keywords();
-        assertThat(parser.getNumberOfSyntaxErrors()).isEqualTo(0);
-      }
+      CharStream charStream = fromString(BenchmarkInputs.KEYWORDS_LIST_CS);
+      lexer.setInputStream(charStream);
+      tokenStream.setTokenSource(lexer);
+      parser.setInputStream(tokenStream);
+      parser.reset();
+      ShowdownParser.KeywordsContext ctx = parser.keywords();
+      assertThat(parser.getNumberOfSyntaxErrors()).isEqualTo(0);
+      assertThat(ctx.keyword().size()).isEqualTo(120);
+
+      // Negative Verify
+      CharStream badStream = fromString(BenchmarkInputs.KEYWORDS_LIST_INVALID);
+      lexer.setInputStream(badStream);
+      tokenStream.setTokenSource(lexer);
+      parser.setInputStream(tokenStream);
+      parser.reset();
+      parser.keywords();
+      assertThat(parser.getNumberOfSyntaxErrors()).isGreaterThan(0);
     }
 
     public Object run(String input) {
@@ -189,15 +197,23 @@ public final class Antlr4Showdown {
       ShowdownParser parser = PARSER.get();
 
       // Verify
-      for (String keyword : BenchmarkInputs.KEYWORDS) {
-        CharStream charStream = fromString(keyword.toUpperCase());
-        lexer.setInputStream(charStream);
-        tokenStream.setTokenSource(lexer);
-        parser.setInputStream(tokenStream);
-        parser.reset();
-        parser.keywordsIgnoreCase();
-        assertThat(parser.getNumberOfSyntaxErrors()).isEqualTo(0);
-      }
+      CharStream charStream = fromString(BenchmarkInputs.KEYWORDS_LIST_CI);
+      lexer.setInputStream(charStream);
+      tokenStream.setTokenSource(lexer);
+      parser.setInputStream(tokenStream);
+      parser.reset();
+      ShowdownParser.KeywordsIgnoreCaseContext ctx = parser.keywordsIgnoreCase();
+      assertThat(parser.getNumberOfSyntaxErrors()).isEqualTo(0);
+      assertThat(ctx.keywordIgnoreCase().size()).isEqualTo(120);
+
+      // Negative Verify
+      CharStream badStream = fromString(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI);
+      lexer.setInputStream(badStream);
+      tokenStream.setTokenSource(lexer);
+      parser.setInputStream(tokenStream);
+      parser.reset();
+      parser.keywordsIgnoreCase();
+      assertThat(parser.getNumberOfSyntaxErrors()).isGreaterThan(0);
     }
 
     public Object run(String input) {

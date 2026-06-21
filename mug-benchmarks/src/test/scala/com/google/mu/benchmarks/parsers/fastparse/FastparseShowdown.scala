@@ -98,20 +98,25 @@ object FastparseShowdown {
       }
     }
 
-    def keywords[_: P] = P(choice(BenchmarkInputs.KEYWORDS.asScala.toList))
+    private def keyword[_: P] = P(choice(BenchmarkInputs.KEYWORDS.asScala.toList))
+    def keywords[_: P] = P( keyword.rep(sep = ",") )
+    def keywordsList[_: P] = P( keywords ~ End )
+    private def verifyingList[_: P] = P( keywords.! ~ End ).map(_.count(_ == ',') + 1)
 
     // Verify
-    for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
-      fastparse.parse(keyword, keywords(_)) match {
-        case Parsed.Success(_, _) =>
-        case f => throw new AssertionError(s"fastparse Keywords verification failed for '$keyword': $f")
-      }
+    fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_CS, verifyingList(_)) match {
+      case Parsed.Success(120, _) =>
+      case f => throw new AssertionError(s"fastparse Keywords verification failed: $f")
+    }
+    fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID, keywordsList(_)) match {
+      case Parsed.Failure(_, _, _) =>
+      case s => throw new AssertionError(s"fastparse Keywords should have failed on invalid input: $s")
     }
   }
 
   class KeywordsFixture {
     def run(input: String): Any = {
-      fastparse.parse(input, KeywordsFixture.keywords(_))
+      fastparse.parse(input, KeywordsFixture.keywordsList(_))
     }
   }
 
@@ -123,20 +128,25 @@ object FastparseShowdown {
       }
     }
 
-    def ignoreCaseKeywords[_: P] = P(choiceIgnoreCase(BenchmarkInputs.KEYWORDS.asScala.toList))
+    private def ignoreCaseKeyword[_: P] = P(choiceIgnoreCase(BenchmarkInputs.KEYWORDS.asScala.toList))
+    def ignoreCaseKeywords[_: P] = P( ignoreCaseKeyword.rep(sep = ",") )
+    def ignoreCaseKeywordsList[_: P] = P( ignoreCaseKeywords ~ End )
+    private def verifyingList[_: P] = P( ignoreCaseKeywords.! ~ End ).map(_.count(_ == ',') + 1)
 
     // Verify
-    for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
-      fastparse.parse(keyword.toUpperCase, ignoreCaseKeywords(_)) match {
-        case Parsed.Success(_, _) =>
-        case f => throw new AssertionError(s"fastparse IgnoreCase verification failed for '$keyword': $f")
-      }
+    fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_CI, verifyingList(_)) match {
+      case Parsed.Success(120, _) =>
+      case f => throw new AssertionError(s"fastparse IgnoreCase verification failed: $f")
+    }
+    fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI, ignoreCaseKeywordsList(_)) match {
+      case Parsed.Failure(_, _, _) =>
+      case s => throw new AssertionError(s"fastparse IgnoreCase should have failed on invalid input: $s")
     }
   }
 
   class IgnoreCaseFixture {
     def run(input: String): Any = {
-      fastparse.parse(input, IgnoreCaseFixture.ignoreCaseKeywords(_))
+      fastparse.parse(input, IgnoreCaseFixture.ignoreCaseKeywordsList(_))
     }
   }
 

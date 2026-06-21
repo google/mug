@@ -1,7 +1,6 @@
 package com.google.mu.benchmarks.parsers.dotparse;
 
 import static com.google.common.labs.parse.Parser.anyOf;
-import static com.google.common.labs.parse.Parser.caseInsensitive;
 import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.define;
 import static com.google.common.labs.parse.Parser.digits;
@@ -10,6 +9,8 @@ import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.truth.Truth.assertThat;
+import static java.util.stream.Collectors.counting;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.labs.parse.OperatorTable;
 import com.google.common.labs.parse.Parser;
@@ -49,13 +50,14 @@ public final class DotParseShowdown {
   }
 
   public static class KeywordsFixture {
-    private static final Parser<?> PARSER =
+    private static final Parser<?> KEYWORD =
         BenchmarkInputs.KEYWORDS.stream().map(Parser::string).collect(or());
+    private static final Parser<Long> PARSER = KEYWORD.atLeastOnceDelimitedBy(",", counting());
 
     static {
-      for (String keyword : BenchmarkInputs.KEYWORDS) {
-        assertThat(PARSER.parse(keyword)).isNotNull();
-      }
+      assertThat(PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS)).isEqualTo(120L);
+      assertThrows(
+          Parser.ParseException.class, () -> PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID));
     }
 
     public Object run(String input) {
@@ -64,13 +66,15 @@ public final class DotParseShowdown {
   }
 
   public static class IgnoreCaseFixture {
-    private static final Parser<?> PARSER =
+    private static final Parser<?> KEYWORD =
         BenchmarkInputs.KEYWORDS.stream().map(Parser::caseInsensitive).collect(or());
+    private static final Parser<Long> PARSER = KEYWORD.atLeastOnceDelimitedBy(",", counting());
 
     static {
-      for (String keyword : BenchmarkInputs.KEYWORDS) {
-        assertThat(PARSER.parse(keyword.toUpperCase())).isNotNull();
-      }
+      assertThat(PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CI)).isEqualTo(120L);
+      assertThrows(
+          Parser.ParseException.class,
+          () -> PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI));
     }
 
     public Object run(String input) {

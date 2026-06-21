@@ -55,7 +55,7 @@ object Parboiled2Showdown {
 
   // 3. Keywords (Case-Sensitive)
   class KeywordsParser(val input: ParserInput) extends Parser {
-    def keywords = rule {
+    def keyword = rule {
       ( str("select")
       | str("insert")
       | str("update")
@@ -68,17 +68,21 @@ object Parboiled2Showdown {
       | str("order")
       | str("having")
       | str("limit")
-      ) ~ EOI
+      )
     }
+    def keywords = rule { oneOrMore(keyword).separatedBy(",") ~ EOI }
+    def verifyingKeywords = rule { capture(oneOrMore(keyword).separatedBy(",")) ~> (str => str.count(_ == ',') + 1) ~ EOI }
   }
 
   object KeywordsFixture {
     // Verify
-    for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
-      new KeywordsParser(keyword).keywords.run() match {
-        case Success(_) =>
-        case Failure(err) => throw new AssertionError(s"parboiled2 Keywords verification failed for $keyword: $err")
-      }
+    new KeywordsParser(BenchmarkInputs.KEYWORDS_LIST_CS).verifyingKeywords.run() match {
+      case Success(120) =>
+      case other => throw new AssertionError(s"parboiled2 Keywords verification failed: $other")
+    }
+    new KeywordsParser(BenchmarkInputs.KEYWORDS_LIST_INVALID).keywords.run() match {
+      case Failure(_) =>
+      case Success(_) => throw new AssertionError("parboiled2 Keywords should have failed on invalid input")
     }
   }
 
@@ -90,7 +94,7 @@ object Parboiled2Showdown {
 
   // 4. Keywords (Case-Insensitive)
   class IgnoreCaseParser(val input: ParserInput) extends Parser {
-    def keywords = rule {
+    def keyword = rule {
       ( ignoreCase("select")
       | ignoreCase("insert")
       | ignoreCase("update")
@@ -103,17 +107,21 @@ object Parboiled2Showdown {
       | ignoreCase("order")
       | ignoreCase("having")
       | ignoreCase("limit")
-      ) ~ EOI
+      )
     }
+    def keywords = rule { oneOrMore(keyword).separatedBy(",") ~ EOI }
+    def verifyingKeywords = rule { capture(oneOrMore(keyword).separatedBy(",")) ~> (str => str.count(_ == ',') + 1) ~ EOI }
   }
 
   object IgnoreCaseFixture {
     // Verify
-    for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
-      new IgnoreCaseParser(keyword.toUpperCase).keywords.run() match {
-        case Success(_) =>
-        case Failure(err) => throw new AssertionError(s"parboiled2 IgnoreCase verification failed for $keyword: $err")
-      }
+    new IgnoreCaseParser(BenchmarkInputs.KEYWORDS_LIST_CI).verifyingKeywords.run() match {
+      case Success(120) =>
+      case other => throw new AssertionError(s"parboiled2 IgnoreCase verification failed: $other")
+    }
+    new IgnoreCaseParser(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI).keywords.run() match {
+      case Failure(_) =>
+      case Success(_) => throw new AssertionError("parboiled2 IgnoreCase should have failed on invalid input")
     }
   }
 

@@ -46,16 +46,20 @@ object CatsParseShowdown {
   }
 
   object KeywordsFixture {
-    private val PARSER = P.oneOf(
+    private val KEYWORD = P.oneOf(
       BenchmarkInputs.KEYWORDS.asScala.map(P.string).toList
     )
+    private val EOF = P.not(P.anyChar)
+    private val PARSER = (KEYWORD.repSep(P.char(',')) <* EOF).map(_.size)
 
     // Verify
-    for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
-      PARSER.parse(keyword) match {
-        case Right(_) =>
-        case Left(err) => throw new AssertionError(s"cats-parse Keywords verification failed for '$keyword': $err")
-      }
+    PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS) match {
+      case Right(("", 120)) =>
+      case other => throw new AssertionError(s"cats-parse Keywords verification failed: $other")
+    }
+    PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID) match {
+      case Left(_) =>
+      case Right(other) => throw new AssertionError(s"cats-parse Keywords should have failed on invalid input but got: $other")
     }
   }
 
@@ -66,16 +70,20 @@ object CatsParseShowdown {
   }
 
   object IgnoreCaseFixture {
-    private val PARSER = P.oneOf(
+    private val KEYWORD = P.oneOf(
       BenchmarkInputs.KEYWORDS.asScala.map(P.ignoreCase).toList
     )
+    private val EOF = P.not(P.anyChar)
+    private val PARSER = (KEYWORD.repSep(P.char(',')) <* EOF).map(_.size)
 
     // Verify
-    for (keyword <- BenchmarkInputs.KEYWORDS.asScala) {
-      PARSER.parse(keyword.toUpperCase) match {
-        case Right(_) =>
-        case Left(err) => throw new AssertionError(s"cats-parse IgnoreCase verification failed for '$keyword': $err")
-      }
+    PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CI) match {
+      case Right(("", 120)) =>
+      case other => throw new AssertionError(s"cats-parse IgnoreCase verification failed: $other")
+    }
+    PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI) match {
+      case Left(_) =>
+      case Right(other) => throw new AssertionError(s"cats-parse IgnoreCase should have failed on invalid input but got: $other")
     }
   }
 

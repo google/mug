@@ -7,10 +7,12 @@ ip: INT '.' INT '.' INT '.' INT EOF;
 quotedString: QUOTED_STRING EOF;
 
 // 3. Case-Sensitive Keywords Rule
-keywords: (SELECT | INSERT | UPDATE | DELETE | CREATE | DROP | ALTER | WHERE | GROUP | ORDER | HAVING | LIMIT) EOF;
+keyword: SELECT | INSERT | UPDATE | DELETE | CREATE | DROP | ALTER | WHERE | GROUP | ORDER | HAVING | LIMIT;
+keywords: keyword (',' keyword)* EOF;
 
 // 4. Case-Insensitive Keywords Rule
-keywordsIgnoreCase: (select_ic | insert_ic | update_ic | delete_ic | create_ic | drop_ic | alter_ic | where_ic | group_ic | order_ic | having_ic | limit_ic) EOF;
+keywordIgnoreCase: select_ic | insert_ic | update_ic | delete_ic | create_ic | drop_ic | alter_ic | where_ic | group_ic | order_ic | having_ic | limit_ic;
+keywordsIgnoreCase: keywordIgnoreCase (',' keywordIgnoreCase)* EOF;
 
 // 5. Calculator Rule
 calculator: calcExpr EOF;

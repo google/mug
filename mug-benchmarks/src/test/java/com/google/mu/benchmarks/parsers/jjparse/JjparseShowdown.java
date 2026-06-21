@@ -50,14 +50,28 @@ public final class JjparseShowdown {
 
   public static class KeywordsFixture {
     private static final JjParserImpl jjParserInstance = new JjParserImpl();
-    private static final Parsing<Character>.Parser<?> PARSER = jjParserInstance.keywords;
+    private static final Parsing<Character>.Parser<Integer> PARSER =
+        jjParserInstance
+            .regex(
+                "("
+                    + String.join("|", BenchmarkInputs.KEYWORDS)
+                    + ")(,("
+                    + String.join("|", BenchmarkInputs.KEYWORDS)
+                    + "))*")
+            .map(str -> (int) str.chars().filter(c -> c == ',').count() + 1);
 
     static {
       // Verify
-      for (String keyword : BenchmarkInputs.KEYWORDS) {
-        assertThat(jjParserInstance.parse(PARSER, Input.of("jjKeywords", keyword)).isSuccess())
-            .isTrue();
-      }
+      assertThat(
+              jjParserInstance
+                  .parse(PARSER, Input.of("jjKeywords", BenchmarkInputs.KEYWORDS_LIST_CS))
+                  .getOrFail())
+          .isEqualTo(120);
+      assertThat(
+              jjParserInstance
+                  .parse(PARSER, Input.of("jjKeywords", BenchmarkInputs.KEYWORDS_LIST_INVALID))
+                  .isSuccess())
+          .isFalse();
     }
 
     public Object run(String input) {
@@ -67,17 +81,28 @@ public final class JjparseShowdown {
 
   public static class IgnoreCaseFixture {
     private static final JjParserImpl jjParserInstance = new JjParserImpl();
-    private static final Parsing<Character>.Parser<?> PARSER = jjParserInstance.keywordsIgnoreCase;
+    private static final Parsing<Character>.Parser<Integer> PARSER =
+        jjParserInstance
+            .regex(
+                "(?i)("
+                    + String.join("|", BenchmarkInputs.KEYWORDS)
+                    + ")(,("
+                    + String.join("|", BenchmarkInputs.KEYWORDS)
+                    + "))*")
+            .map(str -> (int) str.chars().filter(c -> c == ',').count() + 1);
 
     static {
       // Verify
-      for (String keyword : BenchmarkInputs.KEYWORDS) {
-        assertThat(
-                jjParserInstance
-                    .parse(PARSER, Input.of("jjIgnoreCase", keyword.toUpperCase()))
-                    .isSuccess())
-            .isTrue();
-      }
+      assertThat(
+              jjParserInstance
+                  .parse(PARSER, Input.of("jjIgnoreCase", BenchmarkInputs.KEYWORDS_LIST_CI))
+                  .getOrFail())
+          .isEqualTo(120);
+      assertThat(
+              jjParserInstance
+                  .parse(PARSER, Input.of("jjIgnoreCase", BenchmarkInputs.KEYWORDS_LIST_INVALID_CI))
+                  .isSuccess())
+          .isFalse();
     }
 
     public Object run(String input) {
@@ -107,12 +132,15 @@ public final class JjparseShowdown {
 
     static {
       // Verify
-      var res = jjParserInstance.parse(PARSER, Input.of("jjNestedComment", BenchmarkInputs.NESTED_COMMENT));
+      var res =
+          jjParserInstance.parse(
+              PARSER, Input.of("jjNestedComment", BenchmarkInputs.NESTED_COMMENT));
       assertThat(res.isSuccess()).isTrue();
     }
 
     public Object run() {
-      return jjParserInstance.parse(PARSER, Input.of("jjNestedComment", BenchmarkInputs.NESTED_COMMENT));
+      return jjParserInstance.parse(
+          PARSER, Input.of("jjNestedComment", BenchmarkInputs.NESTED_COMMENT));
     }
   }
 
@@ -123,10 +151,20 @@ public final class JjparseShowdown {
 
     @SuppressWarnings("unchecked")
     public final Parsing<Character>.Parser<String> keywords =
-        regex(String.join("|", BenchmarkInputs.KEYWORDS));
+        regex(
+            "("
+                + String.join("|", BenchmarkInputs.KEYWORDS)
+                + ")(,("
+                + String.join("|", BenchmarkInputs.KEYWORDS)
+                + "))*");
 
     public final Parsing<Character>.Parser<String> keywordsIgnoreCase =
-        regex("(?i)" + String.join("|", BenchmarkInputs.KEYWORDS));
+        regex(
+            "(?i)("
+                + String.join("|", BenchmarkInputs.KEYWORDS)
+                + ")(,("
+                + String.join("|", BenchmarkInputs.KEYWORDS)
+                + "))*");
 
     public final Parsing<Character>.Parser<?> nestedComment;
 
@@ -139,8 +177,7 @@ public final class JjparseShowdown {
       var ref = new ParserRef<Integer>();
       var atom =
           choice(
-              number,
-              token(literal("(")).andr(lazy(() -> ref.parser)).andl(token(literal(")"))));
+              number, token(literal("(")).andr(lazy(() -> ref.parser)).andl(token(literal(")"))));
       Parser<BiFunction<Integer, Integer, Integer>> mul =
           token(literal("*")).andr(success(() -> (a, b) -> a * b));
       Parser<BiFunction<Integer, Integer, Integer>> div =

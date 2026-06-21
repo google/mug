@@ -53,19 +53,38 @@ public final class ParboiledShowdown {
   }
 
   public static class KeywordsFixture {
-    private static final BasicParseRunner<Object> RUNNER = buildRunner();
+    static class KeywordsParser extends BaseParser<Object> {
+      public Rule keywords() {
+        return Sequence(keyword(), ZeroOrMore(',', keyword()), EOI);
+      }
 
-    private static BasicParseRunner<Object> buildRunner() {
-      ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
-      return new BasicParseRunner<>(parser.keywords());
+      public Rule verifyingKeywords() {
+        return Sequence(
+            push(0), keyword(), increment(), ZeroOrMore(',', keyword(), increment()), EOI);
+      }
+
+      public Rule keyword() {
+        Rule[] rules = BenchmarkInputs.KEYWORDS.stream().map(this::String).toArray(Rule[]::new);
+        return FirstOf(rules);
+      }
+
+      boolean increment() {
+        poke((Integer) peek() + 1);
+        return true;
+      }
     }
 
+    private static final KeywordsParser PARSER = Parboiled.createParser(KeywordsParser.class);
+    private static final BasicParseRunner<Object> RUNNER =
+        new BasicParseRunner<>(PARSER.keywords());
+
     static {
-      // Verify
-      for (String keyword : BenchmarkInputs.KEYWORDS) {
-        ParsingResult<Object> res = RUNNER.run(keyword);
-        assertThat(res.matched).isTrue();
-      }
+      // Verify using verifying rule
+      var verifyingRunner = new BasicParseRunner<Object>(PARSER.verifyingKeywords());
+      ParsingResult<Object> res = verifyingRunner.run(BenchmarkInputs.KEYWORDS_LIST_CS);
+      assertThat(res.matched).isTrue();
+      assertThat(res.resultValue).isEqualTo(120);
+      assertThat(verifyingRunner.run(BenchmarkInputs.KEYWORDS_LIST_INVALID).matched).isFalse();
     }
 
     public Object run(String input) {
@@ -74,19 +93,38 @@ public final class ParboiledShowdown {
   }
 
   public static class IgnoreCaseFixture {
-    private static final BasicParseRunner<Object> RUNNER = buildRunner();
+    static class IgnoreCaseParser extends BaseParser<Object> {
+      public Rule keywords() {
+        return Sequence(keyword(), ZeroOrMore(',', keyword()), EOI);
+      }
 
-    private static BasicParseRunner<Object> buildRunner() {
-      ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
-      return new BasicParseRunner<>(parser.keywordsIgnoreCase());
+      public Rule verifyingKeywords() {
+        return Sequence(
+            push(0), keyword(), increment(), ZeroOrMore(',', keyword(), increment()), EOI);
+      }
+
+      public Rule keyword() {
+        Rule[] rules = BenchmarkInputs.KEYWORDS.stream().map(this::IgnoreCase).toArray(Rule[]::new);
+        return FirstOf(rules);
+      }
+
+      boolean increment() {
+        poke((Integer) peek() + 1);
+        return true;
+      }
     }
 
+    private static final IgnoreCaseParser PARSER = Parboiled.createParser(IgnoreCaseParser.class);
+    private static final BasicParseRunner<Object> RUNNER =
+        new BasicParseRunner<>(PARSER.keywords());
+
     static {
-      // Verify
-      for (String keyword : BenchmarkInputs.KEYWORDS) {
-        ParsingResult<Object> res = RUNNER.run(keyword.toUpperCase());
-        assertThat(res.matched).isTrue();
-      }
+      // Verify using verifying rule
+      var verifyingRunner = new BasicParseRunner<Object>(PARSER.verifyingKeywords());
+      ParsingResult<Object> res = verifyingRunner.run(BenchmarkInputs.KEYWORDS_LIST_CI);
+      assertThat(res.matched).isTrue();
+      assertThat(res.resultValue).isEqualTo(120);
+      assertThat(verifyingRunner.run(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI).matched).isFalse();
     }
 
     public Object run(String input) {
@@ -145,24 +183,25 @@ public final class ParboiledShowdown {
     }
 
     public Rule quotedString() {
-      return Sequence(
-          '"', ZeroOrMore(FirstOf(Sequence('\\', ANY), NoneOf("\"\\"))), '"', EOI);
+      return Sequence('"', ZeroOrMore(FirstOf(Sequence('\\', ANY), NoneOf("\"\\"))), '"', EOI);
     }
 
     public Rule keywords() {
-      return Sequence(FirstOf(BenchmarkInputs.KEYWORDS.toArray()), EOI);
+      Rule keyword = FirstOf(BenchmarkInputs.KEYWORDS.toArray());
+      return Sequence(keyword, ZeroOrMore(',', keyword), EOI);
     }
 
     public Rule keywordsIgnoreCase() {
-      return Sequence(
-          FirstOf(BenchmarkInputs.KEYWORDS.stream().map(this::IgnoreCase).toArray(Rule[]::new)),
-          EOI);
+      Rule keyword =
+          FirstOf(BenchmarkInputs.KEYWORDS.stream().map(this::IgnoreCase).toArray(Rule[]::new));
+      return Sequence(keyword, ZeroOrMore(',', keyword), EOI);
     }
 
     // Nested Comment Rules
     @SuppressWarnings("InfiniteRecursion")
     public Rule nestedComment() {
-      return Sequence("/*", ZeroOrMore(FirstOf(nestedComment(), Sequence(TestNot("*/"), ANY))), "*/");
+      return Sequence(
+          "/*", ZeroOrMore(FirstOf(nestedComment(), Sequence(TestNot("*/"), ANY))), "*/");
     }
 
     public Rule nestedCommentRoot() {
