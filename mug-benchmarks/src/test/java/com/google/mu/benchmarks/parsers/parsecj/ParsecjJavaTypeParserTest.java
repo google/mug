@@ -1,14 +1,14 @@
-package com.google.mu.benchmarks.parsers.dotparse;
+package com.google.mu.benchmarks.parsers.parsecj;
 
 import com.google.mu.benchmarks.parsers.javatype.*;
-import static com.google.mu.benchmarks.parsers.dotparse.JavaTypeParser.parse;
+import static com.google.mu.benchmarks.parsers.parsecj.ParsecjJavaTypeParser.parse;
 
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-public class JavaTypeParserTest {
+public class ParsecjJavaTypeParserTest {
 
   @Test
   public void testSimpleType() {
@@ -47,7 +47,6 @@ public class JavaTypeParserTest {
 
   @Test
   public void testNestedTypesWithGenerics() {
-    // Static nested type with generics on inner segment only: Foo.Bar<A, B, C>
     JavaType type1 = parse("Foo.Bar<A, B, C>");
     assertEquals("Foo.Bar<A, B, C>", type1.toString());
     assertEquals(2, type1.segments().size());
@@ -56,7 +55,6 @@ public class JavaTypeParserTest {
     assertEquals("Bar", type1.segments().get(1).typeName());
     assertEquals(3, type1.segments().get(1).typeArguments().size());
 
-    // Non-static nested type with generics on outer segment: Foo<A, B>.Bar
     JavaType type2 = parse("Foo<A, B>.Bar");
     assertEquals("Foo<A, B>.Bar", type2.toString());
     assertEquals(2, type2.segments().size());
@@ -65,7 +63,6 @@ public class JavaTypeParserTest {
     assertEquals("Bar", type2.segments().get(1).typeName());
     assertTrue(type2.segments().get(1).typeArguments().isEmpty());
 
-    // Generics on both outer and inner segments: Outer<String>.Inner<Integer>
     JavaType type3 = parse("Outer<String>.Inner<Integer>");
     assertEquals("Outer<String>.Inner<Integer>", type3.toString());
   }

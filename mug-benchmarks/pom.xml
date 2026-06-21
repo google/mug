@@ -187,14 +187,41 @@
           <version>2.5.0</version>
           <scope>test</scope>
         </dependency>
+        <dependency>
+          <groupId>com.github.h0tk3y.betterParse</groupId>
+          <artifactId>better-parse-jvm</artifactId>
+          <version>0.4.4</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>kotlin-stdlib</artifactId>
+          <version>1.9.22</version>
+          <scope>test</scope>
+        </dependency>
       </dependencies>
       <build>
         <plugins>
+          <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <version>1.9.22</version>
+            <executions>
+              <execution>
+                <id>test-compile</id>
+                <phase>process-test-sources</phase>
+                <goals>
+                  <goal>test-compile</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
           <!-- Re-include the showdown benchmark for compilation -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
+              <useIncrementalCompilation>false</useIncrementalCompilation>
               <testExcludes combine.self="override">
                 <exclude>none</exclude>
               </testExcludes>
@@ -226,6 +253,7 @@
                 <configuration>
                   <sources>
                     <source>src/test/scala</source>
+                    <source>src/test/kotlin</source>
                     <source>${project.build.directory}/generated-test-sources/antlr4</source>
                   </sources>
                 </configuration>
@@ -278,7 +306,39 @@
                 <include>**/*.scala</include>
                 <include>**/*.java</include>
               </includes>
+              <excludes>
+                <exclude>**/parsecj/ParsecjJavaTypeParser.java</exclude>
+                <exclude>**/parsecj/ParsecjJavaTypeParserTest.java</exclude>
+                <exclude>**/taker/TakerJavaTypeParser.java</exclude>
+                <exclude>**/taker/TakerJavaTypeParserTest.java</exclude>
+                <exclude>**/javatype/JavaTypeBenchmark.java</exclude>
+              </excludes>
             </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-clean-plugin</artifactId>
+            <version>3.2.0</version>
+            <executions>
+              <execution>
+                <id>clean-jmh-benchmark-class</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>clean</goal>
+                </goals>
+                <configuration>
+                  <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                  <filesets>
+                    <fileset>
+                      <directory>${project.build.directory}/test-classes/com/google/mu/benchmarks/parsers</directory>
+                      <includes>
+                        <include>ParserShowdownBenchmark*.class</include>
+                      </includes>
+                    </fileset>
+                  </filesets>
+                </configuration>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>

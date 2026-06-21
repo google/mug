@@ -1,4 +1,6 @@
-package com.google.mu.benchmarks.parsers.javatype;
+package com.google.mu.benchmarks.parsers.dotparse;
+
+import com.google.mu.benchmarks.parsers.javatype.*;
 
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.bmpCodeUnit;

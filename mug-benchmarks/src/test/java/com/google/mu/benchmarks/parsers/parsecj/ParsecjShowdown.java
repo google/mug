@@ -196,7 +196,7 @@ public final class ParsecjShowdown {
   }
 
   public static class NestedCommentFixture {
-    private static final Parser<Character, ?> PARSER = buildParser();
+    private static final Parser<Character, ?> PARSER = buildParser().between(retn(null), eof());
 
     @SuppressWarnings("unchecked")
     private static Parser<Character, ?> buildParser() {

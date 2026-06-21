@@ -18,6 +18,7 @@ import com.google.mu.benchmarks.parsers.fastparse.FastparseCalculatorShowdown;
 import com.google.mu.benchmarks.parsers.scalaparser.ScalaParserShowdown;
 import com.google.mu.benchmarks.parsers.parboiled2.Parboiled2Showdown;
 import com.google.mu.benchmarks.parsers.petitparser.PetitParserShowdown;
+import com.google.mu.benchmarks.parsers.betterparse.BetterParseShowdown;
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -124,6 +125,14 @@ public class ParserShowdownBenchmark {
     public final PetitParserShowdown.CalculatorFixture petitparserCalculator = new PetitParserShowdown.CalculatorFixture();
     public final PetitParserShowdown.NestedCommentFixture petitparserNestedComment = new PetitParserShowdown.NestedCommentFixture();
 
+    // 13. better-parse Fixtures
+    public final BetterParseShowdown.IpFixture betterParseIp = new BetterParseShowdown.IpFixture();
+    public final BetterParseShowdown.StringFixture betterParseString = new BetterParseShowdown.StringFixture();
+    public final BetterParseShowdown.KeywordsFixture betterParseKeywords = new BetterParseShowdown.KeywordsFixture();
+    public final BetterParseShowdown.IgnoreCaseFixture betterParseIgnoreCase = new BetterParseShowdown.IgnoreCaseFixture();
+    public final BetterParseShowdown.CalculatorFixture betterParseCalculator = new BetterParseShowdown.CalculatorFixture();
+    public final BetterParseShowdown.NestedCommentFixture betterParseNestedComment = new BetterParseShowdown.NestedCommentFixture();
+
     public BenchmarkState() {
       try {
         this.parsecjCalculator = new ParsecjShowdown.CalculatorFixture();
@@ -149,6 +158,7 @@ public class ParserShowdownBenchmark {
   @Benchmark public void scalaParser_simpleIpPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserIp.run()); }
   @Benchmark public void parboiled2_simpleIpPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2Ip.run()); }
   @Benchmark public void petitparser_simpleIpPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.petitparserIp.run()); }
+  @Benchmark public void betterParse_simpleIpPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseIp.run()); }
 
   // =========================================================================
   // 2. Quoted String Benchmarks
@@ -187,6 +197,8 @@ public class ParserShowdownBenchmark {
   @Benchmark public void parboiled2_escapedStringPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2String.run(BenchmarkInputs.STRING_ESCAPED)); }
   @Benchmark public void petitparser_simpleStringPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.petitparserString.run(BenchmarkInputs.STRING_SIMPLE)); }
   @Benchmark public void petitparser_escapedStringPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.petitparserString.run(BenchmarkInputs.STRING_ESCAPED)); }
+  @Benchmark public void betterParse_simpleStringPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseString.run(BenchmarkInputs.STRING_SIMPLE)); }
+  @Benchmark public void betterParse_escapedStringPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseString.run(BenchmarkInputs.STRING_ESCAPED)); }
 
   // =========================================================================
   // 3. Keywords Benchmarks (Case-Sensitive Stream)
@@ -203,6 +215,7 @@ public class ParserShowdownBenchmark {
   @Benchmark public void scalaParser_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserKeywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
   @Benchmark public void parboiled2_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2Keywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
   @Benchmark public void petitparser_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.petitparserKeywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
+  @Benchmark public void betterParse_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseKeywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
 
   // =========================================================================
   // 4. Keywords Benchmarks (Case-Insensitive Stream)
@@ -219,6 +232,7 @@ public class ParserShowdownBenchmark {
   @Benchmark public void scalaParser_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserIgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
   @Benchmark public void parboiled2_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2IgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
   @Benchmark public void petitparser_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.petitparserIgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
+  @Benchmark public void betterParse_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseIgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
 
   // =========================================================================
   // 5. Calculator Benchmarks
@@ -235,6 +249,7 @@ public class ParserShowdownBenchmark {
   @Benchmark public void scalaParser_calculatorPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserCalculator.run()); }
   @Benchmark public void parboiled2_calculatorPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2Calculator.run()); }
   @Benchmark public void petitparser_calculatorPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.petitparserCalculator.run()); }
+  @Benchmark public void betterParse_calculatorPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseCalculator.run()); }
 
   // =========================================================================
   // 6. Nested Comment Benchmarks
@@ -251,4 +266,5 @@ public class ParserShowdownBenchmark {
   @Benchmark public void scalaParser_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserNestedComment.run()); }
   @Benchmark public void parboiled2_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2NestedComment.run()); }
   @Benchmark public void petitparser_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.petitparserNestedComment.run()); }
+  @Benchmark public void betterParse_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseNestedComment.run(BenchmarkInputs.NESTED_COMMENT)); }
 }
