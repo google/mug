@@ -70,7 +70,7 @@ Our benchmarks reveal a clear set of trade-offs between **compile-time macro cod
 
 Throughput was measured in **operations per millisecond** (higher is better). All benchmarks were run under G1 GC with natural, out-of-the-box collection-allocating configurations for all other contenders, while `dot-parse` leveraged its zero-allocation collectors on the hot path.
 
-| Benchmark Scenario | `antlr4` | `dot` | `jparsec` | `petitparser` | `fast` | `cats` | `parsecj` | `taker` | `better` | **Winner(s)** |
+| Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `cats-parse` | `parsecj` | `taker` | `better-parse` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **IPv4 Address** | $2,190$ | $15,837$ | $11,912$ | $7,670$ | **$24,763$** 🚀 | $23,550$ | **$17,572$** ☕ | $5,042$ | $1,576$ | **`fast`** 🚀<br>**`parsecj`** ☕ |
 | **Quoted String (Common)** | $4,887$ | $15,255$ | $12,200$ | $3,839$ | **$21,980$** 🚀 | **$24,615$** 🚀 | $5,798$ | **$24,672$** 🚀 ☕ | $5,178$ | **`taker`** 🚀 ☕ |
@@ -121,7 +121,7 @@ Every engine was validated against the **exact same 14 deep structural AST
 test cases** to guarantee complete functional parity. Throughput was measured
 in **operations per millisecond** (higher is better):
 
-| Benchmark Scenario | `antlr4` | `dot` | `jparsec` | `petitparser` | `fast` | `parsecj` | `taker` | **Winner(s)** |
+| Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `parsecj` | `taker` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Simple Type (`String`)** | $2,226$ | **$8,492$** ☕ | $1,373$ | $3,525$ | **$8,806$** 🚀 | $1,500$ | $2,581$ | **`fast`** 🚀<br>**`dot`** ☕ |
 | **Fully Qualified** | $1,083$ | **$3,476$** ☕ | $651$ | $2,124$ | **$5,625$** 🚀 | $884$ | $1,524$ | **`fast`** 🚀<br>**`dot`** ☕ |
