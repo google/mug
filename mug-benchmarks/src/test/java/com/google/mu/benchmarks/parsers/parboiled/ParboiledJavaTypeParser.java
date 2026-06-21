@@ -468,9 +468,10 @@ public class ParboiledJavaTypeParser extends BaseParser<Object> {
   // 8. Public Parse Entry Point
   // =========================================================================
   private static final ParboiledJavaTypeParser PARSER = Parboiled.createParser(ParboiledJavaTypeParser.class);
+  private static final BasicParseRunner<Object> RUNNER = new BasicParseRunner<>(PARSER.entry());
 
   public static JavaType parse(String input) {
-    ParsingResult<Object> result = new BasicParseRunner<>(PARSER.entry()).run(input);
+    ParsingResult<Object> result = RUNNER.run(input);
     if (!result.matched) {
       throw new IllegalArgumentException("Parboiled parsing error: failed to match input.");
     }

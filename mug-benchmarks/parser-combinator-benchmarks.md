@@ -172,11 +172,11 @@ Every engine was validated against the **exact same 13 deep structural AST test 
  
 | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `cats-parse` | `parboiled` | `parboiled2` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Simple Type (`String`)** | $2,323$ | **$8,399$** ☕ | $1,380$ | $3,581$ | $8,796$ | $3,341$ | $595$ | **$19,058$** 🚀 | **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
-| **Fully Qualified (`java.lang.String`)** | $1,054$ | **$3,307$** ☕ | $657$ | $2,143$ | $5,662$ | $2,157$ | $339$ | **$8,135$** 🚀 | **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
-| **Nested Generics (`Map<String, List<Integer>>`)** | $284$ | **$747$** ☕ | $153$ | $437$ | **$1,260$** 🚀 | $456$ | $94$ | **$1,353$** 🚀 | **`parboiled2`** 🚀, **`fastparse`** 🚀<br>Java: **`dot-parse`** ☕ |
-| **Annotated Array (`List<String>[]`)** | $292$ | **$696$** ☕ | $147$ | $420$ | $995$ | $399$ | $79$ | **$1,225$** 🚀 | **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
-| **Complex (`@MyAnnotation(...) List<Integer>`)** | $205$ | **$283$** ☕ | $101$ | $170$ | $682$ | $232$ | $57$ | **$822$** 🚀 | **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **Simple Type (`String`)** | $2,365$ | **$8,363$** ☕ | $1,524$ | $3,506$ | $9,162$ | $3,310$ | $620$ | **$18,521$** 🚀 | **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **Fully Qualified (`java.lang.String`)** | $934$ | **$3,280$** ☕ | $656$ | $2,083$ | $5,739$ | $2,066$ | $359$ | **$8,080$** 🚀 | **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **Nested Generics (`Map<String, List<Integer>>`)** | $286$ | **$747$** ☕ | $153$ | $446$ | **$1,227$** 🚀 | $439$ | $93$ | **$1,354$** 🚀 | **`parboiled2`** 🚀, **`fastparse`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **Annotated Array (`List<String>[]`)** | $296$ | **$673$** ☕ | $154$ | $426$ | **$1,159$** 🚀 | $364$ | $79$ | **$1,169$** 🚀 | **`parboiled2`** 🚀, **`fastparse`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **Complex (`@MyAnnotation(...) List<Integer>`)** | $217$ | **$281$** ☕ | $103$ | $163$ | **$662$** 🚀 | $235$ | $58$ | **$733$** 🚀 | **`parboiled2`** 🚀, **`fastparse`** 🚀<br>Java: **`dot-parse`** ☕ |
  
 ### Key Takeaways from the Java Type Shootout:
 
