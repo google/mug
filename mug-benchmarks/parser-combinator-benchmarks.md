@@ -44,48 +44,50 @@ All benchmarks were executed side-by-side on the **same JVM (JDK 24.0.1)** and t
 > **Scope & Benchmark Nuance**:
 > Benchmarking deep, nested grammars requires deep, hands-on framework expertise.
 > Our benchmark suite covers pure parsing speed on micro-inputs, which measures framework overhead rather than complex language syntax translation.
-> It highlights what is technically possible when grammars are written idiomatically for each framework.
-> For example, ANTLR4 is designed for larger files with complex AST generation. It carries a heavy fixed-cost machinery that makes it slower on tiny micro-inputs, but is highly scalable on large source files.
-> In contrast, combinators excel at fast, lightweight, and local micro-parsing tasks.
+> Benchmarking nested grammars requires framework expertise.
+> Our benchmark suite covers parsing speed on micro-inputs, which measures framework overhead.
+> It highlights performance when grammars are written idiomatically for each framework.
+> For example, ANTLR4 is designed for larger files with complex AST generation. It carries a fixed-cost machinery that results in lower throughput on tiny micro-inputs, but is highly scalable on large source files.
+> In contrast, combinators demonstrate higher throughput on local micro-parsing tasks.
 
 ---
 
-### Executive Summary
-
-Our benchmarks reveal a clear set of trade-offs between **compile-time macro code generation**, **runtime trie dispatching**, and **bytecode generation**:
-
-*   **Trie Dispatching Efficiency**:
-    For keyword dispatches, prefix-trie dispatching significantly outperforms traditional backtracking. 
-    `parboiled2` leads case-sensitive keywords, matching **$342$ ops/ms** by compiling choices into macro-optimized character-matching prefix-tries in JVM bytecode.
-    `dot-parse` maintains a strong second at **$249$ ops/ms** utilizing its zero-allocation stream collector.
-    `cats-parse` finishes third at **$89$ ops/ms**.
-
-*   **Case-Insensitive Trie Performance**:
-    `parboiled2` leads case-insensitive matching, reaching **$227$ ops/ms** by compiling case-insensitive choices into macro-optimized trie branches.
-    `dot-parse` is the Java champion by a massive margin, reaching **$171$ ops/ms** 🚀 via its permutation-trie lookup, followed by `jparsec` at **$91$ ops/ms**, while other libraries (like `parsecj` at **$24$ ops/ms**) drop off a performance cliff.
-
-*   **Sequencing & Bulk Scanning**:
-    `parboiled2` leads flat sequencing (IPv4) at **$18.5\text{M}$ ops/sec**, followed closely by `fastparse` ($18.0\text{M}$) and `cats-parse` ($15.4\text{M}$), while `parsecj` is the Java leader at **$14.0\text{M}$ ops/sec** after our native regex optimization.
-    For strings with no escapes, `cats-parse` and `fastparse` lead overall (**$18.1\text{M}$** and **$17.5\text{M}$ ops/sec**), while `dot-parse` leads Java at **$12.2\text{M}$ ops/sec**. For escaped strings, `taker` leads overall at **$9.5\text{M}$ ops/sec** 🚀, followed by `fastparse` ($8.4\text{M}$) and `jparsec` ($5.7\text{M}$).
-
-*   **Recursive Expression & Block Comment Champions**:
-    `parboiled2` dominates recursive expression parsing (Calculator) at **$1.61\text{M}$ ops/sec**, outperforming `fastparse` ($0.84\text{M}$), while `dot-parse` and `petitparser` are neck-and-neck in Java ($0.52\text{M}$ and $0.50\text{M}$).
-    For recursive block comments, `dot-parse` is the **absolute, undisputed champion** overall, leading at **$8.7\text{M}$ ops/sec** 🚀 by using a native character scanner, followed by `parboiled2` at **$5.4\text{M}$** and `fastparse` at **$4.1\text{M}$**.
-
-*   **The Evolutionary Bytecode Leap**:
-    Comparing the two generations of `parboiled` reveals a massive performance leap.
-    `parboiled2` (compile-time macro PEG) is **$3.5\text{x}$ to $5.7\text{x}$ faster** than `parboiled` (parboiled1 Java bytecode generator), proving the profound JIT optimization advantages of compile-time macro expansion over runtime bytecode generation.
-
-*   **The Classic Monadic Baseline**:
-    `scala-parser-combinators` serves as an excellent historical baseline.
-    While it performs well when backed by native Java regular expressions ($3.7\text{M}$ on strings), it struggles on recursive structures ($254\text{ ops/ms}$ on comments, $170\text{ ops/ms}$ on calculator), running **$5\text{x}$ to $21\text{x}$ slower** than modern macro-optimized engines.
-
----
-
-## 12-Way Showdown Benchmark Results
-
-Throughput was measured in **operations per millisecond** (higher is better). All benchmarks were run under G1 GC with natural, out-of-the-box collection-allocating configurations for all other contenders, while `dot-parse` leveraged its zero-allocation collectors on the hot path.
-
+##### Executive Summary
+ 
+ Our benchmarks reveal a clear set of trade-offs between **compile-time macro code generation**, **runtime trie dispatching**, and **bytecode generation**:
+ 
+ *   **Trie Dispatching Efficiency**:
+     For keyword dispatches, prefix-trie dispatching shows higher throughput than traditional backtracking. 
+     `parboiled2` shows the highest throughput on case-sensitive keywords at **$342$ ops/ms** by compiling choices into character-matching prefix-tries in JVM bytecode.
+     `dot-parse` ranks second at **$249$ ops/ms** utilizing its zero-allocation stream collector.
+     `cats-parse` ranks third at **$89$ ops/ms**.
+ 
+ *   **Case-Insensitive Trie Performance**:
+     `parboiled2` shows the highest throughput in case-insensitive matching at **$227$ ops/ms** by compiling case-insensitive choices into trie branches.
+     `dot-parse` shows the highest throughput among Java libraries at **$171$ ops/ms** ☕ via its permutation-trie lookup, followed by `jparsec` at **$91$ ops/ms**, while other libraries (like `parsecj` at **$24$ ops/ms**) show significantly lower throughput.
+ 
+ *   **Sequencing & Bulk Scanning**:
+     `parboiled2` shows the highest throughput in flat sequencing (IPv4) at **$18.5\text{M}$ ops/sec**, followed by `fastparse` ($18.0\text{M}$) and `cats-parse` ($15.4\text{M}$), while `parsecj` is the leading Java library at **$14.0\text{M}$ ops/sec** after regex optimization.
+     For strings with no escapes, `cats-parse` and `fastparse` show the highest throughput overall (**$18.1\text{M}$** and **$17.5\text{M}$ ops/sec**), while `dot-parse` leads Java libraries at **$12.2\text{M}$ ops/sec**. For escaped strings, `taker` shows the highest throughput overall at **$9.5\text{M}$ ops/sec** 🚀, followed by `fastparse` ($8.4\text{M}$) and `jparsec` ($5.7\text{M}$).
+ 
+ *   **Recursive Expression & Block Comment Performance**:
+     `parboiled2` shows the highest throughput in recursive expression parsing (Calculator) at **$1.61\text{M}$ ops/sec**, followed by `fastparse` ($0.84\text{M}$), while `dot-parse` and `petitparser` show similar throughput in Java ($0.52\text{M}$ and $0.50\text{M}$).
+     For recursive block comments, `dot-parse` shows the highest throughput overall at **$8.7\text{M}$ ops/sec** 🚀 using a native character scanner, followed by `parboiled2` at **$5.4\text{M}$** and `fastparse` at **$4.1\text{M}$**.
+ 
+ *   **Bytecode Generation Comparison**:
+     Comparing the two generations of `parboiled` shows a significant throughput difference.
+     `parboiled2` (compile-time macro PEG) is **$3.5\text{x}$ to $5.7\text{x}$ faster** than `parboiled` (parboiled1 Java bytecode generator), demonstrating the performance differences between compile-time macro expansion and runtime bytecode generation.
+ 
+ *   **Monadic Baseline**:
+     `scala-parser-combinators` serves as a baseline.
+     While it performs well when backed by native Java regular expressions ($3.7\text{M}$ on strings), it shows lower throughput on recursive structures ($254\text{ ops/ms}$ on comments, $170\text{ ops/ms}$ on calculator), running **$5\text{x}$ to $21\text{x}$ slower** than modern macro-optimized engines.
+ 
+ ---
+ 
+ ## 12-Way Showdown Benchmark Results
+ 
+ Throughput was measured in **operations per millisecond** (higher is better). All benchmarks were run under G1 GC with natural, out-of-the-box collection-allocating configurations for all other contenders, while `dot-parse` leveraged its zero-allocation collectors on the hot path.
+ 
 | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `cats-parse` | `parboiled` | `parboiled2` | `scala-pc` | `parsecj` | `taker` | `jjparse` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **IPv4 Address** | $1,661$ | $11,940$ | $9,011$ | $6,282$ | **$18,098$** 🚀 | $15,465$ | $5,302$ | **$18,573$** 🚀 | $2,577$ | **$14,028$** ☕ | $4,109$ | $5,823$ | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`parsecj`** ☕ |
@@ -95,46 +97,46 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 | **Keywords CI (120 CI)** | $24$ | **$171$** ☕ | $91$ | $44$ | $59$ | $87$ | $36$ | **$227$** 🚀 | $11$ | $24$ | $50$ | $71$ | **`parboiled2`** 🚀<br>Java: **`dot`** ☕ |
 | **Calculator** | $310$ | **$526$** ☕ | $310$ | **$501$** ☕ | $845$ | $373$ | $285$ | **$1,616$** 🚀 | $170$ | $163$ | $363$ | $18$ | **`parboiled2`** 🚀<br>Java: **`dot`** ☕, **`petite`** ☕ |
 | **Nested Block Comment** | $1,106$ | **$8,791$** 🚀 | $1,907$ | $907$ | $4,143$ | $1,968$ | $770$ | $5,406$ | $254$ | $525$ | $581$ | $18$ | **`dot`** 🚀 |
-
----
-
-## Java Type Signature Parser Shootout (8-Way Showdown)
-
-To evaluate how these frameworks perform when building a **highly complex, recursive, and production-grade grammar**, we implemented a full **Java Type signature parser** across 8 key shootout engines:
-
-1.  **`antlr4`** (Java LL(*) Parser Generator)
-2.  **`dot-parse`** (Google Java Runtime Combinators)
-3.  **`jparsec`** (Java Monadic Lexer/Parser Separation)
-4.  **`petitparser`** (Java Runtime Combinators)
-5.  **`fastparse`** (Scala Compile-Time Macro PEG)
-6.  **`cats-parse`** (Scala Runtime Combinators)
-7.  **`parboiled`** (Java Parboiled 1.x Bytecode Generator)
-8.  **`parboiled2`** (Scala Parboiled 2.x Macro PEG)
-
-Every engine was validated against the **exact same 13 deep structural AST test cases** to guarantee complete functional parity. Throughput was measured in **operations per millisecond** (higher is better):
-
-| Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `cats-parse` | `parboiled` | `parboiled2` | **Winner(s)** |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Simple Type (`String`)** | $1,554$ | **$6,926$** ☕ | $1,410$ | $2,714$ | **$7,093$** 🚀 | $2,544$ | $486$ | **$13,846$** 🚀 | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
-| **Fully Qualified (`java.lang.String`)** | $802$ | **$2,768$** ☕ | $547$ | $1,683$ | **$4,468$** 🚀 | $1,681$ | $281$ | **$5,920$** 🚀 | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
-| **Nested Generics (`Map<String, List<Integer>>`)** | $206$ | **$599$** ☕ | $115$ | $321$ | **$969$** 🚀 | $343$ | $73$ | **$961$** 🚀 | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
-| **Annotated Array (`List<String>[]`)** | $210$ | **$592$** ☕ | $111$ | $319$ | **$797$** 🚀 | $293$ | $66$ | **$829$** 🚀 | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
-| **Complex (`@MyAnnotation(...) List<Integer>`)** | $151$ | **$218$** ☕ | $75$ | $126$ | **$545$** 🚀 | $180$ | $46$ | **$588$** 🚀 | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
-
-### Key Takeaways from the Java Type Shootout:
-
-*   **Parboiled2 & Fastparse Macro Supremacy**:
-    With our idiomatic static companion object optimization, `parboiled2` sweeps every single category of the Java Type shootout, reaching an absolute pinnacle of **13.84 million parses/sec** on simple types and **5.92 million parses/sec** on fully qualified types. It completely outclasses `fastparse` ($7.09\text{M}$ simple) by more than **2x**, showcasing the absolute, JIT-friendly efficiency of Scala compile-time PEG macros. `fast` remains a highly competitive runner-up.
-*   **The Extraordinary Runtime JIT Tuning of `dot-parse`**:
-    `dot-parse` is the absolute leader among pure Java/runtime libraries. It achieves an outstanding **6.92 million parses/sec** on simple types and **2.76 million parses/sec** on fully qualified types. It is **2.7x faster than Scala's `cats-parse`** and **4.9x faster than `jparsec`**, showcasing the incredible efficiency of its whitespace skipping and prefix-trie dispatching.
-*   **The Outstanding Performance of `petitparser`**:
-    As a pure Java/runtime combinator library, `petitparser` performs exceptionally, claiming **2.71 million parses/sec** on simple types and **1.68 million parses/sec** on fully qualified types. It is **1.9x faster than `jparsec`** and **5.5x faster than `parboiled`**, easily securing the **#2 Java spot** behind `dot-parse`. Because its stateless parser is reused as a singleton, it completely avoids heap allocation overhead.
-*   **The JParsec Lexer/Parser Separation**:
-    With our idiomatic lexer/parser separation, `jparsec` performs extremely stably ($1.41\text{M}$ simple, $75$ complex). The performance difference compared to scannerless parsers is the expected trade-off for its high-expressiveness, two-phase lexing machinery.
-*   **The Parboiled Evolution**:
-    With our companion object optimization, `parboiled2` (compile-time macro PEG) achieves an extraordinary **13.84 million parses/sec**, making it **28.4x faster** than the old `parboiled` (Parboiled 1.x Java bytecode generator at $486,000$ parses/sec). This is the ultimate, definitive testament to the massive performance advantages of compile-time macro code generation over Parboiled 1.x's heavy runtime bytecode generation!
-*   **ANTLR4 Interpreter Overhead on Micro-Inputs**:
-    `antlr4` performs respectably ($1.55\text{M}$ simple, $151$ complex) but is held back by the fixed object allocation and interpreter overhead of its ALL(*) ATN simulation loop, showing that LL(*) compiler machinery is optimized for larger source files rather than high-frequency micro-parsing.
+ 
+ ---
+ 
+ ## Java Type Signature Parser Shootout (8-Way Showdown)
+ 
+ To evaluate how these frameworks perform when building a **highly complex, recursive, and production-grade grammar**, we implemented a full **Java Type signature parser** across 8 key shootout engines:
+ 
+ 1.  **`antlr4`** (Java LL(*) Parser Generator)
+ 2.  **`dot-parse`** (Google Java Runtime Combinators)
+ 3.  **`jparsec`** (Java Monadic Lexer/Parser Separation)
+ 4.  **`petitparser`** (Java Runtime Combinators)
+ 5.  **`fastparse`** (Scala Compile-Time Macro PEG)
+ 6.  **`cats-parse`** (Scala Runtime Combinators)
+ 7.  **`parboiled`** (Java Parboiled 1.x Bytecode Generator)
+ 8.  **`parboiled2`** (Scala Parboiled 2.x Macro PEG)
+ 
+ Every engine was validated against the **exact same 13 deep structural AST test cases** to guarantee complete functional parity. Throughput was measured in **operations per millisecond** (higher is better):
+ 
+ | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `cats-parse` | `parboiled` | `parboiled2` | **Winner(s)** |
+ | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+ | **Simple Type (`String`)** | $1,554$ | **$6,926$** ☕ | $1,410$ | $2,714$ | **$7,093$** 🚀 | $2,544$ | $486$ | **$13,846$** 🚀 | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
+ | **Fully Qualified (`java.lang.String`)** | $802$ | **$2,768$** ☕ | $547$ | $1,683$ | **$4,468$** 🚀 | $1,681$ | $281$ | **$5,920$** 🚀 | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
+ | **Nested Generics (`Map<String, List<Integer>>`)** | $206$ | **$599$** ☕ | $115$ | $321$ | **$969$** 🚀 | $343$ | $73$ | **$961$** 🚀 | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
+ | **Annotated Array (`List<String>[]`)** | $210$ | **$592$** ☕ | $111$ | $319$ | **$797$** 🚀 | $293$ | $66$ | **$829$** 🚀 | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
+ | **Complex (`@MyAnnotation(...) List<Integer>`)** | $151$ | **$218$** ☕ | $75$ | $126$ | **$545$** 🚀 | $180$ | $46$ | **$588$** 🚀 | **`parboiled2`** 🚀, **`fast`** 🚀<br>Java: **`dot`** ☕ |
+ 
+ ### Key Takeaways from the Java Type Shootout:
+ 
+ *   **Parboiled2 & Fastparse Macro Performance**:
+     With the static companion object optimization, `parboiled2` shows the highest throughput in all categories of the Java Type shootout, reaching **13.84 million parses/sec** on simple types and **5.92 million parses/sec** on fully qualified types. It outperforms `fastparse` ($7.09\text{M}$ simple) by more than **2x**, demonstrating the efficiency of Scala compile-time PEG macros. `fast` ranks second overall.
+ *   **dot-parse Performance**:
+     `dot-parse` shows the highest throughput among pure Java runtime libraries. It achieves **6.92 million parses/sec** on simple types and **2.76 million parses/sec** on fully qualified types. It is **2.7x faster than Scala's `cats-parse`** and **4.9x faster than `jparsec`**, demonstrating the efficiency of its whitespace skipping and prefix-trie dispatching.
+ *   **petitparser Performance**:
+     As a pure Java runtime combinator library, `petitparser` achieves **2.71 million parses/sec** on simple types and **1.68 million parses/sec** on fully qualified types. It is **1.9x faster than `jparsec`** and **5.5x faster than `parboiled`**, ranking second among Java libraries behind `dot-parse`. Because its stateless parser is reused as a singleton, it avoids heap allocation overhead.
+ *   **jparsec Lexer/Parser Separation**:
+     With lexer/parser separation, `jparsec` shows stable performance ($1.41\text{M}$ simple, $75$ complex). The performance difference compared to scannerless parsers represents the trade-off for its two-phase lexing machinery.
+ *   **parboiled Performance Comparison**:
+     With the companion object optimization, `parboiled2` (compile-time macro PEG) achieves **13.84 million parses/sec**, representing a **28.4x throughput increase** over `parboiled` (Parboiled 1.x Java bytecode generator at $486,000$ parses/sec). This demonstrates the performance differences between compile-time macro code generation and runtime bytecode generation.
+ *   **ANTLR4 Interpreter Overhead on Micro-Inputs**:
+     `antlr4` parses at **1.55 million parses/sec** on simple types and **151 parses/sec** on complex types. Its throughput is limited by the object allocation and interpreter overhead of its ALL(*) ATN simulation loop, showing that LL(*) compiler machinery is optimized for larger source files rather than high-frequency micro-parsing.
 
 ---
 
