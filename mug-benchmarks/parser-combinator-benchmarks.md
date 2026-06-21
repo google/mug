@@ -172,29 +172,26 @@ Every engine was validated against the **exact same 13 deep structural AST test 
  
 | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `cats-parse` | `parboiled` | `parboiled2` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Simple Type (`String`)** | $2,135$ | **$5,673$** ☕ | $1,584$ | $3,224$ | **$6,972$** 🚀 | $3,092$ | $567$ | $1,867$ | **`fastparse`** 🚀<br>Java: **`dot-parse`** ☕ |
-| **Fully Qualified (`java.lang.String`)** | $1,005$ | **$3,042$** ☕ | $584$ | $2,008$ | **$4,383$** 🚀 | $1,948$ | $342$ | $1,998$ | **`fastparse`** 🚀<br>Java: **`dot-parse`** ☕ |
-| **Nested Generics (`Map<String, List<Integer>>`)** | $261$ | **$685$** ☕ | $121$ | $382$ | **$966$** 🚀 | $437$ | $90$ | **$879$** 🚀 | **`fastparse`** 🚀, **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
-| **Annotated Array (`List<String>[]`)** | $296$ | **$673$** ☕ | $118$ | $380$ | **$877$** 🚀 | $373$ | $77$ | **$775$** 🚀 | **`fastparse`** 🚀, **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
-| **Complex (`@MyAnnotation(...) List<Integer>`)** | $194$ | **$282$** ☕ | $80$ | $166$ | **$635$** 🚀 | $218$ | $56$ | **$593$** 🚀 | **`fastparse`** 🚀, **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
-
+| **Simple Type (`String`)** | $2,323$ | **$8,399$** ☕ | $1,380$ | $3,581$ | $8,796$ | $3,341$ | $595$ | **$19,058$** 🚀 | **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **Fully Qualified (`java.lang.String`)** | $1,054$ | **$3,307$** ☕ | $657$ | $2,143$ | $5,662$ | $2,157$ | $339$ | **$8,135$** 🚀 | **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **Nested Generics (`Map<String, List<Integer>>`)** | $284$ | **$747$** ☕ | $153$ | $437$ | **$1,260$** 🚀 | $456$ | $94$ | **$1,353$** 🚀 | **`parboiled2`** 🚀, **`fastparse`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **Annotated Array (`List<String>[]`)** | $292$ | **$696$** ☕ | $147$ | $420$ | $995$ | $399$ | $79$ | **$1,225$** 🚀 | **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
+| **Complex (`@MyAnnotation(...) List<Integer>`)** | $205$ | **$283$** ☕ | $101$ | $170$ | $682$ | $232$ | $57$ | **$822$** 🚀 | **`parboiled2`** 🚀<br>Java: **`dot-parse`** ☕ |
+ 
 ### Key Takeaways from the Java Type Shootout:
 
-*   **Fastparse Macro Dominance**:
-    `fastparse` leads all scenarios by compiling the parser graph into inlined, mutable state-passing scanner loops using compile-time Scala macros.
+*   **Parboiled2 & Fastparse Macro Supremacy**:
+    With our idiomatic static companion object optimization, `parboiled2` sweeps every single category of the Java Type shootout, reaching an absolute pinnacle of **19.05 million parses/sec** on simple types and **8.13 million parses/sec** on fully qualified types. It completely outclasses `fastparse` ($8.79\text{M}$ simple) by more than **2.1x**, showcasing the absolute, JIT-friendly efficiency of Scala compile-time PEG macros. `fastparse` remains a highly competitive runner-up.
 *   **The Extraordinary Runtime JIT Tuning of `dot-parse`**:
-    `dot-parse` is the absolute leader among pure Java/runtime libraries. It achieves an outstanding **5.6 million parses/sec** on simple types and **3.0 million parses/sec** on fully qualified types. It is **2x faster than Scala's `cats-parse`** and **3.5x to 5.5x faster than `jparsec`**, showcasing the incredible efficiency of its whitespace skipping and combinator dispatching.
+    `dot-parse` is the absolute leader among pure Java/runtime libraries. It achieves an outstanding **8.39 million parses/sec** on simple types and **3.30 million parses/sec** on fully qualified types. It is **2.5x faster than Scala's `cats-parse`** and **6x faster than `jparsec`**, showcasing the incredible efficiency of its whitespace skipping and prefix-trie dispatching.
 *   **The Outstanding Performance of `petitparser`**:
-    As a pure Java/runtime combinator library, `petitparser` performs exceptionally, claiming **3.2 million parses/sec** on simple types and **2.0 million parses/sec** on fully qualified types. It is **2x faster than `jparsec`** and **6x faster than `parboiled`**, easily securing the **#2 Java spot** behind `dot-parse`. Because its stateless parser is reused as a singleton, it completely avoids heap allocation overhead, making it a highly competitive and JIT-friendly contender.
+    As a pure Java/runtime combinator library, `petitparser` performs exceptionally, claiming **3.58 million parses/sec** on simple types and **2.14 million parses/sec** on fully qualified types. It is **2.5x faster than `jparsec`** and **6x faster than `parboiled`**, easily securing the **#2 Java spot** behind `dot-parse`. Because its stateless parser is reused as a singleton, it completely avoids heap allocation overhead, making it a highly competitive and JIT-friendly contender.
 *   **The JParsec Lexer/Parser Separation**:
-    With our idiomatic lexer/parser separation, `jparsec` performs extremely stably ($1.5\text{M}$ simple, $80$ complex). The performance difference compared to scannerless parsers is the expected trade-off for its high-expressiveness, two-phase lexing machinery.
+    With our idiomatic lexer/parser separation, `jparsec` performs extremely stably ($1.38\text{M}$ simple, $101$ complex). The performance difference compared to scannerless parsers is the expected trade-off for its high-expressiveness, two-phase lexing machinery.
 *   **The Parboiled Evolution**:
-    `parboiled2` (compile-time macro PEG) reaches an exceptional **1.99 million parses/sec** on fully qualified types and **879,000 parses/sec** on nested generics, running almost neck-and-neck with `fastparse`. 
-    With our singleton reuse optimization, `parboiled` (Parboiled 1.x Java bytecode generator) now performs beautifully at **567,000 parses/sec** (Simple) and **342,000 parses/sec** (Fully Qualified).
-    This demonstrates that `parboiled2` is **$3.3\text{x}$ to $5.8\text{x}$ faster** than `parboiled`, providing a highly realistic and impressive testament to the JIT-friendly advantages of Scala's compile-time macros over Parboiled 1.x's heavy runtime bytecode generation and stack-based tree tracking!
+    With our companion object optimization, `parboiled2` (compile-time macro PEG) achieves an extraordinary **19.05 million parses/sec**, making it **32x faster** than the old `parboiled` (Parboiled 1.x Java bytecode generator at $595,000$ parses/sec). This is the ultimate, definitive testament to the massive performance advantages of compile-time macro code generation over Parboiled 1.x's heavy runtime bytecode generation and stack-based tree tracking!
 *   **ANTLR4 Interpreter Overhead on Micro-Inputs**:
-    `antlr4` performs respectably ($2.1\text{M}$ simple, $194$ complex) but is held back by the fixed object allocation and interpreter overhead of its ALL(*) ATN simulation loop, showing that LL(*) compiler machinery is optimized for larger source files rather than high-frequency micro-parsing.
-
+    `antlr4` performs respectably ($2.32\text{M}$ simple, $204$ complex) but is held back by the fixed object allocation and interpreter overhead of its ALL(*) ATN simulation loop, showing that LL(*) compiler machinery is optimized for larger source files rather than high-frequency micro-parsing.
 ---
 
 ## Scenario-by-Scenario Performance Deep-Dive

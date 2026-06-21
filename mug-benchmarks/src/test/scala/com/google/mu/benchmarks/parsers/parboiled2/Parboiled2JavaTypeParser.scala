@@ -11,7 +11,7 @@ class Parboiled2JavaTypeParser(val input: ParserInput) extends Parser {
 
   def token(s: String) = rule { str(s) ~ ws }
 
-  private val primitives = Set("int", "double", "float", "long", "short", "byte", "char", "boolean", "void")
+
 
   def primitiveType = rule {
     capture("int" | "double" | "float" | "long" | "short" | "byte" | "char" | "boolean" | "void") ~ ws
@@ -30,7 +30,7 @@ class Parboiled2JavaTypeParser(val input: ParserInput) extends Parser {
   }
 
   def packageSegment = rule {
-    lowerIdentifier ~ test(!primitives.contains(valueStack.peek.asInstanceOf[String]))
+    lowerIdentifier ~ test(!Parboiled2JavaTypeParser.primitives.contains(valueStack.peek.asInstanceOf[String]))
   }
 
   def typeName = rule { primitiveType | upperIdentifier }
@@ -148,6 +148,8 @@ class Parboiled2JavaTypeParser(val input: ParserInput) extends Parser {
 }
 
 object Parboiled2JavaTypeParser {
+  private val primitives = Set("int", "double", "float", "long", "short", "byte", "char", "boolean", "void")
+
   def parse(input: String): JavaType = {
     val parser = new Parboiled2JavaTypeParser(input)
     parser.entry.run() match {
