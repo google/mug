@@ -153,7 +153,7 @@ in **operations per millisecond** (higher is better):
     highly competitive.
 
 *   **`parsecj` vs `jparsec` (The Combinator Battle)**:
-    `parsecj` performs moderately and **consistently leaks ahead of `jparsec`**
+    `parsecj` performs moderately and **consistently outperforms `jparsec`**
     in 4 out of 5 scenarios. However, in the **Complex Annotation** scenario,
     `parsecj` falls slightly behind `jparsec` ($83$ vs $103$ ops/ms). This is
     due to the heavy monadic bind (`.bind(...)`) nesting and recursive
