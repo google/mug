@@ -26,6 +26,8 @@ import com.google.mu.benchmarks.parsers.betterparse.BetterParseShowdown;
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(1)
 public class ParserShowdownBenchmark {
+  private static final com.fasterxml.jackson.databind.ObjectMapper JACKSON_MAPPER = 
+      new com.fasterxml.jackson.databind.ObjectMapper();
 
   @State(Scope.Benchmark)
   public static class BenchmarkState {
@@ -306,4 +308,6 @@ public class ParserShowdownBenchmark {
   @Benchmark public void fastparse_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.fastparse.FastparseJsonParser.parse(s.jsonString)); }
   @Benchmark public void catsParse_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.catsparse.CatsParseJsonParser.parse(s.jsonString)); }
   @Benchmark public void antlr4_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.antlr4.Antlr4JsonParser.parse(s.jsonString)); }
+  @Benchmark public void gson_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.gson.JsonParser.parseString(s.jsonString)); }
+  @Benchmark public void jackson_jsonPerformance(BenchmarkState s, Blackhole bh) throws Exception { bh.consume(JACKSON_MAPPER.readTree(s.jsonString)); }
 }
