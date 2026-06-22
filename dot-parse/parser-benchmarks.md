@@ -55,9 +55,18 @@ Every engine was validated against a large, representative JSON document (~100 c
 
 Throughput was measured in **operations per millisecond** (higher is better):
 
-| Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | **Winner(s)** |
+| Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Complex JSON Payload** | $0.175$ | **$0.472$** ☕ | $0.160$ | $0.106$ | **$0.510$** 🚀 | $0.383$ | $0.020$ | $0.130$ | $0.107$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex JSON Payload** | $0.186$ | **$0.469$** ☕ | $0.162$ | $0.108$ | **$0.505$** 🚀 | $0.385$ | $0.019$ | $0.129$ | $0.108$ | **`fast`** 🚀<br>**`dot`** ☕ |
+
+#### Reference Production Baselines (JSON)
+To provide an absolute performance ceiling, we stacked our combinator shootout against two industry-standard, hand-written production JSON parsers on the exact same JSON payload:
+
+| Parser Engine | Throughput (ops/ms) | Relative Speed to `dot-parse` |
+| :--- | :---: | :---: |
+| **Jackson Databind** (`ObjectMapper`) | $1.873$ | **3.99x** |
+| **Gson** (`JsonParser`) | $1.555$ | **3.32x** |
+| **`dot-parse`** (Our leading Java combinator) | $0.469$ | **1.00x** |
 
 ### Key Takeaways from the JSON Shootout
 
@@ -78,13 +87,13 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 
 | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `cats-parse` | `parsecj` | `taker` | `better-parse` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **IPv4 Address** | $2,190$ | $15,837$ | $11,912$ | $7,670$ | **$24,763$** 🚀 | $23,550$ | **$17,572$** ☕ | $5,042$ | $1,576$ | **`fast`** 🚀<br>**`parsecj`** ☕ |
-| **Quoted String (Common)** | $4,887$ | $15,255$ | $12,200$ | $3,839$ | **$21,980$** 🚀 | **$24,615$** 🚀 | $5,798$ | **$24,672$** 🚀 ☕ | $5,178$ | **`taker`** 🚀 ☕ |
-| **Quoted String (Escaped)** | $3,124$ | $5,821$ | $7,307$ | $2,722$ | **$10,636$** 🚀 | $4,591$ | $3,263$ | **$8,821$** ☕ | $1,088$ | **`fast`** 🚀<br>**`taker`** ☕ |
-| **Keywords (12 CS)** | $53$ | **$363$** 🚀 ☕ | $105$ | $68$ | $81$ | $123$ | $39$ | $73$ | $60$ | **`dot`** 🚀 ☕ |
-| **Keywords CI (12 CI)** | $32$ | **$217$** 🚀 ☕ | $107$ | $52$ | $74$ | $118$ | $33$ | $62$ | $12$ | **`dot`** 🚀 ☕ |
-| **Calculator** | $411$ | **$748$** ☕ | $409$ | $609$ | **$1,220$** 🚀 | $511$ | $219$ | $449$ | $208$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Nested Block Comment** | $1,380$ | **$11,088$** 🚀 ☕ | $2,276$ | $1,159$ | $4,624$ | $2,457$ | $664$ | $761$ | $1,188$ | **`dot`** 🚀 ☕ |
+| **IPv4 Address** | $1,838$ | **$13,318$** ☕ | $8,839$ | $6,958$ | **$24,782$** 🚀 | $18,329$ | $12,371$ | $5,048$ | $1,923$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Quoted String (Common)** | $4,713$ | $12,425$ | $7,049$ | $3,074$ | **$21,505$** 🚀 | $19,741$ | $5,438$ | **$20,604$** ☕ | $5,193$ | **`fast`** 🚀<br>**`taker`** ☕ |
+| **Quoted String (Escaped)** | $3,402$ | $5,227$ | $4,861$ | $2,363$ | **$12,114$** 🚀 | $3,635$ | $2,704$ | **$10,402$** ☕ | $1,385$ | **`fast`** 🚀<br>**`taker`** ☕ |
+| **Keywords (12 CS)** | $46$ | **$280$** 🚀 ☕ | $89$ | $63$ | $80$ | $101$ | $37$ | $66$ | $43$ | **`dot`** 🚀 ☕ |
+| **Keywords CI (12 CI)** | $31$ | **$197$** 🚀 ☕ | $91$ | $56$ | $71$ | $97$ | $28$ | $55$ | $16$ | **`dot`** 🚀 ☕ |
+| **Calculator** | $346$ | $527$ | $327$ | **$540$** ☕ | **$1,104$** 🚀 | $412$ | $204$ | $443$ | $243$ | **`fast`** 🚀<br>**`petit`** ☕ |
+| **Nested Block Comment** | $1,169$ | **$10,033$** 🚀 ☕ | $2,207$ | $1,050$ | $4,927$ | $2,104$ | $643$ | $769$ | $1,413$ | **`dot`** 🚀 ☕ |
 
 ### Showdown Scenario Analysis & Rationalization
 
@@ -135,11 +144,11 @@ Every engine was validated against the **exact same 14 deep structural AST test 
 
 | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `parsecj` | `taker` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Simple Type (`String`)** | $2,321$ | **$7,034$** ☕ | $1,390$ | $3,579$ | **$9,240$** 🚀 | $1,571$ | $2,566$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Fully Qualified** | $1,054$ | **$3,845$** ☕ | $651$ | $2,139$ | **$5,786$** 🚀 | $933$ | $1,546$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Nested Generics** | $287$ | **$800$** ☕ | $156$ | $435$ | **$1,247$** 🚀 | $187$ | $330$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Annotated Array** | $296$ | **$662$** ☕ | $150$ | $426$ | **$1,164$** 🚀 | $203$ | $308$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Complex Annotation** | $207$ | **$337$** ☕ | $103$ | $167$ | **$671$** 🚀 | $84$ | $130$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Simple Type (`String`)** | $3,402$ | **$7,019$** ☕ | $1,410$ | $3,530$ | **$8,801$** 🚀 | $1,503$ | $2,525$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Fully Qualified** | $1,605$ | **$3,782$** ☕ | $657$ | $2,091$ | **$5,679$** 🚀 | $925$ | $1,525$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Nested Generics** | $302$ | **$796$** ☕ | $149$ | $432$ | **$1,197$** 🚀 | $185$ | $330$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Annotated Array** | $340$ | **$671$** ☕ | $152$ | $427$ | **$984$** 🚀 | $201$ | $309$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex Annotation** | $243$ | **$341$** ☕ | $104$ | $166$ | **$638$** 🚀 | $82$ | $124$ | **`fast`** 🚀<br>**`dot`** ☕ |
 
 ### Key Takeaways from the Java Type Shootout
 

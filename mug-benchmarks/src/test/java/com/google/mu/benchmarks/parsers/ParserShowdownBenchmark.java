@@ -151,7 +151,7 @@ public class ParserShowdownBenchmark {
         verifyJson(com.google.mu.benchmarks.parsers.betterparse.BetterParseJsonParser.INSTANCE.parse(jsonString), "better-parse");
         verifyJson(com.google.mu.benchmarks.parsers.fastparse.FastparseJsonParser.parse(jsonString), "fastparse");
         verifyJson(com.google.mu.benchmarks.parsers.catsparse.CatsParseJsonParser.parse(jsonString), "cats-parse");
-        verifyJson(com.google.mu.benchmarks.parsers.antlr4.Antlr4JsonParser.parse(jsonString), "antlr4");
+        verifyJson(new com.google.mu.benchmarks.parsers.antlr4.Antlr4JsonParser().parse(jsonString), "antlr4");
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
@@ -306,8 +306,14 @@ public class ParserShowdownBenchmark {
   @Benchmark public void taker_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.taker.TakerJsonParser.parse(s.jsonString)); }
   @Benchmark public void betterParse_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.betterparse.BetterParseJsonParser.INSTANCE.parse(s.jsonString)); }
   @Benchmark public void fastparse_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.fastparse.FastparseJsonParser.parse(s.jsonString)); }
+  @State(Scope.Thread)
+  public static class Antlr4JsonState {
+    public final com.google.mu.benchmarks.parsers.antlr4.Antlr4JsonParser parser = 
+        new com.google.mu.benchmarks.parsers.antlr4.Antlr4JsonParser();
+  }
+
   @Benchmark public void catsParse_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.catsparse.CatsParseJsonParser.parse(s.jsonString)); }
-  @Benchmark public void antlr4_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.antlr4.Antlr4JsonParser.parse(s.jsonString)); }
+  @Benchmark public void antlr4_jsonPerformance(BenchmarkState s, Antlr4JsonState state, Blackhole bh) { bh.consume(state.parser.parse(s.jsonString)); }
   @Benchmark public void gson_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.gson.JsonParser.parseString(s.jsonString)); }
   @Benchmark public void jackson_jsonPerformance(BenchmarkState s, Blackhole bh) throws Exception { bh.consume(JACKSON_MAPPER.readTree(s.jsonString)); }
 }

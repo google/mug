@@ -9,62 +9,52 @@ import java.util.stream.Collectors;
 /** Strictly RFC 8259-compliant ANTLR4-based JSON parser. */
 public final class Antlr4JsonParser {
 
-  private static final ThreadLocal<ParserState> STATE = ThreadLocal.withInitial(ParserState::new);
+  private final JsonLexer lexer;
+  private final JsonParser parser;
+  private final Visitor visitor;
 
-  private Antlr4JsonParser() {}
+  public Antlr4JsonParser() {
+    this.lexer = new JsonLexer(CharStreams.fromString(""));
+    this.lexer.removeErrorListeners();
+    this.lexer.addErrorListener(
+        new BaseErrorListener() {
+          @Override
+          public void syntaxError(
+              Recognizer<?, ?> recognizer,
+              Object offendingSymbol,
+              int line,
+              int charPositionInLine,
+              String msg,
+              RecognitionException e) {
+            throw new IllegalArgumentException("Lexing error: " + msg);
+          }
+        });
 
-  private static class ParserState {
-    final JsonLexer lexer;
-    final JsonParser parser;
-    final Visitor visitor;
-
-    ParserState() {
-      this.lexer = new JsonLexer(CharStreams.fromString(""));
-      this.lexer.removeErrorListeners();
-      this.lexer.addErrorListener(
-          new BaseErrorListener() {
-            @Override
-            public void syntaxError(
-                Recognizer<?, ?> recognizer,
-                Object offendingSymbol,
-                int line,
-                int charPositionInLine,
-                String msg,
-                RecognitionException e) {
-              throw new IllegalArgumentException("Lexing error: " + msg);
-            }
-          });
-
-      this.parser = new JsonParser(new CommonTokenStream(lexer));
-      this.parser.removeErrorListeners();
-      this.parser.addErrorListener(
-          new BaseErrorListener() {
-            @Override
-            public void syntaxError(
-                Recognizer<?, ?> recognizer,
-                Object offendingSymbol,
-                int line,
-                int charPositionInLine,
-                String msg,
-                RecognitionException e) {
-              throw new IllegalArgumentException("Parsing error: " + msg);
-            }
-          });
-      this.visitor = new Visitor();
-    }
-
-    JsonValue parse(String input) {
-      lexer.setInputStream(CharStreams.fromString(input));
-      CommonTokenStream tokens = new CommonTokenStream(lexer);
-      parser.setTokenStream(tokens);
-
-      JsonParser.EntryContext entry = parser.entry();
-      return visitor.visit(entry.jsonValue());
-    }
+    this.parser = new JsonParser(new CommonTokenStream(lexer));
+    this.parser.removeErrorListeners();
+    this.parser.addErrorListener(
+        new BaseErrorListener() {
+          @Override
+          public void syntaxError(
+              Recognizer<?, ?> recognizer,
+              Object offendingSymbol,
+              int line,
+              int charPositionInLine,
+              String msg,
+              RecognitionException e) {
+            throw new IllegalArgumentException("Parsing error: " + msg);
+          }
+        });
+    this.visitor = new Visitor();
   }
 
-  public static JsonValue parse(String input) {
-    return STATE.get().parse(input);
+  public JsonValue parse(String input) {
+    lexer.setInputStream(CharStreams.fromString(input));
+    CommonTokenStream tokens = new CommonTokenStream(lexer);
+    parser.setTokenStream(tokens);
+
+    JsonParser.EntryContext entry = parser.entry();
+    return visitor.visit(entry.jsonValue());
   }
 
   private static class Visitor extends JsonBaseVisitor<JsonValue> {

@@ -7,8 +7,10 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public final class Antlr4JsonParserTest extends AbstractJsonParserTest {
+  private final Antlr4JsonParser parser = new Antlr4JsonParser();
+
   @Override
   protected JsonValue parse(String input) {
-    return Antlr4JsonParser.parse(input);
+    return parser.parse(input);
   }
 }

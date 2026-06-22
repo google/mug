@@ -1,6 +1,7 @@
 package com.google.mu.benchmarks.parsers.antlr4;
 
 import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import com.google.mu.benchmarks.parsers.javatype.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -8,12 +9,14 @@ import java.util.stream.Collectors;
 /** ANTLR4 Java Type parser implementation. */
 public final class Antlr4JavaTypeParser {
 
-  private Antlr4JavaTypeParser() {}
+  private final JavaTypeLexer lexer;
+  private final JavaTypeParser parser;
+  private final Visitor visitor;
 
-  public static JavaType parse(String input) {
-    JavaTypeLexer lexer = new JavaTypeLexer(CharStreams.fromString(input));
-    lexer.removeErrorListeners();
-    lexer.addErrorListener(
+  public Antlr4JavaTypeParser() {
+    this.lexer = new JavaTypeLexer(CharStreams.fromString(""));
+    this.lexer.removeErrorListeners();
+    this.lexer.addErrorListener(
         new BaseErrorListener() {
           @Override
           public void syntaxError(
@@ -27,10 +30,9 @@ public final class Antlr4JavaTypeParser {
           }
         });
 
-    CommonTokenStream tokens = new CommonTokenStream(lexer);
-    JavaTypeParser parser = new JavaTypeParser(tokens);
-    parser.removeErrorListeners();
-    parser.addErrorListener(
+    this.parser = new JavaTypeParser(new CommonTokenStream(lexer));
+    this.parser.removeErrorListeners();
+    this.parser.addErrorListener(
         new BaseErrorListener() {
           @Override
           public void syntaxError(
@@ -43,53 +45,82 @@ public final class Antlr4JavaTypeParser {
             throw new IllegalArgumentException("Parsing error: " + msg);
           }
         });
+    this.visitor = new Visitor();
+  }
+
+  public JavaType parse(String input) {
+    lexer.setInputStream(CharStreams.fromString(input));
+    CommonTokenStream tokens = new CommonTokenStream(lexer);
+    parser.setTokenStream(tokens);
 
     JavaTypeParser.EntryContext entry = parser.entry();
-    return (JavaType) new Visitor().visit(entry.javaType());
+    return (JavaType) visitor.visit(entry.javaType());
   }
 
   private static class Visitor extends JavaTypeBaseVisitor<Object> {
     @Override
     public JavaType visitJavaType(JavaTypeParser.JavaTypeContext ctx) {
-      List<String> pkg =
-          ctx.packagePrefix() != null
-              ? visitPackagePrefix(ctx.packagePrefix())
-              : Collections.emptyList();
-      List<TypeSegment> segments =
-          ctx.typeSegment().stream().map(this::visitTypeSegment).collect(Collectors.toList());
+      List<String> pkg;
+      if (ctx.packagePrefix() != null) {
+        pkg = visitPackagePrefix(ctx.packagePrefix());
+      } else {
+        pkg = Collections.emptyList();
+      }
+      List<JavaTypeParser.TypeSegmentContext> segmentCtxs = ctx.typeSegment();
+      List<TypeSegment> segments = new ArrayList<>(segmentCtxs.size());
+      for (int i = 0; i < segmentCtxs.size(); i++) {
+        segments.add(visitTypeSegment(segmentCtxs.get(i)));
+      }
       int dimensions = ctx.arrayDimension().size();
       return new JavaType(pkg, segments, dimensions);
     }
 
     @Override
     public List<String> visitPackagePrefix(JavaTypeParser.PackagePrefixContext ctx) {
-      return ctx.packageSegment().stream().map(RuleContext::getText).collect(Collectors.toList());
+      List<JavaTypeParser.PackageSegmentContext> segmentCtxs = ctx.packageSegment();
+      List<String> pkg = new ArrayList<>(segmentCtxs.size());
+      for (int i = 0; i < segmentCtxs.size(); i++) {
+        pkg.add(segmentCtxs.get(i).start.getText());
+      }
+      return pkg;
     }
 
     @Override
     public TypeSegment visitTypeSegment(JavaTypeParser.TypeSegmentContext ctx) {
-      List<JavaAnnotation> annotations =
-          ctx.annotation().stream().map(this::visitAnnotation).collect(Collectors.toList());
-      String typeName = ctx.typeName().getText();
-      List<JavaType> typeArgs =
-          ctx.typeArguments() != null
-              ? visitTypeArguments(ctx.typeArguments())
-              : Collections.emptyList();
+      List<JavaTypeParser.AnnotationContext> annotationCtxs = ctx.annotation();
+      List<JavaAnnotation> annotations = new ArrayList<>(annotationCtxs.size());
+      for (int i = 0; i < annotationCtxs.size(); i++) {
+        annotations.add(visitAnnotation(annotationCtxs.get(i)));
+      }
+      String typeName = ctx.typeName().start.getText();
+      List<JavaType> typeArgs;
+      if (ctx.typeArguments() != null) {
+        typeArgs = visitTypeArguments(ctx.typeArguments());
+      } else {
+        typeArgs = Collections.emptyList();
+      }
       return new TypeSegment(annotations, typeName, typeArgs);
     }
 
     @Override
     public List<JavaType> visitTypeArguments(JavaTypeParser.TypeArgumentsContext ctx) {
-      return ctx.javaType().stream().map(this::visitJavaType).collect(Collectors.toList());
+      List<JavaTypeParser.JavaTypeContext> typeCtxs = ctx.javaType();
+      List<JavaType> typeArgs = new ArrayList<>(typeCtxs.size());
+      for (int i = 0; i < typeCtxs.size(); i++) {
+        typeArgs.add(visitJavaType(typeCtxs.get(i)));
+      }
+      return typeArgs;
     }
 
     @Override
     public JavaAnnotation visitAnnotation(JavaTypeParser.AnnotationContext ctx) {
-      String name = ctx.annotationName().getText();
-      Map<String, AnnotationValue> params =
-          ctx.annotationParams() != null
-              ? visitAnnotationParams(ctx.annotationParams())
-              : Collections.emptyMap();
+      String name = ctx.annotationName().start.getText();
+      Map<String, AnnotationValue> params;
+      if (ctx.annotationParams() != null) {
+        params = visitAnnotationParams(ctx.annotationParams());
+      } else {
+        params = Collections.emptyMap();
+      }
       return new JavaAnnotation(name, params);
     }
 
@@ -108,9 +139,12 @@ public final class Antlr4JavaTypeParser {
 
     @Override
     public Map<String, AnnotationValue> visitNamedParams(JavaTypeParser.NamedParamsContext ctx) {
-      Map<String, AnnotationValue> map = new LinkedHashMap<>();
-      for (JavaTypeParser.NamedParamContext p : ctx.namedParam()) {
-        map.put(p.getChild(0).getText(), visitAnnotationValue(p.annotationValue()));
+      List<JavaTypeParser.NamedParamContext> params = ctx.namedParam();
+      Map<String, AnnotationValue> map = new LinkedHashMap<>((int) (params.size() / 0.75f) + 1);
+      for (int i = 0; i < params.size(); i++) {
+        JavaTypeParser.NamedParamContext p = params.get(i);
+        String key = ((TerminalNode) p.getChild(0)).getSymbol().getText();
+        map.put(key, visitAnnotationValue(p.annotationValue()));
       }
       return map;
     }
@@ -118,14 +152,14 @@ public final class Antlr4JavaTypeParser {
     @Override
     public AnnotationValue visitAnnotationValue(JavaTypeParser.AnnotationValueContext ctx) {
       if (ctx.STRING_LITERAL() != null) {
-        String literal = ctx.STRING_LITERAL().getText();
+        String literal = ctx.STRING_LITERAL().getSymbol().getText();
         String unescaped = unescapeString(literal.substring(1, literal.length() - 1));
         return new AnnotationValue.StringValue(unescaped);
       } else if (ctx.CLASS() != null) {
         JavaType type = visitJavaType(ctx.javaType());
         return new AnnotationValue.ClassLiteralValue(type);
       } else if (ctx.NUMBER_LITERAL() != null) {
-        String text = ctx.NUMBER_LITERAL().getText();
+        String text = ctx.NUMBER_LITERAL().getSymbol().getText();
         Number number;
         if (text.contains(".")) {
           number = Double.parseDouble(text);
@@ -136,8 +170,11 @@ public final class Antlr4JavaTypeParser {
       } else if (ctx.annotation() != null) {
         return new AnnotationValue.AnnotationValueHolder(visitAnnotation(ctx.annotation()));
       } else {
-        List<AnnotationValue> list =
-            ctx.annotationValue().stream().map(this::visitAnnotationValue).collect(Collectors.toList());
+        List<JavaTypeParser.AnnotationValueContext> valCtxs = ctx.annotationValue();
+        List<AnnotationValue> list = new ArrayList<>(valCtxs.size());
+        for (int i = 0; i < valCtxs.size(); i++) {
+          list.add(visitAnnotationValue(valCtxs.get(i)));
+        }
         return new AnnotationValue.ArrayValue(list);
       }
     }

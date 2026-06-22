@@ -85,11 +85,16 @@ public class JavaTypeBenchmark {
   // =========================================================================
   // 6. antlr4 Benchmarks
   // =========================================================================
-  @Benchmark public void antlr4_parseSimple(Blackhole bh) { bh.consume(Antlr4JavaTypeParser.parse(SIMPLE)); }
-  @Benchmark public void antlr4_parseFullyQualified(Blackhole bh) { bh.consume(Antlr4JavaTypeParser.parse(FULLY_QUALIFIED)); }
-  @Benchmark public void antlr4_parseNestedGenerics(Blackhole bh) { bh.consume(Antlr4JavaTypeParser.parse(NESTED_GENERICS)); }
-  @Benchmark public void antlr4_parseAnnotatedArray(Blackhole bh) { bh.consume(Antlr4JavaTypeParser.parse(ANNOTATED_ARRAY)); }
-  @Benchmark public void antlr4_parseComplex(Blackhole bh) { bh.consume(Antlr4JavaTypeParser.parse(COMPLEX)); }
+  @State(Scope.Thread)
+  public static class Antlr4TypeState {
+    public final Antlr4JavaTypeParser parser = new Antlr4JavaTypeParser();
+  }
+
+  @Benchmark public void antlr4_parseSimple(Antlr4TypeState state, Blackhole bh) { bh.consume(state.parser.parse(SIMPLE)); }
+  @Benchmark public void antlr4_parseFullyQualified(Antlr4TypeState state, Blackhole bh) { bh.consume(state.parser.parse(FULLY_QUALIFIED)); }
+  @Benchmark public void antlr4_parseNestedGenerics(Antlr4TypeState state, Blackhole bh) { bh.consume(state.parser.parse(NESTED_GENERICS)); }
+  @Benchmark public void antlr4_parseAnnotatedArray(Antlr4TypeState state, Blackhole bh) { bh.consume(state.parser.parse(ANNOTATED_ARRAY)); }
+  @Benchmark public void antlr4_parseComplex(Antlr4TypeState state, Blackhole bh) { bh.consume(state.parser.parse(COMPLEX)); }
 
   // =========================================================================
   // 7. parboiled2 Benchmarks (Excluded)

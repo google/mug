@@ -105,8 +105,9 @@ public class Antlr4JavaTypeParserTest {
     assertThrows(IllegalArgumentException.class, () -> parse("Map<String"));
     assertThrows(IllegalArgumentException.class, () -> parse("String.class"));
   }
+  private final Antlr4JavaTypeParser parser = new Antlr4JavaTypeParser();
 
-  private static JavaType parse(String s) {
-    return Antlr4JavaTypeParser.parse(s);
+  private JavaType parse(String s) {
+    return parser.parse(s);
   }
 }
