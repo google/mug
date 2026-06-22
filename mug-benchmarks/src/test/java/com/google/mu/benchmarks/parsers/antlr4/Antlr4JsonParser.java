@@ -72,7 +72,11 @@ public final class Antlr4JsonParser {
 
     @Override
     public JsonValue visitJsonString(JsonParser.JsonStringContext ctx) {
-      return new JsonString(strictUnescape(ctx.getText()));
+      Token t = ctx.start;
+      String inner = t.getInputStream().getText(
+          new org.antlr.v4.runtime.misc.Interval(t.getStartIndex() + 1, t.getStopIndex() - 1)
+      );
+      return new JsonString(strictUnescape(inner));
     }
 
     @Override
@@ -87,17 +91,20 @@ public final class Antlr4JsonParser {
     public JsonValue visitJsonObject(JsonParser.JsonObjectContext ctx) {
       Map<String, JsonValue> map = new LinkedHashMap<>();
       for (JsonParser.MemberContext m : ctx.member()) {
-        String key = strictUnescape(m.jsonString().getText());
+        Token t = m.jsonString().start;
+        String key = t.getInputStream().getText(
+            new org.antlr.v4.runtime.misc.Interval(t.getStartIndex() + 1, t.getStopIndex() - 1)
+        );
+        String unescapedKey = strictUnescape(key);
         JsonValue value = visit(m.jsonValue());
-        map.put(key, value);
+        map.put(unescapedKey, value);
       }
       return new JsonObject(map);
     }
   }
 
   // Strict unescape complying with RFC 8259 Section 7 string constraints
-  private static String strictUnescape(String quoted) {
-    String text = quoted.substring(1, quoted.length() - 1);
+  private static String strictUnescape(String text) {
     if (text.indexOf('\\') == -1) {
       for (int i = 0; i < text.length(); i++) {
         if (text.charAt(i) < 0x20) {

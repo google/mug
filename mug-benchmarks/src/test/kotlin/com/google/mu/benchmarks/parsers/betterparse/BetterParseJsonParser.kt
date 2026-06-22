@@ -45,7 +45,7 @@ object BetterParseJsonParser : Grammar<JsonValue>() {
     }
 
     private val jsonString: Parser<JsonString> by stringToken map { 
-        JsonString(strictUnescape(it.text)) 
+        JsonString(strictUnescape(it.input, it.offset + 1, it.offset + it.length - 1)) 
     }
 
     // Recursive JSON value parser, wrapped in lazy parser {} for self-reference
@@ -74,26 +74,32 @@ object BetterParseJsonParser : Grammar<JsonValue>() {
     }
 
     // Strict unescape complying with RFC 8259 Section 7 string constraints
-    fun strictUnescape(quoted: String): String {
-        val text = quoted.substring(1, quoted.length - 1)
-        if (text.indexOf('\\') == -1) {
-            for (j in 0 until text.length) {
-                val charVal = text[j]
-                if (charVal.code < 0x20) {
-                    throw IllegalArgumentException("Unescaped control character: 0x${Integer.toHexString(charVal.code)}")
+    fun strictUnescape(input: CharSequence, start: Int, end: Int): String {
+        var hasBackslash = false
+        for (i in start until end) {
+            if (input[i] == '\\') {
+                hasBackslash = true
+                break
+            }
+        }
+        if (!hasBackslash) {
+            for (i in start until end) {
+                val c = input[i]
+                if (c.code < 0x20) {
+                    throw IllegalArgumentException("Unescaped control character: 0x${Integer.toHexString(c.code)}")
                 }
             }
-            return text
+            return input.subSequence(start, end).toString()
         }
-        val sb = StringBuilder(text.length)
-        var i = 0
-        while (i < text.length) {
-            val c = text[i]
+        val sb = StringBuilder(end - start)
+        var i = start
+        while (i < end) {
+            val c = input[i]
             if (c == '\\') {
-                if (i + 1 >= text.length) {
+                if (i + 1 >= end) {
                     throw IllegalArgumentException("Trailing backslash")
                 }
-                val esc = text[++i]
+                val esc = input[++i]
                 when (esc) {
                     '"' -> sb.append('"')
                     '\\' -> sb.append('\\')
@@ -104,10 +110,10 @@ object BetterParseJsonParser : Grammar<JsonValue>() {
                     'r' -> sb.append('\r')
                     't' -> sb.append('\t')
                     'u' -> {
-                        if (i + 4 >= text.length) {
+                        if (i + 4 >= end) {
                             throw IllegalArgumentException("Invalid unicode escape")
                         }
-                        val hex = text.substring(i + 1, i + 5)
+                        val hex = input.subSequence(i + 1, i + 5).toString()
                         i += 4
                         sb.append(hex.toInt(16).toChar())
                     }

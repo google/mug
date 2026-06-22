@@ -37,12 +37,13 @@ public final class ParsecjJsonParser {
       regex("-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?")
           .map(s -> new JsonNumber(Double.parseDouble(s)));
 
-  // Matches a quoted string, unescaping strictly
+  // Matches a quoted string, capturing only the inner body to avoid double allocation
   private static final Parser<Character, JsonString> JSON_STRING =
-      regex("\"([^\"\\\\]|\\\\.)*\"").map(s -> new JsonString(strictUnescape(s)));
+      between(chr('"'), chr('"'), regex("([^\"\\\\]|\\\\.)*"))
+          .map(s -> new JsonString(strictUnescape(s)));
 
   private static final Parser<Character, JsonValue> PARSER = buildParser();
-
+  
   private static Parser<Character, JsonValue> buildParser() {
     Parser.Ref<Character, JsonValue> ref = Parser.ref();
 
@@ -115,8 +116,7 @@ public final class ParsecjJsonParser {
   }
 
   // Strict unescape complying with RFC 8259 Section 7 string constraints
-  private static String strictUnescape(String quoted) {
-    String text = quoted.substring(1, quoted.length() - 1);
+  private static String strictUnescape(String text) {
     if (text.indexOf('\\') == -1) {
       for (int i = 0; i < text.length(); i++) {
         if (text.charAt(i) < 0x20) {
