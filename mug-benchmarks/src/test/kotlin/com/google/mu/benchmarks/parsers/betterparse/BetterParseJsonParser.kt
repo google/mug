@@ -76,6 +76,15 @@ object BetterParseJsonParser : Grammar<JsonValue>() {
     // Strict unescape complying with RFC 8259 Section 7 string constraints
     fun strictUnescape(quoted: String): String {
         val text = quoted.substring(1, quoted.length - 1)
+        if (text.indexOf('\\') == -1) {
+            for (j in 0 until text.length) {
+                val charVal = text[j]
+                if (charVal.code < 0x20) {
+                    throw IllegalArgumentException("Unescaped control character: 0x${Integer.toHexString(charVal.code)}")
+                }
+            }
+            return text
+        }
         val sb = StringBuilder(text.length)
         var i = 0
         while (i < text.length) {

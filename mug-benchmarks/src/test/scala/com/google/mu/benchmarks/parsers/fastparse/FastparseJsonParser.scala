@@ -4,7 +4,7 @@ import com.google.mu.benchmarks.parsers.dotparse.JsonValue
 import com.google.mu.benchmarks.parsers.dotparse.JsonValue._
 import scala.jdk.CollectionConverters._
 
-/** Strictly RFC 8259-compliant Fastparse-based JSON parser. */
+/** Strictly RFC 8259-compliant Fastparse-based JSON parser using Li Haoyi's optimized patterns. */
 object FastparseJsonParser {
   import fastparse._
 
@@ -14,32 +14,32 @@ object FastparseJsonParser {
   private object NoWsParser {
     import fastparse._, NoWhitespace._
 
-    // Matches quoted string and unescapes strictly
-    def stringLiteral[_: P]: P[String] = P(
-      "\"" ~ (
-        CharPred(c => c != '"' && c != '\\').! |
-        ("\\" ~ AnyChar).!
-      ).rep ~ "\""
-    ).map { chunks =>
-      val quoted = "\"" + chunks.mkString + "\""
-      strictUnescape(quoted)
-    }
+    def stringChars(c: Char): Boolean = c != '\"' && c != '\\'
 
-    // Strict RFC 8259 number parsing constructed with fastparse combinators (no regex)
-    def sign[_: P]: P[String] = P( P("-").? ).!
-    def zero[_: P]: P[String] = P( "0" ).!
-    def nonZero[_: P]: P[String] = P( CharIn("1-9") ~ CharsWhileIn("0-9", 0) ).!
-    def integer[_: P]: P[String] = P( zero | nonZero )
-    def fraction[_: P]: P[String] = P( "." ~ CharsWhileIn("0-9") ).!
-    def exponent[_: P]: P[String] = P( CharIn("eE") ~ CharIn("+\\-").? ~ CharsWhileIn("0-9") ).!
+    def hexDigit[$: P]: P[Unit]      = P( CharIn("0-9a-fA-F") )
+    def unicodeEscape[$: P]: P[Unit] = P( "u" ~ hexDigit ~ hexDigit ~ hexDigit ~ hexDigit )
+    def escape[$: P]: P[Unit]        = P( "\\" ~ (CharIn("\"/\\\\bfnrt") | unicodeEscape) )
 
-    def numberLiteral[_: P]: P[Double] = P(
-      (sign ~ integer ~ fraction.? ~ exponent.?).!
-    ).map(_.toDouble)
+    def strChars[$: P]: P[Unit]      = P( CharsWhile(stringChars) )
+
+    // Matches quoted string and unescapes strictly with exactly 1 allocation
+    def stringLiteral[$: P]: P[String] = P(
+      "\"" ~/ (strChars | escape).rep.! ~ "\""
+    ).map(strictUnescape)
+
+    // Strict RFC 8259 number parsing using Li Haoyi's optimized block scanning
+    def digits[$: P]: P[Unit]        = P( CharsWhileIn("0-9") )
+    def exponent[$: P]: P[Unit]      = P( CharIn("eE") ~ CharIn("+\\-").? ~ digits )
+    def fractional[$: P]: P[Unit]    = P( "." ~ digits )
+    def integral[$: P]: P[Unit]      = P( "0" | CharIn("1-9") ~ digits.? )
+
+    def numberLiteral[$: P]: P[Double] = P(
+      P( "-".? ) ~ integral ~ fractional.? ~ exponent.?
+    ).!.map(_.toDouble)
   }
 
   // =========================================================================
-  // 2. Main JSON Parser Scope (with custom whitespace-only skipping)
+  // 2. Main JSON Parser Scope (with custom whitespace-only skipping and cuts)
   // =========================================================================
   implicit val whitespace: fastparse.Whitespace = { ctx =>
     import fastparse.NoWhitespace._
@@ -57,21 +57,21 @@ object FastparseJsonParser {
 
   def jsonString[_: P]: P[JsonString] = P( NoWsParser.stringLiteral ).map(new JsonString(_))
 
-  // Recursive JSON value parser rules
+  // Recursive JSON value parser rules with strategic cuts
   def jsonValue[_: P]: P[JsonValue] = P(
     jsonNull | jsonBoolean | jsonNumber | jsonString | jsonArray | jsonObject
   )
 
   def jsonArray[_: P]: P[JsonArray] = P(
-    "[" ~ jsonValue.rep(sep = ",") ~ "]"
+    "[" ~/ jsonValue.rep(sep = ",") ~ "]"
   ).map(list => new JsonArray(list.asJava))
 
   def member[_: P]: P[(String, JsonValue)] = P(
-    NoWsParser.stringLiteral ~ ":" ~ jsonValue
+    NoWsParser.stringLiteral ~/ ":" ~ jsonValue
   )
 
   def jsonObject[_: P]: P[JsonObject] = P(
-    "{" ~ member.rep(sep = ",") ~ "}"
+    "{" ~/ member.rep(sep = ",") ~ "}"
   ).map { list =>
     val map = new java.util.LinkedHashMap[String, JsonValue]()
     list.foreach { case (k, v) => map.put(k, v) }
@@ -90,44 +90,55 @@ object FastparseJsonParser {
   }
 
   // Strict unescape complying with RFC 8259 Section 7 string constraints
-  private def strictUnescape(quoted: String): String = {
-    val text = quoted.substring(1, quoted.length - 1)
-    val sb = new java.lang.StringBuilder(text.length)
-    var i = 0
-    while (i < text.length) {
-      val c = text.charAt(i)
-      if (c == '\\') {
-        if (i + 1 >= text.length) {
-          throw new IllegalArgumentException("Trailing backslash")
+  private def strictUnescape(text: String): String = {
+    if (text.indexOf('\\') == -1) {
+      var j = 0
+      while (j < text.length) {
+        val charVal = text.charAt(j)
+        if (charVal < 0x20) {
+          throw new IllegalArgumentException(s"Unescaped control character: 0x${Integer.toHexString(charVal)}")
+        }
+        j += 1
+      }
+      text
+    } else {
+      val sb = new java.lang.StringBuilder(text.length)
+      var i = 0
+      while (i < text.length) {
+        val c = text.charAt(i)
+        if (c == '\\') {
+          if (i + 1 >= text.length) {
+            throw new IllegalArgumentException("Trailing backslash")
+          }
+          i += 1
+          val esc = text.charAt(i)
+          esc match {
+            case '"'  => sb.append('"')
+            case '\\' => sb.append('\\')
+            case '/'  => sb.append('/')
+            case 'b'  => sb.append('\b')
+            case 'f'  => sb.append('\u000c') // form feed
+            case 'n'  => sb.append('\n')
+            case 'r'  => sb.append('\r')
+            case 't'  => sb.append('\t')
+            case 'u'  =>
+              if (i + 4 >= text.length) {
+                throw new IllegalArgumentException("Invalid unicode escape")
+              }
+              val hex = text.substring(i + 1, i + 5)
+              i += 4
+              sb.append(Integer.parseInt(hex, 16).toChar)
+            case _ =>
+              throw new IllegalArgumentException(s"Invalid escape character: \\$esc")
+          }
+        } else if (c < 0x20) {
+          throw new IllegalArgumentException(s"Unescaped control character: 0x${Integer.toHexString(c)}")
+        } else {
+          sb.append(c)
         }
         i += 1
-        val esc = text.charAt(i)
-        esc match {
-          case '"'  => sb.append('"')
-          case '\\' => sb.append('\\')
-          case '/'  => sb.append('/')
-          case 'b'  => sb.append('\b')
-          case 'f'  => sb.append('\u000c') // form feed
-          case 'n'  => sb.append('\n')
-          case 'r'  => sb.append('\r')
-          case 't'  => sb.append('\t')
-          case 'u'  =>
-            if (i + 4 >= text.length) {
-              throw new IllegalArgumentException("Invalid unicode escape")
-            }
-            val hex = text.substring(i + 1, i + 5)
-            i += 4
-            sb.append(Integer.parseInt(hex, 16).toChar)
-          case _ =>
-            throw new IllegalArgumentException(s"Invalid escape character: \\$esc")
-        }
-      } else if (c < 0x20) {
-        throw new IllegalArgumentException(s"Unescaped control character: 0x${Integer.toHexString(c)}")
-      } else {
-        sb.append(c)
       }
-      i += 1
+      sb.toString
     }
-    sb.toString
   }
 }

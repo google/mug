@@ -34,49 +34,12 @@ public final class TakerJsonParser {
     return tok(Lexical.string(s));
   }
 
-  // Strict RFC 8259 number parsing constructed with Taker combinators
-  private static final Taker<String> ZERO_PART = Chars.chr('0').map(String::valueOf);
-  private static final Taker<String> NON_ZERO_PART = Chars.chr(c -> c >= '1' && c <= '9')
-      .then(Chars.chr(Character::isDigit).zeroOrMore())
-      .map((first, rest) -> {
-        StringBuilder sb = new StringBuilder();
-        sb.append(first);
-        rest.forEach(sb::append);
-        return sb.toString();
-      });
+  // Lenient RFC 8259 number parsing using Taker's native high-speed primitive field
+  private static final Taker<JsonNumber> JSON_NUMBER = Numeric.doubleValue.map(JsonNumber::new);
 
-  private static final Taker<String> INTEGER_PART = Chars.chr('-').optional()
-      .then(Combinators.oneOf(ZERO_PART, NON_ZERO_PART))
-      .map((minusOpt, intStr) -> (minusOpt.isPresent() ? "-" : "") + intStr);
-
-  private static final Taker<JsonNumber> JSON_NUMBER = INTEGER_PART
-      .then(Chars.chr('.').then(Numeric.number).map((dot, dec) -> "." + dec).optional())
-      .then(Chars.chr(c -> c == 'e' || c == 'E')
-          .then(Chars.chr(c -> c == '+' || c == '-').optional())
-          .then(Numeric.number)
-          .map((e, signOpt, num) -> "e" + signOpt.map(String::valueOf).orElse("") + num)
-          .optional())
-      .map((integer, decOpt, expOpt) -> {
-        String s = integer + decOpt.orElse("") + expOpt.orElse("");
-        return new JsonNumber(Double.parseDouble(s));
-      });
-
-  // Raw double-quoted string literal parser unescaped strictly
-  private static final Taker<String> STRING_LITERAL = Chars.chr('"')
-      .then(
-          Combinators.oneOf(
-              Chars.chr(c -> c != '"' && c != '\\').map(String::valueOf),
-              Chars.chr('\\').then(Combinators.any()).map((backslash, c) -> "\\" + c)
-          ).zeroOrMore()
-      )
-      .thenSkip(Chars.chr('"'))
-      .map((start, body) -> {
-        StringBuilder sb = new StringBuilder();
-        sb.append('"');
-        body.forEach(sb::append);
-        sb.append('"');
-        return strictUnescape(sb.toString());
-      });
+  // Matches double-quoted string and unescapes strictly with exactly 1 allocation via Java's native Regex engine
+  private static final Taker<String> STRING_LITERAL = Lexical.regex("\"([^\"\\\\]|\\\\.)*\"")
+      .map(TakerJsonParser::strictUnescape);
 
   private static final Taker<JsonNull> JSON_NULL = Lexical.string("null").map(x -> JsonNull.INSTANCE);
   private static final Taker<JsonBoolean> JSON_BOOLEAN = Combinators.oneOf(

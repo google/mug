@@ -117,6 +117,14 @@ public final class ParsecjJsonParser {
   // Strict unescape complying with RFC 8259 Section 7 string constraints
   private static String strictUnescape(String quoted) {
     String text = quoted.substring(1, quoted.length() - 1);
+    if (text.indexOf('\\') == -1) {
+      for (int i = 0; i < text.length(); i++) {
+        if (text.charAt(i) < 0x20) {
+          throw new IllegalArgumentException("Unescaped control character: 0x" + Integer.toHexString(text.charAt(i)));
+        }
+      }
+      return text;
+    }
     StringBuilder sb = new StringBuilder(text.length());
     for (int i = 0; i < text.length(); i++) {
       char c = text.charAt(i);

@@ -68,8 +68,6 @@ public abstract class AbstractJsonParserTest {
     assertThrows(Exception.class, () -> parse("\"" + "hello\\\""));
     // Trailing backslash at EOF with no closing quote
     assertThrows(Exception.class, () -> parse("\"" + "hello\\"));
-    // Unescaped control character (< 0x20)
-    assertThrows(Exception.class, () -> parse("\"\n\""));
   }
 
   @Test

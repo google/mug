@@ -34,9 +34,9 @@ public final class PetitParserJsonParser {
     Parser quote = CharacterParser.of('"');
     Parser escape = CharacterParser.of('\\').seq(CharacterParser.any());
     Parser normal = CharacterParser.pattern("^\"\\\\");
-    Parser content = escape.or(normal).star();
-    return quote.seq(content).seq(quote).flatten()
-        .map((String s) -> new JsonString(strictUnescape(s)))
+    Parser content = escape.or(normal).star().flatten();
+    return quote.seq(content).seq(quote)
+        .map((List<Object> list) -> new JsonString(strictUnescape((String) list.get(1))))
         .trim();
   }
 
@@ -126,8 +126,15 @@ public final class PetitParserJsonParser {
   }
 
   // Strict unescape complying with RFC 8259 Section 7 string constraints
-  private static String strictUnescape(String quoted) {
-    String text = quoted.substring(1, quoted.length() - 1);
+  private static String strictUnescape(String text) {
+    if (text.indexOf('\\') == -1) {
+      for (int i = 0; i < text.length(); i++) {
+        if (text.charAt(i) < 0x20) {
+          throw new IllegalArgumentException("Unescaped control character: 0x" + Integer.toHexString(text.charAt(i)));
+        }
+      }
+      return text;
+    }
     StringBuilder sb = new StringBuilder(text.length());
     for (int i = 0; i < text.length(); i++) {
       char c = text.charAt(i);

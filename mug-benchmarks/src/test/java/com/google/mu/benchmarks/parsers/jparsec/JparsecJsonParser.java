@@ -24,12 +24,19 @@ public final class JparsecJsonParser {
       .keywords("null", "true", "false")
       .build();
 
-  // Permissive decimal pattern built using JParsec's fluent Pattern API
-  private static final org.jparsec.pattern.Pattern NUMBER_PATTERN =
-      Patterns.isChar('-').optional()
-          .next(Patterns.INTEGER)
-          .next(Patterns.isChar('.').next(Patterns.INTEGER).optional())
-          .next(Patterns.among("eE").next(Patterns.among("+-").optional()).next(Patterns.INTEGER).optional());
+  // Strict RFC 8259 number pattern built natively using JParsec's Pattern API
+  private static final org.jparsec.pattern.Pattern NUMBER_PATTERN;
+  static {
+    org.jparsec.pattern.Pattern zero = Patterns.isChar('0');
+    org.jparsec.pattern.Pattern nonZero = Patterns.range('1', '9')
+        .next(Patterns.range('0', '9').many());
+    org.jparsec.pattern.Pattern integer = zero.or(nonZero);
+    
+    NUMBER_PATTERN = Patterns.isChar('-').optional()
+        .next(integer)
+        .next(Patterns.isChar('.').next(Patterns.range('0', '9').many1()).optional())
+        .next(Patterns.among("eE").next(Patterns.among("+-").optional()).next(Patterns.range('0', '9').many1()).optional());
+  }
 
   private static final Parser<String> NUMBER_SCANNER = Scanners.pattern(NUMBER_PATTERN, "number").source();
 
@@ -38,10 +45,6 @@ public final class JparsecJsonParser {
       NUMBER_SCANNER.map(s -> Tokens.fragment(s, "number")),
       TERMS.tokenizer()
   );
-
-  // Strict RFC 8259 number pattern validated using Java's native regex engine
-  private static final java.util.regex.Pattern STRICT_NUMBER_PATTERN =
-      java.util.regex.Pattern.compile("-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?");
 
   // Parses a string literal and unescapes it under strict RFC 8259 rules
   private static final Parser<String> STRING_LITERAL = Parsers.token(token -> {
@@ -58,10 +61,7 @@ public final class JparsecJsonParser {
     if (token.value() instanceof Tokens.Fragment) {
       Tokens.Fragment f = (Tokens.Fragment) token.value();
       if ("number".equals(f.tag())) {
-        String s = f.text();
-        if (STRICT_NUMBER_PATTERN.matcher(s).matches()) {
-          return new JsonNumber(Double.parseDouble(s));
-        }
+        return new JsonNumber(Double.parseDouble(f.text()));
       }
     }
     return null;
@@ -122,6 +122,14 @@ public final class JparsecJsonParser {
   // Strict unescape complying with RFC 8259 Section 7 string constraints
   private static String strictUnescape(String quoted) {
     String text = quoted.substring(1, quoted.length() - 1);
+    if (text.indexOf('\\') == -1) {
+      for (int i = 0; i < text.length(); i++) {
+        if (text.charAt(i) < 0x20) {
+          throw new IllegalArgumentException("Unescaped control character: 0x" + Integer.toHexString(text.charAt(i)));
+        }
+      }
+      return text;
+    }
     StringBuilder sb = new StringBuilder(text.length());
     for (int i = 0; i < text.length(); i++) {
       char c = text.charAt(i);
