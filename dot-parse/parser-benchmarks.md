@@ -123,7 +123,7 @@ Every engine was validated against a large, representative JSON document (~100 c
 
 Throughput was measured in **operations per millisecond** (higher is better):
 
-| Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `cats-parse` | `parsecj` | `taker` | `better-parse` | **Winner(s)** |
+| Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/javafp/parsecj/blob/master/src/main/java/org/javafp/parsecj/examples/JsonParser.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Complex JSON Payload** | $0.163$ | **$0.465$** ☕ | $0.155$ | $0.108$ | **$0.506$** 🚀 | $0.386$ | $0.020$ | $0.129$ | $0.115$ | **`fastparse`** 🚀<br>**`dot-parse`** ☕ |
 
