@@ -93,7 +93,7 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 *   **Regex Delegation vs. Combinator Sequencing**: `parsecj` ($17,572\text{ ops/ms}$) achieves its throughput by utilizing a single flat regular expression parser (`regex(...)`). This delegates the entire sequence matching to Java's native regular expression engine. While this represents a significant throughput increase, it measures the performance of the JVM's native regex engine rather than the parser combinator's own monadic sequencing overhead.
 *   **ANTLR4 Two-Phase Allocation Overhead**: `antlr4` ($2.1\text{k}$) shows lower throughput here due to its compiler-grade two-phase parsing architecture (Lexer + Parser). On every micro-input execution, ANTLR4 must allocate a new `CharStream`, a new `Lexer`, a new `CommonTokenStream`, a new `Parser`, and individual `CommonToken` objects for every single token scanned, adding object allocation overhead.
 
----
+<hr>
 
 #### 2. Quoted String Parsing (Common Case vs. Escaped Edge Case)
 *   **Performance**: On simple strings, `taker` ($24.6\text{M}$ ops/sec) leads overall, followed closely by `cats-parse` ($24.6\text{M}$) and `fastparse` ($21.9\text{M}$), while `dot-parse` is at **$15.2\text{M}$ ops/sec**. On escaped strings, `fastparse` leads overall at **$10.6\text{M}$ ops/sec**, followed by `taker` ($8.8\text{M}$) and `jparsec` ($7.3\text{M}$).
@@ -102,7 +102,7 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
     `dot-parse` **trades off escape parsing efficiency for grammatical flexibility.** Its `quotedByWithEscapes(char before, char after, Production<CharSequence> escaped)` primitive accepts a generic escape parser rule. While invoking a parser rule on the character following the backslash incurs extra overhead compared to strictly unescaping a literal character, it enables `dot-parse` to support arbitrary, complex escape grammars: such as variable-length Unicode escapes (like `\u12AF`), or Markdown-style escaping (where a backslash not followed by an escapable character must be interpreted as literal, through passing a rule like `escapable.orElse("\\")`). This is an intentional design choice, given that string literals without escapes are far more common in practice.
 *   **Bulk Scanning & Regex Delegation**: Libraries that support native bulk-scanning primitives (like `jparsec`'s string scanner) perform well.
 
----
+<hr>
 
 #### 3. Keywords & Case-Insensitive Tries
 *   **Performance CS**: `dot-parse` ($363$ ops/ms) leads the entire pack overall, followed by `cats-parse` ($123$ ops/ms) and `jparsec` ($105$ ops/ms).
@@ -110,14 +110,14 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 *   **Trie Dispatch Implementation**: `dot-parse` (`anyOf`) compiles keyword alternatives into optimized **Radix Prefix Tries**, bypassing sequential backtracking. By compiling its branching nodes into a flat lookup table (array of size 256) when using `.precomputeForAscii()`, it achieves its high throughput. For case-insensitivity, its prefix-trie compiler precomputes capitalization permutations of the first 4 characters at startup, maintaining an optimized $O(1)$ dispatch.
 *   **Backtracking Penalties**: Libraries that do not precompute prefix-tries must backtrack through all 12 options sequentially, resulting in significantly lower throughput (e.g., `parsecj` at **$24$ ops/ms** on case-insensitive keywords).
 
----
+<hr>
 
 #### 4. Calculator & Nested Comments (Recursive Scenarios)
 *   **Performance Calculator**: `fastparse` ($1,220$ ops/ms) leads overall, followed by `dot-parse` ($748$ ops/ms) and `petitparser` ($609$ ops/ms).
 *   **Performance Comments**: `dot-parse` ($11.08\text{M}$ ops/sec) leads the entire pack overall, followed by `fastparse` ($4.62\text{M}$).
 *   **`dot-parse` Native Flat Character Scan**: `dot-parse` achieves its comment parsing throughput by utilizing its native `nestedBy("/*", "*/")` primitive. Rather than constructing a recursive tree of parser combinator objects, `nestedBy` scans the character stream in a single flat loop, tracking nesting depth in a primitive integer counter. This minimizes CPU and memory overhead, outperforming even macro-rewritten engines.
 
----
+<hr>
 
 #### 5. Kotlin `better-parse` Architectural Profile
 *   **Property Delegation Overhead**: `better-parse` represents grammars using Kotlin's delegated properties (`by`), which introduces multiple runtime wrapper layers and lookup overhead during parser initialization and match dispatching.
@@ -125,7 +125,7 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 *   **Regex and Backtracking Bottlenecks**: On case-insensitive keywords, `better-parse` drops to a very low **$9.8$ ops/ms** ($9,800$ parses/sec) because it compiles 12 separate `Regex` objects and matches them sequentially per character. This is **$17\text{x}$ slower** than `dot-parse`'s Radix prefix tries and **$9\text{x}$ slower** than `taker`.
 *   **Scenario Specific Strengths**: `better-parse` shows respectable throughput on simple strings (**$3,822$ ops/ms**) and nested block comments (**$970$ ops/ms**), outperforming classic Java engines like `parsecj` ($795$ comments) and `taker` ($733$ comments) on deep nested structures.
 
----
+<hr>
 
 ## Java Type Signature Parser Shootout (7-Way Showdown)
 
