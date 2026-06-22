@@ -8,15 +8,14 @@ import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.mu.util.CharPredicate.anyOf;
-import static com.google.mu.util.CharPredicate.noneOf;
 import static com.google.mu.util.CharPredicate.range;
-import static java.util.stream.Stream.concat;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Stream.concat;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
@@ -45,9 +44,9 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
   private static final Parser<Object> SEGMENT =
       anyOf(
           ENCODED.between("=?", "?="),
-          consecutive(noneOf("= \t\r\n"), "literal chars"),
+          consecutive("[^= \t\r\n]"),
           string("="),
-          consecutive(anyOf(" \t\r\n"), "linear whitespaces").map(Lws::new));
+          consecutive("[ \t\r\n]").map(Lws::new));
 
   static String decodeRfc2047(String input) {
     List<?> segments = SEGMENT.zeroOrMore().parse(input);
