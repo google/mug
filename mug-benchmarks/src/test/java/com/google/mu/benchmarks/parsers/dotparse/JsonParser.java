@@ -10,6 +10,7 @@ import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
+import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.mu.util.CharPredicate.anyOf;
 
 import java.util.stream.Collectors;
@@ -33,7 +34,7 @@ public final class JsonParser {
       quotedByWithEscapes('"', '"', ESCAPED).map(JsonString::new);
   
   private static final Parser<?> INTEGER =
-      anyOf(one('0'), one("[1-9]").then(digits().orElse("")));
+      anyOf(one('0'), one("[1-9]").then(zeroOrMore("[0-9]")));
 
   private static final Parser<JsonNumber> JSON_NUMBER = 
       literally(
