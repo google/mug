@@ -18,7 +18,6 @@ import com.google.mu.benchmarks.parsers.dotparse.JsonValue.*;
 
 /** Fully RFC 8259-compliant JSON parser built with dot-parse. */
 public final class JsonParser {
-  // 1. JSON String Escape Sequences
   private static final Parser<String> ESCAPED = anyOf(
       one('b').thenReturn("\b"),
       one('t').thenReturn("\t"),
@@ -28,20 +27,19 @@ public final class JsonParser {
       one('\\').thenReturn("\\"),
       one('/').thenReturn("/"),
       one('"').thenReturn("\""),
-      string("u").then(bmpCodeUnit()).map(Character::toString));
+      one('u').then(bmpCodeUnit()).map(Character::toString));
 
   private static final Parser<JsonString> JSON_STRING =
       quotedByWithEscapes('"', '"', ESCAPED).map(JsonString::new);
   
   private static final Parser<?> INTEGER =
-      anyOf(string("0"), one("[1-9]").then(digits().orElse("")));
+      anyOf(one('0'), one("[1-9]").then(digits().orElse("")));
 
-  // 2. JSON Number (Strict RFC 8259: no leading zeros in the integer part)
   private static final Parser<JsonNumber> JSON_NUMBER = 
       literally(
           sequence(
-              anyOf(INTEGER, sequence(string("-"), INTEGER)),
-              sequence(string("."), digits()).orElse(null),
+              anyOf(INTEGER, sequence(one('-'), INTEGER)),
+              sequence(one('.'), digits()).orElse(null),
               sequence(caseInsensitive("e"), one("[+-]").orElse(null), digits()).orElse(null)))
         .source()
         .map(s -> new JsonNumber(Double.parseDouble(s)));
@@ -49,7 +47,6 @@ public final class JsonParser {
   private static final Parser<JsonNull> JSON_NULL = string("null").thenReturn(JsonNull.INSTANCE);
   private static final Parser<JsonBoolean> JSON_BOOLEAN = anyOf(JsonBoolean.values());
 
-  // 3. Recursive JSON Value Parser
   public static final Parser<JsonValue> PARSER = define(
       me -> {
         Parser<JsonArray> jsonArray = me.zeroOrMoreDelimitedBy(",")
@@ -57,11 +54,12 @@ public final class JsonParser {
             .map(JsonArray::new);
         Parser<JsonObject> jsonObject = 
             Parser.zeroOrMoreDelimited(
-                JSON_STRING.followedBy(":").map(JsonString::value),
+                JSON_STRING.map(JsonString::value).followedBy(":"),
                 me,
                 ",",
                 Collectors::toUnmodifiableMap)
-            .between("{", "}").map(JsonObject::new);
+              .between("{", "}")
+              .map(JsonObject::new);
         return anyOf(JSON_NULL, JSON_BOOLEAN, JSON_NUMBER, JSON_STRING, jsonArray, jsonObject);
       });
 
