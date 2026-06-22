@@ -133,11 +133,37 @@ public class ParserShowdownBenchmark {
     public final BetterParseShowdown.CalculatorFixture betterParseCalculator = new BetterParseShowdown.CalculatorFixture();
     public final BetterParseShowdown.NestedCommentFixture betterParseNestedComment = new BetterParseShowdown.NestedCommentFixture();
 
+    public final String jsonString;
+
     public BenchmarkState() {
       try {
         this.parsecjCalculator = new ParsecjShowdown.CalculatorFixture();
+        this.jsonString = java.nio.file.Files.readString(java.nio.file.Path.of("src/test/resources/large_benchmark.json"));
+        
+        // Rigorous setup-time verification for all 9 JSON parsers
+        verifyJson(com.google.mu.benchmarks.parsers.dotparse.JsonParser.parse(jsonString), "dot-parse");
+        verifyJson(com.google.mu.benchmarks.parsers.jparsec.JparsecJsonParser.parse(jsonString), "jparsec");
+        verifyJson(com.google.mu.benchmarks.parsers.parsecj.ParsecjJsonParser.parse(jsonString), "parsecj");
+        verifyJson(com.google.mu.benchmarks.parsers.petitparser.PetitParserJsonParser.parse(jsonString), "petitparser");
+        verifyJson(com.google.mu.benchmarks.parsers.taker.TakerJsonParser.parse(jsonString), "taker");
+        verifyJson(com.google.mu.benchmarks.parsers.betterparse.BetterParseJsonParser.INSTANCE.parse(jsonString), "better-parse");
+        verifyJson(com.google.mu.benchmarks.parsers.fastparse.FastparseJsonParser.parse(jsonString), "fastparse");
+        verifyJson(com.google.mu.benchmarks.parsers.catsparse.CatsParseJsonParser.parse(jsonString), "cats-parse");
+        verifyJson(com.google.mu.benchmarks.parsers.antlr4.Antlr4JsonParser.parse(jsonString), "antlr4");
       } catch (Exception e) {
         throw new RuntimeException(e);
+      }
+    }
+
+    private void verifyJson(com.google.mu.benchmarks.parsers.dotparse.JsonValue value, String parserName) {
+      if (!(value instanceof com.google.mu.benchmarks.parsers.dotparse.JsonValue.JsonObject)) {
+        throw new AssertionError(parserName + " parsed value is not a JsonObject!");
+      }
+      com.google.mu.benchmarks.parsers.dotparse.JsonValue.JsonObject obj = 
+          (com.google.mu.benchmarks.parsers.dotparse.JsonValue.JsonObject) value;
+      if (obj.members().size() != 12) {
+        throw new AssertionError(
+            parserName + " parsed object has size " + obj.members().size() + ", expected 12!");
       }
     }
 
@@ -267,4 +293,17 @@ public class ParserShowdownBenchmark {
   @Benchmark public void parboiled2_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2NestedComment.run()); }
   @Benchmark public void petitparser_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.petitparserNestedComment.run()); }
   @Benchmark public void betterParse_nestedCommentPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseNestedComment.run(BenchmarkInputs.NESTED_COMMENT)); }
+
+  // =========================================================================
+  // 7. JSON Benchmarks
+  // =========================================================================
+  @Benchmark public void dotParse_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.dotparse.JsonParser.parse(s.jsonString)); }
+  @Benchmark public void jparsec_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.jparsec.JparsecJsonParser.parse(s.jsonString)); }
+  @Benchmark public void parsecj_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.parsecj.ParsecjJsonParser.parse(s.jsonString)); }
+  @Benchmark public void petitparser_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.petitparser.PetitParserJsonParser.parse(s.jsonString)); }
+  @Benchmark public void taker_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.taker.TakerJsonParser.parse(s.jsonString)); }
+  @Benchmark public void betterParse_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.betterparse.BetterParseJsonParser.INSTANCE.parse(s.jsonString)); }
+  @Benchmark public void fastparse_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.fastparse.FastparseJsonParser.parse(s.jsonString)); }
+  @Benchmark public void catsParse_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.catsparse.CatsParseJsonParser.parse(s.jsonString)); }
+  @Benchmark public void antlr4_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.antlr4.Antlr4JsonParser.parse(s.jsonString)); }
 }

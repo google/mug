@@ -57,14 +57,25 @@ public abstract class AbstractJsonParserTest {
   public void parseStringWithInvalidEscapes_throwsException() {
     // Invalid escape character
     assertThrows(Exception.class, () -> parse("\"\\x\""));
-    // Truncated unicode escape
-    assertThrows(Exception.class, () -> parse("\"\\" + "u002\""));
+    // Truncated/incomplete unicode escapes
+    assertThrows(Exception.class, () -> parse("\"" + "hello\\u\""));
+    assertThrows(Exception.class, () -> parse("\"" + "hello\\u1\""));
+    assertThrows(Exception.class, () -> parse("\"" + "hello\\u12\""));
+    assertThrows(Exception.class, () -> parse("\"" + "hello\\u123\""));
     // Non-hex character in unicode escape
-    assertThrows(Exception.class, () -> parse("\"\\" + "u002g\""));
-    // Trailing backslash / unterminated escape
-    assertThrows(Exception.class, () -> parse("\"\\\""));
+    assertThrows(Exception.class, () -> parse("\"" + "hello\\u123g\""));
+    // Trailing backslash escaping the closing quote (unterminated string)
+    assertThrows(Exception.class, () -> parse("\"" + "hello\\\""));
+    // Trailing backslash at EOF with no closing quote
+    assertThrows(Exception.class, () -> parse("\"" + "hello\\"));
     // Unescaped control character (< 0x20)
     assertThrows(Exception.class, () -> parse("\"\n\""));
+  }
+
+  @Test
+  public void parseStringWithValidEscapedBackslash_success() throws Exception {
+    // A double backslash at the end is a valid escaped backslash, yielding a single backslash
+    assertThat(parse("\"hello\\\\\"")).isEqualTo(new JsonString("hello\\"));
   }
 
   @Test
