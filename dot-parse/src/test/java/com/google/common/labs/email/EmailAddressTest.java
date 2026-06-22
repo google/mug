@@ -5,6 +5,7 @@ import static com.google.common.labs.email.EmailAddress.parseAddressList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.common.truth.TruthJUnit.assume;
+import static java.util.Collections.nCopies;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static org.junit.Assert.assertThrows;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1771,5 +1773,55 @@ public class EmailAddressTest {
             EmailAddress.of("user", "example.com").withDisplayName("display2"),
             EmailAddress.of("user", "example.com").withDisplayName("display2"))
         .testEquals();
+  }
+
+  @Test
+  public void testUnicodeDomain_isCached() {
+    EmailAddress address = EmailAddress.of("test", "bücher.de");
+    String unicodeDomain1 = address.unicodeDomain();
+    String unicodeDomain2 = address.unicodeDomain();
+    assertThat(unicodeDomain1).isSameInstanceAs(unicodeDomain2);
+  }
+
+  @Test
+  public void testUnicodeDomain_concurrent() {
+    EmailAddress address = EmailAddress.of("test", "bücher.de");
+    List<String> results = IntStream.range(0, 1000)
+        .parallel()
+        .mapToObj(i -> address.unicodeDomain())
+        .toList();
+    assertThat(results)
+        .containsExactlyElementsIn(nCopies(1000, "bücher.de"));
+  }
+
+  @Test
+  public void testUnicodeDisplayName_isCached() {
+    EmailAddress address = EmailAddress.of("=?UTF-8?Q?John_Doe?= <test@example.com>");
+    Optional<String> unicodeDisplayName1 = address.unicodeDisplayName();
+    Optional<String> unicodeDisplayName2 = address.unicodeDisplayName();
+    assertThat(unicodeDisplayName1).isSameInstanceAs(unicodeDisplayName2);
+  }
+
+  @Test
+  public void testUnicodeDisplayName_concurrent() {
+    EmailAddress address = EmailAddress.of("=?UTF-8?Q?John_Doe?= <test@example.com>");
+    List<String> results = IntStream.range(0, 1000)
+        .parallel()
+        .mapToObj(i -> address.unicodeDisplayName().get())
+        .toList();
+    assertThat(results.stream())
+        .containsExactlyElementsIn(
+            nCopies(1000, EncodedWord.decodeRfc2047("=?UTF-8?Q?John_Doe?=")));
+  }
+
+  @Test
+  public void testUnicodeDisplayName_noDisplayName_concurrent() {
+    EmailAddress address = EmailAddress.of("<test@example.com>");
+    List<Optional<String>> results = IntStream.range(0, 1000)
+        .parallel()
+        .mapToObj(i -> address.unicodeDisplayName())
+        .toList();
+    assertThat(results.stream())
+        .containsExactlyElementsIn(nCopies(1000, Optional.empty()));
   }
 }
