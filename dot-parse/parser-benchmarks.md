@@ -29,7 +29,7 @@ This report presents a comprehensive JMH performance benchmark and architectural
 9. **`better-parse`** (Kotlin):
    A Kotlin-native, highly expressive parser combinator library built on top of property delegation and DSL combinators.
 
-All benchmarks were executed side-by-side on the **same JVM (JDK 24.0.1)** and the **same hardware (Apple M1 Max Mac)** to eliminate environmental bias. All grammars were strictly verified with assertions ensuring **complete input consumption (EOF)** and **structural correctness**.
+All benchmarks were executed side-by-side on the **same JVM (JDK 24.0.1)** and the **same hardware (Apple M1 Mac)** to eliminate environmental bias. All grammars were strictly verified with assertions ensuring **complete input consumption (EOF)** and **structural correctness**.
 
 
 
@@ -68,7 +68,32 @@ Our benchmarks reveal a clear set of trade-offs between **compile-time macro cod
 
 ---
 
-## 9-Way Showdown Benchmark Results
+## JSON Parser Shootout (9-Way Showdown)
+
+To evaluate how these frameworks perform when parsing a **large, complex, and heterogeneous data payload**, we implemented a full **JSON parser** across all 9 shootout engines.
+
+Every engine was validated against a large, representative JSON document (~100 containers, maps of size 12, lists of size 250, scientific numbers, and varying strings of length 20 to 128) and strictly verified at setup time to guarantee complete functional correctness and functional parity.
+
+Throughput was measured in **operations per millisecond** (higher is better):
+
+| Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/javafp/parsecj/blob/master/src/main/java/org/javafp/parsecj/examples/JsonParser.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | **Winner(s)** |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Complex JSON Payload** | $0.163$ | **$0.465$** ☕ | $0.155$ | $0.108$ | **$0.506$** 🚀 | $0.386$ | $0.020$ | $0.129$ | $0.115$ | **`fastparse`** 🚀<br>**`dot-parse`** ☕ |
+
+### Key Takeaways from the JSON Shootout
+
+*   **Scala's `fastparse` Overall Results**:
+    `fastparse` achieved the highest throughput overall, reaching **$0.506$ ops/ms** utilizing compile-time macro inlining and block-scanning primitives.
+*   **Google's `dot-parse` Java Division Results**:
+    Among all Java-native / Java-specific engines, `dot-parse` achieved the highest throughput, delivering **$0.465$ ops/ms** (running at 91.9% of Fastparse's speed and outperforming other Java combinators).
+*   **Combinator Library Comparison**:
+    Within the Java-specific parser combinator libraries, `dot-parse` is **3.00x faster** than `jparsec` ($0.155$ ops/ms) and **23.2x faster** than `parsecj` ($0.020$ ops/ms).
+*   **Scala Comparison**:
+    `fastparse` ($0.506$ ops/ms) outperforms the runtime-based `cats-parse` ($0.386$ ops/ms) by **1.31x**.
+
+---
+
+## 9-Way Showdown Benchmark Results (Micro-Benchmarks)
 
 Throughput was measured in **operations per millisecond** (higher is better). All benchmarks were run under G1 GC with natural, out-of-the-box collection-allocating configurations for all other contenders, while `dot-parse` leveraged its zero-allocation collectors on the hot path.
 
@@ -115,40 +140,11 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 
 ---
 
-## JSON Parser Shootout (9-Way Showdown)
-
-To evaluate how these frameworks perform when parsing a **large, complex, and heterogeneous data payload**, we implemented a full **JSON parser** across all 9 shootout engines.
-
-Every engine was validated against a large, representative JSON document (~100 containers, maps of size 12, lists of size 250, scientific numbers, and varying strings of length 20 to 128) and strictly verified at setup time to guarantee complete functional correctness and functional parity.
-
-Throughput was measured in **operations per millisecond** (higher is better):
-
-| Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/javafp/parsecj/blob/master/src/main/java/org/javafp/parsecj/examples/JsonParser.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | **Winner(s)** |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Complex JSON Payload** | $0.163$ | **$0.465$** ☕ | $0.155$ | $0.108$ | **$0.506$** 🚀 | $0.386$ | $0.020$ | $0.129$ | $0.115$ | **`fastparse`** 🚀<br>**`dot-parse`** ☕ |
-
-### Key Takeaways from the JSON Shootout
-
-*   **Scala's `fastparse` Wins the Shootout**:
-    `fastparse` takes the absolute crown as the fastest engine overall, reaching **$0.506$ ops/ms** utilizing compile-time macro inlining and block-scanning primitives.
-*   **Google's `dot-parse` Leads JVM Languages**:
-    Among all Java and JVM-specific engines, `dot-parse` is the undisputed leader, delivering **$0.465$ ops/ms** (running at 91.9% of Fastparse's speed and outperforming all other Java combinators by a wide margin!).
-*   **Combinator Library Comparison**:
-    Within the Java-specific parser combinator libraries, `dot-parse` is **3.00x faster** than `jparsec` ($0.155$ ops/ms) and **23.2x faster** than `parsecj` ($0.020$ ops/ms).
-*   **Scala Comparison**:
-    `fastparse` ($0.506$ ops/ms) outperforms the runtime-based `cats-parse` ($0.386$ ops/ms) by **1.31x**.
-
----
-
 ## Java Type Signature Parser Shootout (7-Way Showdown)
 
-To evaluate how these frameworks perform when building a **highly complex,
-recursive, and production-grade grammar**, we implemented a full **Java Type
-signature parser** across 7 shootout engines.
+To evaluate how these frameworks perform when building a **highly complex, recursive, and production-grade grammar**, we implemented a full **Java Type signature parser** across 7 shootout engines.
 
-Every engine was validated against the **exact same 14 deep structural AST
-test cases** to guarantee complete functional parity. Throughput was measured
-in **operations per millisecond** (higher is better):
+Every engine was validated against the **exact same 14 deep structural AST test cases** to guarantee complete functional parity. Throughput was measured in **operations per millisecond** (higher is better):
 
 | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `parsecj` | `taker` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -161,43 +157,20 @@ in **operations per millisecond** (higher is better):
 ### Key Takeaways from the Java Type Shootout
 
 *   **Google's `dot-parse` Leads the Java Division**:
-    `dot-parse` is the fastest Java-native parser library, running **$1.5\text{x}$ to $2.0\text{x}$ faster** than the next
-    fastest Java contender (`petitparser` / `antlr4`).
-    On simple types, `dot-parse` ($7,034$ ops/ms) is the leading Java library,
-    behind Scala's macro-based `fastparse` ($9,240$ ops/ms) by leveraging a
-    zero-allocation, pre-allocated tokenizer that avoids object boxing on
-    the hot path.
+    `dot-parse` is the fastest Java-native parser library, running **$1.5\text{x}$ to $2.0\text{x}$ faster** than the next fastest Java contender (`petitparser` / `antlr4`).
+    On simple types, `dot-parse` ($7,034$ ops/ms) is the leading Java library, behind Scala's macro-based `fastparse` ($9,240$ ops/ms) by leveraging a zero-allocation, pre-allocated tokenizer that avoids object boxing on the hot path.
 
 *   **Compile-Time vs. Runtime Combinators**:
-    Scala's compile-time macro-based `fastparse` leads overall in all
-    scenarios. By performing compile-time macro expansion and inlining all
-    parsing loops directly into JVM bytecode, it strips away object
-    allocations and method dispatch overhead.
+    Scala's compile-time macro-based `fastparse` leads overall in all scenarios. By performing compile-time macro expansion and inlining all parsing loops directly into JVM bytecode, it strips away object allocations and method dispatch overhead.
 
 *   **`taker` Delivers Solid, High-Performance PEG Baselines**:
-    The `taker` parser performs well, consistently **beating
-    `antlr4`** on fully qualified ($1,546$ vs $1,054$) and nested generic
-    ($330$ vs $287$) signatures. It also **outperforms `parsecj` and `jparsec`
-    by nearly $2\text{x}$** across almost all scenarios, proving that a lean
-    PEG design with optimized applicative builders (`ApplyBuilder3`) is
-    highly competitive.
+    The `taker` parser performs well, consistently **beating `antlr4`** on fully qualified ($1,546$ vs $1,054$) and nested generic ($330$ vs $287$) signatures. It also **outperforms `parsecj` and `jparsec` by nearly $2\text{x}$** across almost all scenarios, proving that a lean PEG design with optimized applicative builders (`ApplyBuilder3`) is highly competitive.
 
 *   **`parsecj` vs `jparsec` (The Combinator Battle)**:
-    `parsecj` performs moderately and **consistently outperforms `jparsec`**
-    in 4 out of 5 scenarios. However, in the **Complex Annotation** scenario,
-    `parsecj` falls slightly behind `jparsec` ($84$ vs $103$ ops/ms). This is
-    due to the heavy monadic bind (`.bind(...)`) nesting and recursive
-    backtracking (`.attempt()`) we had to introduce in `parsecj` to handle
-    class literals and array parameters, which incurs significant lambda
-    allocation overhead.
+    `parsecj` performs moderately and **consistently outperforms `jparsec`** in 4 out of 5 scenarios. However, in the **Complex Annotation** scenario, `parsecj` falls slightly behind `jparsec` ($84$ vs $103$ ops/ms). This is due to the heavy monadic bind (`.bind(...)`) nesting and recursive backtracking (`.attempt()`) we had to introduce in `parsecj` to handle class literals and array parameters, which incurs significant lambda allocation overhead.
 
 *   **Scannerless vs. Two-Phase Tokenization**:
-    For small, dense inputs with minimal whitespace (such as Java type
-    signatures), scannerless parsers (`dot-parse`, `taker`, `parsecj`) are a
-    fundamentally better architectural fit than two-phase tokenizing parsers
-    (`jparsec`, `antlr4`). Two-phase parsers pay a high object-allocation penalty
-    to construct intermediate token lists, whereas scannerless parsers operate
-    directly on the character stream with zero token overhead.
+    For small, dense inputs with minimal whitespace (such as Java type signatures), scannerless parsers (`dot-parse`, `taker`, `parsecj`) are a fundamentally better architectural fit than two-phase tokenizing parsers (`jparsec`, `antlr4`). Two-phase parsers pay a high object-allocation penalty to construct intermediate token lists, whereas scannerless parsers operate directly on the character stream with zero token overhead.
 
 ---
 
