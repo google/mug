@@ -9,44 +9,62 @@ import java.util.stream.Collectors;
 /** Strictly RFC 8259-compliant ANTLR4-based JSON parser. */
 public final class Antlr4JsonParser {
 
+  private static final ThreadLocal<ParserState> STATE = ThreadLocal.withInitial(ParserState::new);
+
   private Antlr4JsonParser() {}
 
+  private static class ParserState {
+    final JsonLexer lexer;
+    final JsonParser parser;
+    final Visitor visitor;
+
+    ParserState() {
+      this.lexer = new JsonLexer(CharStreams.fromString(""));
+      this.lexer.removeErrorListeners();
+      this.lexer.addErrorListener(
+          new BaseErrorListener() {
+            @Override
+            public void syntaxError(
+                Recognizer<?, ?> recognizer,
+                Object offendingSymbol,
+                int line,
+                int charPositionInLine,
+                String msg,
+                RecognitionException e) {
+              throw new IllegalArgumentException("Lexing error: " + msg);
+            }
+          });
+
+      this.parser = new JsonParser(new CommonTokenStream(lexer));
+      this.parser.removeErrorListeners();
+      this.parser.addErrorListener(
+          new BaseErrorListener() {
+            @Override
+            public void syntaxError(
+                Recognizer<?, ?> recognizer,
+                Object offendingSymbol,
+                int line,
+                int charPositionInLine,
+                String msg,
+                RecognitionException e) {
+              throw new IllegalArgumentException("Parsing error: " + msg);
+            }
+          });
+      this.visitor = new Visitor();
+    }
+
+    JsonValue parse(String input) {
+      lexer.setInputStream(CharStreams.fromString(input));
+      CommonTokenStream tokens = new CommonTokenStream(lexer);
+      parser.setTokenStream(tokens);
+
+      JsonParser.EntryContext entry = parser.entry();
+      return visitor.visit(entry.jsonValue());
+    }
+  }
+
   public static JsonValue parse(String input) {
-    JsonLexer lexer = new JsonLexer(CharStreams.fromString(input));
-    lexer.removeErrorListeners();
-    lexer.addErrorListener(
-        new BaseErrorListener() {
-          @Override
-          public void syntaxError(
-              Recognizer<?, ?> recognizer,
-              Object offendingSymbol,
-              int line,
-              int charPositionInLine,
-              String msg,
-              RecognitionException e) {
-            throw new IllegalArgumentException("Lexing error: " + msg);
-          }
-        });
-
-    CommonTokenStream tokens = new CommonTokenStream(lexer);
-    JsonParser parser = new JsonParser(tokens);
-    parser.removeErrorListeners();
-    parser.addErrorListener(
-        new BaseErrorListener() {
-          @Override
-          public void syntaxError(
-              Recognizer<?, ?> recognizer,
-              Object offendingSymbol,
-              int line,
-              int charPositionInLine,
-              String msg,
-              RecognitionException e) {
-            throw new IllegalArgumentException("Parsing error: " + msg);
-          }
-        });
-
-    JsonParser.EntryContext entry = parser.entry();
-    return new Visitor().visit(entry.jsonValue());
+    return STATE.get().parse(input);
   }
 
   private static class Visitor extends JsonBaseVisitor<JsonValue> {
@@ -62,12 +80,12 @@ public final class Antlr4JsonParser {
 
     @Override
     public JsonValue visitJsonBoolean(JsonParser.JsonBooleanContext ctx) {
-      return ctx.getText().equals("true") ? JsonBoolean.TRUE : JsonBoolean.FALSE;
+      return ctx.start.getType() == JsonParser.T__1 ? JsonBoolean.TRUE : JsonBoolean.FALSE;
     }
 
     @Override
     public JsonValue visitJsonNumber(JsonParser.JsonNumberContext ctx) {
-      return new JsonNumber(Double.parseDouble(ctx.getText()));
+      return new JsonNumber(Double.parseDouble(ctx.start.getText()));
     }
 
     @Override
@@ -81,16 +99,20 @@ public final class Antlr4JsonParser {
 
     @Override
     public JsonValue visitJsonArray(JsonParser.JsonArrayContext ctx) {
-      List<JsonValue> list = ctx.jsonValue().stream()
-          .map(this::visit)
-          .collect(Collectors.toList());
+      List<JsonParser.JsonValueContext> elements = ctx.jsonValue();
+      List<JsonValue> list = new ArrayList<>(elements.size());
+      for (int i = 0; i < elements.size(); i++) {
+        list.add(visit(elements.get(i)));
+      }
       return new JsonArray(list);
     }
 
     @Override
     public JsonValue visitJsonObject(JsonParser.JsonObjectContext ctx) {
-      Map<String, JsonValue> map = new LinkedHashMap<>();
-      for (JsonParser.MemberContext m : ctx.member()) {
+      List<JsonParser.MemberContext> members = ctx.member();
+      Map<String, JsonValue> map = new LinkedHashMap<>((int) (members.size() / 0.75f) + 1);
+      for (int i = 0; i < members.size(); i++) {
+        JsonParser.MemberContext m = members.get(i);
         Token t = m.jsonString().start;
         String key = t.getInputStream().getText(
             new org.antlr.v4.runtime.misc.Interval(t.getStartIndex() + 1, t.getStopIndex() - 1)
