@@ -1786,9 +1786,8 @@ public class EmailAddressTest {
   @Test
   public void testUnicodeDomain_concurrent() {
     EmailAddress address = EmailAddress.of("test", "bücher.de");
-    List<String> results = IntStream.range(0, 1000)
-        .parallel()
-        .mapToObj(i -> address.unicodeDomain())
+    List<String> results = nCopies(1000, address).parallelStream()
+        .map(EmailAddress::unicodeDomain)
         .toList();
     assertThat(results)
         .containsExactlyElementsIn(nCopies(1000, "bücher.de"));
@@ -1797,19 +1796,18 @@ public class EmailAddressTest {
   @Test
   public void testUnicodeDisplayName_isCached() {
     EmailAddress address = EmailAddress.of("=?UTF-8?Q?John_Doe?= <test@example.com>");
-    Optional<String> unicodeDisplayName1 = address.unicodeDisplayName();
-    Optional<String> unicodeDisplayName2 = address.unicodeDisplayName();
-    assertThat(unicodeDisplayName1).isSameInstanceAs(unicodeDisplayName2);
+    assertThat(address.unicodeDisplayName())
+        .isSameInstanceAs(address.unicodeDisplayName());
   }
 
   @Test
   public void testUnicodeDisplayName_concurrent() {
     EmailAddress address = EmailAddress.of("=?UTF-8?Q?John_Doe?= <test@example.com>");
-    List<String> results = IntStream.range(0, 1000)
-        .parallel()
-        .mapToObj(i -> address.unicodeDisplayName().get())
+    List<String> results = nCopies(1000, address).parallelStream()
+        .map(EmailAddress::unicodeDisplayName)
+        .map(Optional::get)
         .toList();
-    assertThat(results.stream())
+    assertThat(results)
         .containsExactlyElementsIn(
             nCopies(1000, EncodedWord.decodeRfc2047("=?UTF-8?Q?John_Doe?=")));
   }
