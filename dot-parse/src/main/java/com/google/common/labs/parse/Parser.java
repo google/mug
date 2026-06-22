@@ -468,8 +468,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(after != '\\', "quoteChar cannot be '\\'");
     checkArgument(!Character.isISOControl(after), "quoteChar cannot be a control character");
     checkArgument(!Character.isSurrogate(after), "quoteChar cannot be a surrogate character");
-    CharPredicate literalChars =
-        isNot('\\').and(c -> c != after && !Character.isISOControl(c)).precomputeForAscii();
+    CharPredicate literalChars = isNot(after).and(isNot('\\')).precomputeForAscii();
     return anyOf(consecutive(literalChars, "quoted chars"), escape)
         .zeroOrMore(joining())
         .immediatelyBetween(before, Character.toString(after));
@@ -556,11 +555,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
               if (input.isEof(index)) {
                 return context.expecting(suffix, index); // Unclosed block
               }
-              char c = input.charAt(index);
-              if (Character.isISOControl(c)) {
-                return context.expecting("non-control character", index);
-              }
-              index++;
+              char c = input.charAt(index++);
               if (c == after) {
                 if (--depth == 0) {
                   return new MatchResult.Success<>(start, index, builder.toString());

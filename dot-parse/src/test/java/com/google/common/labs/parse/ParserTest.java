@@ -457,13 +457,7 @@ public class ParserTest {
     assertThat(singleQuoted.matches("'foo\\'")).isFalse();
   }
 
-  @Test
-  public void quotedByWithEscapes_rejectsControlCharacters() {
-    Parser<String> parser = Parser.quotedByWithEscapes('\'', '\'', chars(1));
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("'foo\nbar'"));
-    assertThat(e.getMessage()).contains("at 1:5:");
-    assertThat(parser.matches("'foo\nbar'")).isFalse();
-  }
+
 
   @Test
   public void quotedByWithEscapes_invalidQuoteChar_throws() {
@@ -652,13 +646,7 @@ public class ParserTest {
     assertThat(parser.matches("(foo \\")).isFalse();
   }
 
-  @Test
-  public void nestedByWithEscapes_rejectsControlCharacters() {
-    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', chars(1));
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("(foo\nbar)"));
-    assertThat(e.getMessage()).contains("at 1:5:");
-    assertThat(parser.matches("(foo\nbar)")).isFalse();
-  }
+
 
   @Test
   public void nestedBy_failures() {
