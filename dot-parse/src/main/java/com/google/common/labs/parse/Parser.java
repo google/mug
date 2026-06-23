@@ -32,7 +32,6 @@ import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toList;
@@ -736,7 +735,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.1
    */
   public static Parser<?> sequence(Parser<?> first, Production<?>... more) {
-    return first.followedByInOrder(more);
+    return first.ignoreReturn().followedByInOrder(more);
   }
 
   /** Matches if any of the given {@code parsers} match. */
@@ -1071,7 +1070,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override Parser<?> ignoreReturn() {
         @SuppressWarnings("unchecked") // return value is unused
         Parser<Object> elided = (Parser<Object>) left().ignoreReturn();
-        return elided.andZeroOrMore(extra.ignoreReturn(), counting());
+        return elided.andZeroOrMore(extra.ignoreReturn(), toNull());
       }
     };
   }
@@ -1299,7 +1298,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       @Override Parser<?> ignoreReturn() {
-        return left().ignoreReturn().followedByInOrder(followers);
+        return sequence(left(), suffixes);
       }
     };
   }
@@ -1443,11 +1442,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       @Override public <R> Parser<R> thenReturn(R result) {
-        return ignoreReturn().thenReturn(result);
+        return elided.thenReturn(result);
       }
 
       @Override Parser<?> ignoreReturn() {
-        return left().ignoreReturn();
+        return elided;
       }
     };
   }
@@ -1486,7 +1485,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
   public final Lexical skipping(Parser<?> skip) {
-    return new Lexical(skip.atLeastOnce(counting()));
+    return new Lexical(skip.atLeastOnce(toNull()));
   }
 
   /**
@@ -2334,6 +2333,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       operand = op.apply(operand);
     }
     return operand;
+  }
+
+  private static <T, A, R> Collector<T, A, R> toNull() {
+    return Collector.of(() -> null, (a, e) -> {}, (a, b) -> a, a -> null);
   }
 
   private interface Constants {

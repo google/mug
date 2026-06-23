@@ -7119,5 +7119,13 @@ public class ParserTest {
     assertThat(parser.parse("aaa")).isEqualTo("aaa");
     assertThrows(ParseException.class, () -> parser.parse("b"));
   }
+
+  @Test
+  public void sequence_propagatesIgnoreReturn() {
+    Parser<?> parser = sequence(string("a"), string("b"), string("c"));
+    assertThat(parser.parse("abc")).isEqualTo("a");
+    assertThrows(ParseException.class, () -> parser.parse("ab"));
+    assertThrows(ParseException.class, () -> parser.parse("abd"));
+  }
 }
 
