@@ -7293,6 +7293,27 @@ public class ParserTest {
   }
 
   @Test
+  public void returnElision_source_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("a").atLeastOnce(collectingAndAdd(joining(","), joined)).source();
+
+    assertThat(parser.parse("aaa")).isEqualTo("aaa");
+    // source() always elides the inner parser internally because the original values are discarded
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_source_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("a").atLeastOnce(collectingAndAdd(joining(","), joined)).source().thenReturn("ok");
+
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
   public void returnElision_zeroOrMoreDelimitedBy_withElision_skipping() {
     List<String> innerJoined = new ArrayList<>();
     List<String> outerJoined = new ArrayList<>();
@@ -7307,6 +7328,67 @@ public class ParserTest {
     assertThat(parser.parseSkipping(whitespace(), "  a , b , c ; d , e ; f  x  ")).isEqualTo("ok");
     assertThat(innerJoined).isEmpty();
     assertThat(outerJoined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_notFollowedBy_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("a").atLeastOnce(collectingAndAdd(joining(","), joined)).notFollowedBy("b");
+
+    assertThat(parser.parse("aaa")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test
+  public void returnElision_notFollowedBy_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("a")
+            .atLeastOnce(collectingAndAdd(joining(","), joined))
+            .notFollowedBy("b")
+            .thenReturn("ok");
+
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_literally_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        literally(string("a").atLeastOnce(collectingAndAdd(joining(","), joined)));
+
+    assertThat(parser.parse("aaa")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test
+  public void returnElision_literally_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        literally(string("a").atLeastOnce(collectingAndAdd(joining(","), joined))).thenReturn("ok");
+
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_skipping_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = string("a").atLeastOnce(collectingAndAdd(joining(","), joined));
+
+    assertThat(parser.skipping(whitespace()).parse("  aaa  ")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test
+  public void returnElision_skipping_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = string("a").atLeastOnce(collectingAndAdd(joining(","), joined));
+
+    assertThat(parser.skipping(whitespace()).matches("  aaa  ")).isTrue();
+    assertThat(joined).isEmpty();
   }
 
   private static <T, A, R> Collector<T, A, R> collectingAndAdd(

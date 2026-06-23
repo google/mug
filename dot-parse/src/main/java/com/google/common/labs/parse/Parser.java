@@ -1300,10 +1300,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           case MatchResult.Failure<T> failure -> failure;
         };
       }
-
-      @Override Parser<?> ignoreReturn() {
-        return sequence(left(), followers);
-      }
     };
   }
 
