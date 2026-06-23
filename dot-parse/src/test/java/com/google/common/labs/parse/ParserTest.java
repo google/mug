@@ -7481,6 +7481,19 @@ public class ParserTest {
     assertThat(joined).isEmpty();
   }
 
+  @Test
+  public void returnElision_regularSequence_isNotElided() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        sequence(
+            word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)),
+            string("b"),
+            (a, b) -> a) // custom lambda not elidable
+        .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "a,b,c b")).isEqualTo("ok");
+    assertThat(joined).containsExactly("abc"); // Must NOT be elided!
+  }
+
   private static <T, A, R> Collector<T, A, R> collectingAndAdd(
       Collector<T, A, R> collector, List<? super R> results) {
     return collectingAndThen(
