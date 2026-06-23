@@ -1298,7 +1298,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       @Override Parser<?> ignoreReturn() {
-        return sequence(left(), suffixes);
+        return sequence(left(), followers);
       }
     };
   }

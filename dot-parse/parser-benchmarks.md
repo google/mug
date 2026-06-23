@@ -57,27 +57,27 @@ Throughput was measured in **operations per millisecond** (higher is better):
 
 | Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Complex JSON Payload** | $0.186$ | **$0.469$** ☕ | $0.162$ | $0.108$ | **$0.505$** 🚀 | $0.385$ | $0.019$ | $0.129$ | $0.108$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex JSON Payload** | $0.186$ | **$0.480$** ☕ | $0.159$ | $0.108$ | **$0.506$** 🚀 | $0.375$ | $0.020$ | $0.130$ | $0.112$ | **`fast`** 🚀<br>**`dot`** ☕ |
 
 #### Reference Production Baselines (JSON)
 To provide an absolute performance ceiling, we stacked our combinator shootout against two industry-standard, hand-written production JSON parsers on the exact same JSON payload:
 
 | Parser Engine | Throughput (ops/ms) | Relative Speed to `dot-parse` |
 | :--- | :---: | :---: |
-| **Jackson Databind** (`ObjectMapper`) | $1.873$ | **3.99x** |
-| **Gson** (`JsonParser`) | $1.555$ | **3.32x** |
-| **`dot-parse`** (Our leading Java combinator) | $0.469$ | **1.00x** |
+| **Jackson Databind** (`ObjectMapper`) | $1.833$ | **3.82x** |
+| **Gson** (`JsonParser`) | $1.554$ | **3.24x** |
+| **`dot-parse`** (Our leading Java combinator) | $0.480$ | **1.00x** |
 
 ### Key Takeaways from the JSON Shootout
 
 *   **Scala's `fastparse` Overall Results**:
-    `fastparse` achieved the highest throughput overall, reaching **$0.510$ ops/ms** utilizing compile-time macro inlining and block-scanning primitives.
+    `fastparse` achieved the highest throughput overall, reaching **$0.506$ ops/ms** utilizing compile-time macro inlining and block-scanning primitives.
 *   **Google's `dot-parse` Java Division Results**:
-    Among all Java-native / Java-specific engines, `dot-parse` achieved the highest throughput, delivering **$0.472$ ops/ms** (running at 92.5% of Fastparse's speed and outperforming other Java combinators).
+    Among all Java-native / Java-specific engines, `dot-parse` achieved the highest throughput, delivering **$0.480$ ops/ms** (running at 94.9% of Fastparse's speed and outperforming other Java combinators).
 *   **Combinator Library Comparison**:
-    Within the Java-specific parser combinator libraries, `dot-parse` is **2.95x faster** than `jparsec` ($0.160$ ops/ms) and **23.6x faster** than `parsecj` ($0.020$ ops/ms).
+    Within the Java-specific parser combinator libraries, `dot-parse` is **3.02x faster** than `jparsec` ($0.159$ ops/ms) and **24.0x faster** than `parsecj` ($0.020$ ops/ms).
 *   **Scala Comparison**:
-    `fastparse` ($0.510$ ops/ms) outperforms the runtime-based `cats-parse` ($0.383$ ops/ms) by **1.33x**.
+    `fastparse` ($0.506$ ops/ms) outperforms the runtime-based `cats-parse` ($0.375$ ops/ms) by **1.35x**.
 
 ---
 
@@ -87,26 +87,26 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 
 | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `cats-parse` | `parsecj` | `taker` | `better-parse` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **IPv4 Address** | $1,838$ | **$13,318$** ☕ | $8,839$ | $6,958$ | **$24,782$** 🚀 | $18,329$ | $12,371$ | $5,048$ | $1,923$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Quoted String (Common)** | $4,713$ | $12,425$ | $7,049$ | $3,074$ | **$21,505$** 🚀 | $19,741$ | $5,438$ | **$20,604$** ☕ | $5,193$ | **`fast`** 🚀<br>**`taker`** ☕ |
-| **Quoted String (Escaped)** | $3,402$ | $5,227$ | $4,861$ | $2,363$ | **$12,114$** 🚀 | $3,635$ | $2,704$ | **$10,402$** ☕ | $1,385$ | **`fast`** 🚀<br>**`taker`** ☕ |
-| **Keywords (12 CS)** | $46$ | **$280$** 🚀 ☕ | $89$ | $63$ | $80$ | $101$ | $37$ | $66$ | $43$ | **`dot`** 🚀 ☕ |
-| **Keywords CI (12 CI)** | $31$ | **$197$** 🚀 ☕ | $91$ | $56$ | $71$ | $97$ | $28$ | $55$ | $16$ | **`dot`** 🚀 ☕ |
-| **Calculator** | $346$ | $527$ | $327$ | **$540$** ☕ | **$1,104$** 🚀 | $412$ | $204$ | $443$ | $243$ | **`fast`** 🚀<br>**`petit`** ☕ |
-| **Nested Block Comment** | $1,169$ | **$10,033$** 🚀 ☕ | $2,207$ | $1,050$ | $4,927$ | $2,104$ | $643$ | $769$ | $1,413$ | **`dot`** 🚀 ☕ |
+| **IPv4 Address** | $1,850$ | **$11,836$** ☕ | $9,266$ | $6,657$ | **$24,645$** 🚀 | $18,665$ | $12,434$ | $4,990$ | $1,943$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Quoted String (Common)** | $4,726$ | $12,321$ | $6,946$ | $3,040$ | $19,391$ | **$19,731$** 🚀 | $5,039$ | **$21,054$** ☕ | $5,358$ | **`cats`** 🚀<br>**`taker`** ☕ |
+| **Quoted String (Escaped)** | $3,549$ | $5,289$ | $4,917$ | $2,372$ | $12,358$ | $3,644$ | $2,771$ | **$17,969$** 🚀 ☕ | $1,224$ | **`taker`** 🚀 ☕ |
+| **Keywords (12 CS)** | $46$ | **$281$** 🚀 ☕ | $91$ | $66$ | $80$ | $101$ | $37$ | $66$ | $50$ | **`dot`** 🚀 ☕ |
+| **Keywords CI (12 CI)** | $32$ | **$201$** 🚀 ☕ | $84$ | $56$ | $71$ | $99$ | $29$ | $55$ | $16$ | **`dot`** 🚀 ☕ |
+| **Calculator** | $367$ | $518$ | $347$ | **$536$** ☕ | **$1,140$** 🚀 | $425$ | $212$ | $451$ | $241$ | **`fast`** 🚀<br>**`petit`** ☕ |
+| **Nested Block Comment** | $1,227$ | **$9,538$** 🚀 ☕ | $2,385$ | $1,077$ | $4,937$ | $2,154$ | $651$ | $689$ | $1,415$ | **`dot`** 🚀 ☕ |
 
 ### Showdown Scenario Analysis & Rationalization
 
 #### 1. IPv4 Address Parsing (Flat Sequencing)
-*   **Performance**: `fastparse` ($24.7\text{M}$ ops/sec) leads, followed by `cats-parse` ($23.5\text{M}$). `parsecj` is the leading Java library at **$17.5\text{M}$ ops/sec**, followed by `dot-parse` ($15.8\text{M}$).
-*   **Regex Delegation vs. Combinator Sequencing**: `parsecj` ($17,572\text{ ops/ms}$) achieves its throughput by utilizing a single flat regular expression parser (`regex(...)`). This delegates the entire sequence matching to Java's native regular expression engine. While this represents a significant throughput increase, it measures the performance of the JVM's native regex engine rather than the parser combinator's own monadic sequencing overhead.
-*   **ANTLR4 Two-Phase Allocation Overhead**: `antlr4` ($2.1\text{k}$) shows lower throughput here due to its compiler-grade two-phase parsing architecture (Lexer + Parser). On every micro-input execution, ANTLR4 must allocate a new `CharStream`, a new `Lexer`, a new `CommonTokenStream`, a new `Parser`, and individual `CommonToken` objects for every single token scanned, adding object allocation overhead.
+*   **Performance**: `fastparse` ($24.6\text{M}$ ops/sec) leads, followed by `cats-parse` ($18.7\text{M}$). `parsecj` is the leading Java library at **$12.4\text{M}$ ops/sec**, followed by `dot-parse` ($11.8\text{M}$).
+*   **Regex Delegation vs. Combinator Sequencing**: `parsecj` ($12,434\text{ ops/ms}$) achieves its throughput by utilizing a single flat regular expression parser (`regex(...)`). This delegates the entire sequence matching to Java's native regular expression engine. While this represents a significant throughput increase, it measures the performance of the JVM's native regex engine rather than the parser combinator's own monadic sequencing overhead.
+*   **ANTLR4 Two-Phase Allocation Overhead**: `antlr4` ($1.9\text{k}$) shows lower throughput here due to its compiler-grade two-phase parsing architecture (Lexer + Parser). On every micro-input execution, ANTLR4 must allocate a new `CharStream`, a new `Lexer`, a new `CommonTokenStream`, a new `Parser`, and individual `CommonToken` objects for every single token scanned, adding object allocation overhead.
 
 <hr>
 
 #### 2. Quoted String Parsing (Common Case vs. Escaped Edge Case)
-*   **Performance**: On simple strings, `taker` ($24.6\text{M}$ ops/sec) leads overall, followed closely by `cats-parse` ($24.6\text{M}$) and `fastparse` ($21.9\text{M}$), while `dot-parse` is at **$15.2\text{M}$ ops/sec**. On escaped strings, `fastparse` leads overall at **$10.6\text{M}$ ops/sec**, followed by `taker` ($8.8\text{M}$) and `jparsec` ($7.3\text{M}$).
-*   **`taker`'s Dedicated Lexical Primitive**: `taker` achieves **$8,821$ ops/ms** on escaped strings by utilizing its built-in, native `Lexical.escapedString('"', '\\', escapesMap)` primitive. Rather than composing general-purpose character combinators (which incur allocation and dispatch overhead on every character), `taker` delegates to a dedicated lexical scanner that parses the string and resolves escapes in a single flat loop.
+*   **Performance**: On simple strings, `taker` ($21.1\text{M}$ ops/sec) leads overall, followed closely by `cats-parse` ($19.7\text{M}$) and `fastparse` ($19.4\text{M}$), while `dot-parse` is at **$12.3\text{M}$ ops/sec**. On escaped strings, `taker` leads overall at **$18.0\text{M}$ ops/sec**, followed by `fastparse` ($12.4\text{M}$) and `dot-parse` ($5.3\text{M}$).
+*   **`taker`'s Dedicated Lexical Primitive**: `taker` achieves **$17,969$ ops/ms** on escaped strings by utilizing its built-in, native `Lexical.escapedString('"', '\\', escapesMap)` primitive. Rather than composing general-purpose character combinators (which incur allocation and dispatch overhead on every character), `taker` delegates to a dedicated lexical scanner that parses the string and resolves escapes in a single flat loop.
 *   **`dot-parse`'s Trade-off: Escape Efficiency vs. Flexibility**:
     `dot-parse` **trades off escape parsing efficiency for grammatical flexibility.** Its `quotedByWithEscapes(char before, char after, Production<CharSequence> escaped)` primitive accepts a generic escape parser rule. While invoking a parser rule on the character following the backslash incurs extra overhead compared to strictly unescaping a literal character, it enables `dot-parse` to support arbitrary, complex escape grammars: such as variable-length Unicode escapes (like `\u12AF`), or Markdown-style escaping (where a backslash not followed by an escapable character must be interpreted as literal, through passing a rule like `escapable.orElse("\\")`). This is an intentional design choice, given that string literals without escapes are far more common in practice.
 *   **Bulk Scanning & Regex Delegation**: Libraries that support native bulk-scanning primitives (like `jparsec`'s string scanner) perform well.
@@ -114,16 +114,16 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 <hr>
 
 #### 3. Keywords & Case-Insensitive Tries
-*   **Performance CS**: `dot-parse` ($363$ ops/ms) leads the entire pack overall, followed by `cats-parse` ($123$ ops/ms) and `jparsec` ($105$ ops/ms).
-*   **Performance CI**: `dot-parse` ($217$ ops/ms) leads the entire pack overall, followed by `cats-parse` ($118$ ops/ms) and `jparsec` ($107$ ops/ms).
+*   **Performance CS**: `dot-parse` ($281$ ops/ms) leads the entire pack overall, followed by `cats-parse` ($101$ ops/ms) and `jparsec` ($91$ ops/ms).
+*   **Performance CI**: `dot-parse` ($201$ ops/ms) leads the entire pack overall, followed by `cats-parse` ($99$ ops/ms) and `jparsec` ($84$ ops/ms).
 *   **Trie Dispatch Implementation**: `dot-parse` (`anyOf`) compiles keyword alternatives into optimized **Radix Prefix Tries**, bypassing sequential backtracking. By compiling its branching nodes into a flat lookup table (array of size 256) when using `.precomputeForAscii()`, it achieves its high throughput. For case-insensitivity, its prefix-trie compiler precomputes capitalization permutations of the first 4 characters at startup, maintaining an optimized $O(1)$ dispatch.
-*   **Backtracking Penalties**: Libraries that do not precompute prefix-tries must backtrack through all 12 options sequentially, resulting in significantly lower throughput (e.g., `parsecj` at **$24$ ops/ms** on case-insensitive keywords).
+*   **Backtracking Penalties**: Libraries that do not precompute prefix-tries must backtrack through all 12 options sequentially, resulting in significantly lower throughput (e.g., `parsecj` at **$29$ ops/ms** on case-insensitive keywords).
 
 <hr>
 
 #### 4. Calculator & Nested Comments (Recursive Scenarios)
-*   **Performance Calculator**: `fastparse` ($1,220$ ops/ms) leads overall, followed by `dot-parse` ($748$ ops/ms) and `petitparser` ($609$ ops/ms).
-*   **Performance Comments**: `dot-parse` ($11.08\text{M}$ ops/sec) leads the entire pack overall, followed by `fastparse` ($4.62\text{M}$).
+*   **Performance Calculator**: `fastparse` ($1,140$ ops/ms) leads overall, followed by `petitparser` ($536$ ops/ms) and `dot-parse` ($518$ ops/ms).
+*   **Performance Comments**: `dot-parse` ($9.54\text{M}$ ops/sec) leads the entire pack overall, followed by `fastparse` ($4.94\text{M}$).
 *   **`dot-parse` Native Flat Character Scan**: `dot-parse` achieves its comment parsing throughput by utilizing its native `nestedBy("/*", "*/")` primitive. Rather than constructing a recursive tree of parser combinator objects, `nestedBy` scans the character stream in a single flat loop, tracking nesting depth in a primitive integer counter. This minimizes CPU and memory overhead, outperforming even macro-rewritten engines.
 
 <hr>
@@ -131,8 +131,8 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 #### 5. Kotlin `better-parse` Architectural Profile
 *   **Property Delegation Overhead**: `better-parse` represents grammars using Kotlin's delegated properties (`by`), which introduces multiple runtime wrapper layers and lookup overhead during parser initialization and match dispatching.
 *   **Heavy Intermediate Allocations**: Unlike zero-allocation parser scans, `better-parse`'s tokenizer scans inputs and allocates a list of intermediate `TokenMatch` objects on the fly, putting significant garbage collection pressure on the JVM hot path.
-*   **Regex and Backtracking Bottlenecks**: On case-insensitive keywords, `better-parse` drops to a very low **$9.8$ ops/ms** ($9,800$ parses/sec) because it compiles 12 separate `Regex` objects and matches them sequentially per character. This is **$17\text{x}$ slower** than `dot-parse`'s Radix prefix tries and **$9\text{x}$ slower** than `taker`.
-*   **Scenario Specific Strengths**: `better-parse` shows respectable throughput on simple strings (**$3,822$ ops/ms**) and nested block comments (**$970$ ops/ms**), outperforming classic Java engines like `parsecj` ($795$ comments) and `taker` ($733$ comments) on deep nested structures.
+*   **Regex and Backtracking Bottlenecks**: On case-insensitive keywords, `better-parse` drops to a very low **$15.9$ ops/ms** ($15,900$ parses/sec) because it compiles 12 separate `Regex` objects and matches them sequentially per character. This is **$12.6\text{x}$ slower** than `dot-parse`'s Radix prefix tries and **$3.5\text{x}$ slower** than `taker`.
+*   **Scenario Specific Strengths**: `better-parse` shows respectable throughput on simple strings (**$5,358$ ops/ms**) and nested block comments (**$1,415$ ops/ms**), outperforming classic Java engines like `parsecj` ($651$ comments) and `taker` ($689$ comments) on deep nested structures.
 
 <hr>
 
@@ -144,26 +144,26 @@ Every engine was validated against the **exact same 14 deep structural AST test 
 
 | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `parsecj` | `taker` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Simple Type (`String`)** | $3,402$ | **$7,019$** ☕ | $1,410$ | $3,530$ | **$8,801$** 🚀 | $1,503$ | $2,525$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Fully Qualified** | $1,605$ | **$3,782$** ☕ | $657$ | $2,091$ | **$5,679$** 🚀 | $925$ | $1,525$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Nested Generics** | $302$ | **$796$** ☕ | $149$ | $432$ | **$1,197$** 🚀 | $185$ | $330$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Annotated Array** | $340$ | **$671$** ☕ | $152$ | $427$ | **$984$** 🚀 | $201$ | $309$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Complex Annotation** | $243$ | **$341$** ☕ | $104$ | $166$ | **$638$** 🚀 | $82$ | $124$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Simple Type (`String`)** | $3,657$ | **$7,060$** ☕ | $1,502$ | $3,453$ | **$8,831$** 🚀 | $1,535$ | $2,555$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Fully Qualified** | $1,603$ | **$4,183$** ☕ | $650$ | $2,020$ | **$5,662$** 🚀 | $841$ | $1,522$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Nested Generics** | $292$ | **$870$** ☕ | $149$ | $444$ | **$1,219$** 🚀 | $188$ | $332$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Annotated Array** | $346$ | **$744$** ☕ | $145$ | $418$ | **$982$** 🚀 | $198$ | $306$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex Annotation** | $244$ | **$351$** ☕ | $103$ | $164$ | **$671$** 🚀 | $83$ | $129$ | **`fast`** 🚀<br>**`dot`** ☕ |
 
 ### Key Takeaways from the Java Type Shootout
 
 *   **Google's `dot-parse` Leads the Java Division**:
     `dot-parse` is the fastest Java-native parser library, running **$1.5\text{x}$ to $2.0\text{x}$ faster** than the next fastest Java contender (`petitparser` / `antlr4`).
-    On simple types, `dot-parse` ($7,034$ ops/ms) is the leading Java library, behind Scala's macro-based `fastparse` ($9,240$ ops/ms) by leveraging a zero-allocation, pre-allocated tokenizer that avoids object boxing on the hot path.
+    On simple types, `dot-parse` ($7,060$ ops/ms) is the leading Java library, behind Scala's macro-based `fastparse` ($8,831$ ops/ms) by leveraging a zero-allocation, pre-allocated tokenizer that avoids object boxing on the hot path.
 
 *   **Compile-Time vs. Runtime Combinators**:
     Scala's compile-time macro-based `fastparse` leads overall in all scenarios. By performing compile-time macro expansion and inlining all parsing loops directly into JVM bytecode, it strips away object allocations and method dispatch overhead.
 
 *   **`taker` Delivers Solid, High-Performance PEG Baselines**:
-    The `taker` parser performs well, consistently **beating `antlr4`** on fully qualified ($1,546$ vs $1,054$) and nested generic ($330$ vs $287$) signatures. It also **outperforms `parsecj` and `jparsec` by nearly $2\text{x}$** across almost all scenarios, proving that a lean PEG design with optimized applicative builders (`ApplyBuilder3`) is highly competitive.
+    The `taker` parser performs well, consistently **close to `antlr4`** on fully qualified ($1,522$ vs $1,603$) and **beating `antlr4`** on nested generic ($332$ vs $292$) signatures. It also **outperforms `parsecj` and `jparsec` by nearly $2\text{x}$** across almost all scenarios, proving that a lean PEG design with optimized applicative builders (`ApplyBuilder3`) is highly competitive.
 
 *   **`parsecj` vs `jparsec` (The Combinator Battle)**:
-    `parsecj` performs moderately and **consistently outperforms `jparsec`** in 4 out of 5 scenarios. However, in the **Complex Annotation** scenario, `parsecj` falls slightly behind `jparsec` ($84$ vs $103$ ops/ms). This is due to the heavy monadic bind (`.bind(...)`) nesting and recursive backtracking (`.attempt()`) we had to introduce in `parsecj` to handle class literals and array parameters, which incurs significant lambda allocation overhead.
+    `parsecj` performs moderately and **consistently outperforms `jparsec`** in 4 out of 5 scenarios. However, in the **Complex Annotation** scenario, `parsecj` falls slightly behind `jparsec` ($83$ vs $103$ ops/ms). This is due to the heavy monadic bind (`.bind(...)`) nesting and recursive backtracking (`.attempt()`) we had to introduce in `parsecj` to handle class literals and array parameters, which incurs significant lambda allocation overhead.
 
 *   **Scannerless vs. Two-Phase Tokenization**:
     For small, dense inputs with minimal whitespace (such as Java type signatures), scannerless parsers (`dot-parse`, `taker`, `parsecj`) are a fundamentally better architectural fit than two-phase tokenizing parsers (`jparsec`, `antlr4`). Two-phase parsers pay a high object-allocation penalty to construct intermediate token lists, whereas scannerless parsers operate directly on the character stream with zero token overhead.
