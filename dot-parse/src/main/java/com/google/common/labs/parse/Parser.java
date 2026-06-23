@@ -1089,6 +1089,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override Set<String> getPrefixes() {
         return Set.of(delimiter);
       }
+
+      @Override Parser<?> ignoreReturn() {
+        return Parser.this.ignoreReturn().afterDelimiter(delimiter);
+      }
     };
   }
 
