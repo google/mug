@@ -7391,6 +7391,96 @@ public class ParserTest {
     assertThat(joined).isEmpty();
   }
 
+  @Test
+  public void returnElision_then_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("b")
+            .then(word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)));
+    assertThat(parser.parseSkipping(whitespace(), "b a,b,c")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_then_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("b")
+            .then(word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)))
+            .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "b a,b,c")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_followedBy_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .followedBy(string("b"));
+    assertThat(parser.parseSkipping(whitespace(), "a,b,c b")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_followedBy_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .followedBy(string("b"))
+            .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "a,b,c b")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_between_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .between("[", "]");
+    assertThat(parser.parse("[a,b,c]")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_between_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .between("[", "]")
+            .thenReturn("ok");
+    assertThat(parser.parse("[a,b,c]")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_immediatelyBetween_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .immediatelyBetween("[", "]");
+    assertThat(parser.parse("[a,b,c]")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_immediatelyBetween_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .immediatelyBetween("[", "]")
+            .thenReturn("ok");
+    assertThat(parser.parse("[a,b,c]")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
   private static <T, A, R> Collector<T, A, R> collectingAndAdd(
       Collector<T, A, R> collector, List<? super R> results) {
     return collectingAndThen(
@@ -7401,5 +7491,3 @@ public class ParserTest {
         });
   }
 }
-
-

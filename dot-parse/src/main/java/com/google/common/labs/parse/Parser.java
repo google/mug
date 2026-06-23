@@ -632,6 +632,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
+
+      @Override Parser<?> ignoreReturn() {
+        return combiner instanceof ElidableBiFunction
+            ? sequence(left.ignoreReturn(), right.ignoreReturn())
+            : this;
+      }
     };
   }
 
@@ -1075,6 +1081,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
+  /** Sequencing but the return value is elidable. */
+  private <B, R> Parser<R> and(
+      Production<B> right,
+      ElidableBiFunction<? super T, ? super B, ? extends R> combiner) {
+    return sequence(this, right, combiner);
+  }
+
   private Parser<T> afterDelimiter(String delimiter) {
     checkArgument(delimiter.length() > 0, "delimiter cannot be empty");
     return new Parser<>() {
@@ -1216,7 +1229,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @Override public final <S> Parser<S> then(Parser<S> suffix) {
-    return sequence(ignoreReturn(), suffix, (a, b) -> b);
+    return ignoreReturn().and(suffix, (a, b) -> b);
   }
 
   /**
@@ -1226,7 +1239,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.0
    */
   @Override public final <R> Parser<R> then(Parser<R>.OrEmpty suffix) {
-    return sequence(ignoreReturn(), suffix, (a, b) -> b);
+    return ignoreReturn().and(suffix, (a, b) -> b);
   }
 
   /**
@@ -1257,7 +1270,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @Override public Parser<T> followedBy(Parser<?> suffix) {
-    return sequence(this, suffix.ignoreReturn(), (a, b) -> a);
+    return and(suffix.ignoreReturn(), (a, b) -> a);
   }
 
   @Override public final <S> Parser<T> followedBy(Parser<S>.OrEmpty suffix) {
@@ -2348,6 +2361,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private static <T, A, R> Collector<T, A, R> toNull() {
     return Collector.of(() -> null, (a, e) -> {}, (a, b) -> a, a -> null);
   }
+
+  private interface ElidableBiFunction<A, B, R> extends BiFunction<A, B, R> {}
 
   private interface Constants {
     static Parser<String> DIGITS = consecutive(charsIn("[0-9]"), "digits");
