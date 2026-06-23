@@ -1,5 +1,6 @@
 package com.google.common.labs.parse;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.bmpCodeUnit;
@@ -21,6 +22,7 @@ import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.CharPredicate.noneOf;
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
@@ -31,6 +33,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -7127,5 +7130,174 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.parse("ab"));
     assertThrows(ParseException.class, () -> parser.parse("abd"));
   }
+
+  @Test
+  public void repetition_atLeastOnce_withoutElision() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Production<ImmutableList<String>> parser =
+        string("a").atLeastOnce(collectingAndSet(toImmutableList(), collectedList));
+    assertThat(parser.parse("aaa")).containsExactly("a", "a", "a");
+    assertThat(collectedList.get()).containsExactly("a", "a", "a");
+  }
+
+  @Test
+  public void repetition_atLeastOnce_withoutElision_skipping() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Production<ImmutableList<String>> parser =
+        string("a").atLeastOnce(collectingAndSet(toImmutableList(), collectedList));
+    assertThat(parser.parseSkipping(whitespace(), "  aaa  ")).containsExactly("a", "a", "a");
+    assertThat(collectedList.get()).containsExactly("a", "a", "a");
+  }
+
+  @Test
+  public void repetition_atLeastOnce_withElision() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Parser<String> parser =
+        string("a")
+            .atLeastOnce(collectingAndSet(toImmutableList(), collectedList))
+            .thenReturn("ok");
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(collectedList.get()).isNull();
+  }
+
+  @Test
+  public void repetition_atLeastOnce_withElision_skipping() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Parser<String> parser =
+        string("a")
+            .atLeastOnce(collectingAndSet(toImmutableList(), collectedList))
+            .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "  aaa  ")).isEqualTo("ok");
+    assertThat(collectedList.get()).isNull();
+  }
+
+  @Test
+  public void repetition_zeroOrMore_withoutElision() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Production<ImmutableList<String>> parser =
+        string("a").zeroOrMore(collectingAndSet(toImmutableList(), collectedList));
+    assertThat(parser.parse("aaa")).containsExactly("a", "a", "a");
+    assertThat(collectedList.get()).containsExactly("a", "a", "a");
+  }
+
+  @Test
+  public void repetition_zeroOrMore_withoutElision_skipping() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Production<ImmutableList<String>> parser =
+        string("a").zeroOrMore(collectingAndSet(toImmutableList(), collectedList));
+    assertThat(parser.parseSkipping(whitespace(), "  aaa  ")).containsExactly("a", "a", "a");
+    assertThat(collectedList.get()).containsExactly("a", "a", "a");
+  }
+
+  @Test
+  public void repetition_zeroOrMore_withElision() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Production<ImmutableList<String>> parser =
+        string("a").zeroOrMore(collectingAndSet(toImmutableList(), collectedList));
+    assertThat(parser.matches("aaa")).isTrue();
+    assertThat(collectedList.get()).isNull();
+  }
+
+  @Test
+  public void repetition_zeroOrMore_withElision_skipping() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Parser<String> parser =
+        string("a")
+            .zeroOrMore(collectingAndSet(toImmutableList(), collectedList))
+            .then(string("b"))
+            .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "  aaa  b  ")).isEqualTo("ok");
+    assertThat(collectedList.get()).isNull();
+  }
+
+  @Test
+  public void repetition_atLeastOnceDelimitedBy_withoutElision() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Production<ImmutableList<String>> parser =
+        string("a").atLeastOnceDelimitedBy(",", collectingAndSet(toImmutableList(), collectedList));
+    assertThat(parser.parse("a,a,a")).containsExactly("a", "a", "a");
+    assertThat(collectedList.get()).containsExactly("a", "a", "a");
+  }
+
+  @Test
+  public void repetition_atLeastOnceDelimitedBy_withoutElision_skipping() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Production<ImmutableList<String>> parser =
+        string("a").atLeastOnceDelimitedBy(",", collectingAndSet(toImmutableList(), collectedList));
+    assertThat(parser.parseSkipping(whitespace(), "  a , a , a  ")).containsExactly("a", "a", "a");
+    assertThat(collectedList.get()).containsExactly("a", "a", "a");
+  }
+
+  @Test
+  public void repetition_atLeastOnceDelimitedBy_withElision() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Parser<String> parser =
+        string("a")
+            .atLeastOnceDelimitedBy(",", collectingAndSet(toImmutableList(), collectedList))
+            .thenReturn("ok");
+    assertThat(parser.parse("a,a,a")).isEqualTo("ok");
+    assertThat(collectedList.get()).isNull();
+  }
+
+  @Test
+  public void repetition_atLeastOnceDelimitedBy_withElision_skipping() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Parser<String> parser =
+        string("a")
+            .atLeastOnceDelimitedBy(",", collectingAndSet(toImmutableList(), collectedList))
+            .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "  a , a , a  ")).isEqualTo("ok");
+    assertThat(collectedList.get()).isNull();
+  }
+
+  @Test
+  public void repetition_zeroOrMoreDelimitedBy_withoutElision() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Production<ImmutableList<String>> parser =
+        string("a").zeroOrMoreDelimitedBy(",", collectingAndSet(toImmutableList(), collectedList));
+    assertThat(parser.parse("a,a,a")).containsExactly("a", "a", "a");
+    assertThat(collectedList.get()).containsExactly("a", "a", "a");
+  }
+
+  @Test
+  public void repetition_zeroOrMoreDelimitedBy_withoutElision_skipping() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Production<ImmutableList<String>> parser =
+        string("a").zeroOrMoreDelimitedBy(",", collectingAndSet(toImmutableList(), collectedList));
+    assertThat(parser.parseSkipping(whitespace(), "  a , a , a  ")).containsExactly("a", "a", "a");
+    assertThat(collectedList.get()).containsExactly("a", "a", "a");
+  }
+
+  @Test
+  public void repetition_zeroOrMoreDelimitedBy_withElision() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Production<ImmutableList<String>> parser =
+        string("a").zeroOrMoreDelimitedBy(",", collectingAndSet(toImmutableList(), collectedList));
+    assertThat(parser.matches("a,a,a")).isTrue();
+    assertThat(collectedList.get()).isNull();
+  }
+
+  @Test
+  public void repetition_zeroOrMoreDelimitedBy_withElision_skipping() {
+    AtomicReference<List<String>> collectedList = new AtomicReference<>();
+    Parser<String> parser =
+        string("a")
+            .zeroOrMoreDelimitedBy(",", collectingAndSet(toImmutableList(), collectedList))
+            .then(string("b"))
+            .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "  a , a , a  b  ")).isEqualTo("ok");
+    assertThat(collectedList.get()).isNull();
+  }
+
+  private static <T, A, R> Collector<T, A, R> collectingAndSet(
+      Collector<T, A, R> collector, AtomicReference<? super R> result) {
+    return collectingAndThen(
+        collector,
+        r -> {
+          result.set(r);
+          return r;
+        });
+  }
 }
+
 
