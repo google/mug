@@ -6991,5 +6991,119 @@ public class ParserTest {
   private static CharPredicate whitespace() {
     return Character::isWhitespace;
   }
+
+  @Test
+  public void ignoreReturn_then_parser() {
+    Parser<String> parser = string("a").then(string("b")).thenReturn("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+  }
+
+  @Test
+  public void ignoreReturn_then_orEmpty() {
+    Parser<String> parser = string("a").then(string("b").orElse("")).thenReturn("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+  }
+
+  @Test
+  public void ignoreReturn_followedBy_parser() {
+    Parser<String> parser = string("a").followedBy(string("b")).thenReturn("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+  }
+
+  @Test
+  public void ignoreReturn_followedBy_orEmpty() {
+    Parser<String> parser = string("a").followedBy(string("b").orElse("")).thenReturn("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+  }
+
+  @Test
+  public void ignoreReturn_followedByOrEof() {
+    Parser<String> parser = string("a").followedByOrEof(string("b")).thenReturn("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+  }
+
+  @Test
+  public void ignoreReturn_sequence() {
+    Parser<String> parser = sequence(string("a"), string("b"), string("c")).thenReturn("ok");
+    assertThat(parser.parse("abc")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ab"));
+    assertThrows(ParseException.class, () -> parser.parse("abd"));
+  }
+
+  @Test
+  public void ignoreReturn_notFollowedBy() {
+    Parser<String> parser = string("a").notFollowedBy(string("b"), "b").thenReturn("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ab"));
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+  }
+
+  @Test
+  public void ignoreReturn_source() {
+    Parser<String> parser = string("a").source().thenReturn("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("b"));
+  }
+
+  @Test
+  public void ignoreReturn_literally() {
+    Parser<String> parser = literally(string("a")).thenReturn("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("b"));
+  }
+
+  @Test
+  public void ignoreReturn_orEmpty_then_parser() {
+    Parser<String> parser = string("a").zeroOrMore().then(string("b")).thenReturn("ok");
+    assertThat(parser.parse("b")).isEqualTo("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("aab")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parse("aac"));
+  }
+
+  @Test
+  public void ignoreReturn_orEmpty_then_orEmpty() {
+    Parser<String> parser = string("a").zeroOrMore().then(string("b").zeroOrMore()).notEmpty().thenReturn("ok");
+    assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThat(parser.parse("b")).isEqualTo("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("aab")).isEqualTo("ok");
+    assertThat(parser.parse("abb")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+  }
+
+  @Test
+  public void ignoreReturn_orEmpty_followedBy_parser() {
+    Parser<String> parser = string("a").zeroOrMore().followedBy(string("b")).thenReturn("ok");
+    assertThat(parser.parse("b")).isEqualTo("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("aab")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parse("aac"));
+  }
+
+  @Test
+  public void ignoreReturn_orEmpty_followedBy_orEmpty() {
+    Parser<String> parser = string("a").zeroOrMore().followedBy(string("b").zeroOrMore()).notEmpty().thenReturn("ok");
+    assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThat(parser.parse("b")).isEqualTo("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("aab")).isEqualTo("ok");
+    assertThat(parser.parse("abb")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+  }
 }
 

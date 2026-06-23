@@ -1067,6 +1067,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           }
         }
       }
+
+      @Override Parser<?> ignoreReturn() {
+        @SuppressWarnings("unchecked") // return value is unused
+        Parser<Object> elided = (Parser<Object>) left().ignoreReturn();
+        return elided.andZeroOrMore(extra.ignoreReturn(), counting());
+      }
     };
   }
 
@@ -1202,12 +1208,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /** If this parser matches, returns the given result. */
-  public final <R> Parser<R> thenReturn(R result) {
-    return map(unused -> result);
+  public <R> Parser<R> thenReturn(R result) {
+    return ignoreReturn().map(unused -> result);
   }
 
   @Override public final <S> Parser<S> then(Parser<S> suffix) {
-    return sequence(this, suffix, (a, b) -> b);
+    return sequence(ignoreReturn(), suffix, (a, b) -> b);
   }
 
   /**
@@ -1217,7 +1223,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.0
    */
   @Override public final <R> Parser<R> then(Parser<R>.OrEmpty suffix) {
-    return sequence(this, suffix, (a, b) -> b);
+    return sequence(ignoreReturn(), suffix, (a, b) -> b);
   }
 
   /**
@@ -1248,7 +1254,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @Override public Parser<T> followedBy(Parser<?> suffix) {
-    return sequence(this, suffix, (a, b) -> a);
+    return sequence(this, suffix.ignoreReturn(), (a, b) -> a);
   }
 
   @Override public final <S> Parser<T> followedBy(Parser<S>.OrEmpty suffix) {
@@ -1262,12 +1268,14 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.4
    */
   public final Parser<T> followedByOrEof(Parser<?> suffix) {
-    return followedBy(anyOf(suffix, UNSAFE_EOF));
+    return followedBy(anyOf(suffix.ignoreReturn(), UNSAFE_EOF));
   }
 
   private Parser<T> followedByInOrder(Production<?>... suffixes) {
-    Parser<?>[] followers =
-        stream(suffixes).map(Parser::allowZeroWidth).toArray(Parser<?>[]::new);
+    Parser<?>[] followers = stream(suffixes)
+        .map(Parser::allowZeroWidth)
+        .map(Parser::ignoreReturn)
+        .toArray(Parser<?>[]::new);
     return new SamePrefix<T>() {
       @Override MatchResult<T> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
@@ -1288,6 +1296,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           }
           case MatchResult.Failure<T> failure -> failure;
         };
+      }
+
+      @Override Parser<?> ignoreReturn() {
+        return left().ignoreReturn().followedByInOrder(followers);
       }
     };
   }
@@ -1331,14 +1343,14 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** A form of negative lookahead such that the match is rejected if followed by {@code suffix}. */
   public final Parser<T> notFollowedBy(Parser<?> suffix, String name) {
-    requireNonNull(suffix);
     requireNonNull(name);
+    Parser<?> elidedSuffix = suffix.ignoreReturn();
     return new SamePrefix<>() {
       @Override MatchResult<T> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<T> success -> {
-            yield switch (suffix.skipAndMatch(skip, input, success.tail(), ErrorContext.MINIMAL)) {
+            yield switch (elidedSuffix.skipAndMatch(skip, input, success.tail(), ErrorContext.MINIMAL)) {
               case MatchResult.Success<?> followed ->
                 context.failAt(
                     followed.head(), followed.tail(),
@@ -1348,6 +1360,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           }
           case MatchResult.Failure<T> failure -> failure;
         };
+      }
+
+      @Override Parser<?> ignoreReturn() {
+        return left().ignoreReturn().notFollowedBy(elidedSuffix, name);
       }
     };
   }
@@ -1423,7 +1439,19 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           case MatchResult.Failure<T> failure -> failure.safeCast();
         };
       }
+
+      @Override public <R> Parser<R> thenReturn(R result) {
+        return ignoreReturn().thenReturn(result);
+      }
+
+      @Override Parser<?> ignoreReturn() {
+        return left().ignoreReturn();
+      }
     };
+  }
+
+  Parser<?> ignoreReturn() {
+    return this;
   }
 
   /**
@@ -1438,6 +1466,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         return left().skipAndMatch(null, input, start, context);
+      }
+
+      @Override Parser<?> ignoreReturn() {
+        return literally(left().ignoreReturn());
       }
     };
   }
@@ -1712,6 +1744,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
               default -> new MatchResult.Success<>(start, start, computeDefaultValue());
             };
           }
+
+          @Override Parser<?> ignoreReturn() {
+            return OrEmpty.this.ignoreReturn().unsafeZeroWidthParser;
+          }
         };
 
     private OrEmpty(Supplier<? extends T> defaultSupplier) {
@@ -1767,21 +1803,21 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     @Override public <S> Parser<S> then(Parser<S> suffix) {
-      return sequence(this, suffix, (a, b) -> b);
+      return sequence(this.ignoreReturn(), suffix, (a, b) -> b);
     }
 
     /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
     @Override public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
-      return sequence(this, suffix, (a, b) -> b);
+      return sequence(this.ignoreReturn(), suffix, (a, b) -> b);
     }
 
     @Override public Parser<T> followedBy(Parser<?> suffix) {
-      return sequence(this, suffix, (a, b) -> a);
+      return sequence(this, suffix.ignoreReturn(), (a, b) -> a);
     }
 
     /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
     @Override public <S> Parser<T>.OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
-      return sequence(this, suffix, (a, b) -> a);
+      return sequence(this, suffix.ignoreReturn(), (a, b) -> a);
     }
 
     /**
@@ -1868,6 +1904,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
     T computeDefaultValue() {
       return defaultSupplier.get();
+    }
+
+    private Parser<?>.OrEmpty ignoreReturn() {
+      return notEmpty().ignoreReturn().new OrEmpty(() -> null);
     }
   }
 
