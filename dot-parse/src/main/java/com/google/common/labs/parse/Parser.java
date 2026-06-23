@@ -1563,7 +1563,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final boolean isPrefixOf(String input) {
     CharInput charInput = CharInput.from(input);
-    return match(charInput, 0, ErrorContext.MINIMAL) instanceof MatchResult.Success;
+    return ignoreReturn().match(charInput, 0, ErrorContext.MINIMAL) instanceof MatchResult.Success;
   }
 
   /**
@@ -1581,7 +1581,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private boolean matches(CharInput input, int fromIndex) {
-    return match(input, fromIndex, ErrorContext.MINIMAL) instanceof MatchResult.Success<?> success
+    return ignoreReturn().match(input, fromIndex, ErrorContext.MINIMAL) instanceof MatchResult.Success<?> success
         && input.isEof(success.tail());
   }
 
@@ -1930,7 +1930,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     private final Parser<?> toSkip;
 
     private Lexical(Parser<?> toSkip) {
-      this.toSkip = toSkip;
+      this.toSkip = toSkip.ignoreReturn();
     }
 
     /** Parses {@code input} while skipping the skippable patterns around lexical tokens. */
@@ -2056,7 +2056,17 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             case MatchResult.Failure<T> failure -> failure;
           };
         }
+
+        @Override Parser<?> ignoreReturn() {
+          return Lexical.this.ignoreReturn().forTokens();
+        }
       };
+    }
+
+    private Parser<?>.Lexical ignoreReturn() {
+      @SuppressWarnings("unchecked") // return value isn't needed
+      Parser<Object> elided = (Parser<Object>) Parser.this.ignoreReturn();
+      return elided.new Lexical(toSkip);
     }
   }
 
