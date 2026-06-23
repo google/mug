@@ -44,10 +44,10 @@ public final class JavaTypeParser {
       sequence(one("[A-Z]"), zeroOrMore("[a-zA-Z0-9_]")).source()
   );
 
-  private static final Parser<String> PACKAGE_SEGMENT = one("[a-z]")
-      .then(zeroOrMore("[a-zA-Z0-9_]"))
-      .source()
-      .suchThat(s -> !PRIMITIVES.contains(s), "package segment");
+  private static final Parser<String> PACKAGE_SEGMENT =
+      sequence(one("[a-z]"), zeroOrMore("[a-zA-Z0-9_]"))
+          .source()
+          .suchThat(s -> !PRIMITIVES.contains(s), "package segment");
 
   // Unicode escape parsing (\u1234)
   private static final Parser<String> UNICODE_ESCAPE = string("u")
@@ -74,7 +74,7 @@ public final class JavaTypeParser {
       anyOf(sequence(string("-"), digits().thenReturn(null)), digits().thenReturn(null));
 
   private static final Parser<Number> NUMBER_VAL =
-      sequence(INTEGER_PART, string(".").then(digits()).orElse(null))
+      sequence(INTEGER_PART, string(".").then(digits().thenReturn(null)).orElse(null))
           .source()
           .map(s -> s.contains(".") ? Double.parseDouble(s) : Integer.parseInt(s));
 
