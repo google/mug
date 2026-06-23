@@ -70,26 +70,13 @@ public final class JavaTypeParser {
   private static final Parser<String> STRING_LITERAL = quotedByWithEscapes('"', '"', ESCAPED);
 
   // Decimal & negative number parsing (no zero-width string("") calls)
-  private static final Parser<String> INTEGER_PART = anyOf(
-      string("-").then(digits()).map(d -> "-" + d),
-      digits()
-  );
+  private static final Parser<?> INTEGER_PART =
+      anyOf(sequence(string("-"), digits().thenReturn(null)), digits().thenReturn(null));
 
-  private static final Parser<Number> NUMBER_VAL = sequence(
-      integerPart(),
-      string(".").then(digits()).source().orElse(""),
-      (integer, decimal) -> {
-        if (decimal.isEmpty()) {
-          return Integer.parseInt(integer);
-        } else {
-          return Double.parseDouble(integer + decimal);
-        }
-      }
-  );
-
-  private static Parser<String> integerPart() {
-    return INTEGER_PART;
-  }
+  private static final Parser<Number> NUMBER_VAL =
+      sequence(INTEGER_PART, string(".").then(digits()).orElse(null))
+          .source()
+          .map(s -> s.contains(".") ? Double.parseDouble(s) : Integer.parseInt(s));
 
   // The master recursive JavaType parser
   public static final Parser<JavaType> JAVA_TYPE = Parser.define(selfType -> {
