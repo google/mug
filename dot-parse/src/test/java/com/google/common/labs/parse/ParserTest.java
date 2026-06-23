@@ -7105,5 +7105,19 @@ public class ParserTest {
     assertThat(parser.parse("abb")).isEqualTo("ok");
     assertThrows(ParseException.class, () -> parser.parse("c"));
   }
+
+  @Test
+  public void source_propagatesIgnoreReturn() {
+    Parser<String> parser = string("a").source();
+    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThrows(ParseException.class, () -> parser.parse("b"));
+  }
+
+  @Test
+  public void source_propagatesIgnoreReturn_zeroOrMore() {
+    Parser<String> parser = string("a").zeroOrMore().notEmpty().source();
+    assertThat(parser.parse("aaa")).isEqualTo("aaa");
+    assertThrows(ParseException.class, () -> parser.parse("b"));
+  }
 }
 

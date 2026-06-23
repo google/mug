@@ -1430,13 +1430,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Returns a parser that matches {@code this} pattern and returns the matched string. */
   public final Parser<String> source() {
-    return new SamePrefix<>() {
+    @SuppressWarnings("unchecked")  // original return value no longer needed
+    Parser<Object> elided = (Parser<Object>) ignoreReturn();
+    return elided.new SamePrefix<String>() {
       @Override MatchResult<String> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success<T>(int head, int tail, T value) ->
+          case MatchResult.Success<?>(int head, int tail, Object value) ->
               new MatchResult.Success<>(head, tail, input.snippet(head, tail - head));
-          case MatchResult.Failure<T> failure -> failure.safeCast();
+          case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
 
