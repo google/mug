@@ -43,7 +43,7 @@ public class ChemicalNotationBenchmark {
 
   private static final Parser<Element> ELEMENT =
       one(charsIn("[A-Z]"))
-          .followedBy(one(charsIn("[a-z]")).optional())
+          .followedBy(one(charsIn("[a-z]")).orNull())
           .source()
           .map(Element::of)
           .optionallyFollowedBy(COUNT, Element::withCount);

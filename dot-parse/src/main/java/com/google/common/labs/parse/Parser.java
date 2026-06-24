@@ -1434,7 +1434,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @since 10.5
    */
-  public final Parser<T>.OrEmpty orNull() {
+  public final OrEmpty orNull() {
     return orElse(null);
   }
 
