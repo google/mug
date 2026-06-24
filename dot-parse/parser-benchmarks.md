@@ -140,23 +140,23 @@ Every engine was validated against the **exact same 14 deep structural AST test 
 
 | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `parsecj` | `taker` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Simple Type (`String`)** | $3,522$ | **$7,125$** ☕ | $1,520$ | $3,516$ | **$9,398$** 🚀 | $1,535$ | $2,580$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Fully Qualified** | $1,513$ | **$4,189$** ☕ | $659$ | $2,116$ | **$5,611$** 🚀 | $933$ | $1,549$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Nested Generics** | $333$ | **$884$** ☕ | $151$ | $440$ | **$1,242$** 🚀 | $187$ | $328$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Annotated Array** | $363$ | **$748$** ☕ | $154$ | $435$ | **$968$** 🚀 | $205$ | $307$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Complex Annotation** | $241$ | **$345$** ☕ | $103$ | $167$ | **$678$** 🚀 | $85$ | $128$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Simple Type (`String`)** | $3,376$ | **$6,913$** ☕ | $1,343$ | $3,493$ | **$9,318$** 🚀 | $1,556$ | $2,575$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Fully Qualified** | $1,661$ | **$4,416$** ☕ | $633$ | $2,115$ | **$5,693$** 🚀 | $919$ | $1,556$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Nested Generics** | $306$ | **$930$** ☕ | $151$ | $438$ | **$1,233$** 🚀 | $194$ | $337$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Annotated Array** | $359$ | **$795$** ☕ | $153$ | $410$ | **$967$** 🚀 | $203$ | $299$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex Annotation** | $231$ | **$369$** ☕ | $104$ | $169$ | **$676$** 🚀 | $86$ | $128$ | **`fast`** 🚀<br>**`dot`** ☕ |
 
 ### Key Takeaways from the Java Type Shootout
 
 *   **Google's `dot-parse` Leads the Java Division**:
-    `dot-parse` is the fastest Java-native parser library, running **$1.5\text{x}$ to $2.0\text{x}$ faster** than the next fastest Java contender (`petitparser` / `antlr4`).
-    On simple types, `dot-parse` ($7,070$ ops/ms) is the leading Java library, behind Scala's macro-based `fastparse` ($9,137$ ops/ms) by leveraging a zero-allocation, pre-allocated tokenizer that avoids object boxing on the hot path.
+    `dot-parse` is the fastest Java-native parser library, running **$1.5\text{x}$ to $2.2\text{x}$ faster** than the next fastest Java contender (`petitparser` / `antlr4`).
+    On simple types, `dot-parse` ($6,913$ ops/ms) is the leading Java library, behind Scala's macro-based `fastparse` ($9,318$ ops/ms) by leveraging a zero-allocation, pre-allocated tokenizer that avoids object boxing on the hot path.
 
 *   **Compile-Time vs. Runtime Combinators**:
     Scala's compile-time macro-based `fastparse` leads overall in all scenarios. By performing compile-time macro expansion and inlining all parsing loops directly into JVM bytecode, it strips away object allocations and method dispatch overhead.
 
 *   **`taker` Delivers Solid, High-Performance PEG Baselines**:
-    The `taker` parser performs well, consistently **close to `antlr4`** on fully qualified ($1,534$ vs $1,559$) and **beating `antlr4`** on nested generic ($330$ vs $312$) signatures. It also **outperforms `parsecj` and `jparsec` by nearly $2\text{x}$** across almost all scenarios, proving that a lean PEG design with optimized applicative builders (`ApplyBuilder3`) is highly competitive.
+    The `taker` parser performs well, consistently **close to `antlr4`** on fully qualified ($1,556$ vs $1,661$) and **beating `antlr4`** on nested generic ($337$ vs $306$) signatures. It also **outperforms `parsecj` and `jparsec` by nearly $2\text{x}$** across almost all scenarios, proving that a lean PEG design with optimized applicative builders (`ApplyBuilder3`) is highly competitive.
 
 *   **Scannerless vs. Two-Phase Tokenization**:
     For small, dense inputs with minimal whitespace (such as Java type signatures), scannerless parsers (`dot-parse`, `taker`, `parsecj`) are a fundamentally better architectural fit than two-phase tokenizing parsers (`jparsec`, `antlr4`). Two-phase parsers pay a high object-allocation penalty to construct intermediate token lists, whereas scannerless parsers operate directly on the character stream with zero token overhead.
