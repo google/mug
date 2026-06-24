@@ -30,18 +30,18 @@ public final class PetitParserJsonParser {
   }
 
   // Parses double-quoted JSON string and unescapes strictly
-  private static Parser jsonString() {
+  private static Parser jsonString(Parser trimmer) {
     Parser quote = CharacterParser.of('"');
     Parser escape = CharacterParser.of('\\').seq(CharacterParser.any());
     Parser normal = CharacterParser.pattern("^\"\\\\");
     Parser content = escape.or(normal).star().flatten();
     return quote.seq(content).seq(quote)
         .map((List<Object> list) -> new JsonString(strictUnescape((String) list.get(1))))
-        .trim();
+        .trim(trimmer);
   }
 
   // Strict RFC 8259 number parser constructed with native combinators (no regex)
-  private static Parser jsonNumber() {
+  private static Parser jsonNumber(Parser trimmer) {
     Parser sign = CharacterParser.of('-').optional();
     Parser zero = CharacterParser.of('0');
     Parser nonZero = CharacterParser.pattern("1-9").seq(CharacterParser.digit().star());
@@ -54,49 +54,61 @@ public final class PetitParserJsonParser {
 
     return sign.seq(integer).seq(fraction).seq(exponent).flatten()
         .map((String s) -> new JsonNumber(Double.parseDouble(s)))
-        .trim();
+        .trim(trimmer);
   }
 
-  private static Parser jsonNull() {
-    return StringParser.of("null").map(x -> JsonNull.INSTANCE).trim();
+  private static Parser jsonNull(Parser trimmer) {
+    return StringParser.of("null").map(x -> JsonNull.INSTANCE).trim(trimmer);
   }
 
-  private static Parser jsonBoolean() {
+  private static Parser jsonBoolean(Parser trimmer) {
     return StringParser.of("true").map(x -> JsonBoolean.TRUE)
         .or(StringParser.of("false").map(x -> JsonBoolean.FALSE))
-        .trim();
+        .trim(trimmer);
   }
 
-  private static final Parser PARSER = buildParser();
+  private static Parser trimmer() {
+    Parser whitespace = CharacterParser.whitespace();
+    Parser lineComment = StringParser.of("//")
+        .seq(CharacterParser.pattern("^\n").star())
+        .seq(CharacterParser.of('\n').optional());
+    Parser blockComment = StringParser.of("/*")
+        .seq(CharacterParser.any().starLazy(StringParser.of("*/")))
+        .seq(StringParser.of("*/"));
+    return whitespace.or(lineComment).or(blockComment);
+  }
 
-  private static Parser buildParser() {
+  private static final Parser PARSER = buildParser(CharacterParser.whitespace());
+  private static final Parser PARSER_WITH_COMMENTS = buildParser(trimmer());
+
+  private static Parser buildParser(Parser trimmer) {
     SettableParser jsonValue = CharacterParser.none().settable();
 
-    Parser jsonNull = jsonNull();
-    Parser jsonBoolean = jsonBoolean();
-    Parser jsonNumber = jsonNumber();
-    Parser jsonString = jsonString();
+    Parser jsonNull = jsonNull(trimmer);
+    Parser jsonBoolean = jsonBoolean(trimmer);
+    Parser jsonNumber = jsonNumber(trimmer);
+    Parser jsonString = jsonString(trimmer);
 
-    Parser jsonArray = CharacterParser.of('[').trim()
-        .seq(jsonValue.separatedBy(CharacterParser.of(',').trim()).optional())
-        .seq(CharacterParser.of(']').trim())
+    Parser jsonArray = CharacterParser.of('[').trim(trimmer)
+        .seq(jsonValue.separatedBy(CharacterParser.of(',').trim(trimmer)).optional())
+        .seq(CharacterParser.of(']').trim(trimmer))
         .map((List<Object> x) -> {
           List<Object> rawList = (List<Object>) x.get(1);
           List<JsonValue> list = getElements(rawList);
           return new JsonArray(list);
         });
 
-    Parser member = jsonString()
-        .seq(CharacterParser.of(':').trim())
+    Parser member = jsonString(trimmer)
+        .seq(CharacterParser.of(':').trim(trimmer))
         .seq(jsonValue)
         .map((List<Object> x) -> new AbstractMap.SimpleImmutableEntry<>(
             ((JsonString) x.get(0)).value(),
             (JsonValue) x.get(2)
         ));
 
-    Parser jsonObject = CharacterParser.of('{').trim()
-        .seq(member.separatedBy(CharacterParser.of(',').trim()).optional())
-        .seq(CharacterParser.of('}').trim())
+    Parser jsonObject = CharacterParser.of('{').trim(trimmer)
+        .seq(member.separatedBy(CharacterParser.of(',').trim(trimmer)).optional())
+        .seq(CharacterParser.of('}').trim(trimmer))
         .map((List<Object> x) -> {
           List<Object> rawList = (List<Object>) x.get(1);
           List<Map.Entry<String, JsonValue>> entries = getElements(rawList);
@@ -119,6 +131,14 @@ public final class PetitParserJsonParser {
 
   public static JsonValue parse(String input) {
     Result result = PARSER.parse(input);
+    if (result.isFailure()) {
+      throw new IllegalArgumentException("PetitParser parsing error: " + result.getMessage());
+    }
+    return (JsonValue) result.get();
+  }
+
+  public static JsonValue parseWithComments(String input) {
+    Result result = PARSER_WITH_COMMENTS.parse(input);
     if (result.isFailure()) {
       throw new IllegalArgumentException("PetitParser parsing error: " + result.getMessage());
     }

@@ -20,18 +20,30 @@ public final class TakerJsonParser {
 
   private TakerJsonParser() {}
 
-  private static final Taker<Void> ws = Chars.chr(Character::isWhitespace).zeroOrMore().map(val -> (Void) null);
+  private static final Taker<Void> STANDARD_WS = Chars.chr(Character::isWhitespace).skipZeroOrMore();
 
-  private static <T> Taker<T> tok(Taker<T> p) {
+  private static final Taker<Void> WHITESPACE = Chars.chr(Character::isWhitespace).map(x -> (Void) null);
+  private static final Taker<Void> LINE_COMMENT = Lexical.string("//")
+      .thenSkip(Chars.chr(c -> c != '\n').skipZeroOrMore())
+      .thenSkip(Chars.chr('\n').optional())
+      .map(x -> (Void) null);
+  private static final Taker<Void> BLOCK_COMMENT = Lexical.string("/*")
+      .thenSkip(Chars.chr(c -> true).zeroOrMoreUntil(Lexical.string("*/")))
+      .map(x -> (Void) null);
+
+  private static final Taker<Void> WS_WITH_COMMENTS = Combinators.oneOf(WHITESPACE, LINE_COMMENT, BLOCK_COMMENT)
+      .skipZeroOrMore();
+
+  private static <T> Taker<T> tok(Taker<T> p, Taker<Void> ws) {
     return p.thenSkip(ws);
   }
 
-  private static Taker<Character> tok(char c) {
-    return tok(Chars.chr(c));
+  private static Taker<Character> tok(char c, Taker<Void> ws) {
+    return tok(Chars.chr(c), ws);
   }
 
-  private static Taker<String> tok(String s) {
-    return tok(Lexical.string(s));
+  private static Taker<String> tok(String s, Taker<Void> ws) {
+    return tok(Lexical.string(s), ws);
   }
 
   // Lenient RFC 8259 number parsing using Taker's native high-speed primitive field
@@ -47,20 +59,21 @@ public final class TakerJsonParser {
       Lexical.string("false").map(x -> JsonBoolean.FALSE)
   );
 
-  private static final Taker<JsonValue> PARSER = buildParser();
+  private static final Taker<JsonValue> PARSER = buildParser(STANDARD_WS);
+  private static final Taker<JsonValue> PARSER_WITH_COMMENTS = buildParser(WS_WITH_COMMENTS);
 
   @SuppressWarnings("unchecked")
-  private static Taker<JsonValue> buildParser() {
+  private static Taker<JsonValue> buildParser(Taker<Void> ws) {
     Taker<JsonValue> ref = Taker.ref();
 
-    Taker<JsonNull> jsonNull = tok(JSON_NULL);
-    Taker<JsonBoolean> jsonBoolean = tok(JSON_BOOLEAN);
-    Taker<JsonNumber> jsonNumber = tok(JSON_NUMBER);
-    Taker<JsonString> jsonString = tok(STRING_LITERAL.map(JsonString::new));
+    Taker<JsonNull> jsonNull = tok(JSON_NULL, ws);
+    Taker<JsonBoolean> jsonBoolean = tok(JSON_BOOLEAN, ws);
+    Taker<JsonNumber> jsonNumber = tok(JSON_NUMBER, ws);
+    Taker<JsonString> jsonString = tok(STRING_LITERAL.map(JsonString::new), ws);
 
-    Taker<JsonArray> jsonArray = tok('[')
+    Taker<JsonArray> jsonArray = tok('[', ws)
         .then(
-            ref.then(tok(',').then(ref).map((comma, v) -> v).zeroOrMore())
+            ref.then(tok(',', ws).skipThen(ref).zeroOrMore())
                 .map((first, rest) -> {
                   List<JsonValue> list = new ArrayList<>();
                   list.add(first);
@@ -70,17 +83,17 @@ public final class TakerJsonParser {
                 .optional()
                 .map(opt -> opt.orElse(List.of()))
         )
-        .thenSkip(tok(']'))
+        .thenSkip(tok(']', ws))
         .map((start, list) -> new JsonArray(list));
 
-    Taker<Map.Entry<String, JsonValue>> member = tok(STRING_LITERAL)
-        .thenSkip(tok(':'))
+    Taker<Map.Entry<String, JsonValue>> member = tok(STRING_LITERAL, ws)
+        .thenSkip(tok(':', ws))
         .then(ref)
         .map((key, val) -> new AbstractMap.SimpleImmutableEntry<>(key, val));
 
-    Taker<JsonObject> jsonObject = tok('{')
+    Taker<JsonObject> jsonObject = tok('{', ws)
         .then(
-            member.then(tok(',').then(member).map((comma, entry) -> entry).zeroOrMore())
+            member.then(tok(',', ws).skipThen(member).zeroOrMore())
                 .map((first, rest) -> {
                   Map<String, JsonValue> map = new LinkedHashMap<>();
                   map.put(first.getKey(), first.getValue());
@@ -92,7 +105,7 @@ public final class TakerJsonParser {
                 .optional()
                 .map(opt -> opt.orElse(Map.of()))
         )
-        .thenSkip(tok('}'))
+        .thenSkip(tok('}', ws))
         .map((start, map) -> new JsonObject(map));
 
     Taker<JsonValue> valueParser = Combinators.oneOf(
@@ -106,11 +119,20 @@ public final class TakerJsonParser {
 
     ref.set(valueParser);
 
-    return ws.then(valueParser).map((wsVal, r) -> r);
+    return ws.skipThen(valueParser);
   }
 
   public static JsonValue parse(String input) {
     Result<JsonValue> result = PARSER.parseAll(input);
+    if (result.matches() && result.input().isEof()) {
+      return result.value();
+    } else {
+      throw new IllegalArgumentException("Parsing failed: " + result.toString());
+    }
+  }
+
+  public static JsonValue parseWithComments(String input) {
+    Result<JsonValue> result = PARSER_WITH_COMMENTS.parseAll(input);
     if (result.matches() && result.input().isEof()) {
       return result.value();
     } else {

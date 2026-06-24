@@ -39,50 +39,77 @@ object FastparseJsonParser {
   }
 
   // =========================================================================
-  // 2. Main JSON Parser Scope (with custom whitespace-only skipping and cuts)
+  // 2. Custom Whitespace and Comment Skippers
   // =========================================================================
-  implicit val whitespace: fastparse.Whitespace = { ctx =>
+  val strictWhitespace: fastparse.Whitespace = { ctx =>
     import fastparse.NoWhitespace._
     implicit val c = ctx
     CharsWhileIn(" \t\r\n", 0)
   }
 
-  def jsonNull[_: P]: P[JsonNull] = P( "null" ).map(_ => JsonNull.INSTANCE)
-
-  def jsonBoolean[_: P]: P[JsonBoolean] = P(
-    P("true").map(_ => JsonBoolean.TRUE) | P("false").map(_ => JsonBoolean.FALSE)
-  )
-
-  def jsonNumber[_: P]: P[JsonNumber] = P( NoWsParser.numberLiteral ).map(new JsonNumber(_))
-
-  def jsonString[_: P]: P[JsonString] = P( NoWsParser.stringLiteral ).map(new JsonString(_))
-
-  // Recursive JSON value parser rules with strategic cuts
-  def jsonValue[_: P]: P[JsonValue] = P(
-    jsonNull | jsonBoolean | jsonNumber | jsonString | jsonArray | jsonObject
-  )
-
-  def jsonArray[_: P]: P[JsonArray] = P(
-    "[" ~/ jsonValue.rep(sep = ",") ~ "]"
-  ).map(list => new JsonArray(list.asJava))
-
-  def member[_: P]: P[(String, JsonValue)] = P(
-    NoWsParser.stringLiteral ~/ ":" ~ jsonValue
-  )
-
-  def jsonObject[_: P]: P[JsonObject] = P(
-    "{" ~/ member.rep(sep = ",") ~ "}"
-  ).map { list =>
-    val map = new java.util.LinkedHashMap[String, JsonValue]()
-    list.foreach { case (k, v) => map.put(k, v) }
-    new JsonObject(map)
+  val whitespaceWithComments: fastparse.Whitespace = { ctx =>
+    import fastparse.NoWhitespace._
+    implicit val c = ctx
+    P( (CharsWhileIn(" \t\r\n", 1) | ("//" ~ CharsWhile(c => c != '\n', 0) ~ "\n".?) | ("/*" ~ (!"*/" ~ AnyChar).rep ~ "*/")).rep )
   }
 
-  def root[_: P]: P[JsonValue] = P( jsonValue ~ End )
+  // =========================================================================
+  // 3. Parametric JSON Grammar Class (reusable for both skippers)
+  // =========================================================================
+  private class JsonGrammar()(implicit val whitespace: fastparse.Whitespace) {
+    import fastparse._
 
-  // Main entry point
+    def jsonNull[_: P]: P[JsonNull] = P( "null" ).map(_ => JsonNull.INSTANCE)
+
+    def jsonBoolean[_: P]: P[JsonBoolean] = P(
+      P("true").map(_ => JsonBoolean.TRUE) | P("false").map(_ => JsonBoolean.FALSE)
+    )
+
+    def jsonNumber[_: P]: P[JsonNumber] = P( NoWsParser.numberLiteral ).map(new JsonNumber(_))
+
+    def jsonString[_: P]: P[JsonString] = P( NoWsParser.stringLiteral ).map(new JsonString(_))
+
+    def jsonValue[_: P]: P[JsonValue] = P(
+      jsonNull | jsonBoolean | jsonNumber | jsonString | jsonArray | jsonObject
+    )
+
+    def jsonArray[_: P]: P[JsonArray] = P(
+      "[" ~/ jsonValue.rep(sep = ",") ~ "]"
+    ).map(list => new JsonArray(list.asJava))
+
+    def member[_: P]: P[(String, JsonValue)] = P(
+      NoWsParser.stringLiteral ~/ ":" ~ jsonValue
+    )
+
+    def jsonObject[_: P]: P[JsonObject] = P(
+      "{" ~/ member.rep(sep = ",") ~ "}"
+    ).map { list =>
+      val map = new java.util.LinkedHashMap[String, JsonValue]()
+      list.foreach { case (k, v) => map.put(k, v) }
+      new JsonObject(map)
+    }
+
+    def root[_: P]: P[JsonValue] = P( jsonValue ~ End )
+  }
+
+  private val strictGrammar = new JsonGrammar()(strictWhitespace)
+  private val commentsGrammar = new JsonGrammar()(whitespaceWithComments)
+
+  // =========================================================================
+  // 4. Public Entry Points
+  // =========================================================================
   def parse(input: String): JsonValue = {
-    fastparse.parse(input, root(_)) match {
+    implicit val ws = strictWhitespace
+    fastparse.parse(input, strictGrammar.root(_)) match {
+      case Parsed.Success(value, _) => value
+      case f: Parsed.Failure =>
+        throw new IllegalArgumentException(s"Fastparse parsing error: ${f.trace().longMsg}")
+    }
+  }
+
+  def parseWithComments(input: String): JsonValue = {
+    implicit val ws = whitespaceWithComments
+    fastparse.parse(input, commentsGrammar.root(_)) match {
       case Parsed.Success(value, _) => value
       case f: Parsed.Failure =>
         throw new IllegalArgumentException(s"Fastparse parsing error: ${f.trace().longMsg}")

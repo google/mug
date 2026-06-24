@@ -29,6 +29,10 @@ public class ParserShowdownBenchmark {
   private static final com.fasterxml.jackson.databind.ObjectMapper JACKSON_MAPPER = 
       new com.fasterxml.jackson.databind.ObjectMapper();
 
+  private static final com.fasterxml.jackson.databind.ObjectMapper JACKSON_MAPPER_WITH_COMMENTS = 
+      new com.fasterxml.jackson.databind.ObjectMapper()
+          .enable(com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_COMMENTS);
+
   @State(Scope.Benchmark)
   public static class BenchmarkState {
     // 1. Taker Fixtures
@@ -136,14 +140,27 @@ public class ParserShowdownBenchmark {
     public final BetterParseShowdown.NestedCommentFixture betterParseNestedComment = new BetterParseShowdown.NestedCommentFixture();
 
     public final String jsonString;
+    public final String jsonWithCommentsString;
 
     public BenchmarkState() {
       try {
         this.parsecjCalculator = new ParsecjShowdown.CalculatorFixture();
         this.jsonString = java.nio.file.Files.readString(java.nio.file.Path.of("src/test/resources/large_benchmark.json"));
+        this.jsonWithCommentsString = java.nio.file.Files.readString(java.nio.file.Path.of("src/test/resources/large_benchmark_with_comments.json"));
         
         // Rigorous setup-time verification for all 9 JSON parsers
         verifyJson(com.google.mu.benchmarks.parsers.dotparse.JsonParser.parse(jsonString), "dot-parse");
+        verifyJson(com.google.mu.benchmarks.parsers.dotparse.JsonParser.parseWithComments(jsonWithCommentsString), "dot-parse-comments");
+        verifyJson(com.google.mu.benchmarks.parsers.petitparser.PetitParserJsonParser.parseWithComments(jsonWithCommentsString), "petitparser-comments");
+        verifyJson(com.google.mu.benchmarks.parsers.catsparse.CatsParseJsonParser.parseWithComments(jsonWithCommentsString), "cats-parse-comments");
+        verifyJson(com.google.mu.benchmarks.parsers.taker.TakerJsonParser.parseWithComments(jsonWithCommentsString), "taker-comments");
+        verifyJson(com.google.mu.benchmarks.parsers.parsecj.ParsecjJsonParser.parseWithComments(jsonWithCommentsString), "parsecj-comments");
+        verifyJson(new com.google.mu.benchmarks.parsers.antlr4.Antlr4JsonParser().parse(jsonWithCommentsString), "antlr4-comments");
+        verifyJson(com.google.mu.benchmarks.parsers.betterparse.BetterParseJsonWithCommentsParser.INSTANCE.parse(jsonWithCommentsString), "better-parse-comments");
+        verifyJson(com.google.mu.benchmarks.parsers.jparsec.JparsecJsonParser.parseWithComments(jsonWithCommentsString), "jparsec-comments");
+        verifyJson(com.google.mu.benchmarks.parsers.fastparse.FastparseJsonParser.parseWithComments(jsonWithCommentsString), "fastparse-comments");
+        var unusedGson = com.google.gson.JsonParser.parseString(jsonWithCommentsString);
+        var unusedJackson = JACKSON_MAPPER_WITH_COMMENTS.readTree(jsonWithCommentsString);
         verifyJson(com.google.mu.benchmarks.parsers.jparsec.JparsecJsonParser.parse(jsonString), "jparsec");
         verifyJson(com.google.mu.benchmarks.parsers.parsecj.ParsecjJsonParser.parse(jsonString), "parsecj");
         verifyJson(com.google.mu.benchmarks.parsers.petitparser.PetitParserJsonParser.parse(jsonString), "petitparser");
@@ -316,4 +333,41 @@ public class ParserShowdownBenchmark {
   @Benchmark public void antlr4_jsonPerformance(BenchmarkState s, Antlr4JsonState state, Blackhole bh) { bh.consume(state.parser.parse(s.jsonString)); }
   @Benchmark public void gson_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.gson.JsonParser.parseString(s.jsonString)); }
   @Benchmark public void jackson_jsonPerformance(BenchmarkState s, Blackhole bh) throws Exception { bh.consume(JACKSON_MAPPER.readTree(s.jsonString)); }
+
+  // =========================================================================
+  // 8. JSON with Comments Benchmarks
+  // =========================================================================
+  @Benchmark public void dotParse_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(com.google.mu.benchmarks.parsers.dotparse.JsonParser.parseWithComments(s.jsonWithCommentsString));
+  }
+  @Benchmark public void petitparser_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(com.google.mu.benchmarks.parsers.petitparser.PetitParserJsonParser.parseWithComments(s.jsonWithCommentsString));
+  }
+  @Benchmark public void catsParse_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(com.google.mu.benchmarks.parsers.catsparse.CatsParseJsonParser.parseWithComments(s.jsonWithCommentsString));
+  }
+  @Benchmark public void taker_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(com.google.mu.benchmarks.parsers.taker.TakerJsonParser.parseWithComments(s.jsonWithCommentsString));
+  }
+  @Benchmark public void parsecj_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(com.google.mu.benchmarks.parsers.parsecj.ParsecjJsonParser.parseWithComments(s.jsonWithCommentsString));
+  }
+  @Benchmark public void antlr4_jsonWithCommentsPerformance(BenchmarkState s, Antlr4JsonState state, Blackhole bh) {
+    bh.consume(state.parser.parse(s.jsonWithCommentsString));
+  }
+  @Benchmark public void betterParse_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(com.google.mu.benchmarks.parsers.betterparse.BetterParseJsonWithCommentsParser.INSTANCE.parse(s.jsonWithCommentsString));
+  }
+  @Benchmark public void jparsec_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(com.google.mu.benchmarks.parsers.jparsec.JparsecJsonParser.parseWithComments(s.jsonWithCommentsString));
+  }
+  @Benchmark public void fastparse_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(com.google.mu.benchmarks.parsers.fastparse.FastparseJsonParser.parseWithComments(s.jsonWithCommentsString));
+  }
+  @Benchmark public void gson_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(com.google.gson.JsonParser.parseString(s.jsonWithCommentsString));
+  }
+  @Benchmark public void jackson_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) throws Exception {
+    bh.consume(JACKSON_MAPPER_WITH_COMMENTS.readTree(s.jsonWithCommentsString));
+  }
 }

@@ -129,3 +129,59 @@ object BetterParseJsonParser : Grammar<JsonValue>() {
         return sb.toString()
     }
 }
+
+object BetterParseJsonWithCommentsParser : Grammar<JsonValue>() {
+    val ws by regexToken("\\s+", ignore = true)
+    val lineComment by regexToken("//[^\\n]*", ignore = true)
+    val blockComment by regexToken("/\\*([^*]|\\*+[^*/])*\\*+/", ignore = true)
+
+    val nullToken by literalToken("null")
+    val trueToken by literalToken("true")
+    val falseToken by literalToken("false")
+    val numberToken by regexToken("-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?")
+    val stringToken by regexToken("\"([^\"\\\\]|\\\\.)*\"")
+
+    val lbracket by literalToken("[")
+    val rbracket by literalToken("]")
+    val lbrace by literalToken("{")
+    val rbrace by literalToken("}")
+    val colon by literalToken(":")
+    val comma by literalToken(",")
+
+    private val jsonNull: Parser<JsonNull> by nullToken asJust JsonNull.INSTANCE
+
+    private val jsonBoolean: Parser<JsonBoolean> by (trueToken asJust JsonBoolean.TRUE) or 
+                                                     (falseToken asJust JsonBoolean.FALSE)
+
+    private val jsonNumber: Parser<JsonNumber> by numberToken map { 
+        JsonNumber(it.text.toDouble()) 
+    }
+
+    private val jsonString: Parser<JsonString> by stringToken map { 
+        JsonString(BetterParseJsonParser.strictUnescape(it.input, it.offset + 1, it.offset + it.length - 1)) 
+    }
+
+    private val jsonValue: Parser<JsonValue> by parser {
+        jsonNull or jsonBoolean or jsonNumber or jsonString or jsonArray or jsonObject
+    }
+
+    private val jsonArray: Parser<JsonArray> by -lbracket * optional(separatedTerms(jsonValue, comma)) * -rbracket map {
+        JsonArray(it ?: emptyList())
+    }
+
+    private val member: Parser<Pair<String, JsonValue>> by jsonString * -colon * jsonValue map { (key, value) ->
+        Pair(key.value(), value)
+    }
+
+    private val jsonObject: Parser<JsonObject> by -lbrace * optional(separatedTerms(member, comma)) * -rbrace map {
+        val map = LinkedHashMap<String, JsonValue>()
+        it?.forEach { (key, value) -> map[key] = value }
+        JsonObject(map)
+    }
+
+    override val rootParser: Parser<JsonValue> by jsonValue
+
+    fun parse(input: String): JsonValue {
+        return parseToEnd(input)
+    }
+}

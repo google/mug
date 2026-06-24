@@ -3,8 +3,10 @@ package com.google.mu.benchmarks.parsers.dotparse;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.bmpCodeUnit;
 import static com.google.common.labs.parse.Parser.caseInsensitive;
+import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.define;
 import static com.google.common.labs.parse.Parser.digits;
+import static com.google.common.labs.parse.Parser.first;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
@@ -71,5 +73,19 @@ public final class JsonParser {
    */
   public static JsonValue parse(String input) {
     return PARSER.parseSkipping(anyOf(" \t\r\n"), input);
+  }
+
+  public static final Parser<?> WHITESPACES_OR_COMMENTS = anyOf(
+      consecutive("[ \t\r\n]"),
+      sequence(string("//"), zeroOrMore("[^\n]")),
+      sequence(string("/*"), first("*/")));
+
+  /**
+   * Parses the given JSON string (which may contain line or block comments) into a structured JsonValue.
+   *
+   * @throws Parser.ParseException if the input is not a valid JSON document.
+   */
+  public static JsonValue parseWithComments(String input) {
+    return PARSER.skipping(WHITESPACES_OR_COMMENTS).parse(input);
   }
 }

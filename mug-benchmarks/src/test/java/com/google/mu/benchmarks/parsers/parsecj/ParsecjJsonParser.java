@@ -19,17 +19,31 @@ public final class ParsecjJsonParser {
 
   private ParsecjJsonParser() {}
 
+  private static final Parser<Character, ?> STANDARD_WS = wspaces;
+
+  private static final Parser<Character, ?> WHITESPACE = satisfy(Character::isWhitespace);
+  private static final Parser<Character, ?> LINE_COMMENT = string("//").attempt()
+      .then(satisfy((Character c) -> c != '\n').skipMany())
+      .then(chr('\n').optionalOpt());
+  private static final Parser<Character, ?> BLOCK_COMMENT = regex("/\\*([^*]|\\*+[^*/])*\\*+/");
+
+  private static final Parser<Character, ?> WS_WITH_COMMENTS = choice(
+      WHITESPACE,
+      LINE_COMMENT,
+      BLOCK_COMMENT
+  ).skipMany();
+
   // Helper to consume trailing whitespaces after a terminal matches
-  private static <T> Parser<Character, T> tok(Parser<Character, T> p) {
-    return p.bind(x -> wspaces.then(retn(x)));
+  private static <T> Parser<Character, T> tok(Parser<Character, T> p, Parser<Character, ?> ws) {
+    return p.bind(x -> ws.then(retn(x)));
   }
 
-  private static Parser<Character, String> tok(String s) {
-    return tok(string(s));
+  private static Parser<Character, String> tok(String s, Parser<Character, ?> ws) {
+    return tok(string(s), ws);
   }
 
-  private static Parser<Character, Character> tok(char c) {
-    return tok(chr(c));
+  private static Parser<Character, Character> tok(char c, Parser<Character, ?> ws) {
+    return tok(chr(c), ws);
   }
 
   // Strict RFC 8259 number regex (no leading zeros, no trailing decimals, no prefix plus)
@@ -42,35 +56,36 @@ public final class ParsecjJsonParser {
       between(chr('"'), chr('"'), regex("([^\"\\\\]|\\\\.)*"))
           .map(s -> new JsonString(strictUnescape(s)));
 
-  private static final Parser<Character, JsonValue> PARSER = buildParser();
+  private static final Parser<Character, JsonValue> PARSER = buildParser(STANDARD_WS);
+  private static final Parser<Character, JsonValue> PARSER_WITH_COMMENTS = buildParser(WS_WITH_COMMENTS);
   
-  private static Parser<Character, JsonValue> buildParser() {
+  private static Parser<Character, JsonValue> buildParser(Parser<Character, ?> ws) {
     Parser.Ref<Character, JsonValue> ref = Parser.ref();
 
-    Parser<Character, JsonNull> jsonNull = tok(string("null")).then(retn(JsonNull.INSTANCE));
+    Parser<Character, JsonNull> jsonNull = tok(string("null"), ws).then(retn(JsonNull.INSTANCE));
     Parser<Character, JsonBoolean> jsonBoolean = or(
-        tok(string("true")).then(retn(JsonBoolean.TRUE)),
-        tok(string("false")).then(retn(JsonBoolean.FALSE))
+        tok(string("true"), ws).then(retn(JsonBoolean.TRUE)),
+        tok(string("false"), ws).then(retn(JsonBoolean.FALSE))
     );
 
-    Parser<Character, JsonNumber> jsonNumber = tok(JSON_NUMBER);
-    Parser<Character, JsonString> jsonString = tok(JSON_STRING);
+    Parser<Character, JsonNumber> jsonNumber = tok(JSON_NUMBER, ws);
+    Parser<Character, JsonString> jsonString = tok(JSON_STRING, ws);
 
     Parser<Character, JsonArray> jsonArray =
-        tok('[')
-            .then(ref.sepBy(tok(',')))
-            .bind((IList<JsonValue> list) -> tok(']')
+        tok('[', ws)
+            .then(ref.sepBy(tok(',', ws)))
+            .bind((IList<JsonValue> list) -> tok(']', ws)
                 .then(retn(new JsonArray(convertList(list)))));
 
     Parser<Character, Map.Entry<String, JsonValue>> member =
-        tok(JSON_STRING).bind((JsonString key) -> tok(':')
+        tok(JSON_STRING, ws).bind((JsonString key) -> tok(':', ws)
             .then(ref)
             .map((JsonValue val) -> Map.entry(key.value(), val)));
 
     Parser<Character, JsonObject> jsonObject =
-        tok('{')
-            .then(member.sepBy(tok(',')))
-            .bind((IList<Map.Entry<String, JsonValue>> list) -> tok('}')
+        tok('{', ws)
+            .then(member.sepBy(tok(',', ws)))
+            .bind((IList<Map.Entry<String, JsonValue>> list) -> tok('}', ws)
                 .map(close -> {
                   Map<String, JsonValue> map = new LinkedHashMap<>();
                   for (Map.Entry<String, JsonValue> entry : list) {
@@ -91,7 +106,7 @@ public final class ParsecjJsonParser {
     ref.set(valueParser);
 
     // Consume leading whitespaces, parse value, and ensure we match until EOF
-    return wspaces.then(valueParser).between(retn(null), eof());
+    return ws.then(valueParser).between(retn(null), eof());
   }
 
   private static <T> List<T> convertList(IList<T> ilist) {
@@ -105,6 +120,19 @@ public final class ParsecjJsonParser {
   public static JsonValue parse(String input) {
     try {
       Reply<Character, JsonValue> reply = PARSER.parse(Input.of(input));
+      if (reply.isOk()) {
+        return reply.getResult();
+      } else {
+        throw new IllegalArgumentException("Parsing failed: " + reply.toString());
+      }
+    } catch (Exception e) {
+      throw new IllegalArgumentException(e);
+    }
+  }
+
+  public static JsonValue parseWithComments(String input) {
+    try {
+      Reply<Character, JsonValue> reply = PARSER_WITH_COMMENTS.parse(Input.of(input));
       if (reply.isOk()) {
         return reply.getResult();
       } else {

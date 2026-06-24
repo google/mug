@@ -33,3 +33,5 @@ JSON_STRING : '"' ( ESCAPED_CHAR | ~["\\] )* '"' ;
 fragment ESCAPED_CHAR : '\\' ( ["\\/bfnrt] | 'u' [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] ) ;
 
 WS : [ \t\r\n]+ -> skip ;
+LINE_COMMENT : '//' ~[\r\n]* -> skip ;
+BLOCK_COMMENT : '/*' .*? '*/' -> skip ;

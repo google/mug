@@ -115,8 +115,14 @@ public final class JparsecJsonParser {
     JSON_PARSER = jsonValue;
   }
 
+  private static final Parser<Void> WS_WITH_COMMENTS = Scanners.JAVA_DELIMITER;
+
   public static JsonValue parse(String input) {
     return JSON_PARSER.from(TOKENIZER, Scanners.WHITESPACES.optional()).parse(input);
+  }
+
+  public static JsonValue parseWithComments(String input) {
+    return JSON_PARSER.from(TOKENIZER, WS_WITH_COMMENTS).parse(input);
   }
 
   // Strict unescape complying with RFC 8259 Section 7 string constraints

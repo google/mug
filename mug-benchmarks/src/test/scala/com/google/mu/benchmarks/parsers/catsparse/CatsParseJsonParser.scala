@@ -6,11 +6,7 @@ import com.google.mu.benchmarks.parsers.dotparse.JsonValue
 import com.google.mu.benchmarks.parsers.dotparse.JsonValue._
 import scala.jdk.CollectionConverters._
 
-/** Strictly RFC 8259-compliant Cats-parse-based JSON parser using official library primitives. */
-object CatsParseJsonParser {
-
-  private val skip: P0[Unit] = P.charIn(" \t\r\n").rep0.void
-
+class CatsParseJsonGrammar(skip: P0[Unit]) {
   private def token[A](p: P[A]): P[A] = p <* skip
   private def tokenStr(s: String): P[String] = token(P.string(s).as(s))
 
@@ -59,10 +55,38 @@ object CatsParseJsonParser {
   }
 
   val root: P[JsonValue] = skip.with1 *> jsonValue <* P.end
+}
 
-  // Main entry point
+object CatsParseJsonParser {
+  private val STANDARD_SKIP: P0[Unit] =
+    P.charsWhile(c => c == ' ' || c == '\t' || c == '\r' || c == '\n').?.void
+
+  private val WHITESPACE: P[Unit] =
+    P.charsWhile(c => c == ' ' || c == '\t' || c == '\r' || c == '\n').void
+
+  private val LINE_COMMENT: P[Unit] =
+    P.string("//").void *> P.charsWhile(c => c != '\n').?.void <* P.char('\n').?.void
+
+  private val BLOCK_COMMENT: P[Unit] =
+    P.string("/*").void *> P.until(P.string("*/")).void <* P.string("*/").void
+
+  private val SKIP_WITH_COMMENTS: P0[Unit] =
+    P.oneOf(WHITESPACE :: LINE_COMMENT :: BLOCK_COMMENT :: Nil).rep0.void
+
+  private val STANDARD_GRAMMAR = new CatsParseJsonGrammar(STANDARD_SKIP)
+  private val COMMENTS_GRAMMAR = new CatsParseJsonGrammar(SKIP_WITH_COMMENTS)
+
+  // Main entry points
   def parse(input: String): JsonValue = {
-    root.parseAll(input) match {
+    STANDARD_GRAMMAR.root.parseAll(input) match {
+      case Right(value) => value
+      case Left(error) =>
+        throw new IllegalArgumentException(s"Cats-parse error: $error")
+    }
+  }
+
+  def parseWithComments(input: String): JsonValue = {
+    COMMENTS_GRAMMAR.root.parseAll(input) match {
       case Right(value) => value
       case Left(error) =>
         throw new IllegalArgumentException(s"Cats-parse error: $error")
