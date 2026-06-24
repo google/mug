@@ -7495,6 +7495,52 @@ public class ParserTest {
   }
 
   @Test
+  public void returnElision_optionallyFollowedByString_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .optionallyFollowedBy("b");
+    assertThat(parser.parse("a,b,c")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_optionallyFollowedByString_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .optionallyFollowedBy("b")
+            .thenReturn("ok");
+    assertThat(parser.parse("a,b,c")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_optionallyFollowedByWithFunction_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .optionallyFollowedBy("b", s -> s + "x");
+    assertThat(parser.parseSkipping(whitespace(), "a,b,c b")).isEqualTo("abcx");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_optionallyFollowedByWithFunction_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .optionallyFollowedBy("b", s -> s + "x")
+            .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "a,b,c b")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
   public void returnElision_orNull_withoutElision() {
     List<String> joined = new ArrayList<>();
     Parser<String> parser =

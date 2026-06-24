@@ -1347,7 +1347,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   final Parser<T> withOptionalSuffix(Parser<UnaryOperator<T>> suffix) {
-    return sequence(this, suffix.orElse(identity()), (a, op) -> op.apply(a));
+    return and(suffix.orElse(identity()), (a, op) -> op.apply(a));
   }
 
   /** A form of negative lookahead such that the match is rejected if followed by {@code suffix}. */
