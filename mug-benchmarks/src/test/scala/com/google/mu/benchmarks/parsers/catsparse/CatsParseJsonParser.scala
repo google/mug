@@ -71,7 +71,7 @@ object CatsParseJsonParser {
     P.string("/*").void *> P.until(P.string("*/")).void <* P.string("*/").void
 
   private val SKIP_WITH_COMMENTS: P0[Unit] =
-    P.oneOf(WHITESPACE :: LINE_COMMENT :: BLOCK_COMMENT :: Nil).rep0.void
+    (P.charIn(" \t\r\n/").peek *> P.oneOf(WHITESPACE :: LINE_COMMENT :: BLOCK_COMMENT :: Nil).rep0).?.void
 
   private val STANDARD_GRAMMAR = new CatsParseJsonGrammar(STANDARD_SKIP)
   private val COMMENTS_GRAMMAR = new CatsParseJsonGrammar(SKIP_WITH_COMMENTS)
