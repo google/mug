@@ -116,7 +116,7 @@ public final class JavaTypeParser {
           .map(val -> Map.of("value", val));
       Parser<Map<String, AnnotationValue>> params = anyOf(namedParams, singleParam);
       return string("@")
-          .then(sequence(annotationName, params.orElse(Map.of()), new JavaAnnotation::new));
+          .then(sequence(annotationName, params.orElse(Map.of()), JavaAnnotation::new));
     });
 
     // Type segment (e.g. @NonNull Outer<String>)
