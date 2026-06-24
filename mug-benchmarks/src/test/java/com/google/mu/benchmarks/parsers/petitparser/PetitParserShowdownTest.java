@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
 import org.petitparser.context.Result;
-
 public class PetitParserShowdownTest {
   private static final String EXPECTED_STRING_SIMPLE = "hello world!";
   private static final String EXPECTED_STRING_ESCAPED = "hello \"world\"!";
@@ -90,4 +89,15 @@ public class PetitParserShowdownTest {
     // 4. Balanced but incorrect order
     assertThat(new PetitParserShowdown.NestedCommentFixture().run("*/ comment /*").isFailure()).isTrue();
   }
+
+  @Test
+  public void testCalculator() {
+    Result result = new PetitParserShowdown.CalculatorFixture().run();
+    assertThat(result.isSuccess()).isTrue();
+    assertThat((Integer) result.get()).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
+  }
 }
+
+
+
+

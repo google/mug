@@ -57,16 +57,16 @@ Throughput was measured in **operations per millisecond** (higher is better):
 
 | Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Complex JSON Payload** | $0.177$ | **$0.484$** ☕ | $0.158$ | $0.105$ | **$0.498$** 🚀 | $0.375$ | $0.020$ | $0.126$ | $0.112$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex JSON Payload** | $0.185$ | **$0.460$** ☕ | $0.160$ | $0.109$ | **$0.504$** 🚀 | $0.384$ | $0.020$ | $0.130$ | $0.112$ | **`fast`** 🚀<br>**`dot`** ☕ |
 
 #### Reference Production Baselines (JSON)
 To provide an absolute performance ceiling, we stacked our combinator shootout against two industry-standard, hand-written production JSON parsers on the exact same JSON payload:
 
 | Parser Engine | Throughput (ops/ms) | Relative Speed to `dot-parse` |
 | :--- | :---: | :---: |
-| **Jackson Databind** (`ObjectMapper`) | $1.865$ | **3.85x** |
-| **Gson** (`JsonParser`) | $1.497$ | **3.09x** |
-| **`dot-parse`** (Our leading Java combinator) | $0.484$ | **1.00x** |
+| **Jackson Databind** (`ObjectMapper`) | $1.840$ | **4.00x** |
+| **Gson** (`JsonParser`) | $1.561$ | **3.39x** |
+| **`dot-parse`** (Our leading Java combinator) | $0.460$ | **1.00x** |
 
 ### Key Takeaways from the JSON Shootout
 
@@ -87,13 +87,13 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 
 | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `cats-parse` | `parsecj` | `taker` | `better-parse` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **IPv4 Address** | $1,912$ | **$13,198$** ☕ | $9,101$ | $6,987$ | **$24,554$** 🚀 | $18,272$ | $12,263$ | $4,938$ | $1,824$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Quoted String (Common)** | $4,815$ | $12,717$ | $6,858$ | $3,014$ | **$22,768$** 🚀 | $19,448$ | $5,280$ | **$21,892$** ☕ | $5,103$ | **`fast`** 🚀<br>**`taker`** ☕ |
-| **Quoted String (Escaped)** | $3,437$ | $5,215$ | $4,903$ | $2,333$ | $12,127$ | $3,584$ | $2,719$ | **$19,915$** 🚀 ☕ | $1,390$ | **`taker`** 🚀 ☕ |
-| **Keywords (12 CS)** | $46$ | **$296$** 🚀 ☕ | $94$ | $64$ | $79$ | $97$ | $37$ | $67$ | $42$ | **`dot`** 🚀 ☕ |
-| **Keywords CI (12 CI)** | $31$ | **$200$** 🚀 ☕ | $91$ | $55$ | $71$ | $99$ | $30$ | $55$ | $16$ | **`dot`** 🚀 ☕ |
-| **Calculator** | $358$ | $518$ | $343$ | **$540$** ☕ | **$1,138$** 🚀 | $423$ | $211$ | $448$ | $247$ | **`fast`** 🚀<br>**`petit`** ☕ |
-| **Nested Block Comment** | $1,119$ | **$10,872$** 🚀 ☕ | $2,234$ | $1,044$ | $4,945$ | $2,165$ | $653$ | $775$ | $1,484$ | **`dot`** 🚀 ☕ |
+| **IPv4 Address** | $2,007$ | **$13,210$** ☕ | $9,176$ | $6,999$ | **$24,538$** 🚀 | $18,447$ | $12,625$ | $4,857$ | $1,897$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Quoted String (Common)** | $4,955$ | $12,491$ | $6,712$ | $3,044$ | **$21,853$** 🚀 | $18,652$ | $5,441$ | **$21,805$** ☕ | $4,584$ | **`fast`** 🚀<br>**`taker`** ☕ |
+| **Quoted String (Escaped)** | $3,465$ | $5,248$ | $4,912$ | $2,424$ | **$12,281$** 🚀 | $3,641$ | $2,790$ | **$19,502$** ☕ | $3,288$ | **`fast`** 🚀<br>**`taker`** ☕ |
+| **Keywords (12 CS)** | $47$ | **$296$** 🚀 ☕ | $93$ | $65$ | $80$ | $96$ | $37$ | $66$ | $18$ | **`dot`** 🚀 ☕ |
+| **Keywords CI (12 CI)** | $32$ | **$198$** 🚀 ☕ | $91$ | $56$ | $72$ | $99$ | $31$ | $55$ | $13$ | **`dot`** 🚀 ☕ |
+| **Calculator** | $369$ | $526$ | $349$ | $428$ | **$1,133$** 🚀 | $436$ | $211$ | $445$ | $197$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Nested Block Comment** | $1,238$ | **$11,414$** 🚀 ☕ | $2,243$ | $1,053$ | $4,910$ | $2,227$ | $655$ | $776$ | $256$ | **`dot`** 🚀 ☕ |
 
 ### Showdown Scenario Analysis & Rationalization
 
@@ -144,11 +144,11 @@ Every engine was validated against the **exact same 14 deep structural AST test 
 
 | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `parsecj` | `taker` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Simple Type (`String`)** | $3,501$ | **$7,070$** ☕ | $1,508$ | $3,559$ | **$9,137$** 🚀 | $1,486$ | $2,526$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Fully Qualified** | $1,559$ | **$4,092$** ☕ | $655$ | $2,133$ | **$5,805$** 🚀 | $932$ | $1,534$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Nested Generics** | $312$ | **$867$** ☕ | $149$ | $448$ | **$1,241$** 🚀 | $187$ | $330$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Annotated Array** | $355$ | **$750$** ☕ | $150$ | $415$ | **$995$** 🚀 | $202$ | $311$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Complex Annotation** | $243$ | **$353$** ☕ | $105$ | $168$ | **$711$** 🚀 | $85$ | $127$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Simple Type (`String`)** | $3,522$ | **$7,125$** ☕ | $1,520$ | $3,516$ | **$9,398$** 🚀 | $1,535$ | $2,580$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Fully Qualified** | $1,513$ | **$4,189$** ☕ | $659$ | $2,116$ | **$5,611$** 🚀 | $933$ | $1,549$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Nested Generics** | $333$ | **$884$** ☕ | $151$ | $440$ | **$1,242$** 🚀 | $187$ | $328$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Annotated Array** | $363$ | **$748$** ☕ | $154$ | $435$ | **$968$** 🚀 | $205$ | $307$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex Annotation** | $241$ | **$345$** ☕ | $103$ | $167$ | **$678$** 🚀 | $85$ | $128$ | **`fast`** 🚀<br>**`dot`** ☕ |
 
 ### Key Takeaways from the Java Type Shootout
 

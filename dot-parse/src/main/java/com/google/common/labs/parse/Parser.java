@@ -2369,7 +2369,5 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     static Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
   }
 
-
-
   Parser() {}
 }

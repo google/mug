@@ -10,6 +10,7 @@ import org.petitparser.parser.Parser;
 import org.petitparser.parser.combinators.SettableParser;
 import org.petitparser.parser.primitive.CharacterParser;
 import org.petitparser.parser.primitive.StringParser;
+import org.petitparser.tools.ExpressionBuilder;
 
 public final class PetitParserShowdown {
 
@@ -139,69 +140,40 @@ public final class PetitParserShowdown {
     private static final Parser PARSER = buildParser();
 
     private static Parser buildParser() {
-      SettableParser expression = CharacterParser.none().settable();
+      ExpressionBuilder builder = new ExpressionBuilder();
 
-      Parser number =
-          CharacterParser.of('-')
-              .optional()
-              .seq(CharacterParser.digit().plus())
-              .flatten()
-              .trim()
-              .map(x -> Integer.parseInt((String) x));
+      builder.group()
+          .primitive(
+              CharacterParser.of('-')
+                  .optional()
+                  .seq(CharacterParser.digit().plus())
+                  .flatten()
+                  .trim()
+                  .map(x -> Integer.parseInt((String) x)))
+          .wrapper(
+              CharacterParser.of('(').trim(),
+              CharacterParser.of(')').trim(),
+              (List<Object> x) -> (Integer) x.get(1));
 
-      Parser factor =
-          CharacterParser.of('(')
-              .trim()
-              .seq(expression)
-              .seq(CharacterParser.of(')').trim())
-              .map((List<Object> x) -> (Integer) x.get(1))
-              .or(number);
+      builder.group()
+          .left(
+              CharacterParser.of('*').trim(),
+              (List<Object> x) -> (Integer) x.get(0) * (Integer) x.get(2))
+          .left(
+              CharacterParser.of('/').trim(),
+              (List<Object> x) -> (Integer) x.get(0) / (Integer) x.get(2));
 
-      // term = factor ( ('*'|'/') factor )*
-      Parser term =
-          factor
-              .seq(CharacterParser.anyOf("*/").trim().seq(factor).star())
-              .map(
-                  (List<Object> x) -> {
-                    int val = (Integer) x.get(0);
-                    List<List<Object>> rest = (List<List<Object>>) x.get(1);
-                    for (List<Object> opAndFactor : rest) {
-                      char op = (Character) opAndFactor.get(0);
-                      int next = (Integer) opAndFactor.get(1);
-                      if (op == '*') {
-                        val *= next;
-                      } else {
-                        val /= next;
-                      }
-                    }
-                    return val;
-                  });
+      builder.group()
+          .left(
+              CharacterParser.of('+').trim(),
+              (List<Object> x) -> (Integer) x.get(0) + (Integer) x.get(2))
+          .left(
+              CharacterParser.of('-').trim(),
+              (List<Object> x) -> (Integer) x.get(0) - (Integer) x.get(2));
 
-      // expression = term ( ('+'|'-') term )*
-      Parser expr =
-          term.seq(CharacterParser.anyOf("+-").trim().seq(term).star())
-              .map(
-                  (List<Object> x) -> {
-                    int val = (Integer) x.get(0);
-                    List<List<Object>> rest = (List<List<Object>>) x.get(1);
-                    for (List<Object> opAndTerm : rest) {
-                      char op = (Character) opAndTerm.get(0);
-                      int next = (Integer) opAndTerm.get(1);
-                      if (op == '+') {
-                        val += next;
-                      } else {
-                        val -= next;
-                      }
-                    }
-                    return val;
-                  });
-
-      expression.set(expr);
-
-      // Skip leading whitespace and match EOI
       return CharacterParser.whitespace()
           .star()
-          .seq(expression)
+          .seq(builder.build())
           .map((List<Object> x) -> x.get(1))
           .end();
     }
