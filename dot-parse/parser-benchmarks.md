@@ -57,25 +57,25 @@ Throughput was measured in **operations per millisecond** (higher is better):
 
 | Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Complex JSON Payload** | $0.185$ | **$0.460$** ☕ | $0.160$ | $0.109$ | **$0.504$** 🚀 | $0.384$ | $0.020$ | $0.130$ | $0.112$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex JSON Payload** | $0.210$ | **$0.491$** ☕ | $0.158$ | $0.108$ | **$0.509$** 🚀 | $0.386$ | $0.020$ | $0.129$ | $0.112$ | **`fast`** 🚀<br>**`dot`** ☕ |
 
 #### Reference Production Baselines (JSON)
 To provide an absolute performance ceiling, we stacked our combinator shootout against two industry-standard, hand-written production JSON parsers on the exact same JSON payload:
 
 | Parser Engine | Throughput (ops/ms) | Relative Speed to `dot-parse` |
 | :--- | :---: | :---: |
-| **Jackson Databind** (`ObjectMapper`) | $1.840$ | **4.00x** |
-| **Gson** (`JsonParser`) | $1.561$ | **3.39x** |
-| **`dot-parse`** (Our leading Java combinator) | $0.460$ | **1.00x** |
+| **Jackson Databind** (`ObjectMapper`) | $1.918$ | **3.91x** |
+| **Gson** (`JsonParser`) | $1.600$ | **3.26x** |
+| **`dot-parse`** (Our leading Java combinator) | $0.491$ | **1.00x** |
 
 ### Key Takeaways from the JSON Shootout
 
 *   **Scala's `fastparse` Overall Results**:
-    `fastparse` achieved the highest throughput overall, reaching **$0.498$ ops/ms** utilizing compile-time macro inlining and block-scanning primitives.
+    `fastparse` achieved the highest throughput overall, reaching **$0.509$ ops/ms** utilizing compile-time macro inlining and block-scanning primitives.
 *   **Google's `dot-parse` Java Division Results**:
-    Among all Java-native / Java-specific engines, `dot-parse` achieved the highest throughput, delivering **$0.484$ ops/ms** (running at 97.2% of Fastparse's speed and outperforming other Java combinators).
+    Among all Java-native / Java-specific engines, `dot-parse` achieved the highest throughput, delivering **$0.491$ ops/ms** (running at 96.5% of Fastparse's speed and outperforming other Java combinators).
 *   **Scala Comparison**:
-    `fastparse` ($0.498$ ops/ms) outperforms the runtime-based `cats-parse` ($0.375$ ops/ms) by **1.33x**.
+    `fastparse` ($0.509$ ops/ms) outperforms the runtime-based `cats-parse` ($0.386$ ops/ms) by **1.32x**.
 
 ---
 
