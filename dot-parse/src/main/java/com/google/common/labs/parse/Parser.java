@@ -1422,7 +1422,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Short-hand for {@code orElse(null)}.
+   * Short-hand for {@code orElse(null)}. Using {@code .orNull()} or {@code orElse(defaultValue)}
+   * for scanner-level parser rules, particularly when you don't need the return value anyways,
+   * is more efficient than {@code optional()} because it elides allocation. For example:
+   *
+   * <pre>{@code
+   * sequence(digits().orNull(), string("."), digits())
+   *     .source()
+   *     .parse(".5");
+   * }</pre>
    *
    * @since 10.5
    */
