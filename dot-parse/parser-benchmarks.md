@@ -82,6 +82,8 @@ To provide an absolute performance ceiling, we stacked our combinator shootout a
 *   **Two-Phase Scanning Overhead**:
     Both `jparsec` ($0.107$ ops/ms) and ANTLR4 ($0.112$ ops/ms) skip comments during tokenization before parser rules execute. While architecturally clean, this two-phase design runs at about **$40\%$ of the speed of `dot-parse`** due to token stream allocation overhead.
 
+
+
 ---
 
 ## 9-Way Showdown Benchmark Results (Micro-Benchmarks)
@@ -129,7 +131,23 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 
 <hr>
 
-#### 5. Kotlin `better-parse` Architectural Profile
+#### 5. `taker`'s Recursion Protection Tax & Flat Operator Loop
+*   **The Discrepancy**: `taker` is highly competitive on the Calculator benchmark ($445\text{ ops/ms}$ vs. `dot-parse`'s $526\text{ ops/ms}$), but drops significantly on the JSON benchmark ($0.129\text{ ops/ms}$ vs. `dot-parse`'s $0.491\text{ ops/ms}$).
+*   **The Flat Operator Loop**: On the Calculator, `taker` bypasses recursive rule traversals by utilizing its built-in `chainLeftOneOrMore` combinator. This compiles left-associative operator matching (`+`, `-`, `*`, `/`) into a single flat `while` loop, avoiding recursive stack checking almost entirely.
+*   **The Recursion Protection Tax**: In contrast, the JSON parser traverses the recursive rule reference chain at every element boundary, evaluating the cycle-detection check for every element (including flat primitives like numbers or strings). 
+    Under the hood, `taker` (and the parent `parseWorks` framework) implements a dynamic recursion-protection wrapper (`CheckParser`) on every recursive `ref()` call. This protection introduces a significant performance tax on the hot path:
+    *   **ThreadLocal Lookup**: Every recursive boundary crossing fetches the parser context via a `ThreadLocal.get()` call (a JVM hash map lookup).
+    *   **IntObjectMap Lookup & Writes**: The current character position is looked up in a custom `IntObjectMap`. If a recursive rule is entered for the first time at that position, it writes to the map.
+    *   **Heap Allocation**: It allocates a new `ArrayDeque<>` stack object at every new character position where a recursive rule is evaluated.
+    *   **Stack Scanning**: It iterates through the active stack to check for re-entrancy, and pushes/pops the parser instance from the stack.
+*   **The Contrast with `dot-parse` & Other Combinators**: 
+    In contrast, other benchmarked combinator frameworks (like `fastparse`, `cats-parse`, `jparsec`, `parsecj`, and `better-parse`) do not implement any left-recursion checking at all—simply crashing with a `StackOverflowError` if a rule is left-recursive.
+    Google's `dot-parse` does guarantee left recursion safety but does so at definition time, paying **zero runtime tax**. For a deep-dive on how its strict `Parser` vs. `OrEmpty` type dichotomy mathematically guarantees 100% detection of all recursive cycles during the startup dry-run, see [left-recursion.md](file:///Users/benyu/mug/dot-parse/left-recursion.md).
+*   **The Main Contributor to Slowness**: In a large JSON document with thousands of nested elements, `taker`'s complex cycle-protection sequence is executed tens of thousands of times, making it the primary contributor to `taker`'s performance degradation on recursive payloads.
+
+<hr>
+
+#### 6. Kotlin `better-parse` Architectural Profile
 *   **Property Delegation Overhead**: `better-parse` represents grammars using Kotlin's delegated properties (`by`), which introduces multiple runtime wrapper layers and lookup overhead during parser initialization and match dispatching.
 *   **Heavy Intermediate Allocations**: Unlike zero-allocation parser scans, `better-parse`'s tokenizer scans inputs and allocates a list of intermediate `TokenMatch` objects on the fly, putting significant garbage collection pressure on the JVM hot path.
 *   **Regex and Backtracking Bottlenecks**: On case-insensitive keywords, `better-parse` drops to a very low **$15.8$ ops/ms** ($15,800$ parses/sec) because it compiles 12 separate `Regex` objects and matches them sequentially per character. This is **$12.7\text{x}$ slower** than `dot-parse`'s Radix prefix tries and **$3.5\text{x}$ slower** than `taker`.
