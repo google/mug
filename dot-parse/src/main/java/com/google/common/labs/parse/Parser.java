@@ -1315,7 +1315,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @Override public final Parser<T> optionallyFollowedBy(String suffix) {
-    return followedBy(string(suffix).orElse(null));
+    return followedBy(string(suffix).orNull());
   }
 
   @Override public final Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
@@ -1419,6 +1419,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final OrEmpty orElse(T defaultValue) {
     return new OrEmpty(() -> defaultValue);
+  }
+
+  /**
+   * Short-hand for {@code orElse(null)}.
+   *
+   * @since 10.5
+   */
+  public final Parser<T>.OrEmpty orNull() {
+    return orElse(null);
   }
 
   /**
@@ -1838,7 +1847,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * @since 9.5
      */
     @Override public Parser<T>.OrEmpty optionallyFollowedBy(String suffix) {
-      return followedBy(string(suffix).orElse(null));
+      return followedBy(string(suffix).orNull());
     }
 
     /**

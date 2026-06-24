@@ -71,10 +71,10 @@ public final class JavaTypeParser {
 
   // Decimal & negative number parsing (no zero-width string("") calls)
   private static final Parser<?> INTEGER_PART =
-      anyOf(sequence(string("-"), digits().thenReturn(null)), digits().thenReturn(null));
+      anyOf(sequence(string("-"), digits()), digits());
 
   private static final Parser<Number> NUMBER_VAL =
-      sequence(INTEGER_PART, string(".").then(digits().thenReturn(null)).orElse(null))
+      sequence(INTEGER_PART, string(".").then(digits()).orNull())
           .source()
           .map(s -> s.contains(".") ? Double.parseDouble(s) : Integer.parseInt(s));
 

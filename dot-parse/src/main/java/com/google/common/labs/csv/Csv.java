@@ -118,7 +118,7 @@ public final class Csv {
       anyOf(one(is('\n'), "LF"), string("\r\n"), one(is('\r'), "CR"));
   private static final Parser<?> COMMENT =
       string("#")
-          .followedBy(consecutive(isNot('\n'), "comment").orElse(null))
+          .followedBy(consecutive(isNot('\n'), "comment").orNull())
           .followedByOrEof(NEW_LINE);
   private static final Parser<String> QUOTED =
       zeroOrMore(isNot('"'), "quoted")
