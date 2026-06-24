@@ -635,7 +635,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
       @Override Parser<?> ignoreReturn() {
         return combiner instanceof ElidableBiFunction
-            ? sequence(left.ignoreReturn(), right.ignoreReturn())
+            ? sequence(left, right)
             : this;
       }
     };
