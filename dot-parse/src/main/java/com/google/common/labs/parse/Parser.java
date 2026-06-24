@@ -810,7 +810,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @since 9.4
    */
-  public final Parser<T>.OrEmpty or(Parser<? extends T>.OrEmpty that) {
+  public final OrEmpty or(Parser<? extends T>.OrEmpty that) {
     return or(that.notEmpty()).new OrEmpty(that.defaultSupplier);
   }
 
@@ -1315,11 +1315,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @Override public final Parser<T> optionallyFollowedBy(String suffix) {
-    return followedBy(string(suffix).orNull());
+    return optionallyFollowedBy(string(suffix));
+  }
+
+  @Override public final Parser<T> optionallyFollowedBy(Parser<?> suffix) {
+    return followedBy(suffix.orNull());
   }
 
   @Override public final Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
-    return optionallyFollowedBy(string(suffix).thenReturn(op::apply));
+    return withOptionalSuffix(string(suffix).thenReturn(op::apply));
   }
 
   /**
@@ -1339,10 +1343,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   @Override public final <S> Parser<T> optionallyFollowedBy(
       Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> op) {
     requireNonNull(op);
-    return optionallyFollowedBy(suffix.map(s -> p -> op.apply(p, s)));
+    return withOptionalSuffix(suffix.map(s -> p -> op.apply(p, s)));
   }
 
-  final Parser<T> optionallyFollowedBy(Parser<UnaryOperator<T>> suffix) {
+  final Parser<T> withOptionalSuffix(Parser<UnaryOperator<T>> suffix) {
     return sequence(this, suffix.orElse(identity()), (a, op) -> op.apply(a));
   }
 
@@ -1788,7 +1792,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      *
      * @since 9.5
      */
-    @Override public final Parser<T>.OrEmpty between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix) {
+    @Override public final OrEmpty between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix) {
       return prefix.then(this).followedBy(suffix);
     }
 
@@ -1845,7 +1849,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
-    @Override public <S> Parser<T>.OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
+    @Override public <S> OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
       return sequence(this, suffix.ignoreReturn(), (a, b) -> a);
     }
 
@@ -1854,18 +1858,27 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      *
      * @since 9.5
      */
-    @Override public Parser<T>.OrEmpty optionallyFollowedBy(String suffix) {
-      return followedBy(string(suffix).orNull());
+    @Override public OrEmpty optionallyFollowedBy(String suffix) {
+      return optionallyFollowedBy(string(suffix));
     }
 
+    /**
+     * The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.
+     *
+     * @since 10.5
+     */
+    @Override public OrEmpty optionallyFollowedBy(Parser<?> suffix) {
+      return followedBy(suffix.orNull());
+    }
     /**
      * If this parser matches, optionally applies the {@code op} function if the pattern is followed
      * by {@code suffix}.
      *
      * @since 10.0
      */
-    @Override public final Parser<T>.OrEmpty optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
-      return optionallyFollowedBy(string(suffix).thenReturn(op::apply));
+    @Override public final OrEmpty optionallyFollowedBy(
+        String suffix, Function<? super T, ? extends T> op) {
+      return withOptionalSuffix(string(suffix).thenReturn(op::apply));
     }
 
     /**
@@ -1874,13 +1887,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      *
      * @since 10.0
      */
-    @Override public final <S> Parser<T>.OrEmpty optionallyFollowedBy(
+    @Override public final <S> OrEmpty optionallyFollowedBy(
         Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> op) {
       requireNonNull(op);
-      return optionallyFollowedBy(suffix.map(s -> p -> op.apply(p, s)));
+      return withOptionalSuffix(suffix.map(s -> p -> op.apply(p, s)));
     }
 
-    private Parser<T>.OrEmpty optionallyFollowedBy(Parser<UnaryOperator<T>> suffix) {
+    private OrEmpty withOptionalSuffix(Parser<UnaryOperator<T>> suffix) {
       return sequence(this, suffix.orElse(identity()), (operand, op) -> op.apply(operand));
     }
 

@@ -6433,7 +6433,7 @@ public class ParserTest {
               subpath)
           .atLeastOnceDelimitedBy("/")
           .map(ResourceNamePattern::new)
-          .optionallyFollowedBy(revision.map(v -> pattern -> pattern.withRevision(v)));
+          .optionallyFollowedBy(revision, ResourceNamePattern::withRevision);
     }
 
     static ResourceNamePattern parse(String path) {
