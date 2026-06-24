@@ -63,11 +63,11 @@ Throughput was measured in **operations per millisecond** (higher is better):
 #### Reference Production Baselines (JSON)
 To provide an absolute performance ceiling, we stacked our combinator shootout against two industry-standard, hand-written production JSON parsers on the exact same JSON payloads:
 
-| Parser Engine | Complex JSON (ops/ms) | JSON with Comments (ops/ms) | Relative Speed (With Comments) |
-| :--- | :---: | :---: | :---: |
-| **Gson** (Lenient) | $1.600$ | $0.423$ | **1.61x** |
-| **Jackson Databind** (Lenient) | $1.918$ | $0.409$ | **1.56x** |
-| **`dot-parse`** (Our leading Java combinator) | $0.491$ | $0.262$ | **1.00x** |
+| Parser Engine | Complex JSON (ops/ms) | Complex JSON with Comments (ops/ms) |
+| :--- | :---: | :---: |
+| **Gson** (Lenient) | $1.600$ | $0.423$ |
+| **Jackson Databind** (Lenient) | $1.918$ | $0.409$ |
+| **`dot-parse`** (Our leading Java combinator) | $0.491$ | $0.262$ |
 
 ### Key Takeaways from the JSON Shootout
 
@@ -75,8 +75,10 @@ To provide an absolute performance ceiling, we stacked our combinator shootout a
     `dot-parse` is the fastest third-party parser library on the JVM at **$0.262$ ops/ms** (running **$1.30\text{x}$ faster than `fastparse`** and delivering **$64.1\%$ of Jackson's speed**). Its internal return elision mechanism helps to completely avoid intermediate object/sequence allocations on repetition loops, maintaining high throughput on comment-heavy files.
 *   **`fastparse` Allocation Overhead on Repetitions**:
     While `fastparse`'s compile-time macro expansion makes it exceptionally fast, its idiomatic block comment combinator (`"/*" ~ (!"*/" ~ AnyChar).rep ~ "*/"`) incurs a non-trivial performance tax. Because we found no `cats-parse`-like `void()` or `dot-parse`-like return elision in `fastparse` to elide sequence generation, the intermediate `Seq[Char]` heap allocations and primitive character boxing required by the repetition combinator result in a **$20.2\%$ lower throughput** compared to its strict JSON parser (when scaled for payload size).
-*   **`cats-parse` Optimized Delimiter Path**:
+*   **`cats-parse`** (Scala):
     `cats-parse` achieves highly optimized comment scanning by leveraging Tuple-free sequencing operators (`*>` and `<*`) and the native, pre-compiled `P.until(P.string("*/")).void` scanner. This completely avoids intermediate list and tuple allocations, maintaining a stable **$0.091$ ops/ms** throughput (running at **$22.2\%$ of Jackson's speed**).
+*   **`taker`'s Recursion Protection Tax on JSON**:
+    While highly competitive on flat loops, `taker` drops significantly on the JSON benchmark ($0.129\text{ ops/ms}$ vs. `dot-parse`'s $0.491\text{ ops/ms}$). Because the JSON parser traverses the recursive rule reference chain at every element boundary, `taker` is forced to evaluate its cycle-detection check for every element (including flat primitives like numbers or strings). Under the hood, its dynamic `CheckParser` wrapper incurs a heavy performance tax at every recursive boundary: performing a `ThreadLocal` lookup, querying/writing to an `IntObjectMap`, allocating a new `ArrayDeque<>` stack, and scanning the active stack. This makes dynamic recursion protection the primary contributor to `taker`'s slowness on deeply nested JSON payloads.
 *   **`parsecj`'s Regex Tax on Delimiters**:
     No native, pre-compiled block comment skipper or `manyTill` combinator could be found in the library's repository or online tutorials. Consequently, the benchmark fell back to using `regex(...)`, which appears to be a common practice in `parsecj` and is also how it performed well in the IPv4 benchmark. However, evaluating a Java `Pattern` regex match at every single token boundary check is extremely heavy, causing a **$10\text{x}$ performance drop** ($0.020 \to 0.002$ ops/ms) due to continuous `Matcher` allocations on the hot path.
 *   **Two-Phase Scanning Overhead**:
@@ -128,26 +130,13 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 *   **Performance Calculator**: `fastparse` ($1,138$ ops/ms) leads overall, followed by `petitparser` ($540$ ops/ms) and `dot-parse` ($518$ ops/ms).
 *   **Performance Comments**: `dot-parse` ($10.87\text{M}$ ops/sec) leads the entire pack overall, followed by `fastparse` ($4.94\text{M}$).
 *   **`dot-parse` Native Flat Character Scan**: `dot-parse` achieves its comment parsing throughput by utilizing its native `nestedBy("/*", "*/")` primitive. Rather than constructing a recursive tree of parser combinator objects, `nestedBy` scans the character stream in a single flat loop, tracking nesting depth in a primitive integer counter. This minimizes CPU and memory overhead, outperforming even macro-rewritten engines.
+*   **`taker`'s Flat Operator Loop**: On the Calculator, `taker` ($445\text{ ops/ms}$) is highly competitive with `dot-parse` ($526\text{ ops/ms}$). This is because it utilizes its built-in `chainLeftOneOrMore` combinator, which compiles left-associative operators into a single flat `while` loop, avoiding recursive stack-checking and cycle-detection overhead almost entirely.
+
+
 
 <hr>
 
-#### 5. `taker`'s Recursion Protection Tax & Flat Operator Loop
-*   **The Discrepancy**: `taker` is highly competitive on the Calculator benchmark ($445\text{ ops/ms}$ vs. `dot-parse`'s $526\text{ ops/ms}$), but drops significantly on the JSON benchmark ($0.129\text{ ops/ms}$ vs. `dot-parse`'s $0.491\text{ ops/ms}$).
-*   **The Flat Operator Loop**: On the Calculator, `taker` bypasses recursive rule traversals by utilizing its built-in `chainLeftOneOrMore` combinator. This compiles left-associative operator matching (`+`, `-`, `*`, `/`) into a single flat `while` loop, avoiding recursive stack checking almost entirely.
-*   **The Recursion Protection Tax**: In contrast, the JSON parser traverses the recursive rule reference chain at every element boundary, evaluating the cycle-detection check for every element (including flat primitives like numbers or strings). 
-    Under the hood, `taker` (and the parent `parseWorks` framework) implements a dynamic recursion-protection wrapper (`CheckParser`) on every recursive `ref()` call. This protection introduces a significant performance tax on the hot path:
-    *   **ThreadLocal Lookup**: Every recursive boundary crossing fetches the parser context via a `ThreadLocal.get()` call (a JVM hash map lookup).
-    *   **IntObjectMap Lookup & Writes**: The current character position is looked up in a custom `IntObjectMap`. If a recursive rule is entered for the first time at that position, it writes to the map.
-    *   **Heap Allocation**: It allocates a new `ArrayDeque<>` stack object at every new character position where a recursive rule is evaluated.
-    *   **Stack Scanning**: It iterates through the active stack to check for re-entrancy, and pushes/pops the parser instance from the stack.
-*   **The Contrast with `dot-parse` & Other Combinators**: 
-    In contrast, other benchmarked combinator frameworks (like `fastparse`, `cats-parse`, `jparsec`, `parsecj`, and `better-parse`) do not implement any left-recursion checking at all—simply crashing with a `StackOverflowError` if a rule is left-recursive.
-    Google's `dot-parse` does guarantee left recursion safety but does so at definition time, paying **zero runtime tax**. For a deep-dive on how its strict `Parser` vs. `OrEmpty` type dichotomy mathematically guarantees 100% detection of all recursive cycles during the startup dry-run, see [left-recursion.md](file:///Users/benyu/mug/dot-parse/left-recursion.md).
-*   **The Main Contributor to Slowness**: In a large JSON document with thousands of nested elements, `taker`'s complex cycle-protection sequence is executed tens of thousands of times, making it the primary contributor to `taker`'s performance degradation on recursive payloads.
-
-<hr>
-
-#### 6. Kotlin `better-parse` Architectural Profile
+#### 5. Kotlin `better-parse` Architectural Profile
 *   **Property Delegation Overhead**: `better-parse` represents grammars using Kotlin's delegated properties (`by`), which introduces multiple runtime wrapper layers and lookup overhead during parser initialization and match dispatching.
 *   **Heavy Intermediate Allocations**: Unlike zero-allocation parser scans, `better-parse`'s tokenizer scans inputs and allocates a list of intermediate `TokenMatch` objects on the fly, putting significant garbage collection pressure on the JVM hot path.
 *   **Regex and Backtracking Bottlenecks**: On case-insensitive keywords, `better-parse` drops to a very low **$15.8$ ops/ms** ($15,800$ parses/sec) because it compiles 12 separate `Regex` objects and matches them sequentially per character. This is **$12.7\text{x}$ slower** than `dot-parse`'s Radix prefix tries and **$3.5\text{x}$ slower** than `taker`.
