@@ -331,6 +331,12 @@ Parser<TypeDecl> typeDecl =
     tokens when calling `parseSkipping(Character::isWhitespace, ...)` or
     `skipping(Character::isWhitespace)`. This is why the grammar above doesn't
     need to explicitly handle whitespace between tokens.
+- **Use** `sequence(Parser, Production...)` with no lambda when you don't need
+  to the constituent parser rules' results but only need to express a pattern
+  similar to regex. Example: `sequence(digits(), dot, digits(), dot, digits())`.
+  - It's more efficient than chaining `then()` or `.followedBy()` methods.
+  - It's more readable too.
+  - If after matching, you need the matched string, attach a `.source()` call.
 - **Use** `then()` with `orElse(defaultValue)` when a parser is followed by an
   optional component that should fall back to a default value if missing.
   - The `then()` method accepts both a standard `Parser` and a `Parser.OrEmpty`

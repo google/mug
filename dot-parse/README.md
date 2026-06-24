@@ -35,6 +35,7 @@ For brevity, all unqualified methods are assumed to be static imported from the
 14  | `(group)(?:bar)`   | `groupParser.followedBy(barParser)`                         | Capture a group before a suffix pattern.
 15  | `(?:foo)(group)`   | `fooParser.then(groupParser)`                               | Capture a group after a prefix pattern.
 16  | `(group1)(group2)` | `sequence(parser1, parser2, (g1, g2) -> ...)`               | Capturing groups map to arguments in the `sequence` lambda.
+16  | `\w+:\d+`          | `sequence(word(), one(':'), digits())`                      | Match a pattern
 
 If you were to build a regex fluent builder, the API will likely look very
 similar.

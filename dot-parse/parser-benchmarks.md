@@ -74,8 +74,6 @@ To provide an absolute performance ceiling, we stacked our combinator shootout a
     `fastparse` achieved the highest throughput overall, reaching **$0.498$ ops/ms** utilizing compile-time macro inlining and block-scanning primitives.
 *   **Google's `dot-parse` Java Division Results**:
     Among all Java-native / Java-specific engines, `dot-parse` achieved the highest throughput, delivering **$0.484$ ops/ms** (running at 97.2% of Fastparse's speed and outperforming other Java combinators).
-*   **Combinator Library Comparison**:
-    Within the Java-specific parser combinator libraries, `dot-parse` is **3.06x faster** than `jparsec` ($0.158$ ops/ms) and **24.2x faster** than `parsecj` ($0.020$ ops/ms).
 *   **Scala Comparison**:
     `fastparse` ($0.498$ ops/ms) outperforms the runtime-based `cats-parse` ($0.375$ ops/ms) by **1.33x**.
 
@@ -107,8 +105,6 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 #### 2. Quoted String Parsing (Common Case vs. Escaped Edge Case)
 *   **Performance**: On simple strings, `fastparse` ($22.8\text{M}$ ops/sec) leads overall, followed closely by `taker` ($21.9\text{M}$) and `cats-parse` ($19.4\text{M}$), while `dot-parse` is at **$12.7\text{M}$ ops/sec**. On escaped strings, `taker` leads overall at **$19.9\text{M}$ ops/sec**, followed by `fastparse` ($12.1\text{M}$) and `dot-parse` ($5.2\text{M}$).
 *   **`taker`'s Dedicated Lexical Primitive**: `taker` achieves **$19,915$ ops/ms** on escaped strings by utilizing its built-in, native `Lexical.escapedString('"', '\\', escapesMap)` primitive. Rather than composing general-purpose character combinators (which incur allocation and dispatch overhead on every character), `taker` delegates to a dedicated lexical scanner that parses the string and resolves escapes in a single flat loop.
-*   **`dot-parse`'s Trade-off: Escape Efficiency vs. Flexibility**:
-    `dot-parse` **trades off escape parsing efficiency for grammatical flexibility.** Its `quotedByWithEscapes(char before, char after, Production<CharSequence> escaped)` primitive accepts a generic escape parser rule. While invoking a parser rule on the character following the backslash incurs extra overhead compared to strictly unescaping a literal character, it enables `dot-parse` to support arbitrary, complex escape grammars: such as variable-length Unicode escapes (like `\u12AF`), or Markdown-style escaping (where a backslash not followed by an escapable character must be interpreted as literal, through passing a rule like `escapable.orElse("\\")`). This is an intentional design choice, given that string literals without escapes are far more common in practice.
 *   **Bulk Scanning & Regex Delegation**: Libraries that support native bulk-scanning primitives (like `jparsec` 's string scanner) perform well.
 
 <hr>
@@ -161,9 +157,6 @@ Every engine was validated against the **exact same 14 deep structural AST test 
 
 *   **`taker` Delivers Solid, High-Performance PEG Baselines**:
     The `taker` parser performs well, consistently **close to `antlr4`** on fully qualified ($1,534$ vs $1,559$) and **beating `antlr4`** on nested generic ($330$ vs $312$) signatures. It also **outperforms `parsecj` and `jparsec` by nearly $2\text{x}$** across almost all scenarios, proving that a lean PEG design with optimized applicative builders (`ApplyBuilder3`) is highly competitive.
-
-*   **`parsecj` vs `jparsec` (The Combinator Battle)**:
-    `parsecj` performs moderately and **consistently outperforms `jparsec`** in 4 out of 5 scenarios. However, in the **Complex Annotation** scenario, `parsecj` falls slightly behind `jparsec` ($85$ vs $105$ ops/ms). This is due to the heavy monadic bind (`.bind(...)`) nesting and recursive backtracking (`.attempt()`) we had to introduce in `parsecj` to handle class literals and array parameters, which incurs significant lambda allocation overhead.
 
 *   **Scannerless vs. Two-Phase Tokenization**:
     For small, dense inputs with minimal whitespace (such as Java type signatures), scannerless parsers (`dot-parse`, `taker`, `parsecj`) are a fundamentally better architectural fit than two-phase tokenizing parsers (`jparsec`, `antlr4`). Two-phase parsers pay a high object-allocation penalty to construct intermediate token lists, whereas scannerless parsers operate directly on the character stream with zero token overhead.
