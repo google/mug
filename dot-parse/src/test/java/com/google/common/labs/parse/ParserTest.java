@@ -2765,6 +2765,13 @@ public class ParserTest {
   }
 
   @Test
+  public void anyOf_strings_duplicateStrings() {
+    Parser<String> parser = anyOf("one", "one", "two", "one", "two");
+    assertThat(parser.parse("one")).isEqualTo("one");
+    assertThat(parser.parse("two")).isEqualTo("two");
+  }
+
+  @Test
   public void anyOf_strings_longestMatch() {
     Parser<String> parser = anyOf("a", "abc", "ab");
     assertThat(parser.parse("a")).isEqualTo("a");
