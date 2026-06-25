@@ -17,7 +17,7 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
         .parse(input);
     ``` 
 - [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md) – define datetime formats by _examples_  
-  → `DateTimeFormatter format = formatOf("2024-03-14 10.4.30:00.123 America/New_York")`
+  → `DateTimeFormatter format = formatOf("2024-03-14 10.50:00.123 America/New_York")`
 
 ## Streams
 - ✅ [`BiStream`](./mug/src/main/java/com/google/mu/util/stream/README.md) – streams `Map` and pair-wise collections  
@@ -58,7 +58,7 @@ Add the following to pom.xml:
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug</artifactId>
-    <version>10.4.3</version>
+    <version>10.5</version>
   </dependency>
 ```
 
@@ -80,7 +80,7 @@ Add `mug-errorprone` to your annotationProcessorPaths:
               <path>
                 <groupId>com.google.mug</groupId>
                 <artifactId>mug-errorprone</artifactId>
-                <version>10.4.3</version>
+                <version>10.5</version>
               </path>
             </annotationProcessorPaths>
           </configuration>
@@ -94,7 +94,7 @@ SafeSql ([javadoc](https://google.github.io/mug/apidocs/com/google/mu/safesql/pa
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-safesql</artifactId>
-    <version>10.4.3</version>
+    <version>10.5</version>
   </dependency>
 ```
 
@@ -104,7 +104,7 @@ Dot Parse Combinators ([javadoc](https://google.github.io/mug/apidocs/com/google
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>dot-parse</artifactId>
-    <version>10.4.3</version>
+    <version>10.5</version>
   </dependency>
 ```
 
@@ -113,7 +113,7 @@ Protobuf utils ([javadoc](https://google.github.io/mug/apidocs/com/google/mu/pro
   <dependency>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-protobuf</artifactId>
-    <version>10.4.3</version>
+    <version>10.5</version>
   </dependency>
 ```
 
@@ -121,11 +121,11 @@ Protobuf utils ([javadoc](https://google.github.io/mug/apidocs/com/google/mu/pro
 
 Add to build.gradle:
 ```
-  implementation 'com.google.mug:mug:10.4.3'
-  implementation 'com.google.mug:mug-safesql:10.4.3'
-  implementation 'com.google.mug:dot-parse:10.4.3'
-  implementation 'com.google.mug:mug-guava:10.4.3'
-  implementation 'com.google.mug:mug-protobuf:10.4.3'
+  implementation 'com.google.mug:mug:10.5'
+  implementation 'com.google.mug:mug-safesql:10.5'
+  implementation 'com.google.mug:dot-parse:10.5'
+  implementation 'com.google.mug:mug-guava:10.5'
+  implementation 'com.google.mug:mug-protobuf:10.5'
 ```
 </details>
 

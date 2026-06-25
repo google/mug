@@ -2,11 +2,10 @@
 
 Low-boilerplate, idiomatic Java parser combinator, aimed to replace regex and your everyday one-off parsing tasks.
 
-- **Easy to use:** a handful of primitives; write parser intuitively.
-- **No footguns:** compile-time guardrail preventing footguns like infinite loops caused by `many(optional)` or left recursion.
-- **Idiomatic Java:** modern, first-class Java style API designed for Java users (not a Haskell or Scala port).
-- **Fast:** consistently among the fastest JVM parser combinators ([benchmark](./parser-benchmarks.md)).
+- **Easy to use:** intuitive, idiomatic and fluent Java API.
 - **Just works:** No "committing" or "cut" complexities. What you see is what you get.
+- **No footguns:** compile-time guardrail preventing footguns like infinite loops caused by `many(optional)` or left recursion.
+- **Fast:** consistently among the fastest JVM parser combinators ([benchmark](./parser-benchmarks.md)).
 
 ---
 
