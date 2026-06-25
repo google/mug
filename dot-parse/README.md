@@ -3,10 +3,10 @@
 Low-boilerplate, idiomatic Java parser combinator, aimed to replace regex and your everyday one-off parsing tasks.
 
 - **Easy to use:** a handful of primitives; write parser intuitively.
-- **Hard to misuse:** compile-time guardrail preventing footguns like infinite loops caused by `many(optional)` or left recursion.
+- **No footguns:** compile-time guardrail preventing footguns like infinite loops caused by `many(optional)` or left recursion.
 - **Idiomatic Java:** modern, first-class Java style API designed for Java users (not a Haskell or Scala port).
-- **Performant:** `anyOf()` optimized by prefix pruning. Faster than regex ([benchmark](./parser-benchmarks.md))
-- **Just works:** No "committing" or "cut" complexities. Your grammar looks right? Then it works right.
+- **Fast:** consistently among the fastest JVM parser combinators ([benchmark](./parser-benchmarks.md)).
+- **Just works:** No "committing" or "cut" complexities. What you see is what you get.
 
 ---
 
