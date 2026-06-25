@@ -244,6 +244,13 @@ Parser<TypeDecl> typeDecl =
     -   It automatically handles prefix matching by trying longer strings first
         (e.g., trying "++" before "+").
 
+-   **Prefer** the `anyOf(String, String, ...)` overload when matching a fixed
+    set of string values.
+
+    -   **Example**: `anyOf("http", "https", "ftp", "ssl")`
+    -   It automatically handles prefix matching by trying longer strings first
+        (e.g., trying "https" before "http").
+
 - **Use** `quotedBy(before, after)` and
   `quotedByWithEscapes(before, after, escaped)`
   to parse quoted strings instead of reinventing the wheel.

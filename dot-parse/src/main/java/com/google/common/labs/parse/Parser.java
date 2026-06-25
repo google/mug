@@ -1854,21 +1854,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     @Override public <S> Parser<S> then(Parser<S> suffix) {
-      return sequence(this.ignoreReturn(), suffix, (a, b) -> b);
+      return this.ignoreReturn().and(suffix, (a, b) -> b);
     }
 
     /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
     @Override public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
-      return sequence(this.ignoreReturn(), suffix, (a, b) -> b);
+      return this.ignoreReturn().and(suffix, (a, b) -> b);
     }
 
     @Override public Parser<T> followedBy(Parser<?> suffix) {
-      return sequence(this, suffix.ignoreReturn(), (a, b) -> a);
+      return this.and(suffix.ignoreReturn(), (a, b) -> a);
     }
 
     /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
+    @SuppressWarnings("unchecked")  // to make Eclipse compiler happy
     @Override public <S> OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
-      return sequence(this, suffix.ignoreReturn(), (a, b) -> a);
+      return this.and((Parser<Object>.OrEmpty) suffix.ignoreReturn(), (a, b) -> a);
     }
 
     /**
@@ -1968,6 +1969,16 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
     private Parser<?>.OrEmpty ignoreReturn() {
       return notEmpty().ignoreReturn().new OrEmpty(() -> null);
+    }
+
+    private <B, R> Parser<R>.OrEmpty and(
+        Parser<B>.OrEmpty right, ElidableBiFunction<? super T, ? super B, R> combiner) {
+      return sequence(this, right, combiner);
+    }
+
+    private <B, R> Parser<R> and(
+        Parser<B> right, ElidableBiFunction<? super T, ? super B, R> combiner) {
+      return sequence(this, right, combiner);
     }
   }
 
