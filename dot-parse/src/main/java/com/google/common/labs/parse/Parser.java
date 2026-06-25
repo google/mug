@@ -1336,7 +1336,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @Override public final Parser<T> optionallyFollowedBy(Parser<?> suffix) {
-    return followedBy(suffix.orNull());
+    return followedBy(suffix.orElse(null));
   }
 
   @Override public final Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
@@ -1440,23 +1440,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final OrEmpty orElse(T defaultValue) {
     return new OrEmpty(() -> defaultValue);
-  }
-
-  /**
-   * Short-hand for {@code orElse(null)}. Using {@code .orNull()} or {@code .orElse(defaultValue)}
-   * for scanner-level parser rules, particularly when you don't need the return value anyways,
-   * is more efficient than {@code .optional()} because it elides allocation. For example:
-   *
-   * <pre>{@code
-   * sequence(digits().orNull(), string("."), digits())
-   *     .source()
-   *     .parse(".5");
-   * }</pre>
-   *
-   * @since 10.5
-   */
-  public final OrEmpty orNull() {
-    return orElse(null);
   }
 
   /**
@@ -1886,7 +1869,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * @since 10.5
      */
     @Override public OrEmpty optionallyFollowedBy(Parser<?> suffix) {
-      return followedBy(suffix.orNull());
+      return followedBy(suffix.orElse(null));
     }
     /**
      * If this parser matches, optionally applies the {@code op} function if the pattern is followed

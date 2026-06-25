@@ -437,7 +437,7 @@ public final class EmailAddress {
   public static List<EmailAddress> parseAddressList(String addressList) {
     return PARSER
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
-        .followedBy(ADDRESS_LIST_DELIMITER.orNull())
+        .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
         .parseSkipping(SAFE_WHITESPACE, addressList);
   }
 
@@ -463,7 +463,7 @@ public final class EmailAddress {
             PARSER.notFollowedBy(ANY_BUT_LIST_DELIMITER, "non-separator"),
             UNTIL_LIST_DELIMITER.map(String::trim))
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(ifInvalid))
-        .followedBy(ADDRESS_LIST_DELIMITER.orNull())
+        .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
         .parseSkipping(SAFE_WHITESPACE, addressList);
   }
 
@@ -501,7 +501,7 @@ public final class EmailAddress {
         sequence(
             // optimization so that for the common case of user@company.com, we don't have to
             // backtrack to the sequence(displayName, bracketedAddress) rule.
-            looksLikeAddrSpec, bracketedAddress.orNull(),
+            looksLikeAddrSpec, bracketedAddress.orElse(null),
             (addrSpecOrDisplayName, bracketedOrNull) ->
                 bracketedOrNull == null
                     ? addrSpecOrDisplayName.toEmailAddress()

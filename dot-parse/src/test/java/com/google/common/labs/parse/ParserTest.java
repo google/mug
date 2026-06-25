@@ -3857,26 +3857,26 @@ public class ParserTest {
 
   @Test
   public void orElse_nullDefault_between_zeroMatch() {
-    Parser<String> parser = string("a").orNull().between("[", "]");
+    Parser<String> parser = string("a").orElse(null).between("[", "]");
     assertThat(parser.parse("[]")).isNull();
     assertThat(parser.parseToStream("[]")).containsExactly((String) null);
   }
 
   @Test
   public void orElse_nullDefault_between_zeroMatch_source() {
-    Parser<String> parser = string("a").source().orNull().between("[", "]");
+    Parser<String> parser = string("a").source().orElse(null).between("[", "]");
     assertThat(parser.source().parse("[]")).isEqualTo("[]");
     assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
   }
 
   @Test
   public void orElse_nullDefault_parseEmpty() {
-    assertThat(string("a").orNull().parse("")).isNull();
+    assertThat(string("a").orElse(null).parse("")).isNull();
   }
 
   @Test
   public void orElse_nullDefault_parseEmpty_source() {
-    assertThat(string("a").source().orNull().parse("")).isNull();
+    assertThat(string("a").source().orElse(null).parse("")).isNull();
   }
 
   @Test
@@ -4178,14 +4178,14 @@ public class ParserTest {
 
   @Test
   public void parser_between_parser_and_orEmptySuffix_suffixPresent() {
-    Parser<String> parser = string("a").between(string("p"), string("s").orNull());
+    Parser<String> parser = string("a").between(string("p"), string("s").orElse(null));
     assertThat(parser.parse("pas")).isEqualTo("a");
     assertThat(parser.matches("pas")).isTrue();
   }
 
   @Test
   public void parser_between_parser_and_orEmptySuffix_suffixAbsent() {
-    Parser<String> parser = string("a").between(string("p"), string("s").orNull());
+    Parser<String> parser = string("a").between(string("p"), string("s").orElse(null));
     assertThat(parser.parse("pa")).isEqualTo("a");
     assertThat(parser.matches("pa")).isTrue();
   }
@@ -4193,7 +4193,7 @@ public class ParserTest {
   @Test
   public void orEmpty_between_parser_and_orEmptySuffix_orEmptyPresent_suffixPresent() {
     Parser<String> parser =
-        string("a").orElse("default").between(string("p"), string("s").orNull());
+        string("a").orElse("default").between(string("p"), string("s").orElse(null));
     assertThat(parser.parse("pas")).isEqualTo("a");
     assertThat(parser.matches("pas")).isTrue();
   }
@@ -4201,7 +4201,7 @@ public class ParserTest {
   @Test
   public void orEmpty_between_parser_and_orEmptySuffix_orEmptyPresent_suffixAbsent() {
     Parser<String> parser =
-        string("a").orElse("default").between(string("p"), string("s").orNull());
+        string("a").orElse("default").between(string("p"), string("s").orElse(null));
     assertThat(parser.parse("pa")).isEqualTo("a");
     assertThat(parser.matches("pa")).isTrue();
   }
@@ -4209,7 +4209,7 @@ public class ParserTest {
   @Test
   public void orEmpty_between_parser_and_orEmptySuffix_orEmptyAbsent_suffixPresent() {
     Parser<String> parser =
-        string("x").orElse("default").between(string("p"), string("s").orNull());
+        string("x").orElse("default").between(string("p"), string("s").orElse(null));
     assertThat(parser.parse("ps")).isEqualTo("default");
     assertThat(parser.matches("ps")).isTrue();
   }
@@ -4217,21 +4217,21 @@ public class ParserTest {
   @Test
   public void orEmpty_between_parser_and_orEmptySuffix_orEmptyAbsent_suffixAbsent() {
     Parser<String> parser =
-        string("x").orElse("default").between(string("p"), string("s").orNull());
+        string("x").orElse("default").between(string("p"), string("s").orElse(null));
     assertThat(parser.parse("p")).isEqualTo("default");
     assertThat(parser.matches("p")).isTrue();
   }
 
   @Test
   public void parser_between_orEmptyPrefix_and_parserSuffix_prefixPresent() {
-    Parser<String> parser = string("a").between(string("p").orNull(), string("s"));
+    Parser<String> parser = string("a").between(string("p").orElse(null), string("s"));
     assertThat(parser.parse("pas")).isEqualTo("a");
     assertThat(parser.matches("pas")).isTrue();
   }
 
   @Test
   public void parser_between_orEmptyPrefix_and_parserSuffix_prefixAbsent() {
-    Parser<String> parser = string("a").between(string("p").orNull(), string("s"));
+    Parser<String> parser = string("a").between(string("p").orElse(null), string("s"));
     assertThat(parser.parse("as")).isEqualTo("a");
     assertThat(parser.matches("as")).isTrue();
   }
@@ -4239,7 +4239,7 @@ public class ParserTest {
   @Test
   public void orEmpty_between_orEmptyPrefix_and_parserSuffix_orEmptyPresent_prefixPresent() {
     Parser<String> parser =
-        string("a").orElse("default").between(string("p").orNull(), string("s"));
+        string("a").orElse("default").between(string("p").orElse(null), string("s"));
     assertThat(parser.parse("pas")).isEqualTo("a");
     assertThat(parser.matches("pas")).isTrue();
   }
@@ -4247,7 +4247,7 @@ public class ParserTest {
   @Test
   public void orEmpty_between_orEmptyPrefix_and_parserSuffix_orEmptyPresent_prefixAbsent() {
     Parser<String> parser =
-        string("a").orElse("default").between(string("p").orNull(), string("s"));
+        string("a").orElse("default").between(string("p").orElse(null), string("s"));
     assertThat(parser.parse("as")).isEqualTo("a");
     assertThat(parser.matches("as")).isTrue();
   }
@@ -4255,7 +4255,7 @@ public class ParserTest {
   @Test
   public void orEmpty_between_orEmptyPrefix_and_parserSuffix_orEmptyAbsent_prefixPresent() {
     Parser<String> parser =
-        string("x").orElse("default").between(string("p").orNull(), string("s"));
+        string("x").orElse("default").between(string("p").orElse(null), string("s"));
     assertThat(parser.parse("ps")).isEqualTo("default");
     assertThat(parser.matches("ps")).isTrue();
   }
@@ -4263,7 +4263,7 @@ public class ParserTest {
   @Test
   public void orEmpty_between_orEmptyPrefix_and_parserSuffix_orEmptyAbsent_prefixAbsent() {
     Parser<String> parser =
-        string("x").orElse("default").between(string("p").orNull(), string("s"));
+        string("x").orElse("default").between(string("p").orElse(null), string("s"));
     assertThat(parser.parse("s")).isEqualTo("default");
     assertThat(parser.matches("s")).isTrue();
   }
@@ -7604,7 +7604,7 @@ public class ParserTest {
     List<String> joined = new ArrayList<>();
     Parser<String> parser =
         string("[")
-            .then(word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)).orNull())
+            .then(word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)).orElse(null))
             .followedBy(string("]"));
     assertThat(parser.parse("[a,b,c]")).isEqualTo("abc");
     assertThat(joined).containsExactly("abc");
@@ -7616,7 +7616,7 @@ public class ParserTest {
     Parser<?> parser =
         sequence(
             string("["),
-            word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)).orNull(),
+            word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)).orElse(null),
             string("]"));
     assertThat(parser.matches("[a,b,c]")).isTrue();
     assertThat(joined).isEmpty();

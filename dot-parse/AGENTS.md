@@ -76,7 +76,7 @@ code is somewhere in the wild, just not in the stack trace of the `parse()`
 call! It's like saying: "Yeah man, you were dead. It was bad, death was
 bad.", but just won't tell you what killed you.
 
-The `optional()`, `orNull()`, `orElse()` and `zeroOrMore()` are only to be used in safe
+The `optional()`, `orElse()` and `zeroOrMore()` are only to be used in safe
 places like `followedBy()`, `then()`, `between()`, `immediatelyBetween()` etc.
 where the composite parser is guaranteed to consume input.
 
@@ -97,7 +97,7 @@ don't try it! You are forced to complete the fluent chain using methods on
 `OrEmpty` that ensure safety.
 
 -   **Chaining Optional Parsers**: Optional parsers (e.g., from `.optional()`,
-    `.orNull()`, `.orElse()`, `.zeroOrMore()`) return a `Parser.OrEmpty` instance. You can
+    `.orElse()`, `.zeroOrMore()`) return a `Parser.OrEmpty` instance. You can
     chain them using `OrEmpty` methods like `.then()`, `.followedBy()`, and
     `.delimitedBy()`, which continue to return `OrEmpty`.
 -   **Exiting the Unsafe Zone**: To convert an `OrEmpty` chain back into a
