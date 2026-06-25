@@ -21,7 +21,7 @@ For brevity, all unqualified methods are assumed to be static imported from the
 1   | `(foo)+`           | `string("foo").atLeastOnce()`                               | Matches one or more occurrences of "foo".
 2   | `[a-zA-Z0-9_]+`    | `word()`                                                    | Matches a "word" (alphanumeric and underscore).
 3   | `[0-9]{5}`         | `digits().suchThat(s -> s.length() == 5, "zip code")`       | Matches exactly 5 digits.
-4   | `(foo\|bar\|baz)`  | `anyOf("foo", "bar", "baz")`                                | Matches one of the alternatives.
+4   | `(foo|bar|baz)`    | `anyOf("foo", "bar", "baz")`                                | Matches one of the alternatives.
 5   | `'[^']*'`          | `quotedBy("'", "'")`                                        | Matches a single-quoted string, excluding the quotes from the result.
 6   | `u[a-fA-F0-9]{4}`  | `string("u").then(bmpCodeUnit())`                           | Matches 'u' followed by 4 hex digits.
 7   | `\d+(\.\d+)?`      | `digits().optionallyFollowedBy(string(".").then(digits()))` | Matches an integer or a simple float.
