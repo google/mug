@@ -757,7 +757,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @throws NullPointerException if {@code strings} is null or any element is null.
    * @since 10.5
    */
-  @SafeVarargs
   public static Parser<String> anyOf(String s1, String s2, String... more) {
     return Stream.concat(Stream.of(s1, s2), stream(more))
         .distinct()
