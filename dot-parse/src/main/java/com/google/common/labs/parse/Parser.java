@@ -748,6 +748,25 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
+   * Returns a parser that matches {@code s1}, {@code s2}, or any of the {@code more} strings.
+   *
+   * <p>Unlike {@link #anyOf(Parser[])}, the order of the strings isn't important as the parser
+   * will automatically choose the longest match.
+   *
+   * @throws IllegalArgumentException if {@code strings} is empty or any element is empty.
+   * @throws NullPointerException if {@code strings} is null or any element is null.
+   * @since 10.5
+   */
+  @SafeVarargs
+  public static Parser<String> anyOf(String s1, String s2, String... more) {
+    return Stream.concat(Stream.of(s1, s2), stream(more))
+        .distinct()
+        .sorted(reverseOrder())
+        .map(Parser::string)
+        .collect(or());
+  }
+
+  /**
    * Returns a parser that matches any of the given enum {@code values} by their
    * {@link Enum#toString}.
    *
@@ -843,8 +862,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use:
    *
    * <pre>{@code
-   * Parser.anyOf(string("a"), string("b"), string("c"))
-   *     .atLeastOnceDelimitedBy("|")
+   * Parser.anyOf("a", "b", "c").atLeastOnceDelimitedBy("|")
    * }</pre>
    */
   public final Parser<List<T>> atLeastOnceDelimitedBy(String delimiter) {
@@ -867,7 +885,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use:
    *
    * <pre>{@code
-   * Parser.anyOf(string("a"), string("b"), string("c"))
+   * Parser.anyOf("a", "b", "c")
    *     .atLeastOnceDelimitedBy("|", RegexPattern.asAlternation())
    * }</pre>
    */

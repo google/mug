@@ -2753,6 +2753,58 @@ public class ParserTest {
   }
 
   @Test
+  public void anyOf_strings_success() {
+    Parser<String> parser = anyOf("one", "two", "three");
+    assertThat(parser.parse("one")).isEqualTo("one");
+    assertThat(parser.parseToStream("one")).containsExactly("one");
+    assertThat(parser.parse("two")).isEqualTo("two");
+    assertThat(parser.parseToStream("two")).containsExactly("two");
+    assertThat(parser.parse("three")).isEqualTo("three");
+    assertThat(parser.parseToStream("three")).containsExactly("three");
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test
+  public void anyOf_strings_longestMatch() {
+    Parser<String> parser = anyOf("a", "abc", "ab");
+    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThat(parser.parse("ab")).isEqualTo("ab");
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+
+    // Order of arguments should not affect output
+    Parser<String> parser2 = anyOf("abc", "ab", "a");
+    assertThat(parser2.parse("a")).isEqualTo("a");
+    assertThat(parser2.parse("ab")).isEqualTo("ab");
+    assertThat(parser2.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test
+  public void anyOf_strings_noMatch_failure() {
+    Parser<String> parser = anyOf("one", "two", "three");
+    assertThrows(ParseException.class, () -> parser.parse("four"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("four").count());
+
+    // Partial match at start but leftover remaining characters
+    assertThrows(ParseException.class, () -> parser.parse("onea"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("onea").count());
+  }
+
+  @Test
+  public void anyOf_strings_emptyString_throwsIllegalArgumentException() {
+    assertThrows(IllegalArgumentException.class, () -> anyOf("", "two"));
+    assertThrows(IllegalArgumentException.class, () -> anyOf("one", ""));
+    assertThrows(IllegalArgumentException.class, () -> anyOf("one", "two", "three", ""));
+  }
+
+  @Test
+  public void anyOf_strings_nullString_throwsNullPointerException() {
+    assertThrows(NullPointerException.class, () -> anyOf(null, "two"));
+    assertThrows(NullPointerException.class, () -> anyOf("one", null));
+    assertThrows(NullPointerException.class, () -> anyOf("one", "two", "three", null));
+    assertThrows(NullPointerException.class, () -> anyOf("one", "two", (String[]) null));
+  }
+
+  @Test
   public void atLeastOnce_success() {
     Parser<List<String>> parser = string("a").atLeastOnce();
     assertThat(parser.parse("a")).containsExactly("a");

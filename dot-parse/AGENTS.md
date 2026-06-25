@@ -76,7 +76,7 @@ code is somewhere in the wild, just not in the stack trace of the `parse()`
 call! It's like saying: "Yeah man, you were dead. It was bad, death was
 bad.", but just won't tell you what killed you.
 
-The `optional()`, `orElse()` and `zeroOrMore()` are only to be used in safe
+The `optional()`, `orNull()`, `orElse()` and `zeroOrMore()` are only to be used in safe
 places like `followedBy()`, `then()`, `between()`, `immediatelyBetween()` etc.
 where the composite parser is guaranteed to consume input.
 
@@ -97,7 +97,7 @@ don't try it! You are forced to complete the fluent chain using methods on
 `OrEmpty` that ensure safety.
 
 -   **Chaining Optional Parsers**: Optional parsers (e.g., from `.optional()`,
-    `.orElse()`, `.zeroOrMore()`) return a `Parser.OrEmpty` instance. You can
+    `.orNull()`, `.orElse()`, `.zeroOrMore()`) return a `Parser.OrEmpty` instance. You can
     chain them using `OrEmpty` methods like `.then()`, `.followedBy()`, and
     `.delimitedBy()`, which continue to return `OrEmpty`.
 -   **Exiting the Unsafe Zone**: To convert an `OrEmpty` chain back into a
@@ -289,7 +289,7 @@ Parser<TypeDecl> typeDecl =
       ```
 - **Parsing Key-Value Pairs with Optional Trailing Comma**: Use the static
   `zeroOrMoreDelimited()` method to parse pairs into a map, and use
-  `.followedBy(string(",").optional())` to handle the trailing comma.
+  `.optionallyFollowedBy(",")` to handle the trailing comma.
 
   - This is more idiomatic and concise when collecting into a map.
   - **Example**:
@@ -303,7 +303,7 @@ Parser<TypeDecl> typeDecl =
               quotedByWithEscapes('"', '"', chars(1)),
               ",",
               toMap())
-          .followedBy(string(",").optional())
+          .optionallyFollowedBy(",")
           .between("{", "}");
       ```
   - **Line-by-line breakdown**:
@@ -323,7 +323,7 @@ Parser<TypeDecl> typeDecl =
       standard
       JDK collectors as long as their signatures have two function parameters to
       extract the key and the value, such as `Collectors::toUnmodifiableMap`.
-    - `.followedBy(string(",").optional())`: An optional suffix that allows a
+    - `.optinallyFollowedBy(",")`: An optional suffix that allows a
       trailing comma after the last pair. Only if you need to support
       trailing comma.
     - `.between("{", "}")`: Ensures the entire map is enclosed in curly braces.
