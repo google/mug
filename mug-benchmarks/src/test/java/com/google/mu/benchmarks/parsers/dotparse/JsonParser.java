@@ -42,8 +42,8 @@ public final class JsonParser {
       literally(
           sequence(
               anyOf(INTEGER, sequence(one('-'), INTEGER)),
-              sequence(one('.'), digits()).orNull(),
-              sequence(caseInsensitive("e"), one("[+-]").orNull(), digits()).orNull()))
+              sequence(one('.'), digits()).orElse(null),
+              sequence(caseInsensitive("e"), one("[+-]").orElse(null), digits()).orElse(null)))
         .source()
         .map(s -> new JsonNumber(Double.parseDouble(s)));
  

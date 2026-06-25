@@ -169,6 +169,12 @@ public class ParserShowdownBenchmark {
         verifyJson(com.google.mu.benchmarks.parsers.fastparse.FastparseJsonParser.parse(jsonString), "fastparse");
         verifyJson(com.google.mu.benchmarks.parsers.catsparse.CatsParseJsonParser.parse(jsonString), "cats-parse");
         verifyJson(new com.google.mu.benchmarks.parsers.antlr4.Antlr4JsonParser().parse(jsonString), "antlr4");
+        verifyJson(com.google.mu.benchmarks.parsers.javacc.JavaccJsonParser.parse(jsonString), "javacc");
+        verifyJson(com.google.mu.benchmarks.parsers.javacc.JavaccJsonParser.parse(jsonWithCommentsString), "javacc-comments");
+        var unusedTomcat = new com.google.mu.benchmarks.parsers.javacc.TomcatJsonParser(jsonString).parse();
+        var unusedTomcatComments = new com.google.mu.benchmarks.parsers.javacc.TomcatJsonParser(jsonWithCommentsString).parse();
+        var unusedRobertFischer = new com.google.mu.benchmarks.parsers.javacc.RobertFischerJsonParser(jsonString).parse();
+        var unusedRobertFischerComments = new com.google.mu.benchmarks.parsers.javacc.RobertFischerJsonParser(jsonWithCommentsString).parse();
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
@@ -331,6 +337,13 @@ public class ParserShowdownBenchmark {
 
   @Benchmark public void catsParse_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.catsparse.CatsParseJsonParser.parse(s.jsonString)); }
   @Benchmark public void antlr4_jsonPerformance(BenchmarkState s, Antlr4JsonState state, Blackhole bh) { bh.consume(state.parser.parse(s.jsonString)); }
+  @Benchmark public void javacc_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.javacc.JavaccJsonParser.parse(s.jsonString)); }
+  @Benchmark public void tomcatJavacc_jsonPerformance(BenchmarkState s, Blackhole bh) throws Exception {
+    bh.consume(new com.google.mu.benchmarks.parsers.javacc.TomcatJsonParser(s.jsonString).parse());
+  }
+  @Benchmark public void robertFischerJavacc_jsonPerformance(BenchmarkState s, Blackhole bh) throws Exception {
+    bh.consume(new com.google.mu.benchmarks.parsers.javacc.RobertFischerJsonParser(s.jsonString).parse());
+  }
   @Benchmark public void gson_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.gson.JsonParser.parseString(s.jsonString)); }
   @Benchmark public void jackson_jsonPerformance(BenchmarkState s, Blackhole bh) throws Exception { bh.consume(JACKSON_MAPPER.readTree(s.jsonString)); }
 
@@ -355,6 +368,12 @@ public class ParserShowdownBenchmark {
   @Benchmark public void antlr4_jsonWithCommentsPerformance(BenchmarkState s, Antlr4JsonState state, Blackhole bh) {
     bh.consume(state.parser.parse(s.jsonWithCommentsString));
   }
+  @Benchmark public void tomcatJavacc_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) throws Exception {
+    bh.consume(new com.google.mu.benchmarks.parsers.javacc.TomcatJsonParser(s.jsonWithCommentsString).parse());
+  }
+  @Benchmark public void robertFischerJavacc_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) throws Exception {
+    bh.consume(new com.google.mu.benchmarks.parsers.javacc.RobertFischerJsonParser(s.jsonWithCommentsString).parse());
+  }
   @Benchmark public void betterParse_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
     bh.consume(com.google.mu.benchmarks.parsers.betterparse.BetterParseJsonWithCommentsParser.INSTANCE.parse(s.jsonWithCommentsString));
   }
@@ -369,5 +388,8 @@ public class ParserShowdownBenchmark {
   }
   @Benchmark public void jackson_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) throws Exception {
     bh.consume(JACKSON_MAPPER_WITH_COMMENTS.readTree(s.jsonWithCommentsString));
+  }
+  @Benchmark public void javacc_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(com.google.mu.benchmarks.parsers.javacc.JavaccJsonParser.parse(s.jsonWithCommentsString));
   }
 }

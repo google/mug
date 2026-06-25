@@ -72,7 +72,7 @@ public final class JavaTypeParser {
       anyOf(sequence(string("-"), digits()), digits());
 
   private static final Parser<Number> NUMBER_VAL =
-      sequence(INTEGER_PART, string(".").then(digits()).orNull())
+      sequence(INTEGER_PART, sequence(string("."), digits()).orElse(null))
           .source()
           .map(s -> s.contains(".") ? Double.parseDouble(s) : Integer.parseInt(s));
 
@@ -95,8 +95,7 @@ public final class JavaTypeParser {
         Parser<AnnotationValue> numberVal = NUMBER_VAL.map(AnnotationValue.NumberValue::new);
         Parser<AnnotationValue> classLiteralVal = selfType.followedBy(".class").map(AnnotationValue.ClassLiteralValue::new);
         Parser<AnnotationValue> nestedAnnoVal = selfAnno.map(AnnotationValue.AnnotationValueHolder::new);
-        Parser<AnnotationValue> arrayVal = selfVal.atLeastOnceDelimitedBy(",")
-            .orElse(List.<AnnotationValue>of())
+        Parser<AnnotationValue> arrayVal = selfVal.zeroOrMoreDelimitedBy(",")
             .between("{", "}")
             .map(AnnotationValue.ArrayValue::new);
         return anyOf(stringVal, classLiteralVal, numberVal, nestedAnnoVal, arrayVal);
@@ -128,7 +127,7 @@ public final class JavaTypeParser {
 
     Parser<TypeSegment> typeSegment = sequence(
         annosAndName,
-        selfType.atLeastOnceDelimitedBy(",").between("<", ">").orElse(List.of()),
+        selfType.zeroOrMoreDelimitedBy(",").between("<", ">"),
         (entry, args) -> new TypeSegment(entry.getKey(), entry.getValue(), args));
 
     // Prefix and type segments combined using sequence(OrEmpty, Parser, BiFunction)

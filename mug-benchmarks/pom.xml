@@ -260,6 +260,7 @@
                     <source>src/test/scala</source>
                     <source>src/test/kotlin</source>
                     <source>${project.build.directory}/generated-test-sources/antlr4</source>
+                    <source>${project.build.directory}/generated-test-sources/javacc</source>
                   </sources>
                 </configuration>
               </execution>
@@ -281,6 +282,24 @@
                    <visitor>true</visitor>
                    <listener>false</listener>
                  </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>javacc-maven-plugin</artifactId>
+            <version>3.0.1</version>
+            <executions>
+              <execution>
+                <id>javacc</id>
+                <phase>generate-test-sources</phase>
+                <goals>
+                  <goal>javacc</goal>
+                </goals>
+                <configuration>
+                  <sourceDirectory>src/test/javacc</sourceDirectory>
+                  <outputDirectory>${project.build.directory}/generated-test-sources/javacc</outputDirectory>
+                </configuration>
               </execution>
             </executions>
           </plugin>

@@ -1,0 +1,195 @@
+options {
+  STATIC = false;
+  SUPPORT_CLASS_VISIBILITY_PUBLIC = true;
+  JDK_VERSION = "1.8";
+  UNICODE_INPUT = true;
+}
+
+PARSER_BEGIN(JavaccJsonParser)
+
+package com.google.mu.benchmarks.parsers.javacc;
+
+import com.google.mu.benchmarks.parsers.dotparse.JsonValue;
+import com.google.mu.benchmarks.parsers.dotparse.JsonValue.*;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+public final class JavaccJsonParser {
+  public static JsonValue parse(String input) {
+    try {
+      return new JavaccJsonParser(new StringReader(input)).parseJson();
+    } catch (ParseException | TokenMgrError | IllegalArgumentException e) {
+      throw new IllegalArgumentException("JavaCC parsing error", e);
+    }
+  }
+
+  // Strict unescape complying with RFC 8259 Section 7 string constraints
+  public static String strictUnescape(String quoted) {
+    String text = quoted.substring(1, quoted.length() - 1);
+    StringBuilder sb = new StringBuilder(text.length());
+    for (int i = 0; i < text.length(); i++) {
+      char c = text.charAt(i);
+      if (c == '\\') {
+        if (i + 1 >= text.length()) {
+          throw new IllegalArgumentException("Trailing backslash");
+        }
+        char esc = text.charAt(++i);
+        switch (esc) {
+          case '"': sb.append('"'); break;
+          case '\\': sb.append('\\'); break;
+          case '/': sb.append('/'); break;
+          case 'b': sb.append('\b'); break;
+          case 'f': sb.append('\f'); break;
+          case 'n': sb.append('\n'); break;
+          case 'r': sb.append('\r'); break;
+          case 't': sb.append('\t'); break;
+          case 'u':
+            if (i + 4 >= text.length()) {
+              throw new IllegalArgumentException("Invalid unicode escape");
+            }
+            String hex = text.substring(i + 1, i + 5);
+            i += 4;
+            sb.append((char) Integer.parseInt(hex, 16));
+            break;
+          default:
+            throw new IllegalArgumentException("Invalid escape character: \\" + esc);
+        }
+      } else if (c < 0x20) {
+        throw new IllegalArgumentException("Unescaped control character: 0x" + Integer.toHexString(c));
+      } else {
+        sb.append(c);
+      }
+    }
+    return sb.toString();
+  }
+}
+
+PARSER_END(JavaccJsonParser)
+
+/* SKIP WHITESPACE AND COMMENTS */
+SKIP : {
+  " " | "\t" | "\r" | "\n"
+| <"//" (~["\n","\r"])* ("\n"|"\r"|"\r\n")>
+| <"/*" (~["*"])* "*" ("*" | (~["*","/"] (~["*"])* "*"))* "/">
+}
+
+/* TOKENS */
+TOKEN : {
+  < CONST_NULL: "null" >
+| < CONST_TRUE: "true" >
+| < CONST_FALSE: "false" >
+| < NUMBER: ("-")? <INT_PART> (<FRAC_PART>)? (<EXP_PART>)? >
+| < #INT_PART: "0" | ["1"-"9"] (["0"-"9"])* >
+| < #FRAC_PART: "." (["0"-"9"])+ >
+| < #EXP_PART: ["e","E"] (["+","-"])? (["0"-"9"])+ >
+| < STRING: "\"" (<ESCAPED_CHAR> | <NORMAL_CHAR>)* "\"" >
+| < #ESCAPED_CHAR: "\\" ["\"","\\","/","b","f","n","r","t"] | "\\u" ["0"-"9","a"-"f","A"-"F"] ["0"-"9","a"-"f","A"-"F"] ["0"-"9","a"-"f","A"-"F"] ["0"-"9","a"-"f","A"-"F"] >
+| < #NORMAL_CHAR: ~["\"","\\"] >
+}
+
+/* GRAMMAR RULES */
+
+public JsonValue parseJson() :
+{
+  JsonValue value;
+}
+{
+  value = jsonValue() <EOF>
+  {
+    return value;
+  }
+}
+
+private JsonValue jsonValue() :
+{
+  JsonValue value;
+}
+{
+  (
+    value = jsonObject()
+  | value = jsonArray()
+  | value = jsonString()
+  | value = jsonNumber()
+  | <CONST_TRUE> { value = JsonBoolean.TRUE; }
+  | <CONST_FALSE> { value = JsonBoolean.FALSE; }
+  | <CONST_NULL> { value = JsonNull.INSTANCE; }
+  )
+  {
+    return value;
+  }
+}
+
+private JsonObject jsonObject() :
+{
+  Map<String, JsonValue> members = new LinkedHashMap<String, JsonValue>();
+  String key;
+  JsonValue val;
+}
+{
+  "{"
+  [
+    key = jsonKey() ":" val = jsonValue() { members.put(key, val); }
+    (
+      "," key = jsonKey() ":" val = jsonValue() { members.put(key, val); }
+    )*
+  ]
+  "}"
+  {
+    return new JsonObject(members);
+  }
+}
+
+private String jsonKey() :
+{
+  Token t;
+}
+{
+  t = <STRING>
+  {
+    return strictUnescape(t.image);
+  }
+}
+
+private JsonString jsonString() :
+{
+  Token t;
+}
+{
+  t = <STRING>
+  {
+    return new JsonString(strictUnescape(t.image));
+  }
+}
+
+private JsonNumber jsonNumber() :
+{
+  Token t;
+}
+{
+  t = <NUMBER>
+  {
+    return new JsonNumber(Double.parseDouble(t.image));
+  }
+}
+
+private JsonArray jsonArray() :
+{
+  List<JsonValue> elements = new ArrayList<JsonValue>();
+  JsonValue val;
+}
+{
+  "["
+  [
+    val = jsonValue() { elements.add(val); }
+    (
+      "," val = jsonValue() { elements.add(val); }
+    )*
+  ]
+  "]"
+  {
+    return new JsonArray(elements);
+  }
+}
