@@ -1,0 +1,164 @@
+package com.google.mu.benchmarks.parsers.antlr4;
+
+import org.antlr.v4.runtime.*;
+import com.google.mu.benchmarks.parsers.dotparse.JsonValue;
+import com.google.mu.benchmarks.parsers.dotparse.JsonValue.*;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/** Strictly RFC 8259-compliant ANTLR4-based JSON parser. */
+public final class Antlr4JsonParser {
+
+  private final JsonLexer lexer;
+  private final JsonParser parser;
+  private final Visitor visitor;
+
+  public Antlr4JsonParser() {
+    this.lexer = new JsonLexer(CharStreams.fromString(""));
+    this.lexer.removeErrorListeners();
+    this.lexer.addErrorListener(
+        new BaseErrorListener() {
+          @Override
+          public void syntaxError(
+              Recognizer<?, ?> recognizer,
+              Object offendingSymbol,
+              int line,
+              int charPositionInLine,
+              String msg,
+              RecognitionException e) {
+            throw new IllegalArgumentException("Lexing error: " + msg);
+          }
+        });
+
+    this.parser = new JsonParser(new CommonTokenStream(lexer));
+    this.parser.removeErrorListeners();
+    this.parser.addErrorListener(
+        new BaseErrorListener() {
+          @Override
+          public void syntaxError(
+              Recognizer<?, ?> recognizer,
+              Object offendingSymbol,
+              int line,
+              int charPositionInLine,
+              String msg,
+              RecognitionException e) {
+            throw new IllegalArgumentException("Parsing error: " + msg);
+          }
+        });
+    this.visitor = new Visitor();
+  }
+
+  public JsonValue parse(String input) {
+    lexer.setInputStream(CharStreams.fromString(input));
+    CommonTokenStream tokens = new CommonTokenStream(lexer);
+    parser.setTokenStream(tokens);
+
+    JsonParser.EntryContext entry = parser.entry();
+    return visitor.visit(entry.jsonValue());
+  }
+
+  private static class Visitor extends JsonBaseVisitor<JsonValue> {
+    @Override
+    public JsonValue visitJsonValue(JsonParser.JsonValueContext ctx) {
+      return visit(ctx.getChild(0));
+    }
+
+    @Override
+    public JsonValue visitJsonNull(JsonParser.JsonNullContext ctx) {
+      return JsonNull.INSTANCE;
+    }
+
+    @Override
+    public JsonValue visitJsonBoolean(JsonParser.JsonBooleanContext ctx) {
+      return ctx.start.getType() == JsonParser.T__1 ? JsonBoolean.TRUE : JsonBoolean.FALSE;
+    }
+
+    @Override
+    public JsonValue visitJsonNumber(JsonParser.JsonNumberContext ctx) {
+      return new JsonNumber(Double.parseDouble(ctx.start.getText()));
+    }
+
+    @Override
+    public JsonValue visitJsonString(JsonParser.JsonStringContext ctx) {
+      Token t = ctx.start;
+      String inner = t.getInputStream().getText(
+          new org.antlr.v4.runtime.misc.Interval(t.getStartIndex() + 1, t.getStopIndex() - 1)
+      );
+      return new JsonString(strictUnescape(inner));
+    }
+
+    @Override
+    public JsonValue visitJsonArray(JsonParser.JsonArrayContext ctx) {
+      List<JsonParser.JsonValueContext> elements = ctx.jsonValue();
+      List<JsonValue> list = new ArrayList<>(elements.size());
+      for (int i = 0; i < elements.size(); i++) {
+        list.add(visit(elements.get(i)));
+      }
+      return new JsonArray(list);
+    }
+
+    @Override
+    public JsonValue visitJsonObject(JsonParser.JsonObjectContext ctx) {
+      List<JsonParser.MemberContext> members = ctx.member();
+      Map<String, JsonValue> map = new LinkedHashMap<>((int) (members.size() / 0.75f) + 1);
+      for (int i = 0; i < members.size(); i++) {
+        JsonParser.MemberContext m = members.get(i);
+        Token t = m.jsonString().start;
+        String key = t.getInputStream().getText(
+            new org.antlr.v4.runtime.misc.Interval(t.getStartIndex() + 1, t.getStopIndex() - 1)
+        );
+        String unescapedKey = strictUnescape(key);
+        JsonValue value = visit(m.jsonValue());
+        map.put(unescapedKey, value);
+      }
+      return new JsonObject(map);
+    }
+  }
+
+  // Strict unescape complying with RFC 8259 Section 7 string constraints
+  private static String strictUnescape(String text) {
+    if (text.indexOf('\\') == -1) {
+      for (int i = 0; i < text.length(); i++) {
+        if (text.charAt(i) < 0x20) {
+          throw new IllegalArgumentException("Unescaped control character: 0x" + Integer.toHexString(text.charAt(i)));
+        }
+      }
+      return text;
+    }
+    StringBuilder sb = new StringBuilder(text.length());
+    for (int i = 0; i < text.length(); i++) {
+      char c = text.charAt(i);
+      if (c == '\\') {
+        if (i + 1 >= text.length()) {
+          throw new IllegalArgumentException("Trailing backslash");
+        }
+        char esc = text.charAt(++i);
+        switch (esc) {
+          case '"': sb.append('"'); break;
+          case '\\': sb.append('\\'); break;
+          case '/': sb.append('/'); break;
+          case 'b': sb.append('\b'); break;
+          case 'f': sb.append('\f'); break;
+          case 'n': sb.append('\n'); break;
+          case 'r': sb.append('\r'); break;
+          case 't': sb.append('\t'); break;
+          case 'u':
+            if (i + 4 >= text.length()) {
+              throw new IllegalArgumentException("Invalid unicode escape");
+            }
+            String hex = text.substring(i + 1, i + 5);
+            i += 4;
+            sb.append((char) Integer.parseInt(hex, 16));
+            break;
+          default:
+            throw new IllegalArgumentException("Invalid escape character: \\" + esc);
+        }
+      } else if (c < 0x20) {
+        throw new IllegalArgumentException("Unescaped control character: 0x" + Integer.toHexString(c));
+      } else {
+        sb.append(c);
+      }
+    }
+    return sb.toString();
+  }
+}

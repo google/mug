@@ -3,10 +3,10 @@
 Low-boilerplate, idiomatic Java parser combinator, aimed to replace regex and your everyday one-off parsing tasks.
 
 - **Easy to use:** a handful of primitives; write parser intuitively.
-- **Hard to misuse:** compile-time guardrail preventing footguns like infinite loops caused by `many(optional)` or left recursion.
+- **No footguns:** compile-time guardrail preventing footguns like infinite loops caused by `many(optional)` or left recursion.
 - **Idiomatic Java:** modern, first-class Java style API designed for Java users (not a Haskell or Scala port).
-- **Performant:** `anyOf()` optimized by prefix pruning. Faster than regex.
-- **Just works:** No "committing" or "cut" complexities. Your grammar looks right? Then it works right.
+- **Fast:** consistently among the fastest JVM parser combinators ([benchmark](./parser-benchmarks.md)).
+- **Just works:** No "committing" or "cut" complexities. What you see is what you get.
 
 ---
 
@@ -29,12 +29,13 @@ For brevity, all unqualified methods are assumed to be static imported from the
 8   | `\[(\w+(,\w+)*)?\]`| `word().zeroOrMoreDelimitedBy(",").between("[", "]")`       | Comma-delimited list of words inside square brackets.
 9   | `if\b`             | `word("if")`                                                | Matches the whole word "if".
 10  | `\d+(?!\.)`        | `digits().notFollowedBy(".")`                               | Matches digits not immediately followed by a dot.
-11  | `foo?`             | `string("foo").optional()`                                  | Matches "foo" zero or one time.
+11  | `foo?`             | `string("foo").orElse("")`                                  | Matches "foo" zero or one time.
 12  | `\s+`              | `consecutive(Character::isWhitespace)`                      | Matches one or more whitespace characters.
 13  | `[ \t\r\n]*`       | `zeroOrMore(Character::isWhitespace)`                       | Matches zero or more whitespace characters.
 14  | `(group)(?:bar)`   | `groupParser.followedBy(barParser)`                         | Capture a group before a suffix pattern.
 15  | `(?:foo)(group)`   | `fooParser.then(groupParser)`                               | Capture a group after a prefix pattern.
 16  | `(group1)(group2)` | `sequence(parser1, parser2, (g1, g2) -> ...)`               | Capturing groups map to arguments in the `sequence` lambda.
+17  | `\w+:\d+`          | `sequence(word(), one(':'), digits())`                      | Match a pattern
 
 If you were to build a regex fluent builder, the API will likely look very
 similar.
@@ -267,7 +268,7 @@ Parser<Map<String, String>> parser =
     Parser.zeroOrMoreDelimited(
         Parser.word().followedBy(":"), word().or(quoted),
         ",", Collectors::toUnmodifiableMap)
-    .followedBy(Parser.string(",").optional())
+    .optionallyFollowedBy(",")
     .between("{", "}");
 ```
 
@@ -599,12 +600,14 @@ precedence across regular operators and the abstract operators, all in the same 
 
 This saves you from manually composing and maintaining layers on top of layers of sub-rules just to encode precedences.
 
-If you have only one left associative operator with no other operato the same result:
+If you have only one left associative operator with no other operator, consider using `withPostfixes()`:
 
 ```java {.good}
 Parser<Expr> expr = identifier.map(IdentifierRef::new)
     .withPostfixes(string(".").then(identifier), FieldRef::new);
 ```
+
+For more details, check out [left-recursion.md](./left-recursion.md).
 
 ---
 

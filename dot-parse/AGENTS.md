@@ -244,6 +244,13 @@ Parser<TypeDecl> typeDecl =
     -   It automatically handles prefix matching by trying longer strings first
         (e.g., trying "++" before "+").
 
+-   **Prefer** the `anyOf(String, String, ...)` overload when matching a fixed
+    set of string values.
+
+    -   **Example**: `anyOf("http", "https", "ftp", "ssl")`
+    -   It automatically handles prefix matching by trying longer strings first
+        (e.g., trying "https" before "http").
+
 - **Use** `quotedBy(before, after)` and
   `quotedByWithEscapes(before, after, escaped)`
   to parse quoted strings instead of reinventing the wheel.
@@ -289,7 +296,7 @@ Parser<TypeDecl> typeDecl =
       ```
 - **Parsing Key-Value Pairs with Optional Trailing Comma**: Use the static
   `zeroOrMoreDelimited()` method to parse pairs into a map, and use
-  `.followedBy(string(",").optional())` to handle the trailing comma.
+  `.optionallyFollowedBy(",")` to handle the trailing comma.
 
   - This is more idiomatic and concise when collecting into a map.
   - **Example**:
@@ -303,7 +310,7 @@ Parser<TypeDecl> typeDecl =
               quotedByWithEscapes('"', '"', chars(1)),
               ",",
               toMap())
-          .followedBy(string(",").optional())
+          .optionallyFollowedBy(",")
           .between("{", "}");
       ```
   - **Line-by-line breakdown**:
@@ -323,7 +330,7 @@ Parser<TypeDecl> typeDecl =
       standard
       JDK collectors as long as their signatures have two function parameters to
       extract the key and the value, such as `Collectors::toUnmodifiableMap`.
-    - `.followedBy(string(",").optional())`: An optional suffix that allows a
+    - `.optinallyFollowedBy(",")`: An optional suffix that allows a
       trailing comma after the last pair. Only if you need to support
       trailing comma.
     - `.between("{", "}")`: Ensures the entire map is enclosed in curly braces.
@@ -331,6 +338,12 @@ Parser<TypeDecl> typeDecl =
     tokens when calling `parseSkipping(Character::isWhitespace, ...)` or
     `skipping(Character::isWhitespace)`. This is why the grammar above doesn't
     need to explicitly handle whitespace between tokens.
+- **Use** `sequence(Parser, Production...)` with no lambda when you don't need
+  to the constituent parser rules' results but only need to express a pattern
+  similar to regex. Example: `sequence(digits(), dot, digits(), dot, digits())`.
+  - It's more efficient than chaining `then()` or `.followedBy()` methods.
+  - It's more readable too.
+  - If after matching, you need the matched string, attach a `.source()` call.
 - **Use** `then()` with `orElse(defaultValue)` when a parser is followed by an
   optional component that should fall back to a default value if missing.
   - The `then()` method accepts both a standard `Parser` and a `Parser.OrEmpty`

@@ -140,6 +140,17 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
    */
   Production<T> optionallyFollowedBy(String suffix);
 
+
+  /**
+   * Returns an equivalent production except it allows {@code suffix} if present.
+   *
+   * <p>Note that the {@link Parser} and {@link Parser.OrEmpty} implementations are re-declared to
+   * return the more specific {@code Parser<T>} or {@code Parser<T>.OrEmpty} subtypes respectively.
+   *
+   * @since 10.5
+   */
+  Production<T> optionallyFollowedBy(Parser<?> suffix);
+
   /**
    * If this production rule matches, optionally applies the {@code op} function if this production
    * is followed by {@code suffix}.

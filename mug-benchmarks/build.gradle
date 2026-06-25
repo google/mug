@@ -53,5 +53,7 @@ dependencies {
         testImplementation 'com.lihaoyi:fastparse_2.13:3.0.2'
         testImplementation 'org.typelevel:cats-parse_2.13:1.0.0'
         testImplementation 'io.github.parseworks:taker:1.0-SNAPSHOT'
+        testImplementation 'org.scala-lang.modules:scala-parser-combinators_2.13:2.3.0'
+        testImplementation 'org.parboiled:parboiled_2.13:2.5.0'
     }
 }

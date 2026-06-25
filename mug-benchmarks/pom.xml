@@ -13,8 +13,7 @@
   <properties>
     <maven.javadoc.skip>true</maven.javadoc.skip>
     <module.name>benchmarks</module.name>
-    <maven.compiler.source>21</maven.compiler.source>
-    <maven.compiler.target>21</maven.compiler.target>
+    <maven.compiler.release>21</maven.compiler.release>
   </properties>
 
   <build>
@@ -41,7 +40,7 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
           <testExcludes>
-            <exclude>**/ParserShowdownBenchmark.java</exclude>
+            <exclude>**/benchmarks/parsers/**</exclude>
           </testExcludes>
         </configuration>
       </plugin>
@@ -121,6 +120,12 @@
       <id>showdown</id>
       <dependencies>
         <dependency>
+          <groupId>com.github.petitparser</groupId>
+          <artifactId>petitparser-core</artifactId>
+          <version>2.3.1</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
           <groupId>io.github.parseworks</groupId>
           <artifactId>taker</artifactId>
           <version>1.0-SNAPSHOT</version>
@@ -144,17 +149,99 @@
           <version>1.0.0</version>
           <scope>test</scope>
         </dependency>
+        <dependency>
+          <groupId>org.jparsec</groupId>
+          <artifactId>jparsec</artifactId>
+          <version>3.1</version>
+        </dependency>
+        <dependency>
+          <groupId>org.parboiled</groupId>
+          <artifactId>parboiled-java</artifactId>
+          <version>1.4.1</version>
+        </dependency>
+        <dependency>
+          <groupId>org.javafp</groupId>
+          <artifactId>parsecj</artifactId>
+          <version>0.6</version>
+        </dependency>
+        <dependency>
+          <groupId>io.github.bjoernloetters</groupId>
+          <artifactId>jjparse-core</artifactId>
+          <version>1.2.5</version>
+        </dependency>
+        <dependency>
+          <groupId>org.antlr</groupId>
+          <artifactId>antlr4-runtime</artifactId>
+          <version>4.13.1</version>
+        </dependency>
+        <dependency>
+          <groupId>org.scala-lang.modules</groupId>
+          <artifactId>scala-parser-combinators_2.13</artifactId>
+          <version>2.3.0</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.parboiled</groupId>
+          <artifactId>parboiled_2.13</artifactId>
+          <version>2.5.0</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>com.github.h0tk3y.betterParse</groupId>
+          <artifactId>better-parse-jvm</artifactId>
+          <version>0.4.4</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>kotlin-stdlib</artifactId>
+          <version>1.9.22</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+          <version>2.17.1</version>
+          <scope>test</scope>
+        </dependency>
       </dependencies>
       <build>
         <plugins>
+          <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <version>1.9.22</version>
+            <executions>
+              <execution>
+                <id>test-compile</id>
+                <phase>process-test-sources</phase>
+                <goals>
+                  <goal>test-compile</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
           <!-- Re-include the showdown benchmark for compilation -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
-              <testExcludes>
+              <useIncrementalCompilation>false</useIncrementalCompilation>
+              <testExcludes combine.self="override">
                 <exclude>none</exclude>
               </testExcludes>
+              <annotationProcessorPaths>
+                <path>
+                  <groupId>com.google.errorprone</groupId>
+                  <artifactId>error_prone_core</artifactId>
+                  <version>${error_prone.version}</version>
+                </path>
+                <path>
+                  <groupId>org.openjdk.jmh</groupId>
+                  <artifactId>jmh-generator-annprocess</artifactId>
+                  <version>1.37</version>
+                </path>
+              </annotationProcessorPaths>
             </configuration>
           </plugin>
           <plugin>
@@ -171,8 +258,29 @@
                 <configuration>
                   <sources>
                     <source>src/test/scala</source>
+                    <source>src/test/kotlin</source>
+                    <source>${project.build.directory}/generated-test-sources/antlr4</source>
                   </sources>
                 </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-maven-plugin</artifactId>
+            <version>4.13.1</version>
+            <executions>
+              <execution>
+                <id>antlr</id>
+                <goals>
+                  <goal>antlr4</goal>
+                </goals>
+                 <configuration>
+                   <sourceDirectory>src/test/antlr4</sourceDirectory>
+                   <outputDirectory>${project.build.directory}/generated-test-sources/antlr4</outputDirectory>
+                   <visitor>true</visitor>
+                   <listener>false</listener>
+                 </configuration>
               </execution>
             </executions>
           </plugin>
@@ -199,7 +307,43 @@
             </executions>
             <configuration>
               <scalaVersion>2.13.12</scalaVersion>
+              <includes>
+                <include>**/*.scala</include>
+                <include>**/*.java</include>
+              </includes>
+              <excludes>
+                <exclude>**/parsecj/ParsecjJavaTypeParser.java</exclude>
+                <exclude>**/parsecj/ParsecjJavaTypeParserTest.java</exclude>
+                <exclude>**/taker/TakerJavaTypeParser.java</exclude>
+                <exclude>**/taker/TakerJavaTypeParserTest.java</exclude>
+                <exclude>**/javatype/JavaTypeBenchmark.java</exclude>
+              </excludes>
             </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-clean-plugin</artifactId>
+            <version>3.2.0</version>
+            <executions>
+              <execution>
+                <id>clean-jmh-benchmark-class</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>clean</goal>
+                </goals>
+                <configuration>
+                  <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                  <filesets>
+                    <fileset>
+                      <directory>${project.build.directory}/test-classes/com/google/mu/benchmarks/parsers</directory>
+                      <includes>
+                        <include>ParserShowdownBenchmark*.class</include>
+                      </includes>
+                    </fileset>
+                  </filesets>
+                </configuration>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>

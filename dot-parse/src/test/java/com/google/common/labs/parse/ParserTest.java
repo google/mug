@@ -21,6 +21,7 @@ import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.CharPredicate.noneOf;
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
@@ -29,6 +30,7 @@ import static org.junit.Assert.assertThrows;
 
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -457,6 +459,8 @@ public class ParserTest {
     assertThat(singleQuoted.matches("'foo\\'")).isFalse();
   }
 
+
+
   @Test
   public void quotedByWithEscapes_invalidQuoteChar_throws() {
     assertThrows(
@@ -643,6 +647,8 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.parse("(foo \\")); // dangling escape
     assertThat(parser.matches("(foo \\")).isFalse();
   }
+
+
 
   @Test
   public void nestedBy_failures() {
@@ -2744,6 +2750,65 @@ public class ParserTest {
     assertThat(parser.parse("s")).isEqualTo('s');
     assertThrows(ParseException.class, () -> parser.parse("z"));
     assertThrows(ParseException.class, () -> parser.parse("!"));
+  }
+
+  @Test
+  public void anyOf_strings_success() {
+    Parser<String> parser = anyOf("one", "two", "three");
+    assertThat(parser.parse("one")).isEqualTo("one");
+    assertThat(parser.parseToStream("one")).containsExactly("one");
+    assertThat(parser.parse("two")).isEqualTo("two");
+    assertThat(parser.parseToStream("two")).containsExactly("two");
+    assertThat(parser.parse("three")).isEqualTo("three");
+    assertThat(parser.parseToStream("three")).containsExactly("three");
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test
+  public void anyOf_strings_duplicateStrings() {
+    Parser<String> parser = anyOf("one", "one", "two", "one", "two");
+    assertThat(parser.parse("one")).isEqualTo("one");
+    assertThat(parser.parse("two")).isEqualTo("two");
+  }
+
+  @Test
+  public void anyOf_strings_longestMatch() {
+    Parser<String> parser = anyOf("a", "abc", "ab");
+    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThat(parser.parse("ab")).isEqualTo("ab");
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+
+    // Order of arguments should not affect output
+    Parser<String> parser2 = anyOf("abc", "ab", "a");
+    assertThat(parser2.parse("a")).isEqualTo("a");
+    assertThat(parser2.parse("ab")).isEqualTo("ab");
+    assertThat(parser2.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test
+  public void anyOf_strings_noMatch_failure() {
+    Parser<String> parser = anyOf("one", "two", "three");
+    assertThrows(ParseException.class, () -> parser.parse("four"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("four").count());
+
+    // Partial match at start but leftover remaining characters
+    assertThrows(ParseException.class, () -> parser.parse("onea"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("onea").count());
+  }
+
+  @Test
+  public void anyOf_strings_emptyString_throwsIllegalArgumentException() {
+    assertThrows(IllegalArgumentException.class, () -> anyOf("", "two"));
+    assertThrows(IllegalArgumentException.class, () -> anyOf("one", ""));
+    assertThrows(IllegalArgumentException.class, () -> anyOf("one", "two", "three", ""));
+  }
+
+  @Test
+  public void anyOf_strings_nullString_throwsNullPointerException() {
+    assertThrows(NullPointerException.class, () -> anyOf(null, "two"));
+    assertThrows(NullPointerException.class, () -> anyOf("one", null));
+    assertThrows(NullPointerException.class, () -> anyOf("one", "two", "three", null));
+    assertThrows(NullPointerException.class, () -> anyOf("one", "two", (String[]) null));
   }
 
   @Test
@@ -6427,7 +6492,7 @@ public class ParserTest {
               subpath)
           .atLeastOnceDelimitedBy("/")
           .map(ResourceNamePattern::new)
-          .optionallyFollowedBy(revision.map(v -> pattern -> pattern.withRevision(v)));
+          .optionallyFollowedBy(revision, ResourceNamePattern::withRevision);
     }
 
     static ResourceNamePattern parse(String path) {
@@ -6987,5 +7052,583 @@ public class ParserTest {
   private static CharPredicate whitespace() {
     return Character::isWhitespace;
   }
-}
 
+  @Test
+  public void ignoreReturn_then_parser() {
+    Parser<String> parser = string("a").then(string("b")).thenReturn("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+  }
+
+  @Test
+  public void ignoreReturn_then_orEmpty() {
+    Parser<String> parser = string("a").then(string("b").orElse("")).thenReturn("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+  }
+
+  @Test
+  public void ignoreReturn_followedBy_parser() {
+    Parser<String> parser = string("a").followedBy(string("b")).thenReturn("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+  }
+
+  @Test
+  public void ignoreReturn_followedBy_orEmpty() {
+    Parser<String> parser = string("a").followedBy(string("b").orElse("")).thenReturn("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+  }
+
+  @Test
+  public void ignoreReturn_followedByOrEof() {
+    Parser<String> parser = string("a").followedByOrEof(string("b")).thenReturn("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+  }
+
+  @Test
+  public void ignoreReturn_sequence() {
+    Parser<String> parser = sequence(string("a"), string("b"), string("c")).thenReturn("ok");
+    assertThat(parser.parse("abc")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ab"));
+    assertThrows(ParseException.class, () -> parser.parse("abd"));
+  }
+
+  @Test
+  public void ignoreReturn_notFollowedBy() {
+    Parser<String> parser = string("a").notFollowedBy(string("b"), "b").thenReturn("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ab"));
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+  }
+
+  @Test
+  public void ignoreReturn_source() {
+    Parser<String> parser = string("a").source().thenReturn("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("b"));
+  }
+
+  @Test
+  public void ignoreReturn_literally() {
+    Parser<String> parser = literally(string("a")).thenReturn("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("b"));
+  }
+
+  @Test
+  public void ignoreReturn_orEmpty_then_parser() {
+    Parser<String> parser = string("a").zeroOrMore().then(string("b")).thenReturn("ok");
+    assertThat(parser.parse("b")).isEqualTo("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("aab")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parse("aac"));
+  }
+
+  @Test
+  public void ignoreReturn_orEmpty_then_orEmpty() {
+    Parser<String> parser = string("a").zeroOrMore().then(string("b").zeroOrMore()).notEmpty().thenReturn("ok");
+    assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThat(parser.parse("b")).isEqualTo("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("aab")).isEqualTo("ok");
+    assertThat(parser.parse("abb")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+  }
+
+  @Test
+  public void ignoreReturn_orEmpty_followedBy_parser() {
+    Parser<String> parser = string("a").zeroOrMore().followedBy(string("b")).thenReturn("ok");
+    assertThat(parser.parse("b")).isEqualTo("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("aab")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parse("aac"));
+  }
+
+  @Test
+  public void ignoreReturn_orEmpty_followedBy_orEmpty() {
+    Parser<String> parser = string("a").zeroOrMore().followedBy(string("b").zeroOrMore()).notEmpty().thenReturn("ok");
+    assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThat(parser.parse("b")).isEqualTo("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("aab")).isEqualTo("ok");
+    assertThat(parser.parse("abb")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+  }
+
+  @Test
+  public void source_propagatesIgnoreReturn() {
+    Parser<String> parser = string("a").source();
+    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThrows(ParseException.class, () -> parser.parse("b"));
+  }
+
+  @Test
+  public void source_propagatesIgnoreReturn_zeroOrMore() {
+    Parser<String> parser = string("a").zeroOrMore().notEmpty().source();
+    assertThat(parser.parse("aaa")).isEqualTo("aaa");
+    assertThrows(ParseException.class, () -> parser.parse("b"));
+  }
+
+  @Test
+  public void sequence_propagatesIgnoreReturn() {
+    Parser<?> parser = sequence(string("a"), string("b"), string("c"));
+    assertThat(parser.parse("abc")).isEqualTo("a");
+    assertThrows(ParseException.class, () -> parser.parse("ab"));
+    assertThrows(ParseException.class, () -> parser.parse("abd"));
+  }
+
+  @Test
+  public void returnElision_atLeastOnce_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = string("a").atLeastOnce(collectingAndAdd(joining(","), joined));
+    assertThat(parser.parse("aaa")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test
+  public void returnElision_atLeastOnce_withoutElision_skipping() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = string("a").atLeastOnce(collectingAndAdd(joining(","), joined));
+    assertThat(parser.parseSkipping(whitespace(), "  aaa  ")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test
+  public void returnElision_atLeastOnce_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("a").atLeastOnce(collectingAndAdd(joining(","), joined)).thenReturn("ok");
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_atLeastOnce_withElision_skipping() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("a").atLeastOnce(collectingAndAdd(joining(","), joined)).thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "  aaa  ")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_zeroOrMore_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Production<String> parser = string("a").zeroOrMore(collectingAndAdd(joining(","), joined));
+    assertThat(parser.parse("aaa")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test
+  public void returnElision_zeroOrMore_withoutElision_skipping() {
+    List<String> joined = new ArrayList<>();
+    Production<String> parser = string("a").zeroOrMore(collectingAndAdd(joining(","), joined));
+    assertThat(parser.parseSkipping(whitespace(), "  aaa  ")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test
+  public void returnElision_zeroOrMore_withElision() {
+    List<String> joined = new ArrayList<>();
+    Production<String> parser = string("a").zeroOrMore(collectingAndAdd(joining(","), joined));
+    assertThat(parser.matches("aaa")).isTrue();
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_atLeastOnceDelimitedBy_withoutElision() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Parser<String> parser =
+        inner.atLeastOnceDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined));
+
+    assertThat(parser.parse("a,b,c;d,e;f")).isEqualTo("abc;de;f");
+    assertThat(innerJoined).containsExactly("abc", "de", "f").inOrder();
+    assertThat(outerJoined).containsExactly("abc;de;f");
+  }
+
+  @Test
+  public void returnElision_atLeastOnceDelimitedBy_withoutElision_skipping() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Parser<String> parser =
+        inner.atLeastOnceDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined));
+
+    assertThat(parser.parseSkipping(whitespace(), "  a , b , c ; d , e ; f  "))
+        .isEqualTo("abc;de;f");
+    assertThat(innerJoined).containsExactly("abc", "de", "f").inOrder();
+    assertThat(outerJoined).containsExactly("abc;de;f");
+  }
+
+  @Test
+  public void returnElision_atLeastOnceDelimitedBy_withElision() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Parser<String> parser =
+        inner
+            .atLeastOnceDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined))
+            .thenReturn("ok");
+
+    assertThat(parser.parse("a,b,c;d,e;f")).isEqualTo("ok");
+    assertThat(innerJoined).isEmpty();
+    assertThat(outerJoined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_atLeastOnceDelimitedBy_withElision_skipping() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Parser<String> parser =
+        inner
+            .atLeastOnceDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined))
+            .thenReturn("ok");
+
+    assertThat(parser.parseSkipping(whitespace(), "  a , b , c ; d , e ; f  ")).isEqualTo("ok");
+    assertThat(innerJoined).isEmpty();
+    assertThat(outerJoined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_zeroOrMoreDelimitedBy_withoutElision() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Production<String> parser =
+        inner.zeroOrMoreDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined));
+
+    assertThat(parser.parse("a,b,c;d,e;f")).isEqualTo("abc;de;f");
+    assertThat(innerJoined).containsExactly("abc", "de", "f").inOrder();
+    assertThat(outerJoined).containsExactly("abc;de;f");
+  }
+
+  @Test
+  public void returnElision_zeroOrMoreDelimitedBy_withoutElision_skipping() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Production<String> parser =
+        inner.zeroOrMoreDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined));
+
+    assertThat(parser.parseSkipping(whitespace(), "  a , b , c ; d , e ; f  "))
+        .isEqualTo("abc;de;f");
+    assertThat(innerJoined).containsExactly("abc", "de", "f").inOrder();
+    assertThat(outerJoined).containsExactly("abc;de;f");
+  }
+
+  @Test
+  public void returnElision_zeroOrMoreDelimitedBy_withElision() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Production<String> parser =
+        inner.zeroOrMoreDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined));
+
+    assertThat(parser.matches("a,b,c;d,e;f")).isTrue();
+    assertThat(innerJoined).isEmpty();
+    assertThat(outerJoined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_source_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("a").atLeastOnce(collectingAndAdd(joining(","), joined)).source();
+
+    assertThat(parser.parse("aaa")).isEqualTo("aaa");
+    // source() always elides the inner parser internally because the original values are discarded
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_source_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("a").atLeastOnce(collectingAndAdd(joining(","), joined)).source().thenReturn("ok");
+
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_zeroOrMoreDelimitedBy_withElision_skipping() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Parser<String> parser =
+        inner
+            .zeroOrMoreDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined))
+            .then(string("x"))
+            .thenReturn("ok");
+
+    assertThat(parser.parseSkipping(whitespace(), "  a , b , c ; d , e ; f  x  ")).isEqualTo("ok");
+    assertThat(innerJoined).isEmpty();
+    assertThat(outerJoined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_notFollowedBy_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("a").atLeastOnce(collectingAndAdd(joining(","), joined)).notFollowedBy("b");
+
+    assertThat(parser.parse("aaa")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test
+  public void returnElision_notFollowedBy_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("a")
+            .atLeastOnce(collectingAndAdd(joining(","), joined))
+            .notFollowedBy("b")
+            .thenReturn("ok");
+
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_literally_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        literally(string("a").atLeastOnce(collectingAndAdd(joining(","), joined)));
+
+    assertThat(parser.parse("aaa")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test
+  public void returnElision_literally_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        literally(string("a").atLeastOnce(collectingAndAdd(joining(","), joined))).thenReturn("ok");
+
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_skipping_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = string("a").atLeastOnce(collectingAndAdd(joining(","), joined));
+
+    assertThat(parser.skipping(whitespace()).parse("  aaa  ")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test
+  public void returnElision_skipping_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = string("a").atLeastOnce(collectingAndAdd(joining(","), joined));
+
+    assertThat(parser.skipping(whitespace()).matches("  aaa  ")).isTrue();
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_then_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("b")
+            .then(word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)));
+    assertThat(parser.parseSkipping(whitespace(), "b a,b,c")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_then_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("b")
+            .then(word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)))
+            .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "b a,b,c")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_followedBy_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .followedBy(string("b"));
+    assertThat(parser.parseSkipping(whitespace(), "a,b,c b")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_followedBy_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .followedBy(string("b"))
+            .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "a,b,c b")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_between_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .between("[", "]");
+    assertThat(parser.parse("[a,b,c]")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_between_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .between("[", "]")
+            .thenReturn("ok");
+    assertThat(parser.parse("[a,b,c]")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_immediatelyBetween_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .immediatelyBetween("[", "]");
+    assertThat(parser.parse("[a,b,c]")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_immediatelyBetween_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .immediatelyBetween("[", "]")
+            .thenReturn("ok");
+    assertThat(parser.parse("[a,b,c]")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_regularSequence_isNotElided() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        sequence(
+            word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)),
+            string("b"),
+            (a, b) -> a) // custom lambda not elidable
+        .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "a,b,c b")).isEqualTo("ok");
+    assertThat(joined).containsExactly("abc"); // Must NOT be elided!
+  }
+
+  @Test
+  public void returnElision_optionallyFollowedByString_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .optionallyFollowedBy("b");
+    assertThat(parser.parse("a,b,c")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_optionallyFollowedByString_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .optionallyFollowedBy("b")
+            .thenReturn("ok");
+    assertThat(parser.parse("a,b,c")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_optionallyFollowedByWithFunction_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .optionallyFollowedBy("b", s -> s + "x");
+    assertThat(parser.parseSkipping(whitespace(), "a,b,c b")).isEqualTo("abcx");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_optionallyFollowedByWithFunction_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word()
+            .atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+            .optionallyFollowedBy("b", s -> s + "x")
+            .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "a,b,c b")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_orNull_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("[")
+            .then(word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)).orElse(null))
+            .followedBy(string("]"));
+    assertThat(parser.parse("[a,b,c]")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_orNull_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<?> parser =
+        sequence(
+            string("["),
+            word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)).orElse(null),
+            string("]"));
+    assertThat(parser.matches("[a,b,c]")).isTrue();
+    assertThat(joined).isEmpty();
+  }
+
+  private static <T, A, R> Collector<T, A, R> collectingAndAdd(
+      Collector<T, A, R> collector, List<? super R> results) {
+    return collectingAndThen(
+        collector,
+        r -> {
+          results.add(r);
+          return r;
+        });
+  }
+}

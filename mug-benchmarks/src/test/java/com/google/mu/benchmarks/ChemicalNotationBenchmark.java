@@ -1,6 +1,5 @@
 package com.google.mu.benchmarks;
 
-import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.one;
@@ -42,8 +41,8 @@ public class ChemicalNotationBenchmark {
   private static final Parser<Integer> COUNT = digits().map(Integer::parseInt);
 
   private static final Parser<Element> ELEMENT =
-      one(charsIn("[A-Z]"))
-          .followedBy(one(charsIn("[a-z]")).optional())
+      one("[A-Z]")
+          .followedBy(one("[a-z]").orElse(null))
           .source()
           .map(Element::of)
           .optionallyFollowedBy(COUNT, Element::withCount);

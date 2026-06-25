@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -1352,7 +1353,7 @@ abstract class AbstractStringFormat {
       int cardinality, String input, Collector<? super String, ?, R> collector) {
     requireNonNull(input);
     checkPlaceholderCount(cardinality);
-    return parseAsList(input).map(values -> values.stream().map(Substring.Match::toString).collect(collector));
+    return parseAsList(input).map(values -> collect(values, collector));
   }
 
   /**
@@ -1372,7 +1373,7 @@ abstract class AbstractStringFormat {
                     new IllegalArgumentException(
                         new StringFormat("input '{input}' doesn't match format string '{format}'")
                             .format(input, format)));
-    R result = values.stream().map(Substring.Match::toString).collect(collector);
+    R result = collect(values, collector);
     if (result == null) {
       throw new NullPointerException(
           String.format(
@@ -1438,9 +1439,7 @@ abstract class AbstractStringFormat {
       int cardinality, String input, Collector<? super String, ?, R> collector) {
     requireNonNull(input);
     checkPlaceholderCount(cardinality);
-    return scanAsLists(input)
-        .map(values -> values.stream().map(Substring.Match::toString).collect(collector))
-        .filter(v -> v != null);
+    return scanAsLists(input).map(values -> collect(values, collector)).filter(v -> v != null);
   }
 
   private int numPlaceholders() {
@@ -1457,11 +1456,8 @@ abstract class AbstractStringFormat {
 
   private void checkPlaceholderCount(int expected) {
     if (numCapturingPlaceholders != expected) {
-      throw new IllegalArgumentException(
-          String.format(
-              "format string has %s placeholders; %s expected.",
-              numCapturingPlaceholders,
-              expected));
+      throw new IllegalArgumentException(String.format(
+          "format string has %s placeholders; %s expected.", numCapturingPlaceholders, expected));
     }
   }
 
@@ -1471,19 +1467,21 @@ abstract class AbstractStringFormat {
 
   private void checkFormatArgs(int argsCount) {
     if (argsCount != numPlaceholders()) {
-      throw new IllegalArgumentException(
-          String.format(
-              "format string expects %s placeholders, %s provided",
-              numPlaceholders(),
-              argsCount));
+      throw new IllegalArgumentException(String.format(
+          "format string expects %s placeholders, %s provided", numPlaceholders(), argsCount));
     }
   }
 
+  private static <A, R> R collect(
+      List<? extends CharSequence> matches, Collector<? super String, A, R> collector) {
+    A container = collector.supplier().get();
+    BiConsumer<A, ? super String> accumulator = collector.accumulator();
+    matches.forEach(match -> accumulator.accept(container, match.toString()));
+    return collector.finisher().apply(container);
+  }
+
   static String reverse(String s) {
-    if (s.length() <= 1) {
-      return s;
-    }
-    return new StringBuilder(s).reverse().toString();
+    return s.length() <= 1 ? s : new StringBuilder(s).reverse().toString();
   }
 
   static <T> List<T> reverse(List<T> list) {

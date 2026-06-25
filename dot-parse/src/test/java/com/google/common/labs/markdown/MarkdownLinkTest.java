@@ -22,6 +22,12 @@ public class MarkdownLinkTest {
   }
 
   @Test
+  public void testLinkLabelWithNewlinesAndTabs(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("[text\nwith\ttabs](url)"))
+        .containsExactly(new MarkdownLink("text\nwith\ttabs", "url"));
+  }
+
+  @Test
   public void testBackticksInsideCode(@TestParameter Scanner scanner) {
     assertThat(scanner.scan("`` `foo` `` [text](url)"))
         .containsExactly(new MarkdownLink("text", "url"));

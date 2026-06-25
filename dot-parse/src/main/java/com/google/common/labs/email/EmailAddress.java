@@ -49,6 +49,7 @@ import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.FormatString;
 import com.google.errorprone.annotations.Immutable;
 import com.google.errorprone.annotations.InlineMe;
+import com.google.errorprone.annotations.concurrent.LazyInit;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
@@ -256,6 +257,9 @@ public final class EmailAddress {
   private final String domain;
   private final Optional<String> displayName;
 
+  @LazyInit private String unicodeDomain;
+  @LazyInit private Optional<String> unicodeDisplayName;
+
   private EmailAddress(String localPart, String domain, Optional<String> displayName) {
     checkArgument(
         localPart.length() + domain.length() + 1 <= 254,
@@ -288,7 +292,11 @@ public final class EmailAddress {
    * @since 10.3.1
    */
   public Optional<String> unicodeDisplayName() {
-    return displayName.map(EncodedWord::decodeRfc2047);
+    Optional<String> result = unicodeDisplayName;
+    if (result == null) {
+      unicodeDisplayName = result = displayName.map(EncodedWord::decodeRfc2047);
+    }
+    return result;
   }
 
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
@@ -369,7 +377,11 @@ public final class EmailAddress {
    * @since 10.3
    */
   public String unicodeDomain() {
-    return IDN.toUnicode(domain, IDN.ALLOW_UNASSIGNED);
+    String result = unicodeDomain;
+    if (result == null) {
+      unicodeDomain = result = IDN.toUnicode(domain, IDN.ALLOW_UNASSIGNED);
+    }
+    return result;
   }
 
   /**
