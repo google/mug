@@ -31,10 +31,10 @@ For brevity, all unqualified methods are assumed to be static imported from the
 11  | `foo?`             | `string("foo").orElse("")`                                  | Matches "foo" zero or one time.
 12  | `\s+`              | `consecutive(Character::isWhitespace)`                      | Matches one or more whitespace characters.
 13  | `[ \t\r\n]*`       | `zeroOrMore(Character::isWhitespace)`                       | Matches zero or more whitespace characters.
-14  | `(group)(?:bar)`   | `groupParser.followedBy(barParser)`                         | Capture a group before a suffix pattern.
-15  | `(?:foo)(group)`   | `fooParser.then(groupParser)`                               | Capture a group after a prefix pattern.
-16  | `(group1)(group2)` | `sequence(parser1, parser2, (g1, g2) -> ...)`               | Capturing groups map to arguments in the `sequence` lambda.
-17  | `\w+:\d+`          | `sequence(word(), one(':'), digits())`                      | Match a pattern
+14  | `(group)(?:bar)`   | `groupParser.followedBy(barParser)`                         | Captures a group before a suffix pattern.
+15  | `(?:foo)(group)`   | `fooParser.then(groupParser)`                               | Captures a group after a prefix pattern.
+16  | `(group1)(group2)` | `sequence(parser1, parser2, (g1, g2) -> ...)`               | Captures groups mapped to arguments in the `sequence` lambda.
+17  | `\w+:\d+`          | `sequence(word(), one(':'), digits())`                      | Matches a pattern
 
 If you were to build a regex fluent builder, the API will likely look very
 similar.

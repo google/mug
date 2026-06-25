@@ -260,6 +260,7 @@
           <version>3.4.2</version>
           <configuration>
             <archive>
+              <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
               <manifest>
                 <addBuildEnvironmentEntries>false</addBuildEnvironmentEntries>
               </manifest>
@@ -282,6 +283,26 @@
               </configuration>
             </execution>
           </executions>
+        </plugin>
+        <plugin>
+          <groupId>biz.aQute.bnd</groupId>
+          <artifactId>bnd-maven-plugin</artifactId>
+          <version>6.4.0</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>bnd-process</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <bnd><![CDATA[
+              Bundle-SymbolicName: ${project.groupId}.${project.artifactId}
+              -exportcontents: !*.impl.*, !*.internal.*, *
+              -noextraheaders: true
+              -snapshot: DAILY
+            ]]></bnd>
+          </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-deploy-plugin</artifactId>
@@ -385,6 +406,10 @@
 	    <groupId>org.jacoco</groupId>
 	    <artifactId>jacoco-maven-plugin</artifactId>
 	  </plugin>
+      <plugin>
+        <groupId>biz.aQute.bnd</groupId>
+        <artifactId>bnd-maven-plugin</artifactId>
+      </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
