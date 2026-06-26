@@ -13,7 +13,7 @@ import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
-import static com.google.mu.util.CharPredicate.anyOf;
+import com.google.mu.util.CharPredicate;
 
 import java.util.stream.Collectors;
 import com.google.common.labs.parse.Parser;
@@ -21,7 +21,7 @@ import com.google.mu.benchmarks.parsers.dotparse.JsonValue.*;
 
 /** Fully RFC 8259-compliant JSON parser built with dot-parse. */
 public final class JsonParser {
-  private static final CharPredicate WHITESPACES = anyOf(" \t\r\n");
+  private static final CharPredicate WHITESPACES = CharPredicate.anyOf(" \t\r\n");
   public static final Parser<?> WHITESPACES_OR_COMMENTS = anyOf(
       consecutive("[ \t\r\n]").thenReturn(""),
       sequence(string("//"), zeroOrMore("[^\n]")),
@@ -79,7 +79,7 @@ public final class JsonParser {
    * @throws Parser.ParseException if the input is not a valid JSON document.
    */
   public static JsonValue parse(String input) {
-    return PARSER.parseSkipping(WHITESPACES, input);
+    return PARSER.parseSkipping(CharPredicate.anyOf(" \t\r\n"), input);
   }
 
   /**
