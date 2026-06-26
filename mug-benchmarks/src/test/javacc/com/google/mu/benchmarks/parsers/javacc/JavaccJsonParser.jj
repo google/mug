@@ -29,6 +29,9 @@ public final class JavaccJsonParser {
   // Strict unescape complying with RFC 8259 Section 7 string constraints
   public static String strictUnescape(String quoted) {
     String text = quoted.substring(1, quoted.length() - 1);
+    if (text.indexOf('\\') == -1) {
+      return text;
+    }
     StringBuilder sb = new StringBuilder(text.length());
     for (int i = 0; i < text.length(); i++) {
       char c = text.charAt(i);
@@ -87,7 +90,7 @@ TOKEN : {
 | < #EXP_PART: ["e","E"] (["+","-"])? (["0"-"9"])+ >
 | < STRING: "\"" (<ESCAPED_CHAR> | <NORMAL_CHAR>)* "\"" >
 | < #ESCAPED_CHAR: "\\" ["\"","\\","/","b","f","n","r","t"] | "\\u" ["0"-"9","a"-"f","A"-"F"] ["0"-"9","a"-"f","A"-"F"] ["0"-"9","a"-"f","A"-"F"] ["0"-"9","a"-"f","A"-"F"] >
-| < #NORMAL_CHAR: ~["\"","\\"] >
+| < #NORMAL_CHAR: ~["\"","\\","\u0000"-"\u001F"] >
 }
 
 /* GRAMMAR RULES */
@@ -171,7 +174,12 @@ private JsonNumber jsonNumber() :
 {
   t = <NUMBER>
   {
-    return new JsonNumber(Double.parseDouble(t.image));
+    String text = t.image;
+    if (text.contains(".") || text.contains("e") || text.contains("E")) {
+      return new JsonNumber(Double.parseDouble(text));
+    } else {
+      return new JsonNumber(Long.parseLong(text));
+    }
   }
 }
 

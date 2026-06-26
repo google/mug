@@ -46,8 +46,10 @@ public final class TakerJsonParser {
     return tok(Lexical.string(s), ws);
   }
 
-  // Lenient RFC 8259 number parsing using Taker's native high-speed primitive field
-  private static final Taker<JsonNumber> JSON_NUMBER = Numeric.doubleValue.map(JsonNumber::new);
+  // Strictly RFC 8259-compliant JSON number parsing
+  private static final Taker<JsonNumber> JSON_NUMBER = Lexical.regex("-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?")
+      .map(Double::parseDouble)
+      .map(JsonNumber::new);
 
   // Matches double-quoted string and unescapes strictly with exactly 1 allocation via Java's native Regex engine
   private static final Taker<String> STRING_LITERAL = Lexical.regex("\"([^\"\\\\]|\\\\.)*\"")

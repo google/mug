@@ -72,7 +72,7 @@ public final class JavaTypeParser {
       anyOf(sequence(string("-"), digits()), digits());
 
   private static final Parser<Number> NUMBER_VAL =
-      sequence(INTEGER_PART, sequence(string("."), digits()).orElse(""))
+      sequence(INTEGER_PART, string(".").then(digits()).orElse(""))
           .source()
           .map(s -> s.contains(".") ? Double.parseDouble(s) : Integer.parseInt(s));
 

@@ -42,8 +42,8 @@ public final class JsonParser {
       literally(
           sequence(
               anyOf(INTEGER, sequence(one('-'), INTEGER)),
-              sequence(one('.'), digits()).orElse(""),
-              sequence(caseInsensitive("e"), one("[+-]").orElse(""), digits()).orElse("")))
+              sequence(one('.'), digits()).orElse(null),
+              sequence(caseInsensitive("e"), one("[+-]").orElse(null), digits()).orElse(null)))
         .source()
         .map(s -> new JsonNumber(Double.parseDouble(s)));
  
@@ -76,7 +76,7 @@ public final class JsonParser {
   }
 
   public static final Parser<?> WHITESPACES_OR_COMMENTS = anyOf(
-      consecutive("[ \t\r\n]"),
+      consecutive("[ \t\r\n]").thenReturn(""),
       sequence(string("//"), zeroOrMore("[^\n]")),
       sequence(string("/*"), first("*/")));
 

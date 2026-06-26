@@ -10,9 +10,12 @@ class CatsParseJsonGrammar(skip: P0[Unit]) {
   private def token[A](p: P[A]): P[A] = p <* skip
   private def tokenStr(s: String): P[String] = token(P.string(s).as(s))
 
-  // Strict RFC 8259 number parsing using official cats-parse library primitive
   private val jsonNumber: P[JsonNumber] = token(Numbers.jsonNumber).map { s =>
-    new JsonNumber(s.toDouble)
+    if (s.contains(".") || s.contains("e") || s.contains("E")) {
+      new JsonNumber(s.toDouble)
+    } else {
+      new JsonNumber(s.toLong.toDouble)
+    }
   }
 
   // Double-quoted string parsing and unescaping using official cats-parse library primitive

@@ -49,11 +49,17 @@ public final class ParsecjJsonParser {
   // Strict RFC 8259 number regex (no leading zeros, no trailing decimals, no prefix plus)
   private static final Parser<Character, JsonNumber> JSON_NUMBER =
       regex("-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?")
-          .map(s -> new JsonNumber(Double.parseDouble(s)));
+          .map(s -> {
+            if (s.contains(".") || s.contains("e") || s.contains("E")) {
+              return new JsonNumber(Double.parseDouble(s));
+            } else {
+              return new JsonNumber(Long.parseLong(s));
+            }
+          });
 
   // Matches a quoted string, capturing only the inner body to avoid double allocation
   private static final Parser<Character, JsonString> JSON_STRING =
-      between(chr('"'), chr('"'), regex("([^\"\\\\]|\\\\.)*"))
+      between(chr('"'), chr('"'), regex("([^\"\\\\\u0000-\u001F]|\\\\.)*"))
           .map(s -> new JsonString(strictUnescape(s)));
 
   private static final Parser<Character, JsonValue> PARSER = buildParser(STANDARD_WS);
@@ -146,11 +152,6 @@ public final class ParsecjJsonParser {
   // Strict unescape complying with RFC 8259 Section 7 string constraints
   private static String strictUnescape(String text) {
     if (text.indexOf('\\') == -1) {
-      for (int i = 0; i < text.length(); i++) {
-        if (text.charAt(i) < 0x20) {
-          throw new IllegalArgumentException("Unescaped control character: 0x" + Integer.toHexString(text.charAt(i)));
-        }
-      }
       return text;
     }
     StringBuilder sb = new StringBuilder(text.length());

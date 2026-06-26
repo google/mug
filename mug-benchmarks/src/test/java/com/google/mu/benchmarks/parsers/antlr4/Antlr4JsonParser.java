@@ -75,7 +75,12 @@ public final class Antlr4JsonParser {
 
     @Override
     public JsonValue visitJsonNumber(JsonParser.JsonNumberContext ctx) {
-      return new JsonNumber(Double.parseDouble(ctx.start.getText()));
+      String text = ctx.start.getText();
+      if (text.contains(".") || text.contains("e") || text.contains("E")) {
+        return new JsonNumber(Double.parseDouble(text));
+      } else {
+        return new JsonNumber(Long.parseLong(text));
+      }
     }
 
     @Override
@@ -118,11 +123,6 @@ public final class Antlr4JsonParser {
   // Strict unescape complying with RFC 8259 Section 7 string constraints
   private static String strictUnescape(String text) {
     if (text.indexOf('\\') == -1) {
-      for (int i = 0; i < text.length(); i++) {
-        if (text.charAt(i) < 0x20) {
-          throw new IllegalArgumentException("Unescaped control character: 0x" + Integer.toHexString(text.charAt(i)));
-        }
-      }
       return text;
     }
     StringBuilder sb = new StringBuilder(text.length());

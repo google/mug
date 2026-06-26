@@ -61,7 +61,12 @@ public final class JparsecJsonParser {
     if (token.value() instanceof Tokens.Fragment) {
       Tokens.Fragment f = (Tokens.Fragment) token.value();
       if ("number".equals(f.tag())) {
-        return new JsonNumber(Double.parseDouble(f.text()));
+        String text = f.text();
+        if (text.contains(".") || text.contains("e") || text.contains("E")) {
+          return new JsonNumber(Double.parseDouble(text));
+        } else {
+          return new JsonNumber(Long.parseLong(text));
+        }
       }
     }
     return null;

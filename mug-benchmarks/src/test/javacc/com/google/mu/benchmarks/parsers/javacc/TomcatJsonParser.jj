@@ -86,6 +86,46 @@ public class TomcatJsonParser {
         return str.substring(0, pos);
     }
 
+    // Strict unescape complying with RFC 8259 Section 7 string constraints
+    public static String strictUnescape(String quoted) {
+        String text = quoted.substring(1, quoted.length() - 1);
+        StringBuilder sb = new StringBuilder(text.length());
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '\\') {
+                if (i + 1 >= text.length()) {
+                    throw new IllegalArgumentException("Trailing backslash");
+                }
+                char esc = text.charAt(++i);
+                switch (esc) {
+                    case '"': sb.append('"'); break;
+                    case '\\': sb.append('\\'); break;
+                    case '/': sb.append('/'); break;
+                    case 'b': sb.append('\b'); break;
+                    case 'f': sb.append('\f'); break;
+                    case 'n': sb.append('\n'); break;
+                    case 'r': sb.append('\r'); break;
+                    case 't': sb.append('\t'); break;
+                    case 'u':
+                        if (i + 4 >= text.length()) {
+                            throw new IllegalArgumentException("Invalid unicode escape");
+                        }
+                        String hex = text.substring(i + 1, i + 5);
+                        i += 4;
+                        sb.append((char) Integer.parseInt(hex, 16));
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Invalid escape character: \\" + esc);
+                }
+            } else if (c < 0x20) {
+                throw new IllegalArgumentException("Unescaped control character: 0x" + Integer.toHexString(c));
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
     public void setNativeNumbers(boolean value) {
         this.nativeNumbers = value;
     }
@@ -101,7 +141,7 @@ PARSER_END(TomcatJsonParser)
 // Ignore comments
 SKIP: {
     <C_SINGLE_COMMENT: "//" (~["\n","\r","\f"])* <EOL>>
-| <C_MULTILINE_COMMENT: "/*" (~[])* "*/">
+| <C_MULTILINE_COMMENT: "/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
 | <SH_SINGLE_COMMENT: "#" (~["\n","\r","\f"])* <EOL>>
 | <WHITESPACE: " " | "\t">
 | <EOL: "\n" | "\r" | "\f">
@@ -164,11 +204,13 @@ TOKEN:{
 | <STRING_DOUBLE_EMPTY: "\"\"">
 | <#STRING_SINGLE_BODY: (
         (~["'","\\","\r","\n","\f","\t"]) |
-        ( "\\" ( "r" | "n" | "f" | "\\" | "/" | "'" | "b" | "t" ) )
+        ( "\\" ( "r" | "n" | "f" | "\\" | "/" | "'" | "b" | "t" ) ) |
+        ( "\\u" ["0"-"9","a"-"f","A"-"F"] ["0"-"9","a"-"f","A"-"F"] ["0"-"9","a"-"f","A"-"F"] ["0"-"9","a"-"f","A"-"F"] )
     )+>
 | <#STRING_DOUBLE_BODY: (
         (~["\"","\\","\r","\n","\f","\t"]) |
-        ( "\\" ( "r" | "n" | "f" | "\\" | "/" | "\"" | "b" | "t" ) )
+        ( "\\" ( "r" | "n" | "f" | "\\" | "/" | "\"" | "b" | "t" ) ) |
+        ( "\\u" ["0"-"9","a"-"f","A"-"F"] ["0"-"9","a"-"f","A"-"F"] ["0"-"9","a"-"f","A"-"F"] ["0"-"9","a"-"f","A"-"F"] )
     )+>
 | <STRING_SINGLE_NONEMPTY: <QUOTE_SINGLE> <STRING_SINGLE_BODY> <QUOTE_SINGLE>>
 | <STRING_DOUBLE_NONEMPTY: <QUOTE_DOUBLE> <STRING_DOUBLE_BODY> <QUOTE_DOUBLE>>
@@ -334,8 +376,7 @@ String doubleQuoteString() : {
     ) | (
         <STRING_DOUBLE_NONEMPTY>
         {
-            String image = token.image;
-            return image.substring(1, image.length() - 1);
+            return strictUnescape(token.image);
         }
     )
 }
@@ -348,8 +389,7 @@ String singleQuoteString() : {
     ) | (
         <STRING_SINGLE_NONEMPTY>
         {
-            String image = token.image;
-            return image.substring(1, image.length() - 1);
+            return strictUnescape(token.image);
         }
     )
 }

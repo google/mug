@@ -11,11 +11,29 @@ map_count = 0
 list_count = 0
 target_containers = 100
 
-def random_string(min_len=20, max_len=128):
+def random_plain_string(min_len=20, max_len=128):
     length = random.randint(min_len, max_len)
-    # Generate a string with letters, numbers, spaces, and some escaped quotes
     chars = string.ascii_letters + string.digits + "    "
     body = "".join(random.choice(chars) for _ in range(length - 4))
+    return f"str_{body}_end"
+
+def random_string(min_len=20, max_len=128):
+    length = random.randint(min_len, max_len)
+    chars = string.ascii_letters + string.digits + "    "
+    body_list = [random.choice(chars) for _ in range(length - 4)]
+    
+    # Decide if we want to inject escapes
+    r = random.random()
+    if r < 0.005:  # 0.5% unicode escape (non-ASCII char)
+        non_ascii_char = chr(random.choice([0x263a, 0x2705, 0x00A0, 0x00B0, 0x00C9]))
+        idx = random.randint(0, len(body_list) - 1)
+        body_list[idx] = non_ascii_char
+    elif r < 0.045:  # 4.0% standard escapes (0.005 to 0.045)
+        escape_char = random.choice(['\n', '\t', '\r', '\b', '\f', '"', '\\'])
+        idx = random.randint(0, len(body_list) - 1)
+        body_list[idx] = escape_char
+
+    body = "".join(body_list)
     return f"str_{body}_end"
 
 def random_number():
@@ -57,7 +75,7 @@ def generate_map(depth):
     
     obj = {}
     for i in range(12):
-        key = f"key_{i}_{random_string(10, 20)}"
+        key = f"key_{i}_{random_plain_string(10, 20)}"
         
         # Decide whether to nest a container
         total_containers = map_count + list_count

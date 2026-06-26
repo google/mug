@@ -44,27 +44,7 @@ public final class RobertFischerJsonParserTest extends AbstractJsonParserTest {
     throw new IllegalArgumentException("Unknown type: " + parsed.getClass());
   }
 
-  @Override
-  @Test
-  public void parseStrings() throws Exception {
-    // Robert Fischer's parser does not unescape, so it returns the raw escaped quotes
-    assertThat(parse("\"hello \\\"world\\\"\"")).isEqualTo(new JsonString("hello \\\"world\\\""));
-  }
 
-  @Override
-  @Test
-  public void parseStringWithAllEscapes() throws Exception {
-    // Robert Fischer's parser does not unescape backslash escapes
-    String json = "\"\\\" \\\\ \\/ \\b \\f \\n \\r \\t \\" + "u0041\"";
-    assertThat(parse(json)).isEqualTo(new JsonString("\\\" \\\\ \\/ \\b \\f \\n \\r \\t A"));
-  }
-
-  @Override
-  @Test
-  public void parseStringWithValidEscapedBackslash_success() throws Exception {
-    // Does not unescape double backslashes
-    assertThat(parse("\"hello\\\\\"")).isEqualTo(new JsonString("hello\\\\"));
-  }
 
   @Override
   @Test
