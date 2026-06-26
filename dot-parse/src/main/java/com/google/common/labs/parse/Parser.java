@@ -1463,9 +1463,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *     .optional()
    *     .between("{", "}")
    * }</pre>
-   *
-   * <p>Note that if you only need to match the pattern without using the return value,
-   * prefer using the more efficient {@code .orElse(null)} instead.
    */
   public final Parser<Optional<T>>.OrEmpty optional() {
     return elidableMap(Optional::ofNullable).new OrEmpty(Optional::empty);
