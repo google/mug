@@ -33,6 +33,8 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -7622,6 +7624,79 @@ public class ParserTest {
     assertThat(joined).isEmpty();
   }
 
+  @Test
+  public void returnElision_optional_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<Optional<String>>.OrEmpty parser =
+        word().atLeastOnce(collectingAndAdd(joining(), joined)).optional();
+    assertThat(parser.parse("abc")).isEqualTo(Optional.of("abc"));
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_optional_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<?> parser =
+        sequence(
+            string("["),
+            word().atLeastOnce(collectingAndAdd(joining(), joined)).optional(),
+            string("]"));
+    assertThat(parser.matches("[abc]")).isTrue();
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_bmpCodeUnit_matches() {
+    assertThat(bmpCodeUnit().parse("123F")).isEqualTo(0x123F);
+    assertThat(bmpCodeUnit().matches("123F")).isTrue();
+  }
+
+  @Test
+  public void returnElision_bmpCodeUnit_doesNotMatch() {
+    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123g"));
+    assertThat(bmpCodeUnit().matches("123g")).isFalse();
+    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123"));
+    assertThat(bmpCodeUnit().matches("123")).isFalse();
+  }
+
+  @Test
+  public void returnElision_atLeastOnceReducer_withoutElision() {
+    AtomicInteger count = new AtomicInteger();
+    Parser<String> parser = word().atLeastOnce(counted((x, y) -> x + y, count));
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+    assertThat(count.get()).isEqualTo(0);
+
+    Parser<String> aParser = string("a").atLeastOnce(counted((x, y) -> x + y, count));
+    assertThat(aParser.parse("aaa")).isEqualTo("aaa");
+    assertThat(count.get()).isEqualTo(2);
+  }
+
+  @Test
+  public void returnElision_atLeastOnceReducer_withElision() {
+    AtomicInteger count = new AtomicInteger();
+    Parser<String> parser = string("a").atLeastOnce(counted((x, y) -> x + y, count));
+    assertThat(parser.matches("aaa")).isTrue();
+    assertThat(count.get()).isEqualTo(0);
+  }
+
+  @Test
+  public void returnElision_atLeastOnceDelimitedByReducer_withoutElision() {
+    AtomicInteger count = new AtomicInteger();
+    Parser<String> parser =
+        string("a").atLeastOnceDelimitedBy(",", counted((x, y) -> x + y, count));
+    assertThat(parser.parse("a,a,a")).isEqualTo("aaa");
+    assertThat(count.get()).isEqualTo(2);
+  }
+
+  @Test
+  public void returnElision_atLeastOnceDelimitedByReducer_withElision() {
+    AtomicInteger count = new AtomicInteger();
+    Parser<String> parser =
+        string("a").atLeastOnceDelimitedBy(",", counted((x, y) -> x + y, count));
+    assertThat(parser.matches("a,a,a")).isTrue();
+    assertThat(count.get()).isEqualTo(0);
+  }
+
   private static <T, A, R> Collector<T, A, R> collectingAndAdd(
       Collector<T, A, R> collector, List<? super R> results) {
     return collectingAndThen(
@@ -7630,5 +7705,13 @@ public class ParserTest {
           results.add(r);
           return r;
         });
+  }
+
+  private static <T> BinaryOperator<T> counted(
+      BinaryOperator<T> reducer, AtomicInteger invocationCount) {
+    return (a, b) -> {
+      invocationCount.incrementAndGet();
+      return reducer.apply(a, b);
+    };
   }
 }

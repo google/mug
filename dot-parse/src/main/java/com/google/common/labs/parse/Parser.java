@@ -608,7 +608,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             CharPredicate.range('0', '9').orRange('A', 'F').orRange('a', 'f').precomputeForAscii()
                 ::matchesAllOf,
             "4 hex digits UTF-16 code unit")
-        .map(digits -> Integer.parseInt(digits, 16));
+        .elidableMap(digits -> Integer.parseInt(digits, 16));
   }
 
   /**
@@ -844,7 +844,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.4
    */
   public final Parser<T> atLeastOnce(BinaryOperator<T> reducer) {
-    return atLeastOnce(reducing(requireNonNull(reducer))).map(Optional::get);
+    return atLeastOnce(reducing(requireNonNull(reducer))).elidableMap(Optional::get);
   }
 
   /**
@@ -875,7 +875,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.4
    */
   public final Parser<T> atLeastOnceDelimitedBy(String delimiter, BinaryOperator<T> reducer) {
-    return atLeastOnceDelimitedBy(delimiter, reducing(requireNonNull(reducer))).map(Optional::get);
+    return atLeastOnceDelimitedBy(delimiter, reducing(requireNonNull(reducer)))
+        .elidableMap(Optional::get);
   }
 
   /**
@@ -1211,7 +1212,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
+
+      @Override Parser<?> ignoreReturn() {
+        return f instanceof ElidableFunction ? left().ignoreReturn() : this;
+      }
     };
+  }
+
+  private <R> Parser<R> elidableMap(ElidableFunction<? super T, ? extends R> f) {
+    return map(f);
   }
 
   /**
@@ -1459,7 +1468,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * prefer using the more efficient {@code .orElse(null)} instead.
    */
   public final Parser<Optional<T>>.OrEmpty optional() {
-    return map(Optional::ofNullable).new OrEmpty(Optional::empty);
+    return elidableMap(Optional::ofNullable).new OrEmpty(Optional::empty);
   }
 
   /** Returns a parser that matches {@code this} pattern and returns the matched string. */
@@ -2403,6 +2412,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private static <T, A, R> Collector<T, A, R> toNull() {
     return Collector.of(() -> null, (a, e) -> {}, (a, b) -> a, a -> null);
   }
+
+  private interface ElidableFunction<F, T> extends Function<F, T> {}
 
   private interface ElidableBiFunction<A, B, R> extends BiFunction<A, B, R> {}
 
