@@ -106,7 +106,7 @@ public JsonValue parseJson() :
   }
 }
 
-private JsonValue jsonValue() :
+public JsonValue jsonValue() :
 {
   JsonValue value;
 }

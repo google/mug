@@ -2,7 +2,21 @@ package com.google.mu.benchmarks.parsers;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
+import com.google.mu.benchmarks.parsers.dotparse.JsonValue;
+import com.google.mu.benchmarks.parsers.json.StreamingJsonParser;
+import com.google.mu.benchmarks.parsers.dotparse.DotParseStreamingParser;
+import com.google.mu.benchmarks.parsers.jackson.JacksonStreamingParser;
+import com.google.mu.benchmarks.parsers.gson.GsonStreamingParser;
+import com.google.mu.benchmarks.parsers.javacc.JavaccStreamingParser;
 
 // Import all framework showdown containers
 import com.google.mu.benchmarks.parsers.taker.TakerShowdown;
@@ -391,5 +405,63 @@ public class ParserShowdownBenchmark {
   }
   @Benchmark public void javacc_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
     bh.consume(com.google.mu.benchmarks.parsers.javacc.JavaccJsonParser.parse(s.jsonWithCommentsString));
+  }
+
+  // =========================================================================
+  // 9. JSON Streaming Benchmarks (Incremental Parsing from File)
+  // =========================================================================
+
+  @State(Scope.Benchmark)
+  public static class StreamingState {
+    Path filePath;
+    StreamingJsonParser dotParseParser;
+    StreamingJsonParser jacksonParser;
+    StreamingJsonParser gsonParser;
+    StreamingJsonParser javaccParser;
+
+    @Setup(Level.Trial)
+    public void setUp() throws Exception {
+      var resource = StreamingState.class.getResource("/large_benchmark.jsonl");
+      if (resource == null) {
+        throw new IllegalStateException("large_benchmark.jsonl not found in classpath resources");
+      }
+      this.filePath = Paths.get(resource.toURI());
+      this.dotParseParser = new DotParseStreamingParser();
+      this.jacksonParser = new JacksonStreamingParser();
+      this.gsonParser = new GsonStreamingParser();
+      this.javaccParser = new JavaccStreamingParser();
+    }
+  }
+
+  @Benchmark
+  public void dotParse_streamingPerformance(StreamingState s, Blackhole bh) throws Exception {
+    try (Reader reader = new FileReader(s.filePath.toFile(), StandardCharsets.UTF_8);
+         Stream<JsonValue> stream = s.dotParseParser.parse(reader)) {
+      stream.forEach(bh::consume);
+    }
+  }
+
+  @Benchmark
+  public void jackson_streamingPerformance(StreamingState s, Blackhole bh) throws Exception {
+    try (Reader reader = new FileReader(s.filePath.toFile(), StandardCharsets.UTF_8);
+         Stream<JsonValue> stream = s.jacksonParser.parse(reader)) {
+      stream.forEach(bh::consume);
+    }
+  }
+
+  @Benchmark
+  public void gson_streamingPerformance(StreamingState s, Blackhole bh) throws Exception {
+    try (BufferedReader reader = Files.newBufferedReader(s.filePath, StandardCharsets.UTF_8);
+         Stream<JsonValue> stream = s.gsonParser.parse(reader)) {
+      stream.forEach(bh::consume);
+    }
+  }
+
+  @Benchmark
+  public void javacc_streamingPerformance(StreamingState s, Blackhole bh) throws Exception {
+    try (Reader reader = new FileReader(s.filePath.toFile(), StandardCharsets.UTF_8);
+         Stream<JsonValue> stream = s.javaccParser.parse(reader)) {
+      stream.forEach(bh::consume);
+    }
   }
 }

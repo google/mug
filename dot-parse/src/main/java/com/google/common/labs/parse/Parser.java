@@ -2411,7 +2411,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private interface ElidableFunction<F, T> extends Function<F, T> {}
-
   private interface ElidableBiFunction<A, B, R> extends BiFunction<A, B, R> {}
 
   private interface Constants {
