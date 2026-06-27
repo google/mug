@@ -21,6 +21,7 @@ import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.CharPredicate.noneOf;
+import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -7722,29 +7723,55 @@ public class ParserTest {
 
   @Test
   public void testSnippetCaretPlacementWithNewline() {
-    Parser<String> parser = string("skip").followedBy("\n").then(string("foo"));
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("skip\nfobar"));
+    Parser<java.util.Map<String, String>> parser =
+        Parser.zeroOrMoreDelimited(
+                quotedBy('"', '"').followedBy(":"),
+                digits(),
+                ",",
+                toMap())
+            .between("{", "}");
+    String malformedJson =
+        """
+        {"a": 1
+         "b"}
+        """;
+    ParseException thrown =
+        assertThrows(
+            ParseException.class,
+            () -> parser.parseSkipping(Character::isWhitespace, malformedJson));
     assertThat(thrown)
         .hasMessageThat()
         .contains("""
-            at 2:1: expecting <foo>, encountered:\s
-                skip
-                fobar
-                ^""");
+            at 2:2: expecting <}>, encountered:\s
+                {"a": 1
+                 "b"}
+                 ^""");
   }
 
   @Test
-  public void testSnippetCaretPlacementWithMultipleNewlines() {
-    Parser<String> parser = string("skip").followedBy("\n\n").then(string("foo"));
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("skip\n\nfobar"));
+  public void testSnippetCaretPlacementWithMalformedJsonAndMultipleNewlines() {
+    Parser<?> parser =
+        Parser.zeroOrMoreDelimited(
+                quotedBy('"', '"').followedBy(":"), digits(), ",", toMap())
+            .between("{", "}");
+    String malformedJson =
+        """
+        {"a":
+            1
+         "b"}
+        """;
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), malformedJson));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("""
-            at 3:1: expecting <foo>, encountered:\s
-                skip
-               \s
-                fobar
-                ^""");
+        .contains(
+            """
+            at 3:2: expecting <}>, encountered:\s
+                {"a":
+                    1
+                 "b"}
+                 ^
+            """);
   }
 
   private static <T, A, R> Collector<T, A, R> collectingAndAdd(
