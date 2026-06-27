@@ -1,6 +1,8 @@
 package com.google.common.labs.parse;
 
 import static com.google.mu.util.Substring.consecutive;
+import static com.google.mu.util.Substring.last;
+import static com.google.mu.util.Substring.upToIncluding;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.lang.Character.isWhitespace;
 import static java.lang.Math.min;
@@ -24,7 +26,7 @@ record Snippet(int indentation, CharInput input, int at) {
     String toShow = backward + lookForward();
     return newLineIndentedBy(indentation)
         + (toShow.isEmpty() ? "<EOF>" : toShow)
-        + newLineIndentedBy(indentation + backward.length()) + "^\n";
+        + newLineIndentedBy(indentation + verticalPositionOf(backward)) + "^\n";
   }
 
   private String showForwardOnly() {
@@ -51,6 +53,10 @@ record Snippet(int indentation, CharInput input, int at) {
       if (chars >= targetChars) return segment.before() + segment;
     }
     return s;
+  }
+
+  private static int verticalPositionOf(String line) {
+    return upToIncluding(last('\n')).removeFrom(line).length();
   }
 
   private static String newLineIndentedBy(int chars) {

@@ -1541,7 +1541,7 @@ public class ParserTest {
         at 2:5: expecting <)>, encountered:\s
             +\s
         ( 2 ? 3)
-                   ^
+                ^
         """);
   }
 
@@ -7718,6 +7718,33 @@ public class ParserTest {
         string("a").atLeastOnceDelimitedBy(",", counted((x, y) -> x + y, count));
     assertThat(parser.matches("a,a,a")).isTrue();
     assertThat(count.get()).isEqualTo(0);
+  }
+
+  @Test
+  public void testSnippetCaretPlacementWithNewline() {
+    Parser<String> parser = string("skip").followedBy("\n").then(string("foo"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("skip\nfobar"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("""
+            at 2:1: expecting <foo>, encountered:\s
+                skip
+            fobar
+                ^""");
+  }
+
+  @Test
+  public void testSnippetCaretPlacementWithMultipleNewlines() {
+    Parser<String> parser = string("skip").followedBy("\n\n").then(string("foo"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("skip\n\nfobar"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("""
+            at 3:1: expecting <foo>, encountered:\s
+                skip
+
+            fobar
+                ^""");
   }
 
   private static <T, A, R> Collector<T, A, R> collectingAndAdd(
