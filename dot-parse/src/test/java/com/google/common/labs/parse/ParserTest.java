@@ -7803,6 +7803,33 @@ public class ParserTest {
             """);
   }
 
+  @Test
+  public void testSnippetCaretPlacementAtEofAfterNewline() {
+    Parser<String> parser = string("abc").followedBy("\n").then(string("foo"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc\n"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("""
+            at 2:1: expecting <foo>, encountered:\s
+                abc
+               \s
+                ^""");
+  }
+
+  @Test
+  public void testSnippetCaretPlacementAtEofAfterMultipleNewlines() {
+    Parser<String> parser = string("abc").followedBy("\n\n").then(string("foo"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc\n\n"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("""
+            at 3:1: expecting <foo>, encountered:\s
+                abc
+               \s
+               \s
+                ^""");
+  }
+
   private static <T, A, R> Collector<T, A, R> collectingAndAdd(
       Collector<T, A, R> collector, List<? super R> results) {
     return collectingAndThen(

@@ -1,5 +1,7 @@
 package com.google.common.labs.parse;
 
+import static com.google.mu.util.CharPredicate.anyOf;
+import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.last;
@@ -9,9 +11,11 @@ import static java.lang.Character.isWhitespace;
 import static java.lang.Math.min;
 import static java.util.stream.Collectors.joining;
 
+import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
 
 record Snippet(int indentation, CharInput input, int at) {
+  private static final CharPredicate CRLF = anyOf("\r\n");
   Snippet(CharInput input, int at) {
     this(4, input, at);
   }
@@ -25,11 +29,11 @@ record Snippet(int indentation, CharInput input, int at) {
       // possible since the input of the last record may have been purged.
       return showForwardOnly();
     }
-    String toShow = backward + first('\n').toEnd().removeFrom(lookForward());
+    String toShow = backward + first(CRLF).toEnd().removeFrom(lookForward());
     return newLine()
         + (toShow.isEmpty() ? "<EOF>" : indented(toShow))
         + newLine()
-        + " ".repeat(upToIncluding(last('\n')).removeFrom(backward).length())
+        + " ".repeat(upToIncluding(last(CRLF)).removeFrom(backward).length())
         + "^\n";
   }
 
@@ -50,7 +54,7 @@ record Snippet(int indentation, CharInput input, int at) {
   }
 
   private String indented(String s) {
-    return s.lines().collect(joining(newLine()));
+    return all('\n').split(s).collect(joining(newLine()));
   }
 
   private String newLine() {
