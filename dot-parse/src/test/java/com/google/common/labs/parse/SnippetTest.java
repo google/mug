@@ -85,8 +85,8 @@ public class SnippetTest {
     String input = "a b c d e f g h";
     assertThat(new Snippet(CharInput.from(input), 12).toString()).isEqualTo("""
 
-            d e f g h
-                  ^
+            a b c d e f g h
+                        ^
         """);
   }
 

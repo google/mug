@@ -1526,8 +1526,9 @@ public class ParserTest {
     assertThat(parser.skipping(whitespace()).matches("(1 + \n( 2 + 3)")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
         at 2:9: expecting <)>, encountered:\s
-            2 + 3)
-                  ^
+            (1 +\s
+            ( 2 + 3)
+                    ^
         """);
   }
 
@@ -1540,7 +1541,7 @@ public class ParserTest {
     assertThat(parser.skipping(whitespace()).matches("(1 + \n( 2 ? 3)")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
         at 2:5: expecting <)>, encountered:\s
-            +\s
+            (1 +\s
             ( 2 ? 3)
                 ^
         """);

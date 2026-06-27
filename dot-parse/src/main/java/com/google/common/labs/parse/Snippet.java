@@ -45,7 +45,7 @@ record Snippet(int indentation, CharInput input, int at) {
   private String lookBackward() {
     int chars = min(at, 25);
     String source = input.snippet(at - chars, chars);
-    return reverse(peek(reverse(source), 5, 25));
+    return reverse(peek(reverse(source), 15, 25));
   }
 
   private String indented(String s) {
