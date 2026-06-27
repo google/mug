@@ -7636,9 +7636,11 @@ public class ParserTest {
   @Test
   public void returnElision_optional_withoutElision_noMatch() {
     List<String> joined = new ArrayList<>();
-    Parser<Optional<String>>.OrEmpty parser =
-        word().atLeastOnce(collectingAndAdd(joining(), joined)).optional();
-    assertThat(parser.parse("")).isEqualTo(Optional.empty());
+    Parser<Optional<String>> parser =
+        word().atLeastOnce(collectingAndAdd(joining(), joined))
+            .optional()
+            .between("[", "]");
+    assertThat(parser.parse("[]")).isEmpty();
     assertThat(joined).isEmpty();
   }
 
