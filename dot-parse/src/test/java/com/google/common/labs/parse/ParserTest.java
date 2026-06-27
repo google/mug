@@ -7786,6 +7786,7 @@ public class ParserTest {
         {"a":
             1
          "b"
+         2
          }
         """;
     ParseException thrown =
