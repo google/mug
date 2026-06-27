@@ -1,6 +1,5 @@
 package com.google.common.labs.parse;
 
-import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
@@ -11,16 +10,15 @@ import static java.lang.Character.isWhitespace;
 import static java.lang.Math.min;
 import static java.util.stream.Collectors.joining;
 
-import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
 
 record Snippet(int indentation, CharInput input, int at) {
-  private static final CharPredicate CRLF = anyOf("\r\n");
   Snippet(CharInput input, int at) {
     this(4, input, at);
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     String backward;
     try {
       backward = lookBackward();
@@ -29,16 +27,18 @@ record Snippet(int indentation, CharInput input, int at) {
       // possible since the input of the last record may have been purged.
       return showForwardOnly();
     }
-    String toShow = backward + first(CRLF).toEnd().removeFrom(lookForward());
+    String toShow = backward + first('\n').toEnd().removeFrom(lookForward());
     return newLine()
         + (toShow.isEmpty() ? "<EOF>" : indented(toShow))
         + newLine()
-        + " ".repeat(upToIncluding(last(CRLF)).removeFrom(backward).length())
+        + " ".repeat(upToIncluding(last('\n')).removeFrom(backward).length())
         + "^\n";
   }
 
   private String showForwardOnly() {
-    if (input.isEof(at)) return "<EOF>";
+    if (input.isEof(at)) {
+      return "<EOF>";
+    }
     String ahead = lookForward();
     return "[" + (input.isInRange(at + ahead.length()) ? ahead + "..." : ahead) + "]";
   }
@@ -62,11 +62,15 @@ record Snippet(int indentation, CharInput input, int at) {
   }
 
   private static String peek(String s, int targetChars, int maxChars) {
-    for (Substring.Match segment
-        : iterateOnce(consecutive(c -> !isWhitespace(c)).repeatedly().match(s))) {
+    for (Substring.Match segment :
+        iterateOnce(consecutive(c -> !isWhitespace(c)).repeatedly().match(s))) {
       int chars = segment.index() + segment.length();
-      if (chars >= maxChars) return s.substring(0, maxChars);
-      if (chars >= targetChars) return segment.before() + segment;
+      if (chars >= maxChars) {
+        return s.substring(0, maxChars);
+      }
+      if (chars >= targetChars) {
+        return segment.before() + segment;
+      }
     }
     return s;
   }
