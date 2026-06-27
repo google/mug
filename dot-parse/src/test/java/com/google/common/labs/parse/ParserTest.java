@@ -7634,6 +7634,15 @@ public class ParserTest {
   }
 
   @Test
+  public void returnElision_optional_withoutElision_noMatch() {
+    List<String> joined = new ArrayList<>();
+    Parser<Optional<String>>.OrEmpty parser =
+        word().atLeastOnce(collectingAndAdd(joining(), joined)).optional();
+    assertThat(parser.parse("")).isEqualTo(Optional.empty());
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
   public void returnElision_optional_withElision() {
     List<String> joined = new ArrayList<>();
     Parser<?> parser =
@@ -7642,6 +7651,18 @@ public class ParserTest {
             word().atLeastOnce(collectingAndAdd(joining(), joined)).optional(),
             string("]"));
     assertThat(parser.matches("[abc]")).isTrue();
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_optional_withElision_noMatch() {
+    List<String> joined = new ArrayList<>();
+    Parser<?> parser =
+        sequence(
+            string("["),
+            word().atLeastOnce(collectingAndAdd(joining(), joined)).optional(),
+            string("]"));
+    assertThat(parser.matches("[]")).isTrue();
     assertThat(joined).isEmpty();
   }
 
