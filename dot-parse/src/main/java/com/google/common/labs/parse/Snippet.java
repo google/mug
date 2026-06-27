@@ -6,6 +6,7 @@ import static com.google.mu.util.Substring.upToIncluding;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.lang.Character.isWhitespace;
 import static java.lang.Math.min;
+import static java.util.stream.Collectors.joining;
 
 import com.google.mu.util.Substring;
 
@@ -24,9 +25,11 @@ record Snippet(int indentation, CharInput input, int at) {
       return showForwardOnly();
     }
     String toShow = backward + lookForward();
-    return newLineIndentedBy(indentation)
-        + (toShow.isEmpty() ? "<EOF>" : toShow)
-        + newLineIndentedBy(indentation + verticalPositionOf(backward)) + "^\n";
+    return newLine()
+        + (toShow.isEmpty() ? "<EOF>" : indented(toShow))
+        + newLine()
+        + " ".repeat(upToIncluding(last('\n')).removeFrom(backward).length())
+        + "^\n";
   }
 
   private String showForwardOnly() {
@@ -45,6 +48,14 @@ record Snippet(int indentation, CharInput input, int at) {
     return reverse(peek(reverse(source), 5, 25));
   }
 
+  private String indented(String s) {
+    return s.lines().collect(joining(newLine()));
+  }
+
+  private String newLine() {
+    return "\n" + " ".repeat(indentation);
+  }
+
   private static String peek(String s, int targetChars, int maxChars) {
     for (Substring.Match segment
         : iterateOnce(consecutive(c -> !isWhitespace(c)).repeatedly().match(s))) {
@@ -53,14 +64,6 @@ record Snippet(int indentation, CharInput input, int at) {
       if (chars >= targetChars) return segment.before() + segment;
     }
     return s;
-  }
-
-  private static int verticalPositionOf(String line) {
-    return upToIncluding(last('\n')).removeFrom(line).length();
-  }
-
-  private static String newLineIndentedBy(int chars) {
-    return "\n" + " ".repeat(chars);
   }
 
   private static String reverse(String s) {

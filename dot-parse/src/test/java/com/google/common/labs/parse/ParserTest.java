@@ -1540,7 +1540,7 @@ public class ParserTest {
     assertThat(thrown).hasMessageThat().isEqualTo("""
         at 2:5: expecting <)>, encountered:\s
             +\s
-        ( 2 ? 3)
+            ( 2 ? 3)
                 ^
         """);
   }
@@ -7729,7 +7729,7 @@ public class ParserTest {
         .contains("""
             at 2:1: expecting <foo>, encountered:\s
                 skip
-            fobar
+                fobar
                 ^""");
   }
 
@@ -7742,8 +7742,8 @@ public class ParserTest {
         .contains("""
             at 3:1: expecting <foo>, encountered:\s
                 skip
-
-            fobar
+               \s
+                fobar
                 ^""");
   }
 
