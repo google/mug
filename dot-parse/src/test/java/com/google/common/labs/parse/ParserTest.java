@@ -7750,7 +7750,7 @@ public class ParserTest {
   }
 
   @Test
-  public void testSnippetCaretPlacementWithMalformedJsonAndMultipleNewlines() {
+  public void testSnippetCaretPlacement_multipleNewlinesInPrelue() {
     Parser<?> parser =
         Parser.zeroOrMoreDelimited(
                 quotedBy('"', '"').followedBy(":"), digits(), ",", toMap())
@@ -7771,6 +7771,33 @@ public class ParserTest {
                 {"a":
                     1
                  "b"}
+                 ^
+            """);
+  }
+
+  @Test
+  public void testSnippetCaretPlacement_truncateAtTrailingNewline() {
+    Parser<?> parser =
+        Parser.zeroOrMoreDelimited(
+                quotedBy('"', '"').followedBy(":"), digits(), ",", toMap())
+            .between("{", "}");
+    String malformedJson =
+        """
+        {"a":
+            1
+         "b"
+         }
+        """;
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), malformedJson));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            """
+            at 3:2: expecting <}>, encountered:\s
+                {"a":
+                    1
+                 "b"
                  ^
             """);
   }

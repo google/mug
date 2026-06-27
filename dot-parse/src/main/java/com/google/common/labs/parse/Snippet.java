@@ -1,6 +1,7 @@
 package com.google.common.labs.parse;
 
 import static com.google.mu.util.Substring.consecutive;
+import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.last;
 import static com.google.mu.util.Substring.upToIncluding;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
@@ -24,7 +25,7 @@ record Snippet(int indentation, CharInput input, int at) {
       // possible since the input of the last record may have been purged.
       return showForwardOnly();
     }
-    String toShow = backward + lookForward();
+    String toShow = backward + first('\n').toEnd().removeFrom(lookForward());
     return newLine()
         + (toShow.isEmpty() ? "<EOF>" : indented(toShow))
         + newLine()
