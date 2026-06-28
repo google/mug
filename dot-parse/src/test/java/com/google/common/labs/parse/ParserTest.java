@@ -7638,23 +7638,24 @@ public class ParserTest {
   @Test
   public void returnElision_optional_withoutElision_noMatch() {
     List<String> joined = new ArrayList<>();
-    Parser<Optional<String>> parser =
-        word().atLeastOnce(collectingAndAdd(joining(), joined))
-            .optional()
-            .between("[", "]");
-    assertThat(parser.parse("[]")).isEmpty();
-    assertThat(joined).isEmpty();
+    Parser<?> parser =
+        sequence(
+            string("["),
+            word().atLeastOnce(collectingAndAdd(joining(), joined))
+                .followedBy("absentSuffix")
+                .optional(),
+            string("]"),
+            (l, m, r) -> null);
+    assertThrows(ParseException.class, () -> parser.parse("[abc]"));
+    assertThat(joined).containsExactly("abc");
   }
 
   @Test
   public void returnElision_optional_withElision() {
     List<String> joined = new ArrayList<>();
-    Parser<?> parser =
-        sequence(
-            string("["),
-            word().atLeastOnce(collectingAndAdd(joining(), joined)).optional(),
-            string("]"));
-    assertThat(parser.matches("[abc]")).isTrue();
+    Parser<Optional<String>>.OrEmpty parser =
+        word().atLeastOnce(collectingAndAdd(joining(), joined)).optional();
+    assertThat(parser.matches("abc")).isTrue();
     assertThat(joined).isEmpty();
   }
 
@@ -7664,9 +7665,11 @@ public class ParserTest {
     Parser<?> parser =
         sequence(
             string("["),
-            word().atLeastOnce(collectingAndAdd(joining(), joined)).optional(),
+            word().atLeastOnce(collectingAndAdd(joining(), joined))
+                .followedBy("absentSuffix")
+                .optional(),
             string("]"));
-    assertThat(parser.matches("[]")).isTrue();
+    assertThat(parser.matches("[abc]")).isFalse();
     assertThat(joined).isEmpty();
   }
 
