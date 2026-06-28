@@ -3,7 +3,7 @@
   <parent>
       <groupId>com.google.mug</groupId>
       <artifactId>mug-root</artifactId>
-      <version>10.5.1</version>
+      <version>10.5.2-SNAPSHOT</version>
       <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-bigquery</artifactId>
@@ -12,7 +12,7 @@
   <properties>
     <module.name>bigquery</module.name>
     <!-- Reproducible builds: fixed timestamp for build artifacts -->
-    <project.build.outputTimestamp>2026-06-28T19:33:05Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-06-28T19:36:32Z</project.build.outputTimestamp>
   </properties>
 
   <build>
