@@ -15,6 +15,7 @@
 package com.google.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.util.CharPredicate.WHITESPACE;
 import static com.google.mu.util.CharPredicate.anyOf;
 
 import org.junit.Test;
@@ -301,19 +302,15 @@ public class CharPredicateTest {
   }
 
   @Test
-  public void precomputeForAscii_isWhitespace() {
-    CharPredicate whitespace = Character::isWhitespace;
-    CharPredicate predicate = whitespace.precomputeForAscii();
-    assertThat(predicate.test('a')).isFalse();
-    assertThat(predicate.test('\n')).isTrue();
-    assertThat(predicate.test(' ')).isTrue();
-    assertThat(predicate.test('\t')).isTrue();
+  public void precomputeForAscii_whitespace() {
+    assertThat(WHITESPACE.test('a')).isFalse();
+    assertThat(WHITESPACE.test('\n')).isTrue();
+    assertThat(WHITESPACE.test(' ')).isTrue();
+    assertThat(WHITESPACE.test('\t')).isTrue();
   }
 
   @Test
   public void precomputeForAscii_idempotent() {
-    CharPredicate whitespace = Character::isWhitespace;
-    CharPredicate predicate = whitespace.precomputeForAscii();
-    assertThat(predicate.precomputeForAscii()).isSameInstanceAs(predicate);
+    assertThat(WHITESPACE.precomputeForAscii()).isSameInstanceAs(WHITESPACE);
   }
 }

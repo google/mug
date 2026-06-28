@@ -81,6 +81,21 @@ public interface CharPredicate {
     }
   };
 
+  /**
+   * Equivalent to {@link Character#isWhitespace}.
+   *
+   * @since 10.6
+   */
+  static CharPredicate WHITESPACE = new CharPredicate() {
+    @Override public boolean test(char c) {
+      return Character.isWhitespace(c);
+    }
+
+    @Override public String toString() {
+      return "WHITESPACE";
+    }
+  }.precomputeForAscii();
+
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
   static CharPredicate is(char ch) {
     return new CharPredicate() {
