@@ -672,6 +672,40 @@ public class BoundedConcurrencyTest {
     assertThat(withMaxConcurrency(1).race(tasks, e -> true)).isNull();
   }
 
+  @Test
+  public void concurrently_threadStartFailure_cancelsPendingAndPropagates() {
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    java.util.concurrent.atomic.AtomicInteger factoryCallCount = new java.util.concurrent.atomic.AtomicInteger();
+    java.util.concurrent.ThreadFactory statefulFactory =
+        runnable -> {
+          if (factoryCallCount.getAndIncrement() == 0) {
+            return Thread.ofVirtual().unstarted(runnable);
+          }
+          return null; // Fail on second thread creation
+        };
+
+    BoundedConcurrency concurrency = BoundedConcurrency.withMaxConcurrency(2, statefulFactory);
+
+    NullPointerException thrown =
+        assertThrows(
+            NullPointerException.class,
+            () ->
+                Stream.of(10, 20) // 10 will start and sleep, 20 will fail to start
+                    .gather(
+                        concurrency.mapConcurrently(
+                            n -> {
+                              try {
+                                Thread.sleep(n * 1000); // Sleep long enough
+                              } catch (InterruptedException e) {
+                                interrupted.add(n);
+                              }
+                              return n;
+                            }))
+                    .toList());
+
+    assertThat(interrupted).containsExactly(10); // Verifies that the running thread was interrupted
+  }
+
   private static class ApplicationException extends RuntimeException {
     ApplicationException(String s) {
       super(s);
