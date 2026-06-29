@@ -21,6 +21,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.google.mu.testing.concurrent.Happenstance;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
@@ -533,40 +534,48 @@ public class BoundedConcurrencyTest {
     assertThat(thrown).hasMessageThat().isEqualTo("3");
   }
 
-  @Ignore
   @Test public void parallelStream_upstreamFailureInterrupts() throws Exception {
     ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
     ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
     boolean[] failed = new boolean[1];
     boolean[] seen = new boolean[1];
+    Happenstance<String> happens = Happenstance.<String>builder()
+        .sequence("10 started", "3 start")
+        .sequence("1 started", "3 start")
+        .sequence("3 thrown", "10 finished", "all done")
+        .sequence("3 thrown", "1 finished", "all done")
+        .build();
     RuntimeException thrown = assertThrows(
         RuntimeException.class,
-        () -> asList(10, 3, 1)
-            .parallelStream()
-            .peek(n -> {})
-            .map(n -> {
-              if (n == 3) {
-                try { // give 1 and 3 some time to have at least started
-                  Thread.sleep(100);
-                } catch (InterruptedException e) {
-                  interrupted.add(n);
-                }
-                failed[0] = true;
-                throw new IllegalArgumentException(String.valueOf(n));
-              }
-              started.add(n);
-              try {
-                Thread.sleep(n * 100);
-              } catch (InterruptedException e) {
-                interrupted.add(n);
-              }
-              seen[0] = true;
-              return n;
-            })
-            .findAny());
+        () -> {
+          try {
+            asList(10, 3, 1)
+                .parallelStream()
+                .peek(n -> {})
+                .map(n -> {
+                  if (n == 3) {
+                    happens.join("3 start");
+                    failed[0] = true;
+                    throw new IllegalArgumentException(String.valueOf(n));
+                  }
+                  started.add(n);
+                  happens.join(n + " started");
+                  happens.join(n + " finished");
+                  if (Thread.interrupted()) {
+                    interrupted.add(n);
+                  }
+                  seen[0] = true;
+                  return n;
+                })
+                .findAny();
+          } finally {
+            happens.join("3 thrown");
+          }
+        });
+    happens.join("all done");
+    assertThat(thrown).hasMessageThat().contains("3");
     assertThat(started).containsExactly(10, 1);
     assertThat(interrupted).isEmpty();
-    assertThat(thrown).hasMessageThat().contains("3");
     assertThat(failed[0]).isTrue();
     assertThat(seen[0]).isTrue();
   }

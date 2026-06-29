@@ -87,5 +87,12 @@
       <artifactId>test-parameter-injector</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>mug-concurrent-testing</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
