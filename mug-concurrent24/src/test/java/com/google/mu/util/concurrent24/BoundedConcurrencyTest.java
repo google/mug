@@ -12,12 +12,13 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Gatherers;
 import java.util.stream.Stream;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -545,35 +546,39 @@ public class BoundedConcurrencyTest {
         .sequence("3 thrown", "10 finished", "all done")
         .sequence("3 thrown", "1 finished", "all done")
         .build();
-    RuntimeException thrown = assertThrows(
-        RuntimeException.class,
-        () -> {
-          try {
-            asList(10, 3, 1)
-                .parallelStream()
-                .peek(n -> {})
-                .map(n -> {
-                  if (n == 3) {
-                    happens.join("3 start");
-                    failed[0] = true;
-                    throw new IllegalArgumentException(String.valueOf(n));
-                  }
-                  started.add(n);
-                  happens.join(n + " started");
-                  happens.join(n + " finished");
-                  if (Thread.interrupted()) {
-                    interrupted.add(n);
-                  }
-                  seen[0] = true;
-                  return n;
-                })
-                .findAny();
-          } finally {
-            happens.join("3 thrown");
-          }
-        });
+    try (ForkJoinPool pool = new ForkJoinPool(3)) {
+      ExecutionException thrown = assertThrows(
+          ExecutionException.class,
+          () -> {
+            try {
+              pool.submit(() -> asList(10, 3, 1)
+                  .parallelStream()
+                  .map(n -> {
+                    if (n == 3) {
+                      happens.join("3 start");
+                      failed[0] = true;
+                      throw new IllegalArgumentException(String.valueOf(n));
+                    }
+                    started.add(n);
+                    happens.join(n + " started");
+                    happens.join(n + " finished");
+                    if (Thread.interrupted()) {
+                      interrupted.add(n);
+                    }
+                    seen[0] = true;
+                    return n;
+                  })
+                  .findAny()).get();
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+              throw new RuntimeException(e);
+            } finally {
+              happens.join("3 thrown");
+            }
+          });
+      assertThat(thrown).hasCauseThat().hasMessageThat().contains("3");
+    }
     happens.join("all done");
-    assertThat(thrown).hasMessageThat().contains("3");
     assertThat(started).containsExactly(10, 1);
     assertThat(interrupted).isEmpty();
     assertThat(failed[0]).isTrue();
