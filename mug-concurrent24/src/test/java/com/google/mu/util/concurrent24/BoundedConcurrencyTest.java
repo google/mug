@@ -661,9 +661,15 @@ public class BoundedConcurrencyTest {
         RuntimeException.class,
         () -> withMaxConcurrency(3).race(tasks, ApplicationException.class::isInstance));
     assertThat(thrown).hasCauseThat().isInstanceOf(AssertionError.class);
-    assertThat(asList(thrown.getSuppressed())).hasSize(2);
+    assertThat(asList(thrown.getSuppressed())).hasSize(3);
     assertThat(started).containsExactly(1, 0, 2, 10);
     assertThat(interrupted).containsExactly(10);
+  }
+
+  @Test
+  public void race_returnsNullSuccessfully() {
+    List<Callable<String>> tasks = asList(() -> null);
+    assertThat(withMaxConcurrency(1).race(tasks, e -> true)).isNull();
   }
 
   private static class ApplicationException extends RuntimeException {
