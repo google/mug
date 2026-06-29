@@ -216,6 +216,7 @@ public final class BoundedConcurrency {
               semaphore.release();
             }
           });
+          requireNonNull(thread, "failed to start a virtual thread");
           running.add(thread);
           thread.start();
           success = true;

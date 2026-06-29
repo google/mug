@@ -703,6 +703,7 @@ public class BoundedConcurrencyTest {
                             }))
                     .toList());
 
+    assertThat(thrown).hasMessageThat().contains("failed to start a virtual thread");
     assertThat(interrupted).containsExactly(10); // Verifies that the running thread was interrupted
   }
 
