@@ -2174,14 +2174,14 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   @ThreadSafe
   public static final class Rule<T> extends Parser<T> {
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
-    private volatile boolean validating = false;
+    private volatile boolean dryRun = false;
 
     @Override MatchResult<T> skipAndMatch(
         Parser<?> skip, CharInput input, int start, ErrorContext context) {
       Parser<T> p = ref.get();
       if (start == 0 && input.isEof(0)) {
         checkState(
-            !validating,
+            !dryRun,
             "Left recursion not supported! Consider using withPostfixes() or the OperatorTable class"
                 + " to define the left recursive grammar.");
         if (p == null) { // can happen when validating mutually recursive rules.
@@ -2196,11 +2196,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     public <S extends T> Parser<S> definedAs(Parser<S> parser) {
       requireNonNull(parser);
       checkArgument(!(parser instanceof Rule), "Do not delegate to a Rule parser");
-      validating = true;
+      dryRun = true;
       try {
         checkState(!parser.matches(""), "parser must not match empty string");
       } finally {
-        validating = false;
+        dryRun = false;
       }
       checkState(ref.compareAndSet(null, covariant(parser)), "definedAs() already called");
       return parser;

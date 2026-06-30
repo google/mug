@@ -535,7 +535,9 @@ public class BoundedConcurrencyTest {
     assertThat(thrown).hasMessageThat().isEqualTo("3");
   }
 
-  @Test public void parallelStream_upstreamFailureInterrupts() throws Exception {
+  // Demonstrates that when a task in Jdk parallelStream throws an exception,
+  // other concurrently running sibling tasks are not interrupted.
+  @Test public void parallelStream_upstreamFailureDoesNotInterruptDownstream() throws Exception {
     ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
     ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
     boolean[] failed = new boolean[1];
