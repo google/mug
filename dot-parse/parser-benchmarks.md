@@ -41,7 +41,7 @@ All benchmarks were executed side-by-side on the **same JVM (JDK 24.0.1)** and t
 
 > [!NOTE]
 > **Acknowledge on parboiled2**:
-> The bytecode-generating parser frameworks `parboiled` (runtime bytecode generation) and `parboiled2` (Scala compile-time macro PEG) are excluded from the main comparison tables below to focus on libraries with more comparable runtime execution models. In our runs, the macro-optimized `parboiled2` represented the performance ceiling, reaching up to **13.84 million parses/sec** on simple types and **5.92 million parses/sec** on fully qualified types.
+> The Scala-based `parboiled2` (compile-time macro PEG) is excluded from the main comparison tables below to focus on libraries with more comparable runtime execution models. In our runs, the macro-optimized `parboiled2` represented the performance ceiling, reaching up to **13.84 million parses/sec** on simple types and **5.92 million parses/sec** on fully qualified types.
 
 > [!IMPORTANT]
 > **Scope & Benchmark Nuance**:
