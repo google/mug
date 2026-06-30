@@ -189,6 +189,10 @@ public class ParserShowdownBenchmark {
         var unusedTomcatComments = new com.google.mu.benchmarks.parsers.javacc.TomcatJsonParser(jsonWithCommentsString).parse();
         var unusedRobertFischer = new com.google.mu.benchmarks.parsers.javacc.RobertFischerJsonParser(jsonString).parse();
         var unusedRobertFischerComments = new com.google.mu.benchmarks.parsers.javacc.RobertFischerJsonParser(jsonWithCommentsString).parse();
+        verifyJson(com.google.mu.benchmarks.parsers.parboiled.ParboiledJsonParser.parse(jsonString), "parboiled");
+        verifyJson(com.google.mu.benchmarks.parsers.parboiled.ParboiledJsonParser.parseWithComments(jsonWithCommentsString), "parboiled-comments");
+        verifyJson(com.google.mu.benchmarks.parsers.autumn.AutumnJsonParser.parse(jsonString), "autumn");
+        verifyJson(com.google.mu.benchmarks.parsers.autumn.AutumnJsonParser.parseWithComments(jsonWithCommentsString), "autumn-comments");
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
@@ -343,6 +347,8 @@ public class ParserShowdownBenchmark {
   @Benchmark public void taker_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.taker.TakerJsonParser.parse(s.jsonString)); }
   @Benchmark public void betterParse_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.betterparse.BetterParseJsonParser.INSTANCE.parse(s.jsonString)); }
   @Benchmark public void fastparse_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.fastparse.FastparseJsonParser.parse(s.jsonString)); }
+  @Benchmark public void parboiled_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.parboiled.ParboiledJsonParser.parse(s.jsonString)); }
+  @Benchmark public void autumn_jsonPerformance(BenchmarkState s, Blackhole bh) { bh.consume(com.google.mu.benchmarks.parsers.autumn.AutumnJsonParser.parse(s.jsonString)); }
   @State(Scope.Thread)
   public static class Antlr4JsonState {
     public final com.google.mu.benchmarks.parsers.antlr4.Antlr4JsonParser parser = 
@@ -405,6 +411,12 @@ public class ParserShowdownBenchmark {
   }
   @Benchmark public void javacc_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
     bh.consume(com.google.mu.benchmarks.parsers.javacc.JavaccJsonParser.parse(s.jsonWithCommentsString));
+  }
+  @Benchmark public void parboiled_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(com.google.mu.benchmarks.parsers.parboiled.ParboiledJsonParser.parseWithComments(s.jsonWithCommentsString));
+  }
+  @Benchmark public void autumn_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(com.google.mu.benchmarks.parsers.autumn.AutumnJsonParser.parseWithComments(s.jsonWithCommentsString));
   }
 
   // =========================================================================

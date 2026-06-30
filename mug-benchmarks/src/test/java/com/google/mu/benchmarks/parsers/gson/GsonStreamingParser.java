@@ -68,7 +68,7 @@ public final class GsonStreamingParser implements StreamingJsonParser {
       for (JsonElement el : array) {
         list.add(toJsonValue(el));
       }
-      return new JsonArray(list);
+      return new JsonValue.JsonArray(list);
     }
     if (element.isJsonObject()) {
       JsonObject obj = element.getAsJsonObject();
@@ -76,7 +76,7 @@ public final class GsonStreamingParser implements StreamingJsonParser {
       for (var entry : obj.entrySet()) {
         map.put(entry.getKey(), toJsonValue(entry.getValue()));
       }
-      return new JsonObject(map);
+      return new JsonValue.JsonObject(map);
     }
     throw new IllegalArgumentException("Unsupported Gson element: " + element);
   }
