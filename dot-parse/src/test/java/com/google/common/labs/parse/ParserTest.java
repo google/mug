@@ -5944,6 +5944,36 @@ public class ParserTest {
   }
 
   @Test
+  public void rule_recursionLimit_underLimitSucceeds() {
+    Parser.Rule<String> rule = new Parser.Rule<>(5);
+    Parser<String> parser = rule.between("(", ")").or(string("x"));
+    rule.definedAs(parser);
+
+    assertThat(rule.parse("((((x))))")).isEqualTo("x");
+  }
+
+  @Test
+  public void rule_recursionLimit_exceededThrows() {
+    Parser.Rule<String> rule = new Parser.Rule<>(5);
+    Parser<String> parser = rule.between("(", ")").or(string("x"));
+    rule.definedAs(parser);
+
+    IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> rule.parse("(((((x)))))"));
+    assertThat(thrown).hasMessageThat().contains("recursion");
+  }
+
+  @Test
+  public void rule_defaultRecursionLimit_exceededThrows() {
+    Parser.Rule<String> rule = new Parser.Rule<>();
+    Parser<String> parser = rule.between("(", ")").or(string("x"));
+    rule.definedAs(parser);
+
+    String input = "(".repeat(101) + "x" + ")".repeat(101);
+    IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> rule.parse(input));
+    assertThat(thrown).hasMessageThat().contains("recursion");
+  }
+
+  @Test
   public void rule_mutuallyRecursiveGrammar() {
     Parser.Rule<String> expr = new Parser.Rule<>();
     Parser.Rule<String> type = new Parser.Rule<>();
