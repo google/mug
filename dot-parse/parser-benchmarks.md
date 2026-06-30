@@ -29,6 +29,12 @@ This report presents a comprehensive JMH performance benchmark and architectural
 9. **`better-parse`** (Kotlin):
    A Kotlin-native, highly expressive parser combinator library built on top of property delegation and DSL combinators.
 
+10. **`parboiled`** (Java):
+    A classic PEG parser combinator library utilizing runtime bytecode generation.
+
+11. **`autumn`** (Java):
+    A highly flexible PEG parser combinator library with left-recursion support.
+
 All benchmarks were executed side-by-side on the **same JVM (JDK 24.0.1)** and the **same hardware (Apple M1 Mac)** to eliminate environmental bias. All grammars were strictly verified with assertions ensuring **complete input consumption (EOF)** and **structural correctness**.
 
 
@@ -47,18 +53,18 @@ All benchmarks were executed side-by-side on the **same JVM (JDK 24.0.1)** and t
 
 ---
 
-## JSON Parser Shootout (9-Way Showdown)
+## JSON Parser Shootout (12-Way Showdown)
 
-To evaluate how these frameworks perform when parsing a **large, complex, and heterogeneous data payload**, we implemented a full **JSON parser** across all 9 shootout engines.
+To evaluate how these frameworks perform when parsing a **large, complex, and heterogeneous data payload**, we implemented a full **JSON parser** across all 12 shootout engines.
 
 Every engine was validated against a large, representative JSON document (~100 containers, maps of size 12, lists of size 250, scientific numbers, and varying strings of length 20 to 128) and strictly verified at setup time to guarantee complete functional correctness and functional parity.
 
 Throughput was measured in **operations per millisecond** (higher is better):
 
-| Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`Javacc`](https://github.com/apache/tomcat/blob/main/java/org/apache/tomcat/util/json/JSONParser.jjt) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | **Winner(s)** |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Complex JSON Payload** | $0.213$ | $0.181$ | **$0.405$** ☕ | $0.122$ | $0.094$ | **$0.592$** 🚀 | $0.258$ | $0.015$ | $0.101$ | $0.088$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Complex JSON with Comments** | $0.102$ | $0.068$ | **$0.224$** 🚀 ☕ | $0.093$ | $0.051$ | **$0.192$** | $0.078$ | $0.002$ | $0.031$ | $0.033$ | **`dot`** 🚀 ☕ |
+| Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`Javacc`](https://github.com/apache/tomcat/blob/main/java/org/apache/tomcat/util/json/JSONParser.jjt) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | [`parboiled`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/parboiled/ParboiledJsonParser.java) | [`autumn`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/autumn/AutumnJsonParser.java) | **Winner(s)** |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Complex JSON Payload** | $0.213$ | $0.181$ | **$0.405$** ☕ | $0.122$ | $0.094$ | **$0.592$** 🚀 | $0.258$ | $0.015$ | $0.101$ | $0.088$ | $0.066$ | $0.077$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex JSON with Comments** | $0.102$ | $0.068$ | **$0.224$** 🚀 ☕ | $0.093$ | $0.051$ | **$0.192$** | $0.078$ | $0.002$ | $0.031$ | $0.033$ | $0.022$ | $0.036$ | **`dot`** 🚀 ☕ |
 
 #### Reference Production Baselines (JSON)
 To provide an absolute performance ceiling, we stacked our combinator shootout against production-grade, hand-written and generated parsers on the exact same JSON payloads:
