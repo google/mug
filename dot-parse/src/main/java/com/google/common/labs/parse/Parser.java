@@ -2170,6 +2170,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <p>For simple definitions, you could use the {@link #define} method with a lambda
    * to elide the need of an explicit forward declaration.
+   *
+   * <p>To prevent StackOverflowError, rules enforce a maximum recursion depth limit.
+   * The recursion depth is tracked globally per parse operation across all recursive rules
+   * on the call stack. Each rule enforces its own limit against this global depth.
    */
   @ThreadSafe
   public static final class Rule<T> extends Parser<T> {
@@ -2184,6 +2188,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
     /**
      * Creates a rule with the given maximum recursion depth.
+     *
+     * <p>The recursion depth is tracked globally per parse operation across all recursive rules
+     * on the call stack.
      *
      * @throws IllegalArgumentException if {@code maxDepth} is not positive.
      * @since 10.6
@@ -2201,7 +2208,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             !dryRun,
             "Left recursion not supported! Consider using withPostfixes() or the OperatorTable class"
                 + " to define the left recursive grammar.");
-        if (p == null) { // can happen when validating mutually recursive rules.
+        if (p == null) { // can happen when dry-running mutually recursive rules.
           return context.failAt(0, "empty input", ""); // A Parser must consume input.
         }
       }

@@ -5974,6 +5974,20 @@ public class ParserTest {
   }
 
   @Test
+  public void rule_recursionLimitOfOne_allowsNoRecursionButExceedsOnFirstRecursion() {
+    Parser.Rule<String> rule = new Parser.Rule<>(1);
+    Parser<String> parser = rule.between("(", ")").or(string("x"));
+    rule.definedAs(parser);
+
+    // No recursion (depth 1) succeeds
+    assertThat(rule.parse("x")).isEqualTo("x");
+
+    // One level of recursion (depth 2) throws
+    IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> rule.parse("(x)"));
+    assertThat(thrown).hasMessageThat().contains("recursion");
+  }
+
+  @Test
   public void rule_mutuallyRecursiveGrammar() {
     Parser.Rule<String> expr = new Parser.Rule<>();
     Parser.Rule<String> type = new Parser.Rule<>();
