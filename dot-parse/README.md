@@ -6,6 +6,7 @@ Low-boilerplate, idiomatic Java parser combinator, aimed to replace regex and yo
 - **Just works:** No "committing" or "cut" complexities. What you see is what you get.
 - **No footguns:** compile-time guardrail preventing footguns like infinite loops caused by `many(optional)` or left recursion.
 - **Fast:** consistently among the fastest JVM parser combinators ([benchmark](./parser-benchmarks.md)).
+- **Safe:** built-in recursion limit. Avoids deep nesting attack.
 
 ---
 
