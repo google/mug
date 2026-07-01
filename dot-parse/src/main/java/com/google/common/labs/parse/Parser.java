@@ -1526,7 +1526,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
   public final Lexical skipping(Parser<?> skip) {
-    return new Lexical(skip.atLeastOnce(toNull()));
+    return new Lexical(skip.ignoreReturn().atLeastOnce(toNull()));
   }
 
   /**
