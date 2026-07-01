@@ -235,15 +235,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public static Parser<String> chars(int n) {
     checkArgument(n > 0, "chars count (%s) must be positive", n);
     String name = n + " char(s)";
-    return new Parser<>() {
-      @Override MatchResult<String> skipAndMatch(
+    return new Parser<Void>() {
+      @Override MatchResult<Void> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         return input.isInRange(start + n - 1)
-            ? new MatchResult.Success<>(start, start + n, input.snippet(start, n))
+            ? new MatchResult.Success<>(start, start + n, null)
             : context.expecting(name, start);
       }
-    };
+    }.source();
   }
 
   /**
@@ -2214,9 +2214,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
       checkState(p != null, "definedAs() should have been called before parse()");
       try {
-        checkState(
-            ++input.nestingLevel <= maxRecursionDepth,
-            "Max recursion depth (%s) exceeded", maxRecursionDepth);
+        if (++input.nestingLevel > maxRecursionDepth) {
+          throw new IllegalStateException(
+              String.format(
+                  "at %s: max recursion depth (%s) exceeded:%s",
+                  input.sourcePosition(start), maxRecursionDepth, new Snippet(input, start)));
+        }
         return p.skipAndMatch(skip, input, start, context);
       } finally {
         --input.nestingLevel;
