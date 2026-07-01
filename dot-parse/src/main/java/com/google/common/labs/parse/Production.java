@@ -169,4 +169,14 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
    */
   <S> Production<T> optionallyFollowedBy(
       Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> op);
+
+  /**
+   * Returns a production rule that matches {@code this} pattern and returns the matched string.
+   *
+   * <p>Note that the {@link Parser} and {@link Parser.OrEmpty} implementations are re-declared to
+   * return the more specific {@code Parser<T>} or {@code Parser<T>.OrEmpty} subtypes respectively.
+   *
+   * @since 10.6
+   */
+  Production<String> source();
 }

@@ -1469,7 +1469,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /** Returns a parser that matches {@code this} pattern and returns the matched string. */
-  public final Parser<String> source() {
+  @Override public final Parser<String> source() {
     @SuppressWarnings("unchecked")  // original return value no longer needed
     Parser<Object> elided = (Parser<Object>) ignoreReturn();
     return elided.new SamePrefix<String>() {
@@ -1905,6 +1905,16 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
     private OrEmpty withOptionalSuffix(Parser<UnaryOperator<T>> suffix) {
       return sequence(this, suffix.orElse(identity()), (operand, op) -> op.apply(operand));
+    }
+
+    /**
+     * Returns an equivalent parser that matches {@code this} pattern and returns the matched string,
+     * or empty string if mismatches.
+     *
+     * @since 10.6
+     */
+    @Override public final Parser<String>.OrEmpty source() {
+      return notEmpty().source().new OrEmpty(() -> "");
     }
 
     /**

@@ -7896,6 +7896,51 @@ public class ParserTest {
                 ^""");
   }
 
+  @Test
+  public void productionSource_success() {
+    Production<String> production = string("foo");
+    Production<String> source = production.source();
+    assertThat(source.parse("foo")).isEqualTo("foo");
+    assertThat(source.matches("foo")).isTrue();
+  }
+
+  @Test
+  public void productionSource_failure() {
+    Production<String> production = string("foo");
+    Production<String> source = production.source();
+    assertThrows(ParseException.class, () -> source.parse("bar"));
+    assertThat(source.matches("bar")).isFalse();
+  }
+
+  @Test
+  public void orEmptySource_success() {
+    Parser<Optional<String>>.OrEmpty orEmpty = string("foo").optional();
+    Parser<String>.OrEmpty source = orEmpty.source();
+    assertThat(source.parse("foo")).isEqualTo("foo");
+    assertThat(source.parse("")).isEqualTo("");
+    assertThat(source.matches("foo")).isTrue();
+    assertThat(source.matches("")).isTrue();
+  }
+
+  @Test
+  public void orEmptySource_failure() {
+    Parser<Optional<String>>.OrEmpty orEmpty = string("foo").optional();
+    Parser<String>.OrEmpty source = orEmpty.source();
+    assertThrows(ParseException.class, () -> source.parse("bar"));
+    assertThat(source.matches("bar")).isFalse();
+  }
+
+  @Test
+  public void returnElision_orEmptySource() {
+    List<String> joined = new ArrayList<>();
+    Parser<String>.OrEmpty orEmpty = string("a").zeroOrMore(collectingAndAdd(joining(","), joined));
+    Parser<String>.OrEmpty source = orEmpty.source();
+    assertThat(source.parse("aaa")).isEqualTo("aaa");
+    assertThat(joined).isEmpty();
+    assertThat(source.parse("")).isEqualTo("");
+    assertThat(joined).isEmpty();
+  }
+
   private static <T, A, R> Collector<T, A, R> collectingAndAdd(
       Collector<T, A, R> collector, List<? super R> results) {
     return collectingAndThen(
