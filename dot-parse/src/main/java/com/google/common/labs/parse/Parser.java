@@ -2208,11 +2208,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       checkState(p != null, "definedAs() should have been called before parse()");
       try {
         checkState(
-            input.beginRecursion() <= maxDepth,
+            ++input.nestingLevel <= maxDepth,
             "Max recursion depth (%s) exceeded", maxDepth);
         return p.skipAndMatch(skip, input, start, context);
       } finally {
-        input.endRecursion();
+        input.nestingLevel--;
       }
     }
 

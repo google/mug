@@ -27,15 +27,7 @@ import com.google.mu.util.Substring;
 
 /** An abstraction over sequentially read characters. */
 abstract class CharInput {
-  private int recursionDepth = 0;
-
-  final int beginRecursion() {
-    return ++recursionDepth;
-  }
-
-  final void endRecursion() {
-    recursionDepth--;
-  }
+  int nestingLevel = 0;
 
   /** Reads the character at {@code index}. */
   abstract char charAt(int index);
