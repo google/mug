@@ -2219,7 +2219,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             "Max recursion depth (%s) exceeded", maxRecursionDepth);
         return p.skipAndMatch(skip, input, start, context);
       } finally {
-        input.nestingLevel--;
+        --input.nestingLevel;
       }
     }
 
