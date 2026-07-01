@@ -2178,7 +2178,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   @ThreadSafe
   public static final class Rule<T> extends Parser<T> {
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
-    private final int maxDepth;
+    private final int maxRecursionDepth;
     private volatile boolean dryRun = false;
 
     /** Creates a rule with a default maximum recursion depth of 100. */
@@ -2192,12 +2192,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * <p>The recursion depth is tracked globally per parse operation across all recursive rules
      * on the call stack.
      *
-     * @throws IllegalArgumentException if {@code maxDepth} is not positive.
+     * @throws IllegalArgumentException if {@code maxRecursionDepth} is not positive.
      * @since 10.6
      */
-    public Rule(int maxDepth) {
-      checkArgument(maxDepth > 0, "maxDepth (%s) must be positive", maxDepth);
-      this.maxDepth = maxDepth;
+    public Rule(int maxRecursionDepth) {
+      checkArgument(maxRecursionDepth > 0, "maxRecursionDepth (%s) must be positive", maxRecursionDepth);
+      this.maxRecursionDepth = maxRecursionDepth;
     }
 
     @Override MatchResult<T> skipAndMatch(
@@ -2215,8 +2215,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       checkState(p != null, "definedAs() should have been called before parse()");
       try {
         checkState(
-            ++input.nestingLevel <= maxDepth,
-            "Max recursion depth (%s) exceeded", maxDepth);
+            ++input.nestingLevel <= maxRecursionDepth,
+            "Max recursion depth (%s) exceeded", maxRecursionDepth);
         return p.skipAndMatch(skip, input, start, context);
       } finally {
         input.nestingLevel--;
