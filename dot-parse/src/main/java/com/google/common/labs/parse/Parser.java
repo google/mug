@@ -949,7 +949,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * }</pre>
    */
   public static Parser<String>.OrEmpty zeroOrMore(CharPredicate charsToMatch, String name) {
-    return consecutive(charsToMatch, name).orElse("");
+    return consecutive(charsToMatch, name).new OrEmpty(() -> "");
   }
 
   /**
@@ -1345,7 +1345,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @Override public final Parser<T> optionallyFollowedBy(Parser<?> suffix) {
-    return followedBy(suffix.orElse(null));
+    return followedBy(suffix.new OrEmpty(() -> null));
   }
 
   @Override public final Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
@@ -1373,7 +1373,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   final Parser<T> withOptionalSuffix(Parser<UnaryOperator<T>> suffix) {
-    return and(suffix.orElse(identity()), (a, op) -> op.apply(a));
+    return and(suffix.new OrEmpty(() -> identity()), (a, op) -> op.apply(a));
   }
 
   /** A form of negative lookahead such that the match is rejected if followed by {@code suffix}. */
@@ -1878,7 +1878,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * @since 10.5
      */
     @Override public OrEmpty optionallyFollowedBy(Parser<?> suffix) {
-      return followedBy(suffix.orElse(null));
+      return followedBy(suffix.new OrEmpty(() -> null));
     }
     /**
      * If this parser matches, optionally applies the {@code op} function if the pattern is followed
@@ -1904,7 +1904,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     private OrEmpty withOptionalSuffix(Parser<UnaryOperator<T>> suffix) {
-      return sequence(this, suffix.orElse(identity()), (operand, op) -> op.apply(operand));
+      return sequence(this, suffix.new OrEmpty(() -> identity()), (operand, op) -> op.apply(operand));
     }
 
     /**
