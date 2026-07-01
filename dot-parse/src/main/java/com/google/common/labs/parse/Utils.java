@@ -30,6 +30,18 @@ class Utils {
     }
   }
 
+  static void checkState(boolean condition, String message) {
+    if (!condition) {
+      throw new IllegalStateException(message);
+    }
+  }
+
+  static void checkState(boolean condition, String message, int arg) {
+    if (!condition) {
+      throw new IllegalStateException(String.format(message, arg));
+    }
+  }
+
   static void checkState(boolean condition, String message, Object... args) {
     if (!condition) {
       throw new IllegalStateException(String.format(message, args));
