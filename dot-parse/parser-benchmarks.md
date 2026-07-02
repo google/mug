@@ -191,6 +191,36 @@ Every engine was validated against the **exact same 14 deep structural AST test 
 
 ---
 
+## StringIn vs. Keywords: Trie-Based Optimizations
+
+We compared the performance of matching one of many literal strings in a flat choice. In `cats-parse`, this is represented by the `Parser.stringIn` primitive. In `dot-parse`, this is represented by collecting individual string parsers using the `Parser.or()` collector.
+
+### Benchmark Results (Average Time, Lower is Better)
+
+| Scenario | Candidate Strings | `dot-parse` (ns/op) | `cats-parse` (ns/op) |
+| :--- | :--- | :---: | :---: |
+| **`stringIn` (foo)** | 5 overlapping strings | **73 ns** | **78 ns** |
+| **`stringIn` (broad)** | 676 generated strings | **1065 ns** | **1066 ns** |
+
+Both libraries perform on par because they both compile the flat list of strings into an optimized trie structure at runtime:
+*   **`cats-parse`** compiles them into an internal `RadixNode` (trie).
+*   **`dot-parse`** compiles them into a `PrefixPruneTree` (trie) inside `OrParser`.
+
+### The Critical Architectural Difference: `StringIn` vs. `Keywords`
+
+While they perform identically on flat string choices (`StringIn`), their performance diverges significantly in real-world programming language grammars (the `Keywords` case):
+
+1.  **`StringIn` (Flat Choice)**:
+    This is used when a list of strings are treated identically by the grammar (e.g., matching any operator or identifier where the exact string is just returned as a leaf value).
+    *   In this case, both `cats-parse` and `dot-parse` compile the raw `Parser.string` instances into their respective tries, achieving excellent $\sim 1\ \mu\text{s}$ scaling for hundreds of strings.
+
+2.  **`Keywords` (Leading Choice)**:
+    This is the standard pattern in programming language and SQL parsers, where different keywords lead to entirely different grammar branches and parser actions (e.g., `select` leads to a `selectStatement` rule, `insert` leads to an `insertStatement` rule).
+    *   **The Suffix/Map Limitation in `cats-parse`**: Because different branches must map to different AST nodes or trigger different rules, they require suffix operations (like `.map` or `*>`/`<*`). In `cats-parse`, appending `.map` to a string parser wraps it in a `Parser.Map` class. This **destroys** `cats-parse`'s radix-tree optimization, forcing it to fall back to sequential backtracking (trying all keywords one-by-one), which is extremely slow.
+    *   **The Prefix-Pruning Advantage in `dot-parse`**: `dot-parse`'s `OrParser` is designed to extract the prefix of candidate parsers **even if they have suffix/map operations**. Its `PrefixPruneTree` can still prune candidates by their leading character prefixes, allowing `dot-parse` to maintain $\sim 1\ \mu\text{s}$ trie-like scaling even when different keywords lead to different complex rules.
+
+---
+
 ## How to Run the Benchmarks
 
 To run these mixed Java/Scala/ANTLR4 benchmarks locally in the `mug` project:
