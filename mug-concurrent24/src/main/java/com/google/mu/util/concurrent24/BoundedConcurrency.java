@@ -276,10 +276,22 @@ public final class BoundedConcurrency {
 
       /** Acquires a semaphore. If interrupted, propagate cancellation then retry. */
       private void acquireWithInterruptionPropagation() {
-        if (Thread.currentThread().isInterrupted()) {
-          cancel();
+        boolean interrupted = false;
+        try {
+          while (true) {
+            try {
+              semaphore.acquire();
+              break;
+            } catch (InterruptedException e) {
+              interrupted = true;
+              cancel();
+            }
+          }
+        } finally {
+          if (interrupted) {
+            Thread.currentThread().interrupt();
+          }
         }
-        semaphore.acquireUninterruptibly(); // acquire even if interrupted
       }
     }
     return Gatherer.<T, Window, R>ofSequential(
