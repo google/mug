@@ -92,22 +92,20 @@ public final class BoundedConcurrency {
     checkArgument(tasks.size() > 0, "At least one task should have been provided");
     requireNonNull(isRecoverable);
     ConcurrentLinkedQueue<Throwable> recoverable = new ConcurrentLinkedQueue<>();
-    var maybeResult =
-        tasks.stream()
-            .gather(
-                flatMapConcurrently(
-                    task -> {
-                      try {
-                        return Stream.of(new Success<T>(task.call()));
-                      } catch (Throwable e) {
-                        if (isRecoverable.test(e)) {
-                          recoverable.add(e);
-                          return Stream.<Result<T>>empty();
-                        }
-                        return Stream.of(new Failure<T>(e)); // plumb it to the main thread to wrap
-                      }
-                    }))
-            .findAny();
+    var maybeResult = tasks.stream()
+        .gather(flatMapConcurrently(
+            task -> {
+              try {
+                return Stream.of(new Success<T>(task.call()));
+              } catch (Throwable e) {
+                if (isRecoverable.test(e)) {
+                  recoverable.add(e);
+                  return Stream.<Result<T>>empty();
+                }
+                return Stream.of(new Failure<T>(e)); // plumb it to the main thread to wrap
+              }
+            }))
+        .findAny();
     if (maybeResult.isEmpty()) {
       throw new UncheckedExecutionException(recoverable.remove(), recoverable);
     }
