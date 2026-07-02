@@ -5,7 +5,7 @@ Low-boilerplate, idiomatic Java parser combinator, aimed to replace regex and yo
 - **Easy to use:** intuitive, idiomatic and fluent Java API.
 - **Just works:** No "committing" or "cut" gotchas. What you see is what you get.
 - **Fast:** consistently among the fastest JVM parser combinators ([benchmark](./parser-benchmarks.md)).
-- **Safe:** Infinite loops can't compile; left recursion can't initialize; Stack overflow can't happen.
+- **Safe:** Infinite loops can't compile; left recursion can't initialize; stack overflow can't happen.
 
 ---
 
