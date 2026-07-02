@@ -448,10 +448,10 @@ Parser<TypeDecl> typeDecl =
 
 ## 8. Performance
 
-- **Always Use** `consecutive(charPredicate, name)` over
+- **Always Use** `consecutive(characterClass)` or `consecutive(charPredicate, name)` over
   `one(charPredicate, name).atLeastOnce(joining())`. The latter is
   substantially more expensive.
-- **Always Use** `zeroOrMore(charPredicate, name)` over
+- **Always Use** `zeroOrMore(characterClass)` or `zeroOrMore(charPredicate, name)` over
   `one(charPredicate, name).zeroOrMore(joining())`. The latter is
   substantially more expensive.
 - **Prefer** `consecutive("[a-fA-F0-9]")` over
