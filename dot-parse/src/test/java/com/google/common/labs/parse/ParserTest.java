@@ -5958,7 +5958,7 @@ public class ParserTest {
     Parser<String> parser = rule.between("(", ")").or(string("x"));
     rule.definedAs(parser);
 
-    IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> rule.parse("(((((x)))))"));
+    Parser.ParseException thrown = assertThrows(Parser.ParseException.class, () -> rule.parse("(((((x)))))"));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
@@ -5967,6 +5967,7 @@ public class ParserTest {
                 (((((x)))))
                      ^
             """);
+    assertThat(thrown.getSourceIndex()).isEqualTo(5);
   }
 
   @Test
@@ -5976,13 +5977,14 @@ public class ParserTest {
     rule.definedAs(parser);
 
     String input = "(".repeat(101) + "x" + ")".repeat(101);
-    IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> rule.parse(input));
+    Parser.ParseException thrown = assertThrows(Parser.ParseException.class, () -> rule.parse(input));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
             "at 1:101: max recursion depth (100) exceeded:\n"
                 + "    " + "(".repeat(26) + "x" + ")".repeat(48) + "\n"
                 + "    " + " ".repeat(25) + "^\n");
+    assertThat(thrown.getSourceIndex()).isEqualTo(100);
   }
 
   @Test
@@ -5995,7 +5997,7 @@ public class ParserTest {
     assertThat(rule.parse("x")).isEqualTo("x");
 
     // One level of recursion (depth 2) throws
-    IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> rule.parse("(x)"));
+    Parser.ParseException thrown = assertThrows(Parser.ParseException.class, () -> rule.parse("(x)"));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
@@ -6004,6 +6006,7 @@ public class ParserTest {
                 (x)
                  ^
             """);
+    assertThat(thrown.getSourceIndex()).isEqualTo(1);
   }
 
   @Test

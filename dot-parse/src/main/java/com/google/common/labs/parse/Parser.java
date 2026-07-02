@@ -2225,7 +2225,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       checkState(p != null, "definedAs() should have been called before parse()");
       try {
         if (++input.nestingLevel > maxRecursionDepth) {
-          throw new IllegalStateException(
+          throw new ParseException(
+              start,
               String.format(
                   "at %s: max recursion depth (%s) exceeded:%s",
                   input.sourcePosition(start), maxRecursionDepth, new Snippet(input, start)));
