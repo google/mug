@@ -448,15 +448,21 @@ Parser<TypeDecl> typeDecl =
 
 ## 8. Performance
 
-- **Prefer** `string("c")` or `one('c')` over `one(is('c'))`. They avoid
-  parse-time allocation (they just return the passed-in string as is) and are
-  more friendly to prefix-based pruning.
+- **Always Use** `consecutive(charPredicate, name)` over
+  `one(charPredicate, name).atLeastOnce(joining())`. The latter is
+  substantially more expensive.
+- **Always Use** `zeroOrMore(charPredicate, name)` over
+  `one(charPredicate, name).zeroOrMore(joining())`. The latter is
+  substantially more expensive.
 - **Prefer** `consecutive("[a-fA-F0-9]")` over
   `consecutive(CharPredicate predicate, String name)` because the latter is
   more verbose and doesn't enable prefix-based pruning.
 - **Prefer** `p1.optionallyFollowedBy(p2, The::wither)` over
   `anyOf(sequence(p1, p2, ...), p1)`. `optionallyFollowedBy()` is both more
   readable and more efficient.
+- **Prefer** `string("c")` or `one('c')` over `one(is('c'))`. They avoid
+  parse-time allocation (they just return the passed-in string as is) and are
+  more friendly to prefix-based pruning.
 
 ## 9. Avoiding API Hallucination
 
