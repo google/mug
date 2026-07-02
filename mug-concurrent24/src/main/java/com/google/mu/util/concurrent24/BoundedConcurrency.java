@@ -278,7 +278,7 @@ public final class BoundedConcurrency {
       private void acquireWithInterruptionPropagation() {
         boolean interrupted = false;
         try {
-          while (true) {
+          for (;;) {
             try {
               semaphore.acquire();
               break;
