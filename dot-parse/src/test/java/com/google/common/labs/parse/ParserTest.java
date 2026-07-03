@@ -4711,16 +4711,32 @@ public class ParserTest {
   }
 
   @Test
-  public void consecutive_fixedCount_charClass_invalidArgument() {
+  public void consecutive_fixedCount_charClass_zeroCount_throws() {
     assertThrows(IllegalArgumentException.class, () -> consecutive(0, "[0-9]"));
+  }
+
+  @Test
+  public void consecutive_fixedCount_charClass_negativeCount_throws() {
     assertThrows(IllegalArgumentException.class, () -> consecutive(-1, "[0-9]"));
+  }
+
+  @Test
+  public void consecutive_fixedCount_charClass_minValueCount_throws() {
     assertThrows(IllegalArgumentException.class, () -> consecutive(Integer.MIN_VALUE, "[0-9]"));
   }
 
   @Test
-  public void consecutive_fixedCount_charPredicate_invalidArgument() {
+  public void consecutive_fixedCount_charPredicate_zeroCount_throws() {
     assertThrows(IllegalArgumentException.class, () -> consecutive(0, is('a'), "a"));
+  }
+
+  @Test
+  public void consecutive_fixedCount_charPredicate_negativeCount_throws() {
     assertThrows(IllegalArgumentException.class, () -> consecutive(-1, is('a'), "a"));
+  }
+
+  @Test
+  public void consecutive_fixedCount_charPredicate_minValueCount_throws() {
     assertThrows(
         IllegalArgumentException.class, () -> consecutive(Integer.MIN_VALUE, is('a'), "a"));
   }
@@ -4740,17 +4756,23 @@ public class ParserTest {
   }
 
   @Test
-  public void consecutive_fixedCount_charClass_notEnoughChars_failure() {
+  public void consecutive_fixedCount_charClass_notEnoughChars_fails() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> consecutive(3, "[0-9]").parse("12"));
     assertThat(thrown).hasMessageThat().contains("1:1");
     assertThat(thrown).hasMessageThat().contains("expecting <3 [0-9]>");
+  }
 
+  @Test
+  public void consecutive_fixedCount_charClass_emptyInput_fails() {
     ParseException emptyThrown =
         assertThrows(ParseException.class, () -> consecutive(3, "[0-9]").parse(""));
     assertThat(emptyThrown).hasMessageThat().contains("1:1");
     assertThat(emptyThrown).hasMessageThat().contains("expecting <3 [0-9]>");
+  }
 
+  @Test
+  public void consecutive_fixedCount_charClass_notEnoughCharsAfterPrefix_fails() {
     ParseException afterPrefix =
         assertThrows(
             ParseException.class,
@@ -4760,12 +4782,23 @@ public class ParserTest {
   }
 
   @Test
-  public void consecutive_fixedCount_charPredicate_notEnoughChars_failure() {
+  public void consecutive_fixedCount_charPredicate_notEnoughChars_fails() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> consecutive(3, is('a'), "3 a's").parse("aa"));
     assertThat(thrown).hasMessageThat().contains("1:1");
     assertThat(thrown).hasMessageThat().contains("expecting <3 a's>");
+  }
 
+  @Test
+  public void consecutive_fixedCount_charPredicate_emptyInput_fails() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> consecutive(3, is('a'), "3 a's").parse(""));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <3 a's>");
+  }
+
+  @Test
+  public void consecutive_fixedCount_charPredicate_notEnoughCharsAfterPrefix_fails() {
     ParseException afterPrefix =
         assertThrows(
             ParseException.class,
@@ -4775,12 +4808,15 @@ public class ParserTest {
   }
 
   @Test
-  public void consecutive_fixedCount_charClass_charNotMatching_failure() {
+  public void consecutive_fixedCount_charClass_lastCharNotMatching_fails() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> consecutive(3, "[0-9]").parse("12a"));
     assertThat(thrown).hasMessageThat().contains("1:3");
     assertThat(thrown).hasMessageThat().contains("expecting <3 [0-9]>");
+  }
 
+  @Test
+  public void consecutive_fixedCount_charClass_middleCharNotMatching_fails() {
     ParseException secondChar =
         assertThrows(ParseException.class, () -> consecutive(3, "[0-9]").parse("1a3"));
     assertThat(secondChar).hasMessageThat().contains("1:2");
@@ -4788,12 +4824,15 @@ public class ParserTest {
   }
 
   @Test
-  public void consecutive_fixedCount_charPredicate_charNotMatching_failure() {
+  public void consecutive_fixedCount_charPredicate_lastCharNotMatching_fails() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> consecutive(3, is('a'), "3 a's").parse("aab"));
     assertThat(thrown).hasMessageThat().contains("1:3");
     assertThat(thrown).hasMessageThat().contains("expecting <3 a's>");
+  }
 
+  @Test
+  public void consecutive_fixedCount_charPredicate_middleCharNotMatching_fails() {
     ParseException secondChar =
         assertThrows(ParseException.class, () -> consecutive(3, is('a'), "3 a's").parse("aba"));
     assertThat(secondChar).hasMessageThat().contains("1:2");
@@ -4801,21 +4840,37 @@ public class ParserTest {
   }
 
   @Test
-  public void consecutive_fixedCount_charClass_leftoverMatchingCharsConsumedBySubsequentParser() {
+  public void consecutive_fixedCount_charClass_leftoverConsumedByFollowedBy() {
     assertThat(consecutive(3, "[0-9]").followedBy(digits()).parse("12345"))
         .isEqualTo("123");
+  }
+
+  @Test
+  public void consecutive_fixedCount_charClass_leftoverConsumedByThen() {
     assertThat(consecutive(3, "[0-9]").then(digits()).parse("12345"))
         .isEqualTo("45");
+  }
+
+  @Test
+  public void consecutive_fixedCount_charClass_leftoverConsumedByFollowedByConsecutive() {
     assertThat(consecutive(3, "[0-9]").followedBy(consecutive(2, "[0-9]")).parse("12345"))
         .isEqualTo("123");
   }
 
   @Test
-  public void consecutive_fixedCount_charPredicate_leftoverMatchingCharsConsumedBySubsequentParser() {
+  public void consecutive_fixedCount_charPredicate_leftoverConsumedByFollowedBy() {
     assertThat(consecutive(3, is('a'), "3 a's").followedBy(consecutive(is('a'), "more a's")).parse("aaaaa"))
         .isEqualTo("aaa");
+  }
+
+  @Test
+  public void consecutive_fixedCount_charPredicate_leftoverConsumedByThen() {
     assertThat(consecutive(3, is('a'), "3 a's").then(consecutive(is('a'), "more a's")).parse("aaaaa"))
         .isEqualTo("aa");
+  }
+
+  @Test
+  public void consecutive_fixedCount_charPredicate_leftoverConsumedByFollowedByConsecutive() {
     assertThat(consecutive(3, is('a'), "3 a's").followedBy(consecutive(2, is('a'), "2 a's")).parse("aaaaa"))
         .isEqualTo("aaa");
   }
@@ -7894,51 +7949,99 @@ public class ParserTest {
   }
 
   @Test
-  public void returnElision_consecutive_matches() {
+  public void returnElision_consecutive_charClass_matches() {
     assertThat(consecutive("[0-9]").parse("123")).isEqualTo("123");
     assertThat(consecutive("[0-9]").matches("123")).isTrue();
   }
 
   @Test
-  public void returnElision_consecutive_doesNotMatch() {
+  public void returnElision_consecutive_charPredicate_matches() {
+    assertThat(consecutive(is('a'), "a's").parse("aaa")).isEqualTo("aaa");
+    assertThat(consecutive(is('a'), "a's").matches("aaa")).isTrue();
+  }
+
+  @Test
+  public void returnElision_consecutive_charClass_notEnoughChars_doesNotMatch() {
     assertThrows(ParseException.class, () -> consecutive("[0-9]").parse("12a"));
     assertThat(consecutive("[0-9]").matches("12a")).isFalse();
+  }
+
+  @Test
+  public void returnElision_consecutive_charClass_emptyInput_doesNotMatch() {
     assertThrows(ParseException.class, () -> consecutive("[0-9]").parse(""));
     assertThat(consecutive("[0-9]").matches("")).isFalse();
   }
 
   @Test
-  public void returnElision_consecutive_withElision() {
-    Parser<String> parser = consecutive("[0-9]").thenReturn("ok");
-    assertThat(parser.parse("123")).isEqualTo("ok");
-    assertThat(consecutive(is('a'), "a's").thenReturn("ok").parse("aaa")).isEqualTo("ok");
+  public void returnElision_consecutive_charPredicate_notEnoughChars_doesNotMatch() {
+    assertThrows(ParseException.class, () -> consecutive(is('a'), "a's").parse("aab"));
+    assertThat(consecutive(is('a'), "a's").matches("aab")).isFalse();
   }
 
   @Test
-  public void returnElision_consecutive_fixedCount_matches() {
+  public void returnElision_consecutive_charPredicate_emptyInput_doesNotMatch() {
+    assertThrows(ParseException.class, () -> consecutive(is('a'), "a's").parse(""));
+    assertThat(consecutive(is('a'), "a's").matches("")).isFalse();
+  }
+
+  @Test
+  public void returnElision_consecutive_charClass_withElision() {
+    Parser<String> parser = consecutive("[0-9]").thenReturn("ok");
+    assertThat(parser.parse("123")).isEqualTo("ok");
+  }
+
+  @Test
+  public void returnElision_consecutive_charPredicate_withElision() {
+    Parser<String> parser = consecutive(is('a'), "a's").thenReturn("ok");
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+  }
+
+  @Test
+  public void returnElision_consecutive_fixedCount_charClass_matches() {
     assertThat(consecutive(3, "[0-9]").parse("123")).isEqualTo("123");
     assertThat(consecutive(3, "[0-9]").matches("123")).isTrue();
+  }
+
+  @Test
+  public void returnElision_consecutive_fixedCount_charPredicate_matches() {
     assertThat(consecutive(3, is('a'), "3 a's").parse("aaa")).isEqualTo("aaa");
     assertThat(consecutive(3, is('a'), "3 a's").matches("aaa")).isTrue();
   }
 
   @Test
-  public void returnElision_consecutive_fixedCount_doesNotMatch() {
+  public void returnElision_consecutive_fixedCount_charClass_lastCharNotMatching_doesNotMatch() {
     assertThrows(ParseException.class, () -> consecutive(3, "[0-9]").parse("12a"));
     assertThat(consecutive(3, "[0-9]").matches("12a")).isFalse();
+  }
+
+  @Test
+  public void returnElision_consecutive_fixedCount_charClass_notEnoughChars_doesNotMatch() {
     assertThrows(ParseException.class, () -> consecutive(3, "[0-9]").parse("12"));
     assertThat(consecutive(3, "[0-9]").matches("12")).isFalse();
+  }
+
+  @Test
+  public void returnElision_consecutive_fixedCount_charPredicate_lastCharNotMatching_doesNotMatch() {
     assertThrows(ParseException.class, () -> consecutive(3, is('a'), "3 a's").parse("aab"));
     assertThat(consecutive(3, is('a'), "3 a's").matches("aab")).isFalse();
+  }
+
+  @Test
+  public void returnElision_consecutive_fixedCount_charPredicate_notEnoughChars_doesNotMatch() {
     assertThrows(ParseException.class, () -> consecutive(3, is('a'), "3 a's").parse("aa"));
     assertThat(consecutive(3, is('a'), "3 a's").matches("aa")).isFalse();
   }
 
   @Test
-  public void returnElision_consecutive_fixedCount_withElision() {
+  public void returnElision_consecutive_fixedCount_charClass_withElision() {
     Parser<String> parser = consecutive(3, "[0-9]").thenReturn("ok");
     assertThat(parser.parse("123")).isEqualTo("ok");
-    assertThat(consecutive(3, is('a'), "3 a's").thenReturn("ok").parse("aaa")).isEqualTo("ok");
+  }
+
+  @Test
+  public void returnElision_consecutive_fixedCount_charPredicate_withElision() {
+    Parser<String> parser = consecutive(3, is('a'), "3 a's").thenReturn("ok");
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
   }
 
   @Test
