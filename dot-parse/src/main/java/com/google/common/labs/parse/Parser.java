@@ -1249,7 +1249,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** If this parser matches, returns the given result. */
   public <R> Parser<R> thenReturn(R result) {
-    return ignoreReturn().map(unused -> result);
+    return ignoreReturn().elidableMap(unused -> result);
   }
 
   @Override public final <S> Parser<S> then(Parser<S> suffix) {

@@ -493,6 +493,13 @@ Parser<TypeDecl> typeDecl =
   in square brackets, mimicking regex character classes.
 
   - **Never** use `consecutive("abc")`. Always use `consecutive("[abc]")`.
+- **Don't Abuse notEmpty()**: `notEmpty()` shouldn't be abused as an escape hatch
+  so you can "cast" an `OrEmpty` to `Parser`. The only legit use case for `notEmpty()`
+  is if you have multiple `OrEmpty` instances being sequenced together and the
+  grammar dictates that the sequence cannot match empty even when every individual
+  component is optional.
+  Instead, attach the `OrEmpty` to an existing consuming `Parser` via
+  `sequence()`, `then()`, `followedBy()` etc.
 - **Greedy Matching**: `zeroOrMore` and `atLeastOnce` are greedy. They will
   consume as much as possible and do not automatically backtrack to give back
   characters to a suffix parser.
