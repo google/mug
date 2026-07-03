@@ -834,7 +834,9 @@ public class ParserTest {
             .setDefault(String.class, "test")
             .setDefault(char.class, '`')
             .setDefault(Production.class, zeroOrMore("[]"));
-    tester.testAllPublicStaticMethods(Parser.class);
+    tester
+        .ignore(Parser.class.getMethod("just", Object.class))
+        .testAllPublicStaticMethods(Parser.class);
     tester
         .ignore(Parser.class.getMethod("orElse", Object.class))
         .ignore(Parser.class.getMethod("thenReturn", Object.class))
@@ -1099,6 +1101,28 @@ public class ParserTest {
             ^
         """);
   }
+
+  @Test
+  public void just_onItsOwn() {
+    Parser<String>.OrEmpty parser = Parser.just("foo");
+    assertThat(parser.parse("")).isEqualTo("foo");
+    assertThat(parser.matches("")).isTrue();
+  }
+
+  @Test
+  public void just_inSequence() {
+    Parser<String> parser = string("abc").then(Parser.just("foo"));
+    assertThat(parser.parse("abc")).isEqualTo("foo");
+    assertThat(parser.matches("abc")).isTrue();
+  }
+
+  @Test
+  public void just_fromFlatMap() {
+    Parser<String> parser = string("abc").flatMap(val -> Parser.just(val.toUpperCase()));
+    assertThat(parser.parse("abc")).isEqualTo("ABC");
+    assertThat(parser.matches("abc")).isTrue();
+  }
+
 
 
 

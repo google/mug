@@ -36,14 +36,17 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.net.IDN;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collector;
 
 import com.google.common.labs.parse.Parser;
+import com.google.common.labs.parse.Production;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.FormatString;
@@ -238,7 +241,7 @@ public final class EmailAddress {
    * @since 10.4
    */
   public static final Parser<EmailAddress> ADDR_SPEC_PARSER =
-      ADDR_SPEC_ALIKE.map(AddrSpecAlike::toEmailAddress);
+      ADDR_SPEC_ALIKE.flatMap(AddrSpecAlike::toEmailAddress);
 
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
@@ -498,7 +501,7 @@ public final class EmailAddress {
         one(unquotedDisplayNameChars.or('"').and(noneOf(",;")), "display name char"),
         "part of display name");
     return anyOf(
-        sequence(
+        safely(
             // optimization so that for the common case of user@company.com, we don't have to
             // backtrack to the sequence(displayName, bracketedAddress) rule.
             looksLikeAddrSpec, bracketedAddress.orElse(null),
@@ -506,11 +509,18 @@ public final class EmailAddress {
                 bracketedOrNull == null
                     ? addrSpecOrDisplayName.toEmailAddress()
                     : bracketedOrNull.toEmailAddressWithDisplayName(addrSpecOrDisplayName.toString())),
-        sequence(
+        safely(
             displayName, bracketedAddress,
             (name, addr) -> addr.toEmailAddressWithDisplayName(name)),
-        bracketedAddress.map(AddrSpecAlike::toEmailAddress),
+        bracketedAddress.flatMap(AddrSpecAlike::toEmailAddress),
         ADDR_SPEC_PARSER); // fall back when PARSER is combined with other parsers
+  }
+
+  private static <A, B> Parser<EmailAddress> safely(
+      Parser<A> a, Production<B> b,
+      BiFunction<? super A, ? super B, ? extends Production<EmailAddress>> combiner) {
+    return sequence(a, b, SimpleImmutableEntry::new)
+        .flatMap(e -> combiner.apply(e.getKey(), e.getValue()));
   }
 
   private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses(
@@ -585,12 +595,21 @@ public final class EmailAddress {
   }
 
   private record AddrSpecAlike(String localPart, String domain) {
-    EmailAddress toEmailAddress() {
-      return new EmailAddress(localPart, canonicalizeDomain(domain), Optional.empty());
+    Production<EmailAddress> toEmailAddress() {
+      try {
+        return Parser.just(new EmailAddress(localPart, canonicalizeDomain(domain), Optional.empty()));
+      } catch (IllegalArgumentException e) {
+        return Parser.fail(e.getMessage());
+      }
     }
 
-    EmailAddress toEmailAddressWithDisplayName(String displayName) {
-      return new EmailAddress(localPart, canonicalizeDomain(domain), Optional.of(displayName));
+    Production<EmailAddress> toEmailAddressWithDisplayName(String displayName) {
+      try {
+        return Parser.just(
+            new EmailAddress(localPart, canonicalizeDomain(domain), Optional.of(displayName)));
+      } catch (IllegalArgumentException e) {
+        return Parser.fail(e.getMessage());
+      }
     }
 
     @Override public String toString() {

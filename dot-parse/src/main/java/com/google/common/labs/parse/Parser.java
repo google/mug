@@ -580,6 +580,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
+   * A production rule that consumes no input and just returns {@code value}.
+   *
+   * @since 10.6
+   */
+  public static <T> Parser<T>.OrEmpty just(T value) {
+    return Parser.<T>fail("").orElse(value);
+  }
+
+  /**
    * An always-failing parser with the {@code errorMessage}.
    *
    * <p>Useful to be returned from the lambda passed to {@link #flatMap} (for example,

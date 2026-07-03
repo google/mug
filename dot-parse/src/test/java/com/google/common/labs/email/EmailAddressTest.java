@@ -1303,6 +1303,15 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testParseAddressList_withConsumer_invalidIdnDomain() {
+    List<String> invalid = new ArrayList<>();
+    String invalidAddress = "test@" + "a".repeat(70) + ".com";
+    assertThat(EmailAddress.parseAddressList(invalidAddress, invalid::add)).isEmpty();
+    assertThat(invalid).containsExactly(invalidAddress);
+  }
+
+
+  @Test
   public void testParseAddressList_withConsumer_allInvalid() {
     List<String> invalid = new ArrayList<>();
     assertThat(EmailAddress.parseAddressList("invalid1, invalid2; wrong@address@com", invalid::add)).isEmpty();
