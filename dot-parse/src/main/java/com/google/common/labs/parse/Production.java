@@ -58,6 +58,16 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
   /** Returns true if this production rule matches the entirety of {@code input} string. */
   boolean matches(String input);
 
+  /**
+   * After this production rule completes, apply the given function to the result.
+   *
+   * <p>Note that the {@link Parser} and {@link Parser.OrEmpty} implementations are re-declared to
+   * return the more specific {@code Parser<T>} or {@code Parser<T>.OrEmpty} subtypes respectively.
+   *
+   * @since 10.6
+   */
+  <R> Production<R> map(Function<? super T, ? extends R> f);
+
   /** The current production must be enclosed between non-empty {@code prefix} and {@code suffix}. */
   default Parser<T> between(String prefix, String suffix) {
     return between(Parser.string(prefix), Parser.string(suffix));

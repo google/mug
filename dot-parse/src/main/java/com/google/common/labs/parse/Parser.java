@@ -1235,7 +1235,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /** If this parser matches, returns the result of applying the given function to the match. */
-  public final <R> Parser<R> map(Function<? super T, ? extends R> f) {
+  @Override public final <R> Parser<R> map(Function<? super T, ? extends R> f) {
     requireNonNull(f);
     return new SamePrefix<>() {
       @Override MatchResult<R> skipAndMatch(
@@ -1828,6 +1828,16 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
     private OrEmpty(Supplier<? extends T> defaultSupplier) {
       this.defaultSupplier = defaultSupplier;
+    }
+
+    /**
+     * Applies {@code f} to either the parse result, or the default value if matching fails.
+     *
+     * @since 10.6
+     */
+    @Override public final <R> Production<R> map(Function<? super T, ? extends R> f) {
+      var supplier = defaultSupplier;
+      return notEmpty().<R>map(f).new OrEmpty(() -> f.apply(supplier.get()));
     }
 
     /**

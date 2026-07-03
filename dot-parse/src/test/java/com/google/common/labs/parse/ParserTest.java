@@ -1872,6 +1872,27 @@ public class ParserTest {
             (a, b) -> a + ":" + b);
     assertThrows(ParseException.class, () -> parser.notEmpty().parse(""));
   }
+ 
+  @Test
+  public void orEmpty_map_match() {
+    Production<String> parser = string("abc").orElse("default").map(String::toUpperCase);
+    assertThat(parser.parse("abc")).isEqualTo("ABC");
+    assertThat(parser.matches("abc")).isTrue();
+  }
+
+  @Test
+  public void orEmpty_map_mismatch() {
+    Production<String> parser = string("abc").orElse("default").map(String::toUpperCase);
+    assertThat(parser.parse("")).isEqualTo("DEFAULT");
+    assertThat(parser.matches("")).isTrue();
+  }
+
+  @Test
+  public void orEmpty_map_differentType() {
+    Production<Integer> parser = string("123").orElse("0").map(Integer::parseInt);
+    assertThat(parser.parse("123")).isEqualTo(123);
+    assertThat(parser.parse("")).isEqualTo(0);
+  }
 
   @Test
   public void optionalPrefixPruning() {
