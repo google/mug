@@ -595,20 +595,23 @@ public final class EmailAddress {
 
   private record AddrSpecAlike(String localPart, String domain) {
     Production<EmailAddress> toEmailAddress() {
+      String canonicalDomain;
       try {
-        return Parser.just(new EmailAddress(localPart, canonicalizeDomain(domain), Optional.empty()));
+        canonicalDomain = canonicalizeDomain(domain);
       } catch (IllegalArgumentException e) {
         return Parser.fail(e.getMessage());
       }
+      return Parser.just(new EmailAddress(localPart, canonicalDomain, Optional.empty()));
     }
 
     Production<EmailAddress> toEmailAddressWithDisplayName(String displayName) {
+      String canonicalDomain;
       try {
-        return Parser.just(
-            new EmailAddress(localPart, canonicalizeDomain(domain), Optional.of(displayName)));
+        canonicalDomain = canonicalizeDomain(domain);
       } catch (IllegalArgumentException e) {
         return Parser.fail(e.getMessage());
       }
+      return Parser.just(new EmailAddress(localPart, canonicalDomain, Optional.of(displayName)));
     }
 
     @Override public String toString() {
