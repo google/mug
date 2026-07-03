@@ -1140,16 +1140,9 @@ public class ParserTest {
 
   @Test
   public void just_onItsOwn() {
-    Parser<String>.OrEmpty parser = Parser.just("foo");
+    Production<String> parser = Parser.just("foo");
     assertThat(parser.parse("")).isEqualTo("foo");
     assertThat(parser.matches("")).isTrue();
-  }
-
-  @Test
-  public void just_inSequence() {
-    Parser<String> parser = string("abc").then(Parser.just("foo"));
-    assertThat(parser.parse("abc")).isEqualTo("foo");
-    assertThat(parser.matches("abc")).isTrue();
   }
 
   @Test

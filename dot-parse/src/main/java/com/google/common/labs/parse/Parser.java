@@ -584,7 +584,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @since 10.6
    */
-  public static <T> Parser<T>.OrEmpty just(T value) {
+  public static <T> Production<T> just(T value) {
     return Parser.<T>fail("").orElse(value);
   }
 
