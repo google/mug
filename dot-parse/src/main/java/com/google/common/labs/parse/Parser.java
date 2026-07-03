@@ -1135,13 +1135,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final Parser<T> withPrefixes(Parser<? extends UnaryOperator<T>> operator) {
     return sequence(
-        operator.zeroOrMore(), this,
-        (ops, operand) ->
-            ops.isEmpty()
-                ? operand
-                : ops.size() == 1
-                    ? ops.get(0).apply(operand)
-                    : applyOperators(ops.reversed(), operand));
+        operator.zeroOrMore(), this, (ops, operand) -> applyOperators(ops.reversed(), operand));
   }
 
   /**
@@ -1751,7 +1745,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * of this class.
    *
    * <p>Besides {@link #between(String, String) between()} and {@link #followedBy(String) followedBy()},
-   * the {@link Parser#sequence(Parser, Parser.OrEmpty, BiFunction) sequence()} and {@link
+   * the {@link Parser#sequence(Parser, Production, BiFunction) sequence()} and {@link
    * Parser#followedBy(Parser.OrEmpty)} methods can be used to specify that a {@code Parser.OrEmpty}
    * production rule follows a regular consuming {@code Parser}.
    *
