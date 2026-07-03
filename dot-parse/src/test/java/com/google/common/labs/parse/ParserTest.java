@@ -842,6 +842,7 @@ public class ParserTest {
         .ignore(Parser.class.getMethod("orElse", Object.class))
         .ignore(Parser.class.getMethod("thenReturn", Object.class))
         .testAllPublicInstanceMethods(string("a"));
+    tester.testAllPublicInstanceMethods(Parser.just("a"));
   }
 
   @Test
@@ -1872,7 +1873,7 @@ public class ParserTest {
             (a, b) -> a + ":" + b);
     assertThrows(ParseException.class, () -> parser.notEmpty().parse(""));
   }
- 
+
   @Test
   public void orEmpty_map_match() {
     Production<String> parser = string("abc").orElse("default").map(String::toUpperCase);
