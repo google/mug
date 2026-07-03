@@ -580,61 +580,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * A production rule that consumes no input and just returns {@code value}.
-   *
-   * <p>Useful when combined with {@link #fail} in the lambda passed to {@link #flatMap}
-   * to dynamically map the previously parsed result with graceful error handling. such as:
-   *
-   * <pre>{@code
-   * Parser<re2.Pattern> pattern = regexPattern.flatMap(
-   *      regex -> {
-   *        try {
-   *          return Parser.just(re2.Pattern.compile(regex));
-   *        } catch (PatternSyntaxException e) {
-   *          return Parser.fail(e.getMessage());
-   *        });
-   * }</pre>
-   *
-   * @since 10.6
-   */
-  public static <T> Production<T> just(T value) {
-    return Parser.<T>fail("")
-        .new OrEmpty(
-            new Parser<T>() {
-              @Override MatchResult<T> skipAndMatch(
-                  Parser<?> skip, CharInput input, int start, ErrorContext context) {
-                return new MatchResult.Success<>(start, start, value);
-              }
-            },
-            () -> value);
-  }
-
-  /**
-   * An always-failing parser with the {@code errorMessage}.
-   *
-   * <p>Useful to be returned from the lambda passed to {@link #flatMap} (for example,
-   * you used a third-party library to parse the content and need to report the error
-   * from the library as if it were regular parsing error).
-   *
-   * @param message the error message; {@code null} is equivalent to an empty string.
-   *
-   * @since 10.6
-   */
-  public static <T> Parser<T> fail(String message) {
-    String name = message == null ? "" : message;
-    return new Parser<T>() {
-      @Override MatchResult<T> skipAndMatch(
-           Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        return context.failAt(start, "{name}{snippet}", name);
-      }
-
-      @Override Set<String> getPrefixes() {
-        return Set.of();  // it can always be pruned.
-      }
-    };
-  }
-
-  /**
    * Parses a 4-digit hex BMP code unit. The following example parses a surrogate pair of two UTF-16
    * code units and will return the emoji {@code 😀}:
    *
@@ -1190,7 +1135,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final Parser<T> withPrefixes(Parser<? extends UnaryOperator<T>> operator) {
     return sequence(
-        operator.zeroOrMore(), this, (ops, operand) -> applyOperators(ops.reversed(), operand));
+        operator.zeroOrMore(), this,
+        (ops, operand) ->
+            ops.isEmpty()
+                ? operand
+                : ops.size() == 1
+                    ? ops.get(0).apply(operand)
+                    : applyOperators(ops.reversed(), operand));
   }
 
   /**
@@ -1832,27 +1783,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * A crippled zero-width parser, not safe to be used in a loop and must be carefully
      * composed with a parser that does consume!
      */
-    private final Parser<T> unsafeZeroWidthParser;
+    private final Parser<T> unsafeZeroWidthParser =
+        new Parser<T>() {
+          @Override MatchResult<T> skipAndMatch(
+              Parser<?> skip, CharInput input, int start, ErrorContext context) {
+            return switch (notEmpty().skipAndMatch(skip, input, start, context)) {
+              case MatchResult.Success<T> success -> success;
+              default -> new MatchResult.Success<>(start, start, computeDefaultValue());
+            };
+          }
+
+          @Override Parser<?> ignoreReturn() {
+            return OrEmpty.this.ignoreReturn().unsafeZeroWidthParser;
+          }
+        };
 
     private OrEmpty(Supplier<? extends T> defaultSupplier) {
-      this(
-          new Parser<T>() {
-            @Override MatchResult<T> skipAndMatch(
-                Parser<?> skip, CharInput input, int start, ErrorContext context) {
-              return switch (Parser.this.skipAndMatch(skip, input, start, context)) {
-                case MatchResult.Success<T> success -> success;
-                default -> new MatchResult.Success<>(start, start, defaultSupplier.get());
-              };
-            }
-
-            @Override Parser<?> ignoreReturn() {
-              return Parser.this.ignoreReturn().new OrEmpty(() -> null).unsafeZeroWidthParser;
-            }
-          }, defaultSupplier);
-    }
-
-    private OrEmpty(Parser<T> unsafeZeroWidthParser, Supplier<? extends T> defaultSupplier) {
-      this.unsafeZeroWidthParser = unsafeZeroWidthParser;
       this.defaultSupplier = defaultSupplier;
     }
 
@@ -1862,8 +1808,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * @since 10.6
      */
     @Override public final <R> Production<R> map(Function<? super T, ? extends R> f) {
-      var supplier = defaultSupplier;
-      return notEmpty().<R>map(f).new OrEmpty(() -> f.apply(supplier.get()));
+      var defaultValue = defaultSupplier;
+      return notEmpty().<R>map(f).new OrEmpty(() -> f.apply(defaultValue.get()));
     }
 
     /**
