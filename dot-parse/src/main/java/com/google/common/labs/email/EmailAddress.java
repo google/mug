@@ -36,7 +36,6 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.net.IDN;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -53,6 +52,7 @@ import com.google.errorprone.annotations.FormatString;
 import com.google.errorprone.annotations.Immutable;
 import com.google.errorprone.annotations.InlineMe;
 import com.google.errorprone.annotations.concurrent.LazyInit;
+import com.google.mu.util.Both;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
@@ -519,8 +519,7 @@ public final class EmailAddress {
   private static <A, B> Parser<EmailAddress> safely(
       Parser<A> a, Production<B> b,
       BiFunction<? super A, ? super B, ? extends Production<EmailAddress>> combiner) {
-    return sequence(a, b, SimpleImmutableEntry::new)
-        .flatMap(e -> combiner.apply(e.getKey(), e.getValue()));
+    return sequence(a, b, Both::of).flatMap(e -> e.andThen(combiner));
   }
 
   private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses(

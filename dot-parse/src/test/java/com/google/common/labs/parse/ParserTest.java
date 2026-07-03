@@ -1036,6 +1036,26 @@ public class ParserTest {
   }
 
   @Test
+  public void flatMap_lambdaReturnsOrEmpty_outerFails() {
+    Parser<String> parser = string("a").flatMap(r -> string("b").orElse("B"));
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+    assertThat(parser.matches("c")).isFalse();
+  }
+
+  @Test
+  public void flatMap_lambdaReturnsOrEmpty_innerMatches() {
+    Parser<String> parser = string("a").flatMap(r -> string("b").orElse("B"));
+    assertThat(parser.parse("ab")).isEqualTo("b");
+    assertThat(parser.matches("ab")).isTrue();
+  }
+
+  @Test
+  public void flatMap_lambdaReturnsOrEmpty_innerDoesNotMatch() {
+    Parser<String> parser = string("a").flatMap(r -> string("b").orElse("B"));
+    assertThat(parser.parse("a")).isEqualTo("B");
+    assertThat(parser.matches("a")).isTrue();
+  }
+  @Test
   public void fail_onItsOwn() {
     Parser<String> parser = Parser.fail("custom error message");
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
@@ -1123,29 +1143,6 @@ public class ParserTest {
     assertThat(parser.matches("abc")).isTrue();
   }
 
-
-
-
-  @Test
-  public void flatMap_lambdaReturnsOrEmpty_outerFails() {
-    Parser<String> parser = string("a").flatMap(r -> string("b").orElse("B"));
-    assertThrows(ParseException.class, () -> parser.parse("c"));
-    assertThat(parser.matches("c")).isFalse();
-  }
-
-  @Test
-  public void flatMap_lambdaReturnsOrEmpty_innerMatches() {
-    Parser<String> parser = string("a").flatMap(r -> string("b").orElse("B"));
-    assertThat(parser.parse("ab")).isEqualTo("b");
-    assertThat(parser.matches("ab")).isTrue();
-  }
-
-  @Test
-  public void flatMap_lambdaReturnsOrEmpty_innerDoesNotMatch() {
-    Parser<String> parser = string("a").flatMap(r -> string("b").orElse("B"));
-    assertThat(parser.parse("a")).isEqualTo("B");
-    assertThat(parser.matches("a")).isTrue();
-  }
 
   @Test
   public void then_success() {
