@@ -501,7 +501,7 @@ public final class EmailAddress {
         one(unquotedDisplayNameChars.or('"').and(noneOf(",;")), "display name char"),
         "part of display name");
     return anyOf(
-        safely(
+        flatMap(
             // optimization so that for the common case of user@company.com, we don't have to
             // backtrack to the sequence(displayName, bracketedAddress) rule.
             looksLikeAddrSpec, bracketedAddress.orElse(null),
@@ -509,14 +509,14 @@ public final class EmailAddress {
                 bracketedOrNull == null
                     ? addrSpecOrDisplayName.toEmailAddress()
                     : bracketedOrNull.toEmailAddressWithDisplayName(addrSpecOrDisplayName.toString())),
-        safely(
+        flatMap(
             displayName, bracketedAddress,
             (name, addr) -> addr.toEmailAddressWithDisplayName(name)),
         bracketedAddress.flatMap(AddrSpecAlike::toEmailAddress),
         ADDR_SPEC_PARSER); // fall back when PARSER is combined with other parsers
   }
 
-  private static <A, B> Parser<EmailAddress> safely(
+  private static <A, B> Parser<EmailAddress> flatMap(
       Parser<A> a, Production<B> b,
       BiFunction<? super A, ? super B, ? extends Production<EmailAddress>> combiner) {
     return sequence(a, b, Both::of).flatMap(ab -> ab.andThen(combiner));
