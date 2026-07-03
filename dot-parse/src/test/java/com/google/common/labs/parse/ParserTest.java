@@ -836,6 +836,7 @@ public class ParserTest {
             .setDefault(Production.class, zeroOrMore("[]"));
     tester
         .ignore(Parser.class.getMethod("just", Object.class))
+        .ignore(Parser.class.getMethod("fail", String.class))
         .testAllPublicStaticMethods(Parser.class);
     tester
         .ignore(Parser.class.getMethod("orElse", Object.class))
@@ -1065,6 +1066,21 @@ public class ParserTest {
             abc
             ^
         """);
+  }
+
+  @Test
+  public void fail_nullMessage() {
+    Parser<String> parser = Parser.fail(null);
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
+    assertThat(parser.matches("abc")).isFalse();
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1:\s
+                abc
+                ^
+            """);
   }
 
   @Test

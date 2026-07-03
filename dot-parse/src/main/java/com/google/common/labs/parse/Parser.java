@@ -598,11 +598,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.6
    */
   public static <T> Parser<T> fail(String message) {
-    requireNonNull(message);
     return new Parser<T>() {
       @Override MatchResult<T> skipAndMatch(
            Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        return context.failAt(start, "{name}{snippet}", message);
+        return context.failAt(start, "{name}{snippet}", message == null ? "" : message);
       }
 
       @Override Set<String> getPrefixes() {
