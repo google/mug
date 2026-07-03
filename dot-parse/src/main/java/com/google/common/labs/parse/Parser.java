@@ -1750,8 +1750,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * combined together with a non-empty prefix, suffix or both, which will be specified by methods
    * of this class.
    *
-   * <p>Besides {@link #between between()} and {@link #followedBy(String) followedBy()}, the {@link
-   * Parser#sequence(Parser, Parser.OrEmpty, BiFunction) sequence()} and {@link
+   * <p>Besides {@link #between(String, String) between()} and {@link #followedBy(String) followedBy()},
+   * the {@link Parser#sequence(Parser, Parser.OrEmpty, BiFunction) sequence()} and {@link
    * Parser#followedBy(Parser.OrEmpty)} methods can be used to specify that a {@code Parser.OrEmpty}
    * production rule follows a regular consuming {@code Parser}.
    *
