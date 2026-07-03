@@ -599,7 +599,7 @@ public final class EmailAddress {
     }
 
     Production<EmailAddress> toEmailAddressWithDisplayName(String displayName) {
-      return toEmailAddress().map(addr -> addr.withDisplayName(displayName));
+      return toCanonicalDomain().map(d -> new EmailAddress(localPart, d, Optional.of(displayName)));
     }
 
     private Production<String> toCanonicalDomain() {
