@@ -580,6 +580,29 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
+   * An always-failing parser with the {@code errorMessage}.
+   *
+   * <p>Useful to be returned from the lambda passed to {@link #flatMap} (for example,
+   * you used a third-party library to parse the content and need to report the error
+   * from the library as if it were regular parsing error).
+   *
+   * @since 10.6
+   */
+  public static <T> Parser<T> fail(String message) {
+    requireNonNull(message);
+    return new Parser<T>() {
+      @Override MatchResult<T> skipAndMatch(
+           Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        return context.failAt(start, "{name}{snippet}", message);
+      }
+
+      @Override Set<String> getPrefixes() {
+        return Set.of();  // it can always be pruned.
+      }
+    };
+  }
+
+  /**
    * Parses a 4-digit hex BMP code unit. The following example parses a surrogate pair of two UTF-16
    * code units and will return the emoji {@code 😀}:
    *
@@ -1135,13 +1158,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final Parser<T> withPrefixes(Parser<? extends UnaryOperator<T>> operator) {
     return sequence(
-        operator.zeroOrMore(), this,
-        (ops, operand) ->
-            ops.isEmpty()
-                ? operand
-                : ops.size() == 1
-                    ? ops.get(0).apply(operand)
-                    : applyOperators(ops.reversed(), operand));
+        operator.zeroOrMore(), this, (ops, operand) -> applyOperators(ops.reversed(), operand));
   }
 
   /**

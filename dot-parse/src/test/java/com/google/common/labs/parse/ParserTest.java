@@ -1034,6 +1034,75 @@ public class ParserTest {
   }
 
   @Test
+  public void fail_onItsOwn() {
+    Parser<String> parser = Parser.fail("custom error message");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
+    assertThat(parser.matches("abc")).isFalse();
+    assertThat(thrown).hasMessageThat().isEqualTo("""
+        at 1:1: custom error message
+            abc
+            ^
+        """);
+  }
+
+  @Test
+  public void fail_fromFlatMap() {
+    Parser<String> parser = string("abc").flatMap(val -> Parser.fail("custom error: " + val));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abcdef"));
+    assertThat(parser.matches("abcdef")).isFalse();
+    assertThat(thrown).hasMessageThat().isEqualTo("""
+        at 1:4: custom error: abc
+            abcdef
+               ^
+        """);
+  }
+
+  @Test
+  public void fail_insideAnyOf_anotherParserMatches() {
+    Parser<Object> parser = anyOf(string("abc"), Parser.fail("custom error"));
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+    assertThat(parser.matches("abc")).isTrue();
+  }
+
+  @Test
+  public void fail_insideAnyOf_anotherParserMismatches() {
+    Parser<Object> parser = anyOf(string("abc"), Parser.fail("custom error"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("def"));
+    assertThat(parser.matches("def")).isFalse();
+    assertThat(thrown).hasMessageThat().isEqualTo("""
+        at 1:1: expecting <abc>, encountered:\s
+            def
+            ^
+        """);
+  }
+
+  @Test
+  public void fail_insideAnyOf_onlyFailPresent() {
+    Parser<Object> parser = anyOf(Parser.fail("custom error"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
+    assertThat(parser.matches("abc")).isFalse();
+    assertThat(thrown).hasMessageThat().isEqualTo("""
+        at 1:1: custom error
+            abc
+            ^
+        """);
+  }
+
+  @Test
+  public void fail_insideAnyOf_twoFailsPresent() {
+    Parser<Object> parser = anyOf(Parser.fail("custom error 1"), Parser.fail("custom error 2"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
+    assertThat(parser.matches("abc")).isFalse();
+    assertThat(thrown).hasMessageThat().isEqualTo("""
+        at 1:1: custom error 1
+            abc
+            ^
+        """);
+  }
+
+
+
+  @Test
   public void flatMap_lambdaReturnsOrEmpty_outerFails() {
     Parser<String> parser = string("a").flatMap(r -> string("b").orElse("B"));
     assertThrows(ParseException.class, () -> parser.parse("c"));
