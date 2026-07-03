@@ -595,6 +595,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * you used a third-party library to parse the content and need to report the error
    * from the library as if it were regular parsing error).
    *
+   * @param message the error message; {@code null} is equivalent to an empty string.
+   *
    * @since 10.6
    */
   public static <T> Parser<T> fail(String message) {
