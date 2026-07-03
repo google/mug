@@ -963,7 +963,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * }</pre>
    */
   public final Parser<List<T>>.OrEmpty zeroOrMore() {
-    return zeroOrMore(toUnmodifiableList());
+    return atLeastOnce(toUnmodifiableList()).new OrEmpty(() -> List.of());
   }
 
   /**
@@ -995,7 +995,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * }</pre>
    */
   public final Parser<List<T>>.OrEmpty zeroOrMoreDelimitedBy(String delimiter) {
-    return zeroOrMoreDelimitedBy(delimiter, toUnmodifiableList());
+    return atLeastOnceDelimitedBy(delimiter, toUnmodifiableList()).new OrEmpty(() -> List.of());
   }
 
   /**
@@ -1136,7 +1136,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public final Parser<T> withPrefixes(Parser<? extends UnaryOperator<T>> operator) {
     return sequence(
         operator.zeroOrMore(), this,
-        (ops, operand) -> ops.isEmpty() ? operand : applyOperators(ops.reversed(), operand));
+        (ops, operand) ->
+            ops.isEmpty()
+                ? operand
+                : ops.size() == 1
+                    ? ops.get(0).apply(operand)
+                    : applyOperators(ops.reversed(), operand));
   }
 
   /**
