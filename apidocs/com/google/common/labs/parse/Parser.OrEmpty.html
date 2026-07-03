@@ -116,12 +116,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  of this class.
 
  <p>Besides <a href="Production.html#between(java.lang.String,java.lang.String)"><code>between()</code></a> and <a href="Production.html#followedBy(java.lang.String)"><code>followedBy()</code></a>,
- the 
-<details class="invalid-tag">
-<summary>invalid reference</summary>
-<pre><code>sequence()</code></pre>
-</details>
- and <a href="Parser.html#followedBy(com.google.common.labs.parse.Parser.OrEmpty)"><code>Parser.followedBy(Parser.OrEmpty)</code></a> methods can be used to specify that a <code>Parser.OrEmpty</code>
+ the <a href="Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.util.function.BiFunction)"><code>sequence()</code></a> and <a href="Parser.html#followedBy(com.google.common.labs.parse.Parser.OrEmpty)"><code>Parser.followedBy(Parser.OrEmpty)</code></a> methods can be used to specify that a <code>Parser.OrEmpty</code>
  production rule follows a regular consuming <code>Parser</code>.
 
  <p>The following is a simplified example of parsing a CSV line: a comma-separated list of
