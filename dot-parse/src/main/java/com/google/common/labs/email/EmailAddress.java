@@ -595,14 +595,14 @@ public final class EmailAddress {
 
   private record AddrSpecAlike(String localPart, String domain) {
     Production<EmailAddress> toEmailAddress() {
-      return toCanonicalDomain().map(d -> new EmailAddress(localPart, d, Optional.empty()));
+      return canonicalDomain().map(d -> new EmailAddress(localPart, d, Optional.empty()));
     }
 
     Production<EmailAddress> toEmailAddressWithDisplayName(String displayName) {
-      return toCanonicalDomain().map(d -> new EmailAddress(localPart, d, Optional.of(displayName)));
+      return canonicalDomain().map(d -> new EmailAddress(localPart, d, Optional.of(displayName)));
     }
 
-    private Production<String> toCanonicalDomain() {
+    private Production<String> canonicalDomain() {
       try {
         return Parser.just(canonicalizeDomain(domain));
       } catch (IllegalArgumentException e) {
