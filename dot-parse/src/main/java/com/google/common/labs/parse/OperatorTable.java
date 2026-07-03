@@ -257,7 +257,11 @@ public final class OperatorTable<T> {
           });
     }
 
-    private record Rhs<T>(BinaryOperator<T> op, T value) {}
+    private record Rhs<T>(BinaryOperator<T> op, T value) implements UnaryOperator<T> {
+      @Override public T apply(T left) {
+        return op.apply(left, value);
+      }
+    }
   }
 
   private abstract static class Unary<T> implements OperatorGroup<T> {

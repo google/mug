@@ -1135,7 +1135,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final Parser<T> withPrefixes(Parser<? extends UnaryOperator<T>> operator) {
     return sequence(
-        operator.zeroOrMore(), this, (ops, operand) -> applyOperators(ops.reversed(), operand));
+        operator.zeroOrMore(), this,
+        (ops, operand) -> ops.isEmpty() ? operand : applyOperators(ops.reversed(), operand));
   }
 
   /**
