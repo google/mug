@@ -1807,7 +1807,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      *
      * @since 10.6
      */
-    @Override public final <R> Production<R> map(Function<? super T, ? extends R> f) {
+    @Override public final <R> Parser<R>.OrEmpty map(Function<? super T, ? extends R> f) {
       var defaultValue = defaultSupplier;
       return notEmpty().<R>map(f).new OrEmpty(() -> f.apply(defaultValue.get()));
     }
