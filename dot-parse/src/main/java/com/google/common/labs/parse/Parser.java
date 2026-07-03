@@ -585,7 +585,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.6
    */
   public static <T> Production<T> just(T value) {
-    return Parser.<T>fail("").orElse(value);
+    return Parser.<T>fail("")
+        .new OrEmpty(
+            new Parser<T>() {
+              @Override MatchResult<T> skipAndMatch(
+                  Parser<?> skip, CharInput input, int start, ErrorContext context) {
+                return new MatchResult.Success<>(start, start, value);
+              }
+            },
+            () -> value);
   }
 
   /**
@@ -1811,22 +1819,27 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * A crippled zero-width parser, not safe to be used in a loop and must be carefully
      * composed with a parser that does consume!
      */
-    private final Parser<T> unsafeZeroWidthParser =
-        new Parser<T>() {
-          @Override MatchResult<T> skipAndMatch(
-              Parser<?> skip, CharInput input, int start, ErrorContext context) {
-            return switch (notEmpty().skipAndMatch(skip, input, start, context)) {
-              case MatchResult.Success<T> success -> success;
-              default -> new MatchResult.Success<>(start, start, computeDefaultValue());
-            };
-          }
-
-          @Override Parser<?> ignoreReturn() {
-            return OrEmpty.this.ignoreReturn().unsafeZeroWidthParser;
-          }
-        };
+    private final Parser<T> unsafeZeroWidthParser;
 
     private OrEmpty(Supplier<? extends T> defaultSupplier) {
+      this(
+          new Parser<T>() {
+            @Override MatchResult<T> skipAndMatch(
+                Parser<?> skip, CharInput input, int start, ErrorContext context) {
+              return switch (Parser.this.skipAndMatch(skip, input, start, context)) {
+                case MatchResult.Success<T> success -> success;
+                default -> new MatchResult.Success<>(start, start, defaultSupplier.get());
+              };
+            }
+
+            @Override Parser<?> ignoreReturn() {
+              return Parser.this.ignoreReturn().new OrEmpty(() -> null).unsafeZeroWidthParser;
+            }
+          }, defaultSupplier);
+    }
+
+    private OrEmpty(Parser<T> unsafeZeroWidthParser, Supplier<? extends T> defaultSupplier) {
+      this.unsafeZeroWidthParser = unsafeZeroWidthParser;
       this.defaultSupplier = defaultSupplier;
     }
 
