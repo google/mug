@@ -3,7 +3,7 @@
   <parent>
       <groupId>com.google.mug</groupId>
       <artifactId>mug-root</artifactId>
-      <version>10.4.4-SNAPSHOT</version>
+      <version>10.5.2-SNAPSHOT</version>
       <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-benchmarks</artifactId>
@@ -48,6 +48,12 @@
   </build>
 
   <dependencies>
+    <dependency>
+      <groupId>com.norswap</groupId>
+      <artifactId>autumn</artifactId>
+      <version>1.2.0</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>com.google.caliper</groupId>
       <artifactId>caliper</artifactId>
@@ -105,6 +111,18 @@
       <groupId>org.openjdk.jmh</groupId>
       <artifactId>jmh-core</artifactId>
       <version>1.37</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.angus</groupId>
+      <artifactId>jakarta.mail</artifactId>
+      <version>2.0.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.sanctionco.jmail</groupId>
+      <artifactId>jmail</artifactId>
+      <version>2.1.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -198,12 +216,7 @@
           <version>1.9.22</version>
           <scope>test</scope>
         </dependency>
-        <dependency>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-          <version>2.17.1</version>
-          <scope>test</scope>
-        </dependency>
+
       </dependencies>
       <build>
         <plugins>
@@ -260,6 +273,7 @@
                     <source>src/test/scala</source>
                     <source>src/test/kotlin</source>
                     <source>${project.build.directory}/generated-test-sources/antlr4</source>
+                    <source>${project.build.directory}/generated-test-sources/javacc</source>
                   </sources>
                 </configuration>
               </execution>
@@ -281,6 +295,24 @@
                    <visitor>true</visitor>
                    <listener>false</listener>
                  </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>javacc-maven-plugin</artifactId>
+            <version>3.0.1</version>
+            <executions>
+              <execution>
+                <id>javacc</id>
+                <phase>generate-test-sources</phase>
+                <goals>
+                  <goal>javacc</goal>
+                </goals>
+                <configuration>
+                  <sourceDirectory>src/test/javacc</sourceDirectory>
+                  <outputDirectory>${project.build.directory}/generated-test-sources/javacc</outputDirectory>
+                </configuration>
               </execution>
             </executions>
           </plugin>
@@ -317,6 +349,9 @@
                 <exclude>**/taker/TakerJavaTypeParser.java</exclude>
                 <exclude>**/taker/TakerJavaTypeParserTest.java</exclude>
                 <exclude>**/javatype/JavaTypeBenchmark.java</exclude>
+                <exclude>**/dotparse/StringInBenchmark.java</exclude>
+                <exclude>**/dotparse/JsonShootoutBenchmark.java</exclude>
+                <exclude>**/EmailAddressBenchmark.java</exclude>
               </excludes>
             </configuration>
           </plugin>

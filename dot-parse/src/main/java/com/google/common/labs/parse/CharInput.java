@@ -27,6 +27,7 @@ import com.google.mu.util.Substring;
 
 /** An abstraction over sequentially read characters. */
 abstract class CharInput {
+  int nestingLevel = 0;
 
   /** Reads the character at {@code index}. */
   abstract char charAt(int index);

@@ -16,17 +16,7 @@ public final class TakerJsonWithCommentsParserTest extends AbstractJsonParserTes
     return TakerJsonParser.parseWithComments(input);
   }
 
-  @Override
-  @org.junit.Test
-  public void parseInvalidNumbers_throwsException() {
-    // Disabled: Taker's native Numeric.doubleValue is permitted to be a lenient superset.
-  }
 
-  @Override
-  @org.junit.Test
-  public void parseStringWithInvalidEscapes_throwsException() {
-    // Disabled: Taker's string literal unescaping is permitted to be a lenient superset.
-  }
 
   @Test
   public void parseWithLineComment() throws Exception {

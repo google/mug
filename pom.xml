@@ -4,7 +4,7 @@
   <groupId>com.google.mug</groupId>
   <artifactId>mug-root</artifactId>
   <packaging>pom</packaging>
-  <version>10.4.4-SNAPSHOT</version>
+  <version>10.5.2-SNAPSHOT</version>
   <name>mug-root</name>
   <description>Google Mug Library</description>
   <url>http://github.com/google/mug</url>
@@ -20,7 +20,7 @@
     <maven.compiler.target>8</maven.compiler.target>
     <mug.version>9.9-SNAPSHOT</mug.version>
     <!-- Reproducible builds: fixed timestamp for build artifacts -->
-    <project.build.outputTimestamp>2026-06-19T14:48:53Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-06-28T19:36:32Z</project.build.outputTimestamp>
   </properties>
 
   <licenses>
@@ -260,6 +260,7 @@
           <version>3.4.2</version>
           <configuration>
             <archive>
+              <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
               <manifest>
                 <addBuildEnvironmentEntries>false</addBuildEnvironmentEntries>
               </manifest>
@@ -282,6 +283,26 @@
               </configuration>
             </execution>
           </executions>
+        </plugin>
+        <plugin>
+          <groupId>biz.aQute.bnd</groupId>
+          <artifactId>bnd-maven-plugin</artifactId>
+          <version>6.4.0</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>bnd-process</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <bnd><![CDATA[
+              Bundle-SymbolicName: ${project.groupId}.${project.artifactId}
+              -exportcontents: !*.impl.*, !*.internal.*, *
+              -noextraheaders: true
+              -snapshot: DAILY
+            ]]></bnd>
+          </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-deploy-plugin</artifactId>
@@ -385,6 +406,10 @@
 	    <groupId>org.jacoco</groupId>
 	    <artifactId>jacoco-maven-plugin</artifactId>
 	  </plugin>
+      <plugin>
+        <groupId>biz.aQute.bnd</groupId>
+        <artifactId>bnd-maven-plugin</artifactId>
+      </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>

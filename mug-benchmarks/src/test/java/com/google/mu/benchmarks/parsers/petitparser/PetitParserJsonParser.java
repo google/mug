@@ -33,7 +33,7 @@ public final class PetitParserJsonParser {
   private static Parser jsonString(Parser trimmer) {
     Parser quote = CharacterParser.of('"');
     Parser escape = CharacterParser.of('\\').seq(CharacterParser.any());
-    Parser normal = CharacterParser.pattern("^\"\\\\");
+    Parser normal = CharacterParser.pattern("^\"\\\\\u0000-\u001F");
     Parser content = escape.or(normal).star().flatten();
     return quote.seq(content).seq(quote)
         .map((List<Object> list) -> new JsonString(strictUnescape((String) list.get(1))))
@@ -53,7 +53,13 @@ public final class PetitParserJsonParser {
         .optional();
 
     return sign.seq(integer).seq(fraction).seq(exponent).flatten()
-        .map((String s) -> new JsonNumber(Double.parseDouble(s)))
+        .map((String s) -> {
+          if (s.contains(".") || s.contains("e") || s.contains("E")) {
+            return new JsonNumber(Double.parseDouble(s));
+          } else {
+            return new JsonNumber(Long.parseLong(s));
+          }
+        })
         .trim(trimmer);
   }
 
@@ -148,11 +154,6 @@ public final class PetitParserJsonParser {
   // Strict unescape complying with RFC 8259 Section 7 string constraints
   private static String strictUnescape(String text) {
     if (text.indexOf('\\') == -1) {
-      for (int i = 0; i < text.length(); i++) {
-        if (text.charAt(i) < 0x20) {
-          throw new IllegalArgumentException("Unescaped control character: 0x" + Integer.toHexString(text.charAt(i)));
-        }
-      }
       return text;
     }
     StringBuilder sb = new StringBuilder(text.length());

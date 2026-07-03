@@ -12,15 +12,17 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Gatherers;
 import java.util.stream.Stream;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.google.mu.testing.concurrent.Happenstance;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
@@ -533,40 +535,54 @@ public class BoundedConcurrencyTest {
     assertThat(thrown).hasMessageThat().isEqualTo("3");
   }
 
-  @Ignore
-  @Test public void parallelStream_upstreamFailureInterrupts() throws Exception {
+  // Demonstrates that when a task in Jdk parallelStream throws an exception,
+  // other concurrently running sibling tasks are not interrupted.
+  @Test public void parallelStream_upstreamFailureDoesNotInterruptDownstream() throws Exception {
     ConcurrentLinkedQueue<Integer> started = new ConcurrentLinkedQueue<>();
     ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
     boolean[] failed = new boolean[1];
     boolean[] seen = new boolean[1];
-    RuntimeException thrown = assertThrows(
-        RuntimeException.class,
-        () -> asList(10, 3, 1)
-            .parallelStream()
-            .peek(n -> {})
-            .map(n -> {
-              if (n == 3) {
-                try { // give 1 and 3 some time to have at least started
-                  Thread.sleep(100);
-                } catch (InterruptedException e) {
-                  interrupted.add(n);
-                }
-                failed[0] = true;
-                throw new IllegalArgumentException(String.valueOf(n));
-              }
-              started.add(n);
-              try {
-                Thread.sleep(n * 100);
-              } catch (InterruptedException e) {
-                interrupted.add(n);
-              }
-              seen[0] = true;
-              return n;
-            })
-            .findAny());
+    Happenstance<String> happens = Happenstance.<String>builder()
+        .sequence("10 started", "3 start")
+        .sequence("1 started", "3 start")
+        .sequence("3 thrown", "10 finished", "all done")
+        .sequence("3 thrown", "1 finished", "all done")
+        .build();
+    try (ForkJoinPool pool = new ForkJoinPool(3)) {
+      ExecutionException thrown = assertThrows(
+          ExecutionException.class,
+          () -> {
+            try {
+              pool.submit(() -> asList(10, 3, 1)
+                  .parallelStream()
+                  .map(n -> {
+                    if (n == 3) {
+                      happens.join("3 start");
+                      failed[0] = true;
+                      throw new IllegalArgumentException(String.valueOf(n));
+                    }
+                    started.add(n);
+                    happens.join(n + " started");
+                    happens.join(n + " finished");
+                    if (Thread.interrupted()) {
+                      interrupted.add(n);
+                    }
+                    seen[0] = true;
+                    return n;
+                  })
+                  .findAny()).get();
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+              throw new RuntimeException(e);
+            } finally {
+              happens.join("3 thrown");
+            }
+          });
+      assertThat(thrown).hasCauseThat().hasMessageThat().contains("3");
+    }
+    happens.join("all done");
     assertThat(started).containsExactly(10, 1);
     assertThat(interrupted).isEmpty();
-    assertThat(thrown).hasMessageThat().contains("3");
     assertThat(failed[0]).isTrue();
     assertThat(seen[0]).isTrue();
   }
@@ -661,9 +677,50 @@ public class BoundedConcurrencyTest {
         RuntimeException.class,
         () -> withMaxConcurrency(3).race(tasks, ApplicationException.class::isInstance));
     assertThat(thrown).hasCauseThat().isInstanceOf(AssertionError.class);
-    assertThat(asList(thrown.getSuppressed())).hasSize(2);
+    assertThat(asList(thrown.getSuppressed())).hasSize(3);
     assertThat(started).containsExactly(1, 0, 2, 10);
     assertThat(interrupted).containsExactly(10);
+  }
+
+  @Test
+  public void race_returnsNullSuccessfully() {
+    List<Callable<String>> tasks = asList(() -> null);
+    assertThat(withMaxConcurrency(1).race(tasks, e -> true)).isNull();
+  }
+
+  @Test
+  public void concurrently_threadStartFailure_cancelsPendingAndPropagates() {
+    ConcurrentLinkedQueue<Integer> interrupted = new ConcurrentLinkedQueue<>();
+    java.util.concurrent.atomic.AtomicInteger factoryCallCount = new java.util.concurrent.atomic.AtomicInteger();
+    java.util.concurrent.ThreadFactory statefulFactory =
+        runnable -> {
+          if (factoryCallCount.getAndIncrement() == 0) {
+            return Thread.ofVirtual().unstarted(runnable);
+          }
+          return null; // Fail on second thread creation
+        };
+
+    BoundedConcurrency concurrency = BoundedConcurrency.withMaxConcurrency(2, statefulFactory);
+
+    NullPointerException thrown =
+        assertThrows(
+            NullPointerException.class,
+            () ->
+                Stream.of(10, 20) // 10 will start and sleep, 20 will fail to start
+                    .gather(
+                        concurrency.mapConcurrently(
+                            n -> {
+                              try {
+                                Thread.sleep(n * 1000); // Sleep long enough
+                              } catch (InterruptedException e) {
+                                interrupted.add(n);
+                              }
+                              return n;
+                            }))
+                    .toList());
+
+    assertThat(thrown).hasMessageThat().contains("failed to start a virtual thread");
+    assertThat(interrupted).containsExactly(10); // Verifies that the running thread was interrupted
   }
 
   private static class ApplicationException extends RuntimeException {

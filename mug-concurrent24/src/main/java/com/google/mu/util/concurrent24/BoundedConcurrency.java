@@ -7,10 +7,10 @@ import static java.util.stream.Collectors.toList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -92,7 +92,7 @@ public final class BoundedConcurrency {
     checkArgument(tasks.size() > 0, "At least one task should have been provided");
     requireNonNull(isRecoverable);
     ConcurrentLinkedQueue<Throwable> recoverable = new ConcurrentLinkedQueue<>();
-    return tasks.stream()
+    var maybeResult = tasks.stream()
         .gather(flatMapConcurrently(
             task -> {
               try {
@@ -100,19 +100,20 @@ public final class BoundedConcurrency {
               } catch (Throwable e) {
                 if (isRecoverable.test(e)) {
                   recoverable.add(e);
-                  return Stream.empty();
+                  return Stream.<Result<T>>empty();
                 }
-                return Stream.of(new Failure<T>(e));  // plumb it to the main thread to wrap
+                return Stream.of(new Failure<T>(e)); // plumb it to the main thread to wrap
               }
             }))
-        .map((Result<T> x) -> switch (x) {
-          case Failure<T> failure ->
-              throw new UncheckedExecutionException(failure.exception(), recoverable);
-          case Success(T v) -> v;
-        })
-        .findAny()
-        .orElseThrow(
-            () -> new UncheckedExecutionException(recoverable.remove(), recoverable));
+        .findAny();
+    if (maybeResult.isEmpty()) {
+      throw new UncheckedExecutionException(recoverable.remove(), recoverable);
+    }
+    return switch (maybeResult.get()) {
+      case Failure<T> failure ->
+          throw new UncheckedExecutionException(failure.exception(), recoverable);
+      case Success(T v) -> v;
+    };
   }
 
   /**
@@ -183,7 +184,7 @@ public final class BoundedConcurrency {
       private final Semaphore semaphore = new Semaphore(maxConcurrency);
 
       /** Only the main thread adds. Virtual threads may remove upon done to free space. */
-      private final ConcurrentMap<Object, Thread> running = new ConcurrentHashMap<>();
+      private final Set<Thread> running = ConcurrentHashMap.newKeySet();
 
       /** Main thread reads (consumes) results; virtual threads add upon success. */
       private final ConcurrentLinkedQueue<Success<R>> results = new ConcurrentLinkedQueue<>();
@@ -201,19 +202,28 @@ public final class BoundedConcurrency {
           semaphore.release();
           return false;
         }
-        Object key = new Object();
-        Thread thread = threadFactory.newThread(() -> {
-          try {
-            results.add(new Success<>(mapper.apply(element)));
-          } catch (Throwable e) {
-            exceptions.add(e);
-          } finally {
-            running.remove(key);
+        boolean success = false;
+        try {
+          Thread thread = threadFactory.newThread(() -> {
+            try {
+              results.add(new Success<>(mapper.apply(element)));
+            } catch (Throwable e) {
+              exceptions.add(e);
+            } finally {
+              running.remove(Thread.currentThread());
+              semaphore.release();
+            }
+          });
+          requireNonNull(thread, "failed to start a virtual thread");
+          running.add(thread);
+          thread.start();
+          success = true;
+        } finally {
+          if (!success) {
             semaphore.release();
+            stop();
           }
-        });
-        thread.start();
-        running.put(key, thread);
+        }
         return true;
       }
 
@@ -253,21 +263,33 @@ public final class BoundedConcurrency {
 
       private void stop() {
         cancel();
-        for (Thread thread : running.values()) {
+        for (Thread thread : running) {
           joinUninterruptibly(thread);
         }
       }
 
       private void cancel() {
-        running.values().stream().forEach(Thread::interrupt);
+        running.forEach(Thread::interrupt);
       }
 
       /** Acquires a semaphore. If interrupted, propagate cancellation then retry. */
       private void acquireWithInterruptionPropagation() {
-        if (Thread.currentThread().isInterrupted()) {
-          cancel();
+        boolean interrupted = false;
+        try {
+          for (;;) {
+            try {
+              semaphore.acquire();
+              break;
+            } catch (InterruptedException e) {
+              interrupted = true;
+              cancel();
+            }
+          }
+        } finally {
+          if (interrupted) {
+            Thread.currentThread().interrupt();
+          }
         }
-        semaphore.acquireUninterruptibly(); // acquire even if interrupted
       }
     }
     return Gatherer.<T, Window, R>ofSequential(

@@ -21,6 +21,7 @@ import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.CharPredicate.noneOf;
+import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -33,6 +34,8 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -1523,8 +1526,9 @@ public class ParserTest {
     assertThat(parser.skipping(whitespace()).matches("(1 + \n( 2 + 3)")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
         at 2:9: expecting <)>, encountered:\s
-            2 + 3)
-                  ^
+            (1 +\s
+            ( 2 + 3)
+                    ^
         """);
   }
 
@@ -1537,9 +1541,9 @@ public class ParserTest {
     assertThat(parser.skipping(whitespace()).matches("(1 + \n( 2 ? 3)")).isFalse();
     assertThat(thrown).hasMessageThat().isEqualTo("""
         at 2:5: expecting <)>, encountered:\s
-            +\s
-        ( 2 ? 3)
-                   ^
+            (1 +\s
+            ( 2 ? 3)
+                ^
         """);
   }
 
@@ -1768,6 +1772,27 @@ public class ParserTest {
             string("b").source().orElse("default-b"),
             (a, b) -> a + ":" + b);
     assertThrows(ParseException.class, () -> parser.notEmpty().parse(""));
+  }
+
+  @Test
+  public void orEmpty_map_match() {
+    Production<String> parser = string("abc").orElse("default").map(String::toUpperCase);
+    assertThat(parser.parse("abc")).isEqualTo("ABC");
+    assertThat(parser.matches("abc")).isTrue();
+  }
+
+  @Test
+  public void orEmpty_map_mismatch() {
+    Production<String> parser = string("abc").orElse("default").map(String::toUpperCase);
+    assertThat(parser.parse("")).isEqualTo("DEFAULT");
+    assertThat(parser.matches("")).isTrue();
+  }
+
+  @Test
+  public void orEmpty_map_differentType() {
+    Production<Integer> parser = string("123").orElse("0").map(Integer::parseInt);
+    assertThat(parser.parse("123")).isEqualTo(123);
+    assertThat(parser.parse("")).isEqualTo(0);
   }
 
   @Test
@@ -5940,6 +5965,72 @@ public class ParserTest {
   }
 
   @Test
+  public void rule_recursionLimit_underLimitSucceeds() {
+    Parser.Rule<String> rule = new Parser.Rule<>(5);
+    Parser<String> parser = rule.between("(", ")").or(string("x"));
+    rule.definedAs(parser);
+
+    assertThat(rule.parse("((((x))))")).isEqualTo("x");
+  }
+
+  @Test
+  public void rule_recursionLimit_exceededThrows() {
+    Parser.Rule<String> rule = new Parser.Rule<>(5);
+    Parser<String> parser = rule.between("(", ")").or(string("x"));
+    rule.definedAs(parser);
+
+    Parser.ParseException thrown = assertThrows(Parser.ParseException.class, () -> rule.parse("(((((x)))))"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:6: max recursion depth (5) exceeded:
+                (((((x)))))
+                     ^
+            """);
+    assertThat(thrown.getSourceIndex()).isEqualTo(5);
+  }
+
+  @Test
+  public void rule_defaultRecursionLimit_exceededThrows() {
+    Parser.Rule<String> rule = new Parser.Rule<>();
+    Parser<String> parser = rule.between("(", ")").or(string("x"));
+    rule.definedAs(parser);
+
+    String input = "(".repeat(101) + "x" + ")".repeat(101);
+    Parser.ParseException thrown = assertThrows(Parser.ParseException.class, () -> rule.parse(input));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "at 1:101: max recursion depth (100) exceeded:\n"
+                + "    " + "(".repeat(26) + "x" + ")".repeat(48) + "\n"
+                + "    " + " ".repeat(25) + "^\n");
+    assertThat(thrown.getSourceIndex()).isEqualTo(100);
+  }
+
+  @Test
+  public void rule_recursionLimitOfOne_allowsNoRecursionButExceedsOnFirstRecursion() {
+    Parser.Rule<String> rule = new Parser.Rule<>(1);
+    Parser<String> parser = rule.between("(", ")").or(string("x"));
+    rule.definedAs(parser);
+
+    // No recursion (depth 1) succeeds
+    assertThat(rule.parse("x")).isEqualTo("x");
+
+    // One level of recursion (depth 2) throws
+    Parser.ParseException thrown = assertThrows(Parser.ParseException.class, () -> rule.parse("(x)"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:2: max recursion depth (1) exceeded:
+                (x)
+                 ^
+            """);
+    assertThat(thrown.getSourceIndex()).isEqualTo(1);
+  }
+
+  @Test
   public void rule_mutuallyRecursiveGrammar() {
     Parser.Rule<String> expr = new Parser.Rule<>();
     Parser.Rule<String> type = new Parser.Rule<>();
@@ -7622,6 +7713,258 @@ public class ParserTest {
     assertThat(joined).isEmpty();
   }
 
+  @Test
+  public void returnElision_optional_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<Optional<String>>.OrEmpty parser =
+        word().atLeastOnce(collectingAndAdd(joining(), joined)).optional();
+    assertThat(parser.parse("abc")).isEqualTo(Optional.of("abc"));
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_optional_withoutElision_noMatch() {
+    List<String> joined = new ArrayList<>();
+    Parser<?> parser =
+        sequence(
+            string("["),
+            word().atLeastOnce(collectingAndAdd(joining(), joined))
+                .followedBy("absentSuffix")
+                .optional(),
+            string("]"),
+            (l, m, r) -> null);
+    assertThrows(ParseException.class, () -> parser.parse("[abc]"));
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test
+  public void returnElision_optional_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<Optional<String>>.OrEmpty parser =
+        word().atLeastOnce(collectingAndAdd(joining(), joined)).optional();
+    assertThat(parser.matches("abc")).isTrue();
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_optional_withElision_noMatch() {
+    List<String> joined = new ArrayList<>();
+    Parser<?> parser =
+        sequence(
+            string("["),
+            word().atLeastOnce(collectingAndAdd(joining(), joined))
+                .followedBy("absentSuffix")
+                .optional(),
+            string("]"));
+    assertThat(parser.matches("[abc]")).isFalse();
+    assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_bmpCodeUnit_matches() {
+    assertThat(bmpCodeUnit().parse("123F")).isEqualTo(0x123F);
+    assertThat(bmpCodeUnit().matches("123F")).isTrue();
+  }
+
+  @Test
+  public void returnElision_bmpCodeUnit_doesNotMatch() {
+    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123g"));
+    assertThat(bmpCodeUnit().matches("123g")).isFalse();
+    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123"));
+    assertThat(bmpCodeUnit().matches("123")).isFalse();
+  }
+
+  @Test
+  public void returnElision_atLeastOnceReducer_withoutElision() {
+    AtomicInteger count = new AtomicInteger();
+    Parser<String> parser = word().atLeastOnce(counted((x, y) -> x + y, count));
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+    assertThat(count.get()).isEqualTo(0);
+
+    Parser<String> aParser = string("a").atLeastOnce(counted((x, y) -> x + y, count));
+    assertThat(aParser.parse("aaa")).isEqualTo("aaa");
+    assertThat(count.get()).isEqualTo(2);
+  }
+
+  @Test
+  public void returnElision_atLeastOnceReducer_withElision() {
+    AtomicInteger count = new AtomicInteger();
+    Parser<String> parser = string("a").atLeastOnce(counted((x, y) -> x + y, count));
+    assertThat(parser.matches("aaa")).isTrue();
+    assertThat(count.get()).isEqualTo(0);
+  }
+
+  @Test
+  public void returnElision_atLeastOnceDelimitedByReducer_withoutElision() {
+    AtomicInteger count = new AtomicInteger();
+    Parser<String> parser =
+        string("a").atLeastOnceDelimitedBy(",", counted((x, y) -> x + y, count));
+    assertThat(parser.parse("a,a,a")).isEqualTo("aaa");
+    assertThat(count.get()).isEqualTo(2);
+  }
+
+  @Test
+  public void returnElision_atLeastOnceDelimitedByReducer_withElision() {
+    AtomicInteger count = new AtomicInteger();
+    Parser<String> parser =
+        string("a").atLeastOnceDelimitedBy(",", counted((x, y) -> x + y, count));
+    assertThat(parser.matches("a,a,a")).isTrue();
+    assertThat(count.get()).isEqualTo(0);
+  }
+
+  @Test
+  public void testSnippetCaretPlacementWithNewline() {
+    Parser<java.util.Map<String, String>> parser =
+        Parser.zeroOrMoreDelimited(
+                quotedBy('"', '"').followedBy(":"),
+                digits(),
+                ",",
+                toMap())
+            .between("{", "}");
+    String malformedJson =
+        """
+        {"a": 1
+         "b"}
+        """;
+    ParseException thrown =
+        assertThrows(
+            ParseException.class,
+            () -> parser.parseSkipping(Character::isWhitespace, malformedJson));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("""
+            at 2:2: expecting <}>, encountered:\s
+                {"a": 1
+                 "b"}
+                 ^""");
+  }
+
+  @Test
+  public void testSnippetCaretPlacement_multipleNewlinesInPrelue() {
+    Parser<?> parser =
+        Parser.zeroOrMoreDelimited(
+                quotedBy('"', '"').followedBy(":"), digits(), ",", toMap())
+            .between("{", "}");
+    String malformedJson =
+        """
+        {"a":
+            1
+         "b"}
+        """;
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), malformedJson));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            """
+            at 3:2: expecting <}>, encountered:\s
+                {"a":
+                    1
+                 "b"}
+                 ^
+            """);
+  }
+
+  @Test
+  public void testSnippetCaretPlacement_truncateAtTrailingNewline() {
+    Parser<?> parser =
+        Parser.zeroOrMoreDelimited(
+                quotedBy('"', '"').followedBy(":"), digits(), ",", toMap())
+            .between("{", "}");
+    String malformedJson =
+        """
+        {"a":
+            1
+         "b"
+         2
+         }
+        """;
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), malformedJson));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            """
+            at 3:2: expecting <}>, encountered:\s
+                {"a":
+                    1
+                 "b"
+                 ^
+            """);
+  }
+
+  @Test
+  public void testSnippetCaretPlacementAtEofAfterNewline() {
+    Parser<String> parser = string("abc").followedBy("\n").then(string("foo"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc\n"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("""
+            at 2:1: expecting <foo>, encountered:\s
+                abc
+               \s
+                ^""");
+  }
+
+  @Test
+  public void testSnippetCaretPlacementAtEofAfterMultipleNewlines() {
+    Parser<String> parser = string("abc").followedBy("\n\n").then(string("foo"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc\n\n"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("""
+            at 3:1: expecting <foo>, encountered:\s
+                abc
+               \s
+               \s
+                ^""");
+  }
+
+  @Test
+  public void productionSource_success() {
+    Production<String> production = string("foo");
+    Production<String> source = production.source();
+    assertThat(source.parse("foo")).isEqualTo("foo");
+    assertThat(source.matches("foo")).isTrue();
+  }
+
+  @Test
+  public void productionSource_failure() {
+    Production<String> production = string("foo");
+    Production<String> source = production.source();
+    assertThrows(ParseException.class, () -> source.parse("bar"));
+    assertThat(source.matches("bar")).isFalse();
+  }
+
+  @Test
+  public void orEmptySource_success() {
+    Parser<Optional<String>>.OrEmpty orEmpty = string("foo").optional();
+    Parser<String>.OrEmpty source = orEmpty.source();
+    assertThat(source.parse("foo")).isEqualTo("foo");
+    assertThat(source.parse("")).isEqualTo("");
+    assertThat(source.matches("foo")).isTrue();
+    assertThat(source.matches("")).isTrue();
+  }
+
+  @Test
+  public void orEmptySource_failure() {
+    Parser<Optional<String>>.OrEmpty orEmpty = string("foo").optional();
+    Parser<String>.OrEmpty source = orEmpty.source();
+    assertThrows(ParseException.class, () -> source.parse("bar"));
+    assertThat(source.matches("bar")).isFalse();
+  }
+
+  @Test
+  public void returnElision_orEmptySource() {
+    List<String> joined = new ArrayList<>();
+    Parser<String>.OrEmpty orEmpty = string("a").zeroOrMore(collectingAndAdd(joining(","), joined));
+    Parser<String>.OrEmpty source = orEmpty.source();
+    assertThat(source.parse("aaa")).isEqualTo("aaa");
+    assertThat(joined).isEmpty();
+    assertThat(source.parse("")).isEqualTo("");
+    assertThat(joined).isEmpty();
+  }
+
   private static <T, A, R> Collector<T, A, R> collectingAndAdd(
       Collector<T, A, R> collector, List<? super R> results) {
     return collectingAndThen(
@@ -7630,5 +7973,13 @@ public class ParserTest {
           results.add(r);
           return r;
         });
+  }
+
+  private static <T> BinaryOperator<T> counted(
+      BinaryOperator<T> reducer, AtomicInteger invocationCount) {
+    return (a, b) -> {
+      invocationCount.incrementAndGet();
+      return reducer.apply(a, b);
+    };
   }
 }

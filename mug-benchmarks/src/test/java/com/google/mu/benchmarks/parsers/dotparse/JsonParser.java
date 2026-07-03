@@ -13,7 +13,7 @@ import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
-import static com.google.mu.util.CharPredicate.anyOf;
+import com.google.mu.util.CharPredicate;
 
 import java.util.stream.Collectors;
 import com.google.common.labs.parse.Parser;
@@ -21,6 +21,12 @@ import com.google.mu.benchmarks.parsers.dotparse.JsonValue.*;
 
 /** Fully RFC 8259-compliant JSON parser built with dot-parse. */
 public final class JsonParser {
+  private static final CharPredicate WHITESPACES = CharPredicate.anyOf(" \t\r\n");
+  public static final Parser<?> WHITESPACES_OR_COMMENTS = anyOf(
+      consecutive("[ \t\r\n]").thenReturn(""),
+      sequence(string("//"), zeroOrMore("[^\n]")),
+      sequence(string("/*"), first("*/")));
+
   private static final Parser<String> ESCAPED = anyOf(
       one('b').thenReturn("\b"),
       one('t').thenReturn("\t"),
@@ -42,8 +48,9 @@ public final class JsonParser {
       literally(
           sequence(
               anyOf(INTEGER, sequence(one('-'), INTEGER)),
-              sequence(one('.'), digits()).orNull(),
-              sequence(caseInsensitive("e"), one("[+-]").orNull(), digits()).orNull()))
+              sequence(one('.'), digits()).optional(),
+              sequence(caseInsensitive("e"), one("[+-]").optional(), digits())
+                  .optional()))
         .source()
         .map(s -> new JsonNumber(Double.parseDouble(s)));
  
@@ -72,13 +79,8 @@ public final class JsonParser {
    * @throws Parser.ParseException if the input is not a valid JSON document.
    */
   public static JsonValue parse(String input) {
-    return PARSER.parseSkipping(anyOf(" \t\r\n"), input);
+    return PARSER.parseSkipping(CharPredicate.anyOf(" \t\r\n"), input);
   }
-
-  public static final Parser<?> WHITESPACES_OR_COMMENTS = anyOf(
-      consecutive("[ \t\r\n]"),
-      sequence(string("//"), zeroOrMore("[^\n]")),
-      sequence(string("/*"), first("*/")));
 
   /**
    * Parses the given JSON string (which may contain line or block comments) into a structured JsonValue.

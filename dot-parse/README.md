@@ -2,11 +2,10 @@
 
 Low-boilerplate, idiomatic Java parser combinator, aimed to replace regex and your everyday one-off parsing tasks.
 
-- **Easy to use:** a handful of primitives; write parser intuitively.
-- **No footguns:** compile-time guardrail preventing footguns like infinite loops caused by `many(optional)` or left recursion.
-- **Idiomatic Java:** modern, first-class Java style API designed for Java users (not a Haskell or Scala port).
+- **Easy to use:** intuitive, idiomatic and fluent Java API.
+- **Just works:** No "committing" or "cut" gotchas. What you see is what you get.
 - **Fast:** consistently among the fastest JVM parser combinators ([benchmark](./parser-benchmarks.md)).
-- **Just works:** No "committing" or "cut" complexities. What you see is what you get.
+- **Safe:** Infinite loops can't compile; left recursion can't initialize; stack overflow can't happen.
 
 ---
 
@@ -22,7 +21,7 @@ For brevity, all unqualified methods are assumed to be static imported from the
 1   | `(foo)+`           | `string("foo").atLeastOnce()`                               | Matches one or more occurrences of "foo".
 2   | `[a-zA-Z0-9_]+`    | `word()`                                                    | Matches a "word" (alphanumeric and underscore).
 3   | `[0-9]{5}`         | `digits().suchThat(s -> s.length() == 5, "zip code")`       | Matches exactly 5 digits.
-4   | `(foo\|bar\|baz)`  | `anyOf(string("foo"), string("bar"), string("baz"))`        | Matches one of the alternatives.
+4   | `(foo\|bar\|baz)`  | `anyOf("foo", "bar", "baz")`                                | Matches one of the alternatives.
 5   | `'[^']*'`          | `quotedBy("'", "'")`                                        | Matches a single-quoted string, excluding the quotes from the result.
 6   | `u[a-fA-F0-9]{4}`  | `string("u").then(bmpCodeUnit())`                           | Matches 'u' followed by 4 hex digits.
 7   | `\d+(\.\d+)?`      | `digits().optionallyFollowedBy(string(".").then(digits()))` | Matches an integer or a simple float.
@@ -32,10 +31,10 @@ For brevity, all unqualified methods are assumed to be static imported from the
 11  | `foo?`             | `string("foo").orElse("")`                                  | Matches "foo" zero or one time.
 12  | `\s+`              | `consecutive(Character::isWhitespace)`                      | Matches one or more whitespace characters.
 13  | `[ \t\r\n]*`       | `zeroOrMore(Character::isWhitespace)`                       | Matches zero or more whitespace characters.
-14  | `(group)(?:bar)`   | `groupParser.followedBy(barParser)`                         | Capture a group before a suffix pattern.
-15  | `(?:foo)(group)`   | `fooParser.then(groupParser)`                               | Capture a group after a prefix pattern.
-16  | `(group1)(group2)` | `sequence(parser1, parser2, (g1, g2) -> ...)`               | Capturing groups map to arguments in the `sequence` lambda.
-17  | `\w+:\d+`          | `sequence(word(), one(':'), digits())`                      | Match a pattern
+14  | `(group)(?:bar)`   | `groupParser.followedBy(barParser)`                         | Captures a group before a suffix pattern.
+15  | `(?:foo)(group)`   | `fooParser.then(groupParser)`                               | Captures a group after a prefix pattern.
+16  | `(group1)(group2)` | `sequence(parser1, parser2, (g1, g2) -> ...)`               | Captures groups mapped to arguments in the `sequence` lambda.
+17  | `\w+:\d+`          | `sequence(word(), one(':'), digits())`                      | Matches a pattern
 
 If you were to build a regex fluent builder, the API will likely look very
 similar.
@@ -172,33 +171,31 @@ In this case, the code simply takes the escaped character as is.
 But what if you do want to translate `\t` to a tab and `\n` to a newline? You can use the `escaped` Parser object to achieve that effect:
 
 ```java {.good}
-Parser<String> singleCharEscaped =  Parser.chars(1)
-    .map(c -> switch (c) {
-      "t" -> "\t";
-      "n" -> "\n";
-      "r" -> "\r";
-      default -> c;  // backslash itself or other regular chars
-    });
+Parser<String> cStyleEscaped = Parser.anyOf(
+    one('t').thenReturn("\t"),
+    one('r').thenReturn("\r"),
+    one('n').thenReturn("\n"),
+    chars(1));  // fall back to escape as a literal char
 ```
 
 The same technique can be used to handle Unicode escaping:
 
 ```java {.good}
 import static com.google.common.labs.parse.Parser.bmpCodeUnit;
-import static com.google.common.labs.parse.Parser.string;
+import static com.google.common.labs.parse.Parser.one;
 
-Parser<String> unicodeEscaped = string("u")
+Parser<String> unicodeEscaped = one('u')
     .then(bmpCodeUnit())
     .map(Character::toString);
 ```
 
-Combine the `singleCharEscaped` and `unicodeEscaped` parsers created above,
+Combine the `cStyleEscaped` and `unicodeEscaped` parsers created above,
 you get a Java-style string literal parser:
 
 ```java {.good}
 Parser<String> quotedString =
     // IMPORTANT: \u must be placed before the single-char case!
-    Parser.quotedByWithEscapes('"', '"', unicodeEscaped.or(singleCharEscaped));
+    Parser.quotedByWithEscapes('"', '"', unicodeEscaped.or(cStyleEscaped));
 quotedString.parse(
     "\"this is a string with quote: \\\" and unicode: \\uD83D\\uDE00\"");
     // this is a string with quote: " and unicode: 😀

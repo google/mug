@@ -29,13 +29,19 @@ This report presents a comprehensive JMH performance benchmark and architectural
 9. **`better-parse`** (Kotlin):
    A Kotlin-native, highly expressive parser combinator library built on top of property delegation and DSL combinators.
 
+10. **`parboiled`** (Java):
+    A classic PEG parser combinator library utilizing runtime bytecode generation.
+
+11. **`autumn`** (Java):
+    A highly flexible PEG parser combinator library with left-recursion support.
+
 All benchmarks were executed side-by-side on the **same JVM (JDK 24.0.1)** and the **same hardware (Apple M1 Mac)** to eliminate environmental bias. All grammars were strictly verified with assertions ensuring **complete input consumption (EOF)** and **structural correctness**.
 
 
 
 > [!NOTE]
 > **Acknowledge on parboiled2**:
-> The bytecode-generating parser frameworks `parboiled` (runtime bytecode generation) and `parboiled2` (Scala compile-time macro PEG) are excluded from the main comparison tables below to focus on libraries with more comparable runtime execution models. In our runs, the macro-optimized `parboiled2` represented the performance ceiling, reaching up to **13.84 million parses/sec** on simple types and **5.92 million parses/sec** on fully qualified types.
+> The Scala-based `parboiled2` (compile-time macro PEG) is excluded from the main comparison tables below to focus on libraries with more comparable runtime execution models. In our runs, the macro-optimized `parboiled2` represented the performance ceiling, reaching up to **13.84 million parses/sec** on simple types and **5.92 million parses/sec** on fully qualified types.
 
 > [!IMPORTANT]
 > **Scope & Benchmark Nuance**:
@@ -47,38 +53,49 @@ All benchmarks were executed side-by-side on the **same JVM (JDK 24.0.1)** and t
 
 ---
 
-## JSON Parser Shootout (9-Way Showdown)
+## JSON Parser Shootout (12-Way Showdown)
 
-To evaluate how these frameworks perform when parsing a **large, complex, and heterogeneous data payload**, we implemented a full **JSON parser** across all 9 shootout engines.
+To evaluate how these frameworks perform when parsing a **large, complex, and heterogeneous data payload**, we implemented a full **JSON parser** across all 12 shootout engines.
 
 Every engine was validated against a large, representative JSON document (~100 containers, maps of size 12, lists of size 250, scientific numbers, and varying strings of length 20 to 128) and strictly verified at setup time to guarantee complete functional correctness and functional parity.
 
 Throughput was measured in **operations per millisecond** (higher is better):
 
-| Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | **Winner(s)** |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Complex JSON Payload** | $0.210$ | **$0.491$** ☕ | $0.158$ | $0.108$ | **$0.509$** 🚀 | $0.386$ | $0.020$ | $0.129$ | $0.112$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Complex JSON with Comments** | $0.112$ | **$0.262$** 🚀 ☕ | $0.107$ | $0.054$ | **$0.202$** | $0.091$ | $0.002$ | $0.037$ | $0.036$ | **`dot`** 🚀 ☕ |
+| Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`Javacc`](https://github.com/apache/tomcat/blob/main/java/org/apache/tomcat/util/json/JSONParser.jjt) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | [`parboiled`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/parboiled/ParboiledJsonParser.java) | [`autumn`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/autumn/AutumnJsonParser.java) | **Winner(s)** |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Complex JSON Payload** | $0.213$ | $0.181$ | **$0.405$** ☕ | $0.122$ | $0.094$ | **$0.592$** 🚀 | $0.258$ | $0.015$ | $0.101$ | $0.088$ | $0.066$ | $0.077$ | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex JSON with Comments** | $0.102$ | $0.068$ | **$0.224$** 🚀 ☕ | $0.093$ | $0.051$ | **$0.192$** | $0.078$ | $0.002$ | $0.031$ | $0.033$ | $0.022$ | $0.036$ | **`dot`** 🚀 ☕ |
+| **`qux2.json` (Medium JSON)** | — | — | **$0.173$** | — | — | **$0.246$** 🚀 | $0.141$ | — | — | — | — | — | **`fast`** 🚀 |
+| **`bla25.json` (Large JSON)** | — | — | **$0.061$** | — | — | **$0.119$** 🚀 | $0.047$ | — | — | — | — | — | **`fast`** 🚀 |
+| **`countries.geo.json` (Geographic JSON)** | — | — | **$0.253$** | — | — | **$0.340$** 🚀 | $0.162$ | — | — | — | — | — | **`fast`** 🚀 |
+| **`ugh10k.json` (Very Large JSON)** | — | — | **$0.021$** | — | — | **$0.035$** 🚀 | $0.018$ | — | — | — | — | — | **`fast`** 🚀 |
 
 #### Reference Production Baselines (JSON)
-To provide an absolute performance ceiling, we stacked our combinator shootout against two industry-standard, hand-written production JSON parsers on the exact same JSON payloads:
+To provide an absolute performance ceiling, we stacked our combinator shootout against production-grade, hand-written and generated parsers on the exact same JSON payloads:
 
 | Parser Engine | Complex JSON (ops/ms) | Complex JSON with Comments (ops/ms) |
 | :--- | :---: | :---: |
-| **Gson** (Lenient) | $1.600$ | $0.423$ |
-| **Jackson Databind** (Lenient) | $1.918$ | $0.409$ |
-| **`dot-parse`** (Our leading Java combinator) | $0.491$ | $0.262$ |
+| **Jackson Databind** (Lenient) | $1.565$ | $0.373$ |
+| **Gson** (Lenient) | $1.198$ | $0.340$ |
+| **`dot-parse`** (Our leading Java combinator) | $0.405$ | $0.224$ |
+| **JavaCC** (Optimized / Best) | $0.181$ | $0.068$ |
 
 ### Key Takeaways from the JSON Shootout
 
+*   **Tomcat JSONParser (JavaCC) Conformance Bug & Fixed Patch**:
+    During shootout integration, Apache Tomcat's official `JSONParser.jjt` was found to contain a conformance bug under RFC 8259: its `<NUMBER_DECIMAL>` token rule required a decimal point before allowing an exponent, while `<NUMBER_INTEGER>` prohibited exponents entirely. This caused the parser to crash on valid JSON inputs containing scientific notation on integer bases (e.g., `-5e-122`). We successfully patched the grammar in our benchmark suite to allow exponents on both integers and decimals, restoring full RFC 8259 compliance.
+*   **The Stateful Parser Allocation Tax**:
+    Despite being a pre-compiled generator, the optimized JavaCC parser runs at less than half the speed of `dot-parse` ($0.181$ vs $0.405$ ops/ms). Because JavaCC generates stateful, mutable parsers that are not thread-safe, a new parser instance, token manager, and string reader must be allocated for every single parse operation. For medium-sized payloads, this setup allocation overhead represents a major bottleneck. `dot-parse` bypasses this entirely by being completely stateless and thread-safe, allowing infinite reuse of a single parser instance.
+*   **The DFA Comment-Scanning Tax vs. SIMD Vectorization**:
+    On comment-heavy payloads, the JavaCC parser throughput drops by 2.7x ($0.181 \to 0.068$ ops/ms), running 3.3x slower than `dot-parse`. This is caused by JavaCC's lexical comment rule (`"/*" (~[])* "*/"`), which compiles into a character-by-character DFA transition loop to check for the comment suffix. `dot-parse` avoids this by using `sequence("/*", until("*/"))`, which delegates to Java's native `String.indexOf()`. The JVM optimizes `indexOf` using vectorized SIMD instructions, scanning memory blocks in parallel and jumping the pointer instantly, delivering a massive systems-level advantage over DFA character loops.
 *   **Google's `dot-parse` High-Efficiency Delimiter Scanning**:
-    `dot-parse` is the fastest third-party parser library on the JVM at $0.262$ ops/ms (running 1.30x faster than `fastparse` and delivering 64.1% of Jackson's speed). Its internal return elision mechanism helps to completely avoid intermediate object/sequence allocations on repetition loops, maintaining high throughput on comment-heavy files.
+    `dot-parse` remains the fastest Java parser library at $0.224$ ops/ms on comment-heavy files, running 1.17x faster than `fastparse` and delivering 60.1% of Jackson's speed. Its internal return elision mechanism completely avoids intermediate object allocations on repetition loops, maintaining high throughput.
 *   **`fastparse` Allocation Overhead on Repetitions**:
     While `fastparse`'s compile-time macro expansion makes it exceptionally fast, its idiomatic block comment combinator (`"/*" ~ (!"*/" ~ AnyChar).rep ~ "*/"`) incurs a non-trivial performance tax. Because we found no `cats-parse`-like `void()` or `dot-parse`-like return elision in `fastparse` to elide sequence generation, the intermediate `Seq[Char]` heap allocations and primitive character boxing required by the repetition combinator result in a 20.2% lower throughput compared to its strict JSON parser (when scaled for payload size).
 *   **`cats-parse`** (Scala):
-    `cats-parse` achieves highly optimized comment scanning by leveraging Tuple-free sequencing operators (`*>` and `<*`) and the native, pre-compiled `P.until(P.string("*/")).void` scanner. This completely avoids intermediate list and tuple allocations, maintaining a stable $0.091$ ops/ms throughput (running at 22.2% of Jackson's speed).
+    `cats-parse` achieves highly optimized comment scanning by leveraging Tuple-free sequencing operators (`*>` and `<*`) and the native, pre-compiled `P.until(P.string("*/")).void` scanner. This completely avoids intermediate list and tuple allocations, maintaining a stable $0.078$ ops/ms throughput (running at 20.9% of Jackson's speed).
 *   **`taker`'s Recursion Protection Tax on JSON**:
-    While highly competitive on flat loops, `taker` drops significantly on the JSON benchmark ($0.129\text{ ops/ms}$ vs. `dot-parse`'s $0.491\text{ ops/ms}$). Because the JSON parser traverses the recursive rule reference chain at every element boundary, `taker` has to evaluate its cycle-detection check for every element (including flat primitives like numbers or strings). Under the hood, its dynamic `CheckParser` wrapper incurs a heavy performance tax at every recursive boundary: performing a `ThreadLocal` lookup, querying/writing to an `IntObjectMap`, allocating a new `ArrayDeque<>` stack, and scanning the active stack. This makes dynamic recursion protection the primary contributor to `taker`'s slowness on deeply nested JSON payloads.
+    While highly competitive on flat loops, `taker` drops significantly on the JSON benchmark ($0.101\text{ ops/ms}$ vs. `dot-parse`'s $0.405$ ops/ms). Because the JSON parser traverses the recursive rule reference chain at every element boundary, `taker` has to evaluate its cycle-detection check for every element (including flat primitives like numbers or strings). Under the hood, its dynamic `CheckParser` wrapper incurs a heavy performance tax at every recursive boundary: performing a `ThreadLocal` lookup, querying/writing to an `IntObjectMap`, allocating a new `ArrayDeque<>` stack, and scanning the active stack. This makes dynamic recursion protection the primary contributor to `taker`'s slowness on deeply nested JSON payloads.
 *   **The Contrast with `dot-parse` & others**:
     - Other benchmarked combinator frameworks (like `fastparse`, `cats-parse`, `jparsec`, `parsecj`, and `better-parse`) don't check for left recursion — they simply crash with a `StackOverflowError` if a rule is left-recursive.
     - Like `taker`, Google's `dot-parse` does guarantee left recursion safety but does so at definition time, paying zero runtime tax. For a deep-dive on how its strict `Parser` vs. `OrEmpty` type dichotomy mathematically guarantees 100% detection of all recursive cycles during the startup dry-run, see [left-recursion.md](./left-recursion.md).
@@ -175,6 +192,36 @@ Every engine was validated against the **exact same 14 deep structural AST test 
 
 *   **Scannerless vs. Two-Phase Tokenization**:
     For small, dense inputs with minimal whitespace (such as Java type signatures), scannerless parsers (`dot-parse`, `taker`, `parsecj`) are a fundamentally better architectural fit than two-phase tokenizing parsers (`jparsec`, `antlr4`). Two-phase parsers pay a high object-allocation penalty to construct intermediate token lists, whereas scannerless parsers operate directly on the character stream with zero token overhead.
+
+---
+
+## StringIn vs. Keywords: Trie-Based Optimizations
+
+We compared the performance of matching one of many literal strings in a flat choice. In `cats-parse`, this is represented by the `Parser.stringIn` primitive. In `dot-parse`, this is represented by collecting individual string parsers using the `Parser.or()` collector.
+
+### Benchmark Results (Average Time, Lower is Better)
+
+| Scenario | Candidate Strings | `dot-parse` (ns/op) | `cats-parse` (ns/op) |
+| :--- | :--- | :---: | :---: |
+| **`stringIn` (foo)** | 5 overlapping strings | **73 ns** | **78 ns** |
+| **`stringIn` (broad)** | 676 generated strings | **1065 ns** | **1066 ns** |
+
+Both libraries perform on par because they both compile the flat list of strings into an optimized trie structure at runtime:
+*   **`cats-parse`** compiles them into an internal `RadixNode` (trie).
+*   **`dot-parse`** compiles them into a `PrefixPruneTree` (trie) inside `OrParser`.
+
+### The Critical Architectural Difference: `StringIn` vs. `Keywords`
+
+While they perform identically on flat string choices (`StringIn`), their performance diverges significantly in real-world programming language grammars (the `Keywords` case):
+
+1.  **`StringIn` (Flat Choice)**:
+    This is used when a list of strings are treated identically by the grammar (e.g., matching any operator or identifier where the exact string is just returned as a leaf value).
+    *   In this case, both `cats-parse` and `dot-parse` compile the raw `Parser.string` instances into their respective tries, achieving excellent $\sim 1\ \mu\text{s}$ scaling for hundreds of strings.
+
+2.  **`Keywords` (Leading Choice)**:
+    This is the standard pattern in programming language and SQL parsers, where different keywords lead to entirely different grammar branches and parser actions (e.g., `select` leads to a `selectStatement` rule, `insert` leads to an `insertStatement` rule).
+    *   **The Suffix/Map Limitation in `cats-parse`**: Because different branches must map to different AST nodes or trigger different rules, they require suffix operations (like `.map` or `*>`/`<*`). In `cats-parse`, appending `.map` to a string parser wraps it in a `Parser.Map` class. This **destroys** `cats-parse`'s radix-tree optimization, forcing it to fall back to sequential backtracking (trying all keywords one-by-one), which is extremely slow.
+    *   **The Prefix-Pruning Advantage in `dot-parse`**: `dot-parse`'s `OrParser` is designed to extract the prefix of candidate parsers **even if they have suffix/map operations**. Its `PrefixPruneTree` can still prune candidates by their leading character prefixes, allowing `dot-parse` to maintain $\sim 1\ \mu\text{s}$ trie-like scaling even when different keywords lead to different complex rules.
 
 ---
 

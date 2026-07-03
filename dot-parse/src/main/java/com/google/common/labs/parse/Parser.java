@@ -235,15 +235,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public static Parser<String> chars(int n) {
     checkArgument(n > 0, "chars count (%s) must be positive", n);
     String name = n + " char(s)";
-    return new Parser<>() {
-      @Override MatchResult<String> skipAndMatch(
+    return new Parser<Void>() {
+      @Override MatchResult<Void> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         return input.isInRange(start + n - 1)
-            ? new MatchResult.Success<>(start, start + n, input.snippet(start, n))
+            ? new MatchResult.Success<>(start, start + n, null)
             : context.expecting(name, start);
       }
-    };
+    }.source();
   }
 
   /**
@@ -608,7 +608,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             CharPredicate.range('0', '9').orRange('A', 'F').orRange('a', 'f').precomputeForAscii()
                 ::matchesAllOf,
             "4 hex digits UTF-16 code unit")
-        .map(digits -> Integer.parseInt(digits, 16));
+        .elidableMap(digits -> Integer.parseInt(digits, 16));
   }
 
   /**
@@ -844,7 +844,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.4
    */
   public final Parser<T> atLeastOnce(BinaryOperator<T> reducer) {
-    return atLeastOnce(reducing(requireNonNull(reducer))).map(Optional::get);
+    return atLeastOnce(reducing(requireNonNull(reducer))).elidableMap(Optional::get);
   }
 
   /**
@@ -875,7 +875,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.4
    */
   public final Parser<T> atLeastOnceDelimitedBy(String delimiter, BinaryOperator<T> reducer) {
-    return atLeastOnceDelimitedBy(delimiter, reducing(requireNonNull(reducer))).map(Optional::get);
+    return atLeastOnceDelimitedBy(delimiter, reducing(requireNonNull(reducer)))
+        .elidableMap(Optional::get);
   }
 
   /**
@@ -948,7 +949,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * }</pre>
    */
   public static Parser<String>.OrEmpty zeroOrMore(CharPredicate charsToMatch, String name) {
-    return consecutive(charsToMatch, name).orElse("");
+    return consecutive(charsToMatch, name).new OrEmpty(() -> "");
   }
 
   /**
@@ -962,7 +963,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * }</pre>
    */
   public final Parser<List<T>>.OrEmpty zeroOrMore() {
-    return zeroOrMore(toUnmodifiableList());
+    return atLeastOnce(toUnmodifiableList()).new OrEmpty(() -> List.of());
   }
 
   /**
@@ -994,7 +995,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * }</pre>
    */
   public final Parser<List<T>>.OrEmpty zeroOrMoreDelimitedBy(String delimiter) {
-    return zeroOrMoreDelimitedBy(delimiter, toUnmodifiableList());
+    return atLeastOnceDelimitedBy(delimiter, toUnmodifiableList()).new OrEmpty(() -> List.of());
   }
 
   /**
@@ -1134,7 +1135,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final Parser<T> withPrefixes(Parser<? extends UnaryOperator<T>> operator) {
     return sequence(
-        operator.zeroOrMore(), this, (ops, operand) -> applyOperators(ops.reversed(), operand));
+        operator.zeroOrMore(), this,
+        (ops, operand) ->
+            ops.isEmpty()
+                ? operand
+                : ops.size() == 1
+                    ? ops.get(0).apply(operand)
+                    : applyOperators(ops.reversed(), operand));
   }
 
   /**
@@ -1200,7 +1207,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /** If this parser matches, returns the result of applying the given function to the match. */
-  public final <R> Parser<R> map(Function<? super T, ? extends R> f) {
+  @Override public final <R> Parser<R> map(Function<? super T, ? extends R> f) {
     requireNonNull(f);
     return new SamePrefix<>() {
       @Override MatchResult<R> skipAndMatch(
@@ -1211,7 +1218,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
+
+      @Override Parser<?> ignoreReturn() {
+        return f instanceof ElidableFunction ? left().ignoreReturn() : this;
+      }
     };
+  }
+
+  private <R> Parser<R> elidableMap(ElidableFunction<? super T, ? extends R> f) {
+    return map(f);
   }
 
   /**
@@ -1336,7 +1351,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @Override public final Parser<T> optionallyFollowedBy(Parser<?> suffix) {
-    return followedBy(suffix.orElse(null));
+    return followedBy(suffix.new OrEmpty(() -> null));
   }
 
   @Override public final Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
@@ -1364,7 +1379,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   final Parser<T> withOptionalSuffix(Parser<UnaryOperator<T>> suffix) {
-    return and(suffix.orElse(identity()), (a, op) -> op.apply(a));
+    return and(suffix.new OrEmpty(() -> identity()), (a, op) -> op.apply(a));
   }
 
   /** A form of negative lookahead such that the match is rejected if followed by {@code suffix}. */
@@ -1454,16 +1469,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *     .optional()
    *     .between("{", "}")
    * }</pre>
-   *
-   * <p>Note that if you only need to match the pattern without using the return value,
-   * prefer using the more efficient {@code .orElse(null)} instead.
    */
   public final Parser<Optional<T>>.OrEmpty optional() {
-    return map(Optional::ofNullable).new OrEmpty(Optional::empty);
+    return elidableMap(Optional::ofNullable).new OrEmpty(Optional::empty);
   }
 
   /** Returns a parser that matches {@code this} pattern and returns the matched string. */
-  public final Parser<String> source() {
+  @Override public final Parser<String> source() {
     @SuppressWarnings("unchecked")  // original return value no longer needed
     Parser<Object> elided = (Parser<Object>) ignoreReturn();
     return elided.new SamePrefix<String>() {
@@ -1520,7 +1532,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
   public final Lexical skipping(Parser<?> skip) {
-    return new Lexical(skip.atLeastOnce(toNull()));
+    return new Lexical(skip.ignoreReturn().atLeastOnce(toNull()));
   }
 
   /**
@@ -1791,6 +1803,16 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /**
+     * Applies {@code f} to either the parse result, or the default value if matching fails.
+     *
+     * @since 10.6
+     */
+    @Override public final <R> Parser<R>.OrEmpty map(Function<? super T, ? extends R> f) {
+      var defaultValue = defaultSupplier;
+      return notEmpty().<R>map(f).new OrEmpty(() -> f.apply(defaultValue.get()));
+    }
+
+    /**
      * The current parser enclosed between {@code prefix} and {@code suffix}, both allowed to be empty.
      *
      * @since 9.5
@@ -1872,7 +1894,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * @since 10.5
      */
     @Override public OrEmpty optionallyFollowedBy(Parser<?> suffix) {
-      return followedBy(suffix.orElse(null));
+      return followedBy(suffix.new OrEmpty(() -> null));
     }
     /**
      * If this parser matches, optionally applies the {@code op} function if the pattern is followed
@@ -1898,7 +1920,17 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     private OrEmpty withOptionalSuffix(Parser<UnaryOperator<T>> suffix) {
-      return sequence(this, suffix.orElse(identity()), (operand, op) -> op.apply(operand));
+      return sequence(this, suffix.new OrEmpty(() -> identity()), (operand, op) -> op.apply(operand));
+    }
+
+    /**
+     * Returns an equivalent parser that matches {@code this} pattern and returns the matched string,
+     * or empty string if mismatches.
+     *
+     * @since 10.6
+     */
+    @Override public final Parser<String>.OrEmpty source() {
+      return notEmpty().source().new OrEmpty(() -> "");
     }
 
     /**
@@ -2164,37 +2196,72 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <p>For simple definitions, you could use the {@link #define} method with a lambda
    * to elide the need of an explicit forward declaration.
+   *
+   * <p>To prevent StackOverflowError, rules enforce a maximum recursion depth limit.
+   * The recursion depth is tracked globally per parse operation across all recursive rules
+   * on the call stack. Each rule enforces its own limit against this global depth.
    */
   @ThreadSafe
   public static final class Rule<T> extends Parser<T> {
     private final AtomicReference<Parser<T>> ref = new AtomicReference<>();
-    private volatile boolean validating = false;
+    private final int maxRecursionDepth;
+    private volatile boolean dryRun = false;
+
+    /** Creates a rule with a default maximum recursion depth of 100. */
+    public Rule() {
+      this(100);
+    }
+
+    /**
+     * Creates a rule with the given maximum recursion depth.
+     *
+     * <p>The recursion depth is tracked globally per parse operation across all recursive rules
+     * on the call stack.
+     *
+     * @throws IllegalArgumentException if {@code maxRecursionDepth} is not positive.
+     * @since 10.6
+     */
+    public Rule(int maxRecursionDepth) {
+      checkArgument(maxRecursionDepth > 0, "maxRecursionDepth (%s) must be positive", maxRecursionDepth);
+      this.maxRecursionDepth = maxRecursionDepth;
+    }
 
     @Override MatchResult<T> skipAndMatch(
         Parser<?> skip, CharInput input, int start, ErrorContext context) {
       Parser<T> p = ref.get();
       if (start == 0 && input.isEof(0)) {
         checkState(
-            !validating,
+            !dryRun,
             "Left recursion not supported! Consider using withPostfixes() or the OperatorTable class"
                 + " to define the left recursive grammar.");
-        if (p == null) { // can happen when validating mutually recursive rules.
+        if (p == null) { // can happen when dry-running mutually recursive rules.
           return context.failAt(0, "empty input", ""); // A Parser must consume input.
         }
       }
       checkState(p != null, "definedAs() should have been called before parse()");
-      return p.skipAndMatch(skip, input, start, context);
+      try {
+        if (++input.nestingLevel > maxRecursionDepth) {
+          throw new ParseException(
+              start,
+              String.format(
+                  "at %s: max recursion depth (%s) exceeded:%s",
+                  input.sourcePosition(start), maxRecursionDepth, new Snippet(input, start)));
+        }
+        return p.skipAndMatch(skip, input, start, context);
+      } finally {
+        --input.nestingLevel;
+      }
     }
 
     /** Define this rule as {@code parser} and returns it. */
     public <S extends T> Parser<S> definedAs(Parser<S> parser) {
       requireNonNull(parser);
       checkArgument(!(parser instanceof Rule), "Do not delegate to a Rule parser");
-      validating = true;
+      dryRun = true;
       try {
         checkState(!parser.matches(""), "parser must not match empty string");
       } finally {
-        validating = false;
+        dryRun = false;
       }
       checkState(ref.compareAndSet(null, covariant(parser)), "definedAs() already called");
       return parser;
@@ -2404,6 +2471,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return Collector.of(() -> null, (a, e) -> {}, (a, b) -> a, a -> null);
   }
 
+  private interface ElidableFunction<F, T> extends Function<F, T> {}
   private interface ElidableBiFunction<A, B, R> extends BiFunction<A, B, R> {}
 
   private interface Constants {

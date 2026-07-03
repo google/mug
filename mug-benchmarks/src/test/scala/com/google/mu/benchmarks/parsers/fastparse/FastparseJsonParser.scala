@@ -14,7 +14,7 @@ object FastparseJsonParser {
   private object NoWsParser {
     import fastparse._, NoWhitespace._
 
-    def stringChars(c: Char): Boolean = c != '\"' && c != '\\'
+    def stringChars(c: Char): Boolean = c != '\"' && c != '\\' && c >= 0x20
 
     def hexDigit[$: P]: P[Unit]      = P( CharIn("0-9a-fA-F") )
     def unicodeEscape[$: P]: P[Unit] = P( "u" ~ hexDigit ~ hexDigit ~ hexDigit ~ hexDigit )
@@ -35,7 +35,13 @@ object FastparseJsonParser {
 
     def numberLiteral[$: P]: P[Double] = P(
       P( "-".? ) ~ integral ~ fractional.? ~ exponent.?
-    ).!.map(_.toDouble)
+    ).!.map { s =>
+      if (s.contains(".") || s.contains("e") || s.contains("E")) {
+        s.toDouble
+      } else {
+        s.toLong.toDouble
+      }
+    }
   }
 
   // =========================================================================
@@ -119,14 +125,6 @@ object FastparseJsonParser {
   // Strict unescape complying with RFC 8259 Section 7 string constraints
   private def strictUnescape(text: String): String = {
     if (text.indexOf('\\') == -1) {
-      var j = 0
-      while (j < text.length) {
-        val charVal = text.charAt(j)
-        if (charVal < 0x20) {
-          throw new IllegalArgumentException(s"Unescaped control character: 0x${Integer.toHexString(charVal)}")
-        }
-        j += 1
-      }
       text
     } else {
       val sb = new java.lang.StringBuilder(text.length)

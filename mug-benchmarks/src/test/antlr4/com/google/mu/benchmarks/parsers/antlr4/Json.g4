@@ -28,7 +28,7 @@ member : jsonString ':' jsonValue ;
 
 JSON_NUMBER : '-'? ( '0' | [1-9] [0-9]* ) ( '.' [0-9]+ )? ( [eE] [+-]? [0-9]+ )? ;
 
-JSON_STRING : '"' ( ESCAPED_CHAR | ~["\\] )* '"' ;
+JSON_STRING : '"' ( ESCAPED_CHAR | ~["\\\u0000-\u001F] )* '"' ;
 
 fragment ESCAPED_CHAR : '\\' ( ["\\/bfnrt] | 'u' [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] ) ;
 

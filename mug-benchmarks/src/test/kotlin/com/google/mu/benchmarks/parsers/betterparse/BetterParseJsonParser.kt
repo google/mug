@@ -25,7 +25,7 @@ object BetterParseJsonParser : Grammar<JsonValue>() {
     val numberToken by regexToken("-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?")
 
     // Double-quoted string token
-    val stringToken by regexToken("\"([^\"\\\\]|\\\\.)*\"")
+    val stringToken by regexToken("\"([^\"\\\\\u0000-\u001F]|\\\\.)*\"")
 
     val lbracket by literalToken("[")
     val rbracket by literalToken("]")
@@ -41,7 +41,12 @@ object BetterParseJsonParser : Grammar<JsonValue>() {
                                                      (falseToken asJust JsonBoolean.FALSE)
 
     private val jsonNumber: Parser<JsonNumber> by numberToken map { 
-        JsonNumber(it.text.toDouble()) 
+        val text = it.text
+        if (text.contains(".") || text.contains("e") || text.contains("E")) {
+            JsonNumber(text.toDouble())
+        } else {
+            JsonNumber(text.toLong().toDouble())
+        }
     }
 
     private val jsonString: Parser<JsonString> by stringToken map { 
@@ -83,12 +88,6 @@ object BetterParseJsonParser : Grammar<JsonValue>() {
             }
         }
         if (!hasBackslash) {
-            for (i in start until end) {
-                val c = input[i]
-                if (c.code < 0x20) {
-                    throw IllegalArgumentException("Unescaped control character: 0x${Integer.toHexString(c.code)}")
-                }
-            }
             return input.subSequence(start, end).toString()
         }
         val sb = StringBuilder(end - start)
@@ -139,7 +138,7 @@ object BetterParseJsonWithCommentsParser : Grammar<JsonValue>() {
     val trueToken by literalToken("true")
     val falseToken by literalToken("false")
     val numberToken by regexToken("-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?")
-    val stringToken by regexToken("\"([^\"\\\\]|\\\\.)*\"")
+    val stringToken by regexToken("\"([^\"\\\\\u0000-\u001F]|\\\\.)*\"")
 
     val lbracket by literalToken("[")
     val rbracket by literalToken("]")
@@ -154,7 +153,12 @@ object BetterParseJsonWithCommentsParser : Grammar<JsonValue>() {
                                                      (falseToken asJust JsonBoolean.FALSE)
 
     private val jsonNumber: Parser<JsonNumber> by numberToken map { 
-        JsonNumber(it.text.toDouble()) 
+        val text = it.text
+        if (text.contains(".") || text.contains("e") || text.contains("E")) {
+            JsonNumber(text.toDouble())
+        } else {
+            JsonNumber(text.toLong().toDouble())
+        }
     }
 
     private val jsonString: Parser<JsonString> by stringToken map { 
