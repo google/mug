@@ -519,7 +519,7 @@ public final class EmailAddress {
   private static <A, B> Parser<EmailAddress> safely(
       Parser<A> a, Production<B> b,
       BiFunction<? super A, ? super B, ? extends Production<EmailAddress>> combiner) {
-    return sequence(a, b, Both::of).flatMap(e -> e.andThen(combiner));
+    return sequence(a, b, Both::of).flatMap(ab -> ab.andThen(combiner));
   }
 
   private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses(
