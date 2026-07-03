@@ -582,6 +582,19 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /**
    * A production rule that consumes no input and just returns {@code value}.
    *
+   * <p>Useful when combined with {@link #fail} in the lambda passed to {@link #flatMap}
+   * to dynamically map the previously parsed result with graceful error handling. such as:
+   *
+   * <pre>{@code
+   * Parser<re2.Pattern> pattern = regexPattern.flatMap(
+   *      regex -> {
+   *        try {
+   *          return Parser.just(re2.Pattern.compile(regex));
+   *        } catch (PatternSyntaxException e) {
+   *          return Parser.fail(e.getMessage());
+   *        });
+   * }</pre>
+   *
    * @since 10.6
    */
   public static <T> Production<T> just(T value) {
