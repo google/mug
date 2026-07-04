@@ -22,7 +22,7 @@ Regex Pattern      | Parser Equivalent                                          
 `[a-zA-Z0-9_]+`    | `word()`                                                    | Matches a "word" (alphanumeric and underscore).
 `[0-9]{5}`         | `digits(5)`                                                 | Matches exactly 5 digits.
 `[0-9a-fA-F]{4}`   | `hexDigits(4)`                                              | Matches exactly 4 hex digits.
-`[a-zA-Z]{2,4}`    | `consecutive("[a-zA-Z]").suchThat(w -> w.length() >= 2 && w.length() <= 4, "2-4 alpha")` | Matches 2-4 alpha chars.
+`[a-zA-Z]{2,4}`    | `consecutive("[a-zA-Z]").suchThat(... length() >=2 && length() <= 4 ...)` | Matches 2-4 alpha chars.
 `(foo\|bar\|baz)`  | `anyOf("foo", "bar", "baz")`                                | Matches one of the alternatives.
 `/\*.*\*/`         | `sequence(string("/*"), first("*/"))`                       | Matches block comment.
 `//[^\n]*`         | `sequence(string("//"), zeroOrMore("[^\n]"))`               | Matches line comment.
