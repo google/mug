@@ -135,7 +135,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
    *
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   *        Literal backslash ({@code "\\"} in Java source code literal),
+   *        Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
    *        '[' and ']' can all be included inside the outer pair of brackets.
    *        The '-' character as long as not at the place of a range is also treated as literal.
    *        You can also use {@code '^'} to get negative character set like:
@@ -207,7 +207,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
    *
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   *        Literal backslash ({@code "\\"} in Java source code literal),
+   *        Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
    *        '[' and ']' can all be included inside the outer pair of brackets.
    *        The '-' character as long as not at the place of a range is also treated as literal.
    *        You can also use {@code '^'} to get negative character set like:
@@ -237,7 +237,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
    *
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   *        Literal backslash ({@code "\\"} in Java source code literal),
+   *        Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
    *        '[' and ']' can all be included inside the outer pair of brackets.
    *        The '-' character as long as not at the place of a range is also treated as literal.
    *        You can also use {@code '^'} to get negative character set like:
@@ -991,7 +991,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
    *
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   *        Literal backslash ({@code "\\"} in Java source code literal),
+   *        Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
    *        '[' and ']' can all be included inside the outer pair of brackets.
    *        The '-' character as long as not at the place of a range is also treated as literal.
    *        You can also use {@code '^'} to get negative character set like:
