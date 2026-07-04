@@ -219,7 +219,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /**
    * Matches {@code n} consecutive characters contained in {@code characterClass}.
    *
-   * <p>For example: {@code consecutive(5, "[0-9]")} is equivalent to {@code consecutive(5, range('0', '9'))}.
+   * <p>For example, the following helper matches exactly n hex digits:
+   *
+   * <pre>{@code
+   * static Parser<String> hexDigits(int n) {
+   *   return consecutive(n, "[0-9a-fA-F]");
+   * }
+   * }</pre>
    *
    * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
    * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
