@@ -1246,9 +1246,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * If this parser matches, returns the result of applying the given function to the match,
-   * with the parse result of type {@code T} and the beginning (inclusive) and end index (exclusive)
-   * passed to the function.
+   * If this parser matches, returns the result of applying the given function,
+   * with the parse result of type {@code T}, the beginning index (inclusive) and the end index
+   * (exclusive) as parameters passed to the function.
    *
    * <p>For example: <pre>{@code
    * Parser<NameNode> nameNode =
