@@ -80,13 +80,6 @@ import com.google.mu.util.stream.Joiner;
  *
  * <p>For simplicity, {@link #or or()} and {@link #anyOf anyOf()} will always backtrack upon failure.
  * anyOf(expr.followedBy(";"), expr)}, use {@code expr.optionallyFollowedBy(";")} instead.
- *
- * <p>WARNING: A poorly-written grammar with long common prefixes among {@code anyOf()} choices
- * may incur expensive backtracking overhead.
- *
- * <p>WARNING: If you define recursive grammars using {@link #define define()} or {@link
- * Parser.Rule}, maliciously crafted input (think of 10K left parens in an expression parser)
- * can cause StackOverflowError.
  */
 @ThreadSafe
 public abstract non-sealed class Parser<T> implements Production<T> {
