@@ -1,6 +1,5 @@
 package com.google.mu.benchmarks;
 
-import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
@@ -62,12 +61,12 @@ public class ChessMoveBenchmark {
   private static final Parser<Move> PARSER = literally(moveParser());
 
   private static Parser<Move> moveParser() {
-    var file = one(charsIn("[a-h]")).source();
-    var rank = one(charsIn("[1-8]")).source();
-    var piece = one(charsIn("[NBRQK]")).source();
+    var file = one("[a-h]").source();
+    var rank = one("[1-8]").source();
+    var piece = one("[NBRQK]").source();
     var destination = sequence(file, rank, String::concat);
-    var promotion = string("=").then(one(charsIn("[NBRQ]")).source());
-    var checkOrMate = one(charsIn("[+#]")).source();
+    var promotion = string("=").then(one("[NBRQ]").source());
+    var checkOrMate = one("[+#]").source();
     var disambiguation = anyOf(file.optionallyFollowedBy(rank, String::concat), rank);
 
     Parser<Castling> castling = string("O-O").thenReturn(Castling.kingside())

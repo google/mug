@@ -411,11 +411,6 @@ Parser<TypeDecl> typeDecl =
     Parser<String> usPhoneNumber =
         sequence(digits(3), string("-"), digits(3), string("-"), digits(4))
             .source();
-
-    private static Parser<String> digits(int n) {
-      return chars(n)
-          .suchThat(CharPredicate.range('0', '9')::matchesAllOf, n + " digits");
-    }
     ```
 
     It avoids the syntactic clutter and cognitive load of chaining combinators:
