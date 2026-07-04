@@ -187,12 +187,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }.source();
   }
 
-  /**
-   * Matches {@code n} consecutive characters as specified by {@code matcher}.
-   *
-   * @since 10.6
-   */
-  public static Parser<String> consecutive(int n, CharPredicate matcher, String name) {
+  /** Matches {@code n} consecutive characters as specified by {@code matcher}. */
+  static Parser<String> consecutive(int n, CharPredicate matcher, String name) {
     requireNonNull(matcher);
     requireNonNull(name);
     checkArgument(n > 0, "n(%s) must be positive", n);
@@ -262,23 +258,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *   return consecutive(n, "[0-9a-fA-F]");
    * }
    * }</pre>
-   *
-   * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
-   * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
-   *
-   * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   *        Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
-   *        '[' and ']' can all be included inside the outer pair of brackets.
-   *        The '-' character as long as not at the place of a range is also treated as literal.
-   *        You can also use {@code '^'} to get negative character set like:
-   *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
-   *        You are strongly recommended to install Google ErrorProne and mug-errorprone in your
-   *        annotation processor path so that incorrect character class syntax will be caught
-   *        at compile-time.
-   * @since 10.6
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
-  public static Parser<String> consecutive(int n, String characterClass) {
+  static Parser<String> consecutive(int n, String characterClass) {
     return consecutive(n, charsIn(characterClass), n + " " + characterClass);
   }
 
