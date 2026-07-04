@@ -22,7 +22,6 @@ For brevity, all unqualified methods are assumed to be static imported from the
 2   | `[a-zA-Z0-9_]+`    | `word()`                                                    | Matches a "word" (alphanumeric and underscore).
 3   | `[0-9]{5}`         | `digits().suchThat(s -> s.length() == 5, "zip code")`       | Matches exactly 5 digits.
 4   | `(foo\|bar\|baz)`  | `anyOf("foo", "bar", "baz")`                                | Matches one of the alternatives.
-4   | `(?i)select\b`     | `caseInsensitiveWord("select")`                             | Matches a word case insensitively.
 4   | `/\*.*\*/`         | `sequence(string("/*"), first("*/"))`                       | Matches block comment.
 4   | `//[^\n]*`         | `sequence(string("//"), zeroOrMore("[^\n]"))`               | Matches line comment.
 5   | `'[^']*'`          | `quotedBy("'", "'")`                                        | Matches a single-quoted string, excluding the quotes from the result.
@@ -30,6 +29,7 @@ For brevity, all unqualified methods are assumed to be static imported from the
 7   | `\d+(\.\d+)?`      | `digits().optionallyFollowedBy(string(".").then(digits()))` | Matches an integer or a simple float.
 8   | `\[(\w+(,\w+)*)?\]`| `word().zeroOrMoreDelimitedBy(",").between("[", "]")`       | Comma-delimited list of words inside square brackets.
 9   | `if\b`             | `word("if")`                                                | Matches the whole word "if".
+4   | `(?i)select\b`     | `caseInsensitiveWord("select")`                             | Matches a word case insensitively.
 10  | `\d+(?!\.)`        | `digits().notFollowedBy(".")`                               | Matches digits not immediately followed by a dot.
 11  | `foo?`             | `string("foo").orElse("")`                                  | Matches "foo" zero or one time.
 12  | `\s+`              | `consecutive(Character::isWhitespace)`                      | Matches one or more whitespace characters.
