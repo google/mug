@@ -58,6 +58,7 @@ import java.util.stream.Stream;
 
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.mu.function.Function4;
+import com.google.mu.function.ObjInt2Function;
 import com.google.mu.function.TriFunction;
 import com.google.mu.util.Both;
 import com.google.mu.util.CharPredicate;
@@ -1240,6 +1241,32 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
       @Override Parser<?> ignoreReturn() {
         return f instanceof ElidableFunction ? left().ignoreReturn() : this;
+      }
+    };
+  }
+
+  /**
+   * If this parser matches, returns the result of applying the given function to the match,
+   * with the parse result of type {@code T} and the beginning (inclusive) and end index (exclusive)
+   * passed to the function.
+   *
+   * <p>For example: <pre>{@code
+   * Parser<NameNode> nameNode =
+   *     word().mapWithIndex((name, begin, end) -> new NameNode(name, begin, end));
+   * }</pre>
+   *
+   * @since 10.6
+   */
+  public final <R> Parser<R> mapWithIndex(ObjInt2Function<? super T, ? extends R> f) {
+    requireNonNull(f);
+    return new SamePrefix<>() {
+      @Override MatchResult<R> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        return switch (left().skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success(int head, int tail, T value) ->
+              new MatchResult.Success<>(head, tail, f.apply(value, head, tail));
+          case MatchResult.Failure<?> failure -> failure.safeCast();
+        };
       }
     };
   }
