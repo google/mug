@@ -205,4 +205,28 @@ public class CharacterSetTest {
         assertThrows(IllegalArgumentException.class, () -> charsIn("[1-0]"));
     assertThat(e).hasMessageThat().contains("[1-0]");
   }
+
+  @Test
+  public void toString_escapesInvisibleCharacters() {
+    CharacterSet set = charsIn("[\r\n\t\f\b]");
+    assertThat(set.toString()).isEqualTo("[\\r\\n\\t\\f\\b]");
+  }
+
+  @Test
+  public void toString_escapesUnicodeControlCharacters() {
+    CharacterSet set = charsIn("[\u0000\u001F\u007F]");
+    assertThat(set.toString()).isEqualTo("[\\u0000\\u001F\\u007F]");
+  }
+
+  @Test
+  public void toString_mixedControlAndRegularCharacters() {
+    CharacterSet set = charsIn("[a-z\r\n\t\f\b0-9\u0000\u001F\u007F]");
+    assertThat(set.toString()).isEqualTo("[a-z\\r\\n\\t\\f\\b0-9\\u0000\\u001F\\u007F]");
+  }
+
+  @Test
+  public void toString_regularCharactersOnly() {
+    CharacterSet set = charsIn("[a-zA-Z0-9-_]");
+    assertThat(set.toString()).isEqualTo("[a-zA-Z0-9-_]");
+  }
 }

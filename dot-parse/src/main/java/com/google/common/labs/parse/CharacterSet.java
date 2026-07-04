@@ -19,6 +19,7 @@ import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.prefix;
 import static java.util.stream.Collectors.flatMapping;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
@@ -109,7 +110,20 @@ public final class CharacterSet implements CharPredicate {
 
   /** Returns the character set string representation. For example {@code "[a-zA-Z0-9-_]"}. */
   @Override public String toString() {
-    return string;
+    CharPredicate controlChars = Character::isISOControl;
+    if (controlChars.matchesNoneOf(string)) {
+      return string;
+    }
+    return string.chars().mapToObj(
+        c -> switch (c) {
+          case '\r' -> "\\r";
+          case '\n' -> "\\n";
+          case '\t' -> "\\t";
+          case '\f' -> "\\f";
+          case '\b' -> "\\b";
+          default -> Character.isISOControl(c) ? String.format("\\u%04X", c) : Character.toString(c);
+        })
+        .collect(joining());
   }
 
   private static CharPredicate compileCharacterSet(String characterSet) {
