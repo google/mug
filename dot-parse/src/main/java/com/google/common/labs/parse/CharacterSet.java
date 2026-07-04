@@ -110,8 +110,8 @@ public final class CharacterSet implements CharPredicate {
 
   /** Returns the character set string representation. For example {@code "[a-zA-Z0-9-_]"}. */
   @Override public String toString() {
-    CharPredicate controlChars = Character::isISOControl;
-    if (controlChars.matchesNoneOf(string)) {
+    CharPredicate needsEscaping = c -> c == '\\' || Character.isISOControl(c);
+    if (needsEscaping.matchesNoneOf(string)) {
       return string;
     }
     return string.chars().mapToObj(
@@ -121,6 +121,7 @@ public final class CharacterSet implements CharPredicate {
           case '\t' -> "\\t";
           case '\f' -> "\\f";
           case '\b' -> "\\b";
+          case '\\' -> "\\\\";
           default -> Character.isISOControl(c) ? String.format("\\u%04X", c) : Character.toString(c);
         })
         .collect(joining());

@@ -51,7 +51,7 @@ public class CharacterSetTest {
     CharacterSet set = charsIn("[\\]");
     assertThat(set.contains('\\')).isTrue();
     assertThat(set.contains('a')).isFalse();
-    assertThat(set.toString()).isEqualTo("[\\]");
+    assertThat(set.toString()).isEqualTo("[\\\\]");
     assertThat(set.candidateCharsIfAscii().get()).containsExactly('\\');
   }
 
@@ -61,7 +61,7 @@ public class CharacterSetTest {
     CharacterSet set = charsIn("[^\\]");
     assertThat(set.contains('\\')).isFalse();
     assertThat(set.contains('a')).isTrue();
-    assertThat(set.toString()).isEqualTo("[^\\]");
+    assertThat(set.toString()).isEqualTo("[^\\\\]");
     assertThat(set.candidateCharsIfAscii()).isEmpty();
   }
 
@@ -76,6 +76,7 @@ public class CharacterSetTest {
     assertThat(set.contains('`')).isTrue();
     assertThat(set.contains('a')).isTrue();
     assertThat(set.contains('b')).isFalse();
+    assertThat(set.toString()).isEqualTo("[\\\\]-a]");
     assertThat(set.candidateCharsIfAscii().get()).containsExactly('\\', ']', '^', '_', '`', 'a');
   }
 
