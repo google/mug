@@ -177,7 +177,28 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.6
    */
   public static Parser<String> consecutive(int n, CharPredicate matcher, String name) {
-    return skipConsecutive(n, matcher, name).source();
+    requireNonNull(matcher);
+    requireNonNull(name);
+    checkArgument(n > 0, "n(%s) must be positive", n);
+    return new Parser<Void>() {
+      @Override MatchResult<Void> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        if (!input.isInRange(start + n - 1)) {
+          return context.expecting(name, start);
+        }
+        for (int i = 0; i < n; i++) {
+          if (!matcher.test(input.charAt(start + i))) {
+            return context.expecting(name, start + i);
+          }
+        }
+        return  new MatchResult.Success<>(start, start + n, null);
+      }
+
+      @Override Set<String> getPrefixes() {
+        return prefixesIfAscii(matcher);
+      }
+    }.source();
   }
 
   /**
@@ -257,31 +278,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return end > start
             ? new MatchResult.Success<>(start, end, null)
             : context.expecting(name, end);
-      }
-
-      @Override Set<String> getPrefixes() {
-        return prefixesIfAscii(matcher);
-      }
-    };
-  }
-
-  private static Parser<Void> skipConsecutive(int n, CharPredicate matcher, String name) {
-    requireNonNull(matcher);
-    requireNonNull(name);
-    checkArgument(n > 0, "n(%s) must be positive", n);
-    return new Parser<>() {
-      @Override MatchResult<Void> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        if (!input.isInRange(start + n - 1)) {
-          return context.expecting(name, start);
-        }
-        for (int i = 0; i < n; i++) {
-          if (!matcher.test(input.charAt(start + i))) {
-            return context.expecting(name, start + i);
-          }
-        }
-        return  new MatchResult.Success<>(start, start + n, null);
       }
 
       @Override Set<String> getPrefixes() {
