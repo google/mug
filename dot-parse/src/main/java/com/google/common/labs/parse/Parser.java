@@ -1642,17 +1642,17 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private T parse(CharInput input, int fromIndex) {
-    ErrorState context = new ErrorState(input);
-    MatchResult<T> result = match(input, fromIndex, context);
+    ErrorTracker errorTracker = new ErrorTracker();
+    MatchResult<T> result = match(input, fromIndex, errorTracker);
     switch (result) {
       case MatchResult.Success(int head, int tail, T value) -> {
         if (!input.isEof(tail)) {
-          throw context.report(context.expecting("EOF", tail));
+          throw errorTracker.report(errorTracker.expecting("EOF", tail), input);
         }
         return value;
       }
       case MatchResult.Failure<?> failure -> {
-        throw context.report(failure);
+        throw errorTracker.report(failure, input);
       }
     }
   }
@@ -1723,15 +1723,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         if (input.isEof(index)) {
           return null;
         }
-        ErrorState context = new ErrorState(input);
-        return switch (match(input, index, context)) {
+        ErrorTracker errorTracker = new ErrorTracker();
+        return switch (match(input, index, errorTracker)) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
             input.markCheckpoint(index);
             yield success;
           }
           case MatchResult.Failure<?> failure -> {
-            throw context.report(failure);
+            throw errorTracker.report(failure, input);
           }
         };
       }
@@ -2467,13 +2467,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
   }
 
-  private static final class ErrorState extends ErrorContext {
-    private final CharInput input;
+  private static final class ErrorTracker extends ErrorContext {
     private MatchResult.Failure<?> farthestFailure = null;
-
-    ErrorState(CharInput input) {
-      this.input = input;
-    }
 
     @Override <V> MatchResult.Failure<V> expecting(
         String symbolName, int at, int frontier) {
@@ -2490,7 +2485,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return failure;
     }
 
-    ParseException report(MatchResult.Failure<?> failure) {
+    ParseException report(MatchResult.Failure<?> failure, CharInput input) {
       return (farthestFailure == null || failure.frontier() >= farthestFailure.frontier())
           ? failure.toException(input)
           : farthestFailure.toException(input);
