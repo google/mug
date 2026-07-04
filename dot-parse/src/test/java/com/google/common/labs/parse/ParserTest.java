@@ -828,6 +828,16 @@ public class ParserTest {
   }
 
   @Test
+  public void bmpCodeUnit_invalidHexChar_fails() {
+    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123g"));
+    assertThat(bmpCodeUnit().matches("123g")).isFalse();
+    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123G"));
+    assertThat(bmpCodeUnit().matches("123G")).isFalse();
+    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123Z"));
+    assertThat(bmpCodeUnit().matches("123Z")).isFalse();
+  }
+
+  @Test
   public void testNulls() throws Exception {
     NullPointerTester tester =
         new NullPointerTester()

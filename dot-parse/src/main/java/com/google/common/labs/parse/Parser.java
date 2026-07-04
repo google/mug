@@ -296,17 +296,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.4
    */
   public static Parser<String> chars(int n) {
-    checkArgument(n > 0, "chars count (%s) must be positive", n);
-    String name = n + " char(s)";
-    return new Parser<Void>() {
-      @Override MatchResult<Void> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        return input.isInRange(start + n - 1)
-            ? new MatchResult.Success<>(start, start + n, null)
-            : context.expecting(name, start);
-      }
-    }.source();
+    return consecutive(n, CharPredicate.ANY, n + " char(s)");
   }
 
   /**
@@ -2533,7 +2523,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     static Parser<String> DIGITS = consecutive(charsIn("[0-9]"), "digits");
     static Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
     static Parser<Integer> BMP_CODE_UNIT =
-        consecutive(4, "[0-9a-fA-Z]").elidableMap(digits -> Integer.parseInt(digits, 16));
+        consecutive(4, "[0-9a-fA-F]").elidableMap(digits -> Integer.parseInt(digits, 16));
   }
 
   Parser() {}
