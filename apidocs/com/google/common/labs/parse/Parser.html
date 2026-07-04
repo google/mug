@@ -894,12 +894,15 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  to a <a href="../../../mu/util/CharPredicate.html#precomputeForAscii()"><code>precomputed</code></a> <code>CharPredicate</code>, at construction time.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
-<dd><code>characterClass</code> - A regex-like character set string (e.g. <code>"[a-zA-Z0-9-_]"</code>),
-        but disallows backslash so doesn't support escaping.
-        If your character class includes special characters like literal backslash,
-        use <a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> directly.
+<dd><code>characterClass</code> - A regex-like character set string (e.g. <code>"[a-zA-Z0-9-_]"</code>).
+        Starting v10.6, literal backslash (<code>"\\"</code> in Java source code literal),
+        '[' and ']' can all be included inside the outer pair of brackets.
+        The '-' character as long as not at the place of a range is also treated as literal.
         You can also use <code>'^'</code> to get negative character set like:
-        <code>one("[^a-zA-Z]")</code>, which is any non-alphabet character.</dd>
+        <code>one("[^a-zA-Z]")</code>, which is any non-alphabet character.
+        You are strongly recommended to install Google ErrorProne and mug-errorprone in your
+        annotation processor path so that incorrect character class syntax will be caught
+        at compile-time.</dd>
 <dt>Since:</dt>
 <dd>10.2</dd>
 </dl>
@@ -975,12 +978,15 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  to a <a href="../../../mu/util/CharPredicate.html#precomputeForAscii()"><code>precomputed</code></a> <code>CharPredicate</code>, at construction time.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
-<dd><code>characterClass</code> - A regex-like character set string (e.g. <code>"[a-zA-Z0-9-_]"</code>),
-        but disallows backslash so doesn't support escaping.
-        If your character class includes special characters like literal backslash,
-        use <a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> directly.
+<dd><code>characterClass</code> - A regex-like character set string (e.g. <code>"[a-zA-Z0-9-_]"</code>).
+        Starting v10.6, literal backslash (<code>"\\"</code> in Java source code literal),
+        '[' and ']' can all be included inside the outer pair of brackets.
+        The '-' character as long as not at the place of a range is also treated as literal.
         You can also use <code>'^'</code> to get negative character set like:
-        <code>consecutive("[^a-zA-Z]")</code>, which is any non-alphabet character.</dd>
+        <code>one("[^a-zA-Z]")</code>, which is any non-alphabet character.
+        You are strongly recommended to install Google ErrorProne and mug-errorprone in your
+        annotation processor path so that incorrect character class syntax will be caught
+        at compile-time.</dd>
 <dt>Since:</dt>
 <dd>10.2</dd>
 </dl>
@@ -995,18 +1001,27 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;characterClass)</span></div>
 <div class="block">Matches <code>n</code> consecutive characters contained in <code>characterClass</code>.
 
- <p>For example: <code>consecutive(5, "[0-9]")</code> is equivalent to <code>consecutive(5, range('0', '9'))</code>.
+ <p>For example, the following helper matches exactly n hex digits:
+
+ <pre><code>
+ static Parser&lt;String&gt; hexDigits(int n) {
+   return consecutive(n, "[0-9a-fA-F]");
+ }
+ </code></pre>
 
  <p>Implementation Note: regex isn't used during parsing. The character class string is translated
  to a <a href="../../../mu/util/CharPredicate.html#precomputeForAscii()"><code>precomputed</code></a> <code>CharPredicate</code>, at construction time.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
-<dd><code>characterClass</code> - A regex-like character set string (e.g. <code>"[a-zA-Z0-9-_]"</code>),
-        but disallows backslash so doesn't support escaping.
-        If your character class includes special characters like literal backslash,
-        use <a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> directly.
+<dd><code>characterClass</code> - A regex-like character set string (e.g. <code>"[a-zA-Z0-9-_]"</code>).
+        Starting v10.6, literal backslash (<code>"\\"</code> in Java source code literal),
+        '[' and ']' can all be included inside the outer pair of brackets.
+        The '-' character as long as not at the place of a range is also treated as literal.
         You can also use <code>'^'</code> to get negative character set like:
-        <code>consecutive("[^a-zA-Z]")</code>, which is any non-alphabet character.</dd>
+        <code>one("[^a-zA-Z]")</code>, which is any non-alphabet character.
+        You are strongly recommended to install Google ErrorProne and mug-errorprone in your
+        annotation processor path so that incorrect character class syntax will be caught
+        at compile-time.</dd>
 <dt>Since:</dt>
 <dd>10.6</dd>
 </dl>
@@ -1677,12 +1692,15 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  to a <a href="../../../mu/util/CharPredicate.html#precomputeForAscii()"><code>precomputed</code></a> <code>CharPredicate</code>, at construction time.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
-<dd><code>characterClass</code> - A regex-like character set string (e.g. <code>"[a-zA-Z0-9-_]"</code>),
-        but disallows backslash so doesn't support escaping.
-        If your character class includes special characters like literal backslash,
-        use <a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> directly.
+<dd><code>characterClass</code> - A regex-like character set string (e.g. <code>"[a-zA-Z0-9-_]"</code>).
+        Starting v10.6, literal backslash (<code>"\\"</code> in Java source code literal),
+        '[' and ']' can all be included inside the outer pair of brackets.
+        The '-' character as long as not at the place of a range is also treated as literal.
         You can also use <code>'^'</code> to get negative character set like:
-        <code>zeroOrMore("[^a-zA-Z]")</code>, which is any non-alphabet character.</dd>
+        <code>one("[^a-zA-Z]")</code>, which is any non-alphabet character.
+        You are strongly recommended to install Google ErrorProne and mug-errorprone in your
+        annotation processor path so that incorrect character class syntax will be caught
+        at compile-time.</dd>
 <dt>Since:</dt>
 <dd>10.2</dd>
 </dl>
