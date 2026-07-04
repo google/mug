@@ -54,14 +54,13 @@ public final class CharacterSetLiteralCheckTest {
   }
 
   @Test
-  public void cannotUseBackslash() {
+  public void allowsBackslash() {
     helper
         .addSourceLines(
             "Test.java",
             "import com.google.common.labs.parse.CharacterSet;",
             "class Test {",
             "  private static final CharacterSet CHARS = CharacterSet.charsIn(",
-            "      // BUG: Diagnostic contains: Escaping ([\\n]) not supported",
             "      \"[\\\\n]\");",
             "}")
         .doTest();
