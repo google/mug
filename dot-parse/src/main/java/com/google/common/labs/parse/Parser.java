@@ -176,6 +176,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
+   * Matches {@code n} consecutive characters as specified by {@code matcher}.
+   *
+   * @since 10.6
+   */
+  public static Parser<String> consecutive(int n, CharPredicate matcher, String name) {
+    return skipConsecutive(n, matcher, name).source();
+  }
+
+  /**
    * Matches one or more consecutive characters contained in {@code characterSet}.
    *
    * @deprecated Use {@link #consecutive(String)} instead
@@ -207,6 +216,27 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return consecutive(charsIn(characterClass), "one or more " + characterClass);
   }
 
+  /**
+   * Matches {@code n} consecutive characters contained in {@code characterClass}.
+   *
+   * <p>For example: {@code consecutive(5, "[0-9]")} is equivalent to {@code consecutive(5, range('0', '9'))}.
+   *
+   * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
+   * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
+   *
+   * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}),
+   *        but disallows backslash so doesn't support escaping.
+   *        If your character class includes special characters like literal backslash,
+   *        use {@link CharPredicate} directly.
+   *        You can also use {@code '^'} to get negative character set like:
+   *        {@code consecutive("[^a-zA-Z]")}, which is any non-alphabet character.
+   * @since 10.6
+   */
+  @SuppressWarnings("CharacterSetLiteralCheck")
+  public static Parser<String> consecutive(int n, String characterClass) {
+    return skipConsecutive(n, charsIn(characterClass), n + " " + characterClass).source();
+  }
+
   static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
     requireNonNull(matcher);
     requireNonNull(name);
@@ -219,6 +249,31 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return end > start
             ? new MatchResult.Success<>(start, end, null)
             : context.expecting(name, end);
+      }
+
+      @Override Set<String> getPrefixes() {
+        return prefixesIfAscii(matcher);
+      }
+    };
+  }
+
+  private static Parser<Void> skipConsecutive(int n, CharPredicate matcher, String name) {
+    requireNonNull(matcher);
+    requireNonNull(name);
+    checkArgument(n > 0, "n(%s) must be positive", n);
+    return new Parser<>() {
+      @Override MatchResult<Void> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        if (!input.isInRange(start + n - 1)) {
+          return context.expecting(name, start);
+        }
+        for (int i = 0; i < n; i++) {
+          if (!matcher.test(input.charAt(start + i))) {
+            return context.expecting(name, start + i);
+          }
+        }
+        return  new MatchResult.Success<>(start, start + n, null);
       }
 
       @Override Set<String> getPrefixes() {
@@ -603,12 +658,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.5
    */
   public static Parser<Integer> bmpCodeUnit() {
-    return chars(4)
-        .suchThat(
-            CharPredicate.range('0', '9').orRange('A', 'F').orRange('a', 'f').precomputeForAscii()
-                ::matchesAllOf,
-            "4 hex digits UTF-16 code unit")
-        .elidableMap(digits -> Integer.parseInt(digits, 16));
+    return Constants.BMP_CODE_UNIT;
   }
 
   /**
@@ -1249,7 +1299,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** If this parser matches, returns the given result. */
   public <R> Parser<R> thenReturn(R result) {
-    return ignoreReturn().map(unused -> result);
+    return ignoreReturn().elidableMap(unused -> result);
   }
 
   @Override public final <S> Parser<S> then(Parser<S> suffix) {
@@ -1953,7 +2003,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * if there's nothing to parse except skippable content, returns the default empty value.
      */
     @Override public T parseSkipping(CharPredicate charsToSkip, String input) {
-      return parseSkipping(Parser.skipConsecutive(charsToSkip, "skipped"), input);
+      return parseSkipping(skipConsecutive(charsToSkip, "skipped"), input);
     }
 
     /**
@@ -2471,6 +2521,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private interface Constants {
     static Parser<String> DIGITS = consecutive(charsIn("[0-9]"), "digits");
     static Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
+    static Parser<Integer> BMP_CODE_UNIT =
+        consecutive(4, "[0-9a-fA-Z]").elidableMap(digits -> Integer.parseInt(digits, 16));
   }
 
   Parser() {}

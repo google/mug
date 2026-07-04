@@ -363,51 +363,11 @@ That's it.
 
 ---
 
-## Example — Split JSON Records
+## Example — Parse JSON
 
-Most JSON parsers can parse a single JSON object enclosed in curly braces `{}`,
-a json array enclosed by square brackets `[]`, or .jsonl files with each JSON record
-at a single line.
+Please check out the fully RFC-compliant efficient JSON parser
+[here](http://github.com/google/mug/blob/master/mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java).
 
-But what if you need to read a file that may contain a single JSON record, or a list of them,
-pretty-printed with indentations and newlines for human readability?
-
-What you need is to be able to split the JSON records one-by-one by matching the top level curly braces.
-
-Since curly braces can appear in quoted string literals, you will also need to recognize double quotes,
-as well as escaped double quotes (which are not to start or terminate a string literal).
-
-The following code splits the JSON records so you can feed them to GSON (or any other JSON parser of choice):
-
-```java {.good}
-import static com.google.common.labs.parse.Parser.chars;
-import com.google.common.labs.parse.Parser;
-
-/** Splits input into a lazy stream of top-level JSON records. */
-Stream<String> jsonStringsFrom(Reader input) {
-  // Either escaped or unescaped, enclosed between double quotes
-  Parser<?> stringLiteral = Parser.quotedByWithEscapes('"', '"', chars(1));
-  
-  // Outside of string literal, any non-quote, non-brace characters are passed through
-  Parser<?> passThrough = Parser.consecutive("[^\"{}]");  // uses regex-like character set
-
-  // Between curly braces, you can have string literals, nested JSON records, or passthrough chars
-  // For nested curly braces, let's define() it.
-  Parser<?> jsonRecord = Parser.define(
-      rule -> Parser.anyOf(stringLiteral, rule, passThrough)
-	      .zeroOrMore()
-	      .between("{", "}"));
-
-  return jsonRecord.source()             // take the source of the matched JSON record
-      .skipping(Character::isWhitespace) // allow whitespaces for indentation and newline
-      .parseToStream(input);
-}
-```
-
-Note that JSON supports Unicode escape. But we don't need to care because we are just splitting by calling
-[`.source()`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#source())
-after finding the split point. The parser translating a unicode escape correctly or not
-is irrelevant.
 
 ## Example — Mini Search Language
 
