@@ -828,6 +828,16 @@ public class ParserTest {
   }
 
   @Test
+  public void bmpCodeUnit_invalidHexChar_fails() {
+    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123g"));
+    assertThat(bmpCodeUnit().matches("123g")).isFalse();
+    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123G"));
+    assertThat(bmpCodeUnit().matches("123G")).isFalse();
+    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123Z"));
+    assertThat(bmpCodeUnit().matches("123Z")).isFalse();
+  }
+
+  @Test
   public void testNulls() throws Exception {
     NullPointerTester tester =
         new NullPointerTester()
@@ -7454,6 +7464,385 @@ public class ParserTest {
     assertThat(parser.parse("abc")).isEqualTo("a");
     assertThrows(ParseException.class, () -> parser.parse("ab"));
     assertThrows(ParseException.class, () -> parser.parse("abd"));
+  }
+
+  private static String toStringWithIndex(Object v, int begin, int end) {
+    return begin + "-" + end + ": " + v;
+  }
+
+  @Test
+  public void mapWithIndex_success() {
+    assertThat(string("foo").mapWithIndex(ParserTest::toStringWithIndex).parse("foo"))
+        .isEqualTo("0-3: foo");
+    assertThat(
+            string("foo")
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parseToStream("foo"))
+        .containsExactly("0-3: foo");
+    assertThat(string("foo").mapWithIndex(ParserTest::toStringWithIndex).matches("foo"))
+        .isTrue();
+  }
+
+  @Test
+  public void mapWithIndex_failure() {
+    ParseException thrown =
+        assertThrows(
+            ParseException.class,
+            () -> string("foo").mapWithIndex(ParserTest::toStringWithIndex).parse("bar"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <foo>");
+  }
+
+  @Test
+  public void mapWithIndex_string() {
+    assertThat(string("foo").mapWithIndex(ParserTest::toStringWithIndex).parse("foo"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test
+  public void mapWithIndex_caseInsensitive() {
+    assertThat(
+            caseInsensitive("foo")
+                .source()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("FoO"))
+        .isEqualTo("0-3: FoO");
+  }
+
+  @Test
+  public void mapWithIndex_word() {
+    assertThat(word("foo").mapWithIndex(ParserTest::toStringWithIndex).parse("foo"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test
+  public void mapWithIndex_caseInsensitiveWord() {
+    assertThat(
+            caseInsensitiveWord("foo")
+                .source()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("FoO"))
+        .isEqualTo("0-3: FoO");
+  }
+
+  @Test
+  public void mapWithIndex_quotedBy() {
+    assertThat(quotedBy('[', ']').mapWithIndex(ParserTest::toStringWithIndex).parse("[foo]"))
+        .isEqualTo("0-5: foo");
+  }
+
+  @Test
+  public void mapWithIndex_quotedBy_stringDelimiters() {
+    assertThat(quotedBy("<<", ">>").mapWithIndex(ParserTest::toStringWithIndex).parse("<<foo>>"))
+        .isEqualTo("0-7: foo");
+  }
+
+  @Test
+  public void mapWithIndex_quotedByWithEscapes() {
+    assertThat(
+            Parser.quotedByWithEscapes('[', ']', chars(1))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("[foo]"))
+        .isEqualTo("0-5: foo");
+  }
+
+  @Test
+  public void mapWithIndex_nestedBy() {
+    assertThat(Parser.nestedBy("[", "]").mapWithIndex(ParserTest::toStringWithIndex).parse("[[foo]]"))
+        .isEqualTo("0-7: [foo]");
+  }
+
+  @Test
+  public void mapWithIndex_nestedBy_stringDelimiters() {
+    assertThat(
+            Parser.nestedBy("<<", ">>")
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("<<<<foo>>>>"))
+        .isEqualTo("0-11: <<foo>>");
+  }
+
+  @Test
+  public void mapWithIndex_nestedByWithEscapes() {
+    assertThat(
+            Parser.nestedByWithEscapes('[', ']', chars(1))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("[[foo]]"))
+        .isEqualTo("0-7: [foo]");
+  }
+
+  @Test
+  public void mapWithIndex_thenReturn() {
+    assertThat(
+            string("foo")
+                .thenReturn("bar")
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foo"))
+        .isEqualTo("0-3: bar");
+  }
+
+  @Test
+  public void mapWithIndex_map() {
+    assertThat(
+            string("123")
+                .map(Integer::parseInt)
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("123"))
+        .isEqualTo("0-3: 123");
+  }
+
+  @Test
+  public void mapWithIndex_flatMap() {
+    assertThat(
+            string("foo")
+                .flatMap(s -> string("bar"))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foobar"))
+        .isEqualTo("0-6: bar");
+  }
+
+  @Test
+  public void mapWithIndex_then() {
+    assertThat(
+            string("foo")
+                .then(string("bar"))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foobar"))
+        .isEqualTo("0-6: bar");
+  }
+
+  @Test
+  public void mapWithIndex_followedBy() {
+    assertThat(
+            string("foo")
+                .followedBy(string("bar"))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foobar"))
+        .isEqualTo("0-6: foo");
+  }
+
+  @Test
+  public void mapWithIndex_optionallyFollowedBy() {
+    assertThat(
+            string("foo")
+                .optionallyFollowedBy(string("bar"))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foobar"))
+        .isEqualTo("0-6: foo");
+  }
+
+  @Test
+  public void mapWithIndex_notFollowedBy() {
+    assertThat(
+            string("foo")
+                .notFollowedBy("baz")
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .followedBy(string("bar"))
+                .parse("foobar"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test
+  public void mapWithIndex_notFollowedByEof() {
+    assertThat(
+            string("foo")
+                .notFollowedByEof()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .followedBy(string("bar"))
+                .parse("foobar"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test
+  public void mapWithIndex_sequence() {
+    assertThat(
+            sequence(string("foo"), string("bar"), (a, b) -> a + b)
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foobar"))
+        .isEqualTo("0-6: foobar");
+  }
+
+  @Test
+  public void mapWithIndex_or() {
+    assertThat(
+            string("foo")
+                .or(string("bar"))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("bar"))
+        .isEqualTo("0-3: bar");
+  }
+
+  @Test
+  public void mapWithIndex_anyOf() {
+    assertThat(
+            anyOf(string("foo"), string("bar"))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("bar"))
+        .isEqualTo("0-3: bar");
+  }
+
+  @Test
+  public void mapWithIndex_atLeastOnce() {
+    assertThat(
+            string("foo")
+                .atLeastOnce()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foofoo"))
+        .isEqualTo("0-6: [foo, foo]");
+  }
+
+  @Test
+  public void mapWithIndex_zeroOrMore() {
+    assertThat(
+            string("foo")
+                .zeroOrMore()
+                .notEmpty()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foofoo"))
+        .isEqualTo("0-6: [foo, foo]");
+  }
+
+  @Test
+  public void mapWithIndex_atLeastOnceDelimitedBy() {
+    assertThat(
+            string("foo")
+                .atLeastOnceDelimitedBy(",")
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foo,foo"))
+        .isEqualTo("0-7: [foo, foo]");
+  }
+
+  @Test
+  public void mapWithIndex_zeroOrMoreDelimitedBy() {
+    assertThat(
+            string("foo")
+                .zeroOrMoreDelimitedBy(",")
+                .notEmpty()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foo,foo"))
+        .isEqualTo("0-7: [foo, foo]");
+  }
+
+  @Test
+  public void mapWithIndex_between() {
+    assertThat(
+            string("foo")
+                .between(string("("), string(")"))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("(foo)"))
+        .isEqualTo("0-5: foo");
+  }
+
+  @Test
+  public void mapWithIndex_immediatelyBetween() {
+    assertThat(
+            string("foo")
+                .immediatelyBetween("(", ")")
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("(foo)"))
+        .isEqualTo("0-5: foo");
+  }
+
+  @Test
+  public void mapWithIndex_one() {
+    assertThat(one('[').mapWithIndex(ParserTest::toStringWithIndex).parse("["))
+        .isEqualTo("0-1: [");
+  }
+
+  @Test
+  public void mapWithIndex_consecutive() {
+    assertThat(consecutive("[0-9]").mapWithIndex(ParserTest::toStringWithIndex).parse("123"))
+        .isEqualTo("0-3: 123");
+  }
+
+  @Test
+  public void mapWithIndex_first() {
+    assertThat(first("bar").mapWithIndex(ParserTest::toStringWithIndex).parse("foobar"))
+        .isEqualTo("3-6: bar");
+  }
+
+  @Test
+  public void mapWithIndex_optional() {
+    assertThat(
+            string("foo")
+                .optional()
+                .notEmpty()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foo"))
+        .isEqualTo("0-3: Optional[foo]");
+  }
+
+  @Test
+  public void mapWithIndex_orElse() {
+    assertThat(
+            string("foo")
+                .orElse("default")
+                .notEmpty()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foo"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test
+  public void mapWithIndex_source() {
+    assertThat(
+            string("foo")
+                .map(String::toUpperCase)
+                .source()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foo"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test
+  public void mapWithIndex_ignoreReturn() {
+    assertThat(
+            string("foo")
+                .ignoreReturn()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foo"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test
+  public void mapWithIndex_suchThat() {
+    assertThat(
+            string("foo")
+                .suchThat(s -> true, "true")
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foo"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test
+  public void mapWithIndex_skipping() {
+    assertThat(
+            word("foo")
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .skipping(whitespace())
+                .parse("  foo  "))
+        .isEqualTo("2-5: foo");
+  }
+
+  @Test
+  public void mapWithIndex_bmpCodeUnit() {
+    assertThat(bmpCodeUnit().mapWithIndex(ParserTest::toStringWithIndex).parse("0000"))
+        .isEqualTo("0-4: 0");
+  }
+
+  @Test
+  public void mapWithIndex_definedAs() {
+    Parser.Rule<String> rule = new Parser.Rule<>();
+    rule.definedAs(string("foo"));
+    assertThat(rule.mapWithIndex(ParserTest::toStringWithIndex).parse("foo"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test
+  public void mapWithIndex_withPostfixes() {
+    Parser<Integer> parser =
+        digits().map(Integer::parseInt).withPostfixes(string("++").map(s -> 1), (a, b) -> a + b);
+    assertThat(parser.mapWithIndex(ParserTest::toStringWithIndex).parse("123++"))
+        .isEqualTo("0-5: 124");
   }
 
   @Test

@@ -58,6 +58,7 @@ import java.util.stream.Stream;
 
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.mu.function.Function4;
+import com.google.mu.function.ObjInt2Function;
 import com.google.mu.function.TriFunction;
 import com.google.mu.util.Both;
 import com.google.mu.util.CharPredicate;
@@ -80,13 +81,6 @@ import com.google.mu.util.stream.Joiner;
  *
  * <p>For simplicity, {@link #or or()} and {@link #anyOf anyOf()} will always backtrack upon failure.
  * anyOf(expr.followedBy(";"), expr)}, use {@code expr.optionallyFollowedBy(";")} instead.
- *
- * <p>WARNING: A poorly-written grammar with long common prefixes among {@code anyOf()} choices
- * may incur expensive backtracking overhead.
- *
- * <p>WARNING: If you define recursive grammars using {@link #define define()} or {@link
- * Parser.Rule}, maliciously crafted input (think of 10K left parens in an expression parser)
- * can cause StackOverflowError.
  */
 @ThreadSafe
 public abstract non-sealed class Parser<T> implements Production<T> {
@@ -175,16 +169,49 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Matches one or more consecutive characters as specified by {@code matcher}. */
   public static Parser<String> consecutive(CharPredicate matcher, String name) {
-    return skipConsecutive(matcher, name).source();
+    requireNonNull(matcher);
+    requireNonNull(name);
+    return new Parser<Void>() {
+      @Override MatchResult<Void> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        int end = start;
+        for (; input.isInRange(end) && matcher.test(input.charAt(end)); end++) {}
+        return end > start
+            ? new MatchResult.Success<>(start, end, null)
+            : context.expecting(name, end);
+      }
+
+      @Override Set<String> getPrefixes() {
+        return prefixesIfAscii(matcher);
+      }
+    }.source();
   }
 
-  /**
-   * Matches {@code n} consecutive characters as specified by {@code matcher}.
-   *
-   * @since 10.6
-   */
-  public static Parser<String> consecutive(int n, CharPredicate matcher, String name) {
-    return skipConsecutive(n, matcher, name).source();
+  /** Matches {@code n} consecutive characters as specified by {@code matcher}. */
+  static Parser<String> consecutive(int n, CharPredicate matcher, String name) {
+    requireNonNull(matcher);
+    requireNonNull(name);
+    checkArgument(n > 0, "n(%s) must be positive", n);
+    return new Parser<Void>() {
+      @Override MatchResult<Void> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        if (!input.isInRange(start + n - 1)) {
+          return context.expecting(name, start);
+        }
+        for (int i = 0; i < n; i++) {
+          if (!matcher.test(input.charAt(start + i))) {
+            return context.expecting(name, start + i);
+          }
+        }
+        return  new MatchResult.Success<>(start, start + n, null);
+      }
+
+      @Override Set<String> getPrefixes() {
+        return prefixesIfAscii(matcher);
+      }
+    }.source();
   }
 
   /**
@@ -232,69 +259,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *   return consecutive(n, "[0-9a-fA-F]");
    * }
    * }</pre>
-   *
-   * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
-   * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
-   *
-   * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   *        Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
-   *        '[' and ']' can all be included inside the outer pair of brackets.
-   *        The '-' character as long as not at the place of a range is also treated as literal.
-   *        You can also use {@code '^'} to get negative character set like:
-   *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
-   *        You are strongly recommended to install Google ErrorProne and mug-errorprone in your
-   *        annotation processor path so that incorrect character class syntax will be caught
-   *        at compile-time.
-   * @since 10.6
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
-  public static Parser<String> consecutive(int n, String characterClass) {
-    return skipConsecutive(n, charsIn(characterClass), n + " " + characterClass).source();
-  }
-
-  static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
-    requireNonNull(matcher);
-    requireNonNull(name);
-    return new Parser<>() {
-      @Override MatchResult<Void> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        int end = start;
-        for (; input.isInRange(end) && matcher.test(input.charAt(end)); end++) {}
-        return end > start
-            ? new MatchResult.Success<>(start, end, null)
-            : context.expecting(name, end);
-      }
-
-      @Override Set<String> getPrefixes() {
-        return prefixesIfAscii(matcher);
-      }
-    };
-  }
-
-  private static Parser<Void> skipConsecutive(int n, CharPredicate matcher, String name) {
-    requireNonNull(matcher);
-    requireNonNull(name);
-    checkArgument(n > 0, "n(%s) must be positive", n);
-    return new Parser<>() {
-      @Override MatchResult<Void> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        if (!input.isInRange(start + n - 1)) {
-          return context.expecting(name, start);
-        }
-        for (int i = 0; i < n; i++) {
-          if (!matcher.test(input.charAt(start + i))) {
-            return context.expecting(name, start + i);
-          }
-        }
-        return  new MatchResult.Success<>(start, start + n, null);
-      }
-
-      @Override Set<String> getPrefixes() {
-        return prefixesIfAscii(matcher);
-      }
-    };
+  static Parser<String> consecutive(int n, String characterClass) {
+    return consecutive(n, charsIn(characterClass), n + " " + characterClass);
   }
 
   /**
@@ -303,17 +271,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.4
    */
   public static Parser<String> chars(int n) {
-    checkArgument(n > 0, "chars count (%s) must be positive", n);
-    String name = n + " char(s)";
-    return new Parser<Void>() {
-      @Override MatchResult<Void> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        return input.isInRange(start + n - 1)
-            ? new MatchResult.Success<>(start, start + n, null)
-            : context.expecting(name, start);
-      }
-    }.source();
+    return consecutive(n, CharPredicate.ANY, n + " char(s)");
   }
 
   /**
@@ -1287,6 +1245,32 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
+  /**
+   * If this parser matches, returns the result of applying the given function,
+   * with the parse result of type {@code T}, the beginning index (inclusive) and the end index
+   * (exclusive) as parameters passed to the function.
+   *
+   * <p>For example: <pre>{@code
+   * Parser<NameNode> nameNode =
+   *     word().mapWithIndex((name, begin, end) -> new NameNode(name, begin, end));
+   * }</pre>
+   *
+   * @since 10.6
+   */
+  public final <R> Parser<R> mapWithIndex(ObjInt2Function<? super T, ? extends R> f) {
+    requireNonNull(f);
+    return new SamePrefix<>() {
+      @Override MatchResult<R> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        return switch (left().skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success(int head, int tail, T value) ->
+              new MatchResult.Success<>(head, tail, f.apply(value, head, tail));
+          case MatchResult.Failure<?> failure -> failure.safeCast();
+        };
+      }
+    };
+  }
+
   private <R> Parser<R> elidableMap(ElidableFunction<? super T, ? extends R> f) {
     return map(f);
   }
@@ -1607,7 +1591,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * }</pre>
    */
   public final Lexical skipping(CharPredicate charsToSkip) {
-    return new Lexical(skipConsecutive(charsToSkip, "skipped"));
+    return new Lexical(consecutive(charsToSkip, "skipped"));
   }
 
   /**
@@ -2021,7 +2005,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * if there's nothing to parse except skippable content, returns the default empty value.
      */
     @Override public T parseSkipping(CharPredicate charsToSkip, String input) {
-      return parseSkipping(skipConsecutive(charsToSkip, "skipped"), input);
+      return parseSkipping(consecutive(charsToSkip, "skipped"), input);
     }
 
     /**
@@ -2540,7 +2524,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     static Parser<String> DIGITS = consecutive(charsIn("[0-9]"), "digits");
     static Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
     static Parser<Integer> BMP_CODE_UNIT =
-        consecutive(4, "[0-9a-fA-Z]").elidableMap(digits -> Integer.parseInt(digits, 16));
+        consecutive(4, "[0-9a-fA-F]").elidableMap(digits -> Integer.parseInt(digits, 16));
   }
 
   Parser() {}
