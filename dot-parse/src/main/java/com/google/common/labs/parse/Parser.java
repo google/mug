@@ -242,7 +242,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
   public static Parser<String> consecutive(int n, String characterClass) {
-    return skipConsecutive(n, charsIn(characterClass), n + " " + characterClass).source();
+    return consecutive(n, charsIn(characterClass), n + " " + characterClass);
   }
 
   static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
