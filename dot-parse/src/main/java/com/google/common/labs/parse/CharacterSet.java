@@ -64,12 +64,8 @@ public final class CharacterSet implements CharPredicate {
   /**
    * Returns a {@link CharacterSet} instance compiled from the given {@code characterSet} specifier.
    *
-   * @param characterSet A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}),
-   *        but disallows backslash so doesn't support escaping.
-   *        If your character set includes special characters like literal backslash,
-   *        use {@link CharPredicate} directly.
-   * @throws IllegalArgumentException if {@code characterSet} includes backslash
-   *         or the right bracket (except the outmost pairs of {@code []}).
+   * @param characterSet A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
+   * @throws IllegalArgumentException if {@code characterSet} is malformed
    */
   public static CharacterSet charsIn(String characterSet) {
     return new CharacterSet(characterSet, compileCharacterSet(characterSet));
@@ -117,20 +113,17 @@ public final class CharacterSet implements CharPredicate {
   }
 
   private static CharPredicate compileCharacterSet(String characterSet) {
-    checkArgument(characterSet.startsWith("[") && characterSet.endsWith("]"),
-        "Character set must be in square brackets. Use [%s] instead.", characterSet);
     checkArgument(
-        !characterSet.contains("\\"),
-        "Escaping (%s) not supported in a character set. Please use CharePredicate instead.",
-        characterSet);
+        characterSet.startsWith("[") && characterSet.endsWith("]"),
+        "Character set must be in square brackets. Use [%s] instead.", characterSet);
     Parser<Character> validChar = Parser.one(ANY, "literal char").notFollowedByEof();
-    Parser<CharPredicate> range =
-        Parser.sequence(validChar.followedBy("-"), validChar,
-            (c1, c2) -> {
-              checkArgument(
-                  c1 <= c2, "invalid range [%s-%s] in character set %s", c1, c2, characterSet);
-              return CharPredicate.range(c1, c2);
-            });
+    Parser<CharPredicate> range = Parser.sequence(
+        validChar.followedBy("-"), validChar,
+        (c1, c2) -> {
+          checkArgument(
+              c1 <= c2, "invalid range [%s-%s] in character set %s", c1, c2, characterSet);
+          return CharPredicate.range(c1, c2);
+        });
     Parser<CharPredicate>.OrEmpty positiveSet =
         Parser.anyOf(range, validChar.map(CharPredicate::is))
             .zeroOrMore(reducing(CharPredicate.NONE, CharPredicate::or));

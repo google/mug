@@ -47,10 +47,44 @@ public class CharacterSetTest {
 
   @Test
   @SuppressWarnings("CharacterSetLiteralCheck")
-  public void test_backslashNotAllowed_throws() {
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> charsIn("[\\]"));
-    assertThat(thrown).hasMessageThat().contains("Escaping ([\\]) not supported");
+  public void test_backslashAllowed() {
+    CharacterSet set = charsIn("[\\]");
+    assertThat(set.contains('\\')).isTrue();
+    assertThat(set.contains('a')).isFalse();
+    assertThat(set.toString()).isEqualTo("[\\]");
+    assertThat(set.candidateCharsIfAscii().get()).containsExactly('\\');
+  }
+
+  @Test
+  @SuppressWarnings("CharacterSetLiteralCheck")
+  public void test_negativeCharSetWithBackslash() {
+    CharacterSet set = charsIn("[^\\]");
+    assertThat(set.contains('\\')).isFalse();
+    assertThat(set.contains('a')).isTrue();
+    assertThat(set.toString()).isEqualTo("[^\\]");
+    assertThat(set.candidateCharsIfAscii()).isEmpty();
+  }
+
+  @Test
+  @SuppressWarnings("CharacterSetLiteralCheck")
+  public void test_rangeWithBackslash() {
+    CharacterSet set = charsIn("[\\]-a]");
+    assertThat(set.contains('\\')).isTrue();
+    assertThat(set.contains(']')).isTrue();
+    assertThat(set.contains('^')).isTrue();
+    assertThat(set.contains('_')).isTrue();
+    assertThat(set.contains('`')).isTrue();
+    assertThat(set.contains('a')).isTrue();
+    assertThat(set.contains('b')).isFalse();
+    assertThat(set.candidateCharsIfAscii().get()).containsExactly('\\', ']', '^', '_', '`', 'a');
+  }
+
+  @Test
+  @SuppressWarnings("CharacterSetLiteralCheck")
+  public void test_invalidRangeWithBackslash_throws() {
+    IllegalArgumentException e =
+        assertThrows(IllegalArgumentException.class, () -> charsIn("[a-\\]"));
+    assertThat(e).hasMessageThat().contains("[a-\\]");
   }
 
   @Test
@@ -142,12 +176,14 @@ public class CharacterSetTest {
   }
 
   @Test
+  @SuppressWarnings("CharacterSetLiteralCheck")
   public void testEquals() {
     new EqualsTester()
         .addEqualityGroup(charsIn("[]"), charsIn("[]"))
         .addEqualityGroup(charsIn("[^]"), charsIn("[^]"))
         .addEqualityGroup(charsIn("[a-zA-Z0-9]"), charsIn("[a-zA-Z0-9]"))
         .addEqualityGroup(charsIn("[^a-zA-Z0-9]"), charsIn("[^a-zA-Z0-9]"))
+        .addEqualityGroup(charsIn("[\\]"), charsIn("[\\]"))
         .testEquals();
   }
 

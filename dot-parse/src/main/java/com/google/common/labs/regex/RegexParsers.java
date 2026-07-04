@@ -24,7 +24,7 @@ import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
-import static com.google.mu.util.CharPredicate.noneOf;
+
 import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.stream;
@@ -66,7 +66,7 @@ final class RegexParsers {
           groupOrLookaround(me),
           anyOf(PredefinedCharClass.values()),
           anyOf(Anchor.values()),
-          consecutive(noneOf(".[]{}()*+?^$|\\ #"), "literal char").map(Literal::new),
+          consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
           consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
           ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))));
       Parser<RegexPattern> sequence =
@@ -108,9 +108,9 @@ final class RegexParsers {
   }
 
   private static Parser<RegexPattern.CharacterSet> charClass() {
-    Parser<Character> literalChar = anyOf(ESCAPED_CHAR, one(noneOf("-]\\"), "literal character"));
+    Parser<Character> literalChar = anyOf(ESCAPED_CHAR, one("[^-]\\]"));
     Parser<Character> literalCharOrDash =
-        anyOf(ESCAPED_CHAR, one(CharPredicate.noneOf("]\\"), "literal character or dash"));
+        anyOf(ESCAPED_CHAR, one("[^\\]]"));
     Parser<CharRange> range =
         sequence(literalChar, string("-").then(literalChar), RegexPattern.CharRange::new);
     var element = anyOf(

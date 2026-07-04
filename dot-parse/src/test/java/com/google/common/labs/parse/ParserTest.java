@@ -550,11 +550,12 @@ public class ParserTest {
   public void quotedByWithEscapes_orEmpty_success() {
     Parser<String> parser = Parser.quotedByWithEscapes(
         "[", ']',
-        Parser.one(anyOf("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"), "escapable punctuation")
+        Parser.one("[!\"#$%&'()*+,-./:;<=>?@\\[\\]^_`{|}~]")
             .map(String::valueOf)
             .orElse("\\"));
     // Escapable punctuation gets resolved:
     assertThat(parser.parse("[a\\!b]")).isEqualTo("a!b");
+    assertThat(parser.parse("[a\\\\]")).isEqualTo("a\\");
     // Non-escapable character gets resolved to the default value (only backslash consumed)
     assertThat(parser.parse("[a\\xb]")).isEqualTo("a\\xb");
   }
@@ -563,7 +564,7 @@ public class ParserTest {
   public void nestedByWithEscapes_markdownLink() {
     record MarkdownLink(String text, String url) {}
     Parser<String> escapedChar =
-        Parser.one(anyOf("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~\\"), "escapable char")
+        Parser.one("[!\"#$%&'()*+,-./:;<=>?@\\[\\]^_`{|}~]")
             .map(c -> Character.toString(c))
             .or(one(c -> true, "non-escapable char").map(c -> "\\" + c));
     Parser<MarkdownLink> parser =
@@ -807,11 +808,12 @@ public class ParserTest {
   public void nestedByWithEscapes_orEmpty_success() {
     Parser<String> parser = Parser.nestedByWithEscapes(
         '(', ')',
-        Parser.one(anyOf("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"), "escapable punctuation")
+        Parser.one("[!\"#$%&'()*+,-./:;<=>?@\\[\\]^_`{|}~]")
             .map(String::valueOf)
             .orElse("\\"));
     // Escapable punctuation gets resolved:
     assertThat(parser.parse("(a\\!b)")).isEqualTo("a!b");
+    assertThat(parser.parse("(a\\\\)")).isEqualTo("a\\");
     // Non-escapable character gets resolved to the default value (only backslash consumed)
     assertThat(parser.parse("(a\\xb)")).isEqualTo("a\\xb");
   }

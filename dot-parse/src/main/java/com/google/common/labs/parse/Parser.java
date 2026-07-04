@@ -134,12 +134,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
    * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
    *
-   * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}),
-   *        but disallows backslash so doesn't support escaping.
-   *        If your character class includes special characters like literal backslash,
-   *        use {@link CharPredicate} directly.
+   * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
+   *        Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
+   *        '[' and ']' can all be included inside the outer pair of brackets.
+   *        The '-' character as long as not at the place of a range is also treated as literal.
    *        You can also use {@code '^'} to get negative character set like:
    *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
+   *        You are strongly recommended to install Google ErrorProne and mug-errorprone in your
+   *        annotation processor path so that incorrect character class syntax will be caught
+   *        at compile-time.
    * @since 10.2
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
@@ -203,12 +206,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
    * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
    *
-   * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}),
-   *        but disallows backslash so doesn't support escaping.
-   *        If your character class includes special characters like literal backslash,
-   *        use {@link CharPredicate} directly.
+   * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
+   *        Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
+   *        '[' and ']' can all be included inside the outer pair of brackets.
+   *        The '-' character as long as not at the place of a range is also treated as literal.
    *        You can also use {@code '^'} to get negative character set like:
-   *        {@code consecutive("[^a-zA-Z]")}, which is any non-alphabet character.
+   *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
+   *        You are strongly recommended to install Google ErrorProne and mug-errorprone in your
+   *        annotation processor path so that incorrect character class syntax will be caught
+   *        at compile-time.
    * @since 10.2
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
@@ -219,17 +225,26 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /**
    * Matches {@code n} consecutive characters contained in {@code characterClass}.
    *
-   * <p>For example: {@code consecutive(5, "[0-9]")} is equivalent to {@code consecutive(5, range('0', '9'))}.
+   * <p>For example, the following helper matches exactly n hex digits:
+   *
+   * <pre>{@code
+   * static Parser<String> hexDigits(int n) {
+   *   return consecutive(n, "[0-9a-fA-F]");
+   * }
+   * }</pre>
    *
    * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
    * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
    *
-   * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}),
-   *        but disallows backslash so doesn't support escaping.
-   *        If your character class includes special characters like literal backslash,
-   *        use {@link CharPredicate} directly.
+   * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
+   *        Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
+   *        '[' and ']' can all be included inside the outer pair of brackets.
+   *        The '-' character as long as not at the place of a range is also treated as literal.
    *        You can also use {@code '^'} to get negative character set like:
-   *        {@code consecutive("[^a-zA-Z]")}, which is any non-alphabet character.
+   *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
+   *        You are strongly recommended to install Google ErrorProne and mug-errorprone in your
+   *        annotation processor path so that incorrect character class syntax will be caught
+   *        at compile-time.
    * @since 10.6
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
@@ -975,12 +990,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
    * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
    *
-   * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}),
-   *        but disallows backslash so doesn't support escaping.
-   *        If your character class includes special characters like literal backslash,
-   *        use {@link CharPredicate} directly.
+   * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
+   *        Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
+   *        '[' and ']' can all be included inside the outer pair of brackets.
+   *        The '-' character as long as not at the place of a range is also treated as literal.
    *        You can also use {@code '^'} to get negative character set like:
-   *        {@code zeroOrMore("[^a-zA-Z]")}, which is any non-alphabet character.
+   *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
+   *        You are strongly recommended to install Google ErrorProne and mug-errorprone in your
+   *        annotation processor path so that incorrect character class syntax will be caught
+   *        at compile-time.
    * @since 10.2
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
