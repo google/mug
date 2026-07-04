@@ -168,7 +168,23 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Matches one or more consecutive characters as specified by {@code matcher}. */
   public static Parser<String> consecutive(CharPredicate matcher, String name) {
-    return skipConsecutive(matcher, name).source();
+    requireNonNull(matcher);
+    requireNonNull(name);
+    return new Parser<Void>() {
+      @Override MatchResult<Void> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        int end = start;
+        for (; input.isInRange(end) && matcher.test(input.charAt(end)); end++) {}
+        return end > start
+            ? new MatchResult.Success<>(start, end, null)
+            : context.expecting(name, end);
+      }
+
+      @Override Set<String> getPrefixes() {
+        return prefixesIfAscii(matcher);
+      }
+    }.source();
   }
 
   /**
@@ -264,26 +280,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   @SuppressWarnings("CharacterSetLiteralCheck")
   public static Parser<String> consecutive(int n, String characterClass) {
     return consecutive(n, charsIn(characterClass), n + " " + characterClass);
-  }
-
-  static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
-    requireNonNull(matcher);
-    requireNonNull(name);
-    return new Parser<>() {
-      @Override MatchResult<Void> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        int end = start;
-        for (; input.isInRange(end) && matcher.test(input.charAt(end)); end++) {}
-        return end > start
-            ? new MatchResult.Success<>(start, end, null)
-            : context.expecting(name, end);
-      }
-
-      @Override Set<String> getPrefixes() {
-        return prefixesIfAscii(matcher);
-      }
-    };
   }
 
   /**
@@ -1586,7 +1582,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * }</pre>
    */
   public final Lexical skipping(CharPredicate charsToSkip) {
-    return new Lexical(skipConsecutive(charsToSkip, "skipped"));
+    return new Lexical(consecutive(charsToSkip, "skipped"));
   }
 
   /**
@@ -2000,7 +1996,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * if there's nothing to parse except skippable content, returns the default empty value.
      */
     @Override public T parseSkipping(CharPredicate charsToSkip, String input) {
-      return parseSkipping(skipConsecutive(charsToSkip, "skipped"), input);
+      return parseSkipping(consecutive(charsToSkip, "skipped"), input);
     }
 
     /**
