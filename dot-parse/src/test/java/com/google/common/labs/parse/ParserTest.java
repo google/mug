@@ -8,6 +8,7 @@ import static com.google.common.labs.parse.Parser.caseInsensitiveWord;
 import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.first;
+import static com.google.common.labs.parse.Parser.hexDigits;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.or;
 import static com.google.common.labs.parse.Parser.quotedBy;
@@ -17,7 +18,6 @@ import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parser.zeroOrMoreDelimited;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.CharPredicate.noneOf;
@@ -4681,6 +4681,98 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> digits().parse("12a"));
     assertThrows(ParseException.class, () -> digits().parseToStream("12a").toList());
     assertThrows(ParseException.class, () -> digits().parse(""));
+  }
+
+  @Test
+  public void digits_parse() {
+    assertThat(digits(3).parse("123")).isEqualTo("123");
+  }
+
+  @Test
+  public void digits_parseToStream() {
+    assertThat(digits(3).parseToStream("123456")).containsExactly("123", "456");
+  }
+
+  @Test
+  public void digits_singleDigit() {
+    assertThat(digits(1).parse("0")).isEqualTo("0");
+  }
+
+  @Test
+  public void digits_failure_partialMatch() {
+    ParseException e = assertThrows(ParseException.class, () -> digits(3).parse("12a"));
+    assertThat(e).hasMessageThat().contains("1:3");
+    assertThat(e).hasMessageThat().contains("expecting <3 digits>");
+  }
+
+  @Test
+  public void digits_failure_insufficientInput() {
+    ParseException e = assertThrows(ParseException.class, () -> digits(3).parse("12"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <3 digits>");
+  }
+
+  @Test
+  public void digits_failure_emptyInput() {
+    ParseException e = assertThrows(ParseException.class, () -> digits(3).parse(""));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <3 digits>");
+  }
+
+  @Test
+  public void digits_zero_throws() {
+    assertThrows(IllegalArgumentException.class, () -> digits(0));
+  }
+
+  @Test
+  public void digits_negative_throws() {
+    assertThrows(IllegalArgumentException.class, () -> digits(-1));
+  }
+
+  @Test
+  public void hexDigits_parse() {
+    assertThat(hexDigits(4).parse("01aF")).isEqualTo("01aF");
+  }
+
+  @Test
+  public void hexDigits_parseToStream() {
+    assertThat(hexDigits(4).parseToStream("01aF89bC")).containsExactly("01aF", "89bC");
+  }
+
+  @Test
+  public void hexDigits_twoDigits() {
+    assertThat(hexDigits(2).parse("FF")).isEqualTo("FF");
+  }
+
+  @Test
+  public void hexDigits_failure_partialMatch() {
+    ParseException e = assertThrows(ParseException.class, () -> hexDigits(4).parse("01gF"));
+    assertThat(e).hasMessageThat().contains("1:3");
+    assertThat(e).hasMessageThat().contains("expecting <4 hex digits>");
+  }
+
+  @Test
+  public void hexDigits_failure_insufficientInput() {
+    ParseException e = assertThrows(ParseException.class, () -> hexDigits(4).parse("01a"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <4 hex digits>");
+  }
+
+  @Test
+  public void hexDigits_failure_emptyInput() {
+    ParseException e = assertThrows(ParseException.class, () -> hexDigits(4).parse(""));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <4 hex digits>");
+  }
+
+  @Test
+  public void hexDigits_zero_throws() {
+    assertThrows(IllegalArgumentException.class, () -> hexDigits(0));
+  }
+
+  @Test
+  public void hexDigits_negative_throws() {
+    assertThrows(IllegalArgumentException.class, () -> hexDigits(-1));
   }
 
   @Test

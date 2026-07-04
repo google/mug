@@ -54,6 +54,9 @@ import com.google.mu.util.CharPredicate;
  *     parameter, such as {@link Parser#consecutive(String)}.
  */
 public final class CharacterSet implements CharPredicate {
+  static final CharacterSet DECIMAL = charsIn("[0-9]");
+  static final CharacterSet HEX = charsIn("[0-9a-fA-F]");
+
   private final String string;
   private final CharPredicate predicate;
 
