@@ -71,8 +71,10 @@ loadScripts(document, 'script');</script>
 <li><a href="#one(java.lang.String)" tabindex="0">one(String)</a></li>
 <li><a href="#one(com.google.mu.util.CharPredicate,java.lang.String)" tabindex="0">one(CharPredicate, String)</a></li>
 <li><a href="#consecutive(com.google.mu.util.CharPredicate,java.lang.String)" tabindex="0">consecutive(CharPredicate, String)</a></li>
+<li><a href="#consecutive(int,com.google.mu.util.CharPredicate,java.lang.String)" tabindex="0">consecutive(int, CharPredicate, String)</a></li>
 <li><a href="#consecutive(com.google.common.labs.parse.CharacterSet)" tabindex="0">consecutive(CharacterSet)</a></li>
 <li><a href="#consecutive(java.lang.String)" tabindex="0">consecutive(String)</a></li>
+<li><a href="#consecutive(int,java.lang.String)" tabindex="0">consecutive(int, String)</a></li>
 <li><a href="#chars(int)" tabindex="0">chars(int)</a></li>
 <li><a href="#word(java.lang.String)" tabindex="0">word(String)</a></li>
 <li><a href="#word()" tabindex="0">word()</a></li>
@@ -337,6 +339,19 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#chars(int)" class="member-name-link">chars</a><wbr>(int&nbsp;n)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Consumes exactly <code>n</code> consecutive characters.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#consecutive(int,com.google.mu.util.CharPredicate,java.lang.String)" class="member-name-link">consecutive</a><wbr>(int&nbsp;n,
+ <a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;matcher,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;name)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Matches <code>n</code> consecutive characters as specified by <code>matcher</code>.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#consecutive(int,java.lang.String)" class="member-name-link">consecutive</a><wbr>(int&nbsp;n,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;characterClass)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Matches <code>n</code> consecutive characters contained in <code>characterClass</code>.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#consecutive(com.google.common.labs.parse.CharacterSet)" class="member-name-link">consecutive</a><wbr>(<a href="CharacterSet.html" title="class in com.google.common.labs.parse">CharacterSet</a>&nbsp;characterSet)</code></div>
@@ -916,6 +931,21 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 </section>
 </li>
 <li>
+<section class="detail" id="consecutive(int,com.google.mu.util.CharPredicate,java.lang.String)">
+<h3>consecutive</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">consecutive</span><wbr><span class="parameters">(int&nbsp;n,
+ <a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util">CharPredicate</a>&nbsp;matcher,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;name)</span></div>
+<div class="block">Matches <code>n</code> consecutive characters as specified by <code>matcher</code>.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.6</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
 <section class="detail" id="consecutive(com.google.common.labs.parse.CharacterSet)">
 <h3>consecutive</h3>
 <div class="horizontal-scroll">
@@ -953,6 +983,32 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
         <code>consecutive("[^a-zA-Z]")</code>, which is any non-alphabet character.</dd>
 <dt>Since:</dt>
 <dd>10.2</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="consecutive(int,java.lang.String)">
+<h3>consecutive</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">consecutive</span><wbr><span class="parameters">(int&nbsp;n,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;characterClass)</span></div>
+<div class="block">Matches <code>n</code> consecutive characters contained in <code>characterClass</code>.
+
+ <p>For example: <code>consecutive(5, "[0-9]")</code> is equivalent to <code>consecutive(5, range('0', '9'))</code>.
+
+ <p>Implementation Note: regex isn't used during parsing. The character class string is translated
+ to a <a href="../../../mu/util/CharPredicate.html#precomputeForAscii()"><code>precomputed</code></a> <code>CharPredicate</code>, at construction time.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>characterClass</code> - A regex-like character set string (e.g. <code>"[a-zA-Z0-9-_]"</code>),
+        but disallows backslash so doesn't support escaping.
+        If your character class includes special characters like literal backslash,
+        use <a href="../../../mu/util/CharPredicate.html" title="interface in com.google.mu.util"><code>CharPredicate</code></a> directly.
+        You can also use <code>'^'</code> to get negative character set like:
+        <code>consecutive("[^a-zA-Z]")</code>, which is any non-alphabet character.</dd>
+<dt>Since:</dt>
+<dd>10.6</dd>
 </dl>
 </div>
 </section>
