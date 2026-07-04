@@ -164,6 +164,18 @@ public class MarkdownLinkTest {
   }
 
   @Test
+  public void testEscapedBackslashBeforeClosingBracketInLabel(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("[foo\\\\](url)"))
+        .containsExactly(new MarkdownLink("foo\\", "url"));
+  }
+
+  @Test
+  public void testEscapedBackslashBeforeClosingParenthesisInUrl(@TestParameter Scanner scanner) {
+    assertThat(scanner.scan("[text](http://foo\\\\)bar)"))
+        .containsExactly(new MarkdownLink("text", "http://foo\\"));
+  }
+
+  @Test
   public void testUnescapedNestedSquareBracketsInLabel(@TestParameter Scanner scanner) {
     assertThat(scanner.scan("[x[y[?]]](url)"))
         .containsExactly(new MarkdownLink("x[y[?]]", "url"));

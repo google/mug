@@ -555,6 +555,7 @@ public class ParserTest {
             .orElse("\\"));
     // Escapable punctuation gets resolved:
     assertThat(parser.parse("[a\\!b]")).isEqualTo("a!b");
+    assertThat(parser.parse("[a\\\\]")).isEqualTo("a\\");
     // Non-escapable character gets resolved to the default value (only backslash consumed)
     assertThat(parser.parse("[a\\xb]")).isEqualTo("a\\xb");
   }
@@ -812,6 +813,7 @@ public class ParserTest {
             .orElse("\\"));
     // Escapable punctuation gets resolved:
     assertThat(parser.parse("(a\\!b)")).isEqualTo("a!b");
+    assertThat(parser.parse("(a\\\\)")).isEqualTo("a\\");
     // Non-escapable character gets resolved to the default value (only backslash consumed)
     assertThat(parser.parse("(a\\xb)")).isEqualTo("a\\xb");
   }

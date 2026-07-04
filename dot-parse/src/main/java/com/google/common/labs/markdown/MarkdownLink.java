@@ -22,7 +22,6 @@ import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.nestedByWithEscapes;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
-
 import static java.util.Objects.requireNonNull;
 
 import java.io.Reader;
@@ -57,7 +56,7 @@ public record MarkdownLink(String label, String url) {
   }
 
   private static final Parser<String>.OrEmpty ESCAPED =
-      one("[!\"#$%&'()*+,-./:;<=>?@\\[\\]^_`{|}~]")
+      one("[!\"#$%&'()*+,-./:;<=>?@[]^_`{|}~\\]")
           .map(String::valueOf)
           .orElse("\\");  // if the char isn't escapable
 
@@ -76,7 +75,7 @@ public record MarkdownLink(String label, String url) {
   private static final Parser<?> IGNORED = anyOf(
       consecutive("[^\\[`]"),
       consecutive("[`]").flatMap(Parser::first),
-      one("[\\]").then(chars(1)));
+      one('\\').then(chars(1)));
 
   /**
    * Parses {@code link} into a {@link MarkdownLink}.
