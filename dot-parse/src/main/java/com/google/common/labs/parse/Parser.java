@@ -74,9 +74,9 @@ import com.google.mu.util.stream.Joiner;
  * (infinite loop or StackOverFlowError caused by accidental zero-consumption rule in the context of
  * many() or recursive grammar) is made impossible by requiring all parsers to consume at least one
  * character. Optional suffix is achieved through using the built-in combinators such as {@link
- * #optionallyFollowedBy optionallyFollowedBy()} and {@link #withPostfixes withPostfixes()};
- * or you can use the {@link #zeroOrMore zeroOrMore()}, {@link #zeroOrMoreDelimitedBy zeroOrMoreDelimitedBy()},
- * {@link #orElse orElse()} and {@link #optional optional()} fluent chains.
+ * #optionallyFollowedBy} or {@link OperatorTable} if you have multiple operators; you can also use
+ * the {@link #zeroOrMore}, {@link #zeroOrMoreDelimitedBy}, {@link #orElse} and {@link #optional}
+ * fluent chains.
  *
  * <p>For simplicity, {@link #or or()} and {@link #anyOf anyOf()} will always backtrack upon failure. But it's
  * more efficient to factor out common left prefix. For example instead of {@code
