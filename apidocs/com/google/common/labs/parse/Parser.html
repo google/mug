@@ -896,8 +896,8 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <dd><code>characterClass</code> - A regex-like character set string (e.g. <code>"[a-zA-Z0-9-_]"</code>).
         <p>Starting v10.6, literal backslash (<code>"\\"</code> in Java source code literal),
         '[' and ']' can all be included inside the outer pair of brackets.
-        The '-' character as long as not at the place of a range is also treated as literal.
-        <p>You can also use <code>'^'</code> to get negative character set like:
+        The '-' character is also treated as literal, as long as not placed at the place of a range.
+        <p>You can also use <code>'^'</code> to get negative character class like:
         <code>one("[^a-zA-Z]")</code>, which is any non-alphabet character.
         <p>It's <em>strongly recommended</em> to install Google ErrorProne and mug-errorprone in your
         annotation processor path so that incorrect character class syntax will be caught
@@ -965,8 +965,8 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <dd><code>characterClass</code> - A regex-like character set string (e.g. <code>"[a-zA-Z0-9-_]"</code>).
         <p>Starting v10.6, literal backslash (<code>"\\"</code> in Java source code literal),
         '[' and ']' can all be included inside the outer pair of brackets.
-        The '-' character as long as not at the place of a range is also treated as literal.
-        <p>You can also use <code>'^'</code> to get negative character set like:
+        The '-' character is also treated as literal, as long as not placed at the place of a range.
+        <p>You can also use <code>'^'</code> to get negative character class like:
         <code>one("[^a-zA-Z]")</code>, which is any non-alphabet character.
         <p>It's <em>strongly recommended</em> to install Google ErrorProne and mug-errorprone in your
         annotation processor path so that incorrect character class syntax will be caught
@@ -1670,8 +1670,8 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <dd><code>characterClass</code> - A regex-like character set string (e.g. <code>"[a-zA-Z0-9-_]"</code>).
         <p>Starting v10.6, literal backslash (<code>"\\"</code> in Java source code literal),
         '[' and ']' can all be included inside the outer pair of brackets.
-        The '-' character as long as not at the place of a range is also treated as literal.
-        <p>You can also use <code>'^'</code> to get negative character set like:
+        The '-' character is also treated as literal, as long as not placed at the place of a range.
+        <p>You can also use <code>'^'</code> to get negative character class like:
         <code>one("[^a-zA-Z]")</code>, which is any non-alphabet character.
         <p>It's <em>strongly recommended</em> to install Google ErrorProne and mug-errorprone in your
         annotation processor path so that incorrect character class syntax will be caught
