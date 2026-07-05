@@ -2115,7 +2115,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       // forTokens().parseToStream() checks isEof() to terminate, and only skip the trailing upon
       // success. So if everything is skippable, it will fail to match.
       return switch (toSkip.scan(input, fromIndex, ErrorContext.MINIMAL)) {
-         case MatchResult.Success<?> success -> forTokens().parseToStream(input, success.tail());
+         case MatchResult.Success<?> skipped -> forTokens().parseToStream(input, skipped.tail());
          default -> forTokens().parseToStream(input, fromIndex);
       };
     }
