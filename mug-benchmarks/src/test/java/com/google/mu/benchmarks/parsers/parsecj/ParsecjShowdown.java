@@ -96,7 +96,7 @@ public final class ParsecjShowdown {
       try {
         List<Keyword> result =
             PARSER.parse(Input.of(BenchmarkInputs.KEYWORDS_LIST_CS)).getResult();
-        assertThat(result.size()).isEqualTo(120);
+        assertThat(result.size()).isEqualTo(500);
       } catch (Exception e) {
         throw new AssertionError(e);
       }
@@ -141,7 +141,7 @@ public final class ParsecjShowdown {
       try {
         List<Keyword> result =
             PARSER.parse(Input.of(BenchmarkInputs.KEYWORDS_LIST_CI)).getResult();
-        assertThat(result.size()).isEqualTo(120);
+        assertThat(result.size()).isEqualTo(500);
       } catch (Exception e) {
         throw new AssertionError(e);
       }

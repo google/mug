@@ -87,7 +87,7 @@ public final class PetitParserShowdown {
       Truth.assertThat(res.isSuccess()).isTrue();
       @SuppressWarnings("unchecked")
       List<Keyword> result = (List<Keyword>) res.get();
-      Truth.assertThat(result.size()).isEqualTo(120);
+      Truth.assertThat(result.size()).isEqualTo(500);
 
       Result resBad = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID);
       Truth.assertThat(resBad.isSuccess()).isFalse();
@@ -125,7 +125,7 @@ public final class PetitParserShowdown {
       Truth.assertThat(res.isSuccess()).isTrue();
       @SuppressWarnings("unchecked")
       List<Keyword> result = (List<Keyword>) res.get();
-      Truth.assertThat(result.size()).isEqualTo(120);
+      Truth.assertThat(result.size()).isEqualTo(500);
 
       Result resBad = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI);
       Truth.assertThat(resBad.isSuccess()).isFalse();

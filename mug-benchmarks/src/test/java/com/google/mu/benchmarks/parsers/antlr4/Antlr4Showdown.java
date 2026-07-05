@@ -160,7 +160,7 @@ public final class Antlr4Showdown {
       parser.reset();
       ShowdownParser.KeywordsContext ctx = parser.keywords();
       assertThat(parser.getNumberOfSyntaxErrors()).isEqualTo(0);
-      assertThat(ctx.keyword().size()).isEqualTo(120);
+      assertThat(ctx.keyword().size()).isEqualTo(500);
 
       // Negative Verify
       CharStream badStream = fromString(BenchmarkInputs.KEYWORDS_LIST_INVALID);
@@ -225,7 +225,7 @@ public final class Antlr4Showdown {
       parser.reset();
       ShowdownParser.KeywordsIgnoreCaseContext ctx = parser.keywordsIgnoreCase();
       assertThat(parser.getNumberOfSyntaxErrors()).isEqualTo(0);
-      assertThat(ctx.keywordIgnoreCase().size()).isEqualTo(120);
+      assertThat(ctx.keywordIgnoreCase().size()).isEqualTo(500);
 
       // Negative Verify
       CharStream badStream = fromString(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI);

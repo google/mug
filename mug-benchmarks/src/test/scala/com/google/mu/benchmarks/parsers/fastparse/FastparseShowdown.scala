@@ -108,7 +108,7 @@ object FastparseShowdown {
 
     // Verify
     fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_CS, keywordsList(_)) match {
-      case Parsed.Success(result, _) if result.size() == 120 =>
+      case Parsed.Success(result, _) if result.size() == 500 =>
       case f => throw new AssertionError(s"fastparse Keywords verification failed: $f")
     }
     fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID, keywordsList(_)) match {
@@ -139,7 +139,7 @@ object FastparseShowdown {
 
     // Verify
     fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_CI, ignoreCaseKeywordsList(_)) match {
-      case Parsed.Success(result, _) if result.size() == 120 =>
+      case Parsed.Success(result, _) if result.size() == 500 =>
       case f => throw new AssertionError(s"fastparse IgnoreCase verification failed: $f")
     }
     fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI, ignoreCaseKeywordsList(_)) match {

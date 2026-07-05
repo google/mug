@@ -38,7 +38,7 @@ class FastparseShowdownTest {
   @Test
   def testKeywordsCaseSensitive(): Unit = {
     new FastparseShowdown.KeywordsFixture().run(BenchmarkInputs.KEYWORDS_LIST_CS) match {
-      case Parsed.Success(keywords: List[Keyword], _) => Assert.assertEquals(120, keywords.size())
+      case Parsed.Success(keywords: List[Keyword], _) => Assert.assertEquals(500, keywords.size())
       case f => Assert.fail(s"fastparse Keywords CS parsing failed: $f")
     }
   }
@@ -46,7 +46,7 @@ class FastparseShowdownTest {
   @Test
   def testKeywordsCaseInsensitive(): Unit = {
     new FastparseShowdown.IgnoreCaseFixture().run(BenchmarkInputs.KEYWORDS_LIST_CI) match {
-      case Parsed.Success(keywords: List[Keyword], _) => Assert.assertEquals(120, keywords.size())
+      case Parsed.Success(keywords: List[Keyword], _) => Assert.assertEquals(500, keywords.size())
       case f => Assert.fail(s"fastparse Keywords CI parsing failed: $f")
     }
   }

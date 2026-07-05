@@ -52,7 +52,7 @@ object CatsParseShowdown {
 
     // Verify
     PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS) match {
-      case Right(("", result)) if result.size() == 120 =>
+      case Right(("", result)) if result.size() == 500 =>
       case other => throw new AssertionError(s"cats-parse Keywords verification failed: $other")
     }
     PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID) match {
@@ -76,7 +76,7 @@ object CatsParseShowdown {
 
     // Verify
     PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CI) match {
-      case Right(("", result)) if result.size() == 120 =>
+      case Right(("", result)) if result.size() == 500 =>
       case other => throw new AssertionError(s"cats-parse IgnoreCase verification failed: $other")
     }
     PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI) match {

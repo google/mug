@@ -37,7 +37,7 @@ class CatsParseShowdownTest {
   @Test
   def testKeywordsCaseSensitive(): Unit = {
     new CatsParseShowdown.KeywordsFixture().run(BenchmarkInputs.KEYWORDS_LIST_CS) match {
-      case Right((_, keywords: List[Keyword])) => Assert.assertEquals(120, keywords.size())
+      case Right((_, keywords: List[Keyword])) => Assert.assertEquals(500, keywords.size())
       case Left(err) => Assert.fail(s"cats-parse Keywords CS parsing failed: $err")
     }
   }
@@ -45,7 +45,7 @@ class CatsParseShowdownTest {
   @Test
   def testKeywordsCaseInsensitive(): Unit = {
     new CatsParseShowdown.IgnoreCaseFixture().run(BenchmarkInputs.KEYWORDS_LIST_CI) match {
-      case Right((_, keywords: List[Keyword])) => Assert.assertEquals(120, keywords.size())
+      case Right((_, keywords: List[Keyword])) => Assert.assertEquals(500, keywords.size())
       case Left(err) => Assert.fail(s"cats-parse Keywords CI parsing failed: $err")
     }
   }

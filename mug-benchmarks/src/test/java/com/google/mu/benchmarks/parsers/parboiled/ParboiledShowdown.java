@@ -97,7 +97,7 @@ public final class ParboiledShowdown {
       assertThat(res.matched).isTrue();
       @SuppressWarnings("unchecked")
       List<Keyword> result = (List<Keyword>) res.resultValue;
-      assertThat(result.size()).isEqualTo(120);
+      assertThat(result.size()).isEqualTo(500);
       assertThat(RUNNER.run(BenchmarkInputs.KEYWORDS_LIST_INVALID).matched).isFalse();
     }
 
@@ -149,7 +149,7 @@ public final class ParboiledShowdown {
       assertThat(res.matched).isTrue();
       @SuppressWarnings("unchecked")
       List<Keyword> result = (List<Keyword>) res.resultValue;
-      assertThat(result.size()).isEqualTo(120);
+      assertThat(result.size()).isEqualTo(500);
       assertThat(RUNNER.run(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI).matched).isFalse();
     }
 

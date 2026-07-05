@@ -63,7 +63,7 @@ object ScalaParserShowdown {
 
     // Verify
     parse(parser, BenchmarkInputs.KEYWORDS_LIST_CS) match {
-      case Success(result, next) if next.atEnd && result.size() == 120 =>
+      case Success(result, next) if next.atEnd && result.size() == 500 =>
       case other => throw new AssertionError(s"scala-parser-combinators Keywords verification failed: $other")
     }
     parse(parser, BenchmarkInputs.KEYWORDS_LIST_INVALID) match {
@@ -88,7 +88,7 @@ object ScalaParserShowdown {
 
     // Verify
     parse(parser, BenchmarkInputs.KEYWORDS_LIST_CI) match {
-      case Success(result, next) if next.atEnd && result.size() == 120 =>
+      case Success(result, next) if next.atEnd && result.size() == 500 =>
       case other => throw new AssertionError(s"scala-parser-combinators IgnoreCase verification failed: $other")
     }
     parse(parser, BenchmarkInputs.KEYWORDS_LIST_INVALID_CI) match {

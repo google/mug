@@ -76,7 +76,7 @@ public final class JjparseShowdown {
           jjParserInstance
               .parse(PARSER, Input.of("jjKeywords", BenchmarkInputs.KEYWORDS_LIST_CS))
               .getOrFail();
-      assertThat(result.size()).isEqualTo(120);
+      assertThat(result.size()).isEqualTo(500);
       assertThat(
               jjParserInstance
                   .parse(PARSER, Input.of("jjKeywords", BenchmarkInputs.KEYWORDS_LIST_INVALID))
@@ -114,7 +114,7 @@ public final class JjparseShowdown {
           jjParserInstance
               .parse(PARSER, Input.of("jjIgnoreCase", BenchmarkInputs.KEYWORDS_LIST_CI))
               .getOrFail();
-      assertThat(result.size()).isEqualTo(120);
+      assertThat(result.size()).isEqualTo(500);
       assertThat(
               jjParserInstance
                   .parse(PARSER, Input.of("jjIgnoreCase", BenchmarkInputs.KEYWORDS_LIST_INVALID_CI))

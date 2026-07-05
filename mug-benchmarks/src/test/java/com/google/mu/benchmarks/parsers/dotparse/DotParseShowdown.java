@@ -63,7 +63,7 @@ public final class DotParseShowdown {
 
     static {
       List<Keyword> result = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS);
-      assertThat(result.size()).isEqualTo(120);
+      assertThat(result.size()).isEqualTo(500);
       assertThrows(
           Parser.ParseException.class, () -> PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID));
     }
@@ -82,7 +82,7 @@ public final class DotParseShowdown {
 
     static {
       List<Keyword> result = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CI);
-      assertThat(result.size()).isEqualTo(120);
+      assertThat(result.size()).isEqualTo(500);
       assertThrows(
           Parser.ParseException.class,
           () -> PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI));

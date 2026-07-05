@@ -103,7 +103,7 @@ object Parboiled2Showdown {
   object KeywordsFixture {
     // Verify
     new KeywordsParser(BenchmarkInputs.KEYWORDS_LIST_CS).keywords.run() match {
-      case Success(result: java.util.List[_]) if result.size() == 120 =>
+      case Success(result: java.util.List[_]) if result.size() == 500 =>
       case other => throw new AssertionError(s"parboiled2 Keywords verification failed: $other")
     }
     new KeywordsParser(BenchmarkInputs.KEYWORDS_LIST_INVALID).keywords.run() match {
@@ -143,7 +143,7 @@ object Parboiled2Showdown {
   object IgnoreCaseFixture {
     // Verify
     new IgnoreCaseParser(BenchmarkInputs.KEYWORDS_LIST_CI).keywords.run() match {
-      case Success(result: java.util.List[_]) if result.size() == 120 =>
+      case Success(result: java.util.List[_]) if result.size() == 500 =>
       case other => throw new AssertionError(s"parboiled2 IgnoreCase verification failed: $other")
     }
     new IgnoreCaseParser(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI).keywords.run() match {

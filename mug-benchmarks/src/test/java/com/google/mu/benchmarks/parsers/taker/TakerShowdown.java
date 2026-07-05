@@ -101,7 +101,7 @@ public final class TakerShowdown {
       Result<List<Keyword>> res = PARSER.parseAll(BenchmarkInputs.KEYWORDS_LIST_CS);
       assert res.matches();
       assert res.input().isEof();
-      assert res.value().size() == 120;
+      assert res.value().size() == 500;
     }
 
     public Result<List<Keyword>> run(String input) {
@@ -134,7 +134,7 @@ public final class TakerShowdown {
       Result<List<Keyword>> res = PARSER.parseAll(BenchmarkInputs.KEYWORDS_LIST_CI);
       assert res.matches();
       assert res.input().isEof();
-      assert res.value().size() == 120;
+      assert res.value().size() == 500;
     }
 
     public Result<List<Keyword>> run(String input) {
