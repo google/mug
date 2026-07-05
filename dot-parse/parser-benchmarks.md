@@ -70,10 +70,10 @@ Throughput was measured in **operations per millisecond** (higher is better):
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Complex JSON Payload** | 0.213 | 0.181 | **0.405** ☕ | 0.122 | 0.094 | **0.592** 🚀 | 0.258 | 0.015 | 0.101 | 0.088 | 0.066 | 0.077 | **`fast`** 🚀<br>**`dot`** ☕ |
 | **Complex JSON with Comments** | 0.102 | 0.068 | **0.224** 🚀 ☕ | 0.093 | 0.051 | **0.192** | 0.078 | 0.002 | 0.031 | 0.033 | 0.022 | 0.036 | **`dot`** 🚀 ☕ |
-| **`qux2.json` (Medium JSON)** | — | — | **0.173** | — | — | **0.246** 🚀 | 0.141 | — | — | — | — | — | **`fast`** 🚀 |
-| **`bla25.json` (Large JSON)** | — | — | **0.061** | — | — | **0.119** 🚀 | 0.047 | — | — | — | — | — | **`fast`** 🚀 |
-| **`countries.geo.json` (Geographic JSON)** | — | — | **0.253** | — | — | **0.340** 🚀 | 0.162 | — | — | — | — | — | **`fast`** 🚀 |
-| **`ugh10k.json` (Very Large JSON)** | — | — | **0.021** | — | — | **0.035** 🚀 | 0.018 | — | — | — | — | — | **`fast`** 🚀 |
+| **`qux2.json` (Medium JSON)** | — | — | **0.173** ☕ | — | — | **0.246** 🚀 | 0.141 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
+| **`bla25.json` (Large JSON)** | — | — | **0.061** ☕ | — | — | **0.119** 🚀 | 0.047 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
+| **`countries.geo.json` (Geographic JSON)** | — | — | **0.253** ☕ | — | — | **0.340** 🚀 | 0.162 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
+| **`ugh10k.json` (Very Large JSON)** | — | — | **0.021** ☕ | — | — | **0.035** 🚀 | 0.018 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
 
 #### Reference Production Baselines (JSON)
 To provide an absolute performance ceiling, we stacked our combinator shootout against production-grade, hand-written and generated parsers on the exact same JSON payloads:
@@ -192,6 +192,11 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 #### 6. US Phone Number Parsing (Single & 1,000-Element List)
 *   **Performance (Single Number)**: `parboiled2` (29.5M ops/sec) leads overall. `dot-parse` is the leading Java library at 18.3M ops/sec, outperforming `taker` (13.7M) and `cats-parse` (12.9M).
 *   **Performance (1,000-Element List)**: `dot-parse` (11.30 lists/ms, or ~11.3M phone numbers/sec) leads overall across all 13 libraries, followed by `cats-parse` (10.54 lists/ms) and `jparsec` (9.46 lists/ms).
+*   **JMH Operation Units (Why ~29,000 drops to ~8-11)**: In `US Phone (Single)`, one JMH operation measures parsing **1 single phone number**, meaning `29,481 ops/ms` represents 29,481 individual numbers parsed per millisecond. In `US Phone (1,000-List)`, one JMH operation measures parsing **1 entire list of 1,000 phone numbers**. When normalized to individual items by multiplying by 1,000, `8.11 lists/ms` equals **8,110 numbers/ms** for `parboiled2`, while `11.30 lists/ms` equals **11,300 numbers/ms** for `dot-parse`.
+*   **Architectural Trade-Off: Macro Inlining vs. Repetition Loop Overhead**: While `parboiled2` represents the performance ceiling on micro-inputs (leading on `US Phone (Single)` at 29,481 ops/ms), its relative throughput drops on long sequences, falling to #6 overall on `US Phone (1,000-List)` (**8.11 lists/ms**):
+    *   **Micro-Input Regime (`parboiled2` on Single Mode)**: On a short 13-character string, collection construction and stack manipulation costs are non-existent. `parboiled2`'s compile-time macro expands rule matching directly into flat JVM bytecode without method dispatch indirection, executing in ~33 nanoseconds.
+    *   **High-Repetition Regime (`parboiled2` in List Mode)**: In long repetition loops (1,000 elements), execution time becomes dominated by per-element data management: pushing and popping 1,000 times on `parboiled2`'s runtime ValueStack, constructing intermediate Scala sequences, and wrapping those sequences in Java collection adapters (`seq.asJava`). Additionally, every parse invocation allocates a new parser instance (`new UsPhoneParser(input)`).
+    *   **Why `dot-parse` Leads on Lists**: In high-repetition regimes, `dot-parse` (**11.30 lists/ms**) and optimized combinator scanners (`cats-parse` at 10.54 and `fastparse` at 9.24) surpass `parboiled2`. `dot-parse` uses a static, stateless singleton parser whose `.zeroOrMore()` collector executes a direct loop inserting sliced substrings straight into a standard Java list without intermediate collection builders, ValueStack manipulations, or collection adapter boxing, while `.parseSkipping()` scans whitespace using a primitive bit-mask check.
 
 <hr>
 
