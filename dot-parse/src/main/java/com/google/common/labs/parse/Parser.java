@@ -75,7 +75,7 @@ import com.google.mu.util.stream.Joiner;
  * many() or recursive grammar) is made impossible by requiring all parsers to consume at least one
  * character. Optional suffix is achieved through using the built-in combinators such as {@link
  * #optionallyFollowedBy} or {@link OperatorTable} if you have multiple operators; you can also use
- * the {@link #zeroOrMore}, {@link #zeroOrMoreDelimitedBy}, {@link #orElse} and {@link #optional}
+ * the {@link #zeroOrMore()}, {@link #zeroOrMoreDelimitedBy(String)}, {@link #orElse} and {@link #optional}
  * fluent chains.
  *
  * <p>For simplicity, {@link #or or()} and {@link #anyOf anyOf()} will always backtrack upon failure. But it's
