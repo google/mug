@@ -60,7 +60,7 @@ public final class CharacterSet implements CharPredicate {
 
   private final String string;
   private final CharPredicate predicate;
-  @LazyInit private Set<String> prefixes;
+  @LazyInit private Set<String> asciiPrefixes;
 
   private CharacterSet(String string, CharPredicate predicate) {
     this.string = string;
@@ -133,9 +133,9 @@ public final class CharacterSet implements CharPredicate {
   }
 
   Set<String> getAsciiPrefixes() {
-    Set<String> result = prefixes;
+    Set<String> result = asciiPrefixes;
     if (result == null) {
-      prefixes = result = candidateCharsIfAscii()
+      asciiPrefixes = result = candidateCharsIfAscii()
           .map(chars -> chars.stream().map(Object::toString).collect(toUnmodifiableSet()))
           .orElse(Set.of(""));
     }
