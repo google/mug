@@ -199,8 +199,9 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  or you can use the <a href="#zeroOrMore(com.google.common.labs.parse.CharacterSet)"><code>zeroOrMore()</code></a>, <a href="#zeroOrMoreDelimitedBy(java.lang.String)"><code>zeroOrMoreDelimitedBy()</code></a>,
  <a href="#orElse(T)"><code>orElse()</code></a> and <a href="#optional()"><code>optional()</code></a> fluent chains.
 
- <p>For simplicity, <a href="#or()"><code>or()</code></a> and <a href="#anyOf(com.google.common.labs.parse.Parser...)"><code>anyOf()</code></a> will always backtrack upon failure.
- anyOf(expr.followedBy(";"), expr)}, use <code>expr.optionallyFollowedBy(";")</code> instead.</div>
+ <p>For simplicity, <a href="#or()"><code>or()</code></a> and <a href="#anyOf(com.google.common.labs.parse.Parser...)"><code>anyOf()</code></a> will always backtrack upon failure. But it's
+ more efficient to factor out common left prefix. For example instead of <code>
+ anyOf(expr.followedBy(";"), expr)</code>, use <code>expr.optionallyFollowedBy(";"))</code> instead.</div>
 </div>
 </section>
 <section class="summary">
