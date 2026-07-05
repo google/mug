@@ -195,13 +195,13 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  <p>Different from most parser combinators (such as Haskell Parsec), a common source of bug
  (infinite loop or StackOverFlowError caused by accidental zero-consumption rule in the context of
  many() or recursive grammar) is made impossible by requiring all parsers to consume at least one
- character. Optional suffix is achieved through using the built-in combinators such as <a href="#optionallyFollowedBy(java.lang.String)"><code>optionallyFollowedBy()</code></a> and <a href="#withPostfixes(com.google.common.labs.parse.Parser)"><code>withPostfixes()</code></a>;
- or you can use the <a href="#zeroOrMore(com.google.common.labs.parse.CharacterSet)"><code>zeroOrMore()</code></a>, <a href="#zeroOrMoreDelimitedBy(java.lang.String)"><code>zeroOrMoreDelimitedBy()</code></a>,
- <a href="#orElse(T)"><code>orElse()</code></a> and <a href="#optional()"><code>optional()</code></a> fluent chains.
+ character. Optional suffix is achieved through using the built-in combinators such as <a href="#optionallyFollowedBy(java.lang.String)"><code>optionallyFollowedBy(java.lang.String)</code></a> or <a href="OperatorTable.html" title="class in com.google.common.labs.parse"><code>OperatorTable</code></a> if you have multiple operators; you can also use
+ the <a href="#zeroOrMore(com.google.common.labs.parse.CharacterSet)"><code>zeroOrMore(com.google.common.labs.parse.CharacterSet)</code></a>, <a href="#zeroOrMoreDelimitedBy(java.lang.String)"><code>zeroOrMoreDelimitedBy(java.lang.String)</code></a>, <a href="#orElse(T)"><code>orElse(T)</code></a> and <a href="#optional()"><code>optional()</code></a>
+ fluent chains.
 
  <p>For simplicity, <a href="#or()"><code>or()</code></a> and <a href="#anyOf(com.google.common.labs.parse.Parser...)"><code>anyOf()</code></a> will always backtrack upon failure. But it's
  more efficient to factor out common left prefix. For example instead of <code>
- anyOf(expr.followedBy(";"), expr)</code>, use <code>expr.optionallyFollowedBy(";"))</code> instead.</div>
+ anyOf(expr.followedBy(";"), expr)</code>, use <code>expr.optionallyFollowedBy(";")</code> instead.</div>
 </div>
 </section>
 <section class="summary">
