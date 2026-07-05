@@ -214,4 +214,45 @@ object Parboiled2Showdown {
       new NestedCommentParser(input).root.run()
     }
   }
+
+  class UsPhoneParser(val input: ParserInput) extends Parser {
+    def d3 = rule { 3.times(CharPredicate.Digit) }
+    def d4 = rule { 4.times(CharPredicate.Digit) }
+    def phone: Rule1[String] = rule { capture('(' ~ d3 ~ ')' ~ d3 ~ '-' ~ d4) }
+    def usPhone: Rule1[String] = rule { phone ~ EOI }
+
+    def ws = rule { zeroOrMore(CharPredicate(" \t\r\n")) }
+    def phoneWs: Rule1[String] = rule { phone ~ ws }
+    def usPhoneList: Rule1[java.util.List[String]] = rule {
+      (ws ~ zeroOrMore(phoneWs) ~> ((seq: Seq[String]) => seq.asJava)) ~ EOI
+    }
+  }
+
+  object UsPhoneFixture {
+    // Verify
+    new UsPhoneParser(BenchmarkInputs.US_PHONE).usPhone.run() match {
+      case Success(res) if res == BenchmarkInputs.US_PHONE =>
+      case Failure(err) => throw new AssertionError(s"parboiled2 US_PHONE verification failed: $err")
+    }
+  }
+
+  class UsPhoneFixture {
+    def run(input: String): scala.util.Try[String] = {
+      new UsPhoneParser(input).usPhone.run()
+    }
+  }
+
+  object UsPhoneListFixture {
+    // Verify
+    new UsPhoneParser(BenchmarkInputs.US_PHONE_LIST).usPhoneList.run() match {
+      case Success(res) if res.size() == 1000 =>
+      case Failure(err) => throw new AssertionError(s"parboiled2 US_PHONE_LIST verification failed: $err")
+    }
+  }
+
+  class UsPhoneListFixture {
+    def run(input: String): scala.util.Try[java.util.List[String]] = {
+      new UsPhoneParser(input).usPhoneList.run()
+    }
+  }
 }

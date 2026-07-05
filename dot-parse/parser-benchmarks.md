@@ -108,19 +108,21 @@ To provide an absolute performance ceiling, we stacked our combinator shootout a
 
 ---
 
-## 9-Way Showdown Benchmark Results (Micro-Benchmarks)
+## 13-Way Showdown Benchmark Results (Micro-Benchmarks)
 
 Throughput was measured in **operations per millisecond** (higher is better). All benchmarks were run under G1 GC with natural, out-of-the-box collection-allocating configurations for all other contenders, while `dot-parse` leveraged its zero-allocation collectors on the hot path.
 
-| Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `cats-parse` | `parsecj` | `taker` | `better-parse` | **Winner(s)** |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **IPv4 Address** | $2,007$ | **$13,210$** ☕ | $9,176$ | $6,999$ | **$24,538$** 🚀 | $18,447$ | $12,625$ | $4,857$ | $1,897$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Quoted String (Common)** | $4,955$ | $12,491$ | $6,712$ | $3,044$ | **$21,853$** 🚀 | $18,652$ | $5,441$ | **$21,805$** ☕ | $4,584$ | **`fast`** 🚀<br>**`taker`** ☕ |
-| **Quoted String (Escaped)** | $3,465$ | $5,248$ | $4,912$ | $2,424$ | **$12,281$** 🚀 | $3,641$ | $2,790$ | **$19,502$** ☕ | $3,288$ | **`fast`** 🚀<br>**`taker`** ☕ |
-| **Keywords (12 CS)** | $47$ | **$296$** 🚀 ☕ | $93$ | $65$ | $80$ | $96$ | $37$ | $66$ | $18$ | **`dot`** 🚀 ☕ |
-| **Keywords CI (12 CI)** | $32$ | **$198$** 🚀 ☕ | $91$ | $56$ | $72$ | $99$ | $31$ | $55$ | $13$ | **`dot`** 🚀 ☕ |
-| **Calculator** | $369$ | **$526$** ☕ | $349$ | $428$ | **$1,133$** 🚀 | $436$ | $211$ | $445$ | $197$ | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Nested Block Comment** | $1,238$ | **$11,414$** 🚀 ☕ | $2,243$ | $1,053$ | $4,910$ | $2,227$ | $655$ | $776$ | $256$ | **`dot`** 🚀 ☕ |
+| Benchmark Scenario | `dot-parse` ☕ | `jparsec` | `fastparse` 🚀 | `cats-parse` 🚀 | `taker` | `parsecj` | `parboiled` | `jjparse` | `antlr4` | `scalaParser` | `parboiled2` 🚀 | `petitparser` | `better-parse` | **Winner(s)** |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **IPv4 Address** | $20,807$ | $13,600$ | $24,661$ | $23,763$ | $10,021$ | $2,939$ | $8,907$ | $669$ | $2,974$ | $3,778$ | **$27,330$** 🚀 | $7,655$ | $1,173$ | **`parboiled2`** 🚀<br>Java: **`dot`** ☕ |
+| **String (Simple)** | **$14,926$** ☕ | $13,833$ | $13,746$ | $3,150$ | $2,825$ | $2,019$ | $2,522$ | $584$ | $5,493$ | $4,832$ | $2,287$ | $3,609$ | $3,822$ | **`dot`** ☕ |
+| **String (Escaped)** | $5,797$ | $11,111$ ☕ | **$11,801$** 🚀 | $2,976$ | $2,208$ | $1,513$ | $2,201$ | $580$ | $4,966$ | $3,898$ | $2,217$ | $3,131$ | $871$ | **`fast`** 🚀<br>Java: **`jparsec`** ☕ |
+| **Keywords (120 CS)** | $364$ ☕ | $138$ | $93$ | $424$ 🚀 | $95$ | $131$ | $255$ | $73$ | $76$ | $110$ | **$476$** 🚀 | $105$ | $46$ | **`parboiled2`** 🚀<br>Java: **`dot`** ☕ |
+| **Ignore-Case (120 CI)** | $129$ | $148$ ☕ | $91$ | $107$ | $87$ | $172$ ☕ | $57$ | $76$ | $60$ | $121$ | **$324$** 🚀 | $90$ | $9.8$ | **`parboiled2`** 🚀<br>Java: **`parsecj`** ☕ |
+| **Calculator (Math)** | $701$ ☕ | $264$ | $1,224$ | $513$ | $462$ | $231$ | $329$ | $4$ | $400$ | $216$ | **$2,094$** 🚀 | $630$ | $162$ | **`parboiled2`** 🚀<br>Java: **`dot`** ☕ |
+| **Nested Comments** | **$11,622$** ☕ | $2,307$ | $4,587$ | $2,445$ | $733$ | $795$ | $912$ | $9$ | $2,085$ | $361$ | $6,377$ | $1,143$ | $970$ | **`dot`** ☕ |
+| **US Phone (Single)** | $18,262$ ☕ | $9,316$ | $8,583$ | $12,886$ | $13,710$ | $10,308$ | $4,851$ | $5,746$ | $5,669$ | $3,104$ | **$29,481$** 🚀 | $7,110$ | $9,720$ | **`parboiled2`** 🚀<br>Java: **`dot`** ☕ |
+| **US Phone (1,000-List)** | **$11.30$** 🚀 ☕ | $9.46$ | $9.24$ | $10.54$ | $8.69$ | $1.94$ | $4.16$ | $4.81$ | $7.76$ | $2.91$ | $8.11$ | $5.55$ | $5.26$ | **`dot`** 🚀 ☕ |
 
 ### Showdown Scenario Analysis & Rationalization
 
@@ -161,6 +163,14 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 *   **Heavy Intermediate Allocations**: Unlike zero-allocation parser scans, `better-parse`'s tokenizer scans inputs and allocates a list of intermediate `TokenMatch` objects on the fly, putting significant garbage collection pressure on the JVM hot path.
 *   **Regex and Backtracking Bottlenecks**: On case-insensitive keywords, `better-parse` drops to a very low **$15.8$ ops/ms** ($15,800$ parses/sec) because it compiles 12 separate `Regex` objects and matches them sequentially per character. This is **$12.7\text{x}$ slower** than `dot-parse`'s Radix prefix tries and **$3.5\text{x}$ slower** than `taker`.
 *   **Scenario Specific Strengths**: `better-parse` shows respectable throughput on simple strings (**$5,103$ ops/ms**) and nested block comments (**$1,484$ ops/ms**), outperforming classic Java engines like `parsecj` ($653$ comments) and `taker` ($775$ comments) on deep nested structures.
+
+<hr>
+
+#### 6. US Phone Number Parsing (Single & 1,000-Element List)
+*   **Performance (Single Number)**: `parboiled2` ($29.5\text{M}$ ops/sec) leads overall due to its macro-compiled PEG byte loop. `dot-parse` is the **leading Java library at $18.3\text{M}$ ops/sec**, outperforming `taker` ($13.7\text{M}$) and `cats-parse` ($12.9\text{M}$).
+*   **Performance (1,000-Element List)**: `dot-parse` ($11.30\text{ lists/ms}$, or ~$11.3\text{M}$ phone numbers/sec) **leads the entire pack overall across all 13 languages and architectures**, followed by `cats-parse` ($10.54\text{ lists/ms}$) and `jparsec` ($9.46\text{ lists/ms}$).
+*   **Prefix Pruning Advantage**: In `dot-parse`, delegating fixed-width component checks to `chars(3, ASCII_DIGIT)` equips compound alternations with prefix pruning and eliminates loop-counter overhead, giving it a ~33% throughput advantage over the next fastest Java engine on single phone numbers.
+*   **Zero-Allocation Token Skipping**: When parsing long lists of 1,000 phone numbers, `dot-parse`'s `.zeroOrMore().parseSkipping(CharPredicate.WHITESPACE, ...)` executes in `skipAndMatch` mode without allocating intermediate strings or token wrappers for whitespace separators. In contrast, stack-based engines like `parboiled2` drop from #1 on single numbers to #6 on lists ($8.11\text{ lists/ms}$) due to the runtime overhead of pushing/popping 1,000 intermediate results onto their value stack and invoking action lambdas for collection insertion.
 
 <hr>
 

@@ -227,4 +227,36 @@ public final class TakerShowdown {
       return PARSER.parseAll(input);
     }
   }
+
+  public static final class UsPhoneFixture {
+    private static final Taker<String> PARSER = Lexical.regex("\\(\\d{3}\\)\\d{3}-\\d{4}");
+
+    static {
+      Result<String> res = PARSER.parseAll(BenchmarkInputs.US_PHONE);
+      assert res.matches();
+      assert res.input().isEof();
+      assert res.value().equals(BenchmarkInputs.US_PHONE);
+    }
+
+    public Result<String> run(String input) {
+      return PARSER.parseAll(input);
+    }
+  }
+
+  public static final class UsPhoneListFixture {
+    private static final Taker<Void> WS = Chars.chr(Character::isWhitespace).skipZeroOrMore();
+    private static final Taker<List<String>> PARSER =
+        WS.skipThen(UsPhoneFixture.PARSER.thenSkip(WS).zeroOrMore());
+
+    static {
+      Result<List<String>> res = PARSER.parseAll(BenchmarkInputs.US_PHONE_LIST);
+      assert res.matches();
+      assert res.input().isEof();
+      assert res.value().size() == 1000;
+    }
+
+    public Result<List<String>> run(String input) {
+      return PARSER.parseAll(input);
+    }
+  }
 }

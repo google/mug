@@ -241,7 +241,7 @@
             <configuration>
               <useIncrementalCompilation>false</useIncrementalCompilation>
               <testExcludes combine.self="override">
-                <exclude>none</exclude>
+                <exclude>**/grappa/**</exclude>
               </testExcludes>
               <annotationProcessorPaths>
                 <path>
@@ -344,6 +344,7 @@
                 <include>**/*.java</include>
               </includes>
               <excludes>
+                <exclude>**/grappa/**</exclude>
                 <exclude>**/parsecj/ParsecjJavaTypeParser.java</exclude>
                 <exclude>**/parsecj/ParsecjJavaTypeParserTest.java</exclude>
                 <exclude>**/taker/TakerJavaTypeParser.java</exclude>

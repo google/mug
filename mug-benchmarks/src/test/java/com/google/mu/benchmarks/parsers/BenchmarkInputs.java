@@ -1,9 +1,11 @@
 package com.google.mu.benchmarks.parsers;
 
 import static java.util.Map.entry;
+import static java.util.stream.Collectors.joining;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 public final class BenchmarkInputs {
   public static final String IP = "192.168.1.1";
@@ -50,6 +52,16 @@ public final class BenchmarkInputs {
   public static final String NESTED_COMMENT = "/* comment /* nested */ */";
   public static final String NESTED_COMMENT_EXPECTED_INNER = " comment /* nested */ ";
   public static final String NESTED_COMMENT_INVALID = "/* comment /* nested */";
+
+  public static final String US_PHONE = "(650)123-4567";
+  public static final String US_PHONE_INVALID = "(650)123-45678";
+  public static final String US_PHONE_LIST =
+      IntStream.range(0, 1000)
+          .mapToObj(
+              i ->
+                  String.format(
+                      "(%03d)%03d-%04d", i % 1000, (i * 7) % 1000, (i * 13) % 10000))
+          .collect(joining(" \n "));
 
   public enum Keyword {
     SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, WHERE, GROUP, ORDER, HAVING, LIMIT

@@ -163,4 +163,45 @@ object ScalaParserShowdown {
       NestedCommentFixture.parse(NestedCommentFixture.parser, input)
     }
   }
+
+  object UsPhoneFixture extends RegexParsers {
+    override val skipWhitespace = false
+    private val d3 = """\d{3}""".r
+    private val d4 = """\d{4}""".r
+    val phone: Parser[String] = ("(" ~> d3 <~ ")") ~ d3 ~ ("-" ~> d4) ^^ { case a ~ b ~ c => s"($a)$b-$c" }
+    val parser: Parser[String] = phrase(phone)
+
+    // Verify
+    parse(parser, BenchmarkInputs.US_PHONE) match {
+      case Success(res, next) if next.atEnd && res == BenchmarkInputs.US_PHONE =>
+      case other => throw new AssertionError(s"scala-parser-combinators US_PHONE verification failed: $other")
+    }
+  }
+
+  class UsPhoneFixture {
+    def run(input: String): UsPhoneFixture.ParseResult[String] = {
+      UsPhoneFixture.parse(UsPhoneFixture.parser, input)
+    }
+  }
+
+  object UsPhoneListFixture extends RegexParsers {
+    override val skipWhitespace = false
+    private val ws = """\s*""".r
+    private val d3 = """\d{3}""".r
+    private val d4 = """\d{4}""".r
+    private val phone: Parser[String] = ("(" ~> d3 <~ ")") ~ d3 ~ ("-" ~> d4) ^^ { case a ~ b ~ c => s"($a)$b-$c" }
+    val parser: Parser[java.util.List[String]] = phrase(ws ~> rep(phone <~ ws)) ^^ { _.asJava }
+
+    // Verify
+    parse(parser, BenchmarkInputs.US_PHONE_LIST) match {
+      case Success(res, next) if next.atEnd && res.size() == 1000 =>
+      case other => throw new AssertionError(s"scala-parser-combinators US_PHONE_LIST verification failed: $other")
+    }
+  }
+
+  class UsPhoneListFixture {
+    def run(input: String): UsPhoneListFixture.ParseResult[java.util.List[String]] = {
+      UsPhoneListFixture.parse(UsPhoneListFixture.parser, input)
+    }
+  }
 }

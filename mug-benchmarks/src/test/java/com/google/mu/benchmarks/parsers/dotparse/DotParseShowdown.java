@@ -4,6 +4,8 @@ import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.chars;
 import static com.google.common.labs.parse.Parser.define;
 import static com.google.common.labs.parse.Parser.digits;
+import static com.google.common.labs.parse.Parser.literally;
+import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.or;
 import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
@@ -15,6 +17,7 @@ import java.util.List;
 
 import com.google.common.labs.parse.OperatorTable;
 import com.google.common.labs.parse.Parser;
+import static com.google.mu.util.CharPredicate.WHITESPACE;
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
 import com.google.mu.benchmarks.parsers.BenchmarkInputs.Keyword;
 
@@ -104,12 +107,12 @@ public final class DotParseShowdown {
 
     static {
       // Verify
-      int res = PARSER.parseSkipping(Character::isWhitespace, BenchmarkInputs.CALCULATOR);
+      int res = PARSER.parseSkipping(WHITESPACE, BenchmarkInputs.CALCULATOR);
       assertThat(res).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
     }
 
     public Integer run() {
-      return PARSER.parseSkipping(Character::isWhitespace, BenchmarkInputs.CALCULATOR);
+      return PARSER.parseSkipping(WHITESPACE, BenchmarkInputs.CALCULATOR);
     }
   }
 
@@ -128,6 +131,34 @@ public final class DotParseShowdown {
 
     public String run(String input) {
       return PARSER.parse(input);
+    }
+  }
+
+  public static class UsPhoneFixture {
+    private static final Parser<String> PARSER =
+        sequence(one('('), digits(3), one(')'), digits(3), one('-'), digits(4))
+            .source();
+
+    static {
+      assertThat(PARSER.parse(BenchmarkInputs.US_PHONE)).isEqualTo(BenchmarkInputs.US_PHONE);
+    }
+
+    public String run(String input) {
+      return PARSER.parse(input);
+    }
+  }
+
+  public static class UsPhoneListFixture {
+    private static final Parser<List<String>>.OrEmpty PARSER = literally(UsPhoneFixture.PARSER).zeroOrMore();
+
+    static {
+      List<String> result =
+          PARSER.parseSkipping(WHITESPACE, BenchmarkInputs.US_PHONE_LIST);
+      assertThat(result.size()).isEqualTo(1000);
+    }
+
+    public List<String> run(String input) {
+      return PARSER.parseSkipping(WHITESPACE, input);
     }
   }
 

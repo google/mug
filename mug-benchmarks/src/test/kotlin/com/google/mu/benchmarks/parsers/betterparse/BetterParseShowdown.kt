@@ -140,4 +140,17 @@ object BetterParseShowdown {
 
         fun run(input: String): String = parseToEnd(input)
     }
+
+    class UsPhoneFixture : Grammar<String>() {
+        val phone by regexToken("\\(\\d{3}\\)\\d{3}-\\d{4}")
+        override val rootParser: Parser<String> by phone map { it.text }
+        fun run(input: String): String = parseToEnd(input)
+    }
+
+    class UsPhoneListFixture : Grammar<List<String>>() {
+        val ws by regexToken("\\s+", ignore = true)
+        val phone by regexToken("\\(\\d{3}\\)\\d{3}-\\d{4}")
+        override val rootParser: Parser<List<String>> by zeroOrMore(phone map { it.text })
+        fun run(input: String): List<String> = parseToEnd(input)
+    }
 }

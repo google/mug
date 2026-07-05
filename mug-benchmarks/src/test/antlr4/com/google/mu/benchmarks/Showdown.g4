@@ -26,6 +26,9 @@ calcExpr: calcExpr ('*'|'/') calcExpr
 nestedCommentRoot: nestedComment EOF;
 nestedComment: OPEN_COMMENT ( TEXT | nestedComment )* CLOSE_COMMENT;
 
+usPhone: US_PHONE_TOKEN EOF;
+usPhoneList: US_PHONE_TOKEN* EOF;
+
 select_ic: SELECT | SELECT_IC;
 insert_ic: INSERT | INSERT_IC;
 update_ic: UPDATE | UPDATE_IC;
@@ -70,6 +73,8 @@ GROUP_IC: [gG][rR][oO][uU][pP];
 ORDER_IC: [oO][rR][dD][eE][rR];
 HAVING_IC: [hH][aA][vV][iI][nN][gG];
 LIMIT_IC: [lL][iI][mM][iI][tT];
+
+US_PHONE_TOKEN: '(' [0-9] [0-9] [0-9] ')' [0-9] [0-9] [0-9] '-' [0-9] [0-9] [0-9] [0-9];
 
 WS: [ \t\r\n]+ -> skip;
 

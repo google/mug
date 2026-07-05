@@ -17,6 +17,7 @@ import com.google.mu.benchmarks.parsers.BenchmarkInputs.Keyword;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BinaryOperator;
+import org.javafp.data.IList;
 import org.javafp.parsecj.Parser;
 import org.javafp.parsecj.Reply;
 import org.javafp.parsecj.input.Input;
@@ -228,6 +229,48 @@ public final class ParsecjShowdown {
 
   private static <T> Parser<Character, T> token(Parser<Character, T> p) {
     return p.bind(x -> wspaces.then(retn(x)));
+  }
+
+  private static final Parser<Character, String> PHONE = regex("\\(\\d{3}\\)\\d{3}-\\d{4}");
+
+  public static class UsPhoneFixture {
+    private static final Parser<Character, String> PARSER = PHONE.between(retn(null), eof());
+
+    static {
+      try {
+        assertThat(PARSER.parse(Input.of(BenchmarkInputs.US_PHONE)).getResult()).isEqualTo(BenchmarkInputs.US_PHONE);
+      } catch (Exception e) {
+        throw new AssertionError(e);
+      }
+    }
+
+    public Reply<Character, String> run(String input) {
+      return PARSER.parse(Input.of(input));
+    }
+  }
+
+  public static class UsPhoneListFixture {
+    private static final Parser<Character, List<String>> PARSER =
+        wspaces.then(token(PHONE).many()).map(ilist -> {
+          List<String> list = new ArrayList<>();
+          for (String x : ilist) {
+            list.add(x);
+          }
+          return list;
+        }).between(retn(null), eof());
+
+    static {
+      try {
+        List<String> result = PARSER.parse(Input.of(BenchmarkInputs.US_PHONE_LIST)).getResult();
+        assertThat(result.size()).isEqualTo(1000);
+      } catch (Exception e) {
+        throw new AssertionError(e);
+      }
+    }
+
+    public Reply<Character, List<String>> run(String input) {
+      return PARSER.parse(Input.of(input));
+    }
   }
 
   private ParsecjShowdown() {}

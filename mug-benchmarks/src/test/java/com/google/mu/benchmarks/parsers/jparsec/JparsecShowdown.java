@@ -20,6 +20,8 @@ import org.jparsec.Parser;
 import org.jparsec.Scanners;
 import org.jparsec.Terminals;
 import org.jparsec.error.ParserException;
+import org.jparsec.pattern.Pattern;
+import org.jparsec.pattern.Patterns;
 
 public final class JparsecShowdown {
 
@@ -147,6 +149,40 @@ public final class JparsecShowdown {
     }
 
     public Void run(String input) {
+      return PARSER.parse(input);
+    }
+  }
+
+  public static class UsPhoneFixture {
+    private static final Pattern D = Patterns.range('0', '9');
+    private static final Pattern D3 = D.next(D).next(D);
+    private static final Pattern D4 = D3.next(D);
+    private static final Pattern PHONE_PATTERN =
+        Patterns.isChar('(').next(D3).next(Patterns.isChar(')')).next(D3).next(Patterns.isChar('-')).next(D4);
+    private static final Parser<String> PARSER =
+        Scanners.pattern(PHONE_PATTERN, "US phone").source();
+
+    static {
+      assertThat(PARSER.parse(BenchmarkInputs.US_PHONE)).isEqualTo(BenchmarkInputs.US_PHONE);
+    }
+
+    public String run(String input) {
+      return PARSER.parse(input);
+    }
+  }
+
+  public static class UsPhoneListFixture {
+    private static final Parser<List<String>> PARSER =
+        UsPhoneFixture.PARSER
+            .sepBy(Scanners.WHITESPACES)
+            .between(Scanners.WHITESPACES.optional(), Scanners.WHITESPACES.optional());
+
+    static {
+      List<String> result = PARSER.parse(BenchmarkInputs.US_PHONE_LIST);
+      assertThat(result.size()).isEqualTo(1000);
+    }
+
+    public List<String> run(String input) {
       return PARSER.parse(input);
     }
   }

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 public final class Antlr4Showdown {
 
@@ -358,6 +359,110 @@ public final class Antlr4Showdown {
         throw new RuntimeException("ANTLR4 parsing failed with " + parser.getNumberOfSyntaxErrors() + " syntax errors");
       }
       return ctx.getText();
+    }
+  }
+
+  public static class UsPhoneFixture {
+    private static final ThreadLocal<ShowdownLexer> LEXER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownLexer lex = new ShowdownLexer(null);
+              lex.removeErrorListeners();
+              return lex;
+            });
+    private static final ThreadLocal<CommonTokenStream> TOKEN_STREAM =
+        ThreadLocal.withInitial(() -> new CommonTokenStream(LEXER.get()));
+    private static final ThreadLocal<ShowdownParser> PARSER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownParser p = new ShowdownParser(TOKEN_STREAM.get());
+              p.removeErrorListeners();
+              return p;
+            });
+
+    static {
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
+
+      CharStream charStream = fromString(BenchmarkInputs.US_PHONE);
+      lexer.setInputStream(charStream);
+      tokenStream.setTokenSource(lexer);
+      parser.setInputStream(tokenStream);
+      parser.reset();
+      ShowdownParser.UsPhoneContext ctx = parser.usPhone();
+      assertThat(parser.getNumberOfSyntaxErrors()).isEqualTo(0);
+      assertThat(ctx.US_PHONE_TOKEN().getText()).isEqualTo(BenchmarkInputs.US_PHONE);
+    }
+
+    public String run(String input) {
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
+      lexer.setInputStream(fromString(input));
+      tokenStream.setTokenSource(lexer);
+      parser.setInputStream(tokenStream);
+      parser.reset();
+      ShowdownParser.UsPhoneContext ctx = parser.usPhone();
+      if (parser.getNumberOfSyntaxErrors() > 0 || ctx.US_PHONE_TOKEN() == null) {
+        throw new RuntimeException("Syntax error");
+      }
+      return ctx.US_PHONE_TOKEN().getText();
+    }
+  }
+
+  public static class UsPhoneListFixture {
+    private static final ThreadLocal<ShowdownLexer> LEXER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownLexer lex = new ShowdownLexer(null);
+              lex.removeErrorListeners();
+              return lex;
+            });
+    private static final ThreadLocal<CommonTokenStream> TOKEN_STREAM =
+        ThreadLocal.withInitial(() -> new CommonTokenStream(LEXER.get()));
+    private static final ThreadLocal<ShowdownParser> PARSER =
+        ThreadLocal.withInitial(
+            () -> {
+              ShowdownParser p = new ShowdownParser(TOKEN_STREAM.get());
+              p.removeErrorListeners();
+              return p;
+            });
+
+    static {
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
+
+      CharStream charStream = fromString(BenchmarkInputs.US_PHONE_LIST);
+      lexer.setInputStream(charStream);
+      tokenStream.setTokenSource(lexer);
+      parser.setInputStream(tokenStream);
+      parser.reset();
+      ShowdownParser.UsPhoneListContext ctx = parser.usPhoneList();
+      assertThat(parser.getNumberOfSyntaxErrors()).isEqualTo(0);
+      assertThat(ctx.US_PHONE_TOKEN().size()).isEqualTo(1000);
+    }
+
+    public List<String> run(String input) {
+      ShowdownLexer lexer = LEXER.get();
+      CommonTokenStream tokenStream = TOKEN_STREAM.get();
+      ShowdownParser parser = PARSER.get();
+      lexer.setInputStream(fromString(input));
+      tokenStream.setTokenSource(lexer);
+      parser.setInputStream(tokenStream);
+      parser.reset();
+      ShowdownParser.UsPhoneListContext ctx = parser.usPhoneList();
+      if (parser.getNumberOfSyntaxErrors() > 0) {
+        throw new RuntimeException("Syntax error");
+      }
+      List<String> list = new ArrayList<>();
+      if (ctx.US_PHONE_TOKEN() != null) {
+        for (TerminalNode node : ctx.US_PHONE_TOKEN()) {
+          list.add(node.getText());
+        }
+      }
+      return list;
     }
   }
 
