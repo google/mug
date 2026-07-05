@@ -51,7 +51,7 @@ public class CharacterSetTest {
     CharacterSet set = charsIn("[\\]");
     assertThat(set.contains('\\')).isTrue();
     assertThat(set.contains('a')).isFalse();
-    assertThat(set.toString()).isEqualTo("[\\]");
+    assertThat(set.toString()).isEqualTo("[\\\\]");
     assertThat(set.candidateCharsIfAscii().get()).containsExactly('\\');
   }
 
@@ -61,7 +61,7 @@ public class CharacterSetTest {
     CharacterSet set = charsIn("[^\\]");
     assertThat(set.contains('\\')).isFalse();
     assertThat(set.contains('a')).isTrue();
-    assertThat(set.toString()).isEqualTo("[^\\]");
+    assertThat(set.toString()).isEqualTo("[^\\\\]");
     assertThat(set.candidateCharsIfAscii()).isEmpty();
   }
 
@@ -76,6 +76,7 @@ public class CharacterSetTest {
     assertThat(set.contains('`')).isTrue();
     assertThat(set.contains('a')).isTrue();
     assertThat(set.contains('b')).isFalse();
+    assertThat(set.toString()).isEqualTo("[\\\\]-a]");
     assertThat(set.candidateCharsIfAscii().get()).containsExactly('\\', ']', '^', '_', '`', 'a');
   }
 
@@ -204,5 +205,29 @@ public class CharacterSetTest {
     IllegalArgumentException e =
         assertThrows(IllegalArgumentException.class, () -> charsIn("[1-0]"));
     assertThat(e).hasMessageThat().contains("[1-0]");
+  }
+
+  @Test
+  public void toString_escapesInvisibleCharacters() {
+    CharacterSet set = charsIn("[\r\n\t\f\b]");
+    assertThat(set.toString()).isEqualTo("[\\r\\n\\t\\f\\b]");
+  }
+
+  @Test
+  public void toString_escapesUnicodeControlCharacters() {
+    CharacterSet set = charsIn("[\u0000\u001F\u007F]");
+    assertThat(set.toString()).isEqualTo("[\\u0000\\u001F\\u007F]");
+  }
+
+  @Test
+  public void toString_mixedControlAndRegularCharacters() {
+    CharacterSet set = charsIn("[a-z\r\n\t\f\b0-9\u0000\u001F\u007F]");
+    assertThat(set.toString()).isEqualTo("[a-z\\r\\n\\t\\f\\b0-9\\u0000\\u001F\\u007F]");
+  }
+
+  @Test
+  public void toString_regularCharactersOnly() {
+    CharacterSet set = charsIn("[a-zA-Z0-9-_]");
+    assertThat(set.toString()).isEqualTo("[a-zA-Z0-9-_]");
   }
 }

@@ -19,6 +19,7 @@ import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.prefix;
 import static java.util.stream.Collectors.flatMapping;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
@@ -53,6 +54,9 @@ import com.google.mu.util.CharPredicate;
  *     parameter, such as {@link Parser#consecutive(String)}.
  */
 public final class CharacterSet implements CharPredicate {
+  static final CharacterSet DECIMAL = charsIn("[0-9]");
+  static final CharacterSet HEX = charsIn("[0-9a-fA-F]");
+
   private final String string;
   private final CharPredicate predicate;
 
@@ -109,7 +113,21 @@ public final class CharacterSet implements CharPredicate {
 
   /** Returns the character set string representation. For example {@code "[a-zA-Z0-9-_]"}. */
   @Override public String toString() {
-    return string;
+    CharPredicate needsEscaping = c -> c == '\\' || Character.isISOControl(c);
+    if (needsEscaping.matchesNoneOf(string)) {
+      return string;
+    }
+    return string.chars().mapToObj(
+        c -> switch (c) {
+          case '\r' -> "\\r";
+          case '\n' -> "\\n";
+          case '\t' -> "\\t";
+          case '\f' -> "\\f";
+          case '\b' -> "\\b";
+          case '\\' -> "\\\\";
+          default -> Character.isISOControl(c) ? String.format("\\u%04X", c) : Character.toString(c);
+        })
+        .collect(joining());
   }
 
   private static CharPredicate compileCharacterSet(String characterSet) {

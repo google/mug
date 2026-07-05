@@ -249,17 +249,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return consecutive(charsIn(characterClass), "one or more " + characterClass);
   }
 
-  /**
-   * Matches {@code n} consecutive characters contained in {@code characterClass}.
-   *
-   * <p>For example, the following helper matches exactly n hex digits:
-   *
-   * <pre>{@code
-   * static Parser<String> hexDigits(int n) {
-   *   return consecutive(n, "[0-9a-fA-F]");
-   * }
-   * }</pre>
-   */
+  /** Matches {@code n} consecutive characters contained in {@code characterClass}. */
   @SuppressWarnings("CharacterSetLiteralCheck")
   static Parser<String> consecutive(int n, String characterClass) {
     return consecutive(n, charsIn(characterClass), n + " " + characterClass);
@@ -299,6 +289,24 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public static Parser<String> digits() {
     return Constants.DIGITS;
+  }
+
+  /**
+   * Matches {@code n} digits of {@code [0-9]}. {@code n} must be positive.
+   *
+   * @since 10.6
+   */
+  public static Parser<String> digits(int n) {
+    return consecutive(n, CharacterSet.DECIMAL, n + " digits");
+  }
+
+  /**
+   * Matches {@code n} hex digits of {@code [0-9a-fA-F]}. {@code n} must be positive.
+   *
+   * @since 10.6
+   */
+  public static Parser<String> hexDigits(int n) {
+    return consecutive(n, CharacterSet.HEX, n + " hex digits");
   }
 
   /**
@@ -1634,17 +1642,17 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private T parse(CharInput input, int fromIndex) {
-    ErrorState context = new ErrorState(input);
-    MatchResult<T> result = match(input, fromIndex, context);
+    ErrorTracker errorTracker = new ErrorTracker();
+    MatchResult<T> result = match(input, fromIndex, errorTracker);
     switch (result) {
       case MatchResult.Success(int head, int tail, T value) -> {
         if (!input.isEof(tail)) {
-          throw context.report(context.expecting("EOF", tail));
+          throw errorTracker.report(errorTracker.expecting("EOF", tail), input);
         }
         return value;
       }
       case MatchResult.Failure<?> failure -> {
-        throw context.report(failure);
+        throw errorTracker.report(failure, input);
       }
     }
   }
@@ -1715,15 +1723,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         if (input.isEof(index)) {
           return null;
         }
-        ErrorState context = new ErrorState(input);
-        return switch (match(input, index, context)) {
+        ErrorTracker errorTracker = new ErrorTracker();
+        return switch (match(input, index, errorTracker)) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
             input.markCheckpoint(index);
             yield success;
           }
           case MatchResult.Failure<?> failure -> {
-            throw context.report(failure);
+            throw errorTracker.report(failure, input);
           }
         };
       }
@@ -2459,13 +2467,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
   }
 
-  private static final class ErrorState extends ErrorContext {
-    private final CharInput input;
+  private static final class ErrorTracker extends ErrorContext {
     private MatchResult.Failure<?> farthestFailure = null;
-
-    ErrorState(CharInput input) {
-      this.input = input;
-    }
 
     @Override <V> MatchResult.Failure<V> expecting(
         String symbolName, int at, int frontier) {
@@ -2482,7 +2485,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return failure;
     }
 
-    ParseException report(MatchResult.Failure<?> failure) {
+    ParseException report(MatchResult.Failure<?> failure, CharInput input) {
       return (farthestFailure == null || failure.frontier() >= farthestFailure.frontier())
           ? failure.toException(input)
           : farthestFailure.toException(input);
@@ -2521,10 +2524,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private interface ElidableBiFunction<A, B, R> extends BiFunction<A, B, R> {}
 
   private interface Constants {
-    static Parser<String> DIGITS = consecutive(charsIn("[0-9]"), "digits");
+    static Parser<String> DIGITS = consecutive(CharacterSet.DECIMAL, "digits");
     static Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
     static Parser<Integer> BMP_CODE_UNIT =
-        consecutive(4, "[0-9a-fA-F]").elidableMap(digits -> Integer.parseInt(digits, 16));
+        consecutive(4, CharacterSet.HEX, "4-digit hex code point")
+            .elidableMap(digits -> Integer.parseInt(digits, 16));
   }
 
   Parser() {}

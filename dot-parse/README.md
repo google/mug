@@ -16,25 +16,30 @@ Use Dot Parse for more readable and more efficient string processing.
 For brevity, all unqualified methods are assumed to be static imported from the
 `Parser` class.
 
-\#  | Regex Pattern      | Parser Equivalent                                           | Notes
---- | ------------------ | ----------------------------------------------------------- | -----
-1   | `(foo)+`           | `string("foo").atLeastOnce()`                               | Matches one or more occurrences of "foo".
-2   | `[a-zA-Z0-9_]+`    | `word()`                                                    | Matches a "word" (alphanumeric and underscore).
-3   | `[0-9]{5}`         | `digits().suchThat(s -> s.length() == 5, "zip code")`       | Matches exactly 5 digits.
-4   | `(foo\|bar\|baz)`  | `anyOf("foo", "bar", "baz")`                                | Matches one of the alternatives.
-5   | `'[^']*'`          | `quotedBy("'", "'")`                                        | Matches a single-quoted string, excluding the quotes from the result.
-6   | `u[a-fA-F0-9]{4}`  | `string("u").then(bmpCodeUnit())`                           | Matches 'u' followed by 4 hex digits.
-7   | `\d+(\.\d+)?`      | `digits().optionallyFollowedBy(string(".").then(digits()))` | Matches an integer or a simple float.
-8   | `\[(\w+(,\w+)*)?\]`| `word().zeroOrMoreDelimitedBy(",").between("[", "]")`       | Comma-delimited list of words inside square brackets.
-9   | `if\b`             | `word("if")`                                                | Matches the whole word "if".
-10  | `\d+(?!\.)`        | `digits().notFollowedBy(".")`                               | Matches digits not immediately followed by a dot.
-11  | `foo?`             | `string("foo").orElse("")`                                  | Matches "foo" zero or one time.
-12  | `\s+`              | `consecutive(Character::isWhitespace)`                      | Matches one or more whitespace characters.
-13  | `[ \t\r\n]*`       | `zeroOrMore(Character::isWhitespace)`                       | Matches zero or more whitespace characters.
-14  | `(group)(?:bar)`   | `groupParser.followedBy(barParser)`                         | Captures a group before a suffix pattern.
-15  | `(?:foo)(group)`   | `fooParser.then(groupParser)`                               | Captures a group after a prefix pattern.
-16  | `(group1)(group2)` | `sequence(parser1, parser2, (g1, g2) -> ...)`               | Captures groups mapped to arguments in the `sequence` lambda.
-17  | `\w+:\d+`          | `sequence(word(), one(':'), digits())`                      | Matches a pattern
+Regex Pattern      | Parser Equivalent                                           | Notes
+------------------ | ----------------------------------------------------------- | -----
+`(foo)+`           | `string("foo").atLeastOnce()`                               | Matches one or more occurrences of "foo".
+`[a-zA-Z0-9_]+`    | `word()`                                                    | Matches a "word" (alphanumeric and underscore).
+`[0-9]{5}`         | `digits(5)`                                                 | Matches exactly 5 digits.
+`[0-9a-fA-F]{4}`   | `hexDigits(4)`                                              | Matches exactly 4 hex digits.
+`[a-zA-Z]{2,4}`    | `consecutive("[a-zA-Z]").suchThat(... length() >=2 ...)` | Matches 2-4 alpha chars.
+`(foo\|bar\|baz)`  | `anyOf("foo", "bar", "baz")`                                | Matches one of the alternatives.
+`/\*.*\*/`         | `sequence(string("/*"), first("*/"))`                       | Matches block comment.
+`//[^\n]*`         | `sequence(string("//"), zeroOrMore("[^\n]"))`               | Matches line comment.
+`'[^']*'`          | `quotedBy("'", "'")`                                        | Matches a single-quoted string, excluding the quotes from the result.
+`u[a-fA-F0-9]{4}`  | `string("u").then(bmpCodeUnit())`                           | Matches 'u' followed by 4 hex digits.
+`\d+(\.\d+)?`      | `digits().optionallyFollowedBy(string(".").then(digits()))` | Matches an integer or a simple float.
+`\[(\w+(,\w+)*)?\]`| `word().zeroOrMoreDelimitedBy(",").between("[", "]")`       | Comma-delimited list of words inside square brackets.
+`if\b`             | `word("if")`                                                | Matches the whole word "if".
+`(?i)select\b`     | `caseInsensitiveWord("select")`                             | Matches a word case insensitively.
+`\d+(?!\.)`        | `digits().notFollowedBy(".")`                               | Matches digits not immediately followed by a dot.
+`foo?`             | `string("foo").orElse("")`                                  | Matches "foo" zero or one time.
+`\s+`              | `consecutive(Character::isWhitespace)`                      | Matches one or more whitespace characters.
+`[ \t\r\n]*`       | `zeroOrMore("[ \t\r\n]")`                                   | Matches zero or more whitespace characters.
+`(group)(?:bar)`   | `groupParser.followedBy(barParser)`                         | Captures a group before a suffix pattern.
+`(?:foo)(group)`   | `fooParser.then(groupParser)`                               | Captures a group after a prefix pattern.
+`(group1)(group2)` | `sequence(parser1, parser2, (g1, g2) -> ...)`               | Captures groups mapped to arguments in the `sequence` lambda.
+`\w+:\d+`          | `sequence(word(), one(':'), digits())`                      | Matches a sequential pattern
 
 If you were to build a regex fluent builder, the API will likely look very
 similar.
