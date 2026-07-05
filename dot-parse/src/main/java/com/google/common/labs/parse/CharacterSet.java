@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 
+import com.google.errorprone.annotations.concurrent.LazyInit;
 import com.google.mu.util.CharPredicate;
 
 /**
@@ -59,6 +60,7 @@ public final class CharacterSet implements CharPredicate {
 
   private final String string;
   private final CharPredicate predicate;
+  @LazyInit private Set<String> asciiPrefixes;
 
   private CharacterSet(String string, CharPredicate predicate) {
     this.string = string;
@@ -128,6 +130,16 @@ public final class CharacterSet implements CharPredicate {
           default -> Character.isISOControl(c) ? String.format("\\u%04X", c) : Character.toString(c);
         })
         .collect(joining());
+  }
+
+  Set<String> getAsciiPrefixes() {
+    Set<String> result = asciiPrefixes;
+    if (result == null) {
+      asciiPrefixes = result = candidateCharsIfAscii()
+          .map(chars -> chars.stream().map(Object::toString).collect(toUnmodifiableSet()))
+          .orElse(Set.of(""));
+    }
+    return result;
   }
 
   private static CharPredicate compileCharacterSet(String characterSet) {

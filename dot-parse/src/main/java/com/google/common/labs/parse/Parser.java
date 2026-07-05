@@ -36,7 +36,6 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import java.io.Reader;
 import java.io.UncheckedIOException;
@@ -129,12 +128,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
    *
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   *        Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
+   *        <p>Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
    *        '[' and ']' can all be included inside the outer pair of brackets.
    *        The '-' character as long as not at the place of a range is also treated as literal.
-   *        You can also use {@code '^'} to get negative character set like:
+   *        <p>You can also use {@code '^'} to get negative character set like:
    *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
-   *        You are strongly recommended to install Google ErrorProne and mug-errorprone in your
+   *        <p>It's <em>strongly recommended</em> to install Google ErrorProne and mug-errorprone in your
    *        annotation processor path so that incorrect character class syntax will be caught
    *        at compile-time.
    * @since 10.2
@@ -188,32 +187,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }.source();
   }
 
-  /** Matches {@code n} consecutive characters as specified by {@code matcher}. */
-  static Parser<String> consecutive(int n, CharPredicate matcher, String name) {
-    requireNonNull(matcher);
-    requireNonNull(name);
-    checkArgument(n > 0, "n(%s) must be positive", n);
-    return new Parser<Void>() {
-      @Override MatchResult<Void> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        if (!input.isInRange(start + n - 1)) {
-          return context.expecting(name, start);
-        }
-        for (int i = 0; i < n; i++) {
-          if (!matcher.test(input.charAt(start + i))) {
-            return context.expecting(name, start + i);
-          }
-        }
-        return  new MatchResult.Success<>(start, start + n, null);
-      }
-
-      @Override Set<String> getPrefixes() {
-        return prefixesIfAscii(matcher);
-      }
-    }.source();
-  }
-
   /**
    * Matches one or more consecutive characters contained in {@code characterSet}.
    *
@@ -234,12 +207,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
    *
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   *        Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
+   *        <p>Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
    *        '[' and ']' can all be included inside the outer pair of brackets.
    *        The '-' character as long as not at the place of a range is also treated as literal.
-   *        You can also use {@code '^'} to get negative character set like:
+   *        <p>You can also use {@code '^'} to get negative character set like:
    *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
-   *        You are strongly recommended to install Google ErrorProne and mug-errorprone in your
+   *        <p>It's <em>strongly recommended</em> to install Google ErrorProne and mug-errorprone in your
    *        annotation processor path so that incorrect character class syntax will be caught
    *        at compile-time.
    * @since 10.2
@@ -249,19 +222,34 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return consecutive(charsIn(characterClass), "one or more " + characterClass);
   }
 
-  /** Matches {@code n} consecutive characters contained in {@code characterClass}. */
-  @SuppressWarnings("CharacterSetLiteralCheck")
-  static Parser<String> consecutive(int n, String characterClass) {
-    return consecutive(n, charsIn(characterClass), n + " " + characterClass);
-  }
-
   /**
    * Consumes exactly {@code n} consecutive characters. {@code n} must be positive.
    *
    * @since 9.4
    */
   public static Parser<String> chars(int n) {
-    return consecutive(n, CharPredicate.ANY, n + " char(s)");
+    return chars(n, EMPTY_PREFIX, n + " char(s)");
+  }
+
+  private static Parser<String> chars(int n, Set<String> prefixes, String name) {
+    checkArgument(n > 0, "chars count (%s) must be positive", n);
+    return new Parser<>() {
+      @Override MatchResult<String> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        return input.isInRange(start + n - 1)
+            ? new MatchResult.Success<>(start, start + n, input.snippet(start, n))
+            : context.expecting(name, start);
+      }
+
+      @Override Set<String> getPrefixes() {
+        return prefixes;
+      }
+    };
+  }
+
+  private static Parser<String> chars(int n, CharacterSet characterSet, String name) {
+    return chars(n, characterSet.getAsciiPrefixes(), name).suchThat(characterSet::matchesAllOf, name);
   }
 
   /**
@@ -297,7 +285,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.6
    */
   public static Parser<String> digits(int n) {
-    return consecutive(n, CharacterSet.DECIMAL, n + " digits");
+    return chars(n, CharacterSet.DECIMAL, n + " digits");
   }
 
   /**
@@ -306,7 +294,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.6
    */
   public static Parser<String> hexDigits(int n) {
-    return consecutive(n, CharacterSet.HEX, n + " hex digits");
+    return chars(n, CharacterSet.HEX, n + " hex digits");
   }
 
   /**
@@ -639,7 +627,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.5
    */
   public static Parser<Integer> bmpCodeUnit() {
-    return Constants.BMP_CODE_UNIT;
+    return hexDigits(4).elidableMap(digits -> Integer.parseInt(digits, 16));
   }
 
   /**
@@ -957,12 +945,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
    *
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   *        Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
+   *        <p>Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
    *        '[' and ']' can all be included inside the outer pair of brackets.
    *        The '-' character as long as not at the place of a range is also treated as literal.
-   *        You can also use {@code '^'} to get negative character set like:
+   *        <p>You can also use {@code '^'} to get negative character set like:
    *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
-   *        You are strongly recommended to install Google ErrorProne and mug-errorprone in your
+   *        <p>It's <em>strongly recommended</em> to install Google ErrorProne and mug-errorprone in your
    *        annotation processor path so that incorrect character class syntax will be caught
    *        at compile-time.
    * @since 10.2
@@ -1643,8 +1631,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private T parse(CharInput input, int fromIndex) {
     ErrorTracker errorTracker = new ErrorTracker();
-    MatchResult<T> result = match(input, fromIndex, errorTracker);
-    switch (result) {
+    switch (tryParse(input, fromIndex, errorTracker)) {
       case MatchResult.Success(int head, int tail, T value) -> {
         if (!input.isEof(tail)) {
           throw errorTracker.report(errorTracker.expecting("EOF", tail), input);
@@ -1664,7 +1651,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final boolean isPrefixOf(String input) {
     CharInput charInput = CharInput.from(input);
-    return ignoreReturn().match(charInput, 0, ErrorContext.MINIMAL) instanceof MatchResult.Success;
+    return ignoreReturn().tryParse(charInput, 0, ErrorContext.MINIMAL)
+        instanceof MatchResult.Success;
   }
 
   /**
@@ -1678,12 +1666,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.9.1
    */
   @Override public final boolean matches(String input) {
-    return matches(CharInput.from(input), 0);
-  }
-
-  private boolean matches(CharInput input, int fromIndex) {
-    return ignoreReturn().match(input, fromIndex, ErrorContext.MINIMAL) instanceof MatchResult.Success<?> success
-        && input.isEof(success.tail());
+    return ignoreReturn().tryParse(CharInput.from(input), 0, ErrorContext.MINIMAL)
+            instanceof MatchResult.Success<?> success
+        && success.tail() == input.length();
   }
 
   /**
@@ -1724,7 +1709,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           return null;
         }
         ErrorTracker errorTracker = new ErrorTracker();
-        return switch (match(input, index, errorTracker)) {
+        return switch (tryParse(input, index, errorTracker)) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
             input.markCheckpoint(index);
@@ -1785,7 +1770,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       private int index = fromIndex;
 
       MatchResult.Success<T> nextOrNull() {
-        return switch (match(input, index, ErrorContext.MINIMAL)) {
+        return switch (tryParse(input, index, ErrorContext.MINIMAL)) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
             input.markCheckpoint(index);
@@ -1895,8 +1880,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             A buffer = supplier.get();
             accumulator.accept(buffer, head);
             tail.forEach(value -> accumulator.accept(buffer, value));
-            R result = finisher.apply(buffer);
-            return result;
+            return finisher.apply(buffer);
           });
     }
 
@@ -2129,16 +2113,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     Stream<T> parseToStream(CharInput input, int fromIndex) {
-      // forTokens().parseToStream() would only skip the trailing upon success.
-      // If everything is skippable, it will fail to match.
-      // We use flatMap() to keep the buffer loading lazy upon the returned stream being consumed.
-      return Stream.of(ErrorContext.MINIMAL)
-          .flatMap(
-              context ->
-                  toSkip.match(input, fromIndex, context) instanceof MatchResult.Success<?> success
-                          && input.isEof(success.tail())
-                      ? Stream.empty()
-                      : forTokens().parseToStream(input, fromIndex));
+      // forTokens().parseToStream() checks isEof() to terminate, and only skip the trailing upon
+      // success. So if everything is skippable, it will fail to match.
+      return switch (toSkip.tryParse(input, fromIndex, ErrorContext.MINIMAL)) {
+         case MatchResult.Success<?> skipped -> forTokens().parseToStream(input, skipped.tail());
+         default -> forTokens().parseToStream(input, fromIndex);
+      };
     }
 
     /**
@@ -2190,8 +2170,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           return left().skipAndMatch(toSkip, input, start, context);
         }
 
-        @Override MatchResult<T> match(CharInput input, int start, ErrorContext context) {
-          return switch (super.match(input, start, context)) {
+        @Override MatchResult<T> tryParse(CharInput input, int start, ErrorContext context) {
+          return switch (super.tryParse(input, start, context)) {
             case MatchResult.Success(int head, int tail, T value) ->
                 new MatchResult.Success<>(head, skipIfAny(toSkip, input, tail), value);
             case MatchResult.Failure<T> failure -> failure;
@@ -2351,12 +2331,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private static Set<String> prefixesIfAscii(CharPredicate predicate) {
-    if (predicate instanceof CharacterSet cset) {
-      return cset.candidateCharsIfAscii()
-          .map(chars -> chars.stream().map(Object::toString).collect(toUnmodifiableSet()))
-          .orElse(EMPTY_PREFIX);
-    }
-    return EMPTY_PREFIX;
+    return predicate instanceof CharacterSet cset ? cset.getAsciiPrefixes() : EMPTY_PREFIX;
   }
 
   /**
@@ -2364,7 +2339,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @return a MatchResult containing the parsed value and the [start, end) range of the match.
    */
-  MatchResult<T> match(CharInput input, int start, ErrorContext context) {
+  MatchResult<T> tryParse(CharInput input, int start, ErrorContext context) {
     return skipAndMatch(null, input, start, context);
   }
 
@@ -2375,7 +2350,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     if (skip == null) {
       return start;
     }
-    return switch (skip.match(input, start, ErrorContext.MINIMAL)) {
+    return switch (skip.tryParse(input, start, ErrorContext.MINIMAL)) {
       case MatchResult.Success<?> success -> success.tail();
       case MatchResult.Failure<?> failure -> start;
     };
@@ -2510,9 +2485,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private static <T> T applyOperators(Iterable<? extends UnaryOperator<T>> ops, T operand) {
-    for (UnaryOperator<T> op : ops) {
-      operand = op.apply(operand);
-    }
+    for (UnaryOperator<T> op : ops) operand = op.apply(operand);
     return operand;
   }
 
@@ -2526,9 +2499,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private interface Constants {
     static Parser<String> DIGITS = consecutive(CharacterSet.DECIMAL, "digits");
     static Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
-    static Parser<Integer> BMP_CODE_UNIT =
-        consecutive(4, CharacterSet.HEX, "4-digit hex code point")
-            .elidableMap(digits -> Integer.parseInt(digits, 16));
   }
 
   Parser() {}

@@ -52,7 +52,7 @@ object CatsParseShowdown {
 
     // Verify
     PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS) match {
-      case Right(("", result)) if result.size() == 120 =>
+      case Right(("", result)) if result.size() == 500 =>
       case other => throw new AssertionError(s"cats-parse Keywords verification failed: $other")
     }
     PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID) match {
@@ -76,7 +76,7 @@ object CatsParseShowdown {
 
     // Verify
     PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CI) match {
-      case Right(("", result)) if result.size() == 120 =>
+      case Right(("", result)) if result.size() == 500 =>
       case other => throw new AssertionError(s"cats-parse IgnoreCase verification failed: $other")
     }
     PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI) match {
@@ -156,6 +156,44 @@ object CatsParseShowdown {
 
     def run(input: String): Either[P.Error, (String, Unit)] = {
       NestedCommentFixture.PARSER.parse(input)
+    }
+  }
+
+  object UsPhoneFixture {
+    private val d3 = P.charIn('0' to '9').rep(3, 3).void
+    private val d4 = P.charIn('0' to '9').rep(4, 4).void
+    private val EOF = P.not(P.anyChar)
+    val PHONE = (P.char('(') ~ d3 ~ P.char(')') ~ d3 ~ P.char('-') ~ d4).string
+    val PARSER = PHONE <* EOF
+
+    // Verify
+    PARSER.parse(BenchmarkInputs.US_PHONE) match {
+      case Right(("", res)) if res == BenchmarkInputs.US_PHONE =>
+      case other => throw new AssertionError(s"cats-parse US_PHONE verification failed: $other")
+    }
+  }
+
+  class UsPhoneFixture {
+    def run(input: String): Either[P.Error, (String, String)] = {
+      UsPhoneFixture.PARSER.parse(input)
+    }
+  }
+
+  object UsPhoneListFixture {
+    private val ws = P.charIn(" \t\r\n").rep0.void
+    private val EOF = P.not(P.anyChar)
+    private val PARSER = (ws *> UsPhoneFixture.PHONE.repSep0(ws) <* ws <* EOF).map(_.toList.asJava)
+
+    // Verify
+    PARSER.parse(BenchmarkInputs.US_PHONE_LIST) match {
+      case Right(("", res)) if res.size() == 1000 =>
+      case other => throw new AssertionError(s"cats-parse US_PHONE_LIST verification failed: $other")
+    }
+  }
+
+  class UsPhoneListFixture {
+    def run(input: String): Either[P.Error, (String, java.util.List[String])] = {
+      UsPhoneListFixture.PARSER.parse(input)
     }
   }
 }

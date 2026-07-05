@@ -41,7 +41,7 @@ class ScalaParserShowdownTest {
     new KeywordsFixture().run(BenchmarkInputs.KEYWORDS_LIST_CS) match {
       case success: KeywordsFixture.Success[_] =>
         val keywords = success.get.asInstanceOf[List[Keyword]]
-        Assert.assertEquals(120, keywords.size())
+        Assert.assertEquals(500, keywords.size())
       case failure => Assert.fail(s"Scala Parser Combinators Keywords CS parsing failed: $failure")
     }
   }
@@ -51,7 +51,7 @@ class ScalaParserShowdownTest {
     new IgnoreCaseFixture().run(BenchmarkInputs.KEYWORDS_LIST_CI) match {
       case success: IgnoreCaseFixture.Success[_] =>
         val keywords = success.get.asInstanceOf[List[Keyword]]
-        Assert.assertEquals(120, keywords.size())
+        Assert.assertEquals(500, keywords.size())
       case failure => Assert.fail(s"Scala Parser Combinators Keywords CI parsing failed: $failure")
     }
   }

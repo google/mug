@@ -76,7 +76,7 @@ public final class JjparseShowdown {
           jjParserInstance
               .parse(PARSER, Input.of("jjKeywords", BenchmarkInputs.KEYWORDS_LIST_CS))
               .getOrFail();
-      assertThat(result.size()).isEqualTo(120);
+      assertThat(result.size()).isEqualTo(500);
       assertThat(
               jjParserInstance
                   .parse(PARSER, Input.of("jjKeywords", BenchmarkInputs.KEYWORDS_LIST_INVALID))
@@ -114,7 +114,7 @@ public final class JjparseShowdown {
           jjParserInstance
               .parse(PARSER, Input.of("jjIgnoreCase", BenchmarkInputs.KEYWORDS_LIST_CI))
               .getOrFail();
-      assertThat(result.size()).isEqualTo(120);
+      assertThat(result.size()).isEqualTo(500);
       assertThat(
               jjParserInstance
                   .parse(PARSER, Input.of("jjIgnoreCase", BenchmarkInputs.KEYWORDS_LIST_INVALID_CI))
@@ -164,6 +164,41 @@ public final class JjparseShowdown {
     }
   }
 
+  public static class UsPhoneFixture {
+    private static final JjParserImpl jjParserInstance = new JjParserImpl();
+    private static final Parsing<Character>.Parser<String> PARSER = jjParserInstance.usPhone;
+
+    static {
+      assertThat(
+              jjParserInstance
+                  .parse(PARSER, Input.of("usPhone", BenchmarkInputs.US_PHONE))
+                  .isSuccess())
+          .isTrue();
+    }
+
+    public Parsing<Character>.Result<String> run(String input) {
+      return jjParserInstance.parse(PARSER, Input.of("usPhone", input));
+    }
+  }
+
+  public static class UsPhoneListFixture {
+    private static final JjParserImpl jjParserInstance = new JjParserImpl();
+    private static final Parsing<Character>.Parser<List<String>> PARSER =
+        jjParserInstance.usPhoneList;
+
+    static {
+      List<String> result =
+          jjParserInstance
+              .parse(PARSER, Input.of("usPhoneList", BenchmarkInputs.US_PHONE_LIST))
+              .getOrFail();
+      assertThat(result.size()).isEqualTo(1000);
+    }
+
+    public Parsing<Character>.Result<List<String>> run(String input) {
+      return jjParserInstance.parse(PARSER, Input.of("usPhoneList", input));
+    }
+  }
+
   // Inner Parser Rules Implementation
   public static class JjParserImpl extends StringParsing {
     public final Parser<String> ip = regex("[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+");
@@ -189,6 +224,10 @@ public final class JjparseShowdown {
 
     // Calculator Rules
     public final Parser<Integer> calculator;
+
+    public final Parser<String> phoneToken = regex("\\(\\d{3}\\)\\d{3}-\\d{4}");
+    public final Parser<String> usPhone = regex("\\(\\d{3}\\)\\d{3}-\\d{4}$");
+    public final Parser<List<String>> usPhoneList = regex("\\s*").andr(token(phoneToken).repeat());
 
     @SuppressWarnings("unchecked")
     public JjParserImpl() {

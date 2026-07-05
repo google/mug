@@ -108,7 +108,7 @@ object FastparseShowdown {
 
     // Verify
     fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_CS, keywordsList(_)) match {
-      case Parsed.Success(result, _) if result.size() == 120 =>
+      case Parsed.Success(result, _) if result.size() == 500 =>
       case f => throw new AssertionError(s"fastparse Keywords verification failed: $f")
     }
     fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID, keywordsList(_)) match {
@@ -139,7 +139,7 @@ object FastparseShowdown {
 
     // Verify
     fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_CI, ignoreCaseKeywordsList(_)) match {
-      case Parsed.Success(result, _) if result.size() == 120 =>
+      case Parsed.Success(result, _) if result.size() == 500 =>
       case f => throw new AssertionError(s"fastparse IgnoreCase verification failed: $f")
     }
     fastparse.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI, ignoreCaseKeywordsList(_)) match {
@@ -173,6 +173,42 @@ object FastparseShowdown {
 
     def run(input: String): Parsed[Unit] = {
       fastparse.parse(input, NestedCommentFixture.entry(_))
+    }
+  }
+
+  object UsPhoneFixture {
+    private def d3[_: P] = P( CharIn("0-9").rep(exactly = 3) )
+    private def d4[_: P] = P( CharIn("0-9").rep(exactly = 4) )
+    def phone[_: P]: P[String] = P( ("(" ~ d3 ~ ")" ~ d3 ~ "-" ~ d4).! )
+    def parser[_: P]: P[String] = P( Start ~ phone ~ End )
+
+    // Verify
+    fastparse.parse(BenchmarkInputs.US_PHONE, parser(_)) match {
+      case Parsed.Success(value, _) if value == BenchmarkInputs.US_PHONE =>
+      case f => throw new AssertionError(s"fastparse US_PHONE verification failed: $f")
+    }
+  }
+
+  class UsPhoneFixture {
+    def run(input: String): Parsed[String] = {
+      fastparse.parse(input, UsPhoneFixture.parser(_))
+    }
+  }
+
+  object UsPhoneListFixture {
+    private def ws[_: P] = P( CharIn(" \t\r\n").rep )
+    def listParser[_: P]: P[java.util.List[String]] = P( Start ~ ws ~ UsPhoneFixture.phone.rep(sep = ws) ~ ws ~ End ).map(_.asJava)
+
+    // Verify
+    fastparse.parse(BenchmarkInputs.US_PHONE_LIST, listParser(_)) match {
+      case Parsed.Success(value, _) if value.size == 1000 =>
+      case f => throw new AssertionError(s"fastparse US_PHONE_LIST verification failed: $f")
+    }
+  }
+
+  class UsPhoneListFixture {
+    def run(input: String): Parsed[java.util.List[String]] = {
+      fastparse.parse(input, UsPhoneListFixture.listParser(_))
     }
   }
 }

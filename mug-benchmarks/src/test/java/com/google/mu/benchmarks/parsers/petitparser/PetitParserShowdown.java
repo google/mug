@@ -87,7 +87,7 @@ public final class PetitParserShowdown {
       Truth.assertThat(res.isSuccess()).isTrue();
       @SuppressWarnings("unchecked")
       List<Keyword> result = (List<Keyword>) res.get();
-      Truth.assertThat(result.size()).isEqualTo(120);
+      Truth.assertThat(result.size()).isEqualTo(500);
 
       Result resBad = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID);
       Truth.assertThat(resBad.isSuccess()).isFalse();
@@ -125,7 +125,7 @@ public final class PetitParserShowdown {
       Truth.assertThat(res.isSuccess()).isTrue();
       @SuppressWarnings("unchecked")
       List<Keyword> result = (List<Keyword>) res.get();
-      Truth.assertThat(result.size()).isEqualTo(120);
+      Truth.assertThat(result.size()).isEqualTo(500);
 
       Result resBad = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI);
       Truth.assertThat(resBad.isSuccess()).isFalse();
@@ -215,6 +215,51 @@ public final class PetitParserShowdown {
 
     public Result run() {
       return run(BenchmarkInputs.NESTED_COMMENT);
+    }
+
+    public Result run(String input) {
+      return PARSER.parse(input);
+    }
+  }
+
+  private static final Parser PHONE = buildPhoneParser();
+
+  private static Parser buildPhoneParser() {
+    Parser d3 = CharacterParser.digit().seq(CharacterParser.digit()).seq(CharacterParser.digit()).flatten();
+    Parser d4 = CharacterParser.digit().seq(CharacterParser.digit()).seq(CharacterParser.digit()).seq(CharacterParser.digit()).flatten();
+    Parser lparen = CharacterParser.of('(');
+    Parser rparen = CharacterParser.of(')');
+    Parser dash = CharacterParser.of('-');
+    return lparen.seq(d3).seq(rparen).seq(d3).seq(dash).seq(d4).flatten();
+  }
+
+  public static class UsPhoneFixture {
+    private static final Parser PARSER = PHONE.end();
+
+    static {
+      Result res = PARSER.parse(BenchmarkInputs.US_PHONE);
+      Truth.assertThat(res.isSuccess()).isTrue();
+      Truth.assertThat((String) res.get()).isEqualTo(BenchmarkInputs.US_PHONE);
+    }
+
+    public Result run(String input) {
+      return PARSER.parse(input);
+    }
+  }
+
+  public static class UsPhoneListFixture {
+    private static final Parser PARSER = buildListParser();
+
+    private static Parser buildListParser() {
+      Parser ws = CharacterParser.whitespace().star();
+      Parser token = PHONE.seq(ws).map((List<?> list) -> list.get(0));
+      return ws.seq(token.star()).map((List<?> list) -> list.get(1)).end();
+    }
+
+    static {
+      Result res = PARSER.parse(BenchmarkInputs.US_PHONE_LIST);
+      Truth.assertThat(res.isSuccess()).isTrue();
+      Truth.assertThat(((List<?>) res.get()).size()).isEqualTo(1000);
     }
 
     public Result run(String input) {

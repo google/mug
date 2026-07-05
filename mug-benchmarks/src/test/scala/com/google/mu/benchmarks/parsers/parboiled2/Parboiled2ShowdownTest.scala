@@ -38,7 +38,7 @@ class Parboiled2ShowdownTest {
   @Test
   def testKeywordsCaseSensitive(): Unit = {
     new Parboiled2Showdown.KeywordsFixture().run(BenchmarkInputs.KEYWORDS_LIST_CS) match {
-      case Success(keywords: List[Keyword]) => Assert.assertEquals(120, keywords.size())
+      case Success(keywords: List[Keyword]) => Assert.assertEquals(500, keywords.size())
       case Failure(err) => Assert.fail(s"parboiled2 Keywords CS parsing failed: $err")
     }
   }
@@ -46,7 +46,7 @@ class Parboiled2ShowdownTest {
   @Test
   def testKeywordsCaseInsensitive(): Unit = {
     new Parboiled2Showdown.IgnoreCaseFixture().run(BenchmarkInputs.KEYWORDS_LIST_CI) match {
-      case Success(keywords: List[Keyword]) => Assert.assertEquals(120, keywords.size())
+      case Success(keywords: List[Keyword]) => Assert.assertEquals(500, keywords.size())
       case Failure(err) => Assert.fail(s"parboiled2 Keywords CI parsing failed: $err")
     }
   }

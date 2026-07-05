@@ -97,7 +97,7 @@ public final class ParboiledShowdown {
       assertThat(res.matched).isTrue();
       @SuppressWarnings("unchecked")
       List<Keyword> result = (List<Keyword>) res.resultValue;
-      assertThat(result.size()).isEqualTo(120);
+      assertThat(result.size()).isEqualTo(500);
       assertThat(RUNNER.run(BenchmarkInputs.KEYWORDS_LIST_INVALID).matched).isFalse();
     }
 
@@ -149,7 +149,7 @@ public final class ParboiledShowdown {
       assertThat(res.matched).isTrue();
       @SuppressWarnings("unchecked")
       List<Keyword> result = (List<Keyword>) res.resultValue;
-      assertThat(result.size()).isEqualTo(120);
+      assertThat(result.size()).isEqualTo(500);
       assertThat(RUNNER.run(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI).matched).isFalse();
     }
 
@@ -195,6 +195,38 @@ public final class ParboiledShowdown {
 
     public ParsingResult<Object> run() {
       return run(BenchmarkInputs.NESTED_COMMENT);
+    }
+
+    public ParsingResult<Object> run(String input) {
+      return RUNNER.run(input);
+    }
+  }
+
+  public static class UsPhoneFixture {
+    private static final ParboiledParser PARSER = Parboiled.createParser(ParboiledParser.class);
+    private static final BasicParseRunner<Object> RUNNER = new BasicParseRunner<>(PARSER.usPhone());
+
+    static {
+      ParsingResult<Object> res = RUNNER.run(BenchmarkInputs.US_PHONE);
+      assertThat(res.matched).isTrue();
+      assertThat(res.resultValue).isEqualTo(BenchmarkInputs.US_PHONE);
+    }
+
+    public ParsingResult<Object> run(String input) {
+      return RUNNER.run(input);
+    }
+  }
+
+  public static class UsPhoneListFixture {
+    private static final ParboiledParser PARSER = Parboiled.createParser(ParboiledParser.class);
+    private static final BasicParseRunner<Object> RUNNER = new BasicParseRunner<>(PARSER.usPhoneList());
+
+    static {
+      ParsingResult<Object> res = RUNNER.run(BenchmarkInputs.US_PHONE_LIST);
+      assertThat(res.matched).isTrue();
+      @SuppressWarnings("unchecked")
+      List<String> result = (List<String>) res.resultValue;
+      assertThat(result.size()).isEqualTo(1000);
     }
 
     public ParsingResult<Object> run(String input) {
@@ -284,6 +316,36 @@ public final class ParboiledShowdown {
           Sequence(Optional('-'), OneOrMore(CharRange('0', '9'))),
           push(Integer.parseInt(match())),
           whitespace());
+    }
+
+    public Rule usPhone() {
+      return Sequence(
+          Sequence('(', nDigits(3), ')', nDigits(3), '-', nDigits(4)),
+          push(match()),
+          EOI);
+    }
+
+    public Rule nDigits(int n) {
+      return NTimes(n, CharRange('0', '9'));
+    }
+
+    public Rule usPhoneList() {
+      Rule phone = Sequence(
+          Sequence('(', nDigits(3), ')', nDigits(3), '-', nDigits(4)),
+          push(match()));
+      return Sequence(
+          push(new ArrayList<String>()),
+          whitespace(),
+          ZeroOrMore(phone, addPhone(), whitespace()),
+          EOI);
+    }
+
+    boolean addPhone() {
+      String p = (String) pop();
+      @SuppressWarnings("unchecked")
+      List<String> list = (List<String>) peek();
+      list.add(p);
+      return true;
     }
   }
 

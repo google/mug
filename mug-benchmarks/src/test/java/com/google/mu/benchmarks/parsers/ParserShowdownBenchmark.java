@@ -50,6 +50,8 @@ public class ParserShowdownBenchmark {
     public final TakerShowdown.IgnoreCaseFixture takerIgnoreCase = new TakerShowdown.IgnoreCaseFixture();
     public final TakerShowdown.CalculatorFixture takerCalculator = new TakerShowdown.CalculatorFixture();
     public final TakerShowdown.NestedCommentFixture takerNestedComment = new TakerShowdown.NestedCommentFixture();
+    public final TakerShowdown.UsPhoneFixture takerUsPhone = new TakerShowdown.UsPhoneFixture();
+    public final TakerShowdown.UsPhoneListFixture takerUsPhoneList = new TakerShowdown.UsPhoneListFixture();
 
     // 2. dot-parse Fixtures
     public final DotParseShowdown.IpFixture dotParseIp = new DotParseShowdown.IpFixture();
@@ -58,6 +60,8 @@ public class ParserShowdownBenchmark {
     public final DotParseShowdown.IgnoreCaseFixture dotParseIgnoreCase = new DotParseShowdown.IgnoreCaseFixture();
     public final DotParseShowdown.CalculatorFixture dotParseCalculator = new DotParseShowdown.CalculatorFixture();
     public final DotParseShowdown.NestedCommentFixture dotParseNestedComment = new DotParseShowdown.NestedCommentFixture();
+    public final DotParseShowdown.UsPhoneFixture dotParseUsPhone = new DotParseShowdown.UsPhoneFixture();
+    public final DotParseShowdown.UsPhoneListFixture dotParseUsPhoneList = new DotParseShowdown.UsPhoneListFixture();
 
     // 3. cats-parse Fixtures
     public final CatsParseShowdown.IpFixture catsParseIp = new CatsParseShowdown.IpFixture();
@@ -66,6 +70,8 @@ public class ParserShowdownBenchmark {
     public final CatsParseShowdown.IgnoreCaseFixture catsParseIgnoreCase = new CatsParseShowdown.IgnoreCaseFixture();
     public final CatsParseShowdown.CalculatorFixture catsParseCalculator = new CatsParseShowdown.CalculatorFixture();
     public final CatsParseShowdown.NestedCommentFixture catsParseNestedComment = new CatsParseShowdown.NestedCommentFixture();
+    public final CatsParseShowdown.UsPhoneFixture catsParseUsPhone = new CatsParseShowdown.UsPhoneFixture();
+    public final CatsParseShowdown.UsPhoneListFixture catsParseUsPhoneList = new CatsParseShowdown.UsPhoneListFixture();
 
     // 4. fastparse Fixtures
     public final FastparseShowdown.IpFixture fastparseIp = new FastparseShowdown.IpFixture();
@@ -74,6 +80,8 @@ public class ParserShowdownBenchmark {
     public final FastparseShowdown.IgnoreCaseFixture fastparseIgnoreCase = new FastparseShowdown.IgnoreCaseFixture();
     public final FastparseCalculatorShowdown.CalculatorFixture fastparseCalculator = new FastparseCalculatorShowdown.CalculatorFixture();
     public final FastparseShowdown.NestedCommentFixture fastparseNestedComment = new FastparseShowdown.NestedCommentFixture();
+    public final FastparseShowdown.UsPhoneFixture fastparseUsPhone = new FastparseShowdown.UsPhoneFixture();
+    public final FastparseShowdown.UsPhoneListFixture fastparseUsPhoneList = new FastparseShowdown.UsPhoneListFixture();
 
     // 5. jparsec Fixtures
     public final JparsecShowdown.IpFixture jparsecIp = new JparsecShowdown.IpFixture();
@@ -82,6 +90,8 @@ public class ParserShowdownBenchmark {
     public final JparsecShowdown.IgnoreCaseFixture jparsecIgnoreCase = new JparsecShowdown.IgnoreCaseFixture();
     public final JparsecShowdown.CalculatorFixture jparsecCalculator = new JparsecShowdown.CalculatorFixture();
     public final JparsecShowdown.NestedCommentFixture jparsecNestedComment = new JparsecShowdown.NestedCommentFixture();
+    public final JparsecShowdown.UsPhoneFixture jparsecUsPhone = new JparsecShowdown.UsPhoneFixture();
+    public final JparsecShowdown.UsPhoneListFixture jparsecUsPhoneList = new JparsecShowdown.UsPhoneListFixture();
 
     // 6. parboiled Fixtures
     public final ParboiledShowdown.IpFixture parboiledIp = new ParboiledShowdown.IpFixture();
@@ -90,6 +100,8 @@ public class ParserShowdownBenchmark {
     public final ParboiledShowdown.IgnoreCaseFixture parboiledIgnoreCase = new ParboiledShowdown.IgnoreCaseFixture();
     public final ParboiledShowdown.CalculatorFixture parboiledCalculator = new ParboiledShowdown.CalculatorFixture();
     public final ParboiledShowdown.NestedCommentFixture parboiledNestedComment = new ParboiledShowdown.NestedCommentFixture();
+    public final ParboiledShowdown.UsPhoneFixture parboiledUsPhone = new ParboiledShowdown.UsPhoneFixture();
+    public final ParboiledShowdown.UsPhoneListFixture parboiledUsPhoneList = new ParboiledShowdown.UsPhoneListFixture();
 
     // 7. parsecj Fixtures
     public final ParsecjShowdown.IpFixture parsecjIp = new ParsecjShowdown.IpFixture();
@@ -98,6 +110,8 @@ public class ParserShowdownBenchmark {
     public final ParsecjShowdown.IgnoreCaseFixture parsecjIgnoreCase = new ParsecjShowdown.IgnoreCaseFixture();
     public final ParsecjShowdown.NestedCommentFixture parsecjNestedComment = new ParsecjShowdown.NestedCommentFixture();
     public final ParsecjShowdown.CalculatorFixture parsecjCalculator;
+    public final ParsecjShowdown.UsPhoneFixture parsecjUsPhone = new ParsecjShowdown.UsPhoneFixture();
+    public final ParsecjShowdown.UsPhoneListFixture parsecjUsPhoneList = new ParsecjShowdown.UsPhoneListFixture();
 
     // 8. jjparse Fixtures
     public final JjparseShowdown.IpFixture jjparseIp = new JjparseShowdown.IpFixture();
@@ -106,6 +120,8 @@ public class ParserShowdownBenchmark {
     public final JjparseShowdown.IgnoreCaseFixture jjparseIgnoreCase = new JjparseShowdown.IgnoreCaseFixture();
     public final JjparseShowdown.CalculatorFixture jjparseCalculator = new JjparseShowdown.CalculatorFixture();
     public final JjparseShowdown.NestedCommentFixture jjparseNestedComment = new JjparseShowdown.NestedCommentFixture();
+    public final JjparseShowdown.UsPhoneFixture jjparseUsPhone = new JjparseShowdown.UsPhoneFixture();
+    public final JjparseShowdown.UsPhoneListFixture jjparseUsPhoneList = new JjparseShowdown.UsPhoneListFixture();
 
     // 9. antlr4 Fixtures
     public final Antlr4Showdown.IpFixture antlr4Ip = new Antlr4Showdown.IpFixture();
@@ -114,6 +130,8 @@ public class ParserShowdownBenchmark {
     public final Antlr4Showdown.IgnoreCaseFixture antlr4IgnoreCase = new Antlr4Showdown.IgnoreCaseFixture();
     public final Antlr4Showdown.CalculatorFixture antlr4Calculator = new Antlr4Showdown.CalculatorFixture();
     public final Antlr4Showdown.NestedCommentFixture antlr4NestedComment = new Antlr4Showdown.NestedCommentFixture();
+    public final Antlr4Showdown.UsPhoneFixture antlr4UsPhone = new Antlr4Showdown.UsPhoneFixture();
+    public final Antlr4Showdown.UsPhoneListFixture antlr4UsPhoneList = new Antlr4Showdown.UsPhoneListFixture();
 
     // 10. scala-parser-combinators Fixtures
     public final ScalaParserShowdown.IpFixture scalaParserIp = new ScalaParserShowdown.IpFixture();
@@ -122,6 +140,8 @@ public class ParserShowdownBenchmark {
     public final ScalaParserShowdown.IgnoreCaseFixture scalaParserIgnoreCase = new ScalaParserShowdown.IgnoreCaseFixture();
     public final ScalaParserShowdown.CalculatorFixture scalaParserCalculator = new ScalaParserShowdown.CalculatorFixture();
     public final ScalaParserShowdown.NestedCommentFixture scalaParserNestedComment = new ScalaParserShowdown.NestedCommentFixture();
+    public final ScalaParserShowdown.UsPhoneFixture scalaParserUsPhone = new ScalaParserShowdown.UsPhoneFixture();
+    public final ScalaParserShowdown.UsPhoneListFixture scalaParserUsPhoneList = new ScalaParserShowdown.UsPhoneListFixture();
 
     // 11. parboiled2 Fixtures
     public final Parboiled2Showdown.IpFixture parboiled2Ip = new Parboiled2Showdown.IpFixture();
@@ -130,6 +150,8 @@ public class ParserShowdownBenchmark {
     public final Parboiled2Showdown.IgnoreCaseFixture parboiled2IgnoreCase = new Parboiled2Showdown.IgnoreCaseFixture();
     public final Parboiled2Showdown.CalculatorFixture parboiled2Calculator = new Parboiled2Showdown.CalculatorFixture();
     public final Parboiled2Showdown.NestedCommentFixture parboiled2NestedComment = new Parboiled2Showdown.NestedCommentFixture();
+    public final Parboiled2Showdown.UsPhoneFixture parboiled2UsPhone = new Parboiled2Showdown.UsPhoneFixture();
+    public final Parboiled2Showdown.UsPhoneListFixture parboiled2UsPhoneList = new Parboiled2Showdown.UsPhoneListFixture();
 
     // 12. petitparser Fixtures
     public final PetitParserShowdown.IpFixture petitparserIp = new PetitParserShowdown.IpFixture();
@@ -138,6 +160,8 @@ public class ParserShowdownBenchmark {
     public final PetitParserShowdown.IgnoreCaseFixture petitparserIgnoreCase = new PetitParserShowdown.IgnoreCaseFixture();
     public final PetitParserShowdown.CalculatorFixture petitparserCalculator = new PetitParserShowdown.CalculatorFixture();
     public final PetitParserShowdown.NestedCommentFixture petitparserNestedComment = new PetitParserShowdown.NestedCommentFixture();
+    public final PetitParserShowdown.UsPhoneFixture petitparserUsPhone = new PetitParserShowdown.UsPhoneFixture();
+    public final PetitParserShowdown.UsPhoneListFixture petitparserUsPhoneList = new PetitParserShowdown.UsPhoneListFixture();
 
     // 13. better-parse Fixtures
     public final BetterParseShowdown.IpFixture betterParseIp = new BetterParseShowdown.IpFixture();
@@ -146,6 +170,8 @@ public class ParserShowdownBenchmark {
     public final BetterParseShowdown.IgnoreCaseFixture betterParseIgnoreCase = new BetterParseShowdown.IgnoreCaseFixture();
     public final BetterParseShowdown.CalculatorFixture betterParseCalculator = new BetterParseShowdown.CalculatorFixture();
     public final BetterParseShowdown.NestedCommentFixture betterParseNestedComment = new BetterParseShowdown.NestedCommentFixture();
+    public final BetterParseShowdown.UsPhoneFixture betterParseUsPhone = new BetterParseShowdown.UsPhoneFixture();
+    public final BetterParseShowdown.UsPhoneListFixture betterParseUsPhoneList = new BetterParseShowdown.UsPhoneListFixture();
 
     public final String jsonString;
     public final String jsonWithCommentsString;
@@ -276,9 +302,9 @@ public class ParserShowdownBenchmark {
   @Benchmark public void jjparse_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.jjparseKeywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
   @Benchmark public void antlr4_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.antlr4Keywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
   @Benchmark public void scalaParser_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserKeywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
-  @Benchmark public void parboiled2_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2Keywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
+  // @Benchmark public void parboiled2_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2Keywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
   @Benchmark public void petitparser_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.petitparserKeywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
-  @Benchmark public void betterParse_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseKeywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
+  // @Benchmark public void betterParse_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseKeywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
 
   // =========================================================================
   // 4. Keywords Benchmarks (Case-Insensitive Stream)
@@ -293,9 +319,9 @@ public class ParserShowdownBenchmark {
   @Benchmark public void jjparse_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.jjparseIgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
   @Benchmark public void antlr4_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.antlr4IgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
   @Benchmark public void scalaParser_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserIgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
-  @Benchmark public void parboiled2_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2IgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
+  // @Benchmark public void parboiled2_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2IgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
   @Benchmark public void petitparser_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.petitparserIgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
-  @Benchmark public void betterParse_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseIgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
+  // @Benchmark public void betterParse_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseIgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
 
   // =========================================================================
   // 5. Calculator Benchmarks
@@ -462,4 +488,38 @@ public class ParserShowdownBenchmark {
       stream.forEach(bh::consume);
     }
   }
+
+  // =========================================================================
+  // 10. US Phone Number Benchmarks (Single Phone Number)
+  // =========================================================================
+  @Benchmark public void taker_simpleUsPhonePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.takerUsPhone.run(BenchmarkInputs.US_PHONE)); }
+  @Benchmark public void dotParse_simpleUsPhonePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.dotParseUsPhone.run(BenchmarkInputs.US_PHONE)); }
+  @Benchmark public void catsParse_simpleUsPhonePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.catsParseUsPhone.run(BenchmarkInputs.US_PHONE)); }
+  @Benchmark public void fastparse_simpleUsPhonePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.fastparseUsPhone.run(BenchmarkInputs.US_PHONE)); }
+  @Benchmark public void jparsec_simpleUsPhonePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.jparsecUsPhone.run(BenchmarkInputs.US_PHONE)); }
+  @Benchmark public void parboiled_simpleUsPhonePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiledUsPhone.run(BenchmarkInputs.US_PHONE)); }
+  @Benchmark public void parsecj_simpleUsPhonePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parsecjUsPhone.run(BenchmarkInputs.US_PHONE)); }
+  @Benchmark public void jjparse_simpleUsPhonePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.jjparseUsPhone.run(BenchmarkInputs.US_PHONE)); }
+  @Benchmark public void antlr4_simpleUsPhonePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.antlr4UsPhone.run(BenchmarkInputs.US_PHONE)); }
+  @Benchmark public void scalaParser_simpleUsPhonePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserUsPhone.run(BenchmarkInputs.US_PHONE)); }
+  @Benchmark public void parboiled2_simpleUsPhonePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2UsPhone.run(BenchmarkInputs.US_PHONE)); }
+  @Benchmark public void petitparser_simpleUsPhonePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.petitparserUsPhone.run(BenchmarkInputs.US_PHONE)); }
+  @Benchmark public void betterParse_simpleUsPhonePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseUsPhone.run(BenchmarkInputs.US_PHONE)); }
+
+  // =========================================================================
+  // 11. US Phone Number Benchmarks (List of 1000 Phone Numbers)
+  // =========================================================================
+  @Benchmark public void taker_usPhoneListPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.takerUsPhoneList.run(BenchmarkInputs.US_PHONE_LIST)); }
+  @Benchmark public void dotParse_usPhoneListPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.dotParseUsPhoneList.run(BenchmarkInputs.US_PHONE_LIST)); }
+  @Benchmark public void catsParse_usPhoneListPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.catsParseUsPhoneList.run(BenchmarkInputs.US_PHONE_LIST)); }
+  @Benchmark public void fastparse_usPhoneListPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.fastparseUsPhoneList.run(BenchmarkInputs.US_PHONE_LIST)); }
+  @Benchmark public void jparsec_usPhoneListPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.jparsecUsPhoneList.run(BenchmarkInputs.US_PHONE_LIST)); }
+  @Benchmark public void parboiled_usPhoneListPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiledUsPhoneList.run(BenchmarkInputs.US_PHONE_LIST)); }
+  @Benchmark public void parsecj_usPhoneListPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parsecjUsPhoneList.run(BenchmarkInputs.US_PHONE_LIST)); }
+  @Benchmark public void jjparse_usPhoneListPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.jjparseUsPhoneList.run(BenchmarkInputs.US_PHONE_LIST)); }
+  @Benchmark public void antlr4_usPhoneListPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.antlr4UsPhoneList.run(BenchmarkInputs.US_PHONE_LIST)); }
+  @Benchmark public void scalaParser_usPhoneListPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserUsPhoneList.run(BenchmarkInputs.US_PHONE_LIST)); }
+  @Benchmark public void parboiled2_usPhoneListPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2UsPhoneList.run(BenchmarkInputs.US_PHONE_LIST)); }
+  @Benchmark public void petitparser_usPhoneListPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.petitparserUsPhoneList.run(BenchmarkInputs.US_PHONE_LIST)); }
+  @Benchmark public void betterParse_usPhoneListPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseUsPhoneList.run(BenchmarkInputs.US_PHONE_LIST)); }
 }
