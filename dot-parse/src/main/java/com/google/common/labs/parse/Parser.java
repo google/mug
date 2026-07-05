@@ -130,8 +130,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
    *        <p>Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
    *        '[' and ']' can all be included inside the outer pair of brackets.
-   *        The '-' character as long as not at the place of a range is also treated as literal.
-   *        <p>You can also use {@code '^'} to get negative character set like:
+   *        The '-' character is also treated as literal, as long as not placed at the place of a range.
+   *        <p>You can also use {@code '^'} to get negative character class like:
    *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
    *        <p>It's <em>strongly recommended</em> to install Google ErrorProne and mug-errorprone in your
    *        annotation processor path so that incorrect character class syntax will be caught
@@ -209,8 +209,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
    *        <p>Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
    *        '[' and ']' can all be included inside the outer pair of brackets.
-   *        The '-' character as long as not at the place of a range is also treated as literal.
-   *        <p>You can also use {@code '^'} to get negative character set like:
+   *        The '-' character is also treated as literal, as long as not placed at the place of a range.
+   *        <p>You can also use {@code '^'} to get negative character class like:
    *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
    *        <p>It's <em>strongly recommended</em> to install Google ErrorProne and mug-errorprone in your
    *        annotation processor path so that incorrect character class syntax will be caught
@@ -947,8 +947,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
    *        <p>Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
    *        '[' and ']' can all be included inside the outer pair of brackets.
-   *        The '-' character as long as not at the place of a range is also treated as literal.
-   *        <p>You can also use {@code '^'} to get negative character set like:
+   *        The '-' character is also treated as literal, as long as not placed at the place of a range.
+   *        <p>You can also use {@code '^'} to get negative character class like:
    *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
    *        <p>It's <em>strongly recommended</em> to install Google ErrorProne and mug-errorprone in your
    *        annotation processor path so that incorrect character class syntax will be caught
