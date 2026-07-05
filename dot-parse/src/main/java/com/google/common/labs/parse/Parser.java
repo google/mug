@@ -1631,7 +1631,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private T parse(CharInput input, int fromIndex) {
     ErrorTracker errorTracker = new ErrorTracker();
-    switch (scan(input, fromIndex, errorTracker)) {
+    switch (tryParse(input, fromIndex, errorTracker)) {
       case MatchResult.Success(int head, int tail, T value) -> {
         if (!input.isEof(tail)) {
           throw errorTracker.report(errorTracker.expecting("EOF", tail), input);
@@ -1651,7 +1651,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final boolean isPrefixOf(String input) {
     CharInput charInput = CharInput.from(input);
-    return ignoreReturn().scan(charInput, 0, ErrorContext.MINIMAL) instanceof MatchResult.Success;
+    return ignoreReturn().tryParse(charInput, 0, ErrorContext.MINIMAL)
+        instanceof MatchResult.Success;
   }
 
   /**
@@ -1665,7 +1666,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.9.1
    */
   @Override public final boolean matches(String input) {
-    return ignoreReturn().scan(CharInput.from(input), 0, ErrorContext.MINIMAL)
+    return ignoreReturn().tryParse(CharInput.from(input), 0, ErrorContext.MINIMAL)
             instanceof MatchResult.Success<?> success
         && success.tail() == input.length();
   }
@@ -1708,7 +1709,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           return null;
         }
         ErrorTracker errorTracker = new ErrorTracker();
-        return switch (scan(input, index, errorTracker)) {
+        return switch (tryParse(input, index, errorTracker)) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
             input.markCheckpoint(index);
@@ -1769,7 +1770,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       private int index = fromIndex;
 
       MatchResult.Success<T> nextOrNull() {
-        return switch (scan(input, index, ErrorContext.MINIMAL)) {
+        return switch (tryParse(input, index, ErrorContext.MINIMAL)) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
             input.markCheckpoint(index);
@@ -2114,7 +2115,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     Stream<T> parseToStream(CharInput input, int fromIndex) {
       // forTokens().parseToStream() checks isEof() to terminate, and only skip the trailing upon
       // success. So if everything is skippable, it will fail to match.
-      return switch (toSkip.scan(input, fromIndex, ErrorContext.MINIMAL)) {
+      return switch (toSkip.tryParse(input, fromIndex, ErrorContext.MINIMAL)) {
          case MatchResult.Success<?> skipped -> forTokens().parseToStream(input, skipped.tail());
          default -> forTokens().parseToStream(input, fromIndex);
       };
@@ -2169,8 +2170,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           return left().skipAndMatch(toSkip, input, start, context);
         }
 
-        @Override MatchResult<T> scan(CharInput input, int start, ErrorContext context) {
-          return switch (super.scan(input, start, context)) {
+        @Override MatchResult<T> tryParse(CharInput input, int start, ErrorContext context) {
+          return switch (super.tryParse(input, start, context)) {
             case MatchResult.Success(int head, int tail, T value) ->
                 new MatchResult.Success<>(head, skipIfAny(toSkip, input, tail), value);
             case MatchResult.Failure<T> failure -> failure;
@@ -2338,7 +2339,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @return a MatchResult containing the parsed value and the [start, end) range of the match.
    */
-  MatchResult<T> scan(CharInput input, int start, ErrorContext context) {
+  MatchResult<T> tryParse(CharInput input, int start, ErrorContext context) {
     return skipAndMatch(null, input, start, context);
   }
 
@@ -2349,7 +2350,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     if (skip == null) {
       return start;
     }
-    return switch (skip.scan(input, start, ErrorContext.MINIMAL)) {
+    return switch (skip.tryParse(input, start, ErrorContext.MINIMAL)) {
       case MatchResult.Success<?> success -> success.tail();
       case MatchResult.Failure<?> failure -> start;
     };
