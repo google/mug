@@ -167,10 +167,8 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 <hr>
 
 #### 6. US Phone Number Parsing (Single & 1,000-Element List)
-*   **Performance (Single Number)**: `parboiled2` ($29.5\text{M}$ ops/sec) leads overall due to its macro-compiled PEG byte loop. `dot-parse` is the **leading Java library at $18.3\text{M}$ ops/sec**, outperforming `taker` ($13.7\text{M}$) and `cats-parse` ($12.9\text{M}$).
-*   **Performance (1,000-Element List)**: `dot-parse` ($11.30\text{ lists/ms}$, or ~$11.3\text{M}$ phone numbers/sec) **leads the entire pack overall across all 13 languages and architectures**, followed by `cats-parse` ($10.54\text{ lists/ms}$) and `jparsec` ($9.46\text{ lists/ms}$).
-*   **Prefix Pruning Advantage**: In `dot-parse`, delegating fixed-width component checks to `chars(3, ASCII_DIGIT)` equips compound alternations with prefix pruning and eliminates loop-counter overhead, giving it a ~33% throughput advantage over the next fastest Java engine on single phone numbers.
-*   **Zero-Allocation Token Skipping**: When parsing long lists of 1,000 phone numbers, `dot-parse`'s `.zeroOrMore().parseSkipping(CharPredicate.WHITESPACE, ...)` executes in `skipAndMatch` mode without allocating intermediate strings or token wrappers for whitespace separators. In contrast, stack-based engines like `parboiled2` drop from #1 on single numbers to #6 on lists ($8.11\text{ lists/ms}$) due to the runtime overhead of pushing/popping 1,000 intermediate results onto their value stack and invoking action lambdas for collection insertion.
+*   **Performance (Single Number)**: `parboiled2` ($29.5\text{M}$ ops/sec) leads overall. `dot-parse` is the leading Java library at $18.3\text{M}$ ops/sec, outperforming `taker` ($13.7\text{M}$) and `cats-parse` ($12.9\text{M}$).
+*   **Performance (1,000-Element List)**: `dot-parse` ($11.30\text{ lists/ms}$, or ~$11.3\text{M}$ phone numbers/sec) leads overall across all 13 libraries, followed by `cats-parse` ($10.54\text{ lists/ms}$) and `jparsec` ($9.46\text{ lists/ms}$).
 
 <hr>
 
