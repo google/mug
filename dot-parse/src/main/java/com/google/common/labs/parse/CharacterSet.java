@@ -130,6 +130,12 @@ public final class CharacterSet implements CharPredicate {
         .collect(joining());
   }
 
+  Set<String> getAsciiPrefixes() {
+    return candidateCharsIfAscii()
+        .map(chars -> chars.stream().map(Object::toString).collect(toUnmodifiableSet()))
+        .orElse(Set.of(""));
+  }
+
   private static CharPredicate compileCharacterSet(String characterSet) {
     checkArgument(
         characterSet.startsWith("[") && characterSet.endsWith("]"),

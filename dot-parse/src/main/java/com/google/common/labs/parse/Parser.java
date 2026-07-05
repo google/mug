@@ -36,7 +36,6 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import java.io.Reader;
 import java.io.UncheckedIOException;
@@ -188,32 +187,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }.source();
   }
 
-  /** Matches {@code n} consecutive characters as specified by {@code matcher}. */
-  static Parser<String> consecutive(int n, CharPredicate matcher, String name) {
-    requireNonNull(matcher);
-    requireNonNull(name);
-    checkArgument(n > 0, "n(%s) must be positive", n);
-    return new Parser<Void>() {
-      @Override MatchResult<Void> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        if (!input.isInRange(start + n - 1)) {
-          return context.expecting(name, start);
-        }
-        for (int i = 0; i < n; i++) {
-          if (!matcher.test(input.charAt(start + i))) {
-            return context.expecting(name, start + i);
-          }
-        }
-        return  new MatchResult.Success<>(start, start + n, null);
-      }
-
-      @Override Set<String> getPrefixes() {
-        return prefixesIfAscii(matcher);
-      }
-    }.source();
-  }
-
   /**
    * Matches one or more consecutive characters contained in {@code characterSet}.
    *
@@ -249,19 +222,34 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return consecutive(charsIn(characterClass), "one or more " + characterClass);
   }
 
-  /** Matches {@code n} consecutive characters contained in {@code characterClass}. */
-  @SuppressWarnings("CharacterSetLiteralCheck")
-  static Parser<String> consecutive(int n, String characterClass) {
-    return consecutive(n, charsIn(characterClass), n + " " + characterClass);
-  }
-
   /**
    * Consumes exactly {@code n} consecutive characters. {@code n} must be positive.
    *
    * @since 9.4
    */
   public static Parser<String> chars(int n) {
-    return consecutive(n, CharPredicate.ANY, n + " char(s)");
+    return chars(n, EMPTY_PREFIX, n + " char(s)");
+  }
+
+  private static Parser<String> chars(int n, Set<String> prefixes, String name) {
+    checkArgument(n > 0, "chars count (%s) must be positive", n);
+    return new Parser<>() {
+      @Override MatchResult<String> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        return input.isInRange(start + n - 1)
+            ? new MatchResult.Success<>(start, start + n, input.snippet(start, n))
+            : context.expecting(name, start);
+      }
+
+      @Override Set<String> getPrefixes() {
+        return prefixes;
+      }
+    };
+  }
+
+  private static Parser<String> chars(int n, CharacterSet characterSet, String name) {
+    return chars(n, characterSet.getAsciiPrefixes(), name).suchThat(characterSet::matchesAllOf, name);
   }
 
   /**
@@ -297,7 +285,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.6
    */
   public static Parser<String> digits(int n) {
-    return consecutive(n, CharacterSet.DECIMAL, n + " digits");
+    return chars(n, CharacterSet.DECIMAL, n + " digits");
   }
 
   /**
@@ -306,7 +294,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.6
    */
   public static Parser<String> hexDigits(int n) {
-    return consecutive(n, CharacterSet.HEX, n + " hex digits");
+    return chars(n, CharacterSet.HEX, n + " hex digits");
   }
 
   /**
@@ -639,7 +627,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.5
    */
   public static Parser<Integer> bmpCodeUnit() {
-    return Constants.BMP_CODE_UNIT;
+    return hexDigits(4).elidableMap(digits -> Integer.parseInt(digits, 16));
   }
 
   /**
@@ -2351,12 +2339,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private static Set<String> prefixesIfAscii(CharPredicate predicate) {
-    if (predicate instanceof CharacterSet cset) {
-      return cset.candidateCharsIfAscii()
-          .map(chars -> chars.stream().map(Object::toString).collect(toUnmodifiableSet()))
-          .orElse(EMPTY_PREFIX);
-    }
-    return EMPTY_PREFIX;
+    return predicate instanceof CharacterSet cset ? cset.getAsciiPrefixes() : EMPTY_PREFIX;
   }
 
   /**
@@ -2526,9 +2509,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private interface Constants {
     static Parser<String> DIGITS = consecutive(CharacterSet.DECIMAL, "digits");
     static Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
-    static Parser<Integer> BMP_CODE_UNIT =
-        consecutive(4, CharacterSet.HEX, "4-digit hex code point")
-            .elidableMap(digits -> Integer.parseInt(digits, 16));
   }
 
   Parser() {}
