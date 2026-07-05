@@ -1631,7 +1631,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private T parse(CharInput input, int fromIndex) {
     ErrorTracker errorTracker = new ErrorTracker();
-    MatchResult<T> result = match(input, fromIndex, errorTracker);
+    MatchResult<T> result = scan(input, fromIndex, errorTracker);
     switch (result) {
       case MatchResult.Success(int head, int tail, T value) -> {
         if (!input.isEof(tail)) {
@@ -1652,7 +1652,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final boolean isPrefixOf(String input) {
     CharInput charInput = CharInput.from(input);
-    return ignoreReturn().match(charInput, 0, ErrorContext.MINIMAL) instanceof MatchResult.Success;
+    return ignoreReturn().scan(charInput, 0, ErrorContext.MINIMAL) instanceof MatchResult.Success;
   }
 
   /**
@@ -1670,7 +1670,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private boolean matches(CharInput input, int fromIndex) {
-    return ignoreReturn().match(input, fromIndex, ErrorContext.MINIMAL) instanceof MatchResult.Success<?> success
+    return ignoreReturn().matches(input, fromIndex, ErrorContext.MINIMAL);
+  }
+
+  private boolean matches(CharInput input, int start, ErrorContext context) {
+    return scan(input, start, context) instanceof MatchResult.Success<?> success
         && input.isEof(success.tail());
   }
 
@@ -1712,7 +1716,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           return null;
         }
         ErrorTracker errorTracker = new ErrorTracker();
-        return switch (match(input, index, errorTracker)) {
+        return switch (scan(input, index, errorTracker)) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
             input.markCheckpoint(index);
@@ -1773,7 +1777,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       private int index = fromIndex;
 
       MatchResult.Success<T> nextOrNull() {
-        return switch (match(input, index, ErrorContext.MINIMAL)) {
+        return switch (scan(input, index, ErrorContext.MINIMAL)) {
           case MatchResult.Success<T> success -> {
             index = success.tail();
             input.markCheckpoint(index);
@@ -2123,8 +2127,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return Stream.of(ErrorContext.MINIMAL)
           .flatMap(
               context ->
-                  toSkip.match(input, fromIndex, context) instanceof MatchResult.Success<?> success
-                          && input.isEof(success.tail())
+                  toSkip.matches(input, fromIndex, context)
                       ? Stream.empty()
                       : forTokens().parseToStream(input, fromIndex));
     }
@@ -2178,8 +2181,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           return left().skipAndMatch(toSkip, input, start, context);
         }
 
-        @Override MatchResult<T> match(CharInput input, int start, ErrorContext context) {
-          return switch (super.match(input, start, context)) {
+        @Override MatchResult<T> scan(CharInput input, int start, ErrorContext context) {
+          return switch (super.scan(input, start, context)) {
             case MatchResult.Success(int head, int tail, T value) ->
                 new MatchResult.Success<>(head, skipIfAny(toSkip, input, tail), value);
             case MatchResult.Failure<T> failure -> failure;
@@ -2347,7 +2350,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @return a MatchResult containing the parsed value and the [start, end) range of the match.
    */
-  MatchResult<T> match(CharInput input, int start, ErrorContext context) {
+  MatchResult<T> scan(CharInput input, int start, ErrorContext context) {
     return skipAndMatch(null, input, start, context);
   }
 
@@ -2358,7 +2361,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     if (skip == null) {
       return start;
     }
-    return switch (skip.match(input, start, ErrorContext.MINIMAL)) {
+    return switch (skip.scan(input, start, ErrorContext.MINIMAL)) {
       case MatchResult.Success<?> success -> success.tail();
       case MatchResult.Failure<?> failure -> start;
     };
