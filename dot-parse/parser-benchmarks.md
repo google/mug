@@ -61,6 +61,11 @@ Every engine was validated against a large, representative JSON document (~100 c
 
 Throughput was measured in **operations per millisecond** (higher is better):
 
+> [!NOTE]
+> **Emoji Legend**:
+> *   🚀 **Rocket Emoji**: Indicates the **overall #1 leader** across all tested libraries and JVM languages (Java, Scala, Kotlin).
+> *   ☕ **Coffee Emoji**: Indicates the **#1 leader among Java-native libraries**. When a Java library leads overall across all languages, it receives both icons (🚀 ☕).
+
 | Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`Javacc`](https://github.com/apache/tomcat/blob/main/java/org/apache/tomcat/util/json/JSONParser.jjt) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | [`parboiled`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/parboiled/ParboiledJsonParser.java) | [`autumn`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/autumn/AutumnJsonParser.java) | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Complex JSON Payload** | 0.213 | 0.181 | **0.405** ☕ | 0.122 | 0.094 | **0.592** 🚀 | 0.258 | 0.015 | 0.101 | 0.088 | 0.066 | 0.077 | **`fast`** 🚀<br>**`dot`** ☕ |
@@ -111,6 +116,11 @@ To provide an absolute performance ceiling, we stacked our combinator shootout a
 ## 13-Way Showdown Benchmark Results (Micro-Benchmarks)
 
 Throughput was measured in **operations per millisecond** (higher is better). All benchmarks were run under G1 GC with natural, out-of-the-box collection-allocating configurations for all other contenders, while `dot-parse` leveraged its zero-allocation collectors on the hot path.
+
+> [!NOTE]
+> **Emoji Legend**:
+> *   🚀 **Rocket Emoji**: Indicates the **overall #1 leader** across all tested libraries and JVM languages (Java, Scala, Kotlin).
+> *   ☕ **Coffee Emoji**: Indicates the **#1 leader among Java-native libraries**. When a Java library leads overall across all languages, it receives both icons (🚀 ☕).
 
 | Benchmark Scenario | `dot-parse` ☕ | `jparsec` | `fastparse` 🚀 | `cats-parse` 🚀 | `taker` | `parsecj` | `parboiled` | `jjparse` | `antlr4` | `scalaParser` | `parboiled2` 🚀 | `petitparser` | `better-parse` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
