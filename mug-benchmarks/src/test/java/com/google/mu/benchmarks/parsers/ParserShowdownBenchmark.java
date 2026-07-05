@@ -302,7 +302,7 @@ public class ParserShowdownBenchmark {
   @Benchmark public void jjparse_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.jjparseKeywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
   @Benchmark public void antlr4_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.antlr4Keywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
   @Benchmark public void scalaParser_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserKeywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
-  @Benchmark public void parboiled2_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2Keywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
+  // @Benchmark public void parboiled2_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2Keywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
   @Benchmark public void petitparser_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.petitparserKeywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
   @Benchmark public void betterParse_simpleKeywordsPerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseKeywords.run(BenchmarkInputs.KEYWORDS_LIST_CS)); }
 
@@ -319,7 +319,7 @@ public class ParserShowdownBenchmark {
   @Benchmark public void jjparse_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.jjparseIgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
   @Benchmark public void antlr4_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.antlr4IgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
   @Benchmark public void scalaParser_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.scalaParserIgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
-  @Benchmark public void parboiled2_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2IgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
+  // @Benchmark public void parboiled2_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.parboiled2IgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
   @Benchmark public void petitparser_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.petitparserIgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
   @Benchmark public void betterParse_simpleIgnoreCasePerformance(BenchmarkState s, Blackhole bh) { bh.consume(s.betterParseIgnoreCase.run(BenchmarkInputs.KEYWORDS_LIST_CI)); }
 

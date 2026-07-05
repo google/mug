@@ -1631,8 +1631,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private T parse(CharInput input, int fromIndex) {
     ErrorTracker errorTracker = new ErrorTracker();
-    MatchResult<T> result = scan(input, fromIndex, errorTracker);
-    switch (result) {
+    switch (scan(input, fromIndex, errorTracker)) {
       case MatchResult.Success(int head, int tail, T value) -> {
         if (!input.isEof(tail)) {
           throw errorTracker.report(errorTracker.expecting("EOF", tail), input);
@@ -1880,8 +1879,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             A buffer = supplier.get();
             accumulator.accept(buffer, head);
             tail.forEach(value -> accumulator.accept(buffer, value));
-            R result = finisher.apply(buffer);
-            return result;
+            return finisher.apply(buffer);
           });
     }
 
@@ -2117,8 +2115,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       // forTokens().parseToStream() checks isEof() to terminate, and only skip the trailing upon
       // success. So if everything is skippable, it will fail to match.
       return switch (toSkip.scan(input, fromIndex, ErrorContext.MINIMAL)) {
-         case MatchResult.Success<?>(int head, int tail, Object unused) ->
-             input.isEof(tail) ? Stream.empty() : forTokens().parseToStream(input, tail);
+         case MatchResult.Success<?> success -> forTokens().parseToStream(input, success.tail());
          default -> forTokens().parseToStream(input, fromIndex);
       };
     }
