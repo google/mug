@@ -78,8 +78,9 @@ import com.google.mu.util.stream.Joiner;
  * or you can use the {@link #zeroOrMore zeroOrMore()}, {@link #zeroOrMoreDelimitedBy zeroOrMoreDelimitedBy()},
  * {@link #orElse orElse()} and {@link #optional optional()} fluent chains.
  *
- * <p>For simplicity, {@link #or or()} and {@link #anyOf anyOf()} will always backtrack upon failure.
- * anyOf(expr.followedBy(";"), expr)}, use {@code expr.optionallyFollowedBy(";")} instead.
+ * <p>For simplicity, {@link #or or()} and {@link #anyOf anyOf()} will always backtrack upon failure. But it's
+ * more efficient to factor out common left prefix. For example instead of {@code
+ * anyOf(expr.followedBy(";"), expr)}, use {@code expr.optionallyFollowedBy(";"))} instead.
  */
 @ThreadSafe
 public abstract non-sealed class Parser<T> implements Production<T> {
@@ -1880,7 +1881,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             A buffer = supplier.get();
             accumulator.accept(buffer, head);
             tail.forEach(value -> accumulator.accept(buffer, value));
-            return finisher.apply(buffer);
+            R result = finisher.apply(buffer);
+            return result;
           });
     }
 
