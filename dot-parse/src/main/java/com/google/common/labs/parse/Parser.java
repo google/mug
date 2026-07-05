@@ -2114,16 +2114,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     Stream<T> parseToStream(CharInput input, int fromIndex) {
-      // forTokens().parseToStream() would only skip the trailing upon success.
-      // If everything is skippable, it will fail to match.
-      // We use flatMap() to keep the buffer loading lazy upon the returned stream being consumed.
-      return Stream.of(ErrorContext.MINIMAL)
-          .flatMap(
-              context -> switch (toSkip.scan(input, fromIndex, context)) {
-                   case MatchResult.Success<?>(int head, int tail, Object unused) ->
-                       input.isEof(tail) ? Stream.empty() : forTokens().parseToStream(input, tail);
-                   default -> forTokens().parseToStream(input, fromIndex);
-              });
+      // forTokens().parseToStream() checks isEof() to terminate, and only skip the trailing upon
+      // success. So if everything is skippable, it will fail to match.
+      return switch (toSkip.scan(input, fromIndex, ErrorContext.MINIMAL)) {
+         case MatchResult.Success<?>(int head, int tail, Object unused) ->
+             input.isEof(tail) ? Stream.empty() : forTokens().parseToStream(input, tail);
+         default -> forTokens().parseToStream(input, fromIndex);
+      };
     }
 
     /**
