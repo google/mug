@@ -196,7 +196,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  (infinite loop or StackOverFlowError caused by accidental zero-consumption rule in the context of
  many() or recursive grammar) is made impossible by requiring all parsers to consume at least one
  character. Optional suffix is achieved through using the built-in combinators such as <a href="#optionallyFollowedBy(java.lang.String)"><code>optionallyFollowedBy(java.lang.String)</code></a> or <a href="OperatorTable.html" title="class in com.google.common.labs.parse"><code>OperatorTable</code></a> if you have multiple operators; you can also use
- the <a href="#zeroOrMore(com.google.common.labs.parse.CharacterSet)"><code>zeroOrMore(com.google.common.labs.parse.CharacterSet)</code></a>, <a href="#zeroOrMoreDelimitedBy(java.lang.String)"><code>zeroOrMoreDelimitedBy(java.lang.String)</code></a>, <a href="#orElse(T)"><code>orElse(T)</code></a> and <a href="#optional()"><code>optional()</code></a>
+ the <a href="#zeroOrMore()"><code>zeroOrMore()</code></a>, <a href="#zeroOrMoreDelimitedBy(java.lang.String)"><code>zeroOrMoreDelimitedBy(String)</code></a>, <a href="#orElse(T)"><code>orElse(T)</code></a> and <a href="#optional()"><code>optional()</code></a>
  fluent chains.
 
  <p>For simplicity, <a href="#or()"><code>or()</code></a> and <a href="#anyOf(com.google.common.labs.parse.Parser...)"><code>anyOf()</code></a> will always backtrack upon failure. But it's
