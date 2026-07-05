@@ -1670,11 +1670,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private boolean matches(CharInput input, int fromIndex) {
-    return ignoreReturn().matches(input, fromIndex, ErrorContext.MINIMAL);
+    return matches(input, fromIndex, ErrorContext.MINIMAL);
   }
 
   private boolean matches(CharInput input, int start, ErrorContext context) {
-    return scan(input, start, context) instanceof MatchResult.Success<?> success
+    return ignoreReturn().scan(input, start, context) instanceof MatchResult.Success<?> success
         && input.isEof(success.tail());
   }
 
