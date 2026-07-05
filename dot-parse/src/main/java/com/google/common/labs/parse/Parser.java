@@ -1666,11 +1666,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.9.1
    */
   @Override public final boolean matches(String input) {
-    return matches(CharInput.from(input), 0);
-  }
-
-  private boolean matches(CharInput input, int fromIndex) {
-    return matches(input, fromIndex, ErrorContext.MINIMAL);
+    return matches(CharInput.from(input), 0, ErrorContext.MINIMAL);
   }
 
   private boolean matches(CharInput input, int start, ErrorContext context) {
