@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
 
+import com.google.errorprone.annotations.concurrent.LazyInit;
 import com.google.mu.util.CharPredicate;
 
 /**
@@ -59,6 +60,7 @@ public final class CharacterSet implements CharPredicate {
 
   private final String string;
   private final CharPredicate predicate;
+  @LazyInit private Set<String> prefixes;
 
   private CharacterSet(String string, CharPredicate predicate) {
     this.string = string;
@@ -131,9 +133,13 @@ public final class CharacterSet implements CharPredicate {
   }
 
   Set<String> getAsciiPrefixes() {
-    return candidateCharsIfAscii()
-        .map(chars -> chars.stream().map(Object::toString).collect(toUnmodifiableSet()))
-        .orElse(Set.of(""));
+    Set<String> result = prefixes;
+    if (result == null) {
+      prefixes = result = candidateCharsIfAscii()
+          .map(chars -> chars.stream().map(Object::toString).collect(toUnmodifiableSet()))
+          .orElse(Set.of(""));
+    }
+    return result;
   }
 
   private static CharPredicate compileCharacterSet(String characterSet) {

@@ -2493,9 +2493,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private static <T> T applyOperators(Iterable<? extends UnaryOperator<T>> ops, T operand) {
-    for (UnaryOperator<T> op : ops) {
-      operand = op.apply(operand);
-    }
+    for (UnaryOperator<T> op : ops) operand = op.apply(operand);
     return operand;
   }
 
