@@ -1666,12 +1666,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.9.1
    */
   @Override public final boolean matches(String input) {
-    return matches(CharInput.from(input), 0, ErrorContext.MINIMAL);
-  }
-
-  private boolean matches(CharInput input, int start, ErrorContext context) {
-    return ignoreReturn().scan(input, start, context) instanceof MatchResult.Success<?> success
-        && input.isEof(success.tail());
+    return ignoreReturn().scan(CharInput.from(input), 0, ErrorContext.MINIMAL)
+            instanceof MatchResult.Success<?> success
+        && success.tail() == input.length();
   }
 
   /**
@@ -2122,10 +2119,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       // We use flatMap() to keep the buffer loading lazy upon the returned stream being consumed.
       return Stream.of(ErrorContext.MINIMAL)
           .flatMap(
-              context ->
-                  toSkip.matches(input, fromIndex, context)
-                      ? Stream.empty()
-                      : forTokens().parseToStream(input, fromIndex));
+              context -> switch (toSkip.scan(input, fromIndex, context)) {
+                   case MatchResult.Success<?>(int head, int tail, Object unused) ->
+                       input.isEof(tail) ? Stream.empty() : forTokens().parseToStream(input, tail);
+                   default -> forTokens().parseToStream(input, fromIndex);
+              });
     }
 
     /**
