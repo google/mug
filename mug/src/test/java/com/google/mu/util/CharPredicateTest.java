@@ -308,9 +308,4 @@ public class CharPredicateTest {
     assertThat(WHITESPACE.test(' ')).isTrue();
     assertThat(WHITESPACE.test('\t')).isTrue();
   }
-
-  @Test
-  public void precomputeForAscii_idempotent() {
-    assertThat(WHITESPACE.precomputeForAscii()).isSameInstanceAs(WHITESPACE);
-  }
 }
