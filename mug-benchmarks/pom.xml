@@ -353,6 +353,8 @@
                 <exclude>**/dotparse/StringInBenchmark.java</exclude>
                 <exclude>**/dotparse/JsonShootoutBenchmark.java</exclude>
                 <exclude>**/EmailAddressBenchmark.java</exclude>
+                <exclude>**/WhitespaceBenchmark.java</exclude>
+                <exclude>**/LetterBenchmark.java</exclude>
               </excludes>
             </configuration>
           </plugin>

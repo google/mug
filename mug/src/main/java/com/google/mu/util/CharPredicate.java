@@ -94,7 +94,7 @@ public interface CharPredicate {
     @Override public String toString() {
       return "WHITESPACE";
     }
-  }.precomputeForAscii();
+  };
 
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
   static CharPredicate is(char ch) {
