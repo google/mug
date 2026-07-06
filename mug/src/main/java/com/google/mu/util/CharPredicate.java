@@ -46,7 +46,7 @@ public interface CharPredicate {
     @Override public String toString() {
       return "WORD";
     }
-  }.precomputeForAscii();
+  };
 
   /** Corresponds to the ASCII characters. */
   static CharPredicate ASCII = new CharPredicate() {

@@ -355,6 +355,7 @@
                 <exclude>**/EmailAddressBenchmark.java</exclude>
                 <exclude>**/WhitespaceBenchmark.java</exclude>
                 <exclude>**/LetterBenchmark.java</exclude>
+                <exclude>**/WordBenchmark.java</exclude>
               </excludes>
             </configuration>
           </plugin>
