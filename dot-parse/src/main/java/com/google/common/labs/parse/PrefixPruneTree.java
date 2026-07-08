@@ -74,7 +74,7 @@ record PrefixPruneTree<V>(
   static final class Builder<V> {
     private final List<Ordered<V>> survivors = new ArrayList<>();
     private final Map<Integer, Builder<V>> children = new HashMap<>();
-    private final Map<Character, Set<V>> blocked = new HashMap<>();
+    private final Map<Integer, Set<V>> blocked = new HashMap<>();
     private final AtomicInteger sequence;
 
     Builder() {
@@ -115,7 +115,7 @@ record PrefixPruneTree<V>(
 
     @CanIgnoreReturnValue
     Builder<V> addBlocked(char c, V value) {
-      blocked.computeIfAbsent(c, k -> new HashSet<>()).add(value);
+      blocked.computeIfAbsent((int) c, k -> new HashSet<>()).add(value);
       return this;
     }
 
@@ -123,8 +123,8 @@ record PrefixPruneTree<V>(
       if (survivors.isEmpty()) {
         return buildWithHierarchy(List.of(), List.of());
       }
-      for (Character c : blocked.keySet()) {
-        children.putIfAbsent((int) c, new Builder<V>(sequence));
+      for (int c : blocked.keySet()) {
+        children.putIfAbsent(c, new Builder<V>(sequence));
       }
       List<Ordered<V>> ancestorsIncludingMe =
           survivors.stream().sorted(comparingInt(Ordered::order)).collect(toUnmodifiableList());
@@ -135,7 +135,7 @@ record PrefixPruneTree<V>(
       }
       var subtrees = BiStream.from(children)
           .mapValues((c, childBuilder) -> {
-            Set<V> blockedForChild = blocked.getOrDefault((char) (int) c, Set.of());
+            Set<V> blockedForChild = blocked.getOrDefault(c, Set.of());
             List<Ordered<V>> filteredAncestors = ancestorsIncludingMe.stream()
                 .filter(o -> !blockedForChild.contains(o.value()))
                 .collect(toUnmodifiableList());
