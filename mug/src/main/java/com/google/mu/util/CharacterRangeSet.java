@@ -85,7 +85,7 @@ abstract class CharacterRangeSet implements CharPredicate {
     }
 
     @Override public boolean test(char c) {
-      return c <= '\u007f';
+      return c < 128;
     }
 
     @Override public String toString() {
@@ -185,7 +185,7 @@ abstract class CharacterRangeSet implements CharPredicate {
     }
 
     private static String coalesce(CharSequence rangeString) {
-      return rangeString.length() < 2
+      return rangeString.length() <= 2
           ? rangeString.toString()
           : unionRangeStrings(rangeString, rangeString.subSequence(0, 2));
     }
@@ -233,8 +233,7 @@ abstract class CharacterRangeSet implements CharPredicate {
       }
       if (aRangeString.isEmpty() || bRangeString.isEmpty()) return "";
       StringBuilder builder = new StringBuilder();
-      int i = 0, j = 0;
-      while (i < aRangeString.length() && j < bRangeString.length()) {
+      for (int i = 0, j = 0; i < aRangeString.length() && j < bRangeString.length(); ) {
         char as = aRangeString.charAt(i), ae = aRangeString.charAt(i + 1);
         char bs = bRangeString.charAt(j), be = bRangeString.charAt(j + 1);
         char start = (char) Math.max(as, bs);
