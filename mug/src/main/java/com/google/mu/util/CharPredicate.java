@@ -113,6 +113,7 @@ public interface CharPredicate {
    * regex compilers will reject out-of-order ranges (such as {@code "z-a"}).
    *
    * @since 10.6.1
+   * @hidden
    */
   default String characterRangeSet() {
     return "";
