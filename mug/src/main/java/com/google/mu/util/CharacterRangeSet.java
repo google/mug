@@ -88,6 +88,10 @@ abstract class CharacterRangeSet implements CharPredicate {
       return c < 128;
     }
 
+    @Override public CharPredicate precomputeForAscii() {
+      return this;
+    }
+
     @Override public String toString() {
       return "ASCII";
     }
@@ -102,6 +106,10 @@ abstract class CharacterRangeSet implements CharPredicate {
       return true;
     }
 
+    @Override public CharPredicate precomputeForAscii() {
+      return this;
+    }
+
     @Override public String toString() {
       return "ANY";
     }
@@ -114,6 +122,10 @@ abstract class CharacterRangeSet implements CharPredicate {
 
     @Override public boolean test(char c) {
       return false;
+    }
+
+    @Override public CharPredicate precomputeForAscii() {
+      return this;
     }
 
     @Override public String toString() {
@@ -319,9 +331,6 @@ abstract class CharacterRangeSet implements CharPredicate {
       this.high64 = computeMask(base, 64);
     }
 
-    boolean matchesAnyAscii() {
-      return low64 != 0L || high64 != 0L;
-    }
 
     @Override public boolean test(char c) {
       if (c < 64) {

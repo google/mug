@@ -651,11 +651,12 @@ public class CharPredicateTest {
         .isSameInstanceAs(CharPredicate.NONE);
 
     CharPredicate nonAsciiRange = CharPredicate.range('\u0080', '\u00FF');
-    assertThat(nonAsciiRange.precomputeForAscii()).isSameInstanceAs(nonAsciiRange);
-    assertThat(nonAsciiRange.precomputeForAscii().precomputeForAscii()).isSameInstanceAs(nonAsciiRange);
+    CharPredicate precomputedNonAscii = nonAsciiRange.precomputeForAscii();
+    assertThat(precomputedNonAscii).isNotSameInstanceAs(nonAsciiRange);
+    assertThat(precomputedNonAscii.precomputeForAscii()).isSameInstanceAs(precomputedNonAscii);
 
     CharPredicate nonAsciiSingle = CharPredicate.is('\u0080');
-    assertThat(nonAsciiSingle.precomputeForAscii()).isSameInstanceAs(nonAsciiSingle);
+    assertThat(nonAsciiSingle.precomputeForAscii()).isNotSameInstanceAs(nonAsciiSingle);
 
     CharPredicate asciiRange = CharPredicate.range('a', 'z');
     CharPredicate precomputedAsciiRange = asciiRange.precomputeForAscii();

@@ -243,8 +243,6 @@ public interface CharPredicate {
    * @since 9.9.4
    */
   default CharPredicate precomputeForAscii() {
-    CharacterRangeSet.PrecomputedForAscii precomputed =
-        new CharacterRangeSet.PrecomputedForAscii(this);
-    return precomputed.matchesAnyAscii() ? precomputed : this;
+    return new CharacterRangeSet.PrecomputedForAscii(this);
   }
 }
