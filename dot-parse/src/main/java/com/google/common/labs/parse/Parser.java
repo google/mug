@@ -53,6 +53,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import com.google.errorprone.annotations.ThreadSafe;
@@ -164,6 +166,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override Set<String> getPrefixes() {
         return CharacterSet.prefixesIfAscii(matcher);
       }
+
+      @Override Set<Character> getBlocklist() {
+        return blockedAsciiChars(matcher);
+      }
     };
   }
 
@@ -184,6 +190,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
       @Override Set<String> getPrefixes() {
         return CharacterSet.prefixesIfAscii(matcher);
+      }
+
+      @Override Set<Character> getBlocklist() {
+        return blockedAsciiChars(matcher);
       }
     }.source();
   }
@@ -2333,6 +2343,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return EMPTY_PREFIX;
   }
 
+  /** Returns the characters that will disqualify this parser if it's the next char in the input. */
+  Set<Character> getBlocklist() {
+    return Set.of();
+  }
+
   /**
    * Matches the input string starting at the given position.
    *
@@ -2366,6 +2381,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private abstract class SamePrefix<R> extends Parser<R> {
     @Override Set<String> getPrefixes() {
       return left().getPrefixes();
+    }
+
+    @Override Set<Character> getBlocklist() {
+      return left().getBlocklist();
     }
 
     final Parser<T> left() {
@@ -2490,6 +2509,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private static <T, A, R> Collector<T, A, R> toNull() {
     return Collector.of(() -> null, (a, e) -> {}, (a, b) -> a, a -> null);
+  }
+
+  private static Set<Character> blockedAsciiChars(CharPredicate predicate) {
+    return IntStream.range(0, 128)
+        .mapToObj(c -> (char) c)
+        .filter(c -> !predicate.test(c))
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   private interface ElidableFunction<F, T> extends Function<F, T> {}

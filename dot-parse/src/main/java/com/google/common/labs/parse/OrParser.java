@@ -16,6 +16,7 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Utils.checkArgument;
+import static com.google.mu.util.stream.MoreCollectors.toIntersectionOf;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
@@ -89,12 +90,21 @@ final class OrParser<T> extends Parser<T> {
     return prefixes.stream().collect(toUnmodifiableSet());
   }
 
+  @Override Set<Character> getBlocklist() {
+    return parsers.stream().collect(toIntersectionOf(Parser::getBlocklist));
+  }
+
   private static <T> PrefixPruneTree<Parser<T>> makePruneTreeIfUseful(
       List<Parser<T>> parsers) {
     var builder = new PrefixPruneTree.Builder<Parser<T>>();
     for (Parser<T> parser : parsers) {
       for (String prefix : parser.getPrefixes()) {
         builder.addPrefix(prefix, 8, parser); // peek for up to 8 chars lest diminishing return.
+        if (prefix.isEmpty()) {  // If there is no positive prefix to prune, prune by blocklist.
+          for (Character c : parser.getBlocklist()) {
+            builder.addBlocked(c, parser);
+          }
+        }
       }
     }
     return builder.numSurvivors() < parsers.size() ? builder.build() : null;

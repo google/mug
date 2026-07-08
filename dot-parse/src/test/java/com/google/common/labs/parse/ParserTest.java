@@ -6977,6 +6977,91 @@ public class ParserTest {
   }
 
   @Test
+  public void consecutive_negative_pruning_with_blocklist() {
+    Parser<String> parser =
+        anyOf(
+            string("x1"),
+            string("x2"),
+            string("x3"),
+            string("x4"),
+            string("x5"),
+            consecutive("[^abc]"),
+            chars(4));
+
+    // Input "a" starts with 'a', which is blocked by [^abc], so consecutive("[^abc]") is pruned.
+    // Only chars(4) remains and is tried, expecting 4 chars.
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
+
+    // Input "d" starts with 'd', which is not blocked, and is parsed successfully.
+    assertThat(parser.parse("d")).isEqualTo("d");
+  }
+
+  @Test
+  public void one_negative_pruning_with_blocklist() {
+    Parser<?> parser =
+        anyOf(
+            string("x1"),
+            string("x2"),
+            string("x3"),
+            string("x4"),
+            string("x5"),
+            one("[^abc]"),
+            chars(4));
+
+    // Input "a" starts with 'a', which is blocked by [^abc], so one("[^abc]") is pruned.
+    // Only chars(4) remains and is tried.
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
+
+    // Input "d" starts with 'd', which is not blocked, and is parsed successfully.
+    assertThat(parser.parse("d")).isEqualTo('d');
+  }
+
+  @Test
+  public void consecutive_predicate_pruning_with_blocklist() {
+    Parser<String> parser =
+        anyOf(
+            string("x1"),
+            string("x2"),
+            string("x3"),
+            string("x4"),
+            string("x5"),
+            consecutive(Character::isLetterOrDigit, "alphanumeric"),
+            chars(4));
+
+    // Input "!" starts with '!', which is blocked by alphanumeric, so consecutive is pruned.
+    // Only chars(4) remains and is tried.
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("!"));
+    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
+
+    // Input "a" starts with 'a', which is not blocked, and is parsed successfully.
+    assertThat(parser.parse("a")).isEqualTo("a");
+  }
+
+  @Test
+  public void one_predicate_pruning_with_blocklist() {
+    Parser<?> parser =
+        anyOf(
+            string("x1"),
+            string("x2"),
+            string("x3"),
+            string("x4"),
+            string("x5"),
+            one(Character::isLetterOrDigit, "alphanumeric"),
+            chars(4));
+
+    // Input "!" starts with '!', which is blocked by alphanumeric, so one is pruned.
+    // Only chars(4) remains and is tried.
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("!"));
+    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
+
+    // Input "a" starts with 'a', which is not blocked, and is parsed successfully.
+    assertThat(parser.parse("a")).isEqualTo('a');
+  }
+
+
+  @Test
   public void consecutive_with_caret_pruning() {
     assertThat(consecutive("[ab^c]").getPrefixes()).containsExactly("a", "b", "^", "c");
 
@@ -7038,13 +7123,13 @@ public class ParserTest {
     assertThat(parser.parse("z")).isEqualTo("z");
     assertThat(parser.parse("!")).isEqualTo("!");
 
-    // Input "8" should prune p0-p7 and prunable. Only unprunable is tried.
+    // Input "8" should prune p0-p7, prunable and unprunable (since '8' is in 0-9). Fallback to p0.
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("8"));
-    assertThat(e).hasMessageThat().contains("expecting <one or more [^0-9a-z]>");
+    assertThat(e).hasMessageThat().contains("expecting <one or more [0]>");
 
-    // Input "y" should prune p0-p7 and prunable. Only unprunable is tried.
+    // Input "y" should prune p0-p7, prunable and unprunable (since 'y' is in a-z). Fallback to p0.
     e = assertThrows(ParseException.class, () -> parser.parse("y"));
-    assertThat(e).hasMessageThat().contains("expecting <one or more [^0-9a-z]>");
+    assertThat(e).hasMessageThat().contains("expecting <one or more [0]>");
   }
 
   @Test
@@ -7065,9 +7150,9 @@ public class ParserTest {
     assertThat(parser.parse("a\u00A0")).isEqualTo("a\u00A0");
     assertThat(parser.parse("x1")).isEqualTo("x1");
 
-    // Input "b" prunes x1-x5 and abc. Only [a\u00A0] is tried.
+    // Input "b" prunes all candidates (including [a\u00A0] via blocklist). Fallback to first candidate x1.
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("b"));
-    assertThat(e).hasMessageThat().contains("expecting <one or more [a\u00A0]>");
+    assertThat(e).hasMessageThat().contains("expecting <x1>");
   }
 
   @Test
@@ -7136,9 +7221,9 @@ public class ParserTest {
     assertThat(parser.parse("\u00A0")).isEqualTo('\u00A0');
     assertThat(parser.parse("x1")).isEqualTo("x1");
 
-    // Input "b" prunes x1-x5 and abc. Only [a\u00A0] is tried.
+    // Input "b" prunes all candidates (including [a\u00A0] via blocklist). Fallback to first candidate x1.
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("b"));
-    assertThat(e).hasMessageThat().contains("expecting <[a\u00A0]>");
+    assertThat(e).hasMessageThat().contains("expecting <x1>");
   }
 
   @Test

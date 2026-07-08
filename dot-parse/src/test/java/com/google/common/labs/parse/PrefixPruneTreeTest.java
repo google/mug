@@ -247,4 +247,65 @@ public final class PrefixPruneTreeTest {
     assertThat(tree.pruneByPrefix(CharInput.from("ab"), 0)).containsExactly("val1", "val2");
     assertThat(tree.pruneByPrefix(CharInput.from("x"), 0)).isEmpty();
   }
+
+  @Test
+  public void onlyEmptyPrefix_withOneBlockedChar() {
+    PrefixPruneTree<String> tree =
+        new PrefixPruneTree.Builder<String>()
+            .addPrefix("", 100, "candidate")
+            .addBlocked('a', "candidate")
+            .build();
+    assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).isEmpty();
+    assertThat(tree.pruneByPrefix(CharInput.from("b"), 0)).containsExactly("candidate");
+  }
+
+  @Test
+  public void onlyEmptyPrefix_withTwoBlockedChars() {
+    PrefixPruneTree<String> tree =
+        new PrefixPruneTree.Builder<String>()
+            .addPrefix("", 100, "candidate")
+            .addBlocked('a', "candidate")
+            .addBlocked('b', "candidate")
+            .build();
+    assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).isEmpty();
+    assertThat(tree.pruneByPrefix(CharInput.from("b"), 0)).isEmpty();
+    assertThat(tree.pruneByPrefix(CharInput.from("c"), 0)).containsExactly("candidate");
+  }
+
+  @Test
+  public void noEmptyPrefix_withBlockedChar() {
+    PrefixPruneTree<String> tree =
+        new PrefixPruneTree.Builder<String>()
+            .addPrefix("a", 100, "candidate")
+            .addBlocked('b', "candidate")
+            .build();
+    assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).containsExactly("candidate");
+    // Due to the collapse lone leaf child optimization, single prefix tree collapses and does not prune.
+    assertThat(tree.pruneByPrefix(CharInput.from("b"), 0)).containsExactly("candidate");
+  }
+
+  @Test
+  public void mixedEmptyAndNonEmptyPrefix_withBlockedChar() {
+    PrefixPruneTree<String> tree =
+        new PrefixPruneTree.Builder<String>()
+            .addPrefix("", 100, "val1")
+            .addBlocked('x', "val1")
+            .addPrefix("x", 100, "val2")
+            .build();
+    assertThat(tree.pruneByPrefix(CharInput.from("x"), 0)).containsExactly("val2");
+    assertThat(tree.pruneByPrefix(CharInput.from("y"), 0)).containsExactly("val1");
+  }
+
+  @Test
+  public void blockedCharWithoutEmptyPrefix() {
+    PrefixPruneTree<String> tree =
+        new PrefixPruneTree.Builder<String>()
+            .addPrefix("b", 100, "candidate")
+            .addBlocked('a', "candidate")
+            .build();
+    assertThat(tree.pruneByPrefix(CharInput.from("b"), 0)).containsExactly("candidate");
+    // Due to the collapse lone leaf child optimization, single prefix tree collapses and does not prune.
+    assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).containsExactly("candidate");
+  }
 }
+

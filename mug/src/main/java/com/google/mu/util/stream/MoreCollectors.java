@@ -21,10 +21,12 @@ import static java.util.stream.Collectors.toList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -720,6 +722,73 @@ public final class MoreCollectors {
 
       R build() {
         return tie.stream().collect(downstream);
+      }
+    }
+    return Collector.of(Builder::new, Builder::add, Builder::merge, Builder::build);
+  }
+
+  /**
+   * Returns a collector that performs an intersection on sets of type {@code E} before accumulating
+   * the results into an immutable {@link Set}.
+   *
+   * <p>This is done by applying a mapping function that produces a set of type {@code E} to each
+   * input, and then intersecting the results.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * clubs.stream().collect(toIntersectionOf(Club::members)));
+   * }</pre>
+   *
+   * The runtime has an upper bounds of O(N) where N is the total number of elements in the mapped
+   * streams, and a lower bound of O(S * X) where S is the number of input sets and X is the size of
+   * the intersection. In practice, the runtime is usually around an average of the two.
+   *
+   * <p>The collector preserves encounter order. For example, given [{1, 2, 3, 4, 5}, {3, 2, 1}] the
+   * intersection returned will be {1, 2, 3}.
+   *
+   * <p>At least one {@code Set} element (even if empty) must be present in the input, or else {@code
+   * IllegalArgumentException} will be thrown.
+   *
+   * @param <T> the input type
+   * @param <E> the intersection element type (i.e. element type in the result set)
+   * @param mapper a function to be applied to the input elements, which returns a set of {@code E}
+   * @since 10.6.1
+   */
+  public static <T, E> Collector<T, ?, Set<E>> toIntersectionOf(
+      Function<? super T, ? extends Set<? extends E>> mapper) {
+    requireNonNull(mapper);
+    class Builder {
+      private LinkedHashSet<E> intersection = null;
+
+      void add(T input) {
+        intersectWith(mapper.apply(input));
+      }
+
+      private void intersectWith(Set<? extends E> elements) {
+        if (intersection == null) {
+          intersection = new LinkedHashSet<>();
+          intersection.addAll(elements);
+        } else {
+          intersection.retainAll(elements);
+        }
+      }
+
+      Builder merge(Builder that) {
+        if (intersection == null) {
+          return that;
+        }
+        if (that.intersection != null) {
+          intersectWith(that.intersection);
+        }
+        return this;
+      }
+
+      Set<E> build() {
+        if (intersection == null) {
+          throw new IllegalArgumentException("toIntersectionOf() requires at least one Set");
+        }
+        return Collections.unmodifiableSet(intersection);
       }
     }
     return Collector.of(Builder::new, Builder::add, Builder::merge, Builder::build);
