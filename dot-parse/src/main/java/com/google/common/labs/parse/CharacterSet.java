@@ -171,17 +171,16 @@ public final class CharacterSet implements CharPredicate {
   private static Set<String> parsePrefixesByCharacterRangeSet(CharPredicate predicate) {
     Parser<Character> regularChar = one(c -> c < 128 && c != '\\', "regular ascii char")
         .notFollowedByEof();
-    Parser<Character> escaped = one('\\')
-        .then(anyOf(
-            string("t").thenReturn('\t'),
-            string("n").thenReturn('\n'),
-            string("r").thenReturn('\r'),
-            string("f").thenReturn('\f'),
-            string("b").thenReturn('\b'),
-            string("\\").thenReturn('\\')));
+    Parser<Character> escaped = anyOf(
+        string("\\t").thenReturn('\t'),
+        string("\\n").thenReturn('\n'),
+        string("\\r").thenReturn('\r'),
+        string("\\f").thenReturn('\f'),
+        string("\\b").thenReturn('\b'),
+        string("\\\\").thenReturn('\\'));
     Parser<Character> asciiChar = regularChar.or(escaped);
-    Parser<Set<Character>> range = sequence(
-        asciiChar.followedBy("-"), asciiChar, CharacterSet::charsInRange);
+    Parser<Set<Character>> range =
+        sequence(asciiChar.followedBy("-"), asciiChar, CharacterSet::charsInRange);
     return anyOf(range, asciiChar.map(Set::of))
         .zeroOrMore(flatMapping(chars -> chars.stream().map(Object::toString), toUnmodifiableSet()))
         .between("[", "]")
