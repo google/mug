@@ -203,30 +203,6 @@ abstract class CharacterRangeSet implements CharPredicate {
     }
   }
 
-  static final class Whitespace extends CharacterRangeSet {
-    private static final String RANGES = new String(new char[] {
-        0x0009, 0x000D,
-        0x001C, 0x0020,
-        0x1680, 0x1680,
-        0x2000, 0x2006,
-        0x2008, 0x200A,
-        0x2028, 0x2029,
-        0x205F, 0x205F,
-        0x3000, 0x3000
-    });
-
-    @Override String getRangeString() {
-      return RANGES;
-    }
-
-    @Override public boolean test(char c) {
-      return Character.isWhitespace(c);
-    }
-
-    @Override public String toString() {
-      return "WHITESPACE";
-    }
-  }
 
   static final class Single extends CharacterRangeSet {
     private final char ch;

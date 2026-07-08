@@ -44,7 +44,15 @@ public interface CharPredicate {
    *
    * @since 10.6
    */
-  static CharPredicate WHITESPACE = new CharacterRangeSet.Whitespace();
+  static CharPredicate WHITESPACE = new CharPredicate() {
+    @Override public boolean test(char c) {
+      return Character.isWhitespace(c);
+    }
+
+    @Override public String toString() {
+      return "WHITESPACE";
+    }
+  };
 
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
   static CharPredicate is(char ch) {
@@ -96,7 +104,8 @@ public interface CharPredicate {
    *   <li>Caret {@code ^} is always treated as a literal character (doesn't need to be escaped).
    *       Negative character range set isn't supported.
    *   <li>Unicode code unit ({@code \u1234}), {@code \\}, {@code \t}, {@code \r}, {@code \n},
-   *       {@code \f} and {@code \b} escape sequences are allowed.
+   *       {@code \f} and {@code \b} escape sequences are allowed. Non-ASCII characters must be
+   *       unicode escaped.
    * </ul>
    *
    * <p>For any range {@code c1-c2} inside the character range set, the start character {@code c1} must not
