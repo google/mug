@@ -19,14 +19,12 @@ import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.lang.Math.min;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.reverseOrder;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -273,9 +271,7 @@ record PrefixPruneTree<V>(
     List<V> unwrap() {
       var result = unwrapped;
       if (result == null) {
-        unwrapped = result = isEmpty()
-            ? List.of()
-            : ordered.stream().map(Ordered::value).collect(toUnmodifiableList());
+        unwrapped = result = isEmpty() ? List.of() : ordered.stream().map(Ordered::value).toList();
       }
       return result;
     }
