@@ -246,4 +246,9 @@ public class CharacterSetTest {
         assertThrows(IllegalArgumentException.class, () -> prefixesIfAscii(custom));
     assertThat(e).hasMessageThat().contains("invalid range [z-a]");
   }
+
+  @Test
+  public void prefixesIfAscii_unicodeRange_returnsEmptySet() {
+    assertThat(prefixesIfAscii(CharPredicate.ANY)).containsExactly("");
+  }
 }
