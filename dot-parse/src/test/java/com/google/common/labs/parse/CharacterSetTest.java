@@ -1,8 +1,8 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.CharacterSet.charsIn;
+import static com.google.common.labs.parse.CharacterSet.prefixesIfAscii;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
@@ -10,6 +10,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.testing.EqualsTester;
+import com.google.mu.util.CharPredicate;
 
 @RunWith(JUnit4.class)
 public class CharacterSetTest {
@@ -19,8 +20,8 @@ public class CharacterSetTest {
     CharacterSet set = charsIn("[a-fA-F-_]");
     assertThat(set.matchesAllOf("abcfED-_")).isTrue();
     assertThat(set.matchesNoneOf("gzZ")).isTrue();
-    assertThat(set.candidateCharsIfAscii().get())
-        .containsExactly('a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F', '-', '_');
+    assertThat(prefixesIfAscii(set))
+        .containsExactly("a", "b", "c", "d", "e", "f", "A", "B", "C", "D", "E", "F", "-", "_");
   }
 
   @Test
@@ -28,21 +29,21 @@ public class CharacterSetTest {
     CharacterSet set = charsIn("[^\"{}]");
     assertThat(set.matchesAllOf("zzZ")).isTrue();
     assertThat(set.matchesNoneOf("\"{}")).isTrue();
-    assertThat(set.candidateCharsIfAscii()).isEmpty();
+    assertThat(prefixesIfAscii(set)).containsExactly("");
   }
 
   @Test
   public void test_emptyCharSet() {
     CharacterSet set = charsIn("[]");
     assertThat(set.matchesNoneOf("ab123")).isTrue();
-    assertThat(set.candidateCharsIfAscii().get()).isEmpty();
+    assertThat(prefixesIfAscii(set)).isEmpty();
   }
 
   @Test
   public void test_emptyNegativeCharSet_parseSucceeds() {
     CharacterSet set = charsIn("[^]");
     assertThat(set.matchesAllOf("ab123")).isTrue();
-    assertThat(set.candidateCharsIfAscii()).isEmpty();
+    assertThat(prefixesIfAscii(set)).containsExactly("");
   }
 
   @Test
@@ -52,7 +53,7 @@ public class CharacterSetTest {
     assertThat(set.contains('\\')).isTrue();
     assertThat(set.contains('a')).isFalse();
     assertThat(set.toString()).isEqualTo("[\\\\]");
-    assertThat(set.candidateCharsIfAscii().get()).containsExactly('\\');
+    assertThat(prefixesIfAscii(set)).containsExactly("\\");
   }
 
   @Test
@@ -62,7 +63,7 @@ public class CharacterSetTest {
     assertThat(set.contains('\\')).isFalse();
     assertThat(set.contains('a')).isTrue();
     assertThat(set.toString()).isEqualTo("[^\\\\]");
-    assertThat(set.candidateCharsIfAscii()).isEmpty();
+    assertThat(prefixesIfAscii(set)).containsExactly("");
   }
 
   @Test
@@ -77,7 +78,7 @@ public class CharacterSetTest {
     assertThat(set.contains('a')).isTrue();
     assertThat(set.contains('b')).isFalse();
     assertThat(set.toString()).isEqualTo("[\\\\]-a]");
-    assertThat(set.candidateCharsIfAscii().get()).containsExactly('\\', ']', '^', '_', '`', 'a');
+    assertThat(prefixesIfAscii(set)).containsExactly("\\", "]", "^", "_", "`", "a");
   }
 
   @Test
@@ -95,13 +96,13 @@ public class CharacterSetTest {
     assertThat(set1.contains(']')).isTrue();
     assertThat(set1.contains('a')).isFalse();
     assertThat(set1.toString()).isEqualTo("[]]");
-    assertThat(set1.candidateCharsIfAscii().get()).containsExactly(']');
+    assertThat(prefixesIfAscii(set1)).containsExactly("]");
 
     CharacterSet set2 = charsIn("[^]]");
     assertThat(set2.contains(']')).isFalse();
     assertThat(set2.contains('a')).isTrue();
     assertThat(set2.toString()).isEqualTo("[^]]");
-    assertThat(set2.candidateCharsIfAscii()).isEmpty();
+    assertThat(prefixesIfAscii(set2)).containsExactly("");
   }
 
   @Test
@@ -119,8 +120,8 @@ public class CharacterSetTest {
     assertThat(positive.not().contains('b')).isFalse();
     assertThat(positive.not().contains('c')).isTrue();
     assertThat(positive.not().toString()).isEqualTo("[^ab]");
-    assertThat(positive.candidateCharsIfAscii().get()).containsExactly('a', 'b');
-    assertThat(positive.not().candidateCharsIfAscii()).isEmpty();
+    assertThat(prefixesIfAscii(positive)).containsExactly("a", "b");
+    assertThat(prefixesIfAscii(positive.not())).containsExactly("");
   }
 
   @Test
@@ -130,8 +131,8 @@ public class CharacterSetTest {
     assertThat(negative.not().contains('b')).isTrue();
     assertThat(negative.not().contains('c')).isFalse();
     assertThat(negative.not().toString()).isEqualTo("[ab]");
-    assertThat(negative.candidateCharsIfAscii()).isEmpty();
-    assertThat(negative.not().candidateCharsIfAscii().get()).containsExactly('a', 'b');
+    assertThat(prefixesIfAscii(negative)).containsExactly("");
+    assertThat(prefixesIfAscii(negative.not())).containsExactly("a", "b");
   }
 
   @Test
@@ -142,8 +143,8 @@ public class CharacterSetTest {
     assertThat(range.not().contains('c')).isFalse();
     assertThat(range.not().contains('d')).isTrue();
     assertThat(range.not().toString()).isEqualTo("[^a-c]");
-    assertThat(range.candidateCharsIfAscii().get()).containsExactly('a', 'b', 'c');
-    assertThat(range.not().candidateCharsIfAscii()).isEmpty();
+    assertThat(prefixesIfAscii(range)).containsExactly("a", "b", "c");
+    assertThat(prefixesIfAscii(range.not())).containsExactly("");
   }
 
   @Test
@@ -154,8 +155,8 @@ public class CharacterSetTest {
     assertThat(negatedRange.not().contains('c')).isTrue();
     assertThat(negatedRange.not().contains('d')).isFalse();
     assertThat(negatedRange.not().toString()).isEqualTo("[a-c]");
-    assertThat(negatedRange.candidateCharsIfAscii()).isEmpty();
-    assertThat(negatedRange.not().candidateCharsIfAscii().get()).containsExactly('a', 'b', 'c');
+    assertThat(prefixesIfAscii(negatedRange)).containsExactly("");
+    assertThat(prefixesIfAscii(negatedRange.not())).containsExactly("a", "b", "c");
   }
 
   @Test
@@ -163,8 +164,8 @@ public class CharacterSetTest {
     CharacterSet empty = charsIn("[]");
     assertThat(empty.not().contains('a')).isTrue();
     assertThat(empty.not().toString()).isEqualTo("[^]");
-    assertThat(empty.candidateCharsIfAscii().get()).isEmpty();
-    assertThat(empty.not().candidateCharsIfAscii()).isEmpty();
+    assertThat(prefixesIfAscii(empty)).isEmpty();
+    assertThat(prefixesIfAscii(empty.not())).containsExactly("");
   }
 
   @Test
@@ -172,8 +173,8 @@ public class CharacterSetTest {
     CharacterSet full = charsIn("[^]");
     assertThat(full.not().contains('a')).isFalse();
     assertThat(full.not().toString()).isEqualTo("[]");
-    assertThat(full.candidateCharsIfAscii()).isEmpty();
-    assertThat(full.not().candidateCharsIfAscii().get()).isEmpty();
+    assertThat(prefixesIfAscii(full)).containsExactly("");
+    assertThat(prefixesIfAscii(full.not())).isEmpty();
   }
 
   @Test
@@ -191,13 +192,13 @@ public class CharacterSetTest {
   @Test
   public void candidateCharsIfAscii_nonAscii() {
     CharacterSet set = charsIn("[á]");
-    assertThat(set.candidateCharsIfAscii()).isEmpty();
+    assertThat(prefixesIfAscii(set)).containsExactly("");
   }
 
   @Test
   public void candidateCharsIfAscii_nonAsciiRange() {
     CharacterSet set = charsIn("[a-á]");
-    assertThat(set.candidateCharsIfAscii()).isEmpty();
+    assertThat(prefixesIfAscii(set)).containsExactly("");
   }
 
   @Test
@@ -229,5 +230,20 @@ public class CharacterSetTest {
   public void toString_regularCharactersOnly() {
     CharacterSet set = charsIn("[a-zA-Z0-9-_]");
     assertThat(set.toString()).isEqualTo("[a-zA-Z0-9-_]");
+  }
+
+  @Test
+  public void prefixesIfAscii_customPredicate_invalidRange_throws() {
+    CharPredicate custom = new CharPredicate() {
+      @Override public boolean test(char c) {
+        return false;
+      }
+      @Override public String characterRangeSet() {
+        return "[z-a]";
+      }
+    };
+    IllegalArgumentException e =
+        assertThrows(IllegalArgumentException.class, () -> prefixesIfAscii(custom));
+    assertThat(e).hasMessageThat().contains("invalid range [z-a]");
   }
 }

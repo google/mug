@@ -2779,6 +2779,44 @@ public class ParserTest {
   }
 
   @Test
+  public void getPrefixes_charPredicate_union() {
+    Parser<Character> parser = Parser.one(CharPredicate.is('a').or('b'), "a or b");
+    assertThat(parser.getPrefixes()).containsExactly("a", "b");
+  }
+
+  @Test
+  public void getPrefixes_charPredicate_brackets() {
+    Parser<Character> parser = Parser.one(CharPredicate.anyOf("[]^"), "brackets");
+    assertThat(parser.getPrefixes()).containsExactly("[", "]", "^");
+  }
+
+  @Test
+  public void getPrefixes_charPredicate_range() {
+    Parser<Character> parser = Parser.one(CharPredicate.range('x', 'z'), "x-z");
+    assertThat(parser.getPrefixes()).containsExactly("x", "y", "z");
+  }
+
+  @Test
+  public void getPrefixes_charPredicate_alpha() {
+    Parser<Character> parser = Parser.one(CharPredicate.ALPHA, "alpha");
+    assertThat(parser.getPrefixes()).hasSize(52); // A-Z, a-z
+    assertThat(parser.getPrefixes()).contains("a");
+    assertThat(parser.getPrefixes()).contains("Z");
+  }
+
+  @Test
+  public void getPrefixes_charPredicate_whitespaceAborts() {
+    Parser<Character> parser = Parser.one(CharPredicate.WHITESPACE, "whitespace");
+    assertThat(parser.getPrefixes()).containsExactly("");
+  }
+
+  @Test
+  public void getPrefixes_charPredicate_customLambdaAborts() {
+    Parser<Character> parser = Parser.one(CharPredicate.is('a').or(c -> false), "a or lambda");
+    assertThat(parser.getPrefixes()).containsExactly("");
+  }
+
+  @Test
   public void anyOf_pruning_withOneChar() {
     List<Parser<Character>> parsers = range(0, 20).mapToObj(i -> one((char) ('a' + i))).toList();
     Parser<Character> parser = parsers.stream().collect(or());

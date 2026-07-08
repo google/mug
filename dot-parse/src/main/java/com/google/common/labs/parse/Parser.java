@@ -162,7 +162,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       @Override Set<String> getPrefixes() {
-        return prefixesIfAscii(matcher);
+        return CharacterSet.prefixesIfAscii(matcher);
       }
     };
   }
@@ -183,7 +183,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       @Override Set<String> getPrefixes() {
-        return prefixesIfAscii(matcher);
+        return CharacterSet.prefixesIfAscii(matcher);
       }
     }.source();
   }
@@ -250,7 +250,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private static Parser<String> chars(int n, CharacterSet characterSet, String name) {
-    return chars(n, characterSet.getAsciiPrefixes(), name).suchThat(characterSet::matchesAllOf, name);
+    return chars(n, CharacterSet.prefixesIfAscii(characterSet), name)
+        .suchThat(characterSet::matchesAllOf, name);
   }
 
   /**
@@ -2330,10 +2331,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   Set<String> getPrefixes() {
     return EMPTY_PREFIX;
-  }
-
-  private static Set<String> prefixesIfAscii(CharPredicate predicate) {
-    return predicate instanceof CharacterSet cset ? cset.getAsciiPrefixes() : EMPTY_PREFIX;
   }
 
   /**
