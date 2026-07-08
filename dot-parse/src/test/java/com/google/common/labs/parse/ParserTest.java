@@ -32,8 +32,10 @@ import static org.junit.Assert.assertThrows;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
@@ -2825,6 +2827,27 @@ public class ParserTest {
     assertThat(parser.parse("s")).isEqualTo('s');
     assertThrows(ParseException.class, () -> parser.parse("z"));
     assertThrows(ParseException.class, () -> parser.parse("!"));
+  }
+
+  @Test
+  public void anyOf_getPrefixes_lazyInit() {
+    Parser<String> parser = anyOf(string("foo"), string("bar"));
+    assertThat(parser.getPrefixes()).containsExactly("foo", "bar");
+    // Second call should return the cached prefixes correctly.
+    assertThat(parser.getPrefixes()).containsExactly("foo", "bar");
+  }
+
+  @Test
+  public void anyOf_getBlocklist_lazyInit() {
+    Parser<?> p1 = consecutive("[a]");
+    Parser<?> p2 = consecutive("[b]");
+    Parser<?> parser = anyOf(p1, p2);
+    BitSet blocklist = parser.getBlocklist();
+    assertThat(blocklist.get('x')).isTrue();
+    assertThat(blocklist.get('a')).isFalse();
+    assertThat(blocklist.get('b')).isFalse();
+    // Second call should return the cached blocklist correctly.
+    assertThat(parser.getBlocklist()).isSameInstanceAs(blocklist);
   }
 
   @Test

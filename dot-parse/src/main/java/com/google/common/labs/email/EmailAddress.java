@@ -420,6 +420,15 @@ public final class EmailAddress {
     return of(address);
   }
 
+  private static final Parser<List<EmailAddress>>.OrEmpty ADDRESS_LIST_PARSER = PARSER
+      .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
+      .optionallyFollowedBy(ADDRESS_LIST_DELIMITER);
+
+  private static final Parser<Object> ADDRESS_OR_WHATEVER_LIST = anyOf(
+          // don't extract a@b from a@b@c
+          PARSER.notFollowedBy(ANY_BUT_LIST_DELIMITER, "non-separator"),
+          UNTIL_LIST_DELIMITER.map(String::trim));
+
   /**
    * Parses {@code addressList} according to RFC 5322 and returns an immutable list of {@link
    * EmailAddress}.
@@ -435,12 +444,8 @@ public final class EmailAddress {
    * @throws Parser.ParseException if {@code addressList} is invalid
    */
   public static List<EmailAddress> parseAddressList(String addressList) {
-    return PARSER
-        .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
-        .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
-        .parseSkipping(SAFE_WHITESPACE, addressList);
+    return ADDRESS_LIST_PARSER.parseSkipping(SAFE_WHITESPACE, addressList);
   }
-
   /**
    * Parses {@code addressList} according to RFC 5322 and returns an immutable list of {@link
    * EmailAddress}, with invalid entries passed to the {@code ifInvalid} consumer.
@@ -458,12 +463,9 @@ public final class EmailAddress {
    */
   public static List<EmailAddress> parseAddressList(
       String addressList, Consumer<? super String> ifInvalid) {
-    return anyOf(
-            // don't extract a@b from a@b@c
-            PARSER.notFollowedBy(ANY_BUT_LIST_DELIMITER, "non-separator"),
-            UNTIL_LIST_DELIMITER.map(String::trim))
+    return ADDRESS_OR_WHATEVER_LIST
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(ifInvalid))
-        .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
+        .optionallyFollowedBy(ADDRESS_LIST_DELIMITER)
         .parseSkipping(SAFE_WHITESPACE, addressList);
   }
 

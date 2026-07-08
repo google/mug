@@ -16,13 +16,13 @@ Measures the throughput of parsing/validating a single plain email address (`"us
 
 | Parser / Library | Throughput (ops/s) | Error (ops/s) | Relative Performance |
 | :--- | :--- | :--- | :--- |
-| [**`InternetAddress` (Jakarta Mail)**](http://github.com/google/mug/blob/master/mug-benchmarks/src/test/java/com/google/mu/benchmarks/EmailAddressBenchmark.java#L51-L53) | **10,517,365** | ± 281,489 | **2.3x** |
-| [**`EmailAddress.of` (Combinator)**](http://github.com/google/mug/blob/master/mug-benchmarks/src/test/java/com/google/mu/benchmarks/EmailAddressBenchmark.java#L41-L43) | **4,501,307** | ± 78,287 | **1.0x** |
-| [**`JMail.tryParse`**](http://github.com/google/mug/blob/master/mug-benchmarks/src/test/java/com/google/mu/benchmarks/EmailAddressBenchmark.java#L46-L48) | **2,094,378** | ± 19,387 | **0.5x** |
+| [**`InternetAddress` (Jakarta Mail)**](http://github.com/google/mug/blob/master/mug-benchmarks/src/test/java/com/google/mu/benchmarks/EmailAddressBenchmark.java#L51-L53) | **10,683,342** | ± 228,078 | **2.7x** |
+| [**`EmailAddress.of` (Combinator)**](http://github.com/google/mug/blob/master/mug-benchmarks/src/test/java/com/google/mu/benchmarks/EmailAddressBenchmark.java#L41-L43) | **3,842,677** | ± 52,220 | **1.0x** |
+| [**`JMail.tryParse`**](http://github.com/google/mug/blob/master/mug-benchmarks/src/test/java/com/google/mu/benchmarks/EmailAddressBenchmark.java#L46-L48) | **2,205,359** | ± 65,951 | **0.6x** |
 
 ### Analysis
 - **Jakarta Mail** is the fastest because it uses a relaxed, hand-written state loop that performs minimal validation and avoids constructing intermediate objects. It is less strict and susceptible to certain RFC violations.
-- **`EmailAddress`** is **2.1x faster than JMail** while enforcing strict RFC 5322 compliance. It leverages `dot-parse` combinators, which are optimized for character-level matching and utilize blocklist-based prefix pruning.
+- **`EmailAddress`** is **1.7x faster than JMail** while enforcing strict RFC 5322 compliance. It leverages `dot-parse` combinators, which are optimized for character-level matching and utilize blocklist-based prefix pruning.
 
 ---
 
@@ -33,5 +33,5 @@ Measures the throughput of parsing a comma-separated list of email addresses usi
 
 | Benchmark Scenario | Throughput (ops/s) | Error (ops/s) | Description |
 | :--- | :--- | :--- | :--- |
-| `parseValidList` | **277,903** | ± 4,932 | Parses a list of 4 valid email addresses. |
-| `parseMixedList` | **205,983** | ± 1,841 | Parses a list of 5 addresses, discarding 2 invalid ones. |
+| `parseValidList` | **273,263** | ± 4,811 | Parses a list of 4 valid email addresses. |
+| `parseMixedList` | **217,357** | ± 1,252 | Parses a list of 5 addresses, discarding 2 invalid ones. |

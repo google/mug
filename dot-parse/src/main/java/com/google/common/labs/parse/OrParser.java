@@ -16,20 +16,24 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Utils.checkArgument;
-import static com.google.mu.util.stream.MoreCollectors.toIntersectionOf;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import com.google.errorprone.annotations.concurrent.LazyInit;
 
 /** Implements {@link Parser#anyOf}. */
 final class OrParser<T> extends Parser<T> {
   private final List<Parser<T>> parsers;
   private final PrefixPruneTree<Parser<T>> pruneTree;
+  @LazyInit private Set<String> prefixes;
+  @LazyInit private volatile BitSet blocklist;  // contractually immutable
 
   OrParser(List<? extends Parser<? extends T>> candidates) {
     checkArgument(candidates.size() > 0, "parsers cannot be empty");
@@ -76,22 +80,43 @@ final class OrParser<T> extends Parser<T> {
   }
 
   @Override public Set<String> getPrefixes() {
-    List<String> prefixes = new ArrayList<>();
+    Set<String> result = prefixes;
+    if (result == null) {
+      prefixes = result = computePrefixes();
+    }
+    return result;
+  }
+
+  private Set<String> computePrefixes() {
+    List<String> result = new ArrayList<>();
     for (String prefix :
         iterateOnce(parsers.stream().flatMap(parser -> parser.getPrefixes().stream()).sorted())) {
       if (prefix.isEmpty()) { // short circuit upon no prefix.
         return super.getPrefixes();
       }
       // prefixes are sorted lexicographically, so if "a" is a prefix, "an", "any" are redundant.
-      if (prefixes.isEmpty() || !prefix.startsWith(prefixes.getLast())) {
-        prefixes.add(prefix);
+      if (result.isEmpty() || !prefix.startsWith(result.getLast())) {
+        result.add(prefix);
       }
     }
-    return prefixes.stream().collect(toUnmodifiableSet());
+    return result.stream().collect(toUnmodifiableSet());
   }
 
-  @Override Set<Character> getBlocklist() {
-    return parsers.stream().collect(toIntersectionOf(Parser::getBlocklist));
+  @Override
+  BitSet getBlocklist() {
+    var result = blocklist;
+    if (result == null) {
+      blocklist = result = computeBlocklist();
+    }
+    return result;
+  }
+
+  private BitSet computeBlocklist() {
+    var result = (BitSet) parsers.get(0).getBlocklist().clone();
+    for (int i = 1; i < parsers.size(); i++) {
+      result.and(parsers.get(i).getBlocklist());
+    }
+    return result;
   }
 
   private static <T> PrefixPruneTree<Parser<T>> makePruneTreeIfUseful(
@@ -101,8 +126,9 @@ final class OrParser<T> extends Parser<T> {
       for (String prefix : parser.getPrefixes()) {
         builder.addPrefix(prefix, 8, parser); // peek for up to 8 chars lest diminishing return.
         if (prefix.isEmpty()) {  // If there is no positive prefix to prune, prune by blocklist.
-          for (Character c : parser.getBlocklist()) {
-            builder.addBlocked(c, parser);
+          BitSet blocklist = parser.getBlocklist();
+          for (int c = blocklist.nextSetBit(0); c >= 0; c = blocklist.nextSetBit(c + 1)) {
+            builder.addBlocked((char) c, parser);
           }
         }
       }

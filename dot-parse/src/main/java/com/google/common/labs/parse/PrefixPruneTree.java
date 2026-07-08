@@ -22,18 +22,20 @@ import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.Immutable;
+import com.google.errorprone.annotations.concurrent.LazyInit;
 import com.google.mu.util.stream.BiStream;
 
 /**
@@ -74,14 +76,16 @@ record PrefixPruneTree<V>(
   static final class Builder<V> {
     private final List<Ordered<V>> survivors = new ArrayList<>();
     private final Map<Integer, Builder<V>> children = new HashMap<>();
-    private final Map<Integer, Set<V>> blocked = new HashMap<>();
+    private Map<Integer, BitSet> blockedByFirstChars;
+    private final Map<V, Integer> candidateToOrder;
     private final AtomicInteger sequence;
 
     Builder() {
-      this(new AtomicInteger());
+      this(new HashMap<>(), new AtomicInteger());
     }
 
-    private Builder(AtomicInteger sequence) {
+    private Builder(Map<V, Integer> candidateToOrder, AtomicInteger sequence) {
+      this.candidateToOrder = candidateToOrder;
       this.sequence = sequence;
     }
 
@@ -91,7 +95,9 @@ record PrefixPruneTree<V>(
 
     /** Adds a candidate that requires no prefix matching. */
     private void addDefault(V candidate) {
-      survivors.add(new Ordered<>(candidate, sequence.getAndIncrement()));
+      int order = sequence.getAndIncrement();
+      survivors.add(new Ordered<>(candidate, order));
+      candidateToOrder.put(candidate, order);
     }
 
     /**
@@ -107,7 +113,7 @@ record PrefixPruneTree<V>(
         if (c >= 128) { // out of range, stop.
           break;
         }
-        node = node.children.computeIfAbsent(c, k -> new Builder<V>(sequence));
+        node = node.children.computeIfAbsent(c, k -> new Builder<V>(candidateToOrder, sequence));
       }
       node.addDefault(candidate);
       return this;
@@ -119,45 +125,42 @@ record PrefixPruneTree<V>(
      */
     @CanIgnoreReturnValue
     Builder<V> addBlocked(char c, V candidate) {
-      int key = c;
-      blocked.computeIfAbsent(key, k -> new HashSet<>()).add(candidate);
-      children.putIfAbsent(key, new Builder<V>(sequence));
+      if (c >= 128) {
+        return this;
+      }
+      Integer order = candidateToOrder.get(candidate);
+      if (order != null) {
+        var blocked = blockedByFirstChars;
+        if (blocked == null) {
+          blockedByFirstChars = blocked = new HashMap<>();
+        }
+        blocked.computeIfAbsent((int) c, k -> new BitSet()).set(order);
+      }
+      children.putIfAbsent((int) c, new Builder<V>(candidateToOrder, sequence));
       return this;
     }
 
     PrefixPruneTree<V> build() {
-      return buildWithHierarchy(List.of(), List.of(), blocked);
+      return buildWithHierarchy(Survivors.none(), blockedByFirstChars);
     }
 
     private PrefixPruneTree<V> buildWithHierarchy(
-        List<Ordered<V>> orderedAncestors,
-        List<V> ancestorSurvivors,
-        Map<Integer, Set<V>> blocked) {
-      List<Ordered<V>> ancestorsIncludingMe;
-      List<V> effectiveSurvivors;
-      if (survivors.isEmpty()) {
-        ancestorsIncludingMe = orderedAncestors;
-        effectiveSurvivors = ancestorSurvivors;
-      } else {
-        ancestorsIncludingMe =
-            Stream.concat(orderedAncestors.stream(), survivors.stream())
-                .sorted(comparingInt(Ordered::order))
-                .collect(toUnmodifiableList());
-        effectiveSurvivors = Ordered.unwrap(ancestorsIncludingMe);
-      }
+        Survivors<V> ancestorSurvivors, Map<Integer, BitSet> blocked) {
+      Survivors<V> effectiveSurvivors = ancestorSurvivors.concat(survivors);
       if (children.isEmpty()) {
-        return new PrefixPruneTree<>(effectiveSurvivors, null);
+        return new PrefixPruneTree<>(effectiveSurvivors.unwrap(), null);
       }
       var subtrees = BiStream.from(children)
           .mapValues((c, builder) -> {
-            Set<V> blockedForChild = blocked.getOrDefault(c, Set.of());
-            if (blockedForChild.isEmpty()) {
-              return builder.buildWithHierarchy(ancestorsIncludingMe, effectiveSurvivors, Map.of());
+            if (blocked == null) {
+              return builder.buildWithHierarchy(effectiveSurvivors, null);
             }
-            List<Ordered<V>> filteredAncestors = ancestorsIncludingMe.stream()
-                .filter(o -> !blockedForChild.contains(o.value()))
-                .collect(toUnmodifiableList());
-            return builder.buildWithHierarchy(filteredAncestors, Ordered.unwrap(filteredAncestors), Map.of());
+            BitSet blockedForChild = blocked.get(c);
+            if (blockedForChild == null || blockedForChild.isEmpty()) {
+              return builder.buildWithHierarchy(effectiveSurvivors, null);
+            }
+            return builder.buildWithHierarchy(
+                effectiveSurvivors.filter(o -> !blockedForChild.get(o.order())), null);
           })
           // lower-case -> upper-case -> digits.
           // For the comparison (x == c1 ? child1 : x == c2 ? child2 : null), we want
@@ -169,7 +172,7 @@ record PrefixPruneTree<V>(
           return loneChild;
         }
       }
-      return new PrefixPruneTree<>(effectiveSurvivors, Trie.from(subtrees));
+      return new PrefixPruneTree<>(effectiveSurvivors.unwrap(), Trie.from(subtrees));
     }
   }
 
@@ -255,9 +258,54 @@ record PrefixPruneTree<V>(
     }
   }
 
-  private record Ordered<V>(V value, int order) {
-    static <V> List<V> unwrap(List<Ordered<V>> orderedList) {
-      return orderedList.stream().map(Ordered::value).collect(toUnmodifiableList());
+  private static final class Survivors<V> {
+    final List<Ordered<V>> ordered;
+    @LazyInit private List<V> unwrapped;
+
+    static <V> Survivors<V> none() {
+      return new Survivors<>(List.of());
+    }
+
+    Survivors(List<Ordered<V>> ordered) {
+      this.ordered = ordered;
+    }
+
+    List<V> unwrap() {
+      var result = unwrapped;
+      if (result == null) {
+        unwrapped = result = isEmpty()
+            ? List.of()
+            : ordered.stream().map(Ordered::value).collect(toUnmodifiableList());
+      }
+      return result;
+    }
+
+    Survivors<V> concat(List<Ordered<V>> that) {
+      if (isEmpty()) {
+        return new Survivors<>(that);
+      }
+      if (that.isEmpty()) {
+        return this;
+      }
+      return new Survivors<V>(
+          Stream.concat(ordered.stream(), that.stream())
+          .sorted(comparingInt(Ordered::order))
+          .toList());
+    }
+
+    Survivors<V> filter(Predicate<? super Ordered<V>> condition) {
+      List<Ordered<V>> filtered = ordered.stream().filter(condition).toList();
+      return filtered.size() == size() ? this : new Survivors<>(filtered);
+    }
+
+    boolean isEmpty() {
+      return ordered.isEmpty();
+    }
+
+    int size() {
+      return ordered.size();
     }
   }
+
+  private record Ordered<V>(V value, int order) {}
 }

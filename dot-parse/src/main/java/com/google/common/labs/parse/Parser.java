@@ -40,6 +40,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.AbstractMap;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,8 +54,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import com.google.errorprone.annotations.ThreadSafe;
@@ -167,7 +166,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return CharacterSet.prefixesIfAscii(matcher);
       }
 
-      @Override Set<Character> getBlocklist() {
+      @Override BitSet getBlocklist() {
         return blockedAsciiChars(matcher);
       }
     };
@@ -192,7 +191,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return CharacterSet.prefixesIfAscii(matcher);
       }
 
-      @Override Set<Character> getBlocklist() {
+      @Override BitSet getBlocklist() {
         return blockedAsciiChars(matcher);
       }
     }.source();
@@ -2343,9 +2342,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return EMPTY_PREFIX;
   }
 
-  /** Returns the characters that will disqualify this parser if it's the next char in the input. */
-  Set<Character> getBlocklist() {
-    return Set.of();
+  /**
+   * Returns the characters that will disqualify this parser if it's the next char in the input.
+   *
+   * <p>It's supposed to be used as immutable. Don't mutate it.
+   */
+  BitSet getBlocklist() {
+    return new BitSet();
   }
 
   /**
@@ -2383,7 +2386,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return left().getPrefixes();
     }
 
-    @Override Set<Character> getBlocklist() {
+    @Override BitSet getBlocklist() {
       return left().getBlocklist();
     }
 
@@ -2511,11 +2514,14 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return Collector.of(() -> null, (a, e) -> {}, (a, b) -> a, a -> null);
   }
 
-  private static Set<Character> blockedAsciiChars(CharPredicate predicate) {
-    return IntStream.range(0, 128)
-        .mapToObj(c -> (char) c)
-        .filter(c -> !predicate.test(c))
-        .collect(Collectors.toUnmodifiableSet());
+  private static BitSet blockedAsciiChars(CharPredicate predicate) {
+    BitSet bitSet = new BitSet();
+    for (int c = 0; c < 128; c++) {
+      if (!predicate.test((char) c)) {
+        bitSet.set(c);
+      }
+    }
+    return bitSet;
   }
 
   private interface ElidableFunction<F, T> extends Function<F, T> {}

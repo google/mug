@@ -305,5 +305,18 @@ public final class PrefixPruneTreeTest {
     assertThat(tree.pruneByPrefix(CharInput.from("b"), 0)).containsExactly("candidate");
     assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).isEmpty();
   }
+
+  @Test
+  public void nonAsciiBlocked_withMoreThanThreeChildren() {
+    PrefixPruneTree<String> tree =
+        new PrefixPruneTree.Builder<String>()
+            .addPrefix("a", 100, "c1")
+            .addPrefix("b", 100, "c2")
+            .addPrefix("c", 100, "c3")
+            .addPrefix("", 100, "c4")
+            .addBlocked('\u00ff', "c4") // Non-ASCII code point 255.
+            .build();
+    assertThat(tree.pruneByPrefix(CharInput.from("\u00ff"), 0)).containsExactly("c4");
+  }
 }
 
