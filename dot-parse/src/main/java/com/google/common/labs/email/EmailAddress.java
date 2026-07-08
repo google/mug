@@ -424,10 +424,10 @@ public final class EmailAddress {
       .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
       .optionallyFollowedBy(ADDRESS_LIST_DELIMITER);
 
-  private static final Parser<Object> ADDRESS_OR_WHATEVER_LIST = anyOf(
-          // don't extract a@b from a@b@c
-          PARSER.notFollowedBy(ANY_BUT_LIST_DELIMITER, "non-separator"),
-          UNTIL_LIST_DELIMITER.map(String::trim));
+  private static final Parser<?> ADDRESS_OR_JUNK = anyOf(
+      // don't extract a@b from a@b@c
+      PARSER.notFollowedBy(ANY_BUT_LIST_DELIMITER, "non-separator"),
+      UNTIL_LIST_DELIMITER.map(String::trim));
 
   /**
    * Parses {@code addressList} according to RFC 5322 and returns an immutable list of {@link
@@ -446,6 +446,7 @@ public final class EmailAddress {
   public static List<EmailAddress> parseAddressList(String addressList) {
     return ADDRESS_LIST_PARSER.parseSkipping(SAFE_WHITESPACE, addressList);
   }
+
   /**
    * Parses {@code addressList} according to RFC 5322 and returns an immutable list of {@link
    * EmailAddress}, with invalid entries passed to the {@code ifInvalid} consumer.
@@ -463,7 +464,7 @@ public final class EmailAddress {
    */
   public static List<EmailAddress> parseAddressList(
       String addressList, Consumer<? super String> ifInvalid) {
-    return ADDRESS_OR_WHATEVER_LIST
+    return ADDRESS_OR_JUNK
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(ifInvalid))
         .optionallyFollowedBy(ADDRESS_LIST_DELIMITER)
         .parseSkipping(SAFE_WHITESPACE, addressList);

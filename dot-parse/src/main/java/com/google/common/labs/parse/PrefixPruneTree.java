@@ -21,10 +21,11 @@ import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.reverseOrder;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -74,16 +75,14 @@ record PrefixPruneTree<V>(
   static final class Builder<V> {
     private final List<Ordered<V>> survivors = new ArrayList<>();
     private final Map<Integer, Builder<V>> children = new HashMap<>();
-    private Map<Integer, BitSet> blockedByFirstChars;
-    private final Map<V, Integer> candidateToOrder;
+    private Map<Integer, Set<V>> blockedByFirstChars;
     private final AtomicInteger sequence;
 
     Builder() {
-      this(new HashMap<>(), new AtomicInteger());
+      this(new AtomicInteger());
     }
 
-    private Builder(Map<V, Integer> candidateToOrder, AtomicInteger sequence) {
-      this.candidateToOrder = candidateToOrder;
+    private Builder(AtomicInteger sequence) {
       this.sequence = sequence;
     }
 
@@ -93,9 +92,7 @@ record PrefixPruneTree<V>(
 
     /** Adds a candidate that requires no prefix matching. */
     private void addDefault(V candidate) {
-      int order = sequence.getAndIncrement();
-      survivors.add(new Ordered<>(candidate, order));
-      candidateToOrder.put(candidate, order);
+      survivors.add(new Ordered<>(candidate, sequence.getAndIncrement()));
     }
 
     /**
@@ -111,7 +108,7 @@ record PrefixPruneTree<V>(
         if (c >= 128) { // out of range, stop.
           break;
         }
-        node = node.children.computeIfAbsent(c, k -> new Builder<V>(candidateToOrder, sequence));
+        node = node.children.computeIfAbsent(c, k -> new Builder<V>(sequence));
       }
       node.addDefault(candidate);
       return this;
@@ -123,42 +120,37 @@ record PrefixPruneTree<V>(
      */
     @CanIgnoreReturnValue
     Builder<V> addBlocked(char c, V candidate) {
-      if (c >= 128) {
+      int key = c;
+      if (key >= 128) {  // we are unable to block or prune beyond ascii
         return this;
       }
-      Integer order = candidateToOrder.get(candidate);
-      if (order != null) {
-        var blocked = blockedByFirstChars;
-        if (blocked == null) {
-          blockedByFirstChars = blocked = new HashMap<>();
-        }
-        blocked.computeIfAbsent((int) c, k -> new BitSet()).set(order);
+      if (blockedByFirstChars == null) {
+        blockedByFirstChars = new HashMap<>();
       }
-      children.putIfAbsent((int) c, new Builder<V>(candidateToOrder, sequence));
+      blockedByFirstChars.computeIfAbsent(key, k -> new HashSet<>()).add(candidate);
+      children.putIfAbsent(key, new Builder<V>(sequence));
       return this;
     }
 
+    /**
+     * Builds the prefix prune tree.
+     */
     PrefixPruneTree<V> build() {
       return buildWithHierarchy(Survivors.none(), blockedByFirstChars);
     }
 
     private PrefixPruneTree<V> buildWithHierarchy(
-        Survivors<V> ancestorSurvivors, Map<Integer, BitSet> blocked) {
+        Survivors<V> ancestorSurvivors, Map<Integer, Set<V>> blocked) {
       Survivors<V> effectiveSurvivors = ancestorSurvivors.concat(survivors);
       if (children.isEmpty()) {
         return new PrefixPruneTree<>(effectiveSurvivors.unwrap(), null);
       }
       var subtrees = BiStream.from(children)
           .mapValues((c, builder) -> {
-            if (blocked == null) {
-              return builder.buildWithHierarchy(effectiveSurvivors, null);
-            }
-            BitSet blockedForChild = blocked.get(c);
-            if (blockedForChild == null || blockedForChild.isEmpty()) {
-              return builder.buildWithHierarchy(effectiveSurvivors, null);
-            }
-            return builder.buildWithHierarchy(
-                effectiveSurvivors.filter(o -> !blockedForChild.get(o.order())), null);
+            Survivors<V> nextSurvivors = blocked == null
+                ? effectiveSurvivors
+                : filterBlocked(effectiveSurvivors, blocked.get(c));
+            return builder.buildWithHierarchy(nextSurvivors, null);
           })
           // lower-case -> upper-case -> digits.
           // For the comparison (x == c1 ? child1 : x == c2 ? child2 : null), we want
@@ -171,6 +163,13 @@ record PrefixPruneTree<V>(
         }
       }
       return new PrefixPruneTree<>(effectiveSurvivors.unwrap(), Trie.from(subtrees));
+    }
+
+    private static <V> Survivors<V> filterBlocked(Survivors<V> survivors, Set<V> blockedForChild) {
+      if (blockedForChild == null || blockedForChild.isEmpty()) {
+        return survivors;
+      }
+      return survivors.filter(o -> !blockedForChild.contains(o.value()));
     }
   }
 

@@ -17,7 +17,6 @@ package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import java.util.ArrayList;
@@ -44,7 +43,7 @@ final class OrParser<T> extends Parser<T> {
                     ? or.parsers.stream()
                     : Stream.of(p))
             .map(Parser::<T>covariant)
-            .collect(toUnmodifiableList());
+            .toList();
     this.pruneTree = makePruneTreeIfUseful(parsers);
   }
 
