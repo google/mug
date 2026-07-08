@@ -120,10 +120,16 @@ public class CharPredicateTest {
 
   @Test
   public void testAnyOf_toString() {
-    assertThat(CharPredicate.anyOf("abc").toString()).isEqualTo("anyOf('abc')");
+    assertThat(CharPredicate.anyOf("abc").toString()).isEqualTo("[a-c]");
     assertThat(CharPredicate.anyOf("ab").toString()).isEqualTo("[ab]");
     assertThat(CharPredicate.anyOf("a").toString()).isEqualTo("'a'");
     assertThat(CharPredicate.anyOf("").toString()).isEqualTo("NONE");
+  }
+
+  @Test
+  public void testAnyOf_withControlAndUnicodeChars_toString() {
+    assertThat(CharPredicate.anyOf("\n\r\t").toString()).isEqualTo("[\\t\\n\\r]");
+    assertThat(CharPredicate.anyOf("a\u0080\u00FF").toString()).isEqualTo("[a\\u0080\\u00FF]");
   }
 
   @Test
@@ -360,6 +366,10 @@ public class CharPredicateTest {
   public void characterRangeSet_anyOf() {
     assertThat(anyOf("xyz").characterRangeSet()).isEqualTo("[x-z]");
     assertThat(anyOf("acb-").characterRangeSet()).isEqualTo("[-a-c]");
+    assertThat(anyOf("fooBAR345").characterRangeSet()).isEqualTo("[3-5ABRfo]");
+    assertThat(anyOf("fooBAR345").not().characterRangeSet())
+        .isEqualTo("[\\u0000-26-@C-QS-eg-np-\\uFFFF]");
+    assertThat(anyOf("fooBAR345").not().not().characterRangeSet()).isEqualTo("[3-5ABRfo]");
   }
 
   @Test
@@ -632,5 +642,29 @@ public class CharPredicateTest {
       @Override public String toString() { return "custom"; }
     };
     assertThat(custom.not().toString()).isEqualTo("not (custom)");
+  }
+
+  @Test
+  public void precomputeForAscii_optimizations() {
+    assertThat(CharPredicate.NONE.precomputeForAscii()).isSameInstanceAs(CharPredicate.NONE);
+    assertThat(CharPredicate.NONE.precomputeForAscii().precomputeForAscii())
+        .isSameInstanceAs(CharPredicate.NONE);
+
+    CharPredicate nonAsciiRange = CharPredicate.range('\u0080', '\u00FF');
+    assertThat(nonAsciiRange.precomputeForAscii()).isSameInstanceAs(nonAsciiRange);
+    assertThat(nonAsciiRange.precomputeForAscii().precomputeForAscii()).isSameInstanceAs(nonAsciiRange);
+
+    CharPredicate nonAsciiSingle = CharPredicate.is('\u0080');
+    assertThat(nonAsciiSingle.precomputeForAscii()).isSameInstanceAs(nonAsciiSingle);
+
+    CharPredicate asciiRange = CharPredicate.range('a', 'z');
+    CharPredicate precomputedAsciiRange = asciiRange.precomputeForAscii();
+    assertThat(precomputedAsciiRange).isNotSameInstanceAs(asciiRange);
+    assertThat(precomputedAsciiRange.precomputeForAscii()).isSameInstanceAs(precomputedAsciiRange);
+
+    CharPredicate asciiSingle = CharPredicate.is('a');
+    CharPredicate precomputedAsciiSingle = asciiSingle.precomputeForAscii();
+    assertThat(precomputedAsciiSingle).isNotSameInstanceAs(asciiSingle);
+    assertThat(precomputedAsciiSingle.precomputeForAscii()).isSameInstanceAs(precomputedAsciiSingle);
   }
 }

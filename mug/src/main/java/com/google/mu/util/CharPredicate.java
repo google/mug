@@ -128,7 +128,7 @@ public interface CharPredicate {
    */
   default CharPredicate or(CharPredicate that) {
     requireNonNull(that);
-    return new CharacterRangeSet.Union(this, that);
+    return new CharacterRangeSet.Or(this, that);
   }
 
   /**
@@ -147,7 +147,7 @@ public interface CharPredicate {
    */
   default CharPredicate and(CharPredicate that) {
     requireNonNull(that);
-    return new CharacterRangeSet.Intersection(this, that);
+    return new CharacterRangeSet.And(this, that);
   }
 
   /**
@@ -243,6 +243,8 @@ public interface CharPredicate {
    * @since 9.9.4
    */
   default CharPredicate precomputeForAscii() {
-    return new CharacterRangeSet.PrecomputedForAscii(this);
+    CharacterRangeSet.PrecomputedForAscii precomputed =
+        new CharacterRangeSet.PrecomputedForAscii(this);
+    return precomputed.matchesAnyAscii() ? precomputed : this;
   }
 }

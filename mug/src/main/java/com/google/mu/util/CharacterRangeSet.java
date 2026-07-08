@@ -20,117 +20,35 @@ abstract class CharacterRangeSet implements CharPredicate {
   }
 
   @Override public final String characterRangeSet() {
-    String s = getRangeString();
-    return s == null ? "" : toCharacterClass(s);
+    String rangeString = getRangeString();
+    if (rangeString == null) {
+      return "";
+    }
+    if (rangeString.isEmpty()) {
+      return "[]";
+    }
+    String prefix = "[";
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < rangeString.length(); i += 2) {
+      char start = rangeString.charAt(i);
+      char end = rangeString.charAt(i + 1);
+      if (start == '-' && end == '-') {
+        prefix = "[-";
+        continue;
+      }
+      if (start == end) {
+        builder.append(escapeChar(start));
+      } else if (start + 1 == end) {
+        builder.append(escapeChar(start)).append(escapeChar(end));
+      } else {
+        builder.append(escapeChar(start)).append('-').append(escapeChar(end));
+      }
+    }
+    return prefix + builder + "]";
   }
 
   @Override public String toString() {
     return characterRangeSet();
-  }
-
-  private static String unionRangeStrings(String aRangeString, String bRangeString) {
-    if (aRangeString.isEmpty()) return bRangeString;
-    if (bRangeString.isEmpty()) return aRangeString;
-
-    StringBuilder result = new StringBuilder();
-    int i = 0, j = 0;
-
-    char currentStart, currentEnd;
-    if (aRangeString.charAt(0) <= bRangeString.charAt(0)) {
-      currentStart = aRangeString.charAt(0);
-      currentEnd = aRangeString.charAt(1);
-      i = 2;
-    } else {
-      currentStart = bRangeString.charAt(0);
-      currentEnd = bRangeString.charAt(1);
-      j = 2;
-    }
-
-    while (i < aRangeString.length() || j < bRangeString.length()) {
-      char nextStart, nextEnd;
-      if (i < aRangeString.length()
-          && (j >= bRangeString.length() || aRangeString.charAt(i) <= bRangeString.charAt(j))) {
-        nextStart = aRangeString.charAt(i);
-        nextEnd = aRangeString.charAt(i + 1);
-        i += 2;
-      } else {
-        nextStart = bRangeString.charAt(j);
-        nextEnd = bRangeString.charAt(j + 1);
-        j += 2;
-      }
-
-      if (nextStart <= currentEnd + 1) {
-        currentEnd = (char) Math.max(currentEnd, nextEnd);
-      } else {
-        result.append(currentStart).append(currentEnd);
-        currentStart = nextStart;
-        currentEnd = nextEnd;
-      }
-    }
-
-    result.append(currentStart).append(currentEnd);
-    return result.toString();
-  }
-
-  private static String intersectRangeStrings(String aRangeString, String bRangeString) {
-    if (aRangeString.isEmpty() || bRangeString.isEmpty()) return "";
-
-    StringBuilder result = new StringBuilder();
-    int i = 0, j = 0;
-
-    while (i < aRangeString.length() && j < bRangeString.length()) {
-      char as = aRangeString.charAt(i), ae = aRangeString.charAt(i + 1);
-      char bs = bRangeString.charAt(j), be = bRangeString.charAt(j + 1);
-
-      char start = (char) Math.max(as, bs);
-      char end = (char) Math.min(ae, be);
-
-      if (start <= end) {
-        result.append(start).append(end);
-      }
-
-      if (ae < be) {
-        i += 2;
-      } else if (be < ae) {
-        j += 2;
-      } else {
-        i += 2;
-        j += 2;
-      }
-    }
-    return result.toString();
-  }
-
-  private static String negateRangeString(String rangeString) {
-    StringBuilder builder = new StringBuilder();
-    char current = 0;
-
-    for (int i = 0; i < rangeString.length(); i += 2) {
-      char start = rangeString.charAt(i);
-      char end = rangeString.charAt(i + 1);
-
-      if (start > current) {
-        builder.append(current).append((char) (start - 1));
-      }
-      current = (char) (end + 1);
-      if (end == 0xFFFF) {
-        break;
-      }
-    }
-
-    if (rangeString.isEmpty() || rangeString.charAt(rangeString.length() - 1) < 0xFFFF) {
-      builder.append(current).append((char) 0xFFFF);
-    }
-
-    return builder.toString();
-  }
-
-  private static String coalesce(String rangeString) {
-    String result = "";
-    for (int i = 0; i < rangeString.length(); i += 2) {
-      result = unionRangeStrings(result, rangeString.substring(i, i + 2));
-    }
-    return result;
   }
 
   static final class Alpha extends CharacterRangeSet {
@@ -206,15 +124,13 @@ abstract class CharacterRangeSet implements CharPredicate {
 
   static final class Single extends CharacterRangeSet {
     private final char ch;
-    private final String rangeString;
 
     Single(char ch) {
       this.ch = ch;
-      this.rangeString = "" + ch + ch;
     }
 
     @Override String getRangeString() {
-      return rangeString;
+      return "" + ch + ch;
     }
 
     @Override public boolean test(char c) {
@@ -229,16 +145,14 @@ abstract class CharacterRangeSet implements CharPredicate {
   static final class Range extends CharacterRangeSet {
     private final char from;
     private final char to;
-    private final String rangeString;
 
     Range(char from, char to) {
       this.from = from;
       this.to = to;
-      this.rangeString = from <= to ? "" + from + to : "";
     }
 
     @Override String getRangeString() {
-      return rangeString;
+      return from <= to ? "" + from + to : "";
     }
 
     @Override public boolean test(char c) {
@@ -252,38 +166,36 @@ abstract class CharacterRangeSet implements CharPredicate {
 
   static final class AnyOf extends CharacterRangeSet {
     private final char[] array;
-    private final String original;
-    private final String rangeString;
 
     AnyOf(String chars) {
-      this.original = chars;
       this.array = chars.toCharArray();
       Arrays.sort(array);
+    }
+
+    @Override String getRangeString() {
       StringBuilder builder = new StringBuilder(array.length * 2);
       for (char c : array) {
         builder.append(c).append(c);
       }
-      this.rangeString = coalesce(builder.toString());
-    }
-
-    @Override String getRangeString() {
-      return rangeString;
+      return coalesce(builder);
     }
 
     @Override public boolean test(char c) {
       return Arrays.binarySearch(array, c) >= 0;
     }
 
-    @Override public String toString() {
-      return "anyOf('" + original + "')";
+    private static String coalesce(CharSequence rangeString) {
+      return rangeString.length() < 2
+          ? rangeString.toString()
+          : unionRangeStrings(rangeString, rangeString.subSequence(0, 2));
     }
   }
 
-  static final class Union extends Computed {
+  static final class Or extends Computed {
     private final CharPredicate a;
     private final CharPredicate b;
 
-    Union(CharPredicate a, CharPredicate b) {
+    Or(CharPredicate a, CharPredicate b) {
       this.a = a;
       this.b = b;
     }
@@ -304,19 +216,42 @@ abstract class CharacterRangeSet implements CharPredicate {
     }
   }
 
-  static final class Intersection extends Computed {
+  static final class And extends Computed {
     private final CharPredicate a;
     private final CharPredicate b;
 
-    Intersection(CharPredicate a, CharPredicate b) {
+    And(CharPredicate a, CharPredicate b) {
       this.a = a;
       this.b = b;
     }
 
     @Override String computeRangeString() {
-      String aString = rangeStringOf(a);
-      String bString = rangeStringOf(b);
-      return aString == null || bString == null ? null : intersectRangeStrings(aString, bString);
+      String aRangeString = rangeStringOf(a);
+      String bRangeString = rangeStringOf(b);
+      if (aRangeString == null || bRangeString == null) {
+        return null;
+      }
+      if (aRangeString.isEmpty() || bRangeString.isEmpty()) return "";
+      StringBuilder builder = new StringBuilder();
+      int i = 0, j = 0;
+      while (i < aRangeString.length() && j < bRangeString.length()) {
+        char as = aRangeString.charAt(i), ae = aRangeString.charAt(i + 1);
+        char bs = bRangeString.charAt(j), be = bRangeString.charAt(j + 1);
+        char start = (char) Math.max(as, bs);
+        char end = (char) Math.min(ae, be);
+        if (start <= end) {
+          builder.append(start).append(end);
+        }
+        if (ae < be) {
+          i += 2;
+        } else if (be < ae) {
+          j += 2;
+        } else {
+          i += 2;
+          j += 2;
+        }
+      }
+      return builder.toString();
     }
 
     @Override public boolean test(char c) {
@@ -337,8 +272,27 @@ abstract class CharacterRangeSet implements CharPredicate {
     }
 
     @Override String computeRangeString() {
-      String inner = rangeStringOf(predicate);
-      return inner == null ? null : negateRangeString(inner);
+      String base = rangeStringOf(predicate);
+      if (base == null) {
+        return null;
+      }
+      StringBuilder builder = new StringBuilder();
+      char current = 0;
+      for (int i = 0; i < base.length(); i += 2) {
+        char start = base.charAt(i);
+        char end = base.charAt(i + 1);
+        if (start > current) {
+          builder.append(current).append((char) (start - 1));
+        }
+        current = (char) (end + 1);
+        if (end == 0xFFFF) {
+          break;
+        }
+      }
+      if (base.isEmpty() || base.charAt(base.length() - 1) < 0xFFFF) {
+        builder.append(current).append((char) 0xFFFF);
+      }
+      return builder.toString();
     }
 
     @Override public boolean test(char c) {
@@ -364,6 +318,10 @@ abstract class CharacterRangeSet implements CharPredicate {
       this.base = base;
       this.low64 = computeMask(base, 0);
       this.high64 = computeMask(base, 64);
+    }
+
+    boolean matchesAnyAscii() {
+      return low64 != 0L || high64 != 0L;
     }
 
     @Override public boolean test(char c) {
@@ -399,33 +357,52 @@ abstract class CharacterRangeSet implements CharPredicate {
     }
   }
 
-  private static String toCharacterClass(String rangeString) {
-    if (rangeString.isEmpty()) {
-      return "[]";
+  private static String unionRangeStrings(CharSequence aRangeString, CharSequence bRangeString) {
+    if (aRangeString.isEmpty()) return bRangeString.toString();
+    if (bRangeString.isEmpty()) return aRangeString.toString();
+
+    StringBuilder result = new StringBuilder();
+    int i = 0, j = 0;
+    char currentStart, currentEnd;
+    if (aRangeString.charAt(0) <= bRangeString.charAt(0)) {
+      currentStart = aRangeString.charAt(0);
+      currentEnd = aRangeString.charAt(1);
+      i = 2;
+    } else {
+      currentStart = bRangeString.charAt(0);
+      currentEnd = bRangeString.charAt(1);
+      j = 2;
     }
 
-    String prefix = "[";
-    StringBuilder builder = new StringBuilder();
-
-    for (int i = 0; i < rangeString.length(); i += 2) {
-      char start = rangeString.charAt(i);
-      char end = rangeString.charAt(i + 1);
-
-      if (start == '-' && end == '-') {
-        prefix = "[-";
-        continue;
-      }
-
-      if (start == end) {
-        builder.append(escapeChar(start));
-      } else if (start + 1 == end) {
-        builder.append(escapeChar(start)).append(escapeChar(end));
+    while (i < aRangeString.length() || j < bRangeString.length()) {
+      char nextStart, nextEnd;
+      if (i < aRangeString.length()
+          && (j >= bRangeString.length() || aRangeString.charAt(i) <= bRangeString.charAt(j))) {
+        nextStart = aRangeString.charAt(i);
+        nextEnd = aRangeString.charAt(i + 1);
+        i += 2;
       } else {
-        builder.append(escapeChar(start)).append('-').append(escapeChar(end));
+        nextStart = bRangeString.charAt(j);
+        nextEnd = bRangeString.charAt(j + 1);
+        j += 2;
+      }
+      if (nextStart <= currentEnd + 1) {
+        currentEnd = (char) Math.max(currentEnd, nextEnd);
+      } else {
+        result.append(currentStart).append(currentEnd);
+        currentStart = nextStart;
+        currentEnd = nextEnd;
       }
     }
 
-    return prefix + builder.toString() + "]";
+    result.append(currentStart).append(currentEnd);
+    return result.toString();
+  }
+
+  private static String rangeStringOf(CharPredicate predicate) {
+    return predicate instanceof CharacterRangeSet
+        ? ((CharacterRangeSet) predicate).getRangeString()
+        : null;
   }
 
   private static String escapeChar(int c) {
@@ -442,11 +419,5 @@ abstract class CharacterRangeSet implements CharPredicate {
         }
         return Character.toString((char) c);
     }
-  }
-
-  static String rangeStringOf(CharPredicate predicate) {
-    return predicate instanceof CharacterRangeSet
-        ? ((CharacterRangeSet) predicate).getRangeString()
-        : null;
   }
 }
