@@ -2887,6 +2887,18 @@ public class ParserTest {
   }
 
   @Test
+  public void anyOf_withEmptyPrefixParsers() {
+    Parser<?> p = anyOf(one("[]"), consecutive("[]"));
+    assertThat(p.getPrefixes()).isEmpty();
+  }
+
+  @Test
+  public void anyOf_withEmptyPrefixParsers_correctness() {
+    Parser<?> p = anyOf(string("abc"), one("[]"));
+    assertThat(p.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test
   public void atLeastOnce_success() {
     Parser<List<String>> parser = string("a").atLeastOnce();
     assertThat(parser.parse("a")).containsExactly("a");
@@ -8550,11 +8562,5 @@ public class ParserTest {
       invocationCount.incrementAndGet();
       return reducer.apply(a, b);
     };
-  }
-
-  @Test
-  public void testAnyOfWithEmptyPrefixParsers() {
-    Parser<?> p = anyOf(one("[]"), consecutive("[]"));
-    assertThat(p.getPrefixes()).isEmpty();
   }
 }

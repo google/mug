@@ -93,8 +93,7 @@ final class OrParser<T> extends Parser<T> {
       List<Parser<T>> parsers) {
     var builder = new PrefixPruneTree.Builder<Parser<T>>();
     for (Parser<T> parser : parsers) {
-      Set<String> prefixes = parser.getPrefixes();
-      for (String prefix : prefixes) {
+      for (String prefix : parser.getPrefixes()) {
         builder.addPrefix(prefix, 8, parser); // peek for up to 8 chars lest diminishing return.
       }
     }
