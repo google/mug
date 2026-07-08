@@ -77,12 +77,14 @@ public interface CharPredicate {
   }
 
   /**
-   * Returns a regex-like character range set representation of this predicate (e.g.,
-   * {@code "[0-9a-zA-Z]"}, negated {@code "[^a-z]"}, or empty {@code "[]"}), if known, or else
-   * {@code ""}.
+   * Returns a regex-like character range set metadata of this predicate (e.g.,
+   * {@code "[0-9a-zA-Z_-]"}, {@code "[]"}). By default {@code ""} is returned, indicating
+   * that the character range set metadata is unknown.
    *
-   * <p>It's used for debugging and metadata for optimization.
-   * Thus the returned string needs to be accurate, if implemented.
+   * <p>It's used both for debugging and as metadata for optimizations.
+   * Thus it's critical for the returned character set range string to be accurate, if implemented.
+   * That is, if your {@link #characterRangeSet} is inconsistent with {@link #test}, behavior is
+   * unpredictable.
    *
    * <p>Special characters inside the class body are serialized and parsed as follows:
    * <ul>

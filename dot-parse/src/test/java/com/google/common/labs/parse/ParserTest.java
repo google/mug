@@ -8551,4 +8551,10 @@ public class ParserTest {
       return reducer.apply(a, b);
     };
   }
+
+  @Test
+  public void testAnyOfWithEmptyPrefixParsers() {
+    Parser<?> p = anyOf(one("[]"), consecutive("[]"));
+    assertThat(p.getPrefixes()).isEmpty();
+  }
 }
