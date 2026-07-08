@@ -113,43 +113,26 @@ record PrefixPruneTree<V>(
       return this;
     }
 
+    /**
+     * Registers that if the next char in the input is {@code c}, the {@code candidate}
+     * can be safely pruned.
+     */
     @CanIgnoreReturnValue
-    Builder<V> addBlocked(char c, V value) {
-      blocked.computeIfAbsent((int) c, k -> new HashSet<>()).add(value);
+    Builder<V> addBlocked(char c, V candidate) {
+      int key = c;
+      blocked.computeIfAbsent(key, k -> new HashSet<>()).add(candidate);
+      children.putIfAbsent(key, new Builder<V>(sequence));
       return this;
     }
 
     PrefixPruneTree<V> build() {
-      if (survivors.isEmpty()) {
-        return buildWithHierarchy(List.of(), List.of());
-      }
-      for (int c : blocked.keySet()) {
-        children.putIfAbsent(c, new Builder<V>(sequence));
-      }
-      List<Ordered<V>> ancestorsIncludingMe =
-          survivors.stream().sorted(comparingInt(Ordered::order)).collect(toUnmodifiableList());
-      List<V> effectiveSurvivors =
-          ancestorsIncludingMe.stream().map(Ordered::value).collect(toUnmodifiableList());
-      if (children.isEmpty()) {
-        return new PrefixPruneTree<>(effectiveSurvivors, null);
-      }
-      var subtrees = BiStream.from(children)
-          .mapValues((c, childBuilder) -> {
-            Set<V> blockedForChild = blocked.getOrDefault(c, Set.of());
-            List<Ordered<V>> filteredAncestors = ancestorsIncludingMe.stream()
-                .filter(o -> !blockedForChild.contains(o.value()))
-                .collect(toUnmodifiableList());
-            List<V> filteredAncestorSurvivors = filteredAncestors.stream()
-                .map(Ordered::value)
-                .collect(toUnmodifiableList());
-            return childBuilder.buildWithHierarchy(filteredAncestors, filteredAncestorSurvivors);
-          })
-          .collect(toMap(() -> new TreeMap<Integer, PrefixPruneTree<V>>(reverseOrder())));
-      return new PrefixPruneTree<>(effectiveSurvivors, Trie.from(subtrees));
+      return buildWithHierarchy(List.of(), List.of(), blocked);
     }
 
     private PrefixPruneTree<V> buildWithHierarchy(
-        List<Ordered<V>> orderedAncestors, List<V> ancestorSurvivors) {
+        List<Ordered<V>> orderedAncestors,
+        List<V> ancestorSurvivors,
+        Map<Integer, Set<V>> blocked) {
       List<Ordered<V>> ancestorsIncludingMe;
       List<V> effectiveSurvivors;
       if (survivors.isEmpty()) {
@@ -160,14 +143,22 @@ record PrefixPruneTree<V>(
             Stream.concat(orderedAncestors.stream(), survivors.stream())
                 .sorted(comparingInt(Ordered::order))
                 .collect(toUnmodifiableList());
-        effectiveSurvivors =
-            ancestorsIncludingMe.stream().map(Ordered::value).collect(toUnmodifiableList());
+        effectiveSurvivors = Ordered.unwrap(ancestorsIncludingMe);
       }
       if (children.isEmpty()) {
         return new PrefixPruneTree<>(effectiveSurvivors, null);
       }
       var subtrees = BiStream.from(children)
-          .mapValues(c -> c.buildWithHierarchy(ancestorsIncludingMe, effectiveSurvivors))
+          .mapValues((c, builder) -> {
+            Set<V> blockedForChild = blocked.getOrDefault(c, Set.of());
+            if (blockedForChild.isEmpty()) {
+              return builder.buildWithHierarchy(ancestorsIncludingMe, effectiveSurvivors, Map.of());
+            }
+            List<Ordered<V>> filteredAncestors = ancestorsIncludingMe.stream()
+                .filter(o -> !blockedForChild.contains(o.value()))
+                .collect(toUnmodifiableList());
+            return builder.buildWithHierarchy(filteredAncestors, Ordered.unwrap(filteredAncestors), Map.of());
+          })
           // lower-case -> upper-case -> digits.
           // For the comparison (x == c1 ? child1 : x == c2 ? child2 : null), we want
           // c1 to occur more frequently than c2 for more effective short-circuiting.
@@ -264,5 +255,9 @@ record PrefixPruneTree<V>(
     }
   }
 
-  private record Ordered<V>(V value, int order) {}
+  private record Ordered<V>(V value, int order) {
+    static <V> List<V> unwrap(List<Ordered<V>> orderedList) {
+      return orderedList.stream().map(Ordered::value).collect(toUnmodifiableList());
+    }
+  }
 }

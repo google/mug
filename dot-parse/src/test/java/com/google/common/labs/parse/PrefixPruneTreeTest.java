@@ -280,8 +280,7 @@ public final class PrefixPruneTreeTest {
             .addBlocked('b', "candidate")
             .build();
     assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).containsExactly("candidate");
-    // Due to the collapse lone leaf child optimization, single prefix tree collapses and does not prune.
-    assertThat(tree.pruneByPrefix(CharInput.from("b"), 0)).containsExactly("candidate");
+    assertThat(tree.pruneByPrefix(CharInput.from("b"), 0)).isEmpty();
   }
 
   @Test
@@ -304,8 +303,7 @@ public final class PrefixPruneTreeTest {
             .addBlocked('a', "candidate")
             .build();
     assertThat(tree.pruneByPrefix(CharInput.from("b"), 0)).containsExactly("candidate");
-    // Due to the collapse lone leaf child optimization, single prefix tree collapses and does not prune.
-    assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).containsExactly("candidate");
+    assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).isEmpty();
   }
 }
 
