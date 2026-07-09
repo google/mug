@@ -57,6 +57,7 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import com.google.errorprone.annotations.ThreadSafe;
+import com.google.errorprone.annotations.concurrent.LazyInit;
 import com.google.mu.function.Function4;
 import com.google.mu.function.ObjInt2Function;
 import com.google.mu.function.TriFunction;
@@ -162,11 +163,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(name, start);
       }
 
-      @Override Set<String> getPrefixes() {
+      @Override Set<String> computePrefixes() {
         return CharacterSet.prefixesIfAscii(matcher);
       }
 
-      @Override BitSet getBlocklist() {
+      @Override BitSet computeBlocklist() {
         return blockedAsciiChars(matcher);
       }
     };
@@ -187,11 +188,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(name, end);
       }
 
-      @Override Set<String> getPrefixes() {
+      @Override Set<String> computePrefixes() {
         return CharacterSet.prefixesIfAscii(matcher);
       }
 
-      @Override BitSet getBlocklist() {
+      @Override BitSet computeBlocklist() {
         return blockedAsciiChars(matcher);
       }
     }.source();
@@ -252,7 +253,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(name, start);
       }
 
-      @Override Set<String> getPrefixes() {
+      @Override Set<String> computePrefixes() {
         return prefixes;
       }
     };
@@ -357,7 +358,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(string, start);
       }
 
-      @Override Set<String> getPrefixes() {
+      @Override Set<String> computePrefixes() {
         return Set.of(string);
       }
     };
@@ -382,8 +383,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(string, start);
       }
 
-      @Override Set<String> getPrefixes() {
-        // Prune by up to 4 chars (16 combinations) to avoid prefix tree explosion.
+      @Override Set<String> computePrefixes() {
         return caseInsensitivePrefixes(string, 4);
       }
     };
@@ -1148,7 +1148,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : ErrorContext.MINIMAL.failAt(start, "expecting <{name}>", delimiter);
       }
 
-      @Override Set<String> getPrefixes() {
+      @Override Set<String> computePrefixes() {
         return Set.of(delimiter);
       }
 
@@ -2334,11 +2334,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
   }
 
+  @LazyInit private volatile Set<String> prefixes;
+  @LazyInit private volatile BitSet blocklist;
+
   /**
    * Returns metadata about the prefixes that can be used to prune out this parser, if the input
    * doesn't start with any of the prefixes. Return EMPTY_PREFIX to indicate no pruning is applicable.
    */
-  Set<String> getPrefixes() {
+  final Set<String> getPrefixes() {
+    Set<String> result = prefixes;
+    if (result == null) {
+      prefixes = result = computePrefixes();
+    }
+    return result;
+  }
+
+  Set<String> computePrefixes() {
     return EMPTY_PREFIX;
   }
 
@@ -2347,7 +2358,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <p>It's supposed to be used as immutable. Don't mutate it.
    */
-  BitSet getBlocklist() {
+  final BitSet getBlocklist() {
+    BitSet result = blocklist;
+    if (result == null) {
+      blocklist = result = computeBlocklist();
+    }
+    return result;
+  }
+
+  BitSet computeBlocklist() {
     return new BitSet();
   }
 
@@ -2382,11 +2401,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** A derived parser, with {@code this} being the left-most rule. */
   private abstract class SamePrefix<R> extends Parser<R> {
-    @Override Set<String> getPrefixes() {
+    @Override Set<String> computePrefixes() {
       return left().getPrefixes();
     }
 
-    @Override BitSet getBlocklist() {
+    @Override BitSet computeBlocklist() {
       return left().getBlocklist();
     }
 
