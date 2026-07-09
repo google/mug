@@ -130,20 +130,17 @@ record PrefixPruneTree<V>(
       blocked.add(candidate);
     }
 
-    /**
-     * Builds the prefix prune tree.
-     */
     PrefixPruneTree<V> build() {
-      return buildWithHierarchy(Survivors.none());
+      return buildWithInheritance(Survivors.none());
     }
 
-    private PrefixPruneTree<V> buildWithHierarchy(Survivors<V> inherited) {
+    private PrefixPruneTree<V> buildWithInheritance(Survivors<V> inherited) {
       Survivors<V> effective = inherited.excluding(blocked).concat(survivors);
       if (children.isEmpty()) {
         return new PrefixPruneTree<>(effective.unwrap(), null);
       }
       var subtrees = BiStream.from(children)
-          .mapValues(child -> child.buildWithHierarchy(effective))
+          .mapValues(child -> child.buildWithInheritance(effective))
           // lower-case -> upper-case -> digits.
           // For the comparison (x == c1 ? child1 : x == c2 ? child2 : null), we want
           // c1 to occur more frequently than c2 for more effective short-circuiting.
