@@ -314,4 +314,21 @@ public class CharPredicateTest {
     CharPredicate predicate = CharPredicate.ASCII.precomputeForAscii();
     assertThat(predicate.precomputeForAscii()).isSameInstanceAs(predicate);
   }
+
+  @Test
+  public void precomputeForAscii_idempotent_specialCases() {
+    assertThat(CharPredicate.ANY.precomputeForAscii()).isSameInstanceAs(CharPredicate.ANY);
+    assertThat(CharPredicate.NONE.precomputeForAscii()).isSameInstanceAs(CharPredicate.NONE);
+    assertThat(CharPredicate.ASCII.precomputeForAscii()).isSameInstanceAs(CharPredicate.ASCII);
+    assertThat(CharPredicate.ALPHA.precomputeForAscii()).isSameInstanceAs(CharPredicate.ALPHA);
+
+    CharPredicate isA = CharPredicate.is('a');
+    assertThat(isA.precomputeForAscii()).isSameInstanceAs(isA);
+
+    CharPredicate rangeAZ = CharPredicate.range('A', 'Z');
+    assertThat(rangeAZ.precomputeForAscii()).isSameInstanceAs(rangeAZ);
+
+    CharPredicate notA = isA.not();
+    assertThat(notA.precomputeForAscii()).isSameInstanceAs(notA);
+  }
 }

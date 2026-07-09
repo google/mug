@@ -60,6 +60,7 @@ import com.google.mu.util.CharPredicate;
  */
 public final class CharacterSet implements CharPredicate {
   private static final Parser<CharPredicate> CHARACTER_SET_PARSER = makeCharacterSetParser();
+  private static final Parser<Set<Character>> ASCII_SET_PARSER = makeAsciiSetParser();
 
   static final CharacterSet DECIMAL = charsIn("[0-9]");
   static final CharacterSet HEX = charsIn("[0-9a-fA-F]");
@@ -152,14 +153,7 @@ public final class CharacterSet implements CharPredicate {
     if (string.startsWith("[^")) {
       return Optional.empty();
     }
-    Parser<Character> asciiChar = one(c -> c < 128, "ascii char").notFollowedByEof();
-    Parser<Set<Character>> range =
-        sequence(asciiChar.followedBy("-"), asciiChar, CharacterSet::charsInRange);
-    return anyOf(range, asciiChar.map(Set::of))
-        .zeroOrMore(flatMapping(Set::stream, toUnmodifiableSet()))
-        .between("[", "]")
-        .probe(string)
-        .findFirst();
+    return ASCII_SET_PARSER.probe(string).findFirst();
   }
 
   private static CharPredicate compileCharacterSet(String characterSet) {
@@ -187,6 +181,14 @@ public final class CharacterSet implements CharPredicate {
     Parser<CharPredicate> negativeSet =
         string("^").then(positiveSet).map(CharPredicate::not);
     return negativeSet.or(positiveSet).between("[", "]");
+  }
+  private static Parser<Set<Character>> makeAsciiSetParser() {
+    Parser<Character> asciiChar = one(c -> c < 128, "ascii char").notFollowedByEof();
+    Parser<Set<Character>> range =
+        sequence(asciiChar.followedBy("-"), asciiChar, CharacterSet::charsInRange);
+    return anyOf(range, asciiChar.map(Set::of))
+        .zeroOrMore(flatMapping(Set::stream, toUnmodifiableSet()))
+        .between("[", "]");
   }
 
   private static Set<Character> charsInRange(char c1, char c2) {
