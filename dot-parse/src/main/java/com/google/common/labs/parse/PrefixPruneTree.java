@@ -147,10 +147,12 @@ record PrefixPruneTree<V>(
       }
       var subtrees = BiStream.from(children)
           .mapValues((c, builder) -> {
-            Survivors<V> nextSurvivors = blocked == null
-                ? effectiveSurvivors
-                : filterBlocked(effectiveSurvivors, blocked.get(c));
-            return builder.buildWithHierarchy(nextSurvivors, null);
+            Set<V> blockedForChild = blocked == null ? null : blocked.get(c);
+            return builder.buildWithHierarchy(
+                blockedForChild == null
+                    ? effectiveSurvivors
+                    : effectiveSurvivors.filter(o -> !blockedForChild.contains(o.value())),
+                null);
           })
           // lower-case -> upper-case -> digits.
           // For the comparison (x == c1 ? child1 : x == c2 ? child2 : null), we want
@@ -163,13 +165,6 @@ record PrefixPruneTree<V>(
         }
       }
       return new PrefixPruneTree<>(effectiveSurvivors.unwrap(), Trie.from(subtrees));
-    }
-
-    private static <V> Survivors<V> filterBlocked(Survivors<V> survivors, Set<V> blockedForChild) {
-      if (blockedForChild == null || blockedForChild.isEmpty()) {
-        return survivors;
-      }
-      return survivors.filter(o -> !blockedForChild.contains(o.value()));
     }
   }
 
