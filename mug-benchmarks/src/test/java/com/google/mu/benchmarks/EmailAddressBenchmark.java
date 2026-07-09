@@ -38,6 +38,11 @@ public class EmailAddressBenchmark {
   }
 
   @Benchmark
+  public List<EmailAddress> parseValidList_withConsumer() {
+    return EmailAddress.parseAddressList(VALID_INPUT, discarded -> {});
+  }
+
+  @Benchmark
   public EmailAddress parseSinglePlainAddress() {
     return EmailAddress.of("user@company.com");
   }
