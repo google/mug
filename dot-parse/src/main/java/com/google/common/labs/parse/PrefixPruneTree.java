@@ -74,7 +74,7 @@ record PrefixPruneTree<V>(
   static final class Builder<V> {
     private final List<Ordered<V>> survivors = new ArrayList<>();  // in encounter order
     private final Map<Integer, Builder<V>> children = new HashMap<>();
-    private Set<V> blocked;
+    private final Set<V> blocked = new HashSet<>();
     private final AtomicInteger sequence;
 
     Builder() {
@@ -123,7 +123,6 @@ record PrefixPruneTree<V>(
     }
 
     private void block(V candidate) {
-      if (blocked == null) blocked = new HashSet<>();
       blocked.add(candidate);
     }
 
