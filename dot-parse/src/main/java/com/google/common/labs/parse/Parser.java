@@ -2367,7 +2367,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   BitSet computeBlocklist() {
-    return new BitSet();
+    return new BitSet(0);
   }
 
   /**
