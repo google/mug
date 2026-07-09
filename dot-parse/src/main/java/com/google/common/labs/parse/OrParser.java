@@ -105,8 +105,7 @@ final class OrParser<T> extends Parser<T> {
     return super.ignoreReturn();
   }
 
-  private static <T> PrefixPruneTree<Parser<T>> makePruneTreeIfUseful(
-      List<Parser<T>> parsers) {
+  private static <T> PrefixPruneTree<Parser<T>> makePruneTreeIfUseful(List<Parser<T>> parsers) {
     if (parsers.size() < 3) {
       return null;
     }
