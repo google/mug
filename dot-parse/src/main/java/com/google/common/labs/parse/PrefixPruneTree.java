@@ -89,11 +89,6 @@ record PrefixPruneTree<V>(
       return survivors.size();
     }
 
-    /** Adds a candidate that requires no prefix matching. */
-    private void addDefault(V candidate) {
-      survivors.add(new Ordered<>(candidate, sequence.getAndIncrement()));
-    }
-
     /**
      * Adds a candidate that requires the input to start with {@code prefix}, but only up to {@code
      * maxChars} characters are used for pruning.
@@ -104,13 +99,16 @@ record PrefixPruneTree<V>(
       int length = min(prefix.length(), maxChars);
       for (int i = 0; i < length; i++) {
         int c = prefix.charAt(i);
-        if (c >= 128) { // out of range, stop.
-          break;
-        }
+        if (c >= 128) break; // out of range, stop.
         node = node.children.computeIfAbsent(c, k -> new Builder<V>(sequence));
       }
       node.addDefault(candidate);
       return this;
+    }
+
+    /** Adds a candidate that requires no prefix matching. */
+    private void addDefault(V candidate) {
+      survivors.add(new Ordered<>(candidate, sequence.getAndIncrement()));
     }
 
     /**
@@ -147,9 +145,7 @@ record PrefixPruneTree<V>(
           .collect(toMap(() -> new TreeMap<Integer, PrefixPruneTree<V>>(reverseOrder())));
       if (subtrees.size() == 1 && survivors.isEmpty()) { // collapse lone leaf child
         PrefixPruneTree<V> loneChild = subtrees.values().iterator().next();
-        if (loneChild.isLeaf()) {
-          return loneChild;
-        }
+        if (loneChild.isLeaf()) return loneChild;
       }
       return new PrefixPruneTree<>(effective.unwrap(), Trie.from(subtrees));
     }
@@ -167,9 +163,7 @@ record PrefixPruneTree<V>(
     PrefixPruneTree<V> node = this;
     for (int i = index; !node.isLeaf() && !input.isEof(i); i++) {
       PrefixPruneTree<V> child = node.children.child(input.charAt(i));
-      if (child == null) {
-        break;
-      }
+      if (child == null) break;
       node = child;
     }
     return node.survivors;
@@ -258,12 +252,8 @@ record PrefixPruneTree<V>(
     }
 
     Survivors<V> concat(List<Ordered<V>> that) {
-      if (that.isEmpty()) {
-        return this;
-      }
-      if (this.isEmpty()) {
-        return new Survivors<>(that);
-      }
+      if (that.isEmpty()) return this;
+      if (this.isEmpty()) return new Survivors<>(that);
       return new Survivors<V>(
           Stream.concat(ordered.stream(), that.stream())
           .sorted(comparingInt(Ordered::order))
