@@ -728,11 +728,8 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a collector that performs an intersection on sets of type {@code E} before accumulating
-   * the results into an immutable {@link Set}.
-   *
-   * <p>This is done by applying a mapping function that produces a set of type {@code E} to each
-   * input, and then intersecting the results.
+   * Returns a collector that intersects sets of type {@code E} derived from the input element
+   * using the {@code toSet} function.
    *
    * <p>For example:
    *
@@ -740,29 +737,22 @@ public final class MoreCollectors {
    * clubs.stream().collect(toIntersectionOf(Club::members)));
    * }</pre>
    *
-   * The runtime has an upper bounds of O(N) where N is the total number of elements in the mapped
-   * streams, and a lower bound of O(S * X) where S is the number of input sets and X is the size of
-   * the intersection. In practice, the runtime is usually around an average of the two.
-   *
-   * <p>The collector preserves encounter order. For example, given [{1, 2, 3, 4, 5}, {3, 2, 1}] the
-   * intersection returned will be {1, 2, 3}.
+   * <p>Encounter order is preserved. Collecting {@code [[1, 2, 3, 4, 5], [3, 2, 1]]} will return
+   * {@code [1, 2, 3]}.
    *
    * <p>At least one {@code Set} element (even if empty) must be present in the input, or else {@code
    * IllegalArgumentException} will be thrown.
    *
-   * @param <T> the input type
-   * @param <E> the intersection element type (i.e. element type in the result set)
-   * @param mapper a function to be applied to the input elements, which returns a set of {@code E}
    * @since 10.6.1
    */
   public static <T, E> Collector<T, ?, Set<E>> toIntersectionOf(
-      Function<? super T, ? extends Set<? extends E>> mapper) {
-    requireNonNull(mapper);
+      Function<? super T, ? extends Set<? extends E>> toSet) {
+    requireNonNull(toSet);
     class Builder {
       private LinkedHashSet<E> intersection = null;
 
       void add(T input) {
-        intersectWith(mapper.apply(input));
+        intersectWith(toSet.apply(input));
       }
 
       private void intersectWith(Set<? extends E> elements) {
