@@ -100,7 +100,7 @@ record PrefixPruneTree<V>(
       for (int i = 0; i < length; i++) {
         int c = prefix.charAt(i);
         if (c >= 128) break; // out of range, stop.
-        node = node.children.computeIfAbsent(c, k -> new Builder<V>(sequence));
+        node = node.child(c);
       }
       node.addDefault(candidate);
       return this;
@@ -117,15 +117,18 @@ record PrefixPruneTree<V>(
      */
     @CanIgnoreReturnValue
     Builder<V> addBlocked(char c, V candidate) {
-      int key = c;
-      if (key >= 128) return this; // we are unable to block or prune beyond ascii
-      children.computeIfAbsent(key, k -> new Builder<V>(sequence)).block(candidate);
+      if (c >= 128) return this; // we are unable to block or prune beyond ascii
+      child(c).block(candidate);
       return this;
     }
 
     private void block(V candidate) {
       if (blocked == null) blocked = new HashSet<>();
       blocked.add(candidate);
+    }
+
+    private Builder<V> child(int c) {
+      return children.computeIfAbsent(c, k -> new Builder<V>(sequence));
     }
 
     PrefixPruneTree<V> build() {
@@ -232,7 +235,7 @@ record PrefixPruneTree<V>(
   }
 
   private static final class Survivors<V> {
-    final List<Ordered<V>> ordered;
+    private final List<Ordered<V>> ordered;
     @LazyInit private List<V> unwrapped;
 
     static <V> Survivors<V> none() {
