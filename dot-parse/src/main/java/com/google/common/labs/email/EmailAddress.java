@@ -29,10 +29,7 @@ import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.last;
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.filtering;
-import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.net.IDN;
@@ -41,7 +38,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collector;
 
 import com.google.common.labs.parse.Parser;
 import com.google.errorprone.annotations.CheckReturnValue;
@@ -420,10 +416,18 @@ public final class EmailAddress {
     return of(address);
   }
 
-  private static final Parser<?> ADDRESS_OR_JUNK = anyOf(
+  private static final Parser<List<EmailAddress>>.OrEmpty ADDRESS_LIST_PARSER =
+      PARSER
+          .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
+          .optionallyFollowedBy(ADDRESS_LIST_DELIMITER);
+  private static final Parser<Object> ADDRESS_OR_JUNK = anyOf(
       // don't extract a@b from a@b@c
       PARSER.notFollowedBy(ANY_BUT_LIST_DELIMITER, "non-separator"),
       UNTIL_LIST_DELIMITER.map(String::trim));
+  private static final Parser<List<Object>>.OrEmpty ERROR_TOLERANT_ADDRESS_LIST_PARSER =
+      ADDRESS_OR_JUNK
+          .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
+          .optionallyFollowedBy(ADDRESS_LIST_DELIMITER);
 
   /**
    * Parses {@code addressList} according to RFC 5322 and returns an immutable list of {@link
@@ -440,9 +444,7 @@ public final class EmailAddress {
    * @throws Parser.ParseException if {@code addressList} is invalid
    */
   public static List<EmailAddress> parseAddressList(String addressList) {
-    return PARSER.zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
-        .optionallyFollowedBy(ADDRESS_LIST_DELIMITER)
-        .parseSkipping(SAFE_WHITESPACE, addressList);
+    return ADDRESS_LIST_PARSER.parseSkipping(SAFE_WHITESPACE, addressList);
   }
 
   /**
@@ -462,10 +464,16 @@ public final class EmailAddress {
    */
   public static List<EmailAddress> parseAddressList(
       String addressList, Consumer<? super String> ifInvalid) {
-    return ADDRESS_OR_JUNK
-        .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(ifInvalid))
-        .optionallyFollowedBy(ADDRESS_LIST_DELIMITER)
-        .parseSkipping(SAFE_WHITESPACE, addressList);
+    return ERROR_TOLERANT_ADDRESS_LIST_PARSER.parseSkipping(SAFE_WHITESPACE, addressList).stream()
+        .filter(segment -> {
+          if (segment instanceof String s) {
+            ifInvalid.accept(s);
+            return false;
+          }
+          return true;
+        })
+        .map(segment -> (EmailAddress) segment)
+        .collect(toUnmodifiableList());
   }
 
   @Override public boolean equals(Object obj) {
@@ -512,17 +520,6 @@ public final class EmailAddress {
             (name, addr) -> addr.toEmailAddressWithDisplayName(name)),
         bracketedAddress.map(AddrSpecAlike::toEmailAddress),
         ADDR_SPEC_PARSER); // fall back when PARSER is combined with other parsers
-  }
-
-  private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses(
-      Consumer<? super String> ifInvalid) {
-    requireNonNull(ifInvalid);
-    return filtering(
-        e -> {
-          if (e instanceof String s) ifInvalid.accept(s);
-          return e instanceof EmailAddress;
-        },
-        mapping(e -> (EmailAddress) e, toUnmodifiableList()));
   }
 
   private static String escape(String name) {
