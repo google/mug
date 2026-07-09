@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -73,9 +72,9 @@ import com.google.mu.util.stream.BiStream;
 record PrefixPruneTree<V>(
     @SuppressWarnings("Immutable") List<V> survivors, Trie<V> children) {
   static final class Builder<V> {
-    private final List<Ordered<V>> survivors = new ArrayList<>();
+    private final List<Ordered<V>> survivors = new ArrayList<>();  // in encounter order
     private final Map<Integer, Builder<V>> children = new HashMap<>();
-    private Map<Integer, Set<V>> blockedByFirstChars;
+    private Set<V> blocked;
     private final AtomicInteger sequence;
 
     Builder() {
@@ -121,39 +120,30 @@ record PrefixPruneTree<V>(
     @CanIgnoreReturnValue
     Builder<V> addBlocked(char c, V candidate) {
       int key = c;
-      if (key >= 128) {  // we are unable to block or prune beyond ascii
-        return this;
-      }
-      if (blockedByFirstChars == null) {
-        blockedByFirstChars = new HashMap<>();
-      }
-      blockedByFirstChars.computeIfAbsent(key, k -> new HashSet<>()).add(candidate);
-      children.putIfAbsent(key, new Builder<V>(sequence));
+      if (key >= 128) return this; // we are unable to block or prune beyond ascii
+      children.computeIfAbsent(key, k -> new Builder<V>(sequence)).block(candidate);
       return this;
+    }
+
+    private void block(V candidate) {
+      if (blocked == null) blocked = new HashSet<>();
+      blocked.add(candidate);
     }
 
     /**
      * Builds the prefix prune tree.
      */
     PrefixPruneTree<V> build() {
-      return buildWithHierarchy(Survivors.none(), blockedByFirstChars);
+      return buildWithHierarchy(Survivors.none());
     }
 
-    private PrefixPruneTree<V> buildWithHierarchy(
-        Survivors<V> ancestorSurvivors, Map<Integer, Set<V>> blocked) {
-      Survivors<V> effectiveSurvivors = ancestorSurvivors.concat(survivors);
+    private PrefixPruneTree<V> buildWithHierarchy(Survivors<V> inherited) {
+      Survivors<V> effective = inherited.excluding(blocked).concat(survivors);
       if (children.isEmpty()) {
-        return new PrefixPruneTree<>(effectiveSurvivors.unwrap(), null);
+        return new PrefixPruneTree<>(effective.unwrap(), null);
       }
       var subtrees = BiStream.from(children)
-          .mapValues((c, builder) -> {
-            Set<V> blockedForChild = blocked == null ? null : blocked.get(c);
-            return builder.buildWithHierarchy(
-                blockedForChild == null
-                    ? effectiveSurvivors
-                    : effectiveSurvivors.filter(o -> !blockedForChild.contains(o.value())),
-                null);
-          })
+          .mapValues(child -> child.buildWithHierarchy(effective))
           // lower-case -> upper-case -> digits.
           // For the comparison (x == c1 ? child1 : x == c2 ? child2 : null), we want
           // c1 to occur more frequently than c2 for more effective short-circuiting.
@@ -164,7 +154,7 @@ record PrefixPruneTree<V>(
           return loneChild;
         }
       }
-      return new PrefixPruneTree<>(effectiveSurvivors.unwrap(), Trie.from(subtrees));
+      return new PrefixPruneTree<>(effective.unwrap(), Trie.from(subtrees));
     }
   }
 
@@ -271,11 +261,11 @@ record PrefixPruneTree<V>(
     }
 
     Survivors<V> concat(List<Ordered<V>> that) {
-      if (isEmpty()) {
-        return new Survivors<>(that);
-      }
       if (that.isEmpty()) {
         return this;
+      }
+      if (this.isEmpty()) {
+        return new Survivors<>(that);
       }
       return new Survivors<V>(
           Stream.concat(ordered.stream(), that.stream())
@@ -283,8 +273,9 @@ record PrefixPruneTree<V>(
           .toList());
     }
 
-    Survivors<V> filter(Predicate<? super Ordered<V>> condition) {
-      List<Ordered<V>> filtered = ordered.stream().filter(condition).toList();
+    Survivors<V> excluding(Set<? super V> blocked) {
+      if (blocked == null || blocked.isEmpty()) return this;
+      List<Ordered<V>> filtered = ordered.stream().filter(o -> !blocked.contains(o.value())).toList();
       return filtered.size() == size() ? this : new Survivors<>(filtered);
     }
 
