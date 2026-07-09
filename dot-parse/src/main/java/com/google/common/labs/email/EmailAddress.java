@@ -420,10 +420,6 @@ public final class EmailAddress {
     return of(address);
   }
 
-  private static final Parser<List<EmailAddress>>.OrEmpty ADDRESS_LIST_PARSER = PARSER
-      .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
-      .optionallyFollowedBy(ADDRESS_LIST_DELIMITER);
-
   private static final Parser<?> ADDRESS_OR_JUNK = anyOf(
       // don't extract a@b from a@b@c
       PARSER.notFollowedBy(ANY_BUT_LIST_DELIMITER, "non-separator"),
@@ -444,7 +440,9 @@ public final class EmailAddress {
    * @throws Parser.ParseException if {@code addressList} is invalid
    */
   public static List<EmailAddress> parseAddressList(String addressList) {
-    return ADDRESS_LIST_PARSER.parseSkipping(SAFE_WHITESPACE, addressList);
+    return PARSER.zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
+        .optionallyFollowedBy(ADDRESS_LIST_DELIMITER)
+        .parseSkipping(SAFE_WHITESPACE, addressList);
   }
 
   /**
