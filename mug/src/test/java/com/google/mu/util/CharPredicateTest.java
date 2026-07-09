@@ -60,7 +60,7 @@ public class CharPredicateTest {
 
   @Test
   public void testIsNot_toString() {
-    assertThat(CharPredicate.isNot('c').toString()).isEqualTo("[\\u0000-bd-\\uFFFF]");
+    assertThat(CharPredicate.isNot('c').toString()).isEqualTo("not ('c')");
   }
 
   @Test
@@ -71,7 +71,7 @@ public class CharPredicateTest {
 
   @Test
   public void testNot_toString() {
-    assertThat(CharPredicate.is('c').not().toString()).isEqualTo("[\\u0000-bd-\\uFFFF]");
+    assertThat(CharPredicate.is('c').not().toString()).isEqualTo("not ('c')");
   }
 
   @Test
@@ -86,8 +86,8 @@ public class CharPredicateTest {
 
   @Test
   public void testOr_char_toString() {
-    assertThat(CharPredicate.is('c').orRange('A', 'Z').toString()).isEqualTo("[A-Zc]");
-    assertThat(CharPredicate.range('A', 'Z').or('c').toString()).isEqualTo("[A-Zc]");
+    assertThat(CharPredicate.is('c').orRange('A', 'Z').toString()).isEqualTo("'c' | ['A', 'Z']");
+    assertThat(CharPredicate.range('A', 'Z').or('c').toString()).isEqualTo("['A', 'Z'] | 'c'");
   }
 
   @Test
@@ -120,16 +120,10 @@ public class CharPredicateTest {
 
   @Test
   public void testAnyOf_toString() {
-    assertThat(CharPredicate.anyOf("abc").toString()).isEqualTo("[a-c]");
-    assertThat(CharPredicate.anyOf("ab").toString()).isEqualTo("[ab]");
+    assertThat(CharPredicate.anyOf("abc").toString()).isEqualTo("anyOf('abc')");
+    assertThat(CharPredicate.anyOf("ab").toString()).isEqualTo("'a' | 'b'");
     assertThat(CharPredicate.anyOf("a").toString()).isEqualTo("'a'");
     assertThat(CharPredicate.anyOf("").toString()).isEqualTo("NONE");
-  }
-
-  @Test
-  public void testAnyOf_withControlAndUnicodeChars_toString() {
-    assertThat(CharPredicate.anyOf("\n\r\t").toString()).isEqualTo("[\\t\\n\\r]");
-    assertThat(CharPredicate.anyOf("a\u0080\u00FF").toString()).isEqualTo("[a\\u0080\\u00FF]");
   }
 
   @Test
@@ -148,10 +142,10 @@ public class CharPredicateTest {
 
   @Test
   public void testNoneOf_toString() {
-    assertThat(CharPredicate.noneOf("ab").toString()).isEqualTo("[\\u0000-`c-\\uFFFF]");
-    assertThat(CharPredicate.noneOf("a").toString()).isEqualTo("[\\u0000-`b-\\uFFFF]");
-    assertThat(CharPredicate.noneOf("abc").toString()).isEqualTo("[\\u0000-`d-\\uFFFF]");
-    assertThat(CharPredicate.noneOf("").toString()).isEqualTo("[\\u0000-\\uFFFF]");
+    assertThat(CharPredicate.noneOf("ab").toString()).isEqualTo("not ('a' | 'b')");
+    assertThat(CharPredicate.noneOf("a").toString()).isEqualTo("not ('a')");
+    assertThat(CharPredicate.noneOf("abc").toString()).isEqualTo("not (anyOf('abc'))");
+    assertThat(CharPredicate.noneOf("").toString()).isEqualTo("not (NONE)");
   }
 
   @Test
@@ -319,353 +313,5 @@ public class CharPredicateTest {
   public void precomputeForAscii_idempotent() {
     CharPredicate predicate = CharPredicate.ASCII.precomputeForAscii();
     assertThat(predicate.precomputeForAscii()).isSameInstanceAs(predicate);
-  }
-
-  @Test
-  public void characterRangeSet_alpha() {
-    assertThat(CharPredicate.ALPHA.characterRangeSet()).isEqualTo("[A-Za-z]");
-  }
-
-  @Test
-  public void characterRangeSet_word() {
-    assertThat(CharPredicate.WORD.characterRangeSet()).isEqualTo("[0-9A-Z_a-z]");
-  }
-
-  @Test
-  public void characterRangeSet_ascii() {
-    assertThat(CharPredicate.ASCII.characterRangeSet()).isEqualTo("[\\u0000-\\u007F]");
-  }
-
-  @Test
-  public void characterRangeSet_any() {
-    assertThat(CharPredicate.ANY.characterRangeSet()).isEqualTo("[\\u0000-\\uFFFF]");
-  }
-
-  @Test
-  public void characterRangeSet_none() {
-    assertThat(CharPredicate.NONE.characterRangeSet()).isEqualTo("[]");
-  }
-
-  @Test
-  public void characterRangeSet_whitespace() {
-    assertThat(WHITESPACE.characterRangeSet()).isEqualTo("");
-  }
-
-  @Test
-  public void characterRangeSet_is() {
-    assertThat(CharPredicate.is('x').characterRangeSet()).isEqualTo("[x]");
-  }
-
-  @Test
-  public void characterRangeSet_range() {
-    assertThat(CharPredicate.range('a', 'c').characterRangeSet()).isEqualTo("[a-c]");
-    assertThat(CharPredicate.range('a', 'b').characterRangeSet()).isEqualTo("[ab]");
-  }
-
-  @Test
-  public void characterRangeSet_anyOf() {
-    assertThat(anyOf("xyz").characterRangeSet()).isEqualTo("[x-z]");
-    assertThat(anyOf("acb-").characterRangeSet()).isEqualTo("[-a-c]");
-    assertThat(anyOf("fooBAR345").characterRangeSet()).isEqualTo("[3-5ABRfo]");
-    assertThat(anyOf("fooBAR345").not().characterRangeSet())
-        .isEqualTo("[\\u0000-26-@C-QS-eg-np-\\uFFFF]");
-    assertThat(anyOf("fooBAR345").not().not().characterRangeSet()).isEqualTo("[3-5ABRfo]");
-  }
-
-  @Test
-  public void characterRangeSet_or_adjacent_ranges() {
-    assertThat(CharPredicate.range('a', 'c').or(CharPredicate.range('d', 'f')).characterRangeSet()).isEqualTo("[a-f]");
-  }
-
-  @Test
-  public void characterRangeSet_or_overlapping_ranges() {
-    assertThat(CharPredicate.range('a', 'd').or(CharPredicate.range('c', 'f')).characterRangeSet()).isEqualTo("[a-f]");
-  }
-
-  @Test
-  public void characterRangeSet_or_subset_ranges() {
-    assertThat(CharPredicate.range('a', 'f').or(CharPredicate.range('c', 'e')).characterRangeSet()).isEqualTo("[a-f]");
-  }
-
-  @Test
-  public void characterRangeSet_and_disjoint_ranges() {
-    assertThat(CharPredicate.range('a', 'c').and(CharPredicate.range('e', 'g')).characterRangeSet()).isEqualTo("[]");
-  }
-
-  @Test
-  public void characterRangeSet_and_overlapping_ranges() {
-    assertThat(CharPredicate.range('a', 'd').and(CharPredicate.range('c', 'f')).characterRangeSet()).isEqualTo("[cd]");
-  }
-
-  @Test
-  public void characterRangeSet_and_subset_ranges() {
-    assertThat(CharPredicate.range('a', 'f').and(CharPredicate.range('c', 'e')).characterRangeSet()).isEqualTo("[c-e]");
-  }
-
-  @Test
-  public void characterRangeSet_coalesce_unsorted() {
-    assertThat(anyOf("aeb").characterRangeSet()).isEqualTo("[abe]");
-  }
-
-  @Test
-  public void characterRangeSet_coalesce_adjacent() {
-    assertThat(anyOf("ab").characterRangeSet()).isEqualTo("[ab]");
-  }
-
-  @Test
-  public void characterRangeSet_or_disjoint() {
-    CharPredicate digit = CharPredicate.range('0', '9');
-    assertThat(CharPredicate.ALPHA.or(digit).characterRangeSet()).isEqualTo("[0-9A-Za-z]");
-  }
-
-  @Test
-  public void characterRangeSet_or_overlapping() {
-    assertThat(CharPredicate.ALPHA.or(anyOf("a0")).characterRangeSet()).isEqualTo("[0A-Za-z]");
-  }
-
-  @Test
-  public void characterRangeSet_or_char() {
-    assertThat(CharPredicate.ALPHA.or('0').characterRangeSet()).isEqualTo("[0A-Za-z]");
-  }
-
-  @Test
-  public void characterRangeSet_or_range() {
-    assertThat(CharPredicate.ALPHA.orRange('0', '9').characterRangeSet()).isEqualTo("[0-9A-Za-z]");
-  }
-
-  @Test
-  public void characterRangeSet_or_string() {
-    assertThat(CharPredicate.ALPHA.or("012").characterRangeSet()).isEqualTo("[0-2A-Za-z]");
-  }
-
-  @Test
-  public void characterRangeSet_or_duplicate_self() {
-    assertThat(CharPredicate.ALPHA.or(CharPredicate.ALPHA).characterRangeSet()).isEqualTo("[A-Za-z]");
-  }
-
-  @Test
-  public void characterRangeSet_or_duplicate_subset() {
-    assertThat(CharPredicate.ALPHA.or(anyOf("aA")).characterRangeSet()).isEqualTo("[A-Za-z]");
-  }
-
-  @Test
-  public void characterRangeSet_or_none() {
-    assertThat(CharPredicate.ALPHA.or(CharPredicate.NONE).characterRangeSet()).isEqualTo("[A-Za-z]");
-  }
-
-  @Test
-  public void characterRangeSet_or_any() {
-    assertThat(CharPredicate.ALPHA.or(CharPredicate.ANY).characterRangeSet()).isEqualTo("[\\u0000-\\uFFFF]");
-  }
-
-  @Test
-  public void characterRangeSet_and_disjoint() {
-    CharPredicate digit = CharPredicate.range('0', '9');
-    assertThat(CharPredicate.ALPHA.and(digit).characterRangeSet()).isEqualTo("[]");
-  }
-
-  @Test
-  public void characterRangeSet_and_overlapping() {
-    assertThat(CharPredicate.ALPHA.and(anyOf("a0")).characterRangeSet()).isEqualTo("[a]");
-  }
-
-  @Test
-  public void characterRangeSet_and_subset() {
-    assertThat(CharPredicate.ALPHA.and(CharPredicate.ASCII).characterRangeSet()).isEqualTo("[A-Za-z]");
-  }
-
-  @Test
-  public void characterRangeSet_and_duplicate_self() {
-    assertThat(CharPredicate.ALPHA.and(CharPredicate.ALPHA).characterRangeSet()).isEqualTo("[A-Za-z]");
-  }
-
-  @Test
-  public void characterRangeSet_and_duplicate_subset() {
-    assertThat(CharPredicate.ALPHA.and(anyOf("aA")).characterRangeSet()).isEqualTo("[Aa]");
-  }
-
-  @Test
-  public void characterRangeSet_and_none() {
-    assertThat(CharPredicate.ALPHA.and(CharPredicate.NONE).characterRangeSet()).isEqualTo("[]");
-  }
-
-  @Test
-  public void characterRangeSet_and_any() {
-    assertThat(CharPredicate.ALPHA.and(CharPredicate.ANY).characterRangeSet()).isEqualTo("[A-Za-z]");
-  }
-
-  @Test
-  public void characterRangeSet_customPredicateWithCharacterClass() {
-    CharPredicate custom = new CharPredicate() {
-      @Override public boolean test(char c) {
-        return c >= '0' && c <= '9';
-      }
-      @Override public String characterRangeSet() {
-        return "[0-9]";
-      }
-    };
-    assertThat(CharPredicate.ALPHA.or(custom).characterRangeSet()).isEmpty();
-    assertThat(CharPredicate.ALPHA.and(custom).characterRangeSet()).isEmpty();
-  }
-
-  @Test
-  public void characterRangeSet_or_lambda() {
-    CharPredicate lambda = c -> c == '0';
-    assertThat(CharPredicate.ALPHA.or(lambda).characterRangeSet()).isEmpty();
-  }
-
-  @Test
-  public void characterRangeSet_and_lambda() {
-    CharPredicate lambda = c -> c == '0';
-    assertThat(CharPredicate.ALPHA.and(lambda).characterRangeSet()).isEmpty();
-  }
-
-  @Test
-  public void characterRangeSet_not_alpha() {
-    assertThat(CharPredicate.ALPHA.not().characterRangeSet()).isEqualTo("[\\u0000-@[-`{-\\uFFFF]");
-  }
-
-  @Test
-  public void characterRangeSet_not_none() {
-    assertThat(CharPredicate.NONE.not().characterRangeSet()).isEqualTo("[\\u0000-\\uFFFF]");
-  }
-
-  @Test
-  public void characterRangeSet_not_any() {
-    assertThat(CharPredicate.ANY.not().characterRangeSet()).isEqualTo("[]");
-  }
-
-  @Test
-  public void characterRangeSet_not_lambda() {
-    CharPredicate lambda = c -> c == '0';
-    assertThat(lambda.not().characterRangeSet()).isEmpty();
-  }
-
-  @Test
-  public void characterRangeSet_noneOf() {
-    assertThat(CharPredicate.noneOf("abc").characterRangeSet()).isEqualTo("[\\u0000-`d-\\uFFFF]");
-  }
-
-  @Test
-  public void characterRangeSet_escapes() {
-    assertThat(anyOf("\r\n\t\f\b\\[]^").characterRangeSet()).isEqualTo("[\\b-\\n\\f\\r[-^]");
-  }
-
-  @Test
-  public void characterRangeSet_not_rangeEndingAtMax() {
-    assertThat(CharPredicate.range('a', '\uFFFF').not().characterRangeSet()).isEqualTo("[\\u0000-`]");
-  }
-
-  @Test
-  public void characterRangeSet_anyOf_dashWithControl() {
-    assertThat(anyOf("\n-").characterRangeSet()).isEqualTo("[-\\n]");
-  }
-
-  @Test
-  public void characterRangeSet_anyOf_dash() {
-    assertThat(anyOf("-").characterRangeSet()).isEqualTo("[-]");
-  }
-
-  @Test
-  public void characterRangeSet_anyOf_caret() {
-    assertThat(anyOf("^").characterRangeSet()).isEqualTo("[^]");
-  }
-
-  @Test
-  public void characterRangeSet_anyOf_leftBracket() {
-    assertThat(anyOf("[").characterRangeSet()).isEqualTo("[[]");
-  }
-
-  @Test
-  public void characterRangeSet_anyOf_rightBracket() {
-    assertThat(anyOf("]").characterRangeSet()).isEqualTo("[]]");
-  }
-
-  @Test
-  public void characterRangeSet_precomputed() {
-    assertThat(CharPredicate.ALPHA.precomputeForAscii().characterRangeSet()).isEqualTo("[A-Za-z]");
-  }
-
-  @Test
-  public void not_not_idempotent() {
-    CharPredicate alpha = CharPredicate.ALPHA;
-    assertThat(alpha.not().not()).isSameInstanceAs(alpha);
-
-    CharPredicate custom = c -> c == 'a';
-    assertThat(custom.not().not()).isSameInstanceAs(custom);
-  }
-
-  @Test
-  public void toString_alpha() {
-    assertThat(CharPredicate.ALPHA.toString()).isEqualTo("ALPHA");
-  }
-
-  @Test
-  public void toString_unionWithKnownCharacterClass() {
-    CharPredicate digit = CharPredicate.range('0', '9');
-    assertThat(CharPredicate.ALPHA.or(digit).toString()).isEqualTo("[0-9A-Za-z]");
-  }
-
-  @Test
-  public void toString_unionWithUnknownCharacterClass() {
-    CharPredicate custom = new CharPredicate() {
-      @Override public boolean test(char c) { return false; }
-      @Override public String toString() { return "custom"; }
-    };
-    assertThat(CharPredicate.ALPHA.or(custom).toString()).isEqualTo("ALPHA | custom");
-  }
-
-  @Test
-  public void toString_intersectionWithKnownCharacterClass() {
-    CharPredicate digit = CharPredicate.range('0', '9');
-    assertThat(CharPredicate.ALPHA.and(digit).toString()).isEqualTo("[]");
-  }
-
-  @Test
-  public void toString_intersectionWithUnknownCharacterClass() {
-    CharPredicate custom = new CharPredicate() {
-      @Override public boolean test(char c) { return false; }
-      @Override public String toString() { return "custom"; }
-    };
-    assertThat(CharPredicate.ALPHA.and(custom).toString()).isEqualTo("ALPHA & custom");
-  }
-
-  @Test
-  public void toString_negationWithKnownCharacterClass() {
-    assertThat(CharPredicate.ALPHA.not().toString()).isEqualTo("[\\u0000-@[-`{-\\uFFFF]");
-  }
-
-  @Test
-  public void toString_negationWithUnknownCharacterClass() {
-    CharPredicate custom = new CharPredicate() {
-      @Override public boolean test(char c) { return false; }
-      @Override public String toString() { return "custom"; }
-    };
-    assertThat(custom.not().toString()).isEqualTo("not (custom)");
-  }
-
-  @Test
-  public void precomputeForAscii_optimizations() {
-    assertThat(CharPredicate.NONE.precomputeForAscii()).isSameInstanceAs(CharPredicate.NONE);
-    assertThat(CharPredicate.NONE.precomputeForAscii().precomputeForAscii())
-        .isSameInstanceAs(CharPredicate.NONE);
-
-    CharPredicate nonAsciiRange = CharPredicate.range('\u0080', '\u00FF');
-    CharPredicate precomputedNonAscii = nonAsciiRange.precomputeForAscii();
-    assertThat(precomputedNonAscii).isNotSameInstanceAs(nonAsciiRange);
-    assertThat(precomputedNonAscii.precomputeForAscii()).isSameInstanceAs(precomputedNonAscii);
-
-    CharPredicate nonAsciiSingle = CharPredicate.is('\u0080');
-    assertThat(nonAsciiSingle.precomputeForAscii()).isNotSameInstanceAs(nonAsciiSingle);
-
-    CharPredicate asciiRange = CharPredicate.range('a', 'z');
-    CharPredicate precomputedAsciiRange = asciiRange.precomputeForAscii();
-    assertThat(precomputedAsciiRange).isNotSameInstanceAs(asciiRange);
-    assertThat(precomputedAsciiRange.precomputeForAscii()).isSameInstanceAs(precomputedAsciiRange);
-
-    CharPredicate asciiSingle = CharPredicate.is('a');
-    CharPredicate precomputedAsciiSingle = asciiSingle.precomputeForAscii();
-    assertThat(precomputedAsciiSingle).isNotSameInstanceAs(asciiSingle);
-    assertThat(precomputedAsciiSingle.precomputeForAscii()).isSameInstanceAs(precomputedAsciiSingle);
   }
 }

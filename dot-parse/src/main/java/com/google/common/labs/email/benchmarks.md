@@ -22,7 +22,7 @@ Measures the throughput of parsing/validating a single plain email address (`"us
 
 ### Analysis
 - **Jakarta Mail** is the fastest because it uses a relaxed, hand-written state loop that performs minimal validation and avoids constructing intermediate objects. It is less strict and susceptible to certain RFC violations.
-- **`EmailAddress`** is **1.7x faster than JMail** while enforcing strict RFC 5322 compliance. It leverages `dot-parse` combinators, which are optimized for character-level matching and utilize blocklist-based prefix pruning.
+- **`EmailAddress`** is **1.7x faster than JMail** while enforcing strict RFC 5322 compliance. It leverages `dot-parse` combinators, which are optimized for character-level matching and prefix-based pruning.
 
 ---
 

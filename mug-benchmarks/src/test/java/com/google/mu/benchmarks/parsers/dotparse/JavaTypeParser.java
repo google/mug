@@ -72,9 +72,15 @@ public final class JavaTypeParser {
       anyOf(sequence(string("-"), digits()), digits());
 
   private static final Parser<Number> NUMBER_VAL =
-      sequence(INTEGER_PART, string(".").then(digits()).orElse(""))
+      sequence(INTEGER_PART, sequence(string("."), digits()).orElse(null))
           .source()
-          .map(s -> s.contains(".") ? Double.parseDouble(s) : Integer.parseInt(s));
+          .map(s -> {
+            if (s.contains(".")) {
+              return Double.parseDouble(s);
+            } else {
+              return Integer.parseInt(s);
+            }
+          });
 
   // The master recursive JavaType parser
   public static final Parser<JavaType> JAVA_TYPE = Parser.define(selfType -> {
@@ -127,7 +133,7 @@ public final class JavaTypeParser {
 
     Parser<TypeSegment> typeSegment = sequence(
         annosAndName,
-        selfType.zeroOrMoreDelimitedBy(",").between("<", ">"),
+        selfType.zeroOrMoreDelimitedBy(",").between("<", ">").orElse(List.of()),
         (entry, args) -> new TypeSegment(entry.getKey(), entry.getValue(), args));
 
     // Prefix and type segments combined using sequence(OrEmpty, Parser, BiFunction)

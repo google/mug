@@ -32,10 +32,8 @@ import static org.junit.Assert.assertThrows;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
@@ -2595,7 +2593,7 @@ public class ParserTest {
 
   @Test
   public void anyOf_nestedAnyOf_nonePrunable() {
-    Parser<String> nested = anyOf(caseInsensitive("foo"), chars(2)).map(Object::toString);
+    Parser<String> nested = anyOf(caseInsensitive("foo"), caseInsensitive("bar"), chars(2)).map(Object::toString);
     List<Parser<String>> parsers =
         concat(range(0, 10).mapToObj(i -> string("a" + i)), Stream.of(nested)).toList();
     Parser<String> outer = parsers.stream().collect(or());
@@ -2781,44 +2779,6 @@ public class ParserTest {
   }
 
   @Test
-  public void getPrefixes_charPredicate_union() {
-    Parser<Character> parser = Parser.one(CharPredicate.is('a').or('b'), "a or b");
-    assertThat(parser.getPrefixes()).containsExactly("a", "b");
-  }
-
-  @Test
-  public void getPrefixes_charPredicate_brackets() {
-    Parser<Character> parser = Parser.one(CharPredicate.anyOf("[]^"), "brackets");
-    assertThat(parser.getPrefixes()).containsExactly("[", "]", "^");
-  }
-
-  @Test
-  public void getPrefixes_charPredicate_range() {
-    Parser<Character> parser = Parser.one(CharPredicate.range('x', 'z'), "x-z");
-    assertThat(parser.getPrefixes()).containsExactly("x", "y", "z");
-  }
-
-  @Test
-  public void getPrefixes_charPredicate_alpha() {
-    Parser<Character> parser = Parser.one(CharPredicate.ALPHA, "alpha");
-    assertThat(parser.getPrefixes()).hasSize(52); // A-Z, a-z
-    assertThat(parser.getPrefixes()).contains("a");
-    assertThat(parser.getPrefixes()).contains("Z");
-  }
-
-  @Test
-  public void getPrefixes_charPredicate_whitespaceAborts() {
-    Parser<Character> parser = Parser.one(CharPredicate.WHITESPACE, "whitespace");
-    assertThat(parser.getPrefixes()).containsExactly("");
-  }
-
-  @Test
-  public void getPrefixes_charPredicate_customLambdaAborts() {
-    Parser<Character> parser = Parser.one(CharPredicate.is('a').or(c -> false), "a or lambda");
-    assertThat(parser.getPrefixes()).containsExactly("");
-  }
-
-  @Test
   public void anyOf_pruning_withOneChar() {
     List<Parser<Character>> parsers = range(0, 20).mapToObj(i -> one((char) ('a' + i))).toList();
     Parser<Character> parser = parsers.stream().collect(or());
@@ -2835,19 +2795,6 @@ public class ParserTest {
     assertThat(parser.getPrefixes()).containsExactly("foo", "bar");
     // Second call should return the cached prefixes correctly.
     assertThat(parser.getPrefixes()).containsExactly("foo", "bar");
-  }
-
-  @Test
-  public void anyOf_getBlocklist_lazyInit() {
-    Parser<?> p1 = consecutive("[a]");
-    Parser<?> p2 = consecutive("[b]");
-    Parser<?> parser = anyOf(p1, p2);
-    BitSet blocklist = parser.getBlocklist();
-    assertThat(blocklist.get('x')).isTrue();
-    assertThat(blocklist.get('a')).isFalse();
-    assertThat(blocklist.get('b')).isFalse();
-    // Second call should return the cached blocklist correctly.
-    assertThat(parser.getBlocklist()).isSameInstanceAs(blocklist);
   }
 
   @Test
@@ -7000,91 +6947,6 @@ public class ParserTest {
   }
 
   @Test
-  public void consecutive_negative_pruning_with_blocklist() {
-    Parser<String> parser =
-        anyOf(
-            string("x1"),
-            string("x2"),
-            string("x3"),
-            string("x4"),
-            string("x5"),
-            consecutive("[^abc]"),
-            chars(4));
-
-    // Input "a" starts with 'a', which is blocked by [^abc], so consecutive("[^abc]") is pruned.
-    // Only chars(4) remains and is tried, expecting 4 chars.
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("a"));
-    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
-
-    // Input "d" starts with 'd', which is not blocked, and is parsed successfully.
-    assertThat(parser.parse("d")).isEqualTo("d");
-  }
-
-  @Test
-  public void one_negative_pruning_with_blocklist() {
-    Parser<?> parser =
-        anyOf(
-            string("x1"),
-            string("x2"),
-            string("x3"),
-            string("x4"),
-            string("x5"),
-            one("[^abc]"),
-            chars(4));
-
-    // Input "a" starts with 'a', which is blocked by [^abc], so one("[^abc]") is pruned.
-    // Only chars(4) remains and is tried.
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("a"));
-    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
-
-    // Input "d" starts with 'd', which is not blocked, and is parsed successfully.
-    assertThat(parser.parse("d")).isEqualTo('d');
-  }
-
-  @Test
-  public void consecutive_predicate_pruning_with_blocklist() {
-    Parser<String> parser =
-        anyOf(
-            string("x1"),
-            string("x2"),
-            string("x3"),
-            string("x4"),
-            string("x5"),
-            consecutive(Character::isLetterOrDigit, "alphanumeric"),
-            chars(4));
-
-    // Input "!" starts with '!', which is blocked by alphanumeric, so consecutive is pruned.
-    // Only chars(4) remains and is tried.
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("!"));
-    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
-
-    // Input "a" starts with 'a', which is not blocked, and is parsed successfully.
-    assertThat(parser.parse("a")).isEqualTo("a");
-  }
-
-  @Test
-  public void one_predicate_pruning_with_blocklist() {
-    Parser<?> parser =
-        anyOf(
-            string("x1"),
-            string("x2"),
-            string("x3"),
-            string("x4"),
-            string("x5"),
-            one(Character::isLetterOrDigit, "alphanumeric"),
-            chars(4));
-
-    // Input "!" starts with '!', which is blocked by alphanumeric, so one is pruned.
-    // Only chars(4) remains and is tried.
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("!"));
-    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
-
-    // Input "a" starts with 'a', which is not blocked, and is parsed successfully.
-    assertThat(parser.parse("a")).isEqualTo('a');
-  }
-
-
-  @Test
   public void consecutive_with_caret_pruning() {
     assertThat(consecutive("[ab^c]").getPrefixes()).containsExactly("a", "b", "^", "c");
 
@@ -7122,60 +6984,6 @@ public class ParserTest {
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
     assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
     assertThat(parser.parse("a")).isEqualTo("a");
-  }
-
-  @Test
-  public void anyOf_with_many_consecutive_rules_and_unprunable() {
-    Parser<String> p0 = consecutive("[0]");
-    Parser<String> p1 = consecutive("[1]");
-    Parser<String> p2 = consecutive("[2]");
-    Parser<String> p3 = consecutive("[3]");
-    Parser<String> p4 = consecutive("[4]");
-    Parser<String> p5 = consecutive("[5]");
-    Parser<String> p6 = consecutive("[6]");
-    Parser<String> p7 = consecutive("[7]");
-    // Prefix "" means it survives pruning.
-    Parser<String> unprunable = consecutive("[^0-9a-z]");
-    Parser<String> prunable = consecutive("[z]");
-
-    Parser<String> parser = anyOf(p0, p1, p2, p3, p4, p5, p6, p7, unprunable, prunable);
-
-    // Success cases
-    assertThat(parser.parse("0")).isEqualTo("0");
-    assertThat(parser.parse("7")).isEqualTo("7");
-    assertThat(parser.parse("z")).isEqualTo("z");
-    assertThat(parser.parse("!")).isEqualTo("!");
-
-    // Input "8" should prune p0-p7, prunable and unprunable (since '8' is in 0-9). Fallback to p0.
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("8"));
-    assertThat(e).hasMessageThat().contains("expecting <one or more [0]>");
-
-    // Input "y" should prune p0-p7, prunable and unprunable (since 'y' is in a-z). Fallback to p0.
-    e = assertThrows(ParseException.class, () -> parser.parse("y"));
-    assertThat(e).hasMessageThat().contains("expecting <one or more [0]>");
-  }
-
-  @Test
-  public void consecutive_nonAscii_pruning() {
-    // Non-ASCII in class currently results in empty prefix.
-    assertThat(consecutive("[a\u00A0]").getPrefixes()).containsExactly("");
-
-    Parser<String> parser =
-        anyOf(
-            string("x1"),
-            string("x2"),
-            string("x3"),
-            string("x4"),
-            string("x5"),
-            consecutive("[a\u00A0]"),
-            string("abc"));
-
-    assertThat(parser.parse("a\u00A0")).isEqualTo("a\u00A0");
-    assertThat(parser.parse("x1")).isEqualTo("x1");
-
-    // Input "b" prunes all candidates (including [a\u00A0] via blocklist). Fallback to first candidate x1.
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("b"));
-    assertThat(e).hasMessageThat().contains("expecting <x1>");
   }
 
   @Test
@@ -7223,30 +7031,6 @@ public class ParserTest {
     // abc matches farther, thus its error is reported.
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("abz"));
     assertThat(e).hasMessageThat().contains("expecting <abc>");
-  }
-
-  @Test
-  public void one_nonAscii_pruning() {
-    // Non-ASCII in class currently results in empty prefix.
-    assertThat(one("[a\u00A0]").getPrefixes()).containsExactly("");
-
-    Parser<Object> parser =
-        anyOf(
-            string("x1"),
-            string("x2"),
-            string("x3"),
-            string("x4"),
-            string("x5"),
-            one("[a\u00A0]"),
-            string("abc"));
-
-    assertThat(parser.parse("a")).isEqualTo('a');
-    assertThat(parser.parse("\u00A0")).isEqualTo('\u00A0');
-    assertThat(parser.parse("x1")).isEqualTo("x1");
-
-    // Input "b" prunes all candidates (including [a\u00A0] via blocklist). Fallback to first candidate x1.
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("b"));
-    assertThat(e).hasMessageThat().contains("expecting <x1>");
   }
 
   @Test
@@ -8652,6 +8436,43 @@ public class ParserTest {
     assertThat(joined).isEmpty();
     assertThat(source.parse("")).isEqualTo("");
     assertThat(joined).isEmpty();
+  }
+
+  @Test
+  public void returnElision_anyOf_twoCandidates_withElision() {
+    List<String> joined1 = new ArrayList<>();
+    List<String> joined2 = new ArrayList<>();
+    Parser<String> parser =
+        anyOf(
+                string("a").atLeastOnce(collectingAndAdd(joining(","), joined1)),
+                string("b").atLeastOnce(collectingAndAdd(joining(","), joined2)))
+            .thenReturn("ok");
+
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(joined1).isEmpty();
+    assertThat(joined2).isEmpty();
+
+    assertThat(parser.parse("bbb")).isEqualTo("ok");
+    assertThat(joined1).isEmpty();
+    assertThat(joined2).isEmpty();
+  }
+
+  @Test
+  public void returnElision_anyOf_threeCandidates_noElision() {
+    List<String> joined1 = new ArrayList<>();
+    List<String> joined2 = new ArrayList<>();
+    List<String> joined3 = new ArrayList<>();
+    Parser<String> parser =
+        anyOf(
+                string("a").atLeastOnce(collectingAndAdd(joining(","), joined1)),
+                string("b").atLeastOnce(collectingAndAdd(joining(","), joined2)),
+                string("c").atLeastOnce(collectingAndAdd(joining(","), joined3)))
+            .thenReturn("ok");
+
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(joined1).containsExactly("a,a,a");
+    assertThat(joined2).isEmpty();
+    assertThat(joined3).isEmpty();
   }
 
   private static <T, A, R> Collector<T, A, R> collectingAndAdd(

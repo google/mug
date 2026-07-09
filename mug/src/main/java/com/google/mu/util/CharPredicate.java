@@ -16,6 +16,8 @@ package com.google.mu.util;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Arrays;
+
 /**
  * A predicate of character. More efficient than {@code Predicate<Character>}.
  *
@@ -25,19 +27,59 @@ import static java.util.Objects.requireNonNull;
 public interface CharPredicate {
 
   /** Equivalent to the {@code [a-zA-Z]} character class. */
-  static CharPredicate ALPHA = new CharacterRangeSet.Alpha();
+  static CharPredicate ALPHA =  new CharPredicate() {
+    @Override public boolean test(char c) {
+      return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+    }
+
+    @Override public String toString() {
+      return "ALPHA";
+    }
+  };
 
   /** Equivalent to the {@code [a-zA-Z0-9_]} character class. */
-  static CharPredicate WORD = new CharacterRangeSet.Word();
+  static CharPredicate WORD = new CharPredicate() {
+    @Override public boolean test(char c) {
+      return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
+    }
+
+    @Override public String toString() {
+      return "WORD";
+    }
+  };
 
   /** Corresponds to the ASCII characters. */
-  static CharPredicate ASCII = new CharacterRangeSet.Ascii();
+  static CharPredicate ASCII = new CharPredicate() {
+    @Override public boolean test(char c) {
+      return c <= '\u007f';
+    }
+
+    @Override public String toString() {
+      return "ASCII";
+    }
+  };
 
   /** Corresponds to all characters. */
-  static CharPredicate ANY = new CharacterRangeSet.Any();
+  static CharPredicate ANY = new CharPredicate() {
+    @Override public boolean test(char c) {
+      return true;
+    }
+
+    @Override public String toString() {
+      return "ANY";
+    }
+  };
 
   /** Corresponds to no characters. */
-  static CharPredicate NONE = new CharacterRangeSet.None();
+  static CharPredicate NONE = new CharPredicate() {
+    @Override public boolean test(char c) {
+      return false;
+    }
+
+    @Override public String toString() {
+      return "NONE";
+    }
+  };
 
   /**
    * Equivalent to {@link Character#isWhitespace}.
@@ -56,7 +98,15 @@ public interface CharPredicate {
 
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
   static CharPredicate is(char ch) {
-    return new CharacterRangeSet.Single(ch);
+    return new CharPredicate() {
+      @Override public boolean test(char c) {
+        return c == ch;
+      }
+
+      @Override public String toString() {
+        return "'" + ch + "'";
+      }
+    };
   }
 
   /** Returns a CharPredicate that matches except {@code ch}. */
@@ -66,7 +116,15 @@ public interface CharPredicate {
 
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
   static CharPredicate range(char from, char to) {
-    return new CharacterRangeSet.Range(from, to);
+    return new CharPredicate() {
+      @Override public boolean test(char c) {
+        return c >= from && c <= to;
+      }
+
+      @Override public String toString() {
+        return "['" + from + "', '" + to + "']";
+      }
+    };
   }
 
   /** Returns a CharPredicate that matches any of {@code chars}. */
@@ -75,48 +133,23 @@ public interface CharPredicate {
       case 2: return is(chars.charAt(0)).or(chars.charAt(1));
       case 1: return is(chars.charAt(0));
       case 0: return NONE;
-      default: return new CharacterRangeSet.AnyOf(chars);
     }
+    char[] array = chars.toCharArray();
+    Arrays.sort(array);
+    return new CharPredicate() {
+      @Override public boolean test(char c) {
+        return Arrays.binarySearch(array, c) >= 0;
+      }
+
+      @Override public String toString() {
+        return "anyOf('" + chars + "')";
+      }
+    }.precomputeForAscii();
   }
 
   /** Returns a CharPredicate that matches any of {@code chars}. */
   static CharPredicate noneOf(String chars) {
     return anyOf(chars).not();
-  }
-
-  /**
-   * Returns a regex-like character range set metadata of this predicate (e.g.,
-   * {@code "[0-9a-zA-Z_-]"}, {@code "[]"}). By default {@code ""} is returned, indicating
-   * that the character range set metadata is unknown.
-   *
-   * <p>It's used both for debugging and as metadata for optimizations.
-   * Thus it's critical for the returned character set range string to be accurate, if implemented.
-   * That is, if your {@link #characterRangeSet} is inconsistent with {@link #test}, behavior is
-   * unpredictable.
-   *
-   * <p>Special characters inside the class body are serialized and parsed as follows:
-   * <ul>
-   *   <li>Brackets {@code [} and {@code ]} are treated as literal (don't need to be escaped).
-   *   <li>Dash {@code -} is treated as literal (doesn't need to be escaped) but positioned at
-   *       the start of the body (e.g., {@code "[-..."}) to avoid being interpreted as a range separator.
-   *       It is treated as a range separator only when positioned between two characters
-   *       (e.g. {@code "a-z"}),  and as a literal dash otherwise.
-   *   <li>Caret {@code ^} is always treated as a literal character (doesn't need to be escaped).
-   *       Negative character range set isn't supported.
-   *   <li>Unicode code unit ({@code \u1234}), {@code \\}, {@code \t}, {@code \r}, {@code \n},
-   *       {@code \f} and {@code \b} escape sequences are allowed. Non-ASCII characters must be
-   *       unicode escaped.
-   * </ul>
-   *
-   * <p>For any range {@code c1-c2} inside the character range set, the start character {@code c1} must not
-   * be greater than the end character {@code c2} (i.e. {@code c1 <= c2}). Standard parser engines and
-   * regex compilers will reject out-of-order ranges (such as {@code "z-a"}).
-   *
-   * @since 10.6.1
-   * @hidden
-   */
-  default String characterRangeSet() {
-    return "";
   }
 
   /** Returns true if {@code ch} satisfies this predicate. */
@@ -128,7 +161,16 @@ public interface CharPredicate {
    */
   default CharPredicate or(CharPredicate that) {
     requireNonNull(that);
-    return new CharacterRangeSet.Or(this, that);
+    CharPredicate me = this;
+    return new CharPredicate() {
+      @Override public boolean test(char c) {
+        return me.test(c) || that.test(c);
+      }
+
+      @Override public String toString() {
+        return me + " | " + that;
+      }
+    };
   }
 
   /**
@@ -147,7 +189,16 @@ public interface CharPredicate {
    */
   default CharPredicate and(CharPredicate that) {
     requireNonNull(that);
-    return new CharacterRangeSet.And(this, that);
+    CharPredicate me = this;
+    return new CharPredicate() {
+      @Override public boolean test(char c) {
+        return me.test(c) && that.test(c);
+      }
+
+      @Override public String toString() {
+        return me + " & " + that;
+      }
+    };
   }
 
   /**
@@ -168,7 +219,20 @@ public interface CharPredicate {
 
   /** Returns the negation of this {@code CharPredicate}. */
   default CharPredicate not() {
-    return new CharacterRangeSet.Negation(this);
+    CharPredicate me = this;
+    return new CharPredicate() {
+      @Override public boolean test(char c) {
+        return !me.test(c);
+      }
+
+      @Override public CharPredicate not() {
+        return me;
+      }
+
+      @Override public String toString() {
+        return "not (" + me + ")";
+      }
+    };
   }
 
   /**
@@ -243,6 +307,39 @@ public interface CharPredicate {
    * @since 9.9.4
    */
   default CharPredicate precomputeForAscii() {
-    return new CharacterRangeSet.PrecomputedForAscii(this);
+    CharPredicate base = this;
+
+    return new CharPredicate() {
+      private final long low64 = computeMask(0); // ASCII 0-63
+      private final long high64 = computeMask(64); // ASCII 64-127
+
+      @Override public boolean test(char c) {
+        if (c < 64) {
+          return ((low64 >>> c) & 1L) != 0;
+        }
+        if (c < 128) {
+          return ((high64 >>> (c - 64)) & 1L) != 0;
+        }
+        return base.test(c); // Fallback for non-ASCII
+      }
+
+      @Override public CharPredicate precomputeForAscii() {
+        return this;
+      }
+
+      @Override public String toString() {
+        return base.toString();
+      }
+
+      private long computeMask(int offset) {
+        long mask = 0L;
+        for (int i = 0; i < 64; i++) {
+          if (base.test((char) (offset + i))) {
+            mask |= (1L << i);
+          }
+        }
+        return mask;
+      }
+    };
   }
 }

@@ -40,7 +40,6 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.AbstractMap;
-import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -164,11 +163,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       @Override Set<String> computePrefixes() {
-        return CharacterSet.prefixesIfAscii(matcher);
-      }
-
-      @Override BitSet computeBlocklist() {
-        return blockedAsciiChars(matcher);
+        return prefixesIfAscii(matcher);
       }
     };
   }
@@ -189,11 +184,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       @Override Set<String> computePrefixes() {
-        return CharacterSet.prefixesIfAscii(matcher);
-      }
-
-      @Override BitSet computeBlocklist() {
-        return blockedAsciiChars(matcher);
+        return prefixesIfAscii(matcher);
       }
     }.source();
   }
@@ -260,7 +251,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   private static Parser<String> chars(int n, CharacterSet characterSet, String name) {
-    return chars(n, CharacterSet.prefixesIfAscii(characterSet), name)
+    return chars(n, characterSet.getAsciiPrefixes(), name)
         .suchThat(characterSet::matchesAllOf, name);
   }
 
@@ -2335,8 +2326,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @LazyInit private volatile Set<String> prefixes;
-  @LazyInit private volatile BitSet blocklist;
-
   /**
    * Returns metadata about the prefixes that can be used to prune out this parser, if the input
    * doesn't start with any of the prefixes. Return EMPTY_PREFIX to indicate no pruning is applicable.
@@ -2351,23 +2340,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   Set<String> computePrefixes() {
     return EMPTY_PREFIX;
-  }
-
-  /**
-   * Returns the characters that will disqualify this parser if it's the next char in the input.
-   *
-   * <p>It's supposed to be used as immutable. Don't mutate it.
-   */
-  final BitSet getBlocklist() {
-    BitSet result = blocklist;
-    if (result == null) {
-      blocklist = result = computeBlocklist();
-    }
-    return result;
-  }
-
-  BitSet computeBlocklist() {
-    return new BitSet(0);
   }
 
   /**
@@ -2403,10 +2375,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private abstract class SamePrefix<R> extends Parser<R> {
     @Override Set<String> computePrefixes() {
       return left().getPrefixes();
-    }
-
-    @Override BitSet computeBlocklist() {
-      return left().getBlocklist();
     }
 
     final Parser<T> left() {
@@ -2533,14 +2501,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return Collector.of(() -> null, (a, e) -> {}, (a, b) -> a, a -> null);
   }
 
-  private static BitSet blockedAsciiChars(CharPredicate predicate) {
-    BitSet bitSet = new BitSet();
-    for (int c = 0; c < 128; c++) {
-      if (!predicate.test((char) c)) {
-        bitSet.set(c);
-      }
-    }
-    return bitSet;
+  private static Set<String> prefixesIfAscii(CharPredicate predicate) {
+    return predicate instanceof CharacterSet cset ? cset.getAsciiPrefixes() : EMPTY_PREFIX;
   }
 
   private interface ElidableFunction<F, T> extends Function<F, T> {}

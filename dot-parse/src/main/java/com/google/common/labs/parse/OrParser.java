@@ -17,10 +17,11 @@ package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -37,10 +38,15 @@ final class OrParser<T> extends Parser<T> {
             .flatMap( // flatten nested Or for more effective pruning.
                 p -> covariant(p) instanceof OrParser<? extends T> or
                     ? or.parsers.stream()
-                    : Stream.of(p))
+                    : Stream.of(requireNonNull(p)))
             .map(Parser::<T>covariant)
             .toList();
     this.pruneTree = makePruneTreeIfUseful(parsers);
+  }
+
+  private OrParser(List<Parser<T>> parsers, PrefixPruneTree<Parser<T>> pruneTree) {
+    this.parsers = parsers;
+    this.pruneTree = pruneTree;
   }
 
   @Override MatchResult<T> skipAndMatch(
@@ -89,26 +95,25 @@ final class OrParser<T> extends Parser<T> {
     return result.stream().collect(toUnmodifiableSet());
   }
 
-  @Override BitSet computeBlocklist() {
-    var result = (BitSet) parsers.get(0).getBlocklist().clone();
-    for (int i = 1; i < parsers.size(); i++) {
-      result.and(parsers.get(i).getBlocklist());
+  @Override Parser<?> ignoreReturn() {
+    if (pruneTree == null) {
+      @SuppressWarnings("unchecked")
+      List<Parser<Object>> elided =
+          (List) parsers.stream().map(Parser::ignoreReturn).collect(toUnmodifiableList());
+      return new OrParser<Object>(elided, null);
     }
-    return result;
+    return super.ignoreReturn();
   }
 
   private static <T> PrefixPruneTree<Parser<T>> makePruneTreeIfUseful(
       List<Parser<T>> parsers) {
+    if (parsers.size() < 3) {
+      return null;
+    }
     var builder = new PrefixPruneTree.Builder<Parser<T>>();
     for (Parser<T> parser : parsers) {
       for (String prefix : parser.getPrefixes()) {
         builder.addPrefix(prefix, 8, parser); // peek for up to 8 chars lest diminishing return.
-        if (prefix.isEmpty()) {  // If there is no positive prefix to prune, prune by blocklist.
-          BitSet blocklist = parser.getBlocklist();
-          for (int c = blocklist.nextSetBit(0); c >= 0; c = blocklist.nextSetBit(c + 1)) {
-            builder.addBlocked((char) c, parser);
-          }
-        }
       }
     }
     return builder.numSurvivors() < parsers.size() ? builder.build() : null;

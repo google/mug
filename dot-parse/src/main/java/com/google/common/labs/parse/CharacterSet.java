@@ -59,7 +59,6 @@ import com.google.mu.util.CharPredicate;
  *     parameter, such as {@link Parser#consecutive(String)}.
  */
 public final class CharacterSet implements CharPredicate {
-  private static final Parser<Set<String>> RANGE_SET_PARSER = makeCharacterRangeSetParser();
   private static final Parser<CharPredicate> CHARACTER_SET_PARSER = makeCharacterSetParser();
 
   static final CharacterSet DECIMAL = charsIn("[0-9]");
@@ -139,15 +138,7 @@ public final class CharacterSet implements CharPredicate {
         .collect(joining());
   }
 
-  static Set<String> prefixesIfAscii(CharPredicate predicate) {
-    if (predicate instanceof CharacterSet cset) {
-      return cset.getAsciiPrefixes();
-    }
-    String characterClass = predicate.characterRangeSet();
-    return characterClass.isEmpty() ? Set.of("") : parsePrefixesByCharacterRangeSet(predicate);
-  }
-
-  private Set<String> getAsciiPrefixes() {
+  Set<String> getAsciiPrefixes() {
     Set<String> result = asciiPrefixes;
     if (result == null) {
       asciiPrefixes = result = candidateCharsIfAscii()
@@ -157,7 +148,7 @@ public final class CharacterSet implements CharPredicate {
     return result;
   }
 
-  private Optional<Set<Character>> candidateCharsIfAscii() {
+  Optional<Set<Character>> candidateCharsIfAscii() {
     if (string.startsWith("[^")) {
       return Optional.empty();
     }
@@ -171,13 +162,6 @@ public final class CharacterSet implements CharPredicate {
         .findFirst();
   }
 
-  private static Set<String> parsePrefixesByCharacterRangeSet(CharPredicate predicate) {
-    return RANGE_SET_PARSER
-        .probe(predicate.characterRangeSet())
-        .findFirst()
-        .orElse(Set.of(""));
-  }
-
   private static CharPredicate compileCharacterSet(String characterSet) {
     checkArgument(
         characterSet.startsWith("[") && characterSet.endsWith("]"),
@@ -187,25 +171,6 @@ public final class CharacterSet implements CharPredicate {
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("in character set " + characterSet, e);
     }
-  }
-
-  private static Parser<Set<String>> makeCharacterRangeSetParser() {
-    Parser<Character> regularChar =
-        one(c -> c < 128 && c != '\\', "regular ascii char").notFollowedByEof();
-    Parser<Character> escaped =
-        anyOf(
-            string("\\t").thenReturn('\t'),
-            string("\\n").thenReturn('\n'),
-            string("\\r").thenReturn('\r'),
-            string("\\f").thenReturn('\f'),
-            string("\\b").thenReturn('\b'),
-            string("\\\\").thenReturn('\\'));
-    Parser<Character> asciiChar = regularChar.or(escaped);
-    Parser<Set<Character>> range =
-        sequence(asciiChar.followedBy("-"), asciiChar, CharacterSet::charsInRange);
-    return anyOf(range, asciiChar.map(Set::of))
-        .zeroOrMore(flatMapping(chars -> chars.stream().map(Object::toString), toUnmodifiableSet()))
-        .between("[", "]");
   }
 
   private static Parser<CharPredicate> makeCharacterSetParser() {
