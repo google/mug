@@ -59,6 +59,9 @@ import com.google.mu.util.CharPredicate;
  *     parameter, such as {@link Parser#consecutive(String)}.
  */
 public final class CharacterSet implements CharPredicate {
+  private static final Parser<Set<String>> RANGE_SET_PARSER = makeCharacterRangeSetParser();
+  private static final Parser<CharPredicate> CHARACTER_SET_PARSER = makeCharacterSetParser();
+
   static final CharacterSet DECIMAL = charsIn("[0-9]");
   static final CharacterSet HEX = charsIn("[0-9a-fA-F]");
 
@@ -169,21 +172,7 @@ public final class CharacterSet implements CharPredicate {
   }
 
   private static Set<String> parsePrefixesByCharacterRangeSet(CharPredicate predicate) {
-    Parser<Character> regularChar = one(c -> c < 128 && c != '\\', "regular ascii char")
-        .notFollowedByEof();
-    Parser<Character> escaped = anyOf(
-        string("\\t").thenReturn('\t'),
-        string("\\n").thenReturn('\n'),
-        string("\\r").thenReturn('\r'),
-        string("\\f").thenReturn('\f'),
-        string("\\b").thenReturn('\b'),
-        string("\\\\").thenReturn('\\'));
-    Parser<Character> asciiChar = regularChar.or(escaped);
-    Parser<Set<Character>> range =
-        sequence(asciiChar.followedBy("-"), asciiChar, CharacterSet::charsInRange);
-    return anyOf(range, asciiChar.map(Set::of))
-        .zeroOrMore(flatMapping(chars -> chars.stream().map(Object::toString), toUnmodifiableSet()))
-        .between("[", "]")
+    return RANGE_SET_PARSER
         .probe(predicate.characterRangeSet())
         .findFirst()
         .orElse(Set.of(""));
@@ -193,12 +182,38 @@ public final class CharacterSet implements CharPredicate {
     checkArgument(
         characterSet.startsWith("[") && characterSet.endsWith("]"),
         "Character set must be in square brackets. Use [%s] instead.", characterSet);
+    try {
+      return CHARACTER_SET_PARSER.parse(characterSet).precomputeForAscii();
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException("in character set " + characterSet, e);
+    }
+  }
+
+  private static Parser<Set<String>> makeCharacterRangeSetParser() {
+    Parser<Character> regularChar =
+        one(c -> c < 128 && c != '\\', "regular ascii char").notFollowedByEof();
+    Parser<Character> escaped =
+        anyOf(
+            string("\\t").thenReturn('\t'),
+            string("\\n").thenReturn('\n'),
+            string("\\r").thenReturn('\r'),
+            string("\\f").thenReturn('\f'),
+            string("\\b").thenReturn('\b'),
+            string("\\\\").thenReturn('\\'));
+    Parser<Character> asciiChar = regularChar.or(escaped);
+    Parser<Set<Character>> range =
+        sequence(asciiChar.followedBy("-"), asciiChar, CharacterSet::charsInRange);
+    return anyOf(range, asciiChar.map(Set::of))
+        .zeroOrMore(flatMapping(chars -> chars.stream().map(Object::toString), toUnmodifiableSet()))
+        .between("[", "]");
+  }
+
+  private static Parser<CharPredicate> makeCharacterSetParser() {
     Parser<Character> validChar = one(ANY, "literal char").notFollowedByEof();
     Parser<CharPredicate> range = sequence(
         validChar.followedBy("-"), validChar,
         (c1, c2) -> {
-          checkArgument(
-              c1 <= c2, "invalid range [%s-%s] in character set %s", c1, c2, characterSet);
+          checkArgument(c1 <= c2, "invalid range [%s-%s]", c1, c2);
           return CharPredicate.range(c1, c2);
         });
     Parser<CharPredicate>.OrEmpty positiveSet =
@@ -206,7 +221,7 @@ public final class CharacterSet implements CharPredicate {
             .zeroOrMore(reducing(CharPredicate.NONE, CharPredicate::or));
     Parser<CharPredicate> negativeSet =
         string("^").then(positiveSet).map(CharPredicate::not);
-    return negativeSet.or(positiveSet).between("[", "]").parse(characterSet).precomputeForAscii();
+    return negativeSet.or(positiveSet).between("[", "]");
   }
 
   private static Set<Character> charsInRange(char c1, char c2) {
