@@ -728,7 +728,7 @@ public final class MoreCollectors {
   }
 
   /**
-   * Returns a collector that intersects sets of type {@code E} derived from the input element
+   * Returns a collector that intersects {@code Set<E>} derived from the input elements
    * using the {@code toSet} function.
    *
    * <p>For example:
@@ -740,8 +740,12 @@ public final class MoreCollectors {
    * <p>Encounter order is preserved. Collecting {@code [[1, 2, 3, 4, 5], [3, 2, 1]]} will return
    * {@code [1, 2, 3]}.
    *
-   * <p>At least one {@code Set} element (even if empty) must be present in the input, or else {@code
-   * IllegalArgumentException} will be thrown.
+   * <p>At least one {@code Set} input (even if empty) must be present in the input, or else {@code
+   * IllegalArgumentException} will be thrown, because mathematically intersecting zero Set's is
+   * equivalent to the set of all, which isn't representable by Java {@link Set}.
+   *
+   * <p>If you do need to express the notion of <em>all</em>, consider using {@link
+   * com.google.mu.collect.Selection#toIntersection} instead.
    *
    * @since 10.6.1
    */
