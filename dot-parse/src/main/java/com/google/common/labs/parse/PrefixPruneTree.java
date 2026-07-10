@@ -241,14 +241,14 @@ record PrefixPruneTree<V>(
   }
 
   private static final class Survivors<V> {
+    private static final Survivors<?> NONE = new Survivors<>(List.of());
+
     private final List<Ordered<V>> ordered;
     @LazyInit private List<V> unwrapped;
 
-    private static final Survivors<?> EMPTY = new Survivors<>(List.of());
-
     @SuppressWarnings("unchecked")
     static <V> Survivors<V> none() {
-      return (Survivors<V>) EMPTY;
+      return (Survivors<V>) NONE;
     }
 
     Survivors(List<Ordered<V>> ordered) {
