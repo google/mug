@@ -18,7 +18,6 @@ package com.google.common.labs.parse;
 import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import java.util.ArrayList;
@@ -97,10 +96,7 @@ final class OrParser<T> extends Parser<T> {
 
   @Override Parser<?> ignoreReturn() {
     if (pruneTree == null) {
-      @SuppressWarnings("unchecked")
-      List<Parser<Object>> elided =
-          (List) parsers.stream().map(Parser::ignoreReturn).collect(toUnmodifiableList());
-      return new OrParser<Object>(elided, null);
+      return new OrParser<>(parsers.stream().map(p -> covariant(p.ignoreReturn())).toList(), null);
     }
     return super.ignoreReturn();
   }

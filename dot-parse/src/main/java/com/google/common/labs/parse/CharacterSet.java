@@ -182,6 +182,7 @@ public final class CharacterSet implements CharPredicate {
         string("^").then(positiveSet).map(CharPredicate::not);
     return negativeSet.or(positiveSet).between("[", "]");
   }
+
   private static Parser<Set<Character>> makeAsciiSetParser() {
     Parser<Character> asciiChar = one(c -> c < 128, "ascii char").notFollowedByEof();
     Parser<Set<Character>> range =
