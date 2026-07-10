@@ -291,10 +291,6 @@ record PrefixPruneTree<V>(
       return new Survivors<>(ordered.stream().filter(v -> !blocked.contains(v.value)).toList());
     }
 
-    int size() {
-      return ordered.size();
-    }
-
     boolean isEmpty() {
       return ordered.isEmpty();
     }
