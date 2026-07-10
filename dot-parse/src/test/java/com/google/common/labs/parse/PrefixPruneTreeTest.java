@@ -247,5 +247,36 @@ public final class PrefixPruneTreeTest {
     assertThat(tree.pruneByPrefix(CharInput.from("ab"), 0)).containsExactly("val1", "val2");
     assertThat(tree.pruneByPrefix(CharInput.from("x"), 0)).isEmpty();
   }
+
+  @Test
+  public void testBlockedCandidates_allBlocked() {
+    PrefixPruneTree<String> tree =
+        new PrefixPruneTree.Builder<String>()
+            .addPrefix("", 100, "default")
+            .addBlocked('a', "default")
+            .build();
+    assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).isEmpty();
+  }
+
+  @Test
+  public void testBlockedCandidates_noneBlocked() {
+    PrefixPruneTree<String> tree =
+        new PrefixPruneTree.Builder<String>()
+            .addPrefix("", 100, "default")
+            .addBlocked('b', "default")
+            .build();
+    assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).containsExactly("default");
+  }
+
+  @Test
+  public void testBlockedCandidates_partiallyBlocked() {
+    PrefixPruneTree<String> tree =
+        new PrefixPruneTree.Builder<String>()
+            .addPrefix("", 100, "default1")
+            .addPrefix("", 100, "default2")
+            .addBlocked('a', "default1")
+            .build();
+    assertThat(tree.pruneByPrefix(CharInput.from("a"), 0)).containsExactly("default2");
+  }
 }
 

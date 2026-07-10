@@ -40,6 +40,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.AbstractMap;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -165,6 +166,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override Set<String> computePrefixes() {
         return prefixesIfAscii(matcher);
       }
+
+      @Override BitSet computeBlocklist() {
+        return blockedCommonAsciiChars(matcher);
+      }
     };
   }
 
@@ -185,6 +190,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
       @Override Set<String> computePrefixes() {
         return prefixesIfAscii(matcher);
+      }
+
+      @Override BitSet computeBlocklist() {
+        return blockedCommonAsciiChars(matcher);
       }
     }.source();
   }
@@ -2326,6 +2335,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @LazyInit private volatile Set<String> prefixes;
+  @LazyInit private volatile BitSet blocklist;
+
   /**
    * Returns metadata about the prefixes that can be used to prune out this parser, if the input
    * doesn't start with any of the prefixes. Return EMPTY_PREFIX to indicate no pruning is applicable.
@@ -2336,6 +2347,18 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       prefixes = result = computePrefixes();
     }
     return result;
+  }
+
+  final BitSet getBlocklist() {
+    BitSet result = blocklist;
+    if (result == null) {
+      blocklist = result = computeBlocklist();
+    }
+    return result;
+  }
+
+  BitSet computeBlocklist() {
+    return new BitSet(0);
   }
 
   Set<String> computePrefixes() {
@@ -2375,6 +2398,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private abstract class SamePrefix<R> extends Parser<R> {
     @Override Set<String> computePrefixes() {
       return left().getPrefixes();
+    }
+
+    @Override BitSet computeBlocklist() {
+      return left().getBlocklist();
     }
 
     final Parser<T> left() {
@@ -2503,6 +2530,18 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private static Set<String> prefixesIfAscii(CharPredicate predicate) {
     return predicate instanceof CharacterSet cset ? cset.getAsciiPrefixes() : EMPTY_PREFIX;
+  }
+
+  private static BitSet blockedCommonAsciiChars(CharPredicate predicate) {
+    String commonAscii = "abcdefghijklmnopqrstuvwxyz0123456789!\"#$%&'()*+,-./:;<=>?@[\\]_`{|}";
+    BitSet bitSet = new BitSet(128);
+    for (int i = 0; i < commonAscii.length(); i++) {
+      char c = commonAscii.charAt(i);
+      if (!predicate.test(c)) {
+        bitSet.set(c);
+      }
+    }
+    return bitSet;
   }
 
   private interface ElidableFunction<F, T> extends Function<F, T> {}

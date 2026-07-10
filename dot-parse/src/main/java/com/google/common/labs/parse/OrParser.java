@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -101,6 +102,14 @@ final class OrParser<T> extends Parser<T> {
     return super.ignoreReturn();
   }
 
+  @Override BitSet computeBlocklist() {
+    var result = (BitSet) parsers.get(0).getBlocklist().clone();
+    for (int i = 1; i < parsers.size(); i++) {
+      result.and(parsers.get(i).getBlocklist());
+    }
+    return result;
+  }
+
   private static <T> PrefixPruneTree<Parser<T>> makePruneTreeIfUseful(List<Parser<T>> parsers) {
     if (parsers.size() < 3) {
       return null;
@@ -111,6 +120,21 @@ final class OrParser<T> extends Parser<T> {
         builder.addPrefix(prefix, 8, parser); // peek for up to 8 chars lest diminishing return.
       }
     }
-    return builder.numSurvivors() < parsers.size() ? builder.build() : null;
+    if (builder.numSurvivors() == parsers.size()) {
+      return null;
+    }
+    if (builder.numSurvivors() > 0) {
+      for (Parser<T> parser : parsers) {
+        for (String prefix : parser.getPrefixes()) {
+          if (prefix.isEmpty()) {
+            BitSet blocklist = parser.getBlocklist();
+            for (int c = blocklist.nextSetBit(0); c >= 0; c = blocklist.nextSetBit(c + 1)) {
+              builder.addBlocked((char) c, parser);
+            }
+          }
+        }
+      }
+    }
+    return builder.build();
   }
 }
