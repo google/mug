@@ -8722,4 +8722,27 @@ public class ParserTest {
     assertThat(thrown).hasMessageThat().contains("custom IAE");
     assertThat(thrown).hasMessageThat().contains("1:1");
   }
+
+  @Test
+  public void except_exceptionInSuchThatAfterSequenceWithoutCombiner_reportedAtCorrectPosition() {
+    Parser<?> parser =
+        sequence(
+            string("ab"),
+            string("cd")
+        )
+        .suchThat(v -> {
+          throw new IllegalArgumentException("suchThat IAE");
+        }, "suchThat")
+        .except(IllegalArgumentException.class, RuntimeException::getMessage);
+
+    Parser<?> combinedParser =
+        anyOf(
+            parser,
+            sequence(string("abc"), string("Y"))
+        );
+
+    ParseException combinedThrown = assertThrows(ParseException.class, () -> combinedParser.parse("abcd"));
+    assertThat(combinedThrown).hasMessageThat().contains("suchThat IAE");
+    assertThat(combinedThrown).hasMessageThat().contains("1:1");
+  }
 }

@@ -1105,16 +1105,21 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success(int head, int tail, T value) -> {
+            context.onSuccess(new MatchResult.Success<>(head, tail, null));
             A buffer = supplier.get();
             accumulator.accept(buffer, value);
             for (int index = tail; ; ) {
               switch (extra.skipAndMatch(skip, input, index, context)) {
                 case MatchResult.Success(int head2, int tail2, T value2) -> {
+                  context.onSuccess(new MatchResult.Success<>(head, tail2, null));
                   accumulator.accept(buffer, value2);
                   index = tail2;
                 }
                 case MatchResult.Failure<?> failure -> {
-                  return new MatchResult.Success<>(head, index, finisher.apply(buffer));
+                  MatchResult.Success<R> successResult =
+                      new MatchResult.Success<>(head, index, finisher.apply(buffer));
+                  context.onSuccess(successResult);
+                  return successResult;
                 }
               }
             }
@@ -1398,9 +1403,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override MatchResult<T> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         var result = left().skipAndMatch(skip, input, start, context);
-        return result instanceof MatchResult.Success<T> success && !condition.test(success.value())
-            ? context.expecting(name, success.head(), success.tail())
-            : result;
+        if (result instanceof MatchResult.Success<T> success) {
+          context.onSuccess(success);
+          if (!condition.test(success.value())) {
+            return context.expecting(name, success.head(), success.tail());
+          }
+        }
+        return result;
       }
     };
   }
@@ -1444,7 +1453,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
                 }
               }
             }
-            yield new MatchResult.Success<T>(result.head(), index, result.value());
+            MatchResult.Success<T> successResult =
+                new MatchResult.Success<>(result.head(), index, result.value());
+            context.onSuccess(successResult);
+            yield successResult;
           }
           case MatchResult.Failure<T> failure -> failure;
         };
