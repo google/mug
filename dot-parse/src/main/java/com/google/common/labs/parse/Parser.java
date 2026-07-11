@@ -1294,10 +1294,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * <p>Useful if any callback passed through {@link #map}, {@link #flatMap} etc.
    * delegates to a third-party parser that throws exceptions that you need to treat as
    * a regular parsing error. For example: <pre>{@code
-   * List<String> domains =
-   *     consecutive("[a-z.-]")
-   *         .map(IDN::toASCII)
-   *         .except(IllegalArgumentException.class, IllegalArgumentException::getMessage)
+   * List<Integer> numbers =
+   *     Parser.digits()
+   *         .map(Integer::parseInt)
+   *         .except(NumberFormatException.class, Exception::getMessage)
    *         .atleastOnceDelimitedBy(",")
    *         .parseSkipping(Character::isWhitespace, input);
    * }</pre>
