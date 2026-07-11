@@ -1322,6 +1322,20 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testParseAddressList_withConsumer_invalidIdnDomain() {
+    List<String> invalid = new ArrayList<>();
+    String longDomain = "a".repeat(70) + ".com";
+    assertThat(
+            EmailAddress.parseAddressList(
+                "a@b.com, c@" + longDomain + ", e@f.com", invalid::add))
+        .containsExactly(
+            EmailAddress.of("a", "b.com"),
+            EmailAddress.of("e", "f.com"))
+        .inOrder();
+    assertThat(invalid).containsExactly("c@" + longDomain);
+  }
+
+  @Test
   public void testParseAddressList_withConsumer_delimitersInQuotedDisplayName() {
     List<String> invalid = new ArrayList<>();
     assertThat(

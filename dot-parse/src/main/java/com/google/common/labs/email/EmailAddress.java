@@ -228,8 +228,6 @@ public final class EmailAddress {
       literally(sequence(LOCAL_PART.followedBy("@"), DOMAIN, AddrSpecAlike::new));
 
   private static final Parser<?> ADDRESS_LIST_DELIMITER = one("[,;]").atLeastOnce(counting());
-  private static final Parser<Character> ANY_BUT_LIST_DELIMITER = one("[^,;]");
-  private static final Parser<String> UNTIL_LIST_DELIMITER = consecutive("[^,;]");
 
   /**
    * Parser that strictly matches only the RFC 5322 {@code addr-spec} (i.e., {@code
@@ -254,9 +252,12 @@ public final class EmailAddress {
   public static final Parser<EmailAddress> PARSER = makeParser();
 
   private static final Parser<Object> ADDRESS_OR_JUNK = anyOf(
-      // don't extract a@b from a@b@c
-      PARSER.notFollowedBy(ANY_BUT_LIST_DELIMITER, "non-separator"),
-      UNTIL_LIST_DELIMITER.map(String::trim));
+      PARSER
+          // invalid idn is also junk
+          .except(IllegalArgumentException.class, IllegalArgumentException::getMessage)
+          // don't extract a@b from a@b@c
+          .notFollowedBy(one("[^,;]"), "non-separator"),
+          consecutive("[^,;]").map(String::trim));
 
   private final String localPart;
   private final String domain;

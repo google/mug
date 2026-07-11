@@ -1283,6 +1283,48 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
+   * Returns a new instance of this Parser but exceptions of {@code exceptionType}
+   * will be handled by the {@code toErrorMessage} function to be reported as a backtrackable
+   * parsing error, with the error pointing to the starting position evaluated by
+   * this parser.
+   *
+   * <p>Useful if any callback passed through {@link #map}, {@link #flatMap} etc.
+   * delegates to a third-party parser that throws exceptions that you need to treat as
+   * a regular parsing error. For example: <pre>{@code
+   * List<String> domains =
+   *     consecutive("[a-z.-]")
+   *         .map(IDN::toASCII)
+   *         .except(IllegalArgumentException.class, IllegalArgumentException::getMessage)
+   *         .atleastOnceDelimitedBy(",")
+   *         .parseSkipping(Character::isWhitespace, input);
+   * }</pre>
+   *
+   * <p>All other unchecked exceptions, and unchecked exceptions thrown by {@code toErrorMessage}
+   * are propagated as is.
+   *
+   * @since 10.6.1
+   */
+  public final <E extends RuntimeException> Parser<T> except(
+      Class<E> exceptionType, Function<? super E, String> toErrorMessage) {
+    requireNonNull(exceptionType);
+    requireNonNull(toErrorMessage);
+    return new SamePrefix<>() {
+      @Override MatchResult<T> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        try {
+          return left().skipAndMatch(skip, input, start, context);
+        } catch (RuntimeException e) {
+          if (exceptionType.isInstance(e)) {
+            return context.failAt(start, "{name}", toErrorMessage.apply(exceptionType.cast(e)));
+          }
+          throw e;
+        }
+      }
+    };
+  }
+
+  /**
    * If this parser matches, applies function {@code f} to get the next production rule to match
    * in sequence.
    *

@@ -8516,4 +8516,56 @@ public class ParserTest {
       return reducer.apply(a, b);
     };
   }
+
+  @Test
+  public void except_succeeds() {
+    Parser<Integer> parser =
+        digits().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage);
+    assertThat(parser.parse("123")).isEqualTo(123);
+  }
+
+  @Test
+  public void except_failsToMatch() {
+    Parser<Integer> parser =
+        digits().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage);
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
+    assertThat(thrown).hasMessageThat().contains("expecting <digits>");
+    assertThat(thrown).hasMessageThat().contains("1:1");
+  }
+
+  @Test
+  public void except_mapperThrows() {
+    Parser<Integer> parser =
+        word().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage);
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
+    assertThat(thrown).hasMessageThat().contains("\"abc\"");
+    assertThat(thrown).hasMessageThat().contains("1:1");
+  }
+
+  @Test
+  public void except_parseSkipping_errorPositionAfterSkipping() {
+    Parser<Integer> parser =
+        word().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage);
+    ParseException thrown = assertThrows(
+        ParseException.class, () -> parser.parseSkipping(whitespace(), "   abc"));
+    assertThat(thrown).hasMessageThat().contains("\"abc\"");
+    assertThat(thrown).hasMessageThat().contains("1:4");
+  }
+
+  @Test
+  public void except_unexpectedExceptionType_propagatedAsIs() {
+    Parser<Integer> parser =
+        word().map(Integer::parseInt).except(NullPointerException.class, RuntimeException::getMessage);
+    assertThrows(NumberFormatException.class, () -> parser.parse("abc"));
+  }
+
+  @Test
+  public void except_nullExceptionType_throws() {
+    assertThrows(NullPointerException.class, () -> digits().except(null, RuntimeException::getMessage));
+  }
+
+  @Test
+  public void except_nullErrorMessageFunction_throws() {
+    assertThrows(NullPointerException.class, () -> digits().except(NumberFormatException.class, null));
+  }
 }
