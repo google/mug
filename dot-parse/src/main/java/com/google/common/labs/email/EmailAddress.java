@@ -236,7 +236,13 @@ public final class EmailAddress {
    * @since 10.4
    */
   public static final Parser<EmailAddress> ADDR_SPEC_PARSER =
-      ADDR_SPEC_ALIKE.map(AddrSpecAlike::toEmailAddress);
+      ADDR_SPEC_ALIKE.map(addr -> {
+        try {
+          return addr.toEmailAddress();
+        } catch (IllegalArgumentException e) {
+          throw Parser.fail(e.getMessage());
+        }
+      });
 
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
@@ -253,8 +259,6 @@ public final class EmailAddress {
 
   private static final Parser<Object> ADDRESS_OR_JUNK = anyOf(
       PARSER
-          // invalid idn is also junk
-          .except(IllegalArgumentException.class, IllegalArgumentException::getMessage)
           // don't extract a@b from a@b@c
           .notFollowedBy(one("[^,;]"), "non-separator"),
       consecutive("[^,;]").map(String::trim));
@@ -505,14 +509,31 @@ public final class EmailAddress {
             // optimization so that for the common case of user@company.com, we don't have to
             // backtrack to the sequence(displayName, bracketedAddress) rule.
             looksLikeAddrSpec, bracketedAddress.orElse(null),
-            (addrSpecOrDisplayName, bracketedOrNull) ->
-                bracketedOrNull == null
+            (addrSpecOrDisplayName, bracketedOrNull) -> {
+              try {
+                return bracketedOrNull == null
                     ? addrSpecOrDisplayName.toEmailAddress()
-                    : bracketedOrNull.toEmailAddressWithDisplayName(addrSpecOrDisplayName.toString())),
+                    : bracketedOrNull.toEmailAddressWithDisplayName(addrSpecOrDisplayName.toString());
+              } catch (IllegalArgumentException e) {
+                throw Parser.fail(e.getMessage());
+              }
+            }),
         sequence(
             displayName, bracketedAddress,
-            (name, addr) -> addr.toEmailAddressWithDisplayName(name)),
-        bracketedAddress.map(AddrSpecAlike::toEmailAddress),
+            (name, addr) -> {
+              try {
+                return addr.toEmailAddressWithDisplayName(name);
+              } catch (IllegalArgumentException e) {
+                throw Parser.fail(e.getMessage());
+              }
+            }),
+        bracketedAddress.map(addr -> {
+          try {
+            return addr.toEmailAddress();
+          } catch (IllegalArgumentException e) {
+            throw Parser.fail(e.getMessage());
+          }
+        }),
         ADDR_SPEC_PARSER); // fall back when PARSER is combined with other parsers
   }
 
