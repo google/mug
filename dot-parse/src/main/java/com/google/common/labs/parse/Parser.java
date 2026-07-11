@@ -2547,7 +2547,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
     }
 
-    final <V> MatchResult<V> test(MatchResult.Success<V> success, Predicate<? super V> condition, String name) {
+    final <V> MatchResult<V> test(
+        MatchResult.Success<V> success, Predicate<? super V> condition, String name) {
       try {
         return condition.test(success.value) ? success : expecting(name, success.head, success.tail);
       } catch (ParseError e) {
