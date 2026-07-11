@@ -103,6 +103,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#or()" tabindex="0">or()</a></li>
 <li><a href="#or(com.google.common.labs.parse.Parser)" tabindex="0">or(Parser)</a></li>
 <li><a href="#or(com.google.common.labs.parse.Parser.OrEmpty)" tabindex="0">or(Parser.OrEmpty)</a></li>
+<li><a href="#fail(java.lang.String)" tabindex="0">fail(String)</a></li>
 <li><a href="#atLeastOnce()" tabindex="0">atLeastOnce()</a></li>
 <li><a href="#atLeastOnce(java.util.function.BinaryOperator)" tabindex="0">atLeastOnce(BinaryOperator)</a></li>
 <li><a href="#atLeastOnce(java.util.stream.Collector)" tabindex="0">atLeastOnce(Collector)</a></li>
@@ -126,7 +127,6 @@ loadScripts(document, 'script');</script>
 <li><a href="#between(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser.OrEmpty)" tabindex="0">between(Parser.OrEmpty, Parser.OrEmpty)</a></li>
 <li><a href="#map(java.util.function.Function)" tabindex="0">map(Function)</a></li>
 <li><a href="#mapWithIndex(com.google.mu.function.ObjInt2Function)" tabindex="0">mapWithIndex(ObjInt2Function)</a></li>
-<li><a href="#except(java.lang.Class,java.util.function.Function)" tabindex="0">except(Class, Function)</a></li>
 <li><a href="#flatMap(java.util.function.Function)" tabindex="0">flatMap(Function)</a></li>
 <li><a href="#thenReturn(R)" tabindex="0">thenReturn(R)</a></li>
 <li><a href="#then(com.google.common.labs.parse.Parser)" tabindex="0">then(Parser)</a></li>
@@ -370,13 +370,11 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Matches <code>n</code> digits of <code>[0-9]</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;E extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/RuntimeException.html" title="class or interface in java.lang" class="external-link">RuntimeException</a>&gt;<br><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#except(java.lang.Class,java.util.function.Function)" class="member-name-link">except</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;E&gt;&nbsp;exceptionType,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super E, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;toErrorMessage)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns a new instance of this Parser with exceptions of <code>exceptionType</code>
- handled by the <code>toErrorMessage</code> function to be reported as a backtrackable
- parsing error.</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Error.html" title="class or interface in java.lang" class="external-link">Error</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#fail(java.lang.String)" class="member-name-link">fail</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;message)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Throw this error from the lambda passed to <a href="#map(java.util.function.Function)"><code>map()</code></a>, <a href="#flatMap(java.util.function.Function)"><code>flatMap()</code></a>
+ etc.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#first(java.lang.String)" class="member-name-link">first</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;needle)</code></div>
@@ -1553,6 +1551,38 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 </section>
 </li>
 <li>
+<section class="detail" id="fail(java.lang.String)">
+<h3>fail</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Error.html" title="class or interface in java.lang" class="external-link">Error</a></span>&nbsp;<span class="element-name">fail</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;message)</span></div>
+<div class="block">Throw this error from the lambda passed to <a href="#map(java.util.function.Function)"><code>map()</code></a>, <a href="#flatMap(java.util.function.Function)"><code>flatMap()</code></a>
+ etc. to report a custom parse error. The error will point to the starting position evaluated by
+ the chained parser.
+
+ <p>For example: <pre><code>
+ Parser&lt;List&lt;Integer&gt;&gt; numbers =
+     Parser.digits()
+         .map(s -&gt; {
+           try {
+             return Integer.parseInt(s);
+           } catch (NumberFormatException e) {
+             throw Parser.fail(e.getMessage());
+           }
+         })
+         .atLeastOnce();
+ </code></pre>
+
+ <p><em>DO NOT throw this error outside of the parser lambdas!</em></div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>message</code> - the error message to be reported as part of the parse failure.</dd>
+<dt>Since:</dt>
+<dd>10.7</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
 <section class="detail" id="atLeastOnce()">
 <h3>atLeastOnce</h3>
 <div class="horizontal-scroll">
@@ -1958,39 +1988,6 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <dl class="notes">
 <dt>Since:</dt>
 <dd>10.6</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="except(java.lang.Class,java.util.function.Function)">
-<h3>except</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="type-parameters">&lt;E extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/RuntimeException.html" title="class or interface in java.lang" class="external-link">RuntimeException</a>&gt;</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">except</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;E&gt;&nbsp;exceptionType,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super E, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;toErrorMessage)</span></div>
-<div class="block">Returns a new instance of this Parser with exceptions of <code>exceptionType</code>
- handled by the <code>toErrorMessage</code> function to be reported as a backtrackable
- parsing error.
-
- <p>Because the parsing error will point to the starting position evaluated by
- this parser, make sure to call <code>.except()</code> at the finest granularity possible.
-
- <p>Useful if any callback passed through <a href="#map(java.util.function.Function)"><code>map()</code></a>, <a href="#flatMap(java.util.function.Function)"><code>flatMap()</code></a> etc.
- delegates to a third-party parser that throws exceptions that you need to treat as
- a regular parsing error. For example: <pre><code>
- List&lt;Integer&gt; numbers =
-     Parser.digits()
-         .map(Integer::parseInt)
-         .except(NumberFormatException.class, Exception::getMessage)
-         .atleastOnceDelimitedBy(",")
-         .parseSkipping(Character::isWhitespace, input);
- </code></pre>
-
- <p>All other unchecked exceptions, and unchecked exceptions thrown by <code>toErrorMessage</code>
- are propagated as is.</div>
-<dl class="notes">
-<dt>Since:</dt>
-<dd>10.7</dd>
 </dl>
 </div>
 </section>

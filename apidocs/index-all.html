@@ -1506,12 +1506,6 @@ loadScripts(document, 'script');</script>
 <div class="block">If this represents an exact point (not between two adjacent values), returns
  the element at the point; else returns empty.</div>
 </dd>
-<dt><a href="com/google/common/labs/parse/Parser.html#except(java.lang.Class,java.util.function.Function)" class="member-name-link">except(Class&lt;E&gt;, Function&lt;? super E, String&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
-<dd>
-<div class="block">Returns a new instance of this Parser with exceptions of <code>exceptionType</code>
- handled by the <code>toErrorMessage</code> function to be reported as a backtrackable
- parsing error.</div>
-</dd>
 <dt><a href="com/google/mu/util/Substring.BoundStyle.html#EXCLUSIVE" class="member-name-link">EXCLUSIVE</a> - Enum constant in enum class com.google.mu.util.<a href="com/google/mu/util/Substring.BoundStyle.html" title="enum class in com.google.mu.util">Substring.BoundStyle</a></dt>
 <dd>
 <div class="block">The match doesn't include the bound</div>
@@ -1519,6 +1513,11 @@ loadScripts(document, 'script');</script>
 </dl>
 <h2 class="title" id="I:F">F</h2>
 <dl class="index">
+<dt><a href="com/google/common/labs/parse/Parser.html#fail(java.lang.String)" class="member-name-link">fail(String)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dd>
+<div class="block">Throw this error from the lambda passed to <a href="com/google/common/labs/parse/Parser.html#map(java.util.function.Function)"><code>map()</code></a>, <a href="com/google/common/labs/parse/Parser.html#flatMap(java.util.function.Function)"><code>flatMap()</code></a>
+ etc.</div>
+</dd>
 <dt><a href="com/google/mu/protobuf/util/MoreValues.html#FALSE" class="member-name-link">FALSE</a> - Static variable in class com.google.mu.protobuf.util.<a href="com/google/mu/protobuf/util/MoreValues.html" title="class in com.google.mu.protobuf.util">MoreValues</a></dt>
 <dd>
 <div class="block">The <code>Value</code> for boolean <code>false</code>.</div>
