@@ -1165,10 +1165,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * Returns a parser that applies the {@code operator} parser zero or more times before {@code
    * this} and applies the result unary operator functions iteratively.
    *
-   * <p>For infix operator support, consider using {@link OperatorTable}.
-   *
    * @since 9.9.3
+   * @deprecated Use {@link OperatorTable} instead
    */
+  @Deprecated
   public final Parser<T> withPrefixes(Parser<? extends UnaryOperator<T>> operator) {
     return sequence(
         operator.zeroOrMore(), this, (ops, operand) -> applyOperators(ops.reversed(), operand));
