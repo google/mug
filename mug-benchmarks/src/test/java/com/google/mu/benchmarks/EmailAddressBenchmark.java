@@ -38,8 +38,23 @@ public class EmailAddressBenchmark {
   }
 
   @Benchmark
+  public List<EmailAddress> parseValidList_withConsumer() {
+    return EmailAddress.parseAddressList(VALID_INPUT, discarded -> {});
+  }
+
+  @Benchmark
   public EmailAddress parseSinglePlainAddress() {
     return EmailAddress.of("user@company.com");
+  }
+
+  @Benchmark
+  public EmailAddress parseSingleBracketedAddress() {
+    return EmailAddress.of("<user.name@domain.com>");
+  }
+
+  @Benchmark
+  public EmailAddress parseSingleBracketedAddressWithDisplayName() {
+    return EmailAddress.of("John Doe <user.name@domain.com>");
   }
 
   @Benchmark

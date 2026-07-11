@@ -32,6 +32,10 @@ public interface CharPredicate {
       return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
     }
 
+    @Override public CharPredicate precomputeForAscii() {
+      return this;
+    }
+
     @Override public String toString() {
       return "ALPHA";
     }
@@ -46,12 +50,16 @@ public interface CharPredicate {
     @Override public String toString() {
       return "WORD";
     }
-  }.precomputeForAscii();
+  };
 
   /** Corresponds to the ASCII characters. */
   static CharPredicate ASCII = new CharPredicate() {
     @Override public boolean test(char c) {
       return c <= '\u007f';
+    }
+
+    @Override public CharPredicate precomputeForAscii() {
+      return this;
     }
 
     @Override public String toString() {
@@ -65,6 +73,10 @@ public interface CharPredicate {
       return true;
     }
 
+    @Override public CharPredicate precomputeForAscii() {
+      return this;
+    }
+
     @Override public String toString() {
       return "ANY";
     }
@@ -74,6 +86,10 @@ public interface CharPredicate {
   static CharPredicate NONE = new CharPredicate() {
     @Override public boolean test(char c) {
       return false;
+    }
+
+    @Override public CharPredicate precomputeForAscii() {
+      return this;
     }
 
     @Override public String toString() {
@@ -94,13 +110,17 @@ public interface CharPredicate {
     @Override public String toString() {
       return "WHITESPACE";
     }
-  }.precomputeForAscii();
+  };
 
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
   static CharPredicate is(char ch) {
     return new CharPredicate() {
       @Override public boolean test(char c) {
         return c == ch;
+      }
+
+      @Override public CharPredicate precomputeForAscii() {
+        return this;
       }
 
       @Override public String toString() {
@@ -119,6 +139,10 @@ public interface CharPredicate {
     return new CharPredicate() {
       @Override public boolean test(char c) {
         return c >= from && c <= to;
+      }
+
+      @Override public CharPredicate precomputeForAscii() {
+        return this;
       }
 
       @Override public String toString() {
@@ -227,6 +251,11 @@ public interface CharPredicate {
 
       @Override public CharPredicate not() {
         return me;
+      }
+
+      @Override public CharPredicate precomputeForAscii() {
+        CharPredicate precomputed = me.precomputeForAscii();
+        return precomputed == me ? this : precomputed.not();
       }
 
       @Override public String toString() {

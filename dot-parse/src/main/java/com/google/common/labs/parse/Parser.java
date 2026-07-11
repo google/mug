@@ -26,10 +26,12 @@ import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
+import static java.lang.Math.max;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
@@ -40,6 +42,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.AbstractMap;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,6 +59,7 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import com.google.errorprone.annotations.ThreadSafe;
+import com.google.errorprone.annotations.concurrent.LazyInit;
 import com.google.mu.function.Function4;
 import com.google.mu.function.ObjInt2Function;
 import com.google.mu.function.TriFunction;
@@ -161,8 +165,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(name, start);
       }
 
-      @Override Set<String> getPrefixes() {
+      @Override Set<String> computePrefixes() {
         return prefixesIfAscii(matcher);
+      }
+
+      @Override BitSet computeBlocklist() {
+        return blockedCommonAsciiChars(matcher);
       }
     };
   }
@@ -182,8 +190,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(name, end);
       }
 
-      @Override Set<String> getPrefixes() {
+      @Override Set<String> computePrefixes() {
         return prefixesIfAscii(matcher);
+      }
+
+      @Override BitSet computeBlocklist() {
+        return blockedCommonAsciiChars(matcher);
       }
     }.source();
   }
@@ -243,14 +255,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(name, start);
       }
 
-      @Override Set<String> getPrefixes() {
+      @Override Set<String> computePrefixes() {
         return prefixes;
       }
     };
   }
 
   private static Parser<String> chars(int n, CharacterSet characterSet, String name) {
-    return chars(n, characterSet.getAsciiPrefixes(), name).suchThat(characterSet::matchesAllOf, name);
+    return chars(n, characterSet.getAsciiPrefixes(), name)
+        .suchThat(characterSet::matchesAllOf, name);
   }
 
   /**
@@ -347,7 +360,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(string, start);
       }
 
-      @Override Set<String> getPrefixes() {
+      @Override Set<String> computePrefixes() {
         return Set.of(string);
       }
     };
@@ -372,8 +385,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(string, start);
       }
 
-      @Override Set<String> getPrefixes() {
-        // Prune by up to 4 chars (16 combinations) to avoid prefix tree explosion.
+      @Override Set<String> computePrefixes() {
         return caseInsensitivePrefixes(string, 4);
       }
     };
@@ -431,7 +443,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             return switch (after.skipAndMatch(skip, input, start, context)) {
               case MatchResult.Success<?> success ->
                   new MatchResult.Success<>(
-                      start, success.tail(), input.snippet(start, success.head() - start));
+                      start, success.tail, input.snippet(start, success.head - start));
               case MatchResult.Failure<?> failure -> failure.safeCast();
             };
           }
@@ -643,10 +655,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override  MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success(int head, int tail, A v1) ->
-              switch (right.skipAndMatch(skip, input, tail, context)) {
-                case MatchResult.Success(int head2, int tail2, B v2) ->
-                    new MatchResult.Success<>(head, tail2, combiner.apply(v1, v2));
+          case MatchResult.Success<A> a ->
+              switch (right.skipAndMatch(skip, input, a.tail, context)) {
+                case MatchResult.Success<B> b -> context.map(a, b, combiner);
                 case MatchResult.Failure<?> failure -> failure.safeCast();
               };
           case MatchResult.Failure<?> failure -> failure.safeCast();
@@ -1101,7 +1112,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
                   index = tail2;
                 }
                 case MatchResult.Failure<?> failure -> {
-                  return new MatchResult.Success<>(head, index, finisher.apply(buffer));
+                  MatchResult.Success<R> successResult =
+                      new MatchResult.Success<>(head, index, finisher.apply(buffer));
+                  return successResult;
                 }
               }
             }
@@ -1138,7 +1151,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : ErrorContext.MINIMAL.failAt(start, "expecting <{name}>", delimiter);
       }
 
-      @Override Set<String> getPrefixes() {
+      @Override Set<String> computePrefixes() {
         return Set.of(delimiter);
       }
 
@@ -1230,8 +1243,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success(int head, int tail, T value) ->
-              new MatchResult.Success<>(head, tail, f.apply(value));
+          case MatchResult.Success<T> success -> context.map(success, f);
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
@@ -1260,8 +1272,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success(int head, int tail, T value) ->
-              new MatchResult.Success<>(head, tail, f.apply(value, head, tail));
+          case MatchResult.Success<T> success ->  context.mapWithIndex(success, f);
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
@@ -1270,6 +1281,51 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private <R> Parser<R> elidableMap(ElidableFunction<? super T, ? extends R> f) {
     return map(f);
+  }
+
+  /**
+   * Returns a new instance of this Parser with exceptions of {@code exceptionType}
+   * handled by the {@code toErrorMessage} function to be reported as a backtrackable
+   * parsing error.
+   *
+   * <p>Because the parsing error will point to the starting position evaluated by
+   * this parser, make sure to call {@code .except()} at as finest granularity as possible.
+   *
+   * <p>Useful if any callback passed through {@link #map}, {@link #flatMap} etc.
+   * delegates to a third-party parser that throws exceptions that you need to treat as
+   * a regular parsing error. For example: <pre>{@code
+   * List<Integer> numbers =
+   *     Parser.digits()
+   *         .map(Integer::parseInt)
+   *         .except(NumberFormatException.class, Exception::getMessage)
+   *         .atleastOnceDelimitedBy(",")
+   *         .parseSkipping(Character::isWhitespace, input);
+   * }</pre>
+   *
+   * <p>All other unchecked exceptions, and unchecked exceptions thrown by {@code toErrorMessage}
+   * are propagated as is.
+   *
+   * @since 10.7
+   */
+  public final <E extends RuntimeException> Parser<T> except(
+      Class<E> exceptionType, Function<? super E, String> toErrorMessage) {
+    requireNonNull(exceptionType);
+    requireNonNull(toErrorMessage);
+    return new SamePrefix<>() {
+      @Override MatchResult<T> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        try {
+          return left().skipAndMatch(skip, input, start, context);
+        } catch (RuntimeException e) {
+          if (exceptionType.isInstance(e)) {
+            return context.exceptionAt(
+                start, requireNonNullElseGet(toErrorMessage.apply(exceptionType.cast(e)), e::toString));
+          }
+          throw e;
+        }
+      }
+    };
   }
 
   /**
@@ -1286,10 +1342,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success(int head, int tail, T value) ->
-              (MatchResult<R>)
-                  allowZeroWidth(f.apply(value)).skipAndMatch(skip, input, tail, context)
-                      .startingFrom(head);
+          case MatchResult.Success<T> success -> {
+            context.onSuccess(success);
+            yield (MatchResult<R>)
+                  allowZeroWidth(f.apply(success.value))
+                      .skipAndMatch(skip, input, success.tail, context)
+                      .startingFrom(success.head);
+          }
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
@@ -1335,8 +1394,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override MatchResult<T> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         var result = left().skipAndMatch(skip, input, start, context);
-        return result instanceof MatchResult.Success<T> success && !condition.test(success.value())
-            ? context.expecting(name, success.head(), success.tail())
+        return result instanceof MatchResult.Success<T> success && !context.test(success, condition)
+            ? context.expecting(name, success.head, success.tail)
             : result;
       }
     };
@@ -1370,18 +1429,18 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<T> result -> {
-            int index = result.tail();
+            int index = result.tail;
             for (Parser<?> follower : followers) {
               switch (follower.skipAndMatch(skip, input, index, context)) {
                 case MatchResult.Success<?> success -> {
-                  index = success.tail();
+                  index = success.tail;
                 }
                 case MatchResult.Failure<?> failure -> {
                   yield failure.safeCast();
                 }
               }
             }
-            yield new MatchResult.Success<T>(result.head(), index, result.value());
+            yield new MatchResult.Success<T>(result.head, index, result.value);
           }
           case MatchResult.Failure<T> failure -> failure;
         };
@@ -1439,10 +1498,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<T> success -> {
-            yield switch (elidedSuffix.skipAndMatch(skip, input, success.tail(), ErrorContext.MINIMAL)) {
+            yield switch (elidedSuffix.skipAndMatch(skip, input, success.tail, ErrorContext.MINIMAL)) {
               case MatchResult.Success<?> followed ->
                 context.failAt(
-                    followed.head(), followed.tail(),
+                    followed.head, followed.tail,
                     "unexpected `{name}`: {snippet}", name);
               default -> success;
             };
@@ -1669,7 +1728,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   @Override public final boolean matches(String input) {
     return ignoreReturn().tryParse(CharInput.from(input), 0, ErrorContext.MINIMAL)
             instanceof MatchResult.Success<?> success
-        && success.tail() == input.length();
+        && success.tail == input.length();
   }
 
   /**
@@ -1712,7 +1771,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         ErrorTracker errorTracker = new ErrorTracker();
         return switch (tryParse(input, index, errorTracker)) {
           case MatchResult.Success<T> success -> {
-            index = success.tail();
+            index = success.tail;
             input.markCheckpoint(index);
             yield success;
           }
@@ -1773,7 +1832,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       MatchResult.Success<T> nextOrNull() {
         return switch (tryParse(input, index, ErrorContext.MINIMAL)) {
           case MatchResult.Success<T> success -> {
-            index = success.tail();
+            index = success.tail;
             input.markCheckpoint(index);
             yield success;
           }
@@ -2118,7 +2177,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       // forTokens().parseToStream() checks isEof() to terminate, and only skip the trailing upon
       // success. So if everything is skippable, it will fail to match.
       return switch (toSkip.tryParse(input, fromIndex, ErrorContext.MINIMAL)) {
-         case MatchResult.Success<?> skipped -> forTokens().parseToStream(input, skipped.tail());
+         case MatchResult.Success<?> skipped -> forTokens().parseToStream(input, skipped.tail);
          default -> forTokens().parseToStream(input, fromIndex);
       };
     }
@@ -2324,16 +2383,50 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
   }
 
+  @LazyInit private volatile Set<String> prefixes;
+  @LazyInit private volatile BitSet blocklist;
+
   /**
    * Returns metadata about the prefixes that can be used to prune out this parser, if the input
    * doesn't start with any of the prefixes. Return EMPTY_PREFIX to indicate no pruning is applicable.
    */
-  Set<String> getPrefixes() {
-    return EMPTY_PREFIX;
+  final Set<String> getPrefixes() {
+    Set<String> result = prefixes;
+    if (result == null) {
+      prefixes = result = computePrefixes();
+    }
+    return result;
   }
 
-  private static Set<String> prefixesIfAscii(CharPredicate predicate) {
-    return predicate instanceof CharacterSet cset ? cset.getAsciiPrefixes() : EMPTY_PREFIX;
+  /**
+   * Returns the characters that are known to disqualify this parser if it's the next char in the
+   * input. Note that characters not returned don't guarantee this parser will match.
+   */
+  final BitSet getBlocklist() {
+    BitSet result = blocklist;
+    if (result == null) {
+      blocklist = result = computeBlocklist();
+    }
+    return result;
+  }
+
+  BitSet computeBlocklist() {
+    Set<String> prefixes = getPrefixes();
+    BitSet firstAsciiChars = new BitSet(128);
+    for (String prefix : prefixes) {
+      if (prefix.isEmpty()) {
+        return new BitSet(0);
+      }
+      char firstChar = prefix.charAt(0);
+      if (firstChar < 128) {
+        firstAsciiChars.set(firstChar);
+      }
+    }
+    return blockedCommonAsciiChars(firstAsciiChars::get);
+  }
+
+  Set<String> computePrefixes() {
+    return EMPTY_PREFIX;
   }
 
   /**
@@ -2353,7 +2446,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return start;
     }
     return switch (skip.tryParse(input, start, ErrorContext.MINIMAL)) {
-      case MatchResult.Success<?> success -> success.tail();
+      case MatchResult.Success<?> success -> success.tail;
       case MatchResult.Failure<?> failure -> start;
     };
   }
@@ -2367,8 +2460,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** A derived parser, with {@code this} being the left-most rule. */
   private abstract class SamePrefix<R> extends Parser<R> {
-    @Override Set<String> getPrefixes() {
+    @Override Set<String> computePrefixes() {
       return left().getPrefixes();
+    }
+
+    @Override BitSet computeBlocklist() {
+      return left().getBlocklist();
     }
 
     final Parser<T> left() {
@@ -2442,10 +2539,41 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     <V> MatchResult.Failure<V> failAt(int at, int frontier, String messageTemplate, String symbolName) {
       return new MatchResult.Failure<V>(at, frontier, messageTemplate, symbolName);
     }
+
+    final <V, T> MatchResult.Success<T> map(MatchResult.Success<V> success, Function<? super V, ? extends T> function) {
+      onSuccess(success);
+      return new MatchResult.Success<T>(success.head, success.tail, function.apply(success.value));
+    }
+
+    final <V, T> MatchResult.Success<T> mapWithIndex(
+        MatchResult.Success<V> success, ObjInt2Function<? super V, ? extends T> function) {
+      onSuccess(success);
+      return new MatchResult.Success<T>(
+          success.head, success.tail, function.apply(success.value, success.head, success.tail));
+    }
+
+    final <V> boolean test(MatchResult.Success<V> success, Predicate<? super V> condition) {
+      onSuccess(success);
+      return condition.test(success.value);
+    }
+
+    final <A, B, T> MatchResult.Success<T> map(
+        MatchResult.Success<A> a, MatchResult.Success<B> b,
+        BiFunction<? super A, ? super B, ? extends T> function) {
+      onSuccess(b);
+      return new MatchResult.Success<>(a.head, b.tail, function.apply(a.value, b.value));
+    }
+
+    <V> MatchResult.Failure<V> exceptionAt(int at, String message) {
+      return failAt(at, "{name}", message);
+    }
+
+    void onSuccess(MatchResult.Success<?> success) {}
   }
 
   private static final class ErrorTracker extends ErrorContext {
     private MatchResult.Failure<?> farthestFailure = null;
+    private MatchResult.Success<?> lastSuccess = null;
 
     @Override <V> MatchResult.Failure<V> expecting(
         String symbolName, int at, int frontier) {
@@ -2456,14 +2584,27 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         int at, int frontier, String messageTemplate, String symbolName) {
       MatchResult.Failure<V> failure = super.failAt(at, frontier, messageTemplate, symbolName);
       // prefer the farthest then the most recent failure
-      if (farthestFailure == null || failure.frontier() >= farthestFailure.frontier()) {
+      if (farthestFailure == null || failure.frontier >= farthestFailure.frontier) {
         farthestFailure = failure;
       }
       return failure;
     }
 
+    @Override <V> MatchResult.Failure<V> exceptionAt(int at, String message) {
+      int frontier = at;
+      if (lastSuccess != null) {
+        frontier = max(frontier, lastSuccess.tail);
+        lastSuccess = null;
+      }
+      return failAt(at, frontier, "{name}", message);
+    }
+
+    @Override void onSuccess(MatchResult.Success<?> success) {
+      lastSuccess = success;
+    }
+
     ParseException report(MatchResult.Failure<?> failure, CharInput input) {
-      return (farthestFailure == null || failure.frontier() >= farthestFailure.frontier())
+      return (farthestFailure == null || failure.frontier >= farthestFailure.frontier)
           ? failure.toException(input)
           : farthestFailure.toException(input);
     }
@@ -2493,6 +2634,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private static <T, A, R> Collector<T, A, R> toNull() {
     return Collector.of(() -> null, (a, e) -> {}, (a, b) -> a, a -> null);
+  }
+
+  private static Set<String> prefixesIfAscii(CharPredicate predicate) {
+    return predicate instanceof CharacterSet cset ? cset.getAsciiPrefixes() : EMPTY_PREFIX;
+  }
+
+  private static BitSet blockedCommonAsciiChars(CharPredicate predicate) {
+    String commonAscii = "abcdefghijklmnopqrstuvwxyz0123456789!\"#$%&'()*+,-./:;<=>?@[\\]_`{|}";
+    BitSet bitSet = new BitSet(128);
+    for (int i = 0; i < commonAscii.length(); i++) {
+      char c = commonAscii.charAt(i);
+      if (!predicate.test(c)) {
+        bitSet.set(c);
+      }
+    }
+    return bitSet;
   }
 
   private interface ElidableFunction<F, T> extends Function<F, T> {}

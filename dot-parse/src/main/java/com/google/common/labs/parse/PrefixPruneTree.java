@@ -19,12 +19,13 @@ import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.lang.Math.min;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.reverseOrder;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -70,8 +71,9 @@ import com.google.mu.util.stream.BiStream;
 record PrefixPruneTree<V>(
     @SuppressWarnings("Immutable") List<V> survivors, Trie<V> children) {
   static final class Builder<V> {
-    private final List<Ordered<V>> survivors = new ArrayList<>();
+    private final List<Ordered<V>> survivors = new ArrayList<>();  // in encounter order
     private final Map<Integer, Builder<V>> children = new HashMap<>();
+    private final Set<V> blocked = new HashSet<>();
     private final AtomicInteger sequence;
 
     Builder() {
@@ -86,11 +88,6 @@ record PrefixPruneTree<V>(
       return survivors.size();
     }
 
-    /** Adds a candidate that requires no prefix matching. */
-    private void addDefault(V candidate) {
-      survivors.add(new Ordered<>(candidate, sequence.getAndIncrement()));
-    }
-
     /**
      * Adds a candidate that requires the input to start with {@code prefix}, but only up to {@code
      * maxChars} characters are used for pruning.
@@ -101,50 +98,57 @@ record PrefixPruneTree<V>(
       int length = min(prefix.length(), maxChars);
       for (int i = 0; i < length; i++) {
         int c = prefix.charAt(i);
-        if (c >= 128) { // out of range, stop.
-          break;
-        }
-        node = node.children.computeIfAbsent(c, k -> new Builder<V>(sequence));
+        if (c >= 128) break; // out of range, stop.
+        node = node.child(c);
       }
       node.addDefault(candidate);
       return this;
     }
 
-    PrefixPruneTree<V> build() {
-      return buildWithHierarchy(List.of(), List.of());
+    /** Adds a candidate that requires no prefix matching. */
+    private void addDefault(V candidate) {
+      survivors.add(new Ordered<>(candidate, sequence.getAndIncrement()));
     }
 
-    private PrefixPruneTree<V> buildWithHierarchy(
-        List<Ordered<V>> orderedAncestors, List<V> ancestorSurvivors) {
-      List<Ordered<V>> ancestorsIncludingMe;
-      List<V> effectiveSurvivors;
-      if (survivors.isEmpty()) {
-        ancestorsIncludingMe = orderedAncestors;
-        effectiveSurvivors = ancestorSurvivors;
-      } else {
-        ancestorsIncludingMe =
-            Stream.concat(orderedAncestors.stream(), survivors.stream())
-                .sorted(comparingInt(Ordered::order))
-                .collect(toUnmodifiableList());
-        effectiveSurvivors =
-            ancestorsIncludingMe.stream().map(Ordered::value).collect(toUnmodifiableList());
-      }
+    /**
+     * Registers that if the next char in the input is {@code c}, the {@code candidate}
+     * can be safely pruned.
+     */
+    @CanIgnoreReturnValue
+    Builder<V> addBlocked(char c, V candidate) {
+      if (c >= 128) return this; // we are unable to block or prune beyond ascii
+      child(c).block(candidate);
+      return this;
+    }
+
+    private void block(V candidate) {
+      blocked.add(candidate);
+    }
+
+    private Builder<V> child(int c) {
+      return children.computeIfAbsent(c, k -> new Builder<V>(sequence));
+    }
+
+    PrefixPruneTree<V> build() {
+      return buildWithInheritance(Survivors.none());
+    }
+
+    private PrefixPruneTree<V> buildWithInheritance(Survivors<V> inherited) {
+      Survivors<V> effective = inherited.excluding(blocked).concat(survivors);
       if (children.isEmpty()) {
-        return new PrefixPruneTree<>(effectiveSurvivors, null);
+        return new PrefixPruneTree<>(effective.unwrap(), null);
       }
       var subtrees = BiStream.from(children)
-          .mapValues(c -> c.buildWithHierarchy(ancestorsIncludingMe, effectiveSurvivors))
+          .mapValues(child -> child.buildWithInheritance(effective))
           // lower-case -> upper-case -> digits.
           // For the comparison (x == c1 ? child1 : x == c2 ? child2 : null), we want
           // c1 to occur more frequently than c2 for more effective short-circuiting.
           .collect(toMap(() -> new TreeMap<Integer, PrefixPruneTree<V>>(reverseOrder())));
       if (subtrees.size() == 1 && survivors.isEmpty()) { // collapse lone leaf child
         PrefixPruneTree<V> loneChild = subtrees.values().iterator().next();
-        if (loneChild.isLeaf()) {
-          return loneChild;
-        }
+        if (loneChild.isLeaf()) return loneChild;
       }
-      return new PrefixPruneTree<>(effectiveSurvivors, Trie.from(subtrees));
+      return new PrefixPruneTree<>(effective.unwrap(), Trie.from(subtrees));
     }
   }
 
@@ -160,9 +164,7 @@ record PrefixPruneTree<V>(
     PrefixPruneTree<V> node = this;
     for (int i = index; !node.isLeaf() && !input.isEof(i); i++) {
       PrefixPruneTree<V> child = node.children.child(input.charAt(i));
-      if (child == null) {
-        break;
-      }
+      if (child == null) break;
       node = child;
     }
     return node.survivors;
@@ -227,6 +229,54 @@ record PrefixPruneTree<V>(
       var children = new PrefixPruneTree[128];
       map.forEach((c, v) -> children[c] = v);
       return c -> c < 128 ? children[c] : null;
+    }
+  }
+
+  private static final class Survivors<V> {
+    private final List<Ordered<V>> ordered;
+
+    static <V> Survivors<V> none() {
+      return new Survivors<>(List.of());
+    }
+
+    Survivors(List<Ordered<V>> ordered) {
+      this.ordered = ordered;
+    }
+
+    List<V> unwrap() {
+      return isEmpty() ? List.of() : ordered.stream().map(Ordered::value).toList();
+    }
+
+    Survivors<V> concat(List<Ordered<V>> that) {
+      if (that.isEmpty()) return this;
+      if (this.isEmpty()) return new Survivors<>(that);
+      return new Survivors<V>(
+          Stream.concat(ordered.stream(), that.stream())
+          .sorted(comparingInt(Ordered::order))
+          .toList());
+    }
+
+    Survivors<V> excluding(Set<? super V> blocked) {
+      if (blocked.isEmpty() || ordered.isEmpty()) {
+        return this;
+      }
+      int blockedCount = 0;
+      for (Ordered<V> item : ordered) {
+        if (blocked.contains(item.value)) {
+          blockedCount++;
+        }
+      }
+      if (blockedCount == 0) {
+        return this;
+      }
+      if (blockedCount == ordered.size()) {
+        return none();
+      }
+      return new Survivors<>(ordered.stream().filter(v -> !blocked.contains(v.value)).toList());
+    }
+
+    boolean isEmpty() {
+      return ordered.isEmpty();
     }
   }
 

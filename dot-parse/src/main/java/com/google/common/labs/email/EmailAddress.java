@@ -228,8 +228,6 @@ public final class EmailAddress {
       literally(sequence(LOCAL_PART.followedBy("@"), DOMAIN, AddrSpecAlike::new));
 
   private static final Parser<?> ADDRESS_LIST_DELIMITER = one("[,;]").atLeastOnce(counting());
-  private static final Parser<Character> ANY_BUT_LIST_DELIMITER = one("[^,;]");
-  private static final Parser<String> UNTIL_LIST_DELIMITER = consecutive("[^,;]");
 
   /**
    * Parser that strictly matches only the RFC 5322 {@code addr-spec} (i.e., {@code
@@ -252,6 +250,14 @@ public final class EmailAddress {
    * }</pre>
    */
   public static final Parser<EmailAddress> PARSER = makeParser();
+
+  private static final Parser<Object> ADDRESS_OR_JUNK = anyOf(
+      PARSER
+          // invalid idn is also junk
+          .except(IllegalArgumentException.class, IllegalArgumentException::getMessage)
+          // don't extract a@b from a@b@c
+          .notFollowedBy(one("[^,;]"), "non-separator"),
+      consecutive("[^,;]").map(String::trim));
 
   private final String localPart;
   private final String domain;
@@ -437,7 +443,7 @@ public final class EmailAddress {
   public static List<EmailAddress> parseAddressList(String addressList) {
     return PARSER
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
-        .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
+        .optionallyFollowedBy(ADDRESS_LIST_DELIMITER)
         .parseSkipping(SAFE_WHITESPACE, addressList);
   }
 
@@ -458,10 +464,7 @@ public final class EmailAddress {
    */
   public static List<EmailAddress> parseAddressList(
       String addressList, Consumer<? super String> ifInvalid) {
-    return anyOf(
-            // don't extract a@b from a@b@c
-            PARSER.notFollowedBy(ANY_BUT_LIST_DELIMITER, "non-separator"),
-            UNTIL_LIST_DELIMITER.map(String::trim))
+    return ADDRESS_OR_JUNK
         .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(ifInvalid))
         .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
         .parseSkipping(SAFE_WHITESPACE, addressList);
@@ -511,17 +514,6 @@ public final class EmailAddress {
             (name, addr) -> addr.toEmailAddressWithDisplayName(name)),
         bracketedAddress.map(AddrSpecAlike::toEmailAddress),
         ADDR_SPEC_PARSER); // fall back when PARSER is combined with other parsers
-  }
-
-  private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses(
-      Consumer<? super String> ifInvalid) {
-    requireNonNull(ifInvalid);
-    return filtering(
-        e -> {
-          if (e instanceof String s) ifInvalid.accept(s);
-          return e instanceof EmailAddress;
-        },
-        mapping(e -> (EmailAddress) e, toUnmodifiableList()));
   }
 
   private static String escape(String name) {
@@ -597,6 +589,20 @@ public final class EmailAddress {
       return localPart + '@' + domain;
     }
   }
+
+  private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses(
+      Consumer<? super String> ifInvalid) {
+    requireNonNull(ifInvalid);
+    return filtering(
+        e -> {
+          if (e instanceof String s) {
+            ifInvalid.accept(s);
+          }
+          return e instanceof EmailAddress;
+        },
+        mapping(e -> (EmailAddress) e, toUnmodifiableList()));
+  }
+
 
   @FormatMethod
   private static void checkArgument(

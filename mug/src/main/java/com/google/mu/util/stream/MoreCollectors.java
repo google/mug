@@ -21,10 +21,12 @@ import static java.util.stream.Collectors.toList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -720,6 +722,67 @@ public final class MoreCollectors {
 
       R build() {
         return tie.stream().collect(downstream);
+      }
+    }
+    return Collector.of(Builder::new, Builder::add, Builder::merge, Builder::build);
+  }
+
+  /**
+   * Returns a collector that intersects {@code Set<E>} derived from the input elements
+   * using the {@code toSet} function.
+   *
+   * <p>For example:
+   *
+   * <pre>{@code
+   * clubs.stream().collect(toIntersectionOf(Club::members)));
+   * }</pre>
+   *
+   * <p>Encounter order is preserved. Collecting {@code [[1, 2, 3, 4, 5], [3, 2, 1]]} will return
+   * {@code [1, 2, 3]}.
+   *
+   * <p>At least one {@code Set} input (even if empty) must be present in the input, or else {@code
+   * IllegalArgumentException} will be thrown, because mathematically intersecting zero Set's is
+   * equivalent to the set of all, which isn't representable by Java {@link Set}.
+   *
+   * <p>If you do need to express the notion of <em>all</em>, consider using {@link
+   * com.google.mu.collect.Selection#toIntersection} instead.
+   *
+   * @since 10.7
+   */
+  public static <T, E> Collector<T, ?, Set<E>> toIntersectionOf(
+      Function<? super T, ? extends Set<? extends E>> toSet) {
+    requireNonNull(toSet);
+    class Builder {
+      private LinkedHashSet<E> intersection = null;
+
+      void add(T input) {
+        intersectWith(toSet.apply(input));
+      }
+
+      private void intersectWith(Set<? extends E> elements) {
+        if (intersection == null) {
+          intersection = new LinkedHashSet<>();
+          intersection.addAll(elements);
+        } else {
+          intersection.retainAll(elements);
+        }
+      }
+
+      Builder merge(Builder that) {
+        if (intersection == null) {
+          return that;
+        }
+        if (that.intersection != null) {
+          intersectWith(that.intersection);
+        }
+        return this;
+      }
+
+      Set<E> build() {
+        if (intersection == null) {
+          throw new IllegalArgumentException("toIntersectionOf() requires at least one Set");
+        }
+        return Collections.unmodifiableSet(intersection);
       }
     }
     return Collector.of(Builder::new, Builder::add, Builder::merge, Builder::build);

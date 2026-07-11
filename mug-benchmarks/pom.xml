@@ -42,6 +42,18 @@
           <testExcludes>
             <exclude>**/benchmarks/parsers/**</exclude>
           </testExcludes>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>com.google.errorprone</groupId>
+              <artifactId>error_prone_core</artifactId>
+              <version>${error_prone.version}</version>
+            </path>
+            <path>
+              <groupId>org.openjdk.jmh</groupId>
+              <artifactId>jmh-generator-annprocess</artifactId>
+              <version>1.37</version>
+            </path>
+          </annotationProcessorPaths>
         </configuration>
       </plugin>
     </plugins>
@@ -353,6 +365,9 @@
                 <exclude>**/dotparse/StringInBenchmark.java</exclude>
                 <exclude>**/dotparse/JsonShootoutBenchmark.java</exclude>
                 <exclude>**/EmailAddressBenchmark.java</exclude>
+                <exclude>**/WhitespaceBenchmark.java</exclude>
+                <exclude>**/LetterBenchmark.java</exclude>
+                <exclude>**/WordBenchmark.java</exclude>
               </excludes>
             </configuration>
           </plugin>

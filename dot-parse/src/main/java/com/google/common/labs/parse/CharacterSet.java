@@ -15,6 +15,10 @@
  *****************************************************************************/
 package com.google.common.labs.parse;
 
+import static com.google.common.labs.parse.Parser.anyOf;
+import static com.google.common.labs.parse.Parser.one;
+import static com.google.common.labs.parse.Parser.sequence;
+import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.prefix;
@@ -55,6 +59,9 @@ import com.google.mu.util.CharPredicate;
  *     parameter, such as {@link Parser#consecutive(String)}.
  */
 public final class CharacterSet implements CharPredicate {
+  private static final Parser<CharPredicate> CHARACTER_SET_PARSER = makeCharacterSetParser();
+  private static final Parser<Set<Character>> ASCII_SET_PARSER = makeAsciiSetParser();
+
   static final CharacterSet DECIMAL = charsIn("[0-9]");
   static final CharacterSet HEX = charsIn("[0-9a-fA-F]");
 
@@ -142,41 +149,51 @@ public final class CharacterSet implements CharPredicate {
     return result;
   }
 
-  private static CharPredicate compileCharacterSet(String characterSet) {
-    checkArgument(
-        characterSet.startsWith("[") && characterSet.endsWith("]"),
-        "Character set must be in square brackets. Use [%s] instead.", characterSet);
-    Parser<Character> validChar = Parser.one(ANY, "literal char").notFollowedByEof();
-    Parser<CharPredicate> range = Parser.sequence(
-        validChar.followedBy("-"), validChar,
-        (c1, c2) -> {
-          checkArgument(
-              c1 <= c2, "invalid range [%s-%s] in character set %s", c1, c2, characterSet);
-          return CharPredicate.range(c1, c2);
-        });
-    Parser<CharPredicate>.OrEmpty positiveSet =
-        Parser.anyOf(range, validChar.map(CharPredicate::is))
-            .zeroOrMore(reducing(CharPredicate.NONE, CharPredicate::or));
-    Parser<CharPredicate> negativeSet =
-        Parser.string("^").then(positiveSet).map(CharPredicate::not);
-    return negativeSet.or(positiveSet).between("[", "]").parse(characterSet).precomputeForAscii();
-  }
-
   Optional<Set<Character>> candidateCharsIfAscii() {
     if (string.startsWith("[^")) {
       return Optional.empty();
     }
-    Parser<Character> asciiChar = Parser.one(c -> c < 128, "ascii char").notFollowedByEof();
+    return ASCII_SET_PARSER.probe(string).findFirst();
+  }
+
+  private static CharPredicate compileCharacterSet(String characterSet) {
+    checkArgument(
+        characterSet.startsWith("[") && characterSet.endsWith("]"),
+        "Character set must be in square brackets. Use [%s] instead.", characterSet);
+    try {
+      return CHARACTER_SET_PARSER.parse(characterSet).precomputeForAscii();
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException("in character set " + characterSet, e);
+    }
+  }
+
+  private static Parser<CharPredicate> makeCharacterSetParser() {
+    Parser<Character> validChar = one(ANY, "literal char").notFollowedByEof();
+    Parser<CharPredicate> range = sequence(
+        validChar.followedBy("-"), validChar,
+        (c1, c2) -> {
+          checkArgument(c1 <= c2, "invalid range [%s-%s]", c1, c2);
+          return CharPredicate.range(c1, c2);
+        });
+    Parser<CharPredicate>.OrEmpty positiveSet =
+        anyOf(range, validChar.map(CharPredicate::is))
+            .zeroOrMore(reducing(CharPredicate.NONE, CharPredicate::or));
+    Parser<CharPredicate> negativeSet =
+        string("^").then(positiveSet).map(CharPredicate::not);
+    return negativeSet.or(positiveSet).between("[", "]");
+  }
+
+  private static Parser<Set<Character>> makeAsciiSetParser() {
+    Parser<Character> asciiChar = one(c -> c < 128, "ascii char").notFollowedByEof();
     Parser<Set<Character>> range =
-        Parser.sequence(asciiChar.followedBy("-"), asciiChar, CharacterSet::charsInRange);
-    return Parser.anyOf(range, asciiChar.map(Set::of))
+        sequence(asciiChar.followedBy("-"), asciiChar, CharacterSet::charsInRange);
+    return anyOf(range, asciiChar.map(Set::of))
         .zeroOrMore(flatMapping(Set::stream, toUnmodifiableSet()))
-        .between("[", "]")
-        .probe(string)
-        .findFirst();
+        .between("[", "]");
   }
 
   private static Set<Character> charsInRange(char c1, char c2) {
+    checkArgument(c1 <= c2, "invalid range [%s-%s]", c1, c2);
     return IntStream.rangeClosed(c1, c2)
       .mapToObj(c -> (char) c)
       .collect(toUnmodifiableSet());

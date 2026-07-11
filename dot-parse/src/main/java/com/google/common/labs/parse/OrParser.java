@@ -17,10 +17,11 @@ package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
-import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -37,10 +38,15 @@ final class OrParser<T> extends Parser<T> {
             .flatMap( // flatten nested Or for more effective pruning.
                 p -> covariant(p) instanceof OrParser<? extends T> or
                     ? or.parsers.stream()
-                    : Stream.of(p))
+                    : Stream.of(requireNonNull(p)))
             .map(Parser::<T>covariant)
-            .collect(toUnmodifiableList());
+            .toList();
     this.pruneTree = makePruneTreeIfUseful(parsers);
+  }
+
+  private OrParser(List<Parser<T>> parsers, PrefixPruneTree<Parser<T>> pruneTree) {
+    this.parsers = parsers;
+    this.pruneTree = pruneTree;
   }
 
   @Override MatchResult<T> skipAndMatch(
@@ -74,31 +80,59 @@ final class OrParser<T> extends Parser<T> {
     return farthestFailure.safeCast();
   }
 
-  @Override public Set<String> getPrefixes() {
-    List<String> prefixes = new ArrayList<>();
+  @Override Set<String> computePrefixes() {
+    List<String> result = new ArrayList<>();
     for (String prefix :
         iterateOnce(parsers.stream().flatMap(parser -> parser.getPrefixes().stream()).sorted())) {
       if (prefix.isEmpty()) { // short circuit upon no prefix.
-        return super.getPrefixes();
+        return super.computePrefixes();
       }
       // prefixes are sorted lexicographically, so if "a" is a prefix, "an", "any" are redundant.
-      if (prefixes.isEmpty() || !prefix.startsWith(prefixes.getLast())) {
-        prefixes.add(prefix);
+      if (result.isEmpty() || !prefix.startsWith(result.getLast())) {
+        result.add(prefix);
       }
     }
-    return prefixes.stream().collect(toUnmodifiableSet());
+    return result.stream().collect(toUnmodifiableSet());
   }
 
-  private static <T> PrefixPruneTree<Parser<T>> makePruneTreeIfUseful(
-      List<Parser<T>> parsers) {
+  @Override Parser<?> ignoreReturn() {
+    if (pruneTree == null) {
+      return new OrParser<>(parsers.stream().map(p -> covariant(p.ignoreReturn())).toList(), null);
+    }
+    return super.ignoreReturn();
+  }
+
+  @Override BitSet computeBlocklist() {
+    var result = (BitSet) parsers.get(0).getBlocklist().clone();
+    for (int i = 1; i < parsers.size(); i++) {
+      result.and(parsers.get(i).getBlocklist());
+    }
+    return result;
+  }
+
+  private static <T> PrefixPruneTree<Parser<T>> makePruneTreeIfUseful(List<Parser<T>> parsers) {
+    if (parsers.size() < 3) {
+      return null;
+    }
     var builder = new PrefixPruneTree.Builder<Parser<T>>();
     for (Parser<T> parser : parsers) {
-      Set<String> prefixes = parser.getPrefixes();
-      assert prefixes.size() > 0;
-      for (String prefix : prefixes) {
+      for (String prefix : parser.getPrefixes()) {
         builder.addPrefix(prefix, 8, parser); // peek for up to 8 chars lest diminishing return.
       }
     }
-    return builder.numSurvivors() < parsers.size() ? builder.build() : null;
+    if (builder.numSurvivors() == parsers.size()) {
+      return null;
+    }
+    if (builder.numSurvivors() > 0) {
+      for (Parser<T> parser : parsers) {
+        if (parser.getPrefixes().contains("")) {
+          BitSet blocklist = parser.getBlocklist();
+          for (int c = blocklist.nextSetBit(0); c >= 0; c = blocklist.nextSetBit(c + 1)) {
+            builder.addBlocked((char) c, parser);
+          }
+        }
+      }
+    }
+    return builder.build();
   }
 }
