@@ -8745,4 +8745,24 @@ public class ParserTest {
     assertThat(combinedThrown).hasMessageThat().contains("suchThat IAE");
     assertThat(combinedThrown).hasMessageThat().contains("1:1");
   }
+
+  @Test
+  public void except_exceptionInMapWithIndex_reportedAtCorrectPosition() {
+    Parser<?> parser =
+        word()
+        .mapWithIndex((w, begin, end) -> {
+          throw new IllegalArgumentException("mapWithIndex IAE");
+        })
+        .except(IllegalArgumentException.class, RuntimeException::getMessage);
+
+    Parser<?> combinedParser =
+        anyOf(
+            parser,
+            sequence(string("abc"), string("Y"))
+        );
+
+    ParseException combinedThrown = assertThrows(ParseException.class, () -> combinedParser.parse("abcd"));
+    assertThat(combinedThrown).hasMessageThat().contains("mapWithIndex IAE");
+    assertThat(combinedThrown).hasMessageThat().contains("1:1");
+  }
 }

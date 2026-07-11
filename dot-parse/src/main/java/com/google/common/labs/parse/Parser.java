@@ -654,12 +654,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override  MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success(int head, int tail, A v1) ->
-              switch (right.skipAndMatch(skip, input, tail, context)) {
-                case MatchResult.Success(int head2, int tail2, B v2) -> {
-                  context.onSuccess(new MatchResult.Success<>(head, tail2, null));
-                  yield new MatchResult.Success<>(head, tail2, combiner.apply(v1, v2));
-                }
+          case MatchResult.Success<A> a ->
+              switch (right.skipAndMatch(skip, input, a.tail, context)) {
+                case MatchResult.Success<B> b -> context.map(a, b, combiner);
                 case MatchResult.Failure<?> failure -> failure.safeCast();
               };
           case MatchResult.Failure<?> failure -> failure.safeCast();
@@ -1105,20 +1102,17 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success(int head, int tail, T value) -> {
-            context.onSuccess(new MatchResult.Success<>(head, tail, null));
             A buffer = supplier.get();
             accumulator.accept(buffer, value);
             for (int index = tail; ; ) {
               switch (extra.skipAndMatch(skip, input, index, context)) {
                 case MatchResult.Success(int head2, int tail2, T value2) -> {
-                  context.onSuccess(new MatchResult.Success<>(head, tail2, null));
                   accumulator.accept(buffer, value2);
                   index = tail2;
                 }
                 case MatchResult.Failure<?> failure -> {
                   MatchResult.Success<R> successResult =
                       new MatchResult.Success<>(head, index, finisher.apply(buffer));
-                  context.onSuccess(successResult);
                   return successResult;
                 }
               }
@@ -1248,10 +1242,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success<T> success -> {
-            context.onSuccess(success);
-            yield new MatchResult.Success<>(success.head(), success.tail(), f.apply(success.value()));
-          }
+          case MatchResult.Success<T> success -> context.map(success, f);
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
@@ -1280,8 +1271,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success(int head, int tail, T value) ->
-              new MatchResult.Success<>(head, tail, f.apply(value, head, tail));
+          case MatchResult.Success<T> success ->  context.mapWithIndex(success, f);
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
@@ -1403,13 +1393,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override MatchResult<T> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         var result = left().skipAndMatch(skip, input, start, context);
-        if (result instanceof MatchResult.Success<T> success) {
-          context.onSuccess(success);
-          if (!condition.test(success.value())) {
-            return context.expecting(name, success.head(), success.tail());
-          }
-        }
-        return result;
+        return result instanceof MatchResult.Success<T> success && !context.test(success, condition)
+            ? context.expecting(name, success.head(), success.tail())
+            : result;
       }
     };
   }
@@ -1453,10 +1439,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
                 }
               }
             }
-            MatchResult.Success<T> successResult =
-                new MatchResult.Success<>(result.head(), index, result.value());
-            context.onSuccess(successResult);
-            yield successResult;
+            yield new MatchResult.Success<T>(result.head(), index, result.value());
           }
           case MatchResult.Failure<T> failure -> failure;
         };
@@ -2554,6 +2537,30 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
     <V> MatchResult.Failure<V> failAt(int at, int frontier, String messageTemplate, String symbolName) {
       return new MatchResult.Failure<V>(at, frontier, messageTemplate, symbolName);
+    }
+
+    <V, T> MatchResult.Success<T> map(MatchResult.Success<V> success, Function<? super V, ? extends T> function) {
+      onSuccess(success);
+      return new MatchResult.Success<T>(success.head, success.tail, function.apply(success.value));
+    }
+
+    <V, T> MatchResult.Success<T> mapWithIndex(
+        MatchResult.Success<V> success, ObjInt2Function<? super V, ? extends T> function) {
+      onSuccess(success);
+      return new MatchResult.Success<T>(
+          success.head, success.tail, function.apply(success.value, success.head, success.tail));
+    }
+
+    <V> boolean test(MatchResult.Success<V> success, Predicate<? super V> condition) {
+      onSuccess(success);
+      return condition.test(success.value);
+    }
+
+    <A, B, T> MatchResult.Success<T> map(
+        MatchResult.Success<A> a, MatchResult.Success<B> b,
+        BiFunction<? super A, ? super B, ? extends T> function) {
+      onSuccess(b);
+      return new MatchResult.Success<>(a.head, b.tail, function.apply(a.value, b.value));
     }
 
     <V> MatchResult.Failure<V> exceptionAt(int at, String message) {
