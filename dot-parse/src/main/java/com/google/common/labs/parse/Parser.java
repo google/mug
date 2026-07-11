@@ -1289,9 +1289,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * parsing error.
    *
    * <p>Because the parsing error will point to the starting position evaluated by
-   * this parser, make sure to call {@code .except()} at as finest granularity as possible.
+   * this parser, make sure to call {@code .except()} at the finest granularity possible.
    *
-   * <p>Useful if any callback passed through {@link #map}, {@link #flatMap} etc.
+   * <p>Useful if any callback passed through {@link #map map()}, {@link #flatMap flatMap()} etc.
    * delegates to a third-party parser that throws exceptions that you need to treat as
    * a regular parsing error. For example: <pre>{@code
    * List<Integer> numbers =
