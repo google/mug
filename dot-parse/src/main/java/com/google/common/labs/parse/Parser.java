@@ -2349,6 +2349,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return result;
   }
 
+  /**
+   * Returns the characters that are known to disqualify this parser if it's the next char in the
+   * input. Note that characters not returned don't guarantee this parser will match.
+   */
   final BitSet getBlocklist() {
     BitSet result = blocklist;
     if (result == null) {

@@ -113,7 +113,7 @@ To provide an absolute performance ceiling, we stacked our combinator shootout a
 
 ---
 
-## 13-Way Showdown Benchmark Results (Micro-Benchmarks)
+## 12-Way Showdown Benchmark Results (Micro-Benchmarks)
 
 Throughput was measured in **operations per millisecond** (higher is better). All benchmarks were run under G1 GC with natural, out-of-the-box collection-allocating configurations for all other contenders, while `dot-parse` leveraged its zero-allocation collectors on the hot path.
 
@@ -122,19 +122,19 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 > *   🚀 **Rocket Emoji**: Indicates the **overall #1 leader** across all tested libraries and JVM languages (Java, Scala, Kotlin).
 > *   ☕ **Coffee Emoji**: Indicates the **#1 leader among Java-native libraries**. When a Java library leads overall across all languages, it receives both icons (🚀 ☕).
 
-| Benchmark Scenario | `dot-parse` ☕ | `jparsec` | `fastparse` 🚀 | `cats-parse` 🚀 | `taker` | `parsecj` | `parboiled` | `jjparse` | `antlr4` | `scalaParser` | `parboiled2` 🚀 | `petitparser` | `better-parse` | **Winner(s)** |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **IPv4 Address** | **15,486** ☕ | 9,125 | **23,335** 🚀 | 11,758 | 4,757 | 12,403 | 5,206 | 5,493 | 1,884 | 3,398 | 23,146 | 6,788 | 1,936 | **`fast`** 🚀<br>Java: **`dot`** ☕ |
-| **String (Simple)** | 8,365 | 5,582 | 21,615 | 12,344 | **27,420** 🚀 ☕ | 4,959 | 1,933 | 2,775 | 3,637 | 3,747 | 6,530 | 2,917 | 4,778 | **`taker`** 🚀 ☕ |
-| **String (Escaped)** | 5,218 | 4,068 | **12,143** 🚀 | 3,021 | **8,480** ☕ | 2,553 | 1,509 | 2,116 | 3,852 | 3,288 | 7,349 | 2,333 | 1,363 | **`fast`** 🚀<br>Java: **`taker`** ☕ |
-| **120 Programming Keywords (CS)** | **216.83** 🚀 ☕ | 15.43 | 12.08 | 13.74 | 10.59 | 5.11 | 88.22 | 26.35 | 36.29 | 1.70 | — | 13.06 | — | **`dot`** 🚀 ☕ |
-| **120 Programming Keywords (CI)** | **152.10** 🚀 ☕ | 14.64 | 11.31 | 13.37 | 10.67 | 4.01 | 8.25 | 23.18 | 34.10 | 1.28 | — | 10.76 | — | **`dot`** 🚀 ☕ |
-| **500 City Names (CS)** | **25.94** 🚀 ☕ | 0.92 | 0.47 | 0.68 | 0.56 | 0.21 | 14.88 | 1.89 | 6.07 | 0.10 | — | 0.80 | — | **`dot`** 🚀 ☕ |
-| **500 City Names (CI)** | **18.22** 🚀 ☕ | 0.75 | 0.45 | 0.74 | 0.52 | 0.08 | 0.45 | 1.64 | 6.92 | 0.07 | — | 0.60 | — | **`dot`** 🚀 ☕ |
-| **Calculator (Math)** | 393 | 356 | 1,160 | 404 | **395** ☕ | 198 | 269 | 28 | 355 | 200 | **1,870** 🚀 | 353 | 231 | **`parboiled2`** 🚀<br>Java: **`taker`** ☕ |
-| **Nested Comments** | **9,898** 🚀 ☕ | 2,544 | 4,015 | 2,130 | 663 | 593 | 801 | 28 | 1,052 | 253 | 6,339 | 993 | 1,339 | **`dot`** 🚀 ☕ |
-| **US Phone (Single)** | 18,414 ☕ | 7,420 | 7,978 | 12,033 | 13,978 | 8,734 | 4,548 | 5,526 | 5,710 | 3,199 | **30,723** 🚀 | 6,716 | 8,906 | **`parboiled2`** 🚀<br>Java: **`dot`** ☕ |
-| **US Phone (1,000-List)** | **11.05** 🚀 ☕ | 8.73 | 8.25 | 10.99 | 7.36 | 1.89 | 3.77 | 4.34 | 7.52 | 2.83 | 7.95 | 5.33 | 5.05 | **`dot`** 🚀 ☕ |
+| Benchmark Scenario | `dot-parse` | `jparsec` | `fastparse` | `cats-parse` | `taker` | `parsecj` | `parboiled` | `jjparse` | `antlr4` | `scalaParser` | `petitparser` | `better-parse` | **Winner(s)** |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **IPv4 Address** | **15,486** ☕ | 9,125 | **23,335** 🚀 | 11,758 | 4,757 | 12,403 | 5,206 | 5,493 | 1,884 | 3,398 | 6,788 | 1,936 | **`fast`** 🚀<br>Java: **`dot`** ☕ |
+| **String (Simple)** | 8,365 | 5,582 | 21,615 | 12,344 | **27,420** 🚀 ☕ | 4,959 | 1,933 | 2,775 | 3,637 | 3,747 | 2,917 | 4,778 | **`taker`** 🚀 ☕ |
+| **String (Escaped)** | 5,218 | 4,068 | **12,143** 🚀 | 3,021 | **8,480** ☕ | 2,553 | 1,509 | 2,116 | 3,852 | 3,288 | 2,333 | 1,363 | **`fast`** 🚀<br>Java: **`taker`** ☕ |
+| **120 Programming Keywords (CS)** | **216.83** 🚀 ☕ | 15.43 | 12.08 | 13.74 | 10.59 | 5.11 | 88.22 | 26.35 | 36.29 | 1.70 | 13.06 | — | **`dot`** 🚀 ☕ |
+| **120 Programming Keywords (CI)** | **152.10** 🚀 ☕ | 14.64 | 11.31 | 13.37 | 10.67 | 4.01 | 8.25 | 23.18 | 34.10 | 1.28 | 10.76 | — | **`dot`** 🚀 ☕ |
+| **500 City Names (CS)** | **25.94** 🚀 ☕ | 0.92 | 0.47 | 0.68 | 0.56 | 0.21 | 14.88 | 1.89 | 6.07 | 0.10 | 0.80 | — | **`dot`** 🚀 ☕ |
+| **500 City Names (CI)** | **18.22** 🚀 ☕ | 0.75 | 0.45 | 0.74 | 0.52 | 0.08 | 0.45 | 1.64 | 6.92 | 0.07 | 0.60 | — | **`dot`** 🚀 ☕ |
+| **Calculator (Math)** | 393 | 356 | **1,160** 🚀 | 404 | **395** ☕ | 198 | 269 | 28 | 355 | 200 | 353 | 231 | **`fastparse`** 🚀<br>Java: **`taker`** ☕ |
+| **Nested Comments** | **9,898** 🚀 ☕ | 2,544 | 4,015 | 2,130 | 663 | 593 | 801 | 28 | 1,052 | 253 | 993 | 1,339 | **`dot`** 🚀 ☕ |
+| **US Phone (Single)** | **18,414** 🚀 ☕ | 7,420 | 7,978 | 12,033 | 13,978 | 8,734 | 4,548 | 5,526 | 5,710 | 3,199 | 6,716 | 8,906 | **`dot`** 🚀 ☕ |
+| **US Phone (1,000-List)** | **11.05** 🚀 ☕ | 8.73 | 8.25 | 10.99 | 7.36 | 1.89 | 3.77 | 4.34 | 7.52 | 2.83 | 5.33 | 5.05 | **`dot`** 🚀 ☕ |
 
 ### Showdown Scenario Analysis & Rationalization
 
@@ -153,7 +153,7 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 <hr>
 
 #### 3. Keywords & Case-Insensitive Tries
-*   **120 Programming Keywords (CS)**: On 120 realistic programming keywords across SQL, Java, C++, Python, Rust, Go, and JavaScript, `dot-parse` (**216.83 ops/ms**) is the #1 leader across all 13 libraries, outperforming #2 `parboiled` (88.22 ops/ms) by 2.46x and #3 `antlr4` (36.29 ops/ms) by 5.97x.
+*   **120 Programming Keywords (CS)**: On 120 realistic programming keywords across SQL, Java, C++, Python, Rust, Go, and JavaScript, `dot-parse` (**216.83 ops/ms**) is the #1 leader across all 12 libraries, outperforming #2 `parboiled` (88.22 ops/ms) by 2.46x and #3 `antlr4` (36.29 ops/ms) by 5.97x.
 *   **120 Programming Keywords (CI)**: In case-insensitive mode on 120 programming keywords, `dot-parse` leads overall at **152.10 ops/ms**, outperforming #2 `antlr4` (34.10 ops/ms) by 4.46x and #3 `jjparse` (23.18 ops/ms) by 6.56x.
 *   **Trie Dispatch Implementation**: `dot-parse` (`anyOf`) compiles keyword alternatives into optimized **Radix Prefix Tries**, bypassing sequential backtracking. By compiling its branching nodes into a flat lookup table (array of size 256) when using `.precomputeForAscii()`, it achieves its high throughput. For case-insensitivity, its prefix-trie compiler precomputes capitalization permutations of the first 4 characters at startup, maintaining an optimized O(1) dispatch.
 *   **Backtracking Penalties**: Libraries that do not precompute prefix-tries must backtrack through all options sequentially or evaluate regex choices sequentially, resulting in lower throughput (e.g., `parsecj` at **4.01 ops/ms** on case-insensitive keywords).
@@ -191,7 +191,7 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 
 #### 6. US Phone Number Parsing (Single & 1,000-Element List)
 *   **Performance (Single Number)**: `parboiled2` (30.7M ops/sec) leads overall. `dot-parse` is the leading Java library at 18.4M ops/sec, outperforming `taker` (14.0M) and `cats-parse` (12.0M).
-*   **Performance (1,000-Element List)**: `dot-parse` (11.05 lists/ms, or ~11.0M phone numbers/sec) leads overall across all 13 libraries, followed by `cats-parse` (10.99 lists/ms) and `jparsec` (8.73 lists/ms).
+*   **Performance (1,000-Element List)**: `dot-parse` (11.05 lists/ms, or ~11.0M phone numbers/sec) leads overall across all 12 libraries, followed by `cats-parse` (10.99 lists/ms) and `jparsec` (8.73 lists/ms).
 *   **JMH Operation Units (Why ~29,000 drops to ~8-11)**: In `US Phone (Single)`, one JMH operation measures parsing **1 single phone number**, meaning `30,723 ops/ms` represents 30,723 individual numbers parsed per millisecond. In `US Phone (1,000-List)`, one JMH operation measures parsing **1 entire list of 1,000 phone numbers**. When normalized to individual items by multiplying by 1,000, `7.95 lists/ms` equals **7,950 numbers/ms** for `parboiled2`, while `11.05 lists/ms` equals **11,050 numbers/ms** for `dot-parse`.
 *   **Architectural Trade-Off: Macro Inlining vs. Repetition Loop Overhead**: While `parboiled2` represents the performance ceiling on micro-inputs (leading on `US Phone (Single)` at 30,723 ops/ms), its relative throughput drops on long sequences, falling to #6 overall on `US Phone (1,000-List)` (**7.95 lists/ms**):
     *   **Micro-Input Regime (`parboiled2` on Single Mode)**: On a short 13-character string, collection construction and stack manipulation costs are non-existent. `parboiled2`'s compile-time macro expands rule matching directly into flat JVM bytecode without method dispatch indirection, executing in ~33 nanoseconds.
