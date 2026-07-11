@@ -2540,24 +2540,24 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return new MatchResult.Failure<V>(at, frontier, messageTemplate, symbolName);
     }
 
-    <V, T> MatchResult.Success<T> map(MatchResult.Success<V> success, Function<? super V, ? extends T> function) {
+    final <V, T> MatchResult.Success<T> map(MatchResult.Success<V> success, Function<? super V, ? extends T> function) {
       onSuccess(success);
       return new MatchResult.Success<T>(success.head, success.tail, function.apply(success.value));
     }
 
-    <V, T> MatchResult.Success<T> mapWithIndex(
+    final <V, T> MatchResult.Success<T> mapWithIndex(
         MatchResult.Success<V> success, ObjInt2Function<? super V, ? extends T> function) {
       onSuccess(success);
       return new MatchResult.Success<T>(
           success.head, success.tail, function.apply(success.value, success.head, success.tail));
     }
 
-    <V> boolean test(MatchResult.Success<V> success, Predicate<? super V> condition) {
+    final <V> boolean test(MatchResult.Success<V> success, Predicate<? super V> condition) {
       onSuccess(success);
       return condition.test(success.value);
     }
 
-    <A, B, T> MatchResult.Success<T> map(
+    final <A, B, T> MatchResult.Success<T> map(
         MatchResult.Success<A> a, MatchResult.Success<B> b,
         BiFunction<? super A, ? super B, ? extends T> function) {
       onSuccess(b);
