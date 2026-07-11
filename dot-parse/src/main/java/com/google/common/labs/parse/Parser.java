@@ -1305,7 +1305,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * <p>All other unchecked exceptions, and unchecked exceptions thrown by {@code toErrorMessage}
    * are propagated as is.
    *
-   * @since 10.6.1
+   * @since 10.7
    */
   public final <E extends RuntimeException> Parser<T> except(
       Class<E> exceptionType, Function<? super E, String> toErrorMessage) {

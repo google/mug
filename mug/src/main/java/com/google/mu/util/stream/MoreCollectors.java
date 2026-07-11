@@ -747,7 +747,7 @@ public final class MoreCollectors {
    * <p>If you do need to express the notion of <em>all</em>, consider using {@link
    * com.google.mu.collect.Selection#toIntersection} instead.
    *
-   * @since 10.6.1
+   * @since 10.7
    */
   public static <T, E> Collector<T, ?, Set<E>> toIntersectionOf(
       Function<? super T, ? extends Set<? extends E>> toSet) {
