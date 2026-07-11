@@ -113,7 +113,7 @@ To provide an absolute performance ceiling, we stacked our combinator shootout a
 
 ---
 
-## 12-Way Showdown Benchmark Results (Micro-Benchmarks)
+## 11-Way Showdown Benchmark Results (Micro-Benchmarks)
 
 Throughput was measured in **operations per millisecond** (higher is better). All benchmarks were run under G1 GC with natural, out-of-the-box collection-allocating configurations for all other contenders, while `dot-parse` leveraged its zero-allocation collectors on the hot path.
 
@@ -122,19 +122,19 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 > *   🚀 **Rocket Emoji**: Indicates the **overall #1 leader** across all tested libraries and JVM languages (Java, Scala, Kotlin).
 > *   ☕ **Coffee Emoji**: Indicates the **#1 leader among Java-native libraries**. When a Java library leads overall across all languages, it receives both icons (🚀 ☕).
 
-| Benchmark Scenario | `dot-parse` | `jparsec` | `fastparse` | `cats-parse` | `taker` | `parsecj` | `parboiled` | `jjparse` | `antlr4` | `scalaParser` | `petitparser` | `better-parse` | **Winner(s)** |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **IPv4 Address** | **15,486** ☕ | 9,125 | **23,335** 🚀 | 11,758 | 4,757 | 12,403 | 5,206 | 5,493 | 1,884 | 3,398 | 6,788 | 1,936 | **`fast`** 🚀<br>Java: **`dot`** ☕ |
-| **String (Simple)** | 8,365 | 5,582 | 21,615 | 12,344 | **27,420** 🚀 ☕ | 4,959 | 1,933 | 2,775 | 3,637 | 3,747 | 2,917 | 4,778 | **`taker`** 🚀 ☕ |
-| **String (Escaped)** | 5,218 | 4,068 | **12,143** 🚀 | 3,021 | **8,480** ☕ | 2,553 | 1,509 | 2,116 | 3,852 | 3,288 | 2,333 | 1,363 | **`fast`** 🚀<br>Java: **`taker`** ☕ |
-| **120 Programming Keywords (CS)** | **216.83** 🚀 ☕ | 15.43 | 12.08 | 13.74 | 10.59 | 5.11 | 88.22 | 26.35 | 36.29 | 1.70 | 13.06 | — | **`dot`** 🚀 ☕ |
-| **120 Programming Keywords (CI)** | **152.10** 🚀 ☕ | 14.64 | 11.31 | 13.37 | 10.67 | 4.01 | 8.25 | 23.18 | 34.10 | 1.28 | 10.76 | — | **`dot`** 🚀 ☕ |
-| **500 City Names (CS)** | **25.94** 🚀 ☕ | 0.92 | 0.47 | 0.68 | 0.56 | 0.21 | 14.88 | 1.89 | 6.07 | 0.10 | 0.80 | — | **`dot`** 🚀 ☕ |
-| **500 City Names (CI)** | **18.22** 🚀 ☕ | 0.75 | 0.45 | 0.74 | 0.52 | 0.08 | 0.45 | 1.64 | 6.92 | 0.07 | 0.60 | — | **`dot`** 🚀 ☕ |
-| **Calculator (Math)** | **393** ☕ | 356 | **1,160** 🚀 | 404 | **395** ☕ | 198 | 269 | 28 | 355 | 200 | 353 | 231 | **`fastparse`** 🚀<br>Java: **`dot`** / **`taker`** ☕ |
-| **Nested Comments** | **9,898** 🚀 ☕ | 2,544 | 4,015 | 2,130 | 663 | 593 | 801 | 28 | 1,052 | 253 | 993 | 1,339 | **`dot`** 🚀 ☕ |
-| **US Phone (Single)** | **18,414** 🚀 ☕ | 7,420 | 7,978 | 12,033 | 13,978 | 8,734 | 4,548 | 5,526 | 5,710 | 3,199 | 6,716 | 8,906 | **`dot`** 🚀 ☕ |
-| **US Phone (1,000-List)** | **11.05** 🚀 ☕ | 8.73 | 8.25 | 10.99 | 7.36 | 1.89 | 3.77 | 4.34 | 7.52 | 2.83 | 5.33 | 5.05 | **`dot`** 🚀 ☕ |
+| Benchmark Scenario | `dot-parse` | `jparsec` | `fastparse` | `cats-parse` | `taker` | `parsecj` | `parboiled` | `antlr4` | `scalaParser` | `petitparser` | `better-parse` | **Winner(s)** |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **IPv4 Address** | **15,486** ☕ | 9,125 | **23,335** 🚀 | 11,758 | 4,757 | 12,403 | 5,206 | 1,884 | 3,398 | 6,788 | 1,936 | **`fast`** 🚀<br>Java: **`dot`** ☕ |
+| **String (Simple)** | 8,365 | 5,582 | 21,615 | 12,344 | **27,420** 🚀 ☕ | 4,959 | 1,933 | 3,637 | 3,747 | 2,917 | 4,778 | **`taker`** 🚀 ☕ |
+| **String (Escaped)** | 5,218 | 4,068 | **12,143** 🚀 | 3,021 | **8,480** ☕ | 2,553 | 1,509 | 3,852 | 3,288 | 2,333 | 1,363 | **`fast`** 🚀<br>Java: **`taker`** ☕ |
+| **120 Programming Keywords (CS)** | **216.83** 🚀 ☕ | 15.43 | 12.08 | 13.74 | 10.59 | 5.11 | 88.22 | 36.29 | 1.70 | 13.06 | — | **`dot`** 🚀 ☕ |
+| **120 Programming Keywords (CI)** | **152.10** 🚀 ☕ | 14.64 | 11.31 | 13.37 | 10.67 | 4.01 | 8.25 | 34.10 | 1.28 | 10.76 | — | **`dot`** 🚀 ☕ |
+| **500 City Names (CS)** | **25.94** 🚀 ☕ | 0.92 | 0.47 | 0.68 | 0.56 | 0.21 | 14.88 | 6.07 | 0.10 | 0.80 | — | **`dot`** 🚀 ☕ |
+| **500 City Names (CI)** | **18.22** 🚀 ☕ | 0.75 | 0.45 | 0.74 | 0.52 | 0.08 | 0.45 | 6.92 | 0.07 | 0.60 | — | **`dot`** 🚀 ☕ |
+| **Calculator (Math)** | **393** ☕ | 356 | **1,160** 🚀 | 404 | **395** ☕ | 198 | 269 | 355 | 200 | 353 | 231 | **`fastparse`** 🚀<br>Java: **`dot`** / **`taker`** ☕ |
+| **Nested Comments** | **9,898** 🚀 ☕ | 2,544 | 4,015 | 2,130 | 663 | 593 | 801 | 1,052 | 253 | 993 | 1,339 | **`dot`** 🚀 ☕ |
+| **US Phone (Single)** | **18,414** 🚀 ☕ | 7,420 | 7,978 | 12,033 | 13,978 | 8,734 | 4,548 | 5,710 | 3,199 | 6,716 | 8,906 | **`dot`** 🚀 ☕ |
+| **US Phone (1,000-List)** | **11.05** 🚀 ☕ | 8.73 | 8.25 | 10.99 | 7.36 | 1.89 | 3.77 | 7.52 | 2.83 | 5.33 | 5.05 | **`dot`** 🚀 ☕ |
 
 ### Showdown Scenario Analysis & Rationalization
 
@@ -154,17 +154,17 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 
 #### 3. Keywords & Case-Insensitive Tries
 *   **120 Programming Keywords (CS)**: On 120 realistic programming keywords across SQL, Java, C++, Python, Rust, Go, and JavaScript, `dot-parse` (**216.83 ops/ms**) is the #1 leader across all 12 libraries, outperforming #2 `parboiled` (88.22 ops/ms) by 2.46x and #3 `antlr4` (36.29 ops/ms) by 5.97x.
-*   **120 Programming Keywords (CI)**: In case-insensitive mode on 120 programming keywords, `dot-parse` leads overall at **152.10 ops/ms**, outperforming #2 `antlr4` (34.10 ops/ms) by 4.46x and #3 `jjparse` (23.18 ops/ms) by 6.56x.
+*   **120 Programming Keywords (CI)**: In case-insensitive mode on 120 programming keywords, `dot-parse` leads overall at **152.10 ops/ms**, outperforming #2 `antlr4` (34.10 ops/ms) by 4.46x and #3 `jparsec` (14.64 ops/ms) by 10.39x.
 *   **Trie Dispatch Implementation**: `dot-parse` (`anyOf`) compiles keyword alternatives into optimized **Radix Prefix Tries**, bypassing sequential backtracking. By compiling its branching nodes into a flat lookup table (array of size 256) when using `.precomputeForAscii()`, it achieves its high throughput. For case-insensitivity, its prefix-trie compiler precomputes capitalization permutations of the first 4 characters at startup, maintaining an optimized O(1) dispatch.
 *   **Backtracking Penalties**: Libraries that do not precompute prefix-tries must backtrack through all options sequentially or evaluate regex choices sequentially, resulting in lower throughput (e.g., `parsecj` at **4.01 ops/ms** on case-insensitive keywords).
 *   **Vocabulary Scaling Boundary (500 City Names)**: When scaling from 120 programming keywords to a vocabulary of **500 world city names**, macro-compiled PEG engines like `parboiled2` hit a compile-time scaling limit, failing with compiler stack overflow (`StackOverflowError` in `scalac` during typechecking). Across all 11 runtime combinator and parser libraries benchmarked under full warmup:
     *   **500 City Names (CS)**: `dot-parse` leads overall at **25.94 ops/ms**, outperforming #2 `parboiled` (14.88 ops/ms) by 1.74x and #3 `antlr4` (6.07 ops/ms) by 4.27x. Because `dot-parse` compiles keyword alternations into an in-memory Radix prefix trie, lookup complexity scales by word length (O(k)) rather than vocabulary size (O(N)). By contrast, combinator libraries without prefix tries experience significant throughput reduction: `fastparse` drops to 0.47 ops/ms, `cats-parse` to 0.68 ops/ms, and `jparsec` to 0.92 ops/ms.
-    *   **500 City Names (CI)**: `dot-parse` leads overall at **18.22 ops/ms**, outperforming #2 `antlr4` (6.92 ops/ms) by 2.63x and #3 `jjparse` (1.64 ops/ms) by 11.11x. When generating capitalization permutations per 4-character prefix across 500 city names (~8,000 trie branches), `dot-parse` outperforms `jparsec` (0.75 ops/ms) by 24x, `cats-parse` (0.74 ops/ms) by 24x, and `fastparse` (0.45 ops/ms) by 40x.
+    *   **500 City Names (CI)**: `dot-parse` leads overall at **18.22 ops/ms**, outperforming #2 `antlr4` (6.92 ops/ms) by 2.63x and #3 `jparsec` (0.75 ops/ms) by 24.29x. When generating capitalization permutations per 4-character prefix across 500 city names (~8,000 trie branches), `dot-parse` outperforms `cats-parse` (0.74 ops/ms) by 24.6x and `fastparse` (0.45 ops/ms) by 40x.
     *   **Architectural Representation of 500 City Names**:
         *   **`parsecj` (500 Separate Regexes)**: In case-insensitive mode, `parsecj` compiles 500 individual regular expression parsers (`regex("(?i)" + kw)`), combined into an ordered choice (`choice(...)`). It sequentially evaluates up to 500 separate Java `Pattern`/`Matcher` regex executions per token, causing its throughput to drop to **0.08 ops/ms**.
         *   **`dot-parse` (Single Radix Prefix Trie)**: `dot-parse` avoids regexes entirely, compiling all 500 string parsers into a single in-memory Radix Prefix Trie (`PrefixPruneTree`). For case-insensitivity, it precomputes capitalization permutations of the first 4 characters at startup (~8,000 branches), maintaining an O(1) table lookup into surviving candidates and achieving **18.22 ops/ms** (#1 overall).
         *   **`antlr4` (Single Compiled DFA Table)**: ANTLR4 defines 500 separate lexer rules in `Showdown.g4`. At generator compile-time, it combines all 500 rules into a single Deterministic Finite Automaton (DFA) state table, executing a single DFA state transition loop across all candidates rather than checking rules sequentially (**6.92 ops/ms**, #2 overall).
-        *   **Other Combinators (`jparsec`, `fastparse`, `cats-parse`, `jjparse`, `petitparser`, `parboiled`, `taker`) (500 Sequential String Checks)**: Lacking automatic prefix-trie compilation on AST-mapped parsers, these engines construct 500 individual string scanners combined into an ordered choice (`or()`, `FirstOf`, `/`, `|`), sequentially evaluating up to 500 string comparisons per token.
+        *   **Other Combinators (`jparsec`, `fastparse`, `cats-parse`, `petitparser`, `parboiled`, `taker`) (500 Sequential String Checks)**: Lacking automatic prefix-trie compilation on AST-mapped parsers, these engines construct 500 individual string scanners combined into an ordered choice (`or()`, `FirstOf`, `/`, `|`), sequentially evaluating up to 500 string comparisons per token.
     *   **Allocation Domination vs. Pure Character-Scanning Scaling**:
         *   **Why `antlr4` (~4.9x drop) and `parboiled` (~5.7x drop) scale close to token volume (4.17x)**: In both engines, physical character scanning represents only a small fraction of runtime. In `antlr4`, each invocation allocates a new `CharStream`, builds 120 vs. 500 AST `KeywordContext` objects, and calls `getText()` (allocating 120 vs. 500 new String objects on the heap) to perform a `HashMap.get()`. In `parboiled`, every matched token calls `match()` and `toLowerCase()` (allocating 240 vs. 1,000 new String objects per parse), performs a `HashMap.get()`, and manipulates a runtime ValueStack. Because 80%+ of their CPU cycles are spent on object creation and framework data structures, scanning ~4 extra characters per word adds negligible runtime overhead; their performance drop is governed almost entirely by the number of tokens allocated (500 / 120 = ~4.17x).
         *   **Why `dot-parse` drops by 7.70x**: In `dot-parse`, `.thenReturn(value)` binds the target enum value directly to the trie leaf at setup time, and `.atLeastOnceDelimitedBy(",")` uses return elision to insert values directly into the result list. There are zero String allocations, zero `getText()` or `match()` calls, zero `HashMap` lookups, and zero runtime stack manipulations during parsing. Because almost 100% of its CPU time is spent actively scanning characters inside the Radix prefix trie, when average word length increases by ~1.7x (from 5.5 to 9.5 characters) and shared prefixes (`San...`, `Santa...`) deepen trie traversal, `dot-parse` reflects the actual physical cost of character scanning (~7.7x total drop), whereas allocation-heavy engines mask this cost behind object creation overhead.
