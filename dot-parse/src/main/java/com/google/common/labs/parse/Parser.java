@@ -1293,7 +1293,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * parsing error.
    *
    * <p>Because the parsing error will point to the starting position evaluated by
-   * this parser, make sure to call `.except()` on as finest granularity as possible.
+   * this parser, make sure to call {@code .except()} on as finest granularity as possible.
    *
    * <p>Useful if any callback passed through {@link #map}, {@link #flatMap} etc.
    * delegates to a third-party parser that throws exceptions that you need to treat as
