@@ -8520,14 +8520,14 @@ public class ParserTest {
   @Test
   public void except_succeeds() {
     Parser<Integer> parser =
-        digits().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage);
+        digits().map(Integer::parseInt).except(NumberFormatException.class, Exception::getMessage);
     assertThat(parser.parse("123")).isEqualTo(123);
   }
 
   @Test
   public void except_failsToMatch() {
     Parser<Integer> parser =
-        digits().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage);
+        digits().map(Integer::parseInt).except(NumberFormatException.class, Exception::getMessage);
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("xyzabc", 3));
     assertThat(thrown).hasMessageThat().contains("expecting <digits>");
     assertThat(thrown).hasMessageThat().contains("1:4");
@@ -8536,7 +8536,7 @@ public class ParserTest {
   @Test
   public void except_mapperThrows() {
     Parser<Integer> parser =
-        word().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage);
+        word().map(Integer::parseInt).except(NumberFormatException.class, Exception::getMessage);
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("xyzabc", 3));
     assertThat(thrown).hasMessageThat().contains("\"abc\"");
     assertThat(thrown).hasMessageThat().contains("1:4");
@@ -8545,7 +8545,7 @@ public class ParserTest {
   @Test
   public void except_parseSkipping_errorPositionAfterSkipping() {
     Parser<Integer> parser =
-        word().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage);
+        word().map(Integer::parseInt).except(NumberFormatException.class, Exception::getMessage);
     ParseException thrown = assertThrows(
         ParseException.class, () -> parser.parseSkipping(whitespace(), "   abc"));
     assertThat(thrown).hasMessageThat().contains("\"abc\"");
@@ -8555,13 +8555,13 @@ public class ParserTest {
   @Test
   public void except_unexpectedExceptionType_propagatedAsIs() {
     Parser<Integer> parser =
-        word().map(Integer::parseInt).except(NullPointerException.class, RuntimeException::getMessage);
+        word().map(Integer::parseInt).except(NullPointerException.class, Exception::getMessage);
     assertThrows(NumberFormatException.class, () -> parser.parse("abc"));
   }
 
   @Test
   public void except_nullExceptionType_throws() {
-    assertThrows(NullPointerException.class, () -> digits().except(null, RuntimeException::getMessage));
+    assertThrows(NullPointerException.class, () -> digits().except(null, Exception::getMessage));
   }
 
   @Test
@@ -8582,9 +8582,9 @@ public class ParserTest {
   public void except_recoveredFailure_notReportedOnSubsequentFailure() {
     Parser<List<String>> parser =
         anyOf(
-            word().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage).then(string(";")),
+            word().map(Integer::parseInt).except(NumberFormatException.class, Exception::getMessage).then(string(";")),
             word().then(string(";")))
-        .atLeastOnceDelimitedBy(",");
+          .atLeastOnceDelimitedBy(",");
 
     ParseException thrown = assertThrows(
         ParseException.class, () -> parser.parse("12345678901234567890;,,;"));
@@ -8595,10 +8595,9 @@ public class ParserTest {
 
   @Test
   public void except_frontierIsTailOfMatch() {
-    Parser<?> parser =
-        anyOf(
-            word().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage),
-            sequence(string("ab"), string("X")));
+    Parser<?> parser = anyOf(
+        word().map(Integer::parseInt).except(NumberFormatException.class, Exception::getMessage),
+        sequence(string("ab"), string("X")));
 
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
 
@@ -8610,10 +8609,9 @@ public class ParserTest {
 
   @Test
   public void except_frontierIsTailOfMatch_overruledByFurtherFailure() {
-    Parser<?> parser =
-        anyOf(
-            word().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage),
-            sequence(string("abcd "), string("Y")));
+    Parser<?> parser = anyOf(
+        word().map(Integer::parseInt).except(NumberFormatException.class, Exception::getMessage),
+        sequence(string("abcd "), string("Y")));
 
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abcd "));
 
@@ -8625,14 +8623,13 @@ public class ParserTest {
 
   @Test
   public void except_staleSuccessStateFromOtherBranch_doesNotLeak() {
-    Parser<?> parser =
-        anyOf(
-            sequence(string("ab"), digits().map(Integer::parseInt), string("X")),
-            sequence(
-                string("ab"),
-                string("1").map(s -> { throw new IllegalArgumentException("custom IAE"); })
-            ).except(IllegalArgumentException.class, RuntimeException::getMessage),
-            sequence(string("ab"), string("c"), string("Y")));
+    Parser<?> parser = anyOf(
+        sequence(string("ab"), digits().map(Integer::parseInt), string("X")),
+        sequence(
+            string("ab"),
+            string("1").map(s -> { throw new IllegalArgumentException("custom IAE"); })
+        ).except(IllegalArgumentException.class, Exception::getMessage),
+        sequence(string("ab"), string("c"), string("Y")));
 
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("ab123"));
 
@@ -8649,17 +8646,15 @@ public class ParserTest {
 
   @Test
   public void except_mapSucceeds() {
-    Parser<Integer> parser =
-        digits().map(Integer::parseInt)
-                .except(IllegalArgumentException.class, RuntimeException::getMessage);
+    Parser<Integer> parser = digits().map(Integer::parseInt)
+        .except(IllegalArgumentException.class, Exception::getMessage);
     assertThat(parser.parse("123")).isEqualTo(123);
   }
 
   @Test
   public void except_mapFails() {
-    Parser<Integer> parser =
-        digits().map(Integer::parseInt)
-                .except(IllegalArgumentException.class, RuntimeException::getMessage);
+    Parser<Integer> parser = digits().map(Integer::parseInt)
+        .except(IllegalArgumentException.class, Exception::getMessage);
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
     assertThat(thrown).hasMessageThat().contains("expecting <digits>");
     assertThat(thrown).hasMessageThat().contains("1:1");
@@ -8671,26 +8666,24 @@ public class ParserTest {
         sequence(
             digits().map(Integer::parseInt),
             string("X").map(s -> { throw new IllegalArgumentException("custom IAE"); })
-                      .except(IllegalArgumentException.class, RuntimeException::getMessage));
+          .except(IllegalArgumentException.class, Exception::getMessage));
 
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("123X"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("\n123X", 1));
     assertThat(thrown).hasMessageThat().contains("custom IAE");
-    assertThat(thrown).hasMessageThat().contains("1:4");
+    assertThat(thrown).hasMessageThat().contains("2:4");
   }
 
   @Test
   public void except_sequenceSucceeds() {
-    Parser<String> parser =
-        sequence(string("ab"), string("cd"), (a, b) -> a + b)
-                .except(IllegalArgumentException.class, RuntimeException::getMessage);
+    Parser<String> parser = sequence(string("ab"), string("cd"), (a, b) -> a + b)
+        .except(IllegalArgumentException.class, Exception::getMessage);
     assertThat(parser.parse("abcd")).isEqualTo("abcd");
   }
 
   @Test
   public void except_sequenceFails() {
-    Parser<String> parser =
-        sequence(string("ab"), string("cd"), (a, b) -> a + b)
-                .except(IllegalArgumentException.class, RuntimeException::getMessage);
+    Parser<String> parser = sequence(string("ab"), string("cd"), (a, b) -> a + b)
+        .except(IllegalArgumentException.class, Exception::getMessage);
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abxx"));
     assertThat(thrown).hasMessageThat().contains("expecting <cd>");
     assertThat(thrown).hasMessageThat().contains("1:3");
@@ -8700,78 +8693,74 @@ public class ParserTest {
   public void except_sequenceThrows_reportedAtCorrectPosition() {
     Parser<?> parser =
         sequence(
-            string("ab"),
-            string("cd"),
+            string("ab"), string("cd"),
             (a, b) -> {
               throw new IllegalArgumentException("combiner IAE");
             }
         )
-        .except(IllegalArgumentException.class, RuntimeException::getMessage);
+        .except(IllegalArgumentException.class, Exception::getMessage);
 
     Parser<?> combinedParser = anyOf(parser, sequence(string("abc"), string("Y")));
 
-    ParseException combinedThrown = assertThrows(ParseException.class, () -> combinedParser.parse("abcd"));
+    ParseException combinedThrown = assertThrows(ParseException.class, () -> combinedParser.parse("__\n__abcd", 5));
     assertThat(combinedThrown).hasMessageThat().contains("combiner IAE");
-    assertThat(combinedThrown).hasMessageThat().contains("1:1");
+    assertThat(combinedThrown).hasMessageThat().contains("2:3");
   }
 
   @Test
   public void except_sequencePropagates_reportedAtStartOfSequence() {
     Parser<?> parser =
         sequence(
-            string("xyz"),
-            digits().map(Integer::parseInt),
+            string("xyz"), digits().map(Integer::parseInt),
             string("X").map(s -> { throw new IllegalArgumentException("custom IAE"); })
         )
-        .except(IllegalArgumentException.class, RuntimeException::getMessage);
+        .except(IllegalArgumentException.class, Exception::getMessage);
 
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("xyz123X"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("__xyz123X", 2));
 
-    // The except() wraps the entire sequence starting at 0.
-    // So the error should be reported at the sequence start (index 0, position 1:1),
-    // but the frontier should be 6 (end of digits).
+    // The except() wraps the entire sequence starting at index 2 (position 1:3).
+    // So the error should be reported at the sequence start (index 2, position 1:3),
+    // but the frontier should be 8 (end of digits).
     assertThat(thrown).hasMessageThat().contains("custom IAE");
-    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("1:3");
   }
 
   @Test
   public void except_suchThatSucceeds() {
-    Parser<String> parser =
-        word().suchThat(w -> w.length() > 2, "long word")
-              .except(IllegalArgumentException.class, RuntimeException::getMessage);
+    Parser<String> parser = word().suchThat(w -> w.length() > 2, "long word")
+        .except(IllegalArgumentException.class, Exception::getMessage);
     assertThat(parser.parse("abc")).isEqualTo("abc");
   }
 
   @Test
   public void except_suchThatFails() {
-    Parser<String> parser =
-        word().suchThat(w -> w.length() > 2, "long word")
-              .except(IllegalArgumentException.class, RuntimeException::getMessage);
+    Parser<String> parser = word().suchThat(w -> w.length() > 2, "long word")
+        .except(IllegalArgumentException.class, Exception::getMessage);
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("ab"));
     assertThat(thrown).hasMessageThat().contains("expecting <long word>");
     assertThat(thrown).hasMessageThat().contains("1:1");
   }
 
   @Test
-  public void except_suchThatThrows_reportedAtCorrectPosition() {
+  public void except_sequenceThenSuchThatThrows_reportedAtCorrectPosition() {
     Parser<?> parser = sequence(string("ab"), string("cd"))
         .suchThat(v -> {
           throw new IllegalArgumentException("suchThat IAE");
         }, "suchThat")
-        .except(IllegalArgumentException.class, RuntimeException::getMessage);
+        .except(IllegalArgumentException.class, Exception::getMessage);
 
     Parser<?> combinedParser = anyOf(parser, sequence(string("abc"), string("Y")));
 
-    ParseException combinedThrown = assertThrows(ParseException.class, () -> combinedParser.parse("abcd"));
+    ParseException combinedThrown = assertThrows(ParseException.class, () -> combinedParser.parse("\n\n_abcd", 3));
     assertThat(combinedThrown).hasMessageThat().contains("suchThat IAE");
-    assertThat(combinedThrown).hasMessageThat().contains("1:1");
+    assertThat(combinedThrown).hasMessageThat().contains("3:2");
   }
 
   @Test
   public void except_mapWithIndexSucceeds() {
     Parser<String> parser =
         word().mapWithIndex((w, begin, end) -> w + ":" + begin + "-" + end)
-              .except(IllegalArgumentException.class, RuntimeException::getMessage);
+              .except(IllegalArgumentException.class, Exception::getMessage);
     assertThat(parser.parse("abc")).isEqualTo("abc:0-3");
   }
 
@@ -8779,7 +8768,7 @@ public class ParserTest {
   public void except_mapWithIndexFails() {
     Parser<String> parser =
         word().mapWithIndex((w, begin, end) -> w + ":" + begin + "-" + end)
-              .except(IllegalArgumentException.class, RuntimeException::getMessage);
+              .except(IllegalArgumentException.class, Exception::getMessage);
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse(""));
     assertThat(thrown).hasMessageThat().contains("expecting <word>");
     assertThat(thrown).hasMessageThat().contains("1:1");
@@ -8787,25 +8776,24 @@ public class ParserTest {
 
   @Test
   public void except_mapWithIndexThrows_reportedAtCorrectPosition() {
-    Parser<?> parser =
-        word()
-        .mapWithIndex((w, begin, end) -> {
+    Parser<?> parser = word().mapWithIndex(
+        (w, begin, end) -> {
           throw new IllegalArgumentException("mapWithIndex IAE");
         })
-        .except(IllegalArgumentException.class, RuntimeException::getMessage);
+        .except(IllegalArgumentException.class, Exception::getMessage);
 
     Parser<?> combinedParser = anyOf(parser, sequence(string("abc"), string("Y")));
 
-    ParseException combinedThrown = assertThrows(ParseException.class, () -> combinedParser.parse("abcd"));
+    ParseException combinedThrown = assertThrows(ParseException.class, () -> combinedParser.parse("\nabcd", 1));
     assertThat(combinedThrown).hasMessageThat().contains("mapWithIndex IAE");
-    assertThat(combinedThrown).hasMessageThat().contains("1:1");
+    assertThat(combinedThrown).hasMessageThat().contains("2:1");
   }
 
   @Test
   public void except_flatMapSucceeds() {
     Parser<String> parser =
         digits().flatMap(number -> string("=" + number))
-                .except(IllegalArgumentException.class, RuntimeException::getMessage);
+                .except(IllegalArgumentException.class, Exception::getMessage);
     assertThat(parser.parse("123=123")).isEqualTo("=123");
   }
 
@@ -8813,7 +8801,7 @@ public class ParserTest {
   public void except_flatMapFails() {
     Parser<String> parser =
         digits().flatMap(number -> string("=" + number))
-                .except(IllegalArgumentException.class, RuntimeException::getMessage);
+                .except(IllegalArgumentException.class, Exception::getMessage);
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("123x"));
     assertThat(thrown).hasMessageThat().contains("expecting <=123>");
     assertThat(thrown).hasMessageThat().contains("1:4");
@@ -8821,17 +8809,49 @@ public class ParserTest {
 
   @Test
   public void except_flatMapThrows_reportedAtCorrectPosition() {
-    Parser<?> parser =
-        digits()
-        .flatMap(number -> {
+    Parser<?> parser = digits().flatMap(
+        number -> {
           throw new IllegalArgumentException("flatMap IAE");
         })
-        .except(IllegalArgumentException.class, RuntimeException::getMessage);
+        .except(IllegalArgumentException.class, Exception::getMessage);
 
     Parser<?> combinedParser = anyOf(parser, sequence(string("12"), string("Y")));
 
-    ParseException combinedThrown = assertThrows(ParseException.class, () -> combinedParser.parse("123"));
+    ParseException combinedThrown = assertThrows(ParseException.class, () -> combinedParser.parse("____123", 4));
     assertThat(combinedThrown).hasMessageThat().contains("flatMap IAE");
-    assertThat(combinedThrown).hasMessageThat().contains("1:1");
+    assertThat(combinedThrown).hasMessageThat().contains("1:5");
+  }
+
+  @Test
+  public void except_flatMapReturnedParserThrows_reportedAtCorrectPosition() {
+    Parser<?> parser = digits().flatMap(
+        number ->
+            string("X").map(x -> {
+              throw new IllegalArgumentException("right-hand parser IAE");
+            })
+        )
+        .except(IllegalArgumentException.class, Exception::getMessage);
+
+    Parser<?> combinedParser = anyOf(parser, sequence(string("123"), string("Y")));
+
+    ParseException combinedThrown = assertThrows(ParseException.class, () -> combinedParser.parse("\n\n123X", 2));
+    assertThat(combinedThrown).hasMessageThat().contains("right-hand parser IAE");
+    assertThat(combinedThrown).hasMessageThat().contains("3:1");
+  }
+
+  @Test
+  public void except_flatMapReturnedParserExcept_reportedAtCorrectPosition() {
+    Parser<?> parser = digits().flatMap(
+        number ->
+            string("X").map(x -> {
+              throw new IllegalArgumentException("right-hand parser IAE");
+            })
+            .except(IllegalArgumentException.class, Exception::getMessage));
+
+    Parser<?> combinedParser = anyOf(parser, sequence(string("123"), string("Y")));
+
+    ParseException combinedThrown = assertThrows(ParseException.class, () -> combinedParser.parse("\n\n123X", 2));
+    assertThat(combinedThrown).hasMessageThat().contains("right-hand parser IAE");
+    assertThat(combinedThrown).hasMessageThat().contains("3:4");
   }
 }
