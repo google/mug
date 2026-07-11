@@ -26,12 +26,11 @@ import static com.google.mu.util.stream.BiCollectors.toMap;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.MoreCollectors.mapping;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
-import static java.lang.Math.max;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.requireNonNull;
-import static java.util.Objects.requireNonNullElseGet;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
@@ -863,6 +862,34 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return or(that.notEmpty()).new OrEmpty(that.defaultSupplier);
   }
 
+  /**
+   * Throw this error from the lambda passed to {@link #map map()}, {@link #flatMap flatMap()}
+   * etc. to report a custom parse error. The error will point to the starting position evaluated by
+   * the chained parser.
+   *
+   * <p>For example: <pre>{@code
+   * Parser<List<Integer>> numbers =
+   *     Parser.digits()
+   *         .map(s -> {
+   *           try {
+   *             return Integer.parseInt(s);
+   *           } catch (NumberFormatException e) {
+   *             throw Parser.fail(e.getMessage());
+   *           }
+   *         })
+   *         .atLeastOnce();
+   * }</pre>
+   *
+   * <p><em>DO NOT throw this error outside of the parser lambdas!</em>
+   *
+   * @param message the error message to be reported as part of the parse failure.
+   *
+   * @since 10.7
+   */
+  public static Error fail(String message) {
+    throw new ParseError(requireNonNullElse(message, ""));
+  }
+
   /** Returns a parser that applies this parser at least once, greedily. */
   public final Parser<List<T>> atLeastOnce() {
     return atLeastOnce(toUnmodifiableList());
@@ -1284,51 +1311,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Returns a new instance of this Parser with exceptions of {@code exceptionType}
-   * handled by the {@code toErrorMessage} function to be reported as a backtrackable
-   * parsing error.
-   *
-   * <p>Because the parsing error will point to the starting position evaluated by
-   * this parser, make sure to call {@code .except()} at the finest granularity possible.
-   *
-   * <p>Useful if any callback passed through {@link #map map()}, {@link #flatMap flatMap()} etc.
-   * delegates to a third-party parser that throws exceptions that you need to treat as
-   * a regular parsing error. For example: <pre>{@code
-   * List<Integer> numbers =
-   *     Parser.digits()
-   *         .map(Integer::parseInt)
-   *         .except(NumberFormatException.class, Exception::getMessage)
-   *         .atleastOnceDelimitedBy(",")
-   *         .parseSkipping(Character::isWhitespace, input);
-   * }</pre>
-   *
-   * <p>All other unchecked exceptions, and unchecked exceptions thrown by {@code toErrorMessage}
-   * are propagated as is.
-   *
-   * @since 10.7
-   */
-  public final <E extends RuntimeException> Parser<T> except(
-      Class<E> exceptionType, Function<? super E, String> toErrorMessage) {
-    requireNonNull(exceptionType);
-    requireNonNull(toErrorMessage);
-    return new SamePrefix<>() {
-      @Override MatchResult<T> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        try {
-          return left().skipAndMatch(skip, input, start, context);
-        } catch (RuntimeException e) {
-          if (exceptionType.isInstance(e)) {
-            return context.exceptionAt(
-                start, requireNonNullElseGet(toErrorMessage.apply(exceptionType.cast(e)), e::toString));
-          }
-          throw e;
-        }
-      }
-    };
-  }
-
-  /**
    * If this parser matches, applies function {@code f} to get the next production rule to match
    * in sequence.
    *
@@ -1343,11 +1325,14 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<T> success -> {
-            context.onSuccess(success);
-            yield (MatchResult<R>)
-                  allowZeroWidth(f.apply(success.value))
-                      .skipAndMatch(skip, input, success.tail, context)
-                      .startingFrom(success.head);
+            try {
+              yield (MatchResult<R>)
+                    allowZeroWidth(f.apply(success.value))
+                        .skipAndMatch(skip, input, success.tail, context)
+                        .startingFrom(success.head);
+            } catch (ParseError e) {
+              yield context.errorAt(success.head, success.tail, e);
+            }
           }
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
@@ -1394,8 +1379,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override MatchResult<T> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         var result = left().skipAndMatch(skip, input, start, context);
-        return result instanceof MatchResult.Success<T> success && !context.test(success, condition)
-            ? context.expecting(name, success.head, success.tail)
+        return result instanceof MatchResult.Success<T> success
+            ? context.test(success, condition, name)
             : result;
       }
     };
@@ -2540,40 +2525,49 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return new MatchResult.Failure<V>(at, frontier, messageTemplate, symbolName);
     }
 
-    final <V, T> MatchResult.Success<T> map(MatchResult.Success<V> success, Function<? super V, ? extends T> function) {
-      onSuccess(success);
-      return new MatchResult.Success<T>(success.head, success.tail, function.apply(success.value));
+    final <V> MatchResult.Failure<V> errorAt(int at, int frontier, ParseError error) {
+      return failAt(at, frontier, "{name}", error.getMessage());
     }
 
-    final <V, T> MatchResult.Success<T> mapWithIndex(
+    final <V, T> MatchResult<T> map(MatchResult.Success<V> success, Function<? super V, ? extends T> function) {
+      try {
+        return new MatchResult.Success<T>(success.head, success.tail, function.apply(success.value));
+      } catch (ParseError e) {
+        return errorAt(success.head, success.tail, e);
+      }
+    }
+
+    final <V, T> MatchResult<T> mapWithIndex(
         MatchResult.Success<V> success, ObjInt2Function<? super V, ? extends T> function) {
-      onSuccess(success);
-      return new MatchResult.Success<T>(
-          success.head, success.tail, function.apply(success.value, success.head, success.tail));
+      try {
+        return new MatchResult.Success<T>(
+            success.head, success.tail, function.apply(success.value, success.head, success.tail));
+      } catch (ParseError e) {
+        return errorAt(success.head, success.tail, e);
+      }
     }
 
-    final <V> boolean test(MatchResult.Success<V> success, Predicate<? super V> condition) {
-      onSuccess(success);
-      return condition.test(success.value);
+    final <V> MatchResult<V> test(MatchResult.Success<V> success, Predicate<? super V> condition, String name) {
+      try {
+        return condition.test(success.value) ? success : expecting(name, success.head, success.tail);
+      } catch (ParseError e) {
+        return errorAt(success.head, success.tail, e);
+      }
     }
 
-    final <A, B, T> MatchResult.Success<T> map(
+    final <A, B, T> MatchResult<T> map(
         MatchResult.Success<A> a, MatchResult.Success<B> b,
         BiFunction<? super A, ? super B, ? extends T> function) {
-      onSuccess(b);
-      return new MatchResult.Success<>(a.head, b.tail, function.apply(a.value, b.value));
+      try {
+        return new MatchResult.Success<>(a.head, b.tail, function.apply(a.value, b.value));
+      } catch (ParseError e) {
+        return errorAt(a.head, b.tail, e);
+      }
     }
-
-    <V> MatchResult.Failure<V> exceptionAt(int at, String message) {
-      return failAt(at, "{name}", message);
-    }
-
-    void onSuccess(MatchResult.Success<?> success) {}
   }
 
   private static final class ErrorTracker extends ErrorContext {
     private MatchResult.Failure<?> farthestFailure = null;
-    private MatchResult.Success<?> lastSuccess = null;
 
     @Override <V> MatchResult.Failure<V> expecting(
         String symbolName, int at, int frontier) {
@@ -2588,19 +2582,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         farthestFailure = failure;
       }
       return failure;
-    }
-
-    @Override <V> MatchResult.Failure<V> exceptionAt(int at, String message) {
-      int frontier = at;
-      if (lastSuccess != null) {
-        frontier = max(frontier, lastSuccess.tail);
-        lastSuccess = null;
-      }
-      return failAt(at, frontier, "{name}", message);
-    }
-
-    @Override void onSuccess(MatchResult.Success<?> success) {
-      lastSuccess = success;
     }
 
     ParseException report(MatchResult.Failure<?> failure, CharInput input) {
@@ -2654,6 +2635,16 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private interface ElidableFunction<F, T> extends Function<F, T> {}
   private interface ElidableBiFunction<A, B, R> extends BiFunction<A, B, R> {}
+
+  private static final class ParseError extends Error {
+    ParseError(String message) {
+      super(message, null, /* enableSuppression= */ false, /* writableStackTrace= */ false);
+    }
+
+    @Override public String toString() {
+      return "ParseFailure isn't expected to be caught or propagated outside of the Parser framework.";
+    }
+  }
 
   private interface Constants {
     static Parser<String> DIGITS = consecutive(CharacterSet.DECIMAL, "digits");
