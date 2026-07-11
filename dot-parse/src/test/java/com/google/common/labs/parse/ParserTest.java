@@ -2779,6 +2779,30 @@ public class ParserTest {
   }
 
   @Test
+  public void anyOf_derivedBlocklistFromPrefixes_blocklist() {
+    Parser<Character> parser = anyOf(
+        one(','),
+        one('.'),
+        one(isNot('<'), "not <"));
+    assertThat(parser.getBlocklist().get('<')).isTrue();
+    assertThat(parser.getBlocklist().get(',')).isFalse();
+    assertThat(parser.getBlocklist().get('.')).isFalse();
+    assertThat(parser.getBlocklist().get('a')).isFalse();
+  }
+
+  @Test
+  public void anyOf_derivedBlocklistFromPrefixes_parsing() {
+    Parser<Character> parser = anyOf(
+        one(','),
+        one('.'),
+        one(isNot('<'), "not <"));
+    assertThat(parser.parse(",")).isEqualTo(',');
+    assertThat(parser.parse(".")).isEqualTo('.');
+    assertThat(parser.parse("a")).isEqualTo('a');
+    assertThrows(ParseException.class, () -> parser.parse("<"));
+  }
+
+  @Test
   public void anyOf_pruning_withOneChar() {
     List<Parser<Character>> parsers = range(0, 20).mapToObj(i -> one((char) ('a' + i))).toList();
     Parser<Character> parser = parsers.stream().collect(or());

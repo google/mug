@@ -33,7 +33,6 @@ import java.util.stream.Stream;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.Immutable;
-import com.google.errorprone.annotations.concurrent.LazyInit;
 import com.google.mu.util.stream.BiStream;
 
 /**
@@ -168,13 +167,18 @@ record PrefixPruneTree<V>(
    *
    * <p>This will run in a hot loop, so performance is critical.
    */
+  public static final java.util.concurrent.atomic.AtomicLong LOOKUPS = new java.util.concurrent.atomic.AtomicLong();
+  public static final java.util.concurrent.atomic.AtomicLong PRUNED = new java.util.concurrent.atomic.AtomicLong();
+
   List<V> pruneByPrefix(CharInput input, int index) {
+    LOOKUPS.incrementAndGet();
     PrefixPruneTree<V> node = this;
     for (int i = index; !node.isLeaf() && !input.isEof(i); i++) {
       PrefixPruneTree<V> child = node.children.child(input.charAt(i));
       if (child == null) break;
       node = child;
     }
+    PRUNED.addAndGet(this.survivors.size() - node.survivors.size());
     return node.survivors;
   }
 
@@ -241,14 +245,10 @@ record PrefixPruneTree<V>(
   }
 
   private static final class Survivors<V> {
-    private static final Survivors<?> NONE = new Survivors<>(List.of());
-
     private final List<Ordered<V>> ordered;
-    @LazyInit private List<V> unwrapped;
 
-    @SuppressWarnings("unchecked")
     static <V> Survivors<V> none() {
-      return (Survivors<V>) NONE;
+      return new Survivors<>(List.of());
     }
 
     Survivors(List<Ordered<V>> ordered) {
@@ -256,11 +256,7 @@ record PrefixPruneTree<V>(
     }
 
     List<V> unwrap() {
-      var result = unwrapped;
-      if (result == null) {
-        unwrapped = result = isEmpty() ? List.of() : ordered.stream().map(Ordered::value).toList();
-      }
-      return result;
+      return isEmpty() ? List.of() : ordered.stream().map(Ordered::value).toList();
     }
 
     Survivors<V> concat(List<Ordered<V>> that) {

@@ -48,6 +48,16 @@ public class EmailAddressBenchmark {
   }
 
   @Benchmark
+  public EmailAddress parseSingleBracketedAddress() {
+    return EmailAddress.of("<user.name@domain.com>");
+  }
+
+  @Benchmark
+  public EmailAddress parseSingleBracketedAddressWithDisplayName() {
+    return EmailAddress.of("John Doe <user.name@domain.com>");
+  }
+
+  @Benchmark
   public Object jmail_parseSinglePlainAddress() {
     return JMail.tryParse("user@company.com");
   }
@@ -65,6 +75,20 @@ public class EmailAddressBenchmark {
   @Test public void testBenchmark() {
     assertThat(parseValidList()).hasSize(4);
     assertThat(parseMixedList()).hasSize(3);
+
+    com.google.common.labs.parse.Parser.LOOKUPS.set(0);
+    com.google.common.labs.parse.Parser.PRUNED.set(0);
+    var unused1 = EmailAddress.of("<user.name@domain.com>");
+    System.out.println("For <user.name@domain.com>:");
+    System.out.println("  Parser lookups: " + com.google.common.labs.parse.Parser.LOOKUPS.get());
+    System.out.println("  Parser pruned: " + com.google.common.labs.parse.Parser.PRUNED.get());
+
+    com.google.common.labs.parse.Parser.LOOKUPS.set(0);
+    com.google.common.labs.parse.Parser.PRUNED.set(0);
+    var unused2 = EmailAddress.of("John Doe <user.name@domain.com>");
+    System.out.println("For John Doe <user.name@domain.com>:");
+    System.out.println("  Parser lookups: " + com.google.common.labs.parse.Parser.LOOKUPS.get());
+    System.out.println("  Parser pruned: " + com.google.common.labs.parse.Parser.PRUNED.get());
   }
 
   public static void main(String[] args) throws Exception {
