@@ -125,12 +125,10 @@ final class OrParser<T> extends Parser<T> {
     }
     if (builder.numSurvivors() > 0) {
       for (Parser<T> parser : parsers) {
-        for (String prefix : parser.getPrefixes()) {
-          if (prefix.isEmpty()) {
-            BitSet blocklist = parser.getBlocklist();
-            for (int c = blocklist.nextSetBit(0); c >= 0; c = blocklist.nextSetBit(c + 1)) {
-              builder.addBlocked((char) c, parser);
-            }
+        if (parser.getPrefixes().contains("")) {
+          BitSet blocklist = parser.getBlocklist();
+          for (int c = blocklist.nextSetBit(0); c >= 0; c = blocklist.nextSetBit(c + 1)) {
+            builder.addBlocked((char) c, parser);
           }
         }
       }
