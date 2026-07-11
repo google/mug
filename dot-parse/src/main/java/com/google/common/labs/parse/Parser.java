@@ -2639,11 +2639,19 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private static final class ParseError extends Error {
     ParseError(String message) {
-      super(message, null, /* enableSuppression= */ false, /* writableStackTrace= */ false);
+      super(
+          message, null,
+          /* enableSuppression= */ debugMode(), /* writableStackTrace= */ debugMode());
     }
 
     @Override public String toString() {
-      return "ParseFailure isn't expected to be caught or propagated outside of the Parser framework.";
+      return "ParseError isn't expected to be caught or propagated outside of the Parser framework.";
+    }
+
+    private static boolean debugMode() {
+      boolean debugMode = false;
+      assert debugMode = true;
+      return debugMode;
     }
   }
 

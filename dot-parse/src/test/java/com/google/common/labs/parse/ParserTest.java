@@ -8866,4 +8866,15 @@ public class ParserTest {
     assertThat(combinedThrown).hasMessageThat().contains("right-hand parser IAE");
     assertThat(combinedThrown).hasMessageThat().contains("3:4");
   }
+
+  @Test
+  public void fail_returnsErrorWithStackTraceAndSuppression() {
+    Error error = assertThrows(Error.class, () -> Parser.fail("test error"));
+    assertThat(error.getMessage()).isEqualTo("test error");
+    assertThat(error.getStackTrace()).isNotEmpty();
+
+    Throwable suppressed = new RuntimeException("suppressed");
+    error.addSuppressed(suppressed);
+    assertThat(error.getSuppressed()).asList().containsExactly(suppressed);
+  }
 }
