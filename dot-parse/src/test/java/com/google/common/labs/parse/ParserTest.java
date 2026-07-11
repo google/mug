@@ -8528,18 +8528,18 @@ public class ParserTest {
   public void except_failsToMatch() {
     Parser<Integer> parser =
         digits().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage);
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("xyzabc", 3));
     assertThat(thrown).hasMessageThat().contains("expecting <digits>");
-    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("1:4");
   }
 
   @Test
   public void except_mapperThrows() {
     Parser<Integer> parser =
         word().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage);
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("xyzabc", 3));
     assertThat(thrown).hasMessageThat().contains("\"abc\"");
-    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("1:4");
   }
 
   @Test
@@ -8567,5 +8567,159 @@ public class ParserTest {
   @Test
   public void except_nullErrorMessageFunction_throws() {
     assertThrows(NullPointerException.class, () -> digits().except(NumberFormatException.class, null));
+  }
+
+  @Test
+  public void except_errorMessageFunctionReturnsNull_throwsParseException() {
+    Parser<Integer> parser =
+        word().map(Integer::parseInt).except(NumberFormatException.class, e -> null);
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("xyzabc", 3));
+    assertThat(thrown).hasMessageThat().contains("java.lang.NumberFormatException: For input string: \"abc\"");
+    assertThat(thrown).hasMessageThat().contains("1:4");
+  }
+
+  @Test
+  public void except_recoveredFailure_notReportedOnSubsequentFailure() {
+    Parser<List<String>> parser =
+        anyOf(
+            word().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage).then(string(";")),
+            word().then(string(";")))
+        .atLeastOnceDelimitedBy(",");
+
+    ParseException thrown = assertThrows(
+        ParseException.class, () -> parser.parse("12345678901234567890;,,;"));
+
+    assertThat(thrown).hasMessageThat().contains("expecting <word>");
+    assertThat(thrown).hasMessageThat().contains("1:23");
+  }
+
+  @Test
+  public void except_frontierIsTailOfMatch() {
+    Parser<?> parser =
+        anyOf(
+            word().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage),
+            sequence(string("ab"), string("X"))
+        );
+
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
+
+    // We expect the NumberFormatException from Branch 1 to be reported because its frontier
+    // is the tail of the match ("abc" -> index 3), which is further than Branch 2's failure (index 2).
+    assertThat(thrown).hasMessageThat().contains("For input string:");
+    assertThat(thrown).hasMessageThat().contains("1:1");
+  }
+
+  @Test
+  public void except_frontierIsTailOfMatch_overruledByFurtherFailure() {
+    Parser<?> parser =
+        anyOf(
+            word().map(Integer::parseInt).except(NumberFormatException.class, RuntimeException::getMessage),
+            sequence(string("abcd "), string("Y"))
+        );
+
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abcd "));
+
+    // We expect the failure from Branch 2 (expecting "Y" at index 4) to be reported
+    // because its frontier (4) is further than the exception failure's frontier (3).
+    assertThat(thrown).hasMessageThat().contains("expecting <Y>");
+    assertThat(thrown).hasMessageThat().contains("1:6");
+  }
+
+  @Test
+  public void except_staleSuccessStateFromOtherBranch_doesNotLeak() {
+    Parser<String> customThrows = new Parser<>() {
+      @Override MatchResult<String> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        throw new IllegalArgumentException("custom IAE");
+      }
+    };
+
+    Parser<?> parser =
+        anyOf(
+            sequence(string("ab"), digits().map(Integer::parseInt), string("X")),
+            sequence(string("ab"), customThrows).except(IllegalArgumentException.class, RuntimeException::getMessage),
+            sequence(string("ab"), string("c"), string("Y"))
+        );
+
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("ab123"));
+
+    // Branch 1: matches "ab123" but fails expecting "X" at index 5.
+    // Branch 2: matches "ab", then customThrows throws IAE at index 2.
+    //   If Branch 1's success (2, 5) leaks, Branch 2's exception will report frontier = 5.
+    //   If it doesn't leak, Branch 2's exception will report frontier = 2.
+    // Branch 3: matches "ab" (2 chars), fails expecting "c" at index 2. Frontier = 2.
+    // Since Branch 1 failed at index 5, the overall parse failure should report Branch 1's failure
+    // at index 5 (expecting "X"), NOT the IAE at index 2 with leaked frontier = 5!
+    assertThat(thrown).hasMessageThat().contains("expecting <X>");
+    assertThat(thrown).hasMessageThat().contains("1:6");
+  }
+
+  @Test
+  public void except_exceptionAfterSuccessfulMap_reportedAtCorrectPosition() {
+    Parser<String> customThrows = new Parser<>() {
+      @Override MatchResult<String> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        throw new IllegalArgumentException("custom IAE");
+      }
+    };
+
+    Parser<?> parser =
+        sequence(
+            digits().map(Integer::parseInt),
+            customThrows.except(IllegalArgumentException.class, RuntimeException::getMessage)
+        );
+
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("123"));
+    assertThat(thrown).hasMessageThat().contains("custom IAE");
+    assertThat(thrown).hasMessageThat().contains("1:4");
+  }
+
+  @Test
+  public void except_exceptionInSequenceCombiner_reportedAtCorrectPosition() {
+    Parser<?> parser =
+        sequence(
+            string("ab"),
+            string("cd"),
+            (a, b) -> {
+              throw new IllegalArgumentException("combiner IAE");
+            }
+        )
+        .except(IllegalArgumentException.class, RuntimeException::getMessage);
+
+    Parser<?> combinedParser =
+        anyOf(
+            parser,
+            sequence(string("abc"), string("Y"))
+        );
+
+    ParseException combinedThrown = assertThrows(ParseException.class, () -> combinedParser.parse("abcd"));
+    assertThat(combinedThrown).hasMessageThat().contains("combiner IAE");
+    assertThat(combinedThrown).hasMessageThat().contains("1:1");
+  }
+
+  @Test
+  public void except_exceptionAfterSuccessfulMap_wrappedSequence_reportedAtStartOfSequence() {
+    Parser<String> customThrows = new Parser<>() {
+      @Override MatchResult<String> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        throw new IllegalArgumentException("custom IAE");
+      }
+    };
+
+    Parser<?> parser =
+        sequence(
+            string("xyz"),
+            digits().map(Integer::parseInt),
+            customThrows
+        )
+        .except(IllegalArgumentException.class, RuntimeException::getMessage);
+
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("xyz123"));
+
+    // The except() wraps the entire sequence starting at 0.
+    // So the error should be reported at the sequence start (index 0, position 1:1),
+    // but the frontier should be 6 (end of digits).
+    assertThat(thrown).hasMessageThat().contains("custom IAE");
+    assertThat(thrown).hasMessageThat().contains("1:1");
   }
 }

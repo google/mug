@@ -30,6 +30,7 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
@@ -655,8 +656,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success(int head, int tail, A v1) ->
               switch (right.skipAndMatch(skip, input, tail, context)) {
-                case MatchResult.Success(int head2, int tail2, B v2) ->
-                    new MatchResult.Success<>(head, tail2, combiner.apply(v1, v2));
+                case MatchResult.Success(int head2, int tail2, B v2) -> {
+                  context.onSuccess(new MatchResult.Success<>(head, tail2, null));
+                  yield new MatchResult.Success<>(head, tail2, combiner.apply(v1, v2));
+                }
                 case MatchResult.Failure<?> failure -> failure.safeCast();
               };
           case MatchResult.Failure<?> failure -> failure.safeCast();
@@ -1240,8 +1243,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success(int head, int tail, T value) ->
-              new MatchResult.Success<>(head, tail, f.apply(value));
+          case MatchResult.Success<T> success -> {
+            context.onSuccess(success);
+            yield new MatchResult.Success<>(success.head(), success.tail(), f.apply(success.value()));
+          }
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
@@ -1283,10 +1288,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Returns a new instance of this Parser but exceptions of {@code exceptionType}
-   * will be handled by the {@code toErrorMessage} function to be reported as a backtrackable
-   * parsing error, with the error pointing to the starting position evaluated by
-   * this parser.
+   * Returns a new instance of this Parser with exceptions of {@code exceptionType}
+   * handled by the {@code toErrorMessage} function to be reported as a backtrackable
+   * parsing error.
+   *
+   * <p>Because the parsing error will point to the starting position evaluated by
+   * this parser, make sure to call `.except()` on as finest granularity as possible.
    *
    * <p>Useful if any callback passed through {@link #map}, {@link #flatMap} etc.
    * delegates to a third-party parser that throws exceptions that you need to treat as
@@ -1316,7 +1323,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           return left().skipAndMatch(skip, input, start, context);
         } catch (RuntimeException e) {
           if (exceptionType.isInstance(e)) {
-            return context.failAt(start, "{name}", toErrorMessage.apply(exceptionType.cast(e)));
+            return context.exceptionAt(
+                start, requireNonNullElseGet(toErrorMessage.apply(exceptionType.cast(e)), e::toString));
           }
           throw e;
         }
@@ -1338,10 +1346,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success(int head, int tail, T value) ->
-              (MatchResult<R>)
-                  allowZeroWidth(f.apply(value)).skipAndMatch(skip, input, tail, context)
-                      .startingFrom(head);
+          case MatchResult.Success<T> success -> {
+            context.onSuccess(success);
+            yield (MatchResult<R>)
+                  allowZeroWidth(f.apply(success.value))
+                      .skipAndMatch(skip, input, success.tail, context)
+                      .startingFrom(success.head);
+          }
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
@@ -2532,10 +2543,17 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     <V> MatchResult.Failure<V> failAt(int at, int frontier, String messageTemplate, String symbolName) {
       return new MatchResult.Failure<V>(at, frontier, messageTemplate, symbolName);
     }
+
+    <V> MatchResult.Failure<V> exceptionAt(int at, String message) {
+      return failAt(at, "{name}", message);
+    }
+
+    void onSuccess(MatchResult.Success<?> success) {}
   }
 
   private static final class ErrorTracker extends ErrorContext {
     private MatchResult.Failure<?> farthestFailure = null;
+    private MatchResult.Success<?> lastSuccess = null;
 
     @Override <V> MatchResult.Failure<V> expecting(
         String symbolName, int at, int frontier) {
@@ -2550,6 +2568,19 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         farthestFailure = failure;
       }
       return failure;
+    }
+
+    @Override <V> MatchResult.Failure<V> exceptionAt(int at, String message) {
+      int frontier = at;
+      if (lastSuccess != null) {
+        frontier = Math.max(frontier, lastSuccess.tail);
+        lastSuccess = null;
+      }
+      return failAt(at, frontier, "{name}", message);
+    }
+
+    @Override void onSuccess(MatchResult.Success<?> success) {
+      lastSuccess = success;
     }
 
     ParseException report(MatchResult.Failure<?> failure, CharInput input) {

@@ -257,7 +257,7 @@ public final class EmailAddress {
           .except(IllegalArgumentException.class, IllegalArgumentException::getMessage)
           // don't extract a@b from a@b@c
           .notFollowedBy(one("[^,;]"), "non-separator"),
-          consecutive("[^,;]").map(String::trim));
+      consecutive("[^,;]").map(String::trim));
 
   private final String localPart;
   private final String domain;
