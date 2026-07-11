@@ -1973,9 +1973,9 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  parsing error.
 
  <p>Because the parsing error will point to the starting position evaluated by
- this parser, make sure to call <code>.except()</code> at as finest granularity as possible.
+ this parser, make sure to call <code>.except()</code> at the finest granularity possible.
 
- <p>Useful if any callback passed through <a href="#map(java.util.function.Function)"><code>map(java.util.function.Function&lt;? super T, ? extends R&gt;)</code></a>, <a href="#flatMap(java.util.function.Function)"><code>flatMap(java.util.function.Function&lt;? super T, ? extends com.google.common.labs.parse.Production&lt;? extends R&gt;&gt;)</code></a> etc.
+ <p>Useful if any callback passed through <a href="#map(java.util.function.Function)"><code>map()</code></a>, <a href="#flatMap(java.util.function.Function)"><code>flatMap()</code></a> etc.
  delegates to a third-party parser that throws exceptions that you need to treat as
  a regular parsing error. For example: <pre><code>
  List&lt;Integer&gt; numbers =
