@@ -86,9 +86,6 @@ import com.google.mu.util.stream.Joiner;
  */
 @ThreadSafe
 public abstract non-sealed class Parser<T> implements Production<T> {
-  public static final java.util.concurrent.atomic.AtomicLong LOOKUPS = PrefixPruneTree.LOOKUPS;
-  public static final java.util.concurrent.atomic.AtomicLong PRUNED = PrefixPruneTree.PRUNED;
-
   private static final Set<String> EMPTY_PREFIX = Set.of("");
 
   /**

@@ -70,13 +70,6 @@ import com.google.mu.util.stream.BiStream;
 @Immutable(containerOf = "V")
 record PrefixPruneTree<V>(
     @SuppressWarnings("Immutable") List<V> survivors, Trie<V> children) {
-  static final java.util.concurrent.atomic.AtomicInteger ALLOCATION_COUNTER =
-      new java.util.concurrent.atomic.AtomicInteger();
-
-  PrefixPruneTree {
-    ALLOCATION_COUNTER.incrementAndGet();
-  }
-
   static final class Builder<V> {
     private final List<Ordered<V>> survivors = new ArrayList<>();  // in encounter order
     private final Map<Integer, Builder<V>> children = new HashMap<>();
@@ -167,18 +160,13 @@ record PrefixPruneTree<V>(
    *
    * <p>This will run in a hot loop, so performance is critical.
    */
-  public static final java.util.concurrent.atomic.AtomicLong LOOKUPS = new java.util.concurrent.atomic.AtomicLong();
-  public static final java.util.concurrent.atomic.AtomicLong PRUNED = new java.util.concurrent.atomic.AtomicLong();
-
   List<V> pruneByPrefix(CharInput input, int index) {
-    LOOKUPS.incrementAndGet();
     PrefixPruneTree<V> node = this;
     for (int i = index; !node.isLeaf() && !input.isEof(i); i++) {
       PrefixPruneTree<V> child = node.children.child(input.charAt(i));
       if (child == null) break;
       node = child;
     }
-    PRUNED.addAndGet(this.survivors.size() - node.survivors.size());
     return node.survivors;
   }
 
