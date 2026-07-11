@@ -236,7 +236,7 @@ public final class EmailAddress {
    * @since 10.4
    */
   public static final Parser<EmailAddress> ADDR_SPEC_PARSER =
-      ADDR_SPEC_ALIKE.map(AddrSpecAlike::toEmailAddress);
+      ADDR_SPEC_ALIKE.map(AddrSpecAlike::toEmailAddressOrFail);
 
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
@@ -505,12 +505,13 @@ public final class EmailAddress {
             looksLikeAddrSpec, bracketedAddress.orElse(null),
             (addrSpecOrDisplayName, bracketedOrNull) ->
                 bracketedOrNull == null
-                    ? addrSpecOrDisplayName.toEmailAddress()
-                    : bracketedOrNull.toEmailAddressWithDisplayName(addrSpecOrDisplayName.toString())),
+                    ? addrSpecOrDisplayName.toEmailAddressOrFail()
+                    : bracketedOrNull.toEmailAddressWithDisplayNameOrFail(
+                        addrSpecOrDisplayName.toString())),
         sequence(
             displayName, bracketedAddress,
-            (name, addr) -> addr.toEmailAddressWithDisplayName(name)),
-        bracketedAddress.map(AddrSpecAlike::toEmailAddress),
+            (name, addr) -> addr.toEmailAddressWithDisplayNameOrFail(name)),
+        bracketedAddress.map(AddrSpecAlike::toEmailAddressOrFail),
         ADDR_SPEC_PARSER); // fall back when PARSER is combined with other parsers
   }
 
@@ -575,7 +576,7 @@ public final class EmailAddress {
   }
 
   private record AddrSpecAlike(String localPart, String domain) {
-    EmailAddress toEmailAddress() {
+    EmailAddress toEmailAddressOrFail() {
       try {
         return new EmailAddress(localPart, canonicalizeDomain(domain), Optional.empty());
       } catch (IllegalArgumentException e) {
@@ -583,7 +584,7 @@ public final class EmailAddress {
       }
     }
 
-    EmailAddress toEmailAddressWithDisplayName(String displayName) {
+    EmailAddress toEmailAddressWithDisplayNameOrFail(String displayName) {
       try {
         return new EmailAddress(localPart, canonicalizeDomain(domain), Optional.of(displayName));
       } catch (IllegalArgumentException e) {
