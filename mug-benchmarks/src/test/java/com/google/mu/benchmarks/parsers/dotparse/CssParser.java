@@ -62,17 +62,9 @@ public final class CssParser {
           .orElse("")
           .between(caseInsensitive("url("), one(')'))
           .map(Url::new);
-  
-  private static final Parser<?> POINT_DIGITS = sequence(one('.'), digits());
 
   private static final Parser<Num> NUM =
-      literally(sequence(
-          one("[+-]").optional(),
-          anyOf(sequence(digits(), POINT_DIGITS.optional()), POINT_DIGITS),
-          sequence(caseInsensitive("e"), one("[+-]").optional(), digits())
-              .optional()))
-      .source()
-      .map(s -> new Num(Double.parseDouble(s)));
+      scientificNotation().map(s -> new Num(Double.parseDouble(s)));
 
   private static final Parser<ComponentValue> NUMERIC_VALUE =
       anyOf(
@@ -144,6 +136,16 @@ public final class CssParser {
 
   public static Stylesheet parse(String input) {
     return PARSER.parseSkipping(IGNORED, input);
+  }
+
+  private static Parser<String> scientificNotation() {
+    Parser<?> pointDigits = sequence(one('.'), digits());
+    return literally(sequence(
+        one("[+-]").optional(),
+        anyOf(sequence(digits(), pointDigits.optional()), pointDigits),
+        sequence(caseInsensitive("e"), one("[+-]").optional(), digits())
+            .optional()))
+    .source();
   }
   
   private interface NumberSuffix {
