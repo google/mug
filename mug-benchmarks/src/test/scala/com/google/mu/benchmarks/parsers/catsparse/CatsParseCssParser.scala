@@ -42,13 +42,10 @@ object CatsParseCssParser {
   private val sign = P.charIn("+-").?
   private val exponent = (P.charIn("eE") ~ P.charIn("+-").? ~ Numbers.digits).void.backtrack
   private val dotDigits = P.char('.') ~ Numbers.digits
-  private val digitsDotDigits = Numbers.digits ~ P.char('.') ~ Numbers.digits
-
   private val numStr = (
     sign.with1 ~ (
-      digitsDotDigits.backtrack |
-      dotDigits.backtrack |
-      Numbers.digits
+      (Numbers.digits ~ dotDigits.?).void |
+      dotDigits.void
     ) ~ exponent.?
   ).string
 
@@ -83,16 +80,16 @@ object CatsParseCssParser {
 
     val simpleToken: P[ComponentValue] =
       atWord |
-      hash.backtrack |
+      hash |
       url.backtrack |
       numericValue.backtrack |
       stringLiteral |
       identOrFunction |
       delim
 
-    bracketsBlock.backtrack |
+    bracketsBlock |
     curlyBracketsBlock.backtrack |
-    squareBracketsBlock.backtrack |
+    squareBracketsBlock |
     simpleToken
   }
 
