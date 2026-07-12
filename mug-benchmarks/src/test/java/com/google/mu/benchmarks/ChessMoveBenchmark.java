@@ -40,9 +40,9 @@ import com.google.common.labs.parse.Parser;
  * <p>Results:
  *
  * <pre>
- * Benchmark                           Mode  Cnt     Score    Error  Units
- * ChessMoveParserBenchmark.dotParse  thrpt   10  1071.109 ± 10.138  ops/s
- * ChessMoveParserBenchmark.regex     thrpt   10  1129.392 ±  6.653  ops/s
+ * Benchmark                    Mode  Cnt     Score    Error  Units
+ * ChessMoveBenchmark.dotParse  thrpt    5  4814.507 ± 42.911  ops/s
+ * ChessMoveBenchmark.regex     thrpt    5  2884.064 ± 97.847  ops/s
  * </pre>
  */
 @Warmup(iterations = 5, time = 3, timeUnit = TimeUnit.SECONDS)

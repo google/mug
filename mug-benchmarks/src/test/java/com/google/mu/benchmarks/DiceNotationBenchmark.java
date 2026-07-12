@@ -37,9 +37,9 @@ import com.google.common.labs.parse.Parser;
  * <p>Results:
  *
  * <pre>
- * Benchmark                              Mode  Cnt    Score     Error  Units
- * DiceNotationParserBenchmark.dotParse  thrpt    5  771.455 ± 107.845  ops/s
- * DiceNotationParserBenchmark.regex     thrpt    5  322.524 ±  11.126  ops/s
+ * Benchmark                       Mode  Cnt     Score    Error  Units
+ * DiceNotationBenchmark.dotParse  thrpt    5  2330.622 ± 25.280  ops/s
+ * DiceNotationBenchmark.regex     thrpt    5   752.885 ± 69.233  ops/s
  * </pre>
  */
 @RunWith(JUnit4.class)
