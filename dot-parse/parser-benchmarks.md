@@ -121,12 +121,12 @@ Throughput was measured in **operations per millisecond** (higher is better), wi
 
 | Parser Engine | Throughput (ops/ms) | Relative Performance (vs. `fastparse`) | Notes / Optimizations |
 | :--- | :---: | :---: | :--- |
-| [**`dot-parse`**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/CssParser.java) | **0.343 ± 0.005** | **1.45x** 🚀 ☕ | Stateless, zero-allocation radix-tree scanning on hot paths. Parses 1193 rules. |
-| [**`fastparse`**](../mug-benchmarks/src/test/scala/com/google/mu/benchmarks/parsers/fastparse/FastparseCssParser.scala) | 0.236 ± 0.006 | 1.00x (Baseline) | Fast Scala macro-based PEG parser. Parses 1193 rules. |
-| [**`cats-parse`**](../mug-benchmarks/src/test/scala/com/google/mu/benchmarks/parsers/catsparse/CatsParseCssParser.scala) | 0.222 ± 0.003 | 0.94x | Optimized via left-factoring and eliminating redundant backtracks. Parses 1193 rules. |
-| [**`parboiled` (v1)**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/parboiled/ParboiledCssParser.java) | 0.110 ± 0.001 | 0.47x | Classic PEG combinators with ASM bytecode generation. Parses 1193 rules. |
-| [**`htmlUnit` (javacc)**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/javacc/HtmlUnitCssParser.java) | 0.024 ± 0.001 | 0.10x | Standard JavaCC-generated parser. Parses 1188 rules. |
-| [**`antlr4`**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/antlr4/Antlr4CssParser.java) | 0.007 ± 0.001 | 0.03x | Full grammar-v4 validating CSS3 parser. Parses 1188 rules. |
+| [**`dot-parse`**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/CssParser.java) | **0.343 ± 0.005** | **1.45x** 🚀 ☕ | Stateless, zero-allocation radix-tree scanning on hot paths. |
+| [**`fastparse`**](../mug-benchmarks/src/test/scala/com/google/mu/benchmarks/parsers/fastparse/FastparseCssParser.scala) | 0.236 ± 0.006 | 1.00x (Baseline) | Official fastparse benchmark implementation (Scala macro-based). |
+| [**`cats-parse`**](../mug-benchmarks/src/test/scala/com/google/mu/benchmarks/parsers/catsparse/CatsParseCssParser.scala) | 0.222 ± 0.003 | 0.94x | Optimized via left-factoring numeric/identifier choices. |
+| [**`parboiled` (v1)**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/parboiled/ParboiledCssParser.java) | 0.110 ± 0.001 | 0.47x | Classic PEG combinators with ASM bytecode generation. |
+| [**`htmlUnit` (javacc)**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/javacc/HtmlUnitCssParser.java) | 0.024 ± 0.001 | 0.10x | Official HtmlUnit CSS Parser implementation (JavaCC-generated). |
+| [**`antlr4`**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/antlr4/Antlr4CssParser.java) | 0.007 ± 0.001 | 0.03x | Official ANTLR grammars-v4 CSS3 parser grammar. |
 
 ### Rationale for ANTLR4 and JavaCC Poor Performance
 

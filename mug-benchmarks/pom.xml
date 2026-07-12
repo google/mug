@@ -455,6 +455,15 @@
                         <include>CssBenchmark*.class</include>
                       </includes>
                     </fileset>
+                    <fileset>
+                      <directory>${project.build.directory}/test-classes/com/google/mu/benchmarks</directory>
+                      <includes>
+                        <include>AbcNoteBenchmark*.class</include>
+                        <include>ChemicalNotationBenchmark*.class</include>
+                        <include>ChessMoveBenchmark*.class</include>
+                        <include>DiceNotationBenchmark*.class</include>
+                      </includes>
+                    </fileset>
                   </filesets>
                 </configuration>
               </execution>
