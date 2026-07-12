@@ -58,7 +58,6 @@ import com.google.mu.util.stream.BiStream;
 public class ParserTest {
   private static final CharacterSet DIGIT = charsIn("[0-9]");
 
-
   @Test
   public void first_atBeginning_followedBy() {
     assertThat(first("foo").followedBy(string("bar")).parse("foobar")).isEqualTo("foo");
@@ -2070,6 +2069,61 @@ public class ParserTest {
     Parser<?> parser = sequence(string("a"), string("b"), string("c"));
     assertThat(parser.source().parse("abc")).isEqualTo("abc");
     assertThat(parser.matches("abc")).isTrue();
+  }
+
+  @Test
+  public void sequence_optionalFirst_matches() {
+    Parser<?> parser = sequence(string("a").optional(), string("b"), string("c"));
+    assertThat(parser.source().parse("abc")).isEqualTo("abc");
+    assertThat(parser.matches("abc")).isTrue();
+  }
+
+  @Test
+  public void sequence_optionalFirst_doesNotMatch() {
+    Parser<?> parser = sequence(string("a").optional(), string("b"), string("c"));
+    assertThat(parser.source().parse("bc")).isEqualTo("bc");
+    assertThat(parser.matches("bc")).isTrue();
+  }
+
+  @Test
+  public void sequence_optionalFirst_ambiguous_firstMatches() {
+    Parser<?> parser = sequence(string("a").optional(), string("a"), string("b"));
+    assertThat(parser.source().parse("aab")).isEqualTo("aab");
+    assertThat(parser.matches("aab")).isTrue();
+  }
+
+  @Test
+  public void sequence_optionalFirst_ambiguous_firstBypassed() {
+    Parser<?> parser = sequence(string("a").optional(), string("a"), string("b"));
+    assertThat(parser.source().parse("ab")).isEqualTo("ab");
+    assertThat(parser.matches("ab")).isTrue();
+  }
+
+  @Test
+  public void sequence_optionalFirst_failsOnRemaining_whenFirstMatched() {
+    Parser<?> parser = sequence(string("a").optional(), string("b"), string("c"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abx"));
+    assertThat(parser.matches("abx")).isFalse();
+    assertThat(thrown).hasMessageThat().contains("1:3");
+    assertThat(thrown).hasMessageThat().contains("expecting <c>");
+  }
+
+  @Test
+  public void sequence_optionalFirst_failsOnRemaining_whenFirstNotMatched() {
+    Parser<?> parser = sequence(string("a").optional(), string("b"), string("c"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("bx"));
+    assertThat(parser.matches("bx")).isFalse();
+    assertThat(thrown).hasMessageThat().contains("1:2");
+    assertThat(thrown).hasMessageThat().contains("expecting <c>");
+  }
+
+  @Test
+  public void sequence_optionalFirst_failsAll_whenIncorrectFirstChar() {
+    Parser<?> parser = sequence(string("a").optional(), string("b"), string("c"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("xbc"));
+    assertThat(parser.matches("xbc")).isFalse();
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <a>");
   }
 
   @Test
@@ -8212,6 +8266,38 @@ public class ParserTest {
   }
 
   @Test
+  public void returnElision_sequenceWithOrEmptyFirst_firstMatched_elidesAll() {
+    List<String> joined1 = new ArrayList<>();
+    List<String> joined2 = new ArrayList<>();
+    List<String> joined3 = new ArrayList<>();
+    Parser<?> parser =
+        sequence(
+            string("a").atLeastOnce(collectingAndAdd(joining(), joined1)).optional(),
+            string("b").atLeastOnce(collectingAndAdd(joining(), joined2)),
+            string("c").atLeastOnce(collectingAndAdd(joining(), joined3)));
+    parser.parse("abc");
+    assertThat(joined1).isEmpty();
+    assertThat(joined2).isEmpty();
+    assertThat(joined3).isEmpty();
+  }
+
+  @Test
+  public void returnElision_sequenceWithOrEmptyFirst_firstNotMatched_elidesAll() {
+    List<String> joined1 = new ArrayList<>();
+    List<String> joined2 = new ArrayList<>();
+    List<String> joined3 = new ArrayList<>();
+    Parser<?> parser =
+        sequence(
+            string("a").atLeastOnce(collectingAndAdd(joining(), joined1)).optional(),
+            string("b").atLeastOnce(collectingAndAdd(joining(), joined2)),
+            string("c").atLeastOnce(collectingAndAdd(joining(), joined3)));
+    parser.parse("bc");
+    assertThat(joined1).isEmpty();
+    assertThat(joined2).isEmpty();
+    assertThat(joined3).isEmpty();
+  }
+
+  @Test
   public void returnElision_bmpCodeUnit_matches() {
     assertThat(bmpCodeUnit().parse("123F")).isEqualTo(0x123F);
     assertThat(bmpCodeUnit().matches("123F")).isTrue();
@@ -8865,5 +8951,16 @@ public class ParserTest {
     ParseException combinedThrown = assertThrows(ParseException.class, () -> combinedParser.parse("\n\n123X", 2));
     assertThat(combinedThrown).hasMessageThat().contains("right-hand parser IAE");
     assertThat(combinedThrown).hasMessageThat().contains("3:4");
+  }
+
+  @Test
+  public void fail_returnsErrorWithStackTraceAndSuppression() {
+    Error error = assertThrows(Error.class, () -> Parser.fail("test error"));
+    assertThat(error.getMessage()).isEqualTo("test error");
+    assertThat(error.getStackTrace()).isNotEmpty();
+
+    Throwable suppressed = new RuntimeException("suppressed");
+    error.addSuppressed(suppressed);
+    assertThat(error.getSuppressed()).asList().containsExactly(suppressed);
   }
 }

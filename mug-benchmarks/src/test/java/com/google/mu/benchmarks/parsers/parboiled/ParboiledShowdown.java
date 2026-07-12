@@ -15,46 +15,37 @@ import org.parboiled.support.ParsingResult;
 public final class ParboiledShowdown {
 
   public static class IpFixture {
-    private static final BasicParseRunner<Object> RUNNER = buildRunner();
-
-    private static BasicParseRunner<Object> buildRunner() {
-      ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
-      return new BasicParseRunner<>(parser.ipAddress());
-    }
-
     static {
       // Verify
-      ParsingResult<Object> res = RUNNER.run(BenchmarkInputs.IP);
+      ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
+      ParsingResult<Object> res = new BasicParseRunner<>(parser.ipAddress()).run(BenchmarkInputs.IP);
       assertThat(res.matched).isTrue();
       assertThat(res.resultValue).isEqualTo(BenchmarkInputs.IP);
     }
 
     public ParsingResult<Object> run() {
-      return RUNNER.run(BenchmarkInputs.IP);
+      ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
+      return new BasicParseRunner<>(parser.ipAddress()).run(BenchmarkInputs.IP);
     }
   }
 
   public static class StringFixture {
-    private static final BasicParseRunner<Object> RUNNER = buildRunner();
-
-    private static BasicParseRunner<Object> buildRunner() {
-      ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
-      return new BasicParseRunner<>(parser.Sequence(parser.quotedString(), parser.EOI));
-    }
-
     static {
       // Verify
-      ParsingResult<Object> res1 = RUNNER.run(BenchmarkInputs.STRING_SIMPLE);
+      ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
+      BasicParseRunner<Object> runner = new BasicParseRunner<>(parser.Sequence(parser.quotedString(), parser.EOI));
+      ParsingResult<Object> res1 = runner.run(BenchmarkInputs.STRING_SIMPLE);
       assertThat(res1.matched).isTrue();
       assertThat(res1.resultValue).isEqualTo("hello world!");
 
-      ParsingResult<Object> res2 = RUNNER.run(BenchmarkInputs.STRING_ESCAPED);
+      ParsingResult<Object> res2 = runner.run(BenchmarkInputs.STRING_ESCAPED);
       assertThat(res2.matched).isTrue();
       assertThat(res2.resultValue).isEqualTo("hello \"world\"!");
     }
 
     public ParsingResult<Object> run(String input) {
-      return RUNNER.run(input);
+      ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
+      return new BasicParseRunner<>(parser.Sequence(parser.quotedString(), parser.EOI)).run(input);
     }
   }
 
@@ -89,20 +80,18 @@ public final class ParboiledShowdown {
     }
 
     private static final KeywordsParser PARSER = Parboiled.createParser(KeywordsParser.class);
-    private static final BasicParseRunner<Object> RUNNER =
-        new BasicParseRunner<>(PARSER.keywords());
 
     static {
-      ParsingResult<Object> res = RUNNER.run(BenchmarkInputs.KEYWORDS_LIST_CS);
+      ParsingResult<Object> res = new BasicParseRunner<>(PARSER.keywords()).run(BenchmarkInputs.KEYWORDS_LIST_CS);
       assertThat(res.matched).isTrue();
       @SuppressWarnings("unchecked")
       List<Keyword> result = (List<Keyword>) res.resultValue;
       assertThat(result.size()).isEqualTo(500);
-      assertThat(RUNNER.run(BenchmarkInputs.KEYWORDS_LIST_INVALID).matched).isFalse();
+      assertThat(new BasicParseRunner<>(PARSER.keywords()).run(BenchmarkInputs.KEYWORDS_LIST_INVALID).matched).isFalse();
     }
 
     public ParsingResult<Object> run(String input) {
-      return RUNNER.run(input);
+      return new BasicParseRunner<>(PARSER.keywords()).run(input);
     }
   }
 
@@ -141,55 +130,42 @@ public final class ParboiledShowdown {
     }
 
     private static final IgnoreCaseParser PARSER = Parboiled.createParser(IgnoreCaseParser.class);
-    private static final BasicParseRunner<Object> RUNNER =
-        new BasicParseRunner<>(PARSER.keywords());
 
     static {
-      ParsingResult<Object> res = RUNNER.run(BenchmarkInputs.KEYWORDS_LIST_CI);
+      ParsingResult<Object> res = new BasicParseRunner<>(PARSER.keywords()).run(BenchmarkInputs.KEYWORDS_LIST_CI);
       assertThat(res.matched).isTrue();
       @SuppressWarnings("unchecked")
       List<Keyword> result = (List<Keyword>) res.resultValue;
       assertThat(result.size()).isEqualTo(500);
-      assertThat(RUNNER.run(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI).matched).isFalse();
+      assertThat(new BasicParseRunner<>(PARSER.keywords()).run(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI).matched).isFalse();
     }
 
     public ParsingResult<Object> run(String input) {
-      return RUNNER.run(input);
+      return new BasicParseRunner<>(PARSER.keywords()).run(input);
     }
   }
 
   public static class CalculatorFixture {
-    private static final BasicParseRunner<Object> RUNNER = buildRunner();
-
-    private static BasicParseRunner<Object> buildRunner() {
-      ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
-      return new BasicParseRunner<>(parser.calculator());
-    }
-
     static {
       // Verify
-      ParsingResult<Object> res = RUNNER.run(BenchmarkInputs.CALCULATOR);
+      ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
+      ParsingResult<Object> res = new BasicParseRunner<>(parser.calculator()).run(BenchmarkInputs.CALCULATOR);
       assertThat(res.matched).isTrue();
       assertThat(res.valueStack.isEmpty()).isFalse();
       assertThat((Integer) res.valueStack.peek()).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
     }
 
     public ParsingResult<Object> run() {
-      return RUNNER.run(BenchmarkInputs.CALCULATOR);
+      ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
+      return new BasicParseRunner<>(parser.calculator()).run(BenchmarkInputs.CALCULATOR);
     }
   }
 
   public static class NestedCommentFixture {
-    private static final BasicParseRunner<Object> RUNNER = buildRunner();
-
-    private static BasicParseRunner<Object> buildRunner() {
-      ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
-      return new BasicParseRunner<>(parser.nestedCommentRoot());
-    }
-
     static {
       // Verify
-      ParsingResult<Object> res = RUNNER.run(BenchmarkInputs.NESTED_COMMENT);
+      ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
+      ParsingResult<Object> res = new BasicParseRunner<>(parser.nestedCommentRoot()).run(BenchmarkInputs.NESTED_COMMENT);
       assertThat(res.matched).isTrue();
     }
 
@@ -198,31 +174,30 @@ public final class ParboiledShowdown {
     }
 
     public ParsingResult<Object> run(String input) {
-      return RUNNER.run(input);
+      ParboiledParser parser = Parboiled.createParser(ParboiledParser.class);
+      return new BasicParseRunner<>(parser.nestedCommentRoot()).run(input);
     }
   }
 
   public static class UsPhoneFixture {
     private static final ParboiledParser PARSER = Parboiled.createParser(ParboiledParser.class);
-    private static final BasicParseRunner<Object> RUNNER = new BasicParseRunner<>(PARSER.usPhone());
 
     static {
-      ParsingResult<Object> res = RUNNER.run(BenchmarkInputs.US_PHONE);
+      ParsingResult<Object> res = new BasicParseRunner<>(PARSER.usPhone()).run(BenchmarkInputs.US_PHONE);
       assertThat(res.matched).isTrue();
       assertThat(res.resultValue).isEqualTo(BenchmarkInputs.US_PHONE);
     }
 
     public ParsingResult<Object> run(String input) {
-      return RUNNER.run(input);
+      return new BasicParseRunner<>(PARSER.usPhone()).run(input);
     }
   }
 
   public static class UsPhoneListFixture {
     private static final ParboiledParser PARSER = Parboiled.createParser(ParboiledParser.class);
-    private static final BasicParseRunner<Object> RUNNER = new BasicParseRunner<>(PARSER.usPhoneList());
 
     static {
-      ParsingResult<Object> res = RUNNER.run(BenchmarkInputs.US_PHONE_LIST);
+      ParsingResult<Object> res = new BasicParseRunner<>(PARSER.usPhoneList()).run(BenchmarkInputs.US_PHONE_LIST);
       assertThat(res.matched).isTrue();
       @SuppressWarnings("unchecked")
       List<String> result = (List<String>) res.resultValue;
@@ -230,7 +205,7 @@ public final class ParboiledShowdown {
     }
 
     public ParsingResult<Object> run(String input) {
-      return RUNNER.run(input);
+      return new BasicParseRunner<>(PARSER.usPhoneList()).run(input);
     }
   }
 

@@ -236,13 +236,7 @@ public final class EmailAddress {
    * @since 10.4
    */
   public static final Parser<EmailAddress> ADDR_SPEC_PARSER =
-      ADDR_SPEC_ALIKE.map(addr -> {
-        try {
-          return addr.toEmailAddress();
-        } catch (IllegalArgumentException e) {
-          throw Parser.fail(e.getMessage());
-        }
-      });
+      ADDR_SPEC_ALIKE.map(AddrSpecAlike::toEmailAddressOrFail);
 
   /**
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
@@ -509,31 +503,15 @@ public final class EmailAddress {
             // optimization so that for the common case of user@company.com, we don't have to
             // backtrack to the sequence(displayName, bracketedAddress) rule.
             looksLikeAddrSpec, bracketedAddress.orElse(null),
-            (addrSpecOrDisplayName, bracketedOrNull) -> {
-              try {
-                return bracketedOrNull == null
-                    ? addrSpecOrDisplayName.toEmailAddress()
-                    : bracketedOrNull.toEmailAddressWithDisplayName(addrSpecOrDisplayName.toString());
-              } catch (IllegalArgumentException e) {
-                throw Parser.fail(e.getMessage());
-              }
-            }),
+            (addrSpecOrDisplayName, bracketedOrNull) ->
+                bracketedOrNull == null
+                    ? addrSpecOrDisplayName.toEmailAddressOrFail()
+                    : bracketedOrNull.toEmailAddressWithDisplayNameOrFail(
+                        addrSpecOrDisplayName.toString())),
         sequence(
             displayName, bracketedAddress,
-            (name, addr) -> {
-              try {
-                return addr.toEmailAddressWithDisplayName(name);
-              } catch (IllegalArgumentException e) {
-                throw Parser.fail(e.getMessage());
-              }
-            }),
-        bracketedAddress.map(addr -> {
-          try {
-            return addr.toEmailAddress();
-          } catch (IllegalArgumentException e) {
-            throw Parser.fail(e.getMessage());
-          }
-        }),
+            (name, addr) -> addr.toEmailAddressWithDisplayNameOrFail(name)),
+        bracketedAddress.map(AddrSpecAlike::toEmailAddressOrFail),
         ADDR_SPEC_PARSER); // fall back when PARSER is combined with other parsers
   }
 
@@ -598,12 +576,20 @@ public final class EmailAddress {
   }
 
   private record AddrSpecAlike(String localPart, String domain) {
-    EmailAddress toEmailAddress() {
-      return new EmailAddress(localPart, canonicalizeDomain(domain), Optional.empty());
+    EmailAddress toEmailAddressOrFail() {
+      try {
+        return new EmailAddress(localPart, canonicalizeDomain(domain), Optional.empty());
+      } catch (IllegalArgumentException e) {
+        throw Parser.fail(e.getMessage());
+      }
     }
 
-    EmailAddress toEmailAddressWithDisplayName(String displayName) {
-      return new EmailAddress(localPart, canonicalizeDomain(domain), Optional.of(displayName));
+    EmailAddress toEmailAddressWithDisplayNameOrFail(String displayName) {
+      try {
+        return new EmailAddress(localPart, canonicalizeDomain(domain), Optional.of(displayName));
+      } catch (IllegalArgumentException e) {
+        throw Parser.fail(e.getMessage());
+      }
     }
 
     @Override public String toString() {
