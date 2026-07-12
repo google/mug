@@ -89,7 +89,7 @@ public class ParboiledCssParser extends BaseParser<Object> {
         bracketsBlock(),
         squareBracketsBlock(),
         urlVal(),
-        functionBlock(),
+        identOrFunction(),
         simpleToken()
     );
   }
@@ -156,7 +156,7 @@ public class ParboiledCssParser extends BaseParser<Object> {
         curlyBracketsBlock(),
         squareBracketsBlock(),
         urlVal(),
-        functionBlock(),
+        identOrFunction(),
         simpleToken()
     );
   }
@@ -167,7 +167,6 @@ public class ParboiledCssParser extends BaseParser<Object> {
         hashVal(),
         numericValue(),
         stringVal(),
-        identComponent(),
         delim()
     );
   }
@@ -209,6 +208,25 @@ public class ParboiledCssParser extends BaseParser<Object> {
         Symbol("]"),
         push(new SquareBracketsBlock((List<ComponentValue>) pop()))
     );
+  }
+
+  public Rule identOrFunction() {
+    return Sequence(
+        identString(),
+        FirstOf(
+            Sequence(
+                Symbol("("),
+                push(new ArrayList<ComponentValue>()),
+                ZeroOrMore(
+                    componentValue(),
+                    addComponentValueToList()
+                ),
+                Symbol(")"),
+                push(createFunctionBlock())
+            ),
+            push(new Ident((String) pop()))
+        )
+      );
   }
 
   public Rule functionBlock() {

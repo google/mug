@@ -12,6 +12,7 @@ import com.google.mu.benchmarks.parsers.javacc.HtmlUnitCssParser;
 import com.google.mu.benchmarks.parsers.jparsec.JparsecCssParser;
 import com.google.mu.benchmarks.parsers.betterparse.BetterParseCssParser;
 import com.google.mu.benchmarks.parsers.parboiled.ParboiledCssParser;
+import com.google.mu.benchmarks.parsers.parboiled2.Parboiled2CssParser;
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -135,4 +136,13 @@ public class CssBenchmark {
   @Benchmark public void parboiled_parseMediaQuery(Blackhole bh) { bh.consume(ParboiledCssParser.parse(MEDIA_QUERY)); }
   @Benchmark public void parboiled_parseNestedMedia(Blackhole bh) { bh.consume(ParboiledCssParser.parse(NESTED_MEDIA)); }
   @Benchmark public void parboiled_parseBootstrap(Blackhole bh) { bh.consume(ParboiledCssParser.parse(BOOTSTRAP)); }
+
+  // =========================================================================
+  // 9. parboiled2 Benchmarks
+  // =========================================================================
+  @Benchmark public void parboiled2_parseSimple(Blackhole bh) { bh.consume(Parboiled2CssParser.parse(SIMPLE)); }
+  @Benchmark public void parboiled2_parseMultiple(Blackhole bh) { bh.consume(Parboiled2CssParser.parse(MULTIPLE)); }
+  @Benchmark public void parboiled2_parseMediaQuery(Blackhole bh) { bh.consume(Parboiled2CssParser.parse(MEDIA_QUERY)); }
+  @Benchmark public void parboiled2_parseNestedMedia(Blackhole bh) { bh.consume(Parboiled2CssParser.parse(NESTED_MEDIA)); }
+  @Benchmark public void parboiled2_parseBootstrap(Blackhole bh) { bh.consume(Parboiled2CssParser.parse(BOOTSTRAP)); }
 }
