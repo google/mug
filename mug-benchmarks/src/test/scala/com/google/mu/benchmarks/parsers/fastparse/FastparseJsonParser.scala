@@ -53,11 +53,7 @@ object FastparseJsonParser {
     CharsWhileIn(" \t\r\n", 0)
   }
 
-  val whitespaceWithComments: fastparse.Whitespace = { ctx =>
-    import fastparse.NoWhitespace._
-    implicit val c = ctx
-    P( (CharsWhileIn(" \t\r\n", 1) | ("//" ~ CharsWhile(c => c != '\n', 0) ~ "\n".?) | ("/*" ~ (!"*/" ~ AnyChar).rep ~ "*/")).rep )
-  }
+  val whitespaceWithComments: fastparse.Whitespace = fastparse.JavaWhitespace.whitespace
 
   // =========================================================================
   // 3. Parametric JSON Grammar Class (reusable for both skippers)
@@ -76,7 +72,7 @@ object FastparseJsonParser {
     def jsonString[_: P]: P[JsonString] = P( NoWsParser.stringLiteral ).map(new JsonString(_))
 
     def jsonValue[_: P]: P[JsonValue] = P(
-      jsonNull | jsonBoolean | jsonNumber | jsonString | jsonArray | jsonObject
+      jsonString | jsonNumber | jsonObject | jsonArray | jsonBoolean | jsonNull
     )
 
     def jsonArray[_: P]: P[JsonArray] = P(

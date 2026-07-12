@@ -211,6 +211,12 @@
           <scope>test</scope>
         </dependency>
         <dependency>
+          <groupId>org.htmlunit</groupId>
+          <artifactId>htmlunit-cssparser</artifactId>
+          <version>5.2.0</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
           <groupId>org.parboiled</groupId>
           <artifactId>parboiled_2.13</artifactId>
           <version>2.5.0</version>
@@ -329,6 +335,63 @@
             </executions>
           </plugin>
           <plugin>
+            <groupId>com.google.code.maven-replacer-plugin</groupId>
+            <artifactId>replacer</artifactId>
+            <version>1.5.3</version>
+            <executions>
+              <execution>
+                <phase>process-test-sources</phase>
+                <goals>
+                  <goal>replace</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <basedir>${project.build.directory}/generated-test-sources/javacc/org/htmlunit/cssparser/parser/javacc</basedir>
+              <includes>
+                <include>CharStream.java</include>
+              </includes>
+              <replacements>
+                <replacement>
+                  <token>char BeginToken\(\) throws java.io.IOException;</token>
+                  <value><![CDATA[
+  default char BeginToken() throws java.io.IOException {
+    return beginToken();
+  }
+  char beginToken() throws java.io.IOException;
+                  ]]></value>
+                </replacement>
+                <replacement>
+                  <token>String GetImage\(\);</token>
+                  <value><![CDATA[
+  default String GetImage() {
+    return getImage();
+  }
+  String getImage();
+                  ]]></value>
+                </replacement>
+                <replacement>
+                  <token>char\[\] GetSuffix\(int len\);</token>
+                  <value><![CDATA[
+  default char[] GetSuffix(int len) {
+    return getSuffix(len);
+  }
+  char[] getSuffix(int len);
+                  ]]></value>
+                </replacement>
+                <replacement>
+                  <token>void Done\(\);</token>
+                  <value><![CDATA[
+  default void Done() {
+    done();
+  }
+  void done();
+                  ]]></value>
+                </replacement>
+              </replacements>
+            </configuration>
+          </plugin>
+          <plugin>
             <groupId>net.alchim31.maven</groupId>
             <artifactId>scala-maven-plugin</artifactId>
             <version>4.8.1</version>
@@ -389,6 +452,7 @@
                       <directory>${project.build.directory}/test-classes/com/google/mu/benchmarks/parsers</directory>
                       <includes>
                         <include>ParserShowdownBenchmark*.class</include>
+                        <include>CssBenchmark*.class</include>
                       </includes>
                     </fileset>
                   </filesets>

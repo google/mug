@@ -772,6 +772,30 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return first.ignoreReturn().followedByInOrder(more);
   }
 
+  /**
+   * Sequentially matches the {@code first} optional parser, followed by {@code second}, then
+   * followed by {@code more} (always-consuming {@link Parser}'s or optional {@link
+   * Parser.OrEmpty}'s), disregarding the return values, suitable when you only care about matching
+   * but not extracting data.
+   *
+   * <p>For instance,
+   *
+   * <pre>{@code sequence(string("-").optional(), digits())}</pre>
+   *
+   * <p>If you need to ensure no skipping between the constituent sub-parsers even when {@link
+   * #parseSkipping parseSkipping()} or {@link #skipping skipping()} is used, wrap the returned
+   * sequence with {@link #literally literally()}.
+   *
+   * <p>The returned parser's match spans all of the constituent parsers. To access the matched
+   * source, use {@link #source}.
+   *
+   * @since 10.7
+   */
+  public static Parser<?> sequence(Parser<?>.OrEmpty first, Parser<?> second, Production<?>... more) {
+    Parser<?> tail = sequence(second, more);
+    return anyOf(sequence(first.notEmpty(), tail), tail);
+  }
+
   /** Matches if any of the given {@code parsers} match. */
   @SafeVarargs public static <T> Parser<T> anyOf(Parser<? extends T>... parsers) {
     return stream(parsers).collect(or());

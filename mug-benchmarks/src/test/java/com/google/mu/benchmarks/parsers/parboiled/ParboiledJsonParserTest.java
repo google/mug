@@ -29,4 +29,12 @@ public class ParboiledJsonParserTest {
     JsonObject obj = (JsonObject) val;
     assertThat(obj.members().get("a")).isInstanceOf(JsonArray.class);
   }
+
+  @Test
+  public void testParseEscapedString() {
+    JsonValue val = ParboiledJsonParser.parse("{\"a\": \"hello \\\"world\\\"!\"}");
+    JsonObject obj = (JsonObject) val;
+    JsonString str = (JsonString) obj.members().get("a");
+    assertThat(str.value()).isEqualTo("hello \"world\"!");
+  }
 }

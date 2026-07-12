@@ -16,16 +16,9 @@ import java.util.Map;
 /** JSON and JSON-with-Comments parser implemented using Java Parboiled. */
 public class ParboiledJsonParser extends BaseParser<Object> {
 
-  private static final ParboiledJsonParser PARSER = Parboiled.createParser(ParboiledJsonParser.class);
-  
-  private static final BasicParseRunner<Object> STANDARD_RUNNER = 
-      new BasicParseRunner<>(PARSER.jsonRoot());
-      
-  private static final BasicParseRunner<Object> COMMENTS_RUNNER = 
-      new BasicParseRunner<>(PARSER.jsonRootWithComments());
-
   public static JsonValue parse(String input) {
-    ParsingResult<Object> result = STANDARD_RUNNER.run(input);
+    ParboiledJsonParser parser = Parboiled.createParser(ParboiledJsonParser.class);
+    ParsingResult<Object> result = new BasicParseRunner<>(parser.jsonRoot()).run(input);
     if (!result.matched) {
       throw new RuntimeException("Parse failed");
     }
@@ -33,7 +26,8 @@ public class ParboiledJsonParser extends BaseParser<Object> {
   }
 
   public static JsonValue parseWithComments(String input) {
-    ParsingResult<Object> result = COMMENTS_RUNNER.run(input);
+    ParboiledJsonParser parser = Parboiled.createParser(ParboiledJsonParser.class);
+    ParsingResult<Object> result = new BasicParseRunner<>(parser.jsonRootWithComments()).run(input);
     if (!result.matched) {
       throw new RuntimeException("Parse failed");
     }
@@ -112,10 +106,12 @@ public class ParboiledJsonParser extends BaseParser<Object> {
 
   public Rule stringVal() {
     return Sequence(
-        '"',
-        ZeroOrMore(FirstOf(Sequence('\\', ANY), NoneOf("\"\\"))),
+        Sequence(
+            '"',
+            ZeroOrMore(FirstOf(Sequence('\\', ANY), NoneOf("\"\\"))),
+            '"'
+        ),
         push(new JsonString(unescape(match()))),
-        '"',
         whitespace()
     );
   }
@@ -223,10 +219,12 @@ public class ParboiledJsonParser extends BaseParser<Object> {
 
   public Rule stringValWithComments() {
     return Sequence(
-        '"',
-        ZeroOrMore(FirstOf(Sequence('\\', ANY), NoneOf("\"\\"))),
+        Sequence(
+            '"',
+            ZeroOrMore(FirstOf(Sequence('\\', ANY), NoneOf("\"\\"))),
+            '"'
+        ),
         push(new JsonString(unescape(match()))),
-        '"',
         whitespaceWithComments()
     );
   }
