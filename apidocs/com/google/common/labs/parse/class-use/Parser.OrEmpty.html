@@ -292,36 +292,45 @@ loadScripts(document, 'script');</script>
 <div class="col-last odd-row-color">
 <div class="block">Matches if <code>this</code> or <code>that</code> matches.</div>
 </div>
-<div class="col-first even-row-color"><code>static &lt;A,<wbr>B,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#sequence(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser.OrEmpty,java.util.function.BiFunction)" class="member-name-link">sequence</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;left,
+<div class="col-first even-row-color"><code>static <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;?&gt;</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#sequence(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production...)" class="member-name-link">sequence</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;first,
+ <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;second,
+ <a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;...&nbsp;more)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Sequentially matches the <code>first</code> optional parser, followed by <code>second</code>, then
+ followed by <code>more</code> (always-consuming <a href="../Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a>'s or optional <a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse"><code>Parser.OrEmpty</code></a>'s), disregarding the return values, suitable when you only care about matching
+ but not extracting data.</div>
+</div>
+<div class="col-first odd-row-color"><code>static &lt;A,<wbr>B,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#sequence(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser.OrEmpty,java.util.function.BiFunction)" class="member-name-link">sequence</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;left,
  <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;B&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;right,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super A, ? super B, ? extends R&gt;&nbsp;combiner)</code></div>
-<div class="col-last even-row-color">
+<div class="col-last odd-row-color">
 <div class="block">Sequentially matches <code>left</code> then <code>right</code>, with both allowed to be optional, and
  then combines the results using the <code>combiner</code> function.</div>
 </div>
-<div class="col-first odd-row-color"><code>static &lt;A,<wbr>B,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#sequence(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">sequence</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;left,
+<div class="col-first even-row-color"><code>static &lt;A,<wbr>B,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#sequence(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">sequence</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;left,
  <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;B&gt;&nbsp;right,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super A, ? super B, ? extends R&gt;&nbsp;combiner)</code></div>
-<div class="col-last odd-row-color">
+<div class="col-last even-row-color">
 <div class="block">Sequentially matches <code>left</code> (which is allowed to be optional), then <code>right</code>, and
  then combines the results using the <code>combiner</code> function.</div>
 </div>
-<div class="col-first even-row-color"><code>&lt;S&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">Parser.OrEmpty.</span><code><a href="../Parser.OrEmpty.html#then(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">then</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;suffix)</code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>&lt;S&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">Parser.OrEmpty.</span><code><a href="../Parser.OrEmpty.html#then(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">then</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;suffix)</code></div>
+<div class="col-last odd-row-color">
 <div class="block">After matching the current optional (or zero-or-more) parser, proceed to match <code>suffix</code>.</div>
 </div>
-<div class="col-first odd-row-color"><code>final &lt;R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#then(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">then</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;suffix)</code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code>final &lt;R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#then(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">then</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;suffix)</code></div>
+<div class="col-last even-row-color">
 <div class="block">If this parser matches, applies the given optional (or zero-or-more) parser on the remaining
  input.</div>
 </div>
-<div class="col-first even-row-color"><code>&lt;S&gt;&nbsp;<a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a><wbr>&lt;S&gt;</code></div>
-<div class="col-second even-row-color"><span class="type-name-label">Production.</span><code><a href="../Production.html#then(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">then</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;suffix)</code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>&lt;S&gt;&nbsp;<a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a><wbr>&lt;S&gt;</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">Production.</span><code><a href="../Production.html#then(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">then</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;suffix)</code></div>
+<div class="col-last odd-row-color">
 <div class="block">After matching the current production rule, proceed to match <code>suffix</code>.</div>
 </div>
 </div>

@@ -180,46 +180,55 @@ loadScripts(document, 'script');</script>
 <div class="block">String literal quoted by <code>before</code> and <code>after</code> with backslash escapes.</div>
 </div>
 <div class="col-first odd-row-color"><code>static <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;?&gt;</code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production...)" class="member-name-link">sequence</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;first,
+<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#sequence(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production...)" class="member-name-link">sequence</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;first,
+ <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;second,
  <a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;...&nbsp;more)</code></div>
 <div class="col-last odd-row-color">
+<div class="block">Sequentially matches the <code>first</code> optional parser, followed by <code>second</code>, then
+ followed by <code>more</code> (always-consuming <a href="../Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a>'s or optional <a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse"><code>Parser.OrEmpty</code></a>'s), disregarding the return values, suitable when you only care about matching
+ but not extracting data.</div>
+</div>
+<div class="col-first even-row-color"><code>static <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;?&gt;</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production...)" class="member-name-link">sequence</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;first,
+ <a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;...&nbsp;more)</code></div>
+<div class="col-last even-row-color">
 <div class="block">Sequentially matches <code>first</code> followed by <code>more</code> (always-consuming <a href="../Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a>'s
  or optional <a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse"><code>Parser.OrEmpty</code></a>'s), disregarding the return values, suitable when you only
  care about matching but not extracting data.</div>
 </div>
-<div class="col-first even-row-color"><code>static &lt;A,<wbr>B,<wbr>C,<wbr>D,<wbr>R&gt;<br><a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
-<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production,com.google.mu.function.Function4)" class="member-name-link">sequence</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;&nbsp;a,
+<div class="col-first odd-row-color"><code>static &lt;A,<wbr>B,<wbr>C,<wbr>D,<wbr>R&gt;<br><a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production,com.google.mu.function.Function4)" class="member-name-link">sequence</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;&nbsp;a,
  <a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;B&gt;&nbsp;b,
  <a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;C&gt;&nbsp;c,
  <a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;D&gt;&nbsp;d,
  <a href="../../../../mu/function/Function4.html" title="interface in com.google.mu.function">Function4</a>&lt;? super A, ? super B, ? super C, ? super D, ? extends R&gt;&nbsp;combiner)</code></div>
-<div class="col-last even-row-color">
+<div class="col-last odd-row-color">
 <div class="block">Sequentially matches <code>a</code>, <code>b</code>, <code>c</code> and <code>d</code>,
  and then combines the results using the <code>combiner</code> function.</div>
 </div>
-<div class="col-first odd-row-color"><code>static &lt;A,<wbr>B,<wbr>C,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production,com.google.mu.function.TriFunction)" class="member-name-link">sequence</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;&nbsp;a,
+<div class="col-first even-row-color"><code>static &lt;A,<wbr>B,<wbr>C,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production,com.google.mu.function.TriFunction)" class="member-name-link">sequence</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;&nbsp;a,
  <a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;B&gt;&nbsp;b,
  <a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;C&gt;&nbsp;c,
  <a href="../../../../mu/function/TriFunction.html" title="interface in com.google.mu.function">TriFunction</a>&lt;? super A, ? super B, ? super C, ? extends R&gt;&nbsp;combiner)</code></div>
-<div class="col-last odd-row-color">
+<div class="col-last even-row-color">
 <div class="block">Sequentially matches <code>a</code>, <code>b</code> and <code>c</code>, and then combines the results using the
  <code>combiner</code> function.</div>
 </div>
-<div class="col-first even-row-color"><code>static &lt;A,<wbr>B,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
-<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.util.function.BiFunction)" class="member-name-link">sequence</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;&nbsp;left,
+<div class="col-first odd-row-color"><code>static &lt;A,<wbr>B,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.util.function.BiFunction)" class="member-name-link">sequence</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;&nbsp;left,
  <a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;B&gt;&nbsp;right,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super A, ? super B, ? extends R&gt;&nbsp;combiner)</code></div>
-<div class="col-last even-row-color">
+<div class="col-last odd-row-color">
 <div class="block">Sequentially matches <code>left</code> then <code>right</code>, and then combines the results using the
  <code>combiner</code> function.</div>
 </div>
-<div class="col-first odd-row-color"><code>static &lt;A,<wbr>B,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#zeroOrMoreDelimited(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.lang.String,com.google.mu.util.stream.BiCollector)" class="member-name-link">zeroOrMoreDelimited</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;&nbsp;first,
+<div class="col-first even-row-color"><code>static &lt;A,<wbr>B,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#zeroOrMoreDelimited(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.lang.String,com.google.mu.util.stream.BiCollector)" class="member-name-link">zeroOrMoreDelimited</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;&nbsp;first,
  <a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;B&gt;&nbsp;second,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;delimiter,
  <a href="../../../../mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream">BiCollector</a>&lt;? super A, ? super B, R&gt;&nbsp;collector)</code></div>
-<div class="col-last odd-row-color">
+<div class="col-last even-row-color">
 <div class="block">Applies <code>first</code> and the optional <code>second</code> pattern in order, for zero or more
  times, collecting the results using the provided <a href="../../../../mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a>.</div>
 </div>
