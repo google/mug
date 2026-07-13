@@ -424,7 +424,7 @@ public final class MoreCollections {
     requireNonNull(predicate);
     int size = list.size();
     if (size == 0)  return list;
-    if (size <= 64) {
+    if (size <= 64 && list instanceof RandomAccess) {
       long mask = 0L;
       for (int i = 0; i < size; i++) {
         if (predicate.test(list.get(i))) {
