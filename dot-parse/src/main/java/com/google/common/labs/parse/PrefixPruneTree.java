@@ -15,6 +15,7 @@
  *****************************************************************************/
 package com.google.common.labs.parse;
 
+import static com.google.mu.collect.MoreCollections.filter;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.lang.Math.min;
 import static java.util.Comparator.comparingInt;
@@ -260,19 +261,7 @@ record PrefixPruneTree<V>(
       if (blocked.isEmpty() || ordered.isEmpty()) {
         return this;
       }
-      int blockedCount = 0;
-      for (Ordered<V> item : ordered) {
-        if (blocked.contains(item.value)) {
-          blockedCount++;
-        }
-      }
-      if (blockedCount == 0) {
-        return this;
-      }
-      if (blockedCount == ordered.size()) {
-        return none();
-      }
-      return new Survivors<>(ordered.stream().filter(v -> !blocked.contains(v.value)).toList());
+      return new Survivors<>(filter(ordered, v -> !blocked.contains(v.value)));
     }
 
     boolean isEmpty() {
