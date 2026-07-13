@@ -439,13 +439,9 @@ public final class MoreCollections {
           mask |= (1L << i);
         }
       }
-      if (mask == 0L) {
-        return emptyList();
-      }
+      if (mask == 0L) return emptyList();
       final int matchCount = Long.bitCount(mask);
-      if (matchCount == size) {
-        return list;
-      }
+      if (matchCount == size) return list;
       if (matchCount == 1) {
         return singletonList(list.get(Long.numberOfTrailingZeros(mask)));
       }
@@ -460,11 +456,12 @@ public final class MoreCollections {
       List<T> wrapped = (List<T>) asList(result);
       return unmodifiableList(wrapped);
     }
-    List<T> result = new ArrayList<>(size);
-    list.stream().filter(predicate).forEach(result::add);
+    List<T> buffer = new ArrayList<>(size);
+    list.stream().filter(predicate).forEach(buffer::add);
+    if (buffer.size() == size) return list;
     @SuppressWarnings("unchecked")
-    List<T> wrapped = (List<T>) asList(result.toArray());
-    return unmodifiableList(wrapped);
+    List<T> result = (List<T>) asList(buffer.toArray());
+    return unmodifiableList(result);
   }
 
   private MoreCollections() {}
