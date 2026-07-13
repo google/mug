@@ -36,7 +36,6 @@ import static com.google.mu.util.stream.MoreCollectors.partitioningBy;
 import static com.google.mu.util.stream.MoreCollectors.switching;
 import static com.google.mu.util.stream.MoreCollectors.toListAndThen;
 import static com.google.mu.util.stream.MoreCollectors.toMap;
-import static com.google.mu.util.stream.MoreCollectors.toIntersectionOf;
 import static java.util.Comparator.naturalOrder;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.summingInt;
@@ -45,15 +44,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -412,110 +406,5 @@ public class MoreCollectorsTest {
     ImmutableMap<Integer, String> dictionary() {
       return dictionary;
     }
-  }
-
-  @Test public void testToIntersectionOf_zeroInputThrows() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> Stream.<Set<Integer>>empty().collect(toIntersectionOf(MoreCollectorsTest::stringify)));
-  }
-
-  @Test public void testToIntersectionOf_oneSet() {
-    Set<Integer> set = Set.of(1, 2, 3);
-    Set<String> intersection = Stream.of(set).collect(toIntersectionOf(MoreCollectorsTest::stringify));
-    assertThat(intersection).containsExactly("1", "2", "3");
-  }
-
-  @Test public void testToIntersectionOf_twoSets() {
-    Set<Integer> s1 = Set.of(1, 2);
-    Set<Integer> s2 = Set.of(2, 3);
-    Set<String> intersection = Stream.of(s1, s2).collect(toIntersectionOf(MoreCollectorsTest::stringify));
-    assertThat(intersection).containsExactly("2");
-  }
-
-  @Test public void testToIntersectionOf_threeSets() {
-    Set<Integer> s1 = Set.of(1, 2);
-    Set<Integer> s2 = Set.of(2, 3);
-    Set<Integer> s3 = Set.of(2);
-    Set<String> intersection = Stream.of(s1, s2, s3).collect(toIntersectionOf(MoreCollectorsTest::stringify));
-    assertThat(intersection).containsExactly("2");
-  }
-
-  @Test public void testToIntersectionOf_disjointSets() {
-    Set<Integer> s1 = Set.of(1, 2);
-    Set<Integer> s2 = Set.of(3, 4);
-    Set<String> intersection = Stream.of(s1, s2).collect(toIntersectionOf(MoreCollectorsTest::stringify));
-    assertThat(intersection).isEmpty();
-  }
-
-  @Test public void testToIntersectionOf_firstEmptySet() {
-    Set<Integer> s1 = Set.of();
-    Set<Integer> s2 = Set.of(1, 2);
-    Set<String> intersection = Stream.of(s1, s2).collect(toIntersectionOf(MoreCollectorsTest::stringify));
-    assertThat(intersection).isEmpty();
-  }
-
-  @Test public void testToIntersectionOf_secondEmptySet() {
-    Set<Integer> s1 = Set.of(1, 2);
-    Set<Integer> s2 = Set.of();
-    Set<String> intersection = Stream.of(s1, s2).collect(toIntersectionOf(MoreCollectorsTest::stringify));
-    assertThat(intersection).isEmpty();
-  }
-
-  @Test public void testToIntersectionOf_overlappingSets() {
-    Set<Integer> s1 = Set.of(1, 2, 3);
-    Set<Integer> s2 = Set.of(2, 3, 4);
-    Set<String> intersection = Stream.of(s1, s2).collect(toIntersectionOf(MoreCollectorsTest::stringify));
-    assertThat(intersection).containsExactly("2", "3");
-  }
-
-  @Test public void testToIntersectionOf_fullyEqualSets() {
-    Set<Integer> s1 = Set.of(1, 2);
-    Set<Integer> s2 = Set.of(1, 2);
-    Set<String> intersection = Stream.of(s1, s2).collect(toIntersectionOf(MoreCollectorsTest::stringify));
-    assertThat(intersection).containsExactly("1", "2");
-  }
-
-  @Test public void testToIntersectionOf_maintainsEncounterOrder() {
-    Set<Integer> s1 = new LinkedHashSet<>(List.of(4, 3, 2, 1));
-    Set<Integer> s2 = new LinkedHashSet<>(List.of(2, 3));
-    Set<String> intersection = Stream.of(s1, s2).collect(toIntersectionOf(MoreCollectorsTest::stringify));
-    assertThat(intersection).containsExactly("3", "2").inOrder();
-  }
-
-  @Test public void testToIntersectionOf_parallelStream() {
-    Set<Integer> s1 = Set.of(1, 2, 3);
-    Set<Integer> s2 = Set.of(2, 3, 4);
-    Set<Integer> s3 = Set.of(3, 4, 5);
-    Set<String> intersection =
-        Stream.of(s1, s2, s3).parallel().collect(toIntersectionOf(MoreCollectorsTest::stringify));
-    assertThat(intersection).containsExactly("3");
-  }
-
-  @Test public void testToIntersectionOf_parallelStreamWithEmptySplit() {
-    Spliterator<Set<Integer>> spliterator = new Spliterators.AbstractSpliterator<Set<Integer>>(
-        1, Spliterator.SIZED | Spliterator.SUBSIZED) {
-      private boolean hasElements = true;
-      @Override public boolean tryAdvance(java.util.function.Consumer<? super Set<Integer>> action) {
-        if (hasElements) {
-          action.accept(Set.of(1, 2));
-          hasElements = false;
-          return true;
-        }
-        return false;
-      }
-      @Override public Spliterator<Set<Integer>> trySplit() {
-        return Spliterators.emptySpliterator();
-      }
-    };
-    Set<String> intersection = StreamSupport.stream(spliterator, true)
-        .collect(toIntersectionOf(MoreCollectorsTest::stringify));
-    assertThat(intersection).containsExactly("1", "2");
-  }
-
-  private static Set<String> stringify(Set<?> set) {
-    return set.stream()
-        .map(Object::toString)
-        .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 }
