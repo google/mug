@@ -253,14 +253,12 @@ record PrefixPruneTree<V>(
       if (this.isEmpty()) return new Survivors<>(that);
       return new Survivors<V>(
           Stream.concat(ordered.stream(), that.stream())
-          .sorted(comparingInt(Ordered::order))
-          .toList());
+              .sorted(comparingInt(Ordered::order))
+              .toList());
     }
 
     Survivors<V> excluding(Set<? super V> blocked) {
-      if (blocked.isEmpty() || ordered.isEmpty()) {
-        return this;
-      }
+      if (blocked.isEmpty() || ordered.isEmpty()) return this;
       return new Survivors<>(filter(ordered, v -> !blocked.contains(v.value)));
     }
 
