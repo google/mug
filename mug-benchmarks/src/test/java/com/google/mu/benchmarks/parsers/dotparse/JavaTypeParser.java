@@ -69,7 +69,7 @@ public final class JavaTypeParser {
 
   // Decimal & negative number parsing (no zero-width string("") calls)
   private static final Parser<?> INTEGER_PART =
-      anyOf(sequence(string("-"), digits()), digits());
+      sequence(string("-").optional(), digits());
 
   private static final Parser<Number> NUMBER_VAL =
       sequence(INTEGER_PART, sequence(string("."), digits()).orElse(null))

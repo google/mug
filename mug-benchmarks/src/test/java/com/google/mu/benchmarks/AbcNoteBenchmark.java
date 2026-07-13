@@ -36,9 +36,9 @@ import com.google.common.labs.parse.Parser;
  * <p>Results:
  *
  * <pre>
- * Benchmark                         Mode  Cnt       Score       Error  Units
- * AbcNoteParserBenchmark.dotParse  thrpt    5  237044.233 ±  5071.176  ops/s
- * AbcNoteParserBenchmark.regex     thrpt    5  238520.581 ± 12170.420  ops/s
+ * Benchmark                    Mode  Cnt        Score        Error  Units
+ * AbcNoteBenchmark.dotParse   thrpt    5   811983.581 ±  17304.504  ops/s
+ * AbcNoteBenchmark.regex      thrpt    5   567142.760 ±  15042.067  ops/s
  * </pre>
  */
 @RunWith(JUnit4.class)

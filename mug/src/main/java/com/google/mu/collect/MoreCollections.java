@@ -14,14 +14,20 @@
  *****************************************************************************/
 package com.google.mu.collect;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.RandomAccess;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 import com.google.mu.function.MapFrom3;
 import com.google.mu.function.MapFrom4;
@@ -360,6 +366,97 @@ public final class MoreCollections {
         found.map(
             it.next(), it.next(), it.next(), it.next(), it.next(), it.next(), it.next(),
             it.next()));
+  }
+
+  /**
+   * Returns a list containing the elements of the given list that match the given predicate.
+   *
+   * <p>This method optimizes for small lists: Java stream performs well for medium and large
+   * lists but for small lists (in reality, lists with {@code size() <= 64} happen pretty frequently),
+   * the streaming overhead often dominates the cost of {@code smallList.filter(...).toList()}. So
+   * if you have a small list to filter, consider using this method to significantly optimize for
+   * the common case.
+   *
+   * <ul>
+   *   <li>For empty lists (n = 0), returns the original list with zero allocation.
+   *   <li>For size {@code <= 64}, if all elements match, returns the original list directly (zero allocation).
+   *   <li>If only one element matches (or none match), returns a singleton list or empty list (extremely low allocation).
+   *   <li>If only some elements match, returns an unmodifiable list constructed without stream overhead.
+   * </ul>
+   *
+   * <p>Benchmark results (JVM: JDK 24.0.1, Throughput in ops/sec):
+   *
+   * <pre>{@code
+   *   Size | Match Rate | MoreCollections.filter | stream().toList() | Speedup
+   *   -----+------------+------------------------+-------------------+--------
+   *      0 |            |         1,806,612,304  |       59,190,909  |  30.5x
+   *      1 |       0%   |           566,995,008  |       54,823,907  |  10.3x
+   *      1 |     100%   |           495,301,391  |       39,685,261  |  12.5x
+   *      2 |       0%   |           505,644,734  |       53,630,247  |   9.4x
+   *      2 |      50%   |           283,244,290  |       39,977,345  |   7.1x
+   *      2 |     100%   |           442,565,514  |       39,739,454  |  11.1x
+   *      3 |       0%   |           387,272,751  |       51,906,625  |   7.5x
+   *      3 |      67%   |           109,216,394  |       39,212,813  |   2.8x
+   *      3 |     100%   |           360,620,020  |       38,529,116  |   9.4x
+   *      5 |      60%   |            90,403,444  |       37,834,798  |   2.4x
+   *      5 |     100%   |           302,455,379  |       35,991,628  |   8.4x
+   *     10 |      50%   |            67,698,128  |       32,944,167  |   2.1x
+   *     10 |     100%   |           214,023,158  |       31,440,482  |   6.8x
+   *     32 |      50%   |            24,473,961  |       20,212,588  |   1.2x
+   *     32 |     100%   |            95,754,817  |        7,102,417  |  13.5x
+   *     64 |      50%   |            10,408,078  |        5,498,968  |   1.9x
+   *     64 |     100%   |            53,600,935  |        3,990,547  |  13.4x
+   *   -----+------------+------------------------+-------------------+--------
+   *     70 |      50%   |             6,929,459  |        3,924,459  |  1.76x
+   *     70 |     100%   |             4,994,682  |        3,949,838  |  1.26x
+   *     80 |      50%   |             6,346,297  |        3,569,342  |  1.77x
+   *     80 |     100%   |             4,481,216  |        3,506,878  |  1.27x
+   *    100 |      50%   |             5,238,215  |        3,114,895  |  1.68x
+   *    100 |     100%   |             3,449,274  |        2,909,303  |  1.18x
+   * }</pre>
+   *
+   * <p><strong>Note:</strong> If the input {@code list} is mutated concurrently while being
+   * filtered, the behavior of this method is unspecified.
+   *
+   * @since 10.7
+   */
+  public static <T> List<T> filter(List<T> list, Predicate<? super T> predicate) {
+    requireNonNull(predicate);
+    int size = list.size();
+    if (size == 0)  return list;
+    if (size <= 64 && list instanceof RandomAccess) {
+      long mask = 0L;
+      for (int i = 0; i < size; i++) {
+        if (predicate.test(list.get(i))) {
+          mask |= (1L << i);
+        }
+      }
+      if (mask == 0L) {
+        return emptyList();
+      }
+      final int matchCount = Long.bitCount(mask);
+      if (matchCount == size) {
+        return list;
+      }
+      if (matchCount == 1) {
+        return singletonList(list.get(Long.numberOfTrailingZeros(mask)));
+      }
+      Object[] result = new Object[matchCount];
+      long m = mask;
+      for (int i = 0; i < matchCount; i++) {
+        int index = Long.numberOfTrailingZeros(m);
+        result[i] = list.get(index);
+        m &= ~(1L << index);
+      }
+      @SuppressWarnings("unchecked")
+      List<T> wrapped = (List<T>) asList(result);
+      return unmodifiableList(wrapped);
+    }
+    List<T> result = new ArrayList<>(size);
+    list.stream().filter(predicate).forEach(result::add);
+    @SuppressWarnings("unchecked")
+    List<T> wrapped = (List<T>) asList(result.toArray());
+    return unmodifiableList(wrapped);
   }
 
   private MoreCollections() {}

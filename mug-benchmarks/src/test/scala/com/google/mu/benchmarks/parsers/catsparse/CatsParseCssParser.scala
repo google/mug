@@ -42,22 +42,23 @@ object CatsParseCssParser {
   private val sign = P.charIn("+-").?
   private val exponent = (P.charIn("eE") ~ P.charIn("+-").? ~ Numbers.digits).void.backtrack
   private val dotDigits = P.char('.') ~ Numbers.digits
-  private val digitsDotDigits = Numbers.digits ~ P.char('.') ~ Numbers.digits
-
   private val numStr = (
     sign.with1 ~ (
-      digitsDotDigits.backtrack |
-      dotDigits.backtrack |
-      Numbers.digits
+      (Numbers.digits ~ dotDigits.?).void |
+      dotDigits.void
     ) ~ exponent.?
   ).string
 
   private val numberVal: P[Double] = token(numStr.map(_.toDouble))
 
-  private val percentage: P[Percentage] = (numberVal <* tokenChar('%')).map(new Percentage(_))
-  private val dimension: P[Dimension] = (numberVal ~ identifier).map { case (n, id) => new Dimension(n, id) }
-  private val number: P[Num] = numberVal.map(new Num(_))
-  private val numericValue: P[ComponentValue] = percentage.backtrack | dimension.backtrack | number
+  private val numericValue: P[ComponentValue] = (
+    numberVal ~ (tokenChar('%').as(true) | identifier.map(Some(_)).backtrack | P.pure(None))
+  ).map {
+    case (num, true) => new Percentage(num)
+    case (num, Some(unit: String)) => new Dimension(num, unit)
+    case (num, None) => new Num(num)
+    case _ => throw new IllegalStateException("unreachable")
+  }
 
   private val hash: P[HashWord] = (tokenChar('#') *> token(P.charIn("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_").rep.string)).map(new HashWord(_))
   private val atWord: P[AtWord] = (tokenChar('@') *> identifier).map(new AtWord(_))
@@ -70,26 +71,25 @@ object CatsParseCssParser {
 
     val squareBracketsBlock = (tokenChar('[') *> recurse.rep0 <* tokenChar(']')).map(list => new SquareBracketsBlock(list.asJava))
 
-    val functionBlock = (
-      identifier.filter(name => !name.equalsIgnoreCase("url"))
-        ~ (tokenChar('(') *> recurse.rep0 <* tokenChar(')'))
-    ).map { case (name, list) =>
-      new FunctionBlock(name, new BracketsBlock(list.asJava))
+    val identOrFunction = (
+      identifier ~ (tokenChar('(') *> recurse.rep0 <* tokenChar(')')).?
+    ).map {
+      case (name, None) => new Ident(name)
+      case (name, Some(args)) => new FunctionBlock(name, new BracketsBlock(args.asJava))
     }
 
     val simpleToken: P[ComponentValue] =
-      atWord.backtrack |
-      hash.backtrack |
+      atWord |
+      hash |
       url.backtrack |
       numericValue.backtrack |
-      stringLiteral.backtrack |
-      identifier.map(new Ident(_)).backtrack |
+      stringLiteral |
+      identOrFunction |
       delim
 
-    bracketsBlock.backtrack |
+    bracketsBlock |
     curlyBracketsBlock.backtrack |
-    squareBracketsBlock.backtrack |
-    functionBlock.backtrack |
+    squareBracketsBlock |
     simpleToken
   }
 

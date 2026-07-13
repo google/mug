@@ -27,6 +27,14 @@ import com.google.common.labs.parse.Parser;
 
 /**
  * Benchmark for Chemical Notation Parser.
+ *
+ * <p>Results:
+ *
+ * <pre>
+ * Benchmark                           Mode  Cnt        Score        Error  Units
+ * ChemicalNotationBenchmark.dotParse  thrpt    5  1559811.824 ±  54250.180  ops/s
+ * ChemicalNotationBenchmark.regex     thrpt    5  1293684.193 ±   5643.648  ops/s
+ * </pre>
  */
 @RunWith(JUnit4.class)
 @State(Scope.Thread)
