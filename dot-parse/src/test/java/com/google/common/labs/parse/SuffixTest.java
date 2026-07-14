@@ -8,18 +8,17 @@ import static com.google.common.labs.parse.Suffix.suffix;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import java.util.function.Function;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import com.google.common.labs.parse.Parser.ParseException;
+import com.google.common.testing.NullPointerTester;
 
 @RunWith(JUnit4.class)
 public class SuffixTest {
   @Test
-  public void sequence_withMandatorySuffix_success() {
+  public void sequence_withStringSuffix_success() {
     Parser<Integer> prefix = digits().map(Integer::parseInt);
     Parser<Integer> parser = sequence(
         prefix,
@@ -29,7 +28,7 @@ public class SuffixTest {
   }
 
   @Test
-  public void sequence_withMandatorySuffix_mismatchThrows() {
+  public void sequence_withStringSuffix_mismatchThrows() {
     Parser<Integer> prefix = digits().map(Integer::parseInt);
     Parser<Integer> parser = sequence(
         prefix,
@@ -41,7 +40,7 @@ public class SuffixTest {
   }
 
   @Test
-  public void sequence_withMandatoryParserSuffix_success() {
+  public void sequence_withSuffix_success() {
     Parser<Integer> prefix = digits().map(Integer::parseInt);
     Parser<Integer> exponent = string("^").then(digits().map(Integer::parseInt));
     Parser<Integer> parser = sequence(
@@ -52,7 +51,7 @@ public class SuffixTest {
   }
 
   @Test
-  public void sequence_withMandatoryParserSuffix_mismatchThrows() {
+  public void sequence_withSuffix_mismatchThrows() {
     Parser<Integer> prefix = digits().map(Integer::parseInt);
     Parser<Integer> exponent = string("^").then(digits().map(Integer::parseInt));
     Parser<Integer> parser = sequence(
@@ -62,27 +61,6 @@ public class SuffixTest {
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("2*3"));
     assertThat(thrown).hasMessageThat().contains("1:2");
     assertThat(thrown).hasMessageThat().contains("expecting <^>");
-  }
-
-  @Test
-  public void suffix_withStringAndMapper_nullSuffixThrows() {
-    assertThrows(NullPointerException.class, () -> suffix((String) null, i -> i));
-  }
-
-  @Test
-  public void suffix_withStringAndMapper_nullMapperThrows() {
-    assertThrows(NullPointerException.class, () -> suffix("--", (Function<Integer, Integer>) null));
-  }
-
-  @Test
-  public void suffix_withParserAndCombiner_nullParserThrows() {
-    assertThrows(NullPointerException.class, () -> suffix((Parser<Integer>) null, (i, e) -> i));
-  }
-
-  @Test
-  public void suffix_withParserAndCombiner_nullCombinerThrows() {
-    Parser<Integer> exponent = string("^").then(digits().map(Integer::parseInt));
-    assertThrows(NullPointerException.class, () -> suffix(exponent, null));
   }
 
   @Test
@@ -155,6 +133,13 @@ public class SuffixTest {
             .orElse(LiteralExpr::new),
         Suffix::apply);
     assertThat(parser.parse("10")).isEqualTo(new LiteralExpr(10));
+  }
+
+  @Test public void testNulls() {
+    new NullPointerTester()
+        .setDefault(String.class, ".")
+        .setDefault(Parser.class, string("foo"))
+        .testAllPublicStaticMethods(Suffix.class);
   }
 
   private interface Expr {}
