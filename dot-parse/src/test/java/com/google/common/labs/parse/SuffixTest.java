@@ -86,7 +86,7 @@ public class SuffixTest {
   }
 
   @Test
-  public void optionallyFollowedBy_firstExample_decrement() {
+  public void optionallyFollowedBy_twoSuffixes_firstSuffixMatches() {
     Parser<Integer> prefix = digits().map(Integer::parseInt);
     Parser<Integer> exponential = string("^").then(digits().map(Integer::parseInt));
     Parser<Integer> parser = prefix.optionallyFollowedBy(
@@ -98,7 +98,7 @@ public class SuffixTest {
   }
 
   @Test
-  public void optionallyFollowedBy_firstExample_exponential() {
+  public void optionallyFollowedBy_twoSuffixes_secondSuffixMatches() {
     Parser<Integer> prefix = digits().map(Integer::parseInt);
     Parser<Integer> exponential = string("^").then(digits().map(Integer::parseInt));
     Parser<Integer> parser = prefix.optionallyFollowedBy(
@@ -110,7 +110,7 @@ public class SuffixTest {
   }
 
   @Test
-  public void optionallyFollowedBy_firstExample_noSuffix() {
+  public void optionallyFollowedBy_twoSuffixes_noSuffixMatch() {
     Parser<Integer> prefix = digits().map(Integer::parseInt);
     Parser<Integer> exponential = string("^").then(digits().map(Integer::parseInt));
     Parser<Integer> parser = prefix.optionallyFollowedBy(
@@ -122,43 +122,37 @@ public class SuffixTest {
   }
 
   @Test
-  public void sequence_secondExample_optional() {
+  public void sequence_twoSuffixesWithDefault_firstSuffixMatches() {
     Parser<Integer> prefix = digits().map(Integer::parseInt);
     Parser<Integer> exponential = string("^").then(digits().map(Integer::parseInt));
     Parser<Expr> parser = sequence(
         prefix,
-        anyOf(
-            suffix("?", (Integer i) -> new OptionalExpr(i)),
-            suffix(exponential, (Integer i, Integer exp) -> new PowExpr(i, exp)))
+        anyOf(suffix("?", OptionalExpr::new), suffix(exponential, PowExpr::new))
             .orElse(LiteralExpr::new),
         Suffix::apply);
     assertThat(parser.parse("10?")).isEqualTo(new OptionalExpr(10));
   }
 
   @Test
-  public void sequence_secondExample_exponential() {
+  public void sequence_twoSuffixesWithDefault_secondSuffixMatches() {
     Parser<Integer> prefix = digits().map(Integer::parseInt);
     Parser<Integer> exponential = string("^").then(digits().map(Integer::parseInt));
     Parser<Expr> parser = sequence(
         prefix,
-        anyOf(
-            suffix("?", (Integer i) -> new OptionalExpr(i)),
-            suffix(exponential, (Integer i, Integer exp) -> new PowExpr(i, exp)))
+        anyOf(suffix("?", OptionalExpr::new), suffix(exponential, PowExpr::new))
             .orElse(LiteralExpr::new),
         Suffix::apply);
     assertThat(parser.parse("2^3")).isEqualTo(new PowExpr(2, 3));
   }
 
   @Test
-  public void sequence_secondExample_literal() {
+  public void sequence_twoSuffixesWithDefault_noSuffixMatch_defaultApplied() {
     Parser<Integer> prefix = digits().map(Integer::parseInt);
     Parser<Integer> exponential = string("^").then(digits().map(Integer::parseInt));
     Parser<Expr> parser = sequence(
         prefix,
-        anyOf(
-            suffix("?", (Integer i) -> new OptionalExpr(i)),
-            suffix(exponential, (Integer i, Integer exp) -> new PowExpr(i, exp)))
-          .orElse(LiteralExpr::new),
+        anyOf(suffix("?", OptionalExpr::new), suffix(exponential, PowExpr::new))
+            .orElse(LiteralExpr::new),
         Suffix::apply);
     assertThat(parser.parse("10")).isEqualTo(new LiteralExpr(10));
   }
