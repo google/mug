@@ -10,19 +10,25 @@ import java.util.function.UnaryOperator;
 /**
  * A convenience helper to manage multiple optional suffixes.
  *
- * <p>Usually when you have an optional suffix, you should use {@link Parser#optionallyFollowedBy}
- * directly. However when there are more than one optional suffixes to be applied after the same
- * parser, it becomes awkward to compose them in a readable way.
+ * <p>Usually when you have an optional suffix, you should use {@link Parser#optionallyFollowedBy(String, Function) optionallyFollowedBy()}
+ * directly, such as:
  *
- * <p>The following is an example using {@link Parser#anyOf(Parser...)} to compose the optional
- * suffix operators together before passing to {@link Parser#optionallyFollowedBy}:
+ * <pre>{@code
+ * expr.optionallyFollowedBy("!", (Integer n) -> factorial(n));
+ * }</pre>
+ *
+ * However when there are more than one optional suffixes to be applied after the same parser, it
+ * becomes awkward to compose them in a readable way.
+ *
+ * <p>The following is an example using the {@code Suffix} helper and {@link Parser#anyOf(Parser...)} to compose the optional
+ * suffix operators together before passing to {@code optionallyFollowedBy()}:
  *
  * <pre>{@code
  * import static com.google.common.labs.parse.Suffix.suffix;
  *
  * expr.optionallyFollowedBy(
  *     anyOf(
- *         suffix("--", (Integer i) -> i - 1),
+ *         suffix("!", (Integer n) -> factorial(n)),
  *         suffix(exponential, (Integer i, Double e) -> pow(i, e))),
  *     Suffix::apply);
  * }</pre>
@@ -38,7 +44,7 @@ import java.util.function.UnaryOperator;
  * Parser.sequence(
  *     expr,
  *     anyOf(
- *             suffix("?", OptionalExpr::new),
+ *             suffix("!", FactorialExpr::new),
  *             suffix(exponential, PowExpr::new))
  *         .orElse(LiteralExpr::new),
  *     Suffix::apply);
