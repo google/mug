@@ -16,6 +16,7 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.CharacterSet.charsIn;
+import static com.google.common.labs.parse.Suffix.postfix;
 import static com.google.common.labs.parse.Utils.caseInsensitivePrefixes;
 import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.common.labs.parse.Utils.checkPositionIndex;
@@ -1256,7 +1257,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final <S> Parser<T> withPostfixes(
       Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
-    return withPostfixes(asPostfixOperator(operator, postfixFunction));
+    return withPostfixes(postfix(operator, postfixFunction));
   }
 
   /**
@@ -1485,12 +1486,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   @Override public final <S> Parser<T> optionallyFollowedBy(
       Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> op) {
-    requireNonNull(op);
-    return withOptionalSuffix(suffix.map(s -> p -> op.apply(p, s)));
+    return withOptionalSuffix(postfix(suffix, op));
   }
 
   final Parser<T> withOptionalSuffix(Parser<UnaryOperator<T>> suffix) {
-    return and(suffix.new OrEmpty(() -> identity()), (a, op) -> op.apply(a));
+    return and(suffix.new OrEmpty(() -> identity()), Suffix::apply);
   }
 
   /** A form of negative lookahead such that the match is rejected if followed by {@code suffix}. */
@@ -2023,12 +2023,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      */
     @Override public final <S> OrEmpty optionallyFollowedBy(
         Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> op) {
-      requireNonNull(op);
-      return withOptionalSuffix(suffix.map(s -> p -> op.apply(p, s)));
+      return withOptionalSuffix(postfix(suffix, op));
     }
 
     private OrEmpty withOptionalSuffix(Parser<UnaryOperator<T>> suffix) {
-      return sequence(this, suffix.new OrEmpty(() -> identity()), (operand, op) -> op.apply(operand));
+      return sequence(this, suffix.new OrEmpty(() -> identity()), Suffix::apply);
     }
 
     /**
@@ -2619,12 +2618,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   @SuppressWarnings("unchecked") // Parser<T> is covariant
   static <T> Parser<T> covariant(Parser<? extends T> parser) {
     return (Parser<T>) parser;
-  }
-
-  static <S, T> Parser<UnaryOperator<T>> asPostfixOperator(
-      Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
-    requireNonNull(postfixFunction);
-    return operator.map(postfixValue -> operand -> postfixFunction.apply(operand, postfixValue));
   }
 
   private static <A, T> Supplier<T> emptyValueSupplier(Collector<?, A, ? extends T> collector) {
