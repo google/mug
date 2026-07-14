@@ -50,6 +50,17 @@ import java.util.function.UnaryOperator;
  *     Suffix::apply);
  * }</pre>
  *
+ * Or even a single optional suffix can benefit too:
+ *
+ * <pre>{@code
+ * import static com.google.common.labs.text.Suffix.suffix;
+ *
+ * Parser.sequence(
+ *     expr,
+ *     suffix(exponential, PowExpr::new).orElse(LiteralExpr::new),
+ *     Suffix::apply);
+ * }</pre>
+ *
  * @since 10.7
  */
 public final class Suffix {
