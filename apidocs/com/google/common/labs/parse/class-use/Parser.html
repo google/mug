@@ -555,6 +555,19 @@ loadScripts(document, 'script');</script>
 <div class="block">If this parser matches, applies the given <code>condition</code> and disqualifies the match if the
  condition is false.</div>
 </div>
+<div class="col-first even-row-color"><code>static &lt;T,<wbr>S,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;T,<wbr>R&gt;&gt;</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">Suffix.</span><code><a href="../Suffix.html#suffix(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">suffix</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super T, ? super S, ? extends R&gt;&nbsp;combiner)</code></div>
+<div class="col-last even-row-color">
+<div class="block">A suffix parser that combines together with its prefix parse's result using the <code>combine</code>
+ function.</div>
+</div>
+<div class="col-first odd-row-color"><code>static &lt;T,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;T,<wbr>R&gt;&gt;</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">Suffix.</span><code><a href="../Suffix.html#suffix(java.lang.String,java.util.function.Function)" class="member-name-link">suffix</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super T, ? extends R&gt;&nbsp;mapper)</code></div>
+<div class="col-last odd-row-color">
+<div class="block">A suffix parser that uses the <code>mapper</code> function to transform the prefix's result.</div>
+</div>
 <div class="col-first even-row-color"><code>&lt;S&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;S&gt;</code></div>
 <div class="col-second even-row-color"><span class="type-name-label">Parser.OrEmpty.</span><code><a href="../Parser.OrEmpty.html#then(com.google.common.labs.parse.Parser)" class="member-name-link">then</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix)</code></div>
 <div class="col-last even-row-color">&nbsp;</div>
@@ -870,50 +883,57 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color">
 <div class="block">Starts a fluent chain for parsing inputs while skipping patterns matched by <code>skip</code>.</div>
 </div>
-<div class="col-first odd-row-color"><code>&lt;S&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;S&gt;</code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">Parser.OrEmpty.</span><code><a href="../Parser.OrEmpty.html#then(com.google.common.labs.parse.Parser)" class="member-name-link">then</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix)</code></div>
-<div class="col-last odd-row-color">&nbsp;</div>
-<div class="col-first even-row-color"><code>final &lt;S&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;S&gt;</code></div>
-<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#then(com.google.common.labs.parse.Parser)" class="member-name-link">then</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix)</code></div>
-<div class="col-last even-row-color">&nbsp;</div>
-<div class="col-first odd-row-color"><code>&lt;S&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;S&gt;</code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">Production.</span><code><a href="../Production.html#then(com.google.common.labs.parse.Parser)" class="member-name-link">then</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix)</code></div>
+<div class="col-first odd-row-color"><code>static &lt;T,<wbr>S,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;T,<wbr>R&gt;&gt;</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">Suffix.</span><code><a href="../Suffix.html#suffix(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">suffix</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super T, ? super S, ? extends R&gt;&nbsp;combiner)</code></div>
 <div class="col-last odd-row-color">
+<div class="block">A suffix parser that combines together with its prefix parse's result using the <code>combine</code>
+ function.</div>
+</div>
+<div class="col-first even-row-color"><code>&lt;S&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;S&gt;</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">Parser.OrEmpty.</span><code><a href="../Parser.OrEmpty.html#then(com.google.common.labs.parse.Parser)" class="member-name-link">then</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix)</code></div>
+<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-first odd-row-color"><code>final &lt;S&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;S&gt;</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#then(com.google.common.labs.parse.Parser)" class="member-name-link">then</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix)</code></div>
+<div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-first even-row-color"><code>&lt;S&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;S&gt;</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">Production.</span><code><a href="../Production.html#then(com.google.common.labs.parse.Parser)" class="member-name-link">then</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix)</code></div>
+<div class="col-last even-row-color">
 <div class="block">After matching the current production, proceed to match <code>suffix</code>.</div>
 </div>
-<div class="col-first even-row-color"><code>final <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#withPostfixes(com.google.common.labs.parse.Parser)" class="member-name-link">withPostfixes</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;operator)</code></div>
-<div class="col-last even-row-color">
-<div class="block">Returns a parser that after this parser succeeds, applies the <code>operator</code> parser zero or
- more times and applies the result unary operator function iteratively.</div>
-</div>
-<div class="col-first odd-row-color"><code>final &lt;S&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#withPostfixes(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">withPostfixes</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;operator,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>, ? super S, ? extends <a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</code></div>
+<div class="col-first odd-row-color"><code>final <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#withPostfixes(com.google.common.labs.parse.Parser)" class="member-name-link">withPostfixes</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;operator)</code></div>
 <div class="col-last odd-row-color">
 <div class="block">Returns a parser that after this parser succeeds, applies the <code>operator</code> parser zero or
  more times and applies the result unary operator function iteratively.</div>
 </div>
-<div class="col-first even-row-color"><code>final <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#withPrefixes(com.google.common.labs.parse.Parser)" class="member-name-link">withPrefixes</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;operator)</code></div>
+<div class="col-first even-row-color"><code>final &lt;S&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#withPostfixes(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">withPostfixes</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;operator,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>, ? super S, ? extends <a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</code></div>
 <div class="col-last even-row-color">
+<div class="block">Returns a parser that after this parser succeeds, applies the <code>operator</code> parser zero or
+ more times and applies the result unary operator function iteratively.</div>
+</div>
+<div class="col-first odd-row-color"><code>final <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#withPrefixes(com.google.common.labs.parse.Parser)" class="member-name-link">withPrefixes</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;operator)</code></div>
+<div class="col-last odd-row-color">
 <div class="block"><span class="deprecated-label">Deprecated.</span>
 <div class="deprecation-comment">Use <a href="../OperatorTable.html" title="class in com.google.common.labs.parse"><code>OperatorTable</code></a> instead</div>
 </div>
 </div>
-<div class="col-first odd-row-color"><code>static &lt;A,<wbr>B,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#zeroOrMoreDelimited(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.lang.String,com.google.mu.util.stream.BiCollector)" class="member-name-link">zeroOrMoreDelimited</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;&nbsp;first,
+<div class="col-first even-row-color"><code>static &lt;A,<wbr>B,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#zeroOrMoreDelimited(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.lang.String,com.google.mu.util.stream.BiCollector)" class="member-name-link">zeroOrMoreDelimited</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;&nbsp;first,
  <a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;B&gt;&nbsp;second,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;delimiter,
  <a href="../../../../mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream">BiCollector</a>&lt;? super A, ? super B, R&gt;&nbsp;collector)</code></div>
-<div class="col-last odd-row-color">
+<div class="col-last even-row-color">
 <div class="block">Applies <code>first</code> and the optional <code>second</code> pattern in order, for zero or more
  times, collecting the results using the provided <a href="../../../../mu/util/stream/BiCollector.html" title="interface in com.google.mu.util.stream"><code>BiCollector</code></a>.</div>
 </div>
-<div class="col-first even-row-color"><code>final &lt;A,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#zeroOrMoreDelimitedBy(com.google.common.labs.parse.Parser,java.util.stream.Collector)" class="member-name-link">zeroOrMoreDelimitedBy</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;delimiter,
+<div class="col-first odd-row-color"><code>final &lt;A,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#zeroOrMoreDelimitedBy(com.google.common.labs.parse.Parser,java.util.stream.Collector)" class="member-name-link">zeroOrMoreDelimitedBy</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;delimiter,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a>&lt;? super <a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>, A, ? extends R&gt;&nbsp;collector)</code></div>
-<div class="col-last even-row-color">
+<div class="col-last odd-row-color">
 <div class="block">Starts a fluent chain for matching the current parser zero or more times, delimited by <code>
  delimiter</code>.</div>
 </div>
