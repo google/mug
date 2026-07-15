@@ -68,7 +68,6 @@ import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
-import com.google.mu.util.stream.Joiner;
 
 /**
  * A simple recursive descent parser combinator intended to parse simple grammars such as regex, csv
@@ -468,8 +467,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <pre>{@code
    * Parser<String> unicodeEscaped = string("u")
-   *     .then(bmpCodeUnit())
-   *     .map(Character::toString);
+   *     .then(hexDigits(4))
+   *     .map(digits -> Character.toString(Integer.parseInt(digits, 16)));
    * quotedByWithEscapes('"', '"', unicodeEscaped.or(chars(1))).parse("foo\\uD83D");
    * }</pre>
    *
@@ -616,29 +615,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         });
   }
 
-  /**
-   * Parses a 4-digit hex BMP code unit. The following example parses a surrogate pair of two UTF-16
-   * code units and will return the emoji {@code 😀}:
-   *
-   * <pre>{@code
-   * bmpCodeUnit()
-   *     .map(Character::toString)
-   *     .zeroOrMore(Collectors.joining())
-   *     .parse("D83DDE00");
-   * }</pre>
-   *
-   * <p>Note that starting from v9.6, it's recommended to use {@link Joiner} ({@code Joiner.on(delimiter)})
-   * in place of JDK {@code Collectors.joining(delimiter)} because {@code Joiner} optimizes for single-string
-   * input, which is a common case in the context of parsing.
-   *
-   * <p>You can also compose it with {@link #quotedByWithEscapes}:
-   *
-   * <pre>{@code
-   * quotedByWithEscapes('"', '"', string("u").then(bmpCodeUnit()).map(Character::toString));
-   * }</pre>
-   *
-   * @since 9.5
-   */
+  /** @deprecated use {@code hexDigits(4).map(d -> Integer.parseInt(d, 16))} directly */
+  @Deprecated
   public static Parser<Integer> bmpCodeUnit() {
     return hexDigits(4).elidableMap(digits -> Integer.parseInt(digits, 16));
   }
@@ -726,6 +704,21 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
+   * Sequentially matches {@code a}, {@code b} and {@code c}, and then combines the results using the
+   * {@code combiner} function.
+   *
+   * @since 10.7
+   */
+  public static <A, B, C, R> Parser<R> sequence(
+      Parser<A>.OrEmpty a, Parser<B> b, Production<C> c,
+      TriFunction<? super A, ? super B, ? super C, ? extends R> combiner) {
+    requireNonNull(combiner);
+    return sequence(
+        a, sequence(b, c, AbstractMap.SimpleImmutableEntry<B, C>::new),
+        (v1, bc) -> combiner.apply(v1, bc.getKey(), bc.getValue()));
+  }
+
+  /**
    * Sequentially matches {@code a}, {@code b}, {@code c} and {@code d},
    * and then combines the results using the {@code combiner} function.
    *
@@ -733,6 +726,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public static <A, B, C, D, R> Parser<R> sequence(
       Parser<A> a, Production<B> b, Production<C> c, Production<D> d,
+      Function4<? super A, ? super B, ? super C, ? super D, ? extends R> combiner) {
+    requireNonNull(combiner);
+    return sequence(
+        sequence(a, b, AbstractMap.SimpleImmutableEntry<A, B>::new),
+        sequence(allowZeroWidth(c), d, AbstractMap.SimpleImmutableEntry<C, D>::new),
+        (ab, cd) -> combiner.apply(ab.getKey(), ab.getValue(), cd.getKey(), cd.getValue()));
+  }
+
+  /**
+   * Sequentially matches {@code a}, {@code b}, {@code c} and {@code d},
+   * and then combines the results using the {@code combiner} function.
+   *
+   * @since 10.7
+   */
+  public static <A, B, C, D, R> Parser<R> sequence(
+      Parser<A>.OrEmpty a, Parser<B> b, Production<C> c, Production<D> d,
       Function4<? super A, ? super B, ? super C, ? super D, ? extends R> combiner) {
     requireNonNull(combiner);
     return sequence(
