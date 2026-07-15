@@ -736,7 +736,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       TriFunction<? super A, ? super B, ? super C, ? extends R> combiner) {
     requireNonNull(combiner);
     return sequence(
-        a, sequence(allowZeroWidth(b), c, AbstractMap.SimpleImmutableEntry<B, C>::new),
+        a, sequence(b, c, AbstractMap.SimpleImmutableEntry<B, C>::new),
         (v1, bc) -> combiner.apply(v1, bc.getKey(), bc.getValue()));
   }
 

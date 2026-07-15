@@ -123,7 +123,9 @@ public final class Csv {
 
   private final char delim;
   private final boolean allowsComments;
+  @SuppressWarnings("Immutable")
   private final CharPredicate regularChar;
+  @SuppressWarnings("Immutable")
   private final Parser<List<String>> line;
 
   private Csv(char delim, boolean allowsComments) {
