@@ -615,7 +615,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         });
   }
 
-  /** @deprecated use {@code hexDigits(4).map(digits-> Integer.parseInt(digits, 16))} directly */
+  /** @deprecated use {@code hexDigits(4).map(d -> Integer.parseInt(d, 16))} directly */
   @Deprecated
   public static Parser<Integer> bmpCodeUnit() {
     return hexDigits(4).elidableMap(digits -> Integer.parseInt(digits, 16));
