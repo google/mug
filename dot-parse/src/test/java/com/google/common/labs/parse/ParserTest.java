@@ -1948,6 +1948,90 @@ public class ParserTest {
   }
 
   @Test
+  public void sequence3_firstRuleOptional_optionalRuleMatches_parse() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test
+  public void sequence3_firstRuleOptional_optionalRuleMatches_matches() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.matches("abc")).isTrue();
+  }
+
+  @Test
+  public void sequence3_firstRuleOptional_optionalRuleMatches_parseToStream() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.parseToStream("abc")).containsExactly("abc");
+  }
+
+  @Test
+  public void sequence3_firstRuleOptional_optionalRuleMatches_probe() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.probe("abc")).containsExactly("abc");
+  }
+
+  @Test
+  public void sequence3_firstRuleOptional_optionalRuleDoesNotMatch_parse() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.parse("bc")).isEqualTo("Abc");
+  }
+
+  @Test
+  public void sequence3_firstRuleOptional_optionalRuleDoesNotMatch_matches() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.matches("bc")).isTrue();
+  }
+
+  @Test
+  public void sequence3_firstRuleOptional_optionalRuleDoesNotMatch_parseToStream() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.parseToStream("bc")).containsExactly("Abc");
+  }
+
+  @Test
+  public void sequence3_firstRuleOptional_optionalRuleDoesNotMatch_probe() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.probe("bc")).containsExactly("Abc");
+  }
+
+  @Test
+  public void sequence3_firstRuleOptional_matches_secondRuleFails() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThrows(ParseException.class, () -> seq.parse("axc"));
+  }
+
+  @Test
+  public void sequence3_firstRuleOptional_doesNotMatch_secondRuleFails() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThrows(ParseException.class, () -> seq.parse("xc"));
+  }
+
+  @Test
+  public void sequence3_firstRuleOptional_matches_thirdRuleFails() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThrows(ParseException.class, () -> seq.parse("abx"));
+  }
+
+  @Test
+  public void sequence3_firstRuleOptional_doesNotMatch_thirdRuleFails() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThrows(ParseException.class, () -> seq.parse("bx"));
+  }
+
+  @Test
   public void sequence4_secondRuleOptional_optionalRuleMatches() {
     Parser<String> seq =
         sequence(
@@ -2017,6 +2101,174 @@ public class ParserTest {
             string("d").orElse("D"),
             (a, b, c, d) -> a + b + c + d);
     assertThat(seq.parse("abc")).isEqualTo("abcD");
+  }
+
+  @Test
+  public void sequence4_firstRuleOptional_optionalRuleMatches_parse() {
+    Parser<String> seq =
+        sequence(
+            string("a").orElse("A"),
+            string("b"),
+            string("c"),
+            string("d"),
+            (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.parse("abcd")).isEqualTo("abcd");
+  }
+
+  @Test
+  public void sequence4_firstRuleOptional_optionalRuleMatches_matches() {
+    Parser<String> seq =
+        sequence(
+            string("a").orElse("A"),
+            string("b"),
+            string("c"),
+            string("d"),
+            (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.matches("abcd")).isTrue();
+  }
+
+  @Test
+  public void sequence4_firstRuleOptional_optionalRuleMatches_parseToStream() {
+    Parser<String> seq =
+        sequence(
+            string("a").orElse("A"),
+            string("b"),
+            string("c"),
+            string("d"),
+            (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.parseToStream("abcd")).containsExactly("abcd");
+  }
+
+  @Test
+  public void sequence4_firstRuleOptional_optionalRuleMatches_probe() {
+    Parser<String> seq =
+        sequence(
+            string("a").orElse("A"),
+            string("b"),
+            string("c"),
+            string("d"),
+            (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.probe("abcd")).containsExactly("abcd");
+  }
+
+  @Test
+  public void sequence4_firstRuleOptional_optionalRuleDoesNotMatch_parse() {
+    Parser<String> seq =
+        sequence(
+            string("a").orElse("A"),
+            string("b"),
+            string("c"),
+            string("d"),
+            (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.parse("bcd")).isEqualTo("Abcd");
+  }
+
+  @Test
+  public void sequence4_firstRuleOptional_optionalRuleDoesNotMatch_matches() {
+    Parser<String> seq =
+        sequence(
+            string("a").orElse("A"),
+            string("b"),
+            string("c"),
+            string("d"),
+            (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.matches("bcd")).isTrue();
+  }
+
+  @Test
+  public void sequence4_firstRuleOptional_optionalRuleDoesNotMatch_parseToStream() {
+    Parser<String> seq =
+        sequence(
+            string("a").orElse("A"),
+            string("b"),
+            string("c"),
+            string("d"),
+            (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.parseToStream("bcd")).containsExactly("Abcd");
+  }
+
+  @Test
+  public void sequence4_firstRuleOptional_optionalRuleDoesNotMatch_probe() {
+    Parser<String> seq =
+        sequence(
+            string("a").orElse("A"),
+            string("b"),
+            string("c"),
+            string("d"),
+            (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.probe("bcd")).containsExactly("Abcd");
+  }
+
+  @Test
+  public void sequence4_firstRuleOptional_matches_secondRuleFails() {
+    Parser<String> seq =
+        sequence(
+            string("a").orElse("A"),
+            string("b"),
+            string("c"),
+            string("d"),
+            (a, b, c, d) -> a + b + c + d);
+    assertThrows(ParseException.class, () -> seq.parse("axcd"));
+  }
+
+  @Test
+  public void sequence4_firstRuleOptional_doesNotMatch_secondRuleFails() {
+    Parser<String> seq =
+        sequence(
+            string("a").orElse("A"),
+            string("b"),
+            string("c"),
+            string("d"),
+            (a, b, c, d) -> a + b + c + d);
+    assertThrows(ParseException.class, () -> seq.parse("xcd"));
+  }
+
+  @Test
+  public void sequence4_firstRuleOptional_matches_thirdRuleFails() {
+    Parser<String> seq =
+        sequence(
+            string("a").orElse("A"),
+            string("b"),
+            string("c"),
+            string("d"),
+            (a, b, c, d) -> a + b + c + d);
+    assertThrows(ParseException.class, () -> seq.parse("abxd"));
+  }
+
+  @Test
+  public void sequence4_firstRuleOptional_doesNotMatch_thirdRuleFails() {
+    Parser<String> seq =
+        sequence(
+            string("a").orElse("A"),
+            string("b"),
+            string("c"),
+            string("d"),
+            (a, b, c, d) -> a + b + c + d);
+    assertThrows(ParseException.class, () -> seq.parse("bxd"));
+  }
+
+  @Test
+  public void sequence4_firstRuleOptional_matches_fourthRuleFails() {
+    Parser<String> seq =
+        sequence(
+            string("a").orElse("A"),
+            string("b"),
+            string("c"),
+            string("d"),
+            (a, b, c, d) -> a + b + c + d);
+    assertThrows(ParseException.class, () -> seq.parse("abcx"));
+  }
+
+  @Test
+  public void sequence4_firstRuleOptional_doesNotMatch_fourthRuleFails() {
+    Parser<String> seq =
+        sequence(
+            string("a").orElse("A"),
+            string("b"),
+            string("c"),
+            string("d"),
+            (a, b, c, d) -> a + b + c + d);
+    assertThrows(ParseException.class, () -> seq.parse("bcx"));
   }
 
   @Test

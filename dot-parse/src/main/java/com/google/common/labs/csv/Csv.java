@@ -17,10 +17,8 @@ package com.google.common.labs.csv;
 
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
-import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
-import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.CharPredicate.noneOf;
 import static com.google.mu.util.stream.BiCollectors.toMap;
@@ -43,7 +41,6 @@ import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
-import com.google.mu.util.stream.Joiner;
 import com.google.mu.util.stream.MoreStreams;
 
 /**
@@ -108,30 +105,39 @@ import com.google.mu.util.stream.MoreStreams;
 // CsvBenchmark.univocityFromString            avgt    5  1388068.463 ±  132654.257  ns/op
 @Immutable
 public final class Csv {
+  private static final CharPredicate UNRESERVED_CHAR = noneOf("\"\r\n");
+  private static final Parser<?>.OrEmpty IGNORED_WHITESPACES = zeroOrMore("[ \t]");
+  private static final Parser<?> NEW_LINE = anyOf("\n", "\r\n", "\r");
+  private static final Parser<?> COMMENT =
+      string("#")
+          .followedBy(zeroOrMore(isNot('\n'), "comment"))
+          .followedByOrEof(NEW_LINE);
+  private static final Parser<String> QUOTED =
+      anyOf(consecutive(isNot('"'), "quoted"), string("\"\"").thenReturn("\""))
+          .zeroOrMore(Collectors.joining())
+          .between("\"", "\"")
+          // RFC doesn't allow spaces around quotes, but no ambiguity, no harm, why not?
+          .between(IGNORED_WHITESPACES, IGNORED_WHITESPACES);
   /** Default CSV parser. Configurable using {@link #withComments} and {@link #withDelimiter}. */
   public static final Csv CSV = new Csv(',', /* allowsComments= */ false);
 
-  private static final CharPredicate UNRESERVED_CHAR = noneOf("\"\r\n");
-  private static final Parser<?>.OrEmpty IGNORED_WHITESPACES =
-      zeroOrMore(c -> c == ' ' || c == '\t', "ignored");
-  private static final Parser<?> NEW_LINE =
-      anyOf(one(is('\n'), "LF"), string("\r\n"), one(is('\r'), "CR"));
-  private static final Parser<?> COMMENT =
-      string("#")
-          .followedBy(consecutive(isNot('\n'), "comment").orElse(null))
-          .followedByOrEof(NEW_LINE);
-  private static final Parser<String> QUOTED =
-      zeroOrMore(isNot('"'), "quoted")
-          .delimitedBy("\"\"", Joiner.on("\""))
-          .immediatelyBetween("\"", "\"")
-          .between(IGNORED_WHITESPACES, IGNORED_WHITESPACES);
-
   private final char delim;
   private final boolean allowsComments;
+  private final CharPredicate regularChar;
+  private final Parser<List<String>> line;
 
   private Csv(char delim, boolean allowsComments) {
     this.delim = delim;
     this.allowsComments = allowsComments;
+    this.regularChar = UNRESERVED_CHAR.and(isNot(delim)).precomputeForAscii();
+    this.line = anyOf(
+        NEW_LINE.thenReturn(List.of()),  // empty line => [], not [""]
+        QUOTED
+            .or(consecutive(regularChar, "unquoted field"))
+            .orElse("")
+            .delimitedBy(String.valueOf(delim))
+            .notEmpty()
+            .followedByOrEof(NEW_LINE));
   }
 
   /** Returns an otherwise equivalent CSV parser but using {@code delimiter} instead of comma. */
@@ -160,8 +166,8 @@ public final class Csv {
    */
   public Stream<List<String>> parseToLists(String csv) {
     return allowsComments
-        ? line().skipping(COMMENT).parseToStream(csv).filter(row -> !row.isEmpty())
-        : line().parseToStream(csv).filter(row -> !row.isEmpty());
+        ? line.skipping(COMMENT).parseToStream(csv).filter(row -> !row.isEmpty())
+        : line.parseToStream(csv).filter(row -> !row.isEmpty());
   }
 
   /**
@@ -175,8 +181,8 @@ public final class Csv {
    */
   public Stream<List<String>> parseToLists(Reader csv) {
     return allowsComments
-        ? line().skipping(COMMENT).parseToStream(csv).filter(row -> !row.isEmpty())
-        : line().parseToStream(csv).filter(row -> !row.isEmpty());
+        ? line.skipping(COMMENT).parseToStream(csv).filter(row -> !row.isEmpty())
+        : line.parseToStream(csv).filter(row -> !row.isEmpty());
   }
 
   /**
@@ -312,25 +318,10 @@ public final class Csv {
       return "";
     }
     String str = field.toString();
-    if (regularChar().matchesAllOf(str)) {
+    if (regularChar.matchesAllOf(str)) {
       return str;
     }
     return '"' + Substring.all('"').replaceAllFrom(str, q -> "\"\"") + '"';
-  }
-
-  private Parser<List<String>> line() {
-    Parser<String> unquoted = consecutive(regularChar().precomputeForAscii(), "unquoted field");
-    return anyOf(
-        NEW_LINE.thenReturn(List.of()),  // empty line => [], not [""]
-        QUOTED.or(unquoted)
-            .orElse("")
-            .delimitedBy(String.valueOf(delim))
-            .notEmpty()
-            .followedByOrEof(NEW_LINE));
-  }
-
-  private CharPredicate regularChar() {
-    return UNRESERVED_CHAR.and(isNot(delim));
   }
 
   private static void checkArgument(boolean condition, String message, Object... args) {

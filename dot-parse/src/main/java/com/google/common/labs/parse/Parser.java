@@ -726,6 +726,21 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
+   * Sequentially matches {@code a}, {@code b} and {@code c}, and then combines the results using the
+   * {@code combiner} function.
+   *
+   * @since 10.7
+   */
+  public static <A, B, C, R> Parser<R> sequence(
+      Parser<A>.OrEmpty a, Parser<B> b, Production<C> c,
+      TriFunction<? super A, ? super B, ? super C, ? extends R> combiner) {
+    requireNonNull(combiner);
+    return sequence(
+        a, sequence(allowZeroWidth(b), c, AbstractMap.SimpleImmutableEntry<B, C>::new),
+        (v1, bc) -> combiner.apply(v1, bc.getKey(), bc.getValue()));
+  }
+
+  /**
    * Sequentially matches {@code a}, {@code b}, {@code c} and {@code d},
    * and then combines the results using the {@code combiner} function.
    *
@@ -733,6 +748,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public static <A, B, C, D, R> Parser<R> sequence(
       Parser<A> a, Production<B> b, Production<C> c, Production<D> d,
+      Function4<? super A, ? super B, ? super C, ? super D, ? extends R> combiner) {
+    requireNonNull(combiner);
+    return sequence(
+        sequence(a, b, AbstractMap.SimpleImmutableEntry<A, B>::new),
+        sequence(allowZeroWidth(c), d, AbstractMap.SimpleImmutableEntry<C, D>::new),
+        (ab, cd) -> combiner.apply(ab.getKey(), ab.getValue(), cd.getKey(), cd.getValue()));
+  }
+
+  /**
+   * Sequentially matches {@code a}, {@code b}, {@code c} and {@code d},
+   * and then combines the results using the {@code combiner} function.
+   *
+   * @since 10.7
+   */
+  public static <A, B, C, D, R> Parser<R> sequence(
+      Parser<A>.OrEmpty a, Parser<B> b, Production<C> c, Production<D> d,
       Function4<? super A, ? super B, ? super C, ? super D, ? extends R> combiner) {
     requireNonNull(combiner);
     return sequence(
