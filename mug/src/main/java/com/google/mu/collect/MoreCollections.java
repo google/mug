@@ -420,8 +420,11 @@ public final class MoreCollections {
    *    100 |     100%   |             3,449,274  |        2,909,303  |  1.18x
    * }</pre>
    *
-   * <p><strong>Note:</strong> If the input {@code list} is mutated concurrently while being
-   * filtered, the behavior of this method is unspecified.
+   * <p><strong>Note:</strong> You should almost always pass immutable {@code list} as the parameter
+   * because for max efficiency this method will attempt to return the {@code list} instance as is
+   * when all elements match the predicate, making it an <em>accidental</em> "view";
+   * but if you later change {@code list}'s content, it may break expectations from your code
+   * that all elements in the {@code filter()}'ed list shall match the {@code predicate}.
    *
    * @since 10.7
    */
@@ -436,13 +439,9 @@ public final class MoreCollections {
           mask |= (1L << i);
         }
       }
-      if (mask == 0L) {
-        return emptyList();
-      }
+      if (mask == 0L) return emptyList();
       final int matchCount = Long.bitCount(mask);
-      if (matchCount == size) {
-        return list;
-      }
+      if (matchCount == size) return list;
       if (matchCount == 1) {
         return singletonList(list.get(Long.numberOfTrailingZeros(mask)));
       }
@@ -457,11 +456,12 @@ public final class MoreCollections {
       List<T> wrapped = (List<T>) asList(result);
       return unmodifiableList(wrapped);
     }
-    List<T> result = new ArrayList<>(size);
-    list.stream().filter(predicate).forEach(result::add);
+    List<T> buffer = new ArrayList<>(size);
+    list.stream().filter(predicate).forEach(buffer::add);
+    if (buffer.size() == size) return list;
     @SuppressWarnings("unchecked")
-    List<T> wrapped = (List<T>) asList(result.toArray());
-    return unmodifiableList(wrapped);
+    List<T> result = (List<T>) asList(buffer.toArray());
+    return unmodifiableList(result);
   }
 
   private MoreCollections() {}
