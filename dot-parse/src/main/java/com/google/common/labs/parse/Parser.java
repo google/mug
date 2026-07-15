@@ -68,7 +68,6 @@ import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
-import com.google.mu.util.stream.Joiner;
 
 /**
  * A simple recursive descent parser combinator intended to parse simple grammars such as regex, csv
@@ -468,8 +467,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <pre>{@code
    * Parser<String> unicodeEscaped = string("u")
-   *     .then(bmpCodeUnit())
-   *     .map(Character::toString);
+   *     .then(hexDigits(4))
+   *     .map(digits -> Character.toString(Integer.parseInt(digits, 16)));
    * quotedByWithEscapes('"', '"', unicodeEscaped.or(chars(1))).parse("foo\\uD83D");
    * }</pre>
    *
@@ -616,29 +615,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         });
   }
 
-  /**
-   * Parses a 4-digit hex BMP code unit. The following example parses a surrogate pair of two UTF-16
-   * code units and will return the emoji {@code 😀}:
-   *
-   * <pre>{@code
-   * bmpCodeUnit()
-   *     .map(Character::toString)
-   *     .zeroOrMore(Collectors.joining())
-   *     .parse("D83DDE00");
-   * }</pre>
-   *
-   * <p>Note that starting from v9.6, it's recommended to use {@link Joiner} ({@code Joiner.on(delimiter)})
-   * in place of JDK {@code Collectors.joining(delimiter)} because {@code Joiner} optimizes for single-string
-   * input, which is a common case in the context of parsing.
-   *
-   * <p>You can also compose it with {@link #quotedByWithEscapes}:
-   *
-   * <pre>{@code
-   * quotedByWithEscapes('"', '"', string("u").then(bmpCodeUnit()).map(Character::toString));
-   * }</pre>
-   *
-   * @since 9.5
-   */
+  /** @deprecated use {@code hexDigits(4).map(digits-> Integer.parseInt(digits, 16))} directly */
+  @Deprecated
   public static Parser<Integer> bmpCodeUnit() {
     return hexDigits(4).elidableMap(digits -> Integer.parseInt(digits, 16));
   }
