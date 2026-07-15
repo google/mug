@@ -44,16 +44,16 @@ import java.util.function.UnaryOperator;
  * Parser.sequence(
  *     expr,
  *     anyOf(
- *             suffix("!", FactorialExpr::new),
- *             suffix(exponential, PowExpr::new))
- *         .orElse(LiteralExpr::new),
+ *         suffix("!", FactorialExpr::new),
+ *         suffix(exponential, PowExpr::new))
+ *       .orElse(LiteralExpr::new),
  *     Suffix::apply);
  * }</pre>
  *
  * Or even a single optional suffix can benefit too:
  *
  * <pre>{@code
- * import static com.google.common.labs.text.Suffix.suffix;
+ * import static com.google.common.labs.parse.Suffix.suffix;
  *
  * Parser.sequence(
  *     expr,
@@ -65,27 +65,18 @@ import java.util.function.UnaryOperator;
  */
 public final class Suffix {
   /**
-   * A convenience method to apply a suffix to a prefix. When passed to the {@link
-   * Parser#optionallyFollowedBy(Parser, BiFunction) optionallyFollowedBy()} as a method reference
-   * ({@code Suffix::apply}), it reads in the intuitive encounter order.
-   */
-  public static <P, R> R apply(P prefix, Function<? super P, ? extends R> suffix) {
-    return suffix.apply(prefix);
-  }
-
-  /**
    * A suffix parser that combines together with its prefix parse's result using the {@code combine}
    * function.
    */
-  public static <P, S, R> Parser<Function<P, R>> suffix(
-      Parser<S> suffix, BiFunction<? super P, ? super S, ? extends R> combiner) {
+  public static <T, S, R> Parser<Function<T, R>> suffix(
+      Parser<S> suffix, BiFunction<? super T, ? super S, ? extends R> combiner) {
     requireNonNull(combiner);
     return suffix.map(s -> p -> combiner.apply(p, s));
   }
 
   /** A suffix parser that uses the {@code mapper} function to transform the prefix's result. */
-  public static <P, R> Parser<Function<P, R>> suffix(
-      String suffix, Function<? super P, ? extends R> mapper) {
+  public static <T, R> Parser<Function<T, R>> suffix(
+      String suffix, Function<? super T, ? extends R> mapper) {
     return string(suffix).thenReturn(mapper::apply);
   }
 
@@ -97,6 +88,15 @@ public final class Suffix {
 
   static <T> Parser<UnaryOperator<T>> postfix(String postfix, Function<? super T, ? extends T> op) {
     return string(postfix).thenReturn(op::apply);
+  }
+
+  /**
+   * A convenience method to apply a suffix to a prefix. When passed to the {@link
+   * Parser#optionallyFollowedBy(Parser, BiFunction) optionallyFollowedBy()} as a method reference
+   * ({@code Suffix::apply}), it reads in the intuitive encounter order.
+   */
+  public static <T, R> R apply(T prefix, Function<? super T, ? extends R> suffix) {
+    return suffix.apply(prefix);
   }
 
   private Suffix() {}
