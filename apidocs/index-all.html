@@ -700,7 +700,9 @@ loadScripts(document, 'script');</script>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/common/labs/parse/Parser.html#bmpCodeUnit()" class="member-name-link">bmpCodeUnit()</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>
-<div class="block">Parses a 4-digit hex BMP code unit.</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">use <code>hexDigits(4).map(d -&gt; Integer.parseInt(d, 16))</code> directly</div>
+</div>
 </dd>
 <dt><a href="com/google/mu/util/Optionals.html#both(java.util.Optional,java.util.Optional)" class="member-name-link">both(Optional&lt;? extends A&gt;, Optional&lt;? extends B&gt;)</a> - Static method in class com.google.mu.util.<a href="com/google/mu/util/Optionals.html" title="class in com.google.mu.util">Optionals</a></dt>
 <dd>
@@ -4866,6 +4868,16 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Sequentially matches <code>left</code> then <code>right</code>, with both allowed to be optional, and
  then combines the results using the <code>combiner</code> function.</div>
+</dd>
+<dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production,com.google.mu.function.Function4)" class="member-name-link">sequence(Parser.OrEmpty, Parser&lt;B&gt;, Production&lt;C&gt;, Production&lt;D&gt;, Function4&lt;? super A, ? super B, ? super C, ? super D, ? extends R&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dd>
+<div class="block">Sequentially matches <code>a</code>, <code>b</code>, <code>c</code> and <code>d</code>,
+ and then combines the results using the <code>combiner</code> function.</div>
+</dd>
+<dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.mu.function.TriFunction)" class="member-name-link">sequence(Parser.OrEmpty, Parser&lt;B&gt;, Production&lt;C&gt;, TriFunction&lt;? super A, ? super B, ? super C, ? extends R&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
+<dd>
+<div class="block">Sequentially matches <code>a</code>, <code>b</code> and <code>c</code>, and then combines the results using the
+ <code>combiner</code> function.</div>
 </dd>
 <dt><a href="com/google/common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">sequence(Parser.OrEmpty, Parser&lt;B&gt;, BiFunction&lt;? super A, ? super B, ? extends R&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>

@@ -79,11 +79,20 @@ loadScripts(document, 'script');</script>
 <div class="table-header col-second">Method</div>
 <div class="table-header col-last">Description</div>
 <div class="col-first even-row-color"><code>static &lt;A,<wbr>B,<wbr>C,<wbr>R&gt;&nbsp;<a href="../../../common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
-<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../../../common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production,com.google.mu.function.TriFunction)" class="member-name-link">sequence</a><wbr>(<a href="../../../common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;&nbsp;a,
- <a href="../../../common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;B&gt;&nbsp;b,
+<div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../../../common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.mu.function.TriFunction)" class="member-name-link">sequence</a><wbr>(<a href="../../../common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;.<a href="../../../common/labs/parse/Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;a,
+ <a href="../../../common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;B&gt;&nbsp;b,
  <a href="../../../common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;C&gt;&nbsp;c,
  <a href="../TriFunction.html" title="interface in com.google.mu.function">TriFunction</a>&lt;? super A, ? super B, ? super C, ? extends R&gt;&nbsp;combiner)</code></div>
 <div class="col-last even-row-color">
+<div class="block">Sequentially matches <code>a</code>, <code>b</code> and <code>c</code>, and then combines the results using the
+ <code>combiner</code> function.</div>
+</div>
+<div class="col-first odd-row-color"><code>static &lt;A,<wbr>B,<wbr>C,<wbr>R&gt;&nbsp;<a href="../../../common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../../../common/labs/parse/Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production,com.google.mu.function.TriFunction)" class="member-name-link">sequence</a><wbr>(<a href="../../../common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;&nbsp;a,
+ <a href="../../../common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;B&gt;&nbsp;b,
+ <a href="../../../common/labs/parse/Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;C&gt;&nbsp;c,
+ <a href="../TriFunction.html" title="interface in com.google.mu.function">TriFunction</a>&lt;? super A, ? super B, ? super C, ? extends R&gt;&nbsp;combiner)</code></div>
+<div class="col-last odd-row-color">
 <div class="block">Sequentially matches <code>a</code>, <code>b</code> and <code>c</code>, and then combines the results using the
  <code>combiner</code> function.</div>
 </div>
