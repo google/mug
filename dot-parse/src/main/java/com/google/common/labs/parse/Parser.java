@@ -2519,7 +2519,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * Represents failure with an index in the source, and an error message
      * with predefined {name} and {snippet} template placeholders to be filled when throwing exception.
      */
-    record Failure<V>(int at, int frontier, String messageTemplate, String symbolName)
+    record Failure<V>(int at, long frontier, String messageTemplate, String symbolName)
         implements MatchResult<V> {
       Failure(int at, String messageTemplate, String symbolName) {
         this(at, at, messageTemplate, symbolName);
@@ -2563,7 +2563,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return expecting(symbolName, at, at);
     }
 
-    <V> MatchResult.Failure<V> expecting(String symbolName, int at, int frontier) {
+    <V> MatchResult.Failure<V> expecting(String symbolName, int at, long frontier) {
       return failAt(at, frontier, "expecting <{name}>.", symbolName);
     }
 
@@ -2571,12 +2571,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return failAt(at, at, messageTemplate, symbolName);
     }
 
-    <V> MatchResult.Failure<V> failAt(int at, int frontier, String messageTemplate, String symbolName) {
+    <V> MatchResult.Failure<V> failAt(int at, long frontier, String messageTemplate, String symbolName) {
       return new MatchResult.Failure<V>(at, frontier, messageTemplate, symbolName);
     }
 
-    final <V> MatchResult.Failure<V> errorAt(int at, int frontier, ParseError error) {
-      return failAt(at, frontier, "{name}", error.getMessage());
+    final <V> MatchResult.Failure<V> errorAt(int at, long frontier, ParseError error) {
+      return failAt(at, frontier | (1L << 32), "{name}", error.getMessage());
     }
 
     final <V, T> MatchResult<T> map(MatchResult.Success<V> success, Function<? super V, ? extends T> function) {
@@ -2621,12 +2621,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     private MatchResult.Failure<?> farthestFailure = null;
 
     @Override <V> MatchResult.Failure<V> expecting(
-        String symbolName, int at, int frontier) {
+        String symbolName, int at, long frontier) {
       return failAt(at, frontier, "expecting <{name}>, encountered: {snippet}", symbolName);
     }
 
     @Override <V> MatchResult.Failure<V> failAt(
-        int at, int frontier, String messageTemplate, String symbolName) {
+        int at, long frontier, String messageTemplate, String symbolName) {
       MatchResult.Failure<V> failure = super.failAt(at, frontier, messageTemplate, symbolName);
       // prefer the farthest then the most recent failure
       if (farthestFailure == null || failure.frontier >= farthestFailure.frontier) {

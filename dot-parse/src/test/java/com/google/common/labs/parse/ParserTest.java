@@ -8937,7 +8937,7 @@ public class ParserTest {
   }
 
   @Test
-  public void fail_recoveredFailure_notReportedOnSubsequentFailure() {
+  public void fail_recoveredFailure_reportedOnSubsequentFailure() {
     Parser<List<String>> parser =
         anyOf(
             word().map(d -> {
@@ -8953,8 +8953,8 @@ public class ParserTest {
     ParseException thrown = assertThrows(
         ParseException.class, () -> parser.parse("12345678901234567890;,,;"));
 
-    assertThat(thrown).hasMessageThat().contains("expecting <word>");
-    assertThat(thrown).hasMessageThat().contains("1:23");
+    assertThat(thrown).hasMessageThat().contains("For input string: \"12345678901234567890\"");
+    assertThat(thrown).hasMessageThat().contains("1:1");
   }
 
   @Test
@@ -8978,7 +8978,7 @@ public class ParserTest {
   }
 
   @Test
-  public void fail_frontierIsTailOfMatch_overruledByFurtherFailure() {
+  public void fail_frontierIsTailOfMatch_notOverruledByFurtherFailure() {
     Parser<?> parser = anyOf(
         word().map(d -> {
           try {
@@ -8991,10 +8991,10 @@ public class ParserTest {
 
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abcd "));
 
-    // We expect the failure from Branch 2 (expecting "Y" at index 4) to be reported
-    // because its frontier (4) is further than the exception failure's frontier (3).
-    assertThat(thrown).hasMessageThat().contains("expecting <Y>");
-    assertThat(thrown).hasMessageThat().contains("1:6");
+    // We expect the semantic failure from Branch 1 to be reported
+    // because it unconditionally overshadows Branch 2's syntactic failure.
+    assertThat(thrown).hasMessageThat().contains("For input string: \"abcd\"");
+    assertThat(thrown).hasMessageThat().contains("1:1");
   }
 
   @Test
@@ -9011,13 +9011,11 @@ public class ParserTest {
 
     // Branch 1: matches "ab123" but fails expecting "X" at index 5.
     // Branch 2: matches "ab", then string("1").map throws ParseError at index 3.
-    //   If Branch 1's success (2, 5) leaks, Branch 2's failure will report frontier = 5.
-    //   If it doesn't leak, Branch 2's failure will report frontier = 3.
-    // Branch 3: matches "ab" (2 chars), fails expecting "c" at index 2. Frontier = 2.
-    // Since Branch 1 failed at index 5, the overall parse failure should report Branch 1's failure
-    // at index 5 (expecting "X"), NOT the IAE at index 3 with leaked frontier = 5!
-    assertThat(thrown).hasMessageThat().contains("expecting <X>");
-    assertThat(thrown).hasMessageThat().contains("1:6");
+    // Branch 3: matches "ab" (2 chars), fails expecting "c" at index 2.
+    // The semantic error ("custom IAE") from Branch 2 is reported because it
+    // unconditionally overshadows syntactic mismatches.
+    assertThat(thrown).hasMessageThat().contains("custom IAE");
+    assertThat(thrown).hasMessageThat().contains("1:3");
   }
 
   @Test

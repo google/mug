@@ -87,16 +87,16 @@ public final class CelParser {
       sequence(
           string("-").orElse(""),
           literally(caseInsensitive("0x").then(HEX_DIGITS)),
-          (sign, d) -> Long.parseLong(sign + d, 16));
+          (sign, d) -> parseLong(sign + d, 16));
 
   private static final Parser<Long> DEC_INT =
-      sequence(string("-").orElse(""), digits(), (sign, d) -> Long.parseLong(sign + d));
+      sequence(string("-").orElse(""), digits(), (sign, d) -> parseLong(sign + d));
 
   private static final Parser<Long> NUM_UINT =
       literally(
           anyOf(
-                  string("0x").then(HEX_DIGITS).map(s -> Long.parseUnsignedLong(s, 16)),
-                  digits().map(Long::parseUnsignedLong))
+                  string("0x").then(HEX_DIGITS).map(s -> parseUnsignedLong(s, 16)),
+                  digits().map(CelParser::parseUnsignedLong))
               .followedBy(caseInsensitive("u")));
 
   private static final Parser<String> EXPONENT =
@@ -109,7 +109,7 @@ public final class CelParser {
                   sequence(digits(), EXPONENT),
                   sequence(one('.'), digits(), EXPONENT.optional()))
               .source()
-              .map(Double::parseDouble),
+              .map(CelParser::parseDouble),
           d -> -d);
 
   private static final Parser<CelExpr> CONSTANT_LITERAL =
@@ -434,6 +434,46 @@ public final class CelParser {
 
     @Override public CelExpr apply(CelExpr receiver) {
       return new CelExpr.Call(Optional.of(receiver), method, args);
+    }
+  }
+
+  private static long parseLong(String s, int radix) {
+    try {
+      return Long.parseLong(s, radix);
+    } catch (NumberFormatException e) {
+      throw Parser.fail("integer overflow: " + s);
+    }
+  }
+
+  private static long parseLong(String s) {
+    try {
+      return Long.parseLong(s);
+    } catch (NumberFormatException e) {
+      throw Parser.fail("integer overflow: " + s);
+    }
+  }
+
+  private static long parseUnsignedLong(String s, int radix) {
+    try {
+      return Long.parseUnsignedLong(s, radix);
+    } catch (NumberFormatException e) {
+      throw Parser.fail("integer overflow: " + s);
+    }
+  }
+
+  private static long parseUnsignedLong(String s) {
+    try {
+      return Long.parseUnsignedLong(s);
+    } catch (NumberFormatException e) {
+      throw Parser.fail("integer overflow: " + s);
+    }
+  }
+
+  private static double parseDouble(String s) {
+    try {
+      return Double.parseDouble(s);
+    } catch (NumberFormatException e) {
+      throw Parser.fail("double overflow: " + s);
     }
   }
 }
