@@ -51,7 +51,7 @@ public final class CelParser {
       one('?').thenReturn(true).orElse(false);
 
   static final Parser<String> IDENTIFIER =
-      literally(sequence(one("[a-zA-Z_]"), zeroOrMore("[a-zA-Z0-9_]")))
+      literally(one("[a-zA-Z_]"), zeroOrMore("[a-zA-Z0-9_]"))
           .source()
           .suchThat(s -> !KEYWORDS.contains(s), "identifier");
 

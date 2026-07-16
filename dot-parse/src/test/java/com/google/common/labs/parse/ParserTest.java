@@ -6093,6 +6093,48 @@ public class ParserTest {
   }
 
   @Test
+  public void literally_multipleParsers_matches() {
+    Parser<String> p = literally(string("1"), string("2"), string("3")).source();
+    assertThat(p.parseSkipping(whitespace(), "123")).isEqualTo("123");
+    assertThat(p.parseSkipping(whitespace(), " 123")).isEqualTo("123");
+  }
+
+  @Test
+  public void literally_multipleParsers_disallowsInnerSkipping() {
+    Parser<String> p = literally(string("1"), string("2"), string("3")).source();
+    assertThrows(
+        ParseException.class, () -> p.parseSkipping(whitespace(), "1 23"));
+  }
+
+  @Test
+  public void literally_optionalFirstPresent_matches() {
+    Parser<String> p = literally(string("1").optional(), string("2"), string("3")).source();
+    assertThat(p.parseSkipping(whitespace(), "123")).isEqualTo("123");
+    assertThat(p.parseSkipping(whitespace(), " 123 ")).isEqualTo("123");
+  }
+
+  @Test
+  public void literally_optionalFirstPresent_disallowsInnerSkipping() {
+    Parser<String> p = literally(string("1").optional(), string("2"), string("3")).source();
+    assertThrows(
+        ParseException.class, () -> p.parseSkipping(whitespace(), "1 23"));
+  }
+
+  @Test
+  public void literally_optionalFirstAbsent_matches() {
+    Parser<String> p = literally(string("1").optional(), string("2"), string("3")).source();
+    assertThat(p.parseSkipping(whitespace(), "23")).isEqualTo("23");
+    assertThat(p.parseSkipping(whitespace(), " 23 ")).isEqualTo("23");
+  }
+
+  @Test
+  public void literally_optionalFirstAbsent_disallowsInnerSkipping() {
+    Parser<String> p = literally(string("1").optional(), string("2"), string("3")).source();
+    assertThrows(
+        ParseException.class, () -> p.parseSkipping(whitespace(), "2 3"));
+  }
+
+  @Test
   public void zeroOrMoreChars_literally_between_zeroMatch() {
     Parser<String> parser = literally(zeroOrMore(noneOf("[]"), "name")).between("[", "]");
     assertThat(parser.parseSkipping(whitespace(), "[]")).isEmpty();
