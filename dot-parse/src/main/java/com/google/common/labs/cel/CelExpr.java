@@ -85,7 +85,7 @@ public sealed interface CelExpr {
   }
 
   /** Unary prefix operations (e.g. {@code -x}, {@code !x}). */
-  record Unary(Op op, CelExpr operand) implements CelExpr {
+  record Unary(Op operator, CelExpr operand) implements CelExpr {
     public enum Op {
       MINUS("-"), NOT("!");
 
@@ -101,12 +101,12 @@ public sealed interface CelExpr {
     }
 
     @Override public String toString() {
-      return op.toString() + "(" + operand + ")";
+      return operator.toString() + "(" + operand + ")";
     }
   }
 
   /** Binary operations (e.g. {@code x + y}, {@code x == y}, {@code x && y}). */
-  record Binary(CelExpr left, Op op, CelExpr right) implements CelExpr {
+  record Binary(CelExpr left, Op operator, CelExpr right) implements CelExpr {
     public enum Op {
       ADD("+"), SUB("-"), MULT("*"), DIV("/"), MOD("%"),
       EQ("=="), NE("!="), LT("<"), LE("<="), GT(">"), GE(">="), IN("in"),
@@ -124,14 +124,14 @@ public sealed interface CelExpr {
     }
 
     @Override public String toString() {
-      return "(" + left + ") " + op + " (" + right + ")";
+      return "(" + left + ") " + operator + " (" + right + ")";
     }
   }
 
   /** Ternary conditional (e.g. {@code condition ? trueExpr : falseExpr}). */
-  record Ternary(CelExpr condition, CelExpr trueExpr, CelExpr falseExpr) implements CelExpr {
+  record Ternary(CelExpr condition, CelExpr ifTrue, CelExpr ifFalse) implements CelExpr {
     @Override public String toString() {
-      return "(" + condition + ") ? (" + trueExpr + ") : (" + falseExpr + ")";
+      return "(" + condition + ") ? (" + ifTrue + ") : (" + ifFalse + ")";
     }
   }
 
