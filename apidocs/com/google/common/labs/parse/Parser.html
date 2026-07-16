@@ -150,6 +150,8 @@ loadScripts(document, 'script');</script>
 <li><a href="#optional()" tabindex="0">optional()</a></li>
 <li><a href="#source()" tabindex="0">source()</a></li>
 <li><a href="#literally(com.google.common.labs.parse.Parser)" tabindex="0">literally(Parser)</a></li>
+<li><a href="#literally(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production...)" tabindex="0">literally(Parser, Production, Production...)</a></li>
+<li><a href="#literally(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production...)" tabindex="0">literally(Parser.OrEmpty, Parser, Production...)</a></li>
 <li><a href="#literally(com.google.common.labs.parse.Parser.OrEmpty)" tabindex="0">literally(Parser.OrEmpty)</a></li>
 <li><a href="#skipping(com.google.common.labs.parse.Parser)" tabindex="0">skipping(Parser)</a></li>
 <li><a href="#skipping(com.google.mu.util.CharPredicate)" tabindex="0">skipping(CharPredicate)</a></li>
@@ -417,6 +419,20 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#isPrefixOf(java.lang.String)" class="member-name-link">isPrefixOf</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;input)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns true if this parser represents a non-empty prefix of the given <code>input</code>.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;?&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#literally(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production...)" class="member-name-link">literally</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;p1,
+ <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;p2,
+ <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;...&nbsp;more)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block"><code>literally(p1, p2, p3)</code> is short-hand for <code>literally(sequence(p1, p2, p3))</code>.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;?&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#literally(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production...)" class="member-name-link">literally</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;p1,
+ <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;&nbsp;p2,
+ <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;...&nbsp;more)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block"><code>literally(p1, p2, p3)</code> is short-hand for <code>literally(sequence(p1, p2, p3))</code>.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;T&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#literally(com.google.common.labs.parse.Parser)" class="member-name-link">literally</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;&nbsp;parser)</code></div>
@@ -2369,6 +2385,36 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="block">Returns an equivalent parser that suppresses character skipping that's otherwise applied if
  <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.common.labs.parse.Parser)"><code>skipping()</code></a>
  are called. For example quoted string literals should not skip whitespaces.</div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="literally(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production...)">
+<h3>literally</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;</span>&nbsp;<span class="element-name">literally</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;p1,
+ <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;&nbsp;p2,
+ <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;...&nbsp;more)</span></div>
+<div class="block"><code>literally(p1, p2, p3)</code> is short-hand for <code>literally(sequence(p1, p2, p3))</code>.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.7</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="literally(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production...)">
+<h3>literally</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;</span>&nbsp;<span class="element-name">literally</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;p1,
+ <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;p2,
+ <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;...&nbsp;more)</span></div>
+<div class="block"><code>literally(p1, p2, p3)</code> is short-hand for <code>literally(sequence(p1, p2, p3))</code>.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.7</dd>
+</dl>
 </div>
 </section>
 </li>
