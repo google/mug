@@ -63,28 +63,28 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Variable or symbol lookup (e.g. `request`). */
+  /** Variable or symbol lookup (e.g. {@code request}). */
   record Ident(String name) implements CelExpr {
     @Override public String toString() {
       return CelParser.IDENTIFIER.matches(name) ? name : "`" + name + "`";
     }
   }
 
-  /** Field selection (e.g. `operand.field`). */
+  /** Field selection (e.g. {@code operand.field}). */
   record Select(CelExpr operand, String field) implements CelExpr {
     @Override public String toString() {
       return "(" + operand + ")." + new Ident(field);
     }
   }
 
-  /** Subscript/indexing (e.g. `operand[index]`). */
+  /** Subscript/indexing (e.g. {@code operand[index]}). */
   record Index(CelExpr operand, CelExpr index) implements CelExpr {
     @Override public String toString() {
       return "(" + operand + ")[" + index + "]";
     }
   }
 
-  /** Unary prefix operations (e.g. `-x`, `!x`). */
+  /** Unary prefix operations (e.g. {@code -x}, {@code !x}). */
   record Unary(Op op, CelExpr operand) implements CelExpr {
     public enum Op {
       MINUS("-"), NOT("!");
@@ -105,7 +105,7 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Binary operations (e.g. `x + y`, `x == y`, `x && y`). */
+  /** Binary operations (e.g. {@code x + y}, {@code x == y}, {@code x && y}). */
   record Binary(CelExpr left, Op op, CelExpr right) implements CelExpr {
     public enum Op {
       ADD("+"), SUB("-"), MULT("*"), DIV("/"), MOD("%"),
@@ -128,14 +128,14 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Ternary conditional (e.g. `condition ? trueExpr : falseExpr`). */
+  /** Ternary conditional (e.g. {@code condition ? trueExpr : falseExpr}). */
   record Ternary(CelExpr condition, CelExpr trueExpr, CelExpr falseExpr) implements CelExpr {
     @Override public String toString() {
       return "(" + condition + ") ? (" + trueExpr + ") : (" + falseExpr + ")";
     }
   }
 
-  /** Global function calls `f(args)` or member calls `target.f(args)`. */
+  /** Global function calls {@code f(args)} or member calls {@code target.f(args)}. */
   record Call(Optional<CelExpr> target, String function, List<CelExpr> args) implements CelExpr {
     @Override public String toString() {
       return target.map(t -> "(" + t + ").").orElse("")
@@ -144,7 +144,7 @@ public sealed interface CelExpr {
     }
   }
 
-  /** List creation (e.g. `[1, ?optional_var]`). */
+  /** List creation (e.g. {@code [1, ?optional_var]}). */
   record ListLiteral(List<Element> elements) implements CelExpr {
     public record Element(CelExpr value, boolean optional) {
       @Override public String toString() {
@@ -157,7 +157,7 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Map creation (e.g. `{"key": value, ? "opt_key": value}`). */
+  /** Map creation (e.g. {@code {"key": value, ? "opt_key": value}}). */
   record MapLiteral(List<Entry> entries) implements CelExpr {
     public record Entry(CelExpr key, CelExpr value, boolean optional) {
       @Override public String toString() {
@@ -170,7 +170,7 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Struct/message creation (e.g. `Type{field: value, ?opt_field: value}`). */
+  /** Struct/message creation (e.g. {@code Type{field: value, ?opt_field: value}}). */
   record StructLiteral(String messageName, List<Field> fields) implements CelExpr {
     public record Field(String name, CelExpr value, boolean optional) {
       @Override public String toString() {
@@ -183,7 +183,6 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Helper method to escape string literals. */
   private static String escapeString(String s) {
     return s.codePoints()
         .mapToObj(c -> switch (c) {
@@ -197,7 +196,6 @@ public sealed interface CelExpr {
         .collect(Joiner.on("").between('"', '"'));
   }
 
-  /** Helper method to format byte sequence literals. */
   private static String escapeBytes(byte[] bytes) {
     StringBuilder builder = new StringBuilder();
     builder.append("b\"");
