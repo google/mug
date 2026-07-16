@@ -635,7 +635,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<A> a ->
               switch (right.skipAndMatch(skip, input, a.tail, context)) {
-                case MatchResult.Success<B> b -> context.map(a, b, combiner);
+                case MatchResult.Success<B> b -> a.and(b, combiner, context);
                 case MatchResult.Failure<?> failure -> failure.safeCast();
               };
           case MatchResult.Failure<?> failure -> failure.safeCast();
@@ -1303,10 +1303,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return new SamePrefix<>() {
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success<T> success -> context.map(success, f);
-          case MatchResult.Failure<?> failure -> failure.safeCast();
-        };
+        return left().skipAndMatch(skip, input, start, context).map(f, context);
       }
 
       @Override Parser<?> ignoreReturn() {
@@ -1332,10 +1329,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return new SamePrefix<>() {
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success<T> success ->  context.mapWithIndex(success, f);
-          case MatchResult.Failure<?> failure -> failure.safeCast();
-        };
+        return left().skipAndMatch(skip, input, start, context).mapWithIndex(f, context);
       }
     };
   }
@@ -1354,20 +1348,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public final <R> Parser<R> flatMap(Function<? super T, ? extends Production<? extends R>> f) {
     requireNonNull(f);
     return new SamePrefix<>() {
-      @SuppressWarnings("unchecked")  // MatchResult<R> is covariant
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success<T> success -> {
-            try {
-              yield (MatchResult<R>)
-                    allowZeroWidth(f.apply(success.value))
-                        .skipAndMatch(skip, input, success.tail, context)
-                        .startingFrom(success.head);
-            } catch (ParseError e) {
-              yield context.errorAt(success.head, success.tail, e);
-            }
-          }
+          case MatchResult.Success<T> success ->
+            success.<R>andThen(
+                () ->  allowZeroWidth(f.apply(success.value))
+                    .skipAndMatch(skip, input, success.tail, context), context);
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
@@ -1412,10 +1399,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return new SamePrefix<>() {
       @Override MatchResult<T> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        var result = left().skipAndMatch(skip, input, start, context);
-        return result instanceof MatchResult.Success<T> success
-            ? context.test(success, condition, name)
-            : result;
+        return left().skipAndMatch(skip, input, start, context).suchThat(condition, name, context);
       }
     };
   }
@@ -2509,9 +2493,60 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   sealed interface MatchResult<V> {
+    <T> MatchResult<T> map(Function<? super V, ? extends T> function, ErrorContext context);
+
+    <T> MatchResult<T> mapWithIndex(
+        ObjInt2Function<? super V, ? extends T> function, ErrorContext context);
+
+    MatchResult<V> suchThat(Predicate<? super V> condition, String name, ErrorContext context);
+
     record Success<V>(int head, int tail, V value) implements MatchResult<V> {
-      @Override public Success<V> startingFrom(int index) {
-        return new MatchResult.Success<>(index, tail, value);
+      @Override public <T> MatchResult<T> map(Function<? super V, ? extends T> function, ErrorContext context) {
+        try {
+          return new Success<T>(head, tail, function.apply(value));
+        } catch (ParseError e) {
+          return context.errorAt(head, tail, e);
+        }
+      }
+
+      @Override public <T> MatchResult<T> mapWithIndex(
+          ObjInt2Function<? super V, ? extends T> function, ErrorContext context) {
+        try {
+          return new Success<T>(head, tail, function.apply(value, head, tail));
+        } catch (ParseError e) {
+          return context.errorAt(head, tail, e);
+        }
+      }
+
+      @Override public MatchResult<V> suchThat(Predicate<? super V> condition, String name, ErrorContext context) {
+        try {
+          return condition.test(value) ? this : context.expecting(name, head, tail);
+        } catch (ParseError e) {
+          return context.errorAt(head, tail, e);
+        }
+      }
+
+      <B, T> MatchResult<T> and(
+          Success<B> b, BiFunction<? super V, ? super B, ? extends T> function, ErrorContext context) {
+        try {
+          return new Success<T>(head, b.tail, function.apply(value, b.value));
+        } catch (ParseError e) {
+          return context.errorAt(head, b.tail, e);
+        }
+      }
+
+      <T> MatchResult<T> andThen(
+          Supplier<? extends MatchResult<? extends T>> next, ErrorContext context) {
+        MatchResult<? extends T> r2;
+        try {
+          r2 = next.get();
+        } catch (ParseError e) {
+          return context.errorAt(head, tail, e);
+        }
+        return switch (r2) {
+          case Success<? extends T> success -> new Success<>(head, success.tail, success.value);
+          case Failure<?> failure -> failure.safeCast();
+        };
       }
     }
 
@@ -2548,12 +2583,21 @@ public abstract non-sealed class Parser<T> implements Production<T> {
                 });
       }
 
-      @Override public Failure<V> startingFrom(int head) {
+      @Override public <T> Failure<T> map(
+          Function<? super V, ? extends T> function, ErrorContext context) {
+        return safeCast();
+      }
+
+      @Override public <T> Failure<T> mapWithIndex(
+          ObjInt2Function<? super V, ? extends T> function, ErrorContext context) {
+        return safeCast();
+      }
+
+      @Override public Failure<V> suchThat(
+          Predicate<? super V> condition, String name, ErrorContext context) {
         return this;
       }
     }
-
-    MatchResult<V> startingFrom(int head);
   }
 
   static class ErrorContext {
@@ -2577,43 +2621,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
     final <V> MatchResult.Failure<V> errorAt(int at, long frontier, ParseError error) {
       return failAt(at, frontier | (1L << 32), "{name}", error.getMessage());
-    }
-
-    final <V, T> MatchResult<T> map(MatchResult.Success<V> success, Function<? super V, ? extends T> function) {
-      try {
-        return new MatchResult.Success<T>(success.head, success.tail, function.apply(success.value));
-      } catch (ParseError e) {
-        return errorAt(success.head, success.tail, e);
-      }
-    }
-
-    final <V, T> MatchResult<T> mapWithIndex(
-        MatchResult.Success<V> success, ObjInt2Function<? super V, ? extends T> function) {
-      try {
-        return new MatchResult.Success<T>(
-            success.head, success.tail, function.apply(success.value, success.head, success.tail));
-      } catch (ParseError e) {
-        return errorAt(success.head, success.tail, e);
-      }
-    }
-
-    final <V> MatchResult<V> test(
-        MatchResult.Success<V> success, Predicate<? super V> condition, String name) {
-      try {
-        return condition.test(success.value) ? success : expecting(name, success.head, success.tail);
-      } catch (ParseError e) {
-        return errorAt(success.head, success.tail, e);
-      }
-    }
-
-    final <A, B, T> MatchResult<T> map(
-        MatchResult.Success<A> a, MatchResult.Success<B> b,
-        BiFunction<? super A, ? super B, ? extends T> function) {
-      try {
-        return new MatchResult.Success<>(a.head, b.tail, function.apply(a.value, b.value));
-      } catch (ParseError e) {
-        return errorAt(a.head, b.tail, e);
-      }
     }
   }
 

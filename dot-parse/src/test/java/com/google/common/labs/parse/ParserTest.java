@@ -9246,6 +9246,20 @@ public class ParserTest {
   }
 
   @Test
+  public void fail_betweenTwoFailErrors_furtherWins() {
+    Parser<?> parser = anyOf(
+        sequence(string("ab").map(s -> { throw Parser.fail("closer fail"); }), string("X")),
+        sequence(string("abcd").map(s -> { throw Parser.fail("further fail"); }), string("Y"))
+    );
+
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abcd"));
+
+    // We expect "further fail" (frontier 4) to win over "closer fail" (frontier 2)
+    assertThat(thrown).hasMessageThat().contains("further fail");
+    assertThat(thrown).hasMessageThat().contains("1:1");
+  }
+
+  @Test
   public void fail_returnsErrorWithStackTraceAndSuppression() {
     Error error = assertThrows(Error.class, () -> Parser.fail("test error"));
     assertThat(error.getMessage()).isEqualTo("test error");
