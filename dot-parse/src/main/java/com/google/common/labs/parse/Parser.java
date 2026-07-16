@@ -1643,6 +1643,24 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
+   * {@code literally(p1, p2, p3)} is short-hand for {@code literally(sequence(p1, p2, p3))}.
+   *
+   * @since 10.7
+   */
+  public static Parser<?> literally(Parser<?> p1, Production<?> p2, Production<?>... more) {
+    return literally(sequence(p1, concat(p2, more)));
+  }
+
+  /**
+   * {@code literally(p1, p2, p3)} is short-hand for {@code literally(sequence(p1, p2, p3))}.
+   *
+   * @since 10.7
+   */
+  public static Parser<?> literally(Parser<?>.OrEmpty p1, Parser<?> p2, Production<?>... more) {
+    return literally(sequence(sequence(p1, p2), more));
+  }
+
+  /**
    * Specifies that the optional (or zero-or-more) {@code rule} should be matched literally even if
    * {@link #parseSkipping parseSkipping()} or {@link #skipping skipping()} is called.
    */
@@ -2658,6 +2676,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
     }
     return bitSet;
+  }
+
+  private static Production<?>[] concat(Production<?> first, Production<?>[] more) {
+    Production<?>[] result = new Production<?>[1 + more.length];
+    result[0] = first;
+    System.arraycopy(more, 0, result, 1, more.length);
+    return result;
   }
 
   private interface ElidableFunction<F, T> extends Function<F, T> {}

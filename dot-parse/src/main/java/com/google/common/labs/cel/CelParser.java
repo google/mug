@@ -42,7 +42,8 @@ public final class CelParser {
       "as", "break", "const", "continue", "else", "false", "for", "function", "if",
       "import", "in", "let", "loop", "package", "namespace", "null", "return", "true",
       "var", "void", "while");
-  private static final CharPredicate WHITESPACES = CharPredicate.anyOf(" \t\r\n\f").precomputeForAscii();
+  private static final CharPredicate WHITESPACES =
+      CharPredicate.anyOf(" \t\r\n\f").precomputeForAscii();
   private static final Parser<?> WHITESPACES_OR_COMMENTS =
       anyOf(consecutive("[ \t\r\n\f]"), sequence(string("//"), zeroOrMore("[^\n]")));
 
@@ -50,7 +51,7 @@ public final class CelParser {
       one('?').thenReturn(true).orElse(false);
 
   static final Parser<String> IDENTIFIER =
-      literally(sequence(one("[a-zA-Z_]"), zeroOrMore("[a-zA-Z0-9_]")))
+      literally(one("[a-zA-Z_]"), zeroOrMore("[a-zA-Z0-9_]"))
           .source()
           .suchThat(s -> !KEYWORDS.contains(s), "identifier");
 
@@ -150,13 +151,16 @@ public final class CelParser {
             .between("[", "]")
             .map(CelExpr.ListLiteral::new);
     Parser<CelExpr> mapExpr =
-        sequence(OPTIONALITY, expr.followedBy(":"), expr, (opt, key, val) -> new CelExpr.MapLiteral.Entry(key, val, opt))
+        sequence(
+                OPTIONALITY, expr.followedBy(":"), expr,
+                (opt, key, val) -> new CelExpr.MapLiteral.Entry(key, val, opt))
             .zeroOrMoreDelimitedBy(",")
             .optionallyFollowedBy(",")
             .between("{", "}")
             .map(CelExpr.MapLiteral::new);
-    Parser<CelExpr.StructLiteral.Field> messageFieldInit =
-        sequence(OPTIONALITY, ANY_IDENTIFIER.followedBy(":"), expr, (opt, name, val) -> new CelExpr.StructLiteral.Field(name, val, opt));
+    Parser<CelExpr.StructLiteral.Field> messageFieldInit = sequence(
+        OPTIONALITY, ANY_IDENTIFIER.followedBy(":"), expr,
+        (opt, name, val) -> new CelExpr.StructLiteral.Field(name, val, opt));
     Parser<CelExpr> myType =
         IDENT_EXPR.withPostfixes(one('.').then(ANY_IDENTIFIER).map(CelParser::select));
     Parser<List<CelExpr>> args = expr.zeroOrMoreDelimitedBy(",").between("(", ")");
@@ -222,7 +226,7 @@ public final class CelParser {
             .rightAssociative(
                 anyOf(parenthesized, regular)
                     .between("?", ":")
-                    .map(trueExpr -> (cond, falseExpr) -> new CelExpr.Ternary(cond, trueExpr, falseExpr)),
+                    .map(ifTrue -> (cond, ifFalse) -> new CelExpr.Ternary(cond, ifTrue, ifFalse)),
                 1)
             .build(anyOf(regular, parenthesized)));
   }
@@ -392,7 +396,8 @@ public final class CelParser {
   private static CelExpr call(CelExpr receiver, List<CelExpr> args) {
     return switch (receiver) {
       case CelExpr.Ident ident -> new CelExpr.Call(Optional.empty(), ident.name(), args);
-      case CelExpr.Select select -> new CelExpr.Call(Optional.of(select.operand()), select.field(), args);
+      case CelExpr.Select select ->
+          new CelExpr.Call(Optional.of(select.operand()), select.field(), args);
       default -> throw new AssertionError("Invalid call receiver: " + receiver);
     };
   }
@@ -424,7 +429,9 @@ public final class CelParser {
       if (MACRO_METHODS.contains(method)) {
         int minArgs = 2;
         int maxArgs = method.equals("map") ? 3 : 2;
-        return args.size() >= minArgs && args.size() <= maxArgs && args.get(0) instanceof CelExpr.Ident;
+        return args.size() >= minArgs
+            && args.size() <= maxArgs
+            && args.get(0) instanceof CelExpr.Ident;
       }
       return true;
     }
