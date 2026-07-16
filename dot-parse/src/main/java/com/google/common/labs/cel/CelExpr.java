@@ -32,7 +32,7 @@ public sealed interface CelExpr {
   /** Unsigned 64-bit integer literal. */
   record UintValue(long value) implements CelExpr {
     @Override public String toString() {
-      return value + "u";
+      return Long.toUnsignedString(value) + "u";
     }
   }
 
