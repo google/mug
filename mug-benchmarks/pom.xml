@@ -466,9 +466,7 @@
                       <includes>
                         <include>ParserShowdownBenchmark*.class</include>
                         <include>CssBenchmark*.class</include>
-                        <include>CsvBenchmark*.class</include>
                       </includes>
-
                     </fileset>
                     <fileset>
                       <directory>${project.build.directory}/test-classes/com/google/mu/benchmarks</directory>
