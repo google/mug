@@ -383,10 +383,6 @@ public final class CelParser {
     return receiver -> new CelExpr.Select(receiver, field);
   }
 
-  private static UnaryOperator<CelExpr> memberCall(String method, List<CelExpr> args) {
-    return receiver -> new CelExpr.Call(Optional.of(receiver), method, args);
-  }
-
   private static UnaryOperator<CelExpr> indexCall(boolean optional, CelExpr index) {
     return optional
         ? receiver -> new CelExpr.Call(Optional.of(receiver), "optionalIndex", List.of(index))
@@ -437,7 +433,7 @@ public final class CelParser {
     }
 
     @Override public CelExpr apply(CelExpr receiver) {
-      return memberCall(method, args).apply(receiver);
+      return new CelExpr.Call(Optional.of(receiver), method, args);
     }
   }
 }
