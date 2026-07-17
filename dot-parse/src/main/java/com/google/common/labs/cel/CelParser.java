@@ -28,7 +28,10 @@ import java.util.stream.Collectors;
 import com.google.common.labs.parse.OperatorTable;
 import com.google.common.labs.parse.Parser;
 import com.google.common.labs.parse.Suffix;
+import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.Immutable;
+import com.google.mu.function.Function4;
+import com.google.mu.function.TriFunction;
 import com.google.mu.util.CharPredicate;
 
 /**
@@ -179,23 +182,18 @@ public final class CelParser {
     // Primary expression
     Parser<CelExpr> primary =
         anyOf(CONSTANT_LITERAL, callOrStructOrIdent, listExpr, mapExpr, parenthesized);
-    Parser<MemberCallOp> memberCallOp =
-        sequence(ANY_IDENTIFIER, args, MemberCallOp::new)
-            .suchThat(MemberCallOp::isValidMacroCall, "valid macro call");
+    Parser<UnaryOperator<CelExpr>> memberCallOp =
+        sequence(ANY_IDENTIFIER, args, (ident, a) -> target -> macroOrCall(target, ident, a));
     Parser<UnaryOperator<CelExpr>> indexOp =
-        sequence(
-            one('?').thenReturn(true).orElse(false),
-            expr,
-            CelParser::indexCall);
+        sequence(one('?').thenReturn(true).orElse(false), expr, CelParser::indexCall);
     Parser<CelExpr> memberExpr =
         primary.withPostfixes(
             anyOf(
-                one('.')
-                    .then(
-                        anyOf(
-                            memberCallOp,
-                            one('?').then(ANY_IDENTIFIER).map(CelParser::optionalSelect),
-                            ANY_IDENTIFIER.map(CelParser::select))),
+                one('.').then(
+                    anyOf(
+                        memberCallOp,
+                        one('?').then(ANY_IDENTIFIER).map(CelParser::optionalSelect),
+                        ANY_IDENTIFIER.map(CelParser::select))),
                 indexOp.between("[", "]")));
     Parser<CelExpr> unaryExpr =
         anyOf(
@@ -334,11 +332,7 @@ public final class CelParser {
 
     @Override Parser<String> escaped() {
       return anyOf(
-          charEscape(),
-          octEscape(),
-          hexEscape(),
-          one('u').then(fromHex(4)),
-          one('U').then(fromHex(8)));
+          charEscape(), octEscape(), hexEscape(), one('u').then(fromHex(4)), one('U').then(fromHex(8)));
     }
   }
 
@@ -371,9 +365,6 @@ public final class CelParser {
     }
   }
 
-  private static final Set<String> MACRO_METHODS =
-      Set.of("all", "exists", "exists_one", "map", "filter");
-
   private static UnaryOperator<CelExpr> optionalSelect(String field) {
     return receiver -> new CelExpr.Call(
         Optional.of(receiver), "optionalSelect", List.of(new CelExpr.StringValue(field)));
@@ -389,13 +380,58 @@ public final class CelParser {
         : receiver -> new CelExpr.Index(receiver, index);
   }
 
-  private static CelExpr call(CelExpr receiver, List<CelExpr> args) {
-    return switch (receiver) {
-      case CelExpr.Ident ident -> new CelExpr.Call(Optional.empty(), ident.name(), args);
-      case CelExpr.Select select ->
-          new CelExpr.Call(Optional.of(select.operand()), select.field(), args);
-      default -> throw new AssertionError("Invalid call receiver: " + receiver);
+  private static CelExpr call(CelExpr target, List<CelExpr> args) {
+    return switch (target) {
+      case CelExpr.Ident ident -> macroOrCall(ident.name(), args);
+      case CelExpr.Select select -> macroOrCall(select.operand(), select.field(), args);
+      default -> throw new AssertionError("Invalid call receiver: " + target);
     };
+  }
+
+  private static CelExpr macroOrCall(String method, List<CelExpr> args) {
+    return switch (method) {
+      case "has" -> {
+        checkSyntax(args.size() == 1, "has() expects 1 arg, %s provided", args.size());
+        CelExpr.Select select =
+            expect(CelExpr.Select.class, args.get(0), "has() expects 1 select argument");
+        yield new CelExpr.Macro.Has(select);
+      }
+      default -> new CelExpr.Call(Optional.empty(), method, args);
+    };
+  }
+
+  private static CelExpr macroOrCall(CelExpr target, String method, List<CelExpr> args) {
+    return switch (method) {
+      case "all" -> toMacro(target, method, args, CelExpr.Macro.All::new);
+      case "exists" -> toMacro(target, method, args, CelExpr.Macro.Exists::new);
+      case "exists_one" -> toMacro(target, method, args, CelExpr.Macro.ExistsOne::new);
+      case "filter" -> toMacro(target, method, args, CelExpr.Macro.Filter::new);
+      case "map" -> switch (args.size()) {
+        case 2 -> toMacro(target, method, args, CelExpr.Macro.Map::new);
+        case 3 -> toMacro(target, method, args, CelExpr.Macro.FilterMap::new);
+        default ->
+          throw Parser.fail("map() macro expects 2 or 3 args, " + args.size() + " provided");
+      };
+      default -> new CelExpr.Call(Optional.of(target), method, args);
+    };
+  }
+
+  private static <T extends CelExpr.Macro> T toMacro(
+      CelExpr target, String method, List<CelExpr> args,
+      TriFunction<CelExpr, String, CelExpr, T> construct) {
+    checkSyntax(args.size() == 2, "%s() expects 2 args, %s provided", method, args.size());
+    CelExpr.Ident placeholder =
+        expect(CelExpr.Ident.class, args.get(0), "identifier expected for the 1st arg of %s()", method);
+    return construct.apply(target, placeholder.name(), args.get(1));
+  }
+
+  private static <T extends CelExpr.Macro> T toMacro(
+      CelExpr target, String method, List<CelExpr> args,
+      Function4<CelExpr, String, CelExpr, CelExpr, T> construct) {
+    checkSyntax(args.size() == 3, "%s() expects 3 args, %s provided", method, args.size());
+    CelExpr.Ident placeholder =
+        expect(CelExpr.Ident.class, args.get(0), "identifier expected for the 1st arg of %s()", method);
+    return construct.apply(target, placeholder.name(), args.get(1), args.get(2));
   }
 
   private static CelExpr structExpr(CelExpr receiver, List<CelExpr.StructLiteral.Field> fields) {
@@ -420,20 +456,29 @@ public final class CelParser {
     return anyOf(one('-').then(literal).map(negate), literal);
   }
 
-  private record MemberCallOp(String method, List<CelExpr> args) implements UnaryOperator<CelExpr> {
-    boolean isValidMacroCall() {
-      if (MACRO_METHODS.contains(method)) {
-        int minArgs = 2;
-        int maxArgs = method.equals("map") ? 3 : 2;
-        return args.size() >= minArgs
-            && args.size() <= maxArgs
-            && args.get(0) instanceof CelExpr.Ident;
-      }
-      return true;
-    }
+  @FormatMethod
+  private static <T> T expect(Class<T> type, Object value, String message, Object... args) {
+    checkSyntax(type.isInstance(value), message, args);
+    return type.cast(value);
+  }
 
-    @Override public CelExpr apply(CelExpr receiver) {
-      return new CelExpr.Call(Optional.of(receiver), method, args);
+  @FormatMethod
+  private static <T> T expect(Class<T> type, Object value, String message) {
+    checkSyntax(type.isInstance(value), message);
+    return type.cast(value);
+  }
+
+  @FormatMethod
+  private static void checkSyntax(boolean condition, String message, Object... args) {
+    if (!condition) {
+      throw Parser.fail(String.format(message, args));
+    }
+  }
+
+  @FormatMethod
+  private static void checkSyntax(boolean condition, String message) {
+    if (!condition) {
+      throw Parser.fail(message);
     }
   }
 

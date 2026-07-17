@@ -183,6 +183,60 @@ public sealed interface CelExpr {
     }
   }
 
+  /** Abstract representation of a CEL macro expression. */
+  sealed interface Macro extends CelExpr {
+    /** The {@code has(member)} macro. */
+    record Has(Select member) implements Macro {
+      @Override public String toString() {
+        return "has(" + member + ")";
+      }
+    }
+
+    /** The {@code target.all(varName, condition)} macro. */
+    record All(CelExpr target, String varName, CelExpr condition) implements Macro {
+      @Override public String toString() {
+        return target + ".all(" + varName + ", " + condition + ")";
+      }
+    }
+
+    /** The {@code target.exists(varName, condition)} macro. */
+    record Exists(CelExpr target, String varName, CelExpr condition) implements Macro {
+      @Override public String toString() {
+        return target + ".exists(" + varName + ", " + condition + ")";
+      }
+    }
+
+    /** The {@code target.exists_one(varName, condition)} macro. */
+    record ExistsOne(CelExpr target, String varName, CelExpr condition) implements Macro {
+      @Override public String toString() {
+        return target + ".exists_one(" + varName + ", " + condition + ")";
+      }
+    }
+
+    /** The {@code target.filter(varName, expr)} macro. */
+    record Filter(CelExpr target, String varName, CelExpr expr) implements Macro {
+      @Override public String toString() {
+        return target + ".filter(" + varName + ", " + expr + ")";
+      }
+    }
+
+    /** The {@code target.map(varName, expr)} macro. */
+    record Map(CelExpr target, String varName, CelExpr expr) implements Macro {
+      @Override public String toString() {
+        return target + ".map(" + varName + ", " + expr + ")";
+      }
+    }
+
+    /** The {@code target.map(varName, filter, transform)} macro. */
+    record FilterMap(CelExpr target, String varName, CelExpr filter, CelExpr transform)
+        implements Macro {
+      @Override public String toString() {
+        return target + ".map(" + varName + ", " + filter + ", " + transform + ")";
+      }
+    }
+  }
+
+
   private static String escapeString(String s) {
     return s.codePoints()
         .mapToObj(c -> switch (c) {

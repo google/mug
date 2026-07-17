@@ -247,6 +247,12 @@
           <version>1.9.22</version>
           <scope>test</scope>
         </dependency>
+        <dependency>
+          <groupId>dev.cel</groupId>
+          <artifactId>cel</artifactId>
+          <version>0.13.1</version>
+          <scope>test</scope>
+        </dependency>
 
       </dependencies>
       <build>
@@ -466,6 +472,7 @@
                       <includes>
                         <include>ParserShowdownBenchmark*.class</include>
                         <include>CssBenchmark*.class</include>
+                        <include>CelParserBenchmark*.class</include>
                       </includes>
                     </fileset>
                     <fileset>
