@@ -85,6 +85,12 @@
     </dependency>
 
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>mug-cel</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
     </dependency>
@@ -245,6 +251,12 @@
           <groupId>org.jetbrains.kotlin</groupId>
           <artifactId>kotlin-stdlib</artifactId>
           <version>1.9.22</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>dev.cel</groupId>
+          <artifactId>cel</artifactId>
+          <version>0.13.1</version>
           <scope>test</scope>
         </dependency>
 
@@ -466,6 +478,7 @@
                       <includes>
                         <include>ParserShowdownBenchmark*.class</include>
                         <include>CssBenchmark*.class</include>
+                        <include>CelParserBenchmark*.class</include>
                       </includes>
                     </fileset>
                     <fileset>
