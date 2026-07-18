@@ -14,28 +14,83 @@ import java.util.concurrent.atomic.AtomicLong;
 /** Helper to convert CelExpr to official CEL Protobuf AST. */
 final class CelProtoConverter {
   static Expr toProto(CelExpr expr) {
-    return new CelProtoConverter(new AtomicLong(1), SourceInfo.newBuilder()).convert(expr);
+    return new CelProtoConverter(new AtomicLong(1), SourceInfo.newBuilder(), null).convert(expr);
   }
 
   static ParsedExpr toParsedExpr(CelExpr celExpr, String input) {
+    int[] charToCodePoint = precomputeCharToCodePoint(input);
     SourceInfo.Builder sourceInfo = SourceInfo.newBuilder();
-    all('\n').match(input).forEach(m -> sourceInfo.addLineOffsets(m.index() + 1));
-    sourceInfo.addLineOffsets(input.length() + 1);
-    Expr expr = new CelProtoConverter(new AtomicLong(1), sourceInfo).convert(celExpr);
-    return ParsedExpr.newBuilder().setExpr(expr).setSourceInfo(sourceInfo).build();
+    all('\n').match(input).forEach(m -> sourceInfo.addLineOffsets(charToCodePoint[m.index()] + 1));
+    sourceInfo.addLineOffsets(charToCodePoint[input.length()] + 1);
+    Expr expr =
+        new CelProtoConverter(new AtomicLong(1), sourceInfo, charToCodePoint).convert(celExpr);
+    return ParsedExpr.newBuilder().setExpr(expr).setSourceInfo(sourceInfo.build()).build();
+  }
+
+  private static int[] precomputeCharToCodePoint(String input) {
+    int[] mapping = new int[input.length() + 1];
+    int codePointIndex = 0;
+    for (int charIndex = 0; charIndex < input.length(); ) {
+      mapping[charIndex] = codePointIndex;
+      int codePoint = input.codePointAt(charIndex);
+      int count = Character.charCount(codePoint);
+      for (int i = 1; i < count; i++) {
+        mapping[charIndex + i] = codePointIndex;
+      }
+      charIndex += count;
+      codePointIndex++;
+    }
+    mapping[input.length()] = codePointIndex;
+    return mapping;
   }
 
   private final AtomicLong idGenerator;
   private final SourceInfo.Builder sourceInfo;
+  private final int[] charToCodePoint;
+  private final java.util.Map<CelExpr, Long> convertedIds = new java.util.IdentityHashMap<>();
+  private final java.util.Map<CelExpr, Expr> convertedExprs = new java.util.IdentityHashMap<>();
+  private final java.util.Set<CelExpr> shortCircuitedMacros =
+      java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+  private boolean isSerializingMacroCall = false;
 
-  private CelProtoConverter(AtomicLong idGenerator, SourceInfo.Builder sourceInfo) {
+  private CelProtoConverter(
+      AtomicLong idGenerator, SourceInfo.Builder sourceInfo, int[] charToCodePoint) {
     this.idGenerator = idGenerator;
     this.sourceInfo = sourceInfo;
+    this.charToCodePoint = charToCodePoint;
+  }
+
+  private int toCodePoint(int charIndex) {
+    if (charToCodePoint == null || charIndex < 0 || charIndex >= charToCodePoint.length) {
+      return charIndex;
+    }
+    return charToCodePoint[charIndex];
+  }
+
+  private void putPosition(long id, int charIndex) {
+    sourceInfo.putPositions(id, toCodePoint(charIndex));
   }
 
   private Expr convert(CelExpr expr) {
-    long id = idGenerator.getAndIncrement();
-    sourceInfo.putPositions(id, expr.sourceIndex());
+    if (shortCircuitedMacros.contains(expr)) {
+      Long innerId = convertedIds.get(expr);
+      if (innerId == null) {
+        throw new IllegalStateException("Inner macro not converted yet: " + expr);
+      }
+      return Expr.newBuilder().setId(innerId).build();
+    }
+    if (!isSerializingMacroCall) {
+      Expr cached = convertedExprs.get(expr);
+      if (cached != null) {
+        return cached;
+      }
+    }
+    Long existingId = convertedIds.get(expr);
+    long id = existingId != null ? existingId : idGenerator.getAndIncrement();
+    if (existingId == null) {
+      convertedIds.put(expr, id);
+      putPosition(id, expr.sourceIndex());
+    }
     Expr.Builder builder = Expr.newBuilder().setId(id);
     switch (expr) {
       case CelExpr.NullValue v ->
@@ -66,23 +121,102 @@ final class CelProtoConverter {
           builder.setCallExpr(
               Expr.Call.newBuilder()
                   .setFunction("_?._")
-                  .setTarget(convert(v.operand()))
-                  .addArgs(convert(new CelExpr.StringValue(v.sourceIndex(), v.field()))));
+                  .addArgs(convert(v.operand()))
+                  .addArgs(convert(new CelExpr.StringValue(v.operand().sourceIndex(), v.field()))));
       case CelExpr.OptionalIndex v ->
           builder.setCallExpr(
               Expr.Call.newBuilder()
                   .setFunction("_[?_]")
-                  .setTarget(convert(v.operand()))
+                  .addArgs(convert(v.operand()))
                   .addArgs(convert(v.index())));
-      case CelExpr.Unary v ->
+      case CelExpr.Not v ->
+          builder.setCallExpr(
+              Expr.Call.newBuilder().setFunction("!_").addArgs(convert(v.operand())));
+      case CelExpr.Negative v ->
+          builder.setCallExpr(
+              Expr.Call.newBuilder().setFunction("-_").addArgs(convert(v.operand())));
+      case CelExpr.Add v ->
           builder.setCallExpr(
               Expr.Call.newBuilder()
-                  .setFunction(toOperatorName(v.operator()))
-                  .addArgs(convert(v.operand())));
-      case CelExpr.Binary v ->
+                  .setFunction("_+_")
+                  .addArgs(convert(v.left()))
+                  .addArgs(convert(v.right())));
+      case CelExpr.Subtract v ->
           builder.setCallExpr(
               Expr.Call.newBuilder()
-                  .setFunction(toOperatorName(v.operator()))
+                  .setFunction("_-_")
+                  .addArgs(convert(v.left()))
+                  .addArgs(convert(v.right())));
+      case CelExpr.Multiply v ->
+          builder.setCallExpr(
+              Expr.Call.newBuilder()
+                  .setFunction("_*_")
+                  .addArgs(convert(v.left()))
+                  .addArgs(convert(v.right())));
+      case CelExpr.Divide v ->
+          builder.setCallExpr(
+              Expr.Call.newBuilder()
+                  .setFunction("_/_")
+                  .addArgs(convert(v.left()))
+                  .addArgs(convert(v.right())));
+      case CelExpr.Modulo v ->
+          builder.setCallExpr(
+              Expr.Call.newBuilder()
+                  .setFunction("_%_")
+                  .addArgs(convert(v.left()))
+                  .addArgs(convert(v.right())));
+      case CelExpr.EqualTo v ->
+          builder.setCallExpr(
+              Expr.Call.newBuilder()
+                  .setFunction("_==_")
+                  .addArgs(convert(v.left()))
+                  .addArgs(convert(v.right())));
+      case CelExpr.NotEqualTo v ->
+          builder.setCallExpr(
+              Expr.Call.newBuilder()
+                  .setFunction("_!=_")
+                  .addArgs(convert(v.left()))
+                  .addArgs(convert(v.right())));
+      case CelExpr.LessThan v ->
+          builder.setCallExpr(
+              Expr.Call.newBuilder()
+                  .setFunction("_<_")
+                  .addArgs(convert(v.left()))
+                  .addArgs(convert(v.right())));
+      case CelExpr.LessThanOrEqualTo v ->
+          builder.setCallExpr(
+              Expr.Call.newBuilder()
+                  .setFunction("_<=_")
+                  .addArgs(convert(v.left()))
+                  .addArgs(convert(v.right())));
+      case CelExpr.GreaterThan v ->
+          builder.setCallExpr(
+              Expr.Call.newBuilder()
+                  .setFunction("_>_")
+                  .addArgs(convert(v.left()))
+                  .addArgs(convert(v.right())));
+      case CelExpr.GreaterThanOrEqualTo v ->
+          builder.setCallExpr(
+              Expr.Call.newBuilder()
+                  .setFunction("_>=_")
+                  .addArgs(convert(v.left()))
+                  .addArgs(convert(v.right())));
+      case CelExpr.And v ->
+          builder.setCallExpr(
+              Expr.Call.newBuilder()
+                  .setFunction("_&&_")
+                  .addArgs(convert(v.left()))
+                  .addArgs(convert(v.right())));
+      case CelExpr.Or v ->
+          builder.setCallExpr(
+              Expr.Call.newBuilder()
+                  .setFunction("_||_")
+                  .addArgs(convert(v.left()))
+                  .addArgs(convert(v.right())));
+      case CelExpr.In v ->
+          builder.setCallExpr(
+              Expr.Call.newBuilder()
+                  .setFunction("@in")
                   .addArgs(convert(v.left()))
                   .addArgs(convert(v.right())));
       case CelExpr.Ternary v ->
@@ -121,9 +255,11 @@ final class CelProtoConverter {
       case CelExpr.MapLiteral v -> {
         Expr.CreateStruct.Builder structBuilder = Expr.CreateStruct.newBuilder();
         for (CelExpr.Entry<CelExpr> entry : v.entries()) {
+          long entryId = idGenerator.getAndIncrement();
+          putPosition(entryId, entry.sourceIndex());
           structBuilder.addEntries(
               Expr.CreateStruct.Entry.newBuilder()
-                  .setId(idGenerator.getAndIncrement())
+                  .setId(entryId)
                   .setMapKey(convert(entry.key()))
                   .setValue(convert(entry.value()))
                   .setOptionalEntry(entry.optional()));
@@ -134,9 +270,11 @@ final class CelProtoConverter {
         Expr.CreateStruct.Builder structBuilder =
             Expr.CreateStruct.newBuilder().setMessageName(v.messageName());
         for (CelExpr.Entry<CelExpr.Ident> field : v.fields()) {
+          long entryId = idGenerator.getAndIncrement();
+          putPosition(entryId, field.sourceIndex());
           structBuilder.addEntries(
               Expr.CreateStruct.Entry.newBuilder()
-                  .setId(idGenerator.getAndIncrement())
+                  .setId(entryId)
                   .setFieldKey(field.key().name())
                   .setValue(convert(field.value()))
                   .setOptionalEntry(field.optional()));
@@ -149,48 +287,201 @@ final class CelProtoConverter {
                 .setOperand(convert(v.member().operand()))
                 .setField(v.member().field())
                 .setTestOnly(true));
-        Expr macroCall = convert(toMacroCall(v)).toBuilder().setId(id).build();
-        sourceInfo.putMacroCalls(id, macroCall);
+        sourceInfo.putMacroCalls(id, serializeMacroCall(v));
       }
       case CelExpr.Macro v -> {
-        builder.setComprehensionExpr(toComprehensionProto(v));
-        Expr macroCall = convert(toMacroCall(v)).toBuilder().setId(id).build();
-        sourceInfo.putMacroCalls(id, macroCall);
+        builder.setComprehensionExpr(toComprehensionProto(v.sourceIndex(), v));
+        sourceInfo.putMacroCalls(id, serializeMacroCall(v));
       }
     }
-    return builder.build();
+    Expr result = builder.build();
+    if (!isSerializingMacroCall) {
+      convertedExprs.put(expr, result);
+    }
+    return result;
   }
 
-  private Expr.Comprehension toComprehensionProto(CelExpr.Macro macro) {
+  private Expr serializeMacroCall(CelExpr.Macro v) {
+    CelExpr macroCallExpr = toMacroCall(v);
+    convertedIds.put(macroCallExpr, 0L);
+    java.util.List<CelExpr> toShortCircuit = new java.util.ArrayList<>();
+    switch (v) {
+      case CelExpr.Macro.Has m -> findMacros(m.member(), toShortCircuit);
+      case CelExpr.Macro.All m -> {
+        findMacros(m.target(), toShortCircuit);
+        findMacros(m.condition(), toShortCircuit);
+      }
+      case CelExpr.Macro.Exists m -> {
+        findMacros(m.target(), toShortCircuit);
+        findMacros(m.condition(), toShortCircuit);
+      }
+      case CelExpr.Macro.ExistsOne m -> {
+        findMacros(m.target(), toShortCircuit);
+        findMacros(m.condition(), toShortCircuit);
+      }
+      case CelExpr.Macro.Filter m -> {
+        findMacros(m.target(), toShortCircuit);
+        findMacros(m.expr(), toShortCircuit);
+      }
+      case CelExpr.Macro.Map m -> {
+        findMacros(m.target(), toShortCircuit);
+        findMacros(m.expr(), toShortCircuit);
+      }
+      case CelExpr.Macro.FilterMap m -> {
+        findMacros(m.target(), toShortCircuit);
+        findMacros(m.filter(), toShortCircuit);
+        findMacros(m.transform(), toShortCircuit);
+      }
+    }
+
+    shortCircuitedMacros.addAll(toShortCircuit);
+    boolean wasSerializing = isSerializingMacroCall;
+    isSerializingMacroCall = true;
+    try {
+      return convert(macroCallExpr);
+    } finally {
+      isSerializingMacroCall = wasSerializing;
+      shortCircuitedMacros.removeAll(toShortCircuit);
+    }
+  }
+
+  private static void findMacros(CelExpr expr, java.util.List<CelExpr> result) {
+    if (expr == null) {
+      return;
+    }
+    if (expr instanceof CelExpr.Macro) {
+      result.add(expr);
+      return;
+    }
+    switch (expr) {
+      case CelExpr.Not v -> findMacros(v.operand(), result);
+      case CelExpr.Negative v -> findMacros(v.operand(), result);
+      case CelExpr.Add v -> {
+        findMacros(v.left(), result);
+        findMacros(v.right(), result);
+      }
+      case CelExpr.Subtract v -> {
+        findMacros(v.left(), result);
+        findMacros(v.right(), result);
+      }
+      case CelExpr.Multiply v -> {
+        findMacros(v.left(), result);
+        findMacros(v.right(), result);
+      }
+      case CelExpr.Divide v -> {
+        findMacros(v.left(), result);
+        findMacros(v.right(), result);
+      }
+      case CelExpr.Modulo v -> {
+        findMacros(v.left(), result);
+        findMacros(v.right(), result);
+      }
+      case CelExpr.LessThan v -> {
+        findMacros(v.left(), result);
+        findMacros(v.right(), result);
+      }
+      case CelExpr.LessThanOrEqualTo v -> {
+        findMacros(v.left(), result);
+        findMacros(v.right(), result);
+      }
+      case CelExpr.GreaterThan v -> {
+        findMacros(v.left(), result);
+        findMacros(v.right(), result);
+      }
+      case CelExpr.GreaterThanOrEqualTo v -> {
+        findMacros(v.left(), result);
+        findMacros(v.right(), result);
+      }
+      case CelExpr.EqualTo v -> {
+        findMacros(v.left(), result);
+        findMacros(v.right(), result);
+      }
+      case CelExpr.NotEqualTo v -> {
+        findMacros(v.left(), result);
+        findMacros(v.right(), result);
+      }
+      case CelExpr.And v -> {
+        findMacros(v.left(), result);
+        findMacros(v.right(), result);
+      }
+      case CelExpr.Or v -> {
+        findMacros(v.left(), result);
+        findMacros(v.right(), result);
+      }
+      case CelExpr.In v -> {
+        findMacros(v.left(), result);
+        findMacros(v.right(), result);
+      }
+      case CelExpr.Ternary v -> {
+        findMacros(v.condition(), result);
+        findMacros(v.ifTrue(), result);
+        findMacros(v.ifFalse(), result);
+      }
+      case CelExpr.FunctionCall v -> {
+        for (CelExpr arg : v.args()) {
+          findMacros(arg, result);
+        }
+      }
+      case CelExpr.MemberCall v -> {
+        for (CelExpr arg : v.args()) {
+          findMacros(arg, result);
+        }
+      }
+      default -> {}
+    }
+  }
+
+  private Expr.Comprehension toComprehensionProto(int macroPos, CelExpr.Macro macro) {
     return switch (macro) {
       case CelExpr.Macro.Has v -> throw new AssertionError("Macro.Has is handled separately");
-      case CelExpr.Macro.All v -> toAllComprehension(v.target(), v.varName(), v.condition());
-      case CelExpr.Macro.Exists v -> toExistsComprehension(v.target(), v.varName(), v.condition());
+      case CelExpr.Macro.All v -> toAllComprehension(macroPos, v.target(), v.var(), v.condition());
+      case CelExpr.Macro.Exists v ->
+          toExistsComprehension(macroPos, v.target(), v.var(), v.condition());
       case CelExpr.Macro.ExistsOne v ->
-          toExistsOneComprehension(v.target(), v.varName(), v.condition());
-      case CelExpr.Macro.Filter v -> toFilterComprehension(v.target(), v.varName(), v.expr());
-      case CelExpr.Macro.Map v -> toMapComprehension(v.target(), v.varName(), v.expr());
+          toExistsOneComprehension(macroPos, v.target(), v.var(), v.condition());
+      case CelExpr.Macro.Filter v -> toFilterComprehension(macroPos, v.target(), v.var(), v.expr());
+      case CelExpr.Macro.Map v -> toMapComprehension(macroPos, v.target(), v.var(), v.expr());
       case CelExpr.Macro.FilterMap v ->
-          toFilterMapComprehension(v.target(), v.varName(), v.filter(), v.transform());
+          toFilterMapComprehension(macroPos, v.target(), v.var(), v.filter(), v.transform());
     };
   }
 
-  private Expr.Comprehension toAllComprehension(CelExpr target, String varName, CelExpr condition) {
-    long accuId = idGenerator.getAndIncrement();
-    long stepId = idGenerator.getAndIncrement();
+  private Expr.Comprehension toAllComprehension(
+      int macroPos, CelExpr target, CelExpr.Ident var, CelExpr condition) {
+    Expr targetProto = convert(target);
+    Expr varProto = convert(var);
+    Expr conditionProto = convert(condition);
+
+    long initId = idGenerator.getAndIncrement();
+    long accuId1 = idGenerator.getAndIncrement();
     long condId = idGenerator.getAndIncrement();
+    long accuId2 = idGenerator.getAndIncrement();
+    long stepId = idGenerator.getAndIncrement();
     long resultId = idGenerator.getAndIncrement();
+
+    sourceInfo.putPositions(initId, macroPos);
+    sourceInfo.putPositions(accuId1, macroPos);
+    sourceInfo.putPositions(condId, macroPos);
+    sourceInfo.putPositions(accuId2, macroPos);
+    sourceInfo.putPositions(stepId, macroPos);
+    sourceInfo.putPositions(resultId, macroPos);
 
     Expr accuInit =
         Expr.newBuilder()
-            .setId(idGenerator.getAndIncrement())
+            .setId(initId)
             .setConstExpr(Constant.newBuilder().setBoolValue(true))
             .build();
 
     Expr loopCondition =
         Expr.newBuilder()
             .setId(condId)
-            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__"))
+            .setCallExpr(
+                Expr.Call.newBuilder()
+                    .setFunction("@not_strictly_false")
+                    .addArgs(
+                        Expr.newBuilder()
+                            .setId(accuId1)
+                            .setIdentExpr(Expr.Ident.newBuilder().setName("@result"))))
             .build();
 
     Expr loopStep =
@@ -201,21 +492,21 @@ final class CelProtoConverter {
                     .setFunction("_&&_")
                     .addArgs(
                         Expr.newBuilder()
-                            .setId(accuId)
-                            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__")))
-                    .addArgs(convert(condition)))
+                            .setId(accuId2)
+                            .setIdentExpr(Expr.Ident.newBuilder().setName("@result")))
+                    .addArgs(conditionProto))
             .build();
 
     Expr result =
         Expr.newBuilder()
             .setId(resultId)
-            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__"))
+            .setIdentExpr(Expr.Ident.newBuilder().setName("@result"))
             .build();
 
     return Expr.Comprehension.newBuilder()
-        .setIterVar(varName)
-        .setIterRange(convert(target))
-        .setAccuVar("__result__")
+        .setIterVar(var.name())
+        .setIterRange(targetProto)
+        .setAccuVar("@result")
         .setAccuInit(accuInit)
         .setLoopCondition(loopCondition)
         .setLoopStep(loopStep)
@@ -224,29 +515,50 @@ final class CelProtoConverter {
   }
 
   private Expr.Comprehension toExistsComprehension(
-      CelExpr target, String varName, CelExpr condition) {
-    long notId = idGenerator.getAndIncrement();
+      int macroPos, CelExpr target, CelExpr.Ident var, CelExpr condition) {
+    Expr targetProto = convert(target);
+    Expr varProto = convert(var);
+    Expr conditionProto = convert(condition);
+
+    long initId = idGenerator.getAndIncrement();
     long accuId1 = idGenerator.getAndIncrement();
+    long notId = idGenerator.getAndIncrement();
+    long condId = idGenerator.getAndIncrement();
     long accuId2 = idGenerator.getAndIncrement();
     long stepId = idGenerator.getAndIncrement();
     long resultId = idGenerator.getAndIncrement();
 
+    sourceInfo.putPositions(initId, macroPos);
+    sourceInfo.putPositions(accuId1, macroPos);
+    sourceInfo.putPositions(notId, macroPos);
+    sourceInfo.putPositions(condId, macroPos);
+    sourceInfo.putPositions(accuId2, macroPos);
+    sourceInfo.putPositions(stepId, macroPos);
+    sourceInfo.putPositions(resultId, macroPos);
+
     Expr accuInit =
         Expr.newBuilder()
-            .setId(idGenerator.getAndIncrement())
+            .setId(initId)
             .setConstExpr(Constant.newBuilder().setBoolValue(false))
             .build();
 
     Expr loopCondition =
         Expr.newBuilder()
-            .setId(notId)
+            .setId(condId)
             .setCallExpr(
                 Expr.Call.newBuilder()
-                    .setFunction("!_")
+                    .setFunction("@not_strictly_false")
                     .addArgs(
                         Expr.newBuilder()
-                            .setId(accuId1)
-                            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__"))))
+                            .setId(notId)
+                            .setCallExpr(
+                                Expr.Call.newBuilder()
+                                    .setFunction("!_")
+                                    .addArgs(
+                                        Expr.newBuilder()
+                                            .setId(accuId1)
+                                            .setIdentExpr(
+                                                Expr.Ident.newBuilder().setName("@result"))))))
             .build();
 
     Expr loopStep =
@@ -258,20 +570,20 @@ final class CelProtoConverter {
                     .addArgs(
                         Expr.newBuilder()
                             .setId(accuId2)
-                            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__")))
-                    .addArgs(convert(condition)))
+                            .setIdentExpr(Expr.Ident.newBuilder().setName("@result")))
+                    .addArgs(conditionProto))
             .build();
 
     Expr result =
         Expr.newBuilder()
             .setId(resultId)
-            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__"))
+            .setIdentExpr(Expr.Ident.newBuilder().setName("@result"))
             .build();
 
     return Expr.Comprehension.newBuilder()
-        .setIterVar(varName)
-        .setIterRange(convert(target))
-        .setAccuVar("__result__")
+        .setIterVar(var.name())
+        .setIterRange(targetProto)
+        .setAccuVar("@result")
         .setAccuInit(accuInit)
         .setLoopCondition(loopCondition)
         .setLoopStep(loopStep)
@@ -280,121 +592,43 @@ final class CelProtoConverter {
   }
 
   private Expr.Comprehension toExistsOneComprehension(
-      CelExpr target, String varName, CelExpr condition) {
+      int macroPos, CelExpr target, CelExpr.Ident var, CelExpr condition) {
+    Expr targetProto = convert(target);
+    Expr varProto = convert(var);
+    Expr conditionProto = convert(condition);
+
+    long initId = idGenerator.getAndIncrement();
     long loopCondId = idGenerator.getAndIncrement();
-    long stepId = idGenerator.getAndIncrement();
-    long ternaryInnerId = idGenerator.getAndIncrement();
     long accuId1 = idGenerator.getAndIncrement();
-    long accuId2 = idGenerator.getAndIncrement();
-    long resultId = idGenerator.getAndIncrement();
-
-    Expr accuInit =
-        Expr.newBuilder()
-            .setId(idGenerator.getAndIncrement())
-            .setConstExpr(Constant.newBuilder().setBoolValue(false))
-            .build();
-
-    Expr loopCondition =
-        Expr.newBuilder()
-            .setId(loopCondId)
-            .setConstExpr(Constant.newBuilder().setBoolValue(true))
-            .build();
-
-    Expr ternaryInner =
-        Expr.newBuilder()
-            .setId(ternaryInnerId)
-            .setCallExpr(
-                Expr.Call.newBuilder()
-                    .setFunction("_?_:_")
-                    .addArgs(
-                        Expr.newBuilder()
-                            .setId(accuId1)
-                            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__")))
-                    .addArgs(
-                        Expr.newBuilder()
-                            .setId(idGenerator.getAndIncrement())
-                            .setConstExpr(Constant.newBuilder().setBoolValue(false)))
-                    .addArgs(
-                        Expr.newBuilder()
-                            .setId(idGenerator.getAndIncrement())
-                            .setConstExpr(Constant.newBuilder().setBoolValue(true))))
-            .build();
-
-    Expr loopStep =
-        Expr.newBuilder()
-            .setId(stepId)
-            .setCallExpr(
-                Expr.Call.newBuilder()
-                    .setFunction("_?_:_")
-                    .addArgs(convert(condition))
-                    .addArgs(ternaryInner)
-                    .addArgs(
-                        Expr.newBuilder()
-                            .setId(accuId2)
-                            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__"))))
-            .build();
-
-    Expr result =
-        Expr.newBuilder()
-            .setId(resultId)
-            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__"))
-            .build();
-
-    return Expr.Comprehension.newBuilder()
-        .setIterVar(varName)
-        .setIterRange(convert(target))
-        .setAccuVar("__result__")
-        .setAccuInit(accuInit)
-        .setLoopCondition(loopCondition)
-        .setLoopStep(loopStep)
-        .setResult(result)
-        .build();
-  }
-
-  private Expr.Comprehension toFilterComprehension(CelExpr target, String varName, CelExpr expr) {
-    long loopCondId = idGenerator.getAndIncrement();
-    long stepId = idGenerator.getAndIncrement();
+    long oneConstId = idGenerator.getAndIncrement();
     long addId = idGenerator.getAndIncrement();
-    long listId = idGenerator.getAndIncrement();
-    long elementId = idGenerator.getAndIncrement();
-    long accuId1 = idGenerator.getAndIncrement();
     long accuId2 = idGenerator.getAndIncrement();
+    long stepId = idGenerator.getAndIncrement();
+    long accuId3 = idGenerator.getAndIncrement();
+    long resultConstId = idGenerator.getAndIncrement();
     long resultId = idGenerator.getAndIncrement();
+
+    sourceInfo.putPositions(initId, macroPos);
+    sourceInfo.putPositions(loopCondId, macroPos);
+    sourceInfo.putPositions(accuId1, macroPos);
+    sourceInfo.putPositions(oneConstId, macroPos);
+    sourceInfo.putPositions(addId, macroPos);
+    sourceInfo.putPositions(accuId2, macroPos);
+    sourceInfo.putPositions(stepId, macroPos);
+    sourceInfo.putPositions(accuId3, macroPos);
+    sourceInfo.putPositions(resultConstId, macroPos);
+    sourceInfo.putPositions(resultId, macroPos);
 
     Expr accuInit =
         Expr.newBuilder()
-            .setId(idGenerator.getAndIncrement())
-            .setListExpr(Expr.CreateList.newBuilder())
+            .setId(initId)
+            .setConstExpr(Constant.newBuilder().setInt64Value(0))
             .build();
 
     Expr loopCondition =
         Expr.newBuilder()
             .setId(loopCondId)
             .setConstExpr(Constant.newBuilder().setBoolValue(true))
-            .build();
-
-    Expr singleList =
-        Expr.newBuilder()
-            .setId(listId)
-            .setListExpr(
-                Expr.CreateList.newBuilder()
-                    .addElements(
-                        Expr.newBuilder()
-                            .setId(elementId)
-                            .setIdentExpr(Expr.Ident.newBuilder().setName(varName))))
-            .build();
-
-    Expr addExpr =
-        Expr.newBuilder()
-            .setId(addId)
-            .setCallExpr(
-                Expr.Call.newBuilder()
-                    .setFunction("_+_")
-                    .addArgs(
-                        Expr.newBuilder()
-                            .setId(accuId1)
-                            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__")))
-                    .addArgs(singleList))
             .build();
 
     Expr loopStep =
@@ -403,24 +637,48 @@ final class CelProtoConverter {
             .setCallExpr(
                 Expr.Call.newBuilder()
                     .setFunction("_?_:_")
-                    .addArgs(convert(expr))
-                    .addArgs(addExpr)
+                    .addArgs(conditionProto)
+                    .addArgs(
+                        Expr.newBuilder()
+                            .setId(addId)
+                            .setCallExpr(
+                                Expr.Call.newBuilder()
+                                    .setFunction("_+_")
+                                    .addArgs(
+                                        Expr.newBuilder()
+                                            .setId(accuId1)
+                                            .setIdentExpr(
+                                                Expr.Ident.newBuilder().setName("@result")))
+                                    .addArgs(
+                                        Expr.newBuilder()
+                                            .setId(oneConstId)
+                                            .setConstExpr(Constant.newBuilder().setInt64Value(1)))))
                     .addArgs(
                         Expr.newBuilder()
                             .setId(accuId2)
-                            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__"))))
+                            .setIdentExpr(Expr.Ident.newBuilder().setName("@result"))))
             .build();
 
     Expr result =
         Expr.newBuilder()
             .setId(resultId)
-            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__"))
+            .setCallExpr(
+                Expr.Call.newBuilder()
+                    .setFunction("_==_")
+                    .addArgs(
+                        Expr.newBuilder()
+                            .setId(accuId3)
+                            .setIdentExpr(Expr.Ident.newBuilder().setName("@result")))
+                    .addArgs(
+                        Expr.newBuilder()
+                            .setId(resultConstId)
+                            .setConstExpr(Constant.newBuilder().setInt64Value(1))))
             .build();
 
     return Expr.Comprehension.newBuilder()
-        .setIterVar(varName)
-        .setIterRange(convert(target))
-        .setAccuVar("__result__")
+        .setIterVar(var.name())
+        .setIterRange(targetProto)
+        .setAccuVar("@result")
         .setAccuInit(accuInit)
         .setLoopCondition(loopCondition)
         .setLoopStep(loopStep)
@@ -428,18 +686,32 @@ final class CelProtoConverter {
         .build();
   }
 
-  private Expr.Comprehension toMapComprehension(CelExpr target, String varName, CelExpr expr) {
+  private Expr.Comprehension toFilterComprehension(
+      int macroPos, CelExpr target, CelExpr.Ident var, CelExpr expr) {
+    Expr targetProto = convert(target);
+    Expr varProto = convert(var);
+    Expr conditionProto = convert(expr);
+
+    long initId = idGenerator.getAndIncrement();
     long loopCondId = idGenerator.getAndIncrement();
+    long accuId1 = idGenerator.getAndIncrement();
+    long stepListId = idGenerator.getAndIncrement();
+    long addId = idGenerator.getAndIncrement();
+    long accuId2 = idGenerator.getAndIncrement();
     long stepId = idGenerator.getAndIncrement();
-    long listId = idGenerator.getAndIncrement();
-    long accuId = idGenerator.getAndIncrement();
     long resultId = idGenerator.getAndIncrement();
 
+    sourceInfo.putPositions(initId, macroPos);
+    sourceInfo.putPositions(loopCondId, macroPos);
+    sourceInfo.putPositions(accuId1, macroPos);
+    sourceInfo.putPositions(stepListId, macroPos);
+    sourceInfo.putPositions(addId, macroPos);
+    sourceInfo.putPositions(accuId2, macroPos);
+    sourceInfo.putPositions(stepId, macroPos);
+    sourceInfo.putPositions(resultId, macroPos);
+
     Expr accuInit =
-        Expr.newBuilder()
-            .setId(idGenerator.getAndIncrement())
-            .setListExpr(Expr.CreateList.newBuilder())
-            .build();
+        Expr.newBuilder().setId(initId).setListExpr(Expr.CreateList.newBuilder()).build();
 
     Expr loopCondition =
         Expr.newBuilder()
@@ -447,10 +719,80 @@ final class CelProtoConverter {
             .setConstExpr(Constant.newBuilder().setBoolValue(true))
             .build();
 
-    Expr singleList =
+    Expr loopStep =
         Expr.newBuilder()
-            .setId(listId)
-            .setListExpr(Expr.CreateList.newBuilder().addElements(convert(expr)))
+            .setId(stepId)
+            .setCallExpr(
+                Expr.Call.newBuilder()
+                    .setFunction("_?_:_")
+                    .addArgs(conditionProto)
+                    .addArgs(
+                        Expr.newBuilder()
+                            .setId(addId)
+                            .setCallExpr(
+                                Expr.Call.newBuilder()
+                                    .setFunction("_+_")
+                                    .addArgs(
+                                        Expr.newBuilder()
+                                            .setId(accuId1)
+                                            .setIdentExpr(
+                                                Expr.Ident.newBuilder().setName("@result")))
+                                    .addArgs(
+                                        Expr.newBuilder()
+                                            .setId(stepListId)
+                                            .setListExpr(
+                                                Expr.CreateList.newBuilder()
+                                                    .addElements(varProto)))))
+                    .addArgs(
+                        Expr.newBuilder()
+                            .setId(accuId2)
+                            .setIdentExpr(Expr.Ident.newBuilder().setName("@result"))))
+            .build();
+
+    Expr result =
+        Expr.newBuilder()
+            .setId(resultId)
+            .setIdentExpr(Expr.Ident.newBuilder().setName("@result"))
+            .build();
+
+    return Expr.Comprehension.newBuilder()
+        .setIterVar(var.name())
+        .setIterRange(targetProto)
+        .setAccuVar("@result")
+        .setAccuInit(accuInit)
+        .setLoopCondition(loopCondition)
+        .setLoopStep(loopStep)
+        .setResult(result)
+        .build();
+  }
+
+  private Expr.Comprehension toMapComprehension(
+      int macroPos, CelExpr target, CelExpr.Ident var, CelExpr expr) {
+    Expr targetProto = convert(target);
+    Expr varProto = convert(var);
+    Expr exprProto = convert(expr);
+
+    long initId = idGenerator.getAndIncrement();
+    long loopCondId = idGenerator.getAndIncrement();
+    long accuId1 = idGenerator.getAndIncrement();
+    long stepListId = idGenerator.getAndIncrement();
+    long stepId = idGenerator.getAndIncrement();
+    long resultId = idGenerator.getAndIncrement();
+
+    sourceInfo.putPositions(initId, macroPos);
+    sourceInfo.putPositions(loopCondId, macroPos);
+    sourceInfo.putPositions(accuId1, macroPos);
+    sourceInfo.putPositions(stepListId, macroPos);
+    sourceInfo.putPositions(stepId, macroPos);
+    sourceInfo.putPositions(resultId, macroPos);
+
+    Expr accuInit =
+        Expr.newBuilder().setId(initId).setListExpr(Expr.CreateList.newBuilder()).build();
+
+    Expr loopCondition =
+        Expr.newBuilder()
+            .setId(loopCondId)
+            .setConstExpr(Constant.newBuilder().setBoolValue(true))
             .build();
 
     Expr loopStep =
@@ -461,21 +803,24 @@ final class CelProtoConverter {
                     .setFunction("_+_")
                     .addArgs(
                         Expr.newBuilder()
-                            .setId(accuId)
-                            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__")))
-                    .addArgs(singleList))
+                            .setId(accuId1)
+                            .setIdentExpr(Expr.Ident.newBuilder().setName("@result")))
+                    .addArgs(
+                        Expr.newBuilder()
+                            .setId(stepListId)
+                            .setListExpr(Expr.CreateList.newBuilder().addElements(exprProto))))
             .build();
 
     Expr result =
         Expr.newBuilder()
             .setId(resultId)
-            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__"))
+            .setIdentExpr(Expr.Ident.newBuilder().setName("@result"))
             .build();
 
     return Expr.Comprehension.newBuilder()
-        .setIterVar(varName)
-        .setIterRange(convert(target))
-        .setAccuVar("__result__")
+        .setIterVar(var.name())
+        .setIterRange(targetProto)
+        .setAccuVar("@result")
         .setAccuInit(accuInit)
         .setLoopCondition(loopCondition)
         .setLoopStep(loopStep)
@@ -484,44 +829,37 @@ final class CelProtoConverter {
   }
 
   private Expr.Comprehension toFilterMapComprehension(
-      CelExpr target, String varName, CelExpr filter, CelExpr transform) {
+      int macroPos, CelExpr target, CelExpr.Ident var, CelExpr filter, CelExpr transform) {
+    Expr targetProto = convert(target);
+    Expr varProto = convert(var);
+    Expr filterProto = convert(filter);
+    Expr transformProto = convert(transform);
+
+    long initId = idGenerator.getAndIncrement();
     long loopCondId = idGenerator.getAndIncrement();
-    long stepId = idGenerator.getAndIncrement();
-    long addId = idGenerator.getAndIncrement();
-    long listId = idGenerator.getAndIncrement();
     long accuId1 = idGenerator.getAndIncrement();
+    long stepListId = idGenerator.getAndIncrement();
+    long addId = idGenerator.getAndIncrement();
     long accuId2 = idGenerator.getAndIncrement();
+    long stepId = idGenerator.getAndIncrement();
     long resultId = idGenerator.getAndIncrement();
 
+    sourceInfo.putPositions(initId, macroPos);
+    sourceInfo.putPositions(loopCondId, macroPos);
+    sourceInfo.putPositions(accuId1, macroPos);
+    sourceInfo.putPositions(stepListId, macroPos);
+    sourceInfo.putPositions(addId, macroPos);
+    sourceInfo.putPositions(accuId2, macroPos);
+    sourceInfo.putPositions(stepId, macroPos);
+    sourceInfo.putPositions(resultId, macroPos);
+
     Expr accuInit =
-        Expr.newBuilder()
-            .setId(idGenerator.getAndIncrement())
-            .setListExpr(Expr.CreateList.newBuilder())
-            .build();
+        Expr.newBuilder().setId(initId).setListExpr(Expr.CreateList.newBuilder()).build();
 
     Expr loopCondition =
         Expr.newBuilder()
             .setId(loopCondId)
             .setConstExpr(Constant.newBuilder().setBoolValue(true))
-            .build();
-
-    Expr singleList =
-        Expr.newBuilder()
-            .setId(listId)
-            .setListExpr(Expr.CreateList.newBuilder().addElements(convert(transform)))
-            .build();
-
-    Expr addExpr =
-        Expr.newBuilder()
-            .setId(addId)
-            .setCallExpr(
-                Expr.Call.newBuilder()
-                    .setFunction("_+_")
-                    .addArgs(
-                        Expr.newBuilder()
-                            .setId(accuId1)
-                            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__")))
-                    .addArgs(singleList))
             .build();
 
     Expr loopStep =
@@ -530,24 +868,40 @@ final class CelProtoConverter {
             .setCallExpr(
                 Expr.Call.newBuilder()
                     .setFunction("_?_:_")
-                    .addArgs(convert(filter))
-                    .addArgs(addExpr)
+                    .addArgs(filterProto)
+                    .addArgs(
+                        Expr.newBuilder()
+                            .setId(addId)
+                            .setCallExpr(
+                                Expr.Call.newBuilder()
+                                    .setFunction("_+_")
+                                    .addArgs(
+                                        Expr.newBuilder()
+                                            .setId(accuId1)
+                                            .setIdentExpr(
+                                                Expr.Ident.newBuilder().setName("@result")))
+                                    .addArgs(
+                                        Expr.newBuilder()
+                                            .setId(stepListId)
+                                            .setListExpr(
+                                                Expr.CreateList.newBuilder()
+                                                    .addElements(transformProto)))))
                     .addArgs(
                         Expr.newBuilder()
                             .setId(accuId2)
-                            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__"))))
+                            .setIdentExpr(Expr.Ident.newBuilder().setName("@result"))))
             .build();
 
     Expr result =
         Expr.newBuilder()
             .setId(resultId)
-            .setIdentExpr(Expr.Ident.newBuilder().setName("__result__"))
+            .setIdentExpr(Expr.Ident.newBuilder().setName("@result"))
             .build();
 
     return Expr.Comprehension.newBuilder()
-        .setIterVar(varName)
-        .setIterRange(convert(target))
-        .setAccuVar("__result__")
+        .setIterVar(var.name())
+        .setIterRange(targetProto)
+        .setAccuVar("@result")
         .setAccuInit(accuInit)
         .setLoopCondition(loopCondition)
         .setLoopStep(loopStep)
@@ -558,63 +912,44 @@ final class CelProtoConverter {
   private static CelExpr toMacroCall(CelExpr.Macro macro) {
     return switch (macro) {
       case CelExpr.Macro.Has v ->
-          new CelExpr.FunctionCall(new CelExpr.Ident(v.sourceIndex(), "has"), List.of(v.member()));
+          new CelExpr.FunctionCall(
+              v.sourceIndex(), new CelExpr.Ident(v.sourceIndex(), "has"), List.of(v.member()));
       case CelExpr.Macro.All v ->
           new CelExpr.MemberCall(
+              v.sourceIndex(),
               v.target(),
               new CelExpr.Ident(v.sourceIndex(), "all"),
-              List.of(new CelExpr.Ident(v.sourceIndex(), v.varName()), v.condition()));
+              List.of(v.var(), v.condition()));
       case CelExpr.Macro.Exists v ->
           new CelExpr.MemberCall(
+              v.sourceIndex(),
               v.target(),
               new CelExpr.Ident(v.sourceIndex(), "exists"),
-              List.of(new CelExpr.Ident(v.sourceIndex(), v.varName()), v.condition()));
+              List.of(v.var(), v.condition()));
       case CelExpr.Macro.ExistsOne v ->
           new CelExpr.MemberCall(
+              v.sourceIndex(),
               v.target(),
               new CelExpr.Ident(v.sourceIndex(), "exists_one"),
-              List.of(new CelExpr.Ident(v.sourceIndex(), v.varName()), v.condition()));
+              List.of(v.var(), v.condition()));
       case CelExpr.Macro.Filter v ->
           new CelExpr.MemberCall(
+              v.sourceIndex(),
               v.target(),
               new CelExpr.Ident(v.sourceIndex(), "filter"),
-              List.of(new CelExpr.Ident(v.sourceIndex(), v.varName()), v.expr()));
+              List.of(v.var(), v.expr()));
       case CelExpr.Macro.Map v ->
           new CelExpr.MemberCall(
+              v.sourceIndex(),
               v.target(),
               new CelExpr.Ident(v.sourceIndex(), "map"),
-              List.of(new CelExpr.Ident(v.sourceIndex(), v.varName()), v.expr()));
+              List.of(v.var(), v.expr()));
       case CelExpr.Macro.FilterMap v ->
           new CelExpr.MemberCall(
+              v.sourceIndex(),
               v.target(),
               new CelExpr.Ident(v.sourceIndex(), "map"),
-              List.of(new CelExpr.Ident(v.sourceIndex(), v.varName()), v.filter(), v.transform()));
-    };
-  }
-
-  private static String toOperatorName(CelExpr.Unary.Op op) {
-    return switch (op) {
-      case NEGATIVE -> "-_";
-      case NOT -> "!_";
-    };
-  }
-
-  private static String toOperatorName(CelExpr.Binary.Op op) {
-    return switch (op) {
-      case ADD -> "_+_";
-      case SUB -> "_-_";
-      case MULT -> "_*_";
-      case DIV -> "_/_";
-      case MOD -> "_%_";
-      case EQ -> "_==_";
-      case NE -> "_!=_";
-      case LT -> "_<_";
-      case LE -> "_<=_";
-      case GT -> "_>_";
-      case GE -> "_>=_";
-      case IN -> "@in";
-      case AND -> "_&&_";
-      case OR -> "_||_";
+              List.of(v.var(), v.filter(), v.transform()));
     };
   }
 }
