@@ -3,7 +3,6 @@ package com.google.mu.cel;
 import java.util.List;
 import java.util.Map;
 
-import com.google.api.expr.v1alpha1.Expr;
 import com.google.mu.util.stream.Joiner;
 
 /**
@@ -29,11 +28,6 @@ public sealed interface CelExpr {
    */
   static CelExpr of(String cel) {
     return new CelParser().parse(cel);
-  }
-
-  /** Converts this expression to the official CEL Expr Protobuf representation. */
-  default Expr toProto() {
-    return CelProtoConverter.toProto(this);
   }
 
   /** {@code CelExpr.value(true)} is equivalent to {@code CelExpr.of("true")}. */

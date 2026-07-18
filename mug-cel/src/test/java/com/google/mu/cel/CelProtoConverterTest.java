@@ -16,7 +16,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testNullLiteral() {
-    assertThat(CelExpr.of("null").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("null")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -26,7 +26,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBoolLiteral() {
-    assertThat(CelExpr.of("true").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("true")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -36,7 +36,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testLongLiteral() {
-    assertThat(CelExpr.of("42").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("42")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -46,7 +46,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testUintLiteral() {
-    assertThat(CelExpr.of("42u").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("42u")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -56,7 +56,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testDoubleLiteral() {
-    assertThat(CelExpr.of("3.14").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("3.14")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -66,7 +66,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testStringLiteral() {
-    assertThat(CelExpr.of("'hello'").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("'hello'")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -76,7 +76,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBytesLiteral() {
-    assertThat(CelExpr.of("b'\\x01\\x02'").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("b'\\x01\\x02'")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -87,7 +87,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testIdent() {
-    assertThat(CelExpr.of("my_var").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("my_var")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -97,7 +97,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testSelect() {
-    assertThat(CelExpr.of("x.y").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("x.y")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -113,7 +113,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testIndex() {
-    assertThat(CelExpr.of("arr[0]").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("arr[0]")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -133,7 +133,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testUnaryMinus() {
-    assertThat(CelExpr.of("-(5)").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("-(5)")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -149,7 +149,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBinaryAdd() {
-    assertThat(CelExpr.of("1 + 2").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("1 + 2")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -169,7 +169,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testTernary() {
-    assertThat(CelExpr.of("true ? 1 : 2").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("true ? 1 : 2")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -193,7 +193,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testCallWithTarget() {
-    assertThat(CelExpr.of("receiver.method(1)").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("receiver.method(1)")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -213,7 +213,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testOptionalSelectCall() {
-    assertThat(CelExpr.of("obj.?field").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("obj.?field")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -233,7 +233,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testOptionalIndexCall() {
-    assertThat(CelExpr.of("arr[?0]").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("arr[?0]")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -253,7 +253,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testListLiteral() {
-    assertThat(CelExpr.of("[1]").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("[1]")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -268,7 +268,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testListLiteralWithOptionalElement() {
-    assertThat(CelExpr.of("[?1]").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("[?1]")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -284,7 +284,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testMapLiteral() {
-    assertThat(CelExpr.of("{'k': 1}").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("{'k': 1}")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -306,7 +306,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testMapLiteralWithOptionalEntry() {
-    assertThat(CelExpr.of("{? 'k': 1}").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("{? 'k': 1}")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -329,7 +329,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testStructLiteral() {
-    assertThat(CelExpr.of("MyMsg{f: 1}").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("MyMsg{f: 1}")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -349,7 +349,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testStructLiteralWithOptionalField() {
-    assertThat(CelExpr.of("MyMsg{?f: 1}").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("MyMsg{?f: 1}")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -370,7 +370,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testMacroHas() {
-    assertThat(CelExpr.of("has(x.y)").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("has(x.y)")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -388,7 +388,7 @@ public class CelProtoConverterTest {
   @Test
   public void testMacroAll() {
     CelExpr expr = CelExpr.of("list.all(v, true)");
-    Expr proto = expr.toProto();
+    Expr proto = CelProtoConverter.toProto(expr);
     assertThat(proto.hasComprehensionExpr()).isTrue();
     Expr.Comprehension comp = proto.getComprehensionExpr();
     assertThat(comp.getIterVar()).isEqualTo("v");
@@ -402,7 +402,7 @@ public class CelProtoConverterTest {
   @Test
   public void testMacroExists() {
     CelExpr expr = CelExpr.of("list.exists(v, true)");
-    Expr proto = expr.toProto();
+    Expr proto = CelProtoConverter.toProto(expr);
     assertThat(proto.hasComprehensionExpr()).isTrue();
     Expr.Comprehension comp = proto.getComprehensionExpr();
     assertThat(comp.getIterVar()).isEqualTo("v");
@@ -416,7 +416,7 @@ public class CelProtoConverterTest {
   @Test
   public void testMacroExistsOne() {
     CelExpr expr = CelExpr.of("list.exists_one(v, true)");
-    Expr proto = expr.toProto();
+    Expr proto = CelProtoConverter.toProto(expr);
     assertThat(proto.hasComprehensionExpr()).isTrue();
     Expr.Comprehension comp = proto.getComprehensionExpr();
     assertThat(comp.getIterVar()).isEqualTo("v");
@@ -430,7 +430,7 @@ public class CelProtoConverterTest {
   @Test
   public void testMacroFilter() {
     CelExpr expr = CelExpr.of("list.filter(v, true)");
-    Expr proto = expr.toProto();
+    Expr proto = CelProtoConverter.toProto(expr);
     assertThat(proto.hasComprehensionExpr()).isTrue();
     Expr.Comprehension comp = proto.getComprehensionExpr();
     assertThat(comp.getIterVar()).isEqualTo("v");
@@ -444,7 +444,7 @@ public class CelProtoConverterTest {
   @Test
   public void testMacroMap() {
     CelExpr expr = CelExpr.of("list.map(v, 1)");
-    Expr proto = expr.toProto();
+    Expr proto = CelProtoConverter.toProto(expr);
     assertThat(proto.hasComprehensionExpr()).isTrue();
     Expr.Comprehension comp = proto.getComprehensionExpr();
     assertThat(comp.getIterVar()).isEqualTo("v");
@@ -457,7 +457,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testUnaryNot() {
-    assertThat(CelExpr.of("!true").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("!true")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -473,7 +473,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBinarySubtract() {
-    assertThat(CelExpr.of("1 - 2").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("1 - 2")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -493,7 +493,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBinaryMultiply() {
-    assertThat(CelExpr.of("1 * 2").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("1 * 2")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -513,7 +513,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBinaryDivide() {
-    assertThat(CelExpr.of("1 / 2").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("1 / 2")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -533,7 +533,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBinaryModulo() {
-    assertThat(CelExpr.of("1 % 2").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("1 % 2")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -553,7 +553,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBinaryEqual() {
-    assertThat(CelExpr.of("1 == 2").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("1 == 2")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -573,7 +573,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBinaryNotEqual() {
-    assertThat(CelExpr.of("1 != 2").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("1 != 2")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -593,7 +593,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBinaryLessThan() {
-    assertThat(CelExpr.of("1 < 2").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("1 < 2")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -613,7 +613,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBinaryLessOrEqual() {
-    assertThat(CelExpr.of("1 <= 2").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("1 <= 2")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -633,7 +633,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBinaryGreaterThan() {
-    assertThat(CelExpr.of("1 > 2").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("1 > 2")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -653,7 +653,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBinaryGreaterOrEqual() {
-    assertThat(CelExpr.of("1 >= 2").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("1 >= 2")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -673,7 +673,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBinaryIn() {
-    assertThat(CelExpr.of("1 in [2]").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("1 in [2]")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -699,7 +699,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBinaryAnd() {
-    assertThat(CelExpr.of("true && false").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("true && false")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -719,7 +719,7 @@ public class CelProtoConverterTest {
 
   @Test
   public void testBinaryOr() {
-    assertThat(CelExpr.of("true || false").toProto())
+    assertThat(CelProtoConverter.toProto(CelExpr.of("true || false")))
         .isEqualTo(
             Expr.newBuilder()
                 .setId(1)
@@ -740,8 +740,8 @@ public class CelProtoConverterTest {
   @Test
   public void testDeterministicIds() {
     CelExpr expr = CelExpr.of("1 + 2");
-    Expr proto1 = expr.toProto();
-    Expr proto2 = expr.toProto();
+    Expr proto1 = CelProtoConverter.toProto(expr);
+    Expr proto2 = CelProtoConverter.toProto(expr);
     assertThat(proto1).isEqualTo(proto2);
   }
 }
