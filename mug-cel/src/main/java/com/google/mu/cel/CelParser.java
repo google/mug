@@ -12,7 +12,6 @@ import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
-import static com.google.common.labs.parse.Suffix.suffix;
 import static com.google.mu.util.CharPredicate.isNot;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -29,7 +28,9 @@ import java.io.ByteArrayOutputStream;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -107,41 +108,57 @@ public final class CelParser {
 
   private static final Parser<String> HEX_DIGITS = consecutive("[0-9a-fA-F]");
 
-  private static final Parser<Long> HEX_INT =
+  private static final Parser<CelExpr.LongValue> hexInt =
       sequence(
-          string("-").orElse(""),
-          literally(caseInsensitive("0x").then(HEX_DIGITS)),
-          (sign, d) -> parseLong(sign + d, 16));
+              one('-').optional(),
+              literally(caseInsensitive("0x").then(HEX_DIGITS)),
+              (sign, d) -> {
+                String valStr = sign.map(Object::toString).orElse("") + d;
+                return parseLong(valStr, 16);
+              })
+          .mapWithIndex((val, begin, end) -> new CelExpr.LongValue(begin, val));
 
-  private static final Parser<Long> DEC_INT =
-      sequence(string("-").orElse(""), digits(), (sign, d) -> parseLong(sign + d));
+  private static final Parser<CelExpr.LongValue> decInt =
+      sequence(
+              one('-').optional(),
+              digits(),
+              (sign, d) -> {
+                String valStr = sign.map(Object::toString).orElse("") + d;
+                return parseLong(valStr);
+              })
+          .mapWithIndex((val, begin, end) -> new CelExpr.LongValue(begin, val));
 
-  private static final Parser<Long> NUM_UINT =
+  private static final Parser<CelExpr.UintValue> positiveUint =
       literally(
-          anyOf(
-                  string("0x").then(HEX_DIGITS).map(s -> parseUnsignedLong(s, 16)),
-                  digits().map(CelParser::parseUnsignedLong))
-              .followedBy(caseInsensitive("u")));
+              anyOf(
+                      string("0x").then(HEX_DIGITS).map(s -> parseUnsignedLong(s, 16)),
+                      digits().map(CelParser::parseUnsignedLong))
+                  .followedBy(caseInsensitive("u")))
+          .mapWithIndex((val, begin, end) -> new CelExpr.UintValue(begin, val));
 
   private static final Parser<String> EXPONENT =
       sequence(caseInsensitive("e"), anyOf("+", "-").optional(), digits()).source();
 
-  private static final Parser<Double> NUM_DOUBLE =
-      signedLiteral(
-          anyOf(
-                  sequence(digits(), one('.'), digits(), EXPONENT.optional()),
-                  sequence(digits(), EXPONENT),
-                  sequence(one('.'), digits(), EXPONENT.optional()))
-              .source()
-              .map(CelParser::parseDouble),
-          d -> -d);
+  private static final Parser<CelExpr.DoubleValue> signedDouble =
+      sequence(
+              one('-').optional(),
+              anyOf(
+                      sequence(digits(), one('.'), digits(), EXPONENT.optional()),
+                      sequence(digits(), EXPONENT),
+                      sequence(one('.'), digits(), EXPONENT.optional()))
+                  .source(),
+              (sign, d) -> {
+                String valStr = sign.map(Object::toString).orElse("") + d;
+                return parseDouble(valStr);
+              })
+          .mapWithIndex((val, begin, end) -> new CelExpr.DoubleValue(begin, val));
 
   private static final Parser<CelExpr> CONSTANT_LITERAL =
       anyOf(
-          NUM_DOUBLE.mapWithIndex((val, begin, end) -> new CelExpr.DoubleValue(begin, val)),
-          NUM_UINT.mapWithIndex((val, begin, end) -> new CelExpr.UintValue(begin, val)),
-          HEX_INT.mapWithIndex((val, begin, end) -> new CelExpr.LongValue(begin, val)),
-          DEC_INT.mapWithIndex((val, begin, end) -> new CelExpr.LongValue(begin, val)),
+          signedDouble,
+          positiveUint,
+          hexInt,
+          decInt,
           STRING_LITERAL.mapWithIndex((val, begin, end) -> new CelExpr.StringValue(begin, val)),
           BYTES_LITERAL.mapWithIndex((val, begin, end) -> new CelExpr.BytesValue(begin, val)),
           word("true").mapWithIndex((val, begin, end) -> new CelExpr.BoolValue(begin, true)),
@@ -179,13 +196,13 @@ public final class CelParser {
    * Parses the CEL expression and converts it to a {@link ParsedExpr} proto.
    *
    * <p>The returned {@link ParsedExpr#getSourceInfo} will have {@link
-   * com.google.api.expr.v1alpha1.SourceInfo#getPositionsMap() positions},
-   * {@link com.google.api.expr.v1alpha1.SourceInfo#getLineOffsetsList() line_offsets}
-   * and {@link com.google.api.expr.v1alpha1.SourceInfo#getMacroCallsMap() macro_calls}
-   * populated. The caller can also populate the other fields like {@link
-   * com.google.api.expr.v1alpha1.SourceInfo#getLocation location} and
-   * {@link com.google.api.expr.v1alpha1.SourceInfo#getSyntaxVersion() syntax_version}
-   * if such information is available.
+   * com.google.api.expr.v1alpha1.SourceInfo#getPositionsMap() positions}, {@link
+   * com.google.api.expr.v1alpha1.SourceInfo#getLineOffsetsList() line_offsets} and {@link
+   * com.google.api.expr.v1alpha1.SourceInfo#getMacroCallsMap() macro_calls} populated. The caller
+   * can also populate the other fields like {@link
+   * com.google.api.expr.v1alpha1.SourceInfo#getLocation location} and {@link
+   * com.google.api.expr.v1alpha1.SourceInfo#getSyntaxVersion() syntax_version} if such information
+   * is available.
    */
   public ParsedExpr parseToProto(String input) {
     return CelProtoConverter.toParsedExpr(parse(input), input);
@@ -194,8 +211,7 @@ public final class CelParser {
   private static Parser<CelExpr> makeParser() {
     Parser.Rule<CelExpr> regular = new Parser.Rule<>();
     Parser.Rule<CelExpr> expr = new Parser.Rule<>();
-    Parser<CelExpr> parenthesized =
-        expr.between("(", ")").mapWithIndex((v, begin, end) -> v.withSourceIndex(begin));
+    Parser<CelExpr> parenthesized = expr.between("(", ")");
 
     Parser<CelExpr> listExpr =
         sequence(OPTIONALITY, expr, (opt, val) -> new CelExpr.Element(val, opt))
@@ -206,9 +222,10 @@ public final class CelParser {
     Parser<CelExpr> mapExpr =
         sequence(
                 OPTIONALITY,
-                expr.followedBy(":"),
                 expr,
-                (opt, key, val) -> new CelExpr.Entry<>(key, val, opt))
+                string(":").mapWithIndex((colon, begin, end) -> begin),
+                expr,
+                (opt, key, colon, val) -> new CelExpr.Entry<>(colon, key, val, opt))
             .zeroOrMoreDelimitedBy(",")
             .optionallyFollowedBy(",")
             .between("{", "}")
@@ -216,98 +233,109 @@ public final class CelParser {
     Parser<CelExpr.Entry<CelExpr.Ident>> messageFieldInit =
         sequence(
             OPTIONALITY,
-            ANY_IDENTIFIER.followedBy(":"),
+            ANY_IDENTIFIER.mapWithIndex((name, begin, end) -> new CelExpr.Ident(begin, name)),
+            string(":").mapWithIndex((colon, begin, end) -> begin),
             expr,
-            (opt, name, val) -> new CelExpr.Entry<>(new CelExpr.Ident(name), val, opt));
-    Parser<CelExpr> myType =
-        IDENT_EXPR.withPostfixes(one('.').then(ANY_IDENTIFIER).map(CelParser::select));
-    Parser<List<CelExpr>> args = expr.zeroOrMoreDelimitedBy(",").between("(", ")");
+            (opt, nameIdent, colon, val) -> new CelExpr.Entry<>(colon, nameIdent, val, opt));
     Parser<CelExpr> callOrStructOrIdent =
-        myType.optionallyFollowedBy(
-            anyOf(
-                suffix(
-                    messageFieldInit
-                        .zeroOrMoreDelimitedBy(",")
-                        .optionallyFollowedBy(",")
-                        .between("{", "}"),
-                    CelParser::structExpr),
-                suffix(args, CelParser::call)),
-            Suffix::apply);
+        IDENT_EXPR
+            .withPostfixes(
+                one('.')
+                    .then(ANY_IDENTIFIER)
+                    .mapWithIndex((f, begin, end) -> e -> new CelExpr.Select(begin, e, f)))
+            .optionallyFollowedBy(
+                anyOf(
+                    suffixWithIndex(
+                        messageFieldInit
+                            .zeroOrMoreDelimitedBy(",")
+                            .optionallyFollowedBy(",")
+                            .between("{", "}"),
+                        CelParser::structExpr),
+                    suffixWithIndex(
+                        expr.zeroOrMoreDelimitedBy(",").between("(", ")"), CelParser::call)),
+                Suffix::apply);
 
     // Primary expression
     Parser<CelExpr> primary =
         anyOf(CONSTANT_LITERAL, callOrStructOrIdent, listExpr, mapExpr, parenthesized);
     Parser<CelExpr.Ident> memberMethod =
         ANY_IDENTIFIER.mapWithIndex((name, begin, end) -> new CelExpr.Ident(begin, name));
+
     Parser<CelExpr> memberExpr =
-        primary.withPostfixes(
+        withPostfixIndex(
+            primary,
             anyOf(
-                one('.')
-                    .then(
-                        anyOf(
-                            sequence(
-                                memberMethod, args, (method, a) -> t -> macroOrCall(t, method, a)),
-                            one('?').then(ANY_IDENTIFIER).map(CelParser::optionalSelect),
-                            ANY_IDENTIFIER.map(CelParser::select))),
-                sequence(one('?').thenReturn(true).orElse(false), expr, CelParser::indexCall)
-                    .between("[", "]")));
+                    one('.')
+                        .then(
+                            anyOf(
+                                sequence(
+                                    memberMethod,
+                                    expr.zeroOrMoreDelimitedBy(",").between("(", ")"),
+                                    (name, methodArgs) ->
+                                        target -> macroOrCall(target, name, methodArgs)),
+                                one('?').then(ANY_IDENTIFIER).map(CelParser::optionalSelect),
+                                ANY_IDENTIFIER.map(CelParser::select))),
+                    sequence(one('?').thenReturn(true).orElse(false), expr, CelParser::index)
+                        .between("[", "]")));
     Parser<CelExpr> unaryExpr =
         anyOf(
-            memberExpr.withPrefixes(
-                one('!')
-                    .mapWithIndex((op, begin, end) -> e -> CelExpr.not(e).withSourceIndex(begin))),
-            memberExpr.withPrefixes(
-                one('-')
-                    .mapWithIndex(
-                        (op, begin, end) -> e -> CelExpr.negative(e).withSourceIndex(begin))));
+            memberExpr.withPrefixes(unary('!', CelExpr.Not::new)),
+            memberExpr.withPrefixes(unary('-', CelExpr.Negative::new)));
     Parser<CelExpr> binary =
         new OperatorTable<CelExpr>()
-            .leftAssociative("*", (l, r) -> binaryExpr(CelExpr.Binary.Op.MULT, l, r), 6)
-            .leftAssociative("/", (l, r) -> binaryExpr(CelExpr.Binary.Op.DIV, l, r), 6)
-            .leftAssociative("%", (l, r) -> binaryExpr(CelExpr.Binary.Op.MOD, l, r), 6)
-            .leftAssociative("+", (l, r) -> binaryExpr(CelExpr.Binary.Op.ADD, l, r), 5)
-            .leftAssociative("-", (l, r) -> binaryExpr(CelExpr.Binary.Op.SUB, l, r), 5)
-            .leftAssociative("<=", (l, r) -> binaryExpr(CelExpr.Binary.Op.LE, l, r), 4)
-            .leftAssociative("<", (l, r) -> binaryExpr(CelExpr.Binary.Op.LT, l, r), 4)
-            .leftAssociative(">=", (l, r) -> binaryExpr(CelExpr.Binary.Op.GE, l, r), 4)
-            .leftAssociative(">", (l, r) -> binaryExpr(CelExpr.Binary.Op.GT, l, r), 4)
-            .leftAssociative("==", (l, r) -> binaryExpr(CelExpr.Binary.Op.EQ, l, r), 4)
-            .leftAssociative("!=", (l, r) -> binaryExpr(CelExpr.Binary.Op.NE, l, r), 4)
-            .leftAssociative(
-                word("in").thenReturn((l, r) -> binaryExpr(CelExpr.Binary.Op.IN, l, r)), 4)
+            .leftAssociative(binary("*", CelExpr::multiply), 6)
+            .leftAssociative(binary("/", CelExpr::divide), 6)
+            .leftAssociative(binary("%", CelExpr::modulo), 6)
+            .leftAssociative(binary("+", CelExpr::add), 5)
+            .leftAssociative(binary("-", CelExpr::subtract), 5)
+            .leftAssociative(binary("<=", CelExpr::atMost), 4)
+            .leftAssociative(binary("<", CelExpr::lessThan), 4)
+            .leftAssociative(binary(">=", CelExpr::atLeast), 4)
+            .leftAssociative(binary(">", CelExpr::greaterThan), 4)
+            .leftAssociative(binary("==", CelExpr::equalTo), 4)
+            .leftAssociative(binary("!=", CelExpr::notEqualTo), 4)
+            .leftAssociative(binary(word("in"), CelExpr::in), 4)
             .build(unaryExpr);
-    binary = associative(binary, "&&", (l, r) -> binaryExpr(CelExpr.Binary.Op.AND, l, r));
-    binary = associative(binary, "||", (l, r) -> binaryExpr(CelExpr.Binary.Op.OR, l, r));
+    binary = associative(binary, "&&", CelExpr::and);
+    binary = associative(binary, "||", CelExpr::or);
     regular.definedAs(binary);
     return expr.definedAs(
         new OperatorTable<CelExpr>()
             .rightAssociative(
                 anyOf(parenthesized, regular)
                     .between("?", ":")
-                    .map(ifTrue -> (cond, ifFalse) -> cond.ifElse(ifTrue, ifFalse)),
+                    .mapWithIndex(
+                        (ifTrue, begin, end) ->
+                            (cond, ifFalse) -> new CelExpr.Ternary(begin, cond, ifTrue, ifFalse)),
                 1)
             .build(anyOf(regular, parenthesized)));
   }
 
-  private static <T> Parser<T> associative(
-      Parser<T> operand, String operator, BinaryOperator<T> combine) {
-    return operand
-        .atLeastOnceDelimitedBy(operator)
-        .map(operands -> balanced(operands, 0, operands.size(), combine));
+  private static Parser<CelExpr> associative(
+      Parser<CelExpr> operand, String operator, BinaryOperator<CelExpr> factory) {
+    return sequence(
+        operand,
+        sequence(binary(operator, factory), operand, Rhs::new).zeroOrMore(),
+        (left, rights) -> balanced(left, rights, 0, rights.size()));
   }
 
-  private static <T> T balanced(
-      List<? extends T> operands, int from, int len, BinaryOperator<T> op) {
-    if (len <= 0) {
-      throw new IllegalStateException("len must be positive");
+  private static CelExpr balanced(CelExpr left, List<Rhs> rights, int from, int len) {
+    if (len == 0) {
+      return left;
     }
     if (len == 1) {
-      return operands.get(from);
+      Rhs rhs = rights.get(from);
+      return rhs.op.apply(left, rhs.value);
     }
-    int left = (len + 1) / 2;
-    int right = len - left;
-    return op.apply(balanced(operands, from, left, op), balanced(operands, from + left, right, op));
+    int leftLen = (len + 2) / 2 - 1;
+    int splitIndex = from + leftLen;
+    Rhs split = rights.get(splitIndex);
+    return split.op.apply(
+        balanced(left, rights, from, leftLen),
+        balanced(split.value, rights, splitIndex + 1, len - 1 - leftLen));
   }
+
+  private static final record Rhs(BinaryOperator<CelExpr> op, CelExpr value) {}
 
   private abstract static class SequenceLexer<T> {
     final Parser<T> parser() {
@@ -315,13 +343,9 @@ public final class CelParser {
     }
 
     abstract Collector<? super T, ?, T> joiner();
-
     abstract T fromCodePoint(int codePoint);
-
     abstract T literal(String raw);
-
     abstract T literal(char c);
-
     abstract Parser<T> escaped();
 
     final Parser<T> charEscape() {
@@ -433,18 +457,18 @@ public final class CelParser {
     }
   }
 
-  private static UnaryOperator<CelExpr> optionalSelect(String field) {
-    return receiver -> new CelExpr.OptionalSelect(receiver, field);
-  }
-
   private static UnaryOperator<CelExpr> select(String field) {
-    return receiver -> new CelExpr.Select(receiver, field);
+    return receiver -> receiver.select(field);
   }
 
-  private static UnaryOperator<CelExpr> indexCall(boolean optional, CelExpr index) {
+  private static UnaryOperator<CelExpr> optionalSelect(String field) {
+    return receiver -> receiver.optionalSelect(field);
+  }
+
+  private static UnaryOperator<CelExpr> index(boolean optional, CelExpr index) {
     return optional
-        ? receiver -> new CelExpr.OptionalIndex(receiver, index)
-        : receiver -> new CelExpr.Index(receiver, index);
+        ? receiver -> receiver.optionalIndex(index)
+        : receiver -> receiver.index(index);
   }
 
   private static CelExpr call(CelExpr target, List<CelExpr> args) {
@@ -463,7 +487,7 @@ public final class CelParser {
         checkSyntax(args.size() == 1, "has() expects 1 arg, %s provided", args.size());
         CelExpr.Select select =
             expect(CelExpr.Select.class, args.get(0), "has() expects 1 select argument");
-        yield new CelExpr.Macro.Has(method.sourceIndex(), select);
+        yield new CelExpr.Macro.Has(select);
       }
       default -> new CelExpr.FunctionCall(method, args);
     };
@@ -500,7 +524,7 @@ public final class CelParser {
       CelExpr target,
       String method,
       List<CelExpr> args,
-      TriFunction<CelExpr, String, CelExpr, T> construct) {
+      TriFunction<CelExpr, CelExpr.Ident, CelExpr, T> construct) {
     checkSyntax(args.size() == 2, "%s() expects 2 args, %s provided", method, args.size());
     CelExpr.Ident placeholder =
         expect(
@@ -508,14 +532,14 @@ public final class CelParser {
             args.get(0),
             "identifier expected for the 1st arg of %s()",
             method);
-    return construct.apply(target, placeholder.name(), args.get(1));
+    return construct.apply(target, placeholder, args.get(1));
   }
 
   private static <T extends CelExpr.Macro> T toMacro(
       CelExpr target,
       String method,
       List<CelExpr> args,
-      Function4<CelExpr, String, CelExpr, CelExpr, T> construct) {
+      Function4<CelExpr, CelExpr.Ident, CelExpr, CelExpr, T> construct) {
     checkSyntax(args.size() == 3, "%s() expects 3 args, %s provided", method, args.size());
     CelExpr.Ident placeholder =
         expect(
@@ -523,7 +547,7 @@ public final class CelParser {
             args.get(0),
             "identifier expected for the 1st arg of %s()",
             method);
-    return construct.apply(target, placeholder.name(), args.get(1), args.get(2));
+    return construct.apply(target, placeholder, args.get(1), args.get(2));
   }
 
   private static CelExpr structExpr(CelExpr receiver, List<CelExpr.Entry<CelExpr.Ident>> fields) {
@@ -532,7 +556,7 @@ public final class CelParser {
       String name = field.key().name();
       checkSyntax(keys.add(name), "duplicate field name: %s", name);
     }
-    return new CelExpr.StructLiteral(receiver.sourceIndex(), toTypeName(receiver), fields);
+    return new CelExpr.StructLiteral(toTypeName(receiver), fields);
   }
 
   private static String toTypeName(CelExpr expr) {
@@ -543,13 +567,32 @@ public final class CelParser {
     };
   }
 
-  private static CelExpr binaryExpr(CelExpr.Binary.Op op, CelExpr left, CelExpr right) {
-    return new CelExpr.Binary(left, op, right);
+  private static Parser<BinaryOperator<CelExpr>> binary(
+      Parser<?> op, BinaryOperator<CelExpr> factory) {
+    return op.mapWithIndex(
+        (s, begin, end) -> (l, r) -> factory.apply(l, r).withSourceIndex(begin));
   }
 
-  private static <N> Parser<N> signedLiteral(Parser<N> positive, UnaryOperator<N> negate) {
-    Parser<N> literal = literally(positive);
-    return anyOf(one('-').then(literal).map(negate), literal);
+  private static Parser<BinaryOperator<CelExpr>> binary(
+      String op, BinaryOperator<CelExpr> factory) {
+    return binary(string(op), factory);
+  }
+
+  private static Parser<UnaryOperator<CelExpr>> unary(
+      char opChar, BiFunction<Integer, CelExpr, CelExpr> factory) {
+    return one(opChar).mapWithIndex((s, begin, end) -> e -> factory.apply(begin, e));
+  }
+
+  private static Parser<CelExpr> withPostfixIndex(
+      Parser<CelExpr> parser, Parser<UnaryOperator<CelExpr>> op) {
+    return parser.withPostfixes(
+        op.mapWithIndex((f, begin, end) -> v -> f.apply(v).withSourceIndex(begin)));
+  }
+
+  private static <T, S> Parser<Function<T, CelExpr>> suffixWithIndex(
+      Parser<S> suffix, BiFunction<? super T, ? super S, ? extends CelExpr> combiner) {
+    java.util.Objects.requireNonNull(combiner);
+    return suffix.mapWithIndex((s, begin, end) -> p -> combiner.apply(p, s).withSourceIndex(begin));
   }
 
   @FormatMethod
