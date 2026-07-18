@@ -106,72 +106,72 @@ public sealed interface CelExpr {
     return new Index(this, index);
   }
 
-  /** {@code left.add(right)} is equivalent to {@code CelExpr.of("left + right")}. */
+  /** {@code a.add(b)} is equivalent to {@code CelExpr.of("a + b")}. */
   default Binary add(CelExpr that) {
     return new Binary(this, Binary.Op.ADD, that);
   }
 
-  /** {@code left.subtract(right)} is equivalent to {@code CelExpr.of("left - right")}. */
+  /** {@code a.subtract(b)} is equivalent to {@code CelExpr.of("a - b")}. */
   default Binary subtract(CelExpr that) {
     return new Binary(this, Binary.Op.SUB, that);
   }
 
-  /** {@code left.multiply(right)} is equivalent to {@code CelExpr.of("left * right")}. */
+  /** {@code a.multiply(b)} is equivalent to {@code CelExpr.of("a * b")}. */
   default Binary multiply(CelExpr that) {
     return new Binary(this, Binary.Op.MULT, that);
   }
 
-  /** {@code left.divide(right)} is equivalent to {@code CelExpr.of("left / right")}. */
+  /** {@code a.divide(b)} is equivalent to {@code CelExpr.of("a / b")}. */
   default Binary divide(CelExpr that) {
     return new Binary(this, Binary.Op.DIV, that);
   }
 
-  /** {@code left.modulo(right)} is equivalent to {@code CelExpr.of("left % right")}. */
+  /** {@code a.modulo(b)} is equivalent to {@code CelExpr.of("a % b")}. */
   default Binary modulo(CelExpr that) {
     return new Binary(this, Binary.Op.MOD, that);
   }
 
-  /** {@code left.equalTo(right)} is equivalent to {@code CelExpr.of("left == right")}. */
+  /** {@code a.equalTo(b)} is equivalent to {@code CelExpr.of("a == b")}. */
   default Binary equalTo(CelExpr that) {
     return new Binary(this, Binary.Op.EQ, that);
   }
 
-  /** {@code left.notEqualTo(right)} is equivalent to {@code CelExpr.of("left != right")}. */
+  /** {@code a.notEqualTo(b)} is equivalent to {@code CelExpr.of("a != b")}. */
   default Binary notEqualTo(CelExpr that) {
     return new Binary(this, Binary.Op.NE, that);
   }
 
-  /** {@code left.lessThan(right)} is equivalent to {@code CelExpr.of("left < right")}. */
+  /** {@code a.lessThan(b)} is equivalent to {@code CelExpr.of("a < b")}. */
   default Binary lessThan(CelExpr that) {
     return new Binary(this, Binary.Op.LT, that);
   }
 
-  /** {@code left.atMost(right)} is equivalent to {@code CelExpr.of("left <= right")}. */
+  /** {@code a.atMost(b)} is equivalent to {@code CelExpr.of("a <= b")}. */
   default Binary atMost(CelExpr ceiling) {
     return new Binary(this, Binary.Op.LE, ceiling);
   }
 
-  /** {@code left.greaterThan(right)} is equivalent to {@code CelExpr.of("left > right")}. */
+  /** {@code a.greaterThan(b)} is equivalent to {@code CelExpr.of("a > b")}. */
   default Binary greaterThan(CelExpr that) {
     return new Binary(this, Binary.Op.GT, that);
   }
 
-  /** {@code left.atLeast(right)} is equivalent to {@code CelExpr.of("left >= right")}. */
+  /** {@code a.atLeast(b)} is equivalent to {@code CelExpr.of("a >= b")}. */
   default Binary atLeast(CelExpr floor) {
     return new Binary(this, Binary.Op.GE, floor);
   }
 
-  /** {@code left.in(right)} is equivalent to {@code CelExpr.of("left in right")}. */
+  /** {@code a.in(b)} is equivalent to {@code CelExpr.of("a in b")}. */
   default Binary in(CelExpr that) {
     return new Binary(this, Binary.Op.IN, that);
   }
 
-  /** {@code left.and(right)} is equivalent to {@code CelExpr.of("left && right")}. */
+  /** {@code a.and(b)} is equivalent to {@code CelExpr.of("a && b")}. */
   default Binary and(CelExpr that) {
     return new Binary(this, Binary.Op.AND, that);
   }
 
-  /** {@code left.or(right)} is equivalent to {@code CelExpr.of("left || right")}. */
+  /** {@code a.or(b)} is equivalent to {@code CelExpr.of("a || b")}. */
   default Binary or(CelExpr that) {
     return new Binary(this, Binary.Op.OR, that);
   }
