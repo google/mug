@@ -337,6 +337,11 @@
                 <version>4.31.1</version>
               </additionalDependency>
               <additionalDependency>
+                <groupId>org.projectnessie.cel</groupId>
+                <artifactId>cel-generated-pb</artifactId>
+                <version>0.4.5</version>
+              </additionalDependency>
+              <additionalDependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
                 <version>3.12.0</version>
