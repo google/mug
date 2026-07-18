@@ -6,12 +6,10 @@ import static com.google.mu.cel.CelExpr.callFunction;
 import static com.google.mu.cel.CelExpr.negative;
 import static com.google.mu.cel.CelExpr.not;
 import static com.google.mu.cel.CelExpr.string;
-import static com.google.mu.cel.CelExpr.struct;
 import static com.google.mu.cel.CelExpr.unsigned;
 import static com.google.mu.cel.CelExpr.value;
 import static org.junit.Assert.assertThrows;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.labs.parse.Parser.ParseException;
 import com.google.mu.cel.CelExpr.Element;
 import com.google.mu.cel.CelExpr.Entry;
@@ -20,6 +18,7 @@ import com.google.mu.cel.CelExpr.ListLiteral;
 import com.google.mu.cel.CelExpr.Macro.*;
 import com.google.mu.cel.CelExpr.MapLiteral;
 import com.google.mu.cel.CelExpr.NullValue;
+import com.google.mu.cel.CelExpr.StructLiteral;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,128 +30,217 @@ public final class CelParserTest {
 
   @Test
   public void testLiterals() throws Exception {
-    assertAst("123", value(123L));
-    assertAst("-123", value(-123L));
-    assertAst("0x1a", value(26L));
-    assertAst("-0x1b", value(-27L));
-    assertAst("123u", unsigned(123L));
-    assertAst("0x1au", unsigned(26L));
-    assertAst("1.23", value(1.23));
-    assertAst("-1.23", value(-1.23));
-    assertAst("1e3", value(1000.0));
-    assertAst("1.23e-4", value(1.23E-4));
-    assertAst("-1.23e+4", value(-12300.0));
-    assertAst("\"hello\"", string("hello"));
-    assertAst("'hello'", string("hello"));
-    assertAst("true", value(true));
-    assertAst("false", value(false));
-    assertAst("null", new NullValue());
+    assertAst("123", value(123L).withSourceIndex(0));
+    assertAst("-123", value(-123L).withSourceIndex(0));
+    assertAst("0x1a", value(26L).withSourceIndex(0));
+    assertAst("-0x1b", value(-27L).withSourceIndex(0));
+    assertAst("123u", unsigned(123L).withSourceIndex(0));
+    assertAst("0x1au", unsigned(26L).withSourceIndex(0));
+    assertAst("1.23", value(1.23).withSourceIndex(0));
+    assertAst("-1.23", value(-1.23).withSourceIndex(0));
+    assertAst("1e3", value(1000.0).withSourceIndex(0));
+    assertAst("1.23e-4", value(1.23E-4).withSourceIndex(0));
+    assertAst("-1.23e+4", value(-12300.0).withSourceIndex(0));
+    assertAst("\"hello\"", string("hello").withSourceIndex(0));
+    assertAst("'hello'", string("hello").withSourceIndex(0));
+    assertAst("true", value(true).withSourceIndex(0));
+    assertAst("false", value(false).withSourceIndex(0));
+    assertAst("null", new NullValue(0));
   }
 
   @Test
   public void testIdentifiers() throws Exception {
-    assertAst("x", new Ident("x"));
-    assertAst("true_var", new Ident("true_var"));
-    assertAst("false_var", new Ident("false_var"));
-    assertAst("null_var", new Ident("null_var"));
-    assertAst("in_var", new Ident("in_var"));
+    assertAst("x", new Ident(0, "x"));
+    assertAst("true_var", new Ident(0, "true_var"));
+    assertAst("false_var", new Ident(0, "false_var"));
+    assertAst("null_var", new Ident(0, "null_var"));
+    assertAst("in_var", new Ident(0, "in_var"));
   }
 
   @Test
   public void testUnaryOperators() throws Exception {
-    assertAst("!true", not(value(true)));
-    assertAst("-x", negative(new Ident("x")));
-    assertAst("-(1)", negative(value(1L)));
-    assertAst("- (1)", negative(value(1L)));
-    assertAst("-1", value(-1L));
-    assertAst("- 1", value(-1L));
-    assertAst("- 9223372036854775808", value(-9223372036854775808L));
-    assertAst("!!true", not(not(value(true))));
-    assertAst("--x", negative(negative(new Ident("x"))));
+    assertAst("!true", not(value(true).withSourceIndex(1)).withSourceIndex(0));
+    assertAst("-x", negative(new Ident(1, "x")).withSourceIndex(0));
+    assertAst("-(1)", negative(value(1L).withSourceIndex(1)).withSourceIndex(0));
+    assertAst("- (1)", negative(value(1L).withSourceIndex(2)).withSourceIndex(0));
+    assertAst("-1", value(-1L).withSourceIndex(0));
+    assertAst("- 1", value(-1L).withSourceIndex(0));
+    assertAst("- 9223372036854775808", value(-9223372036854775808L).withSourceIndex(0));
+    assertAst(
+        "!!true", not(not(value(true).withSourceIndex(2)).withSourceIndex(1)).withSourceIndex(0));
+    assertAst("--x", negative(negative(new Ident(2, "x")).withSourceIndex(1)).withSourceIndex(0));
   }
 
   @Test
   public void testBinaryOperators() throws Exception {
-    assertAst("1 + 2", value(1L).add(value(2L)));
-    assertAst("1 - 2", value(1L).subtract(value(2L)));
-    assertAst("1 * 2", value(1L).multiply(value(2L)));
-    assertAst("1 / 2", value(1L).divide(value(2L)));
-    assertAst("1 % 2", value(1L).modulo(value(2L)));
-    assertAst("1 + 2 * 3", value(1L).add(value(2L).multiply(value(3L))));
+    assertAst(
+        "1 + 2", value(1L).withSourceIndex(0).add(value(2L).withSourceIndex(4)).withSourceIndex(0));
+    assertAst(
+        "1 - 2",
+        value(1L).withSourceIndex(0).subtract(value(2L).withSourceIndex(4)).withSourceIndex(0));
+    assertAst(
+        "1 * 2",
+        value(1L).withSourceIndex(0).multiply(value(2L).withSourceIndex(4)).withSourceIndex(0));
+    assertAst(
+        "1 / 2",
+        value(1L).withSourceIndex(0).divide(value(2L).withSourceIndex(4)).withSourceIndex(0));
+    assertAst(
+        "1 % 2",
+        value(1L).withSourceIndex(0).modulo(value(2L).withSourceIndex(4)).withSourceIndex(0));
+    assertAst(
+        "1 + 2 * 3",
+        value(1L)
+            .withSourceIndex(0)
+            .add(
+                value(2L)
+                    .withSourceIndex(4)
+                    .multiply(value(3L).withSourceIndex(8))
+                    .withSourceIndex(4))
+            .withSourceIndex(0));
 
-    assertAst("(1 + 2) * 3", value(1L).add(value(2L)).multiply(value(3L)));
+    assertAst(
+        "(1 + 2) * 3",
+        value(1L)
+            .withSourceIndex(1)
+            .add(value(2L).withSourceIndex(5))
+            .withSourceIndex(0)
+            .multiply(value(3L).withSourceIndex(10))
+            .withSourceIndex(0));
 
-    assertAst("1 * 2 + 3", value(1L).multiply(value(2L)).add(value(3L)));
+    assertAst(
+        "1 * 2 + 3",
+        value(1L)
+            .withSourceIndex(0)
+            .multiply(value(2L).withSourceIndex(4))
+            .withSourceIndex(0)
+            .add(value(3L).withSourceIndex(8))
+            .withSourceIndex(0));
 
-    assertAst("1+2", value(1L).add(value(2L)));
-    assertAst("1-2", value(1L).subtract(value(2L)));
-    assertAst("1*2", value(1L).multiply(value(2L)));
-    assertAst("1/2", value(1L).divide(value(2L)));
-    assertAst("1%2", value(1L).modulo(value(2L)));
+    assertAst(
+        "1+2", value(1L).withSourceIndex(0).add(value(2L).withSourceIndex(2)).withSourceIndex(0));
+    assertAst(
+        "1-2",
+        value(1L).withSourceIndex(0).subtract(value(2L).withSourceIndex(2)).withSourceIndex(0));
+    assertAst(
+        "1*2",
+        value(1L).withSourceIndex(0).multiply(value(2L).withSourceIndex(2)).withSourceIndex(0));
+    assertAst(
+        "1/2",
+        value(1L).withSourceIndex(0).divide(value(2L).withSourceIndex(2)).withSourceIndex(0));
+    assertAst(
+        "1%2",
+        value(1L).withSourceIndex(0).modulo(value(2L).withSourceIndex(2)).withSourceIndex(0));
   }
 
   @Test
   public void testRelations() throws Exception {
-    assertAst("a < b", new Ident("a").lessThan(new Ident("b")));
-    assertAst("a <= b", new Ident("a").atMost(new Ident("b")));
-    assertAst("a > b", new Ident("a").greaterThan(new Ident("b")));
-    assertAst("a >= b", new Ident("a").atLeast(new Ident("b")));
-    assertAst("a == b", new Ident("a").equalTo(new Ident("b")));
-    assertAst("a != b", new Ident("a").notEqualTo(new Ident("b")));
-    assertAst("a in b", new Ident("a").in(new Ident("b")));
-    assertAst("a<b", new Ident("a").lessThan(new Ident("b")));
-    assertAst("a<=b", new Ident("a").atMost(new Ident("b")));
-    assertAst("a>b", new Ident("a").greaterThan(new Ident("b")));
-    assertAst("a>=b", new Ident("a").atLeast(new Ident("b")));
-    assertAst("a==b", new Ident("a").equalTo(new Ident("b")));
-    assertAst("a!=b", new Ident("a").notEqualTo(new Ident("b")));
+    assertAst("a < b", new Ident(0, "a").lessThan(new Ident(4, "b")).withSourceIndex(0));
+    assertAst("a <= b", new Ident(0, "a").atMost(new Ident(5, "b")).withSourceIndex(0));
+    assertAst("a > b", new Ident(0, "a").greaterThan(new Ident(4, "b")).withSourceIndex(0));
+    assertAst("a >= b", new Ident(0, "a").atLeast(new Ident(5, "b")).withSourceIndex(0));
+    assertAst("a == b", new Ident(0, "a").equalTo(new Ident(5, "b")).withSourceIndex(0));
+    assertAst("a != b", new Ident(0, "a").notEqualTo(new Ident(5, "b")).withSourceIndex(0));
+    assertAst("a in b", new Ident(0, "a").in(new Ident(5, "b")).withSourceIndex(0));
+    assertAst("a<b", new Ident(0, "a").lessThan(new Ident(2, "b")).withSourceIndex(0));
+    assertAst("a<=b", new Ident(0, "a").atMost(new Ident(3, "b")).withSourceIndex(0));
+    assertAst("a>b", new Ident(0, "a").greaterThan(new Ident(2, "b")).withSourceIndex(0));
+    assertAst("a>=b", new Ident(0, "a").atLeast(new Ident(3, "b")).withSourceIndex(0));
+    assertAst("a==b", new Ident(0, "a").equalTo(new Ident(3, "b")).withSourceIndex(0));
+    assertAst("a!=b", new Ident(0, "a").notEqualTo(new Ident(3, "b")).withSourceIndex(0));
   }
 
   @Test
   public void testLogical() throws Exception {
-    assertAst("a && b", new Ident("a").and(new Ident("b")));
-    assertAst("a || b", new Ident("a").or(new Ident("b")));
-    assertAst("a && b || c", new Ident("a").and(new Ident("b")).or(new Ident("c")));
+    assertAst("a && b", new Ident(0, "a").and(new Ident(5, "b")).withSourceIndex(0));
+    assertAst("a || b", new Ident(0, "a").or(new Ident(5, "b")).withSourceIndex(0));
+    assertAst(
+        "a && b || c",
+        new Ident(0, "a")
+            .and(new Ident(5, "b"))
+            .withSourceIndex(0)
+            .or(new Ident(10, "c"))
+            .withSourceIndex(0));
 
-    assertAst("a || b && c", new Ident("a").or(new Ident("b").and(new Ident("c"))));
+    assertAst(
+        "a || b && c",
+        new Ident(0, "a")
+            .or(new Ident(5, "b").and(new Ident(10, "c")).withSourceIndex(5))
+            .withSourceIndex(0));
   }
 
   @Test
   public void testTernary() throws Exception {
-    assertAst("a ? b : c", new Ident("a").ifElse(new Ident("b"), new Ident("c")));
+    assertAst(
+        "a ? b : c",
+        new Ident(0, "a").ifElse(new Ident(4, "b"), new Ident(8, "c")).withSourceIndex(0));
     assertAst(
         "a ? (b ? c : d) : e",
-        new Ident("a")
-            .ifElse(new Ident("b").ifElse(new Ident("c"), new Ident("d")), new Ident("e")));
+        new Ident(0, "a")
+            .ifElse(
+                new Ident(5, "b").ifElse(new Ident(9, "c"), new Ident(13, "d")).withSourceIndex(4),
+                new Ident(18, "e"))
+            .withSourceIndex(0));
     assertAst(
         "a ? b : c ? d : e",
-        new Ident("a")
-            .ifElse(new Ident("b"), new Ident("c").ifElse(new Ident("d"), new Ident("e"))));
+        new Ident(0, "a")
+            .ifElse(
+                new Ident(4, "b"),
+                new Ident(8, "c").ifElse(new Ident(12, "d"), new Ident(16, "e")).withSourceIndex(8))
+            .withSourceIndex(0));
     assertAst(
         "a || b ? c && d : e || f",
-        new Ident("a")
-            .or(new Ident("b"))
-            .ifElse(new Ident("c").and(new Ident("d")), new Ident("e").or(new Ident("f"))));
+        new Ident(0, "a")
+            .or(new Ident(5, "b"))
+            .withSourceIndex(0)
+            .ifElse(
+                new Ident(9, "c").and(new Ident(14, "d")).withSourceIndex(9),
+                new Ident(18, "e").or(new Ident(23, "f")).withSourceIndex(18))
+            .withSourceIndex(0));
   }
 
   @Test
   public void testMemberOperations() throws Exception {
-    assertAst("a.b", new Ident("a").select("b"));
-    assertAst("a.b.c", new Ident("a").select("b").select("c"));
-    assertAst("a[0]", new Ident("a").index(value(0L)));
-    assertAst("a[b]", new Ident("a").index(new Ident("b")));
-    assertAst("a.b[c]", new Ident("a").select("b").index(new Ident("c")));
-    assertAst("a[b].c", new Ident("a").index(new Ident("b")).select("c"));
-    assertAst("a(b)", callFunction("a", List.of(new Ident("b"))));
-    assertAst("a.b(c)", new Ident("a").call("b", List.of(new Ident("c"))));
-    assertAst("a(b, c)", callFunction("a", List.of(new Ident("b"), new Ident("c"))));
-    assertAst("a.b(c, d)", new Ident("a").call("b", List.of(new Ident("c"), new Ident("d"))));
+    assertAst("a.b", new Ident(0, "a").select("b").withSourceIndex(0));
+    assertAst(
+        "a.b.c", new Ident(0, "a").select("b").withSourceIndex(0).select("c").withSourceIndex(0));
+    assertAst("a[0]", new Ident(0, "a").index(value(0L).withSourceIndex(2)).withSourceIndex(0));
+    assertAst("a[b]", new Ident(0, "a").index(new Ident(2, "b")).withSourceIndex(0));
+    assertAst(
+        "a.b[c]",
+        new Ident(0, "a")
+            .select("b")
+            .withSourceIndex(0)
+            .index(new Ident(4, "c"))
+            .withSourceIndex(0));
+    assertAst(
+        "a[b].c",
+        new Ident(0, "a")
+            .index(new Ident(2, "b"))
+            .withSourceIndex(0)
+            .select("c")
+            .withSourceIndex(0));
+    assertAst("a(b)", callFunction("a", List.of(new Ident(2, "b"))).withSourceIndex(0));
+    assertAst("a.b(c)", new Ident(0, "a").call("b", List.of(new Ident(4, "c"))).withSourceIndex(0));
+    assertAst(
+        "a(b, c)",
+        callFunction("a", List.of(new Ident(2, "b"), new Ident(5, "c"))).withSourceIndex(0));
+    assertAst(
+        "a.b(c, d)",
+        new Ident(0, "a")
+            .call("b", List.of(new Ident(4, "c"), new Ident(7, "d")))
+            .withSourceIndex(0));
   }
 
   @Test
   public void testOptionalSyntax() throws Exception {
-    assertAst("a.?b", new Ident("a").call("optionalSelect", List.of(string("b"))));
-    assertAst("a[?b]", new Ident("a").call("optionalIndex", List.of(new Ident("b"))));
+    assertAst(
+        "a.?b",
+        new Ident(0, "a")
+            .call("optionalSelect", List.of(string("b").withSourceIndex(0)))
+            .withSourceIndex(0));
+    assertAst(
+        "a[?b]",
+        new Ident(0, "a").call("optionalIndex", List.of(new Ident(3, "b"))).withSourceIndex(0));
   }
 
   @Test
@@ -160,193 +248,362 @@ public final class CelParserTest {
     assertAst(
         "[1, 2, 3]",
         new ListLiteral(
+            0,
             List.of(
-                new ListLiteral.Element(value(1L), false),
-                new ListLiteral.Element(value(2L), false),
-                new ListLiteral.Element(value(3L), false))));
+                new Element(value(1L).withSourceIndex(1), false),
+                new Element(value(2L).withSourceIndex(4), false),
+                new Element(value(3L).withSourceIndex(7), false))));
     assertAst(
         "[1, 2,]",
         new ListLiteral(
+            0,
             List.of(
-                new ListLiteral.Element(value(1L), false),
-                new ListLiteral.Element(value(2L), false)))); // Trailing comma
-    assertAst("[]", new ListLiteral(List.of()));
+                new Element(value(1L).withSourceIndex(1), false),
+                new Element(value(2L).withSourceIndex(4), false)))); // Trailing comma
+    assertAst("[]", new ListLiteral(0, List.of()));
     assertAst(
         "{'a': 1, 'b': 2}",
         new MapLiteral(
-            List.of(Entry.of(string("a"), value(1L)), Entry.of(string("b"), value(2L)))));
+            0,
+            List.of(
+                new Entry<>(string("a").withSourceIndex(1), value(1L).withSourceIndex(6), false),
+                new Entry<>(
+                    string("b").withSourceIndex(9), value(2L).withSourceIndex(14), false))));
     assertAst(
         "{'a': 1, 'b': 2,}",
         new MapLiteral(
+            0,
             List.of(
-                Entry.of(string("a"), value(1L)),
-                Entry.of(string("b"), value(2L))))); // Trailing comma
-    assertAst("{}", new MapLiteral(List.of()));
+                new Entry<>(string("a").withSourceIndex(1), value(1L).withSourceIndex(6), false),
+                new Entry<>(
+                    string("b").withSourceIndex(9),
+                    value(2L).withSourceIndex(14),
+                    false)))); // Trailing comma
+    assertAst("{}", new MapLiteral(0, List.of()));
   }
 
   @Test
   public void testMessageCreation() throws Exception {
     assertAst(
-        "Type{field: 1}", struct("Type", ImmutableMap.of("field", new Element(value(1L), false))));
+        "Type{field: 1}",
+        new StructLiteral(
+            0,
+            "Type",
+            List.of(new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(12), false))));
     assertAst(
         "a.b.Type{field: 1, field2: 2}",
-        struct(
+        new StructLiteral(
+            0,
             "a.b.Type",
-            ImmutableMap.of(
-                "field", new Element(value(1L), false), "field2", new Element(value(2L), false))));
+            List.of(
+                new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(16), false),
+                new Entry<>(new Ident(0, "field2"), value(2L).withSourceIndex(27), false))));
     assertAst(
         ".Type{field: 1}",
-        struct(".Type", ImmutableMap.of("field", new Element(value(1L), false))));
+        new StructLiteral(
+            0,
+            ".Type",
+            List.of(new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(13), false))));
     assertAst(
         ".   Type{field: 1}",
-        struct(".Type", ImmutableMap.of("field", new Element(value(1L), false))));
+        new StructLiteral(
+            0,
+            ".Type",
+            List.of(new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(16), false))));
   }
 
   @Test
   public void testComplexLiterals() throws Exception {
-    assertAst("\"hello \\\"world\\\"\"", string("hello \"world\""));
-    assertAst("'hello \\'world\\''", string("hello 'world'"));
-    assertAst("\"hello \\n world\"", string("hello \n world"));
-    assertAst("\"hello \\t world\"", string("hello \t world"));
-    assertAst("\"hello \\\\ world\"", string("hello \\ world"));
-    assertAst("r\"hello \\ world\"", string("hello \\ world"));
-    assertAst("r'hello \\ world'", string("hello \\ world"));
-    assertAst("b\"hello\"", bytes((byte) 104, (byte) 101, (byte) 108, (byte) 108, (byte) 111));
-    assertAst("b'hello'", bytes((byte) 104, (byte) 101, (byte) 108, (byte) 108, (byte) 111));
-    assertAst("br'hello'", bytes((byte) 104, (byte) 101, (byte) 108, (byte) 108, (byte) 111));
-    assertAst("br\"hello\"", bytes((byte) 104, (byte) 101, (byte) 108, (byte) 108, (byte) 111));
+    assertAst("\"hello \\\"world\\\"\"", string("hello \"world\"").withSourceIndex(0));
+    assertAst("'hello \\'world\\''", string("hello 'world'").withSourceIndex(0));
+    assertAst("\"hello \\n world\"", string("hello \n world").withSourceIndex(0));
+    assertAst("\"hello \\t world\"", string("hello \t world").withSourceIndex(0));
+    assertAst("\"hello \\\\ world\"", string("hello \\ world").withSourceIndex(0));
+    assertAst("r\"hello \\ world\"", string("hello \\ world").withSourceIndex(0));
+    assertAst("r'hello \\ world'", string("hello \\ world").withSourceIndex(0));
+    assertAst(
+        "b\"hello\"",
+        bytes(new byte[] {(byte) 104, (byte) 101, (byte) 108, (byte) 108, (byte) 111})
+            .withSourceIndex(0));
+    assertAst(
+        "b'hello'",
+        bytes(new byte[] {(byte) 104, (byte) 101, (byte) 108, (byte) 108, (byte) 111})
+            .withSourceIndex(0));
+    assertAst(
+        "br'hello'",
+        bytes(new byte[] {(byte) 104, (byte) 101, (byte) 108, (byte) 108, (byte) 111})
+            .withSourceIndex(0));
+    assertAst(
+        "br\"hello\"",
+        bytes(new byte[] {(byte) 104, (byte) 101, (byte) 108, (byte) 108, (byte) 111})
+            .withSourceIndex(0));
     assertAst(
         "b\"hello \\n world\"",
         bytes(
-            (byte) 104,
-            (byte) 101,
-            (byte) 108,
-            (byte) 108,
-            (byte) 111,
-            (byte) 32,
-            (byte) 10,
-            (byte) 32,
-            (byte) 119,
-            (byte) 111,
-            (byte) 114,
-            (byte) 108,
-            (byte) 100));
-    assertAst("b\"\\x00\\x01\"", bytes((byte) 0, (byte) 1));
-    assertAst("\"\\u270c\"", string("\u270c"));
+                new byte[] {
+                  (byte) 104,
+                  (byte) 101,
+                  (byte) 108,
+                  (byte) 108,
+                  (byte) 111,
+                  (byte) 32,
+                  (byte) 10,
+                  (byte) 32,
+                  (byte) 119,
+                  (byte) 111,
+                  (byte) 114,
+                  (byte) 108,
+                  (byte) 100
+                })
+            .withSourceIndex(0));
+    assertAst("b\"\\x00\\x01\"", bytes(new byte[] {(byte) 0, (byte) 1}).withSourceIndex(0));
+    assertAst("\"\\u270c\"", string("\u270c").withSourceIndex(0));
     // These might reveal bugs in byte parsing:
-    assertAst("b\"\\xff\"", bytes((byte) -1));
+    assertAst("b\"\\xff\"", bytes(new byte[] {(byte) -1}).withSourceIndex(0));
   }
 
   @Test
   public void testComplexUnary() throws Exception {
-    assertAst("!a.b", not(new Ident("a").select("b")));
-    assertAst("!a[0]", not(new Ident("a").index(value(0L))));
-    assertAst("-a.b", negative(new Ident("a").select("b")));
-    assertAst("-a[0]", negative(new Ident("a").index(value(0L))));
-    assertAst("-(a + b)", negative(new Ident("a").add(new Ident("b"))));
+    assertAst("!a.b", not(new Ident(1, "a").select("b").withSourceIndex(1)).withSourceIndex(0));
+    assertAst(
+        "!a[0]",
+        not(new Ident(1, "a").index(value(0L).withSourceIndex(3)).withSourceIndex(1))
+            .withSourceIndex(0));
+    assertAst(
+        "-a.b", negative(new Ident(1, "a").select("b").withSourceIndex(1)).withSourceIndex(0));
+    assertAst(
+        "-a[0]",
+        negative(new Ident(1, "a").index(value(0L).withSourceIndex(3)).withSourceIndex(1))
+            .withSourceIndex(0));
+    assertAst(
+        "-(a + b)",
+        negative(new Ident(2, "a").add(new Ident(6, "b")).withSourceIndex(1)).withSourceIndex(0));
   }
 
   @Test
   public void testComplexBinaryAndPrecedence() throws Exception {
     assertAst(
         "a + b * c / d % e - f",
-        new Ident("a")
+        new Ident(0, "a")
             .add(
-                new Ident("b")
-                    .multiply(new Ident("c"))
-                    .divide(new Ident("d"))
-                    .modulo(new Ident("e")))
-            .subtract(new Ident("f")));
-    assertAst("a - b - c", new Ident("a").subtract(new Ident("b")).subtract(new Ident("c")));
+                new Ident(4, "b")
+                    .multiply(new Ident(8, "c"))
+                    .withSourceIndex(4)
+                    .divide(new Ident(12, "d"))
+                    .withSourceIndex(4)
+                    .modulo(new Ident(16, "e"))
+                    .withSourceIndex(4))
+            .withSourceIndex(0)
+            .subtract(new Ident(20, "f"))
+            .withSourceIndex(0));
+    assertAst(
+        "a - b - c",
+        new Ident(0, "a")
+            .subtract(new Ident(4, "b"))
+            .withSourceIndex(0)
+            .subtract(new Ident(8, "c"))
+            .withSourceIndex(0));
 
-    assertAst("a / b / c", new Ident("a").divide(new Ident("b")).divide(new Ident("c")));
+    assertAst(
+        "a / b / c",
+        new Ident(0, "a")
+            .divide(new Ident(4, "b"))
+            .withSourceIndex(0)
+            .divide(new Ident(8, "c"))
+            .withSourceIndex(0));
 
-    assertAst("a % b % c", new Ident("a").modulo(new Ident("b")).modulo(new Ident("c")));
+    assertAst(
+        "a % b % c",
+        new Ident(0, "a")
+            .modulo(new Ident(4, "b"))
+            .withSourceIndex(0)
+            .modulo(new Ident(8, "c"))
+            .withSourceIndex(0));
 
     assertAst(
         "a + b < c - d",
-        new Ident("a").add(new Ident("b")).lessThan(new Ident("c").subtract(new Ident("d"))));
+        new Ident(0, "a")
+            .add(new Ident(4, "b"))
+            .withSourceIndex(0)
+            .lessThan(new Ident(8, "c").subtract(new Ident(12, "d")).withSourceIndex(8))
+            .withSourceIndex(0));
     assertAst(
         "a * b == c + d",
-        new Ident("a").multiply(new Ident("b")).equalTo(new Ident("c").add(new Ident("d"))));
+        new Ident(0, "a")
+            .multiply(new Ident(4, "b"))
+            .withSourceIndex(0)
+            .equalTo(new Ident(9, "c").add(new Ident(13, "d")).withSourceIndex(9))
+            .withSourceIndex(0));
     assertAst(
         "a && b || c && d",
-        new Ident("a").and(new Ident("b")).or(new Ident("c").and(new Ident("d"))));
+        new Ident(0, "a")
+            .and(new Ident(5, "b"))
+            .withSourceIndex(0)
+            .or(new Ident(10, "c").and(new Ident(15, "d")).withSourceIndex(10))
+            .withSourceIndex(0));
     assertAst(
         "a || b && c || d",
-        new Ident("a").or(new Ident("b").and(new Ident("c"))).or(new Ident("d")));
-    assertAst("!a && b || c", not(new Ident("a")).and(new Ident("b")).or(new Ident("c")));
+        new Ident(0, "a")
+            .or(new Ident(5, "b").and(new Ident(10, "c")).withSourceIndex(5))
+            .withSourceIndex(0)
+            .or(new Ident(15, "d"))
+            .withSourceIndex(0));
+    assertAst(
+        "!a && b || c",
+        not(new Ident(1, "a"))
+            .withSourceIndex(0)
+            .and(new Ident(6, "b"))
+            .withSourceIndex(0)
+            .or(new Ident(11, "c"))
+            .withSourceIndex(0));
   }
 
   @Test
   public void testComplexTernary() throws Exception {
     assertAst(
         "a ? b : c ? d : e ? f : g",
-        new Ident("a")
+        new Ident(0, "a")
             .ifElse(
-                new Ident("b"),
-                new Ident("c")
+                new Ident(4, "b"),
+                new Ident(8, "c")
                     .ifElse(
-                        new Ident("d"), new Ident("e").ifElse(new Ident("f"), new Ident("g")))));
+                        new Ident(12, "d"),
+                        new Ident(16, "e")
+                            .ifElse(new Ident(20, "f"), new Ident(24, "g"))
+                            .withSourceIndex(16))
+                    .withSourceIndex(8))
+            .withSourceIndex(0));
     assertAst(
         "a && b ? c || d : e && f",
-        new Ident("a")
-            .and(new Ident("b"))
-            .ifElse(new Ident("c").or(new Ident("d")), new Ident("e").and(new Ident("f"))));
+        new Ident(0, "a")
+            .and(new Ident(5, "b"))
+            .withSourceIndex(0)
+            .ifElse(
+                new Ident(9, "c").or(new Ident(14, "d")).withSourceIndex(9),
+                new Ident(18, "e").and(new Ident(23, "f")).withSourceIndex(18))
+            .withSourceIndex(0));
     assertAst(
         "a ? b : c ? d : e ? f : g",
-        new Ident("a")
+        new Ident(0, "a")
             .ifElse(
-                new Ident("b"),
-                new Ident("c")
+                new Ident(4, "b"),
+                new Ident(8, "c")
                     .ifElse(
-                        new Ident("d"), new Ident("e").ifElse(new Ident("f"), new Ident("g")))));
+                        new Ident(12, "d"),
+                        new Ident(16, "e")
+                            .ifElse(new Ident(20, "f"), new Ident(24, "g"))
+                            .withSourceIndex(16))
+                    .withSourceIndex(8))
+            .withSourceIndex(0));
   }
 
   @Test
   public void testComplexMemberOperations() throws Exception {
-    assertAst("a.b.c(d)", new Ident("a").select("b").call("c", List.of(new Ident("d"))));
-    assertAst("a.b(c).d", new Ident("a").call("b", List.of(new Ident("c"))).select("d"));
-    assertAst("a(b)[c]", callFunction("a", List.of(new Ident("b"))).index(new Ident("c")));
+    assertAst(
+        "a.b.c(d)",
+        new Ident(0, "a")
+            .select("b")
+            .withSourceIndex(0)
+            .call("c", List.of(new Ident(6, "d")))
+            .withSourceIndex(0));
+    assertAst(
+        "a.b(c).d",
+        new Ident(0, "a")
+            .call("b", List.of(new Ident(4, "c")))
+            .withSourceIndex(0)
+            .select("d")
+            .withSourceIndex(0));
+    assertAst(
+        "a(b)[c]",
+        callFunction("a", List.of(new Ident(2, "b")))
+            .withSourceIndex(0)
+            .index(new Ident(5, "c"))
+            .withSourceIndex(0));
     assertAst(
         "a.b(c).d(e)",
-        new Ident("a").call("b", List.of(new Ident("c"))).call("d", List.of(new Ident("e"))));
+        new Ident(0, "a")
+            .call("b", List.of(new Ident(4, "c")))
+            .withSourceIndex(0)
+            .call("d", List.of(new Ident(9, "e")))
+            .withSourceIndex(0));
     assertAst(
         "a.b(c)[d].e(f)",
-        new Ident("a")
-            .call("b", List.of(new Ident("c")))
-            .index(new Ident("d"))
-            .call("e", List.of(new Ident("f"))));
+        new Ident(0, "a")
+            .call("b", List.of(new Ident(4, "c")))
+            .withSourceIndex(0)
+            .index(new Ident(7, "d"))
+            .withSourceIndex(0)
+            .call("e", List.of(new Ident(12, "f")))
+            .withSourceIndex(0));
     assertAst(
         "a.b.Type{field: 1}",
-        struct("a.b.Type", ImmutableMap.of("field", new Element(value(1L), false))));
+        new StructLiteral(
+            0,
+            "a.b.Type",
+            List.of(new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(16), false))));
     assertAst(
         "Type{field: 1}.field",
-        struct("Type", ImmutableMap.of("field", new Element(value(1L), false))).select("field"));
+        new StructLiteral(
+                0,
+                "Type",
+                List.of(new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(12), false)))
+            .select("field")
+            .withSourceIndex(0));
     assertAst(
         "a.b.Type{field: 1}.field",
-        struct("a.b.Type", ImmutableMap.of("field", new Element(value(1L), false)))
-            .select("field"));
+        new StructLiteral(
+                0,
+                "a.b.Type",
+                List.of(new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(16), false)))
+            .select("field")
+            .withSourceIndex(0));
     assertAst(
         "Type{field: 1}[0]",
-        struct("Type", ImmutableMap.of("field", new Element(value(1L), false))).index(value(0L)));
+        new StructLiteral(
+                0,
+                "Type",
+                List.of(new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(12), false)))
+            .index(value(0L).withSourceIndex(15))
+            .withSourceIndex(0));
   }
 
   @Test
   public void testComplexOptionalSyntax() throws Exception {
-    assertAst("a.?b.c", new Ident("a").call("optionalSelect", List.of(string("b"))).select("c"));
-    assertAst("a.b.?c", new Ident("a").select("b").call("optionalSelect", List.of(string("c"))));
+    assertAst(
+        "a.?b.c",
+        new Ident(0, "a")
+            .call("optionalSelect", List.of(string("b").withSourceIndex(0)))
+            .withSourceIndex(0)
+            .select("c")
+            .withSourceIndex(0));
+    assertAst(
+        "a.b.?c",
+        new Ident(0, "a")
+            .select("b")
+            .withSourceIndex(0)
+            .call("optionalSelect", List.of(string("c").withSourceIndex(0)))
+            .withSourceIndex(0));
     assertAst(
         "a[?b][c]",
-        new Ident("a").call("optionalIndex", List.of(new Ident("b"))).index(new Ident("c")));
+        new Ident(0, "a")
+            .call("optionalIndex", List.of(new Ident(3, "b")))
+            .withSourceIndex(0)
+            .index(new Ident(6, "c"))
+            .withSourceIndex(0));
     assertAst(
         "a[b][?c]",
-        new Ident("a").index(new Ident("b")).call("optionalIndex", List.of(new Ident("c"))));
+        new Ident(0, "a")
+            .index(new Ident(2, "b"))
+            .withSourceIndex(0)
+            .call("optionalIndex", List.of(new Ident(6, "c")))
+            .withSourceIndex(0));
     assertAst(
         "a.?b[?c]",
-        new Ident("a")
-            .call("optionalSelect", List.of(string("b")))
-            .call("optionalIndex", List.of(new Ident("c"))));
+        new Ident(0, "a")
+            .call("optionalSelect", List.of(string("b").withSourceIndex(0)))
+            .withSourceIndex(0)
+            .call("optionalIndex", List.of(new Ident(6, "c")))
+            .withSourceIndex(0));
   }
 
   @Test
@@ -354,86 +611,123 @@ public final class CelParserTest {
     assertAst(
         "[[1, 2], [3, 4]]",
         new ListLiteral(
+            0,
             List.of(
-                new ListLiteral.Element(
+                new Element(
                     new ListLiteral(
+                        1,
                         List.of(
-                            new ListLiteral.Element(value(1L), false),
-                            new ListLiteral.Element(value(2L), false))),
+                            new Element(value(1L).withSourceIndex(2), false),
+                            new Element(value(2L).withSourceIndex(5), false))),
                     false),
-                new ListLiteral.Element(
+                new Element(
                     new ListLiteral(
+                        9,
                         List.of(
-                            new ListLiteral.Element(value(3L), false),
-                            new ListLiteral.Element(value(4L), false))),
+                            new Element(value(3L).withSourceIndex(10), false),
+                            new Element(value(4L).withSourceIndex(13), false))),
                     false))));
     assertAst(
         "{'a': {'b': 1}}",
         new MapLiteral(
+            0,
             List.of(
-                Entry.of(string("a"), new MapLiteral(List.of(Entry.of(string("b"), value(1L))))))));
+                new Entry<>(
+                    string("a").withSourceIndex(1),
+                    new MapLiteral(
+                        6,
+                        List.of(
+                            new Entry<>(
+                                string("b").withSourceIndex(7),
+                                value(1L).withSourceIndex(12),
+                                false))),
+                    false))));
     assertAst(
         "[{'a': 1}, {'b': 2}]",
         new ListLiteral(
+            0,
             List.of(
-                new ListLiteral.Element(
-                    new MapLiteral(List.of(Entry.of(string("a"), value(1L)))), false),
-                new ListLiteral.Element(
-                    new MapLiteral(List.of(Entry.of(string("b"), value(2L)))), false))));
+                new Element(
+                    new MapLiteral(
+                        1,
+                        List.of(
+                            new Entry<>(
+                                string("a").withSourceIndex(2),
+                                value(1L).withSourceIndex(7),
+                                false))),
+                    false),
+                new Element(
+                    new MapLiteral(
+                        11,
+                        List.of(
+                            new Entry<>(
+                                string("b").withSourceIndex(12),
+                                value(2L).withSourceIndex(17),
+                                false))),
+                    false))));
     assertAst(
         "[?a, b, ?c]",
         new ListLiteral(
+            0,
             List.of(
-                new ListLiteral.Element(new Ident("a"), true),
-                new ListLiteral.Element(new Ident("b"), false),
-                new ListLiteral.Element(new Ident("c"), true))));
+                new Element(new Ident(2, "a"), true),
+                new Element(new Ident(5, "b"), false),
+                new Element(new Ident(9, "c"), true))));
     assertAst(
         "{?a: b, ?c: d}",
         new MapLiteral(
+            0,
             List.of(
-                Entry.optional(new Ident("a"), new Ident("b")),
-                Entry.optional(new Ident("c"), new Ident("d")))));
+                new Entry<>(new Ident(2, "a"), new Ident(5, "b"), true),
+                new Entry<>(new Ident(9, "c"), new Ident(12, "d"), true))));
     assertAst(
         "Type{?field: value, field2: value}",
-        struct(
+        new StructLiteral(
+            0,
             "Type",
-            ImmutableMap.of(
-                "field",
-                new Element(new Ident("value"), true),
-                "field2",
-                new Element(new Ident("value"), false))));
+            List.of(
+                new Entry<>(new Ident(0, "field"), new Ident(13, "value"), true),
+                new Entry<>(new Ident(0, "field2"), new Ident(28, "value"), false))));
   }
 
   @Test
   public void testTripleQuotedStrings() throws Exception {
-    assertAst("\"\"\"hello\"\"\"", string("hello"));
-    assertAst("'''hello'''", string("hello"));
-    assertAst("r\"\"\"hello\"\"\"", string("hello"));
-    assertAst("r'''hello'''", string("hello"));
-    assertAst("\"\"\"hello \"world\" \"\"\"", string("hello \"world\" "));
-    assertAst("'''hello 'world' '''", string("hello 'world' "));
-    assertAst("\"\"\"hello\\nworld\"\"\"", string("hello\nworld"));
-    assertAst("'''hello\\nworld'''", string("hello\nworld"));
-    assertAst("\"\"\"hello \\n world\"\"\"", string("hello \n world"));
-    assertAst("'''hello \\t world'''", string("hello \t world"));
+    assertAst("\"\"\"hello\"\"\"", string("hello").withSourceIndex(0));
+    assertAst("'''hello'''", string("hello").withSourceIndex(0));
+    assertAst("r\"\"\"hello\"\"\"", string("hello").withSourceIndex(0));
+    assertAst("r'''hello'''", string("hello").withSourceIndex(0));
+    assertAst("\"\"\"hello \"world\" \"\"\"", string("hello \"world\" ").withSourceIndex(0));
+    assertAst("'''hello 'world' '''", string("hello 'world' ").withSourceIndex(0));
+    assertAst("\"\"\"hello\\nworld\"\"\"", string("hello\nworld").withSourceIndex(0));
+    assertAst("'''hello\\nworld'''", string("hello\nworld").withSourceIndex(0));
+    assertAst("\"\"\"hello \\n world\"\"\"", string("hello \n world").withSourceIndex(0));
+    assertAst("'''hello \\t world'''", string("hello \t world").withSourceIndex(0));
   }
 
   @Test
   public void testEscapes() throws Exception {
     assertAst(
         "\"hello \\a \\b \\f \\n \\r \\t \\v \\? \\` \\' \\\" \\\\\"",
-        string("hello \u0007 \b \f \n \r \t \u000b ? ` ' \" \\"));
-    assertAst("\"\\377\"", string("\u00ff"));
-    assertAst("\"\\000\"", string("\u0000"));
-    assertAst("\"\\U0000270c\"", string("\u270c"));
+        string("hello \u0007 \u0008 \u000c \n \r \t \u000b ? ` ' \" \\").withSourceIndex(0));
+    assertAst("\"\\377\"", string("\u00ff").withSourceIndex(0));
+    assertAst("\"\\000\"", string("\u0000").withSourceIndex(0));
+    assertAst("\"\\U0000270c\"", string("\u270c").withSourceIndex(0));
   }
 
   @Test
   public void testComments() throws Exception {
-    assertAstWithComments("1 + 2 // comment", value(1L).add(value(2L)));
-    assertAstWithComments("1 + // comment\n 2", value(1L).add(value(2L)));
-    assertAstWithComments("// comment\n 1 + 2", value(1L).add(value(2L)));
-    assertAstWithComments("1 // comment 1\n + 2 // comment 2", value(1L).add(value(2L)));
+    assertAstWithComments(
+        "1 + 2 // comment",
+        value(1L).withSourceIndex(0).add(value(2L).withSourceIndex(4)).withSourceIndex(0));
+    assertAstWithComments(
+        "1 + // comment\n 2",
+        value(1L).withSourceIndex(0).add(value(2L).withSourceIndex(16)).withSourceIndex(0));
+    assertAstWithComments(
+        "// comment\n 1 + 2",
+        value(1L).withSourceIndex(12).add(value(2L).withSourceIndex(16)).withSourceIndex(12));
+    assertAstWithComments(
+        "1 // comment 1\n + 2 // comment 2",
+        value(1L).withSourceIndex(0).add(value(2L).withSourceIndex(18)).withSourceIndex(0));
   }
 
   @Test
@@ -441,38 +735,65 @@ public final class CelParserTest {
     assertAst(
         "{1: 'a', 2u: 'b', true: 'c'}",
         new MapLiteral(
+            0,
             List.of(
-                Entry.of(value(1L), string("a")),
-                Entry.of(unsigned(2L), string("b")),
-                Entry.of(value(true), string("c")))));
-    assertAst("{1.0: 'a'}", new MapLiteral(List.of(Entry.of(value(1.0), string("a")))));
+                new Entry<>(value(1L).withSourceIndex(1), string("a").withSourceIndex(4), false),
+                new Entry<>(
+                    unsigned(2L).withSourceIndex(9), string("b").withSourceIndex(13), false),
+                new Entry<>(
+                    value(true).withSourceIndex(18), string("c").withSourceIndex(24), false))));
+    assertAst(
+        "{1.0: 'a'}",
+        new MapLiteral(
+            0,
+            List.of(
+                new Entry<>(
+                    value(1.0).withSourceIndex(1), string("a").withSourceIndex(6), false))));
   }
 
   @Test
   public void testKeywordsAsFields() throws Exception {
-    assertAst("a.`in`", new Ident("a").select("in"));
-    assertAst("a.` b`", new Ident("a").select(" b"));
-    assertAst("a.`b `", new Ident("a").select("b "));
-    assertAst("a.` b `", new Ident("a").select(" b "));
+    assertAst("a.`in`", new Ident(0, "a").select("in").withSourceIndex(0));
+    assertAst("a.` b`", new Ident(0, "a").select(" b").withSourceIndex(0));
+    assertAst("a.`b `", new Ident(0, "a").select("b ").withSourceIndex(0));
+    assertAst("a.` b `", new Ident(0, "a").select(" b ").withSourceIndex(0));
   }
 
   @Test
   public void testComplexPrecedenceMixed() throws Exception {
     assertAst(
         "a ? b + c : d * e",
-        new Ident("a")
-            .ifElse(new Ident("b").add(new Ident("c")), new Ident("d").multiply(new Ident("e"))));
+        new Ident(0, "a")
+            .ifElse(
+                new Ident(4, "b").add(new Ident(8, "c")).withSourceIndex(4),
+                new Ident(12, "d").multiply(new Ident(16, "e")).withSourceIndex(12))
+            .withSourceIndex(0));
     assertAst(
         "a || b && c == d + e",
-        new Ident("a")
-            .or(new Ident("b").and(new Ident("c").equalTo(new Ident("d").add(new Ident("e"))))));
-    assertAst("!a && -b", not(new Ident("a")).and(negative(new Ident("b"))));
+        new Ident(0, "a")
+            .or(
+                new Ident(5, "b")
+                    .and(
+                        new Ident(10, "c")
+                            .equalTo(new Ident(15, "d").add(new Ident(19, "e")).withSourceIndex(15))
+                            .withSourceIndex(10))
+                    .withSourceIndex(5))
+            .withSourceIndex(0));
+    assertAst(
+        "!a && -b",
+        not(new Ident(1, "a"))
+            .withSourceIndex(0)
+            .and(negative(new Ident(7, "b")).withSourceIndex(6))
+            .withSourceIndex(0));
     assertAst(
         "a < b && c >= d || e == f",
-        new Ident("a")
-            .lessThan(new Ident("b"))
-            .and(new Ident("c").atLeast(new Ident("d")))
-            .or(new Ident("e").equalTo(new Ident("f"))));
+        new Ident(0, "a")
+            .lessThan(new Ident(4, "b"))
+            .withSourceIndex(0)
+            .and(new Ident(9, "c").atLeast(new Ident(14, "d")).withSourceIndex(9))
+            .withSourceIndex(0)
+            .or(new Ident(19, "e").equalTo(new Ident(24, "f")).withSourceIndex(19))
+            .withSourceIndex(0));
   }
 
   @Test
@@ -512,359 +833,582 @@ public final class CelParserTest {
 
   @Test
   public void testCppSuite_valid_arithmetic() {
-    assertAst("x * 2", new Ident("x").multiply(value(2L)));
-    assertAst("x * 2u", new Ident("x").multiply(unsigned(2L)));
-    assertAst("4--4", value(4L).subtract(value(-4L)));
-    assertAst("a + b", new Ident("a").add(new Ident("b")));
-    assertAst("a - b", new Ident("a").subtract(new Ident("b")));
-    assertAst("a * b", new Ident("a").multiply(new Ident("b")));
-    assertAst("a / b", new Ident("a").divide(new Ident("b")));
-    assertAst("a % b", new Ident("a").modulo(new Ident("b")));
+    assertAst("x * 2", new Ident(0, "x").multiply(value(2L).withSourceIndex(4)).withSourceIndex(0));
+    assertAst(
+        "x * 2u", new Ident(0, "x").multiply(unsigned(2L).withSourceIndex(4)).withSourceIndex(0));
+    assertAst(
+        "4--4",
+        value(4L).withSourceIndex(0).subtract(value(-4L).withSourceIndex(2)).withSourceIndex(0));
+    assertAst("a + b", new Ident(0, "a").add(new Ident(4, "b")).withSourceIndex(0));
+    assertAst("a - b", new Ident(0, "a").subtract(new Ident(4, "b")).withSourceIndex(0));
+    assertAst("a * b", new Ident(0, "a").multiply(new Ident(4, "b")).withSourceIndex(0));
+    assertAst("a / b", new Ident(0, "a").divide(new Ident(4, "b")).withSourceIndex(0));
+    assertAst("a % b", new Ident(0, "a").modulo(new Ident(4, "b")).withSourceIndex(0));
     assertAst(
         "b\"abc\" + B\"def\"",
-        bytes((byte) 97, (byte) 98, (byte) 99).add(bytes((byte) 100, (byte) 101, (byte) 102)));
+        bytes(new byte[] {(byte) 97, (byte) 98, (byte) 99})
+            .withSourceIndex(0)
+            .add(bytes(new byte[] {(byte) 100, (byte) 101, (byte) 102}).withSourceIndex(9))
+            .withSourceIndex(0));
   }
 
   @Test
   public void testCppSuite_valid_memberOperations() {
-    assertAst("x * 2.0", new Ident("x").multiply(value(2.0)));
-    assertAst("a.b(5)", new Ident("a").call("b", List.of(value(5L))));
-    assertAst("4--4.1", value(4L).subtract(value(-4.1)));
-    assertAst("23.39", value(23.39));
-    assertAst("a.b", new Ident("a").select("b"));
-    assertAst("a.b.c", new Ident("a").select("b").select("c"));
-    assertAst("(a)", new Ident("a"));
-    assertAst("((a))", new Ident("a"));
-    assertAst("a()", callFunction("a", List.of()));
-    assertAst("a(b)", callFunction("a", List.of(new Ident("b"))));
-    assertAst("a(b, c)", callFunction("a", List.of(new Ident("b"), new Ident("c"))));
-    assertAst("a.b()", new Ident("a").call("b", List.of()));
-    assertAst("a.b(c)", new Ident("a").call("b", List.of(new Ident("c"))));
-    assertAst("aaa.bbb(ccc)", new Ident("aaa").call("bbb", List.of(new Ident("ccc"))));
-    assertAst("has(m.f)", new Has(new Ident("m").select("f")));
+    assertAst(
+        "x * 2.0", new Ident(0, "x").multiply(value(2.0).withSourceIndex(4)).withSourceIndex(0));
+    assertAst(
+        "a.b(5)",
+        new Ident(0, "a").call("b", List.of(value(5L).withSourceIndex(4))).withSourceIndex(0));
+    assertAst(
+        "4--4.1",
+        value(4L).withSourceIndex(0).subtract(value(-4.1).withSourceIndex(2)).withSourceIndex(0));
+    assertAst("23.39", value(23.39).withSourceIndex(0));
+    assertAst("a.b", new Ident(0, "a").select("b").withSourceIndex(0));
+    assertAst(
+        "a.b.c", new Ident(0, "a").select("b").withSourceIndex(0).select("c").withSourceIndex(0));
+    assertAst("(a)", new Ident(0, "a"));
+    assertAst("((a))", new Ident(0, "a"));
+    assertAst("a()", callFunction("a", List.of()).withSourceIndex(0));
+    assertAst("a(b)", callFunction("a", List.of(new Ident(2, "b"))).withSourceIndex(0));
+    assertAst(
+        "a(b, c)",
+        callFunction("a", List.of(new Ident(2, "b"), new Ident(5, "c"))).withSourceIndex(0));
+    assertAst("a.b()", new Ident(0, "a").call("b", List.of()).withSourceIndex(0));
+    assertAst("a.b(c)", new Ident(0, "a").call("b", List.of(new Ident(4, "c"))).withSourceIndex(0));
+    assertAst(
+        "aaa.bbb(ccc)",
+        new Ident(0, "aaa").call("bbb", List.of(new Ident(8, "ccc"))).withSourceIndex(0));
+    assertAst("has(m.f)", new Has(0, new Ident(4, "m").select("f").withSourceIndex(4)));
     assertAst(
         "x.single_nested_message != null",
-        new Ident("x").select("single_nested_message").notEqualTo(new NullValue()));
-    assertAst("a.`b`", new Ident("a").select("b"));
-    assertAst("a.`b-c`", new Ident("a").select("b-c"));
-    assertAst("a.`b c`", new Ident("a").select("b c"));
-    assertAst("a.`b/c`", new Ident("a").select("b/c"));
-    assertAst("a.`b.c`", new Ident("a").select("b.c"));
-    assertAst("a.`in`", new Ident("a").select("in"));
-    assertAst("has(a.`b/c`)", new Has(new Ident("a").select("b/c")));
+        new Ident(0, "x")
+            .select("single_nested_message")
+            .withSourceIndex(0)
+            .notEqualTo(new NullValue(27))
+            .withSourceIndex(0));
+    assertAst("a.`b`", new Ident(0, "a").select("b").withSourceIndex(0));
+    assertAst("a.`b-c`", new Ident(0, "a").select("b-c").withSourceIndex(0));
+    assertAst("a.`b c`", new Ident(0, "a").select("b c").withSourceIndex(0));
+    assertAst("a.`b/c`", new Ident(0, "a").select("b/c").withSourceIndex(0));
+    assertAst("a.`b.c`", new Ident(0, "a").select("b.c").withSourceIndex(0));
+    assertAst("a.`in`", new Ident(0, "a").select("in").withSourceIndex(0));
+    assertAst("has(a.`b/c`)", new Has(0, new Ident(4, "a").select("b/c").withSourceIndex(4)));
   }
 
   @Test
   public void testCppSuite_valid_literals() {
-    assertAst("\"\\u2764\"", string("\u2764"));
-    assertAst("\"A\"", string("A"));
-    assertAst("true", value(true));
-    assertAst("false", value(false));
-    assertAst("0", value(0L));
-    assertAst("42", value(42L));
-    assertAst("0u", unsigned(0L));
-    assertAst("23u", unsigned(23L));
-    assertAst("24u", unsigned(24L));
-    assertAst("0xAu", unsigned(10L));
-    assertAst("0xA", value(10L));
-    assertAst("b\"abc\"", bytes((byte) 97, (byte) 98, (byte) 99));
-    assertAst("a", new Ident("a"));
-    assertAst("\"\\\"\"", string("\""));
-    assertAst("\"abc\" + \"def\"", string("abc").add(string("def")));
-    assertAst("\"\\xC3\\XBF\"", string("\u00c3\u00bf"));
-    assertAst("\"\\303\\277\"", string("\u00c3\u00bf"));
-    assertAst("\"hi\\u263A \\u263Athere\"", string("hi\u263a \u263athere"));
-    assertAst("\"\\U000003A8\\?\"", string("\u03a8?"));
+    assertAst("\"\\u2764\"", string("\u2764").withSourceIndex(0));
+    assertAst("\"A\"", string("A").withSourceIndex(0));
+    assertAst("true", value(true).withSourceIndex(0));
+    assertAst("false", value(false).withSourceIndex(0));
+    assertAst("0", value(0L).withSourceIndex(0));
+    assertAst("42", value(42L).withSourceIndex(0));
+    assertAst("0u", unsigned(0L).withSourceIndex(0));
+    assertAst("23u", unsigned(23L).withSourceIndex(0));
+    assertAst("24u", unsigned(24L).withSourceIndex(0));
+    assertAst("0xAu", unsigned(10L).withSourceIndex(0));
+    assertAst("0xA", value(10L).withSourceIndex(0));
+    assertAst("b\"abc\"", bytes(new byte[] {(byte) 97, (byte) 98, (byte) 99}).withSourceIndex(0));
+    assertAst("a", new Ident(0, "a"));
+    assertAst("\"\\\"\"", string("\"").withSourceIndex(0));
+    assertAst(
+        "\"abc\" + \"def\"",
+        string("abc").withSourceIndex(0).add(string("def").withSourceIndex(8)).withSourceIndex(0));
+    assertAst("\"\\xC3\\XBF\"", string("\u00c3\u00bf").withSourceIndex(0));
+    assertAst("\"\\303\\277\"", string("\u00c3\u00bf").withSourceIndex(0));
+    assertAst("\"hi\\u263A \\u263Athere\"", string("hi\u263a \u263athere").withSourceIndex(0));
+    assertAst("\"\\U000003A8\\?\"", string("\u03a8?").withSourceIndex(0));
     assertAst(
         "\"\\a\\b\\f\\n\\r\\t\\v'\\\"\\\\\\? Legal escapes\"",
-        string("\u0007\b\f\n\r\t\u000b'\"\\? Legal escapes"));
+        string("\u0007\u0008\u000c\n\r\t\u000b'\"\\? Legal escapes").withSourceIndex(0));
   }
 
   @Test
   public void testCppSuite_valid_unaryOperators() {
-    assertAst("! false", not(value(false)));
-    assertAst("-a", negative(new Ident("a")));
-    assertAst("-0xA", value(-10L));
-    assertAst("-1", value(-1L));
-    assertAst("!a", not(new Ident("a")));
-    assertAst("---a", negative(negative(negative(new Ident("a")))));
+    assertAst("! false", not(value(false).withSourceIndex(2)).withSourceIndex(0));
+    assertAst("-a", negative(new Ident(1, "a")).withSourceIndex(0));
+    assertAst("-0xA", value(-10L).withSourceIndex(0));
+    assertAst("-1", value(-1L).withSourceIndex(0));
+    assertAst("!a", not(new Ident(1, "a")).withSourceIndex(0));
+    assertAst(
+        "---a",
+        negative(negative(negative(new Ident(3, "a")).withSourceIndex(2)).withSourceIndex(1))
+            .withSourceIndex(0));
   }
 
   @Test
   public void testCppSuite_valid_creators() {
-    assertAst("a[3]", new Ident("a").index(value(3L)));
+    assertAst("a[3]", new Ident(0, "a").index(value(3L).withSourceIndex(2)).withSourceIndex(0));
     assertAst(
         "SomeMessage{foo: 5, bar: \"xyz\"}",
-        struct(
+        new StructLiteral(
+            0,
             "SomeMessage",
-            ImmutableMap.of(
-                "foo", new Element(value(5L), false), "bar", new Element(string("xyz"), false))));
+            List.of(
+                new Entry<>(new Ident(0, "foo"), value(5L).withSourceIndex(17), false),
+                new Entry<>(new Ident(0, "bar"), string("xyz").withSourceIndex(25), false))));
     assertAst(
         "[3, 4, 5]",
         new ListLiteral(
+            0,
             List.of(
-                new ListLiteral.Element(value(3L), false),
-                new ListLiteral.Element(value(4L), false),
-                new ListLiteral.Element(value(5L), false))));
+                new Element(value(3L).withSourceIndex(1), false),
+                new Element(value(4L).withSourceIndex(4), false),
+                new Element(value(5L).withSourceIndex(7), false))));
     assertAst(
         "{foo: 5, bar: \"xyz\"}",
         new MapLiteral(
+            0,
             List.of(
-                Entry.of(new Ident("foo"), value(5L)), Entry.of(new Ident("bar"), string("xyz")))));
-    assertAst("a[b]", new Ident("a").index(new Ident("b")));
-    assertAst("foo{ }", struct("foo", ImmutableMap.of()));
+                new Entry<>(new Ident(1, "foo"), value(5L).withSourceIndex(6), false),
+                new Entry<>(new Ident(9, "bar"), string("xyz").withSourceIndex(14), false))));
+    assertAst("a[b]", new Ident(0, "a").index(new Ident(2, "b")).withSourceIndex(0));
+    assertAst("foo{ }", new StructLiteral(0, "foo", List.of()));
     assertAst(
-        "foo{ a:b }", struct("foo", ImmutableMap.of("a", new Element(new Ident("b"), false))));
+        "foo{ a:b }",
+        new StructLiteral(
+            0, "foo", List.of(new Entry<>(new Ident(0, "a"), new Ident(7, "b"), false))));
     assertAst(
         "foo{ a:b, c:d }",
-        struct(
+        new StructLiteral(
+            0,
             "foo",
-            ImmutableMap.of(
-                "a", new Element(new Ident("b"), false), "c", new Element(new Ident("d"), false))));
-    assertAst("{}", new MapLiteral(List.of()));
+            List.of(
+                new Entry<>(new Ident(0, "a"), new Ident(7, "b"), false),
+                new Entry<>(new Ident(0, "c"), new Ident(12, "d"), false))));
+    assertAst("{}", new MapLiteral(0, List.of()));
     assertAst(
         "{a:b, c:d}",
         new MapLiteral(
+            0,
             List.of(
-                Entry.of(new Ident("a"), new Ident("b")),
-                Entry.of(new Ident("c"), new Ident("d")))));
-    assertAst("[]", new ListLiteral(List.of()));
-    assertAst("[a]", new ListLiteral(List.of(new ListLiteral.Element(new Ident("a"), false))));
+                new Entry<>(new Ident(1, "a"), new Ident(3, "b"), false),
+                new Entry<>(new Ident(6, "c"), new Ident(8, "d"), false))));
+    assertAst("[]", new ListLiteral(0, List.of()));
+    assertAst("[a]", new ListLiteral(0, List.of(new Element(new Ident(1, "a"), false))));
     assertAst(
         "[a, b, c]",
         new ListLiteral(
+            0,
             List.of(
-                new ListLiteral.Element(new Ident("a"), false),
-                new ListLiteral.Element(new Ident("b"), false),
-                new ListLiteral.Element(new Ident("c"), false))));
+                new Element(new Ident(1, "a"), false),
+                new Element(new Ident(4, "b"), false),
+                new Element(new Ident(7, "c"), false))));
     assertAst(
         "[] + [1,2,3,] + [4]",
-        new ListLiteral(List.of())
+        new ListLiteral(0, List.of())
             .add(
                 new ListLiteral(
+                    5,
                     List.of(
-                        new ListLiteral.Element(value(1L), false),
-                        new ListLiteral.Element(value(2L), false),
-                        new ListLiteral.Element(value(3L), false))))
-            .add(new ListLiteral(List.of(new ListLiteral.Element(value(4L), false)))));
+                        new Element(value(1L).withSourceIndex(6), false),
+                        new Element(value(2L).withSourceIndex(8), false),
+                        new Element(value(3L).withSourceIndex(10), false))))
+            .withSourceIndex(0)
+            .add(new ListLiteral(16, List.of(new Element(value(4L).withSourceIndex(17), false))))
+            .withSourceIndex(0));
     assertAst(
         "{1:2u, 2:3u}",
         new MapLiteral(
-            List.of(Entry.of(value(1L), unsigned(2L)), Entry.of(value(2L), unsigned(3L)))));
+            0,
+            List.of(
+                new Entry<>(value(1L).withSourceIndex(1), unsigned(2L).withSourceIndex(3), false),
+                new Entry<>(
+                    value(2L).withSourceIndex(7), unsigned(3L).withSourceIndex(9), false))));
     assertAst(
         "TestAllTypes{single_int32: 1, single_int64: 2}",
-        struct(
+        new StructLiteral(
+            0,
             "TestAllTypes",
-            ImmutableMap.of(
-                "single_int32",
-                new Element(value(1L), false),
-                "single_int64",
-                new Element(value(2L), false))));
+            List.of(
+                new Entry<>(new Ident(0, "single_int32"), value(1L).withSourceIndex(27), false),
+                new Entry<>(new Ident(0, "single_int64"), value(2L).withSourceIndex(44), false))));
     assertAst(
         "[1,3,4][0]",
         new ListLiteral(
+                0,
                 List.of(
-                    new ListLiteral.Element(value(1L), false),
-                    new ListLiteral.Element(value(3L), false),
-                    new ListLiteral.Element(value(4L), false)))
-            .index(value(0L)));
+                    new Element(value(1L).withSourceIndex(1), false),
+                    new Element(value(3L).withSourceIndex(3), false),
+                    new Element(value(4L).withSourceIndex(5), false)))
+            .index(value(0L).withSourceIndex(8))
+            .withSourceIndex(0));
     assertAst(
         "x[\"a\"].single_int32 == 23",
-        new Ident("x").index(string("a")).select("single_int32").equalTo(value(23L)));
+        new Ident(0, "x")
+            .index(string("a").withSourceIndex(2))
+            .withSourceIndex(0)
+            .select("single_int32")
+            .withSourceIndex(0)
+            .equalTo(value(23L).withSourceIndex(23))
+            .withSourceIndex(0));
     assertAst(
         "'😁' in ['😁', '😑', '😦']",
         string("\ud83d\ude01")
+            .withSourceIndex(0)
             .in(
                 new ListLiteral(
+                    8,
                     List.of(
-                        new ListLiteral.Element(string("\ud83d\ude01"), false),
-                        new ListLiteral.Element(string("\ud83d\ude11"), false),
-                        new ListLiteral.Element(string("\ud83d\ude26"), false)))));
+                        new Element(string("\ud83d\ude01").withSourceIndex(9), false),
+                        new Element(string("\ud83d\ude11").withSourceIndex(15), false),
+                        new Element(string("\ud83d\ude26").withSourceIndex(21), false))))
+            .withSourceIndex(0));
     assertAst(
         "'\\u00ff' in ['\\u00ff', '\\u00ff', '\\u00ff']",
         string("\u00ff")
+            .withSourceIndex(0)
             .in(
                 new ListLiteral(
+                    12,
                     List.of(
-                        new ListLiteral.Element(string("\u00ff"), false),
-                        new ListLiteral.Element(string("\u00ff"), false),
-                        new ListLiteral.Element(string("\u00ff"), false)))));
+                        new Element(string("\u00ff").withSourceIndex(13), false),
+                        new Element(string("\u00ff").withSourceIndex(23), false),
+                        new Element(string("\u00ff").withSourceIndex(33), false))))
+            .withSourceIndex(0));
     assertAst(
         "'\\u00ff' in ['\\uffff', '\\U00100000', '\\U0010ffff']",
         string("\u00ff")
+            .withSourceIndex(0)
             .in(
                 new ListLiteral(
+                    12,
                     List.of(
-                        new ListLiteral.Element(string("\uffff"), false),
-                        new ListLiteral.Element(string("\udbc0\udc00"), false),
-                        new ListLiteral.Element(string("\udbff\udfff"), false)))));
+                        new Element(string("\uffff").withSourceIndex(13), false),
+                        new Element(string("\udbc0\udc00").withSourceIndex(23), false),
+                        new Element(string("\udbff\udfff").withSourceIndex(37), false))))
+            .withSourceIndex(0));
     assertAst(
         "'\\u00ff' in ['\\U00100000', '\\uffff', '\\U0010ffff']",
         string("\u00ff")
+            .withSourceIndex(0)
             .in(
                 new ListLiteral(
+                    12,
                     List.of(
-                        new ListLiteral.Element(string("\udbc0\udc00"), false),
-                        new ListLiteral.Element(string("\uffff"), false),
-                        new ListLiteral.Element(string("\udbff\udfff"), false)))));
-    assertAst("A{`b`: 1}", struct("A", ImmutableMap.of("b", new Element(value(1L), false))));
-    assertAst("A{`b-c`: 1}", struct("A", ImmutableMap.of("b-c", new Element(value(1L), false))));
-    assertAst("A{`b c`: 1}", struct("A", ImmutableMap.of("b c", new Element(value(1L), false))));
-    assertAst("A{`b/c`: 1}", struct("A", ImmutableMap.of("b/c", new Element(value(1L), false))));
-    assertAst("A{`b.c`: 1}", struct("A", ImmutableMap.of("b.c", new Element(value(1L), false))));
-    assertAst("A{`in`: 1}", struct("A", ImmutableMap.of("in", new Element(value(1L), false))));
+                        new Element(string("\udbc0\udc00").withSourceIndex(13), false),
+                        new Element(string("\uffff").withSourceIndex(27), false),
+                        new Element(string("\udbff\udfff").withSourceIndex(37), false))))
+            .withSourceIndex(0));
+    assertAst(
+        "A{`b`: 1}",
+        new StructLiteral(
+            0, "A", List.of(new Entry<>(new Ident(0, "b"), value(1L).withSourceIndex(7), false))));
+    assertAst(
+        "A{`b-c`: 1}",
+        new StructLiteral(
+            0,
+            "A",
+            List.of(new Entry<>(new Ident(0, "b-c"), value(1L).withSourceIndex(9), false))));
+    assertAst(
+        "A{`b c`: 1}",
+        new StructLiteral(
+            0,
+            "A",
+            List.of(new Entry<>(new Ident(0, "b c"), value(1L).withSourceIndex(9), false))));
+    assertAst(
+        "A{`b/c`: 1}",
+        new StructLiteral(
+            0,
+            "A",
+            List.of(new Entry<>(new Ident(0, "b/c"), value(1L).withSourceIndex(9), false))));
+    assertAst(
+        "A{`b.c`: 1}",
+        new StructLiteral(
+            0,
+            "A",
+            List.of(new Entry<>(new Ident(0, "b.c"), value(1L).withSourceIndex(9), false))));
+    assertAst(
+        "A{`in`: 1}",
+        new StructLiteral(
+            0, "A", List.of(new Entry<>(new Ident(0, "in"), value(1L).withSourceIndex(8), false))));
     assertAst(
         "{?'key': value}",
-        new MapLiteral(List.of(Entry.optional(string("key"), new Ident("value")))));
+        new MapLiteral(
+            0,
+            List.of(new Entry<>(string("key").withSourceIndex(2), new Ident(9, "value"), true))));
   }
 
   @Test
   public void testCppSuite_valid_logical() {
     assertAst(
         "a > 5 && a < 10",
-        new Ident("a").greaterThan(value(5L)).and(new Ident("a").lessThan(value(10L))));
+        new Ident(0, "a")
+            .greaterThan(value(5L).withSourceIndex(4))
+            .withSourceIndex(0)
+            .and(new Ident(9, "a").lessThan(value(10L).withSourceIndex(13)).withSourceIndex(9))
+            .withSourceIndex(0));
     assertAst(
         "a < 5 || a > 10",
-        new Ident("a").lessThan(value(5L)).or(new Ident("a").greaterThan(value(10L))));
-    assertAst("a || b", new Ident("a").or(new Ident("b")));
-    assertAst("a && b", new Ident("a").and(new Ident("b")));
+        new Ident(0, "a")
+            .lessThan(value(5L).withSourceIndex(4))
+            .withSourceIndex(0)
+            .or(new Ident(9, "a").greaterThan(value(10L).withSourceIndex(13)).withSourceIndex(9))
+            .withSourceIndex(0));
+    assertAst("a || b", new Ident(0, "a").or(new Ident(5, "b")).withSourceIndex(0));
+    assertAst("a && b", new Ident(0, "a").and(new Ident(5, "b")).withSourceIndex(0));
   }
 
   @Test
   public void testCppSuite_valid_ternary() {
-    assertAst("a?b:c", new Ident("a").ifElse(new Ident("b"), new Ident("c")));
+    assertAst(
+        "a?b:c", new Ident(0, "a").ifElse(new Ident(2, "b"), new Ident(4, "c")).withSourceIndex(0));
     assertAst(
         "false && !true || false ? 2 : 3",
-        value(false).and(not(value(true))).or(value(false)).ifElse(value(2L), value(3L)));
+        value(false)
+            .withSourceIndex(0)
+            .and(not(value(true).withSourceIndex(10)).withSourceIndex(9))
+            .withSourceIndex(0)
+            .or(value(false).withSourceIndex(18))
+            .withSourceIndex(0)
+            .ifElse(value(2L).withSourceIndex(26), value(3L).withSourceIndex(30))
+            .withSourceIndex(0));
   }
 
   @Test
   public void testCppSuite_valid_relations() {
-    assertAst("a in b", new Ident("a").in(new Ident("b")));
-    assertAst("a == b", new Ident("a").equalTo(new Ident("b")));
-    assertAst("a != b", new Ident("a").notEqualTo(new Ident("b")));
-    assertAst("a > b", new Ident("a").greaterThan(new Ident("b")));
-    assertAst("a >= b", new Ident("a").atLeast(new Ident("b")));
-    assertAst("a < b", new Ident("a").lessThan(new Ident("b")));
-    assertAst("a <= b", new Ident("a").atMost(new Ident("b")));
+    assertAst("a in b", new Ident(0, "a").in(new Ident(5, "b")).withSourceIndex(0));
+    assertAst("a == b", new Ident(0, "a").equalTo(new Ident(5, "b")).withSourceIndex(0));
+    assertAst("a != b", new Ident(0, "a").notEqualTo(new Ident(5, "b")).withSourceIndex(0));
+    assertAst("a > b", new Ident(0, "a").greaterThan(new Ident(4, "b")).withSourceIndex(0));
+    assertAst("a >= b", new Ident(0, "a").atLeast(new Ident(5, "b")).withSourceIndex(0));
+    assertAst("a < b", new Ident(0, "a").lessThan(new Ident(4, "b")).withSourceIndex(0));
+    assertAst("a <= b", new Ident(0, "a").atMost(new Ident(5, "b")).withSourceIndex(0));
     assertAst(
         "1 + 2 * 3 - 1 / 2 == 6 % 1",
         value(1L)
-            .add(value(2L).multiply(value(3L)))
-            .subtract(value(1L).divide(value(2L)))
-            .equalTo(value(6L).modulo(value(1L))));
-    assertAst("a <= b <= c", new Ident("a").atMost(new Ident("b")).atMost(new Ident("c")));
+            .withSourceIndex(0)
+            .add(
+                value(2L)
+                    .withSourceIndex(4)
+                    .multiply(value(3L).withSourceIndex(8))
+                    .withSourceIndex(4))
+            .withSourceIndex(0)
+            .subtract(
+                value(1L)
+                    .withSourceIndex(12)
+                    .divide(value(2L).withSourceIndex(16))
+                    .withSourceIndex(12))
+            .withSourceIndex(0)
+            .equalTo(
+                value(6L)
+                    .withSourceIndex(21)
+                    .modulo(value(1L).withSourceIndex(25))
+                    .withSourceIndex(21))
+            .withSourceIndex(0));
+    assertAst(
+        "a <= b <= c",
+        new Ident(0, "a")
+            .atMost(new Ident(5, "b"))
+            .withSourceIndex(0)
+            .atMost(new Ident(10, "c"))
+            .withSourceIndex(0));
   }
 
   @Test
   public void testCppSuite_valid_macros() {
-    assertAst("m.exists_one(v, f)", new ExistsOne(new Ident("m"), "v", new Ident("f")));
-    assertAst("m.map(v, f)", new Map(new Ident("m"), "v", new Ident("f")));
-    assertAst("m.map(v, p, f)", new FilterMap(new Ident("m"), "v", new Ident("p"), new Ident("f")));
-    assertAst("m.filter(v, p)", new Filter(new Ident("m"), "v", new Ident("p")));
+    assertAst("m.exists_one(v, f)", new ExistsOne(0, new Ident(0, "m"), "v", new Ident(16, "f")));
+    assertAst("m.map(v, f)", new Map(0, new Ident(0, "m"), "v", new Ident(9, "f")));
+    assertAst(
+        "m.map(v, p, f)",
+        new FilterMap(0, new Ident(0, "m"), "v", new Ident(9, "p"), new Ident(12, "f")));
+    assertAst("m.filter(v, p)", new Filter(0, new Ident(0, "m"), "v", new Ident(12, "p")));
     assertAst(
         "size(x) == x.size()",
-        callFunction("size", List.of(new Ident("x")))
-            .equalTo(new Ident("x").call("size", List.of())));
+        callFunction("size", List.of(new Ident(5, "x")))
+            .withSourceIndex(0)
+            .equalTo(new Ident(11, "x").call("size", List.of()).withSourceIndex(11))
+            .withSourceIndex(0));
     assertAst(
         "x.filter(y, y.filter(z, z > 0))",
         new Filter(
-            new Ident("x"),
+            0,
+            new Ident(0, "x"),
             "y",
-            new Filter(new Ident("y"), "z", new Ident("z").greaterThan(value(0L)))));
+            new Filter(
+                12,
+                new Ident(12, "y"),
+                "z",
+                new Ident(24, "z")
+                    .greaterThan(value(0L).withSourceIndex(28))
+                    .withSourceIndex(24))));
     assertAst(
         "has(a.b).filter(c, c)",
-        new Filter(new Has(new Ident("a").select("b")), "c", new Ident("c")));
+        new Filter(
+            0,
+            new Has(0, new Ident(4, "a").select("b").withSourceIndex(4)),
+            "c",
+            new Ident(19, "c")));
     assertAst(
         "x.filter(y, y.exists(z, has(z.a)) && y.exists(z, has(z.b)))",
         new Filter(
-            new Ident("x"),
+            0,
+            new Ident(0, "x"),
             "y",
-            new Exists(new Ident("y"), "z", new Has(new Ident("z").select("a")))
-                .and(new Exists(new Ident("y"), "z", new Has(new Ident("z").select("b"))))));
+            new Exists(
+                    12,
+                    new Ident(12, "y"),
+                    "z",
+                    new Has(24, new Ident(28, "z").select("a").withSourceIndex(28)))
+                .and(
+                    new Exists(
+                        37,
+                        new Ident(37, "y"),
+                        "z",
+                        new Has(49, new Ident(53, "z").select("b").withSourceIndex(53))))
+                .withSourceIndex(12)));
     assertAst(
         "has(a.b).asList().exists(c, c)",
         new Exists(
-            new Has(new Ident("a").select("b")).call("asList", List.of()), "c", new Ident("c")));
+            0,
+            new Has(0, new Ident(4, "a").select("b").withSourceIndex(4))
+                .call("asList", List.of())
+                .withSourceIndex(0),
+            "c",
+            new Ident(28, "c")));
     assertAst(
-        "m.all(x, x > 0)", new All(new Ident("m"), "x", new Ident("x").greaterThan(value(0L))));
+        "m.all(x, x > 0)",
+        new All(
+            0,
+            new Ident(0, "m"),
+            "x",
+            new Ident(9, "x").greaterThan(value(0L).withSourceIndex(13)).withSourceIndex(9)));
     assertAst(
         "[1, 2].exists(x, x > 0)",
         new Exists(
+            0,
             new ListLiteral(
+                0,
                 List.of(
-                    new ListLiteral.Element(value(1L), false),
-                    new ListLiteral.Element(value(2L), false))),
+                    new Element(value(1L).withSourceIndex(1), false),
+                    new Element(value(2L).withSourceIndex(4), false))),
             "x",
-            new Ident("x").greaterThan(value(0L))));
+            new Ident(17, "x").greaterThan(value(0L).withSourceIndex(21)).withSourceIndex(17)));
     assertAst(
         "{\"a\": 1}.exists(x, x == 'a')",
         new Exists(
-            new MapLiteral(List.of(Entry.of(string("a"), value(1L)))),
+            0,
+            new MapLiteral(
+                0,
+                List.of(
+                    new Entry<>(
+                        string("a").withSourceIndex(1), value(1L).withSourceIndex(6), false))),
             "x",
-            new Ident("x").equalTo(string("a"))));
-    assertAst("exists(x, y)", callFunction("exists", List.of(new Ident("x"), new Ident("y"))));
-    assertAst("all(x, y)", callFunction("all", List.of(new Ident("x"), new Ident("y"))));
-    assertAst("map(x, y)", callFunction("map", List.of(new Ident("x"), new Ident("y"))));
-    assertAst("filter(x, y)", callFunction("filter", List.of(new Ident("x"), new Ident("y"))));
+            new Ident(19, "x").equalTo(string("a").withSourceIndex(24)).withSourceIndex(19)));
     assertAst(
-        "exists_one(x, y)", callFunction("exists_one", List.of(new Ident("x"), new Ident("y"))));
+        "exists(x, y)",
+        callFunction("exists", List.of(new Ident(7, "x"), new Ident(10, "y"))).withSourceIndex(0));
+    assertAst(
+        "all(x, y)",
+        callFunction("all", List.of(new Ident(4, "x"), new Ident(7, "y"))).withSourceIndex(0));
+    assertAst(
+        "map(x, y)",
+        callFunction("map", List.of(new Ident(4, "x"), new Ident(7, "y"))).withSourceIndex(0));
+    assertAst(
+        "filter(x, y)",
+        callFunction("filter", List.of(new Ident(7, "x"), new Ident(10, "y"))).withSourceIndex(0));
+    assertAst(
+        "exists_one(x, y)",
+        callFunction("exists_one", List.of(new Ident(11, "x"), new Ident(14, "y")))
+            .withSourceIndex(0));
     assertParseFailure("has(x)", "1:1", "has() expects 1 select argument");
     assertParseFailure("has(x, y)", "1:1", "has() expects 1 arg, 2 provided");
     assertParseFailure("has()", "1:1", "has() expects 1 arg, 0 provided");
-    assertAst("has(a.b.c)", new Has(new Ident("a").select("b").select("c")));
+    assertAst(
+        "has(a.b.c)",
+        new Has(
+            0, new Ident(4, "a").select("b").withSourceIndex(4).select("c").withSourceIndex(4)));
   }
 
   @Test
   public void testCppSuite_valid_optionalSyntax() {
     assertAst(
         "a.?b[?0] && a[?c]",
-        new Ident("a")
-            .call("optionalSelect", List.of(string("b")))
-            .call("optionalIndex", List.of(value(0L)))
-            .and(new Ident("a").call("optionalIndex", List.of(new Ident("c")))));
+        new Ident(0, "a")
+            .call("optionalSelect", List.of(string("b").withSourceIndex(0)))
+            .withSourceIndex(0)
+            .call("optionalIndex", List.of(value(0L).withSourceIndex(6)))
+            .withSourceIndex(0)
+            .and(
+                new Ident(12, "a")
+                    .call("optionalIndex", List.of(new Ident(15, "c")))
+                    .withSourceIndex(12))
+            .withSourceIndex(0));
     assertAst(
         "[?a, ?b]",
         new ListLiteral(
-            List.of(
-                new ListLiteral.Element(new Ident("a"), true),
-                new ListLiteral.Element(new Ident("b"), true))));
+            0,
+            List.of(new Element(new Ident(2, "a"), true), new Element(new Ident(6, "b"), true))));
     assertAst(
         "[?a[?b]]",
         new ListLiteral(
+            0,
             List.of(
-                new ListLiteral.Element(
-                    new Ident("a").call("optionalIndex", List.of(new Ident("b"))), true))));
+                new Element(
+                    new Ident(2, "a")
+                        .call("optionalIndex", List.of(new Ident(5, "b")))
+                        .withSourceIndex(2),
+                    true))));
     assertAst(
         "Msg{?field: value}",
-        struct("Msg", ImmutableMap.of("field", new Element(new Ident("value"), true))));
+        new StructLiteral(
+            0, "Msg", List.of(new Entry<>(new Ident(0, "field"), new Ident(12, "value"), true))));
     assertAst(
-        "m.optMap(v, f)", new Ident("m").call("optMap", List.of(new Ident("v"), new Ident("f"))));
+        "m.optMap(v, f)",
+        new Ident(0, "m")
+            .call("optMap", List.of(new Ident(9, "v"), new Ident(12, "f")))
+            .withSourceIndex(0));
     assertAst(
         "m.optFlatMap(v, f)",
-        new Ident("m").call("optFlatMap", List.of(new Ident("v"), new Ident("f"))));
+        new Ident(0, "m")
+            .call("optFlatMap", List.of(new Ident(13, "v"), new Ident(16, "f")))
+            .withSourceIndex(0));
   }
 
   @Test
   public void testCppSuite_valid_logicalChaining() {
     assertAst(
         "a || b || c || d || e || f",
-        new Ident("a")
-            .or(new Ident("b"))
-            .or(new Ident("c"))
-            .or(new Ident("d").or(new Ident("e")).or(new Ident("f"))));
+        new Ident(0, "a")
+            .or(new Ident(5, "b"))
+            .withSourceIndex(0)
+            .or(new Ident(10, "c"))
+            .withSourceIndex(0)
+            .or(
+                new Ident(15, "d")
+                    .or(new Ident(20, "e"))
+                    .withSourceIndex(15)
+                    .or(new Ident(25, "f"))
+                    .withSourceIndex(15))
+            .withSourceIndex(0));
     assertAst(
         "a && b && c && d && e && f && g",
-        new Ident("a")
-            .and(new Ident("b"))
-            .and(new Ident("c").and(new Ident("d")))
-            .and(new Ident("e").and(new Ident("f")).and(new Ident("g"))));
+        new Ident(0, "a")
+            .and(new Ident(5, "b"))
+            .withSourceIndex(0)
+            .and(new Ident(10, "c").and(new Ident(15, "d")).withSourceIndex(10))
+            .withSourceIndex(0)
+            .and(
+                new Ident(20, "e")
+                    .and(new Ident(25, "f"))
+                    .withSourceIndex(20)
+                    .and(new Ident(30, "g"))
+                    .withSourceIndex(20))
+            .withSourceIndex(0));
     assertAst(
         "a && b && c && d || e && f && g && h",
-        new Ident("a")
-            .and(new Ident("b"))
-            .and(new Ident("c").and(new Ident("d")))
-            .or(new Ident("e").and(new Ident("f")).and(new Ident("g").and(new Ident("h")))));
+        new Ident(0, "a")
+            .and(new Ident(5, "b"))
+            .withSourceIndex(0)
+            .and(new Ident(10, "c").and(new Ident(15, "d")).withSourceIndex(10))
+            .withSourceIndex(0)
+            .or(
+                new Ident(20, "e")
+                    .and(new Ident(25, "f"))
+                    .withSourceIndex(20)
+                    .and(new Ident(30, "g").and(new Ident(35, "h")).withSourceIndex(30))
+                    .withSourceIndex(20))
+            .withSourceIndex(0));
   }
 
   @Test
@@ -978,6 +1522,18 @@ public final class CelParserTest {
     assertParseFailure("m.filter(v, f, g)", "1:1", "filter() expects 2 args, 3 provided");
     assertParseFailure("m.filter(1, f)", "1:1", "identifier expected for the 1st arg of filter()");
     assertParseFailure("m.filter(v)", "1:1", "filter() expects 2 args, 1 provided");
+  }
+
+  @Test
+  public void testSourceIndex() throws Exception {
+    CelExpr ast = parser.parse("a + b * 3");
+    assertThat(ast.sourceIndex()).isEqualTo(0);
+    CelExpr.Binary add = (CelExpr.Binary) ast;
+    assertThat(add.left().sourceIndex()).isEqualTo(0);
+    CelExpr.Binary mult = (CelExpr.Binary) add.right();
+    assertThat(mult.sourceIndex()).isEqualTo(4);
+    assertThat(mult.left().sourceIndex()).isEqualTo(4);
+    assertThat(mult.right().sourceIndex()).isEqualTo(8);
   }
 
   private void assertAst(String expression, CelExpr expectedAst) {
