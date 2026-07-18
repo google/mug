@@ -1,5 +1,23 @@
-
 # Claude cache
 .claude/
 .claude-cache/
+
+# IDE files
 .settings/
+.classpath
+.project
+.idea/
+*.iml
+
+# Build directories
+target/
+.gradle/
+build/
+
+# Local cache/settings
+.m2/
+.mvn/
+
+# Ignore nested .gitignore files but keep root one
+.gitignore
+!/.gitignore
