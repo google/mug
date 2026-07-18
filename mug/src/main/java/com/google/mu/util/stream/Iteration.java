@@ -270,7 +270,7 @@ public class Iteration<T> {
    *
    * @since 9.6
    */
-  public final <V> void forEachLazily(IntStream stream, IntConsumer consumer) {
+  public final void forEachLazily(IntStream stream, IntConsumer consumer) {
     forEachLazily(stream.spliterator(), requireNonNull(consumer));
   }
 

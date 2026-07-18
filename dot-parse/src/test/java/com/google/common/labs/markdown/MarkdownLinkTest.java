@@ -16,7 +16,7 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 public class MarkdownLinkTest {
 
   @Test
-  public void testParseLink(@TestParameter Scanner scanner) {
+  public void testParseLink() {
     assertThat(MarkdownLink.scan("[text](url)"))
         .containsExactly(new MarkdownLink("text", "url"));
   }

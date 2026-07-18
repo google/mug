@@ -127,7 +127,7 @@ public final class Joiner implements Collector<Object, Joiner.FasterStringJoiner
     return new Joiner(before + prefix, delimiter, suffix + after);
   }
 
-  /*
+  /**
    * Returns an instance that wraps the join result between {@code before} and {@code after}.
    *
    * <p>For example both {@code Joiner.on(',').between("[", "]").join([1, 2])} and

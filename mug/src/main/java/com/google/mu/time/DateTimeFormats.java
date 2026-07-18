@@ -712,6 +712,7 @@ public final class DateTimeFormats {
             .flatMapKeys(token -> token.names.stream())
             .toMap();
 
+    @SuppressWarnings("ImmutableEnumChecker")
     private final Set<String> names;
 
     private Token(String... names) {

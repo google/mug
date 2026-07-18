@@ -23,19 +23,24 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import com.google.errorprone.annotations.FormatMethod;
+
 class Utils {
+  @FormatMethod
   static void checkArgument(boolean condition, String message, Object... args) {
     if (!condition) {
       throw new IllegalArgumentException(String.format(message, args));
     }
   }
 
+  @FormatMethod
   static void checkState(boolean condition, String message) {
     if (!condition) {
       throw new IllegalStateException(message);
     }
   }
 
+  @FormatMethod
   static void checkState(boolean condition, String message, Object... args) {
     if (!condition) {
       throw new IllegalStateException(String.format(message, args));

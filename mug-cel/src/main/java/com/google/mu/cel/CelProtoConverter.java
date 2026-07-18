@@ -8,7 +8,10 @@ import com.google.api.expr.v1alpha1.ParsedExpr;
 import com.google.api.expr.v1alpha1.SourceInfo;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.NullValue;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** Helper to convert CelExpr to official CEL Protobuf AST. */
@@ -47,10 +50,10 @@ final class CelProtoConverter {
   private final AtomicLong idGenerator;
   private final SourceInfo.Builder sourceInfo;
   private final int[] charToCodePoint;
-  private final java.util.Map<CelExpr, Long> convertedIds = new java.util.IdentityHashMap<>();
-  private final java.util.Map<CelExpr, Expr> convertedExprs = new java.util.IdentityHashMap<>();
-  private final java.util.Set<CelExpr> shortCircuitedMacros =
-      java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+  private final IdentityHashMap<CelExpr, Long> convertedIds = new IdentityHashMap<>();
+  private final IdentityHashMap<CelExpr, Expr> convertedExprs = new IdentityHashMap<>();
+  private final Set<CelExpr> shortCircuitedMacros =
+      Collections.newSetFromMap(new IdentityHashMap<>());
   private boolean isSerializingMacroCall = false;
 
   private CelProtoConverter(
@@ -504,7 +507,7 @@ final class CelProtoConverter {
             .build();
 
     return Expr.Comprehension.newBuilder()
-        .setIterVar(var.name())
+        .setIterVar(varProto.getIdentExpr().getName())
         .setIterRange(targetProto)
         .setAccuVar("@result")
         .setAccuInit(accuInit)
@@ -581,7 +584,7 @@ final class CelProtoConverter {
             .build();
 
     return Expr.Comprehension.newBuilder()
-        .setIterVar(var.name())
+        .setIterVar(varProto.getIdentExpr().getName())
         .setIterRange(targetProto)
         .setAccuVar("@result")
         .setAccuInit(accuInit)
@@ -676,7 +679,7 @@ final class CelProtoConverter {
             .build();
 
     return Expr.Comprehension.newBuilder()
-        .setIterVar(var.name())
+        .setIterVar(varProto.getIdentExpr().getName())
         .setIterRange(targetProto)
         .setAccuVar("@result")
         .setAccuInit(accuInit)
@@ -756,7 +759,7 @@ final class CelProtoConverter {
             .build();
 
     return Expr.Comprehension.newBuilder()
-        .setIterVar(var.name())
+        .setIterVar(varProto.getIdentExpr().getName())
         .setIterRange(targetProto)
         .setAccuVar("@result")
         .setAccuInit(accuInit)
@@ -818,7 +821,7 @@ final class CelProtoConverter {
             .build();
 
     return Expr.Comprehension.newBuilder()
-        .setIterVar(var.name())
+        .setIterVar(varProto.getIdentExpr().getName())
         .setIterRange(targetProto)
         .setAccuVar("@result")
         .setAccuInit(accuInit)
@@ -899,7 +902,7 @@ final class CelProtoConverter {
             .build();
 
     return Expr.Comprehension.newBuilder()
-        .setIterVar(var.name())
+        .setIterVar(varProto.getIdentExpr().getName())
         .setIterRange(targetProto)
         .setAccuVar("@result")
         .setAccuInit(accuInit)

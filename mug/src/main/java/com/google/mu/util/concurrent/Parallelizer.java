@@ -574,7 +574,7 @@ public final class Parallelizer {
       try {
         executor = (ExecutorService) Executors.class.getMethod("newVirtualThreadPerTaskExecutor").invoke(null);
       } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-        throw new AssertionError(e);
+        throw new LinkageError(e.getMessage(), e);
       }
     }
   }

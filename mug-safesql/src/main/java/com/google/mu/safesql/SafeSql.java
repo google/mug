@@ -1732,18 +1732,17 @@ public final class SafeSql {
             scanner.nextFragmentIfQuoted("'", placeholder, "'")
                 .map(builder::appendSql)
                 .isPresent()) {
-          builder.addParameter(paramName, mustBeString("'" + placeholder + "'", value));
+          builder.addParameter(mustBeString("'" + placeholder + "'", value));
         } else if (
             new Liker().like(placeholder)
                 .map((prefix, suffix) ->
                     builder.addParameter(
-                        paramName,
                         prefix + escapeLikeWildcards(mustBeString(placeholder, value)) + suffix))
                 .isPresent()) {
           builder.appendSql(" ESCAPE '^'");
         } else {
           checkMissingPlaceholderQuotes(placeholder);
-          builder.appendSql(scanner.nextFragment()).addParameter(paramName, value);
+          builder.appendSql(scanner.nextFragment()).addParameter(value);
         }
       });
       return builder.appendSql(scanner.nextFragment()).build();
@@ -1916,7 +1915,7 @@ public final class SafeSql {
       return this;
     }
 
-    @CanIgnoreReturnValue Builder addParameter(String name, Object value) {
+    @CanIgnoreReturnValue Builder addParameter(Object value) {
       safeAppend("?");
       paramValues.add(value);
       return this;

@@ -910,7 +910,11 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     boolean belong(A a1, B b1, A a2, B b2);
   }
 
-  /** @since 7.1 */
+  /**
+   * Returns a {@code BiStream} wrapping {@code entryStream}.
+   *
+   * @since 7.1
+   */
   public static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> fromEntries(
       Stream<E> entryStream) {
     return new GenericEntryStream<E, K, V>(entryStream, Map.Entry::getKey, Map.Entry::getValue) {
@@ -1791,7 +1795,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @since 5.5
    */
-  public final <G, A, R> BiStream<G, R> groupConsecutiveBy(
+  public final <G, R> BiStream<G, R> groupConsecutiveBy(
       BiFunction<? super K, ? super V, ? extends G> classifier,
       BiCollector<? super K, ? super V, R> groupCollector) {
     return this
@@ -2351,13 +2355,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
   static <T> T right(Both<?, T> both) {
     return both.andThen((l, r) -> r);
-  }
-
-  private static <K, V> BiOptional<K, V> fromOptionalEntry(
-      Optional<? extends Map.Entry<? extends K, ? extends V>> optional) {
-    return optional.isPresent()
-        ? BiOptional.of(optional.get().getKey(), optional.get().getValue())
-        : BiOptional.empty();
   }
 
   private BiStream() {}

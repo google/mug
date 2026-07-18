@@ -267,6 +267,7 @@ public sealed interface CelExpr {
   }
 
   /** Byte sequence literal. */
+  @SuppressWarnings("ArrayRecordComponent")
   record BytesValue(int sourceIndex, byte[] value) implements CelExpr {
     @Override
     public BytesValue withSourceIndex(int index) {
@@ -374,8 +375,18 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Addition: x + y. */
-  record Add(int sourceIndex, CelExpr left, CelExpr right) implements CelExpr {
+  /**
+   * An expression composed by a binary operator. The {@link sourceIndex} points to the binary
+   * operator.
+   */
+  public sealed interface Binary extends CelExpr {
+    CelExpr left();
+
+    CelExpr right();
+  }
+
+  /** Addition: {@code x + y}. */
+  record Add(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
     @Override
     public Add withSourceIndex(int index) {
       return new Add(index, left, right);
@@ -387,8 +398,8 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Subtraction: x - y. */
-  record Subtract(int sourceIndex, CelExpr left, CelExpr right) implements CelExpr {
+  /** Subtraction: {@code x - y}. */
+  record Subtract(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
     @Override
     public Subtract withSourceIndex(int index) {
       return new Subtract(index, left, right);
@@ -400,8 +411,8 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Multiplication: x * y. */
-  record Multiply(int sourceIndex, CelExpr left, CelExpr right) implements CelExpr {
+  /** Multiplication: {@code x * y}. */
+  record Multiply(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
     @Override
     public Multiply withSourceIndex(int index) {
       return new Multiply(index, left, right);
@@ -413,8 +424,8 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Division: x / y. */
-  record Divide(int sourceIndex, CelExpr left, CelExpr right) implements CelExpr {
+  /** Division: {@code x / y}. */
+  record Divide(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
     @Override
     public Divide withSourceIndex(int index) {
       return new Divide(index, left, right);
@@ -426,8 +437,8 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Modulo/remainder: x % y. */
-  record Modulo(int sourceIndex, CelExpr left, CelExpr right) implements CelExpr {
+  /** Modulo/remainder: {@code x % y}. */
+  record Modulo(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
     @Override
     public Modulo withSourceIndex(int index) {
       return new Modulo(index, left, right);
@@ -439,8 +450,8 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Less than relational comparison: x < y. */
-  record LessThan(int sourceIndex, CelExpr left, CelExpr right) implements CelExpr {
+  /** Less than relational comparison: {@code x < y}. */
+  record LessThan(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
     @Override
     public LessThan withSourceIndex(int index) {
       return new LessThan(index, left, right);
@@ -452,8 +463,8 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Less than or equal to relational comparison: x <= y. */
-  record LessThanOrEqualTo(int sourceIndex, CelExpr left, CelExpr right) implements CelExpr {
+  /** Less than or equal to relational comparison: {@code x <= y}. */
+  record LessThanOrEqualTo(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
     @Override
     public LessThanOrEqualTo withSourceIndex(int index) {
       return new LessThanOrEqualTo(index, left, right);
@@ -465,8 +476,8 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Greater than relational comparison: x > y. */
-  record GreaterThan(int sourceIndex, CelExpr left, CelExpr right) implements CelExpr {
+  /** Greater than relational comparison: {@code x > y}. */
+  record GreaterThan(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
     @Override
     public GreaterThan withSourceIndex(int index) {
       return new GreaterThan(index, left, right);
@@ -478,8 +489,8 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Greater than or equal to relational comparison: x >= y. */
-  record GreaterThanOrEqualTo(int sourceIndex, CelExpr left, CelExpr right) implements CelExpr {
+  /** Greater than or equal to relational comparison: {@code x >= y}. */
+  record GreaterThanOrEqualTo(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
     @Override
     public GreaterThanOrEqualTo withSourceIndex(int index) {
       return new GreaterThanOrEqualTo(index, left, right);
@@ -491,8 +502,8 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Equality comparison: x == y. */
-  record EqualTo(int sourceIndex, CelExpr left, CelExpr right) implements CelExpr {
+  /** Equality comparison: {@code x == y}. */
+  record EqualTo(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
     @Override
     public EqualTo withSourceIndex(int index) {
       return new EqualTo(index, left, right);
@@ -504,8 +515,8 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Inequality comparison: x != y. */
-  record NotEqualTo(int sourceIndex, CelExpr left, CelExpr right) implements CelExpr {
+  /** Inequality comparison: {@code x != y}. */
+  record NotEqualTo(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
     @Override
     public NotEqualTo withSourceIndex(int index) {
       return new NotEqualTo(index, left, right);
@@ -517,8 +528,8 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Containment comparison: x in y. */
-  record In(int sourceIndex, CelExpr left, CelExpr right) implements CelExpr {
+  /** Containment comparison: {@code x in y}. */
+  record In(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
     @Override
     public In withSourceIndex(int index) {
       return new In(index, left, right);
@@ -530,8 +541,8 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Logical AND comparison: x && y. */
-  record And(int sourceIndex, CelExpr left, CelExpr right) implements CelExpr {
+  /** Logical AND comparison: {@code x && y}. */
+  record And(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
     @Override
     public And withSourceIndex(int index) {
       return new And(index, left, right);
@@ -543,8 +554,8 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Logical OR comparison: x || y. */
-  record Or(int sourceIndex, CelExpr left, CelExpr right) implements CelExpr {
+  /** Logical OR comparison: {@code x || y}. */
+  record Or(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
     @Override
     public Or withSourceIndex(int index) {
       return new Or(index, left, right);
@@ -556,8 +567,13 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Unary sign negation: -x. */
-  record Negative(int sourceIndex, CelExpr operand) implements CelExpr {
+  /** An expression composed by a unary operator. */
+  public sealed interface Unary extends CelExpr {
+    CelExpr operand();
+  }
+
+  /** Unary sign negation: {@code -x}. */
+  record Negative(int sourceIndex, CelExpr operand) implements Unary {
     @Override
     public Negative withSourceIndex(int index) {
       return new Negative(index, operand);
@@ -569,8 +585,8 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Logical negation: !x. */
-  record Not(int sourceIndex, CelExpr operand) implements CelExpr {
+  /** Logical negation: {@code !x}. */
+  record Not(int sourceIndex, CelExpr operand) implements Unary {
     @Override
     public Not withSourceIndex(int index) {
       return new Not(index, operand);

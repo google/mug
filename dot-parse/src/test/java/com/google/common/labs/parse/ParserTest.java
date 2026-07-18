@@ -5307,8 +5307,8 @@ public class ParserTest {
     Parser<UnaryOperator<Integer>> op = anyOf(neg, plus, flip);
     Parser<Integer> parser = number.withPrefixes(op);
     assertThat(parser.parse("--10")).isEqualTo(10);
-    assertThat(parser.parse("-~10")).isEqualTo(-(~10));
-    assertThat(parser.parse("~-10")).isEqualTo(~(-10));
+    assertThat(parser.parse("-~10")).isEqualTo(-~10);
+    assertThat(parser.parse("~-10")).isEqualTo(~-10);
     assertThat(parser.parseToStream("--10")).containsExactly(10);
     assertThat(parser.parse("-+10")).isEqualTo(-10);
     assertThat(parser.parseToStream("-+10")).containsExactly(-10);
