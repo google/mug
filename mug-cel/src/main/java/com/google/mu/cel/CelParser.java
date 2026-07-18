@@ -378,28 +378,23 @@ public final class CelParser {
   }
 
   private static final class StringLexer extends SequenceLexer<String> {
-    @Override
-    Collector<CharSequence, ?, String> joiner() {
+    @Override Collector<CharSequence, ?, String> joiner() {
       return Collectors.joining();
     }
 
-    @Override
-    String fromCodePoint(int codePoint) {
+    @Override String fromCodePoint(int codePoint) {
       return Character.toString(codePoint);
     }
 
-    @Override
-    String literal(String raw) {
+    @Override String literal(String raw) {
       return raw;
     }
 
-    @Override
-    String literal(char c) {
+    @Override String literal(char c) {
       return Character.toString(c);
     }
 
-    @Override
-    Parser<String> escaped() {
+    @Override Parser<String> escaped() {
       return anyOf(
           charEscape(),
           octEscape(),
@@ -410,8 +405,7 @@ public final class CelParser {
   }
 
   private static final class BytesLexer extends SequenceLexer<byte[]> {
-    @Override
-    Collector<byte[], ?, byte[]> joiner() {
+    @Override Collector<byte[], ?, byte[]> joiner() {
       return Collector.of(
           ByteArrayOutputStream::new,
           ByteArrayOutputStream::writeBytes,
@@ -422,23 +416,19 @@ public final class CelParser {
           ByteArrayOutputStream::toByteArray);
     }
 
-    @Override
-    byte[] fromCodePoint(int codePoint) {
+    @Override byte[] fromCodePoint(int codePoint) {
       return new byte[] {(byte) codePoint};
     }
 
-    @Override
-    byte[] literal(String raw) {
+    @Override byte[] literal(String raw) {
       return raw.getBytes(UTF_8);
     }
 
-    @Override
-    byte[] literal(char c) {
+    @Override byte[] literal(char c) {
       return new byte[] {(byte) c};
     }
 
-    @Override
-    Parser<byte[]> escaped() {
+    @Override Parser<byte[]> escaped() {
       return anyOf(charEscape(), octEscape(), hexEscape());
     }
   }

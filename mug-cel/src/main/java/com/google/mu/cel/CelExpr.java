@@ -202,13 +202,11 @@ public sealed interface CelExpr {
       this(0);
     }
 
-    @Override
-    public NullValue withSourceIndex(int index) {
+    @Override public NullValue withSourceIndex(int index) {
       return new NullValue(index);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "null";
     }
   }
@@ -219,13 +217,11 @@ public sealed interface CelExpr {
       this(0, value);
     }
 
-    @Override
-    public BoolValue withSourceIndex(int index) {
+    @Override public BoolValue withSourceIndex(int index) {
       return new BoolValue(index, value);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return String.valueOf(value);
     }
   }
@@ -236,13 +232,11 @@ public sealed interface CelExpr {
       this(0, value);
     }
 
-    @Override
-    public LongValue withSourceIndex(int index) {
+    @Override public LongValue withSourceIndex(int index) {
       return new LongValue(index, value);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return String.valueOf(value);
     }
   }
@@ -253,13 +247,11 @@ public sealed interface CelExpr {
       this(0, value);
     }
 
-    @Override
-    public UintValue withSourceIndex(int index) {
+    @Override public UintValue withSourceIndex(int index) {
       return new UintValue(index, value);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return Long.toUnsignedString(value) + "u";
     }
   }
@@ -270,13 +262,11 @@ public sealed interface CelExpr {
       this(0, value);
     }
 
-    @Override
-    public DoubleValue withSourceIndex(int index) {
+    @Override public DoubleValue withSourceIndex(int index) {
       return new DoubleValue(index, value);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return String.valueOf(value);
     }
   }
@@ -287,13 +277,11 @@ public sealed interface CelExpr {
       this(0, value);
     }
 
-    @Override
-    public StringValue withSourceIndex(int index) {
+    @Override public StringValue withSourceIndex(int index) {
       return new StringValue(index, value);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return escapeString(value);
     }
   }
@@ -304,23 +292,19 @@ public sealed interface CelExpr {
       this(0, value);
     }
 
-    @Override
-    public BytesValue withSourceIndex(int index) {
+    @Override public BytesValue withSourceIndex(int index) {
       return new BytesValue(index, value);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return escapeBytes(value);
     }
 
-    @Override
-    public boolean equals(Object obj) {
+    @Override public boolean equals(Object obj) {
       return obj instanceof BytesValue other && java.util.Arrays.equals(value, other.value);
     }
 
-    @Override
-    public int hashCode() {
+    @Override public int hashCode() {
       return java.util.Arrays.hashCode(value);
     }
   }
@@ -331,13 +315,11 @@ public sealed interface CelExpr {
       this(0, name);
     }
 
-    @Override
-    public Ident withSourceIndex(int index) {
+    @Override public Ident withSourceIndex(int index) {
       return new Ident(index, name);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return CelParser.IDENTIFIER.matches(name) ? name : "`" + name + "`";
     }
   }
@@ -348,13 +330,11 @@ public sealed interface CelExpr {
       this(operand.sourceIndex(), operand, field);
     }
 
-    @Override
-    public Select withSourceIndex(int index) {
+    @Override public Select withSourceIndex(int index) {
       return new Select(index, operand, field);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "(" + operand + ")." + new Ident(field);
     }
   }
@@ -365,13 +345,11 @@ public sealed interface CelExpr {
       this(operand.sourceIndex(), operand, index);
     }
 
-    @Override
-    public Index withSourceIndex(int index) {
+    @Override public Index withSourceIndex(int index) {
       return new Index(index, operand, this.index);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "(" + operand + ")[" + index + "]";
     }
   }
@@ -382,13 +360,11 @@ public sealed interface CelExpr {
       this(operand.sourceIndex(), operand, field);
     }
 
-    @Override
-    public OptionalSelect withSourceIndex(int index) {
+    @Override public OptionalSelect withSourceIndex(int index) {
       return new OptionalSelect(index, operand, field);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "(" + operand + ").?" + new Ident(field);
     }
   }
@@ -399,13 +375,11 @@ public sealed interface CelExpr {
       this(operand.sourceIndex(), operand, index);
     }
 
-    @Override
-    public OptionalIndex withSourceIndex(int index) {
+    @Override public OptionalIndex withSourceIndex(int index) {
       return new OptionalIndex(index, operand, this.index);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "(" + operand + ")[?" + index + "]";
     }
   }
@@ -416,8 +390,7 @@ public sealed interface CelExpr {
       this(0, operator, operand);
     }
 
-    @Override
-    public Unary withSourceIndex(int index) {
+    @Override public Unary withSourceIndex(int index) {
       return new Unary(index, operator, operand);
     }
 
@@ -431,14 +404,12 @@ public sealed interface CelExpr {
         this.symbol = symbol;
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return symbol;
       }
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return operator.toString() + "(" + operand + ")";
     }
   }
@@ -449,8 +420,7 @@ public sealed interface CelExpr {
       this(left.sourceIndex(), left, operator, right);
     }
 
-    @Override
-    public Binary withSourceIndex(int index) {
+    @Override public Binary withSourceIndex(int index) {
       return new Binary(index, left, operator, right);
     }
 
@@ -476,14 +446,12 @@ public sealed interface CelExpr {
         this.symbol = symbol;
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return symbol;
       }
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "(" + left + ") " + operator + " (" + right + ")";
     }
   }
@@ -495,13 +463,11 @@ public sealed interface CelExpr {
       this(condition.sourceIndex(), condition, ifTrue, ifFalse);
     }
 
-    @Override
-    public Ternary withSourceIndex(int index) {
+    @Override public Ternary withSourceIndex(int index) {
       return new Ternary(index, condition, ifTrue, ifFalse);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "(" + condition + ") ? (" + ifTrue + ") : (" + ifFalse + ")";
     }
   }
@@ -509,36 +475,30 @@ public sealed interface CelExpr {
   /** Global function calls {@code f(args)}. */
   record FunctionCall(Ident function, List<CelExpr> args) implements CelExpr {
 
-    @Override
-    public int sourceIndex() {
+    @Override public int sourceIndex() {
       return function.sourceIndex();
     }
 
-    @Override
-    public FunctionCall withSourceIndex(int index) {
+    @Override public FunctionCall withSourceIndex(int index) {
       return new FunctionCall(function.withSourceIndex(index), args);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return function.name() + args.stream().collect(Joiner.on(", ").between('(', ')'));
     }
   }
 
   /** Member calls {@code target.f(args)}. */
   record MemberCall(CelExpr target, Ident member, List<CelExpr> args) implements CelExpr {
-    @Override
-    public int sourceIndex() {
+    @Override public int sourceIndex() {
       return target.sourceIndex();
     }
 
-    @Override
-    public MemberCall withSourceIndex(int index) {
+    @Override public MemberCall withSourceIndex(int index) {
       return new MemberCall(target.withSourceIndex(index), member, args);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "("
           + target
           + ")."
@@ -553,13 +513,11 @@ public sealed interface CelExpr {
       this(0, elements);
     }
 
-    @Override
-    public ListLiteral withSourceIndex(int index) {
+    @Override public ListLiteral withSourceIndex(int index) {
       return new ListLiteral(index, elements);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return elements.stream().collect(Joiner.on(", ").between('[', ']'));
     }
   }
@@ -570,13 +528,11 @@ public sealed interface CelExpr {
       this(0, entries);
     }
 
-    @Override
-    public MapLiteral withSourceIndex(int index) {
+    @Override public MapLiteral withSourceIndex(int index) {
       return new MapLiteral(index, entries);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return entries.stream().collect(Joiner.on(", ").between('{', '}'));
     }
   }
@@ -588,13 +544,11 @@ public sealed interface CelExpr {
       this(0, messageName, fields);
     }
 
-    @Override
-    public StructLiteral withSourceIndex(int index) {
+    @Override public StructLiteral withSourceIndex(int index) {
       return new StructLiteral(index, messageName, fields);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return messageName + fields.stream().collect(Joiner.on(", ").between('{', '}'));
     }
   }
@@ -628,8 +582,7 @@ public sealed interface CelExpr {
       return new Entry<>(key, value, true);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return optionalMarker(optional) + key + ": " + value;
     }
   }
@@ -642,13 +595,11 @@ public sealed interface CelExpr {
         this(0, member);
       }
 
-      @Override
-      public Has withSourceIndex(int index) {
+      @Override public Has withSourceIndex(int index) {
         return new Has(index, member);
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return "has(" + member + ")";
       }
     }
@@ -660,13 +611,11 @@ public sealed interface CelExpr {
         this(target.sourceIndex(), target, varName, condition);
       }
 
-      @Override
-      public All withSourceIndex(int index) {
+      @Override public All withSourceIndex(int index) {
         return new All(index, target, varName, condition);
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return target + ".all(" + varName + ", " + condition + ")";
       }
     }
@@ -678,13 +627,11 @@ public sealed interface CelExpr {
         this(target.sourceIndex(), target, varName, condition);
       }
 
-      @Override
-      public Exists withSourceIndex(int index) {
+      @Override public Exists withSourceIndex(int index) {
         return new Exists(index, target, varName, condition);
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return target + ".exists(" + varName + ", " + condition + ")";
       }
     }
@@ -696,13 +643,11 @@ public sealed interface CelExpr {
         this(target.sourceIndex(), target, varName, condition);
       }
 
-      @Override
-      public ExistsOne withSourceIndex(int index) {
+      @Override public ExistsOne withSourceIndex(int index) {
         return new ExistsOne(index, target, varName, condition);
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return target + ".exists_one(" + varName + ", " + condition + ")";
       }
     }
@@ -713,13 +658,11 @@ public sealed interface CelExpr {
         this(target.sourceIndex(), target, varName, expr);
       }
 
-      @Override
-      public Filter withSourceIndex(int index) {
+      @Override public Filter withSourceIndex(int index) {
         return new Filter(index, target, varName, expr);
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return target + ".filter(" + varName + ", " + expr + ")";
       }
     }
@@ -730,13 +673,11 @@ public sealed interface CelExpr {
         this(target.sourceIndex(), target, varName, expr);
       }
 
-      @Override
-      public Map withSourceIndex(int index) {
+      @Override public Map withSourceIndex(int index) {
         return new Map(index, target, varName, expr);
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return target + ".map(" + varName + ", " + expr + ")";
       }
     }
@@ -749,21 +690,18 @@ public sealed interface CelExpr {
         this(target.sourceIndex(), target, varName, filter, transform);
       }
 
-      @Override
-      public FilterMap withSourceIndex(int index) {
+      @Override public FilterMap withSourceIndex(int index) {
         return new FilterMap(index, target, varName, filter, transform);
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return target + ".map(" + varName + ", " + filter + ", " + transform + ")";
       }
     }
   }
 
   record Element(CelExpr value, boolean optional) {
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return optionalMarker(optional) + value;
     }
   }

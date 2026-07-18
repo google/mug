@@ -22,7 +22,7 @@ final class CelProtoConverter {
     SourceInfo.Builder sourceInfo = SourceInfo.newBuilder();
     all('\n').match(input).forEach(m -> sourceInfo.addLineOffsets(m.index()));
     Expr expr = new CelProtoConverter(new AtomicLong(1), sourceInfo).convert(celExpr);
-    return ParsedExpr.newBuilder().setExpr(expr).setSourceInfo(sourceInfo.build()).build();
+    return ParsedExpr.newBuilder().setExpr(expr).setSourceInfo(sourceInfo).build();
   }
 
   private final AtomicLong idGenerator;
