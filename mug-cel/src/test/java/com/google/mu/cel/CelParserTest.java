@@ -224,13 +224,16 @@ public final class CelParserTest {
             .withSourceIndex(0)
             .select("c")
             .withSourceIndex(0));
-    assertAst("a(b)", new FunctionCall(new Ident("a"), List.of(new Ident(2, "b"))).withSourceIndex(0));
+    assertAst(
+        "a(b)",
+        new FunctionCall(0, new Ident(0, "a"), List.of(new Ident(2, "b"))).withSourceIndex(0));
     assertAst(
         "a.b(c)",
         new Ident(0, "a").call(new Ident(0, "b"), List.of(new Ident(4, "c"))).withSourceIndex(0));
     assertAst(
         "a(b, c)",
-        new FunctionCall(new Ident("a"), List.of(new Ident(2, "b"), new Ident(5, "c"))).withSourceIndex(0));
+        new FunctionCall(0, new Ident(0, "a"), List.of(new Ident(2, "b"), new Ident(5, "c")))
+            .withSourceIndex(0));
     assertAst(
         "a.b(c, d)",
         new Ident(0, "a")
@@ -240,8 +243,8 @@ public final class CelParserTest {
 
   @Test
   public void testOptionalSyntax() throws Exception {
-    assertAst("a.?b", new OptionalSelect(new Ident(0, "a"), "b"));
-    assertAst("a[?b]", new OptionalIndex(new Ident(0, "a"), new Ident(3, "b")));
+    assertAst("a.?b", new OptionalSelect(0, new Ident(0, "a"), "b"));
+    assertAst("a[?b]", new OptionalIndex(0, new Ident(0, "a"), new Ident(3, "b")));
   }
 
   @Test
@@ -267,16 +270,17 @@ public final class CelParserTest {
         new MapLiteral(
             0,
             List.of(
-                new Entry<>(string("a").withSourceIndex(1), value(1L).withSourceIndex(6), false),
+                new Entry<>(0, string("a").withSourceIndex(1), value(1L).withSourceIndex(6), false),
                 new Entry<>(
-                    string("b").withSourceIndex(9), value(2L).withSourceIndex(14), false))));
+                    0, string("b").withSourceIndex(9), value(2L).withSourceIndex(14), false))));
     assertAst(
         "{'a': 1, 'b': 2,}",
         new MapLiteral(
             0,
             List.of(
-                new Entry<>(string("a").withSourceIndex(1), value(1L).withSourceIndex(6), false),
+                new Entry<>(0, string("a").withSourceIndex(1), value(1L).withSourceIndex(6), false),
                 new Entry<>(
+                    0,
                     string("b").withSourceIndex(9),
                     value(2L).withSourceIndex(14),
                     false)))); // Trailing comma
@@ -290,27 +294,27 @@ public final class CelParserTest {
         new StructLiteral(
             0,
             "Type",
-            List.of(new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(12), false))));
+            List.of(new Entry<>(0, new Ident(0, "field"), value(1L).withSourceIndex(12), false))));
     assertAst(
         "a.b.Type{field: 1, field2: 2}",
         new StructLiteral(
             0,
             "a.b.Type",
             List.of(
-                new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(16), false),
-                new Entry<>(new Ident(0, "field2"), value(2L).withSourceIndex(27), false))));
+                new Entry<>(0, new Ident(0, "field"), value(1L).withSourceIndex(16), false),
+                new Entry<>(0, new Ident(0, "field2"), value(2L).withSourceIndex(27), false))));
     assertAst(
         ".Type{field: 1}",
         new StructLiteral(
             0,
             ".Type",
-            List.of(new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(13), false))));
+            List.of(new Entry<>(0, new Ident(0, "field"), value(1L).withSourceIndex(13), false))));
     assertAst(
         ".   Type{field: 1}",
         new StructLiteral(
             0,
             ".Type",
-            List.of(new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(16), false))));
+            List.of(new Entry<>(0, new Ident(0, "field"), value(1L).withSourceIndex(16), false))));
   }
 
   @Test
@@ -516,7 +520,7 @@ public final class CelParserTest {
             .withSourceIndex(0));
     assertAst(
         "a(b)[c]",
-        new FunctionCall(new Ident("a"), List.of(new Ident(2, "b")))
+        new FunctionCall(0, new Ident(0, "a"), List.of(new Ident(2, "b")))
             .withSourceIndex(0)
             .index(new Ident(5, "c"))
             .withSourceIndex(0));
@@ -541,13 +545,14 @@ public final class CelParserTest {
         new StructLiteral(
             0,
             "a.b.Type",
-            List.of(new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(16), false))));
+            List.of(new Entry<>(0, new Ident(0, "field"), value(1L).withSourceIndex(16), false))));
     assertAst(
         "Type{field: 1}.field",
         new StructLiteral(
                 0,
                 "Type",
-                List.of(new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(12), false)))
+                List.of(
+                    new Entry<>(0, new Ident(0, "field"), value(1L).withSourceIndex(12), false)))
             .select("field")
             .withSourceIndex(0));
     assertAst(
@@ -555,7 +560,8 @@ public final class CelParserTest {
         new StructLiteral(
                 0,
                 "a.b.Type",
-                List.of(new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(16), false)))
+                List.of(
+                    new Entry<>(0, new Ident(0, "field"), value(1L).withSourceIndex(16), false)))
             .select("field")
             .withSourceIndex(0));
     assertAst(
@@ -563,24 +569,25 @@ public final class CelParserTest {
         new StructLiteral(
                 0,
                 "Type",
-                List.of(new Entry<>(new Ident(0, "field"), value(1L).withSourceIndex(12), false)))
+                List.of(
+                    new Entry<>(0, new Ident(0, "field"), value(1L).withSourceIndex(12), false)))
             .index(value(0L).withSourceIndex(15))
             .withSourceIndex(0));
   }
 
   @Test
   public void testComplexOptionalSyntax() throws Exception {
-    assertAst("a.?b.c", new OptionalSelect(new Ident(0, "a"), "b").select("c"));
-    assertAst("a.b.?c", new OptionalSelect(new Ident(0, "a").select("b"), "c"));
+    assertAst("a.?b.c", new OptionalSelect(0, new Ident(0, "a"), "b").select("c"));
+    assertAst("a.b.?c", new OptionalSelect(0, new Ident(0, "a").select("b"), "c"));
     assertAst(
         "a[?b][c]",
-        new OptionalIndex(new Ident(0, "a"), new Ident(3, "b")).index(new Ident(6, "c")));
+        new OptionalIndex(0, new Ident(0, "a"), new Ident(3, "b")).index(new Ident(6, "c")));
     assertAst(
         "a[b][?c]",
-        new OptionalIndex(new Ident(0, "a").index(new Ident(2, "b")), new Ident(6, "c")));
+        new OptionalIndex(0, new Ident(0, "a").index(new Ident(2, "b")), new Ident(6, "c")));
     assertAst(
         "a.?b[?c]",
-        new OptionalIndex(new OptionalSelect(new Ident(0, "a"), "b"), new Ident(6, "c")));
+        new OptionalIndex(0, new OptionalSelect(0, new Ident(0, "a"), "b"), new Ident(6, "c")));
   }
 
   @Test
@@ -610,11 +617,13 @@ public final class CelParserTest {
             0,
             List.of(
                 new Entry<>(
+                    0,
                     string("a").withSourceIndex(1),
                     new MapLiteral(
                         6,
                         List.of(
                             new Entry<>(
+                                0,
                                 string("b").withSourceIndex(7),
                                 value(1L).withSourceIndex(12),
                                 false))),
@@ -629,6 +638,7 @@ public final class CelParserTest {
                         1,
                         List.of(
                             new Entry<>(
+                                0,
                                 string("a").withSourceIndex(2),
                                 value(1L).withSourceIndex(7),
                                 false))),
@@ -638,6 +648,7 @@ public final class CelParserTest {
                         11,
                         List.of(
                             new Entry<>(
+                                0,
                                 string("b").withSourceIndex(12),
                                 value(2L).withSourceIndex(17),
                                 false))),
@@ -655,16 +666,16 @@ public final class CelParserTest {
         new MapLiteral(
             0,
             List.of(
-                new Entry<>(new Ident(2, "a"), new Ident(5, "b"), true),
-                new Entry<>(new Ident(9, "c"), new Ident(12, "d"), true))));
+                new Entry<>(0, new Ident(2, "a"), new Ident(5, "b"), true),
+                new Entry<>(0, new Ident(9, "c"), new Ident(12, "d"), true))));
     assertAst(
         "Type{?field: value, field2: value}",
         new StructLiteral(
             0,
             "Type",
             List.of(
-                new Entry<>(new Ident(0, "field"), new Ident(13, "value"), true),
-                new Entry<>(new Ident(0, "field2"), new Ident(28, "value"), false))));
+                new Entry<>(0, new Ident(0, "field"), new Ident(13, "value"), true),
+                new Entry<>(0, new Ident(0, "field2"), new Ident(28, "value"), false))));
   }
 
   @Test
@@ -714,18 +725,18 @@ public final class CelParserTest {
         new MapLiteral(
             0,
             List.of(
-                new Entry<>(value(1L).withSourceIndex(1), string("a").withSourceIndex(4), false),
+                new Entry<>(0, value(1L).withSourceIndex(1), string("a").withSourceIndex(4), false),
                 new Entry<>(
-                    unsigned(2L).withSourceIndex(9), string("b").withSourceIndex(13), false),
+                    0, unsigned(2L).withSourceIndex(9), string("b").withSourceIndex(13), false),
                 new Entry<>(
-                    value(true).withSourceIndex(18), string("c").withSourceIndex(24), false))));
+                    0, value(true).withSourceIndex(18), string("c").withSourceIndex(24), false))));
     assertAst(
         "{1.0: 'a'}",
         new MapLiteral(
             0,
             List.of(
                 new Entry<>(
-                    value(1.0).withSourceIndex(1), string("a").withSourceIndex(6), false))));
+                    0, value(1.0).withSourceIndex(1), string("a").withSourceIndex(6), false))));
   }
 
   @Test
@@ -847,11 +858,14 @@ public final class CelParserTest {
         "a.b.c", new Ident(0, "a").select("b").withSourceIndex(0).select("c").withSourceIndex(0));
     assertAst("(a)", new Ident(0, "a"));
     assertAst("((a))", new Ident(0, "a"));
-    assertAst("a()", new FunctionCall(new Ident("a"), List.of()).withSourceIndex(0));
-    assertAst("a(b)", new FunctionCall(new Ident("a"), List.of(new Ident(2, "b"))).withSourceIndex(0));
+    assertAst("a()", new FunctionCall(0, new Ident(0, "a"), List.of()).withSourceIndex(0));
+    assertAst(
+        "a(b)",
+        new FunctionCall(0, new Ident(0, "a"), List.of(new Ident(2, "b"))).withSourceIndex(0));
     assertAst(
         "a(b, c)",
-        new FunctionCall(new Ident("a"), List.of(new Ident(2, "b"), new Ident(5, "c"))).withSourceIndex(0));
+        new FunctionCall(0, new Ident(0, "a"), List.of(new Ident(2, "b"), new Ident(5, "c")))
+            .withSourceIndex(0));
     assertAst("a.b()", new Ident(0, "a").call(new Ident(0, "b"), List.of()).withSourceIndex(0));
     assertAst(
         "a.b(c)",
@@ -928,8 +942,8 @@ public final class CelParserTest {
             0,
             "SomeMessage",
             List.of(
-                new Entry<>(new Ident(0, "foo"), value(5L).withSourceIndex(17), false),
-                new Entry<>(new Ident(0, "bar"), string("xyz").withSourceIndex(25), false))));
+                new Entry<>(0, new Ident(0, "foo"), value(5L).withSourceIndex(17), false),
+                new Entry<>(0, new Ident(0, "bar"), string("xyz").withSourceIndex(25), false))));
     assertAst(
         "[3, 4, 5]",
         new ListLiteral(
@@ -943,30 +957,30 @@ public final class CelParserTest {
         new MapLiteral(
             0,
             List.of(
-                new Entry<>(new Ident(1, "foo"), value(5L).withSourceIndex(6), false),
-                new Entry<>(new Ident(9, "bar"), string("xyz").withSourceIndex(14), false))));
+                new Entry<>(0, new Ident(1, "foo"), value(5L).withSourceIndex(6), false),
+                new Entry<>(0, new Ident(9, "bar"), string("xyz").withSourceIndex(14), false))));
     assertAst("a[b]", new Ident(0, "a").index(new Ident(2, "b")).withSourceIndex(0));
     assertAst("foo{ }", new StructLiteral(0, "foo", List.of()));
     assertAst(
         "foo{ a:b }",
         new StructLiteral(
-            0, "foo", List.of(new Entry<>(new Ident(0, "a"), new Ident(7, "b"), false))));
+            0, "foo", List.of(new Entry<>(0, new Ident(0, "a"), new Ident(7, "b"), false))));
     assertAst(
         "foo{ a:b, c:d }",
         new StructLiteral(
             0,
             "foo",
             List.of(
-                new Entry<>(new Ident(0, "a"), new Ident(7, "b"), false),
-                new Entry<>(new Ident(0, "c"), new Ident(12, "d"), false))));
+                new Entry<>(0, new Ident(0, "a"), new Ident(7, "b"), false),
+                new Entry<>(0, new Ident(0, "c"), new Ident(12, "d"), false))));
     assertAst("{}", new MapLiteral(0, List.of()));
     assertAst(
         "{a:b, c:d}",
         new MapLiteral(
             0,
             List.of(
-                new Entry<>(new Ident(1, "a"), new Ident(3, "b"), false),
-                new Entry<>(new Ident(6, "c"), new Ident(8, "d"), false))));
+                new Entry<>(0, new Ident(1, "a"), new Ident(3, "b"), false),
+                new Entry<>(0, new Ident(6, "c"), new Ident(8, "d"), false))));
     assertAst("[]", new ListLiteral(0, List.of()));
     assertAst("[a]", new ListLiteral(0, List.of(new Element(new Ident(1, "a"), false))));
     assertAst(
@@ -995,17 +1009,19 @@ public final class CelParserTest {
         new MapLiteral(
             0,
             List.of(
-                new Entry<>(value(1L).withSourceIndex(1), unsigned(2L).withSourceIndex(3), false),
                 new Entry<>(
-                    value(2L).withSourceIndex(7), unsigned(3L).withSourceIndex(9), false))));
+                    0, value(1L).withSourceIndex(1), unsigned(2L).withSourceIndex(3), false),
+                new Entry<>(
+                    0, value(2L).withSourceIndex(7), unsigned(3L).withSourceIndex(9), false))));
     assertAst(
         "TestAllTypes{single_int32: 1, single_int64: 2}",
         new StructLiteral(
             0,
             "TestAllTypes",
             List.of(
-                new Entry<>(new Ident(0, "single_int32"), value(1L).withSourceIndex(27), false),
-                new Entry<>(new Ident(0, "single_int64"), value(2L).withSourceIndex(44), false))));
+                new Entry<>(0, new Ident(0, "single_int32"), value(1L).withSourceIndex(27), false),
+                new Entry<>(
+                    0, new Ident(0, "single_int64"), value(2L).withSourceIndex(44), false))));
     assertAst(
         "[1,3,4][0]",
         new ListLiteral(
@@ -1076,40 +1092,45 @@ public final class CelParserTest {
     assertAst(
         "A{`b`: 1}",
         new StructLiteral(
-            0, "A", List.of(new Entry<>(new Ident(0, "b"), value(1L).withSourceIndex(7), false))));
+            0,
+            "A",
+            List.of(new Entry<>(0, new Ident(0, "b"), value(1L).withSourceIndex(7), false))));
     assertAst(
         "A{`b-c`: 1}",
         new StructLiteral(
             0,
             "A",
-            List.of(new Entry<>(new Ident(0, "b-c"), value(1L).withSourceIndex(9), false))));
+            List.of(new Entry<>(0, new Ident(0, "b-c"), value(1L).withSourceIndex(9), false))));
     assertAst(
         "A{`b c`: 1}",
         new StructLiteral(
             0,
             "A",
-            List.of(new Entry<>(new Ident(0, "b c"), value(1L).withSourceIndex(9), false))));
+            List.of(new Entry<>(0, new Ident(0, "b c"), value(1L).withSourceIndex(9), false))));
     assertAst(
         "A{`b/c`: 1}",
         new StructLiteral(
             0,
             "A",
-            List.of(new Entry<>(new Ident(0, "b/c"), value(1L).withSourceIndex(9), false))));
+            List.of(new Entry<>(0, new Ident(0, "b/c"), value(1L).withSourceIndex(9), false))));
     assertAst(
         "A{`b.c`: 1}",
         new StructLiteral(
             0,
             "A",
-            List.of(new Entry<>(new Ident(0, "b.c"), value(1L).withSourceIndex(9), false))));
+            List.of(new Entry<>(0, new Ident(0, "b.c"), value(1L).withSourceIndex(9), false))));
     assertAst(
         "A{`in`: 1}",
         new StructLiteral(
-            0, "A", List.of(new Entry<>(new Ident(0, "in"), value(1L).withSourceIndex(8), false))));
+            0,
+            "A",
+            List.of(new Entry<>(0, new Ident(0, "in"), value(1L).withSourceIndex(8), false))));
     assertAst(
         "{?'key': value}",
         new MapLiteral(
             0,
-            List.of(new Entry<>(string("key").withSourceIndex(2), new Ident(9, "value"), true))));
+            List.of(
+                new Entry<>(0, string("key").withSourceIndex(2), new Ident(9, "value"), true))));
   }
 
   @Test
@@ -1198,7 +1219,7 @@ public final class CelParserTest {
     assertAst("m.filter(v, p)", new Filter(0, new Ident(0, "m"), "v", new Ident(12, "p")));
     assertAst(
         "size(x) == x.size()",
-        new FunctionCall(new Ident("size"), List.of(new Ident(5, "x")))
+        new FunctionCall(0, new Ident(0, "size"), List.of(new Ident(5, "x")))
             .withSourceIndex(0)
             .equalTo(new Ident(11, "x").call(new Ident(11, "size"), List.of()).withSourceIndex(11))
             .withSourceIndex(0));
@@ -1275,24 +1296,29 @@ public final class CelParserTest {
                 0,
                 List.of(
                     new Entry<>(
-                        string("a").withSourceIndex(1), value(1L).withSourceIndex(6), false))),
+                        0, string("a").withSourceIndex(1), value(1L).withSourceIndex(6), false))),
             "x",
             new Ident(19, "x").equalTo(string("a").withSourceIndex(24)).withSourceIndex(19)));
     assertAst(
         "exists(x, y)",
-        new FunctionCall(new Ident("exists"), List.of(new Ident(7, "x"), new Ident(10, "y"))).withSourceIndex(0));
+        new FunctionCall(0, new Ident(0, "exists"), List.of(new Ident(7, "x"), new Ident(10, "y")))
+            .withSourceIndex(0));
     assertAst(
         "all(x, y)",
-        new FunctionCall(new Ident("all"), List.of(new Ident(4, "x"), new Ident(7, "y"))).withSourceIndex(0));
+        new FunctionCall(0, new Ident(0, "all"), List.of(new Ident(4, "x"), new Ident(7, "y")))
+            .withSourceIndex(0));
     assertAst(
         "map(x, y)",
-        new FunctionCall(new Ident("map"), List.of(new Ident(4, "x"), new Ident(7, "y"))).withSourceIndex(0));
+        new FunctionCall(0, new Ident(0, "map"), List.of(new Ident(4, "x"), new Ident(7, "y")))
+            .withSourceIndex(0));
     assertAst(
         "filter(x, y)",
-        new FunctionCall(new Ident("filter"), List.of(new Ident(7, "x"), new Ident(10, "y"))).withSourceIndex(0));
+        new FunctionCall(0, new Ident(0, "filter"), List.of(new Ident(7, "x"), new Ident(10, "y")))
+            .withSourceIndex(0));
     assertAst(
         "exists_one(x, y)",
-        new FunctionCall(new Ident("exists_one"), List.of(new Ident(11, "x"), new Ident(14, "y")))
+        new FunctionCall(
+                0, new Ident(0, "exists_one"), List.of(new Ident(11, "x"), new Ident(14, "y")))
             .withSourceIndex(0));
     assertParseFailure("has(x)", "1:1", "has() expects 1 select argument");
     assertParseFailure("has(x, y)", "1:1", "has() expects 1 arg, 2 provided");
@@ -1327,7 +1353,9 @@ public final class CelParserTest {
     assertAst(
         "Msg{?field: value}",
         new StructLiteral(
-            0, "Msg", List.of(new Entry<>(new Ident(0, "field"), new Ident(12, "value"), true))));
+            0,
+            "Msg",
+            List.of(new Entry<>(0, new Ident(0, "field"), new Ident(12, "value"), true))));
     assertAst(
         "m.optMap(v, f)",
         new Ident(0, "m")
@@ -1502,30 +1530,161 @@ public final class CelParserTest {
   @Test
   public void testSourceIndex() throws Exception {
     CelExpr ast = parser.parse("a + b * 3");
-    assertThat(ast.sourceIndex()).isEqualTo(0);
-    CelExpr.Binary add = (CelExpr.Binary) ast;
+    assertThat(ast.sourceIndex()).isEqualTo(2);
+    CelExpr.Add add = (CelExpr.Add) ast;
     assertThat(add.left().sourceIndex()).isEqualTo(0);
-    CelExpr.Binary mult = (CelExpr.Binary) add.right();
-    assertThat(mult.sourceIndex()).isEqualTo(4);
+    CelExpr.Multiply mult = (CelExpr.Multiply) add.right();
+    assertThat(mult.sourceIndex()).isEqualTo(6);
     assertThat(mult.left().sourceIndex()).isEqualTo(4);
     assertThat(mult.right().sourceIndex()).isEqualTo(8);
   }
 
   private void assertAst(String expression, CelExpr expectedAst) {
     CelExpr ast = parser.parse(expression);
-    assertThat(ast).isEqualTo(expectedAst);
+    assertThat(clearSourceIndices(ast)).isEqualTo(clearSourceIndices(expectedAst));
   }
 
   private void assertAstWithComments(String expression, CelExpr expectedAst) {
     CelExpr ast = parser.withComments().parse(expression);
-    assertThat(ast).isEqualTo(expectedAst);
+    assertThat(clearSourceIndices(ast)).isEqualTo(clearSourceIndices(expectedAst));
+  }
+
+  private static CelExpr clearSourceIndices(CelExpr expr) {
+    if (expr == null) {
+      return null;
+    }
+    return switch (expr) {
+      case CelExpr.NullValue v -> new CelExpr.NullValue(0);
+      case CelExpr.BoolValue v -> new CelExpr.BoolValue(0, v.value());
+      case CelExpr.LongValue v -> new CelExpr.LongValue(0, v.value());
+      case CelExpr.UintValue v -> new CelExpr.UintValue(0, v.value());
+      case CelExpr.DoubleValue v -> new CelExpr.DoubleValue(0, v.value());
+      case CelExpr.StringValue v -> new CelExpr.StringValue(0, v.value());
+      case CelExpr.BytesValue v -> new CelExpr.BytesValue(0, v.value());
+      case CelExpr.Ident v -> new CelExpr.Ident(0, v.name());
+      case CelExpr.Select v -> new CelExpr.Select(0, clearSourceIndices(v.operand()), v.field());
+      case CelExpr.Index v ->
+          new CelExpr.Index(0, clearSourceIndices(v.operand()), clearSourceIndices(v.index()));
+      case CelExpr.OptionalSelect v ->
+          new CelExpr.OptionalSelect(0, clearSourceIndices(v.operand()), v.field());
+      case CelExpr.OptionalIndex v ->
+          new CelExpr.OptionalIndex(
+              0, clearSourceIndices(v.operand()), clearSourceIndices(v.index()));
+      case CelExpr.Add v ->
+          new CelExpr.Add(0, clearSourceIndices(v.left()), clearSourceIndices(v.right()));
+      case CelExpr.Subtract v ->
+          new CelExpr.Subtract(0, clearSourceIndices(v.left()), clearSourceIndices(v.right()));
+      case CelExpr.Multiply v ->
+          new CelExpr.Multiply(0, clearSourceIndices(v.left()), clearSourceIndices(v.right()));
+      case CelExpr.Divide v ->
+          new CelExpr.Divide(0, clearSourceIndices(v.left()), clearSourceIndices(v.right()));
+      case CelExpr.Modulo v ->
+          new CelExpr.Modulo(0, clearSourceIndices(v.left()), clearSourceIndices(v.right()));
+      case CelExpr.LessThan v ->
+          new CelExpr.LessThan(0, clearSourceIndices(v.left()), clearSourceIndices(v.right()));
+      case CelExpr.LessThanOrEqualTo v ->
+          new CelExpr.LessThanOrEqualTo(
+              0, clearSourceIndices(v.left()), clearSourceIndices(v.right()));
+      case CelExpr.GreaterThan v ->
+          new CelExpr.GreaterThan(0, clearSourceIndices(v.left()), clearSourceIndices(v.right()));
+      case CelExpr.GreaterThanOrEqualTo v ->
+          new CelExpr.GreaterThanOrEqualTo(
+              0, clearSourceIndices(v.left()), clearSourceIndices(v.right()));
+      case CelExpr.EqualTo v ->
+          new CelExpr.EqualTo(0, clearSourceIndices(v.left()), clearSourceIndices(v.right()));
+      case CelExpr.NotEqualTo v ->
+          new CelExpr.NotEqualTo(0, clearSourceIndices(v.left()), clearSourceIndices(v.right()));
+      case CelExpr.And v ->
+          new CelExpr.And(0, clearSourceIndices(v.left()), clearSourceIndices(v.right()));
+      case CelExpr.Or v ->
+          new CelExpr.Or(0, clearSourceIndices(v.left()), clearSourceIndices(v.right()));
+      case CelExpr.In v ->
+          new CelExpr.In(0, clearSourceIndices(v.left()), clearSourceIndices(v.right()));
+      case CelExpr.Not v -> new CelExpr.Not(0, clearSourceIndices(v.operand()));
+      case CelExpr.Negative v -> new CelExpr.Negative(0, clearSourceIndices(v.operand()));
+      case CelExpr.Ternary v ->
+          new CelExpr.Ternary(
+              0,
+              clearSourceIndices(v.condition()),
+              clearSourceIndices(v.ifTrue()),
+              clearSourceIndices(v.ifFalse()));
+      case CelExpr.FunctionCall v ->
+          new CelExpr.FunctionCall(
+              0,
+              (CelExpr.Ident) clearSourceIndices(v.function()),
+              v.args().stream().map(CelParserTest::clearSourceIndices).toList());
+      case CelExpr.MemberCall v ->
+          new CelExpr.MemberCall(
+              0,
+              clearSourceIndices(v.target()),
+              (CelExpr.Ident) clearSourceIndices(v.member()),
+              v.args().stream().map(CelParserTest::clearSourceIndices).toList());
+      case CelExpr.ListLiteral v ->
+          new CelExpr.ListLiteral(
+              0,
+              v.elements().stream()
+                  .map(
+                      e ->
+                          new CelExpr.ListLiteral.Element(
+                              clearSourceIndices(e.value()), e.optional()))
+                  .toList());
+      case CelExpr.MapLiteral v ->
+          new CelExpr.MapLiteral(
+              0,
+              v.entries().stream()
+                  .map(
+                      e ->
+                          new CelExpr.Entry<>(
+                              0,
+                              clearSourceIndices(e.key()),
+                              clearSourceIndices(e.value()),
+                              e.optional()))
+                  .toList());
+      case CelExpr.StructLiteral v ->
+          new CelExpr.StructLiteral(
+              0,
+              v.messageName(),
+              v.fields().stream()
+                  .map(
+                      e ->
+                          new CelExpr.Entry<>(
+                              0,
+                              (CelExpr.Ident) clearSourceIndices(e.key()),
+                              clearSourceIndices(e.value()),
+                              e.optional()))
+                  .toList());
+      case CelExpr.Macro.Has v ->
+          new CelExpr.Macro.Has(0, (CelExpr.Select) clearSourceIndices(v.member()));
+      case CelExpr.Macro.All v ->
+          new CelExpr.Macro.All(
+              0, clearSourceIndices(v.target()), v.varName(), clearSourceIndices(v.condition()));
+      case CelExpr.Macro.Exists v ->
+          new CelExpr.Macro.Exists(
+              0, clearSourceIndices(v.target()), v.varName(), clearSourceIndices(v.condition()));
+      case CelExpr.Macro.ExistsOne v ->
+          new CelExpr.Macro.ExistsOne(
+              0, clearSourceIndices(v.target()), v.varName(), clearSourceIndices(v.condition()));
+      case CelExpr.Macro.Filter v ->
+          new CelExpr.Macro.Filter(
+              0, clearSourceIndices(v.target()), v.varName(), clearSourceIndices(v.expr()));
+      case CelExpr.Macro.Map v ->
+          new CelExpr.Macro.Map(
+              0, clearSourceIndices(v.target()), v.varName(), clearSourceIndices(v.expr()));
+      case CelExpr.Macro.FilterMap v ->
+          new CelExpr.Macro.FilterMap(
+              0,
+              clearSourceIndices(v.target()),
+              v.varName(),
+              clearSourceIndices(v.filter()),
+              clearSourceIndices(v.transform()));
+    };
   }
 
   @Test
   public void parseToProto_positions() {
     ParsedExpr parsed = parser.parseToProto("a + b * 3");
     SourceInfo sourceInfo = parsed.getSourceInfo();
-    assertThat(sourceInfo.getPositionsMap()).containsExactly(1L, 0, 2L, 0, 3L, 4, 4L, 4, 5L, 8);
+    assertThat(sourceInfo.getPositionsMap()).containsExactly(1L, 2, 2L, 0, 3L, 6, 4L, 4, 5L, 8);
   }
 
   @Test
@@ -1544,18 +1703,17 @@ public final class CelParserTest {
         .containsExactly(
             expr.getId(),
             Expr.newBuilder()
-                .setId(expr.getId())
                 .setCallExpr(
                     Expr.Call.newBuilder()
                         .setFunction("has")
                         .addArgs(
                             Expr.newBuilder()
-                                .setId(4)
+                                .setId(3)
                                 .setSelectExpr(
                                     Expr.Select.newBuilder()
                                         .setOperand(
                                             Expr.newBuilder()
-                                                .setId(5)
+                                                .setId(2)
                                                 .setIdentExpr(Expr.Ident.newBuilder().setName("a")))
                                         .setField("b"))))
                 .build());
@@ -1574,7 +1732,7 @@ public final class CelParserTest {
 
     // Verify positions map of balanced tree
     assertThat(sourceInfo.getPositionsMap())
-        .containsExactly(1L, 0, 2L, 0, 3L, 0, 4L, 5, 5L, 10, 6L, 10, 7L, 15);
+        .containsExactly(1L, 7, 2L, 2, 3L, 0, 4L, 5, 5L, 12, 6L, 10, 7L, 15);
   }
 
   @Test
@@ -1583,7 +1741,7 @@ public final class CelParserTest {
     ParsedExpr parsedParentheses = parser.parseToProto("(a + b)");
     assertThat(parsedParentheses.getSourceInfo().getPositionsMap())
         .containsExactly(
-            1L, 0, // Binary '+' (mapped to opening parenthesis '(' at index 0)
+            1L, 3, // Binary '+' at index 3
             2L, 1, // Ident 'a' at index 1
             3L, 5 // Ident 'b' at index 5
             );
@@ -1592,8 +1750,9 @@ public final class CelParserTest {
     ParsedExpr parsedMap = parser.parseToProto("{\"a\": 1}");
     assertThat(parsedMap.getSourceInfo().getPositionsMap())
         .containsExactly(
-            1L, 0, // MapLiteral (mapped to opening brace '{' at index 0)
-            3L, 1, // String key "a" at index 1 (ID 2 is assigned to CreateStruct.Entry)
+            1L, 0, // MapLiteral at '{' (index 0)
+            2L, 4, // CreateStruct.Entry at ':' (index 4)
+            3L, 1, // String key "a" at index 1
             4L, 6 // Integer value 1 at index 6
             );
 
@@ -1601,8 +1760,9 @@ public final class CelParserTest {
     ParsedExpr parsedStruct = parser.parseToProto("Type{field: 1}");
     assertThat(parsedStruct.getSourceInfo().getPositionsMap())
         .containsExactly(
-            1L, 0, // StructLiteral (mapped to start of Type name "Type" at index 0)
-            3L, 12 // Integer value 1 at index 12 (ID 2 is assigned to CreateStruct.Entry)
+            1L, 4, // StructLiteral at '{' (index 4)
+            2L, 10, // CreateStruct.Entry at ':' (index 10)
+            3L, 12 // Integer value 1 at index 12
             );
   }
 

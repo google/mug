@@ -220,7 +220,7 @@ public class CelProtoConverterTest {
                 .setCallExpr(
                     Expr.Call.newBuilder()
                         .setFunction("_?._")
-                        .setTarget(
+                        .addArgs(
                             Expr.newBuilder()
                                 .setId(2)
                                 .setIdentExpr(Expr.Ident.newBuilder().setName("obj")))
@@ -240,7 +240,7 @@ public class CelProtoConverterTest {
                 .setCallExpr(
                     Expr.Call.newBuilder()
                         .setFunction("_[?_]")
-                        .setTarget(
+                        .addArgs(
                             Expr.newBuilder()
                                 .setId(2)
                                 .setIdentExpr(Expr.Ident.newBuilder().setName("arr")))
@@ -392,11 +392,13 @@ public class CelProtoConverterTest {
     assertThat(proto.hasComprehensionExpr()).isTrue();
     Expr.Comprehension comp = proto.getComprehensionExpr();
     assertThat(comp.getIterVar()).isEqualTo("v");
-    assertThat(comp.getAccuVar()).isEqualTo("__result__");
+    assertThat(comp.getAccuVar()).isEqualTo("@result");
     assertThat(comp.getAccuInit().getConstExpr().getBoolValue()).isTrue();
-    assertThat(comp.getLoopCondition().getIdentExpr().getName()).isEqualTo("__result__");
+    Expr loopCond = comp.getLoopCondition();
+    assertThat(loopCond.getCallExpr().getFunction()).isEqualTo("@not_strictly_false");
+    assertThat(loopCond.getCallExpr().getArgs(0).getIdentExpr().getName()).isEqualTo("@result");
     assertThat(comp.getLoopStep().getCallExpr().getFunction()).isEqualTo("_&&_");
-    assertThat(comp.getResult().getIdentExpr().getName()).isEqualTo("__result__");
+    assertThat(comp.getResult().getIdentExpr().getName()).isEqualTo("@result");
   }
 
   @Test
@@ -406,11 +408,15 @@ public class CelProtoConverterTest {
     assertThat(proto.hasComprehensionExpr()).isTrue();
     Expr.Comprehension comp = proto.getComprehensionExpr();
     assertThat(comp.getIterVar()).isEqualTo("v");
-    assertThat(comp.getAccuVar()).isEqualTo("__result__");
+    assertThat(comp.getAccuVar()).isEqualTo("@result");
     assertThat(comp.getAccuInit().getConstExpr().getBoolValue()).isFalse();
-    assertThat(comp.getLoopCondition().getCallExpr().getFunction()).isEqualTo("!_");
+    Expr loopCond = comp.getLoopCondition();
+    assertThat(loopCond.getCallExpr().getFunction()).isEqualTo("@not_strictly_false");
+    Expr notCall = loopCond.getCallExpr().getArgs(0);
+    assertThat(notCall.getCallExpr().getFunction()).isEqualTo("!_");
+    assertThat(notCall.getCallExpr().getArgs(0).getIdentExpr().getName()).isEqualTo("@result");
     assertThat(comp.getLoopStep().getCallExpr().getFunction()).isEqualTo("_||_");
-    assertThat(comp.getResult().getIdentExpr().getName()).isEqualTo("__result__");
+    assertThat(comp.getResult().getIdentExpr().getName()).isEqualTo("@result");
   }
 
   @Test
@@ -420,11 +426,17 @@ public class CelProtoConverterTest {
     assertThat(proto.hasComprehensionExpr()).isTrue();
     Expr.Comprehension comp = proto.getComprehensionExpr();
     assertThat(comp.getIterVar()).isEqualTo("v");
-    assertThat(comp.getAccuVar()).isEqualTo("__result__");
-    assertThat(comp.getAccuInit().getConstExpr().getBoolValue()).isFalse();
+    assertThat(comp.getAccuVar()).isEqualTo("@result");
+    assertThat(comp.getAccuInit().getConstExpr().getInt64Value()).isEqualTo(0);
     assertThat(comp.getLoopCondition().getConstExpr().getBoolValue()).isTrue();
     assertThat(comp.getLoopStep().getCallExpr().getFunction()).isEqualTo("_?_:_");
-    assertThat(comp.getResult().getIdentExpr().getName()).isEqualTo("__result__");
+    assertThat(comp.getLoopStep().getCallExpr().getArgs(1).getCallExpr().getFunction())
+        .isEqualTo("_+_");
+    assertThat(comp.getResult().getCallExpr().getFunction()).isEqualTo("_==_");
+    assertThat(comp.getResult().getCallExpr().getArgs(0).getIdentExpr().getName())
+        .isEqualTo("@result");
+    assertThat(comp.getResult().getCallExpr().getArgs(1).getConstExpr().getInt64Value())
+        .isEqualTo(1);
   }
 
   @Test
@@ -434,11 +446,11 @@ public class CelProtoConverterTest {
     assertThat(proto.hasComprehensionExpr()).isTrue();
     Expr.Comprehension comp = proto.getComprehensionExpr();
     assertThat(comp.getIterVar()).isEqualTo("v");
-    assertThat(comp.getAccuVar()).isEqualTo("__result__");
+    assertThat(comp.getAccuVar()).isEqualTo("@result");
     assertThat(comp.getAccuInit().getListExpr().getElementsCount()).isEqualTo(0);
     assertThat(comp.getLoopCondition().getConstExpr().getBoolValue()).isTrue();
     assertThat(comp.getLoopStep().getCallExpr().getFunction()).isEqualTo("_?_:_");
-    assertThat(comp.getResult().getIdentExpr().getName()).isEqualTo("__result__");
+    assertThat(comp.getResult().getIdentExpr().getName()).isEqualTo("@result");
   }
 
   @Test
@@ -448,11 +460,11 @@ public class CelProtoConverterTest {
     assertThat(proto.hasComprehensionExpr()).isTrue();
     Expr.Comprehension comp = proto.getComprehensionExpr();
     assertThat(comp.getIterVar()).isEqualTo("v");
-    assertThat(comp.getAccuVar()).isEqualTo("__result__");
+    assertThat(comp.getAccuVar()).isEqualTo("@result");
     assertThat(comp.getAccuInit().getListExpr().getElementsCount()).isEqualTo(0);
     assertThat(comp.getLoopCondition().getConstExpr().getBoolValue()).isTrue();
     assertThat(comp.getLoopStep().getCallExpr().getFunction()).isEqualTo("_+_");
-    assertThat(comp.getResult().getIdentExpr().getName()).isEqualTo("__result__");
+    assertThat(comp.getResult().getIdentExpr().getName()).isEqualTo("@result");
   }
 
   @Test
