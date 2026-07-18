@@ -2,7 +2,6 @@ package com.google.mu.cel;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.cel.CelExpr.bytes;
-import static com.google.mu.cel.CelExpr.functionCall;
 import static com.google.mu.cel.CelExpr.negative;
 import static com.google.mu.cel.CelExpr.not;
 import static com.google.mu.cel.CelExpr.string;
@@ -1533,7 +1532,7 @@ public final class CelParserTest {
   public void parseToProtoWithComments_lineOffsets() {
     ParsedExpr parsed = parser.withComments().parseToProto("a\n+ b\n* 3");
     SourceInfo sourceInfo = parsed.getSourceInfo();
-    assertThat(sourceInfo.getLineOffsetsList()).containsExactly(1, 5).inOrder();
+    assertThat(sourceInfo.getLineOffsetsList()).containsExactly(2, 6, 10).inOrder();
   }
 
   @Test

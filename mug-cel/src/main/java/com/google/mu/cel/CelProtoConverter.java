@@ -2,15 +2,14 @@ package com.google.mu.cel;
 
 import static com.google.mu.util.Substring.all;
 
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.google.api.expr.v1alpha1.Constant;
 import com.google.api.expr.v1alpha1.Expr;
 import com.google.api.expr.v1alpha1.ParsedExpr;
 import com.google.api.expr.v1alpha1.SourceInfo;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.NullValue;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /** Helper to convert CelExpr to official CEL Protobuf AST. */
 final class CelProtoConverter {
@@ -20,7 +19,8 @@ final class CelProtoConverter {
 
   static ParsedExpr toParsedExpr(CelExpr celExpr, String input) {
     SourceInfo.Builder sourceInfo = SourceInfo.newBuilder();
-    all('\n').match(input).forEach(m -> sourceInfo.addLineOffsets(m.index()));
+    all('\n').match(input).forEach(m -> sourceInfo.addLineOffsets(m.index() + 1));
+    sourceInfo.addLineOffsets(input.length() + 1);
     Expr expr = new CelProtoConverter(new AtomicLong(1), sourceInfo).convert(celExpr);
     return ParsedExpr.newBuilder().setExpr(expr).setSourceInfo(sourceInfo).build();
   }
