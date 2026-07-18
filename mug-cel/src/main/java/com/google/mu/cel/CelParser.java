@@ -200,12 +200,9 @@ public final class CelParser {
                         ANY_IDENTIFIER.map(CelParser::select))),
                 sequence(one('?').thenReturn(true).orElse(false), expr, CelParser::indexCall)
                     .between("[", "]")));
-    Parser<CelExpr> unaryExpr =
-        anyOf(
-            memberExpr.withPrefixes(
-                one('!').thenReturn(CelExpr::not)),
-            memberExpr.withPrefixes(
-                one('-').thenReturn(CelExpr::negative)));
+    Parser<CelExpr> unaryExpr = anyOf(
+        memberExpr.withPrefixes(one('!').thenReturn(CelExpr::not)),
+        memberExpr.withPrefixes(one('-').thenReturn(CelExpr::negative)));
     Parser<CelExpr> binary =
         new OperatorTable<CelExpr>()
             .leftAssociative("*", (l, r) -> binaryExpr(CelExpr.Binary.Op.MULT, l, r), 6)
