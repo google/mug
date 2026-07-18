@@ -16,6 +16,7 @@ import static com.google.common.labs.parse.Suffix.suffix;
 import static com.google.mu.util.CharPredicate.isNot;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.api.expr.v1alpha1.ParsedExpr;
 import com.google.common.labs.parse.OperatorTable;
 import com.google.common.labs.parse.Parser;
 import com.google.common.labs.parse.Suffix;
@@ -27,7 +28,6 @@ import com.google.mu.util.CharPredicate;
 import java.io.ByteArrayOutputStream;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
@@ -152,20 +152,43 @@ public final class CelParser {
       sequence(string(".").orElse(""), IDENTIFIER, String::concat)
           .mapWithIndex((name, begin, end) -> new CelExpr.Ident(begin, name));
 
-  static final Parser<CelExpr> PARSER = makeParser();
+  private static final Parser<CelExpr> PARSER = makeParser();
+
+  @SuppressWarnings("Immutable")
+  private final Parser<CelExpr>.Lexical lexical;
+
+  private CelParser(Parser<CelExpr>.Lexical lexical) {
+    this.lexical = lexical;
+  }
+
+  public CelParser() {
+    this(PARSER.skipping(WHITESPACES));
+  }
+
+  /** Returns an equivalent {@link CelParser} that also supports comments. */
+  public CelParser withComments() {
+    return new CelParser(PARSER.skipping(WHITESPACES_OR_COMMENTS));
+  }
 
   /** Parses the given CEL expression. */
-  CelExpr parse(String input) {
-    return PARSER.parseSkipping(WHITESPACES, input);
+  public CelExpr parse(String input) {
+    return lexical.parse(input);
   }
 
   /**
-   * Parses the given CEL expression, supporting comments.
+   * Parses the CEL expression and converts it to a {@link ParsedExpr} proto.
    *
-   * <p>To parse without comments, use {@link CelExpr#of}.
+   * <p>The returned {@link ParsedExpr#getSourceInfo} will have {@link
+   * com.google.api.expr.v1alpha1.SourceInfo#getPositionsMap() positions},
+   * {@link com.google.api.expr.v1alpha1.SourceInfo#getLineOffsetsList() line_offsets}
+   * and {@link com.google.api.expr.v1alpha1.SourceInfo#getMacroCallsMap() macro_calls}
+   * populated. The caller can also populate the other fields like {@link
+   * com.google.api.expr.v1alpha1.SourceInfo#getLocation location} and
+   * {@link com.google.api.expr.v1alpha1.SourceInfo#getSyntaxVersion() syntax_version}
+   * if such information is available.
    */
-  public CelExpr parseWithComments(String input) {
-    return PARSER.parseSkipping(WHITESPACES_OR_COMMENTS, input);
+  public ParsedExpr parseToProto(String input) {
+    return CelProtoConverter.toParsedExpr(parse(input), input);
   }
 
   private static Parser<CelExpr> makeParser() {
@@ -214,13 +237,16 @@ public final class CelParser {
     // Primary expression
     Parser<CelExpr> primary =
         anyOf(CONSTANT_LITERAL, callOrStructOrIdent, listExpr, mapExpr, parenthesized);
+    Parser<CelExpr.Ident> memberMethod =
+        ANY_IDENTIFIER.mapWithIndex((name, begin, end) -> new CelExpr.Ident(begin, name));
     Parser<CelExpr> memberExpr =
         primary.withPostfixes(
             anyOf(
                 one('.')
                     .then(
                         anyOf(
-                            sequence(ANY_IDENTIFIER, args, (n, a) -> t -> macroOrCall(t, n, a)),
+                            sequence(
+                                memberMethod, args, (method, a) -> t -> macroOrCall(t, method, a)),
                             one('?').then(ANY_IDENTIFIER).map(CelParser::optionalSelect),
                             ANY_IDENTIFIER.map(CelParser::select))),
                 sequence(one('?').thenReturn(true).orElse(false), expr, CelParser::indexCall)
@@ -418,9 +444,7 @@ public final class CelParser {
   }
 
   private static UnaryOperator<CelExpr> optionalSelect(String field) {
-    return receiver ->
-        new CelExpr.Call(
-            Optional.of(receiver), "optionalSelect", List.of(new CelExpr.StringValue(field)));
+    return receiver -> new CelExpr.OptionalSelect(receiver, field);
   }
 
   private static UnaryOperator<CelExpr> select(String field) {
@@ -429,71 +453,56 @@ public final class CelParser {
 
   private static UnaryOperator<CelExpr> indexCall(boolean optional, CelExpr index) {
     return optional
-        ? receiver -> new CelExpr.Call(Optional.of(receiver), "optionalIndex", List.of(index))
+        ? receiver -> new CelExpr.OptionalIndex(receiver, index)
         : receiver -> new CelExpr.Index(receiver, index);
   }
 
   private static CelExpr call(CelExpr target, List<CelExpr> args) {
     return switch (target) {
-      case CelExpr.Ident ident -> macroOrCall(ident.sourceIndex(), ident.name(), args);
-      case CelExpr.Select select -> macroOrCall(select.operand(), select.field(), args);
+      case CelExpr.Ident ident -> macroOrCall(ident, args);
+      case CelExpr.Select select ->
+          macroOrCall(
+              select.operand(), new CelExpr.Ident(select.sourceIndex(), select.field()), args);
       default -> throw new AssertionError("Invalid call receiver: " + target);
     };
   }
 
-  private static CelExpr macroOrCall(int sourceIndex, String method, List<CelExpr> args) {
-    return switch (method) {
+  private static CelExpr macroOrCall(CelExpr.Ident method, List<CelExpr> args) {
+    return switch (method.name()) {
       case "has" -> {
         checkSyntax(args.size() == 1, "has() expects 1 arg, %s provided", args.size());
         CelExpr.Select select =
             expect(CelExpr.Select.class, args.get(0), "has() expects 1 select argument");
-        yield new CelExpr.Macro.Has(sourceIndex, select);
+        yield new CelExpr.Macro.Has(method.sourceIndex(), select);
       }
-      default -> new CelExpr.Call(sourceIndex, Optional.empty(), method, args);
+      default -> new CelExpr.FunctionCall(method, args);
     };
   }
 
-  private static CelExpr macroOrCall(CelExpr target, String method, List<CelExpr> args) {
-    return switch (method) {
+  private static CelExpr macroOrCall(CelExpr target, CelExpr.Ident method, List<CelExpr> args) {
+    return switch (method.name()) {
       case "all" ->
-          toMacro(
-              target, method, args, (t, v, c) -> new CelExpr.Macro.All(t.sourceIndex(), t, v, c));
+          toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.All(t, v, c));
       case "exists" ->
-          toMacro(
-              target,
-              method,
-              args,
-              (t, v, c) -> new CelExpr.Macro.Exists(t.sourceIndex(), t, v, c));
+          toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.Exists(t, v, c));
       case "exists_one" ->
-          toMacro(
-              target,
-              method,
-              args,
-              (t, v, c) -> new CelExpr.Macro.ExistsOne(t.sourceIndex(), t, v, c));
+          toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.ExistsOne(t, v, c));
       case "filter" ->
-          toMacro(
-              target,
-              method,
-              args,
-              (t, v, c) -> new CelExpr.Macro.Filter(t.sourceIndex(), t, v, c));
+          toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.Filter(t, v, c));
       case "map" ->
           switch (args.size()) {
             case 2 ->
-                toMacro(
-                    target,
-                    method,
-                    args,
-                    (t, v, c) -> new CelExpr.Macro.Map(t.sourceIndex(), t, v, c));
+                toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.Map(t, v, c));
             case 3 ->
                 toMacro(
                     target,
-                    method,
+                    method.name(),
                     args,
-                    (t, v, c1, c2) -> new CelExpr.Macro.FilterMap(t.sourceIndex(), t, v, c1, c2));
+                    (t, v, c1, c2) -> new CelExpr.Macro.FilterMap(t, v, c1, c2));
             default ->
                 throw Parser.fail("map() macro expects 2 or 3 args, " + args.size() + " provided");
           };
-      default -> new CelExpr.Call(target.sourceIndex(), Optional.of(target), method, args);
+      default -> new CelExpr.MemberCall(target, method, args);
     };
   }
 

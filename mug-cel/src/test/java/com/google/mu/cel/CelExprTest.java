@@ -3,8 +3,6 @@ package com.google.mu.cel;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.util.List;
-import java.util.Optional;
-
 import org.junit.Test;
 
 public class CelExprTest {
@@ -135,29 +133,30 @@ public class CelExprTest {
   }
 
   @Test
-  public void callExpr_withTarget() {
+  public void memberCallExpr() {
     CelExpr target = new CelExpr.Ident("target");
     CelExpr arg = new CelExpr.LongValue(100);
-    CelExpr.Call expr = new CelExpr.Call(Optional.of(target), "method", List.of(arg));
-    assertThat(expr.target()).isEqualTo(Optional.of(target));
-    assertThat(expr.function()).isEqualTo("method");
+    CelExpr.MemberCall expr =
+        new CelExpr.MemberCall(target, new CelExpr.Ident("method"), List.of(arg));
+    assertThat(expr.target()).isEqualTo(target);
+    assertThat(expr.member().name()).isEqualTo("method");
     assertThat(expr.args()).containsExactly(arg);
     assertThat(expr.toString()).isEqualTo("(target).method(100)");
   }
 
   @Test
-  public void callExpr_withoutTarget_multipleArgs() {
+  public void functionCallExpr_multipleArgs() {
     CelExpr arg1 = new CelExpr.Ident("x");
     CelExpr arg2 = new CelExpr.LongValue(42L);
-    CelExpr.Call expr = new CelExpr.Call(Optional.empty(), "func", List.of(arg1, arg2));
-    assertThat(expr.target()).isEqualTo(Optional.empty());
-    // Verification of comma-separator logic in Call.toString()
+    CelExpr.FunctionCall expr =
+        new CelExpr.FunctionCall(new CelExpr.Ident("func"), List.of(arg1, arg2));
+    // Verification of comma-separator logic in toString()
     assertThat(expr.toString()).isEqualTo("func(x, 42)");
   }
 
   @Test
-  public void callExpr_emptyArgs() {
-    CelExpr.Call expr = new CelExpr.Call(Optional.empty(), "func", List.of());
+  public void functionCallExpr_emptyArgs() {
+    CelExpr.FunctionCall expr = new CelExpr.FunctionCall(new CelExpr.Ident("func"), List.of());
     assertThat(expr.toString()).isEqualTo("func()");
   }
 
@@ -175,7 +174,8 @@ public class CelExprTest {
   @Test
   public void createListExpr_multipleMix() {
     // Tests comma-separation and both optional/non-optional list elements
-    CelExpr.ListLiteral.Element el1 = new CelExpr.ListLiteral.Element(new CelExpr.LongValue(1), false);
+    CelExpr.ListLiteral.Element el1 =
+        new CelExpr.ListLiteral.Element(new CelExpr.LongValue(1), false);
     CelExpr.ListLiteral.Element el2 = new CelExpr.ListLiteral.Element(new CelExpr.Ident("x"), true);
     CelExpr.ListLiteral expr = new CelExpr.ListLiteral(List.of(el1, el2));
     assertThat(expr.toString()).isEqualTo("[1, ?x]");
@@ -203,8 +203,10 @@ public class CelExprTest {
   @Test
   public void createMapExpr_multipleMix() {
     // Tests comma-separation and both optional/non-optional map entries
-    CelExpr.Entry<CelExpr> entry1 = new CelExpr.Entry<>(new CelExpr.StringValue("a"), new CelExpr.LongValue(1L), false);
-    CelExpr.Entry<CelExpr> entry2 = new CelExpr.Entry<>(new CelExpr.Ident("x"), new CelExpr.Ident("y"), true);
+    CelExpr.Entry<CelExpr> entry1 =
+        new CelExpr.Entry<>(new CelExpr.StringValue("a"), new CelExpr.LongValue(1L), false);
+    CelExpr.Entry<CelExpr> entry2 =
+        new CelExpr.Entry<>(new CelExpr.Ident("x"), new CelExpr.Ident("y"), true);
     CelExpr.MapLiteral expr = new CelExpr.MapLiteral(List.of(entry1, entry2));
     assertThat(expr.toString()).isEqualTo("{\"a\": 1, ?x: y}");
   }
@@ -218,7 +220,8 @@ public class CelExprTest {
   @Test
   public void createStructExpr_single() {
     CelExpr value = new CelExpr.BoolValue(true);
-    CelExpr.Entry<CelExpr.Ident> field = new CelExpr.Entry<>(new CelExpr.Ident("myField"), value, false);
+    CelExpr.Entry<CelExpr.Ident> field =
+        new CelExpr.Entry<>(new CelExpr.Ident("myField"), value, false);
     CelExpr.StructLiteral expr = new CelExpr.StructLiteral("MyMessage", List.of(field));
     assertThat(expr.messageName()).isEqualTo("MyMessage");
     assertThat(expr.fields()).containsExactly(field);
@@ -231,8 +234,10 @@ public class CelExprTest {
   @Test
   public void createStructExpr_multipleMix() {
     // Tests comma-separation and both optional/non-optional struct fields
-    CelExpr.Entry<CelExpr.Ident> field1 = new CelExpr.Entry<>(new CelExpr.Ident("a"), new CelExpr.LongValue(1L), false);
-    CelExpr.Entry<CelExpr.Ident> field2 = new CelExpr.Entry<>(new CelExpr.Ident("b"), new CelExpr.Ident("x"), true);
+    CelExpr.Entry<CelExpr.Ident> field1 =
+        new CelExpr.Entry<>(new CelExpr.Ident("a"), new CelExpr.LongValue(1L), false);
+    CelExpr.Entry<CelExpr.Ident> field2 =
+        new CelExpr.Entry<>(new CelExpr.Ident("b"), new CelExpr.Ident("x"), true);
     CelExpr.StructLiteral expr = new CelExpr.StructLiteral("MyMessage", List.of(field1, field2));
     assertThat(expr.toString()).isEqualTo("MyMessage{a: 1, ?b: x}");
   }
@@ -250,19 +255,26 @@ public class CelExprTest {
     CelExpr z = new CelExpr.Ident("z");
 
     // x + y * z -> (x) + ((y) * (z))
-    CelExpr addMult = new CelExpr.Binary(x, CelExpr.Binary.Op.ADD, new CelExpr.Binary(y, CelExpr.Binary.Op.MULT, z));
+    CelExpr addMult =
+        new CelExpr.Binary(
+            x, CelExpr.Binary.Op.ADD, new CelExpr.Binary(y, CelExpr.Binary.Op.MULT, z));
     assertThat(addMult.toString()).isEqualTo("(x) + ((y) * (z))");
 
     // (x + y) * z -> ((x) + (y)) * (z)
-    CelExpr addMultParens = new CelExpr.Binary(new CelExpr.Binary(x, CelExpr.Binary.Op.ADD, y), CelExpr.Binary.Op.MULT, z);
+    CelExpr addMultParens =
+        new CelExpr.Binary(
+            new CelExpr.Binary(x, CelExpr.Binary.Op.ADD, y), CelExpr.Binary.Op.MULT, z);
     assertThat(addMultParens.toString()).isEqualTo("((x) + (y)) * (z)");
 
     // x - y - z -> ((x) - (y)) - (z)
-    CelExpr subLeft = new CelExpr.Binary(new CelExpr.Binary(x, CelExpr.Binary.Op.SUB, y), CelExpr.Binary.Op.SUB, z);
+    CelExpr subLeft =
+        new CelExpr.Binary(
+            new CelExpr.Binary(x, CelExpr.Binary.Op.SUB, y), CelExpr.Binary.Op.SUB, z);
     assertThat(subLeft.toString()).isEqualTo("((x) - (y)) - (z)");
 
     // (x + y).field -> ((x) + (y)).field
-    CelExpr selectParens = new CelExpr.Select(new CelExpr.Binary(x, CelExpr.Binary.Op.ADD, y), "field");
+    CelExpr selectParens =
+        new CelExpr.Select(new CelExpr.Binary(x, CelExpr.Binary.Op.ADD, y), "field");
     assertThat(selectParens.toString()).isEqualTo("((x) + (y)).field");
   }
 
@@ -277,7 +289,8 @@ public class CelExprTest {
   @Test
   public void allExpr() {
     CelExpr target = new CelExpr.Ident("users");
-    CelExpr condition = new CelExpr.Binary(new CelExpr.Ident("x"), CelExpr.Binary.Op.GT, new CelExpr.LongValue(0L));
+    CelExpr condition =
+        new CelExpr.Binary(new CelExpr.Ident("x"), CelExpr.Binary.Op.GT, new CelExpr.LongValue(0L));
     CelExpr.Macro.All expr = new CelExpr.Macro.All(target, "x", condition);
     assertThat(expr.target()).isEqualTo(target);
     assertThat(expr.varName()).isEqualTo("x");
@@ -288,7 +301,8 @@ public class CelExprTest {
   @Test
   public void existsExpr() {
     CelExpr target = new CelExpr.Ident("users");
-    CelExpr condition = new CelExpr.Binary(new CelExpr.Ident("x"), CelExpr.Binary.Op.GT, new CelExpr.LongValue(0L));
+    CelExpr condition =
+        new CelExpr.Binary(new CelExpr.Ident("x"), CelExpr.Binary.Op.GT, new CelExpr.LongValue(0L));
     CelExpr.Macro.Exists expr = new CelExpr.Macro.Exists(target, "x", condition);
     assertThat(expr.target()).isEqualTo(target);
     assertThat(expr.varName()).isEqualTo("x");
@@ -299,7 +313,8 @@ public class CelExprTest {
   @Test
   public void existsOneExpr() {
     CelExpr target = new CelExpr.Ident("users");
-    CelExpr condition = new CelExpr.Binary(new CelExpr.Ident("x"), CelExpr.Binary.Op.GT, new CelExpr.LongValue(0L));
+    CelExpr condition =
+        new CelExpr.Binary(new CelExpr.Ident("x"), CelExpr.Binary.Op.GT, new CelExpr.LongValue(0L));
     CelExpr.Macro.ExistsOne expr = new CelExpr.Macro.ExistsOne(target, "x", condition);
     assertThat(expr.target()).isEqualTo(target);
     assertThat(expr.varName()).isEqualTo("x");
@@ -310,7 +325,8 @@ public class CelExprTest {
   @Test
   public void filterExpr() {
     CelExpr target = new CelExpr.Ident("users");
-    CelExpr condition = new CelExpr.Binary(new CelExpr.Ident("x"), CelExpr.Binary.Op.GT, new CelExpr.LongValue(0L));
+    CelExpr condition =
+        new CelExpr.Binary(new CelExpr.Ident("x"), CelExpr.Binary.Op.GT, new CelExpr.LongValue(0L));
     CelExpr.Macro.Filter expr = new CelExpr.Macro.Filter(target, "x", condition);
     assertThat(expr.target()).isEqualTo(target);
     assertThat(expr.varName()).isEqualTo("x");
@@ -321,7 +337,9 @@ public class CelExprTest {
   @Test
   public void mapExpr() {
     CelExpr target = new CelExpr.Ident("users");
-    CelExpr transform = new CelExpr.Binary(new CelExpr.Ident("x"), CelExpr.Binary.Op.MULT, new CelExpr.LongValue(2L));
+    CelExpr transform =
+        new CelExpr.Binary(
+            new CelExpr.Ident("x"), CelExpr.Binary.Op.MULT, new CelExpr.LongValue(2L));
     CelExpr.Macro.Map expr = new CelExpr.Macro.Map(target, "x", transform);
     assertThat(expr.target()).isEqualTo(target);
     assertThat(expr.varName()).isEqualTo("x");
@@ -332,8 +350,11 @@ public class CelExprTest {
   @Test
   public void filterMapExpr() {
     CelExpr target = new CelExpr.Ident("users");
-    CelExpr filter = new CelExpr.Binary(new CelExpr.Ident("x"), CelExpr.Binary.Op.GT, new CelExpr.LongValue(0L));
-    CelExpr transform = new CelExpr.Binary(new CelExpr.Ident("x"), CelExpr.Binary.Op.MULT, new CelExpr.LongValue(2L));
+    CelExpr filter =
+        new CelExpr.Binary(new CelExpr.Ident("x"), CelExpr.Binary.Op.GT, new CelExpr.LongValue(0L));
+    CelExpr transform =
+        new CelExpr.Binary(
+            new CelExpr.Ident("x"), CelExpr.Binary.Op.MULT, new CelExpr.LongValue(2L));
     CelExpr.Macro.FilterMap expr = new CelExpr.Macro.FilterMap(target, "x", filter, transform);
     assertThat(expr.target()).isEqualTo(target);
     assertThat(expr.varName()).isEqualTo("x");

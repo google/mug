@@ -17,8 +17,7 @@ record Snippet(int indentation, CharInput input, int at) {
     this(4, input, at);
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     String backward;
     try {
       backward = lookBackward();

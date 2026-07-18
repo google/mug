@@ -1,11 +1,10 @@
 package com.google.mu.cel;
 
-import com.google.api.expr.v1alpha1.Expr;
-import com.google.mu.util.stream.Joiner;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
+
+import com.google.api.expr.v1alpha1.Expr;
+import com.google.mu.util.stream.Joiner;
 
 /**
  * Abstract representation of a parsed Common Expression Language (CEL) expression.
@@ -22,7 +21,7 @@ public sealed interface CelExpr {
   /**
    * Parses and returns a {@link CelExpr} representing the {@code cel} string.
    *
-   * <p>By default comments are not supported. Use {@link CelParser#parseWithComments} if you need
+   * <p>By default comments are not supported. Use {@link CelParser#withComments} if you need
    * comments.
    *
    * @throws Parser.ParseException if {@code cel} is invalid
@@ -34,7 +33,7 @@ public sealed interface CelExpr {
 
   /** Converts this expression to the official CEL Expr Protobuf representation. */
   default Expr toProto() {
-    return CelProtoConverter.toProto(this, new AtomicLong(1));
+    return CelProtoConverter.toProto(this);
   }
 
   /** {@code CelExpr.value(true)} is equivalent to {@code CelExpr.of("true")}. */
@@ -94,14 +93,6 @@ public sealed interface CelExpr {
     return new Unary(Unary.Op.NOT, expr);
   }
 
-  /**
-   * {@code CelExpr.callFunction("size", List.of(string("abc")))} is equivalent to {@code
-   * CelExpr.of("size('abc')")}.
-   */
-  static Call callFunction(String function, List<CelExpr> args) {
-    return new Call(Optional.empty(), function, args);
-  }
-
   /** {@code expr.select("field")} is equivalent to {@code CelExpr.of("expr.field")}. */
   default Select select(String field) {
     return new Select(this, field);
@@ -110,6 +101,16 @@ public sealed interface CelExpr {
   /** {@code expr.index(value(0))} is equivalent to {@code CelExpr.of("expr[0]")}. */
   default Index index(CelExpr index) {
     return new Index(this, index);
+  }
+
+  /** {@code expr.optionalSelect("field")} is equivalent to {@code CelExpr.of("expr.?field")}. */
+  default OptionalSelect optionalSelect(String field) {
+    return new OptionalSelect(this, field);
+  }
+
+  /** {@code expr.optionalIndex(value(0))} is equivalent to {@code CelExpr.of("expr[?0]")}. */
+  default OptionalIndex optionalIndex(CelExpr index) {
+    return new OptionalIndex(this, index);
   }
 
   /** {@code a.add(b)} is equivalent to {@code CelExpr.of("a + b")}. */
@@ -190,9 +191,15 @@ public sealed interface CelExpr {
   /**
    * {@code target.call("member", args)} is equivalent to {@code CelExpr.of("target.member(args)")}.
    */
-  default Call call(String member, List<CelExpr> args) {
+  default MemberCall call(String member, List<CelExpr> args) {
+    return new MemberCall(this, new Ident(member), args);
+  }
 
-    return new Call(Optional.of(this), member, args);
+  /**
+   * {@code target.call(member, args)} is equivalent to {@code CelExpr.of("target.member(args)")}.
+   */
+  default MemberCall call(Ident member, List<CelExpr> args) {
+    return new MemberCall(this, member, args);
   }
 
   /** Null literal. */
@@ -375,6 +382,40 @@ public sealed interface CelExpr {
     }
   }
 
+  /** Optional field selection (e.g. {@code operand.?field}). */
+  record OptionalSelect(int sourceIndex, CelExpr operand, String field) implements CelExpr {
+    public OptionalSelect(CelExpr operand, String field) {
+      this(operand.sourceIndex(), operand, field);
+    }
+
+    @Override
+    public OptionalSelect withSourceIndex(int index) {
+      return new OptionalSelect(index, operand, field);
+    }
+
+    @Override
+    public String toString() {
+      return "(" + operand + ").?" + new Ident(field);
+    }
+  }
+
+  /** Optional subscript/indexing (e.g. {@code operand[?index]}). */
+  record OptionalIndex(int sourceIndex, CelExpr operand, CelExpr index) implements CelExpr {
+    public OptionalIndex(CelExpr operand, CelExpr index) {
+      this(operand.sourceIndex(), operand, index);
+    }
+
+    @Override
+    public OptionalIndex withSourceIndex(int index) {
+      return new OptionalIndex(index, operand, this.index);
+    }
+
+    @Override
+    public String toString() {
+      return "(" + operand + ")[?" + index + "]";
+    }
+  }
+
   /** Unary prefix operations (e.g. {@code -x}, {@code !x}). */
   record Unary(int sourceIndex, Op operator, CelExpr operand) implements CelExpr {
     public Unary(Op operator, CelExpr operand) {
@@ -471,22 +512,43 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Global function calls {@code f(args)} or member calls {@code target.f(args)}. */
-  record Call(int sourceIndex, Optional<CelExpr> target, String function, List<CelExpr> args)
-      implements CelExpr {
-    public Call(Optional<CelExpr> target, String function, List<CelExpr> args) {
-      this(target.map(CelExpr::sourceIndex).orElse(0), target, function, args);
+  /** Global function calls {@code f(args)}. */
+  record FunctionCall(Ident function, List<CelExpr> args) implements CelExpr {
+
+    @Override
+    public int sourceIndex() {
+      return function.sourceIndex();
     }
 
     @Override
-    public Call withSourceIndex(int index) {
-      return new Call(index, target, function, args);
+    public FunctionCall withSourceIndex(int index) {
+      return new FunctionCall(function.withSourceIndex(index), args);
     }
 
     @Override
     public String toString() {
-      return target.map(t -> "(" + t + ").").orElse("")
-          + function
+      return function.name() + args.stream().collect(Joiner.on(", ").between('(', ')'));
+    }
+  }
+
+  /** Member calls {@code target.f(args)}. */
+  record MemberCall(CelExpr target, Ident member, List<CelExpr> args) implements CelExpr {
+    @Override
+    public int sourceIndex() {
+      return target.sourceIndex();
+    }
+
+    @Override
+    public MemberCall withSourceIndex(int index) {
+      return new MemberCall(target.withSourceIndex(index), member, args);
+    }
+
+    @Override
+    public String toString() {
+      return "("
+          + target
+          + ")."
+          + member.name()
           + args.stream().collect(Joiner.on(", ").between('(', ')'));
     }
   }

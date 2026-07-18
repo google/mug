@@ -2,7 +2,7 @@ package com.google.mu.cel;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.cel.CelExpr.bytes;
-import static com.google.mu.cel.CelExpr.callFunction;
+import static com.google.mu.cel.CelExpr.functionCall;
 import static com.google.mu.cel.CelExpr.negative;
 import static com.google.mu.cel.CelExpr.not;
 import static com.google.mu.cel.CelExpr.string;
@@ -10,14 +10,20 @@ import static com.google.mu.cel.CelExpr.unsigned;
 import static com.google.mu.cel.CelExpr.value;
 import static org.junit.Assert.assertThrows;
 
+import com.google.api.expr.v1alpha1.Expr;
+import com.google.api.expr.v1alpha1.ParsedExpr;
+import com.google.api.expr.v1alpha1.SourceInfo;
 import com.google.common.labs.parse.Parser.ParseException;
 import com.google.mu.cel.CelExpr.Element;
 import com.google.mu.cel.CelExpr.Entry;
+import com.google.mu.cel.CelExpr.FunctionCall;
 import com.google.mu.cel.CelExpr.Ident;
 import com.google.mu.cel.CelExpr.ListLiteral;
 import com.google.mu.cel.CelExpr.Macro.*;
 import com.google.mu.cel.CelExpr.MapLiteral;
 import com.google.mu.cel.CelExpr.NullValue;
+import com.google.mu.cel.CelExpr.OptionalIndex;
+import com.google.mu.cel.CelExpr.OptionalSelect;
 import com.google.mu.cel.CelExpr.StructLiteral;
 import java.util.List;
 import org.junit.Test;
@@ -219,28 +225,24 @@ public final class CelParserTest {
             .withSourceIndex(0)
             .select("c")
             .withSourceIndex(0));
-    assertAst("a(b)", callFunction("a", List.of(new Ident(2, "b"))).withSourceIndex(0));
-    assertAst("a.b(c)", new Ident(0, "a").call("b", List.of(new Ident(4, "c"))).withSourceIndex(0));
+    assertAst("a(b)", new FunctionCall(new Ident("a"), List.of(new Ident(2, "b"))).withSourceIndex(0));
+    assertAst(
+        "a.b(c)",
+        new Ident(0, "a").call(new Ident(0, "b"), List.of(new Ident(4, "c"))).withSourceIndex(0));
     assertAst(
         "a(b, c)",
-        callFunction("a", List.of(new Ident(2, "b"), new Ident(5, "c"))).withSourceIndex(0));
+        new FunctionCall(new Ident("a"), List.of(new Ident(2, "b"), new Ident(5, "c"))).withSourceIndex(0));
     assertAst(
         "a.b(c, d)",
         new Ident(0, "a")
-            .call("b", List.of(new Ident(4, "c"), new Ident(7, "d")))
+            .call(new Ident(0, "b"), List.of(new Ident(4, "c"), new Ident(7, "d")))
             .withSourceIndex(0));
   }
 
   @Test
   public void testOptionalSyntax() throws Exception {
-    assertAst(
-        "a.?b",
-        new Ident(0, "a")
-            .call("optionalSelect", List.of(string("b").withSourceIndex(0)))
-            .withSourceIndex(0));
-    assertAst(
-        "a[?b]",
-        new Ident(0, "a").call("optionalIndex", List.of(new Ident(3, "b"))).withSourceIndex(0));
+    assertAst("a.?b", new OptionalSelect(new Ident(0, "a"), "b"));
+    assertAst("a[?b]", new OptionalIndex(new Ident(0, "a"), new Ident(3, "b")));
   }
 
   @Test
@@ -504,36 +506,36 @@ public final class CelParserTest {
         new Ident(0, "a")
             .select("b")
             .withSourceIndex(0)
-            .call("c", List.of(new Ident(6, "d")))
+            .call(new Ident(0, "c"), List.of(new Ident(6, "d")))
             .withSourceIndex(0));
     assertAst(
         "a.b(c).d",
         new Ident(0, "a")
-            .call("b", List.of(new Ident(4, "c")))
+            .call(new Ident(0, "b"), List.of(new Ident(4, "c")))
             .withSourceIndex(0)
             .select("d")
             .withSourceIndex(0));
     assertAst(
         "a(b)[c]",
-        callFunction("a", List.of(new Ident(2, "b")))
+        new FunctionCall(new Ident("a"), List.of(new Ident(2, "b")))
             .withSourceIndex(0)
             .index(new Ident(5, "c"))
             .withSourceIndex(0));
     assertAst(
         "a.b(c).d(e)",
         new Ident(0, "a")
-            .call("b", List.of(new Ident(4, "c")))
+            .call(new Ident(0, "b"), List.of(new Ident(4, "c")))
             .withSourceIndex(0)
-            .call("d", List.of(new Ident(9, "e")))
+            .call(new Ident(7, "d"), List.of(new Ident(9, "e")))
             .withSourceIndex(0));
     assertAst(
         "a.b(c)[d].e(f)",
         new Ident(0, "a")
-            .call("b", List.of(new Ident(4, "c")))
+            .call(new Ident(0, "b"), List.of(new Ident(4, "c")))
             .withSourceIndex(0)
             .index(new Ident(7, "d"))
             .withSourceIndex(0)
-            .call("e", List.of(new Ident(12, "f")))
+            .call(new Ident(10, "e"), List.of(new Ident(12, "f")))
             .withSourceIndex(0));
     assertAst(
         "a.b.Type{field: 1}",
@@ -569,41 +571,17 @@ public final class CelParserTest {
 
   @Test
   public void testComplexOptionalSyntax() throws Exception {
-    assertAst(
-        "a.?b.c",
-        new Ident(0, "a")
-            .call("optionalSelect", List.of(string("b").withSourceIndex(0)))
-            .withSourceIndex(0)
-            .select("c")
-            .withSourceIndex(0));
-    assertAst(
-        "a.b.?c",
-        new Ident(0, "a")
-            .select("b")
-            .withSourceIndex(0)
-            .call("optionalSelect", List.of(string("c").withSourceIndex(0)))
-            .withSourceIndex(0));
+    assertAst("a.?b.c", new OptionalSelect(new Ident(0, "a"), "b").select("c"));
+    assertAst("a.b.?c", new OptionalSelect(new Ident(0, "a").select("b"), "c"));
     assertAst(
         "a[?b][c]",
-        new Ident(0, "a")
-            .call("optionalIndex", List.of(new Ident(3, "b")))
-            .withSourceIndex(0)
-            .index(new Ident(6, "c"))
-            .withSourceIndex(0));
+        new OptionalIndex(new Ident(0, "a"), new Ident(3, "b")).index(new Ident(6, "c")));
     assertAst(
         "a[b][?c]",
-        new Ident(0, "a")
-            .index(new Ident(2, "b"))
-            .withSourceIndex(0)
-            .call("optionalIndex", List.of(new Ident(6, "c")))
-            .withSourceIndex(0));
+        new OptionalIndex(new Ident(0, "a").index(new Ident(2, "b")), new Ident(6, "c")));
     assertAst(
         "a.?b[?c]",
-        new Ident(0, "a")
-            .call("optionalSelect", List.of(string("b").withSourceIndex(0)))
-            .withSourceIndex(0)
-            .call("optionalIndex", List.of(new Ident(6, "c")))
-            .withSourceIndex(0));
+        new OptionalIndex(new OptionalSelect(new Ident(0, "a"), "b"), new Ident(6, "c")));
   }
 
   @Test
@@ -858,7 +836,9 @@ public final class CelParserTest {
         "x * 2.0", new Ident(0, "x").multiply(value(2.0).withSourceIndex(4)).withSourceIndex(0));
     assertAst(
         "a.b(5)",
-        new Ident(0, "a").call("b", List.of(value(5L).withSourceIndex(4))).withSourceIndex(0));
+        new Ident(0, "a")
+            .call(new Ident(0, "b"), List.of(value(5L).withSourceIndex(4)))
+            .withSourceIndex(0));
     assertAst(
         "4--4.1",
         value(4L).withSourceIndex(0).subtract(value(-4.1).withSourceIndex(2)).withSourceIndex(0));
@@ -868,16 +848,20 @@ public final class CelParserTest {
         "a.b.c", new Ident(0, "a").select("b").withSourceIndex(0).select("c").withSourceIndex(0));
     assertAst("(a)", new Ident(0, "a"));
     assertAst("((a))", new Ident(0, "a"));
-    assertAst("a()", callFunction("a", List.of()).withSourceIndex(0));
-    assertAst("a(b)", callFunction("a", List.of(new Ident(2, "b"))).withSourceIndex(0));
+    assertAst("a()", new FunctionCall(new Ident("a"), List.of()).withSourceIndex(0));
+    assertAst("a(b)", new FunctionCall(new Ident("a"), List.of(new Ident(2, "b"))).withSourceIndex(0));
     assertAst(
         "a(b, c)",
-        callFunction("a", List.of(new Ident(2, "b"), new Ident(5, "c"))).withSourceIndex(0));
-    assertAst("a.b()", new Ident(0, "a").call("b", List.of()).withSourceIndex(0));
-    assertAst("a.b(c)", new Ident(0, "a").call("b", List.of(new Ident(4, "c"))).withSourceIndex(0));
+        new FunctionCall(new Ident("a"), List.of(new Ident(2, "b"), new Ident(5, "c"))).withSourceIndex(0));
+    assertAst("a.b()", new Ident(0, "a").call(new Ident(0, "b"), List.of()).withSourceIndex(0));
+    assertAst(
+        "a.b(c)",
+        new Ident(0, "a").call(new Ident(0, "b"), List.of(new Ident(4, "c"))).withSourceIndex(0));
     assertAst(
         "aaa.bbb(ccc)",
-        new Ident(0, "aaa").call("bbb", List.of(new Ident(8, "ccc"))).withSourceIndex(0));
+        new Ident(0, "aaa")
+            .call(new Ident(0, "bbb"), List.of(new Ident(8, "ccc")))
+            .withSourceIndex(0));
     assertAst("has(m.f)", new Has(0, new Ident(4, "m").select("f").withSourceIndex(4)));
     assertAst(
         "x.single_nested_message != null",
@@ -1215,9 +1199,9 @@ public final class CelParserTest {
     assertAst("m.filter(v, p)", new Filter(0, new Ident(0, "m"), "v", new Ident(12, "p")));
     assertAst(
         "size(x) == x.size()",
-        callFunction("size", List.of(new Ident(5, "x")))
+        new FunctionCall(new Ident("size"), List.of(new Ident(5, "x")))
             .withSourceIndex(0)
-            .equalTo(new Ident(11, "x").call("size", List.of()).withSourceIndex(11))
+            .equalTo(new Ident(11, "x").call(new Ident(11, "size"), List.of()).withSourceIndex(11))
             .withSourceIndex(0));
     assertAst(
         "x.filter(y, y.filter(z, z > 0))",
@@ -1262,7 +1246,7 @@ public final class CelParserTest {
         new Exists(
             0,
             new Has(0, new Ident(4, "a").select("b").withSourceIndex(4))
-                .call("asList", List.of())
+                .call(new Ident(9, "asList"), List.of())
                 .withSourceIndex(0),
             "c",
             new Ident(28, "c")));
@@ -1297,19 +1281,19 @@ public final class CelParserTest {
             new Ident(19, "x").equalTo(string("a").withSourceIndex(24)).withSourceIndex(19)));
     assertAst(
         "exists(x, y)",
-        callFunction("exists", List.of(new Ident(7, "x"), new Ident(10, "y"))).withSourceIndex(0));
+        new FunctionCall(new Ident("exists"), List.of(new Ident(7, "x"), new Ident(10, "y"))).withSourceIndex(0));
     assertAst(
         "all(x, y)",
-        callFunction("all", List.of(new Ident(4, "x"), new Ident(7, "y"))).withSourceIndex(0));
+        new FunctionCall(new Ident("all"), List.of(new Ident(4, "x"), new Ident(7, "y"))).withSourceIndex(0));
     assertAst(
         "map(x, y)",
-        callFunction("map", List.of(new Ident(4, "x"), new Ident(7, "y"))).withSourceIndex(0));
+        new FunctionCall(new Ident("map"), List.of(new Ident(4, "x"), new Ident(7, "y"))).withSourceIndex(0));
     assertAst(
         "filter(x, y)",
-        callFunction("filter", List.of(new Ident(7, "x"), new Ident(10, "y"))).withSourceIndex(0));
+        new FunctionCall(new Ident("filter"), List.of(new Ident(7, "x"), new Ident(10, "y"))).withSourceIndex(0));
     assertAst(
         "exists_one(x, y)",
-        callFunction("exists_one", List.of(new Ident(11, "x"), new Ident(14, "y")))
+        new FunctionCall(new Ident("exists_one"), List.of(new Ident(11, "x"), new Ident(14, "y")))
             .withSourceIndex(0));
     assertParseFailure("has(x)", "1:1", "has() expects 1 select argument");
     assertParseFailure("has(x, y)", "1:1", "has() expects 1 arg, 2 provided");
@@ -1325,14 +1309,9 @@ public final class CelParserTest {
     assertAst(
         "a.?b[?0] && a[?c]",
         new Ident(0, "a")
-            .call("optionalSelect", List.of(string("b").withSourceIndex(0)))
-            .withSourceIndex(0)
-            .call("optionalIndex", List.of(value(0L).withSourceIndex(6)))
-            .withSourceIndex(0)
-            .and(
-                new Ident(12, "a")
-                    .call("optionalIndex", List.of(new Ident(15, "c")))
-                    .withSourceIndex(12))
+            .optionalSelect("b")
+            .optionalIndex(value(0L).withSourceIndex(6))
+            .and(new Ident(12, "a").optionalIndex(new Ident(15, "c")).withSourceIndex(12))
             .withSourceIndex(0));
     assertAst(
         "[?a, ?b]",
@@ -1345,10 +1324,7 @@ public final class CelParserTest {
             0,
             List.of(
                 new Element(
-                    new Ident(2, "a")
-                        .call("optionalIndex", List.of(new Ident(5, "b")))
-                        .withSourceIndex(2),
-                    true))));
+                    new Ident(2, "a").optionalIndex(new Ident(5, "b")).withSourceIndex(2), true))));
     assertAst(
         "Msg{?field: value}",
         new StructLiteral(
@@ -1356,12 +1332,12 @@ public final class CelParserTest {
     assertAst(
         "m.optMap(v, f)",
         new Ident(0, "m")
-            .call("optMap", List.of(new Ident(9, "v"), new Ident(12, "f")))
+            .call(new Ident(0, "optMap"), List.of(new Ident(9, "v"), new Ident(12, "f")))
             .withSourceIndex(0));
     assertAst(
         "m.optFlatMap(v, f)",
         new Ident(0, "m")
-            .call("optFlatMap", List.of(new Ident(13, "v"), new Ident(16, "f")))
+            .call(new Ident(0, "optFlatMap"), List.of(new Ident(13, "v"), new Ident(16, "f")))
             .withSourceIndex(0));
   }
 
@@ -1542,8 +1518,93 @@ public final class CelParserTest {
   }
 
   private void assertAstWithComments(String expression, CelExpr expectedAst) {
-    CelExpr ast = parser.parseWithComments(expression);
+    CelExpr ast = parser.withComments().parse(expression);
     assertThat(ast).isEqualTo(expectedAst);
+  }
+
+  @Test
+  public void parseToProto_positions() {
+    ParsedExpr parsed = parser.parseToProto("a + b * 3");
+    SourceInfo sourceInfo = parsed.getSourceInfo();
+    assertThat(sourceInfo.getPositionsMap()).containsExactly(1L, 0, 2L, 0, 3L, 4, 4L, 4, 5L, 8);
+  }
+
+  @Test
+  public void parseToProtoWithComments_lineOffsets() {
+    ParsedExpr parsed = parser.withComments().parseToProto("a\n+ b\n* 3");
+    SourceInfo sourceInfo = parsed.getSourceInfo();
+    assertThat(sourceInfo.getLineOffsetsList()).containsExactly(1, 5).inOrder();
+  }
+
+  @Test
+  public void parseToProto_macroCalls() {
+    ParsedExpr parsed = parser.parseToProto("has(a.b)");
+    SourceInfo sourceInfo = parsed.getSourceInfo();
+    Expr expr = parsed.getExpr();
+    assertThat(sourceInfo.getMacroCallsMap())
+        .containsExactly(
+            expr.getId(),
+            Expr.newBuilder()
+                .setId(expr.getId())
+                .setCallExpr(
+                    Expr.Call.newBuilder()
+                        .setFunction("has")
+                        .addArgs(
+                            Expr.newBuilder()
+                                .setId(4)
+                                .setSelectExpr(
+                                    Expr.Select.newBuilder()
+                                        .setOperand(
+                                            Expr.newBuilder()
+                                                .setId(5)
+                                                .setIdentExpr(Expr.Ident.newBuilder().setName("a")))
+                                        .setField("b"))))
+                .build());
+  }
+
+  @Test
+  public void parseToProto_balancedLogical() {
+    ParsedExpr parsed = parser.parseToProto("a && b && c && d");
+    SourceInfo sourceInfo = parsed.getSourceInfo();
+    Expr expr = parsed.getExpr();
+
+    // Verify balanced binary tree structure: (a && b) && (c && d)
+    assertThat(expr.getCallExpr().getFunction()).isEqualTo("_&&_");
+    assertThat(expr.getCallExpr().getArgs(0).getCallExpr().getFunction()).isEqualTo("_&&_");
+    assertThat(expr.getCallExpr().getArgs(1).getCallExpr().getFunction()).isEqualTo("_&&_");
+
+    // Verify positions map of balanced tree
+    assertThat(sourceInfo.getPositionsMap())
+        .containsExactly(1L, 0, 2L, 0, 3L, 0, 4L, 5, 5L, 10, 6L, 10, 7L, 15);
+  }
+
+  @Test
+  public void parseToProto_positions_parenthesizedAndCurlyBraces() {
+    // 1. Parenthesized expression: (a + b)
+    ParsedExpr parsedParentheses = parser.parseToProto("(a + b)");
+    assertThat(parsedParentheses.getSourceInfo().getPositionsMap())
+        .containsExactly(
+            1L, 0, // Binary '+' (mapped to opening parenthesis '(' at index 0)
+            2L, 1, // Ident 'a' at index 1
+            3L, 5 // Ident 'b' at index 5
+            );
+
+    // 2. Map literal: {"a": 1}
+    ParsedExpr parsedMap = parser.parseToProto("{\"a\": 1}");
+    assertThat(parsedMap.getSourceInfo().getPositionsMap())
+        .containsExactly(
+            1L, 0, // MapLiteral (mapped to opening brace '{' at index 0)
+            3L, 1, // String key "a" at index 1 (ID 2 is assigned to CreateStruct.Entry)
+            4L, 6 // Integer value 1 at index 6
+            );
+
+    // 3. Struct literal: Type{field: 1}
+    ParsedExpr parsedStruct = parser.parseToProto("Type{field: 1}");
+    assertThat(parsedStruct.getSourceInfo().getPositionsMap())
+        .containsExactly(
+            1L, 0, // StructLiteral (mapped to start of Type name "Type" at index 0)
+            3L, 12 // Integer value 1 at index 12 (ID 2 is assigned to CreateStruct.Entry)
+            );
   }
 
   private void assertParseFailure(
