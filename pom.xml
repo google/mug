@@ -60,6 +60,7 @@
     <module>mug-concurrent24</module>
     <module>mug-safesql-java16tests</module>
     <module>dot-parse</module>
+    <module>mug-cel</module>
     <module>mug-concurrent-testing</module>
   </modules>
   <distributionManagement>

@@ -1,0 +1,999 @@
+package com.google.mu.cel;
+
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.cel.CelExpr.bytes;
+import static com.google.mu.cel.CelExpr.callFunction;
+import static com.google.mu.cel.CelExpr.negative;
+import static com.google.mu.cel.CelExpr.not;
+import static com.google.mu.cel.CelExpr.string;
+import static com.google.mu.cel.CelExpr.struct;
+import static com.google.mu.cel.CelExpr.unsigned;
+import static com.google.mu.cel.CelExpr.value;
+import static org.junit.Assert.assertThrows;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.common.labs.parse.Parser.ParseException;
+import com.google.mu.cel.CelExpr.Element;
+import com.google.mu.cel.CelExpr.Entry;
+import com.google.mu.cel.CelExpr.Ident;
+import com.google.mu.cel.CelExpr.ListLiteral;
+import com.google.mu.cel.CelExpr.Macro.*;
+import com.google.mu.cel.CelExpr.MapLiteral;
+import com.google.mu.cel.CelExpr.NullValue;
+import java.util.List;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+@RunWith(JUnit4.class)
+public final class CelParserTest {
+  private final CelParser parser = new CelParser();
+
+  @Test
+  public void testLiterals() throws Exception {
+    assertAst("123", value(123L));
+    assertAst("-123", value(-123L));
+    assertAst("0x1a", value(26L));
+    assertAst("-0x1b", value(-27L));
+    assertAst("123u", unsigned(123L));
+    assertAst("0x1au", unsigned(26L));
+    assertAst("1.23", value(1.23));
+    assertAst("-1.23", value(-1.23));
+    assertAst("1e3", value(1000.0));
+    assertAst("1.23e-4", value(1.23E-4));
+    assertAst("-1.23e+4", value(-12300.0));
+    assertAst("\"hello\"", string("hello"));
+    assertAst("'hello'", string("hello"));
+    assertAst("true", value(true));
+    assertAst("false", value(false));
+    assertAst("null", new NullValue());
+  }
+
+  @Test
+  public void testIdentifiers() throws Exception {
+    assertAst("x", new Ident("x"));
+    assertAst("true_var", new Ident("true_var"));
+    assertAst("false_var", new Ident("false_var"));
+    assertAst("null_var", new Ident("null_var"));
+    assertAst("in_var", new Ident("in_var"));
+  }
+
+  @Test
+  public void testUnaryOperators() throws Exception {
+    assertAst("!true", not(value(true)));
+    assertAst("-x", negative(new Ident("x")));
+    assertAst("-(1)", negative(value(1L)));
+    assertAst("- (1)", negative(value(1L)));
+    assertAst("-1", value(-1L));
+    assertAst("- 1", value(-1L));
+    assertAst("- 9223372036854775808", value(-9223372036854775808L));
+    assertAst("!!true", not(not(value(true))));
+    assertAst("--x", negative(negative(new Ident("x"))));
+  }
+
+  @Test
+  public void testBinaryOperators() throws Exception {
+    assertAst("1 + 2", value(1L).add(value(2L)));
+    assertAst("1 - 2", value(1L).subtract(value(2L)));
+    assertAst("1 * 2", value(1L).multiply(value(2L)));
+    assertAst("1 / 2", value(1L).divide(value(2L)));
+    assertAst("1 % 2", value(1L).modulo(value(2L)));
+    assertAst("1 + 2 * 3", value(1L).add(value(2L).multiply(value(3L))));
+
+    assertAst("(1 + 2) * 3", value(1L).add(value(2L)).multiply(value(3L)));
+
+    assertAst("1 * 2 + 3", value(1L).multiply(value(2L)).add(value(3L)));
+
+    assertAst("1+2", value(1L).add(value(2L)));
+    assertAst("1-2", value(1L).subtract(value(2L)));
+    assertAst("1*2", value(1L).multiply(value(2L)));
+    assertAst("1/2", value(1L).divide(value(2L)));
+    assertAst("1%2", value(1L).modulo(value(2L)));
+  }
+
+  @Test
+  public void testRelations() throws Exception {
+    assertAst("a < b", new Ident("a").lessThan(new Ident("b")));
+    assertAst("a <= b", new Ident("a").atMost(new Ident("b")));
+    assertAst("a > b", new Ident("a").greaterThan(new Ident("b")));
+    assertAst("a >= b", new Ident("a").atLeast(new Ident("b")));
+    assertAst("a == b", new Ident("a").equalTo(new Ident("b")));
+    assertAst("a != b", new Ident("a").notEqualTo(new Ident("b")));
+    assertAst("a in b", new Ident("a").in(new Ident("b")));
+    assertAst("a<b", new Ident("a").lessThan(new Ident("b")));
+    assertAst("a<=b", new Ident("a").atMost(new Ident("b")));
+    assertAst("a>b", new Ident("a").greaterThan(new Ident("b")));
+    assertAst("a>=b", new Ident("a").atLeast(new Ident("b")));
+    assertAst("a==b", new Ident("a").equalTo(new Ident("b")));
+    assertAst("a!=b", new Ident("a").notEqualTo(new Ident("b")));
+  }
+
+  @Test
+  public void testLogical() throws Exception {
+    assertAst("a && b", new Ident("a").and(new Ident("b")));
+    assertAst("a || b", new Ident("a").or(new Ident("b")));
+    assertAst("a && b || c", new Ident("a").and(new Ident("b")).or(new Ident("c")));
+
+    assertAst("a || b && c", new Ident("a").or(new Ident("b").and(new Ident("c"))));
+  }
+
+  @Test
+  public void testTernary() throws Exception {
+    assertAst("a ? b : c", new Ident("a").ifElse(new Ident("b"), new Ident("c")));
+    assertAst(
+        "a ? (b ? c : d) : e",
+        new Ident("a")
+            .ifElse(new Ident("b").ifElse(new Ident("c"), new Ident("d")), new Ident("e")));
+    assertAst(
+        "a ? b : c ? d : e",
+        new Ident("a")
+            .ifElse(new Ident("b"), new Ident("c").ifElse(new Ident("d"), new Ident("e"))));
+    assertAst(
+        "a || b ? c && d : e || f",
+        new Ident("a")
+            .or(new Ident("b"))
+            .ifElse(new Ident("c").and(new Ident("d")), new Ident("e").or(new Ident("f"))));
+  }
+
+  @Test
+  public void testMemberOperations() throws Exception {
+    assertAst("a.b", new Ident("a").select("b"));
+    assertAst("a.b.c", new Ident("a").select("b").select("c"));
+    assertAst("a[0]", new Ident("a").index(value(0L)));
+    assertAst("a[b]", new Ident("a").index(new Ident("b")));
+    assertAst("a.b[c]", new Ident("a").select("b").index(new Ident("c")));
+    assertAst("a[b].c", new Ident("a").index(new Ident("b")).select("c"));
+    assertAst("a(b)", callFunction("a", List.of(new Ident("b"))));
+    assertAst("a.b(c)", new Ident("a").call("b", List.of(new Ident("c"))));
+    assertAst("a(b, c)", callFunction("a", List.of(new Ident("b"), new Ident("c"))));
+    assertAst("a.b(c, d)", new Ident("a").call("b", List.of(new Ident("c"), new Ident("d"))));
+  }
+
+  @Test
+  public void testOptionalSyntax() throws Exception {
+    assertAst("a.?b", new Ident("a").call("optionalSelect", List.of(string("b"))));
+    assertAst("a[?b]", new Ident("a").call("optionalIndex", List.of(new Ident("b"))));
+  }
+
+  @Test
+  public void testStructures() throws Exception {
+    assertAst(
+        "[1, 2, 3]",
+        new ListLiteral(
+            List.of(
+                new ListLiteral.Element(value(1L), false),
+                new ListLiteral.Element(value(2L), false),
+                new ListLiteral.Element(value(3L), false))));
+    assertAst(
+        "[1, 2,]",
+        new ListLiteral(
+            List.of(
+                new ListLiteral.Element(value(1L), false),
+                new ListLiteral.Element(value(2L), false)))); // Trailing comma
+    assertAst("[]", new ListLiteral(List.of()));
+    assertAst(
+        "{'a': 1, 'b': 2}",
+        new MapLiteral(
+            List.of(Entry.of(string("a"), value(1L)), Entry.of(string("b"), value(2L)))));
+    assertAst(
+        "{'a': 1, 'b': 2,}",
+        new MapLiteral(
+            List.of(
+                Entry.of(string("a"), value(1L)),
+                Entry.of(string("b"), value(2L))))); // Trailing comma
+    assertAst("{}", new MapLiteral(List.of()));
+  }
+
+  @Test
+  public void testMessageCreation() throws Exception {
+    assertAst(
+        "Type{field: 1}", struct("Type", ImmutableMap.of("field", new Element(value(1L), false))));
+    assertAst(
+        "a.b.Type{field: 1, field2: 2}",
+        struct(
+            "a.b.Type",
+            ImmutableMap.of(
+                "field", new Element(value(1L), false), "field2", new Element(value(2L), false))));
+    assertAst(
+        ".Type{field: 1}",
+        struct(".Type", ImmutableMap.of("field", new Element(value(1L), false))));
+    assertAst(
+        ".   Type{field: 1}",
+        struct(".Type", ImmutableMap.of("field", new Element(value(1L), false))));
+  }
+
+  @Test
+  public void testComplexLiterals() throws Exception {
+    assertAst("\"hello \\\"world\\\"\"", string("hello \"world\""));
+    assertAst("'hello \\'world\\''", string("hello 'world'"));
+    assertAst("\"hello \\n world\"", string("hello \n world"));
+    assertAst("\"hello \\t world\"", string("hello \t world"));
+    assertAst("\"hello \\\\ world\"", string("hello \\ world"));
+    assertAst("r\"hello \\ world\"", string("hello \\ world"));
+    assertAst("r'hello \\ world'", string("hello \\ world"));
+    assertAst("b\"hello\"", bytes((byte) 104, (byte) 101, (byte) 108, (byte) 108, (byte) 111));
+    assertAst("b'hello'", bytes((byte) 104, (byte) 101, (byte) 108, (byte) 108, (byte) 111));
+    assertAst("br'hello'", bytes((byte) 104, (byte) 101, (byte) 108, (byte) 108, (byte) 111));
+    assertAst("br\"hello\"", bytes((byte) 104, (byte) 101, (byte) 108, (byte) 108, (byte) 111));
+    assertAst(
+        "b\"hello \\n world\"",
+        bytes(
+            (byte) 104,
+            (byte) 101,
+            (byte) 108,
+            (byte) 108,
+            (byte) 111,
+            (byte) 32,
+            (byte) 10,
+            (byte) 32,
+            (byte) 119,
+            (byte) 111,
+            (byte) 114,
+            (byte) 108,
+            (byte) 100));
+    assertAst("b\"\\x00\\x01\"", bytes((byte) 0, (byte) 1));
+    assertAst("\"\\u270c\"", string("\u270c"));
+    // These might reveal bugs in byte parsing:
+    assertAst("b\"\\xff\"", bytes((byte) -1));
+  }
+
+  @Test
+  public void testComplexUnary() throws Exception {
+    assertAst("!a.b", not(new Ident("a").select("b")));
+    assertAst("!a[0]", not(new Ident("a").index(value(0L))));
+    assertAst("-a.b", negative(new Ident("a").select("b")));
+    assertAst("-a[0]", negative(new Ident("a").index(value(0L))));
+    assertAst("-(a + b)", negative(new Ident("a").add(new Ident("b"))));
+  }
+
+  @Test
+  public void testComplexBinaryAndPrecedence() throws Exception {
+    assertAst(
+        "a + b * c / d % e - f",
+        new Ident("a")
+            .add(
+                new Ident("b")
+                    .multiply(new Ident("c"))
+                    .divide(new Ident("d"))
+                    .modulo(new Ident("e")))
+            .subtract(new Ident("f")));
+    assertAst("a - b - c", new Ident("a").subtract(new Ident("b")).subtract(new Ident("c")));
+
+    assertAst("a / b / c", new Ident("a").divide(new Ident("b")).divide(new Ident("c")));
+
+    assertAst("a % b % c", new Ident("a").modulo(new Ident("b")).modulo(new Ident("c")));
+
+    assertAst(
+        "a + b < c - d",
+        new Ident("a").add(new Ident("b")).lessThan(new Ident("c").subtract(new Ident("d"))));
+    assertAst(
+        "a * b == c + d",
+        new Ident("a").multiply(new Ident("b")).equalTo(new Ident("c").add(new Ident("d"))));
+    assertAst(
+        "a && b || c && d",
+        new Ident("a").and(new Ident("b")).or(new Ident("c").and(new Ident("d"))));
+    assertAst(
+        "a || b && c || d",
+        new Ident("a").or(new Ident("b").and(new Ident("c"))).or(new Ident("d")));
+    assertAst("!a && b || c", not(new Ident("a")).and(new Ident("b")).or(new Ident("c")));
+  }
+
+  @Test
+  public void testComplexTernary() throws Exception {
+    assertAst(
+        "a ? b : c ? d : e ? f : g",
+        new Ident("a")
+            .ifElse(
+                new Ident("b"),
+                new Ident("c")
+                    .ifElse(
+                        new Ident("d"), new Ident("e").ifElse(new Ident("f"), new Ident("g")))));
+    assertAst(
+        "a && b ? c || d : e && f",
+        new Ident("a")
+            .and(new Ident("b"))
+            .ifElse(new Ident("c").or(new Ident("d")), new Ident("e").and(new Ident("f"))));
+    assertAst(
+        "a ? b : c ? d : e ? f : g",
+        new Ident("a")
+            .ifElse(
+                new Ident("b"),
+                new Ident("c")
+                    .ifElse(
+                        new Ident("d"), new Ident("e").ifElse(new Ident("f"), new Ident("g")))));
+  }
+
+  @Test
+  public void testComplexMemberOperations() throws Exception {
+    assertAst("a.b.c(d)", new Ident("a").select("b").call("c", List.of(new Ident("d"))));
+    assertAst("a.b(c).d", new Ident("a").call("b", List.of(new Ident("c"))).select("d"));
+    assertAst("a(b)[c]", callFunction("a", List.of(new Ident("b"))).index(new Ident("c")));
+    assertAst(
+        "a.b(c).d(e)",
+        new Ident("a").call("b", List.of(new Ident("c"))).call("d", List.of(new Ident("e"))));
+    assertAst(
+        "a.b(c)[d].e(f)",
+        new Ident("a")
+            .call("b", List.of(new Ident("c")))
+            .index(new Ident("d"))
+            .call("e", List.of(new Ident("f"))));
+    assertAst(
+        "a.b.Type{field: 1}",
+        struct("a.b.Type", ImmutableMap.of("field", new Element(value(1L), false))));
+    assertAst(
+        "Type{field: 1}.field",
+        struct("Type", ImmutableMap.of("field", new Element(value(1L), false))).select("field"));
+    assertAst(
+        "a.b.Type{field: 1}.field",
+        struct("a.b.Type", ImmutableMap.of("field", new Element(value(1L), false)))
+            .select("field"));
+    assertAst(
+        "Type{field: 1}[0]",
+        struct("Type", ImmutableMap.of("field", new Element(value(1L), false))).index(value(0L)));
+  }
+
+  @Test
+  public void testComplexOptionalSyntax() throws Exception {
+    assertAst("a.?b.c", new Ident("a").call("optionalSelect", List.of(string("b"))).select("c"));
+    assertAst("a.b.?c", new Ident("a").select("b").call("optionalSelect", List.of(string("c"))));
+    assertAst(
+        "a[?b][c]",
+        new Ident("a").call("optionalIndex", List.of(new Ident("b"))).index(new Ident("c")));
+    assertAst(
+        "a[b][?c]",
+        new Ident("a").index(new Ident("b")).call("optionalIndex", List.of(new Ident("c"))));
+    assertAst(
+        "a.?b[?c]",
+        new Ident("a")
+            .call("optionalSelect", List.of(string("b")))
+            .call("optionalIndex", List.of(new Ident("c"))));
+  }
+
+  @Test
+  public void testComplexStructures() throws Exception {
+    assertAst(
+        "[[1, 2], [3, 4]]",
+        new ListLiteral(
+            List.of(
+                new ListLiteral.Element(
+                    new ListLiteral(
+                        List.of(
+                            new ListLiteral.Element(value(1L), false),
+                            new ListLiteral.Element(value(2L), false))),
+                    false),
+                new ListLiteral.Element(
+                    new ListLiteral(
+                        List.of(
+                            new ListLiteral.Element(value(3L), false),
+                            new ListLiteral.Element(value(4L), false))),
+                    false))));
+    assertAst(
+        "{'a': {'b': 1}}",
+        new MapLiteral(
+            List.of(
+                Entry.of(string("a"), new MapLiteral(List.of(Entry.of(string("b"), value(1L))))))));
+    assertAst(
+        "[{'a': 1}, {'b': 2}]",
+        new ListLiteral(
+            List.of(
+                new ListLiteral.Element(
+                    new MapLiteral(List.of(Entry.of(string("a"), value(1L)))), false),
+                new ListLiteral.Element(
+                    new MapLiteral(List.of(Entry.of(string("b"), value(2L)))), false))));
+    assertAst(
+        "[?a, b, ?c]",
+        new ListLiteral(
+            List.of(
+                new ListLiteral.Element(new Ident("a"), true),
+                new ListLiteral.Element(new Ident("b"), false),
+                new ListLiteral.Element(new Ident("c"), true))));
+    assertAst(
+        "{?a: b, ?c: d}",
+        new MapLiteral(
+            List.of(
+                Entry.optional(new Ident("a"), new Ident("b")),
+                Entry.optional(new Ident("c"), new Ident("d")))));
+    assertAst(
+        "Type{?field: value, field2: value}",
+        struct(
+            "Type",
+            ImmutableMap.of(
+                "field",
+                new Element(new Ident("value"), true),
+                "field2",
+                new Element(new Ident("value"), false))));
+  }
+
+  @Test
+  public void testTripleQuotedStrings() throws Exception {
+    assertAst("\"\"\"hello\"\"\"", string("hello"));
+    assertAst("'''hello'''", string("hello"));
+    assertAst("r\"\"\"hello\"\"\"", string("hello"));
+    assertAst("r'''hello'''", string("hello"));
+    assertAst("\"\"\"hello \"world\" \"\"\"", string("hello \"world\" "));
+    assertAst("'''hello 'world' '''", string("hello 'world' "));
+    assertAst("\"\"\"hello\\nworld\"\"\"", string("hello\nworld"));
+    assertAst("'''hello\\nworld'''", string("hello\nworld"));
+    assertAst("\"\"\"hello \\n world\"\"\"", string("hello \n world"));
+    assertAst("'''hello \\t world'''", string("hello \t world"));
+  }
+
+  @Test
+  public void testEscapes() throws Exception {
+    assertAst(
+        "\"hello \\a \\b \\f \\n \\r \\t \\v \\? \\` \\' \\\" \\\\\"",
+        string("hello \u0007 \b \f \n \r \t \u000b ? ` ' \" \\"));
+    assertAst("\"\\377\"", string("\u00ff"));
+    assertAst("\"\\000\"", string("\u0000"));
+    assertAst("\"\\U0000270c\"", string("\u270c"));
+  }
+
+  @Test
+  public void testComments() throws Exception {
+    assertAstWithComments("1 + 2 // comment", value(1L).add(value(2L)));
+    assertAstWithComments("1 + // comment\n 2", value(1L).add(value(2L)));
+    assertAstWithComments("// comment\n 1 + 2", value(1L).add(value(2L)));
+    assertAstWithComments("1 // comment 1\n + 2 // comment 2", value(1L).add(value(2L)));
+  }
+
+  @Test
+  public void testMapNonStringKeys() throws Exception {
+    assertAst(
+        "{1: 'a', 2u: 'b', true: 'c'}",
+        new MapLiteral(
+            List.of(
+                Entry.of(value(1L), string("a")),
+                Entry.of(unsigned(2L), string("b")),
+                Entry.of(value(true), string("c")))));
+    assertAst("{1.0: 'a'}", new MapLiteral(List.of(Entry.of(value(1.0), string("a")))));
+  }
+
+  @Test
+  public void testKeywordsAsFields() throws Exception {
+    assertAst("a.`in`", new Ident("a").select("in"));
+    assertAst("a.` b`", new Ident("a").select(" b"));
+    assertAst("a.`b `", new Ident("a").select("b "));
+    assertAst("a.` b `", new Ident("a").select(" b "));
+  }
+
+  @Test
+  public void testComplexPrecedenceMixed() throws Exception {
+    assertAst(
+        "a ? b + c : d * e",
+        new Ident("a")
+            .ifElse(new Ident("b").add(new Ident("c")), new Ident("d").multiply(new Ident("e"))));
+    assertAst(
+        "a || b && c == d + e",
+        new Ident("a")
+            .or(new Ident("b").and(new Ident("c").equalTo(new Ident("d").add(new Ident("e"))))));
+    assertAst("!a && -b", not(new Ident("a")).and(negative(new Ident("b"))));
+    assertAst(
+        "a < b && c >= d || e == f",
+        new Ident("a")
+            .lessThan(new Ident("b"))
+            .and(new Ident("c").atLeast(new Ident("d")))
+            .or(new Ident("e").equalTo(new Ident("f"))));
+  }
+
+  @Test
+  public void testInvalidSyntax() throws Exception {
+    assertParseFailure("b\"\\u270c\"", "1:4", "expecting <a>, encountered: ");
+    assertParseFailure("!-x", "1:3", "expecting <digits>, encountered: ");
+    assertParseFailure("a ? b ? c : d : e", "1:7", "expecting <:>, encountered: ");
+    assertParseFailure("a[b](c)", "1:5", "expecting <EOF>, encountered: ");
+    assertParseFailure("1 + ", "1:5", "expecting <!>, encountered: ");
+    assertParseFailure("?", "1:1", "expecting <!>, encountered: ");
+    assertParseFailure("a ? b", "1:6", "expecting <:>, encountered: ");
+    assertParseFailure("a : b", "1:3", "expecting <EOF>, encountered: ");
+    assertParseFailure("{'a'}", "1:5", "expecting <:>, encountered: ");
+    assertParseFailure("[1,,2]", "1:4", "expecting <]>, encountered: ");
+    assertParseFailure("a.in", "1:3", "expecting <identifier>, encountered: ");
+    assertParseFailure("a.true", "1:3", "expecting <identifier>, encountered: ");
+    assertParseFailure("a.false", "1:3", "expecting <identifier>, encountered: ");
+    assertParseFailure("a.null", "1:3", "expecting <identifier>, encountered: ");
+    assertParseFailure("b\"\"\"\\u270c\"\"\"", "1:6", "expecting <a>, encountered: ");
+    assertParseFailure("b'''\\u270c'''", "1:6", "expecting <a>, encountered: ");
+    assertParseFailure("rb'hello'", "1:3", "expecting <EOF>, encountered: ");
+    assertParseFailure("rb\"hello\"", "1:3", "expecting <EOF>, encountered: ");
+    assertParseFailure("Type{field: 1}(1)", "1:15", "expecting <EOF>, encountered: ");
+    assertParseFailure("!-x", "1:3", "expecting <digits>, encountered: ");
+    assertParseFailure("-!x", "1:2", "expecting <digits>, encountered: ");
+    assertParseFailure("a input", "1:5", "unexpected `[a-zA-Z0-9_]`: ");
+    assertParseFailure("r \"hello\"", "1:3", "expecting <EOF>, encountered: ");
+    assertParseFailure("b \"hello\"", "1:3", "expecting <EOF>, encountered: ");
+    assertParseFailure("r 'hello'", "1:3", "expecting <EOF>, encountered: ");
+    assertParseFailure("b 'hello'", "1:3", "expecting <EOF>, encountered: ");
+    assertParseFailure("br 'hello'", "1:4", "expecting <EOF>, encountered: ");
+    assertParseFailure("rb 'hello'", "1:4", "expecting <EOF>, encountered: ");
+    assertParseFailure("\"hello\\ nworld\"", "1:8", "expecting <a>, encountered: ");
+    assertParseFailure("\"hello\\3 7 7world\"", "1:9", "expecting <[0-7]>, encountered: ");
+    assertParseFailure("\"hello\\x1 aworld\"", "1:9", "expecting <2 hex digits>, encountered: ");
+  }
+
+  @Test
+  public void testCppSuite_valid_arithmetic() {
+    assertAst("x * 2", new Ident("x").multiply(value(2L)));
+    assertAst("x * 2u", new Ident("x").multiply(unsigned(2L)));
+    assertAst("4--4", value(4L).subtract(value(-4L)));
+    assertAst("a + b", new Ident("a").add(new Ident("b")));
+    assertAst("a - b", new Ident("a").subtract(new Ident("b")));
+    assertAst("a * b", new Ident("a").multiply(new Ident("b")));
+    assertAst("a / b", new Ident("a").divide(new Ident("b")));
+    assertAst("a % b", new Ident("a").modulo(new Ident("b")));
+    assertAst(
+        "b\"abc\" + B\"def\"",
+        bytes((byte) 97, (byte) 98, (byte) 99).add(bytes((byte) 100, (byte) 101, (byte) 102)));
+  }
+
+  @Test
+  public void testCppSuite_valid_memberOperations() {
+    assertAst("x * 2.0", new Ident("x").multiply(value(2.0)));
+    assertAst("a.b(5)", new Ident("a").call("b", List.of(value(5L))));
+    assertAst("4--4.1", value(4L).subtract(value(-4.1)));
+    assertAst("23.39", value(23.39));
+    assertAst("a.b", new Ident("a").select("b"));
+    assertAst("a.b.c", new Ident("a").select("b").select("c"));
+    assertAst("(a)", new Ident("a"));
+    assertAst("((a))", new Ident("a"));
+    assertAst("a()", callFunction("a", List.of()));
+    assertAst("a(b)", callFunction("a", List.of(new Ident("b"))));
+    assertAst("a(b, c)", callFunction("a", List.of(new Ident("b"), new Ident("c"))));
+    assertAst("a.b()", new Ident("a").call("b", List.of()));
+    assertAst("a.b(c)", new Ident("a").call("b", List.of(new Ident("c"))));
+    assertAst("aaa.bbb(ccc)", new Ident("aaa").call("bbb", List.of(new Ident("ccc"))));
+    assertAst("has(m.f)", new Has(new Ident("m").select("f")));
+    assertAst(
+        "x.single_nested_message != null",
+        new Ident("x").select("single_nested_message").notEqualTo(new NullValue()));
+    assertAst("a.`b`", new Ident("a").select("b"));
+    assertAst("a.`b-c`", new Ident("a").select("b-c"));
+    assertAst("a.`b c`", new Ident("a").select("b c"));
+    assertAst("a.`b/c`", new Ident("a").select("b/c"));
+    assertAst("a.`b.c`", new Ident("a").select("b.c"));
+    assertAst("a.`in`", new Ident("a").select("in"));
+    assertAst("has(a.`b/c`)", new Has(new Ident("a").select("b/c")));
+  }
+
+  @Test
+  public void testCppSuite_valid_literals() {
+    assertAst("\"\\u2764\"", string("\u2764"));
+    assertAst("\"A\"", string("A"));
+    assertAst("true", value(true));
+    assertAst("false", value(false));
+    assertAst("0", value(0L));
+    assertAst("42", value(42L));
+    assertAst("0u", unsigned(0L));
+    assertAst("23u", unsigned(23L));
+    assertAst("24u", unsigned(24L));
+    assertAst("0xAu", unsigned(10L));
+    assertAst("0xA", value(10L));
+    assertAst("b\"abc\"", bytes((byte) 97, (byte) 98, (byte) 99));
+    assertAst("a", new Ident("a"));
+    assertAst("\"\\\"\"", string("\""));
+    assertAst("\"abc\" + \"def\"", string("abc").add(string("def")));
+    assertAst("\"\\xC3\\XBF\"", string("\u00c3\u00bf"));
+    assertAst("\"\\303\\277\"", string("\u00c3\u00bf"));
+    assertAst("\"hi\\u263A \\u263Athere\"", string("hi\u263a \u263athere"));
+    assertAst("\"\\U000003A8\\?\"", string("\u03a8?"));
+    assertAst(
+        "\"\\a\\b\\f\\n\\r\\t\\v'\\\"\\\\\\? Legal escapes\"",
+        string("\u0007\b\f\n\r\t\u000b'\"\\? Legal escapes"));
+  }
+
+  @Test
+  public void testCppSuite_valid_unaryOperators() {
+    assertAst("! false", not(value(false)));
+    assertAst("-a", negative(new Ident("a")));
+    assertAst("-0xA", value(-10L));
+    assertAst("-1", value(-1L));
+    assertAst("!a", not(new Ident("a")));
+    assertAst("---a", negative(negative(negative(new Ident("a")))));
+  }
+
+  @Test
+  public void testCppSuite_valid_creators() {
+    assertAst("a[3]", new Ident("a").index(value(3L)));
+    assertAst(
+        "SomeMessage{foo: 5, bar: \"xyz\"}",
+        struct(
+            "SomeMessage",
+            ImmutableMap.of(
+                "foo", new Element(value(5L), false), "bar", new Element(string("xyz"), false))));
+    assertAst(
+        "[3, 4, 5]",
+        new ListLiteral(
+            List.of(
+                new ListLiteral.Element(value(3L), false),
+                new ListLiteral.Element(value(4L), false),
+                new ListLiteral.Element(value(5L), false))));
+    assertAst(
+        "{foo: 5, bar: \"xyz\"}",
+        new MapLiteral(
+            List.of(
+                Entry.of(new Ident("foo"), value(5L)), Entry.of(new Ident("bar"), string("xyz")))));
+    assertAst("a[b]", new Ident("a").index(new Ident("b")));
+    assertAst("foo{ }", struct("foo", ImmutableMap.of()));
+    assertAst(
+        "foo{ a:b }", struct("foo", ImmutableMap.of("a", new Element(new Ident("b"), false))));
+    assertAst(
+        "foo{ a:b, c:d }",
+        struct(
+            "foo",
+            ImmutableMap.of(
+                "a", new Element(new Ident("b"), false), "c", new Element(new Ident("d"), false))));
+    assertAst("{}", new MapLiteral(List.of()));
+    assertAst(
+        "{a:b, c:d}",
+        new MapLiteral(
+            List.of(
+                Entry.of(new Ident("a"), new Ident("b")),
+                Entry.of(new Ident("c"), new Ident("d")))));
+    assertAst("[]", new ListLiteral(List.of()));
+    assertAst("[a]", new ListLiteral(List.of(new ListLiteral.Element(new Ident("a"), false))));
+    assertAst(
+        "[a, b, c]",
+        new ListLiteral(
+            List.of(
+                new ListLiteral.Element(new Ident("a"), false),
+                new ListLiteral.Element(new Ident("b"), false),
+                new ListLiteral.Element(new Ident("c"), false))));
+    assertAst(
+        "[] + [1,2,3,] + [4]",
+        new ListLiteral(List.of())
+            .add(
+                new ListLiteral(
+                    List.of(
+                        new ListLiteral.Element(value(1L), false),
+                        new ListLiteral.Element(value(2L), false),
+                        new ListLiteral.Element(value(3L), false))))
+            .add(new ListLiteral(List.of(new ListLiteral.Element(value(4L), false)))));
+    assertAst(
+        "{1:2u, 2:3u}",
+        new MapLiteral(
+            List.of(Entry.of(value(1L), unsigned(2L)), Entry.of(value(2L), unsigned(3L)))));
+    assertAst(
+        "TestAllTypes{single_int32: 1, single_int64: 2}",
+        struct(
+            "TestAllTypes",
+            ImmutableMap.of(
+                "single_int32",
+                new Element(value(1L), false),
+                "single_int64",
+                new Element(value(2L), false))));
+    assertAst(
+        "[1,3,4][0]",
+        new ListLiteral(
+                List.of(
+                    new ListLiteral.Element(value(1L), false),
+                    new ListLiteral.Element(value(3L), false),
+                    new ListLiteral.Element(value(4L), false)))
+            .index(value(0L)));
+    assertAst(
+        "x[\"a\"].single_int32 == 23",
+        new Ident("x").index(string("a")).select("single_int32").equalTo(value(23L)));
+    assertAst(
+        "'😁' in ['😁', '😑', '😦']",
+        string("\ud83d\ude01")
+            .in(
+                new ListLiteral(
+                    List.of(
+                        new ListLiteral.Element(string("\ud83d\ude01"), false),
+                        new ListLiteral.Element(string("\ud83d\ude11"), false),
+                        new ListLiteral.Element(string("\ud83d\ude26"), false)))));
+    assertAst(
+        "'\\u00ff' in ['\\u00ff', '\\u00ff', '\\u00ff']",
+        string("\u00ff")
+            .in(
+                new ListLiteral(
+                    List.of(
+                        new ListLiteral.Element(string("\u00ff"), false),
+                        new ListLiteral.Element(string("\u00ff"), false),
+                        new ListLiteral.Element(string("\u00ff"), false)))));
+    assertAst(
+        "'\\u00ff' in ['\\uffff', '\\U00100000', '\\U0010ffff']",
+        string("\u00ff")
+            .in(
+                new ListLiteral(
+                    List.of(
+                        new ListLiteral.Element(string("\uffff"), false),
+                        new ListLiteral.Element(string("\udbc0\udc00"), false),
+                        new ListLiteral.Element(string("\udbff\udfff"), false)))));
+    assertAst(
+        "'\\u00ff' in ['\\U00100000', '\\uffff', '\\U0010ffff']",
+        string("\u00ff")
+            .in(
+                new ListLiteral(
+                    List.of(
+                        new ListLiteral.Element(string("\udbc0\udc00"), false),
+                        new ListLiteral.Element(string("\uffff"), false),
+                        new ListLiteral.Element(string("\udbff\udfff"), false)))));
+    assertAst("A{`b`: 1}", struct("A", ImmutableMap.of("b", new Element(value(1L), false))));
+    assertAst("A{`b-c`: 1}", struct("A", ImmutableMap.of("b-c", new Element(value(1L), false))));
+    assertAst("A{`b c`: 1}", struct("A", ImmutableMap.of("b c", new Element(value(1L), false))));
+    assertAst("A{`b/c`: 1}", struct("A", ImmutableMap.of("b/c", new Element(value(1L), false))));
+    assertAst("A{`b.c`: 1}", struct("A", ImmutableMap.of("b.c", new Element(value(1L), false))));
+    assertAst("A{`in`: 1}", struct("A", ImmutableMap.of("in", new Element(value(1L), false))));
+    assertAst(
+        "{?'key': value}",
+        new MapLiteral(List.of(Entry.optional(string("key"), new Ident("value")))));
+  }
+
+  @Test
+  public void testCppSuite_valid_logical() {
+    assertAst(
+        "a > 5 && a < 10",
+        new Ident("a").greaterThan(value(5L)).and(new Ident("a").lessThan(value(10L))));
+    assertAst(
+        "a < 5 || a > 10",
+        new Ident("a").lessThan(value(5L)).or(new Ident("a").greaterThan(value(10L))));
+    assertAst("a || b", new Ident("a").or(new Ident("b")));
+    assertAst("a && b", new Ident("a").and(new Ident("b")));
+  }
+
+  @Test
+  public void testCppSuite_valid_ternary() {
+    assertAst("a?b:c", new Ident("a").ifElse(new Ident("b"), new Ident("c")));
+    assertAst(
+        "false && !true || false ? 2 : 3",
+        value(false).and(not(value(true))).or(value(false)).ifElse(value(2L), value(3L)));
+  }
+
+  @Test
+  public void testCppSuite_valid_relations() {
+    assertAst("a in b", new Ident("a").in(new Ident("b")));
+    assertAst("a == b", new Ident("a").equalTo(new Ident("b")));
+    assertAst("a != b", new Ident("a").notEqualTo(new Ident("b")));
+    assertAst("a > b", new Ident("a").greaterThan(new Ident("b")));
+    assertAst("a >= b", new Ident("a").atLeast(new Ident("b")));
+    assertAst("a < b", new Ident("a").lessThan(new Ident("b")));
+    assertAst("a <= b", new Ident("a").atMost(new Ident("b")));
+    assertAst(
+        "1 + 2 * 3 - 1 / 2 == 6 % 1",
+        value(1L)
+            .add(value(2L).multiply(value(3L)))
+            .subtract(value(1L).divide(value(2L)))
+            .equalTo(value(6L).modulo(value(1L))));
+    assertAst("a <= b <= c", new Ident("a").atMost(new Ident("b")).atMost(new Ident("c")));
+  }
+
+  @Test
+  public void testCppSuite_valid_macros() {
+    assertAst("m.exists_one(v, f)", new ExistsOne(new Ident("m"), "v", new Ident("f")));
+    assertAst("m.map(v, f)", new Map(new Ident("m"), "v", new Ident("f")));
+    assertAst("m.map(v, p, f)", new FilterMap(new Ident("m"), "v", new Ident("p"), new Ident("f")));
+    assertAst("m.filter(v, p)", new Filter(new Ident("m"), "v", new Ident("p")));
+    assertAst(
+        "size(x) == x.size()",
+        callFunction("size", List.of(new Ident("x")))
+            .equalTo(new Ident("x").call("size", List.of())));
+    assertAst(
+        "x.filter(y, y.filter(z, z > 0))",
+        new Filter(
+            new Ident("x"),
+            "y",
+            new Filter(new Ident("y"), "z", new Ident("z").greaterThan(value(0L)))));
+    assertAst(
+        "has(a.b).filter(c, c)",
+        new Filter(new Has(new Ident("a").select("b")), "c", new Ident("c")));
+    assertAst(
+        "x.filter(y, y.exists(z, has(z.a)) && y.exists(z, has(z.b)))",
+        new Filter(
+            new Ident("x"),
+            "y",
+            new Exists(new Ident("y"), "z", new Has(new Ident("z").select("a")))
+                .and(new Exists(new Ident("y"), "z", new Has(new Ident("z").select("b"))))));
+    assertAst(
+        "has(a.b).asList().exists(c, c)",
+        new Exists(
+            new Has(new Ident("a").select("b")).call("asList", List.of()), "c", new Ident("c")));
+    assertAst(
+        "m.all(x, x > 0)", new All(new Ident("m"), "x", new Ident("x").greaterThan(value(0L))));
+    assertAst(
+        "[1, 2].exists(x, x > 0)",
+        new Exists(
+            new ListLiteral(
+                List.of(
+                    new ListLiteral.Element(value(1L), false),
+                    new ListLiteral.Element(value(2L), false))),
+            "x",
+            new Ident("x").greaterThan(value(0L))));
+    assertAst(
+        "{\"a\": 1}.exists(x, x == 'a')",
+        new Exists(
+            new MapLiteral(List.of(Entry.of(string("a"), value(1L)))),
+            "x",
+            new Ident("x").equalTo(string("a"))));
+    assertAst("exists(x, y)", callFunction("exists", List.of(new Ident("x"), new Ident("y"))));
+    assertAst("all(x, y)", callFunction("all", List.of(new Ident("x"), new Ident("y"))));
+    assertAst("map(x, y)", callFunction("map", List.of(new Ident("x"), new Ident("y"))));
+    assertAst("filter(x, y)", callFunction("filter", List.of(new Ident("x"), new Ident("y"))));
+    assertAst(
+        "exists_one(x, y)", callFunction("exists_one", List.of(new Ident("x"), new Ident("y"))));
+    assertParseFailure("has(x)", "1:1", "has() expects 1 select argument");
+    assertParseFailure("has(x, y)", "1:1", "has() expects 1 arg, 2 provided");
+    assertParseFailure("has()", "1:1", "has() expects 1 arg, 0 provided");
+    assertAst("has(a.b.c)", new Has(new Ident("a").select("b").select("c")));
+  }
+
+  @Test
+  public void testCppSuite_valid_optionalSyntax() {
+    assertAst(
+        "a.?b[?0] && a[?c]",
+        new Ident("a")
+            .call("optionalSelect", List.of(string("b")))
+            .call("optionalIndex", List.of(value(0L)))
+            .and(new Ident("a").call("optionalIndex", List.of(new Ident("c")))));
+    assertAst(
+        "[?a, ?b]",
+        new ListLiteral(
+            List.of(
+                new ListLiteral.Element(new Ident("a"), true),
+                new ListLiteral.Element(new Ident("b"), true))));
+    assertAst(
+        "[?a[?b]]",
+        new ListLiteral(
+            List.of(
+                new ListLiteral.Element(
+                    new Ident("a").call("optionalIndex", List.of(new Ident("b"))), true))));
+    assertAst(
+        "Msg{?field: value}",
+        struct("Msg", ImmutableMap.of("field", new Element(new Ident("value"), true))));
+    assertAst(
+        "m.optMap(v, f)", new Ident("m").call("optMap", List.of(new Ident("v"), new Ident("f"))));
+    assertAst(
+        "m.optFlatMap(v, f)",
+        new Ident("m").call("optFlatMap", List.of(new Ident("v"), new Ident("f"))));
+  }
+
+  @Test
+  public void testCppSuite_valid_logicalChaining() {
+    assertAst(
+        "a || b || c || d || e || f",
+        new Ident("a")
+            .or(new Ident("b"))
+            .or(new Ident("c"))
+            .or(new Ident("d").or(new Ident("e")).or(new Ident("f"))));
+    assertAst(
+        "a && b && c && d && e && f && g",
+        new Ident("a")
+            .and(new Ident("b"))
+            .and(new Ident("c").and(new Ident("d")))
+            .and(new Ident("e").and(new Ident("f")).and(new Ident("g"))));
+    assertAst(
+        "a && b && c && d || e && f && g && h",
+        new Ident("a")
+            .and(new Ident("b"))
+            .and(new Ident("c").and(new Ident("d")))
+            .or(new Ident("e").and(new Ident("f")).and(new Ident("g").and(new Ident("h")))));
+  }
+
+  @Test
+  public void testCppSuite_invalid() {
+    assertParseFailure("{", "1:2", "expecting <?>, encountered: ");
+    assertParseFailure("*@a | b", "1:1", "expecting <!>, encountered: ");
+    assertParseFailure("a | b", "1:3", "expecting <EOF>, encountered: ");
+    assertParseFailure("?", "1:1", "expecting <!>, encountered: ");
+    assertParseFailure("t{>C}", "1:3", "expecting <}>, encountered: ");
+    assertParseFailure(
+        "TestAllTypes(){single_int32: 1, single_int64: 2}",
+        "1:15",
+        "expecting <EOF>, encountered: ");
+    assertParseFailure("1 + $", "1:5", "expecting <!>, encountered: ");
+    assertParseFailure("1 + 2\n3 +", "2:1", "expecting <EOF>, encountered: ");
+    assertParseFailure("1.all(2, 3)", "1:1", "identifier expected for the 1st arg of all()");
+    assertParseFailure("1 + +", "1:5", "expecting <!>, encountered: ");
+    assertParseFailure("{\"a\": 1}.\"a\"", "1:10", "expecting <`>, encountered: ");
+    assertParseFailure("\"\\xFh\"", "1:4", "expecting <2 hex digits>, encountered: ");
+    assertParseFailure(
+        "\"\\a\\b\\f\\n\\r\\t\\v\\'\\\"\\\\\\? Illegal escape \\>\"",
+        "1:41",
+        "expecting <a>, encountered: ");
+    assertParseFailure(
+        "'😁' in ['😁', '😑', '😦']\n   && in.😁", "2:7", "expecting <identifier>, encountered: ");
+    assertParseFailure("as", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("break", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("const", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("continue", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("else", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("for", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("function", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("if", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("import", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("in", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("let", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("loop", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("package", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("namespace", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("return", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("var", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("void", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure("while", "1:1", "expecting <identifier>, encountered: ");
+    assertParseFailure(
+        "[1, 2, 3].map(var, var * var)", "1:15", "expecting <identifier>, encountered: ");
+    assertParseFailure(
+        "[\n\t\r[\n\t\r[\n\t\r]\n\t\r]\n\t\r", "6:3", "expecting <]>, encountered: ");
+    assertParseFailure("a.`b\tc`", "1:5", "expecting <`>, encountered: ");
+    assertParseFailure(
+        "a.`@foo`", "1:4", "expecting <one or more [a-zA-Z0-9_./ -]>, encountered: ");
+    assertParseFailure(
+        "a.`$foo`", "1:4", "expecting <one or more [a-zA-Z0-9_./ -]>, encountered: ");
+    assertParseFailure("`a.b`", "1:1", "expecting <!>, encountered: ");
+    assertParseFailure("`a.b`()", "1:1", "expecting <!>, encountered: ");
+    assertParseFailure("b'\\UFFFFFFFF'", "1:4", "expecting <a>, encountered: ");
+  }
+
+  @Test
+  public void testFailures() {
+    assertParseFailure("1(2)", "1:2", "expecting <EOF>, encountered: ");
+    assertParseFailure("1{foo: 2}", "1:2", "expecting <EOF>, encountered: ");
+  }
+
+  @Test
+  public void testIntegerOverflow_signedPositive() {
+    assertParseFailure("9223372036854775808", "1:1", "integer overflow");
+  }
+
+  @Test
+  public void testIntegerOverflow_signedNegative() {
+    assertParseFailure("-9223372036854775809", "1:1", "integer overflow");
+  }
+
+  @Test
+  public void testIntegerOverflow_unsigned() {
+    assertParseFailure("18446744073709551616u", "1:1", "integer overflow");
+  }
+
+  @Test
+  public void testExistsMacro_invalidArgs() {
+    assertParseFailure("m.exists(v, f, g)", "1:1", "exists() expects 2 args, 3 provided");
+    assertParseFailure("m.exists(1, f)", "1:1", "identifier expected for the 1st arg of exists()");
+    assertParseFailure("m.exists(v)", "1:1", "exists() expects 2 args, 1 provided");
+  }
+
+  @Test
+  public void testMapMacro_invalidArgs() {
+    assertParseFailure("m.map(v)", "1:1", "map() macro expects 2 or 3 args, 1 provided");
+    assertParseFailure("m.map(v, f, g, h)", "1:1", "map() macro expects 2 or 3 args, 4 provided");
+    assertParseFailure("m.map(1, f)", "1:1", "identifier expected for the 1st arg of map()");
+    assertParseFailure("m.map(1, f, g)", "1:1", "identifier expected for the 1st arg of map()");
+  }
+
+  @Test
+  public void testAllMacro_invalidArgs() {
+    assertParseFailure("m.all(v, f, g)", "1:1", "all() expects 2 args, 3 provided");
+    assertParseFailure("m.all(1, f)", "1:1", "identifier expected for the 1st arg of all()");
+    assertParseFailure("m.all(v)", "1:1", "all() expects 2 args, 1 provided");
+  }
+
+  @Test
+  public void testExistsOneMacro_invalidArgs() {
+    assertParseFailure("m.exists_one(v, f, g)", "1:1", "exists_one() expects 2 args, 3 provided");
+    assertParseFailure(
+        "m.exists_one(1, f)", "1:1", "identifier expected for the 1st arg of exists_one()");
+    assertParseFailure("m.exists_one(v)", "1:1", "exists_one() expects 2 args, 1 provided");
+  }
+
+  @Test
+  public void testFilterMacro_invalidArgs() {
+    assertParseFailure("m.filter(v, f, g)", "1:1", "filter() expects 2 args, 3 provided");
+    assertParseFailure("m.filter(1, f)", "1:1", "identifier expected for the 1st arg of filter()");
+    assertParseFailure("m.filter(v)", "1:1", "filter() expects 2 args, 1 provided");
+  }
+
+  private void assertAst(String expression, CelExpr expectedAst) {
+    CelExpr ast = parser.parse(expression);
+    assertThat(ast).isEqualTo(expectedAst);
+  }
+
+  private void assertAstWithComments(String expression, CelExpr expectedAst) {
+    CelExpr ast = parser.parseWithComments(expression);
+    assertThat(ast).isEqualTo(expectedAst);
+  }
+
+  private void assertParseFailure(
+      String expression, String expectedPosition, String expectedMessageSubstring) {
+    ParseException ex = assertThrows(ParseException.class, () -> parser.parse(expression));
+    assertThat(ex.getMessage()).contains("at " + expectedPosition + ":");
+    assertThat(ex.getMessage()).contains(expectedMessageSubstring);
+  }
+}

@@ -1,4 +1,4 @@
-package com.google.common.labs.cel;
+package com.google.mu.cel;
 
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.caseInsensitive;
@@ -17,6 +17,7 @@ import static com.google.mu.util.CharPredicate.isNot;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.ByteArrayOutputStream;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -35,7 +36,11 @@ import com.google.mu.function.TriFunction;
 import com.google.mu.util.CharPredicate;
 
 /**
- * Parser for Common Expression Language (CEL) syntax, producing {@code CelExpr} AST.
+ * Parser for Common Expression Language (CEL) syntax, producing {@link CelExpr} AST
+ * records.
+ *
+ * <p>Use this parser if pattern matching over records (as opposed to protos) is desirable to your
+ * use case. It's also about 2x faster than ANTLR-based cel-java parser (as benchmarks show).
  *
  * @since 10.7
  */
@@ -78,11 +83,10 @@ public final class CelParser {
 
   private static final Parser<byte[]> BYTES_LITERAL =
       literally(
-          caseInsensitive("b")
-              .then(
-                  anyOf(
-                      new BytesLexer().parser(),
-                      RAW_STRING_LITERAL.map(s -> s.getBytes(UTF_8)))));
+          caseInsensitive("b").then(
+              anyOf(
+                  new BytesLexer().parser(),
+                  RAW_STRING_LITERAL.map(s -> s.getBytes(UTF_8)))));
 
   private static final Parser<String> HEX_DIGITS = consecutive("[0-9a-fA-F]");
 
@@ -130,14 +134,18 @@ public final class CelParser {
   private static final Parser<CelExpr> IDENT_EXPR =
       sequence(string(".").orElse(""), IDENTIFIER, String::concat).map(CelExpr.Ident::new);
 
-  private static final Parser<CelExpr> PARSER = makeParser();
+  static final Parser<CelExpr> PARSER = makeParser();
 
   /** Parses the given CEL expression. */
-  public CelExpr parse(String input) {
+  CelExpr parse(String input) {
     return PARSER.parseSkipping(WHITESPACES, input);
   }
 
-  /** Parses the given CEL expression, supporting comments. */
+  /**
+   * Parses the given CEL expression, supporting comments.
+   *
+   * <p>To parse without comments, use {@link CelExpr#of}.
+   */
   public CelExpr parseWithComments(String input) {
     return PARSER.parseSkipping(WHITESPACES_OR_COMMENTS, input);
   }
@@ -148,7 +156,7 @@ public final class CelParser {
     Parser<CelExpr> parenthesized = expr.between("(", ")");
 
     Parser<CelExpr> listExpr =
-        sequence(OPTIONALITY, expr, (opt, val) -> new CelExpr.ListLiteral.Element(val, opt))
+        sequence(OPTIONALITY, expr, (opt, val) -> new CelExpr.Element(val, opt))
             .zeroOrMoreDelimitedBy(",")
             .optionallyFollowedBy(",")
             .between("[", "]")
@@ -156,14 +164,14 @@ public final class CelParser {
     Parser<CelExpr> mapExpr =
         sequence(
                 OPTIONALITY, expr.followedBy(":"), expr,
-                (opt, key, val) -> new CelExpr.MapLiteral.Entry(key, val, opt))
+                (opt, key, val) -> new CelExpr.Entry<>(key, val, opt))
             .zeroOrMoreDelimitedBy(",")
             .optionallyFollowedBy(",")
             .between("{", "}")
             .map(CelExpr.MapLiteral::new);
-    Parser<CelExpr.StructLiteral.Field> messageFieldInit = sequence(
+    Parser<CelExpr.Entry<CelExpr.Ident>> messageFieldInit = sequence(
         OPTIONALITY, ANY_IDENTIFIER.followedBy(":"), expr,
-        (opt, name, val) -> new CelExpr.StructLiteral.Field(name, val, opt));
+        (opt, name, val) -> new CelExpr.Entry<>(new CelExpr.Ident(name), val, opt));
     Parser<CelExpr> myType =
         IDENT_EXPR.withPostfixes(one('.').then(ANY_IDENTIFIER).map(CelParser::select));
     Parser<List<CelExpr>> args = expr.zeroOrMoreDelimitedBy(",").between("(", ")");
@@ -182,25 +190,22 @@ public final class CelParser {
     // Primary expression
     Parser<CelExpr> primary =
         anyOf(CONSTANT_LITERAL, callOrStructOrIdent, listExpr, mapExpr, parenthesized);
-    Parser<UnaryOperator<CelExpr>> memberCallOp =
-        sequence(ANY_IDENTIFIER, args, (ident, a) -> target -> macroOrCall(target, ident, a));
-    Parser<UnaryOperator<CelExpr>> indexOp =
-        sequence(one('?').thenReturn(true).orElse(false), expr, CelParser::indexCall);
     Parser<CelExpr> memberExpr =
         primary.withPostfixes(
             anyOf(
                 one('.').then(
                     anyOf(
-                        memberCallOp,
+                        sequence(ANY_IDENTIFIER, args, (n, a) -> t -> macroOrCall(t, n, a)),
                         one('?').then(ANY_IDENTIFIER).map(CelParser::optionalSelect),
                         ANY_IDENTIFIER.map(CelParser::select))),
-                indexOp.between("[", "]")));
+                sequence(one('?').thenReturn(true).orElse(false), expr, CelParser::indexCall)
+                    .between("[", "]")));
     Parser<CelExpr> unaryExpr =
         anyOf(
             memberExpr.withPrefixes(
-                one('!').thenReturn(e -> new CelExpr.Unary(CelExpr.Unary.Op.NOT, e))),
+                one('!').thenReturn(CelExpr::not)),
             memberExpr.withPrefixes(
-                one('-').thenReturn(e -> new CelExpr.Unary(CelExpr.Unary.Op.MINUS, e))));
+                one('-').thenReturn(CelExpr::negative)));
     Parser<CelExpr> binary =
         new OperatorTable<CelExpr>()
             .leftAssociative("*", (l, r) -> binaryExpr(CelExpr.Binary.Op.MULT, l, r), 6)
@@ -224,7 +229,7 @@ public final class CelParser {
             .rightAssociative(
                 anyOf(parenthesized, regular)
                     .between("?", ":")
-                    .map(ifTrue -> (cond, ifFalse) -> new CelExpr.Ternary(cond, ifTrue, ifFalse)),
+                    .map(ifTrue -> (cond, ifFalse) -> cond.ifElse(ifTrue, ifFalse)),
                 1)
             .build(anyOf(regular, parenthesized)));
   }
@@ -332,7 +337,8 @@ public final class CelParser {
 
     @Override Parser<String> escaped() {
       return anyOf(
-          charEscape(), octEscape(), hexEscape(), one('u').then(fromHex(4)), one('U').then(fromHex(8)));
+          charEscape(), octEscape(), hexEscape(),
+          one('u').then(fromHex(4)), one('U').then(fromHex(8)));
     }
   }
 
@@ -434,7 +440,12 @@ public final class CelParser {
     return construct.apply(target, placeholder.name(), args.get(1), args.get(2));
   }
 
-  private static CelExpr structExpr(CelExpr receiver, List<CelExpr.StructLiteral.Field> fields) {
+  private static CelExpr structExpr(CelExpr receiver, List<CelExpr.Entry<CelExpr.Ident>> fields) {
+    Set<String> keys = new HashSet<>();
+    for (CelExpr.Entry<CelExpr.Ident> field : fields) {
+      String name = field.key().name();
+      checkSyntax(keys.add(name), "duplicate field name: %s", name);
+    }
     return new CelExpr.StructLiteral(toTypeName(receiver), fields);
   }
 

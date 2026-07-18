@@ -1,12 +1,153 @@
-package com.google.common.labs.cel;
+package com.google.mu.cel;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
+import com.google.api.expr.v1alpha1.Expr;
 import com.google.mu.util.stream.Joiner;
 
-/** Abstract representation of a parsed Common Expression Language (CEL) expression. */
+/**
+ * Abstract representation of a parsed Common Expression Language (CEL) expression.
+ *
+ * @since 10.7
+ */
 public sealed interface CelExpr {
+  /**
+   * Parses and returns a {@link CelExpr} representing the {@code cel} string.
+   *
+   * <p>By default comments are not supported. Use {@link CelParser#parseWithComments} if
+   * you need comments.
+   *
+   * @throws Parser.ParseException if {@code cel} is invalid
+   * @throws NullPointerException if {@code cel} is null
+   */
+  static CelExpr of(String cel) {
+    return new CelParser().parse(cel);
+  }
+
+  /** Converts this expression to the official CEL Expr Protobuf representation. */
+  default Expr toProto() {
+    return CelProtoConverter.toProto(this, new AtomicLong(1));
+  }
+
+  static BoolValue value(boolean value) {
+    return new BoolValue(value);
+  }
+
+  static LongValue value(long value) {
+    return new LongValue(value);
+  }
+
+  static DoubleValue value(double value) {
+    return new DoubleValue(value);
+  }
+
+  static StringValue string(String value) {
+    return new StringValue(value);
+  }
+
+  static BytesValue bytes(byte... value) {
+    return new BytesValue(value);
+  }
+
+  static UintValue unsigned(long value) {
+    return new UintValue(value);
+  }
+
+  static StructLiteral struct(String messageName, Map<String, Element> fields) {
+    return new StructLiteral(
+        messageName,
+        fields.entrySet().stream()
+            .map(e -> new Entry<>(
+                new Ident(e.getKey()), e.getValue().value(), e.getValue().optional()))
+            .toList());
+  }
+
+  static Unary negative(CelExpr expr) {
+    return new Unary(Unary.Op.NEGATIVE, expr);
+  }
+
+  static Unary not(CelExpr expr) {
+    return new Unary(Unary.Op.NOT, expr);
+  }
+
+  static Call callFunction(String function, List<CelExpr> args) {
+    return new Call(Optional.empty(), function, args);
+  }
+
+  default Select select(String field) {
+    return new Select(this, field);
+  }
+
+  default Index index(CelExpr index) {
+    return new Index(this, index);
+  }
+
+  default Binary add(CelExpr that) {
+    return new Binary(this, Binary.Op.ADD, that);
+  }
+
+  default Binary subtract(CelExpr that) {
+    return new Binary(this, Binary.Op.SUB, that);
+  }
+
+  default Binary multiply(CelExpr that) {
+    return new Binary(this, Binary.Op.MULT, that);
+  }
+
+  default Binary divide(CelExpr that) {
+    return new Binary(this, Binary.Op.DIV, that);
+  }
+
+  default Binary modulo(CelExpr that) {
+    return new Binary(this, Binary.Op.MOD, that);
+  }
+
+  default Binary equalTo(CelExpr that) {
+    return new Binary(this, Binary.Op.EQ, that);
+  }
+
+  default Binary notEqualTo(CelExpr that) {
+    return new Binary(this, Binary.Op.NE, that);
+  }
+
+  default Binary lessThan(CelExpr that) {
+    return new Binary(this, Binary.Op.LT, that);
+  }
+
+  default Binary atMost(CelExpr ceiling) {
+    return new Binary(this, Binary.Op.LE, ceiling);
+  }
+
+  default Binary greaterThan(CelExpr that) {
+    return new Binary(this, Binary.Op.GT, that);
+  }
+
+  default Binary atLeast(CelExpr floor) {
+    return new Binary(this, Binary.Op.GE, floor);
+  }
+
+  default Binary in(CelExpr that) {
+    return new Binary(this, Binary.Op.IN, that);
+  }
+
+  default Binary and(CelExpr that) {
+    return new Binary(this, Binary.Op.AND, that);
+  }
+
+  default Binary or(CelExpr that) {
+    return new Binary(this, Binary.Op.OR, that);
+  }
+
+  default Ternary ifElse(CelExpr ifTrue, CelExpr ifFalse) {
+    return new Ternary(this, ifTrue, ifFalse);
+  }
+
+  default Call call(String member, List<CelExpr> args) {
+    return new Call(Optional.of(this), member, args);
+  }
 
   /** Null literal. */
   record NullValue() implements CelExpr {
@@ -87,7 +228,7 @@ public sealed interface CelExpr {
   /** Unary prefix operations (e.g. {@code -x}, {@code !x}). */
   record Unary(Op operator, CelExpr operand) implements CelExpr {
     public enum Op {
-      MINUS("-"), NOT("!");
+      NEGATIVE("-"), NOT("!");
 
       private final String symbol;
 
@@ -146,40 +287,45 @@ public sealed interface CelExpr {
 
   /** List creation (e.g. {@code [1, ?optional_var]}). */
   record ListLiteral(List<Element> elements) implements CelExpr {
-    public record Element(CelExpr value, boolean optional) {
-      @Override public String toString() {
-        return optionalMarker(optional) + value;
-      }
-    }
-
     @Override public String toString() {
       return elements.stream().collect(Joiner.on(", ").between('[', ']'));
     }
   }
 
   /** Map creation (e.g. {@code {"key": value, ? "opt_key": value}}). */
-  record MapLiteral(List<Entry> entries) implements CelExpr {
-    public record Entry(CelExpr key, CelExpr value, boolean optional) {
-      @Override public String toString() {
-        return optionalMarker(optional) + key + ": " + value;
-      }
-    }
-
+  record MapLiteral(List<Entry<CelExpr>> entries) implements CelExpr {
     @Override public String toString() {
       return entries.stream().collect(Joiner.on(", ").between('{', '}'));
     }
   }
 
   /** Struct/message creation (e.g. {@code Type{field: value, ?opt_field: value}}). */
-  record StructLiteral(String messageName, List<Field> fields) implements CelExpr {
-    public record Field(String name, CelExpr value, boolean optional) {
-      @Override public String toString() {
-        return optionalMarker(optional) + new Ident(name) + ": " + value;
-      }
+  record StructLiteral(String messageName, List<Entry<Ident>> fields) implements CelExpr {
+    @Override public String toString() {
+      return messageName + fields.stream().collect(Joiner.on(", ").between('{', '}'));
+    }
+  }
+
+  /** An entry/field representing a key-value or field-value mapping in map or struct literals. */
+  record Entry<K>(K key, CelExpr value, boolean optional) {
+    public static Entry<Ident> of(String key, CelExpr value) {
+      return new Entry<>(new Ident(key), value, false);
+    }
+
+    public static Entry<Ident> optional(String key, CelExpr value) {
+      return new Entry<>(new Ident(key), value, true);
+    }
+
+    public static Entry<CelExpr> of(CelExpr key, CelExpr value) {
+      return new Entry<>(key, value, false);
+    }
+
+    public static Entry<CelExpr> optional(CelExpr key, CelExpr value) {
+      return new Entry<>(key, value, true);
     }
 
     @Override public String toString() {
-      return messageName + fields.stream().collect(Joiner.on(", ").between('{', '}'));
+      return optionalMarker(optional) + key + ": " + value;
     }
   }
 
@@ -236,6 +382,11 @@ public sealed interface CelExpr {
     }
   }
 
+  record Element(CelExpr value, boolean optional) {
+    @Override public String toString() {
+      return optionalMarker(optional) + value;
+    }
+  }
 
   private static String escapeString(String s) {
     return s.codePoints()
