@@ -162,7 +162,7 @@ public class CelExprTest {
   @Test
   public void createListExpr_singleOptional() {
     CelExpr elementExpr = new CelExpr.DoubleValue(0, 1.5);
-    CelExpr.ListLiteral.Element element = new CelExpr.ListLiteral.Element(elementExpr, true);
+    CelExpr.Element element = new CelExpr.Element(elementExpr, true);
     CelExpr.ListLiteral expr = new CelExpr.ListLiteral(0, List.of(element));
     assertThat(expr.elements()).containsExactly(element);
     assertThat(element.value()).isEqualTo(elementExpr);
@@ -173,10 +173,8 @@ public class CelExprTest {
   @Test
   public void createListExpr_multipleMix() {
     // Tests comma-separation and both optional/non-optional list elements
-    CelExpr.ListLiteral.Element el1 =
-        new CelExpr.ListLiteral.Element(new CelExpr.LongValue(0, 1), false);
-    CelExpr.ListLiteral.Element el2 =
-        new CelExpr.ListLiteral.Element(new CelExpr.Ident(0, "x"), true);
+    CelExpr.Element el1 = new CelExpr.Element(new CelExpr.LongValue(0, 1), false);
+    CelExpr.Element el2 = new CelExpr.Element(new CelExpr.Ident(0, "x"), true);
     CelExpr.ListLiteral expr = new CelExpr.ListLiteral(0, List.of(el1, el2));
     assertThat(expr.toString()).isEqualTo("[1, ?x]");
   }

@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.labs.parse.Parser;
+import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.Immutable;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
@@ -326,6 +327,7 @@ public final class Csv {
     return '"' + Substring.all('"').replaceAllFrom(str, q -> "\"\"") + '"';
   }
 
+  @FormatMethod
   private static void checkArgument(boolean condition, String message, Object... args) {
     if (!condition) {
       throw new IllegalArgumentException(String.format(message, args));

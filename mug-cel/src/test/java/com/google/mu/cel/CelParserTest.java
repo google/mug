@@ -1623,10 +1623,7 @@ public final class CelParserTest {
           new CelExpr.ListLiteral(
               0,
               v.elements().stream()
-                  .map(
-                      e ->
-                          new CelExpr.ListLiteral.Element(
-                              clearSourceIndices(e.value()), e.optional()))
+                  .map(e -> new CelExpr.Element(clearSourceIndices(e.value()), e.optional()))
                   .toList());
       case CelExpr.MapLiteral v ->
           new CelExpr.MapLiteral(

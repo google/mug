@@ -45,7 +45,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
   }
 
   /**
-   * Returns a lazy stream for breadth-first traversal from {@code root}.
+   * Returns a lazy stream for breadth-first traversal from {@code roots}.
    * Empty stream is returned if {@code roots} is empty.
    */
   @Override public Stream<N> breadthFirstFrom(Iterable<? extends N> roots) {
@@ -61,7 +61,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
   }
 
   /**
-   * Returns a lazy stream for post-order traversal from {@code root}.
+   * Returns a lazy stream for post-order traversal from {@code roots}.
    * Empty stream is returned if {@code roots} is empty.
    *
    * <p>For small or medium sized in-memory trees, it's equivalent and more efficient to first

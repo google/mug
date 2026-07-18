@@ -65,7 +65,7 @@ import java.util.function.UnaryOperator;
  */
 public final class Suffix {
   /**
-   * A suffix parser that combines together with its prefix parse's result using the {@code combine}
+   * A suffix parser that combines together with its prefix parse's result using the {@code combiner}
    * function.
    */
   public static <T, S, R> Parser<Function<T, R>> suffix(

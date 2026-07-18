@@ -481,7 +481,7 @@ public final class MoreStreams {
   }
 
   /**
-   * Returns a sequential stream with {@code sideEfect} attached on every element.
+   * Returns a sequential stream with {@code sideEffect} attached on every element.
    *
    * <p>Unlike {@link Stream#peek}, which should only be used for debugging purpose,
    * the side effect is allowed to interfere with the source of the stream, and is
@@ -624,62 +624,6 @@ public final class MoreStreams {
     private long estimateChunks(long size) {
       long lower = size / maxSize;
       return lower + ((size % maxSize == 0) ? 0 : 1);
-    }
-  }
-
-  private static final class FlattenedSpliterator<T> implements Spliterator<T> {
-    private final Spliterator<? extends Stream<? extends T>> blocks;
-    private Spliterator<? extends T> currentBlock;
-    private final Consumer<Stream<? extends T>> nextBlock = block -> {
-      currentBlock = block.spliterator();
-    };
-
-    FlattenedSpliterator(Spliterator<? extends Stream<? extends T>> blocks) {
-      this.blocks = requireNonNull(blocks);
-    }
-
-    private FlattenedSpliterator(
-        Spliterator<? extends T> currentBlock, Spliterator<? extends Stream<? extends T>> blocks) {
-      this.blocks = requireNonNull(blocks);
-      this.currentBlock = currentBlock;
-    }
-
-    @Override public boolean tryAdvance(Consumer<? super T> action) {
-      requireNonNull(action);
-      if (currentBlock == null && !tryAdvanceBlock()) {
-        return false;
-      }
-      boolean advanced = false;
-      while ((!(advanced = currentBlock.tryAdvance(action))) && tryAdvanceBlock()) {}
-      return advanced;
-    }
-
-    @Override public Spliterator<T> trySplit() {
-      return splitThenWrap(blocks, it -> {
-        Spliterator<T> result = new FlattenedSpliterator<>(currentBlock, it);
-        currentBlock = null;
-        return result;
-      });
-    }
-
-    @Override public long estimateSize() {
-      return Long.MAX_VALUE;
-    }
-
-    @Override public long getExactSizeIfKnown() {
-      return -1;
-    }
-
-    @Override public int characteristics() {
-      // While we maintain encounter order as long as 'blocks' does, returning an ordered stream
-      // (which can be infinite) could surprise users when the user does things like
-      // "parallel().limit(n)". It's sufficient for normal use cases to respect encounter order
-      // without reporting order-ness.
-      return 0;
-    }
-
-    private boolean tryAdvanceBlock() {
-      return blocks.tryAdvance(nextBlock);
     }
   }
 
