@@ -47,29 +47,9 @@ import java.util.stream.Collectors;
  */
 @Immutable
 public final class CelParser {
-  private static final Set<String> KEYWORDS =
-      Set.of(
-          "as",
-          "break",
-          "const",
-          "continue",
-          "else",
-          "false",
-          "for",
-          "function",
-          "if",
-          "import",
-          "in",
-          "let",
-          "loop",
-          "package",
-          "namespace",
-          "null",
-          "return",
-          "true",
-          "var",
-          "void",
-          "while");
+  private static final Set<String> KEYWORDS = Set.of(
+      "as", "break", "const", "continue", "else", "false", "for", "function", "if", "import",
+      "in", "let", "loop", "package", "namespace", "null", "return", "true", "var", "void", "while");
   private static final CharPredicate WHITESPACES =
       CharPredicate.anyOf(" \t\r\n\f").precomputeForAscii();
   private static final Parser<?> WHITESPACES_OR_COMMENTS =
