@@ -19,7 +19,8 @@ Standard `cel-java` relies on the ANTLR runtime. In large enterprise deployments
 The AST in `mug-cel` is represented using Java **sealed interfaces** and **records** ([CelExpr](https://google.github.io/mug/apidocs/com/google/mu/cel/CelExpr.html)). This allows developers to write clean, type-safe, and exhaustive AST traversals or rewriters using Java 21 pattern matching:
 
 ```java
-switch (expr) {
+String cel = ...;
+switch (CelExpr.of(cel)) {
   case FunctionCall(Ident(var name, _), List.of(var arg), _) when name.equals("size") -> ...
   case MemberCall(var target, Ident(var member, _), var args, _) -> ...
   default -> ...
