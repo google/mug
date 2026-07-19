@@ -2,11 +2,9 @@ package com.google.mu.cel;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.util.List;
-import static org.junit.Assert.assertThrows;
-import org.junit.Test;
-
 import com.google.common.testing.NullPointerTester;
+import java.util.List;
+import org.junit.Test;
 
 public class CelExprTest {
 
@@ -358,11 +356,13 @@ public class CelExprTest {
     assertThat(expr.toString()).isEqualTo("users.map(x, (x) > (0), (x) * (2))");
   }
 
-  @Test public void testNulls() {
+  @Test
+  public void testNulls() {
     NullPointerTester tester = new NullPointerTester();
     tester.setDefault(CelExpr.class, CelExpr.string("v"));
     tester.setDefault(CelExpr.Ident.class, new CelExpr.Ident("v"));
-    tester.setDefault(CelExpr.Select.class, new CelExpr.Select(CelExpr.string("v"), new CelExpr.Ident("f")));
+    tester.setDefault(
+        CelExpr.Select.class, new CelExpr.Select(CelExpr.string("v"), new CelExpr.Ident("f")));
     tester.setDefault(CelExpr.Element.class, new CelExpr.Element(CelExpr.string("v"), false));
     tester.testAllPublicStaticMethods(CelExpr.class);
     tester.testAllPublicInstanceMethods(CelExpr.string("v"));
@@ -370,5 +370,199 @@ public class CelExprTest {
       tester.testAllPublicConstructors(nestedClass);
       tester.testAllPublicStaticMethods(nestedClass);
     }
+  }
+
+  @Test
+  public void literalExpr_roundtrip() {
+    assertRoundtrip(new CelExpr.NullValue(0));
+    assertRoundtrip(new CelExpr.BoolValue(true, 0));
+    assertRoundtrip(new CelExpr.BoolValue(false, 0));
+    assertRoundtrip(new CelExpr.LongValue(42L, 0));
+    assertRoundtrip(new CelExpr.UintValue(42L, 0));
+    assertRoundtrip(new CelExpr.UintValue(-1L, 0));
+    assertRoundtrip(new CelExpr.DoubleValue(3.14, 0));
+    assertRoundtrip(new CelExpr.StringValue("hello\n\"world\"", 0));
+    assertRoundtrip(new CelExpr.StringValue("a\\b\"c\nd\re\tf", 0));
+    assertRoundtrip(new CelExpr.BytesValue(new byte[] {0x01, 0x0a}, 0));
+  }
+
+  @Test
+  public void identExpr_roundtrip() {
+    assertRoundtrip(new CelExpr.Ident("varName", 0));
+  }
+
+  @Test
+  public void selectExpr_roundtrip() {
+    CelExpr operand = new CelExpr.Ident("operand", 0);
+    assertRoundtrip(new CelExpr.Select(operand, new CelExpr.Ident("field", 0), 0));
+  }
+
+  @Test
+  public void indexExpr_roundtrip() {
+    CelExpr operand = new CelExpr.Ident("operand", 0);
+    assertRoundtrip(new CelExpr.Index(operand, new CelExpr.LongValue(0L, 0), 0));
+  }
+
+  @Test
+  public void unaryExpr_roundtrip() {
+    CelExpr x = new CelExpr.Ident("x", 0);
+    assertRoundtrip(new CelExpr.Negative(x, 0));
+    assertRoundtrip(new CelExpr.Not(x, 0));
+  }
+
+  @Test
+  public void binaryExpr_roundtrip() {
+    CelExpr x = new CelExpr.Ident("x", 0);
+    assertRoundtrip(new CelExpr.Add(x, new CelExpr.LongValue(10L, 0), 0));
+  }
+
+  @Test
+  public void ternaryExpr_roundtrip() {
+    assertRoundtrip(
+        new CelExpr.IfElse(
+            new CelExpr.Ident("cond", 0),
+            new CelExpr.StringValue("yes", 0),
+            new CelExpr.StringValue("no", 0),
+            0));
+  }
+
+  @Test
+  public void memberCallExpr_roundtrip() {
+    CelExpr target = new CelExpr.Ident("target", 0);
+    assertRoundtrip(
+        new CelExpr.MemberCall(
+            target, new CelExpr.Ident("method", 0), List.of(new CelExpr.LongValue(100L, 0)), 0));
+  }
+
+  @Test
+  public void functionCallExpr_roundtrip() {
+    CelExpr x = new CelExpr.Ident("x", 0);
+    assertRoundtrip(
+        new CelExpr.FunctionCall(
+            new CelExpr.Ident("func", 0), List.of(x, new CelExpr.LongValue(42L, 0)), 0));
+    assertRoundtrip(new CelExpr.FunctionCall(new CelExpr.Ident("func", 0), List.of(), 0));
+  }
+
+  @Test
+  public void createListExpr_roundtrip() {
+    CelExpr x = new CelExpr.Ident("x", 0);
+    assertRoundtrip(
+        new CelExpr.ListOf(List.of(new CelExpr.Element(new CelExpr.DoubleValue(1.5, 0), true)), 0));
+    assertRoundtrip(
+        new CelExpr.ListOf(
+            List.of(
+                new CelExpr.Element(new CelExpr.LongValue(1L, 0), false),
+                new CelExpr.Element(x, true)),
+            0));
+    assertRoundtrip(new CelExpr.ListOf(List.of(), 0));
+  }
+
+  @Test
+  public void createMapExpr_roundtrip() {
+    CelExpr x = new CelExpr.Ident("x", 0);
+    assertRoundtrip(
+        new CelExpr.MapOf(
+            List.of(
+                new CelExpr.Entry<>(
+                    new CelExpr.StringValue("key", 0), new CelExpr.LongValue(42L, 0), true, 0)),
+            0));
+    assertRoundtrip(
+        new CelExpr.MapOf(
+            List.of(
+                new CelExpr.Entry<>(
+                    new CelExpr.StringValue("a", 0), new CelExpr.LongValue(1L, 0), false, 0),
+                new CelExpr.Entry<>(x, new CelExpr.Ident("y", 0), true, 0)),
+            0));
+    assertRoundtrip(new CelExpr.MapOf(List.of(), 0));
+  }
+
+  @Test
+  public void createStructExpr_roundtrip() {
+    CelExpr x = new CelExpr.Ident("x", 0);
+    assertRoundtrip(
+        new CelExpr.Struct(
+            "MyMessage",
+            List.of(
+                new CelExpr.Entry<>(
+                    new CelExpr.Ident("myField", 0), new CelExpr.BoolValue(true, 0), false, 0)),
+            0));
+    assertRoundtrip(
+        new CelExpr.Struct(
+            "MyMessage",
+            List.of(
+                new CelExpr.Entry<>(
+                    new CelExpr.Ident("a", 0), new CelExpr.LongValue(1L, 0), false, 0),
+                new CelExpr.Entry<>(new CelExpr.Ident("b", 0), x, true, 0)),
+            0));
+    assertRoundtrip(new CelExpr.Struct("MyMessage", List.of(), 0));
+  }
+
+  @Test
+  public void parenthesizationExpr_roundtrip() {
+    assertRoundtrip(CelExpr.of("x + y * z"));
+    assertRoundtrip(CelExpr.of("(x + y) * z"));
+    assertRoundtrip(CelExpr.of("x - y - z"));
+    assertRoundtrip(CelExpr.of("(x + y).field"));
+  }
+
+  @Test
+  public void macroHasExpr_roundtrip() {
+    CelExpr.Select selectMember =
+        new CelExpr.Select(new CelExpr.Ident("request", 0), new CelExpr.Ident("auth", 0), 0);
+    assertRoundtrip(new CelExpr.Macro.Has(selectMember, 0));
+  }
+
+  @Test
+  public void macroAllExpr_roundtrip() {
+    CelExpr x = new CelExpr.Ident("x", 0);
+    CelExpr users = new CelExpr.Ident("users", 0);
+    CelExpr condition = new CelExpr.GreaterThan(x, new CelExpr.LongValue(0L, 0), 0);
+    assertRoundtrip(new CelExpr.Macro.All(users, "x", condition, 0));
+  }
+
+  @Test
+  public void macroExistsExpr_roundtrip() {
+    CelExpr x = new CelExpr.Ident("x", 0);
+    CelExpr users = new CelExpr.Ident("users", 0);
+    CelExpr condition = new CelExpr.GreaterThan(x, new CelExpr.LongValue(0L, 0), 0);
+    assertRoundtrip(new CelExpr.Macro.Exists(users, "x", condition, 0));
+  }
+
+  @Test
+  public void macroExistsOneExpr_roundtrip() {
+    CelExpr x = new CelExpr.Ident("x", 0);
+    CelExpr users = new CelExpr.Ident("users", 0);
+    CelExpr condition = new CelExpr.GreaterThan(x, new CelExpr.LongValue(0L, 0), 0);
+    assertRoundtrip(new CelExpr.Macro.ExistsOne(users, "x", condition, 0));
+  }
+
+  @Test
+  public void macroFilterExpr_roundtrip() {
+    CelExpr x = new CelExpr.Ident("x", 0);
+    CelExpr users = new CelExpr.Ident("users", 0);
+    CelExpr condition = new CelExpr.GreaterThan(x, new CelExpr.LongValue(0L, 0), 0);
+    assertRoundtrip(new CelExpr.Macro.Filter(users, "x", condition, 0));
+  }
+
+  @Test
+  public void macroMapExpr_roundtrip() {
+    CelExpr x = new CelExpr.Ident("x", 0);
+    CelExpr users = new CelExpr.Ident("users", 0);
+    CelExpr transform = new CelExpr.Multiply(x, new CelExpr.LongValue(2L, 0), 0);
+    assertRoundtrip(new CelExpr.Macro.Map(users, "x", transform, 0));
+  }
+
+  @Test
+  public void macroFilterMapExpr_roundtrip() {
+    CelExpr x = new CelExpr.Ident("x", 0);
+    CelExpr users = new CelExpr.Ident("users", 0);
+    CelExpr condition = new CelExpr.GreaterThan(x, new CelExpr.LongValue(0L, 0), 0);
+    CelExpr transform = new CelExpr.Multiply(x, new CelExpr.LongValue(2L, 0), 0);
+    assertRoundtrip(new CelExpr.Macro.FilterMap(users, "x", condition, transform, 0));
+  }
+
+  private void assertRoundtrip(CelExpr expr) {
+    String cel = expr.toString();
+    assertThat(CelExpr.of(cel).toString()).isEqualTo(cel);
   }
 }
