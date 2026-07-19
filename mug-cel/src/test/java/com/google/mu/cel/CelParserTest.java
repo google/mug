@@ -132,10 +132,10 @@ public final class CelParserTest {
   public void testMemberOperations() throws Exception {
     assertAst("a.b", new Ident("a", 0).select(new Ident("b", 2)).withSourceIndex(1));
     assertAst("a.b.c", new Ident("a", 0).select(new Ident("b", 2)).withSourceIndex(1).select(new Ident("c", 4)).withSourceIndex(3));
-    assertAst("a[0]", new Ident("a", 0).index(value(0L).withSourceIndex(2)).withSourceIndex(2));
-    assertAst("a[b]", new Ident("a", 0).index(new Ident("b", 2)).withSourceIndex(2));
-    assertAst("a.b[c]", new Ident("a", 0).select(new Ident("b", 2)).withSourceIndex(1).index(new Ident("c", 4)).withSourceIndex(4));
-    assertAst("a[b].c", new Ident("a", 0).index(new Ident("b", 2)).withSourceIndex(2).select(new Ident("c", 5)).withSourceIndex(4));
+    assertAst("a[0]", new Ident("a", 0).index(value(0L).withSourceIndex(2)).withSourceIndex(1));
+    assertAst("a[b]", new Ident("a", 0).index(new Ident("b", 2)).withSourceIndex(1));
+    assertAst("a.b[c]", new Ident("a", 0).select(new Ident("b", 2)).withSourceIndex(1).index(new Ident("c", 4)).withSourceIndex(3));
+    assertAst("a[b].c", new Ident("a", 0).index(new Ident("b", 2)).withSourceIndex(1).select(new Ident("c", 5)).withSourceIndex(4));
     assertAst("a(b)", new FunctionCall(new Ident("a", 0), List.of(new Ident("b", 2)), 1));
     assertAst("a.b(c)", new MemberCall(3, new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4))));
     assertAst("a(b, c)", new FunctionCall(new Ident("a", 0), List.of(new Ident("b", 2), new Ident("c", 5)), 1));
@@ -145,7 +145,7 @@ public final class CelParserTest {
   @Test
   public void testOptionalSyntax() throws Exception {
     assertAst("a.?b", new Ident("a", 0).optionalSelect(new Ident("b", 3)).withSourceIndex(1));
-    assertAst("a[?b]", new Ident("a", 0).optionalIndex(new Ident("b", 3)).withSourceIndex(0));
+    assertAst("a[?b]", new Ident("a", 0).optionalIndex(new Ident("b", 3)).withSourceIndex(1));
   }
 
   @Test
@@ -189,9 +189,9 @@ public final class CelParserTest {
   @Test
   public void testComplexUnary() throws Exception {
     assertAst("!a.b", not(new Ident("a", 1).select(new Ident("b", 3)).withSourceIndex(2)).withSourceIndex(0));
-    assertAst("!a[0]", not(new Ident("a", 1).index(value(0L).withSourceIndex(3)).withSourceIndex(3)).withSourceIndex(0));
+    assertAst("!a[0]", not(new Ident("a", 1).index(value(0L).withSourceIndex(3)).withSourceIndex(2)).withSourceIndex(0));
     assertAst("-a.b", negative(new Ident("a", 1).select(new Ident("b", 3)).withSourceIndex(2)).withSourceIndex(0));
-    assertAst("-a[0]", negative(new Ident("a", 1).index(value(0L).withSourceIndex(3)).withSourceIndex(3)).withSourceIndex(0));
+    assertAst("-a[0]", negative(new Ident("a", 1).index(value(0L).withSourceIndex(3)).withSourceIndex(2)).withSourceIndex(0));
     assertAst("-(a + b)", negative(new Ident("a", 2).add(new Ident("b", 6)).withSourceIndex(4)).withSourceIndex(0));
   }
 
@@ -222,22 +222,22 @@ public final class CelParserTest {
   public void testComplexMemberOperations() throws Exception {
     assertAst("a.b.c(d)", new MemberCall(5, new Ident("a", 0).select(new Ident("b", 2)).withSourceIndex(1), new Ident("c", 4), List.of(new Ident("d", 6))));
     assertAst("a.b(c).d", new MemberCall(3, new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4))).select(new Ident("d", 7)).withSourceIndex(6));
-    assertAst("a(b)[c]", new FunctionCall(new Ident("a", 0), List.of(new Ident("b", 2)), 1).index(new Ident("c", 5)).withSourceIndex(5));
+    assertAst("a(b)[c]", new FunctionCall(new Ident("a", 0), List.of(new Ident("b", 2)), 1).index(new Ident("c", 5)).withSourceIndex(4));
     assertAst("a.b(c).d(e)", new MemberCall(8, new MemberCall(3, new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4))), new Ident("d", 7), List.of(new Ident("e", 9))));
-    assertAst("a.b(c)[d].e(f)", new MemberCall(11, new MemberCall(3, new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4))).index(new Ident("d", 7)).withSourceIndex(7), new Ident("e", 10), List.of(new Ident("f", 12))));
+    assertAst("a.b(c)[d].e(f)", new MemberCall(11, new MemberCall(3, new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4))).index(new Ident("d", 7)).withSourceIndex(6), new Ident("e", 10), List.of(new Ident("f", 12))));
     assertAst("a.b.Type{field: 1}", new Struct("a.b.Type", List.of(new Entry<>(new Ident("field", 9), value(1L).withSourceIndex(16), false, 14)), 8));
     assertAst("Type{field: 1}.field", new Struct("Type", List.of(new Entry<>(new Ident("field", 5), value(1L).withSourceIndex(12), false, 10)), 4).select(new Ident("field", 15)).withSourceIndex(14));
     assertAst("a.b.Type{field: 1}.field", new Struct("a.b.Type", List.of(new Entry<>(new Ident("field", 9), value(1L).withSourceIndex(16), false, 14)), 8).select(new Ident("field", 19)).withSourceIndex(18));
-    assertAst("Type{field: 1}[0]", new Struct("Type", List.of(new Entry<>(new Ident("field", 5), value(1L).withSourceIndex(12), false, 10)), 4).index(value(0L).withSourceIndex(15)).withSourceIndex(15));
+    assertAst("Type{field: 1}[0]", new Struct("Type", List.of(new Entry<>(new Ident("field", 5), value(1L).withSourceIndex(12), false, 10)), 4).index(value(0L).withSourceIndex(15)).withSourceIndex(14));
   }
 
   @Test
   public void testComplexOptionalSyntax() throws Exception {
     assertAst("a.?b.c", new Ident("a", 0).optionalSelect(new Ident("b", 3)).withSourceIndex(1).select(new Ident("c", 5)).withSourceIndex(4));
     assertAst("a.b.?c", new Ident("a", 0).select(new Ident("b", 2)).withSourceIndex(1).optionalSelect(new Ident("c", 5)).withSourceIndex(3));
-    assertAst("a[?b][c]", new Ident("a", 0).optionalIndex(new Ident("b", 3)).withSourceIndex(0).index(new Ident("c", 6)).withSourceIndex(6));
-    assertAst("a[b][?c]", new Ident("a", 0).index(new Ident("b", 2)).withSourceIndex(2).optionalIndex(new Ident("c", 6)).withSourceIndex(2));
-    assertAst("a.?b[?c]", new Ident("a", 0).optionalSelect(new Ident("b", 3)).withSourceIndex(1).optionalIndex(new Ident("c", 6)).withSourceIndex(1));
+    assertAst("a[?b][c]", new Ident("a", 0).optionalIndex(new Ident("b", 3)).withSourceIndex(1).index(new Ident("c", 6)).withSourceIndex(5));
+    assertAst("a[b][?c]", new Ident("a", 0).index(new Ident("b", 2)).withSourceIndex(1).optionalIndex(new Ident("c", 6)).withSourceIndex(4));
+    assertAst("a.?b[?c]", new Ident("a", 0).optionalSelect(new Ident("b", 3)).withSourceIndex(1).optionalIndex(new Ident("c", 6)).withSourceIndex(4));
   }
 
   @Test
@@ -413,11 +413,11 @@ public final class CelParserTest {
 
   @Test
   public void testCppSuite_valid_creators() {
-    assertAst("a[3]", new Ident("a", 0).index(value(3L).withSourceIndex(2)).withSourceIndex(2));
+    assertAst("a[3]", new Ident("a", 0).index(value(3L).withSourceIndex(2)).withSourceIndex(1));
     assertAst("SomeMessage{foo: 5, bar: \"xyz\"}", new Struct("SomeMessage", List.of(new Entry<>(new Ident("foo", 12), value(5L).withSourceIndex(17), false, 15), new Entry<>(new Ident("bar", 20), string("xyz").withSourceIndex(25), false, 23)), 11));
     assertAst("[3, 4, 5]", new ListOf(List.of(new Element(value(3L).withSourceIndex(1), false), new Element(value(4L).withSourceIndex(4), false), new Element(value(5L).withSourceIndex(7), false)), 0));
     assertAst("{foo: 5, bar: \"xyz\"}", new MapOf(List.of(new Entry<>(new Ident("foo", 1), value(5L).withSourceIndex(6), false, 4), new Entry<>(new Ident("bar", 9), string("xyz").withSourceIndex(14), false, 12)), 0));
-    assertAst("a[b]", new Ident("a", 0).index(new Ident("b", 2)).withSourceIndex(2));
+    assertAst("a[b]", new Ident("a", 0).index(new Ident("b", 2)).withSourceIndex(1));
     assertAst("foo{ }", new Struct("foo", List.of(), 3));
     assertAst("foo{ a:b }", new Struct("foo", List.of(new Entry<>(new Ident("a", 5), new Ident("b", 7), false, 6)), 3));
     assertAst("foo{ a:b, c:d }", new Struct("foo", List.of(new Entry<>(new Ident("a", 5), new Ident("b", 7), false, 6), new Entry<>(new Ident("c", 10), new Ident("d", 12), false, 11)), 3));
@@ -429,8 +429,8 @@ public final class CelParserTest {
     assertAst("[] + [1,2,3,] + [4]", new ListOf(List.of(), 0).add(new ListOf(List.of(new Element(value(1L).withSourceIndex(6), false), new Element(value(2L).withSourceIndex(8), false), new Element(value(3L).withSourceIndex(10), false)), 5)).withSourceIndex(3).add(new ListOf(List.of(new Element(value(4L).withSourceIndex(17), false)), 16)).withSourceIndex(14));
     assertAst("{1:2u, 2:3u}", new MapOf(List.of(new Entry<>(value(1L).withSourceIndex(1), unsigned(2L).withSourceIndex(3), false, 2), new Entry<>(value(2L).withSourceIndex(7), unsigned(3L).withSourceIndex(9), false, 8)), 0));
     assertAst("TestAllTypes{single_int32: 1, single_int64: 2}", new Struct("TestAllTypes", List.of(new Entry<>(new Ident("single_int32", 13), value(1L).withSourceIndex(27), false, 25), new Entry<>(new Ident("single_int64", 30), value(2L).withSourceIndex(44), false, 42)), 12));
-    assertAst("[1,3,4][0]", new ListOf(List.of(new Element(value(1L).withSourceIndex(1), false), new Element(value(3L).withSourceIndex(3), false), new Element(value(4L).withSourceIndex(5), false)), 0).index(value(0L).withSourceIndex(8)).withSourceIndex(8));
-    assertAst("x[\"a\"].single_int32 == 23", new Ident("x", 0).index(string("a").withSourceIndex(2)).withSourceIndex(2).select(new Ident("single_int32", 7)).withSourceIndex(6).equalTo(value(23L).withSourceIndex(23)).withSourceIndex(20));
+    assertAst("[1,3,4][0]", new ListOf(List.of(new Element(value(1L).withSourceIndex(1), false), new Element(value(3L).withSourceIndex(3), false), new Element(value(4L).withSourceIndex(5), false)), 0).index(value(0L).withSourceIndex(8)).withSourceIndex(7));
+    assertAst("x[\"a\"].single_int32 == 23", new Ident("x", 0).index(string("a").withSourceIndex(2)).withSourceIndex(1).select(new Ident("single_int32", 7)).withSourceIndex(6).equalTo(value(23L).withSourceIndex(23)).withSourceIndex(20));
     assertAst("'😁' in ['😁', '😑', '😦']", string("\ud83d\ude01").withSourceIndex(0).in(new ListOf(List.of(new Element(string("\ud83d\ude01").withSourceIndex(9), false), new Element(string("\ud83d\ude11").withSourceIndex(15), false), new Element(string("\ud83d\ude26").withSourceIndex(21), false)), 8)).withSourceIndex(5));
     assertAst("'\\u00ff' in ['\\u00ff', '\\u00ff', '\\u00ff']", string("\u00ff").withSourceIndex(0).in(new ListOf(List.of(new Element(string("\u00ff").withSourceIndex(13), false), new Element(string("\u00ff").withSourceIndex(23), false), new Element(string("\u00ff").withSourceIndex(33), false)), 12)).withSourceIndex(9));
     assertAst("'\\u00ff' in ['\\uffff', '\\U00100000', '\\U0010ffff']", string("\u00ff").withSourceIndex(0).in(new ListOf(List.of(new Element(string("\uffff").withSourceIndex(13), false), new Element(string("\udbc0\udc00").withSourceIndex(23), false), new Element(string("\udbff\udfff").withSourceIndex(37), false)), 12)).withSourceIndex(9));
@@ -498,9 +498,9 @@ public final class CelParserTest {
 
   @Test
   public void testCppSuite_valid_optionalSyntax() {
-    assertAst("a.?b[?0] && a[?c]", new Ident("a", 0).optionalSelect(new Ident("b", 3)).withSourceIndex(1).optionalIndex(value(0L).withSourceIndex(6)).withSourceIndex(1).and(new Ident("a", 12).optionalIndex(new Ident("c", 15)).withSourceIndex(12)).withSourceIndex(9));
+    assertAst("a.?b[?0] && a[?c]", new Ident("a", 0).optionalSelect(new Ident("b", 3)).withSourceIndex(1).optionalIndex(value(0L).withSourceIndex(6)).withSourceIndex(4).and(new Ident("a", 12).optionalIndex(new Ident("c", 15)).withSourceIndex(13)).withSourceIndex(9));
     assertAst("[?a, ?b]", new ListOf(List.of(new Element(new Ident("a", 2), true), new Element(new Ident("b", 6), true)), 0));
-    assertAst("[?a[?b]]", new ListOf(List.of(new Element(new Ident("a", 2).optionalIndex(new Ident("b", 5)).withSourceIndex(2), true)), 0));
+    assertAst("[?a[?b]]", new ListOf(List.of(new Element(new Ident("a", 2).optionalIndex(new Ident("b", 5)).withSourceIndex(3), true)), 0));
     assertAst("Msg{?field: value}", new Struct("Msg", List.of(new Entry<>(new Ident("field", 5), new Ident("value", 12), true, 10)), 3));
     assertAst("m.optMap(v, f)", new MemberCall(8, new Ident("m", 0), new Ident("optMap", 2), List.of(new Ident("v", 9), new Ident("f", 12))));
     assertAst("m.optFlatMap(v, f)", new MemberCall(12, new Ident("m", 0), new Ident("optFlatMap", 2), List.of(new Ident("v", 13), new Ident("f", 16))));
@@ -1111,9 +1111,6 @@ public final class CelParserTest {
                     + v.sourceIndex()
                     + ")";
           };
-      case CelExpr.ListLiteral v -> throw new UnsupportedOperationException();
-      case CelExpr.MapLiteral v -> throw new UnsupportedOperationException();
-      case CelExpr.StructLiteral v -> throw new UnsupportedOperationException();
     };
   }
 

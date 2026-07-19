@@ -298,9 +298,6 @@ final class CelProtoConverter {
         builder.setComprehensionExpr(toComprehensionProto(v.sourceIndex(), v));
         sourceInfo.putMacroCalls(id, serializeMacroCall(v));
       }
-      case CelExpr.ListLiteral v -> throw new UnsupportedOperationException();
-      case CelExpr.MapLiteral v -> throw new UnsupportedOperationException();
-      case CelExpr.StructLiteral v -> throw new UnsupportedOperationException();
     }
     Expr result = builder.build();
     if (!isSerializingMacroCall) {
