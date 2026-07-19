@@ -1,6 +1,6 @@
 # Mug CEL Parser
 
-A lightweight, high-performance, combinator-based parser for the Common Expression Language (CEL) in Java.
+A modern (Java 21+), lightweight, high-performance parser for the Common Expression Language (CEL) in Java.
 
 `mug-cel` parses CEL expressions directly into a modern, type-safe Java AST (represented by [CelExpr](https://google.github.io/mug/apidocs/com/google/mu/cel/CelExpr.html) records and sealed interfaces), and provides seamless serialization to standard CEL Protobuf messages.
 
