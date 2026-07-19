@@ -235,7 +235,8 @@ public final class CelParser {
             sequence(
                 indexOf('.'), IDENT, (index, field) -> e -> new Select(e, field, index)),
             sequence(one('?').thenReturn(true).orElse(false), expr, CelParser::index)
-                .between("[", "]")));
+                .between("[", "]")
+                .mapWithIndex((op, begin, end) -> e -> op.apply(e).withSourceIndex(begin))));
     Parser<CelExpr> unaryExpr = anyOf(
         memberExpr.withPrefixes(unary('!', CelExpr.Not::new)),
         memberExpr.withPrefixes(unary('-', CelExpr.Negative::new)));

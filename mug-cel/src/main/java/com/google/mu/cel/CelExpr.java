@@ -1033,41 +1033,4 @@ public sealed interface CelExpr {
   private static String optionalMarker(boolean optional) {
     return optional ? "?" : "";
   }
-
-  @Deprecated
-  record ListLiteral(int sourceIndex, List<Element> elements) implements CelExpr {
-    public ListLiteral(List<Element> elements) {
-      this(0, elements);
-    }
-
-    @Override
-    public ListLiteral withSourceIndex(int index) {
-      return new ListLiteral(index, elements);
-    }
-  }
-
-  @Deprecated
-  record MapLiteral(int sourceIndex, List<Entry<CelExpr>> entries) implements CelExpr {
-    public MapLiteral(List<Entry<CelExpr>> entries) {
-      this(0, entries);
-    }
-
-    @Override
-    public MapLiteral withSourceIndex(int index) {
-      return new MapLiteral(index, entries);
-    }
-  }
-
-  @Deprecated
-  record StructLiteral(int sourceIndex, String messageName, List<Entry<Ident>> fields)
-      implements CelExpr {
-    public StructLiteral(String messageName, List<Entry<Ident>> fields) {
-      this(0, messageName, fields);
-    }
-
-    @Override
-    public StructLiteral withSourceIndex(int index) {
-      return new StructLiteral(index, messageName, fields);
-    }
-  }
 }
