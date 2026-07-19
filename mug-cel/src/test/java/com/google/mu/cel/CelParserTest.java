@@ -13,6 +13,7 @@ import com.google.api.expr.v1alpha1.Expr;
 import com.google.api.expr.v1alpha1.ParsedExpr;
 import com.google.api.expr.v1alpha1.SourceInfo;
 import com.google.common.labs.parse.Parser.ParseException;
+import com.google.common.testing.NullPointerTester;
 import com.google.mu.cel.CelExpr.Element;
 import com.google.mu.cel.CelExpr.Entry;
 import com.google.mu.cel.CelExpr.FunctionCall;
@@ -1775,6 +1776,12 @@ public final class CelParserTest {
             2L, 10, // CreateStruct.Entry at ':' (index 10)
             3L, 12 // Integer value 1 at index 12
             );
+  }
+
+  @Test public void testNulls() {
+    NullPointerTester tester = new NullPointerTester();
+    tester.testAllPublicStaticMethods(CelParser.class);
+    tester.testAllPublicInstanceMethods(new CelParser());
   }
 
   private void assertParseFailure(

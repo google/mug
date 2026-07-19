@@ -3,7 +3,10 @@ package com.google.mu.cel;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.util.List;
+import static org.junit.Assert.assertThrows;
 import org.junit.Test;
+
+import com.google.common.testing.NullPointerTester;
 
 public class CelExprTest {
 
@@ -353,5 +356,19 @@ public class CelExprTest {
     assertThat(expr.filter()).isEqualTo(filter);
     assertThat(expr.transform()).isEqualTo(transform);
     assertThat(expr.toString()).isEqualTo("users.map(x, (x) > (0), (x) * (2))");
+  }
+
+  @Test public void testNulls() {
+    NullPointerTester tester = new NullPointerTester();
+    tester.setDefault(CelExpr.class, CelExpr.string("v"));
+    tester.setDefault(CelExpr.Ident.class, new CelExpr.Ident("v"));
+    tester.setDefault(CelExpr.Select.class, new CelExpr.Select(CelExpr.string("v"), new CelExpr.Ident("f")));
+    tester.setDefault(CelExpr.Element.class, new CelExpr.Element(CelExpr.string("v"), false));
+    tester.testAllPublicStaticMethods(CelExpr.class);
+    tester.testAllPublicInstanceMethods(CelExpr.string("v"));
+    for (Class<?> nestedClass : CelExpr.class.getDeclaredClasses()) {
+      tester.testAllPublicConstructors(nestedClass);
+      tester.testAllPublicStaticMethods(nestedClass);
+    }
   }
 }

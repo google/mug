@@ -1,5 +1,7 @@
 package com.google.mu.cel;
 
+import static java.util.Objects.requireNonNull;
+
 import com.google.mu.util.stream.Joiner;
 import java.util.List;
 import java.util.Map;
@@ -198,66 +200,82 @@ public sealed interface CelExpr {
 
   /** Null literal. */
   record NullValue(int sourceIndex) implements CelExpr {
-    @Override public NullValue withSourceIndex(int index) {
+    @Override
+    public NullValue withSourceIndex(int index) {
       return new NullValue(index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "null";
     }
   }
 
   /** Boolean literal. */
   record BoolValue(boolean value, int sourceIndex) implements CelExpr {
-    @Override public BoolValue withSourceIndex(int index) {
+    @Override
+    public BoolValue withSourceIndex(int index) {
       return new BoolValue(value, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return String.valueOf(value);
     }
   }
 
   /** Signed 64-bit integer literal. */
   record LongValue(long value, int sourceIndex) implements CelExpr {
-    @Override public LongValue withSourceIndex(int index) {
+    @Override
+    public LongValue withSourceIndex(int index) {
       return new LongValue(value, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return String.valueOf(value);
     }
   }
 
   /** Unsigned 64-bit integer literal. */
   record UintValue(long value, int sourceIndex) implements CelExpr {
-    @Override public UintValue withSourceIndex(int index) {
+    @Override
+    public UintValue withSourceIndex(int index) {
       return new UintValue(value, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return Long.toUnsignedString(value) + "u";
     }
   }
 
   /** Double-precision floating point literal. */
   record DoubleValue(double value, int sourceIndex) implements CelExpr {
-    @Override public DoubleValue withSourceIndex(int index) {
+    @Override
+    public DoubleValue withSourceIndex(int index) {
       return new DoubleValue(value, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return String.valueOf(value);
     }
   }
 
   /** UTF-8 string literal. */
   record StringValue(String value, int sourceIndex) implements CelExpr {
-    @Override public StringValue withSourceIndex(int index) {
+    public StringValue {
+      requireNonNull(value);
+    }
+
+    @Override
+    public StringValue withSourceIndex(int index) {
       return new StringValue(value, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return escapeString(value);
     }
   }
@@ -265,25 +283,37 @@ public sealed interface CelExpr {
   /** Byte sequence literal. */
   @SuppressWarnings("ArrayRecordComponent")
   record BytesValue(byte[] value, int sourceIndex) implements CelExpr {
-    @Override public BytesValue withSourceIndex(int index) {
+    public BytesValue {
+      requireNonNull(value);
+    }
+
+    @Override
+    public BytesValue withSourceIndex(int index) {
       return new BytesValue(value, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return escapeBytes(value);
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
       return obj instanceof BytesValue other && java.util.Arrays.equals(value, other.value);
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
       return java.util.Arrays.hashCode(value);
     }
   }
 
   /** Variable or symbol lookup (e.g. {@code request}). */
   record Ident(String name, int sourceIndex) implements CelExpr {
+    public Ident {
+      requireNonNull(name);
+    }
+
     public Ident(String name) {
       this(name, 0);
     }
@@ -292,47 +322,68 @@ public sealed interface CelExpr {
       this(name, sourceIndex);
     }
 
-    @Override public Ident withSourceIndex(int index) {
+    @Override
+    public Ident withSourceIndex(int index) {
       return new Ident(name, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return CelParser.PLAIN_IDENTIFIER.matches(name) ? name : "`" + name + "`";
     }
   }
 
   /** Field selection (e.g. {@code operand.field}). */
   record Select(CelExpr operand, Ident field, int sourceIndex) implements CelExpr {
+    public Select {
+      requireNonNull(operand);
+      requireNonNull(field);
+    }
+
     public Select(CelExpr operand, Ident field) {
       this(operand, field, field.sourceIndex());
     }
 
-    @Override public Select withSourceIndex(int index) {
+    @Override
+    public Select withSourceIndex(int index) {
       return new Select(operand, field, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + operand + ")." + field;
     }
   }
 
   /** Subscript/indexing (e.g. {@code operand[index]}). */
   record Index(CelExpr operand, CelExpr index, int sourceIndex) implements CelExpr {
+    public Index {
+      requireNonNull(operand);
+      requireNonNull(index);
+    }
+
     public Index(CelExpr operand, CelExpr index) {
       this(operand, index, operand.sourceIndex());
     }
 
-    @Override public Index withSourceIndex(int index) {
+    @Override
+    public Index withSourceIndex(int index) {
       return new Index(operand, this.index, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + operand + ")[" + index + "]";
     }
   }
 
   /** Optional field selection (e.g. {@code operand.?field}). */
   record OptionalSelect(CelExpr operand, Ident field, int sourceIndex) implements CelExpr {
+    public OptionalSelect {
+      requireNonNull(operand);
+      requireNonNull(field);
+    }
+
     public OptionalSelect(CelExpr operand, Ident field) {
       this(operand, field, field.sourceIndex());
     }
@@ -345,17 +396,24 @@ public sealed interface CelExpr {
       this(operand, new Ident(fieldName), sourceIndex);
     }
 
-    @Override public OptionalSelect withSourceIndex(int index) {
+    @Override
+    public OptionalSelect withSourceIndex(int index) {
       return new OptionalSelect(operand, field, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + operand + ").?" + field;
     }
   }
 
   /** Optional subscript/indexing (e.g. {@code operand[?index]}). */
   record OptionalIndex(CelExpr operand, CelExpr index, int sourceIndex) implements CelExpr {
+    public OptionalIndex {
+      requireNonNull(operand);
+      requireNonNull(index);
+    }
+
     public OptionalIndex(CelExpr operand, CelExpr index) {
       this(operand, index, index.sourceIndex());
     }
@@ -364,11 +422,13 @@ public sealed interface CelExpr {
       this(operand, index, sourceIndex);
     }
 
-    @Override public OptionalIndex withSourceIndex(int index) {
+    @Override
+    public OptionalIndex withSourceIndex(int index) {
       return new OptionalIndex(operand, this.index, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + operand + ")[?" + index + "]";
     }
   }
@@ -385,154 +445,252 @@ public sealed interface CelExpr {
 
   /** Addition: {@code x + y}. */
   record Add(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
-    @Override public Add withSourceIndex(int index) {
+    public Add {
+      requireNonNull(left);
+      requireNonNull(right);
+    }
+
+    @Override
+    public Add withSourceIndex(int index) {
       return new Add(left, right, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + left + ") + (" + right + ")";
     }
   }
 
   /** Subtraction: {@code x - y}. */
   record Subtract(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
-    @Override public Subtract withSourceIndex(int index) {
+    public Subtract {
+      requireNonNull(left);
+      requireNonNull(right);
+    }
+
+    @Override
+    public Subtract withSourceIndex(int index) {
       return new Subtract(left, right, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + left + ") - (" + right + ")";
     }
   }
 
   /** Multiplication: {@code x * y}. */
   record Multiply(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
-    @Override public Multiply withSourceIndex(int index) {
+    public Multiply {
+      requireNonNull(left);
+      requireNonNull(right);
+    }
+
+    @Override
+    public Multiply withSourceIndex(int index) {
       return new Multiply(left, right, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + left + ") * (" + right + ")";
     }
   }
 
   /** Division: {@code x / y}. */
   record Divide(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
-    @Override public Divide withSourceIndex(int index) {
+    public Divide {
+      requireNonNull(left);
+      requireNonNull(right);
+    }
+
+    @Override
+    public Divide withSourceIndex(int index) {
       return new Divide(left, right, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + left + ") / (" + right + ")";
     }
   }
 
   /** Modulo/remainder: {@code x % y}. */
   record Modulo(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
-    @Override public Modulo withSourceIndex(int index) {
+    public Modulo {
+      requireNonNull(left);
+      requireNonNull(right);
+    }
+
+    @Override
+    public Modulo withSourceIndex(int index) {
       return new Modulo(left, right, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + left + ") % (" + right + ")";
     }
   }
 
   /** Less than relational comparison: {@code x < y}. */
   record LessThan(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
-    @Override public LessThan withSourceIndex(int index) {
+    public LessThan {
+      requireNonNull(left);
+      requireNonNull(right);
+    }
+
+    @Override
+    public LessThan withSourceIndex(int index) {
       return new LessThan(left, right, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + left + ") < (" + right + ")";
     }
   }
 
   /** Less than or equal to relational comparison: {@code x <= y}. */
   record LessThanOrEqualTo(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
-    @Override public LessThanOrEqualTo withSourceIndex(int index) {
+    public LessThanOrEqualTo {
+      requireNonNull(left);
+      requireNonNull(right);
+    }
+
+    @Override
+    public LessThanOrEqualTo withSourceIndex(int index) {
       return new LessThanOrEqualTo(left, right, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + left + ") <= (" + right + ")";
     }
   }
 
   /** Greater than relational comparison: {@code x > y}. */
   record GreaterThan(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
-    @Override public GreaterThan withSourceIndex(int index) {
+    public GreaterThan {
+      requireNonNull(left);
+      requireNonNull(right);
+    }
+
+    @Override
+    public GreaterThan withSourceIndex(int index) {
       return new GreaterThan(left, right, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + left + ") > (" + right + ")";
     }
   }
 
   /** Greater than or equal to relational comparison: {@code x >= y}. */
   record GreaterThanOrEqualTo(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
-    @Override public GreaterThanOrEqualTo withSourceIndex(int index) {
+    public GreaterThanOrEqualTo {
+      requireNonNull(left);
+      requireNonNull(right);
+    }
+
+    @Override
+    public GreaterThanOrEqualTo withSourceIndex(int index) {
       return new GreaterThanOrEqualTo(left, right, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + left + ") >= (" + right + ")";
     }
   }
 
   /** Equality comparison: {@code x == y}. */
   record EqualTo(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
-    @Override public EqualTo withSourceIndex(int index) {
+    public EqualTo {
+      requireNonNull(left);
+      requireNonNull(right);
+    }
+
+    @Override
+    public EqualTo withSourceIndex(int index) {
       return new EqualTo(left, right, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + left + ") == (" + right + ")";
     }
   }
 
   /** Inequality comparison: {@code x != y}. */
   record NotEqualTo(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
-    @Override public NotEqualTo withSourceIndex(int index) {
+    public NotEqualTo {
+      requireNonNull(left);
+      requireNonNull(right);
+    }
+
+    @Override
+    public NotEqualTo withSourceIndex(int index) {
       return new NotEqualTo(left, right, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + left + ") != (" + right + ")";
     }
   }
 
   /** Containment comparison: {@code x in y}. */
   record In(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
-    @Override public In withSourceIndex(int index) {
+    public In {
+      requireNonNull(left);
+      requireNonNull(right);
+    }
+
+    @Override
+    public In withSourceIndex(int index) {
       return new In(left, right, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + left + ") in (" + right + ")";
     }
   }
 
   /** Logical AND comparison: {@code x && y}. */
   record And(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
-    @Override public And withSourceIndex(int index) {
+    public And {
+      requireNonNull(left);
+      requireNonNull(right);
+    }
+
+    @Override
+    public And withSourceIndex(int index) {
       return new And(left, right, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + left + ") && (" + right + ")";
     }
   }
 
   /** Logical OR comparison: {@code x || y}. */
   record Or(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
-    @Override public Or withSourceIndex(int index) {
+    public Or {
+      requireNonNull(left);
+      requireNonNull(right);
+    }
+
+    @Override
+    public Or withSourceIndex(int index) {
       return new Or(left, right, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + left + ") || (" + right + ")";
     }
   }
@@ -544,22 +702,34 @@ public sealed interface CelExpr {
 
   /** Unary sign negation: {@code -x}. */
   record Negative(CelExpr operand, int sourceIndex) implements Unary {
-    @Override public Negative withSourceIndex(int index) {
+    public Negative {
+      requireNonNull(operand);
+    }
+
+    @Override
+    public Negative withSourceIndex(int index) {
       return new Negative(operand, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "-(" + operand + ")";
     }
   }
 
   /** Logical negation: {@code !x}. */
   record Not(CelExpr operand, int sourceIndex) implements Unary {
-    @Override public Not withSourceIndex(int index) {
+    public Not {
+      requireNonNull(operand);
+    }
+
+    @Override
+    public Not withSourceIndex(int index) {
       return new Not(operand, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "!(" + operand + ")";
     }
   }
@@ -567,21 +737,34 @@ public sealed interface CelExpr {
   /** Ternary conditional (e.g. {@code condition ? trueExpr : falseExpr}). */
   record IfElse(CelExpr condition, CelExpr ifTrue, CelExpr ifFalse, int sourceIndex)
       implements CelExpr {
+    public IfElse {
+      requireNonNull(condition);
+      requireNonNull(ifTrue);
+      requireNonNull(ifFalse);
+    }
+
     public IfElse(CelExpr condition, CelExpr ifTrue, CelExpr ifFalse) {
       this(condition, ifTrue, ifFalse, condition.sourceIndex());
     }
 
-    @Override public IfElse withSourceIndex(int index) {
+    @Override
+    public IfElse withSourceIndex(int index) {
       return new IfElse(condition, ifTrue, ifFalse, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "(" + condition + ") ? (" + ifTrue + ") : (" + ifFalse + ")";
     }
   }
 
   /** Global function calls {@code f(args)}. */
   record FunctionCall(Ident function, List<CelExpr> args, int sourceIndex) implements CelExpr {
+    public FunctionCall {
+      requireNonNull(function);
+      requireNonNull(args);
+    }
+
     public FunctionCall(Ident function, List<CelExpr> args) {
       this(function, args, 0);
     }
@@ -590,11 +773,13 @@ public sealed interface CelExpr {
       this(function, args, sourceIndex);
     }
 
-    @Override public FunctionCall withSourceIndex(int index) {
+    @Override
+    public FunctionCall withSourceIndex(int index) {
       return new FunctionCall(function, args, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return function.name() + args.stream().collect(Joiner.on(", ").between('(', ')'));
     }
   }
@@ -602,6 +787,12 @@ public sealed interface CelExpr {
   /** Member calls {@code target.f(args)}. */
   record MemberCall(CelExpr target, Ident member, List<CelExpr> args, int sourceIndex)
       implements CelExpr {
+    public MemberCall {
+      requireNonNull(target);
+      requireNonNull(member);
+      requireNonNull(args);
+    }
+
     public MemberCall(CelExpr target, Ident member, List<CelExpr> args) {
       this(target, member, args, member.sourceIndex);
     }
@@ -610,11 +801,13 @@ public sealed interface CelExpr {
       this(target, member, args, sourceIndex);
     }
 
-    @Override public MemberCall withSourceIndex(int index) {
+    @Override
+    public MemberCall withSourceIndex(int index) {
       return new MemberCall(target, member, args, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "("
           + target
           + ")."
@@ -625,43 +818,67 @@ public sealed interface CelExpr {
 
   /** List creation (e.g. {@code [1, ?optional_var]}). */
   record ListOf(List<Element> elements, int sourceIndex) implements CelExpr {
-    @Override public ListOf withSourceIndex(int index) {
+    public ListOf {
+      requireNonNull(elements);
+    }
+
+    @Override
+    public ListOf withSourceIndex(int index) {
       return new ListOf(elements, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return elements.stream().collect(Joiner.on(", ").between('[', ']'));
     }
   }
 
   /** Map creation (e.g. {@code {"key": value, ? "opt_key": value}}). */
   record MapOf(List<Entry<CelExpr>> entries, int sourceIndex) implements CelExpr {
-    @Override public MapOf withSourceIndex(int index) {
+    public MapOf {
+      requireNonNull(entries);
+    }
+
+    @Override
+    public MapOf withSourceIndex(int index) {
       return new MapOf(entries, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return entries.stream().collect(Joiner.on(", ").between('{', '}'));
     }
   }
 
   /** Struct/message creation (e.g. {@code Type{field: value, ?opt_field: value}}). */
   record Struct(String typeName, List<Entry<Ident>> fields, int sourceIndex) implements CelExpr {
+    public Struct {
+      requireNonNull(typeName);
+      requireNonNull(fields);
+    }
+
     public Struct(String typeName, List<Entry<Ident>> fields) {
       this(typeName, fields, 0);
     }
 
-    @Override public Struct withSourceIndex(int index) {
+    @Override
+    public Struct withSourceIndex(int index) {
       return new Struct(typeName, fields, index);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return typeName + fields.stream().collect(Joiner.on(", ").between('{', '}'));
     }
   }
 
   /** An entry/field representing a key-value or field-value mapping in map or struct literals. */
   record Entry<K>(K key, CelExpr value, boolean optional, int sourceIndex) {
+    public Entry {
+      requireNonNull(key);
+      requireNonNull(value);
+    }
+
     public Entry(K key, CelExpr value, boolean optional) {
       this(key, value, optional, 0);
     }
@@ -697,7 +914,8 @@ public sealed interface CelExpr {
       return new Entry<>(key, value, true, key.sourceIndex());
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return optionalMarker(optional) + key + ": " + value;
     }
   }
@@ -706,6 +924,10 @@ public sealed interface CelExpr {
   sealed interface Macro extends CelExpr {
     /** The {@code has(member)} macro. */
     record Has(Select member, int sourceIndex) implements Macro {
+      public Has {
+        requireNonNull(member);
+      }
+
       public Has(Select member) {
         this(member, 0);
       }
@@ -714,16 +936,24 @@ public sealed interface CelExpr {
         this(member, sourceIndex);
       }
 
-      @Override public Has withSourceIndex(int index) {
+      @Override
+      public Has withSourceIndex(int index) {
         return new Has(member, index);
       }
 
-      @Override public String toString() {
+      @Override
+      public String toString() {
         return "has(" + member + ")";
       }
     }
 
     record All(CelExpr target, Ident var, CelExpr condition, int sourceIndex) implements Macro {
+      public All {
+        requireNonNull(target);
+        requireNonNull(var);
+        requireNonNull(condition);
+      }
+
       public All(CelExpr target, Ident var, CelExpr condition) {
         this(target, var, condition, target.sourceIndex());
       }
@@ -744,16 +974,24 @@ public sealed interface CelExpr {
         return var.name();
       }
 
-      @Override public All withSourceIndex(int index) {
+      @Override
+      public All withSourceIndex(int index) {
         return new All(target, var, condition, index);
       }
 
-      @Override public String toString() {
+      @Override
+      public String toString() {
         return target + ".all(" + var.name() + ", " + condition + ")";
       }
     }
 
     record Exists(CelExpr target, Ident var, CelExpr condition, int sourceIndex) implements Macro {
+      public Exists {
+        requireNonNull(target);
+        requireNonNull(var);
+        requireNonNull(condition);
+      }
+
       public Exists(CelExpr target, Ident var, CelExpr condition) {
         this(target, var, condition, target.sourceIndex());
       }
@@ -774,17 +1012,25 @@ public sealed interface CelExpr {
         return var.name();
       }
 
-      @Override public Exists withSourceIndex(int index) {
+      @Override
+      public Exists withSourceIndex(int index) {
         return new Exists(target, var, condition, index);
       }
 
-      @Override public String toString() {
+      @Override
+      public String toString() {
         return target + ".exists(" + var.name() + ", " + condition + ")";
       }
     }
 
     record ExistsOne(CelExpr target, Ident var, CelExpr condition, int sourceIndex)
         implements Macro {
+      public ExistsOne {
+        requireNonNull(target);
+        requireNonNull(var);
+        requireNonNull(condition);
+      }
+
       public ExistsOne(CelExpr target, Ident var, CelExpr condition) {
         this(target, var, condition, target.sourceIndex());
       }
@@ -805,16 +1051,24 @@ public sealed interface CelExpr {
         return var.name();
       }
 
-      @Override public ExistsOne withSourceIndex(int index) {
+      @Override
+      public ExistsOne withSourceIndex(int index) {
         return new ExistsOne(target, var, condition, index);
       }
 
-      @Override public String toString() {
+      @Override
+      public String toString() {
         return target + ".exists_one(" + var.name() + ", " + condition + ")";
       }
     }
 
     record Filter(CelExpr target, Ident var, CelExpr expr, int sourceIndex) implements Macro {
+      public Filter {
+        requireNonNull(target);
+        requireNonNull(var);
+        requireNonNull(expr);
+      }
+
       public Filter(CelExpr target, Ident var, CelExpr expr) {
         this(target, var, expr, target.sourceIndex());
       }
@@ -835,16 +1089,24 @@ public sealed interface CelExpr {
         return var.name();
       }
 
-      @Override public Filter withSourceIndex(int index) {
+      @Override
+      public Filter withSourceIndex(int index) {
         return new Filter(target, var, expr, index);
       }
 
-      @Override public String toString() {
+      @Override
+      public String toString() {
         return target + ".filter(" + var.name() + ", " + expr + ")";
       }
     }
 
     record Map(CelExpr target, Ident var, CelExpr expr, int sourceIndex) implements Macro {
+      public Map {
+        requireNonNull(target);
+        requireNonNull(var);
+        requireNonNull(expr);
+      }
+
       public Map(CelExpr target, Ident var, CelExpr expr) {
         this(target, var, expr, target.sourceIndex());
       }
@@ -865,17 +1127,26 @@ public sealed interface CelExpr {
         return var.name();
       }
 
-      @Override public Map withSourceIndex(int index) {
+      @Override
+      public Map withSourceIndex(int index) {
         return new Map(target, var, expr, index);
       }
 
-      @Override public String toString() {
+      @Override
+      public String toString() {
         return target + ".map(" + var.name() + ", " + expr + ")";
       }
     }
 
     record FilterMap(CelExpr target, Ident var, CelExpr filter, CelExpr transform, int sourceIndex)
         implements Macro {
+      public FilterMap {
+        requireNonNull(target);
+        requireNonNull(var);
+        requireNonNull(filter);
+        requireNonNull(transform);
+      }
+
       public FilterMap(CelExpr target, Ident var, CelExpr filter, CelExpr transform) {
         this(target, var, filter, transform, target.sourceIndex());
       }
@@ -903,18 +1174,25 @@ public sealed interface CelExpr {
         return var.name();
       }
 
-      @Override public FilterMap withSourceIndex(int index) {
+      @Override
+      public FilterMap withSourceIndex(int index) {
         return new FilterMap(target, var, filter, transform, index);
       }
 
-      @Override public String toString() {
+      @Override
+      public String toString() {
         return target + ".map(" + var.name() + ", " + filter + ", " + transform + ")";
       }
     }
   }
 
   record Element(CelExpr value, boolean optional) {
-    @Override public String toString() {
+    public Element {
+      requireNonNull(value);
+    }
+
+    @Override
+    public String toString() {
       return optionalMarker(optional) + value;
     }
   }
