@@ -1,11 +1,13 @@
 package com.google.mu.benchmarks.parsers;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.mu.cel.CelParser;
 import dev.cel.common.CelOptions;
 import dev.cel.parser.CelParserFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import org.junit.Test;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -17,7 +19,6 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import com.google.mu.cel.CelParser;
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
@@ -46,10 +47,12 @@ public class CelParserBenchmark {
   public void setup() {
     antlrParser =
         CelParserFactory.standardCelParserBuilder()
+            .setStandardMacros(dev.cel.parser.CelStandardMacro.STANDARD_MACROS)
             .setOptions(
                 CelOptions.current()
                     .enableOptionalSyntax(true)
                     .retainRepeatedUnaryOperators(true)
+                    .populateMacroCalls(true)
                     .build())
             .build();
 
@@ -325,6 +328,199 @@ public class CelParserBenchmark {
   public void benchmarkLabsText_cppSuite(Blackhole bh) {
     for (String expr : VALID_CPP_EXPRS) {
       bh.consume(labsParser.parse(expr));
+    }
+  }
+
+  @Test
+  public void sanityParityCheck() throws Exception {
+    setup();
+    assertParity(smokeTestExpr);
+    assertParity(chainedOrsExpr);
+    assertParity(chainedAndsExpr);
+    assertParity(messageCreationExpr);
+    assertParity(anyFieldMessageSelectionExpr);
+    assertParity(deepFieldMessageSelectionExpr);
+    assertParity(longListExpr);
+    assertParity(simpleMessageContextExpr);
+    assertParity(listComprehensionExpr);
+    assertParity(mapComprehensionExpr);
+    for (String expr : VALID_CPP_EXPRS) {
+      assertParity(expr);
+    }
+  }
+
+  private void assertParity(String expr) throws Exception {
+    dev.cel.common.CelAbstractSyntaxTree antlrAst = antlrParser.parse(expr).getAst();
+    dev.cel.expr.ParsedExpr antlrParsed =
+        dev.cel.common.CelProtoAbstractSyntaxTree.fromCelAst(antlrAst).toParsedExpr();
+    com.google.api.expr.v1alpha1.ParsedExpr labsParsed = labsParser.parseToProto(expr);
+    assertExprEquals(expr, labsParsed.getExpr(), labsParsed, antlrParsed.getExpr(), antlrParsed);
+  }
+
+  private static void assertExprEquals(
+      String expr,
+      com.google.api.expr.v1alpha1.Expr labsExpr,
+      com.google.api.expr.v1alpha1.ParsedExpr labsParsed,
+      dev.cel.expr.Expr antlrExpr,
+      dev.cel.expr.ParsedExpr antlrParsed) {
+
+    org.junit.Assert.assertEquals(
+        "Expression kind mismatch for expression ["
+            + expr
+            + "] at node: "
+            + labsExpr
+            + " vs "
+            + antlrExpr,
+        antlrExpr.getExprKindCase().name(),
+        labsExpr.getExprKindCase().name());
+
+    int labsPos = labsParsed.getSourceInfo().getPositionsMap().getOrDefault(labsExpr.getId(), -1);
+    int antlrPos =
+        antlrParsed.getSourceInfo().getPositionsMap().getOrDefault(antlrExpr.getId(), -1);
+
+    boolean isNegativeLiteral =
+        labsExpr.getExprKindCase() == com.google.api.expr.v1alpha1.Expr.ExprKindCase.CONST_EXPR
+            && (labsExpr.getConstExpr().getInt64Value() < 0
+                || labsExpr.getConstExpr().getUint64Value() < 0
+                || labsExpr.getConstExpr().getDoubleValue() < 0);
+
+    if (!isNegativeLiteral) {
+      org.junit.Assert.assertEquals(
+          "Position mismatch for expression [" + expr + "] at node: " + labsExpr,
+          antlrPos,
+          labsPos);
+    }
+
+    boolean labsHasMacro =
+        labsParsed.getSourceInfo().getMacroCallsMap().containsKey(labsExpr.getId());
+    boolean antlrHasMacro =
+        antlrParsed.getSourceInfo().getMacroCallsMap().containsKey(antlrExpr.getId());
+    if (antlrHasMacro != labsHasMacro) {
+      System.err.println("Expression: " + expr);
+      System.err.println(
+          "ANTLR Macro calls keys: "
+              + antlrParsed.getSourceInfo().getMacroCallsMap().keySet()
+              + " map: "
+              + antlrParsed.getSourceInfo().getMacroCallsMap());
+      System.err.println(
+          "Labs Macro calls keys: "
+              + labsParsed.getSourceInfo().getMacroCallsMap().keySet()
+              + " map: "
+              + labsParsed.getSourceInfo().getMacroCallsMap());
+    }
+    org.junit.Assert.assertEquals(
+        "Macro presence mismatch for expression [" + expr + "] at node: " + labsExpr,
+        antlrHasMacro,
+        labsHasMacro);
+    if (labsHasMacro) {
+      com.google.api.expr.v1alpha1.Expr labsMacro =
+          labsParsed.getSourceInfo().getMacroCallsMap().get(labsExpr.getId());
+      dev.cel.expr.Expr antlrMacro =
+          antlrParsed.getSourceInfo().getMacroCallsMap().get(antlrExpr.getId());
+      assertExprEquals(expr, labsMacro, labsParsed, antlrMacro, antlrParsed);
+    }
+
+    switch (labsExpr.getExprKindCase()) {
+      case CONST_EXPR:
+        org.junit.Assert.assertEquals(
+            antlrExpr.getConstExpr().getConstantKindCase().name(),
+            labsExpr.getConstExpr().getConstantKindCase().name());
+        break;
+      case IDENT_EXPR:
+        org.junit.Assert.assertEquals(
+            antlrExpr.getIdentExpr().getName(), labsExpr.getIdentExpr().getName());
+        break;
+      case SELECT_EXPR:
+        org.junit.Assert.assertEquals(
+            antlrExpr.getSelectExpr().getField(), labsExpr.getSelectExpr().getField());
+        assertExprEquals(
+            expr,
+            labsExpr.getSelectExpr().getOperand(),
+            labsParsed,
+            antlrExpr.getSelectExpr().getOperand(),
+            antlrParsed);
+        break;
+      case CALL_EXPR:
+        org.junit.Assert.assertEquals(
+            antlrExpr.getCallExpr().getFunction(), labsExpr.getCallExpr().getFunction());
+        org.junit.Assert.assertEquals(
+            antlrExpr.getCallExpr().hasTarget(), labsExpr.getCallExpr().hasTarget());
+        if (labsExpr.getCallExpr().hasTarget()) {
+          assertExprEquals(
+              expr,
+              labsExpr.getCallExpr().getTarget(),
+              labsParsed,
+              antlrExpr.getCallExpr().getTarget(),
+              antlrParsed);
+        }
+        org.junit.Assert.assertEquals(
+            antlrExpr.getCallExpr().getArgsCount(), labsExpr.getCallExpr().getArgsCount());
+        for (int i = 0; i < labsExpr.getCallExpr().getArgsCount(); i++) {
+          assertExprEquals(
+              expr,
+              labsExpr.getCallExpr().getArgs(i),
+              labsParsed,
+              antlrExpr.getCallExpr().getArgs(i),
+              antlrParsed);
+        }
+        break;
+      case LIST_EXPR:
+        org.junit.Assert.assertEquals(
+            antlrExpr.getListExpr().getElementsCount(), labsExpr.getListExpr().getElementsCount());
+        for (int i = 0; i < labsExpr.getListExpr().getElementsCount(); i++) {
+          assertExprEquals(
+              expr,
+              labsExpr.getListExpr().getElements(i),
+              labsParsed,
+              antlrExpr.getListExpr().getElements(i),
+              antlrParsed);
+        }
+        break;
+      case STRUCT_EXPR:
+        org.junit.Assert.assertEquals(
+            antlrExpr.getStructExpr().getMessageName(), labsExpr.getStructExpr().getMessageName());
+        org.junit.Assert.assertEquals(
+            antlrExpr.getStructExpr().getEntriesCount(),
+            labsExpr.getStructExpr().getEntriesCount());
+        for (int i = 0; i < labsExpr.getStructExpr().getEntriesCount(); i++) {
+          com.google.api.expr.v1alpha1.Expr.CreateStruct.Entry labsEntry =
+              labsExpr.getStructExpr().getEntries(i);
+          dev.cel.expr.Expr.CreateStruct.Entry antlrEntry = antlrExpr.getStructExpr().getEntries(i);
+          org.junit.Assert.assertEquals(
+              antlrEntry.getKeyKindCase().name(), labsEntry.getKeyKindCase().name());
+          switch (labsEntry.getKeyKindCase()) {
+            case FIELD_KEY:
+              org.junit.Assert.assertEquals(antlrEntry.getFieldKey(), labsEntry.getFieldKey());
+              break;
+            case MAP_KEY:
+              assertExprEquals(
+                  expr, labsEntry.getMapKey(), labsParsed, antlrEntry.getMapKey(), antlrParsed);
+              break;
+          }
+          assertExprEquals(
+              expr, labsEntry.getValue(), labsParsed, antlrEntry.getValue(), antlrParsed);
+        }
+        break;
+      case COMPREHENSION_EXPR:
+        dev.cel.expr.Expr.Comprehension antlrComp = antlrExpr.getComprehensionExpr();
+        com.google.api.expr.v1alpha1.Expr.Comprehension labsComp = labsExpr.getComprehensionExpr();
+        org.junit.Assert.assertEquals(antlrComp.getIterVar(), labsComp.getIterVar());
+        org.junit.Assert.assertEquals(antlrComp.getAccuVar(), labsComp.getAccuVar());
+        assertExprEquals(
+            expr, labsComp.getIterRange(), labsParsed, antlrComp.getIterRange(), antlrParsed);
+        assertExprEquals(
+            expr, labsComp.getAccuInit(), labsParsed, antlrComp.getAccuInit(), antlrParsed);
+        assertExprEquals(
+            expr,
+            labsComp.getLoopCondition(),
+            labsParsed,
+            antlrComp.getLoopCondition(),
+            antlrParsed);
+        assertExprEquals(
+            expr, labsComp.getLoopStep(), labsParsed, antlrComp.getLoopStep(), antlrParsed);
+        assertExprEquals(
+            expr, labsComp.getResult(), labsParsed, antlrComp.getResult(), antlrParsed);
+        break;
     }
   }
 }

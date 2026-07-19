@@ -113,7 +113,7 @@ final class CelProtoConverter {
       case CelExpr.Ident v -> builder.setIdentExpr(Expr.Ident.newBuilder().setName(v.name()));
       case CelExpr.Select v ->
           builder.setSelectExpr(
-              Expr.Select.newBuilder().setOperand(convert(v.operand())).setField(v.field()));
+              Expr.Select.newBuilder().setOperand(convert(v.operand())).setField(v.field().name()));
       case CelExpr.Index v ->
           builder.setCallExpr(
               Expr.Call.newBuilder()
@@ -125,7 +125,9 @@ final class CelProtoConverter {
               Expr.Call.newBuilder()
                   .setFunction("_?._")
                   .addArgs(convert(v.operand()))
-                  .addArgs(convert(new CelExpr.StringValue(v.operand().sourceIndex(), v.field()))));
+                  .addArgs(
+                      convert(
+                          new CelExpr.StringValue(v.field().name(), v.operand().sourceIndex()))));
       case CelExpr.OptionalIndex v ->
           builder.setCallExpr(
               Expr.Call.newBuilder()
@@ -222,7 +224,7 @@ final class CelProtoConverter {
                   .setFunction("@in")
                   .addArgs(convert(v.left()))
                   .addArgs(convert(v.right())));
-      case CelExpr.Ternary v ->
+      case CelExpr.IfElse v ->
           builder.setCallExpr(
               Expr.Call.newBuilder()
                   .setFunction("_?_:_")
@@ -244,7 +246,7 @@ final class CelProtoConverter {
         }
         builder.setCallExpr(callBuilder);
       }
-      case CelExpr.ListLiteral v -> {
+      case CelExpr.ListOf v -> {
         Expr.CreateList.Builder listBuilder = Expr.CreateList.newBuilder();
         for (int i = 0; i < v.elements().size(); i++) {
           CelExpr.Element elem = v.elements().get(i);
@@ -255,7 +257,7 @@ final class CelProtoConverter {
         }
         builder.setListExpr(listBuilder);
       }
-      case CelExpr.MapLiteral v -> {
+      case CelExpr.MapOf v -> {
         Expr.CreateStruct.Builder structBuilder = Expr.CreateStruct.newBuilder();
         for (CelExpr.Entry<CelExpr> entry : v.entries()) {
           long entryId = idGenerator.getAndIncrement();
@@ -269,7 +271,7 @@ final class CelProtoConverter {
         }
         builder.setStructExpr(structBuilder);
       }
-      case CelExpr.StructLiteral v -> {
+      case CelExpr.Struct v -> {
         Expr.CreateStruct.Builder structBuilder =
             Expr.CreateStruct.newBuilder().setMessageName(v.messageName());
         for (CelExpr.Entry<CelExpr.Ident> field : v.fields()) {
@@ -288,7 +290,7 @@ final class CelProtoConverter {
         builder.setSelectExpr(
             Expr.Select.newBuilder()
                 .setOperand(convert(v.member().operand()))
-                .setField(v.member().field())
+                .setField(v.member().field().name())
                 .setTestOnly(true));
         sourceInfo.putMacroCalls(id, serializeMacroCall(v));
       }
@@ -296,6 +298,9 @@ final class CelProtoConverter {
         builder.setComprehensionExpr(toComprehensionProto(v.sourceIndex(), v));
         sourceInfo.putMacroCalls(id, serializeMacroCall(v));
       }
+      case CelExpr.ListLiteral v -> throw new UnsupportedOperationException();
+      case CelExpr.MapLiteral v -> throw new UnsupportedOperationException();
+      case CelExpr.StructLiteral v -> throw new UnsupportedOperationException();
     }
     Expr result = builder.build();
     if (!isSerializingMacroCall) {
@@ -415,7 +420,7 @@ final class CelProtoConverter {
         findMacros(v.left(), result);
         findMacros(v.right(), result);
       }
-      case CelExpr.Ternary v -> {
+      case CelExpr.IfElse v -> {
         findMacros(v.condition(), result);
         findMacros(v.ifTrue(), result);
         findMacros(v.ifFalse(), result);
@@ -916,43 +921,43 @@ final class CelProtoConverter {
     return switch (macro) {
       case CelExpr.Macro.Has v ->
           new CelExpr.FunctionCall(
-              v.sourceIndex(), new CelExpr.Ident(v.sourceIndex(), "has"), List.of(v.member()));
+              new CelExpr.Ident("has", v.sourceIndex()), List.of(v.member()), v.sourceIndex());
       case CelExpr.Macro.All v ->
           new CelExpr.MemberCall(
-              v.sourceIndex(),
               v.target(),
-              new CelExpr.Ident(v.sourceIndex(), "all"),
-              List.of(v.var(), v.condition()));
+              new CelExpr.Ident("all", v.sourceIndex()),
+              List.of(v.var(), v.condition()),
+              v.sourceIndex());
       case CelExpr.Macro.Exists v ->
           new CelExpr.MemberCall(
-              v.sourceIndex(),
               v.target(),
-              new CelExpr.Ident(v.sourceIndex(), "exists"),
-              List.of(v.var(), v.condition()));
+              new CelExpr.Ident("exists", v.sourceIndex()),
+              List.of(v.var(), v.condition()),
+              v.sourceIndex());
       case CelExpr.Macro.ExistsOne v ->
           new CelExpr.MemberCall(
-              v.sourceIndex(),
               v.target(),
-              new CelExpr.Ident(v.sourceIndex(), "exists_one"),
-              List.of(v.var(), v.condition()));
+              new CelExpr.Ident("exists_one", v.sourceIndex()),
+              List.of(v.var(), v.condition()),
+              v.sourceIndex());
       case CelExpr.Macro.Filter v ->
           new CelExpr.MemberCall(
-              v.sourceIndex(),
               v.target(),
-              new CelExpr.Ident(v.sourceIndex(), "filter"),
-              List.of(v.var(), v.expr()));
+              new CelExpr.Ident("filter", v.sourceIndex()),
+              List.of(v.var(), v.expr()),
+              v.sourceIndex());
       case CelExpr.Macro.Map v ->
           new CelExpr.MemberCall(
-              v.sourceIndex(),
               v.target(),
-              new CelExpr.Ident(v.sourceIndex(), "map"),
-              List.of(v.var(), v.expr()));
+              new CelExpr.Ident("map", v.sourceIndex()),
+              List.of(v.var(), v.expr()),
+              v.sourceIndex());
       case CelExpr.Macro.FilterMap v ->
           new CelExpr.MemberCall(
-              v.sourceIndex(),
               v.target(),
-              new CelExpr.Ident(v.sourceIndex(), "map"),
-              List.of(v.var(), v.filter(), v.transform()));
+              new CelExpr.Ident("map", v.sourceIndex()),
+              List.of(v.var(), v.filter(), v.transform()),
+              v.sourceIndex());
     };
   }
 }

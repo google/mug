@@ -31,42 +31,42 @@ public sealed interface CelExpr {
 
   /** {@code CelExpr.value(true)} is equivalent to {@code CelExpr.of("true")}. */
   static BoolValue value(boolean value) {
-    return new BoolValue(0, value);
+    return new BoolValue(value, 0);
   }
 
   /** {@code CelExpr.value(123)} is equivalent to {@code CelExpr.of("123")}. */
   static LongValue value(long value) {
-    return new LongValue(0, value);
+    return new LongValue(value, 0);
   }
 
   /** {@code CelExpr.value(12.3)} is equivalent to {@code CelExpr.of("12.3")}. */
   static DoubleValue value(double value) {
-    return new DoubleValue(0, value);
+    return new DoubleValue(value, 0);
   }
 
   /** {@code CelExpr.value("foo")} is equivalent to {@code CelExpr.of("'foo'")}. */
   static StringValue string(String value) {
-    return new StringValue(0, value);
+    return new StringValue(value, 0);
   }
 
   /**
    * {@code CelExpr.bytes((byte) 1, (byte) 2)} is equivalent to {@code CelExpr.of("b'\\x01\\x02'")}.
    */
   static BytesValue bytes(byte... value) {
-    return new BytesValue(0, value);
+    return new BytesValue(value, 0);
   }
 
   /** {@code CelExpr.unsigned(123)} is equivalent to {@code CelExpr.of("123u")}. */
   static UintValue unsigned(long value) {
-    return new UintValue(0, value);
+    return new UintValue(value, 0);
   }
 
   /**
    * {@code CelExpr.struct("MyMsg", Map.of("field", new Element(value(1), true)))} is equivalent to
    * {@code CelExpr.of("MyMsg{?field: 1}")}.
    */
-  static StructLiteral struct(String messageName, Map<String, Element> fields) {
-    return new StructLiteral(
+  static Struct struct(String messageName, Map<String, Element> fields) {
+    return new Struct(
         messageName,
         fields.entrySet().stream()
             .map(
@@ -78,114 +78,122 @@ public sealed interface CelExpr {
 
   /** {@code CelExpr.negative(value(5))} is equivalent to {@code CelExpr.of("-(5)")}. */
   static Negative negative(CelExpr expr) {
-    return new Negative(expr.sourceIndex(), expr);
+    return new Negative(expr, expr.sourceIndex());
   }
 
   /** {@code CelExpr.not(value(true))} is equivalent to {@code CelExpr.of("!true")}. */
   static Not not(CelExpr expr) {
-    return new Not(expr.sourceIndex(), expr);
+    return new Not(expr, expr.sourceIndex());
   }
 
   /** {@code expr.select("field")} is equivalent to {@code CelExpr.of("expr.field")}. */
+  default Select select(Ident field) {
+    return new Select(this, field, field.sourceIndex());
+  }
+
   default Select select(String field) {
-    return new Select(sourceIndex(), this, field);
+    return select(new Ident(field));
+  }
+
+  default OptionalSelect optionalSelect(String field) {
+    return optionalSelect(new Ident(field));
   }
 
   /** {@code expr.index(value(0))} is equivalent to {@code CelExpr.of("expr[0]")}. */
   default Index index(CelExpr index) {
-    return new Index(sourceIndex(), this, index);
+    return new Index(this, index, index.sourceIndex());
   }
 
   /** {@code expr.optionalSelect("field")} is equivalent to {@code CelExpr.of("expr.?field")}. */
-  default OptionalSelect optionalSelect(String field) {
-    return new OptionalSelect(sourceIndex(), this, field);
+  default OptionalSelect optionalSelect(Ident field) {
+    return new OptionalSelect(this, field, field.sourceIndex());
   }
 
   /** {@code expr.optionalIndex(value(0))} is equivalent to {@code CelExpr.of("expr[?0]")}. */
   default OptionalIndex optionalIndex(CelExpr index) {
-    return new OptionalIndex(sourceIndex(), this, index);
+    return new OptionalIndex(this, index, sourceIndex());
   }
 
   /** {@code a.add(b)} is equivalent to {@code CelExpr.of("a + b")}. */
   default Add add(CelExpr that) {
-    return new Add(sourceIndex(), this, that);
+    return new Add(this, that, sourceIndex());
   }
 
   /** {@code a.subtract(b)} is equivalent to {@code CelExpr.of("a - b")}. */
   default Subtract subtract(CelExpr that) {
-    return new Subtract(sourceIndex(), this, that);
+    return new Subtract(this, that, sourceIndex());
   }
 
   /** {@code a.multiply(b)} is equivalent to {@code CelExpr.of("a * b")}. */
   default Multiply multiply(CelExpr that) {
-    return new Multiply(sourceIndex(), this, that);
+    return new Multiply(this, that, sourceIndex());
   }
 
   /** {@code a.divide(b)} is equivalent to {@code CelExpr.of("a / b")}. */
   default Divide divide(CelExpr that) {
-    return new Divide(sourceIndex(), this, that);
+    return new Divide(this, that, sourceIndex());
   }
 
   /** {@code a.modulo(b)} is equivalent to {@code CelExpr.of("a % b")}. */
   default Modulo modulo(CelExpr that) {
-    return new Modulo(sourceIndex(), this, that);
+    return new Modulo(this, that, sourceIndex());
   }
 
   /** {@code a.equalTo(b)} is equivalent to {@code CelExpr.of("a == b")}. */
   default EqualTo equalTo(CelExpr that) {
-    return new EqualTo(sourceIndex(), this, that);
+    return new EqualTo(this, that, sourceIndex());
   }
 
   /** {@code a.notEqualTo(b)} is equivalent to {@code CelExpr.of("a != b")}. */
   default NotEqualTo notEqualTo(CelExpr that) {
-    return new NotEqualTo(sourceIndex(), this, that);
+    return new NotEqualTo(this, that, sourceIndex());
   }
 
   /** {@code a.lessThan(b)} is equivalent to {@code CelExpr.of("a < b")}. */
   default LessThan lessThan(CelExpr that) {
-    return new LessThan(sourceIndex(), this, that);
+    return new LessThan(this, that, sourceIndex());
   }
 
   /** {@code a.atMost(b)} is equivalent to {@code CelExpr.of("a <= b")}. */
   default LessThanOrEqualTo atMost(CelExpr ceiling) {
-    return new LessThanOrEqualTo(sourceIndex(), this, ceiling);
+    return new LessThanOrEqualTo(this, ceiling, sourceIndex());
   }
 
   /** {@code a.greaterThan(b)} is equivalent to {@code CelExpr.of("a > b")}. */
   default GreaterThan greaterThan(CelExpr that) {
-    return new GreaterThan(sourceIndex(), this, that);
+    return new GreaterThan(this, that, sourceIndex());
   }
 
   /** {@code a.atLeast(b)} is equivalent to {@code CelExpr.of("a >= b")}. */
   default GreaterThanOrEqualTo atLeast(CelExpr floor) {
-    return new GreaterThanOrEqualTo(sourceIndex(), this, floor);
+    return new GreaterThanOrEqualTo(this, floor, sourceIndex());
   }
 
   /** {@code a.in(b)} is equivalent to {@code CelExpr.of("a in b")}. */
   default In in(CelExpr that) {
-    return new In(sourceIndex(), this, that);
+    return new In(this, that, sourceIndex());
   }
 
   /** {@code a.and(b)} is equivalent to {@code CelExpr.of("a && b")}. */
   default And and(CelExpr that) {
-    return new And(sourceIndex(), this, that);
+    return new And(this, that, sourceIndex());
   }
 
   /** {@code a.or(b)} is equivalent to {@code CelExpr.of("a || b")}. */
   default Or or(CelExpr that) {
-    return new Or(sourceIndex(), this, that);
+    return new Or(this, that, sourceIndex());
   }
 
   /** {@code active.ifElse(1, 0)} is equivalent to {@code CelExpr.of("active ? 1 : 0")}. */
-  default Ternary ifElse(CelExpr ifTrue, CelExpr ifFalse) {
-    return new Ternary(sourceIndex(), this, ifTrue, ifFalse);
+  default IfElse ifElse(CelExpr ifTrue, CelExpr ifFalse) {
+    return new IfElse(this, ifTrue, ifFalse, sourceIndex());
   }
 
   /**
    * {@code target.call(member, args)} is equivalent to {@code CelExpr.of("target.member(args)")}.
    */
   default MemberCall call(Ident member, List<CelExpr> args) {
-    return new MemberCall(sourceIndex(), this, member, args);
+    return new MemberCall(this, member, args, sourceIndex());
   }
 
   /** Null literal. */
@@ -202,10 +210,10 @@ public sealed interface CelExpr {
   }
 
   /** Boolean literal. */
-  record BoolValue(int sourceIndex, boolean value) implements CelExpr {
+  record BoolValue(boolean value, int sourceIndex) implements CelExpr {
     @Override
     public BoolValue withSourceIndex(int index) {
-      return new BoolValue(index, value);
+      return new BoolValue(value, index);
     }
 
     @Override
@@ -215,10 +223,10 @@ public sealed interface CelExpr {
   }
 
   /** Signed 64-bit integer literal. */
-  record LongValue(int sourceIndex, long value) implements CelExpr {
+  record LongValue(long value, int sourceIndex) implements CelExpr {
     @Override
     public LongValue withSourceIndex(int index) {
-      return new LongValue(index, value);
+      return new LongValue(value, index);
     }
 
     @Override
@@ -228,10 +236,10 @@ public sealed interface CelExpr {
   }
 
   /** Unsigned 64-bit integer literal. */
-  record UintValue(int sourceIndex, long value) implements CelExpr {
+  record UintValue(long value, int sourceIndex) implements CelExpr {
     @Override
     public UintValue withSourceIndex(int index) {
-      return new UintValue(index, value);
+      return new UintValue(value, index);
     }
 
     @Override
@@ -241,10 +249,10 @@ public sealed interface CelExpr {
   }
 
   /** Double-precision floating point literal. */
-  record DoubleValue(int sourceIndex, double value) implements CelExpr {
+  record DoubleValue(double value, int sourceIndex) implements CelExpr {
     @Override
     public DoubleValue withSourceIndex(int index) {
-      return new DoubleValue(index, value);
+      return new DoubleValue(value, index);
     }
 
     @Override
@@ -254,10 +262,10 @@ public sealed interface CelExpr {
   }
 
   /** UTF-8 string literal. */
-  record StringValue(int sourceIndex, String value) implements CelExpr {
+  record StringValue(String value, int sourceIndex) implements CelExpr {
     @Override
     public StringValue withSourceIndex(int index) {
-      return new StringValue(index, value);
+      return new StringValue(value, index);
     }
 
     @Override
@@ -268,10 +276,10 @@ public sealed interface CelExpr {
 
   /** Byte sequence literal. */
   @SuppressWarnings("ArrayRecordComponent")
-  record BytesValue(int sourceIndex, byte[] value) implements CelExpr {
+  record BytesValue(byte[] value, int sourceIndex) implements CelExpr {
     @Override
     public BytesValue withSourceIndex(int index) {
-      return new BytesValue(index, value);
+      return new BytesValue(value, index);
     }
 
     @Override
@@ -291,48 +299,52 @@ public sealed interface CelExpr {
   }
 
   /** Variable or symbol lookup (e.g. {@code request}). */
-  record Ident(int sourceIndex, String name) implements CelExpr {
+  record Ident(String name, int sourceIndex) implements CelExpr {
     public Ident(String name) {
-      this(0, name);
+      this(name, 0);
+    }
+
+    public Ident(int sourceIndex, String name) {
+      this(name, sourceIndex);
     }
 
     @Override
     public Ident withSourceIndex(int index) {
-      return new Ident(index, name);
+      return new Ident(name, index);
     }
 
     @Override
     public String toString() {
-      return CelParser.IDENTIFIER.matches(name) ? name : "`" + name + "`";
+      return CelParser.PLAIN_IDENTIFIER.matches(name) ? name : "`" + name + "`";
     }
   }
 
   /** Field selection (e.g. {@code operand.field}). */
-  record Select(int sourceIndex, CelExpr operand, String field) implements CelExpr {
-    public Select(CelExpr operand, String field) {
-      this(operand.sourceIndex(), operand, field);
+  record Select(CelExpr operand, Ident field, int sourceIndex) implements CelExpr {
+    public Select(CelExpr operand, Ident field) {
+      this(operand, field, field.sourceIndex());
     }
 
     @Override
     public Select withSourceIndex(int index) {
-      return new Select(index, operand, field);
+      return new Select(operand, field, index);
     }
 
     @Override
     public String toString() {
-      return "(" + operand + ")." + new Ident(field);
+      return "(" + operand + ")." + field;
     }
   }
 
   /** Subscript/indexing (e.g. {@code operand[index]}). */
-  record Index(int sourceIndex, CelExpr operand, CelExpr index) implements CelExpr {
+  record Index(CelExpr operand, CelExpr index, int sourceIndex) implements CelExpr {
     public Index(CelExpr operand, CelExpr index) {
-      this(operand.sourceIndex(), operand, index);
+      this(operand, index, operand.sourceIndex());
     }
 
     @Override
     public Index withSourceIndex(int index) {
-      return new Index(index, operand, this.index);
+      return new Index(operand, this.index, index);
     }
 
     @Override
@@ -342,31 +354,43 @@ public sealed interface CelExpr {
   }
 
   /** Optional field selection (e.g. {@code operand.?field}). */
-  record OptionalSelect(int sourceIndex, CelExpr operand, String field) implements CelExpr {
-    public OptionalSelect(CelExpr operand, String field) {
-      this(operand.sourceIndex(), operand, field);
+  record OptionalSelect(CelExpr operand, Ident field, int sourceIndex) implements CelExpr {
+    public OptionalSelect(CelExpr operand, Ident field) {
+      this(operand, field, field.sourceIndex());
+    }
+
+    public OptionalSelect(int sourceIndex, CelExpr operand, Ident field) {
+      this(operand, field, sourceIndex);
+    }
+
+    public OptionalSelect(int sourceIndex, CelExpr operand, String fieldName) {
+      this(operand, new Ident(fieldName), sourceIndex);
     }
 
     @Override
     public OptionalSelect withSourceIndex(int index) {
-      return new OptionalSelect(index, operand, field);
+      return new OptionalSelect(operand, field, index);
     }
 
     @Override
     public String toString() {
-      return "(" + operand + ").?" + new Ident(field);
+      return "(" + operand + ").?" + field;
     }
   }
 
   /** Optional subscript/indexing (e.g. {@code operand[?index]}). */
-  record OptionalIndex(int sourceIndex, CelExpr operand, CelExpr index) implements CelExpr {
+  record OptionalIndex(CelExpr operand, CelExpr index, int sourceIndex) implements CelExpr {
     public OptionalIndex(CelExpr operand, CelExpr index) {
-      this(operand.sourceIndex(), operand, index);
+      this(operand, index, index.sourceIndex());
+    }
+
+    public OptionalIndex(int sourceIndex, CelExpr operand, CelExpr index) {
+      this(operand, index, sourceIndex);
     }
 
     @Override
     public OptionalIndex withSourceIndex(int index) {
-      return new OptionalIndex(index, operand, this.index);
+      return new OptionalIndex(operand, this.index, index);
     }
 
     @Override
@@ -386,10 +410,10 @@ public sealed interface CelExpr {
   }
 
   /** Addition: {@code x + y}. */
-  record Add(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
+  record Add(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
     @Override
     public Add withSourceIndex(int index) {
-      return new Add(index, left, right);
+      return new Add(left, right, index);
     }
 
     @Override
@@ -399,10 +423,10 @@ public sealed interface CelExpr {
   }
 
   /** Subtraction: {@code x - y}. */
-  record Subtract(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
+  record Subtract(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
     @Override
     public Subtract withSourceIndex(int index) {
-      return new Subtract(index, left, right);
+      return new Subtract(left, right, index);
     }
 
     @Override
@@ -412,10 +436,10 @@ public sealed interface CelExpr {
   }
 
   /** Multiplication: {@code x * y}. */
-  record Multiply(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
+  record Multiply(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
     @Override
     public Multiply withSourceIndex(int index) {
-      return new Multiply(index, left, right);
+      return new Multiply(left, right, index);
     }
 
     @Override
@@ -425,10 +449,10 @@ public sealed interface CelExpr {
   }
 
   /** Division: {@code x / y}. */
-  record Divide(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
+  record Divide(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
     @Override
     public Divide withSourceIndex(int index) {
-      return new Divide(index, left, right);
+      return new Divide(left, right, index);
     }
 
     @Override
@@ -438,10 +462,10 @@ public sealed interface CelExpr {
   }
 
   /** Modulo/remainder: {@code x % y}. */
-  record Modulo(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
+  record Modulo(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
     @Override
     public Modulo withSourceIndex(int index) {
-      return new Modulo(index, left, right);
+      return new Modulo(left, right, index);
     }
 
     @Override
@@ -451,10 +475,10 @@ public sealed interface CelExpr {
   }
 
   /** Less than relational comparison: {@code x < y}. */
-  record LessThan(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
+  record LessThan(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
     @Override
     public LessThan withSourceIndex(int index) {
-      return new LessThan(index, left, right);
+      return new LessThan(left, right, index);
     }
 
     @Override
@@ -464,10 +488,10 @@ public sealed interface CelExpr {
   }
 
   /** Less than or equal to relational comparison: {@code x <= y}. */
-  record LessThanOrEqualTo(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
+  record LessThanOrEqualTo(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
     @Override
     public LessThanOrEqualTo withSourceIndex(int index) {
-      return new LessThanOrEqualTo(index, left, right);
+      return new LessThanOrEqualTo(left, right, index);
     }
 
     @Override
@@ -477,10 +501,10 @@ public sealed interface CelExpr {
   }
 
   /** Greater than relational comparison: {@code x > y}. */
-  record GreaterThan(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
+  record GreaterThan(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
     @Override
     public GreaterThan withSourceIndex(int index) {
-      return new GreaterThan(index, left, right);
+      return new GreaterThan(left, right, index);
     }
 
     @Override
@@ -490,10 +514,10 @@ public sealed interface CelExpr {
   }
 
   /** Greater than or equal to relational comparison: {@code x >= y}. */
-  record GreaterThanOrEqualTo(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
+  record GreaterThanOrEqualTo(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
     @Override
     public GreaterThanOrEqualTo withSourceIndex(int index) {
-      return new GreaterThanOrEqualTo(index, left, right);
+      return new GreaterThanOrEqualTo(left, right, index);
     }
 
     @Override
@@ -503,10 +527,10 @@ public sealed interface CelExpr {
   }
 
   /** Equality comparison: {@code x == y}. */
-  record EqualTo(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
+  record EqualTo(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
     @Override
     public EqualTo withSourceIndex(int index) {
-      return new EqualTo(index, left, right);
+      return new EqualTo(left, right, index);
     }
 
     @Override
@@ -516,10 +540,10 @@ public sealed interface CelExpr {
   }
 
   /** Inequality comparison: {@code x != y}. */
-  record NotEqualTo(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
+  record NotEqualTo(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
     @Override
     public NotEqualTo withSourceIndex(int index) {
-      return new NotEqualTo(index, left, right);
+      return new NotEqualTo(left, right, index);
     }
 
     @Override
@@ -529,10 +553,10 @@ public sealed interface CelExpr {
   }
 
   /** Containment comparison: {@code x in y}. */
-  record In(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
+  record In(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
     @Override
     public In withSourceIndex(int index) {
-      return new In(index, left, right);
+      return new In(left, right, index);
     }
 
     @Override
@@ -542,10 +566,10 @@ public sealed interface CelExpr {
   }
 
   /** Logical AND comparison: {@code x && y}. */
-  record And(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
+  record And(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
     @Override
     public And withSourceIndex(int index) {
-      return new And(index, left, right);
+      return new And(left, right, index);
     }
 
     @Override
@@ -555,10 +579,10 @@ public sealed interface CelExpr {
   }
 
   /** Logical OR comparison: {@code x || y}. */
-  record Or(int sourceIndex, CelExpr left, CelExpr right) implements Binary {
+  record Or(CelExpr left, CelExpr right, int sourceIndex) implements Binary {
     @Override
     public Or withSourceIndex(int index) {
-      return new Or(index, left, right);
+      return new Or(left, right, index);
     }
 
     @Override
@@ -573,10 +597,10 @@ public sealed interface CelExpr {
   }
 
   /** Unary sign negation: {@code -x}. */
-  record Negative(int sourceIndex, CelExpr operand) implements Unary {
+  record Negative(CelExpr operand, int sourceIndex) implements Unary {
     @Override
     public Negative withSourceIndex(int index) {
-      return new Negative(index, operand);
+      return new Negative(operand, index);
     }
 
     @Override
@@ -586,10 +610,10 @@ public sealed interface CelExpr {
   }
 
   /** Logical negation: {@code !x}. */
-  record Not(int sourceIndex, CelExpr operand) implements Unary {
+  record Not(CelExpr operand, int sourceIndex) implements Unary {
     @Override
     public Not withSourceIndex(int index) {
-      return new Not(index, operand);
+      return new Not(operand, index);
     }
 
     @Override
@@ -599,15 +623,15 @@ public sealed interface CelExpr {
   }
 
   /** Ternary conditional (e.g. {@code condition ? trueExpr : falseExpr}). */
-  record Ternary(int sourceIndex, CelExpr condition, CelExpr ifTrue, CelExpr ifFalse)
+  record IfElse(CelExpr condition, CelExpr ifTrue, CelExpr ifFalse, int sourceIndex)
       implements CelExpr {
-    public Ternary(CelExpr condition, CelExpr ifTrue, CelExpr ifFalse) {
-      this(condition.sourceIndex(), condition, ifTrue, ifFalse);
+    public IfElse(CelExpr condition, CelExpr ifTrue, CelExpr ifFalse) {
+      this(condition, ifTrue, ifFalse, condition.sourceIndex());
     }
 
     @Override
-    public Ternary withSourceIndex(int index) {
-      return new Ternary(index, condition, ifTrue, ifFalse);
+    public IfElse withSourceIndex(int index) {
+      return new IfElse(condition, ifTrue, ifFalse, index);
     }
 
     @Override
@@ -617,14 +641,18 @@ public sealed interface CelExpr {
   }
 
   /** Global function calls {@code f(args)}. */
-  record FunctionCall(int sourceIndex, Ident function, List<CelExpr> args) implements CelExpr {
+  record FunctionCall(Ident function, List<CelExpr> args, int sourceIndex) implements CelExpr {
     public FunctionCall(Ident function, List<CelExpr> args) {
-      this(0, function, args);
+      this(function, args, 0);
+    }
+
+    public FunctionCall(int sourceIndex, Ident function, List<CelExpr> args) {
+      this(function, args, sourceIndex);
     }
 
     @Override
     public FunctionCall withSourceIndex(int index) {
-      return new FunctionCall(index, function, args);
+      return new FunctionCall(function, args, index);
     }
 
     @Override
@@ -634,15 +662,19 @@ public sealed interface CelExpr {
   }
 
   /** Member calls {@code target.f(args)}. */
-  record MemberCall(int sourceIndex, CelExpr target, Ident member, List<CelExpr> args)
+  record MemberCall(CelExpr target, Ident member, List<CelExpr> args, int sourceIndex)
       implements CelExpr {
     public MemberCall(CelExpr target, Ident member, List<CelExpr> args) {
-      this(0, target, member, args);
+      this(target, member, args, member.sourceIndex);
+    }
+
+    public MemberCall(int sourceIndex, CelExpr target, Ident member, List<CelExpr> args) {
+      this(target, member, args, sourceIndex);
     }
 
     @Override
     public MemberCall withSourceIndex(int index) {
-      return new MemberCall(index, target, member, args);
+      return new MemberCall(target, member, args, index);
     }
 
     @Override
@@ -656,10 +688,10 @@ public sealed interface CelExpr {
   }
 
   /** List creation (e.g. {@code [1, ?optional_var]}). */
-  record ListLiteral(int sourceIndex, List<Element> elements) implements CelExpr {
+  record ListOf(List<Element> elements, int sourceIndex) implements CelExpr {
     @Override
-    public ListLiteral withSourceIndex(int index) {
-      return new ListLiteral(index, elements);
+    public ListOf withSourceIndex(int index) {
+      return new ListOf(elements, index);
     }
 
     @Override
@@ -669,10 +701,10 @@ public sealed interface CelExpr {
   }
 
   /** Map creation (e.g. {@code {"key": value, ? "opt_key": value}}). */
-  record MapLiteral(int sourceIndex, List<Entry<CelExpr>> entries) implements CelExpr {
+  record MapOf(List<Entry<CelExpr>> entries, int sourceIndex) implements CelExpr {
     @Override
-    public MapLiteral withSourceIndex(int index) {
-      return new MapLiteral(index, entries);
+    public MapOf withSourceIndex(int index) {
+      return new MapOf(entries, index);
     }
 
     @Override
@@ -682,15 +714,14 @@ public sealed interface CelExpr {
   }
 
   /** Struct/message creation (e.g. {@code Type{field: value, ?opt_field: value}}). */
-  record StructLiteral(int sourceIndex, String messageName, List<Entry<Ident>> fields)
-      implements CelExpr {
-    public StructLiteral(String messageName, List<Entry<Ident>> fields) {
-      this(0, messageName, fields);
+  record Struct(String messageName, List<Entry<Ident>> fields, int sourceIndex) implements CelExpr {
+    public Struct(String messageName, List<Entry<Ident>> fields) {
+      this(messageName, fields, 0);
     }
 
     @Override
-    public StructLiteral withSourceIndex(int index) {
-      return new StructLiteral(index, messageName, fields);
+    public Struct withSourceIndex(int index) {
+      return new Struct(messageName, fields, index);
     }
 
     @Override
@@ -700,9 +731,13 @@ public sealed interface CelExpr {
   }
 
   /** An entry/field representing a key-value or field-value mapping in map or struct literals. */
-  record Entry<K>(int sourceIndex, K key, CelExpr value, boolean optional) {
+  record Entry<K>(K key, CelExpr value, boolean optional, int sourceIndex) {
     public Entry(K key, CelExpr value, boolean optional) {
-      this(0, key, value, optional);
+      this(key, value, optional, 0);
+    }
+
+    public Entry(int sourceIndex, K key, CelExpr value, boolean optional) {
+      this(key, value, optional, sourceIndex);
     }
 
     /** {@code Entry.of("field", value(1))} is equivalent to {@code CelExpr.of("field: 1")}. */
@@ -721,7 +756,7 @@ public sealed interface CelExpr {
      * {@code Entry.of(string("key"), value(1))} is equivalent to {@code CelExpr.of("'key': 1")}.
      */
     public static Entry<CelExpr> of(CelExpr key, CelExpr value) {
-      return new Entry<>(key.sourceIndex(), key, value, false);
+      return new Entry<>(key, value, false, key.sourceIndex());
     }
 
     /**
@@ -729,7 +764,7 @@ public sealed interface CelExpr {
      * 1")}.
      */
     public static Entry<CelExpr> optional(CelExpr key, CelExpr value) {
-      return new Entry<>(key.sourceIndex(), key, value, true);
+      return new Entry<>(key, value, true, key.sourceIndex());
     }
 
     @Override
@@ -741,14 +776,18 @@ public sealed interface CelExpr {
   /** Abstract representation of a CEL macro expression. */
   sealed interface Macro extends CelExpr {
     /** The {@code has(member)} macro. */
-    record Has(int sourceIndex, Select member) implements Macro {
+    record Has(Select member, int sourceIndex) implements Macro {
       public Has(Select member) {
-        this(0, member);
+        this(member, 0);
+      }
+
+      public Has(int sourceIndex, Select member) {
+        this(member, sourceIndex);
       }
 
       @Override
       public Has withSourceIndex(int index) {
-        return new Has(index, member);
+        return new Has(member, index);
       }
 
       @Override
@@ -757,17 +796,21 @@ public sealed interface CelExpr {
       }
     }
 
-    record All(int sourceIndex, CelExpr target, Ident var, CelExpr condition) implements Macro {
+    record All(CelExpr target, Ident var, CelExpr condition, int sourceIndex) implements Macro {
       public All(CelExpr target, Ident var, CelExpr condition) {
-        this(target.sourceIndex(), target, var, condition);
+        this(target, var, condition, target.sourceIndex());
       }
 
       public All(CelExpr target, String varName, CelExpr condition) {
-        this(target.sourceIndex(), target, new Ident(target.sourceIndex(), varName), condition);
+        this(target, new Ident(varName, target.sourceIndex()), condition, target.sourceIndex());
+      }
+
+      public All(CelExpr target, String varName, CelExpr condition, int sourceIndex) {
+        this(target, new Ident(varName, sourceIndex), condition, sourceIndex);
       }
 
       public All(int sourceIndex, CelExpr target, String varName, CelExpr condition) {
-        this(sourceIndex, target, new Ident(sourceIndex, varName), condition);
+        this(target, varName, condition, sourceIndex);
       }
 
       public String varName() {
@@ -776,7 +819,7 @@ public sealed interface CelExpr {
 
       @Override
       public All withSourceIndex(int index) {
-        return new All(index, target, var, condition);
+        return new All(target, var, condition, index);
       }
 
       @Override
@@ -785,17 +828,21 @@ public sealed interface CelExpr {
       }
     }
 
-    record Exists(int sourceIndex, CelExpr target, Ident var, CelExpr condition) implements Macro {
+    record Exists(CelExpr target, Ident var, CelExpr condition, int sourceIndex) implements Macro {
       public Exists(CelExpr target, Ident var, CelExpr condition) {
-        this(target.sourceIndex(), target, var, condition);
+        this(target, var, condition, target.sourceIndex());
       }
 
       public Exists(CelExpr target, String varName, CelExpr condition) {
-        this(target.sourceIndex(), target, new Ident(target.sourceIndex(), varName), condition);
+        this(target, new Ident(varName, target.sourceIndex()), condition, target.sourceIndex());
+      }
+
+      public Exists(CelExpr target, String varName, CelExpr condition, int sourceIndex) {
+        this(target, new Ident(varName, sourceIndex), condition, sourceIndex);
       }
 
       public Exists(int sourceIndex, CelExpr target, String varName, CelExpr condition) {
-        this(sourceIndex, target, new Ident(sourceIndex, varName), condition);
+        this(target, varName, condition, sourceIndex);
       }
 
       public String varName() {
@@ -804,7 +851,7 @@ public sealed interface CelExpr {
 
       @Override
       public Exists withSourceIndex(int index) {
-        return new Exists(index, target, var, condition);
+        return new Exists(target, var, condition, index);
       }
 
       @Override
@@ -813,18 +860,22 @@ public sealed interface CelExpr {
       }
     }
 
-    record ExistsOne(int sourceIndex, CelExpr target, Ident var, CelExpr condition)
+    record ExistsOne(CelExpr target, Ident var, CelExpr condition, int sourceIndex)
         implements Macro {
       public ExistsOne(CelExpr target, Ident var, CelExpr condition) {
-        this(target.sourceIndex(), target, var, condition);
+        this(target, var, condition, target.sourceIndex());
       }
 
       public ExistsOne(CelExpr target, String varName, CelExpr condition) {
-        this(target.sourceIndex(), target, new Ident(target.sourceIndex(), varName), condition);
+        this(target, new Ident(varName, target.sourceIndex()), condition, target.sourceIndex());
+      }
+
+      public ExistsOne(CelExpr target, String varName, CelExpr condition, int sourceIndex) {
+        this(target, new Ident(varName, sourceIndex), condition, sourceIndex);
       }
 
       public ExistsOne(int sourceIndex, CelExpr target, String varName, CelExpr condition) {
-        this(sourceIndex, target, new Ident(sourceIndex, varName), condition);
+        this(target, varName, condition, sourceIndex);
       }
 
       public String varName() {
@@ -833,7 +884,7 @@ public sealed interface CelExpr {
 
       @Override
       public ExistsOne withSourceIndex(int index) {
-        return new ExistsOne(index, target, var, condition);
+        return new ExistsOne(target, var, condition, index);
       }
 
       @Override
@@ -842,17 +893,21 @@ public sealed interface CelExpr {
       }
     }
 
-    record Filter(int sourceIndex, CelExpr target, Ident var, CelExpr expr) implements Macro {
+    record Filter(CelExpr target, Ident var, CelExpr expr, int sourceIndex) implements Macro {
       public Filter(CelExpr target, Ident var, CelExpr expr) {
-        this(target.sourceIndex(), target, var, expr);
+        this(target, var, expr, target.sourceIndex());
       }
 
       public Filter(CelExpr target, String varName, CelExpr expr) {
-        this(target.sourceIndex(), target, new Ident(target.sourceIndex(), varName), expr);
+        this(target, new Ident(varName, target.sourceIndex()), expr, target.sourceIndex());
+      }
+
+      public Filter(CelExpr target, String varName, CelExpr expr, int sourceIndex) {
+        this(target, new Ident(varName, sourceIndex), expr, sourceIndex);
       }
 
       public Filter(int sourceIndex, CelExpr target, String varName, CelExpr expr) {
-        this(sourceIndex, target, new Ident(sourceIndex, varName), expr);
+        this(target, varName, expr, sourceIndex);
       }
 
       public String varName() {
@@ -861,7 +916,7 @@ public sealed interface CelExpr {
 
       @Override
       public Filter withSourceIndex(int index) {
-        return new Filter(index, target, var, expr);
+        return new Filter(target, var, expr, index);
       }
 
       @Override
@@ -870,17 +925,21 @@ public sealed interface CelExpr {
       }
     }
 
-    record Map(int sourceIndex, CelExpr target, Ident var, CelExpr expr) implements Macro {
+    record Map(CelExpr target, Ident var, CelExpr expr, int sourceIndex) implements Macro {
       public Map(CelExpr target, Ident var, CelExpr expr) {
-        this(target.sourceIndex(), target, var, expr);
+        this(target, var, expr, target.sourceIndex());
       }
 
       public Map(CelExpr target, String varName, CelExpr expr) {
-        this(target.sourceIndex(), target, new Ident(target.sourceIndex(), varName), expr);
+        this(target, new Ident(varName, target.sourceIndex()), expr, target.sourceIndex());
+      }
+
+      public Map(CelExpr target, String varName, CelExpr expr, int sourceIndex) {
+        this(target, new Ident(varName, sourceIndex), expr, sourceIndex);
       }
 
       public Map(int sourceIndex, CelExpr target, String varName, CelExpr expr) {
-        this(sourceIndex, target, new Ident(sourceIndex, varName), expr);
+        this(target, varName, expr, sourceIndex);
       }
 
       public String varName() {
@@ -889,7 +948,7 @@ public sealed interface CelExpr {
 
       @Override
       public Map withSourceIndex(int index) {
-        return new Map(index, target, var, expr);
+        return new Map(target, var, expr, index);
       }
 
       @Override
@@ -898,24 +957,29 @@ public sealed interface CelExpr {
       }
     }
 
-    record FilterMap(int sourceIndex, CelExpr target, Ident var, CelExpr filter, CelExpr transform)
+    record FilterMap(CelExpr target, Ident var, CelExpr filter, CelExpr transform, int sourceIndex)
         implements Macro {
       public FilterMap(CelExpr target, Ident var, CelExpr filter, CelExpr transform) {
-        this(target.sourceIndex(), target, var, filter, transform);
+        this(target, var, filter, transform, target.sourceIndex());
       }
 
       public FilterMap(CelExpr target, String varName, CelExpr filter, CelExpr transform) {
         this(
-            target.sourceIndex(),
             target,
-            new Ident(target.sourceIndex(), varName),
+            new Ident(varName, target.sourceIndex()),
             filter,
-            transform);
+            transform,
+            target.sourceIndex());
+      }
+
+      public FilterMap(
+          CelExpr target, String varName, CelExpr filter, CelExpr transform, int sourceIndex) {
+        this(target, new Ident(varName, sourceIndex), filter, transform, sourceIndex);
       }
 
       public FilterMap(
           int sourceIndex, CelExpr target, String varName, CelExpr filter, CelExpr transform) {
-        this(sourceIndex, target, new Ident(sourceIndex, varName), filter, transform);
+        this(target, varName, filter, transform, sourceIndex);
       }
 
       public String varName() {
@@ -924,7 +988,7 @@ public sealed interface CelExpr {
 
       @Override
       public FilterMap withSourceIndex(int index) {
-        return new FilterMap(index, target, var, filter, transform);
+        return new FilterMap(target, var, filter, transform, index);
       }
 
       @Override
@@ -968,5 +1032,42 @@ public sealed interface CelExpr {
 
   private static String optionalMarker(boolean optional) {
     return optional ? "?" : "";
+  }
+
+  @Deprecated
+  record ListLiteral(int sourceIndex, List<Element> elements) implements CelExpr {
+    public ListLiteral(List<Element> elements) {
+      this(0, elements);
+    }
+
+    @Override
+    public ListLiteral withSourceIndex(int index) {
+      return new ListLiteral(index, elements);
+    }
+  }
+
+  @Deprecated
+  record MapLiteral(int sourceIndex, List<Entry<CelExpr>> entries) implements CelExpr {
+    public MapLiteral(List<Entry<CelExpr>> entries) {
+      this(0, entries);
+    }
+
+    @Override
+    public MapLiteral withSourceIndex(int index) {
+      return new MapLiteral(index, entries);
+    }
+  }
+
+  @Deprecated
+  record StructLiteral(int sourceIndex, String messageName, List<Entry<Ident>> fields)
+      implements CelExpr {
+    public StructLiteral(String messageName, List<Entry<Ident>> fields) {
+      this(0, messageName, fields);
+    }
+
+    @Override
+    public StructLiteral withSourceIndex(int index) {
+      return new StructLiteral(index, messageName, fields);
+    }
   }
 }
