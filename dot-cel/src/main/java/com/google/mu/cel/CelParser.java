@@ -257,9 +257,7 @@ public final class CelParser {
   }
 
   private static CelExpr balanced(CelExpr left, List<Rhs> rights, int from, int len) {
-    if (len == 0) {
-      return left;
-    }
+    if (len == 0) return left;
     if (len == 1) {
       Rhs rhs = rights.get(from);
       return rhs.op.apply(left, rhs.value);
@@ -452,9 +450,7 @@ public final class CelParser {
 
   @FormatMethod
   private static void checkSyntax(boolean condition, String message) {
-    if (!condition) {
-      throw Parser.fail(message);
-    }
+    if (!condition)  throw Parser.fail(message);
   }
 
   private static long parseLong(String s, int radix) {
