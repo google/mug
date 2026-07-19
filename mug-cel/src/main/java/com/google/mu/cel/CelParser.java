@@ -21,6 +21,8 @@ import com.google.common.labs.parse.Parser;
 import com.google.common.labs.parse.Suffix;
 import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.Immutable;
+import com.google.mu.cel.CelExpr.Ident;
+import com.google.mu.cel.CelExpr.Select;
 import com.google.mu.function.Function4;
 import com.google.mu.function.TriFunction;
 import com.google.mu.util.CharPredicate;
@@ -76,16 +78,18 @@ public final class CelParser {
   private static final Parser<Boolean>.OrEmpty OPTIONALITY =
       one('?').thenReturn(true).orElse(false);
 
-  static final Parser<String> IDENTIFIER =
+  static final Parser<String> PLAIN_IDENTIFIER =
       literally(one("[a-zA-Z_]"), zeroOrMore("[a-zA-Z0-9_]"))
           .source()
           .suchThat(s -> !KEYWORDS.contains(s), "identifier");
 
   private static final Parser<String> ESC_IDENTIFIER =
       consecutive("[a-zA-Z0-9_./ -]").immediatelyBetween("`", "`");
-  private static final Parser<String> ANY_IDENTIFIER = anyOf(IDENTIFIER, ESC_IDENTIFIER);
+  private static final Parser<CelExpr.Ident> IDENT =
+      anyOf(PLAIN_IDENTIFIER, ESC_IDENTIFIER)
+          .mapWithIndex((name, begin, end) -> new CelExpr.Ident(name, begin));
 
-  private static final Parser<String> RAW_STRING_LITERAL =
+  private static final Parser<String> RAW_STRING =
       anyOf(
           quotedBy("r\"\"\"", "\"\"\""),
           quotedBy("R\"\"\"", "\"\"\""),
@@ -97,77 +101,61 @@ public final class CelParser {
           quotedBy("R'", "'"));
 
   private static final Parser<String> STRING_LITERAL =
-      anyOf(new StringLexer().parser(), RAW_STRING_LITERAL);
+      anyOf(new StringLexer().parser(), RAW_STRING);
 
   private static final Parser<byte[]> BYTES_LITERAL =
       literally(
           caseInsensitive("b")
-              .then(
-                  anyOf(
-                      new BytesLexer().parser(), RAW_STRING_LITERAL.map(s -> s.getBytes(UTF_8)))));
+              .then(anyOf(new BytesLexer().parser(), RAW_STRING.map(s -> s.getBytes(UTF_8)))));
 
   private static final Parser<String> HEX_DIGITS = consecutive("[0-9a-fA-F]");
 
-  private static final Parser<CelExpr.LongValue> hexInt =
+  private static final Parser<CelExpr.LongValue> HEX_INT =
       sequence(
-              one('-').optional(),
-              literally(caseInsensitive("0x").then(HEX_DIGITS)),
-              (sign, d) -> {
-                String valStr = sign.map(Object::toString).orElse("") + d;
-                return parseLong(valStr, 16);
-              })
-          .mapWithIndex((val, begin, end) -> new CelExpr.LongValue(begin, val));
+              string("-").orElse(""), literally(caseInsensitive("0x").then(HEX_DIGITS)),
+              (sign, d) -> parseLong(sign + d, 16))
+          .mapWithIndex((val, begin, end) -> new CelExpr.LongValue(val, begin));
 
-  private static final Parser<CelExpr.LongValue> decInt =
-      sequence(
-              one('-').optional(),
-              digits(),
-              (sign, d) -> {
-                String valStr = sign.map(Object::toString).orElse("") + d;
-                return parseLong(valStr);
-              })
-          .mapWithIndex((val, begin, end) -> new CelExpr.LongValue(begin, val));
+  private static final Parser<CelExpr.LongValue> DEC_INT =
+      sequence(string("-").orElse(""), digits(), (sign, d) -> parseLong(sign + d))
+          .mapWithIndex((val, begin, end) -> new CelExpr.LongValue(val, begin));
 
-  private static final Parser<CelExpr.UintValue> positiveUint =
+  private static final Parser<CelExpr.UintValue> UINT =
       literally(
               anyOf(
                       string("0x").then(HEX_DIGITS).map(s -> parseUnsignedLong(s, 16)),
                       digits().map(CelParser::parseUnsignedLong))
                   .followedBy(caseInsensitive("u")))
-          .mapWithIndex((val, begin, end) -> new CelExpr.UintValue(begin, val));
+          .mapWithIndex((val, begin, end) -> new CelExpr.UintValue(val, begin));
 
   private static final Parser<String> EXPONENT =
       sequence(caseInsensitive("e"), anyOf("+", "-").optional(), digits()).source();
 
-  private static final Parser<CelExpr.DoubleValue> signedDouble =
+  private static final Parser<CelExpr.DoubleValue> SIGNED_DOUBLE =
       sequence(
-              one('-').optional(),
+              string("-").orElse(""),
               anyOf(
-                      sequence(digits(), one('.'), digits(), EXPONENT.optional()),
-                      sequence(digits(), EXPONENT),
-                      sequence(one('.'), digits(), EXPONENT.optional()))
-                  .source(),
-              (sign, d) -> {
-                String valStr = sign.map(Object::toString).orElse("") + d;
-                return parseDouble(valStr);
-              })
-          .mapWithIndex((val, begin, end) -> new CelExpr.DoubleValue(begin, val));
+                  sequence(digits(), one('.'), digits(), EXPONENT.optional()).source(),
+                  sequence(digits(), EXPONENT).source(),
+                  sequence(one('.'), digits(), EXPONENT.optional()).source()),
+              (sign, d) -> parseDouble(sign + d))
+          .mapWithIndex((val, begin, end) -> new CelExpr.DoubleValue(val, begin));
 
   private static final Parser<CelExpr> CONSTANT_LITERAL =
       anyOf(
-          signedDouble,
-          positiveUint,
-          hexInt,
-          decInt,
-          STRING_LITERAL.mapWithIndex((val, begin, end) -> new CelExpr.StringValue(begin, val)),
-          BYTES_LITERAL.mapWithIndex((val, begin, end) -> new CelExpr.BytesValue(begin, val)),
-          word("true").mapWithIndex((val, begin, end) -> new CelExpr.BoolValue(begin, true)),
-          word("false").mapWithIndex((val, begin, end) -> new CelExpr.BoolValue(begin, false)),
+          SIGNED_DOUBLE,
+          UINT,
+          HEX_INT,
+          DEC_INT,
+          STRING_LITERAL.mapWithIndex((val, begin, end) -> new CelExpr.StringValue(val, begin)),
+          BYTES_LITERAL.mapWithIndex((val, begin, end) -> new CelExpr.BytesValue(val, begin)),
+          word("true").mapWithIndex((val, begin, end) -> new CelExpr.BoolValue(true, begin)),
+          word("false").mapWithIndex((val, begin, end) -> new CelExpr.BoolValue(false, begin)),
           word("null").mapWithIndex((val, begin, end) -> new CelExpr.NullValue(begin)));
 
   private static final Parser<CelExpr> IDENT_EXPR =
-      sequence(string(".").orElse(""), IDENTIFIER, String::concat)
-          .mapWithIndex((name, begin, end) -> new CelExpr.Ident(begin, name));
+      sequence(string(".").orElse(""), PLAIN_IDENTIFIER, String::concat)
+          .mapWithIndex((name, begin, end) -> new CelExpr.Ident(name, begin));
 
   private static final Parser<CelExpr> PARSER = makeParser();
 
@@ -212,90 +200,59 @@ public final class CelParser {
     Parser.Rule<CelExpr> regular = new Parser.Rule<>();
     Parser.Rule<CelExpr> expr = new Parser.Rule<>();
     Parser<CelExpr> parenthesized = expr.between("(", ")");
+    Parser<List<CelExpr>> args = expr.zeroOrMoreDelimitedBy(",").between("(", ")");
 
     Parser<CelExpr> listExpr =
         sequence(OPTIONALITY, expr, (opt, val) -> new CelExpr.Element(val, opt))
             .zeroOrMoreDelimitedBy(",")
             .optionallyFollowedBy(",")
             .between("[", "]")
-            .mapWithIndex((elements, begin, end) -> new CelExpr.ListLiteral(begin, elements));
+            .mapWithIndex((elements, begin, end) -> new CelExpr.ListOf(elements, begin));
     Parser<CelExpr> mapExpr =
-        sequence(
-                OPTIONALITY,
-                expr,
-                string(":").mapWithIndex((colon, begin, end) -> begin),
-                expr,
-                (opt, key, colon, val) -> new CelExpr.Entry<>(colon, key, val, opt))
-            .zeroOrMoreDelimitedBy(",")
-            .optionallyFollowedBy(",")
-            .between("{", "}")
-            .mapWithIndex((entries, begin, end) -> new CelExpr.MapLiteral(begin, entries));
-    Parser<CelExpr.Entry<CelExpr.Ident>> messageFieldInit =
-        sequence(
-            OPTIONALITY,
-            ANY_IDENTIFIER.mapWithIndex((name, begin, end) -> new CelExpr.Ident(begin, name)),
-            string(":").mapWithIndex((colon, begin, end) -> begin),
-            expr,
-            (opt, nameIdent, colon, val) -> new CelExpr.Entry<>(colon, nameIdent, val, opt));
+        entries(expr, expr)
+            .mapWithIndex((entries, begin, end) -> new CelExpr.MapOf(entries, begin));
     Parser<CelExpr> callOrStructOrIdent =
         IDENT_EXPR
             .withPostfixes(
-                one('.')
-                    .then(ANY_IDENTIFIER)
-                    .mapWithIndex((f, begin, end) -> e -> new CelExpr.Select(begin, e, f)))
+                sequence(indexOf('.'), IDENT, (index, f) -> e -> new Select(e, f, index)))
             .optionallyFollowedBy(
                 anyOf(
-                    suffixWithIndex(
-                        messageFieldInit
-                            .zeroOrMoreDelimitedBy(",")
-                            .optionallyFollowedBy(",")
-                            .between("{", "}"),
-                        CelParser::structExpr),
-                    suffixWithIndex(
-                        expr.zeroOrMoreDelimitedBy(",").between("(", ")"), CelParser::call)),
+                    suffixWithIndex(entries(IDENT, expr), CelParser::structExpr),
+                    suffixWithIndex(args, CelParser::call)),
                 Suffix::apply);
 
     // Primary expression
     Parser<CelExpr> primary =
         anyOf(CONSTANT_LITERAL, callOrStructOrIdent, listExpr, mapExpr, parenthesized);
-    Parser<CelExpr.Ident> memberMethod =
-        ANY_IDENTIFIER.mapWithIndex((name, begin, end) -> new CelExpr.Ident(begin, name));
 
-    Parser<CelExpr> memberExpr =
-        withPostfixIndex(
-            primary,
-            anyOf(
-                    one('.')
-                        .then(
-                            anyOf(
-                                sequence(
-                                    memberMethod,
-                                    expr.zeroOrMoreDelimitedBy(",").between("(", ")"),
-                                    (name, methodArgs) ->
-                                        target -> macroOrCall(target, name, methodArgs)),
-                                one('?').then(ANY_IDENTIFIER).map(CelParser::optionalSelect),
-                                ANY_IDENTIFIER.map(CelParser::select))),
-                    sequence(one('?').thenReturn(true).orElse(false), expr, CelParser::index)
-                        .between("[", "]")));
-    Parser<CelExpr> unaryExpr =
+    var callWithArgs = suffixWithIndex(args, CelParser::macroOrMemberCall);
+    Parser<CelExpr> memberExpr = primary.withPostfixes(
         anyOf(
-            memberExpr.withPrefixes(unary('!', CelExpr.Not::new)),
-            memberExpr.withPrefixes(unary('-', CelExpr.Negative::new)));
-    Parser<CelExpr> binary =
-        new OperatorTable<CelExpr>()
-            .leftAssociative(binary("*", CelExpr::multiply), 6)
-            .leftAssociative(binary("/", CelExpr::divide), 6)
-            .leftAssociative(binary("%", CelExpr::modulo), 6)
-            .leftAssociative(binary("+", CelExpr::add), 5)
-            .leftAssociative(binary("-", CelExpr::subtract), 5)
-            .leftAssociative(binary("<=", CelExpr::atMost), 4)
-            .leftAssociative(binary("<", CelExpr::lessThan), 4)
-            .leftAssociative(binary(">=", CelExpr::atLeast), 4)
-            .leftAssociative(binary(">", CelExpr::greaterThan), 4)
-            .leftAssociative(binary("==", CelExpr::equalTo), 4)
-            .leftAssociative(binary("!=", CelExpr::notEqualTo), 4)
-            .leftAssociative(binary(word("in"), CelExpr::in), 4)
-            .build(unaryExpr);
+            suffixWithIndex(
+                sequence(one('.'), one('?')).then(IDENT),
+                (CelExpr receiver, Ident field) -> receiver.optionalSelect(field)),
+            sequence(one('.').then(IDENT), callWithArgs, Suffix::apply),
+            sequence(
+                indexOf('.'), IDENT, (index, field) -> e -> new Select(e, field, index)),
+            sequence(one('?').thenReturn(true).orElse(false), expr, CelParser::index)
+                .between("[", "]")));
+    Parser<CelExpr> unaryExpr = anyOf(
+        memberExpr.withPrefixes(unary('!', CelExpr.Not::new)),
+        memberExpr.withPrefixes(unary('-', CelExpr.Negative::new)));
+    Parser<CelExpr> binary = new OperatorTable<CelExpr>()
+        .leftAssociative(binary("*", CelExpr::multiply), 6)
+        .leftAssociative(binary("/", CelExpr::divide), 6)
+        .leftAssociative(binary("%", CelExpr::modulo), 6)
+        .leftAssociative(binary("+", CelExpr::add), 5)
+        .leftAssociative(binary("-", CelExpr::subtract), 5)
+        .leftAssociative(binary("<=", CelExpr::atMost), 4)
+        .leftAssociative(binary("<", CelExpr::lessThan), 4)
+        .leftAssociative(binary(">=", CelExpr::atLeast), 4)
+        .leftAssociative(binary(">", CelExpr::greaterThan), 4)
+        .leftAssociative(binary("==", CelExpr::equalTo), 4)
+        .leftAssociative(binary("!=", CelExpr::notEqualTo), 4)
+        .leftAssociative(binary(word("in"), CelExpr::in), 4)
+        .build(unaryExpr);
     binary = associative(binary, "&&", CelExpr::and);
     binary = associative(binary, "||", CelExpr::or);
     regular.definedAs(binary);
@@ -306,7 +263,7 @@ public final class CelParser {
                     .between("?", ":")
                     .mapWithIndex(
                         (ifTrue, begin, end) ->
-                            (cond, ifFalse) -> new CelExpr.Ternary(begin, cond, ifTrue, ifFalse)),
+                            (cond, ifFalse) -> new CelExpr.IfElse(cond, ifTrue, ifFalse, begin)),
                 1)
             .build(anyOf(regular, parenthesized)));
   }
@@ -314,8 +271,7 @@ public final class CelParser {
   private static Parser<CelExpr> associative(
       Parser<CelExpr> operand, String operator, BinaryOperator<CelExpr> factory) {
     return sequence(
-        operand,
-        sequence(binary(operator, factory), operand, Rhs::new).zeroOrMore(),
+        operand, sequence(binary(operator, factory), operand, Rhs::new).zeroOrMore(),
         (left, rights) -> balanced(left, rights, 0, rights.size()));
   }
 
@@ -343,9 +299,13 @@ public final class CelParser {
     }
 
     abstract Collector<? super T, ?, T> joiner();
+
     abstract T fromCodePoint(int codePoint);
+
     abstract T literal(String raw);
+
     abstract T literal(char c);
+
     abstract Parser<T> escaped();
 
     final Parser<T> charEscape() {
@@ -457,26 +417,14 @@ public final class CelParser {
     }
   }
 
-  private static UnaryOperator<CelExpr> select(String field) {
-    return receiver -> receiver.select(field);
-  }
-
-  private static UnaryOperator<CelExpr> optionalSelect(String field) {
-    return receiver -> receiver.optionalSelect(field);
-  }
-
   private static UnaryOperator<CelExpr> index(boolean optional, CelExpr index) {
-    return optional
-        ? receiver -> receiver.optionalIndex(index)
-        : receiver -> receiver.index(index);
+    return optional ? receiver -> receiver.optionalIndex(index) : receiver -> receiver.index(index);
   }
 
   private static CelExpr call(CelExpr target, List<CelExpr> args) {
     return switch (target) {
       case CelExpr.Ident ident -> macroOrCall(ident, args);
-      case CelExpr.Select select ->
-          macroOrCall(
-              select.operand(), new CelExpr.Ident(select.sourceIndex(), select.field()), args);
+      case CelExpr.Select select -> macroOrMemberCall(select.operand(), select.field(), args);
       default -> throw new AssertionError("Invalid call receiver: " + target);
     };
   }
@@ -493,7 +441,8 @@ public final class CelParser {
     };
   }
 
-  private static CelExpr macroOrCall(CelExpr target, CelExpr.Ident method, List<CelExpr> args) {
+  private static CelExpr macroOrMemberCall(
+      CelExpr target, CelExpr.Ident method, List<CelExpr> args) {
     return switch (method.name()) {
       case "all" ->
           toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.All(t, v, c));
@@ -521,9 +470,7 @@ public final class CelParser {
   }
 
   private static <T extends CelExpr.Macro> T toMacro(
-      CelExpr target,
-      String method,
-      List<CelExpr> args,
+      CelExpr target, String method, List<CelExpr> args,
       TriFunction<CelExpr, CelExpr.Ident, CelExpr, T> construct) {
     checkSyntax(args.size() == 2, "%s() expects 2 args, %s provided", method, args.size());
     CelExpr.Ident placeholder =
@@ -536,9 +483,7 @@ public final class CelParser {
   }
 
   private static <T extends CelExpr.Macro> T toMacro(
-      CelExpr target,
-      String method,
-      List<CelExpr> args,
+      CelExpr target, String method, List<CelExpr> args,
       Function4<CelExpr, CelExpr.Ident, CelExpr, CelExpr, T> construct) {
     checkSyntax(args.size() == 3, "%s() expects 3 args, %s provided", method, args.size());
     CelExpr.Ident placeholder =
@@ -556,7 +501,7 @@ public final class CelParser {
       String name = field.key().name();
       checkSyntax(keys.add(name), "duplicate field name: %s", name);
     }
-    return new CelExpr.StructLiteral(toTypeName(receiver), fields);
+    return new CelExpr.Struct(toTypeName(receiver), fields);
   }
 
   private static String toTypeName(CelExpr expr) {
@@ -567,10 +512,18 @@ public final class CelParser {
     };
   }
 
+  private static <K> Parser<List<CelExpr.Entry<K>>> entries(Parser<K> key, Parser<CelExpr> value) {
+    return sequence(
+            OPTIONALITY, key, indexOf(':'), value,
+            (opt, k, colon, v) -> new CelExpr.Entry<>(k, v, opt, colon))
+        .zeroOrMoreDelimitedBy(",")
+        .optionallyFollowedBy(",")
+        .between("{", "}");
+  }
+
   private static Parser<BinaryOperator<CelExpr>> binary(
       Parser<?> op, BinaryOperator<CelExpr> factory) {
-    return op.mapWithIndex(
-        (s, begin, end) -> (l, r) -> factory.apply(l, r).withSourceIndex(begin));
+    return op.mapWithIndex((s, begin, end) -> (l, r) -> factory.apply(l, r).withSourceIndex(begin));
   }
 
   private static Parser<BinaryOperator<CelExpr>> binary(
@@ -579,20 +532,23 @@ public final class CelParser {
   }
 
   private static Parser<UnaryOperator<CelExpr>> unary(
-      char opChar, BiFunction<Integer, CelExpr, CelExpr> factory) {
-    return one(opChar).mapWithIndex((s, begin, end) -> e -> factory.apply(begin, e));
+      char opChar, BiFunction<CelExpr, Integer, CelExpr> factory) {
+    return one(opChar).mapWithIndex((s, begin, end) -> e -> factory.apply(e, begin));
   }
 
-  private static Parser<CelExpr> withPostfixIndex(
-      Parser<CelExpr> parser, Parser<UnaryOperator<CelExpr>> op) {
-    return parser.withPostfixes(
-        op.mapWithIndex((f, begin, end) -> v -> f.apply(v).withSourceIndex(begin)));
+  private static Parser<Integer> indexOf(char c) {
+    return one(c).mapWithIndex((x, begin, end) -> begin);
   }
 
-  private static <T, S> Parser<Function<T, CelExpr>> suffixWithIndex(
-      Parser<S> suffix, BiFunction<? super T, ? super S, ? extends CelExpr> combiner) {
-    java.util.Objects.requireNonNull(combiner);
+  private static <S> Parser<UnaryOperator<CelExpr>> suffixWithIndex(
+      Parser<S> suffix, BiFunction<CelExpr, ? super S, ? extends CelExpr> combiner) {
     return suffix.mapWithIndex((s, begin, end) -> p -> combiner.apply(p, s).withSourceIndex(begin));
+  }
+
+  private static <A, B> Parser<Function<A, UnaryOperator<CelExpr>>> suffixWithIndex(
+      Parser<B> suffix, TriFunction<CelExpr, ? super A, ? super B, ? extends CelExpr> combiner) {
+    return suffix.mapWithIndex(
+        (b, begin, end) -> a -> p -> combiner.apply(p, a, b).withSourceIndex(begin));
   }
 
   @FormatMethod
