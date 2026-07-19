@@ -86,7 +86,7 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>mug-cel</artifactId>
+      <artifactId>dot-cel</artifactId>
       <version>${project.version}</version>
     </dependency>
 

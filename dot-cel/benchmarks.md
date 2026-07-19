@@ -1,6 +1,6 @@
 # Common Expression Language (CEL) Shootout (Parity Comparison)
 
-We compared the performance of Google's official ANTLR-based Java CEL parser (`cel-java` using `dev.cel:cel`) against our lightweight `dot-parse`-based `CelParser` (module `mug-cel`) on a variety of representative CEL expressions. The benchmark scenarios and target expressions are implemented in [`CelParserBenchmark.java`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/CelParserBenchmark.java). Both parsers output compatible proto ASTs (`com.google.api.expr.v1alpha1.ParsedExpr`) with full position tracking (`positions`), original macro invocation context (`macro_calls`), and line offset records (`line_offsets`).
+We compared the performance of Google's official ANTLR-based Java CEL parser (`cel-java` using `dev.cel:cel`) against our lightweight `dot-parse`-based `CelParser` (module `dot-cel`) on a variety of representative CEL expressions. The benchmark scenarios and target expressions are implemented in [`CelParserBenchmark.java`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/CelParserBenchmark.java). Both parsers output compatible proto ASTs (`com.google.api.expr.v1alpha1.ParsedExpr`) with full position tracking (`positions`), original macro invocation context (`macro_calls`), and line offset records (`line_offsets`).
 
 Both parsers were strictly validated at setup time to guarantee 100% parity:
 1. Identical AST structures.
@@ -10,7 +10,7 @@ Both parsers were strictly validated at setup time to guarantee 100% parity:
 
 Throughput was measured in **microseconds per operation** (lower is better):
 
-| Benchmark Scenario / Expression | ANTLR Parser (`cel-java`) | `dot-parse` Parser (`mug-cel`) | Speedup |
+| Benchmark Scenario / Expression | ANTLR Parser (`cel-java`) | `dot-parse` Parser (`dot-cel`) | Speedup |
 | :--- | :---: | :---: | :---: |
 | **`smokeTest`** (`1 + 2 == 3`) | 2.845 μs | 1.066 μs | **2.67x** |
 | **`chainedOrs`** (`1 > 2 || 2 > 3 || 3 > 4 ...`) | 9.551 μs | 4.471 μs | **2.14x** |

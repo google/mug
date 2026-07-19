@@ -288,7 +288,7 @@ While they perform identically on flat string choices (`StringIn`), their perfor
 
 ## Common Expression Language (CEL) Shootout
 
-For the detailed parser benchmark shootout comparing `mug-cel` against the ANTLR-based `cel-java`, see [mug-cel benchmarks](../mug-cel/benchmarks.md).
+For the detailed parser benchmark shootout comparing `dot-cel` against the ANTLR-based `cel-java`, see [dot-cel benchmarks](../dot-cel/benchmarks.md).
 
 ---
 
