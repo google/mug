@@ -308,7 +308,7 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Variable or symbol lookup (e.g. {@code request}). */
+  /** Variable or symbol lookup, such as {@code request}. */
   record Ident(String name, int sourceIndex) implements CelExpr {
     public Ident {
       requireNonNull(name);
@@ -333,7 +333,7 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Field selection (e.g. {@code operand.field}). */
+  /** Field selection, such as {@code operand.field}. */
   record Select(CelExpr operand, Ident field, int sourceIndex) implements CelExpr {
     public Select {
       requireNonNull(operand);
@@ -355,7 +355,7 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Subscript/indexing (e.g. {@code operand[index]}). */
+  /** Subscript/indexing, such as {@code operand[index]}. */
   record Index(CelExpr operand, CelExpr index, int sourceIndex) implements CelExpr {
     public Index {
       requireNonNull(operand);
@@ -377,7 +377,7 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Optional field selection (e.g. {@code operand.?field}). */
+  /** Optional field selection, such as {@code operand.?field}. */
   record OptionalSelect(CelExpr operand, Ident field, int sourceIndex) implements CelExpr {
     public OptionalSelect {
       requireNonNull(operand);
@@ -407,7 +407,7 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Optional subscript/indexing (e.g. {@code operand[?index]}). */
+  /** Optional subscript/indexing, such as {@code operand[?index]}. */
   record OptionalIndex(CelExpr operand, CelExpr index, int sourceIndex) implements CelExpr {
     public OptionalIndex {
       requireNonNull(operand);
@@ -734,7 +734,7 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Ternary conditional (e.g. {@code condition ? trueExpr : falseExpr}). */
+  /** Ternary conditional, such as {@code condition ? trueExpr : falseExpr}. */
   record IfElse(CelExpr condition, CelExpr ifTrue, CelExpr ifFalse, int sourceIndex)
       implements CelExpr {
     public IfElse {
@@ -816,7 +816,7 @@ public sealed interface CelExpr {
     }
   }
 
-  /** List creation (e.g. {@code [1, ?optional_var]}). */
+  /** List creation, such as {@code [1, ?optional_var]}. */
   record ListOf(List<Element> elements, int sourceIndex) implements CelExpr {
     public ListOf {
       requireNonNull(elements);
@@ -833,7 +833,7 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Map creation (e.g. {@code {"key": value, ? "opt_key": value}}). */
+  /** Map creation, such as {@code {"key": value, ? "opt_key": value}}. */
   record MapOf(List<Entry<CelExpr>> entries, int sourceIndex) implements CelExpr {
     public MapOf {
       requireNonNull(entries);
@@ -850,7 +850,7 @@ public sealed interface CelExpr {
     }
   }
 
-  /** Struct/message creation (e.g. {@code Type{field: value, ?opt_field: value}}). */
+  /** Struct/message creation, such as {@code Type{field: value, ?opt_field: value}}. */
   record Struct(String typeName, List<Entry<Ident>> fields, int sourceIndex) implements CelExpr {
     public Struct {
       requireNonNull(typeName);
