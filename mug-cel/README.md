@@ -13,7 +13,7 @@ Consider using `mug-cel` if your project has the following requirements:
 ### 1. Zero-Dependency Footprint (No ANTLR conflicts)
 Standard `cel-java` relies on the ANTLR runtime. In large enterprise deployments, different transitive dependencies using conflicting ANTLR versions can lead to runtime class-loading or linkage failures. 
 
-`mug-cel` has a **zero-dependency footprint** (built on top of `dot-parse`, a lightweight parser combinator library). It eliminates ANTLR versioning conflicts entirely, making it highly suitable for shared libraries or framework integrations.
+`mug-cel` has a **zero-dependency footprint** (built on top of `dot-parse`, Mug's lightweight parser combinator library). It eliminates ANTLR versioning conflicts entirely, making it highly suitable for shared libraries or framework integrations.
 
 ### 2. Modern Java AST with Pattern Matching
 The AST in `mug-cel` is represented using Java **sealed interfaces** and **records** ([CelExpr](https://google.github.io/mug/apidocs/com/google/mu/cel/CelExpr.html)). This allows developers to write clean, type-safe, and exhaustive AST traversals or rewriters using Java 21 pattern matching:
