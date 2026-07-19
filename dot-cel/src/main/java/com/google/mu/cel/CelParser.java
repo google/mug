@@ -280,13 +280,9 @@ public final class CelParser {
     }
 
     abstract Collector<? super T, ?, T> joiner();
-
     abstract T fromCodePoint(int codePoint);
-
     abstract T literal(String raw);
-
     abstract T literal(char c);
-
     abstract Parser<T> escaped();
 
     final Parser<T> charEscape() {
@@ -451,9 +447,7 @@ public final class CelParser {
 
   @FormatMethod
   private static void checkSyntax(boolean condition, String message, Object... args) {
-    if (!condition) {
-      throw Parser.fail(String.format(message, args));
-    }
+    if (!condition) throw Parser.fail(String.format(message, args));
   }
 
   @FormatMethod
