@@ -218,14 +218,14 @@ public final class CelParser {
             .optionallyFollowedBy(
                 anyOf(
                     suffixWithIndex(entries(IDENT, expr), CelParser::structExpr),
-                    suffixWithIndex(args, CelParser::call)),
+                    suffixWithIndex(args, CelParser::callExpr)),
                 Suffix::apply);
 
     // Primary expression
     Parser<CelExpr> primary =
         anyOf(CONSTANT_LITERAL, callOrStructOrIdent, listExpr, mapExpr, parenthesized);
 
-    var callWithArgs = suffixWithIndex(args, CelParser::macroOrMemberCall);
+    var callWithArgs = suffixWithIndex(args, CelParser::macroOrMemberCallExpr);
     Parser<CelExpr> memberExpr = primary.withPostfixes(
         anyOf(
             suffixWithIndex(
@@ -234,7 +234,7 @@ public final class CelParser {
             sequence(one('.').then(IDENT), callWithArgs, Suffix::apply),
             sequence(
                 indexOf('.'), IDENT, (index, field) -> e -> new Select(e, field, index)),
-            sequence(one('?').thenReturn(true).orElse(false), expr, CelParser::index)
+            sequence(one('?').thenReturn(true).orElse(false), expr, CelParser::indexExpr)
                 .between("[", "]")
                 .mapWithIndex((op, begin, end) -> e -> op.apply(e).withSourceIndex(begin))));
     Parser<CelExpr> unaryExpr = anyOf(
@@ -418,101 +418,6 @@ public final class CelParser {
     }
   }
 
-  private static UnaryOperator<CelExpr> index(boolean optional, CelExpr index) {
-    return optional ? receiver -> receiver.optionalIndex(index) : receiver -> receiver.index(index);
-  }
-
-  private static CelExpr call(CelExpr target, List<CelExpr> args) {
-    return switch (target) {
-      case CelExpr.Ident ident -> macroOrCall(ident, args);
-      case CelExpr.Select select -> macroOrMemberCall(select.operand(), select.field(), args);
-      default -> throw new AssertionError("Invalid call receiver: " + target);
-    };
-  }
-
-  private static CelExpr macroOrCall(CelExpr.Ident method, List<CelExpr> args) {
-    return switch (method.name()) {
-      case "has" -> {
-        checkSyntax(args.size() == 1, "has() expects 1 arg, %s provided", args.size());
-        CelExpr.Select select =
-            expect(CelExpr.Select.class, args.get(0), "has() expects 1 select argument");
-        yield new CelExpr.Macro.Has(select);
-      }
-      default -> new CelExpr.FunctionCall(method, args);
-    };
-  }
-
-  private static CelExpr macroOrMemberCall(
-      CelExpr target, CelExpr.Ident method, List<CelExpr> args) {
-    return switch (method.name()) {
-      case "all" ->
-          toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.All(t, v, c));
-      case "exists" ->
-          toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.Exists(t, v, c));
-      case "exists_one" ->
-          toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.ExistsOne(t, v, c));
-      case "filter" ->
-          toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.Filter(t, v, c));
-      case "map" ->
-          switch (args.size()) {
-            case 2 ->
-                toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.Map(t, v, c));
-            case 3 ->
-                toMacro(
-                    target,
-                    method.name(),
-                    args,
-                    (t, v, c1, c2) -> new CelExpr.Macro.FilterMap(t, v, c1, c2));
-            default ->
-                throw Parser.fail("map() macro expects 2 or 3 args, " + args.size() + " provided");
-          };
-      default -> new CelExpr.MemberCall(target, method, args);
-    };
-  }
-
-  private static <T extends CelExpr.Macro> T toMacro(
-      CelExpr target, String method, List<CelExpr> args,
-      TriFunction<CelExpr, CelExpr.Ident, CelExpr, T> construct) {
-    checkSyntax(args.size() == 2, "%s() expects 2 args, %s provided", method, args.size());
-    CelExpr.Ident placeholder =
-        expect(
-            CelExpr.Ident.class,
-            args.get(0),
-            "identifier expected for the 1st arg of %s()",
-            method);
-    return construct.apply(target, placeholder, args.get(1));
-  }
-
-  private static <T extends CelExpr.Macro> T toMacro(
-      CelExpr target, String method, List<CelExpr> args,
-      Function4<CelExpr, CelExpr.Ident, CelExpr, CelExpr, T> construct) {
-    checkSyntax(args.size() == 3, "%s() expects 3 args, %s provided", method, args.size());
-    CelExpr.Ident placeholder =
-        expect(
-            CelExpr.Ident.class,
-            args.get(0),
-            "identifier expected for the 1st arg of %s()",
-            method);
-    return construct.apply(target, placeholder, args.get(1), args.get(2));
-  }
-
-  private static CelExpr structExpr(CelExpr receiver, List<CelExpr.Entry<CelExpr.Ident>> fields) {
-    Set<String> keys = new HashSet<>();
-    for (CelExpr.Entry<CelExpr.Ident> field : fields) {
-      String name = field.key().name();
-      checkSyntax(keys.add(name), "duplicate field name: %s", name);
-    }
-    return new CelExpr.Struct(toTypeName(receiver), fields);
-  }
-
-  private static String toTypeName(CelExpr expr) {
-    return switch (expr) {
-      case CelExpr.Ident ident -> ident.name();
-      case CelExpr.Select select -> toTypeName(select.operand()) + "." + select.field();
-      default -> throw new AssertionError("Invalid struct receiver: " + expr);
-    };
-  }
-
   private static <K> Parser<List<CelExpr.Entry<K>>> entries(Parser<K> key, Parser<CelExpr> value) {
     return sequence(
             OPTIONALITY, key, indexOf(':'), value,
@@ -616,5 +521,100 @@ public final class CelParser {
     } catch (NumberFormatException e) {
       throw Parser.fail("double overflow: " + s);
     }
+  }
+
+  private static UnaryOperator<CelExpr> indexExpr(boolean optional, CelExpr index) {
+    return optional ? receiver -> receiver.optionalIndex(index) : receiver -> receiver.index(index);
+  }
+
+  private static CelExpr callExpr(CelExpr target, List<CelExpr> args) {
+    return switch (target) {
+      case CelExpr.Ident ident -> macroOrCallExpr(ident, args);
+      case CelExpr.Select select -> macroOrMemberCallExpr(select.operand(), select.field(), args);
+      default -> throw new AssertionError("Invalid call receiver: " + target);
+    };
+  }
+
+  private static CelExpr macroOrCallExpr(CelExpr.Ident method, List<CelExpr> args) {
+    return switch (method.name()) {
+      case "has" -> {
+        checkSyntax(args.size() == 1, "has() expects 1 arg, %s provided", args.size());
+        CelExpr.Select select =
+            expect(CelExpr.Select.class, args.get(0), "has() expects 1 select argument");
+        yield new CelExpr.Macro.Has(select);
+      }
+      default -> new CelExpr.FunctionCall(method, args);
+    };
+  }
+
+  private static CelExpr macroOrMemberCallExpr(
+      CelExpr target, CelExpr.Ident method, List<CelExpr> args) {
+    return switch (method.name()) {
+      case "all" ->
+          toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.All(t, v, c));
+      case "exists" ->
+          toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.Exists(t, v, c));
+      case "exists_one" ->
+          toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.ExistsOne(t, v, c));
+      case "filter" ->
+          toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.Filter(t, v, c));
+      case "map" ->
+          switch (args.size()) {
+            case 2 ->
+                toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.Map(t, v, c));
+            case 3 ->
+                toMacro(
+                    target,
+                    method.name(),
+                    args,
+                    (t, v, c1, c2) -> new CelExpr.Macro.FilterMap(t, v, c1, c2));
+            default ->
+                throw Parser.fail("map() macro expects 2 or 3 args, " + args.size() + " provided");
+          };
+      default -> new CelExpr.MemberCall(target, method, args);
+    };
+  }
+
+  private static <T extends CelExpr.Macro> T toMacro(
+      CelExpr target, String method, List<CelExpr> args,
+      TriFunction<CelExpr, CelExpr.Ident, CelExpr, T> construct) {
+    checkSyntax(args.size() == 2, "%s() expects 2 args, %s provided", method, args.size());
+    CelExpr.Ident placeholder =
+        expect(
+            CelExpr.Ident.class,
+            args.get(0),
+            "identifier expected for the 1st arg of %s()",
+            method);
+    return construct.apply(target, placeholder, args.get(1));
+  }
+
+  private static <T extends CelExpr.Macro> T toMacro(
+      CelExpr target, String method, List<CelExpr> args,
+      Function4<CelExpr, CelExpr.Ident, CelExpr, CelExpr, T> construct) {
+    checkSyntax(args.size() == 3, "%s() expects 3 args, %s provided", method, args.size());
+    CelExpr.Ident placeholder =
+        expect(
+            CelExpr.Ident.class,
+            args.get(0),
+            "identifier expected for the 1st arg of %s()",
+            method);
+    return construct.apply(target, placeholder, args.get(1), args.get(2));
+  }
+
+  private static CelExpr structExpr(CelExpr receiver, List<CelExpr.Entry<CelExpr.Ident>> fields) {
+    Set<String> keys = new HashSet<>();
+    for (CelExpr.Entry<CelExpr.Ident> field : fields) {
+      String name = field.key().name();
+      checkSyntax(keys.add(name), "duplicate field name: %s", name);
+    }
+    return new CelExpr.Struct(toTypeName(receiver), fields);
+  }
+
+  private static String toTypeName(CelExpr expr) {
+    return switch (expr) {
+      case CelExpr.Ident ident -> ident.name();
+      case CelExpr.Select select -> toTypeName(select.operand()) + "." + select.field();
+      default -> throw new AssertionError("Invalid struct receiver: " + expr);
+    };
   }
 }
