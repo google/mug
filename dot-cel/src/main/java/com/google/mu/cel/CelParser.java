@@ -137,7 +137,7 @@ public final class CelParser {
       sequence(string(".").orElse(""), PLAIN_IDENTIFIER, String::concat)
           .mapWithIndex((name, begin, end) -> new CelExpr.Ident(name, begin));
 
-  private static final Parser<CelExpr> PARSER = makeParser();
+  private static final Parser<CelExpr> PARSER = Parser.define(CelParser::makeParser);
 
   @SuppressWarnings("Immutable")
   private final Parser<CelExpr>.Lexical lexical;
@@ -176,9 +176,7 @@ public final class CelParser {
     return CelProtoConverter.toParsedExpr(parse(input), input);
   }
 
-  private static Parser<CelExpr> makeParser() {
-    Parser.Rule<CelExpr> regular = new Parser.Rule<>();
-    Parser.Rule<CelExpr> expr = new Parser.Rule<>();
+  private static Parser<CelExpr> makeParser(Parser<CelExpr> expr) {
     Parser<CelExpr> parenthesized = expr.between("(", ")");
     Parser<List<CelExpr>> args = expr.zeroOrMoreDelimitedBy(",").between("(", ")");
 
@@ -236,17 +234,15 @@ public final class CelParser {
         .build(unaryExpr);
     binary = associative(binary, "&&", CelExpr::and);
     binary = associative(binary, "||", CelExpr::or);
-    regular.definedAs(binary);
-    return expr.definedAs(
-        new OperatorTable<CelExpr>()
-            .rightAssociative(
-                anyOf(parenthesized, regular)
-                    .between("?", ":")
-                    .mapWithIndex(
-                        (ifTrue, begin, end) ->
-                            (cond, ifFalse) -> new CelExpr.IfElse(cond, ifTrue, ifFalse, begin)),
-                1)
-            .build(anyOf(regular, parenthesized)));
+    return new OperatorTable<CelExpr>()
+        .rightAssociative(
+            anyOf(parenthesized, binary)
+                .between("?", ":")
+                .mapWithIndex(
+                    (ifTrue, begin, end) ->
+                        (cond, ifFalse) -> new CelExpr.IfElse(cond, ifTrue, ifFalse, begin)),
+            1)
+        .build(anyOf(binary, parenthesized));
   }
 
   private static Parser<CelExpr> associative(
