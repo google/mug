@@ -21,7 +21,7 @@ Standard `cel-java` relies on the ANTLR runtime. In large enterprise deployments
 Unlike ANTLR-based parsers which maintain mutable state during parsing and force `cel-java` to allocate a fresh pipeline of stateful helper objects (`Lexer`, `Parser`, `TokenStream`, etc.) for every single parse invocation, combinator-based parsers are stateless and inherently thread-safe. A single static parser tree is reused globally, eliminating thread allocation overhead on the hot path.
 
 ### 3. Modern Java AST with Pattern Matching
-The AST in `mug-cel` is represented using Java **sealed interfaces** and **records** (`CelExpr`). This allows you to write clean, type-safe, and exhaustive AST traversals or rewriters using Java 21 pattern matching:
+The AST in `mug-cel` is represented using Java **sealed interfaces** and **records** (`CelExpr`). This allows developers to write clean, type-safe, and exhaustive AST traversals or rewriters using Java 21 pattern matching:
 
 ```java
 switch (expr) {
@@ -31,10 +31,10 @@ switch (expr) {
 }
 ```
 
-This is a significant ergonomic improvement over the traditional nested checks or `AutoValue`-based structures in `cel-java`.
+It's a significant ergonomic improvement over the traditional nested checks or `AutoValue`-based structures in `cel-java`.
 
 ### 4. Production-Safe (StackOverflow Protection)
-Parser combinators are traditionally susceptible to JVM-crashing `StackOverflowError` when parsing deeply nested structures (e.g. `(((...)))` or long chained operations). This makes them risky for parsing untrusted user inputs.
+Parser combinators are traditionally susceptible to JVM-crashing `StackOverflowError` when parsing deeply nested structures (e.g. `(((...)))` or long chained operations), making them risky for parsing untrusted user inputs.
 
 `mug-cel` takes advantage of `dot-parse`'s built-in stack depth protection. It safely limits recursion depth and throws a catchable `ParseException` instead of crashing the JVM, matching the production safety guarantees provided by `cel-java`.
 
