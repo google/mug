@@ -553,12 +553,9 @@ public final class CelParser {
       CelExpr target, String method, List<CelExpr> args,
       TriFunction<CelExpr, CelExpr.Ident, CelExpr, T> construct) {
     checkSyntax(args.size() == 2, "%s() expects 2 args, %s provided", method, args.size());
-    CelExpr.Ident placeholder =
-        expect(
-            CelExpr.Ident.class,
-            args.get(0),
-            "identifier expected for the 1st arg of %s()",
-            method);
+    CelExpr.Ident placeholder = expect(
+        CelExpr.Ident.class, args.get(0),
+        "identifier expected for the 1st arg of %s()", method);
     return construct.apply(target, placeholder, args.get(1));
   }
 
@@ -566,12 +563,9 @@ public final class CelParser {
       CelExpr target, String method, List<CelExpr> args,
       Function4<CelExpr, CelExpr.Ident, CelExpr, CelExpr, T> construct) {
     checkSyntax(args.size() == 3, "%s() expects 3 args, %s provided", method, args.size());
-    CelExpr.Ident placeholder =
-        expect(
-            CelExpr.Ident.class,
-            args.get(0),
-            "identifier expected for the 1st arg of %s()",
-            method);
+    CelExpr.Ident placeholder = expect(
+        CelExpr.Ident.class, args.get(0),
+        "identifier expected for the 1st arg of %s()", method);
     return construct.apply(target, placeholder, args.get(1), args.get(2));
   }
 
