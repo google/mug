@@ -222,7 +222,7 @@ public class CelExprTest {
     CelExpr.Entry<CelExpr.Ident> field =
         new CelExpr.Entry<>(new CelExpr.Ident("myField", 0), value, false, 0);
     CelExpr.Struct expr = new CelExpr.Struct("MyMessage", List.of(field), 0);
-    assertThat(expr.messageName()).isEqualTo("MyMessage");
+    assertThat(expr.typeName()).isEqualTo("MyMessage");
     assertThat(expr.fields()).containsExactly(field);
     assertThat(field.key()).isEqualTo(new CelExpr.Ident("myField", 0));
     assertThat(field.value()).isEqualTo(value);

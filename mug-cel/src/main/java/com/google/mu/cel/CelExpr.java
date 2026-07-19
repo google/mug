@@ -65,9 +65,9 @@ public sealed interface CelExpr {
    * {@code CelExpr.struct("MyMsg", Map.of("field", new Element(value(1), true)))} is equivalent to
    * {@code CelExpr.of("MyMsg{?field: 1}")}.
    */
-  static Struct struct(String messageName, Map<String, Element> fields) {
+  static Struct struct(String typeName, Map<String, Element> fields) {
     return new Struct(
-        messageName,
+        typeName,
         fields.entrySet().stream()
             .map(
                 e ->
@@ -646,17 +646,17 @@ public sealed interface CelExpr {
   }
 
   /** Struct/message creation (e.g. {@code Type{field: value, ?opt_field: value}}). */
-  record Struct(String messageName, List<Entry<Ident>> fields, int sourceIndex) implements CelExpr {
-    public Struct(String messageName, List<Entry<Ident>> fields) {
-      this(messageName, fields, 0);
+  record Struct(String typeName, List<Entry<Ident>> fields, int sourceIndex) implements CelExpr {
+    public Struct(String typeName, List<Entry<Ident>> fields) {
+      this(typeName, fields, 0);
     }
 
     @Override public Struct withSourceIndex(int index) {
-      return new Struct(messageName, fields, index);
+      return new Struct(typeName, fields, index);
     }
 
     @Override public String toString() {
-      return messageName + fields.stream().collect(Joiner.on(", ").between('{', '}'));
+      return typeName + fields.stream().collect(Joiner.on(", ").between('{', '}'));
     }
   }
 
