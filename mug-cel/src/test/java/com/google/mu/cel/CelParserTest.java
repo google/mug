@@ -1038,7 +1038,7 @@ public final class CelParserTest {
           "new MapOf(" + toJavaEntries(v.entries()) + ", " + v.sourceIndex() + ")";
       case CelExpr.Struct v ->
           "new Struct(\""
-              + v.messageName()
+              + v.typeName()
               + "\", "
               + toJavaEntries(v.fields())
               + ", "

@@ -273,7 +273,7 @@ final class CelProtoConverter {
       }
       case CelExpr.Struct v -> {
         Expr.CreateStruct.Builder structBuilder =
-            Expr.CreateStruct.newBuilder().setMessageName(v.messageName());
+            Expr.CreateStruct.newBuilder().setMessageName(v.typeName());
         for (CelExpr.Entry<CelExpr.Ident> field : v.fields()) {
           long entryId = idGenerator.getAndIncrement();
           putPosition(entryId, field.sourceIndex());
