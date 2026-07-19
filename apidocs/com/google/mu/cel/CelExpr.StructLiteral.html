@@ -106,10 +106,11 @@ loadScripts(document, 'script');</script>
 </dl>
 <hr>
 <div class="horizontal-scroll">
-<div class="type-signature"><span class="modifiers">public static record </span><span class="element-name type-name-label">CelExpr.StructLiteral</span>(int&nbsp;sourceIndex, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;messageName, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a>&lt;<a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>&gt;&gt;&nbsp;fields)
+<div class="type-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
+</span><span class="modifiers">public static record </span><span class="element-name type-name-label">CelExpr.StructLiteral</span>(int&nbsp;sourceIndex, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;messageName, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a>&lt;<a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>&gt;&gt;&nbsp;fields)
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a>
 implements <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></span></div>
-<div class="block">Struct/message creation (e.g. <code>Type{field: value, ?opt_field: value}</code>).</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>10.7</dd>
@@ -124,7 +125,7 @@ implements <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr
 <h2>Nested Class Summary</h2>
 <div class="inherited-list">
 <h3 id="nested-classes-inherited-from-class-com.google.mu.cel.CelExpr">Nested classes/interfaces inherited from interface&nbsp;com.google.mu.cel.<a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></h3>
-<code><a href="CelExpr.Add.html" title="class in com.google.mu.cel">CelExpr.Add</a>, <a href="CelExpr.And.html" title="class in com.google.mu.cel">CelExpr.And</a>, <a href="CelExpr.Binary.html" title="interface in com.google.mu.cel">CelExpr.Binary</a>, <a href="CelExpr.BoolValue.html" title="class in com.google.mu.cel">CelExpr.BoolValue</a>, <a href="CelExpr.BytesValue.html" title="class in com.google.mu.cel">CelExpr.BytesValue</a>, <a href="CelExpr.Divide.html" title="class in com.google.mu.cel">CelExpr.Divide</a>, <a href="CelExpr.DoubleValue.html" title="class in com.google.mu.cel">CelExpr.DoubleValue</a>, <a href="CelExpr.Element.html" title="class in com.google.mu.cel">CelExpr.Element</a>, <a href="CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a>&lt;<a href="CelExpr.Entry.html#type-param-K" title="type parameter in CelExpr.Entry">K</a>&gt;, <a href="CelExpr.EqualTo.html" title="class in com.google.mu.cel">CelExpr.EqualTo</a>, <a href="CelExpr.FunctionCall.html" title="class in com.google.mu.cel">CelExpr.FunctionCall</a>, <a href="CelExpr.GreaterThan.html" title="class in com.google.mu.cel">CelExpr.GreaterThan</a>, <a href="CelExpr.GreaterThanOrEqualTo.html" title="class in com.google.mu.cel">CelExpr.GreaterThanOrEqualTo</a>, <a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>, <a href="CelExpr.In.html" title="class in com.google.mu.cel">CelExpr.In</a>, <a href="CelExpr.Index.html" title="class in com.google.mu.cel">CelExpr.Index</a>, <a href="CelExpr.LessThan.html" title="class in com.google.mu.cel">CelExpr.LessThan</a>, <a href="CelExpr.LessThanOrEqualTo.html" title="class in com.google.mu.cel">CelExpr.LessThanOrEqualTo</a>, <a href="CelExpr.ListLiteral.html" title="class in com.google.mu.cel">CelExpr.ListLiteral</a>, <a href="CelExpr.LongValue.html" title="class in com.google.mu.cel">CelExpr.LongValue</a>, <a href="CelExpr.Macro.html" title="interface in com.google.mu.cel">CelExpr.Macro</a>, <a href="CelExpr.MapLiteral.html" title="class in com.google.mu.cel">CelExpr.MapLiteral</a>, <a href="CelExpr.MemberCall.html" title="class in com.google.mu.cel">CelExpr.MemberCall</a>, <a href="CelExpr.Modulo.html" title="class in com.google.mu.cel">CelExpr.Modulo</a>, <a href="CelExpr.Multiply.html" title="class in com.google.mu.cel">CelExpr.Multiply</a>, <a href="CelExpr.Negative.html" title="class in com.google.mu.cel">CelExpr.Negative</a>, <a href="CelExpr.Not.html" title="class in com.google.mu.cel">CelExpr.Not</a>, <a href="CelExpr.NotEqualTo.html" title="class in com.google.mu.cel">CelExpr.NotEqualTo</a>, <a href="CelExpr.NullValue.html" title="class in com.google.mu.cel">CelExpr.NullValue</a>, <a href="CelExpr.OptionalIndex.html" title="class in com.google.mu.cel">CelExpr.OptionalIndex</a>, <a href="CelExpr.OptionalSelect.html" title="class in com.google.mu.cel">CelExpr.OptionalSelect</a>, <a href="CelExpr.Or.html" title="class in com.google.mu.cel">CelExpr.Or</a>, <a href="CelExpr.Select.html" title="class in com.google.mu.cel">CelExpr.Select</a>, <a href="CelExpr.StringValue.html" title="class in com.google.mu.cel">CelExpr.StringValue</a>, <a href="CelExpr.StructLiteral.html" title="class in com.google.mu.cel">CelExpr.StructLiteral</a>, <a href="CelExpr.Subtract.html" title="class in com.google.mu.cel">CelExpr.Subtract</a>, <a href="CelExpr.Ternary.html" title="class in com.google.mu.cel">CelExpr.Ternary</a>, <a href="CelExpr.UintValue.html" title="class in com.google.mu.cel">CelExpr.UintValue</a>, <a href="CelExpr.Unary.html" title="interface in com.google.mu.cel">CelExpr.Unary</a></code></div>
+<code><a href="CelExpr.Add.html" title="class in com.google.mu.cel">CelExpr.Add</a>, <a href="CelExpr.And.html" title="class in com.google.mu.cel">CelExpr.And</a>, <a href="CelExpr.Binary.html" title="interface in com.google.mu.cel">CelExpr.Binary</a>, <a href="CelExpr.BoolValue.html" title="class in com.google.mu.cel">CelExpr.BoolValue</a>, <a href="CelExpr.BytesValue.html" title="class in com.google.mu.cel">CelExpr.BytesValue</a>, <a href="CelExpr.Divide.html" title="class in com.google.mu.cel">CelExpr.Divide</a>, <a href="CelExpr.DoubleValue.html" title="class in com.google.mu.cel">CelExpr.DoubleValue</a>, <a href="CelExpr.Element.html" title="class in com.google.mu.cel">CelExpr.Element</a>, <a href="CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a>&lt;<a href="CelExpr.Entry.html#type-param-K" title="type parameter in CelExpr.Entry">K</a>&gt;, <a href="CelExpr.EqualTo.html" title="class in com.google.mu.cel">CelExpr.EqualTo</a>, <a href="CelExpr.FunctionCall.html" title="class in com.google.mu.cel">CelExpr.FunctionCall</a>, <a href="CelExpr.GreaterThan.html" title="class in com.google.mu.cel">CelExpr.GreaterThan</a>, <a href="CelExpr.GreaterThanOrEqualTo.html" title="class in com.google.mu.cel">CelExpr.GreaterThanOrEqualTo</a>, <a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>, <a href="CelExpr.IfElse.html" title="class in com.google.mu.cel">CelExpr.IfElse</a>, <a href="CelExpr.In.html" title="class in com.google.mu.cel">CelExpr.In</a>, <a href="CelExpr.Index.html" title="class in com.google.mu.cel">CelExpr.Index</a>, <a href="CelExpr.LessThan.html" title="class in com.google.mu.cel">CelExpr.LessThan</a>, <a href="CelExpr.LessThanOrEqualTo.html" title="class in com.google.mu.cel">CelExpr.LessThanOrEqualTo</a>, <a href="CelExpr.ListLiteral.html" title="class in com.google.mu.cel">CelExpr.ListLiteral</a>, <a href="CelExpr.ListOf.html" title="class in com.google.mu.cel">CelExpr.ListOf</a>, <a href="CelExpr.LongValue.html" title="class in com.google.mu.cel">CelExpr.LongValue</a>, <a href="CelExpr.Macro.html" title="interface in com.google.mu.cel">CelExpr.Macro</a>, <a href="CelExpr.MapLiteral.html" title="class in com.google.mu.cel">CelExpr.MapLiteral</a>, <a href="CelExpr.MapOf.html" title="class in com.google.mu.cel">CelExpr.MapOf</a>, <a href="CelExpr.MemberCall.html" title="class in com.google.mu.cel">CelExpr.MemberCall</a>, <a href="CelExpr.Modulo.html" title="class in com.google.mu.cel">CelExpr.Modulo</a>, <a href="CelExpr.Multiply.html" title="class in com.google.mu.cel">CelExpr.Multiply</a>, <a href="CelExpr.Negative.html" title="class in com.google.mu.cel">CelExpr.Negative</a>, <a href="CelExpr.Not.html" title="class in com.google.mu.cel">CelExpr.Not</a>, <a href="CelExpr.NotEqualTo.html" title="class in com.google.mu.cel">CelExpr.NotEqualTo</a>, <a href="CelExpr.NullValue.html" title="class in com.google.mu.cel">CelExpr.NullValue</a>, <a href="CelExpr.OptionalIndex.html" title="class in com.google.mu.cel">CelExpr.OptionalIndex</a>, <a href="CelExpr.OptionalSelect.html" title="class in com.google.mu.cel">CelExpr.OptionalSelect</a>, <a href="CelExpr.Or.html" title="class in com.google.mu.cel">CelExpr.Or</a>, <a href="CelExpr.Select.html" title="class in com.google.mu.cel">CelExpr.Select</a>, <a href="CelExpr.StringValue.html" title="class in com.google.mu.cel">CelExpr.StringValue</a>, <a href="CelExpr.Struct.html" title="class in com.google.mu.cel">CelExpr.Struct</a>, <a href="CelExpr.StructLiteral.html" title="class in com.google.mu.cel">CelExpr.StructLiteral</a>, <a href="CelExpr.Subtract.html" title="class in com.google.mu.cel">CelExpr.Subtract</a>, <a href="CelExpr.UintValue.html" title="class in com.google.mu.cel">CelExpr.UintValue</a>, <a href="CelExpr.Unary.html" title="interface in com.google.mu.cel">CelExpr.Unary</a></code></div>
 </section>
 </li>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
@@ -139,11 +140,14 @@ implements <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;messageName,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a>&lt;<a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>&gt;&gt;&nbsp;fields)</code></div>
 <div class="col-last even-row-color">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Creates an instance of a <code>StructLiteral</code> record class.</div>
 </div>
 <div class="col-constructor-name odd-row-color"><code><a href="#%3Cinit%3E(java.lang.String,java.util.List)" class="member-name-link">StructLiteral</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;messageName,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a>&lt;<a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>&gt;&gt;&nbsp;fields)</code></div>
-<div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-last odd-row-color">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
+&nbsp;</div>
 </div>
 </section>
 </li>
@@ -152,45 +156,52 @@ implements <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr
 <section class="method-summary" id="method-summary">
 <h2>Method Summary</h2>
 <div id="method-summary-table">
-<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab4" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab4', 3)" class="table-tab">Concrete Methods</button></div>
+<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab4" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab4', 3)" class="table-tab">Concrete Methods</button><button id="method-summary-table-tab6" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab6', 3)" class="table-tab">Deprecated Methods</button></div>
 <div id="method-summary-table.tabpanel" role="tabpanel" aria-labelledby="method-summary-table-tab0">
 <div class="summary-table three-column-summary">
 <div class="table-header col-first">Modifier and Type</div>
 <div class="table-header col-second">Method</div>
 <div class="table-header col-last">Description</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final boolean</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#equals(java.lang.Object)" class="member-name-link">equals</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;o)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code>final boolean</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#equals(java.lang.Object)" class="member-name-link">equals</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;o)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Indicates whether some other object is "equal to" this one.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a><wbr>&lt;<a href="CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a>&lt;<a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>&gt;&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#fields()" class="member-name-link">fields</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a><wbr>&lt;<a href="CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a>&lt;<a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>&gt;&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#fields()" class="member-name-link">fields</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Returns the value of the <code>fields</code> record component.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final int</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#hashCode()" class="member-name-link">hashCode</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code>final int</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#hashCode()" class="member-name-link">hashCode</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Returns a hash code value for this object.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#messageName()" class="member-name-link">messageName</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#messageName()" class="member-name-link">messageName</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Returns the value of the <code>messageName</code> record component.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>int</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sourceIndex()" class="member-name-link">sourceIndex</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code>int</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#sourceIndex()" class="member-name-link">sourceIndex</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Returns the value of the <code>sourceIndex</code> record component.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#toString()" class="member-name-link">toString</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code>final <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#toString()" class="member-name-link">toString</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Returns a string representation of this record class.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="CelExpr.StructLiteral.html" title="class in com.google.mu.cel">CelExpr.StructLiteral</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#withSourceIndex(int)" class="member-name-link">withSourceIndex</a><wbr>(int&nbsp;index)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="CelExpr.StructLiteral.html" title="class in com.google.mu.cel">CelExpr.StructLiteral</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#withSourceIndex(int)" class="member-name-link">withSourceIndex</a><wbr>(int&nbsp;index)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Returns a copy of this expression with the given source index.</div>
 </div>
 </div>
@@ -201,7 +212,7 @@ implements <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr
 <code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#clone()" title="class or interface in java.lang" class="external-link">clone</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#finalize()" title="class or interface in java.lang" class="external-link">finalize</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#getClass()" title="class or interface in java.lang" class="external-link">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#notify()" title="class or interface in java.lang" class="external-link">notify</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#notifyAll()" title="class or interface in java.lang" class="external-link">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#wait()" title="class or interface in java.lang" class="external-link">wait</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#wait(long)" title="class or interface in java.lang" class="external-link">wait</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#wait(long,int)" title="class or interface in java.lang" class="external-link">wait</a></code></div>
 <div class="inherited-list">
 <h3 id="methods-inherited-from-class-com.google.mu.cel.CelExpr">Methods inherited from interface&nbsp;com.google.mu.cel.<a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></h3>
-<code><a href="CelExpr.html#add(com.google.mu.cel.CelExpr)">add</a>, <a href="CelExpr.html#and(com.google.mu.cel.CelExpr)">and</a>, <a href="CelExpr.html#atLeast(com.google.mu.cel.CelExpr)">atLeast</a>, <a href="CelExpr.html#atMost(com.google.mu.cel.CelExpr)">atMost</a>, <a href="CelExpr.html#call(com.google.mu.cel.CelExpr.Ident,java.util.List)">call</a>, <a href="CelExpr.html#divide(com.google.mu.cel.CelExpr)">divide</a>, <a href="CelExpr.html#equalTo(com.google.mu.cel.CelExpr)">equalTo</a>, <a href="CelExpr.html#greaterThan(com.google.mu.cel.CelExpr)">greaterThan</a>, <a href="CelExpr.html#ifElse(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr)">ifElse</a>, <a href="CelExpr.html#in(com.google.mu.cel.CelExpr)">in</a>, <a href="CelExpr.html#index(com.google.mu.cel.CelExpr)">index</a>, <a href="CelExpr.html#lessThan(com.google.mu.cel.CelExpr)">lessThan</a>, <a href="CelExpr.html#modulo(com.google.mu.cel.CelExpr)">modulo</a>, <a href="CelExpr.html#multiply(com.google.mu.cel.CelExpr)">multiply</a>, <a href="CelExpr.html#notEqualTo(com.google.mu.cel.CelExpr)">notEqualTo</a>, <a href="CelExpr.html#optionalIndex(com.google.mu.cel.CelExpr)">optionalIndex</a>, <a href="CelExpr.html#optionalSelect(java.lang.String)">optionalSelect</a>, <a href="CelExpr.html#or(com.google.mu.cel.CelExpr)">or</a>, <a href="CelExpr.html#select(java.lang.String)">select</a>, <a href="CelExpr.html#subtract(com.google.mu.cel.CelExpr)">subtract</a></code></div>
+<code><a href="CelExpr.html#add(com.google.mu.cel.CelExpr)">add</a>, <a href="CelExpr.html#and(com.google.mu.cel.CelExpr)">and</a>, <a href="CelExpr.html#atLeast(com.google.mu.cel.CelExpr)">atLeast</a>, <a href="CelExpr.html#atMost(com.google.mu.cel.CelExpr)">atMost</a>, <a href="CelExpr.html#call(com.google.mu.cel.CelExpr.Ident,java.util.List)">call</a>, <a href="CelExpr.html#divide(com.google.mu.cel.CelExpr)">divide</a>, <a href="CelExpr.html#equalTo(com.google.mu.cel.CelExpr)">equalTo</a>, <a href="CelExpr.html#greaterThan(com.google.mu.cel.CelExpr)">greaterThan</a>, <a href="CelExpr.html#ifElse(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr)">ifElse</a>, <a href="CelExpr.html#in(com.google.mu.cel.CelExpr)">in</a>, <a href="CelExpr.html#index(com.google.mu.cel.CelExpr)">index</a>, <a href="CelExpr.html#lessThan(com.google.mu.cel.CelExpr)">lessThan</a>, <a href="CelExpr.html#modulo(com.google.mu.cel.CelExpr)">modulo</a>, <a href="CelExpr.html#multiply(com.google.mu.cel.CelExpr)">multiply</a>, <a href="CelExpr.html#notEqualTo(com.google.mu.cel.CelExpr)">notEqualTo</a>, <a href="CelExpr.html#optionalIndex(com.google.mu.cel.CelExpr)">optionalIndex</a>, <a href="CelExpr.html#optionalSelect(com.google.mu.cel.CelExpr.Ident)">optionalSelect</a>, <a href="CelExpr.html#optionalSelect(java.lang.String)">optionalSelect</a>, <a href="CelExpr.html#or(com.google.mu.cel.CelExpr)">or</a>, <a href="CelExpr.html#select(com.google.mu.cel.CelExpr.Ident)">select</a>, <a href="CelExpr.html#select(java.lang.String)">select</a>, <a href="CelExpr.html#subtract(com.google.mu.cel.CelExpr)">subtract</a></code></div>
 </section>
 </li>
 </ul>
@@ -219,6 +230,7 @@ implements <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">StructLiteral</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;messageName,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a>&lt;<a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>&gt;&gt;&nbsp;fields)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 </div>
 </section>
 </li>
@@ -229,6 +241,7 @@ implements <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">StructLiteral</span><wbr><span class="parameters">(int&nbsp;sourceIndex,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;messageName,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a>&lt;<a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>&gt;&gt;&nbsp;fields)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Creates an instance of a <code>StructLiteral</code> record class.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
@@ -252,6 +265,7 @@ implements <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr
 <h3>withSourceIndex</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="CelExpr.StructLiteral.html" title="class in com.google.mu.cel">CelExpr.StructLiteral</a></span>&nbsp;<span class="element-name">withSourceIndex</span><wbr><span class="parameters">(int&nbsp;index)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block"><span class="description-from-type-label">Description copied from interface:&nbsp;<code><a href="CelExpr.html#withSourceIndex(int)">CelExpr</a></code></span></div>
 <div class="block">Returns a copy of this expression with the given source index.</div>
 <dl class="notes">
@@ -265,7 +279,8 @@ implements <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr
 <section class="detail" id="toString()">
 <h3>toString</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">toString</span>()</div>
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">toString</span>()</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Returns a string representation of this record class. The representation contains the name of the class, followed by the name and value of each of the record components.</div>
 <dl class="notes">
 <dt>Specified by:</dt>
@@ -281,6 +296,7 @@ implements <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr
 <h3>hashCode</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">hashCode</span>()</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Returns a hash code value for this object. The value is derived from the hash code of each of the record components.</div>
 <dl class="notes">
 <dt>Specified by:</dt>
@@ -296,6 +312,7 @@ implements <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr
 <h3>equals</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">equals</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;o)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Indicates whether some other object is "equal to" this one. The objects are equal if the other object is of the same class and if all the record components are equal. Reference components are compared with <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Objects.html#equals(java.lang.Object,java.lang.Object)" title="class or interface in java.util" class="external-link"><code>Objects::equals(Object,Object)</code></a>; primitive components are compared with the <code>compare</code> method from their corresponding wrapper classes.</div>
 <dl class="notes">
 <dt>Specified by:</dt>
@@ -313,6 +330,7 @@ implements <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr
 <h3>sourceIndex</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">sourceIndex</span>()</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Returns the value of the <code>sourceIndex</code> record component.</div>
 <dl class="notes">
 <dt>Specified by:</dt>
@@ -328,6 +346,7 @@ implements <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr
 <h3>messageName</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">messageName</span>()</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Returns the value of the <code>messageName</code> record component.</div>
 <dl class="notes">
 <dt>Returns:</dt>
@@ -341,6 +360,7 @@ implements <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr
 <h3>fields</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a>&lt;<a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>&gt;&gt;</span>&nbsp;<span class="element-name">fields</span>()</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Returns the value of the <code>fields</code> record component.</div>
 <dl class="notes">
 <dt>Returns:</dt>

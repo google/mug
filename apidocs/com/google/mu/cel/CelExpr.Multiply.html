@@ -68,7 +68,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
 <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
 <ol class="toc-list">
-<li><a href="#%3Cinit%3E(int,com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr)" tabindex="0">Multiply(int, CelExpr, CelExpr)</a></li>
+<li><a href="#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr,int)" tabindex="0">Multiply(CelExpr, CelExpr, int)</a></li>
 </ol>
 </li>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
@@ -77,9 +77,9 @@ loadScripts(document, 'script');</script>
 <li><a href="#toString()" tabindex="0">toString()</a></li>
 <li><a href="#hashCode()" tabindex="0">hashCode()</a></li>
 <li><a href="#equals(java.lang.Object)" tabindex="0">equals(Object)</a></li>
-<li><a href="#sourceIndex()" tabindex="0">sourceIndex()</a></li>
 <li><a href="#left()" tabindex="0">left()</a></li>
 <li><a href="#right()" tabindex="0">right()</a></li>
+<li><a href="#sourceIndex()" tabindex="0">sourceIndex()</a></li>
 </ol>
 </li>
 </ol>
@@ -105,7 +105,7 @@ loadScripts(document, 'script');</script>
 </dl>
 <hr>
 <div class="horizontal-scroll">
-<div class="type-signature"><span class="modifiers">public static record </span><span class="element-name type-name-label">CelExpr.Multiply</span>(int&nbsp;sourceIndex, <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;left, <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;right)
+<div class="type-signature"><span class="modifiers">public static record </span><span class="element-name type-name-label">CelExpr.Multiply</span>(<a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;left, <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;right, int&nbsp;sourceIndex)
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a>
 implements <a href="CelExpr.Binary.html" title="interface in com.google.mu.cel">CelExpr.Binary</a></span></div>
 <div class="block">Multiplication: <code>x * y</code>.</div>
@@ -123,7 +123,7 @@ implements <a href="CelExpr.Binary.html" title="interface in com.google.mu.cel">
 <h2>Nested Class Summary</h2>
 <div class="inherited-list">
 <h3 id="nested-classes-inherited-from-class-com.google.mu.cel.CelExpr">Nested classes/interfaces inherited from interface&nbsp;com.google.mu.cel.<a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></h3>
-<code><a href="CelExpr.Add.html" title="class in com.google.mu.cel">CelExpr.Add</a>, <a href="CelExpr.And.html" title="class in com.google.mu.cel">CelExpr.And</a>, <a href="CelExpr.Binary.html" title="interface in com.google.mu.cel">CelExpr.Binary</a>, <a href="CelExpr.BoolValue.html" title="class in com.google.mu.cel">CelExpr.BoolValue</a>, <a href="CelExpr.BytesValue.html" title="class in com.google.mu.cel">CelExpr.BytesValue</a>, <a href="CelExpr.Divide.html" title="class in com.google.mu.cel">CelExpr.Divide</a>, <a href="CelExpr.DoubleValue.html" title="class in com.google.mu.cel">CelExpr.DoubleValue</a>, <a href="CelExpr.Element.html" title="class in com.google.mu.cel">CelExpr.Element</a>, <a href="CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a>&lt;<a href="CelExpr.Entry.html#type-param-K" title="type parameter in CelExpr.Entry">K</a>&gt;, <a href="CelExpr.EqualTo.html" title="class in com.google.mu.cel">CelExpr.EqualTo</a>, <a href="CelExpr.FunctionCall.html" title="class in com.google.mu.cel">CelExpr.FunctionCall</a>, <a href="CelExpr.GreaterThan.html" title="class in com.google.mu.cel">CelExpr.GreaterThan</a>, <a href="CelExpr.GreaterThanOrEqualTo.html" title="class in com.google.mu.cel">CelExpr.GreaterThanOrEqualTo</a>, <a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>, <a href="CelExpr.In.html" title="class in com.google.mu.cel">CelExpr.In</a>, <a href="CelExpr.Index.html" title="class in com.google.mu.cel">CelExpr.Index</a>, <a href="CelExpr.LessThan.html" title="class in com.google.mu.cel">CelExpr.LessThan</a>, <a href="CelExpr.LessThanOrEqualTo.html" title="class in com.google.mu.cel">CelExpr.LessThanOrEqualTo</a>, <a href="CelExpr.ListLiteral.html" title="class in com.google.mu.cel">CelExpr.ListLiteral</a>, <a href="CelExpr.LongValue.html" title="class in com.google.mu.cel">CelExpr.LongValue</a>, <a href="CelExpr.Macro.html" title="interface in com.google.mu.cel">CelExpr.Macro</a>, <a href="CelExpr.MapLiteral.html" title="class in com.google.mu.cel">CelExpr.MapLiteral</a>, <a href="CelExpr.MemberCall.html" title="class in com.google.mu.cel">CelExpr.MemberCall</a>, <a href="CelExpr.Modulo.html" title="class in com.google.mu.cel">CelExpr.Modulo</a>, <a href="CelExpr.Multiply.html" title="class in com.google.mu.cel">CelExpr.Multiply</a>, <a href="CelExpr.Negative.html" title="class in com.google.mu.cel">CelExpr.Negative</a>, <a href="CelExpr.Not.html" title="class in com.google.mu.cel">CelExpr.Not</a>, <a href="CelExpr.NotEqualTo.html" title="class in com.google.mu.cel">CelExpr.NotEqualTo</a>, <a href="CelExpr.NullValue.html" title="class in com.google.mu.cel">CelExpr.NullValue</a>, <a href="CelExpr.OptionalIndex.html" title="class in com.google.mu.cel">CelExpr.OptionalIndex</a>, <a href="CelExpr.OptionalSelect.html" title="class in com.google.mu.cel">CelExpr.OptionalSelect</a>, <a href="CelExpr.Or.html" title="class in com.google.mu.cel">CelExpr.Or</a>, <a href="CelExpr.Select.html" title="class in com.google.mu.cel">CelExpr.Select</a>, <a href="CelExpr.StringValue.html" title="class in com.google.mu.cel">CelExpr.StringValue</a>, <a href="CelExpr.StructLiteral.html" title="class in com.google.mu.cel">CelExpr.StructLiteral</a>, <a href="CelExpr.Subtract.html" title="class in com.google.mu.cel">CelExpr.Subtract</a>, <a href="CelExpr.Ternary.html" title="class in com.google.mu.cel">CelExpr.Ternary</a>, <a href="CelExpr.UintValue.html" title="class in com.google.mu.cel">CelExpr.UintValue</a>, <a href="CelExpr.Unary.html" title="interface in com.google.mu.cel">CelExpr.Unary</a></code></div>
+<code><a href="CelExpr.Add.html" title="class in com.google.mu.cel">CelExpr.Add</a>, <a href="CelExpr.And.html" title="class in com.google.mu.cel">CelExpr.And</a>, <a href="CelExpr.Binary.html" title="interface in com.google.mu.cel">CelExpr.Binary</a>, <a href="CelExpr.BoolValue.html" title="class in com.google.mu.cel">CelExpr.BoolValue</a>, <a href="CelExpr.BytesValue.html" title="class in com.google.mu.cel">CelExpr.BytesValue</a>, <a href="CelExpr.Divide.html" title="class in com.google.mu.cel">CelExpr.Divide</a>, <a href="CelExpr.DoubleValue.html" title="class in com.google.mu.cel">CelExpr.DoubleValue</a>, <a href="CelExpr.Element.html" title="class in com.google.mu.cel">CelExpr.Element</a>, <a href="CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a>&lt;<a href="CelExpr.Entry.html#type-param-K" title="type parameter in CelExpr.Entry">K</a>&gt;, <a href="CelExpr.EqualTo.html" title="class in com.google.mu.cel">CelExpr.EqualTo</a>, <a href="CelExpr.FunctionCall.html" title="class in com.google.mu.cel">CelExpr.FunctionCall</a>, <a href="CelExpr.GreaterThan.html" title="class in com.google.mu.cel">CelExpr.GreaterThan</a>, <a href="CelExpr.GreaterThanOrEqualTo.html" title="class in com.google.mu.cel">CelExpr.GreaterThanOrEqualTo</a>, <a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>, <a href="CelExpr.IfElse.html" title="class in com.google.mu.cel">CelExpr.IfElse</a>, <a href="CelExpr.In.html" title="class in com.google.mu.cel">CelExpr.In</a>, <a href="CelExpr.Index.html" title="class in com.google.mu.cel">CelExpr.Index</a>, <a href="CelExpr.LessThan.html" title="class in com.google.mu.cel">CelExpr.LessThan</a>, <a href="CelExpr.LessThanOrEqualTo.html" title="class in com.google.mu.cel">CelExpr.LessThanOrEqualTo</a>, <a href="CelExpr.ListLiteral.html" title="class in com.google.mu.cel">CelExpr.ListLiteral</a>, <a href="CelExpr.ListOf.html" title="class in com.google.mu.cel">CelExpr.ListOf</a>, <a href="CelExpr.LongValue.html" title="class in com.google.mu.cel">CelExpr.LongValue</a>, <a href="CelExpr.Macro.html" title="interface in com.google.mu.cel">CelExpr.Macro</a>, <a href="CelExpr.MapLiteral.html" title="class in com.google.mu.cel">CelExpr.MapLiteral</a>, <a href="CelExpr.MapOf.html" title="class in com.google.mu.cel">CelExpr.MapOf</a>, <a href="CelExpr.MemberCall.html" title="class in com.google.mu.cel">CelExpr.MemberCall</a>, <a href="CelExpr.Modulo.html" title="class in com.google.mu.cel">CelExpr.Modulo</a>, <a href="CelExpr.Multiply.html" title="class in com.google.mu.cel">CelExpr.Multiply</a>, <a href="CelExpr.Negative.html" title="class in com.google.mu.cel">CelExpr.Negative</a>, <a href="CelExpr.Not.html" title="class in com.google.mu.cel">CelExpr.Not</a>, <a href="CelExpr.NotEqualTo.html" title="class in com.google.mu.cel">CelExpr.NotEqualTo</a>, <a href="CelExpr.NullValue.html" title="class in com.google.mu.cel">CelExpr.NullValue</a>, <a href="CelExpr.OptionalIndex.html" title="class in com.google.mu.cel">CelExpr.OptionalIndex</a>, <a href="CelExpr.OptionalSelect.html" title="class in com.google.mu.cel">CelExpr.OptionalSelect</a>, <a href="CelExpr.Or.html" title="class in com.google.mu.cel">CelExpr.Or</a>, <a href="CelExpr.Select.html" title="class in com.google.mu.cel">CelExpr.Select</a>, <a href="CelExpr.StringValue.html" title="class in com.google.mu.cel">CelExpr.StringValue</a>, <a href="CelExpr.Struct.html" title="class in com.google.mu.cel">CelExpr.Struct</a>, <a href="CelExpr.StructLiteral.html" title="class in com.google.mu.cel">CelExpr.StructLiteral</a>, <a href="CelExpr.Subtract.html" title="class in com.google.mu.cel">CelExpr.Subtract</a>, <a href="CelExpr.UintValue.html" title="class in com.google.mu.cel">CelExpr.UintValue</a>, <a href="CelExpr.Unary.html" title="interface in com.google.mu.cel">CelExpr.Unary</a></code></div>
 </section>
 </li>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
@@ -134,9 +134,9 @@ implements <a href="CelExpr.Binary.html" title="interface in com.google.mu.cel">
 <div class="summary-table two-column-summary">
 <div class="table-header col-first">Constructor</div>
 <div class="table-header col-last">Description</div>
-<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(int,com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr)" class="member-name-link">Multiply</a><wbr>(int&nbsp;sourceIndex,
- <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;left,
- <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;right)</code></div>
+<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr,int)" class="member-name-link">Multiply</a><wbr>(<a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;left,
+ <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;right,
+ int&nbsp;sourceIndex)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Creates an instance of a <code>Multiply</code> record class.</div>
 </div>
@@ -197,7 +197,7 @@ implements <a href="CelExpr.Binary.html" title="interface in com.google.mu.cel">
 <code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#clone()" title="class or interface in java.lang" class="external-link">clone</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#finalize()" title="class or interface in java.lang" class="external-link">finalize</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#getClass()" title="class or interface in java.lang" class="external-link">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#notify()" title="class or interface in java.lang" class="external-link">notify</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#notifyAll()" title="class or interface in java.lang" class="external-link">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#wait()" title="class or interface in java.lang" class="external-link">wait</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#wait(long)" title="class or interface in java.lang" class="external-link">wait</a>, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html#wait(long,int)" title="class or interface in java.lang" class="external-link">wait</a></code></div>
 <div class="inherited-list">
 <h3 id="methods-inherited-from-class-com.google.mu.cel.CelExpr">Methods inherited from interface&nbsp;com.google.mu.cel.<a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></h3>
-<code><a href="CelExpr.html#add(com.google.mu.cel.CelExpr)">add</a>, <a href="CelExpr.html#and(com.google.mu.cel.CelExpr)">and</a>, <a href="CelExpr.html#atLeast(com.google.mu.cel.CelExpr)">atLeast</a>, <a href="CelExpr.html#atMost(com.google.mu.cel.CelExpr)">atMost</a>, <a href="CelExpr.html#call(com.google.mu.cel.CelExpr.Ident,java.util.List)">call</a>, <a href="CelExpr.html#divide(com.google.mu.cel.CelExpr)">divide</a>, <a href="CelExpr.html#equalTo(com.google.mu.cel.CelExpr)">equalTo</a>, <a href="CelExpr.html#greaterThan(com.google.mu.cel.CelExpr)">greaterThan</a>, <a href="CelExpr.html#ifElse(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr)">ifElse</a>, <a href="CelExpr.html#in(com.google.mu.cel.CelExpr)">in</a>, <a href="CelExpr.html#index(com.google.mu.cel.CelExpr)">index</a>, <a href="CelExpr.html#lessThan(com.google.mu.cel.CelExpr)">lessThan</a>, <a href="CelExpr.html#modulo(com.google.mu.cel.CelExpr)">modulo</a>, <a href="CelExpr.html#multiply(com.google.mu.cel.CelExpr)">multiply</a>, <a href="CelExpr.html#notEqualTo(com.google.mu.cel.CelExpr)">notEqualTo</a>, <a href="CelExpr.html#optionalIndex(com.google.mu.cel.CelExpr)">optionalIndex</a>, <a href="CelExpr.html#optionalSelect(java.lang.String)">optionalSelect</a>, <a href="CelExpr.html#or(com.google.mu.cel.CelExpr)">or</a>, <a href="CelExpr.html#select(java.lang.String)">select</a>, <a href="CelExpr.html#subtract(com.google.mu.cel.CelExpr)">subtract</a></code></div>
+<code><a href="CelExpr.html#add(com.google.mu.cel.CelExpr)">add</a>, <a href="CelExpr.html#and(com.google.mu.cel.CelExpr)">and</a>, <a href="CelExpr.html#atLeast(com.google.mu.cel.CelExpr)">atLeast</a>, <a href="CelExpr.html#atMost(com.google.mu.cel.CelExpr)">atMost</a>, <a href="CelExpr.html#call(com.google.mu.cel.CelExpr.Ident,java.util.List)">call</a>, <a href="CelExpr.html#divide(com.google.mu.cel.CelExpr)">divide</a>, <a href="CelExpr.html#equalTo(com.google.mu.cel.CelExpr)">equalTo</a>, <a href="CelExpr.html#greaterThan(com.google.mu.cel.CelExpr)">greaterThan</a>, <a href="CelExpr.html#ifElse(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr)">ifElse</a>, <a href="CelExpr.html#in(com.google.mu.cel.CelExpr)">in</a>, <a href="CelExpr.html#index(com.google.mu.cel.CelExpr)">index</a>, <a href="CelExpr.html#lessThan(com.google.mu.cel.CelExpr)">lessThan</a>, <a href="CelExpr.html#modulo(com.google.mu.cel.CelExpr)">modulo</a>, <a href="CelExpr.html#multiply(com.google.mu.cel.CelExpr)">multiply</a>, <a href="CelExpr.html#notEqualTo(com.google.mu.cel.CelExpr)">notEqualTo</a>, <a href="CelExpr.html#optionalIndex(com.google.mu.cel.CelExpr)">optionalIndex</a>, <a href="CelExpr.html#optionalSelect(com.google.mu.cel.CelExpr.Ident)">optionalSelect</a>, <a href="CelExpr.html#optionalSelect(java.lang.String)">optionalSelect</a>, <a href="CelExpr.html#or(com.google.mu.cel.CelExpr)">or</a>, <a href="CelExpr.html#select(com.google.mu.cel.CelExpr.Ident)">select</a>, <a href="CelExpr.html#select(java.lang.String)">select</a>, <a href="CelExpr.html#subtract(com.google.mu.cel.CelExpr)">subtract</a></code></div>
 </section>
 </li>
 </ul>
@@ -210,18 +210,18 @@ implements <a href="CelExpr.Binary.html" title="interface in com.google.mu.cel">
 <h2>Constructor Details</h2>
 <ul class="member-list">
 <li>
-<section class="detail" id="&lt;init&gt;(int,com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr)">
+<section class="detail" id="&lt;init&gt;(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr,int)">
 <h3>Multiply</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">Multiply</span><wbr><span class="parameters">(int&nbsp;sourceIndex,
- <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;left,
- <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;right)</span></div>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">Multiply</span><wbr><span class="parameters">(<a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;left,
+ <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;right,
+ int&nbsp;sourceIndex)</span></div>
 <div class="block">Creates an instance of a <code>Multiply</code> record class.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
-<dd><code>sourceIndex</code> - the value for the <code>sourceIndex</code> record component</dd>
 <dd><code>left</code> - the value for the <code>left</code> record component</dd>
 <dd><code>right</code> - the value for the <code>right</code> record component</dd>
+<dd><code>sourceIndex</code> - the value for the <code>sourceIndex</code> record component</dd>
 </dl>
 </div>
 </section>
@@ -296,21 +296,6 @@ implements <a href="CelExpr.Binary.html" title="interface in com.google.mu.cel">
 </section>
 </li>
 <li>
-<section class="detail" id="sourceIndex()">
-<h3>sourceIndex</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">sourceIndex</span>()</div>
-<div class="block">Returns the value of the <code>sourceIndex</code> record component.</div>
-<dl class="notes">
-<dt>Specified by:</dt>
-<dd><code><a href="CelExpr.html#sourceIndex()">sourceIndex</a></code>&nbsp;in interface&nbsp;<code><a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></code></dd>
-<dt>Returns:</dt>
-<dd>the value of the <code>sourceIndex</code> record component</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
 <section class="detail" id="left()">
 <h3>left</h3>
 <div class="horizontal-scroll">
@@ -336,6 +321,21 @@ implements <a href="CelExpr.Binary.html" title="interface in com.google.mu.cel">
 <dd><code><a href="CelExpr.Binary.html#right()">right</a></code>&nbsp;in interface&nbsp;<code><a href="CelExpr.Binary.html" title="interface in com.google.mu.cel">CelExpr.Binary</a></code></dd>
 <dt>Returns:</dt>
 <dd>the value of the <code>right</code> record component</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="sourceIndex()">
+<h3>sourceIndex</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">sourceIndex</span>()</div>
+<div class="block">Returns the value of the <code>sourceIndex</code> record component.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="CelExpr.html#sourceIndex()">sourceIndex</a></code>&nbsp;in interface&nbsp;<code><a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></code></dd>
+<dt>Returns:</dt>
+<dd>the value of the <code>sourceIndex</code> record component</dd>
 </dl>
 </div>
 </section>

@@ -69,6 +69,7 @@ loadScripts(document, 'script');</script>
 <ol class="toc-list">
 <li><a href="#%3Cinit%3E(K,com.google.mu.cel.CelExpr,boolean)" tabindex="0">Entry(K, CelExpr, boolean)</a></li>
 <li><a href="#%3Cinit%3E(int,K,com.google.mu.cel.CelExpr,boolean)" tabindex="0">Entry(int, K, CelExpr, boolean)</a></li>
+<li><a href="#%3Cinit%3E(K,com.google.mu.cel.CelExpr,boolean,int)" tabindex="0">Entry(K, CelExpr, boolean, int)</a></li>
 </ol>
 </li>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
@@ -80,10 +81,10 @@ loadScripts(document, 'script');</script>
 <li><a href="#toString()" tabindex="0">toString()</a></li>
 <li><a href="#hashCode()" tabindex="0">hashCode()</a></li>
 <li><a href="#equals(java.lang.Object)" tabindex="0">equals(Object)</a></li>
-<li><a href="#sourceIndex()" tabindex="0">sourceIndex()</a></li>
 <li><a href="#key()" tabindex="0">key()</a></li>
 <li><a href="#value()" tabindex="0">value()</a></li>
 <li><a href="#optional()" tabindex="0">optional()</a></li>
+<li><a href="#sourceIndex()" tabindex="0">sourceIndex()</a></li>
 </ol>
 </li>
 </ol>
@@ -105,7 +106,7 @@ loadScripts(document, 'script');</script>
 </dl>
 <hr>
 <div class="horizontal-scroll">
-<div class="type-signature"><span class="modifiers">public static record </span><span class="element-name type-name-label">CelExpr.Entry&lt;K&gt;</span>(int&nbsp;sourceIndex, <a href="#type-param-K" title="type parameter in CelExpr.Entry">K</a>&nbsp;key, <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;value, boolean&nbsp;optional)
+<div class="type-signature"><span class="modifiers">public static record </span><span class="element-name type-name-label">CelExpr.Entry&lt;K&gt;</span>(<a href="#type-param-K" title="type parameter in CelExpr.Entry">K</a>&nbsp;key, <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;value, boolean&nbsp;optional, int&nbsp;sourceIndex)
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a></span></div>
 <div class="block">An entry/field representing a key-value or field-value mapping in map or struct literals.</div>
 <dl class="notes">
@@ -128,13 +129,18 @@ loadScripts(document, 'script');</script>
  <a href="#type-param-K" title="type parameter in CelExpr.Entry">K</a>&nbsp;key,
  <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;value,
  boolean&nbsp;optional)</code></div>
-<div class="col-last even-row-color">
-<div class="block">Creates an instance of a <code>Entry</code> record class.</div>
-</div>
+<div class="col-last even-row-color">&nbsp;</div>
 <div class="col-constructor-name odd-row-color"><code><a href="#%3Cinit%3E(K,com.google.mu.cel.CelExpr,boolean)" class="member-name-link">Entry</a><wbr>(<a href="#type-param-K" title="type parameter in CelExpr.Entry">K</a>&nbsp;key,
  <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;value,
  boolean&nbsp;optional)</code></div>
 <div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(K,com.google.mu.cel.CelExpr,boolean,int)" class="member-name-link">Entry</a><wbr>(<a href="#type-param-K" title="type parameter in CelExpr.Entry">K</a>&nbsp;key,
+ <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;value,
+ boolean&nbsp;optional,
+ int&nbsp;sourceIndex)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Creates an instance of a <code>Entry</code> record class.</div>
+</div>
 </div>
 </section>
 </li>
@@ -244,13 +250,24 @@ loadScripts(document, 'script');</script>
  <a href="#type-param-K" title="type parameter in CelExpr.Entry">K</a>&nbsp;key,
  <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;value,
  boolean&nbsp;optional)</span></div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="&lt;init&gt;(K,com.google.mu.cel.CelExpr,boolean,int)">
+<h3 id="&lt;init&gt;(java.lang.Object,com.google.mu.cel.CelExpr,boolean,int)">Entry</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">Entry</span><wbr><span class="parameters">(<a href="#type-param-K" title="type parameter in CelExpr.Entry">K</a>&nbsp;key,
+ <a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;value,
+ boolean&nbsp;optional,
+ int&nbsp;sourceIndex)</span></div>
 <div class="block">Creates an instance of a <code>Entry</code> record class.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
-<dd><code>sourceIndex</code> - the value for the <code>sourceIndex</code> record component</dd>
 <dd><code>key</code> - the value for the <code>key</code> record component</dd>
 <dd><code>value</code> - the value for the <code>value</code> record component</dd>
 <dd><code>optional</code> - the value for the <code>optional</code> record component</dd>
+<dd><code>sourceIndex</code> - the value for the <code>sourceIndex</code> record component</dd>
 </dl>
 </div>
 </section>
@@ -352,19 +369,6 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
-<section class="detail" id="sourceIndex()">
-<h3>sourceIndex</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">sourceIndex</span>()</div>
-<div class="block">Returns the value of the <code>sourceIndex</code> record component.</div>
-<dl class="notes">
-<dt>Returns:</dt>
-<dd>the value of the <code>sourceIndex</code> record component</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
 <section class="detail" id="key()">
 <h3>key</h3>
 <div class="horizontal-scroll">
@@ -399,6 +403,19 @@ loadScripts(document, 'script');</script>
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>the value of the <code>optional</code> record component</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="sourceIndex()">
+<h3>sourceIndex</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">sourceIndex</span>()</div>
+<div class="block">Returns the value of the <code>sourceIndex</code> record component.</div>
+<dl class="notes">
+<dt>Returns:</dt>
+<dd>the value of the <code>sourceIndex</code> record component</dd>
 </dl>
 </div>
 </section>
