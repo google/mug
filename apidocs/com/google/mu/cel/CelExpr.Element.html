@@ -76,7 +76,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#hashCode()" tabindex="0">hashCode()</a></li>
 <li><a href="#equals(java.lang.Object)" tabindex="0">equals(Object)</a></li>
 <li><a href="#value()" tabindex="0">value()</a></li>
-<li><a href="#optional()" tabindex="0">optional()</a></li>
+<li><a href="#isOptional()" tabindex="0">isOptional()</a></li>
 </ol>
 </li>
 </ol>
@@ -98,8 +98,9 @@ loadScripts(document, 'script');</script>
 </dl>
 <hr>
 <div class="horizontal-scroll">
-<div class="type-signature"><span class="modifiers">public static record </span><span class="element-name type-name-label">CelExpr.Element</span>(<a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;value, boolean&nbsp;optional)
+<div class="type-signature"><span class="modifiers">public static record </span><span class="element-name type-name-label">CelExpr.Element</span>(<a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;value, boolean&nbsp;isOptional)
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a></span></div>
+<div class="block">An element in a list, map, or message, which can optionally be marked as optional.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>10.7</dd>
@@ -117,7 +118,7 @@ loadScripts(document, 'script');</script>
 <div class="table-header col-first">Constructor</div>
 <div class="table-header col-last">Description</div>
 <div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(com.google.mu.cel.CelExpr,boolean)" class="member-name-link">Element</a><wbr>(<a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;value,
- boolean&nbsp;optional)</code></div>
+ boolean&nbsp;isOptional)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Creates an instance of a <code>Element</code> record class.</div>
 </div>
@@ -146,9 +147,9 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a hash code value for this object.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#optional()" class="member-name-link">optional</a>()</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#isOptional()" class="member-name-link">isOptional</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns the value of the <code>optional</code> record component.</div>
+<div class="block">Returns the value of the <code>isOptional</code> record component.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#toString()" class="member-name-link">toString</a>()</code></div>
@@ -182,12 +183,12 @@ loadScripts(document, 'script');</script>
 <h3>Element</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">Element</span><wbr><span class="parameters">(<a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;value,
- boolean&nbsp;optional)</span></div>
+ boolean&nbsp;isOptional)</span></div>
 <div class="block">Creates an instance of a <code>Element</code> record class.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>value</code> - the value for the <code>value</code> record component</dd>
-<dd><code>optional</code> - the value for the <code>optional</code> record component</dd>
+<dd><code>isOptional</code> - the value for the <code>isOptional</code> record component</dd>
 </dl>
 </div>
 </section>
@@ -261,14 +262,14 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
-<section class="detail" id="optional()">
-<h3>optional</h3>
+<section class="detail" id="isOptional()">
+<h3>isOptional</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">optional</span>()</div>
-<div class="block">Returns the value of the <code>optional</code> record component.</div>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">isOptional</span>()</div>
+<div class="block">Returns the value of the <code>isOptional</code> record component.</div>
 <dl class="notes">
 <dt>Returns:</dt>
-<dd>the value of the <code>optional</code> record component</dd>
+<dd>the value of the <code>isOptional</code> record component</dd>
 </dl>
 </div>
 </section>

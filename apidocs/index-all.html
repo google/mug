@@ -238,18 +238,12 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a <a href="com/google/mu/util/Substring.RepeatingPattern.html" title="class in com.google.mu.util"><code>Substring.RepeatingPattern</code></a> for all occurrences of <code>pattern</code> in
  the input string.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.All.html#%3Cinit%3E(int,com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr)" class="member-name-link">All(int, CelExpr, String, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.All.html" title="class in com.google.mu.cel">CelExpr.Macro.All</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.All.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,com.google.mu.cel.CelExpr)" class="member-name-link">All(CelExpr, CelExpr.Ident, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.All.html" title="class in com.google.mu.cel">CelExpr.Macro.All</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.All.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,com.google.mu.cel.CelExpr,int)" class="member-name-link">All(CelExpr, CelExpr.Ident, CelExpr, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.All.html" title="class in com.google.mu.cel">CelExpr.Macro.All</a></dt>
 <dd>
 <div class="block">Creates an instance of a <code>All</code> record class.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.All.html#%3Cinit%3E(com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr)" class="member-name-link">All(CelExpr, String, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.All.html" title="class in com.google.mu.cel">CelExpr.Macro.All</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.All.html#%3Cinit%3E(com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr,int)" class="member-name-link">All(CelExpr, String, CelExpr, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.All.html" title="class in com.google.mu.cel">CelExpr.Macro.All</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#allMatch(java.util.function.BiPredicate)" class="member-name-link">allMatch(BiPredicate&lt;? super K, ? super V&gt;)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
 <div class="block">Returns true if all pairs in this stream match <code>predicate</code>.</div>
@@ -901,10 +895,8 @@ loadScripts(document, 'script');</script>
 <div class="block">Double-precision floating point literal.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.Element.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Element</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Entry.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Entry&lt;K&gt;</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
-<div class="block">An entry/field representing a key-value or field-value mapping in map or struct literals.</div>
+<div class="block">An element in a list, map, or message, which can optionally be marked as optional.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.EqualTo.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.EqualTo</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
@@ -924,11 +916,11 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.Ident.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Ident</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
-<div class="block">Variable or symbol lookup (e.g.</div>
+<div class="block">Variable or symbol lookup, such as <code>request</code>.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.IfElse.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.IfElse</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
-<div class="block">Ternary conditional (e.g.</div>
+<div class="block">Ternary conditional, such as <code>condition ? trueExpr : falseExpr</code>.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.In.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.In</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
@@ -936,7 +928,11 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.Index.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Index</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
-<div class="block">Subscript/indexing (e.g.</div>
+<div class="block">Subscript/indexing, such as <code>operand[index]</code>.</div>
+</dd>
+<dt><a href="com/google/mu/cel/CelExpr.KeyedBy.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.KeyedBy&lt;K&gt;</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
+<dd>
+<div class="block">An entry/field representing a key-value or field-value mapping in map or struct literals.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.LessThan.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.LessThan</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
@@ -948,7 +944,7 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.ListOf.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.ListOf</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
-<div class="block">List creation (e.g.</div>
+<div class="block">List creation, such as <code>[1, ?optional_var]</code>.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.LongValue.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.LongValue</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
@@ -959,24 +955,37 @@ loadScripts(document, 'script');</script>
 <div class="block">Abstract representation of a CEL macro expression.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.All.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Macro.All</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">The <code>target.all(var, condition)</code> macro.</div>
+</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.Exists.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Macro.Exists</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">The <code>target.exists(var, condition)</code> macro.</div>
+</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Macro.ExistsOne</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">The <code>target.exists_one(var, condition)</code> macro.</div>
+</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.Filter.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Macro.Filter</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">The <code>target.filter(var, expr)</code> macro.</div>
+</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Macro.FilterMap</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">The <code>target.map(var, filter, transform)</code> macro (synthesized from three-argument
+ <code>map</code> macro).</div>
+</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.Has.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Macro.Has</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
 <div class="block">The <code>has(member)</code> macro.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.Map.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Macro.Map</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">The <code>target.map(var, expr)</code> macro.</div>
+</dd>
 <dt><a href="com/google/mu/cel/CelExpr.MapOf.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.MapOf</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
-<div class="block">Map creation (e.g.</div>
+<div class="block">Map creation, such as <code>{"key": value, ? "opt_key": value}</code>.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.MemberCall.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.MemberCall</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
@@ -1008,11 +1017,11 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.OptionalIndex.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.OptionalIndex</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
-<div class="block">Optional subscript/indexing (e.g.</div>
+<div class="block">Optional subscript/indexing, such as <code>operand[?index]</code>.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.OptionalSelect.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.OptionalSelect</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
-<div class="block">Optional field selection (e.g.</div>
+<div class="block">Optional field selection, such as <code>operand.?field</code>.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.Or.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Or</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
@@ -1020,7 +1029,7 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.Select.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Select</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
-<div class="block">Field selection (e.g.</div>
+<div class="block">Field selection, such as <code>operand.field</code>.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.StringValue.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.StringValue</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
@@ -1028,7 +1037,7 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.Struct.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Struct</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
-<div class="block">Struct/message creation (e.g.</div>
+<div class="block">Struct/message creation, such as <code>Type{field: value, ?opt_field: value}</code>.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.Subtract.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Subtract</a> - Record Class in <a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a></dt>
 <dd>
@@ -1221,7 +1230,7 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/google/mu/cel/package-summary.html">com.google.mu.cel</a> - package com.google.mu.cel</dt>
 <dd>
-<div class="block">Cel Parser (requires <em>mug-cel</em> artifact)</div>
+<div class="block">Cel Parser (requires <em>dot-cel</em> artifact)</div>
 </dd>
 <dt><a href="com/google/mu/collect/package-summary.html">com.google.mu.collect</a> - package com.google.mu.collect</dt>
 <dd>
@@ -1682,14 +1691,6 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns the value of the <code>entries</code> record component.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Entry.html#%3Cinit%3E(int,K,com.google.mu.cel.CelExpr,boolean)" class="member-name-link">Entry(int, K, CelExpr, boolean)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Entry.html#%3Cinit%3E(K,com.google.mu.cel.CelExpr,boolean)" class="member-name-link">Entry(K, CelExpr, boolean)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Entry.html#%3Cinit%3E(K,com.google.mu.cel.CelExpr,boolean,int)" class="member-name-link">Entry(K, CelExpr, boolean, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a></dt>
-<dd>
-<div class="block">Creates an instance of a <code>Entry</code> record class.</div>
-</dd>
 <dt><a href="com/google/mu/bigquery/ParameterizedQuery.html#enumConstants(java.lang.Class)" class="member-name-link">enumConstants(Class&lt;? extends Enum&lt;?&gt;&gt;)</a> - Static method in class com.google.mu.bigquery.<a href="com/google/mu/bigquery/ParameterizedQuery.html" title="class in com.google.mu.bigquery">ParameterizedQuery</a></dt>
 <dd>
 <div class="block">Returns the stream of enum constants defined by <code>enumClass</code>,
@@ -1817,10 +1818,6 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Indicates whether some other object is "equal to" this one.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Entry.html#equals(java.lang.Object)" class="member-name-link">equals(Object)</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a></dt>
-<dd>
-<div class="block">Indicates whether some other object is "equal to" this one.</div>
-</dd>
 <dt><a href="com/google/mu/cel/CelExpr.EqualTo.html#equals(java.lang.Object)" class="member-name-link">equals(Object)</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.EqualTo.html" title="class in com.google.mu.cel">CelExpr.EqualTo</a></dt>
 <dd>
 <div class="block">Indicates whether some other object is "equal to" this one.</div>
@@ -1850,6 +1847,10 @@ loadScripts(document, 'script');</script>
 <div class="block">Indicates whether some other object is "equal to" this one.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.Index.html#equals(java.lang.Object)" class="member-name-link">equals(Object)</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Index.html" title="class in com.google.mu.cel">CelExpr.Index</a></dt>
+<dd>
+<div class="block">Indicates whether some other object is "equal to" this one.</div>
+</dd>
+<dt><a href="com/google/mu/cel/CelExpr.KeyedBy.html#equals(java.lang.Object)" class="member-name-link">equals(Object)</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.KeyedBy.html" title="class in com.google.mu.cel">CelExpr.KeyedBy</a></dt>
 <dd>
 <div class="block">Indicates whether some other object is "equal to" this one.</div>
 </dd>
@@ -1992,30 +1993,18 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">The match doesn't include the bound</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Exists.html#%3Cinit%3E(int,com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr)" class="member-name-link">Exists(int, CelExpr, String, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Exists.html" title="class in com.google.mu.cel">CelExpr.Macro.Exists</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.Exists.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,com.google.mu.cel.CelExpr)" class="member-name-link">Exists(CelExpr, CelExpr.Ident, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Exists.html" title="class in com.google.mu.cel">CelExpr.Macro.Exists</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.Exists.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,com.google.mu.cel.CelExpr,int)" class="member-name-link">Exists(CelExpr, CelExpr.Ident, CelExpr, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Exists.html" title="class in com.google.mu.cel">CelExpr.Macro.Exists</a></dt>
 <dd>
 <div class="block">Creates an instance of a <code>Exists</code> record class.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Exists.html#%3Cinit%3E(com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr)" class="member-name-link">Exists(CelExpr, String, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Exists.html" title="class in com.google.mu.cel">CelExpr.Macro.Exists</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Exists.html#%3Cinit%3E(com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr,int)" class="member-name-link">Exists(CelExpr, String, CelExpr, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Exists.html" title="class in com.google.mu.cel">CelExpr.Macro.Exists</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html#%3Cinit%3E(int,com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr)" class="member-name-link">ExistsOne(int, CelExpr, String, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html" title="class in com.google.mu.cel">CelExpr.Macro.ExistsOne</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,com.google.mu.cel.CelExpr)" class="member-name-link">ExistsOne(CelExpr, CelExpr.Ident, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html" title="class in com.google.mu.cel">CelExpr.Macro.ExistsOne</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,com.google.mu.cel.CelExpr,int)" class="member-name-link">ExistsOne(CelExpr, CelExpr.Ident, CelExpr, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html" title="class in com.google.mu.cel">CelExpr.Macro.ExistsOne</a></dt>
 <dd>
 <div class="block">Creates an instance of a <code>ExistsOne</code> record class.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html#%3Cinit%3E(com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr)" class="member-name-link">ExistsOne(CelExpr, String, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html" title="class in com.google.mu.cel">CelExpr.Macro.ExistsOne</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html#%3Cinit%3E(com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr,int)" class="member-name-link">ExistsOne(CelExpr, String, CelExpr, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html" title="class in com.google.mu.cel">CelExpr.Macro.ExistsOne</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.Filter.html#expr()" class="member-name-link">expr()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Filter.html" title="class in com.google.mu.cel">CelExpr.Macro.Filter</a></dt>
 <dd>
 <div class="block">Returns the value of the <code>expr</code> record component.</div>
@@ -2091,34 +2080,22 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns a list containing the elements of the given list that match the given predicate.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Filter.html#%3Cinit%3E(int,com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr)" class="member-name-link">Filter(int, CelExpr, String, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Filter.html" title="class in com.google.mu.cel">CelExpr.Macro.Filter</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.Filter.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,com.google.mu.cel.CelExpr)" class="member-name-link">Filter(CelExpr, CelExpr.Ident, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Filter.html" title="class in com.google.mu.cel">CelExpr.Macro.Filter</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.Filter.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,com.google.mu.cel.CelExpr,int)" class="member-name-link">Filter(CelExpr, CelExpr.Ident, CelExpr, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Filter.html" title="class in com.google.mu.cel">CelExpr.Macro.Filter</a></dt>
 <dd>
 <div class="block">Creates an instance of a <code>Filter</code> record class.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Filter.html#%3Cinit%3E(com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr)" class="member-name-link">Filter(CelExpr, String, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Filter.html" title="class in com.google.mu.cel">CelExpr.Macro.Filter</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Filter.html#%3Cinit%3E(com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr,int)" class="member-name-link">Filter(CelExpr, String, CelExpr, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Filter.html" title="class in com.google.mu.cel">CelExpr.Macro.Filter</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#filterKeys(java.util.function.Predicate)" class="member-name-link">filterKeys(Predicate&lt;? super K&gt;)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
 <div class="block">Filter this stream to only pairs whose key matches <code>predicate</code>.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html#%3Cinit%3E(int,com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr)" class="member-name-link">FilterMap(int, CelExpr, String, CelExpr, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html" title="class in com.google.mu.cel">CelExpr.Macro.FilterMap</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr)" class="member-name-link">FilterMap(CelExpr, CelExpr.Ident, CelExpr, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html" title="class in com.google.mu.cel">CelExpr.Macro.FilterMap</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr,int)" class="member-name-link">FilterMap(CelExpr, CelExpr.Ident, CelExpr, CelExpr, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html" title="class in com.google.mu.cel">CelExpr.Macro.FilterMap</a></dt>
 <dd>
 <div class="block">Creates an instance of a <code>FilterMap</code> record class.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html#%3Cinit%3E(com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr)" class="member-name-link">FilterMap(CelExpr, String, CelExpr, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html" title="class in com.google.mu.cel">CelExpr.Macro.FilterMap</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html#%3Cinit%3E(com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr,int)" class="member-name-link">FilterMap(CelExpr, String, CelExpr, CelExpr, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html" title="class in com.google.mu.cel">CelExpr.Macro.FilterMap</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#filterValues(java.util.function.Predicate)" class="member-name-link">filterValues(Predicate&lt;? super V&gt;)</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
 <div class="block">Filter this stream to only pairs whose value matches <code>predicate</code>.</div>
@@ -2548,8 +2525,6 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">A 4-arg function.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.FunctionCall.html#%3Cinit%3E(int,com.google.mu.cel.CelExpr.Ident,java.util.List)" class="member-name-link">FunctionCall(int, CelExpr.Ident, List&lt;CelExpr&gt;)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.FunctionCall.html" title="class in com.google.mu.cel">CelExpr.FunctionCall</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.FunctionCall.html#%3Cinit%3E(com.google.mu.cel.CelExpr.Ident,java.util.List)" class="member-name-link">FunctionCall(CelExpr.Ident, List&lt;CelExpr&gt;)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.FunctionCall.html" title="class in com.google.mu.cel">CelExpr.FunctionCall</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.FunctionCall.html#%3Cinit%3E(com.google.mu.cel.CelExpr.Ident,java.util.List,int)" class="member-name-link">FunctionCall(CelExpr.Ident, List&lt;CelExpr&gt;, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.FunctionCall.html" title="class in com.google.mu.cel">CelExpr.FunctionCall</a></dt>
@@ -2717,8 +2692,6 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns true if <code>candidate</code> is in this selection.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Has.html#%3Cinit%3E(int,com.google.mu.cel.CelExpr.Select)" class="member-name-link">Has(int, CelExpr.Select)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Has.html" title="class in com.google.mu.cel">CelExpr.Macro.Has</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.Has.html#%3Cinit%3E(com.google.mu.cel.CelExpr.Select)" class="member-name-link">Has(CelExpr.Select)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Has.html" title="class in com.google.mu.cel">CelExpr.Macro.Has</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.Has.html#%3Cinit%3E(com.google.mu.cel.CelExpr.Select,int)" class="member-name-link">Has(CelExpr.Select, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Has.html" title="class in com.google.mu.cel">CelExpr.Macro.Has</a></dt>
@@ -2847,10 +2820,6 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns a hash code value for this object.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Entry.html#hashCode()" class="member-name-link">hashCode()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a></dt>
-<dd>
-<div class="block">Returns a hash code value for this object.</div>
-</dd>
 <dt><a href="com/google/mu/cel/CelExpr.EqualTo.html#hashCode()" class="member-name-link">hashCode()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.EqualTo.html" title="class in com.google.mu.cel">CelExpr.EqualTo</a></dt>
 <dd>
 <div class="block">Returns a hash code value for this object.</div>
@@ -2880,6 +2849,10 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a hash code value for this object.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.Index.html#hashCode()" class="member-name-link">hashCode()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Index.html" title="class in com.google.mu.cel">CelExpr.Index</a></dt>
+<dd>
+<div class="block">Returns a hash code value for this object.</div>
+</dd>
+<dt><a href="com/google/mu/cel/CelExpr.KeyedBy.html#hashCode()" class="member-name-link">hashCode()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.KeyedBy.html" title="class in com.google.mu.cel">CelExpr.KeyedBy</a></dt>
 <dd>
 <div class="block">Returns a hash code value for this object.</div>
 </dd>
@@ -3025,10 +2998,6 @@ loadScripts(document, 'script');</script>
 </dl>
 <h2 class="title" id="I:I">I</h2>
 <dl class="index">
-<dt><a href="com/google/mu/cel/CelExpr.Ident.html#%3Cinit%3E(int,java.lang.String)" class="member-name-link">Ident(int, String)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Ident.html#%3Cinit%3E(java.lang.String)" class="member-name-link">Ident(String)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Ident.html#%3Cinit%3E(java.lang.String,int)" class="member-name-link">Ident(String, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a></dt>
 <dd>
 <div class="block">Creates an instance of a <code>Ident</code> record class.</div>
@@ -3331,6 +3300,14 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns true if the match isn't empty.</div>
 </dd>
+<dt><a href="com/google/mu/cel/CelExpr.Element.html#isOptional()" class="member-name-link">isOptional()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Element.html" title="class in com.google.mu.cel">CelExpr.Element</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>isOptional</code> record component.</div>
+</dd>
+<dt><a href="com/google/mu/cel/CelExpr.KeyedBy.html#isOptional()" class="member-name-link">isOptional()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.KeyedBy.html" title="class in com.google.mu.cel">CelExpr.KeyedBy</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>isOptional</code> record component.</div>
+</dd>
 <dt><a href="com/google/common/labs/regex/RegexPattern.AtLeast.html#isPossessive()" class="member-name-link">isPossessive()</a> - Method in record class com.google.common.labs.regex.<a href="com/google/common/labs/regex/RegexPattern.AtLeast.html" title="class in com.google.common.labs.regex">RegexPattern.AtLeast</a></dt>
 <dd>
 <div class="block">Returns the value of the <code>isPossessive</code> record component.</div>
@@ -3407,6 +3384,30 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Encapsulates recursive iteration or a lazy block of code with side-effect.</div>
 </dd>
+<dt><a href="com/google/mu/cel/CelExpr.Macro.All.html#iterationVar()" class="member-name-link">iterationVar()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.All.html" title="class in com.google.mu.cel">CelExpr.Macro.All</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>iterationVar</code> record component.</div>
+</dd>
+<dt><a href="com/google/mu/cel/CelExpr.Macro.Exists.html#iterationVar()" class="member-name-link">iterationVar()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Exists.html" title="class in com.google.mu.cel">CelExpr.Macro.Exists</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>iterationVar</code> record component.</div>
+</dd>
+<dt><a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html#iterationVar()" class="member-name-link">iterationVar()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html" title="class in com.google.mu.cel">CelExpr.Macro.ExistsOne</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>iterationVar</code> record component.</div>
+</dd>
+<dt><a href="com/google/mu/cel/CelExpr.Macro.Filter.html#iterationVar()" class="member-name-link">iterationVar()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Filter.html" title="class in com.google.mu.cel">CelExpr.Macro.Filter</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>iterationVar</code> record component.</div>
+</dd>
+<dt><a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html#iterationVar()" class="member-name-link">iterationVar()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html" title="class in com.google.mu.cel">CelExpr.Macro.FilterMap</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>iterationVar</code> record component.</div>
+</dd>
+<dt><a href="com/google/mu/cel/CelExpr.Macro.Map.html#iterationVar()" class="member-name-link">iterationVar()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Map.html" title="class in com.google.mu.cel">CelExpr.Macro.Map</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>iterationVar</code> record component.</div>
+</dd>
 <dt><a href="com/google/mu/collect/Chain.html#iterator()" class="member-name-link">iterator()</a> - Method in class com.google.mu.collect.<a href="com/google/mu/collect/Chain.html" title="class in com.google.mu.collect">Chain</a></dt>
 </dl>
 <h2 class="title" id="I:J">J</h2>
@@ -3473,9 +3474,15 @@ loadScripts(document, 'script');</script>
 </dl>
 <h2 class="title" id="I:K">K</h2>
 <dl class="index">
-<dt><a href="com/google/mu/cel/CelExpr.Entry.html#key()" class="member-name-link">key()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a></dt>
+<dt><a href="com/google/mu/cel/CelExpr.KeyedBy.html#key()" class="member-name-link">key()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.KeyedBy.html" title="class in com.google.mu.cel">CelExpr.KeyedBy</a></dt>
 <dd>
 <div class="block">Returns the value of the <code>key</code> record component.</div>
+</dd>
+<dt><a href="com/google/mu/cel/CelExpr.KeyedBy.html#%3Cinit%3E(K,com.google.mu.cel.CelExpr,boolean)" class="member-name-link">KeyedBy(K, CelExpr, boolean)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.KeyedBy.html" title="class in com.google.mu.cel">CelExpr.KeyedBy</a></dt>
+<dd>&nbsp;</dd>
+<dt><a href="com/google/mu/cel/CelExpr.KeyedBy.html#%3Cinit%3E(K,com.google.mu.cel.CelExpr,boolean,int)" class="member-name-link">KeyedBy(K, CelExpr, boolean, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.KeyedBy.html" title="class in com.google.mu.cel">CelExpr.KeyedBy</a></dt>
+<dd>
+<div class="block">Creates an instance of a <code>KeyedBy</code> record class.</div>
 </dd>
 <dt><a href="com/google/mu/util/stream/BiStream.html#keys()" class="member-name-link">keys()</a> - Method in class com.google.mu.util.stream.<a href="com/google/mu/util/stream/BiStream.html" title="class in com.google.mu.util.stream">BiStream</a></dt>
 <dd>
@@ -3754,18 +3761,12 @@ loadScripts(document, 'script');</script>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/function/MapFrom8.html#map(T,T,T,T,T,T,T,T)" class="member-name-link">map(T, T, T, T, T, T, T, T)</a> - Method in interface com.google.mu.function.<a href="com/google/mu/function/MapFrom8.html" title="interface in com.google.mu.function">MapFrom8</a></dt>
 <dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Map.html#%3Cinit%3E(int,com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr)" class="member-name-link">Map(int, CelExpr, String, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Map.html" title="class in com.google.mu.cel">CelExpr.Macro.Map</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.Map.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,com.google.mu.cel.CelExpr)" class="member-name-link">Map(CelExpr, CelExpr.Ident, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Map.html" title="class in com.google.mu.cel">CelExpr.Macro.Map</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Macro.Map.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,com.google.mu.cel.CelExpr,int)" class="member-name-link">Map(CelExpr, CelExpr.Ident, CelExpr, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Map.html" title="class in com.google.mu.cel">CelExpr.Macro.Map</a></dt>
 <dd>
 <div class="block">Creates an instance of a <code>Map</code> record class.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Map.html#%3Cinit%3E(com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr)" class="member-name-link">Map(CelExpr, String, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Map.html" title="class in com.google.mu.cel">CelExpr.Macro.Map</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Map.html#%3Cinit%3E(com.google.mu.cel.CelExpr,java.lang.String,com.google.mu.cel.CelExpr,int)" class="member-name-link">Map(CelExpr, String, CelExpr, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Map.html" title="class in com.google.mu.cel">CelExpr.Macro.Map</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/function/MapFrom3.html" class="type-name-link" title="interface in com.google.mu.function">MapFrom3&lt;T,<wbr>R&gt;</a> - Interface in <a href="com/google/mu/function/package-summary.html">com.google.mu.function</a></dt>
 <dd>
 <div class="block">A 3-arg function of the signature of <code>(T, T, T) -&gt; R</code>.</div>
@@ -3819,7 +3820,7 @@ loadScripts(document, 'script');</script>
 <div class="block">Given <code>keyMapping</code> that maps the keys of type <code>K</code> to elements of type <code>K2</code>,
  returns a <code>BiStream</code> of type <code>&lt;K2, V&gt;</code>.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.MapOf.html#%3Cinit%3E(java.util.List,int)" class="member-name-link">MapOf(List&lt;CelExpr.Entry&lt;CelExpr&gt;&gt;, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.MapOf.html" title="class in com.google.mu.cel">CelExpr.MapOf</a></dt>
+<dt><a href="com/google/mu/cel/CelExpr.MapOf.html#%3Cinit%3E(java.util.List,int)" class="member-name-link">MapOf(List&lt;CelExpr.KeyedBy&lt;CelExpr&gt;&gt;, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.MapOf.html" title="class in com.google.mu.cel">CelExpr.MapOf</a></dt>
 <dd>
 <div class="block">Creates an instance of a <code>MapOf</code> record class.</div>
 </dd>
@@ -4000,8 +4001,6 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns the value of the <code>member</code> record component.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.MemberCall.html#%3Cinit%3E(int,com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,java.util.List)" class="member-name-link">MemberCall(int, CelExpr, CelExpr.Ident, List&lt;CelExpr&gt;)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.MemberCall.html" title="class in com.google.mu.cel">CelExpr.MemberCall</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.MemberCall.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,java.util.List)" class="member-name-link">MemberCall(CelExpr, CelExpr.Ident, List&lt;CelExpr&gt;)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.MemberCall.html" title="class in com.google.mu.cel">CelExpr.MemberCall</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.MemberCall.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,java.util.List,int)" class="member-name-link">MemberCall(CelExpr, CelExpr.Ident, List&lt;CelExpr&gt;, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.MemberCall.html" title="class in com.google.mu.cel">CelExpr.MemberCall</a></dt>
@@ -4319,10 +4318,6 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns an instance with both <code>a</code> and <code>b</code>.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Entry.html#of(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr)" class="member-name-link">of(CelExpr, CelExpr)</a> - Static method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a></dt>
-<dd>
-<div class="block"><code>Entry.of(string("key"), value(1))</code> is equivalent to <code>CelExpr.of("'key': 1")</code>.</div>
-</dd>
 <dt><a href="com/google/mu/util/Ordinal.html#of(java.lang.Enum)" class="member-name-link">of(Enum&lt;?&gt;)</a> - Static method in class com.google.mu.util.<a href="com/google/mu/util/Ordinal.html" title="class in com.google.mu.util">Ordinal</a></dt>
 <dd>
 <div class="block">Returns instance corresponding to the ordinal of the Enum object <code>e</code>.</div>
@@ -4338,10 +4333,6 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/google/mu/cel/CelExpr.html#of(java.lang.String)" class="member-name-link">of(String)</a> - Static method in interface com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></dt>
 <dd>
 <div class="block">Parses and returns a <a href="com/google/mu/cel/CelExpr.html" title="interface in com.google.mu.cel"><code>CelExpr</code></a> representing the <code>cel</code> string.</div>
-</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Entry.html#of(java.lang.String,com.google.mu.cel.CelExpr)" class="member-name-link">of(String, CelExpr)</a> - Static method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a></dt>
-<dd>
-<div class="block"><code>Entry.of("field", value(1))</code> is equivalent to <code>CelExpr.of("field: 1")</code>.</div>
 </dd>
 <dt><a href="com/google/mu/bigquery/ParameterizedQuery.html#of(java.lang.String,java.lang.Object...)" class="member-name-link">of(String, Object...)</a> - Static method in class com.google.mu.bigquery.<a href="com/google/mu/bigquery/ParameterizedQuery.html" title="class in com.google.mu.bigquery">ParameterizedQuery</a></dt>
 <dd>
@@ -4506,34 +4497,15 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Starts a fluent chain for matching the current parser optionally.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Element.html#optional()" class="member-name-link">optional()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Element.html" title="class in com.google.mu.cel">CelExpr.Element</a></dt>
-<dd>
-<div class="block">Returns the value of the <code>optional</code> record component.</div>
-</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Entry.html#optional()" class="member-name-link">optional()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a></dt>
-<dd>
-<div class="block">Returns the value of the <code>optional</code> record component.</div>
-</dd>
 <dt><a href="com/google/mu/util/Optionals.html#optional(boolean,T)" class="member-name-link">optional(boolean, T)</a> - Static method in class com.google.mu.util.<a href="com/google/mu/util/Optionals.html" title="class in com.google.mu.util">Optionals</a></dt>
 <dd>
 <div class="block">Returns an Optional that wraps <code>value</code> if <code>condition</code> is true and <code>value</code> is
  not null, or else <code>empty()</code>.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Entry.html#optional(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr)" class="member-name-link">optional(CelExpr, CelExpr)</a> - Static method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a></dt>
-<dd>
-<div class="block"><code>Entry.optional(string("key"), value(1))</code> is equivalent to <code>CelExpr.of("? 'key':
- 1")</code>.</div>
-</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Entry.html#optional(java.lang.String,com.google.mu.cel.CelExpr)" class="member-name-link">optional(String, CelExpr)</a> - Static method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a></dt>
-<dd>
-<div class="block"><code>Entry.optional("field", value(1))</code> is equivalent to <code>CelExpr.of("?field: 1")</code>.</div>
-</dd>
 <dt><a href="com/google/mu/cel/CelExpr.html#optionalIndex(com.google.mu.cel.CelExpr)" class="member-name-link">optionalIndex(CelExpr)</a> - Method in interface com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></dt>
 <dd>
 <div class="block"><code>expr.optionalIndex(value(0))</code> is equivalent to <code>CelExpr.of("expr[?0]")</code>.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.OptionalIndex.html#%3Cinit%3E(int,com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr)" class="member-name-link">OptionalIndex(int, CelExpr, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.OptionalIndex.html" title="class in com.google.mu.cel">CelExpr.OptionalIndex</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.OptionalIndex.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr)" class="member-name-link">OptionalIndex(CelExpr, CelExpr)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.OptionalIndex.html" title="class in com.google.mu.cel">CelExpr.OptionalIndex</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.OptionalIndex.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr,int)" class="member-name-link">OptionalIndex(CelExpr, CelExpr, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.OptionalIndex.html" title="class in com.google.mu.cel">CelExpr.OptionalIndex</a></dt>
@@ -4612,12 +4584,6 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block"><code>expr.optionalSelect("field")</code> is equivalent to <code>CelExpr.of("expr.?field")</code>.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.html#optionalSelect(java.lang.String)" class="member-name-link">optionalSelect(String)</a> - Method in interface com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.OptionalSelect.html#%3Cinit%3E(int,com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident)" class="member-name-link">OptionalSelect(int, CelExpr, CelExpr.Ident)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.OptionalSelect.html" title="class in com.google.mu.cel">CelExpr.OptionalSelect</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.OptionalSelect.html#%3Cinit%3E(int,com.google.mu.cel.CelExpr,java.lang.String)" class="member-name-link">OptionalSelect(int, CelExpr, String)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.OptionalSelect.html" title="class in com.google.mu.cel">CelExpr.OptionalSelect</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.OptionalSelect.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident)" class="member-name-link">OptionalSelect(CelExpr, CelExpr.Ident)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.OptionalSelect.html" title="class in com.google.mu.cel">CelExpr.OptionalSelect</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.OptionalSelect.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident,int)" class="member-name-link">OptionalSelect(CelExpr, CelExpr.Ident, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.OptionalSelect.html" title="class in com.google.mu.cel">CelExpr.OptionalSelect</a></dt>
@@ -5966,10 +5932,6 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns the second ordinal.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.html#select(com.google.mu.cel.CelExpr.Ident)" class="member-name-link">select(CelExpr.Ident)</a> - Method in interface com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></dt>
-<dd>
-<div class="block"><code>expr.select("field")</code> is equivalent to <code>CelExpr.of("expr.field")</code>.</div>
-</dd>
-<dt><a href="com/google/mu/cel/CelExpr.html#select(java.lang.String)" class="member-name-link">select(String)</a> - Method in interface com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/google/mu/cel/CelExpr.Select.html#%3Cinit%3E(com.google.mu.cel.CelExpr,com.google.mu.cel.CelExpr.Ident)" class="member-name-link">Select(CelExpr, CelExpr.Ident)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Select.html" title="class in com.google.mu.cel">CelExpr.Select</a></dt>
 <dd>&nbsp;</dd>
@@ -6186,10 +6148,6 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns the value of the <code>sourceIndex</code> record component.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Entry.html#sourceIndex()" class="member-name-link">sourceIndex()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a></dt>
-<dd>
-<div class="block">Returns the value of the <code>sourceIndex</code> record component.</div>
-</dd>
 <dt><a href="com/google/mu/cel/CelExpr.EqualTo.html#sourceIndex()" class="member-name-link">sourceIndex()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.EqualTo.html" title="class in com.google.mu.cel">CelExpr.EqualTo</a></dt>
 <dd>
 <div class="block">Returns the value of the <code>sourceIndex</code> record component.</div>
@@ -6219,6 +6177,10 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns the value of the <code>sourceIndex</code> record component.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.Index.html#sourceIndex()" class="member-name-link">sourceIndex()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Index.html" title="class in com.google.mu.cel">CelExpr.Index</a></dt>
+<dd>
+<div class="block">Returns the value of the <code>sourceIndex</code> record component.</div>
+</dd>
+<dt><a href="com/google/mu/cel/CelExpr.KeyedBy.html#sourceIndex()" class="member-name-link">sourceIndex()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.KeyedBy.html" title="class in com.google.mu.cel">CelExpr.KeyedBy</a></dt>
 <dd>
 <div class="block">Returns the value of the <code>sourceIndex</code> record component.</div>
 </dd>
@@ -6511,18 +6473,13 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns a Struct with <code>name</code> and <code>value</code>.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.html#struct(java.lang.String,java.util.Map)" class="member-name-link">struct(String, Map&lt;String, CelExpr.Element&gt;)</a> - Static method in interface com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></dt>
-<dd>
-<div class="block"><code>CelExpr.struct("MyMsg", Map.of("field", new Element(value(1), true)))</code> is equivalent to
- <code>CelExpr.of("MyMsg{?field: 1}")</code>.</div>
-</dd>
 <dt><a href="com/google/mu/protobuf/util/Structor.html#struct(java.util.Map)" class="member-name-link">struct(Map&lt;String, ?&gt;)</a> - Method in class com.google.mu.protobuf.util.<a href="com/google/mu/protobuf/util/Structor.html" title="class in com.google.mu.protobuf.util">Structor</a></dt>
 <dd>
 <div class="block">Returns a Struct equivalent to <code>map</code>.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Struct.html#%3Cinit%3E(java.lang.String,java.util.List)" class="member-name-link">Struct(String, List&lt;CelExpr.Entry&lt;CelExpr.Ident&gt;&gt;)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Struct.html" title="class in com.google.mu.cel">CelExpr.Struct</a></dt>
+<dt><a href="com/google/mu/cel/CelExpr.Struct.html#%3Cinit%3E(java.lang.String,java.util.List)" class="member-name-link">Struct(String, List&lt;CelExpr.KeyedBy&lt;CelExpr.Ident&gt;&gt;)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Struct.html" title="class in com.google.mu.cel">CelExpr.Struct</a></dt>
 <dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Struct.html#%3Cinit%3E(java.lang.String,java.util.List,int)" class="member-name-link">Struct(String, List&lt;CelExpr.Entry&lt;CelExpr.Ident&gt;&gt;, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Struct.html" title="class in com.google.mu.cel">CelExpr.Struct</a></dt>
+<dt><a href="com/google/mu/cel/CelExpr.Struct.html#%3Cinit%3E(java.lang.String,java.util.List,int)" class="member-name-link">Struct(String, List&lt;CelExpr.KeyedBy&lt;CelExpr.Ident&gt;&gt;, int)</a> - Constructor for record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Struct.html" title="class in com.google.mu.cel">CelExpr.Struct</a></dt>
 <dd>
 <div class="block">Creates an instance of a <code>Struct</code> record class.</div>
 </dd>
@@ -7171,10 +7128,6 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns a string representation of this record class.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Entry.html#toString()" class="member-name-link">toString()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a></dt>
-<dd>
-<div class="block">Returns a string representation of this record class.</div>
-</dd>
 <dt><a href="com/google/mu/cel/CelExpr.EqualTo.html#toString()" class="member-name-link">toString()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.EqualTo.html" title="class in com.google.mu.cel">CelExpr.EqualTo</a></dt>
 <dd>
 <div class="block">Returns a string representation of this record class.</div>
@@ -7204,6 +7157,10 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a string representation of this record class.</div>
 </dd>
 <dt><a href="com/google/mu/cel/CelExpr.Index.html#toString()" class="member-name-link">toString()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Index.html" title="class in com.google.mu.cel">CelExpr.Index</a></dt>
+<dd>
+<div class="block">Returns a string representation of this record class.</div>
+</dd>
+<dt><a href="com/google/mu/cel/CelExpr.KeyedBy.html#toString()" class="member-name-link">toString()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.KeyedBy.html" title="class in com.google.mu.cel">CelExpr.KeyedBy</a></dt>
 <dd>
 <div class="block">Returns a string representation of this record class.</div>
 </dd>
@@ -7518,7 +7475,7 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns the value of the <code>value</code> record component.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Entry.html#value()" class="member-name-link">value()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Entry.html" title="class in com.google.mu.cel">CelExpr.Entry</a></dt>
+<dt><a href="com/google/mu/cel/CelExpr.KeyedBy.html#value()" class="member-name-link">value()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.KeyedBy.html" title="class in com.google.mu.cel">CelExpr.KeyedBy</a></dt>
 <dd>
 <div class="block">Returns the value of the <code>value</code> record component.</div>
 </dd>
@@ -7599,42 +7556,6 @@ the order they are declared.</div>
 <div class="block">Returns an array containing the constants of this enum class, in
 the order they are declared.</div>
 </dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.All.html#var()" class="member-name-link">var()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.All.html" title="class in com.google.mu.cel">CelExpr.Macro.All</a></dt>
-<dd>
-<div class="block">Returns the value of the <code>var</code> record component.</div>
-</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Exists.html#var()" class="member-name-link">var()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Exists.html" title="class in com.google.mu.cel">CelExpr.Macro.Exists</a></dt>
-<dd>
-<div class="block">Returns the value of the <code>var</code> record component.</div>
-</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html#var()" class="member-name-link">var()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html" title="class in com.google.mu.cel">CelExpr.Macro.ExistsOne</a></dt>
-<dd>
-<div class="block">Returns the value of the <code>var</code> record component.</div>
-</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Filter.html#var()" class="member-name-link">var()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Filter.html" title="class in com.google.mu.cel">CelExpr.Macro.Filter</a></dt>
-<dd>
-<div class="block">Returns the value of the <code>var</code> record component.</div>
-</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html#var()" class="member-name-link">var()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html" title="class in com.google.mu.cel">CelExpr.Macro.FilterMap</a></dt>
-<dd>
-<div class="block">Returns the value of the <code>var</code> record component.</div>
-</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Map.html#var()" class="member-name-link">var()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Map.html" title="class in com.google.mu.cel">CelExpr.Macro.Map</a></dt>
-<dd>
-<div class="block">Returns the value of the <code>var</code> record component.</div>
-</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.All.html#varName()" class="member-name-link">varName()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.All.html" title="class in com.google.mu.cel">CelExpr.Macro.All</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Exists.html#varName()" class="member-name-link">varName()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Exists.html" title="class in com.google.mu.cel">CelExpr.Macro.Exists</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html#varName()" class="member-name-link">varName()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.ExistsOne.html" title="class in com.google.mu.cel">CelExpr.Macro.ExistsOne</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Filter.html#varName()" class="member-name-link">varName()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Filter.html" title="class in com.google.mu.cel">CelExpr.Macro.Filter</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html#varName()" class="member-name-link">varName()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.FilterMap.html" title="class in com.google.mu.cel">CelExpr.Macro.FilterMap</a></dt>
-<dd>&nbsp;</dd>
-<dt><a href="com/google/mu/cel/CelExpr.Macro.Map.html#varName()" class="member-name-link">varName()</a> - Method in record class com.google.mu.cel.<a href="com/google/mu/cel/CelExpr.Macro.Map.html" title="class in com.google.mu.cel">CelExpr.Macro.Map</a></dt>
-<dd>&nbsp;</dd>
 </dl>
 <h2 class="title" id="I:W">W</h2>
 <dl class="index">
@@ -7678,10 +7599,6 @@ the order they are declared.</div>
 <dt><a href="com/google/common/labs/csv/Csv.html#withComments()" class="member-name-link">withComments()</a> - Method in class com.google.common.labs.csv.<a href="com/google/common/labs/csv/Csv.html" title="class in com.google.common.labs.csv">Csv</a></dt>
 <dd>
 <div class="block">Returns an otherwise equivalent CSV parser but allows comment rows.</div>
-</dd>
-<dt><a href="com/google/mu/cel/CelParser.html#withComments()" class="member-name-link">withComments()</a> - Method in class com.google.mu.cel.<a href="com/google/mu/cel/CelParser.html" title="class in com.google.mu.cel">CelParser</a></dt>
-<dd>
-<div class="block">Returns an equivalent <a href="com/google/mu/cel/CelParser.html" title="class in com.google.mu.cel"><code>CelParser</code></a> that also supports comments.</div>
 </dd>
 <dt><a href="com/google/common/labs/csv/Csv.html#withDelimiter(char)" class="member-name-link">withDelimiter(char)</a> - Method in class com.google.common.labs.csv.<a href="com/google/common/labs/csv/Csv.html" title="class in com.google.common.labs.csv">Csv</a></dt>
 <dd>

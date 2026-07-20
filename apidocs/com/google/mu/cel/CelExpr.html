@@ -75,12 +75,9 @@ loadScripts(document, 'script');</script>
 <li><a href="#string(java.lang.String)" tabindex="0">string(String)</a></li>
 <li><a href="#bytes(byte...)" tabindex="0">bytes(byte...)</a></li>
 <li><a href="#unsigned(long)" tabindex="0">unsigned(long)</a></li>
-<li><a href="#struct(java.lang.String,java.util.Map)" tabindex="0">struct(String, Map)</a></li>
 <li><a href="#negative(com.google.mu.cel.CelExpr)" tabindex="0">negative(CelExpr)</a></li>
 <li><a href="#not(com.google.mu.cel.CelExpr)" tabindex="0">not(CelExpr)</a></li>
 <li><a href="#select(com.google.mu.cel.CelExpr.Ident)" tabindex="0">select(CelExpr.Ident)</a></li>
-<li><a href="#select(java.lang.String)" tabindex="0">select(String)</a></li>
-<li><a href="#optionalSelect(java.lang.String)" tabindex="0">optionalSelect(String)</a></li>
 <li><a href="#index(com.google.mu.cel.CelExpr)" tabindex="0">index(CelExpr)</a></li>
 <li><a href="#optionalSelect(com.google.mu.cel.CelExpr.Ident)" tabindex="0">optionalSelect(CelExpr.Ident)</a></li>
 <li><a href="#optionalIndex(com.google.mu.cel.CelExpr)" tabindex="0">optionalIndex(CelExpr)</a></li>
@@ -177,51 +174,53 @@ loadScripts(document, 'script');</script>
 </div>
 <div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
 <div class="col-second odd-row-color"><code><a href="CelExpr.Element.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Element</a></code></div>
-<div class="col-last odd-row-color">&nbsp;</div>
-<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="CelExpr.Entry.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Entry</a>&lt;<a href="CelExpr.Entry.html#type-param-K" title="type parameter in CelExpr.Entry">K</a>&gt;</code></div>
-<div class="col-last even-row-color">
-<div class="block">An entry/field representing a key-value or field-value mapping in map or struct literals.</div>
-</div>
-<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="CelExpr.EqualTo.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.EqualTo</a></code></div>
 <div class="col-last odd-row-color">
+<div class="block">An element in a list, map, or message, which can optionally be marked as optional.</div>
+</div>
+<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="CelExpr.EqualTo.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.EqualTo</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Equality comparison: <code>x == y</code>.</div>
 </div>
-<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="CelExpr.FunctionCall.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.FunctionCall</a></code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="CelExpr.FunctionCall.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.FunctionCall</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Global function calls <code>f(args)</code>.</div>
 </div>
-<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="CelExpr.GreaterThan.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.GreaterThan</a></code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="CelExpr.GreaterThan.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.GreaterThan</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Greater than relational comparison: <code>x &gt; y</code>.</div>
 </div>
-<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="CelExpr.GreaterThanOrEqualTo.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.GreaterThanOrEqualTo</a></code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="CelExpr.GreaterThanOrEqualTo.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.GreaterThanOrEqualTo</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Greater than or equal to relational comparison: <code>x &gt;= y</code>.</div>
 </div>
+<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="CelExpr.Ident.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Ident</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Variable or symbol lookup, such as <code>request</code>.</div>
+</div>
 <div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="CelExpr.Ident.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Ident</a></code></div>
+<div class="col-second odd-row-color"><code><a href="CelExpr.IfElse.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.IfElse</a></code></div>
 <div class="col-last odd-row-color">
-<div class="block">Variable or symbol lookup (e.g.</div>
+<div class="block">Ternary conditional, such as <code>condition ? trueExpr : falseExpr</code>.</div>
 </div>
 <div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="CelExpr.IfElse.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.IfElse</a></code></div>
+<div class="col-second even-row-color"><code><a href="CelExpr.In.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.In</a></code></div>
 <div class="col-last even-row-color">
-<div class="block">Ternary conditional (e.g.</div>
-</div>
-<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="CelExpr.In.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.In</a></code></div>
-<div class="col-last odd-row-color">
 <div class="block">Containment comparison: <code>x in y</code>.</div>
 </div>
+<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="CelExpr.Index.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Index</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Subscript/indexing, such as <code>operand[index]</code>.</div>
+</div>
 <div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="CelExpr.Index.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Index</a></code></div>
+<div class="col-second even-row-color"><code><a href="CelExpr.KeyedBy.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.KeyedBy</a>&lt;<a href="CelExpr.KeyedBy.html#type-param-K" title="type parameter in CelExpr.KeyedBy">K</a>&gt;</code></div>
 <div class="col-last even-row-color">
-<div class="block">Subscript/indexing (e.g.</div>
+<div class="block">An entry/field representing a key-value or field-value mapping in map or struct literals.</div>
 </div>
 <div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
 <div class="col-second odd-row-color"><code><a href="CelExpr.LessThan.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.LessThan</a></code></div>
@@ -236,7 +235,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
 <div class="col-second odd-row-color"><code><a href="CelExpr.ListOf.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.ListOf</a></code></div>
 <div class="col-last odd-row-color">
-<div class="block">List creation (e.g.</div>
+<div class="block">List creation, such as <code>[1, ?optional_var]</code>.</div>
 </div>
 <div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
 <div class="col-second even-row-color"><code><a href="CelExpr.LongValue.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.LongValue</a></code></div>
@@ -251,7 +250,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
 <div class="col-second even-row-color"><code><a href="CelExpr.MapOf.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.MapOf</a></code></div>
 <div class="col-last even-row-color">
-<div class="block">Map creation (e.g.</div>
+<div class="block">Map creation, such as <code>{"key": value, ? "opt_key": value}</code>.</div>
 </div>
 <div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
 <div class="col-second odd-row-color"><code><a href="CelExpr.MemberCall.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.MemberCall</a></code></div>
@@ -291,12 +290,12 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
 <div class="col-second even-row-color"><code><a href="CelExpr.OptionalIndex.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.OptionalIndex</a></code></div>
 <div class="col-last even-row-color">
-<div class="block">Optional subscript/indexing (e.g.</div>
+<div class="block">Optional subscript/indexing, such as <code>operand[?index]</code>.</div>
 </div>
 <div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
 <div class="col-second odd-row-color"><code><a href="CelExpr.OptionalSelect.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.OptionalSelect</a></code></div>
 <div class="col-last odd-row-color">
-<div class="block">Optional field selection (e.g.</div>
+<div class="block">Optional field selection, such as <code>operand.?field</code>.</div>
 </div>
 <div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
 <div class="col-second even-row-color"><code><a href="CelExpr.Or.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Or</a></code></div>
@@ -306,7 +305,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
 <div class="col-second odd-row-color"><code><a href="CelExpr.Select.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Select</a></code></div>
 <div class="col-last odd-row-color">
-<div class="block">Field selection (e.g.</div>
+<div class="block">Field selection, such as <code>operand.field</code>.</div>
 </div>
 <div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
 <div class="col-second even-row-color"><code><a href="CelExpr.StringValue.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.StringValue</a></code></div>
@@ -316,7 +315,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
 <div class="col-second odd-row-color"><code><a href="CelExpr.Struct.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Struct</a></code></div>
 <div class="col-last odd-row-color">
-<div class="block">Struct/message creation (e.g.</div>
+<div class="block">Struct/message creation, such as <code>Type{field: value, ?opt_field: value}</code>.</div>
 </div>
 <div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
 <div class="col-second even-row-color"><code><a href="CelExpr.Subtract.html" class="type-name-link" title="class in com.google.mu.cel">CelExpr.Subtract</a></code></div>
@@ -454,21 +453,13 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
 <div class="block"><code>expr.optionalSelect("field")</code> is equivalent to <code>CelExpr.of("expr.?field")</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="CelExpr.OptionalSelect.html" title="class in com.google.mu.cel">CelExpr.OptionalSelect</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#optionalSelect(java.lang.String)" class="member-name-link">optionalSelect</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;field)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">&nbsp;</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="CelExpr.Or.html" title="class in com.google.mu.cel">CelExpr.Or</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#or(com.google.mu.cel.CelExpr)" class="member-name-link">or</a><wbr>(<a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;that)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="CelExpr.Or.html" title="class in com.google.mu.cel">CelExpr.Or</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#or(com.google.mu.cel.CelExpr)" class="member-name-link">or</a><wbr>(<a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;that)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
 <div class="block"><code>a.or(b)</code> is equivalent to <code>CelExpr.of("a || b")</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="CelExpr.Select.html" title="class in com.google.mu.cel">CelExpr.Select</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#select(com.google.mu.cel.CelExpr.Ident)" class="member-name-link">select</a><wbr>(<a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>&nbsp;field)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
-<div class="block"><code>expr.select("field")</code> is equivalent to <code>CelExpr.of("expr.field")</code>.</div>
-</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="CelExpr.Select.html" title="class in com.google.mu.cel">CelExpr.Select</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#select(java.lang.String)" class="member-name-link">select</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;field)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#select(com.google.mu.cel.CelExpr.Ident)" class="member-name-link">select</a><wbr>(<a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>&nbsp;field)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">&nbsp;</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>int</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#sourceIndex()" class="member-name-link">sourceIndex</a>()</code></div>
@@ -480,41 +471,34 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1">
 <div class="block"><code>CelExpr.value("foo")</code> is equivalent to <code>CelExpr.of("'foo'")</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1"><code>static <a href="CelExpr.Struct.html" title="class in com.google.mu.cel">CelExpr.Struct</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1"><code><a href="#struct(java.lang.String,java.util.Map)" class="member-name-link">struct</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;typeName,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>, <a href="CelExpr.Element.html" title="class in com.google.mu.cel">CelExpr.Element</a>&gt;&nbsp;fields)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1">
-<div class="block"><code>CelExpr.struct("MyMsg", Map.of("field", new Element(value(1), true)))</code> is equivalent to
- <code>CelExpr.of("MyMsg{?field: 1}")</code>.</div>
-</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="CelExpr.Subtract.html" title="class in com.google.mu.cel">CelExpr.Subtract</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#subtract(com.google.mu.cel.CelExpr)" class="member-name-link">subtract</a><wbr>(<a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;that)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="CelExpr.Subtract.html" title="class in com.google.mu.cel">CelExpr.Subtract</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#subtract(com.google.mu.cel.CelExpr)" class="member-name-link">subtract</a><wbr>(<a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a>&nbsp;that)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
 <div class="block"><code>a.subtract(b)</code> is equivalent to <code>CelExpr.of("a - b")</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1"><code>static <a href="CelExpr.UintValue.html" title="class in com.google.mu.cel">CelExpr.UintValue</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1"><code><a href="#unsigned(long)" class="member-name-link">unsigned</a><wbr>(long&nbsp;value)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1"><code>static <a href="CelExpr.UintValue.html" title="class in com.google.mu.cel">CelExpr.UintValue</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1"><code><a href="#unsigned(long)" class="member-name-link">unsigned</a><wbr>(long&nbsp;value)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1">
 <div class="block"><code>CelExpr.unsigned(123)</code> is equivalent to <code>CelExpr.of("123u")</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1"><code>static <a href="CelExpr.BoolValue.html" title="class in com.google.mu.cel">CelExpr.BoolValue</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1"><code><a href="#value(boolean)" class="member-name-link">value</a><wbr>(boolean&nbsp;value)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1"><code>static <a href="CelExpr.BoolValue.html" title="class in com.google.mu.cel">CelExpr.BoolValue</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1"><code><a href="#value(boolean)" class="member-name-link">value</a><wbr>(boolean&nbsp;value)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1">
 <div class="block"><code>CelExpr.value(true)</code> is equivalent to <code>CelExpr.of("true")</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1"><code>static <a href="CelExpr.DoubleValue.html" title="class in com.google.mu.cel">CelExpr.DoubleValue</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1"><code><a href="#value(double)" class="member-name-link">value</a><wbr>(double&nbsp;value)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1"><code>static <a href="CelExpr.DoubleValue.html" title="class in com.google.mu.cel">CelExpr.DoubleValue</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1"><code><a href="#value(double)" class="member-name-link">value</a><wbr>(double&nbsp;value)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1">
 <div class="block"><code>CelExpr.value(12.3)</code> is equivalent to <code>CelExpr.of("12.3")</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1"><code>static <a href="CelExpr.LongValue.html" title="class in com.google.mu.cel">CelExpr.LongValue</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1"><code><a href="#value(long)" class="member-name-link">value</a><wbr>(long&nbsp;value)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1"><code>static <a href="CelExpr.LongValue.html" title="class in com.google.mu.cel">CelExpr.LongValue</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1"><code><a href="#value(long)" class="member-name-link">value</a><wbr>(long&nbsp;value)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1">
 <div class="block"><code>CelExpr.value(123)</code> is equivalent to <code>CelExpr.of("123")</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#withSourceIndex(int)" class="member-name-link">withSourceIndex</a><wbr>(int&nbsp;index)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#withSourceIndex(int)" class="member-name-link">withSourceIndex</a><wbr>(int&nbsp;index)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">Returns a copy of this expression with the given source index.</div>
 </div>
 </div>
@@ -554,10 +538,7 @@ loadScripts(document, 'script');</script>
 <h3>of</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">static</span>&nbsp;<span class="return-type"><a href="CelExpr.html" title="interface in com.google.mu.cel">CelExpr</a></span>&nbsp;<span class="element-name">of</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;cel)</span></div>
-<div class="block">Parses and returns a <a href="CelExpr.html" title="interface in com.google.mu.cel"><code>CelExpr</code></a> representing the <code>cel</code> string.
-
- <p>By default comments are not supported. Use <a href="CelParser.html#withComments()"><code>CelParser.withComments()</code></a> if you need
- comments.</div>
+<div class="block">Parses and returns a <a href="CelExpr.html" title="interface in com.google.mu.cel"><code>CelExpr</code></a> representing the <code>cel</code> string.</div>
 </div>
 </section>
 </li>
@@ -616,17 +597,6 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
-<section class="detail" id="struct(java.lang.String,java.util.Map)">
-<h3>struct</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">static</span>&nbsp;<span class="return-type"><a href="CelExpr.Struct.html" title="class in com.google.mu.cel">CelExpr.Struct</a></span>&nbsp;<span class="element-name">struct</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;typeName,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>, <a href="CelExpr.Element.html" title="class in com.google.mu.cel">CelExpr.Element</a>&gt;&nbsp;fields)</span></div>
-<div class="block"><code>CelExpr.struct("MyMsg", Map.of("field", new Element(value(1), true)))</code> is equivalent to
- <code>CelExpr.of("MyMsg{?field: 1}")</code>.</div>
-</div>
-</section>
-</li>
-<li>
 <section class="detail" id="negative(com.google.mu.cel.CelExpr)">
 <h3>negative</h3>
 <div class="horizontal-scroll">
@@ -649,23 +619,6 @@ loadScripts(document, 'script');</script>
 <h3>select</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="return-type"><a href="CelExpr.Select.html" title="class in com.google.mu.cel">CelExpr.Select</a></span>&nbsp;<span class="element-name">select</span><wbr><span class="parameters">(<a href="CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>&nbsp;field)</span></div>
-<div class="block"><code>expr.select("field")</code> is equivalent to <code>CelExpr.of("expr.field")</code>.</div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="select(java.lang.String)">
-<h3>select</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="return-type"><a href="CelExpr.Select.html" title="class in com.google.mu.cel">CelExpr.Select</a></span>&nbsp;<span class="element-name">select</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;field)</span></div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="optionalSelect(java.lang.String)">
-<h3>optionalSelect</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="return-type"><a href="CelExpr.OptionalSelect.html" title="class in com.google.mu.cel">CelExpr.OptionalSelect</a></span>&nbsp;<span class="element-name">optionalSelect</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;field)</span></div>
 </div>
 </section>
 </li>

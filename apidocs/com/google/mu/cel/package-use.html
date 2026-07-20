@@ -63,7 +63,7 @@ loadScripts(document, 'script');</script>
 <div class="table-header col-last">Description</div>
 <div class="col-first even-row-color"><a href="#com.google.mu.cel">com.google.mu.cel</a></div>
 <div class="col-last even-row-color">
-<div class="block">Cel Parser (requires <em>mug-cel</em> artifact)</div>
+<div class="block">Cel Parser (requires <em>dot-cel</em> artifact)</div>
 </div>
 </div>
 <section class="package-uses">
@@ -107,42 +107,44 @@ loadScripts(document, 'script');</script>
 <div class="block">Double-precision floating point literal.</div>
 </div>
 <div class="col-first even-row-color"><a href="class-use/CelExpr.Element.html#com.google.mu.cel">CelExpr.Element</a></div>
-<div class="col-last even-row-color">&nbsp;</div>
-<div class="col-first odd-row-color"><a href="class-use/CelExpr.Entry.html#com.google.mu.cel">CelExpr.Entry</a></div>
-<div class="col-last odd-row-color">
-<div class="block">An entry/field representing a key-value or field-value mapping in map or struct literals.</div>
-</div>
-<div class="col-first even-row-color"><a href="class-use/CelExpr.EqualTo.html#com.google.mu.cel">CelExpr.EqualTo</a></div>
 <div class="col-last even-row-color">
+<div class="block">An element in a list, map, or message, which can optionally be marked as optional.</div>
+</div>
+<div class="col-first odd-row-color"><a href="class-use/CelExpr.EqualTo.html#com.google.mu.cel">CelExpr.EqualTo</a></div>
+<div class="col-last odd-row-color">
 <div class="block">Equality comparison: <code>x == y</code>.</div>
 </div>
-<div class="col-first odd-row-color"><a href="class-use/CelExpr.FunctionCall.html#com.google.mu.cel">CelExpr.FunctionCall</a></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><a href="class-use/CelExpr.FunctionCall.html#com.google.mu.cel">CelExpr.FunctionCall</a></div>
+<div class="col-last even-row-color">
 <div class="block">Global function calls <code>f(args)</code>.</div>
 </div>
-<div class="col-first even-row-color"><a href="class-use/CelExpr.GreaterThan.html#com.google.mu.cel">CelExpr.GreaterThan</a></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><a href="class-use/CelExpr.GreaterThan.html#com.google.mu.cel">CelExpr.GreaterThan</a></div>
+<div class="col-last odd-row-color">
 <div class="block">Greater than relational comparison: <code>x &gt; y</code>.</div>
 </div>
-<div class="col-first odd-row-color"><a href="class-use/CelExpr.GreaterThanOrEqualTo.html#com.google.mu.cel">CelExpr.GreaterThanOrEqualTo</a></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><a href="class-use/CelExpr.GreaterThanOrEqualTo.html#com.google.mu.cel">CelExpr.GreaterThanOrEqualTo</a></div>
+<div class="col-last even-row-color">
 <div class="block">Greater than or equal to relational comparison: <code>x &gt;= y</code>.</div>
 </div>
-<div class="col-first even-row-color"><a href="class-use/CelExpr.Ident.html#com.google.mu.cel">CelExpr.Ident</a></div>
-<div class="col-last even-row-color">
-<div class="block">Variable or symbol lookup (e.g.</div>
-</div>
-<div class="col-first odd-row-color"><a href="class-use/CelExpr.IfElse.html#com.google.mu.cel">CelExpr.IfElse</a></div>
+<div class="col-first odd-row-color"><a href="class-use/CelExpr.Ident.html#com.google.mu.cel">CelExpr.Ident</a></div>
 <div class="col-last odd-row-color">
-<div class="block">Ternary conditional (e.g.</div>
+<div class="block">Variable or symbol lookup, such as <code>request</code>.</div>
 </div>
-<div class="col-first even-row-color"><a href="class-use/CelExpr.In.html#com.google.mu.cel">CelExpr.In</a></div>
+<div class="col-first even-row-color"><a href="class-use/CelExpr.IfElse.html#com.google.mu.cel">CelExpr.IfElse</a></div>
 <div class="col-last even-row-color">
+<div class="block">Ternary conditional, such as <code>condition ? trueExpr : falseExpr</code>.</div>
+</div>
+<div class="col-first odd-row-color"><a href="class-use/CelExpr.In.html#com.google.mu.cel">CelExpr.In</a></div>
+<div class="col-last odd-row-color">
 <div class="block">Containment comparison: <code>x in y</code>.</div>
 </div>
-<div class="col-first odd-row-color"><a href="class-use/CelExpr.Index.html#com.google.mu.cel">CelExpr.Index</a></div>
+<div class="col-first even-row-color"><a href="class-use/CelExpr.Index.html#com.google.mu.cel">CelExpr.Index</a></div>
+<div class="col-last even-row-color">
+<div class="block">Subscript/indexing, such as <code>operand[index]</code>.</div>
+</div>
+<div class="col-first odd-row-color"><a href="class-use/CelExpr.KeyedBy.html#com.google.mu.cel">CelExpr.KeyedBy</a></div>
 <div class="col-last odd-row-color">
-<div class="block">Subscript/indexing (e.g.</div>
+<div class="block">An entry/field representing a key-value or field-value mapping in map or struct literals.</div>
 </div>
 <div class="col-first even-row-color"><a href="class-use/CelExpr.LessThan.html#com.google.mu.cel">CelExpr.LessThan</a></div>
 <div class="col-last even-row-color">
@@ -154,7 +156,7 @@ loadScripts(document, 'script');</script>
 </div>
 <div class="col-first even-row-color"><a href="class-use/CelExpr.ListOf.html#com.google.mu.cel">CelExpr.ListOf</a></div>
 <div class="col-last even-row-color">
-<div class="block">List creation (e.g.</div>
+<div class="block">List creation, such as <code>[1, ?optional_var]</code>.</div>
 </div>
 <div class="col-first odd-row-color"><a href="class-use/CelExpr.LongValue.html#com.google.mu.cel">CelExpr.LongValue</a></div>
 <div class="col-last odd-row-color">
@@ -165,24 +167,37 @@ loadScripts(document, 'script');</script>
 <div class="block">Abstract representation of a CEL macro expression.</div>
 </div>
 <div class="col-first odd-row-color"><a href="class-use/CelExpr.Macro.All.html#com.google.mu.cel">CelExpr.Macro.All</a></div>
-<div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-last odd-row-color">
+<div class="block">The <code>target.all(var, condition)</code> macro.</div>
+</div>
 <div class="col-first even-row-color"><a href="class-use/CelExpr.Macro.Exists.html#com.google.mu.cel">CelExpr.Macro.Exists</a></div>
-<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-last even-row-color">
+<div class="block">The <code>target.exists(var, condition)</code> macro.</div>
+</div>
 <div class="col-first odd-row-color"><a href="class-use/CelExpr.Macro.ExistsOne.html#com.google.mu.cel">CelExpr.Macro.ExistsOne</a></div>
-<div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-last odd-row-color">
+<div class="block">The <code>target.exists_one(var, condition)</code> macro.</div>
+</div>
 <div class="col-first even-row-color"><a href="class-use/CelExpr.Macro.Filter.html#com.google.mu.cel">CelExpr.Macro.Filter</a></div>
-<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-last even-row-color">
+<div class="block">The <code>target.filter(var, expr)</code> macro.</div>
+</div>
 <div class="col-first odd-row-color"><a href="class-use/CelExpr.Macro.FilterMap.html#com.google.mu.cel">CelExpr.Macro.FilterMap</a></div>
-<div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-last odd-row-color">
+<div class="block">The <code>target.map(var, filter, transform)</code> macro (synthesized from three-argument
+ <code>map</code> macro).</div>
+</div>
 <div class="col-first even-row-color"><a href="class-use/CelExpr.Macro.Has.html#com.google.mu.cel">CelExpr.Macro.Has</a></div>
 <div class="col-last even-row-color">
 <div class="block">The <code>has(member)</code> macro.</div>
 </div>
 <div class="col-first odd-row-color"><a href="class-use/CelExpr.Macro.Map.html#com.google.mu.cel">CelExpr.Macro.Map</a></div>
-<div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-last odd-row-color">
+<div class="block">The <code>target.map(var, expr)</code> macro.</div>
+</div>
 <div class="col-first even-row-color"><a href="class-use/CelExpr.MapOf.html#com.google.mu.cel">CelExpr.MapOf</a></div>
 <div class="col-last even-row-color">
-<div class="block">Map creation (e.g.</div>
+<div class="block">Map creation, such as <code>{"key": value, ? "opt_key": value}</code>.</div>
 </div>
 <div class="col-first odd-row-color"><a href="class-use/CelExpr.MemberCall.html#com.google.mu.cel">CelExpr.MemberCall</a></div>
 <div class="col-last odd-row-color">
@@ -214,11 +229,11 @@ loadScripts(document, 'script');</script>
 </div>
 <div class="col-first even-row-color"><a href="class-use/CelExpr.OptionalIndex.html#com.google.mu.cel">CelExpr.OptionalIndex</a></div>
 <div class="col-last even-row-color">
-<div class="block">Optional subscript/indexing (e.g.</div>
+<div class="block">Optional subscript/indexing, such as <code>operand[?index]</code>.</div>
 </div>
 <div class="col-first odd-row-color"><a href="class-use/CelExpr.OptionalSelect.html#com.google.mu.cel">CelExpr.OptionalSelect</a></div>
 <div class="col-last odd-row-color">
-<div class="block">Optional field selection (e.g.</div>
+<div class="block">Optional field selection, such as <code>operand.?field</code>.</div>
 </div>
 <div class="col-first even-row-color"><a href="class-use/CelExpr.Or.html#com.google.mu.cel">CelExpr.Or</a></div>
 <div class="col-last even-row-color">
@@ -226,7 +241,7 @@ loadScripts(document, 'script');</script>
 </div>
 <div class="col-first odd-row-color"><a href="class-use/CelExpr.Select.html#com.google.mu.cel">CelExpr.Select</a></div>
 <div class="col-last odd-row-color">
-<div class="block">Field selection (e.g.</div>
+<div class="block">Field selection, such as <code>operand.field</code>.</div>
 </div>
 <div class="col-first even-row-color"><a href="class-use/CelExpr.StringValue.html#com.google.mu.cel">CelExpr.StringValue</a></div>
 <div class="col-last even-row-color">
@@ -234,7 +249,7 @@ loadScripts(document, 'script');</script>
 </div>
 <div class="col-first odd-row-color"><a href="class-use/CelExpr.Struct.html#com.google.mu.cel">CelExpr.Struct</a></div>
 <div class="col-last odd-row-color">
-<div class="block">Struct/message creation (e.g.</div>
+<div class="block">Struct/message creation, such as <code>Type{field: value, ?opt_field: value}</code>.</div>
 </div>
 <div class="col-first even-row-color"><a href="class-use/CelExpr.Subtract.html#com.google.mu.cel">CelExpr.Subtract</a></div>
 <div class="col-last even-row-color">
@@ -247,10 +262,6 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color"><a href="class-use/CelExpr.Unary.html#com.google.mu.cel">CelExpr.Unary</a></div>
 <div class="col-last even-row-color">
 <div class="block">An expression composed by a unary operator.</div>
-</div>
-<div class="col-first odd-row-color"><a href="class-use/CelParser.html#com.google.mu.cel">CelParser</a></div>
-<div class="col-last odd-row-color">
-<div class="block">Parser for Common Expression Language (CEL) syntax, producing <a href="CelExpr.html" title="interface in com.google.mu.cel"><code>CelExpr</code></a> AST records.</div>
 </div>
 </div>
 </section>
