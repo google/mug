@@ -25,7 +25,6 @@ import com.google.mu.cel.CelExpr.Ident;
 import com.google.mu.cel.CelExpr.Select;
 import com.google.mu.function.Function4;
 import com.google.mu.function.TriFunction;
-import com.google.mu.util.CharPredicate;
 import java.io.ByteArrayOutputStream;
 import java.util.HashSet;
 import java.util.List;
@@ -50,8 +49,6 @@ public final class CelParser {
   private static final Set<String> KEYWORDS = Set.of(
       "as", "break", "const", "continue", "else", "false", "for", "function", "if", "import",
       "in", "let", "loop", "package", "namespace", "null", "return", "true", "var", "void", "while");
-  private static final CharPredicate WHITESPACES =
-      CharPredicate.anyOf(" \t\r\n\f").precomputeForAscii();
   private static final Parser<?> WHITESPACES_OR_COMMENTS =
       anyOf(consecutive("[ \t\r\n\f]"), sequence(string("//"), zeroOrMore("[^\n]")));
 
