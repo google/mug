@@ -207,8 +207,7 @@ public final class CelParser {
   private static Parser<CelExpr> ternary(Parser<CelExpr> operand) {
     return new OperatorTable<CelExpr>()
         .rightAssociative(
-            operand
-                .between("?", ":")
+            operand.between("?", ":")
                 .mapWithIndex(
                     (ifTrue, begin, end) ->
                         (cond, ifFalse) -> new CelExpr.IfElse(cond, ifTrue, ifFalse, begin)),
