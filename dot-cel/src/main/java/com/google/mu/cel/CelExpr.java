@@ -4,7 +4,6 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.mu.util.stream.Joiner;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Abstract representation of a parsed Common Expression Language (CEL) expression.
@@ -59,21 +58,6 @@ public sealed interface CelExpr {
     return new UintValue(value, 0);
   }
 
-  /**
-   * {@code CelExpr.struct("MyMsg", Map.of("field", new Element(value(1), true)))} is equivalent to
-   * {@code CelExpr.of("MyMsg{?field: 1}")}.
-   */
-  static Struct struct(String typeName, Map<String, Element> fields) {
-    return new Struct(
-        typeName,
-        fields.entrySet().stream()
-            .map(
-                e ->
-                    new Entry<>(
-                        new Ident(e.getKey()), e.getValue().value(), e.getValue().optional()))
-            .toList());
-  }
-
   /** {@code CelExpr.negative(value(5))} is equivalent to {@code CelExpr.of("-(5)")}. */
   static Negative negative(CelExpr expr) {
     return new Negative(expr, expr.sourceIndex());
@@ -84,17 +68,8 @@ public sealed interface CelExpr {
     return new Not(expr, expr.sourceIndex());
   }
 
-  /** {@code expr.select("field")} is equivalent to {@code CelExpr.of("expr.field")}. */
   default Select select(Ident field) {
     return new Select(this, field, field.sourceIndex());
-  }
-
-  default Select select(String field) {
-    return select(new Ident(field));
-  }
-
-  default OptionalSelect optionalSelect(String field) {
-    return optionalSelect(new Ident(field));
   }
 
   /** {@code expr.index(value(0))} is equivalent to {@code CelExpr.of("expr[0]")}. */
@@ -364,10 +339,6 @@ public sealed interface CelExpr {
 
     public OptionalSelect(int sourceIndex, CelExpr operand, Ident field) {
       this(operand, field, sourceIndex);
-    }
-
-    public OptionalSelect(int sourceIndex, CelExpr operand, String fieldName) {
-      this(operand, new Ident(fieldName), sourceIndex);
     }
 
     @Override public OptionalSelect withSourceIndex(int index) {
@@ -813,17 +784,7 @@ public sealed interface CelExpr {
       this(key, value, optional, sourceIndex);
     }
 
-    /** {@code Entry.of("field", value(1))} is equivalent to {@code CelExpr.of("field: 1")}. */
-    public static Entry<Ident> of(String key, CelExpr value) {
-      return new Entry<>(new Ident(key), value, false);
-    }
 
-    /**
-     * {@code Entry.optional("field", value(1))} is equivalent to {@code CelExpr.of("?field: 1")}.
-     */
-    public static Entry<Ident> optional(String key, CelExpr value) {
-      return new Entry<>(new Ident(key), value, true);
-    }
 
     /**
      * {@code Entry.of(string("key"), value(1))} is equivalent to {@code CelExpr.of("'key': 1")}.
@@ -870,233 +831,140 @@ public sealed interface CelExpr {
       }
     }
 
-    record All(CelExpr target, Ident var, CelExpr condition, int sourceIndex) implements Macro {
+    /** The {@code target.all(var, condition)} macro. */
+    record All(CelExpr target, Ident iterationVar, CelExpr condition, int sourceIndex) implements Macro {
       public All {
         requireNonNull(target);
-        requireNonNull(var);
+        requireNonNull(iterationVar);
         requireNonNull(condition);
       }
 
-      public All(CelExpr target, Ident var, CelExpr condition) {
-        this(target, var, condition, target.sourceIndex());
-      }
-
-      public All(CelExpr target, String varName, CelExpr condition) {
-        this(target, new Ident(varName, target.sourceIndex()), condition, target.sourceIndex());
-      }
-
-      public All(CelExpr target, String varName, CelExpr condition, int sourceIndex) {
-        this(target, new Ident(varName, sourceIndex), condition, sourceIndex);
-      }
-
-      public All(int sourceIndex, CelExpr target, String varName, CelExpr condition) {
-        this(target, varName, condition, sourceIndex);
-      }
-
-      public String varName() {
-        return var.name();
+      public All(CelExpr target, Ident iterationVar, CelExpr condition) {
+        this(target, iterationVar, condition, target.sourceIndex());
       }
 
       @Override public All withSourceIndex(int index) {
-        return new All(target, var, condition, index);
+        return new All(target, iterationVar, condition, index);
       }
 
       @Override public String toString() {
-        return target + ".all(" + var.name() + ", " + condition + ")";
+        return target + ".all(" + iterationVar.name() + ", " + condition + ")";
       }
     }
 
-    record Exists(CelExpr target, Ident var, CelExpr condition, int sourceIndex) implements Macro {
+    /** The {@code target.exists(var, condition)} macro. */
+    record Exists(CelExpr target, Ident iterationVar, CelExpr condition, int sourceIndex) implements Macro {
       public Exists {
         requireNonNull(target);
-        requireNonNull(var);
+        requireNonNull(iterationVar);
         requireNonNull(condition);
       }
 
-      public Exists(CelExpr target, Ident var, CelExpr condition) {
-        this(target, var, condition, target.sourceIndex());
-      }
-
-      public Exists(CelExpr target, String varName, CelExpr condition) {
-        this(target, new Ident(varName, target.sourceIndex()), condition, target.sourceIndex());
-      }
-
-      public Exists(CelExpr target, String varName, CelExpr condition, int sourceIndex) {
-        this(target, new Ident(varName, sourceIndex), condition, sourceIndex);
-      }
-
-      public Exists(int sourceIndex, CelExpr target, String varName, CelExpr condition) {
-        this(target, varName, condition, sourceIndex);
-      }
-
-      public String varName() {
-        return var.name();
+      public Exists(CelExpr target, Ident iterationVar, CelExpr condition) {
+        this(target, iterationVar, condition, target.sourceIndex());
       }
 
       @Override public Exists withSourceIndex(int index) {
-        return new Exists(target, var, condition, index);
+        return new Exists(target, iterationVar, condition, index);
       }
 
       @Override public String toString() {
-        return target + ".exists(" + var.name() + ", " + condition + ")";
+        return target + ".exists(" + iterationVar.name() + ", " + condition + ")";
       }
     }
 
-    record ExistsOne(CelExpr target, Ident var, CelExpr condition, int sourceIndex)
+    /** The {@code target.exists_one(var, condition)} macro. */
+    record ExistsOne(CelExpr target, Ident iterationVar, CelExpr condition, int sourceIndex)
         implements Macro {
       public ExistsOne {
         requireNonNull(target);
-        requireNonNull(var);
+        requireNonNull(iterationVar);
         requireNonNull(condition);
       }
 
-      public ExistsOne(CelExpr target, Ident var, CelExpr condition) {
-        this(target, var, condition, target.sourceIndex());
-      }
-
-      public ExistsOne(CelExpr target, String varName, CelExpr condition) {
-        this(target, new Ident(varName, target.sourceIndex()), condition, target.sourceIndex());
-      }
-
-      public ExistsOne(CelExpr target, String varName, CelExpr condition, int sourceIndex) {
-        this(target, new Ident(varName, sourceIndex), condition, sourceIndex);
-      }
-
-      public ExistsOne(int sourceIndex, CelExpr target, String varName, CelExpr condition) {
-        this(target, varName, condition, sourceIndex);
-      }
-
-      public String varName() {
-        return var.name();
+      public ExistsOne(CelExpr target, Ident iterationVar, CelExpr condition) {
+        this(target, iterationVar, condition, target.sourceIndex());
       }
 
       @Override public ExistsOne withSourceIndex(int index) {
-        return new ExistsOne(target, var, condition, index);
+        return new ExistsOne(target, iterationVar, condition, index);
       }
 
       @Override public String toString() {
-        return target + ".exists_one(" + var.name() + ", " + condition + ")";
+        return target + ".exists_one(" + iterationVar.name() + ", " + condition + ")";
       }
     }
 
-    record Filter(CelExpr target, Ident var, CelExpr expr, int sourceIndex) implements Macro {
+    /** The {@code target.filter(var, expr)} macro. */
+    record Filter(CelExpr target, Ident iterationVar, CelExpr expr, int sourceIndex) implements Macro {
       public Filter {
         requireNonNull(target);
-        requireNonNull(var);
+        requireNonNull(iterationVar);
         requireNonNull(expr);
       }
 
-      public Filter(CelExpr target, Ident var, CelExpr expr) {
-        this(target, var, expr, target.sourceIndex());
-      }
-
-      public Filter(CelExpr target, String varName, CelExpr expr) {
-        this(target, new Ident(varName, target.sourceIndex()), expr, target.sourceIndex());
-      }
-
-      public Filter(CelExpr target, String varName, CelExpr expr, int sourceIndex) {
-        this(target, new Ident(varName, sourceIndex), expr, sourceIndex);
-      }
-
-      public Filter(int sourceIndex, CelExpr target, String varName, CelExpr expr) {
-        this(target, varName, expr, sourceIndex);
-      }
-
-      public String varName() {
-        return var.name();
+      public Filter(CelExpr target, Ident iterationVar, CelExpr expr) {
+        this(target, iterationVar, expr, target.sourceIndex());
       }
 
       @Override public Filter withSourceIndex(int index) {
-        return new Filter(target, var, expr, index);
+        return new Filter(target, iterationVar, expr, index);
       }
 
       @Override public String toString() {
-        return target + ".filter(" + var.name() + ", " + expr + ")";
+        return target + ".filter(" + iterationVar.name() + ", " + expr + ")";
       }
     }
 
-    record Map(CelExpr target, Ident var, CelExpr expr, int sourceIndex) implements Macro {
+    /** The {@code target.map(var, expr)} macro. */
+    record Map(CelExpr target, Ident iterationVar, CelExpr expr, int sourceIndex) implements Macro {
       public Map {
         requireNonNull(target);
-        requireNonNull(var);
+        requireNonNull(iterationVar);
         requireNonNull(expr);
       }
 
-      public Map(CelExpr target, Ident var, CelExpr expr) {
-        this(target, var, expr, target.sourceIndex());
-      }
-
-      public Map(CelExpr target, String varName, CelExpr expr) {
-        this(target, new Ident(varName, target.sourceIndex()), expr, target.sourceIndex());
-      }
-
-      public Map(CelExpr target, String varName, CelExpr expr, int sourceIndex) {
-        this(target, new Ident(varName, sourceIndex), expr, sourceIndex);
-      }
-
-      public Map(int sourceIndex, CelExpr target, String varName, CelExpr expr) {
-        this(target, varName, expr, sourceIndex);
-      }
-
-      public String varName() {
-        return var.name();
+      public Map(CelExpr target, Ident iterationVar, CelExpr expr) {
+        this(target, iterationVar, expr, target.sourceIndex());
       }
 
       @Override public Map withSourceIndex(int index) {
-        return new Map(target, var, expr, index);
+        return new Map(target, iterationVar, expr, index);
       }
 
       @Override public String toString() {
-        return target + ".map(" + var.name() + ", " + expr + ")";
+        return target + ".map(" + iterationVar.name() + ", " + expr + ")";
       }
     }
 
-    record FilterMap(CelExpr target, Ident var, CelExpr filter, CelExpr transform, int sourceIndex)
+    /**
+     * The {@code target.map(var, filter, transform)} macro (synthesized from three-argument
+     * {@code map} macro).
+     */
+    record FilterMap(CelExpr target, Ident iterationVar, CelExpr filter, CelExpr transform, int sourceIndex)
         implements Macro {
       public FilterMap {
         requireNonNull(target);
-        requireNonNull(var);
+        requireNonNull(iterationVar);
         requireNonNull(filter);
         requireNonNull(transform);
       }
 
-      public FilterMap(CelExpr target, Ident var, CelExpr filter, CelExpr transform) {
-        this(target, var, filter, transform, target.sourceIndex());
-      }
-
-      public FilterMap(CelExpr target, String varName, CelExpr filter, CelExpr transform) {
-        this(
-            target,
-            new Ident(varName, target.sourceIndex()),
-            filter,
-            transform,
-            target.sourceIndex());
-      }
-
-      public FilterMap(
-          CelExpr target, String varName, CelExpr filter, CelExpr transform, int sourceIndex) {
-        this(target, new Ident(varName, sourceIndex), filter, transform, sourceIndex);
-      }
-
-      public FilterMap(
-          int sourceIndex, CelExpr target, String varName, CelExpr filter, CelExpr transform) {
-        this(target, varName, filter, transform, sourceIndex);
-      }
-
-      public String varName() {
-        return var.name();
+      public FilterMap(CelExpr target, Ident iterationVar, CelExpr filter, CelExpr transform) {
+        this(target, iterationVar, filter, transform, target.sourceIndex());
       }
 
       @Override public FilterMap withSourceIndex(int index) {
-        return new FilterMap(target, var, filter, transform, index);
+        return new FilterMap(target, iterationVar, filter, transform, index);
       }
 
       @Override public String toString() {
-        return target + ".map(" + var.name() + ", " + filter + ", " + transform + ")";
+        return target + ".map(" + iterationVar.name() + ", " + filter + ", " + transform + ")";
       }
     }
   }
 
+  /** An element in a list, map, or message, which can be marked as optional. */
   record Element(CelExpr value, boolean optional) {
     public Element {
       requireNonNull(value);

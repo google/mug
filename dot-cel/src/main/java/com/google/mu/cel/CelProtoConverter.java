@@ -439,15 +439,15 @@ final class CelProtoConverter {
   private Expr.Comprehension toComprehensionProto(int macroPos, CelExpr.Macro macro) {
     return switch (macro) {
       case CelExpr.Macro.Has v -> throw new AssertionError("Macro.Has is handled separately");
-      case CelExpr.Macro.All v -> toAllComprehension(macroPos, v.target(), v.var(), v.condition());
+      case CelExpr.Macro.All v -> toAllComprehension(macroPos, v.target(), v.iterationVar(), v.condition());
       case CelExpr.Macro.Exists v ->
-          toExistsComprehension(macroPos, v.target(), v.var(), v.condition());
+          toExistsComprehension(macroPos, v.target(), v.iterationVar(), v.condition());
       case CelExpr.Macro.ExistsOne v ->
-          toExistsOneComprehension(macroPos, v.target(), v.var(), v.condition());
-      case CelExpr.Macro.Filter v -> toFilterComprehension(macroPos, v.target(), v.var(), v.expr());
-      case CelExpr.Macro.Map v -> toMapComprehension(macroPos, v.target(), v.var(), v.expr());
+          toExistsOneComprehension(macroPos, v.target(), v.iterationVar(), v.condition());
+      case CelExpr.Macro.Filter v -> toFilterComprehension(macroPos, v.target(), v.iterationVar(), v.expr());
+      case CelExpr.Macro.Map v -> toMapComprehension(macroPos, v.target(), v.iterationVar(), v.expr());
       case CelExpr.Macro.FilterMap v ->
-          toFilterMapComprehension(macroPos, v.target(), v.var(), v.filter(), v.transform());
+          toFilterMapComprehension(macroPos, v.target(), v.iterationVar(), v.filter(), v.transform());
     };
   }
 
@@ -923,37 +923,37 @@ final class CelProtoConverter {
           new CelExpr.MemberCall(
               v.target(),
               new CelExpr.Ident("all", v.sourceIndex()),
-              List.of(v.var(), v.condition()),
+              List.of(v.iterationVar(), v.condition()),
               v.sourceIndex());
       case CelExpr.Macro.Exists v ->
           new CelExpr.MemberCall(
               v.target(),
               new CelExpr.Ident("exists", v.sourceIndex()),
-              List.of(v.var(), v.condition()),
+              List.of(v.iterationVar(), v.condition()),
               v.sourceIndex());
       case CelExpr.Macro.ExistsOne v ->
           new CelExpr.MemberCall(
               v.target(),
               new CelExpr.Ident("exists_one", v.sourceIndex()),
-              List.of(v.var(), v.condition()),
+              List.of(v.iterationVar(), v.condition()),
               v.sourceIndex());
       case CelExpr.Macro.Filter v ->
           new CelExpr.MemberCall(
               v.target(),
               new CelExpr.Ident("filter", v.sourceIndex()),
-              List.of(v.var(), v.expr()),
+              List.of(v.iterationVar(), v.expr()),
               v.sourceIndex());
       case CelExpr.Macro.Map v ->
           new CelExpr.MemberCall(
               v.target(),
               new CelExpr.Ident("map", v.sourceIndex()),
-              List.of(v.var(), v.expr()),
+              List.of(v.iterationVar(), v.expr()),
               v.sourceIndex());
       case CelExpr.Macro.FilterMap v ->
           new CelExpr.MemberCall(
               v.target(),
               new CelExpr.Ident("map", v.sourceIndex()),
-              List.of(v.var(), v.filter(), v.transform()),
+              List.of(v.iterationVar(), v.filter(), v.transform()),
               v.sourceIndex());
     };
   }

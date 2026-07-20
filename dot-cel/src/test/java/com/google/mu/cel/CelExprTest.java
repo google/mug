@@ -284,11 +284,12 @@ public class CelExprTest {
   @Test
   public void allExpr() {
     CelExpr target = new CelExpr.Ident("users", 0);
+    CelExpr.Ident var = new CelExpr.Ident("x", 0);
     CelExpr condition =
-        new CelExpr.GreaterThan(new CelExpr.Ident("x", 0), new CelExpr.LongValue(0L, 0), 0);
-    CelExpr.Macro.All expr = new CelExpr.Macro.All(target, "x", condition, 0);
+        new CelExpr.GreaterThan(var, new CelExpr.LongValue(0L, 0), 0);
+    CelExpr.Macro.All expr = new CelExpr.Macro.All(target, var, condition, 0);
     assertThat(expr.target()).isEqualTo(target);
-    assertThat(expr.varName()).isEqualTo("x");
+    assertThat(expr.iterationVar()).isEqualTo(var);
     assertThat(expr.condition()).isEqualTo(condition);
     assertThat(expr.toString()).isEqualTo("users.all(x, (x) > (0))");
   }
@@ -296,11 +297,12 @@ public class CelExprTest {
   @Test
   public void existsExpr() {
     CelExpr target = new CelExpr.Ident("users", 0);
+    CelExpr.Ident var = new CelExpr.Ident("x", 0);
     CelExpr condition =
-        new CelExpr.GreaterThan(new CelExpr.Ident("x", 0), new CelExpr.LongValue(0L, 0), 0);
-    CelExpr.Macro.Exists expr = new CelExpr.Macro.Exists(target, "x", condition, 0);
+        new CelExpr.GreaterThan(var, new CelExpr.LongValue(0L, 0), 0);
+    CelExpr.Macro.Exists expr = new CelExpr.Macro.Exists(target, var, condition, 0);
     assertThat(expr.target()).isEqualTo(target);
-    assertThat(expr.varName()).isEqualTo("x");
+    assertThat(expr.iterationVar()).isEqualTo(var);
     assertThat(expr.condition()).isEqualTo(condition);
     assertThat(expr.toString()).isEqualTo("users.exists(x, (x) > (0))");
   }
@@ -308,11 +310,12 @@ public class CelExprTest {
   @Test
   public void existsOneExpr() {
     CelExpr target = new CelExpr.Ident("users", 0);
+    CelExpr.Ident var = new CelExpr.Ident("x", 0);
     CelExpr condition =
-        new CelExpr.GreaterThan(new CelExpr.Ident("x", 0), new CelExpr.LongValue(0L, 0), 0);
-    CelExpr.Macro.ExistsOne expr = new CelExpr.Macro.ExistsOne(target, "x", condition, 0);
+        new CelExpr.GreaterThan(var, new CelExpr.LongValue(0L, 0), 0);
+    CelExpr.Macro.ExistsOne expr = new CelExpr.Macro.ExistsOne(target, var, condition, 0);
     assertThat(expr.target()).isEqualTo(target);
-    assertThat(expr.varName()).isEqualTo("x");
+    assertThat(expr.iterationVar()).isEqualTo(var);
     assertThat(expr.condition()).isEqualTo(condition);
     assertThat(expr.toString()).isEqualTo("users.exists_one(x, (x) > (0))");
   }
@@ -320,11 +323,12 @@ public class CelExprTest {
   @Test
   public void filterExpr() {
     CelExpr target = new CelExpr.Ident("users", 0);
+    CelExpr.Ident var = new CelExpr.Ident("x", 0);
     CelExpr condition =
-        new CelExpr.GreaterThan(new CelExpr.Ident("x", 0), new CelExpr.LongValue(0L, 0), 0);
-    CelExpr.Macro.Filter expr = new CelExpr.Macro.Filter(target, "x", condition, 0);
+        new CelExpr.GreaterThan(var, new CelExpr.LongValue(0L, 0), 0);
+    CelExpr.Macro.Filter expr = new CelExpr.Macro.Filter(target, var, condition, 0);
     assertThat(expr.target()).isEqualTo(target);
-    assertThat(expr.varName()).isEqualTo("x");
+    assertThat(expr.iterationVar()).isEqualTo(var);
     assertThat(expr.expr()).isEqualTo(condition);
     assertThat(expr.toString()).isEqualTo("users.filter(x, (x) > (0))");
   }
@@ -332,11 +336,12 @@ public class CelExprTest {
   @Test
   public void mapExpr() {
     CelExpr target = new CelExpr.Ident("users", 0);
+    CelExpr.Ident var = new CelExpr.Ident("x", 0);
     CelExpr transform =
-        new CelExpr.Multiply(new CelExpr.Ident("x", 0), new CelExpr.LongValue(2L, 0), 0);
-    CelExpr.Macro.Map expr = new CelExpr.Macro.Map(target, "x", transform, 0);
+        new CelExpr.Multiply(var, new CelExpr.LongValue(2L, 0), 0);
+    CelExpr.Macro.Map expr = new CelExpr.Macro.Map(target, var, transform, 0);
     assertThat(expr.target()).isEqualTo(target);
-    assertThat(expr.varName()).isEqualTo("x");
+    assertThat(expr.iterationVar()).isEqualTo(var);
     assertThat(expr.expr()).isEqualTo(transform);
     assertThat(expr.toString()).isEqualTo("users.map(x, (x) * (2))");
   }
@@ -344,13 +349,14 @@ public class CelExprTest {
   @Test
   public void filterMapExpr() {
     CelExpr target = new CelExpr.Ident("users", 0);
+    CelExpr.Ident var = new CelExpr.Ident("x", 0);
     CelExpr filter =
-        new CelExpr.GreaterThan(new CelExpr.Ident("x", 0), new CelExpr.LongValue(0L, 0), 0);
+        new CelExpr.GreaterThan(var, new CelExpr.LongValue(0L, 0), 0);
     CelExpr transform =
-        new CelExpr.Multiply(new CelExpr.Ident("x", 0), new CelExpr.LongValue(2L, 0), 0);
-    CelExpr.Macro.FilterMap expr = new CelExpr.Macro.FilterMap(target, "x", filter, transform, 0);
+        new CelExpr.Multiply(var, new CelExpr.LongValue(2L, 0), 0);
+    CelExpr.Macro.FilterMap expr = new CelExpr.Macro.FilterMap(target, var, filter, transform, 0);
     assertThat(expr.target()).isEqualTo(target);
-    assertThat(expr.varName()).isEqualTo("x");
+    assertThat(expr.iterationVar()).isEqualTo(var);
     assertThat(expr.filter()).isEqualTo(filter);
     assertThat(expr.transform()).isEqualTo(transform);
     assertThat(expr.toString()).isEqualTo("users.map(x, (x) > (0), (x) * (2))");
@@ -514,51 +520,51 @@ public class CelExprTest {
 
   @Test
   public void macroAllExpr_roundtrip() {
-    CelExpr x = new CelExpr.Ident("x", 0);
+    CelExpr.Ident x = new CelExpr.Ident("x", 0);
     CelExpr users = new CelExpr.Ident("users", 0);
     CelExpr condition = new CelExpr.GreaterThan(x, new CelExpr.LongValue(0L, 0), 0);
-    assertRoundtrip(new CelExpr.Macro.All(users, "x", condition, 0));
+    assertRoundtrip(new CelExpr.Macro.All(users, x, condition, 0));
   }
 
   @Test
   public void macroExistsExpr_roundtrip() {
-    CelExpr x = new CelExpr.Ident("x", 0);
+    CelExpr.Ident x = new CelExpr.Ident("x", 0);
     CelExpr users = new CelExpr.Ident("users", 0);
     CelExpr condition = new CelExpr.GreaterThan(x, new CelExpr.LongValue(0L, 0), 0);
-    assertRoundtrip(new CelExpr.Macro.Exists(users, "x", condition, 0));
+    assertRoundtrip(new CelExpr.Macro.Exists(users, x, condition, 0));
   }
 
   @Test
   public void macroExistsOneExpr_roundtrip() {
-    CelExpr x = new CelExpr.Ident("x", 0);
+    CelExpr.Ident x = new CelExpr.Ident("x", 0);
     CelExpr users = new CelExpr.Ident("users", 0);
     CelExpr condition = new CelExpr.GreaterThan(x, new CelExpr.LongValue(0L, 0), 0);
-    assertRoundtrip(new CelExpr.Macro.ExistsOne(users, "x", condition, 0));
+    assertRoundtrip(new CelExpr.Macro.ExistsOne(users, x, condition, 0));
   }
 
   @Test
   public void macroFilterExpr_roundtrip() {
-    CelExpr x = new CelExpr.Ident("x", 0);
+    CelExpr.Ident x = new CelExpr.Ident("x", 0);
     CelExpr users = new CelExpr.Ident("users", 0);
     CelExpr condition = new CelExpr.GreaterThan(x, new CelExpr.LongValue(0L, 0), 0);
-    assertRoundtrip(new CelExpr.Macro.Filter(users, "x", condition, 0));
+    assertRoundtrip(new CelExpr.Macro.Filter(users, x, condition, 0));
   }
 
   @Test
   public void macroMapExpr_roundtrip() {
-    CelExpr x = new CelExpr.Ident("x", 0);
+    CelExpr.Ident x = new CelExpr.Ident("x", 0);
     CelExpr users = new CelExpr.Ident("users", 0);
     CelExpr transform = new CelExpr.Multiply(x, new CelExpr.LongValue(2L, 0), 0);
-    assertRoundtrip(new CelExpr.Macro.Map(users, "x", transform, 0));
+    assertRoundtrip(new CelExpr.Macro.Map(users, x, transform, 0));
   }
 
   @Test
   public void macroFilterMapExpr_roundtrip() {
-    CelExpr x = new CelExpr.Ident("x", 0);
+    CelExpr.Ident x = new CelExpr.Ident("x", 0);
     CelExpr users = new CelExpr.Ident("users", 0);
     CelExpr condition = new CelExpr.GreaterThan(x, new CelExpr.LongValue(0L, 0), 0);
     CelExpr transform = new CelExpr.Multiply(x, new CelExpr.LongValue(2L, 0), 0);
-    assertRoundtrip(new CelExpr.Macro.FilterMap(users, "x", condition, transform, 0));
+    assertRoundtrip(new CelExpr.Macro.FilterMap(users, x, condition, transform, 0));
   }
 
   private void assertRoundtrip(CelExpr expr) {
