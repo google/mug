@@ -12,12 +12,6 @@ import java.util.List;
  * @since 10.7
  */
 public sealed interface CelExpr {
-  /** Returns the 0-based source character index where this expression starts. */
-  int sourceIndex();
-
-  /** Returns a copy of this expression with the given source index. */
-  CelExpr withSourceIndex(int index);
-
   /**
    * Parses and returns a {@link CelExpr} representing the {@code cel} string.
    * @throws Parser.ParseException if {@code cel} is invalid
@@ -170,6 +164,12 @@ public sealed interface CelExpr {
   default MemberCall call(Ident member, List<CelExpr> args) {
     return new MemberCall(this, member, args, sourceIndex());
   }
+
+  /** Returns the 0-based source character index where this expression starts. */
+  int sourceIndex();
+
+  /** Returns a copy of this expression with the given source index. */
+  CelExpr withSourceIndex(int index);
 
   /** Null literal. */
   record NullValue(int sourceIndex) implements CelExpr {

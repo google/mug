@@ -185,12 +185,11 @@ public final class CelParser {
                     suffixWithIndex(args, CelParser::callExpr)),
                 Suffix::apply);
 
-    // Primary expression
-    Parser<CelExpr> primary =
+    Parser<CelExpr> subject =
         anyOf(CONSTANT_LITERAL, callOrStructOrIdent, listExpr, mapExpr, parenthesized);
 
     var callWithArgs = suffixWithIndex(args, CelParser::macroOrMemberCallExpr);
-    Parser<CelExpr> memberExpr = primary.withPostfixes(
+    Parser<CelExpr> memberExpr = subject.withPostfixes(
         anyOf(
             suffixWithIndex(
                 sequence(one('.'), one('?')).then(IDENT),
@@ -337,11 +336,8 @@ public final class CelParser {
 
     @Override Parser<String> escaped() {
       return anyOf(
-          charEscape(),
-          octEscape(),
-          hexEscape(),
-          one('u').then(fromHex(4)),
-          one('U').then(fromHex(8)));
+          charEscape(), octEscape(), hexEscape(),
+          one('u').then(fromHex(4)), one('U').then(fromHex(8)));
     }
   }
 
