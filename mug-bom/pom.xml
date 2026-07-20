@@ -91,6 +91,11 @@
         <artifactId>dot-parse</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <dependency>
+        <groupId>com.google.mug</groupId>
+        <artifactId>dot-cel</artifactId>
+        <version>${project.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
