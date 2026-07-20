@@ -166,13 +166,13 @@ public final class CelParser {
     Parser<CelExpr> parenthesized = expr.between("(", ")");
     Parser<List<CelExpr>> args = expr.zeroOrMoreDelimitedBy(",").between("(", ")");
 
-    Parser<CelExpr> listExpr =
+    Parser<CelExpr.ListOf> listExpr =
         sequence(OPTIONALITY, expr, (opt, val) -> new CelExpr.Element(val, opt))
             .zeroOrMoreDelimitedBy(",")
             .optionallyFollowedBy(",")
             .between("[", "]")
             .mapWithIndex((elements, begin, end) -> new CelExpr.ListOf(elements, begin));
-    Parser<CelExpr> mapExpr =
+    Parser<CelExpr.MapOf> mapExpr =
         entries(expr, expr)
             .mapWithIndex((entries, begin, end) -> new CelExpr.MapOf(entries, begin));
     Parser<CelExpr> callOrStructOrIdent =
@@ -187,47 +187,51 @@ public final class CelParser {
 
     Parser<CelExpr> subject =
         anyOf(CONSTANT_LITERAL, callOrStructOrIdent, listExpr, mapExpr, parenthesized);
-
-    var callWithArgs = suffixWithIndex(args, CelParser::macroOrMemberCallExpr);
-    Parser<CelExpr> memberExpr = subject.withPostfixes(
+    Parser<CelExpr> subjectDot = subject.withPostfixes(
         anyOf(
             suffixWithIndex(
                 sequence(one('.'), one('?')).then(IDENT),
                 (CelExpr receiver, Ident field) -> receiver.optionalSelect(field)),
-            sequence(one('.').then(IDENT), callWithArgs, Suffix::apply),
+            sequence(
+                one('.').then(IDENT), suffixWithIndex(args, CelParser::macroOrMemberCallExpr),
+                Suffix::apply),
             sequence(
                 indexOf('.'), IDENT, (index, field) -> e -> new Select(e, field, index)),
             sequence(one('?').thenReturn(true).orElse(false), expr, CelParser::indexExpr)
                 .between("[", "]")
                 .mapWithIndex((op, begin, end) -> e -> op.apply(e).withSourceIndex(begin))));
     Parser<CelExpr> unaryExpr = anyOf(
-        memberExpr.withPrefixes(unary('!', CelExpr.Not::new)),
-        memberExpr.withPrefixes(unary('-', CelExpr.Negative::new)));
+        subjectDot.withPrefixes(unary('!', CelExpr.Not::new)),
+        subjectDot.withPrefixes(unary('-', CelExpr.Negative::new)));
     Parser<CelExpr> binary = new OperatorTable<CelExpr>()
-        .leftAssociative(binary("*", CelExpr::multiply), 6)
-        .leftAssociative(binary("/", CelExpr::divide), 6)
-        .leftAssociative(binary("%", CelExpr::modulo), 6)
-        .leftAssociative(binary("+", CelExpr::add), 5)
-        .leftAssociative(binary("-", CelExpr::subtract), 5)
-        .leftAssociative(binary("<=", CelExpr::atMost), 4)
-        .leftAssociative(binary("<", CelExpr::lessThan), 4)
-        .leftAssociative(binary(">=", CelExpr::atLeast), 4)
-        .leftAssociative(binary(">", CelExpr::greaterThan), 4)
-        .leftAssociative(binary("==", CelExpr::equalTo), 4)
-        .leftAssociative(binary("!=", CelExpr::notEqualTo), 4)
-        .leftAssociative(binary(word("in"), CelExpr::in), 4)
+        .leftAssociative(binary("*", CelExpr::multiply), 30)
+        .leftAssociative(binary("/", CelExpr::divide), 30)
+        .leftAssociative(binary("%", CelExpr::modulo), 30)
+        .leftAssociative(binary("+", CelExpr::add), 20)
+        .leftAssociative(binary("-", CelExpr::subtract), 20)
+        .leftAssociative(binary("<=", CelExpr::atMost), 10)
+        .leftAssociative(binary("<", CelExpr::lessThan), 10)
+        .leftAssociative(binary(">=", CelExpr::atLeast), 10)
+        .leftAssociative(binary(">", CelExpr::greaterThan), 10)
+        .leftAssociative(binary("==", CelExpr::equalTo), 10)
+        .leftAssociative(binary("!=", CelExpr::notEqualTo), 10)
+        .leftAssociative(binary(word("in"), CelExpr::in), 10)
         .build(unaryExpr);
     binary = associative(binary, "&&", CelExpr::and);
     binary = associative(binary, "||", CelExpr::or);
+    return ternary(binary);
+  }
+
+  private static Parser<CelExpr> ternary(Parser<CelExpr> operand) {
     return new OperatorTable<CelExpr>()
         .rightAssociative(
-            anyOf(parenthesized, binary)
+            operand
                 .between("?", ":")
                 .mapWithIndex(
                     (ifTrue, begin, end) ->
                         (cond, ifFalse) -> new CelExpr.IfElse(cond, ifTrue, ifFalse, begin)),
             1)
-        .build(anyOf(binary, parenthesized));
+        .build(operand);
   }
 
   private static Parser<CelExpr> associative(
