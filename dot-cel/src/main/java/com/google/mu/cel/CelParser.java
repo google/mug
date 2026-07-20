@@ -69,14 +69,10 @@ public final class CelParser {
 
   private static final Parser<String> RAW_STRING =
       anyOf(
-          quotedBy("r\"\"\"", "\"\"\""),
-          quotedBy("R\"\"\"", "\"\"\""),
-          quotedBy("r'''", "'''"),
-          quotedBy("R'''", "'''"),
-          quotedBy("r\"", "\""),
-          quotedBy("R\"", "\""),
-          quotedBy("r'", "'"),
-          quotedBy("R'", "'"));
+          quotedBy("r\"\"\"", "\"\"\""), quotedBy("R\"\"\"", "\"\"\""),
+          quotedBy("r'''", "'''"), quotedBy("R'''", "'''"),
+          quotedBy("r\"", "\""), quotedBy("R\"", "\""),
+          quotedBy("r'", "'"), quotedBy("R'", "'"));
   private static final Parser<String> STRING_LITERAL =
       anyOf(new StringLexer().parser(), RAW_STRING);
   private static final Parser<byte[]> BYTES_LITERAL =
