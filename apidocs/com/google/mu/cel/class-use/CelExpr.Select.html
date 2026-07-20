@@ -85,7 +85,9 @@ loadScripts(document, 'script');</script>
 </div>
 <div class="col-first odd-row-color"><code>default <a href="../CelExpr.Select.html" title="class in com.google.mu.cel">CelExpr.Select</a></code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">CelExpr.</span><code><a href="../CelExpr.html#select(com.google.mu.cel.CelExpr.Ident)" class="member-name-link">select</a><wbr>(<a href="../CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>&nbsp;field)</code></div>
-<div class="col-last odd-row-color">&nbsp;</div>
+<div class="col-last odd-row-color">
+<div class="block"><code>expr.select(field)</code> is equivalent to <code>CelExpr.of("expr.field")</code>.</div>
+</div>
 <div class="col-first even-row-color"><code><a href="../CelExpr.Select.html" title="class in com.google.mu.cel">CelExpr.Select</a></code></div>
 <div class="col-second even-row-color"><span class="type-name-label">CelExpr.Select.</span><code><a href="../CelExpr.Select.html#withSourceIndex(int)" class="member-name-link">withSourceIndex</a><wbr>(int&nbsp;index)</code></div>
 <div class="col-last even-row-color">&nbsp;</div>

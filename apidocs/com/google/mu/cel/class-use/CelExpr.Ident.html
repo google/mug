@@ -157,11 +157,13 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color"><code>default <a href="../CelExpr.OptionalSelect.html" title="class in com.google.mu.cel">CelExpr.OptionalSelect</a></code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">CelExpr.</span><code><a href="../CelExpr.html#optionalSelect(com.google.mu.cel.CelExpr.Ident)" class="member-name-link">optionalSelect</a><wbr>(<a href="../CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>&nbsp;field)</code></div>
 <div class="col-last odd-row-color">
-<div class="block"><code>expr.optionalSelect("field")</code> is equivalent to <code>CelExpr.of("expr.?field")</code>.</div>
+<div class="block"><code>expr.optionalSelect(field)</code> is equivalent to <code>CelExpr.of("expr.?field")</code>.</div>
 </div>
 <div class="col-first even-row-color"><code>default <a href="../CelExpr.Select.html" title="class in com.google.mu.cel">CelExpr.Select</a></code></div>
 <div class="col-second even-row-color"><span class="type-name-label">CelExpr.</span><code><a href="../CelExpr.html#select(com.google.mu.cel.CelExpr.Ident)" class="member-name-link">select</a><wbr>(<a href="../CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a>&nbsp;field)</code></div>
-<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-last even-row-color">
+<div class="block"><code>expr.select(field)</code> is equivalent to <code>CelExpr.of("expr.field")</code>.</div>
+</div>
 </div>
 <div class="caption"><span>Constructors in <a href="../package-summary.html">com.google.mu.cel</a> with parameters of type <a href="../CelExpr.Ident.html" title="class in com.google.mu.cel">CelExpr.Ident</a></span></div>
 <div class="summary-table three-column-summary">
