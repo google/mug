@@ -330,8 +330,6 @@ public sealed interface CelExpr {
       this(operand, field, field.sourceIndex());
     }
 
-
-
     @Override public OptionalSelect withSourceIndex(int index) {
       return new OptionalSelect(operand, field, index);
     }
@@ -352,8 +350,6 @@ public sealed interface CelExpr {
       this(operand, index, index.sourceIndex());
     }
 
-
-
     @Override public OptionalIndex withSourceIndex(int index) {
       return new OptionalIndex(operand, this.index, index);
     }
@@ -369,7 +365,6 @@ public sealed interface CelExpr {
    */
   public sealed interface Binary extends CelExpr {
     CelExpr left();
-
     CelExpr right();
   }
 
@@ -665,8 +660,6 @@ public sealed interface CelExpr {
       this(function, args, 0);
     }
 
-
-
     @Override public FunctionCall withSourceIndex(int index) {
       return new FunctionCall(function, args, index);
     }
@@ -688,8 +681,6 @@ public sealed interface CelExpr {
     public MemberCall(CelExpr target, Ident member, List<CelExpr> args) {
       this(target, member, args, member.sourceIndex);
     }
-
-
 
     @Override public MemberCall withSourceIndex(int index) {
       return new MemberCall(target, member, args, index);
@@ -781,8 +772,6 @@ public sealed interface CelExpr {
       public Has(Select member) {
         this(member, 0);
       }
-
-
 
       @Override public Has withSourceIndex(int index) {
         return new Has(member, index);
