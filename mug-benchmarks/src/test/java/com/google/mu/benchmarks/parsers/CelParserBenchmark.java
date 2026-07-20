@@ -58,9 +58,9 @@ public class CelParserBenchmark {
 
     labsParser = new CelParser();
 
-    smokeTestExpr = "1 + 2 == 3";
-    chainedOrsExpr = "1 > 2 || 2 > 3 || 3 > 4 || 4 > 5 || 5 > 6";
-    chainedAndsExpr = "1 < 2 && 2 < 3 && 3 < 4 && 4 < 5 && 5 < 6";
+    smokeTestExpr = "1 + 2 == 3 // smoke test";
+    chainedOrsExpr = "1 > 2 || 2 > 3 || // comment\n 3 > 4 || 4 > 5 || 5 > 6";
+    chainedAndsExpr = "1 < 2 && 2 < 3 && // comment\n 3 < 4 && 4 < 5 && 5 < 6";
     messageCreationExpr =
         "NestedTestAllTypes{ "
             + "child: NestedTestAllTypes{ payload: TestAllTypes{single_int64: 42} }, "
@@ -79,9 +79,11 @@ public class CelParserBenchmark {
             LongStream.rangeClosed(1, 1000)
                 .mapToObj(String::valueOf)
                 .collect(Collectors.joining(",", "[", "]")));
-    simpleMessageContextExpr = "payload.single_int64 == 42 && payload.single_string == '42'";
-    listComprehensionExpr = "payload.repeated_int64.exists(i, i >= 99)";
-    mapComprehensionExpr = "payload.map_int64_int64.exists(k, k >= 99)";
+    simpleMessageContextExpr =
+        "payload.single_int64 == 42 // check single int64\n"
+            + "&& payload.single_string == '42' // check single string";
+    listComprehensionExpr = "payload.repeated_int64.exists(i, i >= 99) // list exists";
+    mapComprehensionExpr = "payload.map_int64_int64.exists(k, k >= 99) // map exists";
   }
 
   // Smoke Test

@@ -20,10 +20,6 @@ public sealed interface CelExpr {
 
   /**
    * Parses and returns a {@link CelExpr} representing the {@code cel} string.
-   *
-   * <p>By default comments are not supported. Use {@link CelParser#withComments} if you need
-   * comments.
-   *
    * @throws Parser.ParseException if {@code cel} is invalid
    * @throws NullPointerException if {@code cel} is null
    */

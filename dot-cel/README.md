@@ -1,6 +1,6 @@
 # Dot CEL Parser
 
-A modern, lightweight, high-performance parser for the Common Expression Language (CEL) in Java.
+A modern, lightweight parser for the Common Expression Language (CEL) in Java.
 
 `dot-cel` parses CEL expressions directly into a type-safe Java AST (represented by [CelExpr](https://google.github.io/mug/apidocs/com/google/mu/cel/CelExpr.html) records and sealed interfaces), and provides seamless serialization to standard CEL Protobuf messages.
 
@@ -36,12 +36,7 @@ Standard CEL parsers (including `cel-java`) immediately expand macro calls (like
 
 The standard low-level expanded AST protos are generated transparently by [`CelParser.parseToProto()`](https://google.github.io/mug/apidocs/com/google/mu/cel/CelParser.html#parseToProto(java.lang.String)), allowing seamless compatibility with the rest of the `cel-java` ecosystem (such as the type checker and interpreter).
 
-### 4. High Performance Parsing (Stateless & Thread-Safe)
-`dot-cel` is optimized for parsing speed. [JMH benchmarks](benchmarks.md) show it parses expressions **1.5x to 2.7x faster** than the standard ANTLR-based `cel-java` parser across various workloads.
-
-Unlike ANTLR-based parsers which maintain mutable state during parsing and force `cel-java` to allocate a fresh pipeline of stateful helper objects (`Lexer`, `Parser`, `TokenStream`, etc.) for every single parse invocation, combinator-based parsers are stateless and inherently thread-safe. A single static parser tree is reused globally, eliminating thread allocation overhead on the hot path.
-
-### 5. Production-Safe (StackOverflow Protection)
+### 4. Production-Safe (StackOverflow Protection)
 Parser combinators are traditionally susceptible to JVM-crashing `StackOverflowError` when parsing deeply nested structures (e.g. `(((...)))` or long chained operations), making them risky for parsing untrusted user inputs.
 
 `dot-cel` takes advantage of `dot-parse`'s built-in stack depth protection. It safely limits recursion depth and throws a catchable `ParseException` instead of crashing the JVM, matching the production safety guarantees provided by `cel-java`.

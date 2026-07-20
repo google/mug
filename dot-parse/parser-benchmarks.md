@@ -285,11 +285,6 @@ While they perform identically on flat string choices (`StringIn`), their perfor
     This is the standard pattern in programming language and SQL parsers, where different keywords lead to entirely different grammar branches and parser actions (e.g., `select` leads to a `selectStatement` rule, `insert` leads to an `insertStatement` rule).
     *   **The Suffix/Map Limitation in `cats-parse`**: Because different branches must map to different AST nodes or trigger different rules, they require suffix operations (like `.map` or `*>`/`<*`). In `cats-parse`, appending `.map` to a string parser wraps it in a `Parser.Map` class. This **destroys** `cats-parse`'s radix-tree optimization, forcing it to fall back to sequential backtracking (trying all keywords one-by-one), which is extremely slow.
     *   **The Prefix-Pruning Advantage in `dot-parse`**: `dot-parse`'s `OrParser` is designed to extract the prefix of candidate parsers **even if they have suffix/map operations**. Its `PrefixPruneTree` can still prune candidates by their leading character prefixes, allowing `dot-parse` to maintain ~1 μs trie-like scaling even when different keywords lead to different complex rules.
-
-## Common Expression Language (CEL) Shootout
-
-For the detailed parser benchmark shootout comparing `dot-cel` against the ANTLR-based `cel-java`, see [dot-cel benchmarks](../dot-cel/benchmarks.md).
-
 ---
 
 ## How to Run the Benchmarks

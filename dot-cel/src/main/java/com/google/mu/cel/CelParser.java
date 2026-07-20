@@ -147,12 +147,7 @@ public final class CelParser {
   }
 
   public CelParser() {
-    this(PARSER.skipping(WHITESPACES));
-  }
-
-  /** Returns an equivalent {@link CelParser} that also supports comments. */
-  public CelParser withComments() {
-    return new CelParser(PARSER.skipping(WHITESPACES_OR_COMMENTS));
+    this(PARSER.skipping(WHITESPACES_OR_COMMENTS));
   }
 
   /** Parses the given CEL expression. */

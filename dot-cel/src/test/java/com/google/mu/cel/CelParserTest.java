@@ -776,16 +776,16 @@ public final class CelParserTest {
 
   @Test
   public void testComments() throws Exception {
-    assertThat(parser.withComments().parse("1 + 2 // comment"))
+    assertThat(parser.parse("1 + 2 // comment"))
         .isEqualTo(
             value(1L).withSourceIndex(0).add(value(2L).withSourceIndex(4)).withSourceIndex(2));
-    assertThat(parser.withComments().parse("1 + // comment\n 2"))
+    assertThat(parser.parse("1 + // comment\n 2"))
         .isEqualTo(
             value(1L).withSourceIndex(0).add(value(2L).withSourceIndex(16)).withSourceIndex(2));
-    assertThat(parser.withComments().parse("// comment\n 1 + 2"))
+    assertThat(parser.parse("// comment\n 1 + 2"))
         .isEqualTo(
             value(1L).withSourceIndex(12).add(value(2L).withSourceIndex(16)).withSourceIndex(14));
-    assertThat(parser.withComments().parse("1 // comment 1\n + 2 // comment 2"))
+    assertThat(parser.parse("1 // comment 1\n + 2 // comment 2"))
         .isEqualTo(
             value(1L).withSourceIndex(0).add(value(2L).withSourceIndex(18)).withSourceIndex(16));
   }
@@ -1701,7 +1701,7 @@ public final class CelParserTest {
 
   @Test
   public void parseToProtoWithComments_lineOffsets() {
-    ParsedExpr parsed = parser.withComments().parseToProto("a\n+ b\n* 3");
+    ParsedExpr parsed = parser.parseToProto("a\n+ b\n* 3");
     SourceInfo sourceInfo = parsed.getSourceInfo();
     assertThat(sourceInfo.getLineOffsetsList()).containsExactly(2, 6, 10).inOrder();
   }
