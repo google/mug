@@ -1,16 +1,12 @@
-# Common Expression Language (CEL) Shootout (Parity Comparison)
+# Common Expression Language (CEL) Shootout
 
-We compared the performance of Google's official ANTLR-based Java CEL parser (`cel-java` using `dev.cel:cel`) against our lightweight `dot-parse`-based `CelParser` (module `dot-cel`) on a variety of representative CEL expressions. The benchmark scenarios and target expressions are implemented in [`CelParserBenchmark.java`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/CelParserBenchmark.java). Both parsers output compatible proto ASTs (`com.google.api.expr.v1alpha1.ParsedExpr`) with full position tracking (`positions`), original macro invocation context (`macro_calls`), and line offset records (`line_offsets`).
+We benchmarked the performance of Google's official ANTLR-based Java CEL parser (`cel-java` using `dev.cel:cel`) against the `dot-cel` parser on a variety of expressions. Both parsers construct identical ASTs (`com.google.api.expr.v1alpha1.ParsedExpr`) with the same source position metadata (`positions`, `macro_calls`, `line_offsets`).
 
-Both parsers were strictly validated at setup time to guarantee 100% parity:
-1. Identical AST structures.
-2. Identical `line_offsets` arrays (including EOF offset mapping).
-3. Identical `positions` map size.
-4. Identical `macro_calls` map size.
+The benchmark scenarios are implemented in [`CelParserBenchmark.java`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/CelParserBenchmark.java).
 
 Throughput was measured in **microseconds per operation** (lower is better):
 
-| Benchmark Scenario / Expression | ANTLR Parser (`cel-java`) | `dot-parse` Parser (`dot-cel`) | Speedup |
+| Benchmark Scenario / Expression | cel-java (ANTLR parser) | dot-cel (dot-parse Parser) | Speedup |
 | :--- | :---: | :---: | :---: |
 | **`deepFieldMessageSelection`** (`child.child.child.child.payload...`) | 3.299 μs | 1.226 μs | **2.69x** |
 | **`smokeTest`** (`1 + 2 == 3`) | 2.712 μs | 1.020 μs | **2.66x** |
@@ -24,7 +20,9 @@ Throughput was measured in **microseconds per operation** (lower is better):
 | **`messageCreation`** (Nested struct instantiation) | 14.000 μs | 7.345 μs | **1.91x** |
 | **`longList`** (`size([1, 2, ... 1000]) == 1000`) | 793.293 μs | 477.317 μs | **1.66x** |
 
-### Key Takeaways from the CEL Shootout
+### Why is it faster?
 
+*   **Prefix Pruning**:
+    Traditional parser combinators sequentially evaluate alternative grammar branches. `dot-parse` extracts character prefixes to prune candidate paths early, avoiding deep backtracking on the hot path.
 *   **Reduced Object Allocations**:
-    During parsing of complex expressions without comments (such as deep selections, long lists, and nested message creations), `dot-parse`'s return elision significantly reduces the allocation rate on the JVM heap, leading to a major reduction in latency.
+    During parsing of complex nested structures (e.g. deep field selections, long lists, and struct instantiations), `dot-parse` uses return elision to bypass allocating intermediate list and tuple wrappers, drastically reducing JVM heap allocation rate and GC overhead.
