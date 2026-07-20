@@ -25,6 +25,7 @@ import com.google.mu.cel.CelExpr.Ident;
 import com.google.mu.cel.CelExpr.Select;
 import com.google.mu.function.Function4;
 import com.google.mu.function.TriFunction;
+import com.google.mu.util.CharPredicate;
 import java.io.ByteArrayOutputStream;
 import java.util.HashSet;
 import java.util.List;
@@ -49,6 +50,8 @@ public final class CelParser {
   private static final Set<String> KEYWORDS = Set.of(
       "as", "break", "const", "continue", "else", "false", "for", "function", "if", "import",
       "in", "let", "loop", "package", "namespace", "null", "return", "true", "var", "void", "while");
+  private static final CharPredicate WHITESPACES =
+      CharPredicate.anyOf(" \t\r\n\f").precomputeForAscii();
   private static final Parser<?> WHITESPACES_OR_COMMENTS =
       anyOf(consecutive("[ \t\r\n\f]"), sequence(string("//"), zeroOrMore("[^\n]")));
 
@@ -134,22 +137,13 @@ public final class CelParser {
       sequence(string(".").orElse(""), PLAIN_IDENTIFIER, String::concat)
           .mapWithIndex((name, begin, end) -> new CelExpr.Ident(name, begin));
 
-  private static final Parser<CelExpr> PARSER = Parser.define(CelParser::makeParser);
-
-  @SuppressWarnings("Immutable")
-  private final Parser<CelExpr>.Lexical lexical;
-
-  private CelParser(Parser<CelExpr>.Lexical lexical) {
-    this.lexical = lexical;
-  }
-
-  public CelParser() {
-    this(PARSER.skipping(WHITESPACES_OR_COMMENTS));
-  }
+  private static final Parser<CelExpr> PARSER = Parser.define(CelParser::expr);
 
   /** Parses the given CEL expression. */
   public CelExpr parse(String input) {
-    return lexical.parse(input);
+    return input.contains("//")
+        ? PARSER.parseSkipping(WHITESPACES_OR_COMMENTS, input)
+        :PARSER.parseSkipping(WHITESPACES, input);
   }
 
   /**
@@ -168,7 +162,7 @@ public final class CelParser {
     return CelProtoConverter.toParsedExpr(parse(input), input);
   }
 
-  private static Parser<CelExpr> makeParser(Parser<CelExpr> expr) {
+  private static Parser<CelExpr> expr(Parser<CelExpr> expr) {
     Parser<CelExpr> parenthesized = expr.between("(", ")");
     Parser<List<CelExpr>> args = expr.zeroOrMoreDelimitedBy(",").between("(", ")");
 
