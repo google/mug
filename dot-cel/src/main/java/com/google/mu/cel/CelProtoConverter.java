@@ -251,7 +251,7 @@ final class CelProtoConverter {
         for (int i = 0; i < v.elements().size(); i++) {
           CelExpr.Element elem = v.elements().get(i);
           listBuilder.addElements(convert(elem.value()));
-          if (elem.optional()) {
+          if (elem.isOptional()) {
             listBuilder.addOptionalIndices(i);
           }
         }
@@ -267,7 +267,7 @@ final class CelProtoConverter {
                   .setId(entryId)
                   .setMapKey(convert(entry.key()))
                   .setValue(convert(entry.value()))
-                  .setOptionalEntry(entry.optional()));
+                  .setOptionalEntry(entry.isOptional()));
         }
         builder.setStructExpr(structBuilder);
       }
@@ -282,7 +282,7 @@ final class CelProtoConverter {
                   .setId(entryId)
                   .setFieldKey(field.key().name())
                   .setValue(convert(field.value()))
-                  .setOptionalEntry(field.optional()));
+                  .setOptionalEntry(field.isOptional()));
         }
         builder.setStructExpr(structBuilder);
       }

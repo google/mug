@@ -770,18 +770,18 @@ public sealed interface CelExpr {
   }
 
   /** An entry/field representing a key-value or field-value mapping in map or struct literals. */
-  record Entry<K>(K key, CelExpr value, boolean optional, int sourceIndex) {
+  record Entry<K>(K key, CelExpr value, boolean isOptional, int sourceIndex) {
     public Entry {
       requireNonNull(key);
       requireNonNull(value);
     }
 
-    public Entry(K key, CelExpr value, boolean optional) {
-      this(key, value, optional, 0);
+    public Entry(K key, CelExpr value, boolean isOptional) {
+      this(key, value, isOptional, 0);
     }
 
-    public Entry(int sourceIndex, K key, CelExpr value, boolean optional) {
-      this(key, value, optional, sourceIndex);
+    public Entry(int sourceIndex, K key, CelExpr value, boolean isOptional) {
+      this(key, value, isOptional, sourceIndex);
     }
 
 
@@ -802,7 +802,7 @@ public sealed interface CelExpr {
     }
 
     @Override public String toString() {
-      return optionalMarker(optional) + key + ": " + value;
+      return optionalMarker(isOptional) + key + ": " + value;
     }
   }
 
@@ -964,14 +964,14 @@ public sealed interface CelExpr {
     }
   }
 
-  /** An element in a list, map, or message, which can be marked as optional. */
-  record Element(CelExpr value, boolean optional) {
+  /** An element in a list, map, or message, which can optionally be marked as optional. */
+  record Element(CelExpr value, boolean isOptional) {
     public Element {
       requireNonNull(value);
     }
 
     @Override public String toString() {
-      return optionalMarker(optional) + value;
+      return optionalMarker(isOptional) + value;
     }
   }
 

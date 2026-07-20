@@ -167,7 +167,7 @@ public class CelExprTest {
     CelExpr.ListOf expr = new CelExpr.ListOf(List.of(element), 0);
     assertThat(expr.elements()).containsExactly(element);
     assertThat(element.value()).isEqualTo(elementExpr);
-    assertThat(element.optional()).isTrue();
+    assertThat(element.isOptional()).isTrue();
     assertThat(expr.toString()).isEqualTo("[?1.5]");
   }
 
@@ -195,7 +195,7 @@ public class CelExprTest {
     assertThat(expr.entries()).containsExactly(entry);
     assertThat(entry.key()).isEqualTo(key);
     assertThat(entry.value()).isEqualTo(value);
-    assertThat(entry.optional()).isTrue();
+    assertThat(entry.isOptional()).isTrue();
     assertThat(expr.toString()).isEqualTo("{?\"key\": 42}");
   }
 
@@ -227,7 +227,7 @@ public class CelExprTest {
     assertThat(expr.fields()).containsExactly(field);
     assertThat(field.key()).isEqualTo(new CelExpr.Ident("myField", 0));
     assertThat(field.value()).isEqualTo(value);
-    assertThat(field.optional()).isFalse();
+    assertThat(field.isOptional()).isFalse();
     assertThat(expr.toString()).isEqualTo("MyMessage{myField: true}");
   }
 
