@@ -256,7 +256,7 @@ public sealed interface CelExpr {
     }
 
     @Override public boolean equals(Object obj) {
-      return obj instanceof BytesValue other && Arrays.equals(value, other.value);
+      return obj instanceof BytesValue that && Arrays.equals(value, that.value);
     }
 
     @Override public int hashCode() {
