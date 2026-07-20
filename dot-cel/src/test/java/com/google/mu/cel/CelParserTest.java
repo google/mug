@@ -15,7 +15,7 @@ import com.google.api.expr.v1alpha1.SourceInfo;
 import com.google.common.labs.parse.Parser.ParseException;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.cel.CelExpr.Element;
-import com.google.mu.cel.CelExpr.Entry;
+import com.google.mu.cel.CelExpr.KeyedBy;
 import com.google.mu.cel.CelExpr.FunctionCall;
 import com.google.mu.cel.CelExpr.Ident;
 import com.google.mu.cel.CelExpr.ListOf;
@@ -255,17 +255,17 @@ public final class CelParserTest {
         .isEqualTo(new FunctionCall(new Ident("a", 0), List.of(new Ident("b", 2)), 1));
     assertThat(parser.parse("a.b(c)"))
         .isEqualTo(
-            new MemberCall(3, new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4))));
+            new MemberCall(new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4)), 3));
     assertThat(parser.parse("a(b, c)"))
         .isEqualTo(
             new FunctionCall(new Ident("a", 0), List.of(new Ident("b", 2), new Ident("c", 5)), 1));
     assertThat(parser.parse("a.b(c, d)"))
         .isEqualTo(
             new MemberCall(
-                3,
                 new Ident("a", 0),
                 new Ident("b", 2),
-                List.of(new Ident("c", 4), new Ident("d", 7))));
+                List.of(new Ident("c", 4), new Ident("d", 7)),
+                3));
   }
 
   @Test
@@ -298,18 +298,18 @@ public final class CelParserTest {
         .isEqualTo(
             new MapOf(
                 List.of(
-                    new Entry<>(
+                    new KeyedBy<>(
                         string("a").withSourceIndex(1), value(1L).withSourceIndex(6), false, 4),
-                    new Entry<>(
+                    new KeyedBy<>(
                         string("b").withSourceIndex(9), value(2L).withSourceIndex(14), false, 12)),
                 0));
     assertThat(parser.parse("{'a': 1, 'b': 2,}"))
         .isEqualTo(
             new MapOf(
                 List.of(
-                    new Entry<>(
+                    new KeyedBy<>(
                         string("a").withSourceIndex(1), value(1L).withSourceIndex(6), false, 4),
-                    new Entry<>(
+                    new KeyedBy<>(
                         string("b").withSourceIndex(9), value(2L).withSourceIndex(14), false, 12)),
                 0)); // Trailing comma
     assertThat(parser.parse("{}")).isEqualTo(new MapOf(List.of(), 0));
@@ -322,29 +322,29 @@ public final class CelParserTest {
             new Struct(
                 "Type",
                 List.of(
-                    new Entry<>(new Ident("field", 5), value(1L).withSourceIndex(12), false, 10)),
+                    new KeyedBy<>(new Ident("field", 5), value(1L).withSourceIndex(12), false, 10)),
                 4));
     assertThat(parser.parse("a.b.Type{field: 1, field2: 2}"))
         .isEqualTo(
             new Struct(
                 "a.b.Type",
                 List.of(
-                    new Entry<>(new Ident("field", 9), value(1L).withSourceIndex(16), false, 14),
-                    new Entry<>(new Ident("field2", 19), value(2L).withSourceIndex(27), false, 25)),
+                    new KeyedBy<>(new Ident("field", 9), value(1L).withSourceIndex(16), false, 14),
+                    new KeyedBy<>(new Ident("field2", 19), value(2L).withSourceIndex(27), false, 25)),
                 8));
     assertThat(parser.parse(".Type{field: 1}"))
         .isEqualTo(
             new Struct(
                 ".Type",
                 List.of(
-                    new Entry<>(new Ident("field", 6), value(1L).withSourceIndex(13), false, 11)),
+                    new KeyedBy<>(new Ident("field", 6), value(1L).withSourceIndex(13), false, 11)),
                 5));
     assertThat(parser.parse(".   Type{field: 1}"))
         .isEqualTo(
             new Struct(
                 ".Type",
                 List.of(
-                    new Entry<>(new Ident("field", 9), value(1L).withSourceIndex(16), false, 14)),
+                    new KeyedBy<>(new Ident("field", 9), value(1L).withSourceIndex(16), false, 14)),
                 8));
   }
 
@@ -548,13 +548,13 @@ public final class CelParserTest {
     assertThat(parser.parse("a.b.c(d)"))
         .isEqualTo(
             new MemberCall(
-                5,
                 new Ident("a", 0).select(new Ident("b", 2)).withSourceIndex(1),
                 new Ident("c", 4),
-                List.of(new Ident("d", 6))));
+                List.of(new Ident("d", 6)),
+                5));
     assertThat(parser.parse("a.b(c).d"))
         .isEqualTo(
-            new MemberCall(3, new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4)))
+            new MemberCall(new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4)), 3)
                 .select(new Ident("d", 7))
                 .withSourceIndex(6));
     assertThat(parser.parse("a(b)[c]"))
@@ -565,32 +565,32 @@ public final class CelParserTest {
     assertThat(parser.parse("a.b(c).d(e)"))
         .isEqualTo(
             new MemberCall(
-                8,
-                new MemberCall(3, new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4))),
+                new MemberCall(new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4)), 3),
                 new Ident("d", 7),
-                List.of(new Ident("e", 9))));
+                List.of(new Ident("e", 9)),
+                8));
     assertThat(parser.parse("a.b(c)[d].e(f)"))
         .isEqualTo(
             new MemberCall(
-                11,
-                new MemberCall(3, new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4)))
+                new MemberCall(new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4)), 3)
                     .index(new Ident("d", 7))
                     .withSourceIndex(6),
                 new Ident("e", 10),
-                List.of(new Ident("f", 12))));
+                List.of(new Ident("f", 12)),
+                11));
     assertThat(parser.parse("a.b.Type{field: 1}"))
         .isEqualTo(
             new Struct(
                 "a.b.Type",
                 List.of(
-                    new Entry<>(new Ident("field", 9), value(1L).withSourceIndex(16), false, 14)),
+                    new KeyedBy<>(new Ident("field", 9), value(1L).withSourceIndex(16), false, 14)),
                 8));
     assertThat(parser.parse("Type{field: 1}.field"))
         .isEqualTo(
             new Struct(
                     "Type",
                     List.of(
-                        new Entry<>(
+                        new KeyedBy<>(
                             new Ident("field", 5), value(1L).withSourceIndex(12), false, 10)),
                     4)
                 .select(new Ident("field", 15))
@@ -600,7 +600,7 @@ public final class CelParserTest {
             new Struct(
                     "a.b.Type",
                     List.of(
-                        new Entry<>(
+                        new KeyedBy<>(
                             new Ident("field", 9), value(1L).withSourceIndex(16), false, 14)),
                     8)
                 .select(new Ident("field", 19))
@@ -610,7 +610,7 @@ public final class CelParserTest {
             new Struct(
                     "Type",
                     List.of(
-                        new Entry<>(
+                        new KeyedBy<>(
                             new Ident("field", 5), value(1L).withSourceIndex(12), false, 10)),
                     4)
                 .index(value(0L).withSourceIndex(15))
@@ -681,11 +681,11 @@ public final class CelParserTest {
         .isEqualTo(
             new MapOf(
                 List.of(
-                    new Entry<>(
+                    new KeyedBy<>(
                         string("a").withSourceIndex(1),
                         new MapOf(
                             List.of(
-                                new Entry<>(
+                                new KeyedBy<>(
                                     string("b").withSourceIndex(7),
                                     value(1L).withSourceIndex(12),
                                     false,
@@ -701,7 +701,7 @@ public final class CelParserTest {
                     new Element(
                         new MapOf(
                             List.of(
-                                new Entry<>(
+                                new KeyedBy<>(
                                     string("a").withSourceIndex(2),
                                     value(1L).withSourceIndex(7),
                                     false,
@@ -711,7 +711,7 @@ public final class CelParserTest {
                     new Element(
                         new MapOf(
                             List.of(
-                                new Entry<>(
+                                new KeyedBy<>(
                                     string("b").withSourceIndex(12),
                                     value(2L).withSourceIndex(17),
                                     false,
@@ -731,16 +731,16 @@ public final class CelParserTest {
         .isEqualTo(
             new MapOf(
                 List.of(
-                    new Entry<>(new Ident("a", 2), new Ident("b", 5), true, 3),
-                    new Entry<>(new Ident("c", 9), new Ident("d", 12), true, 10)),
+                    new KeyedBy<>(new Ident("a", 2), new Ident("b", 5), true, 3),
+                    new KeyedBy<>(new Ident("c", 9), new Ident("d", 12), true, 10)),
                 0));
     assertThat(parser.parse("Type{?field: value, field2: value}"))
         .isEqualTo(
             new Struct(
                 "Type",
                 List.of(
-                    new Entry<>(new Ident("field", 6), new Ident("value", 13), true, 11),
-                    new Entry<>(new Ident("field2", 20), new Ident("value", 28), false, 26)),
+                    new KeyedBy<>(new Ident("field", 6), new Ident("value", 13), true, 11),
+                    new KeyedBy<>(new Ident("field2", 20), new Ident("value", 28), false, 26)),
                 4));
   }
 
@@ -796,14 +796,14 @@ public final class CelParserTest {
         .isEqualTo(
             new MapOf(
                 List.of(
-                    new Entry<>(
+                    new KeyedBy<>(
                         value(1L).withSourceIndex(1), string("a").withSourceIndex(4), false, 2),
-                    new Entry<>(
+                    new KeyedBy<>(
                         unsigned(2L).withSourceIndex(9),
                         string("b").withSourceIndex(13),
                         false,
                         11),
-                    new Entry<>(
+                    new KeyedBy<>(
                         value(true).withSourceIndex(18),
                         string("c").withSourceIndex(24),
                         false,
@@ -813,7 +813,7 @@ public final class CelParserTest {
         .isEqualTo(
             new MapOf(
                 List.of(
-                    new Entry<>(
+                    new KeyedBy<>(
                         value(1.0).withSourceIndex(1), string("a").withSourceIndex(6), false, 4)),
                 0));
   }
@@ -940,7 +940,7 @@ public final class CelParserTest {
     assertThat(parser.parse("a.b(5)"))
         .isEqualTo(
             new MemberCall(
-                3, new Ident("a", 0), new Ident("b", 2), List.of(value(5L).withSourceIndex(4))));
+                new Ident("a", 0), new Ident("b", 2), List.of(value(5L).withSourceIndex(4)), 3));
     assertThat(parser.parse("4--4.1"))
         .isEqualTo(
             value(4L)
@@ -966,16 +966,16 @@ public final class CelParserTest {
         .isEqualTo(
             new FunctionCall(new Ident("a", 0), List.of(new Ident("b", 2), new Ident("c", 5)), 1));
     assertThat(parser.parse("a.b()"))
-        .isEqualTo(new MemberCall(3, new Ident("a", 0), new Ident("b", 2), List.of()));
+        .isEqualTo(new MemberCall(new Ident("a", 0), new Ident("b", 2), List.of(), 3));
     assertThat(parser.parse("a.b(c)"))
         .isEqualTo(
-            new MemberCall(3, new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4))));
+            new MemberCall(new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4)), 3));
     assertThat(parser.parse("aaa.bbb(ccc)"))
         .isEqualTo(
             new MemberCall(
-                7, new Ident("aaa", 0), new Ident("bbb", 4), List.of(new Ident("ccc", 8))));
+                new Ident("aaa", 0), new Ident("bbb", 4), List.of(new Ident("ccc", 8)), 7));
     assertThat(parser.parse("has(m.f)"))
-        .isEqualTo(new Has(3, new Ident("m", 4).select(new Ident("f", 6)).withSourceIndex(5)));
+        .isEqualTo(new Has(new Ident("m", 4).select(new Ident("f", 6)).withSourceIndex(5), 3));
     assertThat(parser.parse("x.single_nested_message != null"))
         .isEqualTo(
             new Ident("x", 0)
@@ -996,7 +996,7 @@ public final class CelParserTest {
     assertThat(parser.parse("a.`in`"))
         .isEqualTo(new Ident("a", 0).select(new Ident("in", 2)).withSourceIndex(1));
     assertThat(parser.parse("has(a.`b/c`)"))
-        .isEqualTo(new Has(3, new Ident("a", 4).select(new Ident("b/c", 6)).withSourceIndex(5)));
+        .isEqualTo(new Has(new Ident("a", 4).select(new Ident("b/c", 6)).withSourceIndex(5), 3));
   }
 
   @Test
@@ -1054,8 +1054,8 @@ public final class CelParserTest {
             new Struct(
                 "SomeMessage",
                 List.of(
-                    new Entry<>(new Ident("foo", 12), value(5L).withSourceIndex(17), false, 15),
-                    new Entry<>(
+                    new KeyedBy<>(new Ident("foo", 12), value(5L).withSourceIndex(17), false, 15),
+                    new KeyedBy<>(
                         new Ident("bar", 20), string("xyz").withSourceIndex(25), false, 23)),
                 11));
     assertThat(parser.parse("[3, 4, 5]"))
@@ -1070,8 +1070,8 @@ public final class CelParserTest {
         .isEqualTo(
             new MapOf(
                 List.of(
-                    new Entry<>(new Ident("foo", 1), value(5L).withSourceIndex(6), false, 4),
-                    new Entry<>(new Ident("bar", 9), string("xyz").withSourceIndex(14), false, 12)),
+                    new KeyedBy<>(new Ident("foo", 1), value(5L).withSourceIndex(6), false, 4),
+                    new KeyedBy<>(new Ident("bar", 9), string("xyz").withSourceIndex(14), false, 12)),
                 0));
     assertThat(parser.parse("a[b]"))
         .isEqualTo(new Ident("a", 0).index(new Ident("b", 2)).withSourceIndex(1));
@@ -1079,22 +1079,22 @@ public final class CelParserTest {
     assertThat(parser.parse("foo{ a:b }"))
         .isEqualTo(
             new Struct(
-                "foo", List.of(new Entry<>(new Ident("a", 5), new Ident("b", 7), false, 6)), 3));
+                "foo", List.of(new KeyedBy<>(new Ident("a", 5), new Ident("b", 7), false, 6)), 3));
     assertThat(parser.parse("foo{ a:b, c:d }"))
         .isEqualTo(
             new Struct(
                 "foo",
                 List.of(
-                    new Entry<>(new Ident("a", 5), new Ident("b", 7), false, 6),
-                    new Entry<>(new Ident("c", 10), new Ident("d", 12), false, 11)),
+                    new KeyedBy<>(new Ident("a", 5), new Ident("b", 7), false, 6),
+                    new KeyedBy<>(new Ident("c", 10), new Ident("d", 12), false, 11)),
                 3));
     assertThat(parser.parse("{}")).isEqualTo(new MapOf(List.of(), 0));
     assertThat(parser.parse("{a:b, c:d}"))
         .isEqualTo(
             new MapOf(
                 List.of(
-                    new Entry<>(new Ident("a", 1), new Ident("b", 3), false, 2),
-                    new Entry<>(new Ident("c", 6), new Ident("d", 8), false, 7)),
+                    new KeyedBy<>(new Ident("a", 1), new Ident("b", 3), false, 2),
+                    new KeyedBy<>(new Ident("c", 6), new Ident("d", 8), false, 7)),
                 0));
     assertThat(parser.parse("[]")).isEqualTo(new ListOf(List.of(), 0));
     assertThat(parser.parse("[a]"))
@@ -1124,9 +1124,9 @@ public final class CelParserTest {
         .isEqualTo(
             new MapOf(
                 List.of(
-                    new Entry<>(
+                    new KeyedBy<>(
                         value(1L).withSourceIndex(1), unsigned(2L).withSourceIndex(3), false, 2),
-                    new Entry<>(
+                    new KeyedBy<>(
                         value(2L).withSourceIndex(7), unsigned(3L).withSourceIndex(9), false, 8)),
                 0));
     assertThat(parser.parse("TestAllTypes{single_int32: 1, single_int64: 2}"))
@@ -1134,9 +1134,9 @@ public final class CelParserTest {
             new Struct(
                 "TestAllTypes",
                 List.of(
-                    new Entry<>(
+                    new KeyedBy<>(
                         new Ident("single_int32", 13), value(1L).withSourceIndex(27), false, 25),
-                    new Entry<>(
+                    new KeyedBy<>(
                         new Ident("single_int64", 30), value(2L).withSourceIndex(44), false, 42)),
                 12));
     assertThat(parser.parse("[1,3,4][0]"))
@@ -1210,43 +1210,43 @@ public final class CelParserTest {
         .isEqualTo(
             new Struct(
                 "A",
-                List.of(new Entry<>(new Ident("b", 2), value(1L).withSourceIndex(7), false, 5)),
+                List.of(new KeyedBy<>(new Ident("b", 2), value(1L).withSourceIndex(7), false, 5)),
                 1));
     assertThat(parser.parse("A{`b-c`: 1}"))
         .isEqualTo(
             new Struct(
                 "A",
-                List.of(new Entry<>(new Ident("b-c", 2), value(1L).withSourceIndex(9), false, 7)),
+                List.of(new KeyedBy<>(new Ident("b-c", 2), value(1L).withSourceIndex(9), false, 7)),
                 1));
     assertThat(parser.parse("A{`b c`: 1}"))
         .isEqualTo(
             new Struct(
                 "A",
-                List.of(new Entry<>(new Ident("b c", 2), value(1L).withSourceIndex(9), false, 7)),
+                List.of(new KeyedBy<>(new Ident("b c", 2), value(1L).withSourceIndex(9), false, 7)),
                 1));
     assertThat(parser.parse("A{`b/c`: 1}"))
         .isEqualTo(
             new Struct(
                 "A",
-                List.of(new Entry<>(new Ident("b/c", 2), value(1L).withSourceIndex(9), false, 7)),
+                List.of(new KeyedBy<>(new Ident("b/c", 2), value(1L).withSourceIndex(9), false, 7)),
                 1));
     assertThat(parser.parse("A{`b.c`: 1}"))
         .isEqualTo(
             new Struct(
                 "A",
-                List.of(new Entry<>(new Ident("b.c", 2), value(1L).withSourceIndex(9), false, 7)),
+                List.of(new KeyedBy<>(new Ident("b.c", 2), value(1L).withSourceIndex(9), false, 7)),
                 1));
     assertThat(parser.parse("A{`in`: 1}"))
         .isEqualTo(
             new Struct(
                 "A",
-                List.of(new Entry<>(new Ident("in", 2), value(1L).withSourceIndex(8), false, 6)),
+                List.of(new KeyedBy<>(new Ident("in", 2), value(1L).withSourceIndex(8), false, 6)),
                 1));
     assertThat(parser.parse("{?'key': value}"))
         .isEqualTo(
             new MapOf(
                 List.of(
-                    new Entry<>(string("key").withSourceIndex(2), new Ident("value", 9), true, 7)),
+                    new KeyedBy<>(string("key").withSourceIndex(2), new Ident("value", 9), true, 7)),
                 0));
   }
 
@@ -1355,7 +1355,7 @@ public final class CelParserTest {
     assertThat(parser.parse("size(x) == x.size()"))
         .isEqualTo(
             new FunctionCall(new Ident("size", 0), List.of(new Ident("x", 5)), 4)
-                .equalTo(new MemberCall(17, new Ident("x", 11), new Ident("size", 13), List.of()))
+                .equalTo(new MemberCall(new Ident("x", 11), new Ident("size", 13), List.of(), 17))
                 .withSourceIndex(8));
     assertThat(parser.parse("x.filter(y, y.filter(z, z > 0))"))
         .isEqualTo(
@@ -1373,7 +1373,7 @@ public final class CelParserTest {
     assertThat(parser.parse("has(a.b).filter(c, c)"))
         .isEqualTo(
             new Filter(
-                new Has(3, new Ident("a", 4).select(new Ident("b", 6)).withSourceIndex(5)),
+                new Has(new Ident("a", 4).select(new Ident("b", 6)).withSourceIndex(5), 3),
                 new Ident("c", 16),
                 new Ident("c", 19),
                 15));
@@ -1386,15 +1386,15 @@ public final class CelParserTest {
                         new Ident("y", 12),
                         new Ident("z", 21),
                         new Has(
-                            27, new Ident("z", 28).select(new Ident("a", 30)).withSourceIndex(29)),
+                            new Ident("z", 28).select(new Ident("a", 30)).withSourceIndex(29), 27),
                         20)
                     .and(
                         new Exists(
                             new Ident("y", 37),
                             new Ident("z", 46),
                             new Has(
-                                52,
-                                new Ident("z", 53).select(new Ident("b", 55)).withSourceIndex(54)),
+                                new Ident("z", 53).select(new Ident("b", 55)).withSourceIndex(54),
+                                52),
                             45))
                     .withSourceIndex(34),
                 8));
@@ -1402,10 +1402,10 @@ public final class CelParserTest {
         .isEqualTo(
             new Exists(
                 new MemberCall(
-                    15,
-                    new Has(3, new Ident("a", 4).select(new Ident("b", 6)).withSourceIndex(5)),
+                    new Has(new Ident("a", 4).select(new Ident("b", 6)).withSourceIndex(5), 3),
                     new Ident("asList", 9),
-                    List.of()),
+                    List.of(),
+                    15),
                 new Ident("c", 25),
                 new Ident("c", 28),
                 24));
@@ -1432,7 +1432,7 @@ public final class CelParserTest {
             new Exists(
                 new MapOf(
                     List.of(
-                        new Entry<>(
+                        new KeyedBy<>(
                             string("a").withSourceIndex(1),
                             value(1L).withSourceIndex(6),
                             false,
@@ -1467,12 +1467,12 @@ public final class CelParserTest {
     assertThat(parser.parse("has(a.b.c)"))
         .isEqualTo(
             new Has(
-                3,
                 new Ident("a", 4)
                     .select(new Ident("b", 6))
                     .withSourceIndex(5)
                     .select(new Ident("c", 8))
-                    .withSourceIndex(7)));
+                    .withSourceIndex(7),
+                3));
   }
 
   @Test
@@ -1503,22 +1503,22 @@ public final class CelParserTest {
         .isEqualTo(
             new Struct(
                 "Msg",
-                List.of(new Entry<>(new Ident("field", 5), new Ident("value", 12), true, 10)),
+                List.of(new KeyedBy<>(new Ident("field", 5), new Ident("value", 12), true, 10)),
                 3));
     assertThat(parser.parse("m.optMap(v, f)"))
         .isEqualTo(
             new MemberCall(
-                8,
                 new Ident("m", 0),
                 new Ident("optMap", 2),
-                List.of(new Ident("v", 9), new Ident("f", 12))));
+                List.of(new Ident("v", 9), new Ident("f", 12)),
+                8));
     assertThat(parser.parse("m.optFlatMap(v, f)"))
         .isEqualTo(
             new MemberCall(
-                12,
                 new Ident("m", 0),
                 new Ident("optFlatMap", 2),
-                List.of(new Ident("v", 13), new Ident("f", 16))));
+                List.of(new Ident("v", 13), new Ident("f", 16)),
+                12));
   }
 
   @Test
@@ -1778,7 +1778,8 @@ public final class CelParserTest {
             );
   }
 
-  @Test public void testNulls() {
+  @Test
+  public void testNulls() {
     NullPointerTester tester = new NullPointerTester();
     tester.testAllPublicStaticMethods(CelParser.class);
     tester.testAllPublicInstanceMethods(new CelParser());

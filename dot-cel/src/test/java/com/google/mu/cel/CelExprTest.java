@@ -3,6 +3,10 @@ package com.google.mu.cel;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.testing.NullPointerTester;
+import com.google.mu.cel.CelExpr.Element;
+import com.google.mu.cel.CelExpr.KeyedBy;
+import com.google.mu.cel.CelExpr.Ident;
+import com.google.mu.cel.CelExpr.Select;
 import java.util.List;
 import org.junit.Test;
 
@@ -190,7 +194,7 @@ public class CelExprTest {
   public void createMapExpr_singleOptional() {
     CelExpr key = new CelExpr.StringValue("key", 0);
     CelExpr value = new CelExpr.LongValue(42L, 0);
-    CelExpr.Entry<CelExpr> entry = new CelExpr.Entry<>(key, value, true, 0);
+    CelExpr.KeyedBy<CelExpr> entry = new CelExpr.KeyedBy<>(key, value, true, 0);
     CelExpr.MapOf expr = new CelExpr.MapOf(List.of(entry), 0);
     assertThat(expr.entries()).containsExactly(entry);
     assertThat(entry.key()).isEqualTo(key);
@@ -202,11 +206,11 @@ public class CelExprTest {
   @Test
   public void createMapExpr_multipleMix() {
     // Tests comma-separation and both optional/non-optional map entries
-    CelExpr.Entry<CelExpr> entry1 =
-        new CelExpr.Entry<>(
+    CelExpr.KeyedBy<CelExpr> entry1 =
+        new CelExpr.KeyedBy<>(
             new CelExpr.StringValue("a", 0), new CelExpr.LongValue(1L, 0), false, 0);
-    CelExpr.Entry<CelExpr> entry2 =
-        new CelExpr.Entry<>(new CelExpr.Ident("x", 0), new CelExpr.Ident("y", 0), true, 0);
+    CelExpr.KeyedBy<CelExpr> entry2 =
+        new CelExpr.KeyedBy<>(new CelExpr.Ident("x", 0), new CelExpr.Ident("y", 0), true, 0);
     CelExpr.MapOf expr = new CelExpr.MapOf(List.of(entry1, entry2), 0);
     assertThat(expr.toString()).isEqualTo("{\"a\": 1, ?x: y}");
   }
@@ -220,8 +224,8 @@ public class CelExprTest {
   @Test
   public void createStructExpr_single() {
     CelExpr value = new CelExpr.BoolValue(true, 0);
-    CelExpr.Entry<CelExpr.Ident> field =
-        new CelExpr.Entry<>(new CelExpr.Ident("myField", 0), value, false, 0);
+    CelExpr.KeyedBy<CelExpr.Ident> field =
+        new CelExpr.KeyedBy<>(new CelExpr.Ident("myField", 0), value, false, 0);
     CelExpr.Struct expr = new CelExpr.Struct("MyMessage", List.of(field), 0);
     assertThat(expr.typeName()).isEqualTo("MyMessage");
     assertThat(expr.fields()).containsExactly(field);
@@ -234,10 +238,10 @@ public class CelExprTest {
   @Test
   public void createStructExpr_multipleMix() {
     // Tests comma-separation and both optional/non-optional struct fields
-    CelExpr.Entry<CelExpr.Ident> field1 =
-        new CelExpr.Entry<>(new CelExpr.Ident("a", 0), new CelExpr.LongValue(1L, 0), false, 0);
-    CelExpr.Entry<CelExpr.Ident> field2 =
-        new CelExpr.Entry<>(new CelExpr.Ident("b", 0), new CelExpr.Ident("x", 0), true, 0);
+    CelExpr.KeyedBy<CelExpr.Ident> field1 =
+        new CelExpr.KeyedBy<>(new CelExpr.Ident("a", 0), new CelExpr.LongValue(1L, 0), false, 0);
+    CelExpr.KeyedBy<CelExpr.Ident> field2 =
+        new CelExpr.KeyedBy<>(new CelExpr.Ident("b", 0), new CelExpr.Ident("x", 0), true, 0);
     CelExpr.Struct expr = new CelExpr.Struct("MyMessage", List.of(field1, field2), 0);
     assertThat(expr.toString()).isEqualTo("MyMessage{a: 1, ?b: x}");
   }
@@ -285,8 +289,7 @@ public class CelExprTest {
   public void allExpr() {
     CelExpr target = new CelExpr.Ident("users", 0);
     CelExpr.Ident var = new CelExpr.Ident("x", 0);
-    CelExpr condition =
-        new CelExpr.GreaterThan(var, new CelExpr.LongValue(0L, 0), 0);
+    CelExpr condition = new CelExpr.GreaterThan(var, new CelExpr.LongValue(0L, 0), 0);
     CelExpr.Macro.All expr = new CelExpr.Macro.All(target, var, condition, 0);
     assertThat(expr.target()).isEqualTo(target);
     assertThat(expr.iterationVar()).isEqualTo(var);
@@ -298,8 +301,7 @@ public class CelExprTest {
   public void existsExpr() {
     CelExpr target = new CelExpr.Ident("users", 0);
     CelExpr.Ident var = new CelExpr.Ident("x", 0);
-    CelExpr condition =
-        new CelExpr.GreaterThan(var, new CelExpr.LongValue(0L, 0), 0);
+    CelExpr condition = new CelExpr.GreaterThan(var, new CelExpr.LongValue(0L, 0), 0);
     CelExpr.Macro.Exists expr = new CelExpr.Macro.Exists(target, var, condition, 0);
     assertThat(expr.target()).isEqualTo(target);
     assertThat(expr.iterationVar()).isEqualTo(var);
@@ -311,8 +313,7 @@ public class CelExprTest {
   public void existsOneExpr() {
     CelExpr target = new CelExpr.Ident("users", 0);
     CelExpr.Ident var = new CelExpr.Ident("x", 0);
-    CelExpr condition =
-        new CelExpr.GreaterThan(var, new CelExpr.LongValue(0L, 0), 0);
+    CelExpr condition = new CelExpr.GreaterThan(var, new CelExpr.LongValue(0L, 0), 0);
     CelExpr.Macro.ExistsOne expr = new CelExpr.Macro.ExistsOne(target, var, condition, 0);
     assertThat(expr.target()).isEqualTo(target);
     assertThat(expr.iterationVar()).isEqualTo(var);
@@ -324,8 +325,7 @@ public class CelExprTest {
   public void filterExpr() {
     CelExpr target = new CelExpr.Ident("users", 0);
     CelExpr.Ident var = new CelExpr.Ident("x", 0);
-    CelExpr condition =
-        new CelExpr.GreaterThan(var, new CelExpr.LongValue(0L, 0), 0);
+    CelExpr condition = new CelExpr.GreaterThan(var, new CelExpr.LongValue(0L, 0), 0);
     CelExpr.Macro.Filter expr = new CelExpr.Macro.Filter(target, var, condition, 0);
     assertThat(expr.target()).isEqualTo(target);
     assertThat(expr.iterationVar()).isEqualTo(var);
@@ -337,8 +337,7 @@ public class CelExprTest {
   public void mapExpr() {
     CelExpr target = new CelExpr.Ident("users", 0);
     CelExpr.Ident var = new CelExpr.Ident("x", 0);
-    CelExpr transform =
-        new CelExpr.Multiply(var, new CelExpr.LongValue(2L, 0), 0);
+    CelExpr transform = new CelExpr.Multiply(var, new CelExpr.LongValue(2L, 0), 0);
     CelExpr.Macro.Map expr = new CelExpr.Macro.Map(target, var, transform, 0);
     assertThat(expr.target()).isEqualTo(target);
     assertThat(expr.iterationVar()).isEqualTo(var);
@@ -350,10 +349,8 @@ public class CelExprTest {
   public void filterMapExpr() {
     CelExpr target = new CelExpr.Ident("users", 0);
     CelExpr.Ident var = new CelExpr.Ident("x", 0);
-    CelExpr filter =
-        new CelExpr.GreaterThan(var, new CelExpr.LongValue(0L, 0), 0);
-    CelExpr transform =
-        new CelExpr.Multiply(var, new CelExpr.LongValue(2L, 0), 0);
+    CelExpr filter = new CelExpr.GreaterThan(var, new CelExpr.LongValue(0L, 0), 0);
+    CelExpr transform = new CelExpr.Multiply(var, new CelExpr.LongValue(2L, 0), 0);
     CelExpr.Macro.FilterMap expr = new CelExpr.Macro.FilterMap(target, var, filter, transform, 0);
     assertThat(expr.target()).isEqualTo(target);
     assertThat(expr.iterationVar()).isEqualTo(var);
@@ -366,10 +363,10 @@ public class CelExprTest {
   public void testNulls() {
     NullPointerTester tester = new NullPointerTester();
     tester.setDefault(CelExpr.class, CelExpr.string("v"));
-    tester.setDefault(CelExpr.Ident.class, new CelExpr.Ident("v"));
+    tester.setDefault(Ident.class, new Ident("v", 0));
     tester.setDefault(
-        CelExpr.Select.class, new CelExpr.Select(CelExpr.string("v"), new CelExpr.Ident("f")));
-    tester.setDefault(CelExpr.Element.class, new CelExpr.Element(CelExpr.string("v"), false));
+        Select.class, new Select(CelExpr.string("v"), new Ident("f", 0)));
+    tester.setDefault(Element.class, new Element(CelExpr.string("v"), false));
     tester.testAllPublicStaticMethods(CelExpr.class);
     tester.testAllPublicInstanceMethods(CelExpr.string("v"));
     for (Class<?> nestedClass : CelExpr.class.getDeclaredClasses()) {
@@ -469,15 +466,15 @@ public class CelExprTest {
     assertRoundtrip(
         new CelExpr.MapOf(
             List.of(
-                new CelExpr.Entry<>(
+                new CelExpr.KeyedBy<>(
                     new CelExpr.StringValue("key", 0), new CelExpr.LongValue(42L, 0), true, 0)),
             0));
     assertRoundtrip(
         new CelExpr.MapOf(
             List.of(
-                new CelExpr.Entry<>(
+                new CelExpr.KeyedBy<>(
                     new CelExpr.StringValue("a", 0), new CelExpr.LongValue(1L, 0), false, 0),
-                new CelExpr.Entry<>(x, new CelExpr.Ident("y", 0), true, 0)),
+                new CelExpr.KeyedBy<>(x, new CelExpr.Ident("y", 0), true, 0)),
             0));
     assertRoundtrip(new CelExpr.MapOf(List.of(), 0));
   }
@@ -489,16 +486,16 @@ public class CelExprTest {
         new CelExpr.Struct(
             "MyMessage",
             List.of(
-                new CelExpr.Entry<>(
+                new CelExpr.KeyedBy<>(
                     new CelExpr.Ident("myField", 0), new CelExpr.BoolValue(true, 0), false, 0)),
             0));
     assertRoundtrip(
         new CelExpr.Struct(
             "MyMessage",
             List.of(
-                new CelExpr.Entry<>(
+                new CelExpr.KeyedBy<>(
                     new CelExpr.Ident("a", 0), new CelExpr.LongValue(1L, 0), false, 0),
-                new CelExpr.Entry<>(new CelExpr.Ident("b", 0), x, true, 0)),
+                new CelExpr.KeyedBy<>(new CelExpr.Ident("b", 0), x, true, 0)),
             0));
     assertRoundtrip(new CelExpr.Struct("MyMessage", List.of(), 0));
   }

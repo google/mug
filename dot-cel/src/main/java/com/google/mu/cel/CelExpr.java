@@ -3,6 +3,7 @@ package com.google.mu.cel;
 import static java.util.Objects.requireNonNull;
 
 import com.google.mu.util.stream.Joiner;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -255,11 +256,11 @@ public sealed interface CelExpr {
     }
 
     @Override public boolean equals(Object obj) {
-      return obj instanceof BytesValue other && java.util.Arrays.equals(value, other.value);
+      return obj instanceof BytesValue other && Arrays.equals(value, other.value);
     }
 
     @Override public int hashCode() {
-      return java.util.Arrays.hashCode(value);
+      return Arrays.hashCode(value);
     }
   }
 
@@ -267,14 +268,6 @@ public sealed interface CelExpr {
   record Ident(String name, int sourceIndex) implements CelExpr {
     public Ident {
       requireNonNull(name);
-    }
-
-    public Ident(String name) {
-      this(name, 0);
-    }
-
-    public Ident(int sourceIndex, String name) {
-      this(name, sourceIndex);
     }
 
     @Override public Ident withSourceIndex(int index) {
@@ -337,9 +330,7 @@ public sealed interface CelExpr {
       this(operand, field, field.sourceIndex());
     }
 
-    public OptionalSelect(int sourceIndex, CelExpr operand, Ident field) {
-      this(operand, field, sourceIndex);
-    }
+
 
     @Override public OptionalSelect withSourceIndex(int index) {
       return new OptionalSelect(operand, field, index);
@@ -361,9 +352,7 @@ public sealed interface CelExpr {
       this(operand, index, index.sourceIndex());
     }
 
-    public OptionalIndex(int sourceIndex, CelExpr operand, CelExpr index) {
-      this(operand, index, sourceIndex);
-    }
+
 
     @Override public OptionalIndex withSourceIndex(int index) {
       return new OptionalIndex(operand, this.index, index);
@@ -676,9 +665,7 @@ public sealed interface CelExpr {
       this(function, args, 0);
     }
 
-    public FunctionCall(int sourceIndex, Ident function, List<CelExpr> args) {
-      this(function, args, sourceIndex);
-    }
+
 
     @Override public FunctionCall withSourceIndex(int index) {
       return new FunctionCall(function, args, index);
@@ -702,9 +689,7 @@ public sealed interface CelExpr {
       this(target, member, args, member.sourceIndex);
     }
 
-    public MemberCall(int sourceIndex, CelExpr target, Ident member, List<CelExpr> args) {
-      this(target, member, args, sourceIndex);
-    }
+
 
     @Override public MemberCall withSourceIndex(int index) {
       return new MemberCall(target, member, args, index);
@@ -735,7 +720,7 @@ public sealed interface CelExpr {
   }
 
   /** Map creation, such as {@code {"key": value, ? "opt_key": value}}. */
-  record MapOf(List<Entry<CelExpr>> entries, int sourceIndex) implements CelExpr {
+  record MapOf(List<KeyedBy<CelExpr>> entries, int sourceIndex) implements CelExpr {
     public MapOf {
       requireNonNull(entries);
     }
@@ -750,13 +735,13 @@ public sealed interface CelExpr {
   }
 
   /** Struct/message creation, such as {@code Type{field: value, ?opt_field: value}}. */
-  record Struct(String typeName, List<Entry<Ident>> fields, int sourceIndex) implements CelExpr {
+  record Struct(String typeName, List<KeyedBy<Ident>> fields, int sourceIndex) implements CelExpr {
     public Struct {
       requireNonNull(typeName);
       requireNonNull(fields);
     }
 
-    public Struct(String typeName, List<Entry<Ident>> fields) {
+    public Struct(String typeName, List<KeyedBy<Ident>> fields) {
       this(typeName, fields, 0);
     }
 
@@ -770,35 +755,14 @@ public sealed interface CelExpr {
   }
 
   /** An entry/field representing a key-value or field-value mapping in map or struct literals. */
-  record Entry<K>(K key, CelExpr value, boolean isOptional, int sourceIndex) {
-    public Entry {
+  record KeyedBy<K>(K key, CelExpr value, boolean isOptional, int sourceIndex) {
+    public KeyedBy {
       requireNonNull(key);
       requireNonNull(value);
     }
 
-    public Entry(K key, CelExpr value, boolean isOptional) {
+    public KeyedBy(K key, CelExpr value, boolean isOptional) {
       this(key, value, isOptional, 0);
-    }
-
-    public Entry(int sourceIndex, K key, CelExpr value, boolean isOptional) {
-      this(key, value, isOptional, sourceIndex);
-    }
-
-
-
-    /**
-     * {@code Entry.of(string("key"), value(1))} is equivalent to {@code CelExpr.of("'key': 1")}.
-     */
-    public static Entry<CelExpr> of(CelExpr key, CelExpr value) {
-      return new Entry<>(key, value, false, key.sourceIndex());
-    }
-
-    /**
-     * {@code Entry.optional(string("key"), value(1))} is equivalent to {@code CelExpr.of("? 'key':
-     * 1")}.
-     */
-    public static Entry<CelExpr> optional(CelExpr key, CelExpr value) {
-      return new Entry<>(key, value, true, key.sourceIndex());
     }
 
     @Override public String toString() {
@@ -818,9 +782,7 @@ public sealed interface CelExpr {
         this(member, 0);
       }
 
-      public Has(int sourceIndex, Select member) {
-        this(member, sourceIndex);
-      }
+
 
       @Override public Has withSourceIndex(int index) {
         return new Has(member, index);

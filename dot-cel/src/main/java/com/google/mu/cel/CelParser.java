@@ -374,10 +374,10 @@ public final class CelParser {
     }
   }
 
-  private static <K> Parser<List<CelExpr.Entry<K>>> entries(Parser<K> key, Parser<CelExpr> value) {
+  private static <K> Parser<List<CelExpr.KeyedBy<K>>> entries(Parser<K> key, Parser<CelExpr> value) {
     return sequence(
             OPTIONALITY, key, indexOf(':'), value,
-            (opt, k, colon, v) -> new CelExpr.Entry<>(k, v, opt, colon))
+            (opt, k, colon, v) -> new CelExpr.KeyedBy<>(k, v, opt, colon))
         .zeroOrMoreDelimitedBy(",")
         .optionallyFollowedBy(",")
         .between("{", "}");
@@ -547,9 +547,9 @@ public final class CelParser {
     return construct.apply(target, placeholder, args.get(1), args.get(2));
   }
 
-  private static CelExpr structExpr(CelExpr receiver, List<CelExpr.Entry<CelExpr.Ident>> fields) {
+  private static CelExpr structExpr(CelExpr receiver, List<CelExpr.KeyedBy<CelExpr.Ident>> fields) {
     Set<String> keys = new HashSet<>();
-    for (CelExpr.Entry<CelExpr.Ident> field : fields) {
+    for (CelExpr.KeyedBy<CelExpr.Ident> field : fields) {
       String name = field.key().name();
       checkSyntax(keys.add(name), "duplicate field name: %s", name);
     }

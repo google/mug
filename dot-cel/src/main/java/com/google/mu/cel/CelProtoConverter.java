@@ -12,6 +12,9 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
+import com.google.mu.cel.CelExpr.Element;
+import com.google.mu.cel.CelExpr.KeyedBy;
+import com.google.mu.cel.CelExpr.Ident;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** Helper to convert CelExpr to official CEL Protobuf AST. */
@@ -249,7 +252,7 @@ final class CelProtoConverter {
       case CelExpr.ListOf v -> {
         Expr.CreateList.Builder listBuilder = Expr.CreateList.newBuilder();
         for (int i = 0; i < v.elements().size(); i++) {
-          CelExpr.Element elem = v.elements().get(i);
+          Element elem = v.elements().get(i);
           listBuilder.addElements(convert(elem.value()));
           if (elem.isOptional()) {
             listBuilder.addOptionalIndices(i);
@@ -259,7 +262,7 @@ final class CelProtoConverter {
       }
       case CelExpr.MapOf v -> {
         Expr.CreateStruct.Builder structBuilder = Expr.CreateStruct.newBuilder();
-        for (CelExpr.Entry<CelExpr> entry : v.entries()) {
+        for (KeyedBy<CelExpr> entry : v.entries()) {
           long entryId = idGenerator.getAndIncrement();
           putPosition(entryId, entry.sourceIndex());
           structBuilder.addEntries(
@@ -274,7 +277,7 @@ final class CelProtoConverter {
       case CelExpr.Struct v -> {
         Expr.CreateStruct.Builder structBuilder =
             Expr.CreateStruct.newBuilder().setMessageName(v.typeName());
-        for (CelExpr.Entry<CelExpr.Ident> field : v.fields()) {
+        for (KeyedBy<Ident> field : v.fields()) {
           long entryId = idGenerator.getAndIncrement();
           putPosition(entryId, field.sourceIndex());
           structBuilder.addEntries(
