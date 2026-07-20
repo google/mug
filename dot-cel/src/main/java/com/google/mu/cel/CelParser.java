@@ -54,7 +54,6 @@ public final class CelParser {
       CharPredicate.anyOf(" \t\r\n\f").precomputeForAscii();
   private static final Parser<?> WHITESPACES_OR_COMMENTS =
       anyOf(consecutive("[ \t\r\n\f]"), sequence(string("//"), zeroOrMore("[^\n]")));
-
   private static final Parser<Boolean>.OrEmpty OPTIONALITY =
       one('?').thenReturn(true).orElse(false);
 
@@ -62,7 +61,6 @@ public final class CelParser {
       literally(one("[a-zA-Z_]"), zeroOrMore("[a-zA-Z0-9_]"))
           .source()
           .suchThat(s -> !KEYWORDS.contains(s), "identifier");
-
   private static final Parser<String> ESC_IDENTIFIER =
       consecutive("[a-zA-Z0-9_./ -]").immediatelyBetween("`", "`");
   private static final Parser<CelExpr.Ident> IDENT =
@@ -79,27 +77,22 @@ public final class CelParser {
           quotedBy("R\"", "\""),
           quotedBy("r'", "'"),
           quotedBy("R'", "'"));
-
   private static final Parser<String> STRING_LITERAL =
       anyOf(new StringLexer().parser(), RAW_STRING);
-
   private static final Parser<byte[]> BYTES_LITERAL =
       literally(
           caseInsensitive("b")
               .then(anyOf(new BytesLexer().parser(), RAW_STRING.map(s -> s.getBytes(UTF_8)))));
 
   private static final Parser<String> HEX_DIGITS = consecutive("[0-9a-fA-F]");
-
   private static final Parser<CelExpr.LongValue> HEX_INT =
       sequence(
               string("-").orElse(""), literally(caseInsensitive("0x").then(HEX_DIGITS)),
               (sign, d) -> parseLong(sign + d, 16))
           .mapWithIndex((val, begin, end) -> new CelExpr.LongValue(val, begin));
-
   private static final Parser<CelExpr.LongValue> DEC_INT =
       sequence(string("-").orElse(""), digits(), (sign, d) -> parseLong(sign + d))
           .mapWithIndex((val, begin, end) -> new CelExpr.LongValue(val, begin));
-
   private static final Parser<CelExpr.UintValue> UINT =
       literally(
               anyOf(
@@ -107,10 +100,8 @@ public final class CelParser {
                       digits().map(CelParser::parseUnsignedLong))
                   .followedBy(caseInsensitive("u")))
           .mapWithIndex((val, begin, end) -> new CelExpr.UintValue(val, begin));
-
   private static final Parser<String> EXPONENT =
       sequence(caseInsensitive("e"), anyOf("+", "-").optional(), digits()).source();
-
   private static final Parser<CelExpr.DoubleValue> SIGNED_DOUBLE =
       sequence(
               string("-").orElse(""),
@@ -123,19 +114,12 @@ public final class CelParser {
 
   private static final Parser<CelExpr> CONSTANT_LITERAL =
       anyOf(
-          SIGNED_DOUBLE,
-          UINT,
-          HEX_INT,
-          DEC_INT,
+          SIGNED_DOUBLE, UINT, HEX_INT, DEC_INT,
           STRING_LITERAL.mapWithIndex((val, begin, end) -> new CelExpr.StringValue(val, begin)),
           BYTES_LITERAL.mapWithIndex((val, begin, end) -> new CelExpr.BytesValue(val, begin)),
           word("true").mapWithIndex((val, begin, end) -> new CelExpr.BoolValue(true, begin)),
           word("false").mapWithIndex((val, begin, end) -> new CelExpr.BoolValue(false, begin)),
           word("null").mapWithIndex((val, begin, end) -> new CelExpr.NullValue(begin)));
-
-  private static final Parser<CelExpr> IDENT_EXPR =
-      sequence(string(".").orElse(""), PLAIN_IDENTIFIER, String::concat)
-          .mapWithIndex((name, begin, end) -> new CelExpr.Ident(name, begin));
 
   private static final Parser<CelExpr> PARSER = Parser.define(CelParser::expr);
 
@@ -143,7 +127,7 @@ public final class CelParser {
   public CelExpr parse(String input) {
     return input.contains("//")
         ? PARSER.parseSkipping(WHITESPACES_OR_COMMENTS, input)
-        :PARSER.parseSkipping(WHITESPACES, input);
+        : PARSER.parseSkipping(WHITESPACES, input);
   }
 
   /**
@@ -175,8 +159,10 @@ public final class CelParser {
     Parser<CelExpr.MapOf> mapExpr =
         entries(expr, expr)
             .mapWithIndex((entries, begin, end) -> new CelExpr.MapOf(entries, begin));
+
     Parser<CelExpr> callOrStructOrIdent =
-        IDENT_EXPR
+        sequence(string(".").orElse(""), PLAIN_IDENTIFIER, String::concat)
+            .<CelExpr>mapWithIndex((name, begin, end) -> new CelExpr.Ident(name, begin))
             .withPostfixes(
                 sequence(indexOf('.'), IDENT, (index, f) -> e -> new Select(e, f, index)))
             .optionallyFollowedBy(
