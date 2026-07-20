@@ -69,18 +69,19 @@ public sealed interface CelExpr {
     return new Not(expr, expr.sourceIndex());
   }
 
+  /** {@code expr.select(field)} is equivalent to {@code CelExpr.of("expr.field")}. */
   default Select select(Ident field) {
     return new Select(this, field, field.sourceIndex());
+  }
+
+  /** {@code expr.optionalSelect(field)} is equivalent to {@code CelExpr.of("expr.?field")}. */
+  default OptionalSelect optionalSelect(Ident field) {
+    return new OptionalSelect(this, field, field.sourceIndex());
   }
 
   /** {@code expr.index(value(0))} is equivalent to {@code CelExpr.of("expr[0]")}. */
   default Index index(CelExpr index) {
     return new Index(this, index, index.sourceIndex());
-  }
-
-  /** {@code expr.optionalSelect("field")} is equivalent to {@code CelExpr.of("expr.?field")}. */
-  default OptionalSelect optionalSelect(Ident field) {
-    return new OptionalSelect(this, field, field.sourceIndex());
   }
 
   /** {@code expr.optionalIndex(value(0))} is equivalent to {@code CelExpr.of("expr[?0]")}. */
