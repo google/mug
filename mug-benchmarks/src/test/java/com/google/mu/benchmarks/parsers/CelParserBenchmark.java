@@ -79,7 +79,8 @@ public class CelParserBenchmark {
             LongStream.rangeClosed(1, 1000)
                 .mapToObj(String::valueOf)
                 .collect(Collectors.joining(",", "[", "]")));
-    simpleMessageContextExpr = "payload.single_int64 == 42 && payload.single_string == '42'";
+    simpleMessageContextExpr =
+        "payload.single_int64 == 42 && payload.single_string == '42'";
     listComprehensionExpr = "payload.repeated_int64.exists(i, i >= 99)";
     mapComprehensionExpr = "payload.map_int64_int64.exists(k, k >= 99)";
   }

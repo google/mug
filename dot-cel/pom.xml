@@ -5,8 +5,8 @@
     <artifactId>mug-root</artifactId>
     <version>10.6.1-SNAPSHOT</version>
   </parent>
-  <artifactId>mug-cel</artifactId>
-  <name>Mug CEL</name>
+  <artifactId>dot-cel</artifactId>
+  <name>Dot CEL</name>
   <properties>
     <module.name>cel</module.name>
   </properties>
