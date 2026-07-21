@@ -14,6 +14,7 @@ import java.util.List;
 public sealed interface CelExpr {
   /**
    * Parses and returns a {@link CelExpr} representing the {@code cel} string.
+   *
    * @throws Parser.ParseException if {@code cel} is invalid
    * @throws NullPointerException if {@code cel} is null
    */
@@ -784,7 +785,8 @@ public sealed interface CelExpr {
     }
 
     /** The {@code target.all(var, condition)} macro. */
-    record All(CelExpr target, Ident iterationVar, CelExpr condition, int sourceIndex) implements Macro {
+    record All(CelExpr target, Ident iterationVar, CelExpr condition, int sourceIndex)
+        implements Macro {
       public All {
         requireNonNull(target);
         requireNonNull(iterationVar);
@@ -805,7 +807,8 @@ public sealed interface CelExpr {
     }
 
     /** The {@code target.exists(var, condition)} macro. */
-    record Exists(CelExpr target, Ident iterationVar, CelExpr condition, int sourceIndex) implements Macro {
+    record Exists(CelExpr target, Ident iterationVar, CelExpr condition, int sourceIndex)
+        implements Macro {
       public Exists {
         requireNonNull(target);
         requireNonNull(iterationVar);
@@ -848,7 +851,8 @@ public sealed interface CelExpr {
     }
 
     /** The {@code target.filter(var, expr)} macro. */
-    record Filter(CelExpr target, Ident iterationVar, CelExpr expr, int sourceIndex) implements Macro {
+    record Filter(CelExpr target, Ident iterationVar, CelExpr expr, int sourceIndex)
+        implements Macro {
       public Filter {
         requireNonNull(target);
         requireNonNull(iterationVar);
@@ -890,10 +894,11 @@ public sealed interface CelExpr {
     }
 
     /**
-     * The {@code target.map(var, filter, transform)} macro (synthesized from three-argument
-     * {@code map} macro).
+     * The {@code target.map(var, filter, transform)} macro (synthesized from three-argument {@code
+     * map} macro).
      */
-    record FilterMap(CelExpr target, Ident iterationVar, CelExpr filter, CelExpr transform, int sourceIndex)
+    record FilterMap(
+        CelExpr target, Ident iterationVar, CelExpr filter, CelExpr transform, int sourceIndex)
         implements Macro {
       public FilterMap {
         requireNonNull(target);
@@ -930,15 +935,14 @@ public sealed interface CelExpr {
   private static String escapeString(String s) {
     return s.codePoints()
         .mapToObj(
-            c ->
-                switch (c) {
-                  case '\\' -> "\\\\";
-                  case '"' -> "\\\"";
-                  case '\n' -> "\\n";
-                  case '\r' -> "\\r";
-                  case '\t' -> "\\t";
-                  default -> Character.toString(c);
-                })
+            c -> switch (c) {
+              case '\\' -> "\\\\";
+              case '"' -> "\\\"";
+              case '\n' -> "\\n";
+              case '\r' -> "\\r";
+              case '\t' -> "\\t";
+              default -> Character.toString(c);
+            })
         .collect(Joiner.on("").between('"', '"'));
   }
 
