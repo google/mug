@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>10.6.1-SNAPSHOT</version>
+    <version>10.7</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-concurrent24</artifactId>
@@ -12,7 +12,7 @@
   <properties>
     <module.name>concurrent24</module.name>
     <!-- Reproducible builds: fixed timestamp for build artifacts -->
-    <project.build.outputTimestamp>2026-07-20T23:34:50Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-07-21T00:11:41Z</project.build.outputTimestamp>
     <argLine>--enable-preview</argLine>
   </properties>
   
