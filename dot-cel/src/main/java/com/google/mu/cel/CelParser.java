@@ -67,54 +67,50 @@ public final class CelParser {
       anyOf(PLAIN_IDENTIFIER, ESC_IDENTIFIER)
           .mapWithIndex((name, begin, end) -> new CelExpr.Ident(name, begin));
 
-  private static final Parser<String> RAW_STRING =
-      anyOf(
-          quotedBy("r\"\"\"", "\"\"\""), quotedBy("R\"\"\"", "\"\"\""),
-          quotedBy("r'''", "'''"), quotedBy("R'''", "'''"),
-          quotedBy("r\"", "\""), quotedBy("R\"", "\""),
-          quotedBy("r'", "'"), quotedBy("R'", "'"));
-  private static final Parser<String> STRING_LITERAL = anyOf(new StringLexer().parser(), RAW_STRING);
+  private static final Parser<String> RAW_STRING = anyOf(
+      quotedBy("r\"\"\"", "\"\"\""), quotedBy("R\"\"\"", "\"\"\""),
+      quotedBy("r'''", "'''"), quotedBy("R'''", "'''"),
+      quotedBy("r\"", "\""), quotedBy("R\"", "\""),
+      quotedBy("r'", "'"), quotedBy("R'", "'"));
+  private static final Parser<String> STRING_LITERAL =
+      anyOf(new StringLexer().parser(), RAW_STRING);
   private static final Parser<byte[]> BYTES_LITERAL =
       literally(
           caseInsensitive("b")
               .then(anyOf(new BytesLexer().parser(), RAW_STRING.map(s -> s.getBytes(UTF_8)))));
 
   private static final Parser<String> HEX_DIGITS = consecutive("[0-9a-fA-F]");
-  private static final Parser<CelExpr.LongValue> HEX_INT =
-      sequence(
-              string("-").orElse(""), literally(caseInsensitive("0x").then(HEX_DIGITS)),
-              (sign, d) -> parseLong(sign + d, 16))
-          .mapWithIndex((val, begin, end) -> new CelExpr.LongValue(val, begin));
-  private static final Parser<CelExpr.LongValue> DEC_INT =
-      sequence(string("-").orElse(""), digits(), (sign, d) -> parseLong(sign + d))
-          .mapWithIndex((val, begin, end) -> new CelExpr.LongValue(val, begin));
-  private static final Parser<CelExpr.UintValue> UINT =
-      literally(
-              anyOf(
-                      string("0x").then(HEX_DIGITS).map(s -> parseUnsignedLong(s, 16)),
-                      digits().map(CelParser::parseUnsignedLong))
-                  .followedBy(caseInsensitive("u")))
-          .mapWithIndex((val, begin, end) -> new CelExpr.UintValue(val, begin));
+  private static final Parser<CelExpr.LongValue> HEX_INT = sequence(
+          string("-").orElse(""), literally(caseInsensitive("0x").then(HEX_DIGITS)),
+          (sign, d) -> parseLong(sign + d, 16))
+      .mapWithIndex((val, begin, end) -> new CelExpr.LongValue(val, begin));
+  private static final Parser<CelExpr.LongValue> DEC_INT = sequence(
+          string("-").orElse(""), digits(), (sign, d) -> parseLong(sign + d))
+      .mapWithIndex((val, begin, end) -> new CelExpr.LongValue(val, begin));
+  private static final Parser<CelExpr.UintValue> UINT = literally(
+          anyOf(
+                  string("0x").then(HEX_DIGITS).map(s -> parseUnsignedLong(s, 16)),
+                  digits().map(CelParser::parseUnsignedLong))
+              .followedBy(caseInsensitive("u")))
+      .mapWithIndex((val, begin, end) -> new CelExpr.UintValue(val, begin));
   private static final Parser<String> EXPONENT =
       sequence(caseInsensitive("e"), anyOf("+", "-").optional(), digits()).source();
-  private static final Parser<CelExpr.DoubleValue> SIGNED_DOUBLE =
-      sequence(
-              string("-").orElse(""),
-              anyOf(
-                  sequence(digits(), one('.'), digits(), EXPONENT.optional()).source(),
-                  sequence(digits(), EXPONENT).source(),
-                  sequence(one('.'), digits(), EXPONENT.optional()).source()),
-              (sign, d) -> parseDouble(sign + d))
-          .mapWithIndex((val, begin, end) -> new CelExpr.DoubleValue(val, begin));
+  private static final Parser<CelExpr.DoubleValue> SIGNED_DOUBLE = sequence(
+          string("-").orElse(""),
+          anyOf(
+              sequence(digits(), one('.'), digits(), EXPONENT.optional()).source(),
+              sequence(digits(), EXPONENT).source(),
+              sequence(one('.'), digits(), EXPONENT.optional()).source()),
+          (sign, d) -> parseDouble(sign + d))
+      .mapWithIndex((val, begin, end) -> new CelExpr.DoubleValue(val, begin));
 
-  private static final Parser<CelExpr> CONSTANT_LITERAL =
-      anyOf(
-          SIGNED_DOUBLE, UINT, HEX_INT, DEC_INT,
-          STRING_LITERAL.mapWithIndex((val, begin, end) -> new CelExpr.StringValue(val, begin)),
-          BYTES_LITERAL.mapWithIndex((val, begin, end) -> new CelExpr.BytesValue(val, begin)),
-          word("true").mapWithIndex((val, begin, end) -> new CelExpr.BoolValue(true, begin)),
-          word("false").mapWithIndex((val, begin, end) -> new CelExpr.BoolValue(false, begin)),
-          word("null").mapWithIndex((val, begin, end) -> new CelExpr.NullValue(begin)));
+  private static final Parser<CelExpr> CONSTANT_LITERAL = anyOf(
+      SIGNED_DOUBLE, UINT, HEX_INT, DEC_INT,
+      STRING_LITERAL.mapWithIndex((val, begin, end) -> new CelExpr.StringValue(val, begin)),
+      BYTES_LITERAL.mapWithIndex((val, begin, end) -> new CelExpr.BytesValue(val, begin)),
+      word("true").mapWithIndex((val, begin, end) -> new CelExpr.BoolValue(true, begin)),
+      word("false").mapWithIndex((val, begin, end) -> new CelExpr.BoolValue(false, begin)),
+      word("null").mapWithIndex((val, begin, end) -> new CelExpr.NullValue(begin)));
 
   private static final Parser<CelExpr> PARSER = Parser.define(CelParser::expr);
 
@@ -145,26 +141,25 @@ public final class CelParser {
     Parser<CelExpr> parenthesized = expr.between("(", ")");
     Parser<List<CelExpr>> args = expr.zeroOrMoreDelimitedBy(",").between("(", ")");
 
-    Parser<CelExpr.ListOf> listExpr =
-        sequence(OPTIONALITY, expr, (opt, val) -> new CelExpr.Element(val, opt))
-            .zeroOrMoreDelimitedBy(",")
-            .optionallyFollowedBy(",")
-            .between("[", "]")
-            .mapWithIndex((elements, begin, end) -> new CelExpr.ListOf(elements, begin));
+    Parser<CelExpr.ListOf> listExpr = sequence(
+            OPTIONALITY, expr, (opt, val) -> new CelExpr.Element(val, opt))
+        .zeroOrMoreDelimitedBy(",")
+        .optionallyFollowedBy(",")
+        .between("[", "]")
+        .mapWithIndex((elements, begin, end) -> new CelExpr.ListOf(elements, begin));
     Parser<CelExpr.MapOf> mapExpr =
         entries(expr, expr)
             .mapWithIndex((entries, begin, end) -> new CelExpr.MapOf(entries, begin));
 
-    Parser<CelExpr> callOrStructOrIdent =
-        sequence(string(".").orElse(""), PLAIN_IDENTIFIER, String::concat)
-            .<CelExpr>mapWithIndex((name, begin, end) -> new CelExpr.Ident(name, begin))
-            .withPostfixes(
-                sequence(indexOf('.'), IDENT, (index, f) -> e -> new Select(e, f, index)))
-            .optionallyFollowedBy(
-                anyOf(
-                    suffixWithIndex(entries(IDENT, expr), CelParser::structExpr),
-                    suffixWithIndex(args, CelParser::callExpr)),
-                Suffix::apply);
+    Parser<CelExpr> callOrStructOrIdent = sequence(
+            string(".").orElse(""), PLAIN_IDENTIFIER, String::concat)
+        .<CelExpr>mapWithIndex((name, begin, end) -> new CelExpr.Ident(name, begin))
+        .withPostfixes(sequence(indexOf('.'), IDENT, (index, f) -> e -> new Select(e, f, index)))
+        .optionallyFollowedBy(
+            anyOf(
+                suffixWithIndex(entries(IDENT, expr), CelParser::structExpr),
+                suffixWithIndex(args, CelParser::callExpr)),
+            Suffix::apply);
 
     Parser<CelExpr> subject =
         anyOf(CONSTANT_LITERAL, callOrStructOrIdent, listExpr, mapExpr, parenthesized);
@@ -176,8 +171,7 @@ public final class CelParser {
             sequence(
                 one('.').then(IDENT), suffixWithIndex(args, CelParser::macroOrMemberCallExpr),
                 Suffix::apply),
-            sequence(
-                indexOf('.'), IDENT, (index, field) -> e -> new Select(e, field, index)),
+            sequence(indexOf('.'), IDENT, (index, field) -> e -> new Select(e, field, index)),
             sequence(one('?').thenReturn(true).orElse(false), expr, CelParser::indexExpr)
                 .between("[", "]")
                 .mapWithIndex((op, begin, end) -> e -> op.apply(e).withSourceIndex(begin))));
@@ -250,18 +244,12 @@ public final class CelParser {
 
     final Parser<T> charEscape() {
       return anyOf(
-          one('a').thenReturn(literal((char) 7)),
-          one('b').thenReturn(literal('\b')),
-          one('f').thenReturn(literal('\f')),
-          one('n').thenReturn(literal('\n')),
-          one('r').thenReturn(literal('\r')),
-          one('t').thenReturn(literal('\t')),
-          one('v').thenReturn(literal((char) 11)),
-          one('"').thenReturn(literal('"')),
-          one('\'').thenReturn(literal('\'')),
-          one('\\').thenReturn(literal('\\')),
-          one('?').thenReturn(literal('?')),
-          one('`').thenReturn(literal('`')));
+          one('a').thenReturn(literal((char) 7)), one('b').thenReturn(literal('\b')),
+          one('f').thenReturn(literal('\f')), one('n').thenReturn(literal('\n')),
+          one('r').thenReturn(literal('\r')), one('t').thenReturn(literal('\t')),
+          one('v').thenReturn(literal((char) 11)), one('"').thenReturn(literal('"')),
+          one('\'').thenReturn(literal('\'')), one('\\').thenReturn(literal('\\')),
+          one('?').thenReturn(literal('?')), one('`').thenReturn(literal('`')));
     }
 
     final Parser<T> octEscape() {
@@ -320,16 +308,15 @@ public final class CelParser {
 
     @Override Parser<String> escaped() {
       return anyOf(
-          charEscape(), octEscape(), hexEscape(),
-          one('u').then(fromHex(4)), one('U').then(fromHex(8)));
+          charEscape(), octEscape(), hexEscape(), one('u').then(fromHex(4)),
+          one('U').then(fromHex(8)));
     }
   }
 
   private static final class BytesLexer extends SequenceLexer<byte[]> {
     @Override Collector<byte[], ?, byte[]> joiner() {
       return Collector.of(
-          ByteArrayOutputStream::new,
-          ByteArrayOutputStream::writeBytes,
+          ByteArrayOutputStream::new, ByteArrayOutputStream::writeBytes,
           (b1, b2) -> {
             b1.writeBytes(b2.toByteArray());
             return b1;
@@ -354,7 +341,8 @@ public final class CelParser {
     }
   }
 
-  private static <K> Parser<List<CelExpr.KeyedBy<K>>> entries(Parser<K> key, Parser<CelExpr> value) {
+  private static <K> Parser<List<CelExpr.KeyedBy<K>>> entries(
+      Parser<K> key, Parser<CelExpr> value) {
     return sequence(
             OPTIONALITY, key, indexOf(':'), value,
             (opt, k, colon, v) -> new CelExpr.KeyedBy<>(k, v, opt, colon))
@@ -412,7 +400,7 @@ public final class CelParser {
 
   @FormatMethod
   private static void checkSyntax(boolean condition, String message) {
-    if (!condition)  throw Parser.fail(message);
+    if (!condition) throw Parser.fail(message);
   }
 
   private static long parseLong(String s, int radix) {
@@ -491,8 +479,7 @@ public final class CelParser {
       case "filter" ->
           toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.Filter(t, v, c));
       case "map" -> switch (args.size()) {
-        case 2 ->
-            toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.Map(t, v, c));
+        case 2 -> toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.Map(t, v, c));
         case 3 ->
             toMacro(
                 target, method.name(), args,
@@ -509,8 +496,7 @@ public final class CelParser {
       TriFunction<CelExpr, CelExpr.Ident, CelExpr, T> construct) {
     checkSyntax(args.size() == 2, "%s() expects 2 args, %s provided", method, args.size());
     CelExpr.Ident placeholder = expect(
-        CelExpr.Ident.class, args.get(0),
-        "identifier expected for the 1st arg of %s()", method);
+        CelExpr.Ident.class, args.get(0), "identifier expected for the 1st arg of %s()", method);
     return construct.apply(target, placeholder, args.get(1));
   }
 
@@ -519,8 +505,7 @@ public final class CelParser {
       Function4<CelExpr, CelExpr.Ident, CelExpr, CelExpr, T> construct) {
     checkSyntax(args.size() == 3, "%s() expects 3 args, %s provided", method, args.size());
     CelExpr.Ident placeholder = expect(
-        CelExpr.Ident.class, args.get(0),
-        "identifier expected for the 1st arg of %s()", method);
+        CelExpr.Ident.class, args.get(0), "identifier expected for the 1st arg of %s()", method);
     return construct.apply(target, placeholder, args.get(1), args.get(2));
   }
 
