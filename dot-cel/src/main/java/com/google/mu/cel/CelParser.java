@@ -48,8 +48,8 @@ import java.util.stream.Collectors;
 @Immutable
 public final class CelParser {
   private static final Set<String> KEYWORDS = Set.of(
-      "as", "break", "const", "continue", "else", "false", "for", "function", "if", "import",
-      "in", "let", "loop", "package", "namespace", "null", "return", "true", "var", "void", "while");
+      "as", "break", "const", "continue", "else", "false", "for", "function", "if", "import", "in",
+      "let", "loop", "package", "namespace", "null", "return", "true", "var", "void", "while");
   private static final CharPredicate WHITESPACES =
       CharPredicate.anyOf(" \t\r\n\f").precomputeForAscii();
   private static final Parser<?> WHITESPACES_OR_COMMENTS =
@@ -73,8 +73,7 @@ public final class CelParser {
           quotedBy("r'''", "'''"), quotedBy("R'''", "'''"),
           quotedBy("r\"", "\""), quotedBy("R\"", "\""),
           quotedBy("r'", "'"), quotedBy("R'", "'"));
-  private static final Parser<String> STRING_LITERAL =
-      anyOf(new StringLexer().parser(), RAW_STRING);
+  private static final Parser<String> STRING_LITERAL = anyOf(new StringLexer().parser(), RAW_STRING);
   private static final Parser<byte[]> BYTES_LITERAL =
       literally(
           caseInsensitive("b")
@@ -491,19 +490,16 @@ public final class CelParser {
           toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.ExistsOne(t, v, c));
       case "filter" ->
           toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.Filter(t, v, c));
-      case "map" ->
-          switch (args.size()) {
-            case 2 ->
-                toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.Map(t, v, c));
-            case 3 ->
-                toMacro(
-                    target,
-                    method.name(),
-                    args,
-                    (t, v, c1, c2) -> new CelExpr.Macro.FilterMap(t, v, c1, c2));
-            default ->
-                throw Parser.fail("map() macro expects 2 or 3 args, " + args.size() + " provided");
-          };
+      case "map" -> switch (args.size()) {
+        case 2 ->
+            toMacro(target, method.name(), args, (t, v, c) -> new CelExpr.Macro.Map(t, v, c));
+        case 3 ->
+            toMacro(
+                target, method.name(), args,
+                (t, v, c1, c2) -> new CelExpr.Macro.FilterMap(t, v, c1, c2));
+        default ->
+            throw Parser.fail("map() macro expects 2 or 3 args, " + args.size() + " provided");
+      };
       default -> new CelExpr.MemberCall(target, method, args);
     };
   }
