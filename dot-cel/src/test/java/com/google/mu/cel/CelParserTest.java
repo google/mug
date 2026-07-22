@@ -15,9 +15,9 @@ import com.google.api.expr.v1alpha1.SourceInfo;
 import com.google.common.labs.parse.Parser.ParseException;
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.cel.CelExpr.Element;
-import com.google.mu.cel.CelExpr.KeyedBy;
 import com.google.mu.cel.CelExpr.FunctionCall;
 import com.google.mu.cel.CelExpr.Ident;
+import com.google.mu.cel.CelExpr.KeyedBy;
 import com.google.mu.cel.CelExpr.ListOf;
 import com.google.mu.cel.CelExpr.Macro.*;
 import com.google.mu.cel.CelExpr.MapOf;
@@ -100,19 +100,16 @@ public final class CelParserTest {
             value(1L).withSourceIndex(0).modulo(value(2L).withSourceIndex(4)).withSourceIndex(2));
     assertThat(parser.parse("1 + 2 * 3"))
         .isEqualTo(
-            value(1L)
-                .withSourceIndex(0)
+            value(1L).withSourceIndex(0)
                 .add(
-                    value(2L)
-                        .withSourceIndex(4)
+                    value(2L).withSourceIndex(4)
                         .multiply(value(3L).withSourceIndex(8))
                         .withSourceIndex(6))
                 .withSourceIndex(2));
 
     assertThat(parser.parse("(1 + 2) * 3"))
         .isEqualTo(
-            value(1L)
-                .withSourceIndex(1)
+            value(1L).withSourceIndex(1)
                 .add(value(2L).withSourceIndex(5))
                 .withSourceIndex(3)
                 .multiply(value(3L).withSourceIndex(10))
@@ -120,8 +117,7 @@ public final class CelParserTest {
 
     assertThat(parser.parse("1 * 2 + 3"))
         .isEqualTo(
-            value(1L)
-                .withSourceIndex(0)
+            value(1L).withSourceIndex(0)
                 .multiply(value(2L).withSourceIndex(4))
                 .withSourceIndex(2)
                 .add(value(3L).withSourceIndex(8))
@@ -204,13 +200,11 @@ public final class CelParserTest {
             new CelExpr.IfElse(
                 new Ident("a", 0),
                 new CelExpr.IfElse(new Ident("b", 5), new Ident("c", 9), new Ident("d", 13), 7),
-                new Ident("e", 18),
-                2));
+                new Ident("e", 18), 2));
     assertThat(parser.parse("a ? b : c ? d : e"))
         .isEqualTo(
             new CelExpr.IfElse(
-                new Ident("a", 0),
-                new Ident("b", 4),
+                new Ident("a", 0), new Ident("b", 4),
                 new CelExpr.IfElse(new Ident("c", 8), new Ident("d", 12), new Ident("e", 16), 10),
                 2));
     assertThat(parser.parse("a || b ? c && d : e || f"))
@@ -218,8 +212,7 @@ public final class CelParserTest {
             new CelExpr.IfElse(
                 new Ident("a", 0).or(new Ident("b", 5)).withSourceIndex(2),
                 new Ident("c", 9).and(new Ident("d", 14)).withSourceIndex(11),
-                new Ident("e", 18).or(new Ident("f", 23)).withSourceIndex(20),
-                7));
+                new Ident("e", 18).or(new Ident("f", 23)).withSourceIndex(20), 7));
   }
 
   @Test
@@ -262,9 +255,7 @@ public final class CelParserTest {
     assertThat(parser.parse("a.b(c, d)"))
         .isEqualTo(
             new MemberCall(
-                new Ident("a", 0),
-                new Ident("b", 2),
-                List.of(new Ident("c", 4), new Ident("d", 7)),
+                new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4), new Ident("d", 7)),
                 3));
   }
 
@@ -330,7 +321,8 @@ public final class CelParserTest {
                 "a.b.Type",
                 List.of(
                     new KeyedBy<>(new Ident("field", 9), value(1L).withSourceIndex(16), false, 14),
-                    new KeyedBy<>(new Ident("field2", 19), value(2L).withSourceIndex(27), false, 25)),
+                    new KeyedBy<>(
+                        new Ident("field2", 19), value(2L).withSourceIndex(27), false, 25)),
                 8));
     assertThat(parser.parse(".Type{field: 1}"))
         .isEqualTo(
@@ -516,8 +508,7 @@ public final class CelParserTest {
                 new Ident("a", 0),
                 new Ident("b", 4),
                 new CelExpr.IfElse(
-                    new Ident("c", 8),
-                    new Ident("d", 12),
+                    new Ident("c", 8), new Ident("d", 12),
                     new CelExpr.IfElse(
                         new Ident("e", 16), new Ident("f", 20), new Ident("g", 24), 18),
                     10),
@@ -527,16 +518,14 @@ public final class CelParserTest {
             new CelExpr.IfElse(
                 new Ident("a", 0).and(new Ident("b", 5)).withSourceIndex(2),
                 new Ident("c", 9).or(new Ident("d", 14)).withSourceIndex(11),
-                new Ident("e", 18).and(new Ident("f", 23)).withSourceIndex(20),
-                7));
+                new Ident("e", 18).and(new Ident("f", 23)).withSourceIndex(20), 7));
     assertThat(parser.parse("a ? b : c ? d : e ? f : g"))
         .isEqualTo(
             new CelExpr.IfElse(
                 new Ident("a", 0),
                 new Ident("b", 4),
                 new CelExpr.IfElse(
-                    new Ident("c", 8),
-                    new Ident("d", 12),
+                    new Ident("c", 8), new Ident("d", 12),
                     new CelExpr.IfElse(
                         new Ident("e", 16), new Ident("f", 20), new Ident("g", 24), 18),
                     10),
@@ -548,10 +537,8 @@ public final class CelParserTest {
     assertThat(parser.parse("a.b.c(d)"))
         .isEqualTo(
             new MemberCall(
-                new Ident("a", 0).select(new Ident("b", 2)).withSourceIndex(1),
-                new Ident("c", 4),
-                List.of(new Ident("d", 6)),
-                5));
+                new Ident("a", 0).select(new Ident("b", 2)).withSourceIndex(1), new Ident("c", 4),
+                List.of(new Ident("d", 6)), 5));
     assertThat(parser.parse("a.b(c).d"))
         .isEqualTo(
             new MemberCall(new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4)), 3)
@@ -566,18 +553,14 @@ public final class CelParserTest {
         .isEqualTo(
             new MemberCall(
                 new MemberCall(new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4)), 3),
-                new Ident("d", 7),
-                List.of(new Ident("e", 9)),
-                8));
+                new Ident("d", 7), List.of(new Ident("e", 9)), 8));
     assertThat(parser.parse("a.b(c)[d].e(f)"))
         .isEqualTo(
             new MemberCall(
                 new MemberCall(new Ident("a", 0), new Ident("b", 2), List.of(new Ident("c", 4)), 3)
                     .index(new Ident("d", 7))
                     .withSourceIndex(6),
-                new Ident("e", 10),
-                List.of(new Ident("f", 12)),
-                11));
+                new Ident("e", 10), List.of(new Ident("f", 12)), 11));
     assertThat(parser.parse("a.b.Type{field: 1}"))
         .isEqualTo(
             new Struct(
@@ -686,10 +669,8 @@ public final class CelParserTest {
                         new MapOf(
                             List.of(
                                 new KeyedBy<>(
-                                    string("b").withSourceIndex(7),
-                                    value(1L).withSourceIndex(12),
-                                    false,
-                                    10)),
+                                    string("b").withSourceIndex(7), value(1L).withSourceIndex(12),
+                                    false, 10)),
                             6),
                         false,
                         4)),
@@ -702,20 +683,16 @@ public final class CelParserTest {
                         new MapOf(
                             List.of(
                                 new KeyedBy<>(
-                                    string("a").withSourceIndex(2),
-                                    value(1L).withSourceIndex(7),
-                                    false,
-                                    5)),
+                                    string("a").withSourceIndex(2), value(1L).withSourceIndex(7),
+                                    false, 5)),
                             1),
                         false),
                     new Element(
                         new MapOf(
                             List.of(
                                 new KeyedBy<>(
-                                    string("b").withSourceIndex(12),
-                                    value(2L).withSourceIndex(17),
-                                    false,
-                                    15)),
+                                    string("b").withSourceIndex(12), value(2L).withSourceIndex(17),
+                                    false, 15)),
                             11),
                         false)),
                 0));
@@ -723,8 +700,7 @@ public final class CelParserTest {
         .isEqualTo(
             new ListOf(
                 List.of(
-                    new Element(new Ident("a", 2), true),
-                    new Element(new Ident("b", 5), false),
+                    new Element(new Ident("a", 2), true), new Element(new Ident("b", 5), false),
                     new Element(new Ident("c", 9), true)),
                 0));
     assertThat(parser.parse("{?a: b, ?c: d}"))
@@ -799,14 +775,10 @@ public final class CelParserTest {
                     new KeyedBy<>(
                         value(1L).withSourceIndex(1), string("a").withSourceIndex(4), false, 2),
                     new KeyedBy<>(
-                        unsigned(2L).withSourceIndex(9),
-                        string("b").withSourceIndex(13),
-                        false,
+                        unsigned(2L).withSourceIndex(9), string("b").withSourceIndex(13), false,
                         11),
                     new KeyedBy<>(
-                        value(true).withSourceIndex(18),
-                        string("c").withSourceIndex(24),
-                        false,
+                        value(true).withSourceIndex(18), string("c").withSourceIndex(24), false,
                         22)),
                 0));
     assertThat(parser.parse("{1.0: 'a'}"))
@@ -835,10 +807,8 @@ public final class CelParserTest {
     assertThat(parser.parse("a ? b + c : d * e"))
         .isEqualTo(
             new CelExpr.IfElse(
-                new Ident("a", 0),
-                new Ident("b", 4).add(new Ident("c", 8)).withSourceIndex(6),
-                new Ident("d", 12).multiply(new Ident("e", 16)).withSourceIndex(14),
-                2));
+                new Ident("a", 0), new Ident("b", 4).add(new Ident("c", 8)).withSourceIndex(6),
+                new Ident("d", 12).multiply(new Ident("e", 16)).withSourceIndex(14), 2));
     assertThat(parser.parse("a || b && c == d + e"))
         .isEqualTo(
             new Ident("a", 0)
@@ -911,8 +881,7 @@ public final class CelParserTest {
         .isEqualTo(new Ident("x", 0).multiply(unsigned(2L).withSourceIndex(4)).withSourceIndex(2));
     assertThat(parser.parse("4--4"))
         .isEqualTo(
-            value(4L)
-                .withSourceIndex(0)
+            value(4L).withSourceIndex(0)
                 .subtract(value(-4L).withSourceIndex(2))
                 .withSourceIndex(1));
     assertThat(parser.parse("a + b"))
@@ -943,8 +912,7 @@ public final class CelParserTest {
                 new Ident("a", 0), new Ident("b", 2), List.of(value(5L).withSourceIndex(4)), 3));
     assertThat(parser.parse("4--4.1"))
         .isEqualTo(
-            value(4L)
-                .withSourceIndex(0)
+            value(4L).withSourceIndex(0)
                 .subtract(value(-4.1).withSourceIndex(2))
                 .withSourceIndex(1));
     assertThat(parser.parse("23.39")).isEqualTo(value(23.39).withSourceIndex(0));
@@ -1071,7 +1039,8 @@ public final class CelParserTest {
             new MapOf(
                 List.of(
                     new KeyedBy<>(new Ident("foo", 1), value(5L).withSourceIndex(6), false, 4),
-                    new KeyedBy<>(new Ident("bar", 9), string("xyz").withSourceIndex(14), false, 12)),
+                    new KeyedBy<>(
+                        new Ident("bar", 9), string("xyz").withSourceIndex(14), false, 12)),
                 0));
     assertThat(parser.parse("a[b]"))
         .isEqualTo(new Ident("a", 0).index(new Ident("b", 2)).withSourceIndex(1));
@@ -1103,8 +1072,7 @@ public final class CelParserTest {
         .isEqualTo(
             new ListOf(
                 List.of(
-                    new Element(new Ident("a", 1), false),
-                    new Element(new Ident("b", 4), false),
+                    new Element(new Ident("a", 1), false), new Element(new Ident("b", 4), false),
                     new Element(new Ident("c", 7), false)),
                 0));
     assertThat(parser.parse("[] + [1,2,3,] + [4]"))
@@ -1246,7 +1214,8 @@ public final class CelParserTest {
         .isEqualTo(
             new MapOf(
                 List.of(
-                    new KeyedBy<>(string("key").withSourceIndex(2), new Ident("value", 9), true, 7)),
+                    new KeyedBy<>(
+                        string("key").withSourceIndex(2), new Ident("value", 9), true, 7)),
                 0));
   }
 
@@ -1282,8 +1251,7 @@ public final class CelParserTest {
     assertThat(parser.parse("false && !true || false ? 2 : 3"))
         .isEqualTo(
             new CelExpr.IfElse(
-                value(false)
-                    .withSourceIndex(0)
+                value(false).withSourceIndex(0)
                     .and(not(value(true).withSourceIndex(10)).withSourceIndex(9))
                     .withSourceIndex(6)
                     .or(value(false).withSourceIndex(18))
@@ -1311,23 +1279,19 @@ public final class CelParserTest {
         .isEqualTo(new Ident("a", 0).atMost(new Ident("b", 5)).withSourceIndex(2));
     assertThat(parser.parse("1 + 2 * 3 - 1 / 2 == 6 % 1"))
         .isEqualTo(
-            value(1L)
-                .withSourceIndex(0)
+            value(1L).withSourceIndex(0)
                 .add(
-                    value(2L)
-                        .withSourceIndex(4)
+                    value(2L).withSourceIndex(4)
                         .multiply(value(3L).withSourceIndex(8))
                         .withSourceIndex(6))
                 .withSourceIndex(2)
                 .subtract(
-                    value(1L)
-                        .withSourceIndex(12)
+                    value(1L).withSourceIndex(12)
                         .divide(value(2L).withSourceIndex(16))
                         .withSourceIndex(14))
                 .withSourceIndex(10)
                 .equalTo(
-                    value(6L)
-                        .withSourceIndex(21)
+                    value(6L).withSourceIndex(21)
                         .modulo(value(1L).withSourceIndex(25))
                         .withSourceIndex(23))
                 .withSourceIndex(18));
@@ -1363,8 +1327,7 @@ public final class CelParserTest {
                 new Ident("x", 0),
                 new Ident("y", 9),
                 new Filter(
-                    new Ident("y", 12),
-                    new Ident("z", 21),
+                    new Ident("y", 12), new Ident("z", 21),
                     new Ident("z", 24)
                         .greaterThan(value(0L).withSourceIndex(28))
                         .withSourceIndex(26),
@@ -1374,24 +1337,20 @@ public final class CelParserTest {
         .isEqualTo(
             new Filter(
                 new Has(new Ident("a", 4).select(new Ident("b", 6)).withSourceIndex(5), 3),
-                new Ident("c", 16),
-                new Ident("c", 19),
-                15));
+                new Ident("c", 16), new Ident("c", 19), 15));
     assertThat(parser.parse("x.filter(y, y.exists(z, has(z.a)) && y.exists(z, has(z.b)))"))
         .isEqualTo(
             new Filter(
                 new Ident("x", 0),
                 new Ident("y", 9),
                 new Exists(
-                        new Ident("y", 12),
-                        new Ident("z", 21),
+                        new Ident("y", 12), new Ident("z", 21),
                         new Has(
                             new Ident("z", 28).select(new Ident("a", 30)).withSourceIndex(29), 27),
                         20)
                     .and(
                         new Exists(
-                            new Ident("y", 37),
-                            new Ident("z", 46),
+                            new Ident("y", 37), new Ident("z", 46),
                             new Has(
                                 new Ident("z", 53).select(new Ident("b", 55)).withSourceIndex(54),
                                 52),
@@ -1403,17 +1362,14 @@ public final class CelParserTest {
             new Exists(
                 new MemberCall(
                     new Has(new Ident("a", 4).select(new Ident("b", 6)).withSourceIndex(5), 3),
-                    new Ident("asList", 9),
-                    List.of(),
-                    15),
+                    new Ident("asList", 9), List.of(), 15),
                 new Ident("c", 25),
                 new Ident("c", 28),
                 24));
     assertThat(parser.parse("m.all(x, x > 0)"))
         .isEqualTo(
             new All(
-                new Ident("m", 0),
-                new Ident("x", 6),
+                new Ident("m", 0), new Ident("x", 6),
                 new Ident("x", 9).greaterThan(value(0L).withSourceIndex(13)).withSourceIndex(11),
                 5));
     assertThat(parser.parse("[1, 2].exists(x, x > 0)"))
@@ -1433,9 +1389,7 @@ public final class CelParserTest {
                 new MapOf(
                     List.of(
                         new KeyedBy<>(
-                            string("a").withSourceIndex(1),
-                            value(1L).withSourceIndex(6),
-                            false,
+                            string("a").withSourceIndex(1), value(1L).withSourceIndex(6), false,
                             4)),
                     0),
                 new Ident("x", 16),
@@ -1508,17 +1462,13 @@ public final class CelParserTest {
     assertThat(parser.parse("m.optMap(v, f)"))
         .isEqualTo(
             new MemberCall(
-                new Ident("m", 0),
-                new Ident("optMap", 2),
-                List.of(new Ident("v", 9), new Ident("f", 12)),
-                8));
+                new Ident("m", 0), new Ident("optMap", 2),
+                List.of(new Ident("v", 9), new Ident("f", 12)), 8));
     assertThat(parser.parse("m.optFlatMap(v, f)"))
         .isEqualTo(
             new MemberCall(
-                new Ident("m", 0),
-                new Ident("optFlatMap", 2),
-                List.of(new Ident("v", 13), new Ident("f", 16)),
-                12));
+                new Ident("m", 0), new Ident("optFlatMap", 2),
+                List.of(new Ident("v", 13), new Ident("f", 16)), 12));
   }
 
   @Test
@@ -1575,8 +1525,7 @@ public final class CelParserTest {
     assertParseFailure("?", "1:1", "expecting <!>, encountered: ");
     assertParseFailure("t{>C}", "1:3", "expecting <}>, encountered: ");
     assertParseFailure(
-        "TestAllTypes(){single_int32: 1, single_int64: 2}",
-        "1:15",
+        "TestAllTypes(){single_int32: 1, single_int64: 2}", "1:15",
         "expecting <EOF>, encountered: ");
     assertParseFailure("1 + $", "1:5", "expecting <!>, encountered: ");
     assertParseFailure("1 + 2\n3 +", "2:1", "expecting <EOF>, encountered: ");
@@ -1585,8 +1534,7 @@ public final class CelParserTest {
     assertParseFailure("{\"a\": 1}.\"a\"", "1:10", "expecting <`>, encountered: ");
     assertParseFailure("\"\\xFh\"", "1:4", "expecting <2 hex digits>, encountered: ");
     assertParseFailure(
-        "\"\\a\\b\\f\\n\\r\\t\\v\\'\\\"\\\\\\? Illegal escape \\>\"",
-        "1:41",
+        "\"\\a\\b\\f\\n\\r\\t\\v\\'\\\"\\\\\\? Illegal escape \\>\"", "1:41",
         "expecting <a>, encountered: ");
     assertParseFailure(
         "'😁' in ['😁', '😑', '😦']\n   && in.😁", "2:7", "expecting <identifier>, encountered: ");
@@ -1715,19 +1663,18 @@ public final class CelParserTest {
         .containsExactly(
             expr.getId(),
             Expr.newBuilder()
-                .setCallExpr(
-                    Expr.Call.newBuilder()
-                        .setFunction("has")
-                        .addArgs(
-                            Expr.newBuilder()
-                                .setId(3)
-                                .setSelectExpr(
-                                    Expr.Select.newBuilder()
-                                        .setOperand(
-                                            Expr.newBuilder()
-                                                .setId(2)
-                                                .setIdentExpr(Expr.Ident.newBuilder().setName("a")))
-                                        .setField("b"))))
+                .setCallExpr(Expr.Call.newBuilder()
+                    .setFunction("has")
+                    .addArgs(
+                        Expr.newBuilder()
+                            .setId(3)
+                            .setSelectExpr(
+                                Expr.Select.newBuilder()
+                                    .setOperand(
+                                        Expr.newBuilder()
+                                            .setId(2)
+                                            .setIdentExpr(Expr.Ident.newBuilder().setName("a")))
+                                    .setField("b"))))
                 .build());
   }
 

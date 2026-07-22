@@ -4,7 +4,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.testing.NullPointerTester;
 import com.google.mu.cel.CelExpr.Element;
-import com.google.mu.cel.CelExpr.KeyedBy;
 import com.google.mu.cel.CelExpr.Ident;
 import com.google.mu.cel.CelExpr.Select;
 import java.util.List;
@@ -206,9 +205,8 @@ public class CelExprTest {
   @Test
   public void createMapExpr_multipleMix() {
     // Tests comma-separation and both optional/non-optional map entries
-    CelExpr.KeyedBy<CelExpr> entry1 =
-        new CelExpr.KeyedBy<>(
-            new CelExpr.StringValue("a", 0), new CelExpr.LongValue(1L, 0), false, 0);
+    CelExpr.KeyedBy<CelExpr> entry1 = new CelExpr.KeyedBy<>(
+        new CelExpr.StringValue("a", 0), new CelExpr.LongValue(1L, 0), false, 0);
     CelExpr.KeyedBy<CelExpr> entry2 =
         new CelExpr.KeyedBy<>(new CelExpr.Ident("x", 0), new CelExpr.Ident("y", 0), true, 0);
     CelExpr.MapOf expr = new CelExpr.MapOf(List.of(entry1, entry2), 0);
@@ -364,8 +362,7 @@ public class CelExprTest {
     NullPointerTester tester = new NullPointerTester();
     tester.setDefault(CelExpr.class, CelExpr.string("v"));
     tester.setDefault(Ident.class, new Ident("v", 0));
-    tester.setDefault(
-        Select.class, new Select(CelExpr.string("v"), new Ident("f", 0)));
+    tester.setDefault(Select.class, new Select(CelExpr.string("v"), new Ident("f", 0)));
     tester.setDefault(Element.class, new Element(CelExpr.string("v"), false));
     tester.testAllPublicStaticMethods(CelExpr.class);
     tester.testAllPublicInstanceMethods(CelExpr.string("v"));
@@ -423,10 +420,8 @@ public class CelExprTest {
   public void ternaryExpr_roundtrip() {
     assertRoundtrip(
         new CelExpr.IfElse(
-            new CelExpr.Ident("cond", 0),
-            new CelExpr.StringValue("yes", 0),
-            new CelExpr.StringValue("no", 0),
-            0));
+            new CelExpr.Ident("cond", 0), new CelExpr.StringValue("yes", 0),
+            new CelExpr.StringValue("no", 0), 0));
   }
 
   @Test
