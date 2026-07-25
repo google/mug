@@ -25,14 +25,6 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 
-import com.google.mu.function.MapFrom3;
-import com.google.mu.function.MapFrom4;
-import com.google.mu.function.MapFrom5;
-import com.google.mu.function.MapFrom6;
-import com.google.mu.function.MapFrom7;
-import com.google.mu.function.MapFrom8;
-import com.google.mu.util.stream.BiCollector;
-import com.google.mu.util.stream.MoreStreams;
 import java.util.AbstractList;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -47,6 +39,15 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import com.google.mu.function.MapFrom3;
+import com.google.mu.function.MapFrom4;
+import com.google.mu.function.MapFrom5;
+import com.google.mu.function.MapFrom6;
+import com.google.mu.function.MapFrom7;
+import com.google.mu.function.MapFrom8;
+import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.MoreStreams;
 
 /** The API of StringFormat. Allows different subclasses to use different placeholder styles. */
 abstract class AbstractStringFormat {
@@ -221,9 +222,7 @@ abstract class AbstractStringFormat {
       Substring.Pattern trailingLiteral =
           i < numPlaceholders ? first(fragments[i]) : suffix(fragments[i]);
       Substring.Match placeholder = before(trailingLiteral).in(input, inputIndex).orElse(null);
-      if (placeholder == null) {
-        return Optional.empty();
-      }
+      if (placeholder == null) return Optional.empty();
       if (toCapture.get(i - 1)) {
         builder.add(placeholder);
       }
@@ -1300,13 +1299,9 @@ abstract class AbstractStringFormat {
           private boolean done = false;
 
           @Override public List<Substring.Match> get() {
-            if (done) {
-              return null;
-            }
+            if (done) return null;
             inputIndex = input.indexOf(fragments[0], inputIndex);
-            if (inputIndex < 0) {
-              return null;
-            }
+            if (inputIndex < 0) return null;
             final int startIndex = inputIndex;
             inputIndex += fragments[0].length();
             List<Substring.Match> builder = new ArrayList<>(numCapturingPlaceholders);
@@ -1318,9 +1313,7 @@ abstract class AbstractStringFormat {
                       ? Substring.END
                       : first(fragments[i]);
               Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
-              if (placeholder == null) {
-                return null;
-              }
+              if (placeholder == null) return null;
               if (toCapture.get(i - 1)) {
                 builder.add(placeholder);
               }
@@ -1388,9 +1381,7 @@ abstract class AbstractStringFormat {
   }
 
   static <T> List<T> reverse(List<T> list) {
-    if (list.size() <= 1) {
-      return list;
-    }
+    if (list.size() <= 1) return list;
     return new AbstractList<T>() {
       @Override public int size() {
         return list.size();
