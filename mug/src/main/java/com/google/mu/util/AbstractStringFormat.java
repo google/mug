@@ -25,6 +25,14 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 
+import com.google.mu.function.MapFrom3;
+import com.google.mu.function.MapFrom4;
+import com.google.mu.function.MapFrom5;
+import com.google.mu.function.MapFrom6;
+import com.google.mu.function.MapFrom7;
+import com.google.mu.function.MapFrom8;
+import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.MoreStreams;
 import java.util.AbstractList;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -40,21 +48,10 @@ import java.util.stream.Collector;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import com.google.mu.function.MapFrom3;
-import com.google.mu.function.MapFrom4;
-import com.google.mu.function.MapFrom5;
-import com.google.mu.function.MapFrom6;
-import com.google.mu.function.MapFrom7;
-import com.google.mu.function.MapFrom8;
-import com.google.mu.util.stream.BiCollector;
-import com.google.mu.util.stream.MoreStreams;
-
-/**
- * The API of StringFormat. Allows different subclasses to use different placeholder styles.
- */
+/** The API of StringFormat. Allows different subclasses to use different placeholder styles. */
 abstract class AbstractStringFormat {
   private final String format;
-  final List<String> fragments; // The string literals between placeholders
+  private final String[] fragments; // The string literals between placeholders
   private final List<Boolean> toCapture;
   private final int numCapturingPlaceholders;
 
@@ -62,16 +59,18 @@ abstract class AbstractStringFormat {
       String format, Substring.RepeatingPattern placeholdersPattern, String wildcard) {
     Stream.Builder<String> delimiters = Stream.builder();
     Stream.Builder<Boolean> toCapture = Stream.builder();
-    placeholdersPattern.split(format).forEachOrdered(
-        literal -> {
-          delimiters.add(literal.toString());
-          toCapture.add(!literal.isFollowedBy(wildcard));
-        });
+    placeholdersPattern
+        .split(format)
+        .forEachOrdered(
+            literal -> {
+              delimiters.add(literal.toString());
+              toCapture.add(!literal.isFollowedBy(wildcard));
+            });
     this.format = format;
-    this.fragments = delimiters.build().collect(toImmutableList());
+    this.fragments = delimiters.build().toArray(String[]::new);
     this.toCapture = chop(toCapture.build().collect(toImmutableList()));
     this.numCapturingPlaceholders =
-        this.fragments.size() - 1 - (int) this.toCapture.stream().filter(c -> !c).count();
+        this.fragments.length - 1 - (int) this.toCapture.stream().filter(c -> !c).count();
   }
 
   /**
@@ -139,8 +138,7 @@ abstract class AbstractStringFormat {
    *     input} doesn't match the format, or {@code mapper} returns null.
    * @throws IllegalArgumentException if or the format string doesn't have exactly 4 placeholders.
    */
-  public final <R> Optional<R> parse(
-      String input, MapFrom4<? super String, ? extends R> mapper) {
+  public final <R> Optional<R> parse(String input, MapFrom4<? super String, ? extends R> mapper) {
     return parseExpecting(4, input, combining(mapper));
   }
 
@@ -197,8 +195,8 @@ abstract class AbstractStringFormat {
   /**
    * Parses {@code input} against the pattern.
    *
-   * <p>Returns an immutable list of placeholder values in the same order as the placeholders in
-   * the format string, upon success; otherwise returns empty.
+   * <p>Returns an immutable list of placeholder values in the same order as the placeholders in the
+   * format string, upon success; otherwise returns empty.
    *
    * <p>The {@link Substring.Match} result type allows caller to inspect the characters around each
    * match, or to access the raw index in the input string.
@@ -210,18 +208,18 @@ abstract class AbstractStringFormat {
   }
 
   private Optional<List<Substring.Match>> internalParse(
-      String input, List<String> fragments, List<Boolean> toCapture) {
+      String input, String[] fragments, List<Boolean> toCapture) {
     checkUnformattability();
-    if (!input.startsWith(fragments.get(0))) { // first literal is the prefix
+    if (!input.startsWith(fragments[0])) { // first literal is the prefix
       return Optional.empty();
     }
     List<Substring.Match> builder = new ArrayList<>(numCapturingPlaceholders);
-    int inputIndex = fragments.get(0).length();
+    int inputIndex = fragments[0].length();
     int numPlaceholders = numPlaceholders();
     for (int i = 1; i <= numPlaceholders; i++) {
       // subsequent delimiters are searched left-to-right; last literal is the suffix.
       Substring.Pattern trailingLiteral =
-          i < numPlaceholders ? first(fragments.get(i)) : suffix(fragments.get(i));
+          i < numPlaceholders ? first(fragments[i]) : suffix(fragments[i]);
       Substring.Match placeholder = before(trailingLiteral).in(input, inputIndex).orElse(null);
       if (placeholder == null) {
         return Optional.empty();
@@ -229,7 +227,7 @@ abstract class AbstractStringFormat {
       if (toCapture.get(i - 1)) {
         builder.add(placeholder);
       }
-      inputIndex = placeholder.index() + placeholder.length() + fragments.get(i).length();
+      inputIndex = placeholder.index() + placeholder.length() + fragments[i].length();
     }
     return optional(inputIndex == input.length(), unmodifiableList(builder));
   }
@@ -322,8 +320,8 @@ abstract class AbstractStringFormat {
    * Similar to {@link #parseOrThrow(String, BiFunction)}, but parses {@code input} and applies
    * {@code mapper} with the <em>4</em> placeholder values in this string format.
    *
-   * <p>Unlike {@link #parse(String, MapFrom4)}, {@code IllegalArgumentException} is thrown if
-   * the input string doesn't match the string format. The error message will include both the input
+   * <p>Unlike {@link #parse(String, MapFrom4)}, {@code IllegalArgumentException} is thrown if the
+   * input string doesn't match the string format. The error message will include both the input
    * string and the format string for ease of debugging, but is otherwise generic. If you need a
    * different exception type, or need to customize the error message, consider using {@link
    * parse(String, MapFrom4)} instead and call {@link Optional#orElseThrow} explicitly.
@@ -558,7 +556,6 @@ abstract class AbstractStringFormat {
    * take CharSequence or Object as the parameter type.
    *
    * @throws IllegalArgumentException if the format string doesn't have exactly 1 named placeholder
-   *
    * @since 7.2
    */
   public final String replaceAllFrom(
@@ -596,7 +593,6 @@ abstract class AbstractStringFormat {
    * take CharSequence or Object as the parameter types.
    *
    * @throws IllegalArgumentException if the format string doesn't have exactly 2 named placeholder
-   *
    * @since 7.2
    */
   public final String replaceAllFrom(
@@ -621,7 +617,6 @@ abstract class AbstractStringFormat {
    * take CharSequence or Object as the parameter types.
    *
    * @throws IllegalArgumentException if the format string doesn't have exactly 3 named placeholder
-   *
    * @since 7.2
    */
   public final String replaceAllFrom(
@@ -647,7 +642,6 @@ abstract class AbstractStringFormat {
    * take CharSequence or Object as the parameter types.
    *
    * @throws IllegalArgumentException if the format string doesn't have exactly 4 named placeholder
-   *
    * @since 7.2
    */
   public final String replaceAllFrom(
@@ -674,7 +668,6 @@ abstract class AbstractStringFormat {
    * take CharSequence or Object as the parameter types.
    *
    * @throws IllegalArgumentException if the format string doesn't have exactly 5 named placeholder
-   *
    * @since 7.2
    */
   public final String replaceAllFrom(
@@ -684,9 +677,8 @@ abstract class AbstractStringFormat {
     checkPlaceholderCount(5);
     return replaceAllMatches(
         input,
-        matches ->
-            replacement.map(
-                matches.get(0), matches.get(1), matches.get(2), matches.get(3), matches.get(4)));
+        matches -> replacement.map(
+            matches.get(0), matches.get(1), matches.get(2), matches.get(3), matches.get(4)));
   }
 
   /**
@@ -703,7 +695,6 @@ abstract class AbstractStringFormat {
    * take CharSequence or Object as the parameter types.
    *
    * @throws IllegalArgumentException if the format string doesn't have exactly 6 named placeholder
-   *
    * @since 7.2
    */
   public final String replaceAllFrom(
@@ -713,14 +704,9 @@ abstract class AbstractStringFormat {
     checkPlaceholderCount(6);
     return replaceAllMatches(
         input,
-        matches ->
-            replacement.map(
-                matches.get(0),
-                matches.get(1),
-                matches.get(2),
-                matches.get(3),
-                matches.get(4),
-                matches.get(5)));
+        matches -> replacement.map(
+            matches.get(0), matches.get(1), matches.get(2), matches.get(3), matches.get(4),
+            matches.get(5)));
   }
 
   /**
@@ -746,15 +732,9 @@ abstract class AbstractStringFormat {
     checkPlaceholderCount(7);
     return replaceAllMatches(
         input,
-        matches ->
-            replacement.map(
-                matches.get(0),
-                matches.get(1),
-                matches.get(2),
-                matches.get(3),
-                matches.get(4),
-                matches.get(5),
-                matches.get(6)));
+        matches -> replacement.map(
+            matches.get(0), matches.get(1), matches.get(2), matches.get(3), matches.get(4),
+            matches.get(5), matches.get(6)));
   }
 
   /**
@@ -780,16 +760,9 @@ abstract class AbstractStringFormat {
     checkPlaceholderCount(8);
     return replaceAllMatches(
         input,
-        matches ->
-            replacement.map(
-                matches.get(0),
-                matches.get(1),
-                matches.get(2),
-                matches.get(3),
-                matches.get(4),
-                matches.get(5),
-                matches.get(6),
-                matches.get(7)));
+        matches -> replacement.map(
+            matches.get(0), matches.get(1), matches.get(2), matches.get(3), matches.get(4),
+            matches.get(5), matches.get(6), matches.get(7)));
   }
 
   final String replaceAllMatches(
@@ -900,10 +873,10 @@ abstract class AbstractStringFormat {
    *     .parse(input, (lhs, rhs, result) -> ...);
    * }</pre>
    *
-   * <p>Unlike {@link #parse(String, MapFrom3)}, the input string isn't matched entirely: the pattern
-   * doesn't have to start from the beginning, and if there are some remaining characters that don't
-   * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
-   * is returned.
+   * <p>Unlike {@link #parse(String, MapFrom3)}, the input string isn't matched entirely: the
+   * pattern doesn't have to start from the beginning, and if there are some remaining characters
+   * that don't match the pattern any more, the stream stops. In particular, if there is no match,
+   * empty stream is returned.
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
    * placeholder isn't expected to be empty, consider filtering it out by returning null from the
@@ -936,10 +909,10 @@ abstract class AbstractStringFormat {
    * stream of non-null results from passing the 5 placeholder values to the {@code mapper} function
    * for each iteration, with null results skipped.
    *
-   * <p>Unlike {@link #parse(String, MapFrom5)}, the input string isn't matched entirely: the pattern
-   * doesn't have to start from the beginning, and if there are some remaining characters that don't
-   * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
-   * is returned.
+   * <p>Unlike {@link #parse(String, MapFrom5)}, the input string isn't matched entirely: the
+   * pattern doesn't have to start from the beginning, and if there are some remaining characters
+   * that don't match the pattern any more, the stream stops. In particular, if there is no match,
+   * empty stream is returned.
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
    * placeholder isn't expected to be empty, consider filtering it out by returning null from the
@@ -954,10 +927,10 @@ abstract class AbstractStringFormat {
    * stream of non-null results from passing the 6 placeholder values to the {@code mapper} function
    * for each iteration, with null results skipped.
    *
-   * <p>Unlike {@link #parse(String, MapFrom6)}, the input string isn't matched entirely: the pattern
-   * doesn't have to start from the beginning, and if there are some remaining characters that don't
-   * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
-   * is returned.
+   * <p>Unlike {@link #parse(String, MapFrom6)}, the input string isn't matched entirely: the
+   * pattern doesn't have to start from the beginning, and if there are some remaining characters
+   * that don't match the pattern any more, the stream stops. In particular, if there is no match,
+   * empty stream is returned.
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
    * placeholder isn't expected to be empty, consider filtering it out by returning null from the
@@ -972,10 +945,10 @@ abstract class AbstractStringFormat {
    * stream of non-null results from passing the 7 placeholder values to the {@code mapper} function
    * for each iteration, with null results skipped.
    *
-   * <p>Unlike {@link #parse(String, MapFrom6)}, the input string isn't matched entirely: the pattern
-   * doesn't have to start from the beginning, and if there are some remaining characters that don't
-   * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
-   * is returned.
+   * <p>Unlike {@link #parse(String, MapFrom6)}, the input string isn't matched entirely: the
+   * pattern doesn't have to start from the beginning, and if there are some remaining characters
+   * that don't match the pattern any more, the stream stops. In particular, if there is no match,
+   * empty stream is returned.
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
    * placeholder isn't expected to be empty, consider filtering it out by returning null from the
@@ -992,10 +965,10 @@ abstract class AbstractStringFormat {
    * stream of non-null results from passing the 8 placeholder values to the {@code mapper} function
    * for each iteration, with null results skipped.
    *
-   * <p>Unlike {@link #parse(String, MapFrom6)}, the input string isn't matched entirely: the pattern
-   * doesn't have to start from the beginning, and if there are some remaining characters that don't
-   * match the pattern any more, the stream stops. In particular, if there is no match, empty stream
-   * is returned.
+   * <p>Unlike {@link #parse(String, MapFrom6)}, the input string isn't matched entirely: the
+   * pattern doesn't have to start from the beginning, and if there are some remaining characters
+   * that don't match the pattern any more, the stream stops. In particular, if there is no match,
+   * empty stream is returned.
    *
    * <p>By default, placeholders are allowed to be matched against an empty string. If a certain
    * placeholder isn't expected to be empty, consider filtering it out by returning null from the
@@ -1040,8 +1013,8 @@ abstract class AbstractStringFormat {
    * }</pre>
    *
    * <p>If you need to apply intermediary operations before collecting to the final result, consider
-   * using {@link com.google.mu.util.stream.BiStream#toBiStream(Function, Function) BiStream::toBiStream}
-   * like the following code:
+   * using {@link com.google.mu.util.stream.BiStream#toBiStream(Function, Function)
+   * BiStream::toBiStream} like the following code:
    *
    * <pre>{@code
    * ImmutableMap<UserId, EmailAddress> userEmails =
@@ -1076,7 +1049,7 @@ abstract class AbstractStringFormat {
    */
   public final String format(long arg) {
     checkFormatArgs(1);
-    return fragments.get(0) + arg + fragments.get(1);
+    return fragments[0] + arg + fragments[1];
   }
 
   /**
@@ -1093,7 +1066,7 @@ abstract class AbstractStringFormat {
    */
   public final String format(Object arg) {
     checkFormatArgs(1);
-    return fragments.get(0) + arg + fragments.get(1);
+    return fragments[0] + arg + fragments[1];
   }
 
   /**
@@ -1110,7 +1083,7 @@ abstract class AbstractStringFormat {
    */
   public final String format(Object a, Object b) {
     checkFormatArgs(2);
-    return fragments.get(0) + a + fragments.get(1) + b + fragments.get(2);
+    return fragments[0] + a + fragments[1] + b + fragments[2];
   }
 
   /**
@@ -1127,7 +1100,7 @@ abstract class AbstractStringFormat {
    */
   public final String format(Object a, Object b, Object c) {
     checkFormatArgs(3);
-    return fragments.get(0) + a + fragments.get(1) + b + fragments.get(2) + c + fragments.get(3);
+    return fragments[0] + a + fragments[1] + b + fragments[2] + c + fragments[3];
   }
 
   /**
@@ -1142,18 +1115,9 @@ abstract class AbstractStringFormat {
    *
    * @since 9.3
    */
-  public final String format(
-      Object a, Object b, Object c, Object d) {
+  public final String format(Object a, Object b, Object c, Object d) {
     checkFormatArgs(4);
-    return fragments.get(0)
-        + a
-        + fragments.get(1)
-        + b
-        + fragments.get(2)
-        + c
-        + fragments.get(3)
-        + d
-        + fragments.get(4);
+    return fragments[0] + a + fragments[1] + b + fragments[2] + c + fragments[3] + d + fragments[4];
   }
 
   /**
@@ -1168,24 +1132,10 @@ abstract class AbstractStringFormat {
    *
    * @since 9.3
    */
-  public final String format(
-      Object a,
-      Object b,
-      Object c,
-      Object d,
-      Object e) {
+  public final String format(Object a, Object b, Object c, Object d, Object e) {
     checkFormatArgs(5);
-    return fragments.get(0)
-        + a
-        + fragments.get(1)
-        + b
-        + fragments.get(2)
-        + c
-        + fragments.get(3)
-        + d
-        + fragments.get(4)
-        + e
-        + fragments.get(5);
+    return fragments[0] + a + fragments[1] + b + fragments[2] + c + fragments[3] + d + fragments[4]
+        + e + fragments[5];
   }
 
   /**
@@ -1200,27 +1150,10 @@ abstract class AbstractStringFormat {
    *
    * @since 9.3
    */
-  public final String format(
-      Object a,
-      Object b,
-      Object c,
-      Object d,
-      Object e,
-      Object f) {
+  public final String format(Object a, Object b, Object c, Object d, Object e, Object f) {
     checkFormatArgs(6);
-    return fragments.get(0)
-        + a
-        + fragments.get(1)
-        + b
-        + fragments.get(2)
-        + c
-        + fragments.get(3)
-        + d
-        + fragments.get(4)
-        + e
-        + fragments.get(5)
-        + f
-        + fragments.get(6);
+    return fragments[0] + a + fragments[1] + b + fragments[2] + c + fragments[3] + d + fragments[4]
+        + e + fragments[5] + f + fragments[6];
   }
 
   /**
@@ -1235,30 +1168,10 @@ abstract class AbstractStringFormat {
    *
    * @since 9.3
    */
-  public final String format(
-      Object a,
-      Object b,
-      Object c,
-      Object d,
-      Object e,
-      Object f,
-      Object g) {
+  public final String format(Object a, Object b, Object c, Object d, Object e, Object f, Object g) {
     checkFormatArgs(7);
-    return fragments.get(0)
-        + a
-        + fragments.get(1)
-        + b
-        + fragments.get(2)
-        + c
-        + fragments.get(3)
-        + d
-        + fragments.get(4)
-        + e
-        + fragments.get(5)
-        + f
-        + fragments.get(6)
-        + g
-        + fragments.get(7);
+    return fragments[0] + a + fragments[1] + b + fragments[2] + c + fragments[3] + d + fragments[4]
+        + e + fragments[5] + f + fragments[6] + g + fragments[7];
   }
 
   /**
@@ -1274,32 +1187,10 @@ abstract class AbstractStringFormat {
    * @since 9.3
    */
   public final String format(
-      Object a,
-      Object b,
-      Object c,
-      Object d,
-      Object e,
-      Object f,
-      Object g,
-      Object h) {
+      Object a, Object b, Object c, Object d, Object e, Object f, Object g, Object h) {
     checkFormatArgs(8);
-    return fragments.get(0)
-        + a
-        + fragments.get(1)
-        + b
-        + fragments.get(2)
-        + c
-        + fragments.get(3)
-        + d
-        + fragments.get(4)
-        + e
-        + fragments.get(5)
-        + f
-        + fragments.get(6)
-        + g
-        + fragments.get(7)
-        + h
-        + fragments.get(8);
+    return fragments[0] + a + fragments[1] + b + fragments[2] + c + fragments[3] + d + fragments[4]
+        + e + fragments[5] + f + fragments[6] + g + fragments[7] + h + fragments[8];
   }
 
   /**
@@ -1316,9 +1207,9 @@ abstract class AbstractStringFormat {
    */
   public final String format(Object... args) {
     checkFormatArgs(args);
-    StringBuilder builder = new StringBuilder().append(fragments.get(0));
+    StringBuilder builder = new StringBuilder().append(fragments[0]);
     for (int i = 0; i < args.length; i++) {
-      builder.append(args[i]).append(fragments.get(i + 1));
+      builder.append(args[i]).append(fragments[i + 1]);
     }
     return builder.toString();
   }
@@ -1326,6 +1217,18 @@ abstract class AbstractStringFormat {
   /** Returns the string format. */
   @Override public String toString() {
     return format;
+  }
+
+  final List<String> fragments() {
+    return new AbstractList<String>() {
+      @Override public String get(int i) {
+        return fragments[i];
+      }
+
+      @Override public int size() {
+        return fragments.length;
+      }
+    };
   }
 
   private <R> Optional<R> parseGreedyExpecting(
@@ -1336,17 +1239,16 @@ abstract class AbstractStringFormat {
     // After the matching is done, reverse the results back.
     return internalParse(
             reverse(input),
-            reverse(fragments).stream().map(s -> reverse(s)).collect(toImmutableList()),
+            reverse(fragments()).stream().map(s -> reverse(s)).toArray(String[]::new),
             reverse(toCapture))
         .map(
-            captured ->
-                reverse(captured).stream()
-                    .map(
-                        sub -> { // Return the original (unreversed) substring
-                          int forwardIndex = input.length() - (sub.index() + sub.length());
-                          return input.substring(forwardIndex, forwardIndex + sub.length());
-                        })
-                    .collect(collector));
+            captured -> reverse(captured).stream()
+                .map(
+                    sub -> { // Return the original (unreversed) substring
+                      int forwardIndex = input.length() - (sub.index() + sub.length());
+                      return input.substring(forwardIndex, forwardIndex + sub.length());
+                    })
+                .collect(collector));
   }
 
   private <R> Optional<R> parseExpecting(
@@ -1366,13 +1268,11 @@ abstract class AbstractStringFormat {
       int cardinality, String input, Collector<? super String, ?, R> collector) {
     requireNonNull(input);
     checkPlaceholderCount(cardinality);
-    List<Substring.Match> values =
-        parseAsList(input)
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        new StringFormat("input '{input}' doesn't match format string '{format}'")
-                            .format(input, format)));
+    List<Substring.Match> values = parseAsList(input)
+        .orElseThrow(
+            () -> new IllegalArgumentException(
+                new StringFormat("input '{input}' doesn't match format string '{format}'")
+                    .format(input, format)));
     R result = collect(values, collector);
     if (result == null) {
       throw new NullPointerException(
@@ -1403,20 +1303,20 @@ abstract class AbstractStringFormat {
             if (done) {
               return null;
             }
-            inputIndex = input.indexOf(fragments.get(0), inputIndex);
+            inputIndex = input.indexOf(fragments[0], inputIndex);
             if (inputIndex < 0) {
               return null;
             }
             final int startIndex = inputIndex;
-            inputIndex += fragments.get(0).length();
+            inputIndex += fragments[0].length();
             List<Substring.Match> builder = new ArrayList<>(numCapturingPlaceholders);
             for (int i = 1; i <= numPlaceholders; i++) {
-              String literal = fragments.get(i);
+              String literal = fragments[i];
               // Always search left-to-right. The last placeholder at the end of format is suffix.
               Substring.Pattern literalLocator =
-                  i == numPlaceholders && fragments.get(i).isEmpty()
+                  i == numPlaceholders && fragments[i].isEmpty()
                       ? Substring.END
-                      : first(fragments.get(i));
+                      : first(fragments[i]);
               Substring.Match placeholder = before(literalLocator).match(input, inputIndex);
               if (placeholder == null) {
                 return null;
@@ -1443,12 +1343,12 @@ abstract class AbstractStringFormat {
   }
 
   private int numPlaceholders() {
-    return fragments.size() - 1;
+    return fragments.length - 1;
   }
 
   private void checkUnformattability() {
     for (int i = 1; i < numPlaceholders(); i++) {
-      if (this.fragments.get(i).isEmpty()) {
+      if (this.fragments[i].isEmpty()) {
         throw new IllegalArgumentException("Placeholders cannot be next to each other: " + format);
       }
     }
@@ -1456,8 +1356,10 @@ abstract class AbstractStringFormat {
 
   private void checkPlaceholderCount(int expected) {
     if (numCapturingPlaceholders != expected) {
-      throw new IllegalArgumentException(String.format(
-          "format string has %s placeholders; %s expected.", numCapturingPlaceholders, expected));
+      throw new IllegalArgumentException(
+          String.format(
+              "format string has %s placeholders; %s expected.",
+              numCapturingPlaceholders, expected));
     }
   }
 
@@ -1467,8 +1369,9 @@ abstract class AbstractStringFormat {
 
   private void checkFormatArgs(int argsCount) {
     if (argsCount != numPlaceholders()) {
-      throw new IllegalArgumentException(String.format(
-          "format string expects %s placeholders, %s provided", numPlaceholders(), argsCount));
+      throw new IllegalArgumentException(
+          String.format(
+              "format string expects %s placeholders, %s provided", numPlaceholders(), argsCount));
     }
   }
 
@@ -1492,6 +1395,7 @@ abstract class AbstractStringFormat {
       @Override public int size() {
         return list.size();
       }
+
       @Override public T get(int i) {
         return list.get(list.size() - 1 - i);
       }
