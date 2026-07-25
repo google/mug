@@ -149,7 +149,7 @@ public final class CharacterSet implements CharPredicate {
     return result;
   }
 
-  Optional<Set<Character>> candidateCharsIfAscii() {
+  private Optional<Set<Character>> candidateCharsIfAscii() {
     if (string.startsWith("[^")) {
       return Optional.empty();
     }
