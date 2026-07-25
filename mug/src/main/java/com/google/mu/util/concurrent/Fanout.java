@@ -39,17 +39,17 @@ import java.util.logging.Logger;
  * unsynchronized side effects) <i>happen-before</i> the concurrent operations running in the
  * virtual threads, which happen-before the join functions, which then happen-before the {@code
  * concurrently()} method returns. As a result, thread-safe or concurrent data structure isn't
- * required to pass data between the caller and callee: they will work the same way as if running
- * in a single thread (except obviously there is no happens-before relationship between the
- * concurrent operations themselves).
+ * required to pass data between the caller and callee: they will work the same way as if running in
+ * a single thread (except obviously there is no happens-before relationship between the concurrent
+ * operations themselves).
  *
  * <p>By default, the JDK {@link Executors#newVirtualThreadPerTaskExecutor} is used to run all
- * structured concurrency tasks (thus requires Java 21 and virtual threads).
- * To use an alternative executor (say, you need a custom ThreadFactory, or don't want to use
- * virtual threads at all), implement a {@link StructuredConcurrencyExecutorPlugin} and package it
- * up for {@link ServiceLoader}. You could also use Google
- * <a href="http://github.com/google/auto/tree/main/service">@AutoService</a> to help
- * automate the generation of the META-INF/services files.
+ * structured concurrency tasks (thus requires Java 21 and virtual threads). To use an alternative
+ * executor (say, you need a custom ThreadFactory, or don't want to use virtual threads at all),
+ * implement a {@link StructuredConcurrencyExecutorPlugin} and package it up for {@link
+ * ServiceLoader}. You could also use Google <a
+ * href="http://github.com/google/auto/tree/main/service">@AutoService</a> to help automate the
+ * generation of the META-INF/services files.
  *
  * @since 8.1
  */
@@ -74,13 +74,12 @@ public final class Fanout {
    * @throws StructuredConcurrencyInterruptedException if the current thread is interrupted while
    *     waiting for the concurrent operations to complete. The unfinished concurrent operations
    *     will be canceled.
-   * @throws RuntimeException wrapping the original exception from the virtual thread if
-   *     any concurrent operation failed
+   * @throws RuntimeException wrapping the original exception from the virtual thread if any
+   *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, R, X extends Throwable> R concurrently(
-      Supplier<A> a, Supplier<B> b, Join2<? super A, ? super B, R, X> join)
-      throws X {
+      Supplier<A> a, Supplier<B> b, Join2<? super A, ? super B, R, X> join) throws X {
     requireNonNull(join);
     Scope scope = new Scope();
     AtomicReference<A> r1 = scope.add(a);
@@ -107,14 +106,12 @@ public final class Fanout {
    * @throws StructuredConcurrencyInterruptedException if the current thread is interrupted while
    *     waiting for the concurrent operations to complete. The unfinished concurrent operations
    *     will be canceled.
-   * @throws RuntimeException wrapping the original exception from the virtual thread if
-   *     any concurrent operation failed
+   * @throws RuntimeException wrapping the original exception from the virtual thread if any
+   *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, R, X extends Throwable> R concurrently(
-      Supplier<A> a,
-      Supplier<B> b,
-      Supplier<C> c,
+      Supplier<A> a, Supplier<B> b, Supplier<C> c,
       Join3<? super A, ? super B, ? super C, R, X> join)
       throws X {
     requireNonNull(join);
@@ -145,15 +142,12 @@ public final class Fanout {
    * @throws StructuredConcurrencyInterruptedException if the current thread is interrupted while
    *     waiting for the concurrent operations to complete. The unfinished concurrent operations
    *     will be canceled.
-   * @throws RuntimeException wrapping the original exception from the virtual thread if
-   *     any concurrent operation failed
+   * @throws RuntimeException wrapping the original exception from the virtual thread if any
+   *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, D, R, X extends Throwable> R concurrently(
-      Supplier<A> a,
-      Supplier<B> b,
-      Supplier<C> c,
-      Supplier<D> d,
+      Supplier<A> a, Supplier<B> b, Supplier<C> c, Supplier<D> d,
       Join4<? super A, ? super B, ? super C, ? super D, R, X> join)
       throws X {
     requireNonNull(join);
@@ -186,16 +180,12 @@ public final class Fanout {
    * @throws StructuredConcurrencyInterruptedException if the current thread is interrupted while
    *     waiting for the concurrent operations to complete. The unfinished concurrent operations
    *     will be canceled.
-   * @throws RuntimeException wrapping the original exception from the virtual thread if
-   *     any concurrent operation failed
+   * @throws RuntimeException wrapping the original exception from the virtual thread if any
+   *     concurrent operation failed
    * @throws X thrown by the {@code join} function
    */
   public static <A, B, C, D, E, R, X extends Throwable> R concurrently(
-      Supplier<A> a,
-      Supplier<B> b,
-      Supplier<C> c,
-      Supplier<D> d,
-      Supplier<E> e,
+      Supplier<A> a, Supplier<B> b, Supplier<C> c, Supplier<D> d, Supplier<E> e,
       Join5<? super A, ? super B, ? super C, ? super D, ? super E, R, X> join)
       throws X {
     requireNonNull(join);
@@ -222,8 +212,8 @@ public final class Fanout {
    * @throws StructuredConcurrencyInterruptedException if the current thread is interrupted while
    *     waiting for the concurrent operations to complete. The unfinished concurrent operations
    *     will be canceled.
-   * @throws RuntimeException wrapping the original exception from the virtual thread if
-   *     any concurrent operation failed
+   * @throws RuntimeException wrapping the original exception from the virtual thread if any
+   *     concurrent operation failed
    * @since 8.3
    */
   public static void concurrently(Runnable task1, Runnable task2, Runnable... moreTasks) {
@@ -322,9 +312,9 @@ public final class Fanout {
   }
 
   private static StructuredConcurrencyExecutorPlugin loadExecutorPlugin() {
-    List<StructuredConcurrencyExecutorPlugin> candidates =
-        Utils.stream(ServiceLoader.load(StructuredConcurrencyExecutorPlugin.class))
-            .collect(allMax(comparing(plugin -> plugin.priority()), toList()));
+    List<StructuredConcurrencyExecutorPlugin> candidates = Utils.stream(
+            ServiceLoader.load(StructuredConcurrencyExecutorPlugin.class))
+        .collect(allMax(comparing(plugin -> plugin.priority()), toList()));
     if (candidates.isEmpty()) {
       logger.info("No StructuredConcurrencyExecutorPlugin found. Using default virtual threads.");
       return new StructuredConcurrencyExecutorPlugin() {
@@ -337,10 +327,8 @@ public final class Fanout {
     Utils.checkState(
         candidates.size() == 1,
         "Only one StructuredConcurrencyExecutorPlugin can be specified (at priority %s); found: %s",
-        plugin.priority(),
-        candidates);
-    logger.info(
-        "Structured concurrency using " + plugin + " at priority " + plugin.priority());
+        plugin.priority(), candidates);
+    logger.info("Structured concurrency using " + plugin + " at priority " + plugin.priority());
     return plugin;
   }
 
