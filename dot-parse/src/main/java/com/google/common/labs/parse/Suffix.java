@@ -8,28 +8,39 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
- * A convenience helper to manage multiple optional suffixes.
+ * A convenience helper to left-factor a common prefix followed by multiple optional suffixes.
  *
- * <p>Usually when you have an optional suffix, you should use {@link Parser#optionallyFollowedBy(String, Function) optionallyFollowedBy()}
- * directly, such as:
+ * <p>Usually when you have an optional suffix, you should use {@link
+ * Parser#optionallyFollowedBy(String, Function) optionallyFollowedBy()} directly, such as:
  *
  * <pre>{@code
  * expr.optionallyFollowedBy("!", (Integer n) -> factorial(n));
  * }</pre>
  *
- * However when there are more than one optional suffixes to be applied after the same parser, it
- * becomes awkward to compose them in a readable way.
+ * However when there are more than one optional suffixes to be applied after the same prefix, it
+ * becomes harder to compose them without backtracking. You could use {@link Parser#anyOf(Parser...)
+ * anyOf()} like:
  *
- * <p>The following is an example using the {@code Suffix} helper and {@link Parser#anyOf(Parser...)} to compose the optional
- * suffix operators together before passing to {@code optionallyFollowedBy()}:
+ * <pre>{@code
+ * Parser.anyOf(
+ *     expr.followedBy("!").map(n -> factorial(n)),
+ *     sequence(expr, exponential, (Expr i, Expr e) -> pow(i, e)));
+ * }</pre>
+ *
+ * But if performance is critical, the same {@code expr} rule will be re-evaluated during
+ * backtracking from choice #1 to choice #2, which is wasteful.
+ *
+ * <p>The following is an example that avoids backtracking, by using the {@code Suffix} helper and
+ * {@code anyOf()} to compose the optional suffix operators together before passing to {@code
+ * optionallyFollowedBy()}:
  *
  * <pre>{@code
  * import static com.google.common.labs.parse.Suffix.suffix;
  *
  * expr.optionallyFollowedBy(
  *     anyOf(
- *         suffix("!", (Integer n) -> factorial(n)),
- *         suffix(exponential, (Integer i, Double e) -> pow(i, e))),
+ *         suffix("!", (Expr n) -> factorial(n)),
+ *         suffix(exponential, (Expr i, Expr e) -> pow(i, e))),
  *     Suffix::apply);
  * }</pre>
  *
@@ -44,9 +55,9 @@ import java.util.function.UnaryOperator;
  * Parser.sequence(
  *     expr,
  *     anyOf(
- *         suffix("!", FactorialExpr::new),
- *         suffix(exponential, PowExpr::new))
- *       .orElse(LiteralExpr::new),
+ *             suffix("!", FactorialExpr::new),
+ *             suffix(exponential, PowExpr::new))
+ *         .orElse(LiteralExpr::new),
  *     Suffix::apply);
  * }</pre>
  *
@@ -65,8 +76,8 @@ import java.util.function.UnaryOperator;
  */
 public final class Suffix {
   /**
-   * A suffix parser that combines together with its prefix parse's result using the {@code combiner}
-   * function.
+   * A suffix parser that combines together with its prefix parse's result using the {@code
+   * combiner} function.
    */
   public static <T, S, R> Parser<Function<T, R>> suffix(
       Parser<S> suffix, BiFunction<? super T, ? super S, ? extends R> combiner) {
