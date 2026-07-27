@@ -35,14 +35,6 @@ import static java.util.stream.Collectors.filtering;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-import java.net.IDN;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.stream.Collector;
-
 import com.google.common.labs.parse.Parser;
 import com.google.errorprone.annotations.CheckReturnValue;
 import com.google.errorprone.annotations.FormatMethod;
@@ -54,16 +46,26 @@ import com.google.mu.util.CharPredicate;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.Joiner;
+import java.net.IDN;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.Collector;
 
 /**
  * Represents a strictly validated email address according to RFC 5322, designed as a modern,
  * light-weight alternative API to {@code javax.mail.InternetAddress}.
  *
- * <p>See <a href="https://github.com/google/mug/tree/master/dot-parse/src/main/java/com/google/common/labs/email/README.md">
- * README</a> for a comprehensive architectural, security,
- * and performance comparison against Jakarta Mail and JMail.
+ * <p>See <a
+ * href="https://github.com/google/mug/tree/master/dot-parse/src/main/java/com/google/common/labs/email/README.md">
+ * README</a> for a comprehensive architectural, security, and performance comparison against
+ * Jakarta Mail and JMail.
  *
- * <p>For example: <pre>{@code
+ * <p>For example:
+ *
+ * <pre>{@code
  * EmailAddress address = EmailAddress.of("J.R.R. Tolkien <tolkien@lotr.org>");
  * // address.displayName() => "J.R.R. Tolkien"
  * // address.localPart() => "tolkien"
@@ -71,47 +73,49 @@ import com.google.mu.util.stream.Joiner;
  * }</pre>
  *
  * <h3>RFC 5322 Compliance Profile</h3>
+ *
  * <ul>
- *   <li><b>Address Specification (addr-spec):</b> Supports the standard
- *       {@code local-part@domain} format (RFC 5322 §3.4.1).</li>
- *   <li><b>Quoted Local-Parts:</b> Fully supports double-quoted local-parts
- *       (RFC 5322 §3.4.1), with backslash-escaped characters. In order to provide a clean,
- *       canonical representation, enclosing quotes are automatically stripped and backslash
- *       escapes are unescaped when stored in the {@code localPart} property (e.g.,
- *       {@code "john doe" -> "john doe"}). While serializing via {@link #address()} or
- *       {@link #toString()}, appropriate quotes and escapes are dynamically and safely
- *       re-introduced if necessary to maintain syntactical validity under RFC 5322 (since v10.3).</li>
- *   <li><b>Name-Addr:</b> Fully supports {@code "display-name" <addr-spec>}
- *       syntax (RFC 5322 §3.4).</li>
- *   <li><b>Quoted-Strings:</b> Complies with RFC 5322 §3.2.4, supporting
- *       backslash-escaped characters within double-quoted display names.</li>
- *   <li><b>Phrases (unquoted names):</b> Supports RFC 5322 "atoms" in
- *       display names, forbidding specials, i.e. the {@code <}, {@code >}, {@code ;},
- *       {@code \}, and {@code "} characters, while allowing periods, commas, colons,
- *       brackets, and parentheses for real-world usability (e.g., "[JIRA] (PROJ-123)").</li>
- *   <li><b>Folding White Space (FWS):</b> Supports optional whitespace
- *       between the display name and the angle-bracketed address.</li>
- *   <li><b>Address-List:</b> Supports semicolon as separators; allows real-world
- *       variations like trailing commas, two-commas-in-a-row etc.</li>
+ *   <li><b>Address Specification (addr-spec):</b> Supports the standard {@code local-part@domain}
+ *       format (RFC 5322 §3.4.1).
+ *   <li><b>Quoted Local-Parts:</b> Fully supports double-quoted local-parts (RFC 5322 §3.4.1), with
+ *       backslash-escaped characters. In order to provide a clean, canonical representation,
+ *       enclosing quotes are automatically stripped and backslash escapes are unescaped when stored
+ *       in the {@code localPart} property (e.g., {@code "john doe" -> "john doe"}). While
+ *       serializing via {@link #address()} or {@link #toString()}, appropriate quotes and escapes
+ *       are dynamically and safely re-introduced if necessary to maintain syntactical validity
+ *       under RFC 5322 (since v10.3).
+ *   <li><b>Name-Addr:</b> Fully supports {@code "display-name" <addr-spec>} syntax (RFC 5322 §3.4).
+ *   <li><b>Quoted-Strings:</b> Complies with RFC 5322 §3.2.4, supporting backslash-escaped
+ *       characters within double-quoted display names.
+ *   <li><b>Phrases (unquoted names):</b> Supports RFC 5322 "atoms" in display names, forbidding
+ *       specials, i.e. the {@code <}, {@code >}, {@code ;}, {@code \}, and {@code "} characters,
+ *       while allowing periods, commas, colons, brackets, and parentheses for real-world usability
+ *       (e.g., "[JIRA] (PROJ-123)").
+ *   <li><b>Folding White Space (FWS):</b> Supports optional whitespace between the display name and
+ *       the angle-bracketed address.
+ *   <li><b>Address-List:</b> Supports semicolon as separators; allows real-world variations like
+ *       trailing commas, two-commas-in-a-row etc.
  * </ul>
  *
  * <h3>Strict Email Address Validation</h3>
- * <p>Unlike legacy {@code javax.mail.InternetAddress} from Java/Jakarta Mail, this class is
- * backed by a strict email address parser and a validated domain model. This improves security,
- * preventing common email parsing exploits such as:
+ *
+ * <p>Unlike legacy {@code javax.mail.InternetAddress} from Java/Jakarta Mail, this class is backed
+ * by a strict email address parser and a validated domain model. This improves security, preventing
+ * common email parsing exploits such as:
+ *
  * <ul>
- *   <li><b>Email Parsing Differentials:</b> Inputs like
- *       {@code <legitimate@trusted.com>attacker@evil.com} are strictly rejected instead of being
- *       silently truncated or partially parsed, preventing privilege escalation or routing
- *       bypasses.</li>
- *   <li><b>Display Name Spoofing (RFC 2047):</b> Display names are preserved literally
- *       in their raw/encoded form by default (preventing visual spoofing/phishing side-channels).
- *       Safe opt-in decoding is provided explicitly via {@link #unicodeDisplayName()}.</li>
- *   <li><b>Group Addresses and Multi-@ Local-Parts:</b> Group address syntaxes and unquoted
- *       multi-@ injections are strictly disallowed.</li>
+ *   <li><b>Email Parsing Differentials:</b> Inputs like {@code
+ *       <legitimate@trusted.com>attacker@evil.com} are strictly rejected instead of being silently
+ *       truncated or partially parsed, preventing privilege escalation or routing bypasses.
+ *   <li><b>Display Name Spoofing (RFC 2047):</b> Display names are preserved literally in their
+ *       raw/encoded form by default (preventing visual spoofing/phishing side-channels). Safe
+ *       opt-in decoding is provided explicitly via {@link #unicodeDisplayName()}.
+ *   <li><b>Group Addresses and Multi-@ Local-Parts:</b> Group address syntaxes and unquoted multi-@
+ *       injections are strictly disallowed.
  * </ul>
  *
  * <h3>Comparison with {@code javax.mail.InternetAddress} (Java / Jakarta Mail)</h3>
+ *
  * <table border="1">
  *   <tr>
  *     <th>Feature/Security Aspect</th>
@@ -145,7 +149,8 @@ import com.google.mu.util.stream.Joiner;
  *   </tr>
  *   <tr>
  *     <td><b>RFC 2047 Encoded Words</b></td>
- *     <td>Automatic or permissive (decodes or accepts encoded words in display name, local-part, or domain, risking address spoofing and routing hijacking)</td>
+ *     <td>Automatic or permissive (decodes or accepts encoded words in display name, local-part,
+ *         or domain, risking address spoofing and routing hijacking)</td>
  *     <td>Defensively rejected in local-part and checkDomain
  *      Supported in display name via safe, explicit opt-in {@link #unicodeDisplayName()}</td>
  *   </tr>
@@ -157,14 +162,17 @@ import com.google.mu.util.stream.Joiner;
  * </table>
  *
  * <h3>Intentionally Omitted Legacy Features</h3>
- * <p>To maintain compatibility with modern MTAs (Gmail, Outlook) and mitigate
- * header injection risks, the following RFC 5322 edge cases are excluded:</p>
+ *
+ * <p>To maintain compatibility with modern MTAs (Gmail, Outlook) and mitigate header injection
+ * risks, the following RFC 5322 edge cases are excluded:
  *
  * <ul>
  *   <li><b>Comments (CFWS):</b> (e.g., {@code name(comment) <addr>}) - De facto obsolete.
- *   <li><b>Domain Literals:</b> (e.g., {@code user@[192.168.1.1]}) - IP routing is rarely supported.
- *   <li><b>RFC 2047 Encoded Words in address fields:</b> (e.g., {@code =?UTF-8?Q?Admin?=@domain.com})
- *      - Strictly rejected to prevent downstream mailer decoding exploits.
+ *   <li><b>Domain Literals:</b> (e.g., {@code user@[192.168.1.1]}) - IP routing is rarely
+ *       supported.
+ *   <li><b>RFC 2047 Encoded Words in address fields:</b> (e.g., {@code
+ *       =?UTF-8?Q?Admin?=@domain.com}) - Strictly rejected to prevent downstream mailer decoding
+ *       exploits.
  * </ul>
  *
  * @since 9.9.4
@@ -210,15 +218,13 @@ public final class EmailAddress {
   private static final CharPredicate ATEXT = LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~");
   private static final CharPredicate ATEXT_OR_DOT = ATEXT.or('.').precomputeForAscii();
 
-  private static final Parser<String> QUOTED =
-      quotedByWithEscapes('"', '"', chars(1))
-          .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
-  private static final Parser<String> LOCAL_PART =
-      anyOf(
-              consecutive(ATEXT_OR_DOT, "local part")
-                  .suchThat(local -> !hasWeirdDots(local), "valid local part"),
-              QUOTED)
-          .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
+  private static final Parser<String> QUOTED = quotedByWithEscapes('"', '"', chars(1))
+      .suchThat(DANGEROUS::matchesNoneOf, "quoted string without control or formatting chars");
+  private static final Parser<String> LOCAL_PART = anyOf(
+          consecutive(ATEXT_OR_DOT, "local part")
+              .suchThat(local -> !hasWeirdDots(local), "valid local part"),
+          QUOTED)
+      .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
   private static final Parser<String> ASCII_DOMAIN_NAME = consecutive("[a-z0-9.-]");
   private static final Parser<String> I18N_DOMAIN_NAME =
       consecutive(LETTER_OR_DIGIT.or(anyOf(".-")).precomputeForAscii(), "domain");
@@ -242,7 +248,9 @@ public final class EmailAddress {
    * The parser for email address, according to RFC 5322, and supporting BMP characters.
    *
    * <p>Prefer using the {@link #of} convenience method. This constant is to be used for
-   * composition, for example to parse a group addresses: <pre>{@code
+   * composition, for example to parse a group addresses:
+   *
+   * <pre>{@code
    * Parser.sequence(
    *     Parser.word().followedBy(":"),
    *     EmailAddress.PARSER.zeroOrMoreDelimitedBy(",").followedBy(";"),
@@ -252,9 +260,7 @@ public final class EmailAddress {
   public static final Parser<EmailAddress> PARSER = makeParser();
 
   private static final Parser<Object> ADDRESS_OR_JUNK = anyOf(
-      PARSER
-          // don't extract a@b from a@b@c
-          .notFollowedBy(one("[^,;]"), "non-separator"),
+      PARSER.notFollowedBy(one("[^,;]"), "non-separator"), // don't extract a@b from a@b@c
       consecutive("[^,;]").map(String::trim));
 
   private final String localPart;
@@ -276,22 +282,20 @@ public final class EmailAddress {
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
   public EmailAddress withDisplayName(String displayName) {
     return new EmailAddress(
-        localPart, domain,
-        Optional.ofNullable(displayName).map(EmailAddress::checkDisplayName));
+        localPart, domain, Optional.ofNullable(displayName).map(EmailAddress::checkDisplayName));
   }
 
   /**
-   * Returns the display name in Unicode (with any RFC 2047 encoded-words decoded),
-   * or {@code Optional.empty()} if no display name is present.
+   * Returns the display name in Unicode (with any RFC 2047 encoded-words decoded), or {@code
+   * Optional.empty()} if no display name is present.
    *
-   * <p>To prevent visual spoofing and phishing attacks in standard rendering, the main
-   * {@link #displayName()} component is kept in its raw transport-safe encoded form. This method
-   * provides a safe, explicit opt-in to decode the display name.
+   * <p>To prevent visual spoofing and phishing attacks in standard rendering, the main {@link
+   * #displayName()} component is kept in its raw transport-safe encoded form. This method provides
+   * a safe, explicit opt-in to decode the display name.
    *
-   * <p>Only standard, ASCII-compatible charsets (specifically UTF-8, ISO-8859-1, and US-ASCII)
-   * are decoded, guarding against null-byte injection exploits in downstream systems.
-   * Unsupported charsets or syntactically malformed encoded-words are safely left in their
-   * encoded form.
+   * <p>Only standard, ASCII-compatible charsets (specifically UTF-8, ISO-8859-1, and US-ASCII) are
+   * decoded, guarding against null-byte injection exploits in downstream systems. Unsupported
+   * charsets or syntactically malformed encoded-words are safely left in their encoded form.
    *
    * @since 10.3.1
    */
@@ -318,28 +322,28 @@ public final class EmailAddress {
   }
 
   /**
-   * Returns the local-part of the email address, e.g. the {@code "tolkien"} from
-   * {@code J.R.R. Tolkien <tolkien@lotr.org>}.
+   * Returns the local-part of the email address, e.g. the {@code "tolkien"} from {@code J.R.R.
+   * Tolkien <tolkien@lotr.org>}.
    */
   public String localPart() {
     return localPart;
   }
 
   /**
-   * Returns the domain of the email address, e.g. the {@code "lotr.org"} from
-   * {@code J.R.R. Tolkien <tolkien@lotr.org>}.
+   * Returns the domain of the email address, e.g. the {@code "lotr.org"} from {@code J.R.R. Tolkien
+   * <tolkien@lotr.org>}.
    *
-   * <p>Note that for internationalized domain, this is the punycode in ASCII. You can
-   * use {@link #unicodeDomain} to access the non-encoded domain. {@link #hasI18nDomain}
-   * can be used to check if the domain is internationalized.
+   * <p>Note that for internationalized domain, this is the punycode in ASCII. You can use {@link
+   * #unicodeDomain} to access the non-encoded domain. {@link #hasI18nDomain} can be used to check
+   * if the domain is internationalized.
    */
   public String domain() {
     return domain;
   }
 
   /**
-   * Returns the display name of the email address (e.g. the {@code "J.R.R. Tolkien"} from
-   * {@code J.R.R. Tolkien <tolkien@lotr.org>}), or {@code Optional.empty()} if no display name is present.
+   * Returns the display name of the email address (e.g. the {@code "J.R.R. Tolkien"} from {@code
+   * J.R.R. Tolkien <tolkien@lotr.org>}), or {@code Optional.empty()} if no display name is present.
    *
    * <p>Note that this holds the raw transport-safe format (including any RFC 2047 encoded-words).
    * You can use {@link #unicodeDisplayName} to access the decoded Unicode representation.
@@ -354,9 +358,8 @@ public final class EmailAddress {
   }
 
   /**
-   * Returns the "user" part of the local-part before the first {@code +} separator,
-   * according to RFC 5233 subaddressing. If no {@code +} is present, the full
-   * {@code localPart} is returned.
+   * Returns the "user" part of the local-part before the first {@code +} separator, according to
+   * RFC 5233 subaddressing. If no {@code +} is present, the full {@code localPart} is returned.
    *
    * @since 10.3
    */
@@ -405,21 +408,24 @@ public final class EmailAddress {
   }
 
   /**
-   * Returns the full email address, in the form of {@code local-part@domain} or
-   * {@code "display name" <local-part@domain>}. Backslashes and double quotes in
-   * the display name are auto-escaped.
+   * Returns the full email address, in the form of {@code local-part@domain} or {@code "display
+   * name" <local-part@domain>}. Backslashes and double quotes in the display name are auto-escaped.
    */
   @Override public String toString() {
-    return displayName
-        .map(name -> requiresQuoting(name)
-            ? WITH_QUOTED_DISPLAY_NAME.format(escape(name), address())
-            : WITH_UNQUOTED_DISPLAY_NAME.format(name, address()))
+    return displayName.map(name ->
+            requiresQuoting(name)
+                ? WITH_QUOTED_DISPLAY_NAME.format(escape(name), address())
+                : WITH_UNQUOTED_DISPLAY_NAME.format(name, address()))
         .orElseGet(this::address);
   }
 
-  /** @deprecated Use {@link #of(String)} instead */
+  /**
+   * @deprecated Use {@link #of(String)} instead
+   */
   @Deprecated
-  @InlineMe(replacement = "EmailAddress.of(address)", imports = "com.google.common.labs.email.EmailAddress")
+  @InlineMe(
+      replacement = "EmailAddress.of(address)",
+      imports = "com.google.common.labs.email.EmailAddress")
   public static EmailAddress parse(String address) {
     return of(address);
   }
@@ -439,8 +445,7 @@ public final class EmailAddress {
    * @throws Parser.ParseException if {@code addressList} is invalid
    */
   public static List<EmailAddress> parseAddressList(String addressList) {
-    return PARSER
-        .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
+    return PARSER.zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
         .optionallyFollowedBy(ADDRESS_LIST_DELIMITER)
         .parseSkipping(SAFE_WHITESPACE, addressList);
   }
@@ -449,7 +454,9 @@ public final class EmailAddress {
    * Parses {@code addressList} according to RFC 5322 and returns an immutable list of {@link
    * EmailAddress}, with invalid entries passed to the {@code ifInvalid} consumer.
    *
-   * <p>For example, <pre>{@code
+   * <p>For example,
+   *
+   * <pre>{@code
    * List<EmailAddress> addresses = parseAddressList(inputAddressList, logger::log);
    * }</pre>
    *
@@ -472,10 +479,8 @@ public final class EmailAddress {
     if (obj == this) {
       return true;
     }
-    return obj instanceof EmailAddress that
-        && localPart.equals(that.localPart)
-        && domain.equals(that.domain)
-        && displayName.equals(that.displayName);
+    return obj instanceof EmailAddress that && localPart.equals(that.localPart)
+        && domain.equals(that.domain) && displayName.equals(that.displayName);
   }
 
   @Override public int hashCode() {
@@ -484,9 +489,8 @@ public final class EmailAddress {
 
   private static Parser<EmailAddress> makeParser() {
     var unquotedDisplayNameChars = DANGEROUS.or("<>;\\\"").not().precomputeForAscii();
-    Parser<String> unquotedAtom =
-        consecutive(unquotedDisplayNameChars, "unquoted display name")
-            .suchThat(n -> !(n.contains(",") && n.contains("@")), "unambiguous display name");
+    Parser<String> unquotedAtom = consecutive(unquotedDisplayNameChars, "unquoted display name")
+        .suchThat(n -> !(n.contains(",") && n.contains("@")), "unambiguous display name");
     Parser<AddrSpecAlike> bracketedAddress = ADDR_SPEC_ALIKE.between("<", ">");
     Parser<String> displayName =
         anyOf(unquotedAtom.map(String::trim), QUOTED).atLeastOnce(Joiner.on(' '));
@@ -495,14 +499,15 @@ public final class EmailAddress {
     // may be in a list.
     // If it's not in a list, the left-over comma or semicolon won't match anything
     // because we don't allow both ',' and '@' co-existing in display name anyways.
-    Parser<AddrSpecAlike> looksLikeAddrSpec =  ADDR_SPEC_ALIKE.notFollowedBy(
+    Parser<AddrSpecAlike> looksLikeAddrSpec = ADDR_SPEC_ALIKE.notFollowedBy(
         one(unquotedDisplayNameChars.or('"').and(noneOf(",;")), "display name char"),
         "part of display name");
     return anyOf(
         sequence(
             // optimization so that for the common case of user@company.com, we don't have to
             // backtrack to the sequence(displayName, bracketedAddress) rule.
-            looksLikeAddrSpec, bracketedAddress.orElse(null),
+            looksLikeAddrSpec,
+            bracketedAddress.orElse(null),
             (addrSpecOrDisplayName, bracketedOrNull) ->
                 bracketedOrNull == null
                     ? addrSpecOrDisplayName.toEmailAddressOrFail()
@@ -520,8 +525,7 @@ public final class EmailAddress {
   }
 
   private static boolean requiresQuoting(String name) {
-    return INLINE_WHITESPACE.isPrefixOf(name)
-        || INLINE_WHITESPACE.isSuffixOf(name)
+    return INLINE_WHITESPACE.isPrefixOf(name) || INLINE_WHITESPACE.isSuffixOf(name)
         || !ATEXT.or(INLINE_WHITESPACE).matchesAllOf(name)
         || Substring.consecutive(INLINE_WHITESPACE)
             .repeatedly()
@@ -609,7 +613,6 @@ public final class EmailAddress {
         },
         mapping(e -> (EmailAddress) e, toUnmodifiableList()));
   }
-
 
   @FormatMethod
   private static void checkArgument(
