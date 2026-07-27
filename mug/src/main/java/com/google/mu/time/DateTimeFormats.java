@@ -55,8 +55,8 @@ import com.google.mu.util.Substring;
 import com.google.mu.util.stream.BiStream;
 
 /**
- * Utility class with one-stop {@link Instant} and {@link ZonedDateTime} parsing for all common
- * date time strings, without needing a {@link DateTimeFormatter}:
+ * Utility class with one-stop {@link Instant} and {@link ZonedDateTime} parsing for all common date
+ * time strings, without needing a {@link DateTimeFormatter}:
  *
  * <pre>{@code
  * Instant timestamp = DateTimeFormats.parseToInstant(timestampString);
@@ -80,22 +80,22 @@ import com.google.mu.util.stream.BiStream;
  *     DateTimeFormats.formatOf("2023/12/09 Sat 10:00+08:00");
  * }</pre>
  *
- * <p>Most ISO 8601 formats are supported, except BASIC_ISO_DATE, ISO_WEEK_DATE ('2012-W48-6')
- * and ISO_ORDINAL_DATE ('2012-337'), which are rarely used.
+ * <p>Most ISO 8601 formats are supported, except BASIC_ISO_DATE, ISO_WEEK_DATE ('2012-W48-6') and
+ * ISO_ORDINAL_DATE ('2012-337'), which are rarely used.
  *
  * <p>For the date part of custom patterns, ambiguous examples like {@code 10/12/2024} or {@code
- * 1/2/yyyy} are not supported. You should use unambiguous examples like {@code 10/30/2024}
- * (which results in "MM/dd/yyyy"} or {@code 30/1/2024} (which results in "dd/M/yyyy}.
- * In addition, localized month names such as {@code Jan} or {@code March} are used, all natural orders
- * ({@code year month day}, {@code month day year} or {@code day month year}) are supported.
+ * 1/2/yyyy} are not supported. You should use unambiguous examples like {@code 10/30/2024} (which
+ * results in "MM/dd/yyyy"} or {@code 30/1/2024} (which results in "dd/M/yyyy}. In addition,
+ * localized month names such as {@code Jan} or {@code March} are used, all natural orders ({@code
+ * year month day}, {@code month day year} or {@code day month year}) are supported.
  *
  * <p>For the time part of custom patterns, only {@code HH:mm}, {@code HH:mm:ss} and {@code
  * HH:mm:ss.S} variants are supported (the S can be 1 to 9 digits). AM/PM and 12-hour numbers are
  * not supported. Though you can explicitly specify them together with placeholders (see below).
  *
  * <p>If the variant of the date time pattern you need exceeds the out-of-box support, you can
- * explicitly mix the {@link DateTimeFormatter} specifiers with example placeholders
- * (between a pair of pointy brackets) to be translated.
+ * explicitly mix the {@link DateTimeFormatter} specifiers with example placeholders (between a pair
+ * of pointy brackets) to be translated.
  *
  * <p>For example the following code uses the {@code dd}, {@code MM} and {@code yyyy} specifiers as
  * is but translates the {@code Tue} and {@code America/New_York} example snippets into {@code E}
@@ -120,22 +120,22 @@ public final class DateTimeFormats {
   private static final CharPredicate DELIMITER = anyOf(" ,;");
 
   /** Punctuation chars, such as '/', ':', '-' are essential part of the pattern syntax. */
-  private static final Substring.RepeatingPattern TOKENIZER =
-      Stream.of(consecutive(DIGIT), consecutive(ALPHA), first(DateTimeFormats::isSeparator))
-          .collect(firstOccurrence())
-          .repeatedly();
+  private static final Substring.RepeatingPattern TOKENIZER = Stream.of(
+          consecutive(DIGIT), consecutive(ALPHA), first(DateTimeFormats::isSeparator))
+      .collect(firstOccurrence())
+      .repeatedly();
+
   private static final Substring.RepeatingPattern PLACEHOLDERS =
       consecutive(noneOf("<>")).immediatelyBetween("<", INCLUSIVE, ">", INCLUSIVE).repeatedly();
 
-  private static final Map<List<?>, DateTimeFormatter> ISO_DATE_FORMATTERS =
-      BiStream.of(
+  private static final Map<List<?>, DateTimeFormatter> ISO_DATE_FORMATTERS = BiStream.of(
           forExample("2011-12-03"), DateTimeFormatter.ISO_LOCAL_DATE,
           forExample("2011-12-03+08:00"), DateTimeFormatter.ISO_DATE,
-          forExample("2011-12-03-08:00"), DateTimeFormatter.ISO_DATE).toMap();
+          forExample("2011-12-03-08:00"), DateTimeFormatter.ISO_DATE)
+      .toMap();
 
   /** These ISO formats all support optional nanoseconds in the format of ".nnnnnnnnn". */
-  private static final Map<List<?>, DateTimeFormatter> ISO_DATE_TIME_FORMATTERS =
-      BiStream.of(
+  private static final Map<List<?>, DateTimeFormatter> ISO_DATE_TIME_FORMATTERS = BiStream.of(
           forExample("10:00:00"), DateTimeFormatter.ISO_LOCAL_TIME,
           forExample("10:00:00+00:00"), DateTimeFormatter.ISO_TIME,
           forExample("2011-12-03T10:15:30"), DateTimeFormatter.ISO_LOCAL_DATE_TIME,
@@ -143,57 +143,53 @@ public final class DateTimeFormats {
           forExample("2011-12-03T10:15:30-01:00"), DateTimeFormatter.ISO_DATE_TIME,
           forExample("2011-12-03T10:15:30+01:00[Europe/Paris]"), DateTimeFormatter.ISO_DATE_TIME,
           forExample("2011-12-03T10:15:30-01:00[Europe/Paris]"), DateTimeFormatter.ISO_DATE_TIME,
-          forExample("2011-12-03T10:15:30Z"), DateTimeFormatter.ISO_INSTANT).toMap();
-
-  /** The day-of-week part is optional; the day-of-month can be 1 or 2 digits. */
-  private static final Map<List<?>, DateTimeFormatter> RFC_1123_FORMATTERS =
-      Stream.of(
-              "Tue, 1 Jun 2008 11:05:30 GMT",
-              "Tue, 10 Jun 2008 11:05:30 GMT",
-              "1 Jun 2008 11:05:30 GMT",
-              "10 Jun 2008 11:05:30 GMT",
-              "Tue, 1 Jun 2008 11:05:30 +0800",
-              "Tue, 1 Jun 2008 11:05:30 -0800",
-              "Tue, 10 Jun 2008 11:05:30 +0800",
-              "Tue, 10 Jun 2008 11:05:30 -0800",
-              "1 Jun 2008 11:05:30 +0800",
-              "10 Jun 2008 11:05:30 +0800")
-          .collect(toMap(DateTimeFormats::forExample, ex -> DateTimeFormatter.RFC_1123_DATE_TIME));
-
-  private static final Map<List<?>, String> LOCAL_DATE_PATTERNS = BiStream.<List<?>, String>builder()
-      .add(forExample("2011-12-03"), "yyyy-MM-dd")
-      .add(forExample("2011-12-3"), "yyyy-MM-d")
-      .add(forExample("2011/12/03"), "yyyy/MM/dd")
-      .add(forExample("2011/12/3"), "yyyy/MM/d")
-      .add(forExample("2011年2月1日"), "yyyy年M月d日")
-      .add(forExample("2011年12月1日"), "yyyy年MM月d日")
-      .add(forExample("2011年2月10日"), "yyyy年M月dd日")
-      .add(forExample("2011年12月11日"), "yyyy年MM月dd日")
-      .add(forExample("2011年"), "yyyy年")
-      .add(forExample("2月"), "M月")
-      .add(forExample("12月"), "MM月")
-      .add(forExample("3日"), "d日")
-      .add(forExample("13日"), "dd日")
-      .add(forExample("Jan 11 2011"), "LLL dd yyyy")
-      .add(forExample("Jan 1 2011"), "LLL d yyyy")
-      .add(forExample("11 Jan 2011"), "dd LLL yyyy")
-      .add(forExample("1 Jan 2011"), "d LLL yyyy")
-      .add(forExample("2011 Jan 1"), "yyyy LLL d")
-      .add(forExample("2011 Jan 11"), "yyyy LLL dd")
-      .add(forExample("January 11 2011"), "LLLL dd yyyy")
-      .add(forExample("January 1 2011"), "LLLL d yyyy")
-      .add(forExample("11 January 2011"), "dd LLLL yyyy")
-      .add(forExample("1 January 2011"), "d LLLL yyyy")
-      .add(forExample("2011 January 1"), "yyyy LLLL d")
-      .add(forExample("2011 January 11"), "yyyy LLLL dd")
-      .build()
+          forExample("2011-12-03T10:15:30Z"), DateTimeFormatter.ISO_INSTANT)
       .toMap();
 
-  private static final Map<List<?>, DateTimeFormatter> LOCAL_DATE_FORMATTERS =
-      BiStream.from(LOCAL_DATE_PATTERNS)
-          .mapValues((signature, p) -> inferLocaleIfNeeded(DateTimeFormatter.ofPattern(p), signature))
-          .append(forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE)
+  /** The day-of-week part is optional; the day-of-month can be 1 or 2 digits. */
+  private static final Map<List<?>, DateTimeFormatter> RFC_1123_FORMATTERS = Stream.of(
+          "Tue, 1 Jun 2008 11:05:30 GMT", "Tue, 10 Jun 2008 11:05:30 GMT",
+          "1 Jun 2008 11:05:30 GMT", "10 Jun 2008 11:05:30 GMT", "Tue, 1 Jun 2008 11:05:30 +0800",
+          "Tue, 1 Jun 2008 11:05:30 -0800", "Tue, 10 Jun 2008 11:05:30 +0800",
+          "Tue, 10 Jun 2008 11:05:30 -0800", "1 Jun 2008 11:05:30 +0800",
+          "10 Jun 2008 11:05:30 +0800")
+      .collect(toMap(DateTimeFormats::forExample, ex -> DateTimeFormatter.RFC_1123_DATE_TIME));
+
+  private static final Map<List<?>, String> LOCAL_DATE_PATTERNS =
+      BiStream.<List<?>, String>builder()
+          .add(forExample("2011-12-03"), "yyyy-MM-dd")
+          .add(forExample("2011-12-3"), "yyyy-MM-d")
+          .add(forExample("2011/12/03"), "yyyy/MM/dd")
+          .add(forExample("2011/12/3"), "yyyy/MM/d")
+          .add(forExample("2011年2月1日"), "yyyy年M月d日")
+          .add(forExample("2011年12月1日"), "yyyy年MM月d日")
+          .add(forExample("2011年2月10日"), "yyyy年M月dd日")
+          .add(forExample("2011年12月11日"), "yyyy年MM月dd日")
+          .add(forExample("2011年"), "yyyy年")
+          .add(forExample("2月"), "M月")
+          .add(forExample("12月"), "MM月")
+          .add(forExample("3日"), "d日")
+          .add(forExample("13日"), "dd日")
+          .add(forExample("Jan 11 2011"), "LLL dd yyyy")
+          .add(forExample("Jan 1 2011"), "LLL d yyyy")
+          .add(forExample("11 Jan 2011"), "dd LLL yyyy")
+          .add(forExample("1 Jan 2011"), "d LLL yyyy")
+          .add(forExample("2011 Jan 1"), "yyyy LLL d")
+          .add(forExample("2011 Jan 11"), "yyyy LLL dd")
+          .add(forExample("January 11 2011"), "LLLL dd yyyy")
+          .add(forExample("January 1 2011"), "LLLL d yyyy")
+          .add(forExample("11 January 2011"), "dd LLLL yyyy")
+          .add(forExample("1 January 2011"), "d LLLL yyyy")
+          .add(forExample("2011 January 1"), "yyyy LLLL d")
+          .add(forExample("2011 January 11"), "yyyy LLLL dd")
+          .build()
           .toMap();
+
+  private static final Map<List<?>, DateTimeFormatter> LOCAL_DATE_FORMATTERS = BiStream.from(
+          LOCAL_DATE_PATTERNS)
+      .mapValues((signature, p) -> inferLocaleIfNeeded(DateTimeFormatter.ofPattern(p), signature))
+      .append(forExample("20111203"), DateTimeFormatter.BASIC_ISO_DATE)
+      .toMap();
 
   private static final PrefixSearchTable<Object, String> PREFIX_TABLE =
       PrefixSearchTable.<Object, String>builder()
@@ -276,53 +272,53 @@ public final class DateTimeFormats {
     // Ignore the ".nanosecond" part of the time in ISO examples because all ISO
     // time formats allow the nanosecond part optionally, with 1 to 9 digits.
     return lookup(ISO_DATE_TIME_FORMATTERS, forExample(removeNanosecondsPart(example)))
-        .map(
-            fmt -> {
-              try {
-                fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
-              } catch (DateTimeParseException e) {
-                throw new DateTimeException("invalid date time example: " + example, e);
-              }
-              return fmt;
-            })
-        .orElseGet(
-            () -> {
-              AtomicInteger placeholderCount = new AtomicInteger();
-              String pattern =
-                  PLACEHOLDERS.replaceAllFrom(
-                      example,
-                      placeholder -> {
-                        placeholderCount.incrementAndGet();
-                        return inferDateTimePattern(placeholder.skip(1, 1).toString());
-                      });
-              try {
-                if (placeholderCount.get() > 0) {
-                  // There is at least 1 placeholder. The input isn't a pure datetime "example".
-                  // So we can't validate using parse().
-                  return inferLocaleIfNeeded(DateTimeFormatter.ofPattern(pattern), signature);
-                }
-                pattern = inferDateTimePattern(example, signature);
-                DateTimeFormatter fmt = inferLocaleIfNeeded(DateTimeFormatter.ofPattern(pattern), signature);
-                fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
-                return fmt;
-              } catch (DateTimeParseException e) {
-                throw new DateTimeException(
-                    "invalid date time example: " + example + " (" + pattern + ")", e);
-              }
-            });
+        .map(fmt -> {
+          try {
+            fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
+          } catch (DateTimeParseException e) {
+            throw new DateTimeException("invalid date time example: " + example, e);
+          }
+          return fmt;
+        })
+        .orElseGet(() -> {
+          AtomicInteger placeholderCount = new AtomicInteger();
+          String pattern = PLACEHOLDERS.replaceAllFrom(
+              example,
+              placeholder -> {
+                placeholderCount.incrementAndGet();
+                return inferDateTimePattern(placeholder.skip(1, 1).toString());
+              });
+          try {
+            if (placeholderCount.get() > 0) {
+              // There is at least 1 placeholder. The input isn't a pure datetime "example".
+              // So we can't validate using parse().
+              return inferLocaleIfNeeded(DateTimeFormatter.ofPattern(pattern), signature);
+            }
+            pattern = inferDateTimePattern(example, signature);
+            DateTimeFormatter fmt =
+                inferLocaleIfNeeded(DateTimeFormatter.ofPattern(pattern), signature);
+            fmt.withResolverStyle(ResolverStyle.STRICT).parse(example);
+            return fmt;
+          } catch (DateTimeParseException e) {
+            throw new DateTimeException(
+                "invalid date time example: " + example + " (" + pattern + ")", e);
+          }
+        });
   }
 
   private static <T> T parseDateTime(String dateTimeString, TemporalQuery<T> query) {
     List<?> signature = forExample(dateTimeString);
     return lookup(RFC_1123_FORMATTERS, signature)
         .orElseGet(() -> lookup(ISO_DATE_FORMATTERS, signature)
-        .orElseGet(() -> lookup(ISO_DATE_TIME_FORMATTERS, forExample(removeNanosecondsPart(dateTimeString)))
-        .orElseGet(() -> inferDateTimeFormatter(dateTimeString, signature))))
+            .orElseGet(() ->
+                lookup(ISO_DATE_TIME_FORMATTERS, forExample(removeNanosecondsPart(dateTimeString)))
+                    .orElseGet(() -> inferDateTimeFormatter(dateTimeString, signature))))
         .parse(dateTimeString, query);
   }
 
   private static DateTimeFormatter inferLocaleIfNeeded(DateTimeFormatter fmt, List<?> signature) {
-    if (signature.contains(Token.XINGQI) || signature.contains(Token.ZHOU) || signature.contains(Token.WU)) {
+    if (signature.contains(Token.XINGQI) || signature.contains(Token.ZHOU)
+        || signature.contains(Token.WU)) {
       return fmt.withLocale(Locale.CHINA);
     }
     if (signature.contains(Token.MONTH_ABBREVIATION) || signature.contains(Token.MONTH)
@@ -336,12 +332,12 @@ public final class DateTimeFormats {
   /**
    * Parses {@code dateString} as {@link LocalDate}.
    *
-   * <p>Acceptable formats include dates like "2024/04/11", "2024-04-11", "2024 April 11",
-   * "Apr 11 2024", "11 April 2024", "20240401", or even with "10/30/2024", "30/01/2024" etc.
-   * as long as it's not ambiguous.
+   * <p>Acceptable formats include dates like "2024/04/11", "2024-04-11", "2024 April 11", "Apr 11
+   * 2024", "11 April 2024", "20240401", or even with "10/30/2024", "30/01/2024" etc. as long as
+   * it's not ambiguous.
    *
-   * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
-   * better performance and earlier error report in case the format cannot be inferred.
+   * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get better
+   * performance and earlier error report in case the format cannot be inferred.
    *
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed to {@link LocalDate}
    * @since 8.0
@@ -356,14 +352,14 @@ public final class DateTimeFormats {
 
   /**
    * Parses {@code dateTimeString} to {@link Instant}. {@code dateTimeString} could be in the format
-   * of {@link DateTimeFormatter#ISO_INSTANT}, which is from {@link Instant#toString};
-   * or it could be any valid date time with zone name or zone offset.
+   * of {@link DateTimeFormatter#ISO_INSTANT}, which is from {@link Instant#toString}; or it could
+   * be any valid date time with zone name or zone offset.
    *
-   * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
-   * better performance and earlier error report in case the format cannot be inferred.
+   * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get better
+   * performance and earlier error report in case the format cannot be inferred.
    *
-   * @param dateTimeString can be the result of {@link Instant#toString}, or any other valid
-   *   date time with either zone name or UTC offset.
+   * @param dateTimeString can be the result of {@link Instant#toString}, or any other valid date
+   *     time with either zone name or UTC offset.
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link Instant}
    * @since 8.0
    */
@@ -372,11 +368,11 @@ public final class DateTimeFormats {
   }
 
   /**
-   * Parses {@code dateTimeString} to {@link ZonedDateTime} using heuristics in this class to
-   * infer the {@link DateTimeFormatter} for common formats.
+   * Parses {@code dateTimeString} to {@link ZonedDateTime} using heuristics in this class to infer
+   * the {@link DateTimeFormatter} for common formats.
    *
-   * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
-   * better performance and earlier error report in case the format cannot be inferred.
+   * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get better
+   * performance and earlier error report in case the format cannot be inferred.
    *
    * @param dateTimeString must be a string with valid date, time, and zone name or UTC offset
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link ZonedDateTime}
@@ -387,14 +383,14 @@ public final class DateTimeFormats {
   }
 
   /**
-   * Parses {@code dateTimeString} to {@link OffsetDateTime} using heuristics in this class to
-   * infer the {@link DateTimeFormatter} for common formats.
+   * Parses {@code dateTimeString} to {@link OffsetDateTime} using heuristics in this class to infer
+   * the {@link DateTimeFormatter} for common formats.
    *
-   * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get
-   * better performance and earlier error report in case the format cannot be inferred.
+   * <p>Prefer to pre-construct a {@link DateTimeFormatter} using {@link #formatOf} to get better
+   * performance and earlier error report in case the format cannot be inferred.
    *
-   * @param dateTimeString must be a string with valid date, time, and UTC offset
-   *   (cannot be zone name)
+   * @param dateTimeString must be a string with valid date, time, and UTC offset (cannot be zone
+   *     name)
    * @throws DateTimeException if {@code dateTimeString} cannot be parsed as {@link OffsetDateTime}
    * @since 8.0
    */
@@ -425,16 +421,13 @@ public final class DateTimeFormats {
         continue;
       }
 
-      int consumed =
-          PREFIX_TABLE
-              .getAll(remaining)
-              .collect(maxByKey(comparingInt(List::size)))
-              .map(
-                  (prefix, fmt) -> {
-                    builder.append(fmt);
-                    return prefix.size();
-                  })
-              .orElse(0);
+      int consumed = PREFIX_TABLE.getAll(remaining)
+          .collect(maxByKey(comparingInt(List::size)))
+          .map((prefix, fmt) -> {
+            builder.append(fmt);
+            return prefix.size();
+          })
+          .orElse(0);
       if (consumed <= 0) {
         consumed = LocalDateRule.resolve(signature)
             .map((prefix, fmt) -> {
@@ -466,24 +459,20 @@ public final class DateTimeFormats {
    * signature lists being: {@code [2, :, 2]} and {@code [2, :, 2, :, 2]} respectively.
    */
   private static List<?> forExample(String example) {
-    return TOKENIZER
-        .cut(example)
+    return TOKENIZER.cut(example)
         .filter(Substring.Match::isNotEmpty)
-        .map(
-            match -> {
-              if (DIGIT.matchesAnyOf(match)) {
-                return new Numeric(match);
-              }
-              String name = match.toString();
-              Token token = Token.ALL.get(name);
-              if (token != null) {
-                return token;
-              }
-              // Single-letter (including all punctuations) are reserved as format specifiers.
-              // Spaces and delimiters are ignored during prefix matching and retained literally.
-              // Unrecognized words are considered equivalent as they may be zone or geo names.
-              return name.length() == 1 || DELIMITER.matchesAnyOf(name) ? name : Token.WORD;
-            })
+        .map(match -> {
+          if (DIGIT.matchesAnyOf(match)) {
+            return new Numeric(match);
+          }
+          String name = match.toString();
+          Token token = Token.ALL.get(name);
+          if (token != null) return token;
+          // Single-letter (including all punctuations) are reserved as format specifiers.
+          // Spaces and delimiters are ignored during prefix matching and retained literally.
+          // Unrecognized words are considered equivalent as they may be zone or geo names.
+          return name.length() == 1 || DELIMITER.matchesAnyOf(name) ? name : Token.WORD;
+        })
         .collect(toList());
   }
 
@@ -498,34 +487,29 @@ public final class DateTimeFormats {
 
   private static boolean isSeparator(char c) {
     int type = Character.getType(c);
-    return Character.isWhitespace(c) ||
-        type == Character.INITIAL_QUOTE_PUNCTUATION ||
-        type == Character.FINAL_QUOTE_PUNCTUATION ||
-        type == Character.DASH_PUNCTUATION ||
-        type == Character.START_PUNCTUATION ||
-        type == Character.END_PUNCTUATION ||
-        type == Character.CONNECTOR_PUNCTUATION ||
-        type == Character.OTHER_PUNCTUATION;
-}
+    return Character.isWhitespace(c) || type == Character.INITIAL_QUOTE_PUNCTUATION
+        || type == Character.FINAL_QUOTE_PUNCTUATION || type == Character.DASH_PUNCTUATION
+        || type == Character.START_PUNCTUATION || type == Character.END_PUNCTUATION
+        || type == Character.CONNECTOR_PUNCTUATION || type == Character.OTHER_PUNCTUATION;
+  }
 
   private static final class LocalDateRule {
     private static final PrefixSearchTable<Object, List<LocalDateRule>> RESOLUTION_TABLE =
         PrefixSearchTable.<Object, List<LocalDateRule>>builder()
-            .add(
-                forExample("10-30-2014"),
-                asList(monthFirst("MM-dd-yyyy"), dayFirst("dd-MM-yyyy")))
+            .add(forExample("10-30-2014"), asList(monthFirst("MM-dd-yyyy"), dayFirst("dd-MM-yyyy")))
             .add(forExample("1-30-2014"), asList(monthFirst("M-dd-yyyy")))
             .add(forExample("30-1-2014"), asList(dayFirst("dd-M-yyyy")))
-            .add(
-                forExample("10/30/2014"),
-                asList(monthFirst("MM/dd/yyyy"), dayFirst("dd/MM/yyyy")))
+            .add(forExample("10/30/2014"), asList(monthFirst("MM/dd/yyyy"), dayFirst("dd/MM/yyyy")))
             .add(forExample("1/30/2014"), asList(monthFirst("M/dd/yyyy")))
             .add(forExample("30/1/2014"), asList(dayFirst("dd/M/yyyy")))
             .build();
 
     static BiOptional<List<Object>, String> resolve(List<?> signature) {
-      return RESOLUTION_TABLE.getAll(signature)
-          .flatMapValues(rules -> rules.stream().filter(rule -> rule.predicate.test(signature)).map(rule -> rule.format))
+      return RESOLUTION_TABLE
+          .getAll(signature)
+          .flatMapValues(rules -> rules.stream()
+              .filter(rule -> rule.predicate.test(signature))
+              .map(rule -> rule.format))
           .findFirst();
     }
 
@@ -563,12 +547,11 @@ public final class DateTimeFormats {
           && likelyDayOfMonth(numericParts.get(1).digits);
     }
 
-
     private static List<Numeric> filterNumeric(List<?> signature) {
       return signature.stream()
-              .filter(part -> part instanceof Numeric)
-              .map(Numeric.class::cast)
-              .collect(toList());
+          .filter(part -> part instanceof Numeric)
+          .map(Numeric.class::cast)
+          .collect(toList());
     }
 
     private static boolean likelyDayOfMonth(String digits) {
@@ -606,31 +589,20 @@ public final class DateTimeFormats {
   }
 
   /**
-   * Words listed for the same token enum are considered equivalent. That is, you can use "Fri"
-   * in the example pattern and it will match "Mon" (but won't match "Monday" as it belongs to
-   * a different token enum.
+   * Words listed for the same token enum are considered equivalent. That is, you can use "Fri" in
+   * the example pattern and it will match "Mon" (but won't match "Monday" as it belongs to a
+   * different token enum.
    */
   private enum Token {
     WEEKDAY_ABBREVIATION("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
-    WEEKDAY(
-        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
+    WEEKDAY("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"),
     XINGQI("星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"),
     ZHOU("周一", "周二", "周三", "周四", "周五", "周六", "周日"),
     WEEKDAY_CODES("E", "EE", "EEE", "EEEE"),
     MONTH_ABBREVIATION("Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
     MONTH(
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December"),
+        "January", "February", "March", "April", "May", "June", "July", "August", "September",
+        "October", "November", "December"),
     MONTH_CODES("L", "LL", "LLL", "LLLL"),
     YEAR_CODES("yyyy", "YYYY"),
     DAY_CODES("dd", "d"),
@@ -650,54 +622,22 @@ public final class DateTimeFormats {
         "CHUT", "CIST", "CIT", "CKT", "CLST", "CLT", "CST", "CVT", "CWST", "CXT", "ChST", "DAVT",
         "DDUT", "DFT", "DUT", "EASST", "EAT", "ECT", "EDT", "EEDT", "EEST", "EET", "EGST", "EGT",
         "EIT", "EST", "FET", "FJT", "FKST", "FKT", "FNT", "GALT", "GAMT", "GFT", "GMT", "GST",
-        "GYT", "HADT", "HAEC", "HAST", "HDT", "HKT", "HMT", "HNE", "HOVT", "HST", "ICT", "IDT", "IOT",
-        "IRDT", "IRKT", "IRST", "IST", "JST", "KGT", "KOST", "KRAT", "KST", "LHST", "LINT", "MAGT",
-        "MAWT", "MDT", "MEST", "MET", "MEZ", "MHT", "MMT", "MSK", "MST", "MUT", "MVT", "MYT", "NCT", "NDT",
-        "NFT", "NPT", "NST", "NUT", "NZDT", "NZST", "NZT", "OMST", "ORAT", "PDT", "PETT", "PGT",
-        "PHOT", "PHT", "PKT", "PMDT", "PMST", "PONT", "PST", "RET", "ROTT", "SAKT", "SAMT", "SAST",
-        "SBT", "SCT", "SGT", "SLT", "SRT", "SST", "SYOT", "TAHT", "TFT", "THA", "TJT", "TKT", "TLT",
-        "TMT", "TVT", "UCT", "ULAT", "UTC", "UYST", "UYT", "UZT", "VLAT", "VOLT", "VOST", "VUT",
-        "WAKT", "WAST", "WAT", "WEDT", "WEST", "WET", "WIB", "WIT", "WITA", "WST", "YAKT", "YEKT",
-        "YET", "YKT", "YST"),
+        "GYT", "HADT", "HAEC", "HAST", "HDT", "HKT", "HMT", "HNE", "HOVT", "HST", "ICT", "IDT",
+        "IOT", "IRDT", "IRKT", "IRST", "IST", "JST", "KGT", "KOST", "KRAT", "KST", "LHST", "LINT",
+        "MAGT", "MAWT", "MDT", "MEST", "MET", "MEZ", "MHT", "MMT", "MSK", "MST", "MUT", "MVT",
+        "MYT", "NCT", "NDT", "NFT", "NPT", "NST", "NUT", "NZDT", "NZST", "NZT", "OMST", "ORAT",
+        "PDT", "PETT", "PGT", "PHOT", "PHT", "PKT", "PMDT", "PMST", "PONT", "PST", "RET", "ROTT",
+        "SAKT", "SAMT", "SAST", "SBT", "SCT", "SGT", "SLT", "SRT", "SST", "SYOT", "TAHT", "TFT",
+        "THA", "TJT", "TKT", "TLT", "TMT", "TVT", "UCT", "ULAT", "UTC", "UYST", "UYT", "UZT",
+        "VLAT", "VOLT", "VOST", "VUT", "WAKT", "WAST", "WAT", "WEDT", "WEST", "WET", "WIB", "WIT",
+        "WITA", "WST", "YAKT", "YEKT", "YET", "YKT", "YST"),
     ZONE_CODES("VV", "z", "zz", "zzz", "zzzz", "ZZ", "ZZZ", "ZZZZ", "ZZZZZ", "x", "X", "O", "OOOO"),
     REGION(
-        "Africa",
-        "America",
-        "Antarctica",
-        "Arctic",
-        "Asia",
-        "Atlantic",
-        "Australia",
-        "Brazil",
-        "Canada",
-        "Chile",
-        "Cuba",
-        "Egypt",
-        "Eire",
-        "Europe",
-        "GB",
-        "Greenwich",
-        "Hongkong",
-        "Iceland",
-        "Indian",
-        "Iran",
-        "Israel",
-        "Jamaica",
-        "Japan",
-        "Kwajalein",
-        "Libya",
-        "Mexico",
-        "Mideast",
-        "Navajo",
-        "Pacific",
-        "Poland",
-        "Portugal",
-        "Singapore",
-        "SystemV",
-        "Turkey",
-        "US",
-        "Universal",
-        "Zulu"),
+        "Africa", "America", "Antarctica", "Arctic", "Asia", "Atlantic", "Australia", "Brazil",
+        "Canada", "Chile", "Cuba", "Egypt", "Eire", "Europe", "GB", "Greenwich", "Hongkong",
+        "Iceland", "Indian", "Iran", "Israel", "Jamaica", "Japan", "Kwajalein", "Libya", "Mexico",
+        "Mideast", "Navajo", "Pacific", "Poland", "Portugal", "Singapore", "SystemV", "Turkey",
+        "US", "Universal", "Zulu"),
     NIAN("年"),
     YUE("月"),
     RI("日"),
@@ -708,9 +648,7 @@ public final class DateTimeFormats {
     WORD;
 
     static final Map<String, Token> ALL =
-        biStream(Arrays.stream(Token.values()))
-            .flatMapKeys(token -> token.names.stream())
-            .toMap();
+        biStream(Arrays.stream(Token.values())).flatMapKeys(token -> token.names.stream()).toMap();
 
     @SuppressWarnings("ImmutableEnumChecker")
     private final Set<String> names;
