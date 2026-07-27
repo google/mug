@@ -56,9 +56,7 @@ public record MarkdownLink(String label, String url) {
   }
 
   private static final Parser<String>.OrEmpty ESCAPED =
-      one("[!\"#$%&'()*+,-./:;<=>?@[]^_`{|}~\\]")
-          .map(String::valueOf)
-          .orElse("\\");  // if the char isn't escapable
+      one("[!\"#$%&'()*+,-./:;<=>?@[]^_`{|}~\\]").source().orElse("\\");
 
   /**
    * Parser for a {@link MarkdownLink}.
