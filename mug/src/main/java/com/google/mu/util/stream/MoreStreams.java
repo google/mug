@@ -343,7 +343,9 @@ public final class MoreStreams {
   public static <T> Stream<List<T>> dice(Stream<? extends T> stream, int maxSize) {
     requireNonNull(stream);
     if (maxSize <= 0) throw new IllegalArgumentException();
-    return mapBySpliterator(stream, Spliterator.NONNULL, it -> dice(it, maxSize));
+    Stream<List<T>> mapped = StreamSupport.stream(
+        () -> dice(stream.spliterator(), maxSize), Spliterator.NONNULL, stream.isParallel());
+    return mapped.onClose(stream::close);
   }
 
   /**
@@ -530,7 +532,7 @@ public final class MoreStreams {
     Spliterator<T> spliterator = stream.spliterator();
     requireNonNull(consumer);
     for (int i = 0; i < n && spliterator.tryAdvance(consumer); i++) {}
-    return StreamSupport.stream(spliterator, /* parallel */ false);
+    return StreamSupport.stream(spliterator, /* parallel= */ false);
   }
 
   /**
@@ -539,15 +541,6 @@ public final class MoreStreams {
    */
   static <T, R> Collector<T, ?, R> collectingAndThen(Function<Stream<T>, R> finisher) {
     return Collectors.collectingAndThen(toStream(), finisher);
-  }
-
-  static <F, T> Stream<T> mapBySpliterator(
-      Stream<F> stream, int characteristics,
-      Function<? super Spliterator<F>, ? extends Spliterator<T>> mapper) {
-    requireNonNull(mapper);
-    Stream<T> mapped = StreamSupport.stream(
-        () -> mapper.apply(stream.spliterator()), characteristics, stream.isParallel());
-    return mapped.onClose(stream::close);
   }
 
   /** Copying input elements into another stream. */
@@ -565,12 +558,6 @@ public final class MoreStreams {
   private static <T> BiPredicate<T, T> by(Function<? super T, ?> keyFunction) {
     requireNonNull(keyFunction);
     return (a, b) -> Objects.equals(keyFunction.apply(a), keyFunction.apply(b));
-  }
-
-  private static <F, T> T splitThenWrap(
-      Spliterator<F> from, Function<? super Spliterator<F>, ? extends T> wrapper) {
-    Spliterator<F> it = from.trySplit();
-    return it == null ? null : wrapper.apply(it);
   }
 
   private static final class DicedSpliterator<T> implements Spliterator<List<T>> {
@@ -592,7 +579,8 @@ public final class MoreStreams {
     }
 
     @Override public Spliterator<List<T>> trySplit() {
-      return splitThenWrap(underlying, it -> new DicedSpliterator<>(it, maxSize));
+      Spliterator<? extends T> it = underlying.trySplit();
+      return it == null ? null : new DicedSpliterator<>(it, maxSize);
     }
 
     @Override public long estimateSize() {
