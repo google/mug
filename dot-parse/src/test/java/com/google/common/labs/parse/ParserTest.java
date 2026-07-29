@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Range;
 import com.google.common.labs.parse.Parser.ParseException;
 import com.google.common.testing.NullPointerTester;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -5166,6 +5167,224 @@ public class ParserTest {
   @Test
   public void hexDigits_negative_throws() {
     assertThrows(IllegalArgumentException.class, () -> hexDigits(-1));
+  }
+
+  @Test
+  public void unsignedDecimal_matchesZero() {
+    assertThat(Parser.unsignedDecimal().parse("0")).isEqualTo("0");
+  }
+
+  @Test
+  public void unsignedDecimal_matchesValidIntegers() {
+    assertThat(Parser.unsignedDecimal().parse("1")).isEqualTo("1");
+    assertThat(Parser.unsignedDecimal().parse("123")).isEqualTo("123");
+  }
+
+  @Test
+  public void unsignedDecimal_matchesValidFloats() {
+    assertThat(Parser.unsignedDecimal().parse("0.0")).isEqualTo("0.0");
+    assertThat(Parser.unsignedDecimal().parse("0.5")).isEqualTo("0.5");
+    assertThat(Parser.unsignedDecimal().parse("1.23")).isEqualTo("1.23");
+    assertThat(Parser.unsignedDecimal().parse("0.007")).isEqualTo("0.007");
+  }
+
+  @Test
+  public void unsignedDecimal_rejectsMinusSign() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> Parser.unsignedDecimal().parse("-1"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <digits>, encountered:\s
+                -1
+                ^
+            """);
+  }
+
+  @Test
+  public void unsignedDecimal_rejectsPlusSign() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> Parser.unsignedDecimal().parse("+1"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <digits>, encountered:\s
+                +1
+                ^
+            """);
+  }
+
+  @Test
+  public void unsignedDecimal_rejectsLeadingDot() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> Parser.unsignedDecimal().parse(".5"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <digits>, encountered:\s
+                .5
+                ^
+            """);
+  }
+
+  @Test
+  public void unsignedDecimal_rejectsTrailingDot() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> Parser.unsignedDecimal().parse("123."));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:5: expecting <digits>, encountered:\s
+                123.
+                    ^
+            """);
+  }
+
+  @Test
+  public void unsignedDecimal_rejectsOnlyDot() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> Parser.unsignedDecimal().parse("."));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <digits>, encountered:\s
+                .
+                ^
+            """);
+  }
+
+  @Test
+  public void unsignedDecimal_rejectsRedundantLeadingZeroInteger() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> Parser.unsignedDecimal().parse("05"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <decimal point number>, encountered:\s
+                05
+                ^
+            """);
+  }
+
+  @Test
+  public void unsignedDecimal_rejectsRedundantLeadingZeroFloat() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> Parser.unsignedDecimal().parse("00.5"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <decimal point number>, encountered:\s
+                00.5
+                ^
+            """);
+  }
+
+  @Test
+  public void unsignedDecimal_rejectsMultipleDots() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> Parser.unsignedDecimal().parse("1.2.3"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <EOF>, encountered:\s
+                1.2.3
+                   ^
+            """);
+  }
+
+  @Test
+  public void unsignedDecimal_rejectsDotsInARow() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> Parser.unsignedDecimal().parse("1..2"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting <digits>, encountered:\s
+                1..2
+                  ^
+            """);
+  }
+
+  @Test
+  public void unsignedDecimal_rejectsScientificNotation() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> Parser.unsignedDecimal().parse("1.2e3"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <EOF>, encountered:\s
+                1.2e3
+                   ^
+            """);
+  }
+
+  @Test
+  public void unsignedDecimal_rejectsAlphabetic() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> Parser.unsignedDecimal().parse("a"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <digits>, encountered:\s
+                a
+                ^
+            """);
+  }
+
+  @Test
+  public void unsignedDecimal_rejectsEmptyString() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> Parser.unsignedDecimal().parse(""));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <digits>, encountered:\s
+                <EOF>
+                ^
+            """);
+  }
+
+  @Test
+  public void unsignedDecimal_rangeParsingSuccess() {
+    Parser<Range<String>> rangeParser =
+        sequence(Parser.unsignedDecimal().followedBy(".."), Parser.unsignedDecimal(), Range::closed)
+            .between("[", "]");
+
+    // This successfully parses because unsignedDecimal() is non-greedy on dot.
+    assertThat(rangeParser.parse("[1.0..2.0]")).isEqualTo(Range.closed("1.0", "2.0"));
+  }
+
+  @Test
+  public void unsignedDecimal_skippingWhitespace() {
+    // Normal parsing without space succeeds
+    assertThat(Parser.unsignedDecimal().parseSkipping(whitespace(), "0.1")).isEqualTo("0.1");
+
+    // But parsing with internal spaces "0 . 1" fails because the optional decimal fraction
+    // backtracks, matching "0" and then expecting EOF at the dot.
+    ParseException thrown =
+        assertThrows(
+            ParseException.class,
+            () -> Parser.unsignedDecimal().parseSkipping(whitespace(), "0 . 1"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting <EOF>, encountered:\s
+                0 . 1
+                  ^
+            """);
   }
 
   @Test

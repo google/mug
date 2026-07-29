@@ -311,6 +311,23 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
+   * Matches a string in the format of a decimal point number such as {@code "123"} or {@code
+   * "0.5"}.
+   *
+   * <p>Note that it doesn't match positive or negative signs, and leading zero is only allowed when
+   * the number is a fraction smaller than 1.
+   *
+   * @since 10.8
+   */
+  public static Parser<String> unsignedDecimal() {
+    return literally(digits(), one('.').followedBy(digits()).optional())
+        .source()
+        .suchThat(
+            s -> !s.startsWith("0") || s.startsWith("0.") || s.equals("0"),
+            "decimal point number");
+  }
+
+  /**
    * Returns a parser that finds the first {@code needle} string that may start from the current
    * position or after any number of characters.
    *
