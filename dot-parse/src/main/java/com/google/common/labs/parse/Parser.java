@@ -320,11 +320,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.8
    */
   public static Parser<String> unsignedDecimal() {
-    return literally(digits(), one('.').followedBy(digits()).optional())
-        .source()
-        .suchThat(
-            s -> !s.startsWith("0") || s.startsWith("0.") || s.equals("0"),
-            "decimal point number");
+    return Constants.UNSIGNED_DECIMAL;
   }
 
   /**
@@ -2735,6 +2731,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private interface Constants {
     static Parser<String> DIGITS = consecutive(CharacterSet.DECIMAL, "digits");
     static Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
+    static Parser<String> UNSIGNED_DECIMAL =
+        literally(DIGITS, one('.').followedBy(DIGITS).optional())
+            .source()
+            .suchThat(
+                s -> !s.startsWith("0") || s.startsWith("0.") || s.equals("0"),
+                "decimal point number");
   }
 
   Parser() {}
