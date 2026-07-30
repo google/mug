@@ -86,7 +86,7 @@ import java.util.stream.Stream;
  */
 @ThreadSafe
 public abstract non-sealed class Parser<T> implements Production<T> {
-  static final Set<String> EMPTY_PREFIX = Set.of("");
+  private static final Set<String> EMPTY_PREFIX = Set.of("");
 
   /**
    * Only use in context where input consumption is guaranteed. Do not use within a loop, like
