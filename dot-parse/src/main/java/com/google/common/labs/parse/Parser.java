@@ -39,6 +39,16 @@ import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+import com.google.errorprone.annotations.ThreadSafe;
+import com.google.errorprone.annotations.concurrent.LazyInit;
+import com.google.mu.function.Function4;
+import com.google.mu.function.ObjInt2Function;
+import com.google.mu.function.TriFunction;
+import com.google.mu.util.Both;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiStream;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.AbstractMap;
@@ -58,17 +68,6 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
-import com.google.errorprone.annotations.ThreadSafe;
-import com.google.errorprone.annotations.concurrent.LazyInit;
-import com.google.mu.function.Function4;
-import com.google.mu.function.ObjInt2Function;
-import com.google.mu.function.TriFunction;
-import com.google.mu.util.Both;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
-import com.google.mu.util.stream.BiCollector;
-import com.google.mu.util.stream.BiStream;
-
 /**
  * A simple recursive descent parser combinator intended to parse simple grammars such as regex, csv
  * format string patterns etc.
@@ -78,11 +77,11 @@ import com.google.mu.util.stream.BiStream;
  * many() or recursive grammar) is made impossible by requiring all parsers to consume at least one
  * character. Optional suffix is achieved through using the built-in combinators such as {@link
  * #optionallyFollowedBy} or {@link OperatorTable} if you have multiple operators; you can also use
- * the {@link #zeroOrMore()}, {@link #zeroOrMoreDelimitedBy(String)}, {@link #orElse} and {@link #optional}
- * fluent chains.
+ * the {@link #zeroOrMore()}, {@link #zeroOrMoreDelimitedBy(String)}, {@link #orElse} and {@link
+ * #optional} fluent chains.
  *
- * <p>For simplicity, {@link #or or()} and {@link #anyOf anyOf()} will always backtrack upon failure. But it's
- * more efficient to factor out common left prefix. For example instead of {@code
+ * <p>For simplicity, {@link #or or()} and {@link #anyOf anyOf()} will always backtrack upon
+ * failure. But it's more efficient to factor out common left prefix. For example instead of {@code
  * anyOf(expr.followedBy(";"), expr)}, use {@code expr.optionallyFollowedBy(";")} instead.
  */
 @ThreadSafe
@@ -93,15 +92,16 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * Only use in context where input consumption is guaranteed. Do not use within a loop, like
    * atLeastOnce(), zeroOrMore()!
    */
-  private static final Parser<Void> UNSAFE_EOF = new Parser<>() {
-    @Override MatchResult<Void> skipAndMatch(
-        Parser<?> skip, CharInput input, int start, ErrorContext context) {
-      start = skipIfAny(skip, input, start);
-      return input.isEof(start)
-          ? new MatchResult.Success<>(start, start, null)
-          : context.expecting("EOF", start);
-    }
-  };
+  private static final Parser<Void> UNSAFE_EOF =
+      new Parser<>() {
+        @Override MatchResult<Void> skipAndMatch(
+            Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          start = skipIfAny(skip, input, start);
+          return input.isEof(start)
+              ? new MatchResult.Success<>(start, start, null)
+              : context.expecting("EOF", start);
+        }
+      };
 
   /**
    * Matches the given character {@code c}.
@@ -128,18 +128,19 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <p>For example: {@code one("[a-z]")} is equivalent to {@code one(range('a', 'z'))}.
    *
-   * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
-   * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
+   * <p>Implementation Note: regex isn't used during parsing. The character class string is
+   * translated to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at
+   * construction time.
    *
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   *        <p>Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
-   *        '[' and ']' can all be included inside the outer pair of brackets.
-   *        The '-' character is also treated as literal, as long as not placed at the place of a range.
-   *        <p>You can also use {@code '^'} to get negative character class like:
-   *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
-   *        <p>It's <em>strongly recommended</em> to install Google ErrorProne and mug-errorprone in your
-   *        annotation processor path so that incorrect character class syntax will be caught
-   *        at compile-time.
+   *     <p>Starting v10.6, literal backslash ({@code "\\"} in Java source code literal), '[' and
+   *     ']' can all be included inside the outer pair of brackets. The '-' character is also
+   *     treated as literal, as long as not placed at the place of a range.
+   *     <p>You can also use {@code '^'} to get negative character class like: {@code
+   *     one("[^a-zA-Z]")}, which is any non-alphabet character.
+   *     <p>It's <em>strongly recommended</em> to install Google ErrorProne and mug-errorprone in
+   *     your annotation processor path so that incorrect character class syntax will be caught at
+   *     compile-time.
    * @since 10.2
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
@@ -213,20 +214,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /**
    * Matches one or more consecutive characters contained in {@code characterClass}.
    *
-   * <p>For example: {@code consecutive("[0-9]")} is equivalent to {@code consecutive(range('0', '9'))}.
+   * <p>For example: {@code consecutive("[0-9]")} is equivalent to {@code consecutive(range('0',
+   * '9'))}.
    *
-   * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
-   * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
+   * <p>Implementation Note: regex isn't used during parsing. The character class string is
+   * translated to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at
+   * construction time.
    *
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   *        <p>Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
-   *        '[' and ']' can all be included inside the outer pair of brackets.
-   *        The '-' character is also treated as literal, as long as not placed at the place of a range.
-   *        <p>You can also use {@code '^'} to get negative character class like:
-   *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
-   *        <p>It's <em>strongly recommended</em> to install Google ErrorProne and mug-errorprone in your
-   *        annotation processor path so that incorrect character class syntax will be caught
-   *        at compile-time.
+   *     <p>Starting v10.6, literal backslash ({@code "\\"} in Java source code literal), '[' and
+   *     ']' can all be included inside the outer pair of brackets. The '-' character is also
+   *     treated as literal, as long as not placed at the place of a range.
+   *     <p>You can also use {@code '^'} to get negative character class like: {@code
+   *     one("[^a-zA-Z]")}, which is any non-alphabet character.
+   *     <p>It's <em>strongly recommended</em> to install Google ErrorProne and mug-errorprone in
+   *     your annotation processor path so that incorrect character class syntax will be caught at
+   *     compile-time.
    * @since 10.2
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
@@ -311,28 +314,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Matches a string in the format of a decimal point number such as {@code "123"} or {@code
-   * "0.5"}.
-   *
-   * <p>Note that it doesn't match positive or negative signs, and leading zero is only allowed when
-   * the number is a fraction smaller than 1.
-   *
-   * @since 10.8
-   */
-  public static Parser<String> unsignedDecimal() {
-    return Constants.UNSIGNED_DECIMAL;
-  }
-
-  /**
    * Returns a parser that finds the first {@code needle} string that may start from the current
    * position or after any number of characters.
    *
    * <p>Useful when you need to skip characters until a particular anchor point, something awkward
    * to express in regex.
    *
-   * <p>For example, markdown supports using any number of backticks to start a code block. The
-   * code block then ends with the same number of backticks. You can parse it trivially using
-   * {@code first()}:
+   * <p>For example, markdown supports using any number of backticks to start a code block. The code
+   * block then ends with the same number of backticks. You can parse it trivially using {@code
+   * first()}:
    *
    * <pre>{@code
    * import static com.google.mu.util.CharPredicate.is;
@@ -381,8 +371,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /**
    * Matches a literal {@code string} case insensitively.
    *
-   * <p>If you need to access the input substring that matched case insensitively,
-   * consider using {@code .source()}.
+   * <p>If you need to access the input substring that matched case insensitively, consider using
+   * {@code .source()}.
    *
    * @since 9.9.3
    */
@@ -406,8 +396,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /**
    * {@code caseInsensitiveWord("or")} matches "Or" and "OR", but not "orange".
    *
-   * <p>If you need to access the input substring that matched case insensitively,
-   * consider using {@code .source()}.
+   * <p>If you need to access the input substring that matched case insensitively, consider using
+   * {@code .source()}.
    *
    * @since 9.9.3
    */
@@ -453,9 +443,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           @Override MatchResult<String> skipAndMatch(
               Parser<?> skip, CharInput input, int start, ErrorContext context) {
             return switch (after.skipAndMatch(skip, input, start, context)) {
-              case MatchResult.Success<?> success ->
-                  new MatchResult.Success<>(
-                      start, success.tail, input.snippet(start, success.head - start));
+              case MatchResult.Success<?> success -> new MatchResult.Success<>(
+                  start, success.tail, input.snippet(start, success.head - start));
               case MatchResult.Failure<?> failure -> failure.safeCast();
             };
           }
@@ -523,15 +512,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Matches the characters nested by {@code before} and {@code after}, supporting balanced
-   * nesting, and returns the nested string in between.
+   * Matches the characters nested by {@code before} and {@code after}, supporting balanced nesting,
+   * and returns the nested string in between.
    *
    * <p>Unlike {@link #quotedBy(String, String)}, which stops at the first occurrence of the {@code
    * after} delimiter, {@code nestedBy()} tracks the nesting depth of the {@code before} and {@code
    * after} delimiters and only succeeds when the nesting is balanced.
    *
-   * <p>For example, {@code nestedBy("(", ")").parse("(a(b)c)")} returns {@code "a(b)c"}.
-   * In contrast, {@code quotedBy("(", ")")} will match {@code "(a(b)"}.
+   * <p>For example, {@code nestedBy("(", ")").parse("(a(b)c)")} returns {@code "a(b)c"}. In
+   * contrast, {@code quotedBy("(", ")")} will match {@code "(a(b)"}.
    *
    * <p>Does not support escaping. If the delimiters can be escaped by backslashes, use {@link
    * #nestedByWithEscapes} instead.
@@ -541,29 +530,30 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public static Parser<String> nestedBy(String before, String after) {
     checkArgument(!after.isEmpty(), "after cannot be empty");
     checkArgument(!before.equals(after), "before and after must be different for nesting");
-    return string(before).then(
-        new Parser<String>() {
-          @Override MatchResult<String> skipAndMatch(
-              Parser<?> skip, CharInput input, final int start, ErrorContext context) {
-            for (int index = start, depth = 1; ; ) {
-              if (input.isEof(index)) {
-                return context.expecting(after, index); // Unclosed block
-              }
-              if (input.startsWith(after, index)) {
-                if (--depth == 0) {
-                  return new MatchResult.Success<>(
-                      start,  index + after.length(), input.snippet(start, index - start));
+    return string(before)
+        .then(
+            new Parser<String>() {
+              @Override MatchResult<String> skipAndMatch(
+                  Parser<?> skip, CharInput input, final int start, ErrorContext context) {
+                for (int index = start, depth = 1; ; ) {
+                  if (input.isEof(index)) {
+                    return context.expecting(after, index); // Unclosed block
+                  }
+                  if (input.startsWith(after, index)) {
+                    if (--depth == 0) {
+                      return new MatchResult.Success<>(
+                          start, index + after.length(), input.snippet(start, index - start));
+                    }
+                    index += after.length();
+                  } else if (input.startsWith(before, index)) {
+                    depth++;
+                    index += before.length();
+                  } else {
+                    index++;
+                  }
                 }
-                index += after.length();
-              } else if (input.startsWith(before, index)) {
-                depth++;
-                index += before.length();
-              } else {
-                index++;
               }
-            }
-          }
-        });
+            });
   }
 
   /**
@@ -595,40 +585,42 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(!Character.isSurrogate(after), "after cannot be a surrogate character");
     String suffix = Character.toString(after);
     return one(before).then(
-        new Parser<String>() {
-          @Override MatchResult<String> skipAndMatch(
-              Parser<?> skip, CharInput input, final int start, ErrorContext context) {
-            StringBuilder builder = new StringBuilder();
-            for (int index = start, depth = 1; ; ) {
-              if (input.isEof(index)) {
-                return context.expecting(suffix, index); // Unclosed block
-              }
-              char c = input.charAt(index++);
-              if (c == after) {
-                if (--depth == 0) {
-                  return new MatchResult.Success<>(start, index, builder.toString());
-                }
-              } else if (c == before) {
-                depth++;
-              } else if (c == '\\') {
-                switch (followingEscape.skipAndMatch(null, input, index, context)) {
-                  case MatchResult.Success(int head, int tail, CharSequence value) -> {
-                    builder.append(value);
-                    index = tail;
-                    continue;
+            new Parser<String>() {
+              @Override MatchResult<String> skipAndMatch(
+                  Parser<?> skip, CharInput input, final int start, ErrorContext context) {
+                StringBuilder builder = new StringBuilder();
+                for (int index = start, depth = 1; ; ) {
+                  if (input.isEof(index)) {
+                    return context.expecting(suffix, index); // Unclosed block
                   }
-                  case MatchResult.Failure<?> failure -> {
-                    return failure.safeCast();
+                  char c = input.charAt(index++);
+                  if (c == after) {
+                    if (--depth == 0) {
+                      return new MatchResult.Success<>(start, index, builder.toString());
+                    }
+                  } else if (c == before) {
+                    depth++;
+                  } else if (c == '\\') {
+                    switch (followingEscape.skipAndMatch(null, input, index, context)) {
+                      case MatchResult.Success(int head, int tail, CharSequence value) -> {
+                        builder.append(value);
+                        index = tail;
+                        continue;
+                      }
+                      case MatchResult.Failure<?> failure -> {
+                        return failure.safeCast();
+                      }
+                    }
                   }
+                  builder.append(c);
                 }
               }
-              builder.append(c);
-            }
-          }
-        });
+            });
   }
 
-  /** @deprecated use {@code hexDigits(4).map(d -> Integer.parseInt(d, 16))} directly */
+  /**
+   * @deprecated use {@link Parsers#BMP_CODE_UNIT} instead.
+   */
   @Deprecated
   public static Parser<Integer> bmpCodeUnit() {
     return hexDigits(4).elidableMap(digits -> Integer.parseInt(digits, 16));
@@ -643,7 +635,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(right);
     requireNonNull(combiner);
     return left.new SamePrefix<>() {
-      @Override  MatchResult<R> skipAndMatch(
+      @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<A> a ->
@@ -702,8 +694,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Sequentially matches {@code a}, {@code b} and {@code c}, and then combines the results using the
-   * {@code combiner} function.
+   * Sequentially matches {@code a}, {@code b} and {@code c}, and then combines the results using
+   * the {@code combiner} function.
    *
    * @since 9.5
    */
@@ -717,8 +709,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Sequentially matches {@code a}, {@code b} and {@code c}, and then combines the results using the
-   * {@code combiner} function.
+   * Sequentially matches {@code a}, {@code b} and {@code c}, and then combines the results using
+   * the {@code combiner} function.
    *
    * @since 10.7
    */
@@ -732,8 +724,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Sequentially matches {@code a}, {@code b}, {@code c} and {@code d},
-   * and then combines the results using the {@code combiner} function.
+   * Sequentially matches {@code a}, {@code b}, {@code c} and {@code d}, and then combines the
+   * results using the {@code combiner} function.
    *
    * @since 9.5
    */
@@ -748,8 +740,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Sequentially matches {@code a}, {@code b}, {@code c} and {@code d},
-   * and then combines the results using the {@code combiner} function.
+   * Sequentially matches {@code a}, {@code b}, {@code c} and {@code d}, and then combines the
+   * results using the {@code combiner} function.
    *
    * @since 10.7
    */
@@ -814,21 +806,23 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @since 10.7
    */
-  public static Parser<?> sequence(Parser<?>.OrEmpty first, Parser<?> second, Production<?>... more) {
+  public static Parser<?> sequence(
+      Parser<?>.OrEmpty first, Parser<?> second, Production<?>... more) {
     Parser<?> tail = sequence(second, more);
     return anyOf(sequence(first.notEmpty(), tail), tail);
   }
 
   /** Matches if any of the given {@code parsers} match. */
-  @SafeVarargs public static <T> Parser<T> anyOf(Parser<? extends T>... parsers) {
+  @SafeVarargs
+  public static <T> Parser<T> anyOf(Parser<? extends T>... parsers) {
     return stream(parsers).collect(or());
   }
 
   /**
    * Returns a parser that matches {@code s1}, {@code s2}, or any of the {@code more} strings.
    *
-   * <p>Unlike {@link #anyOf(Parser[])}, the order of the strings isn't important as the parser
-   * will automatically choose the longest match.
+   * <p>Unlike {@link #anyOf(Parser[])}, the order of the strings isn't important as the parser will
+   * automatically choose the longest match.
    *
    * @throws IllegalArgumentException if {@code strings} is empty or any element is empty.
    * @throws NullPointerException if {@code strings} is null or any element is null.
@@ -843,8 +837,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Returns a parser that matches any of the given enum {@code values} by their
-   * {@link Enum#toString}.
+   * Returns a parser that matches any of the given enum {@code values} by their {@link
+   * Enum#toString}.
    *
    * <p>For example if you want to parse all operators defined in an enum:
    *
@@ -876,9 +870,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public static <T extends Enum<?>> Parser<T> anyOf(T... values) {
     checkArgument(values.length > 0, "values cannot be empty");
     Map<String, T> longerFirst = biStream(stream(values))
-            .mapKeys(Object::toString)
-            // reverse alphabetical order, so that we parse "++" before "+"
-            .collect(toMap(() -> new TreeMap<String, T>(reverseOrder())));
+        .mapKeys(Object::toString)
+        // reverse alphabetical order, so that we parse "++" before "+"
+        .collect(toMap(() -> new TreeMap<String, T>(reverseOrder())));
     return BiStream.from(longerFirst)
         .mapToObj((s, value) -> string(s).thenReturn(value))
         .collect(or());
@@ -910,11 +904,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Throw this error from the lambda passed to {@link #map map()}, {@link #flatMap flatMap()}
-   * etc. to report a custom parse error. The error will point to the starting position evaluated by
-   * the chained parser.
+   * Throw this error from the lambda passed to {@link #map map()}, {@link #flatMap flatMap()} etc.
+   * to report a custom parse error. The error will point to the starting position evaluated by the
+   * chained parser.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * Parser<List<Integer>> numbers =
    *     Parser.digits()
    *         .map(s -> {
@@ -930,7 +926,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * <p><em>DO NOT throw this error outside of the parser lambdas!</em>
    *
    * @param message the error message to be reported as part of the parse failure.
-   *
    * @since 10.7
    */
   public static Error fail(String message) {
@@ -961,7 +956,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Returns a parser that matches {@code this} pattern at least once, delimited by the given delimiter.
+   * Returns a parser that matches {@code this} pattern at least once, delimited by the given
+   * delimiter.
    *
    * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use:
    *
@@ -985,7 +981,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Returns a parser that matches {@code this} pattern at least once, delimited by the given delimiter.
+   * Returns a parser that matches {@code this} pattern at least once, delimited by the given
+   * delimiter.
    *
    * <p>For example if you want to express the regex pattern {@code (a|b|c)}, you can use:
    *
@@ -1025,20 +1022,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * Starts a fluent chain for matching consecutive characters in the {@code characterClass} zero or
    * more times. If no such character is found, empty string is the result.
    *
-   * <p>For example: {@code zeroOrMore("[0-9]")} is equivalent to {@code zeroOrMore(range('0', '9'))}.
+   * <p>For example: {@code zeroOrMore("[0-9]")} is equivalent to {@code zeroOrMore(range('0',
+   * '9'))}.
    *
-   * <p>Implementation Note: regex isn't used during parsing. The character class string is translated
-   * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
+   * <p>Implementation Note: regex isn't used during parsing. The character class string is
+   * translated to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at
+   * construction time.
    *
    * @param characterClass A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
-   *        <p>Starting v10.6, literal backslash ({@code "\\"} in Java source code literal),
-   *        '[' and ']' can all be included inside the outer pair of brackets.
-   *        The '-' character is also treated as literal, as long as not placed at the place of a range.
-   *        <p>You can also use {@code '^'} to get negative character class like:
-   *        {@code one("[^a-zA-Z]")}, which is any non-alphabet character.
-   *        <p>It's <em>strongly recommended</em> to install Google ErrorProne and mug-errorprone in your
-   *        annotation processor path so that incorrect character class syntax will be caught
-   *        at compile-time.
+   *     <p>Starting v10.6, literal backslash ({@code "\\"} in Java source code literal), '[' and
+   *     ']' can all be included inside the outer pair of brackets. The '-' character is also
+   *     treated as literal, as long as not placed at the place of a range.
+   *     <p>You can also use {@code '^'} to get negative character class like: {@code
+   *     one("[^a-zA-Z]")}, which is any non-alphabet character.
+   *     <p>It's <em>strongly recommended</em> to install Google ErrorProne and mug-errorprone in
+   *     your annotation processor path so that incorrect character class syntax will be caught at
+   *     compile-time.
    * @since 10.2
    */
   @SuppressWarnings("CharacterSetLiteralCheck")
@@ -1110,6 +1109,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * Starts a fluent chain for matching the current parser zero or more times, delimited by {@code
    * delimiter}. {@code collector} is used to collect the parsed results and the empty collector
    * result will be used if this parser matches zero times.
+   *
    * <p>For example if you want to parse a set of names {@code [a,b,c]}, you can use:
    *
    * <pre>{@code
@@ -1121,7 +1121,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public final <A, R> Parser<R>.OrEmpty zeroOrMoreDelimitedBy(
       String delimiter, Collector<? super T, A, ? extends R> collector) {
     return this.<A, R>atLeastOnceDelimitedBy(delimiter, collector)
-        .new OrEmpty(emptyValueSupplier(collector));
+    .new OrEmpty(emptyValueSupplier(collector));
   }
 
   /**
@@ -1134,12 +1134,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public final <A, R> Parser<R>.OrEmpty zeroOrMoreDelimitedBy(
       Parser<?> delimiter, Collector<? super T, A, ? extends R> collector) {
     return this.<A, R>atLeastOnceDelimitedBy(delimiter, collector)
-        .new OrEmpty(emptyValueSupplier(collector));
+    .new OrEmpty(emptyValueSupplier(collector));
   }
 
   /**
-   * Applies {@code first} and the optional {@code second} pattern in order, for zero or more
-   * times, collecting the results using the provided {@link BiCollector}.
+   * Applies {@code first} and the optional {@code second} pattern in order, for zero or more times,
+   * collecting the results using the provided {@link BiCollector}.
    *
    * <p>Typically used to parse key-value pairs:
    *
@@ -1159,9 +1159,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.4
    */
   public static <A, B, R> Parser<R>.OrEmpty zeroOrMoreDelimited(
-      Parser<A> first,
-      Production<B> second,
-      String delimiter,
+      Parser<A> first, Production<B> second, String delimiter,
       BiCollector<? super A, ? super B, R> collector) {
     return sequence(first, second, Both::of)
         .zeroOrMoreDelimitedBy(delimiter, mapping(identity(), collector));
@@ -1209,8 +1207,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Sequencing but the return value is elidable. */
   private <B, R> Parser<R> and(
-      Production<B> right,
-      ElidableBiFunction<? super T, ? super B, ? extends R> combiner) {
+      Production<B> right, ElidableBiFunction<? super T, ? super B, ? extends R> combiner) {
     return sequence(this, right, combiner);
   }
 
@@ -1218,7 +1215,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(delimiter.length() > 0, "delimiter cannot be empty");
     return new Parser<>() {
       @Override MatchResult<T> skipAndMatch(
-           Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         return input.startsWith(delimiter, start)
             ? Parser.this.skipAndMatch(skip, input, start + delimiter.length(), context)
@@ -1301,8 +1298,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Returns a parser that matches {@code this} pattern enclosed between {@code prefix} and {@code suffix},
-   * both allowed to be empty.
+   * Returns a parser that matches {@code this} pattern enclosed between {@code prefix} and {@code
+   * suffix}, both allowed to be empty.
    *
    * @since 9.5
    */
@@ -1326,11 +1323,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * If this parser matches, returns the result of applying the given function,
-   * with the parse result of type {@code T}, the beginning index (inclusive) and the end index
-   * (exclusive) as parameters passed to the function.
+   * If this parser matches, returns the result of applying the given function, with the parse
+   * result of type {@code T}, the beginning index (inclusive) and the end index (exclusive) as
+   * parameters passed to the function.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * Parser<NameNode> nameNode =
    *     word().mapWithIndex((name, begin, end) -> new NameNode(name, begin, end));
    * }</pre>
@@ -1347,16 +1346,16 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
-  private <R> Parser<R> elidableMap(ElidableFunction<? super T, ? extends R> f) {
+  final <R> Parser<R> elidableMap(ElidableFunction<? super T, ? extends R> f) {
     return map(f);
   }
 
   /**
-   * If this parser matches, applies function {@code f} to get the next production rule to match
-   * in sequence.
+   * If this parser matches, applies function {@code f} to get the next production rule to match in
+   * sequence.
    *
-   * <p>Starting from v10.0, the function can return either a {@link Parser} that consumes input,
-   * or an {@link OrEmpty} that will succeed even if not matched.
+   * <p>Starting from v10.0, the function can return either a {@link Parser} that consumes input, or
+   * an {@link OrEmpty} that will succeed even if not matched.
    */
   public final <R> Parser<R> flatMap(Function<? super T, ? extends Production<? extends R>> f) {
     requireNonNull(f);
@@ -1364,10 +1363,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override MatchResult<R> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
-          case MatchResult.Success<T> success ->
-            success.<R>andThen(
-                () ->  allowZeroWidth(f.apply(success.value))
-                    .skipAndMatch(skip, input, success.tail, context), context);
+          case MatchResult.Success<T> success -> success.<R>andThen(
+              () -> allowZeroWidth(f.apply(success.value))
+                  .skipAndMatch(skip, input, success.tail, context),
+              context);
           case MatchResult.Failure<?> failure -> failure.safeCast();
         };
       }
@@ -1426,8 +1425,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Specifies that the matched pattern must be either followed by {@code suffix} or EOF.
-   * No other suffixes allowed.
+   * Specifies that the matched pattern must be either followed by {@code suffix} or EOF. No other
+   * suffixes allowed.
    *
    * @since 9.4
    */
@@ -1472,13 +1471,14 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return followedBy(suffix.new OrEmpty(() -> null));
   }
 
-  @Override public final Parser<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op) {
+  @Override public final Parser<T> optionallyFollowedBy(
+      String suffix, Function<? super T, ? extends T> op) {
     return withOptionalSuffix(string(suffix).thenReturn(op::apply));
   }
 
   /**
-   * If this parser matches, optionally matches {@code suffix} with the {@code op} BiFunction
-   * to transform the current parser's result.
+   * If this parser matches, optionally matches {@code suffix} with the {@code op} BiFunction to
+   * transform the current parser's result.
    *
    * <p>For example:
    *
@@ -1513,11 +1513,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<T> success -> {
-            yield switch (elidedSuffix.skipAndMatch(skip, input, success.tail, ErrorContext.MINIMAL)) {
-              case MatchResult.Success<?> followed ->
-                context.failAt(
-                    followed.head, followed.tail,
-                    "unexpected `{name}`: {snippet}", name);
+            yield switch (elidedSuffix.skipAndMatch(
+                skip, input, success.tail, ErrorContext.MINIMAL)) {
+              case MatchResult.Success<?> followed -> context.failAt(
+                  followed.head, followed.tail, "unexpected `{name}`: {snippet}", name);
               default -> success;
             };
           }
@@ -1593,7 +1592,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Returns a parser that matches {@code this} pattern and returns the matched string. */
   @Override public final Parser<String> source() {
-    @SuppressWarnings("unchecked")  // original return value no longer needed
+    @SuppressWarnings("unchecked") // original return value no longer needed
     Parser<Object> elided = (Parser<Object>) ignoreReturn();
     return elided.new SamePrefix<String>() {
       @Override MatchResult<String> skipAndMatch(
@@ -1621,8 +1620,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /**
    * Returns an equivalent parser that suppresses character skipping that's otherwise applied if
-   * {@link #parseSkipping parseSkipping()} or {@link #skipping skipping()}
-   * are called. For example quoted string literals should not skip whitespaces.
+   * {@link #parseSkipping parseSkipping()} or {@link #skipping skipping()} are called. For example
+   * quoted string literals should not skip whitespaces.
    */
   public static <T> Parser<T> literally(Parser<T> parser) {
     requireNonNull(parser);
@@ -1782,8 +1781,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Parses the input reader lazily by applying this parser repeatedly until the end of
-   * input. Results are returned in a lazy stream.
+   * Parses the input reader lazily by applying this parser repeatedly until the end of input.
+   * Results are returned in a lazy stream.
    *
    * <p>{@link UncheckedIOException} will be thrown if the underlying reader throws.
    *
@@ -1820,8 +1819,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /**
    * Lazily and iteratively matches {@code input}, until the input is exhausted or matching failed.
    *
-   * <p>Note that unlike {@link #parseToStream(String) parseToStream()},
-   * a matching failure terminates the stream without throwing exception.
+   * <p>Note that unlike {@link #parseToStream(String) parseToStream()}, a matching failure
+   * terminates the stream without throwing exception.
    *
    * <p>This allows quick probing without fully parsing it.
    */
@@ -1832,8 +1831,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /**
    * Lazily and iteratively matches {@code input} starting from {@code fromIndex}, skipping the
    * skippable patterns, until the input is exhausted or matching failed. Note that unlike {@link
-   * #parseToStream(String, int) parseToStream()}, a matching failure terminates the stream
-   * without throwing exception.
+   * #parseToStream(String, int) parseToStream()}, a matching failure terminates the stream without
+   * throwing exception.
    *
    * <p>This allows quick probing without fully parsing it.
    */
@@ -1843,10 +1842,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Lazily and iteratively matches {@code input} reader, until the input is exhausted or matching failed.
+   * Lazily and iteratively matches {@code input} reader, until the input is exhausted or matching
+   * failed.
    *
-   * <p>Note that unlike {@link #parseToStream(String) parseToStream()},
-   * a matching failure terminates the stream without throwing exception.
+   * <p>Note that unlike {@link #parseToStream(String) parseToStream()}, a matching failure
+   * terminates the stream without throwing exception.
    *
    * <p>This allows quick probing without fully parsing it.
    *
@@ -1882,10 +1882,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * combined together with a non-empty prefix, suffix or both, which will be specified by methods
    * of this class.
    *
-   * <p>Besides {@link #between(String, String) between()} and {@link #followedBy(String) followedBy()},
-   * the {@link Parser#sequence(Parser, Production, BiFunction) sequence()} and {@link
-   * Parser#followedBy(Parser.OrEmpty)} methods can be used to specify that a {@code Parser.OrEmpty}
-   * production rule follows a regular consuming {@code Parser}.
+   * <p>Besides {@link #between(String, String) between()} and {@link #followedBy(String)
+   * followedBy()}, the {@link Parser#sequence(Parser, Production, BiFunction) sequence()} and
+   * {@link Parser#followedBy(Parser.OrEmpty)} methods can be used to specify that a {@code
+   * Parser.OrEmpty} production rule follows a regular consuming {@code Parser}.
    *
    * <p>The following is a simplified example of parsing a CSV line: a comma-separated list of
    * fields with an optional trailing newline. The field values can be empty; empty line results in
@@ -1912,8 +1912,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     private final Supplier<? extends T> defaultSupplier;
 
     /**
-     * A crippled zero-width parser, not safe to be used in a loop and must be carefully
-     * composed with a parser that does consume!
+     * A crippled zero-width parser, not safe to be used in a loop and must be carefully composed
+     * with a parser that does consume!
      */
     private final Parser<T> unsafeZeroWidthParser =
         new Parser<T>() {
@@ -1945,7 +1945,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /**
-     * The current parser enclosed between {@code prefix} and {@code suffix}, both allowed to be empty.
+     * The current parser enclosed between {@code prefix} and {@code suffix}, both allowed to be
+     * empty.
      *
      * @since 9.5
      */
@@ -1968,7 +1969,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       var accumulator = collector.accumulator();
       var finisher = collector.finisher();
       return sequence(
-          this, string(delimiter).then(this).zeroOrMore(toList()),
+          this,
+          string(delimiter).then(this).zeroOrMore(toList()),
           (head, tail) -> {
             A buffer = supplier.get();
             accumulator.accept(buffer, head);
@@ -1996,7 +1998,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return this.ignoreReturn().and(suffix, (a, b) -> b);
     }
 
-    /** After matching the current optional (or zero-or-more) parser, proceed to match {@code suffix}.  */
+    /**
+     * After matching the current optional (or zero-or-more) parser, proceed to match {@code
+     * suffix}.
+     */
     @Override public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
       return this.ignoreReturn().and(suffix, (a, b) -> b);
     }
@@ -2005,8 +2010,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return this.and(suffix.ignoreReturn(), (a, b) -> a);
     }
 
-    /** The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.  */
-    @SuppressWarnings("unchecked")  // to make Eclipse compiler happy
+    /**
+     * The current optional (or zero-or-more) parser may optionally be followed by {@code suffix}.
+     */
+    @SuppressWarnings("unchecked") // to make Eclipse compiler happy
     @Override public <S> OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
       return this.and((Parser<Object>.OrEmpty) suffix.ignoreReturn(), (a, b) -> a);
     }
@@ -2028,6 +2035,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     @Override public OrEmpty optionallyFollowedBy(Parser<?> suffix) {
       return followedBy(suffix.new OrEmpty(() -> null));
     }
+
     /**
      * If this parser matches, optionally applies the {@code op} function if the pattern is followed
      * by {@code suffix}.
@@ -2040,8 +2048,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /**
-     * If this parser matches, optionally matches {@code suffix} with the {@code op} BiFunction
-     * to transform the current parser's result.
+     * If this parser matches, optionally matches {@code suffix} with the {@code op} BiFunction to
+     * transform the current parser's result.
      *
      * @since 10.0
      */
@@ -2055,8 +2063,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /**
-     * Returns an equivalent parser that matches {@code this} pattern and returns the matched string,
-     * or empty string if mismatches.
+     * Returns an equivalent parser that matches {@code this} pattern and returns the matched
+     * string, or empty string if mismatches.
      *
      * @since 10.6
      */
@@ -2086,8 +2094,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /**
-     * Parses the entire input string, ignoring {@code charsToSkip}, and returns the result;
-     * if there's nothing to parse except skippable content, returns the default empty value.
+     * Parses the entire input string, ignoring {@code charsToSkip}, and returns the result; if
+     * there's nothing to parse except skippable content, returns the default empty value.
      */
     @Override public T parseSkipping(CharPredicate charsToSkip, String input) {
       return parseSkipping(consecutive(charsToSkip, "skipped"), input);
@@ -2095,7 +2103,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
     /**
      * Parses the entire input string, ignoring patterns matched by {@code skip}, and returns the
-     * result; if there's nothing to parse except skippable content, returns the default empty value.
+     * result; if there's nothing to parse except skippable content, returns the default empty
+     * value.
      */
     @Override public T parseSkipping(Parser<?> skip, String input) {
       return unsafeZeroWidthParser.parseSkipping(skip, input);
@@ -2179,7 +2188,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /**
-     * Parses {@code input} to a lazy stream while skipping the skippable patterns around lexical tokens.
+     * Parses {@code input} to a lazy stream while skipping the skippable patterns around lexical
+     * tokens.
      */
     public Stream<T> parseToStream(String input) {
       return parseToStream(input, 0);
@@ -2195,7 +2205,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /**
-     * Parses {@code input} reader to a lazy stream while skipping the skippable patterns around lexical tokens.
+     * Parses {@code input} reader to a lazy stream while skipping the skippable patterns around
+     * lexical tokens.
      *
      * <p>{@link UncheckedIOException} will be thrown if the underlying reader throws.
      *
@@ -2209,8 +2220,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       // forTokens().parseToStream() checks isEof() to terminate, and only skip the trailing upon
       // success. So if everything is skippable, it will fail to match.
       return switch (toSkip.tryParse(input, fromIndex, ErrorContext.MINIMAL)) {
-         case MatchResult.Success<?> skipped -> forTokens().parseToStream(input, skipped.tail);
-         default -> forTokens().parseToStream(input, fromIndex);
+        case MatchResult.Success<?> skipped -> forTokens().parseToStream(input, skipped.tail);
+        default -> forTokens().parseToStream(input, fromIndex);
       };
     }
 
@@ -2240,8 +2251,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /**
-     * Lazily and iteratively matches {@code input} reader, skipping the skippable patterns, until the
-     * input is exhausted or matching failed.
+     * Lazily and iteratively matches {@code input} reader, skipping the skippable patterns, until
+     * the input is exhausted or matching failed.
      *
      * <p>Note that unlike {@link #parseToStream(String) parseToStream()}, a matching failure
      * terminates the stream without throwing exception.
@@ -2321,12 +2332,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * return rule.definedAs(expr);
    * }</pre>
    *
-   * <p>For simple definitions, you could use the {@link #define} method with a lambda
-   * to elide the need of an explicit forward declaration.
+   * <p>For simple definitions, you could use the {@link #define} method with a lambda to elide the
+   * need of an explicit forward declaration.
    *
-   * <p>To prevent StackOverflowError, rules enforce a maximum recursion depth limit.
-   * The recursion depth is tracked globally per parse operation across all recursive rules
-   * on the call stack. Each rule enforces its own limit against this global depth.
+   * <p>To prevent StackOverflowError, rules enforce a maximum recursion depth limit. The recursion
+   * depth is tracked globally per parse operation across all recursive rules on the call stack.
+   * Each rule enforces its own limit against this global depth.
    */
   @ThreadSafe
   public static final class Rule<T> extends Parser<T> {
@@ -2342,14 +2353,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     /**
      * Creates a rule with the given maximum recursion depth.
      *
-     * <p>The recursion depth is tracked globally per parse operation across all recursive rules
-     * on the call stack.
+     * <p>The recursion depth is tracked globally per parse operation across all recursive rules on
+     * the call stack.
      *
      * @throws IllegalArgumentException if {@code maxRecursionDepth} is not positive.
      * @since 10.6
      */
     public Rule(int maxRecursionDepth) {
-      checkArgument(maxRecursionDepth > 0, "maxRecursionDepth (%s) must be positive", maxRecursionDepth);
+      checkArgument(
+          maxRecursionDepth > 0, "maxRecursionDepth (%s) must be positive", maxRecursionDepth);
       this.maxRecursionDepth = maxRecursionDepth;
     }
 
@@ -2359,8 +2371,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       if (start == 0 && input.isEof(0)) {
         checkState(
             !dryRun,
-            "Left recursion not supported! Consider using withPostfixes() or the OperatorTable class"
-                + " to define the left recursive grammar.");
+            "Left recursion not supported! Consider using withPostfixes() or the OperatorTable"
+                + " class to define the left recursive grammar.");
         if (p == null) { // can happen when dry-running mutually recursive rules.
           return context.failAt(0, "empty input", ""); // A Parser must consume input.
         }
@@ -2407,8 +2419,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     /**
      * Returns the index in the source where this error was detected.
      *
-     * <p>The index is for diagnostic purpose and isn't guaranteed to be
-     * stable and deterministic across different versions.
+     * <p>The index is for diagnostic purpose and isn't guaranteed to be stable and deterministic
+     * across different versions.
      */
     public int getSourceIndex() {
       return index;
@@ -2420,7 +2432,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /**
    * Returns metadata about the prefixes that can be used to prune out this parser, if the input
-   * doesn't start with any of the prefixes. Return EMPTY_PREFIX to indicate no pruning is applicable.
+   * doesn't start with any of the prefixes. Return EMPTY_PREFIX to indicate no pruning is
+   * applicable.
    */
   final Set<String> getPrefixes() {
     Set<String> result = prefixes;
@@ -2507,14 +2520,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   sealed interface MatchResult<V> {
     <T> MatchResult<T> map(Function<? super V, ? extends T> function, ErrorContext context);
-
     <T> MatchResult<T> mapWithIndex(
         ObjInt2Function<? super V, ? extends T> function, ErrorContext context);
-
     MatchResult<V> suchThat(Predicate<? super V> condition, String name, ErrorContext context);
 
     record Success<V>(int head, int tail, V value) implements MatchResult<V> {
-      @Override public <T> MatchResult<T> map(Function<? super V, ? extends T> function, ErrorContext context) {
+      @Override public <T> MatchResult<T> map(
+          Function<? super V, ? extends T> function, ErrorContext context) {
         try {
           return new Success<T>(head, tail, function.apply(value));
         } catch (ParseError e) {
@@ -2531,7 +2543,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         }
       }
 
-      @Override public MatchResult<V> suchThat(Predicate<? super V> condition, String name, ErrorContext context) {
+      @Override public MatchResult<V> suchThat(
+          Predicate<? super V> condition, String name, ErrorContext context) {
         try {
           return condition.test(value) ? this : context.expecting(name, head, tail);
         } catch (ParseError e) {
@@ -2540,7 +2553,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       <B, T> MatchResult<T> and(
-          Success<B> b, BiFunction<? super V, ? super B, ? extends T> function, ErrorContext context) {
+          Success<B> b, BiFunction<? super V, ? super B, ? extends T> function,
+          ErrorContext context) {
         try {
           return new Success<T>(head, b.tail, function.apply(value, b.value));
         } catch (ParseError e) {
@@ -2564,8 +2578,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     /**
-     * Represents failure with an index in the source, and an error message
-     * with predefined {name} and {snippet} template placeholders to be filled when throwing exception.
+     * Represents failure with an index in the source, and an error message with predefined {name}
+     * and {snippet} template placeholders to be filled when throwing exception.
      */
     record Failure<V>(int at, long frontier, String messageTemplate, String symbolName)
         implements MatchResult<V> {
@@ -2628,7 +2642,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return failAt(at, at, messageTemplate, symbolName);
     }
 
-    <V> MatchResult.Failure<V> failAt(int at, long frontier, String messageTemplate, String symbolName) {
+    <V> MatchResult.Failure<V> failAt(
+        int at, long frontier, String messageTemplate, String symbolName) {
       return new MatchResult.Failure<V>(at, frontier, messageTemplate, symbolName);
     }
 
@@ -2640,8 +2655,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private static final class ErrorTracker extends ErrorContext {
     private MatchResult.Failure<?> farthestFailure = null;
 
-    @Override <V> MatchResult.Failure<V> expecting(
-        String symbolName, int at, long frontier) {
+    @Override <V> MatchResult.Failure<V> expecting(String symbolName, int at, long frontier) {
       return failAt(at, frontier, "expecting <{name}>, encountered: {snippet}", symbolName);
     }
 
@@ -2705,19 +2719,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return result;
   }
 
-  private interface ElidableFunction<F, T> extends Function<F, T> {}
+  interface ElidableFunction<F, T> extends Function<F, T> {}
+
   private interface ElidableBiFunction<A, B, R> extends BiFunction<A, B, R> {}
 
   private static final class ParseError extends Error {
     ParseError(String message) {
       super(
           message, null,
-          /* enableSuppression= */ debugMode(), /* writableStackTrace= */ debugMode());
+          /* enableSuppression= */ debugMode(),
+          /* writableStackTrace= */ debugMode());
     }
 
     @SuppressWarnings("OverrideThrowableToString")
     @Override public String toString() {
-      return "ParseError isn't expected to be caught or propagated outside of the Parser framework.";
+      return "ParseError isn't expected to be caught or propagated outside of the Parser"
+                 + " framework.";
     }
 
     @SuppressWarnings("AssignmentExpression")
@@ -2731,12 +2748,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private interface Constants {
     static Parser<String> DIGITS = consecutive(CharacterSet.DECIMAL, "digits");
     static Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
-    static Parser<String> UNSIGNED_DECIMAL =
-        literally(DIGITS, one('.').followedBy(DIGITS).optional())
-            .source()
-            .suchThat(
-                s -> !s.startsWith("0") || s.startsWith("0.") || s.equals("0"),
-                "decimal point number");
   }
 
   Parser() {}
