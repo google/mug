@@ -171,12 +171,6 @@ final class OrParser<T> extends Parser<T> {
   }
 
   private static String computeExpectedName(List<? extends Parser<?>> parsers) {
-    List<Set<String>> prefixes = parsers.stream()
-        .map(Parser::getExpectedSymbols)
-        .filter(s -> !s.equals(EMPTY_PREFIX))
-        .toList();
-    // if we don't have two candidates to report, return error as is.
-    if (prefixes.size() < 2) return "";
     Comparator<String> symbolOrder = comparing(
         (String s) -> {
           if (s.equals("EOF")) return 5;
@@ -187,8 +181,8 @@ final class OrParser<T> extends Parser<T> {
           return 4;
         })
         .thenComparing(naturalOrder());
-    List<String> symbols = prefixes.stream()
-        .flatMap(Set::stream)
+    List<String> symbols = parsers.stream()
+        .flatMap(candidate -> candidate.getExpectedSymbols().stream())
         .filter(s -> !s.isEmpty())
         .distinct()
         .sorted(symbolOrder)
