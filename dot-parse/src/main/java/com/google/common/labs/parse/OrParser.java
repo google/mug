@@ -35,27 +35,9 @@ import java.util.stream.Stream;
 
 /** Implements {@link Parser#anyOf}. */
 final class OrParser<T> extends Parser<T> {
-  private static final Comparator<String> SYMBOL_ORDER =
-      comparing((String s) -> {
-        if (s.equals("EOF")) {
-          return 5;
-        }
-        char first = s.charAt(0);
-        if (first >= 'a' && first <= 'z') {
-          return 1;
-        }
-        if (first >= 'A' && first <= 'Z') {
-          return 2;
-        }
-        if (first >= '0' && first <= '9') {
-          return 3;
-        }
-        return 4;
-      }).thenComparing(naturalOrder());
-
   private final List<Parser<T>> parsers;
   private final PrefixPruneTree<Parser<T>> pruneTree;
-  @LazyInit private String expectedSymbolsMessage;
+  @LazyInit private String expectedName;
 
   OrParser(List<? extends Parser<? extends T>> candidates) {
     checkArgument(candidates.size() > 0, "parsers cannot be empty");
@@ -83,7 +65,7 @@ final class OrParser<T> extends Parser<T> {
     if (pruneTree != null) {
       candidates = pruneTree.pruneByPrefix(input, start);
       if (candidates.isEmpty()) {
-        String expected = getExpectedSymbolsMessage();
+        String expected = getExpectedName();
         return expected.isEmpty()
             // When no candidate match by prefix, they must have failed right at 'start',
             // whichever candidate reports the error. So picking the first is the "farthest".
@@ -107,44 +89,12 @@ final class OrParser<T> extends Parser<T> {
       }
     }
     if (farthestFailure.frontier() <= start) {
-      String expected = getExpectedSymbolsMessage();
+      String expected = getExpectedName();
       if (!expected.isEmpty()) {
         return context.expecting(expected, start);
       }
     }
     return farthestFailure.safeCast();
-  }
-
-  private String getExpectedSymbolsMessage() {
-    String result = expectedSymbolsMessage;
-    if (result == null) {
-      expectedSymbolsMessage = result = computeExpectedSymbolsMessage();
-    }
-    return result;
-  }
-
-  private String computeExpectedSymbolsMessage() {
-    List<Set<String>> prefixes = parsers.stream()
-        .map(Parser::getExpectedSymbols)
-        .filter(s -> !s.equals(EMPTY_PREFIX))
-        .toList();
-    if (prefixes.size() < 2) return "";
-    List<String> symbols = prefixes.stream()
-        .flatMap(Set::stream)
-        .filter(s -> !s.isEmpty())
-        .distinct()
-        .sorted(SYMBOL_ORDER)
-        .map(s -> s.equals(",") ? "comma (,)" : s)
-        .toList();
-    return symbols.size() > 1
-        ? symbols.stream().collect(Joiner.on(", ").between("one of [", "]"))
-        : "";
-  }
-
-  @Override Set<String> getExpectedSymbols() {
-    return parsers.stream()
-        .flatMap(p -> p.getExpectedSymbols().stream())
-        .collect(toUnmodifiableSet());
   }
 
   @Override Set<String> computePrefixes() {
@@ -201,5 +151,55 @@ final class OrParser<T> extends Parser<T> {
       }
     }
     return builder.build();
+  }
+
+  @Override Set<String> getExpectedSymbols() {
+    return parsers.stream()
+        .flatMap(p -> p.getExpectedSymbols().stream())
+        .collect(toUnmodifiableSet());
+  }
+
+  private String getExpectedName() {
+    String result = expectedName;
+    if (result == null) {
+      expectedName = result = computeExpectedName(parsers);
+    }
+    return result;
+  }
+
+  private static String computeExpectedName(List<? extends Parser<?>> parsers) {
+    List<Set<String>> prefixes = parsers.stream()
+        .map(Parser::getExpectedSymbols)
+        .filter(s -> !s.equals(EMPTY_PREFIX))
+        .toList();
+    if (prefixes.size() < 2) return "";
+    Comparator<String> symbolOrder =
+        comparing((String s) -> {
+          if (s.equals("EOF")) {
+            return 5;
+          }
+          char first = s.charAt(0);
+          if (first >= 'a' && first <= 'z') {
+            return 1;
+          }
+          if (first >= 'A' && first <= 'Z') {
+            return 2;
+          }
+          if (first >= '0' && first <= '9') {
+            return 3;
+          }
+          return 4;
+        })
+        .thenComparing(naturalOrder());
+    List<String> symbols = prefixes.stream()
+        .flatMap(Set::stream)
+        .filter(s -> !s.isEmpty())
+        .distinct()
+        .sorted(symbolOrder)
+        .map(s -> s.equals(",") ? "comma (,)" : s)
+        .toList();
+    return symbols.size() > 1
+        ? symbols.stream().collect(Joiner.on(", ").between("one of [", "]"))
+        : "";
   }
 }
