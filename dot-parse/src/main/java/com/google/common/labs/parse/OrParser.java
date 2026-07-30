@@ -17,6 +17,8 @@ package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
@@ -33,6 +35,24 @@ import java.util.stream.Stream;
 
 /** Implements {@link Parser#anyOf}. */
 final class OrParser<T> extends Parser<T> {
+  private static final Comparator<String> SYMBOL_ORDER =
+      comparing((String s) -> {
+        if (s.equals("EOF")) {
+          return 5;
+        }
+        char first = s.charAt(0);
+        if (first >= 'a' && first <= 'z') {
+          return 1;
+        }
+        if (first >= 'A' && first <= 'Z') {
+          return 2;
+        }
+        if (first >= '0' && first <= '9') {
+          return 3;
+        }
+        return 4;
+      }).thenComparing(naturalOrder());
+
   private final List<Parser<T>> parsers;
   private final PrefixPruneTree<Parser<T>> pruneTree;
   @LazyInit private String expectedSymbolsMessage;
@@ -120,29 +140,6 @@ final class OrParser<T> extends Parser<T> {
         ? symbols.stream().collect(Joiner.on(", ").between("one of [", "]"))
         : "";
   }
-
-  private static int categoryRank(String s) {
-    if (s.equals("EOF")) {
-      return 5;
-    }
-    if (s.isEmpty()) {
-      return 4;
-    }
-    char first = s.charAt(0);
-    if (first >= 'a' && first <= 'z') {
-      return 1;
-    }
-    if (first >= 'A' && first <= 'Z') {
-      return 2;
-    }
-    if (first >= '0' && first <= '9') {
-      return 3;
-    }
-    return 4;
-  }
-
-  private static final Comparator<String> SYMBOL_ORDER =
-      Comparator.comparing((String s) -> categoryRank(s)).thenComparing(Comparator.naturalOrder());
 
   @Override Set<String> getExpectedSymbols() {
     return parsers.stream()
