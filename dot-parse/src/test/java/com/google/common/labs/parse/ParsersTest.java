@@ -149,8 +149,8 @@ public class ParsersTest {
 
   @Test public void duration_overflowDurationThrows() {
     ParseException e =
-        assertThrows(ParseException.class, () -> Parsers.DURATION.parse("9223372036854775807d"));
-    assertThat(e).hasMessageThat().isEqualTo("at 1:1: duration out of range: 9223372036854775807d");
+        assertThrows(ParseException.class, () -> Parsers.DURATION.parse("3w9223372036854775807d100s"));
+    assertThat(e).hasMessageThat().isEqualTo("at 1:3: duration out of range: 9223372036854775807d");
   }
 
   @Test public void duration_overflowAccumulationThrows() {
