@@ -43,6 +43,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
@@ -2431,6 +2432,145 @@ public class ParserTest {
         .contains("expecting <one of [a1, a10, a2, a3, a4, a5, a6, a7, a8, a9, b]>");
   }
 
+  @Test public void anyOf_pruning_allCandidatesPruned_hasExpectedName() {
+    Parser<String> parser = anyOf(string("abc"), string("def"), string("ghi"));
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [abc, def, ghi]>, encountered:\s
+                xyz
+                ^
+            """);
+  }
+
+  @Test public void anyOf_pruning_allCandidatesPruned_emptyExpectedName() {
+    Parser<String> p1 =
+        new Parser<String>() {
+          @Override MatchResult<String> skipAndMatch(
+              Parser<?> skip, CharInput input, int start, ErrorContext context) {
+            return string("abc").skipAndMatch(skip, input, start, context);
+          }
+
+          @Override Set<String> computePrefixes() {
+            return Set.of("abc");
+          }
+
+          @Override Set<String> getExpectedSymbols() {
+            return Set.of();
+          }
+        };
+    Parser<String> p2 =
+        new Parser<String>() {
+          @Override MatchResult<String> skipAndMatch(
+              Parser<?> skip, CharInput input, int start, ErrorContext context) {
+            return string("def").skipAndMatch(skip, input, start, context);
+          }
+
+          @Override Set<String> computePrefixes() {
+            return Set.of("def");
+          }
+
+          @Override Set<String> getExpectedSymbols() {
+            return Set.of();
+          }
+        };
+    Parser<String> p3 =
+        new Parser<String>() {
+          @Override MatchResult<String> skipAndMatch(
+              Parser<?> skip, CharInput input, int start, ErrorContext context) {
+            return string("ghi").skipAndMatch(skip, input, start, context);
+          }
+
+          @Override Set<String> computePrefixes() {
+            return Set.of("ghi");
+          }
+
+          @Override Set<String> getExpectedSymbols() {
+            return Set.of();
+          }
+        };
+    Parser<String> parser = anyOf(p1, p2, p3);
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <abc>, encountered:\s
+                xyz
+                ^
+            """);
+  }
+
+  @Test public void anyOf_noPruning_overshadowsFailedCandidate() {
+    Parser<String> parser = anyOf(string("abc"), string("def"));
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [abc, def]>, encountered:\s
+                xyz
+                ^
+            """);
+  }
+
+  @Test public void anyOf_noPruning_noOvershadowDueToSingleCandidateExpectedSymbols() {
+    Parser<String> p1 = string("abc");
+    Parser<String> p2 =
+        new Parser<String>() {
+          @Override MatchResult<String> skipAndMatch(
+              Parser<?> skip, CharInput input, int start, ErrorContext context) {
+            return context.expecting("custom_error", start);
+          }
+
+          @Override Set<String> getExpectedSymbols() {
+            return Set.of();
+          }
+        };
+    Parser<String> parser = anyOf(p1, p2);
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <abc>, encountered:\s
+                xyz
+                ^
+            """);
+  }
+
+  @Test public void anyOf_noPruning_noOvershadowDueToSingleExpectedSymbol() {
+    Parser<String> p1 = string("abc");
+    Parser<String> p2 = string("abc").map(x -> x);
+    Parser<String> parser = anyOf(p1, p2);
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <abc>, encountered:\s
+                xyz
+                ^
+            """);
+  }
+
+  @Test public void anyOf_expectedSymbolsAggregation() {
+    Parser<?> parser = anyOf(
+        one(DIGIT, "digit"), consecutive(DIGIT, "digits"), chars(3),
+        string("abc").suchThat(s -> true, "non-reserved word"));
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("x"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [digit, digits, non-reserved word, 3 char(s)]>, encountered:\s
+                x
+                ^
+            """);
+  }
+
   @Test public void anyOf_commonPrefixPruning() {
     // 11 candidates sharing a common prefix "prefix".
     // Use prefix01...prefix11 so none is a prefix of another.
@@ -4274,7 +4414,15 @@ public class ParserTest {
 
   @Test public void one_failure() {
     Parser<Character> parser = one(DIGIT, "digit");
-    assertThrows(ParseException.class, () -> parser.parse("a"));
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <digit>, encountered:\s
+                a
+                ^
+            """);
     assertThrows(ParseException.class, () -> parser.parseToStream("a").toList());
     assertThrows(ParseException.class, () -> parser.parse("12"));
   }
@@ -4334,7 +4482,15 @@ public class ParserTest {
   }
 
   @Test public void consecutive_failure() {
-    assertThrows(ParseException.class, () -> digits().parse("a"));
+    ParseException e = assertThrows(ParseException.class, () -> digits().parse("a"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <digits>, encountered:\s
+                a
+                ^
+            """);
     assertThrows(ParseException.class, () -> digits().parseToStream("a").toList());
     assertThrows(ParseException.class, () -> digits().parse("12a"));
     assertThrows(ParseException.class, () -> digits().parseToStream("12a").toList());

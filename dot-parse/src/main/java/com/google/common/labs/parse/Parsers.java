@@ -3,15 +3,16 @@ package com.google.common.labs.parse;
 import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
-import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
-import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
-import com.google.mu.util.stream.Joiner;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+
+import com.google.mu.util.stream.BiStream;
+import com.google.mu.util.stream.Joiner;
 
 /**
  * Some useful, but not-so-primitive parsers.
@@ -39,13 +40,14 @@ public final class Parsers {
   /**
    * Parser for duration strings in the shorthand systems format.
    *
-   * <p>Matches one or more unit specs consisting of a positive integer followed by a unit suffix.
-   * For example:
+   * <p>Matches one or more unit specs consisting of a positive decimal number followed by a unit
+   * suffix. For example:
    *
    * <ul>
    *   <li>{@code "30s"} {@code ->} 30 seconds
    *   <li>{@code "2h30m"} {@code ->} 2 hours and 30 minutes
    *   <li>{@code "1w2d"} {@code ->} 9 days (1 week + 2 days)
+   *   <li>{@code "1.5h"} {@code ->} 1 hour and 30 minutes
    * </ul>
    *
    * <p>Supported units:
@@ -61,73 +63,157 @@ public final class Parsers {
    *   <li>{@code ns} (nanoseconds)
    * </ul>
    *
-   * <p>Note: Decimal numbers (e.g., {@code "1.5s"}) and negative values (e.g., {@code "-2s"}) are
-   * not supported.
+   * <p>Note:
+   *
+   * <ul>
+   *   <li>The duration segments must be specified in strictly descending order of unit size (e.g.,
+   *       {@code "1d2h"} is allowed, but {@code "2h1d"} or {@code "1d1d"} are not).
+   *   <li>Only the last segment can contain a decimal point (e.g., {@code "1.5h"} or {@code
+   *       "1h2.5m"} are allowed, but {@code "1.5h2m"} is not).
+   *   <li>Negative values (e.g., {@code "-2s"}) are not supported.
+   * </ul>
    */
   public static final Parser<Duration> DURATION = literally(
           sequence(
-                  digits(),
+                  UNSIGNED_DECIMAL,
                   anyOf(DurationUnit.values())
                       .notImmediatelyFollowedBy(charsIn("[a-zA-Z]"), "duration unit char"),
                   (num, unit) -> {
                     try {
-                      return unit.of(Long.parseLong(num));
+                      return num.contains(".")
+                          ? new DurationSegment.Fractional(Double.parseDouble(num), unit)
+                          : new DurationSegment.Integral(Long.parseLong(num), unit);
                     } catch (NumberFormatException e) {
                       throw Parser.fail(e.getMessage());
-                    } catch (ArithmeticException e) {
-                      throw Parser.fail("duration out of range: " + num + unit);
                     }
                   })
               .atLeastOnce())
       .map(durations -> {
+        BiStream.adjacentPairsFrom(durations)
+            .forEach((prev, next) -> {
+              if (prev instanceof DurationSegment.Fractional) {
+                throw Parser.fail(
+                    "Only the last duration segment is allowed to be fractional: " + prev);
+              }
+              if (prev.unit().compareTo(next.unit()) <= 0) {
+                throw Parser.fail("Duration units must be specified in order: " + prev + next);
+              }
+            });
         try {
-          return durations.stream().reduce(Duration::plus).get();
+          return durations.stream()
+              .map(seg -> {
+                try {
+                  return seg.toDuration();
+                } catch (ArithmeticException e) {
+                  throw Parser.fail("duration out of range: " + seg);
+                }
+              })
+              .reduce(Duration::plus)
+              .get();
         } catch (ArithmeticException e) {
           throw Parser.fail("duration out of range");
         }
       });
 
+  private sealed interface DurationSegment {
+    DurationUnit unit();
+    Duration toDuration();
+
+    record Integral(long n, DurationUnit unit) implements DurationSegment {
+      @Override public Duration toDuration() {
+        return unit.of(n);
+      }
+
+      @Override public String toString() {
+        return "" + n + unit;
+      }
+    }
+
+    record Fractional(double n, DurationUnit unit) implements DurationSegment {
+      @Override public Duration toDuration() {
+        return unit.of(n);
+      }
+
+      @Override public String toString() {
+        return "" + n + unit;
+      }
+    }
+  }
+
   private enum DurationUnit {
-    WEEK("w") {
+    NANOSECOND("ns") {
       @Override Duration of(long n) {
-        return Duration.ofDays(n * 7);
+        return Duration.ofNanos(n);
+      }
+
+      @Override long nanos() {
+        return 1;
       }
     },
-    DAY("d") {
+    MICROSECOND("us") {
       @Override Duration of(long n) {
-        return Duration.ofDays(n);
+        return Duration.ofNanos(nanos() * n);
       }
-    },
-    HOUR("h") {
-      @Override Duration of(long n) {
-        return Duration.ofHours(n);
-      }
-    },
-    MINUTE("m") {
-      @Override Duration of(long n) {
-        return Duration.ofMinutes(n);
-      }
-    },
-    SECOND("s") {
-      @Override Duration of(long n) {
-        return Duration.ofSeconds(n);
+
+      @Override long nanos() {
+        return NANOSECONDS.convert(1, TimeUnit.MICROSECONDS);
       }
     },
     MILLISECOND("ms") {
       @Override Duration of(long n) {
         return Duration.ofMillis(n);
       }
-    },
-    MICROSECOND("us") {
-      @Override Duration of(long n) {
-        return Duration.ofNanos(NANOSECONDS.convert(n, MICROSECONDS));
+
+      @Override long nanos() {
+        return NANOSECONDS.convert(1, TimeUnit.MILLISECONDS);
       }
     },
-    NANOSECOND("ns") {
+    SECOND("s") {
       @Override Duration of(long n) {
-        return Duration.ofNanos(n);
+        return Duration.ofSeconds(n);
       }
-    };
+
+      @Override long nanos() {
+        return NANOSECONDS.convert(1, TimeUnit.SECONDS);
+      }
+    },
+    MINUTE("m") {
+      @Override Duration of(long n) {
+        return Duration.ofMinutes(n);
+      }
+
+      @Override long nanos() {
+        return NANOSECONDS.convert(1, TimeUnit.MINUTES);
+      }
+    },
+    HOUR("h") {
+      @Override Duration of(long n) {
+        return Duration.ofHours(n);
+      }
+
+      @Override long nanos() {
+        return NANOSECONDS.convert(1, TimeUnit.HOURS);
+      }
+    },
+    DAY("d") {
+      @Override Duration of(long n) {
+        return Duration.ofDays(n);
+      }
+
+      @Override long nanos() {
+        return NANOSECONDS.convert(1, TimeUnit.DAYS);
+      }
+    },
+    WEEK("w") {
+      @Override Duration of(long n) {
+        return Duration.ofDays(n * 7);
+      }
+
+      @Override long nanos() {
+        return 7 * DAY.nanos();
+      }
+    },
+    ;
 
     private final String str;
 
@@ -136,6 +222,15 @@ public final class Parsers {
     }
 
     abstract Duration of(long n);
+    abstract long nanos();
+
+    final Duration of(double d) {
+      if (d > Long.MAX_VALUE) {
+        throw new ArithmeticException("Double value " + d + " out of range.");
+      }
+      long n = (long) d;
+      return of(n).plusNanos((long) ((d - n) * nanos()));
+    }
 
     @Override public String toString() {
       return str;

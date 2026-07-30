@@ -42,6 +42,11 @@ public class ParsersTest {
     assertThat(Parsers.DURATION.parse("100ns")).isEqualTo(Duration.ofNanos(100));
   }
 
+  @Test public void duration_longMaxValueNanosSuccess() {
+    assertThat(Parsers.DURATION.parse("9223372036854775807ns"))
+        .isEqualTo(Duration.ofNanos(Long.MAX_VALUE));
+  }
+
   @Test public void duration_zeroSeconds() {
     assertThat(Parsers.DURATION.parse("0s")).isEqualTo(Duration.ZERO);
   }
@@ -92,7 +97,7 @@ public class ParsersTest {
   }
 
   @Test public void duration_skippingWhitespace_success() {
-    assertThat(Parsers.DURATION.parseSkipping(Character::isWhitespace, "  1s2m  "))
+    assertThat(Parsers.DURATION.parseSkipping(Character::isWhitespace, "  2m1s  "))
         .isEqualTo(Duration.ofMinutes(2).plusSeconds(1));
   }
 
@@ -123,16 +128,17 @@ public class ParsersTest {
             """);
   }
 
-  @Test public void duration_decimalThrows() {
-    ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1.5s"));
+  @Test public void duration_decimalLastSegment() {
+    assertThat(Parsers.DURATION.parse("1.5s")).isEqualTo(Duration.ofMillis(1500));
+    assertThat(Parsers.DURATION.parse("1h2.5m"))
+        .isEqualTo(Duration.ofHours(1).plus(Duration.ofMinutes(2).plusSeconds(30)));
+  }
+
+  @Test public void duration_fractionalNotLastSegmentThrows() {
+    ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1.5h2m"));
     assertThat(e)
         .hasMessageThat()
-        .isEqualTo(
-            """
-            at 1:2: expecting <one of [d, h, m, ms, ns, s, us, w]>, encountered:\s
-                1.5s
-                 ^
-            """);
+        .isEqualTo("at 1:1: Only the last duration segment is allowed to be fractional: 1.5h");
   }
 
   @Test public void duration_negativeThrows() {
@@ -182,13 +188,26 @@ public class ParsersTest {
   @Test public void duration_overflowDurationThrows() {
     ParseException e = assertThrows(
         ParseException.class, () -> Parsers.DURATION.parse("3w9223372036854775807d100s"));
-    assertThat(e).hasMessageThat().isEqualTo("at 1:3: duration out of range: 9223372036854775807d");
+    assertThat(e).hasMessageThat().contains("duration out of range: 9223372036854775807d");
   }
 
   @Test public void duration_overflowAccumulationThrows() {
-    ParseException e =
-        assertThrows(ParseException.class, () -> Parsers.DURATION.parse("9223372036854775800s10s"));
+    ParseException e = assertThrows(
+        ParseException.class, () -> Parsers.DURATION.parse("9223372036854775800s10000ms"));
     assertThat(e).hasMessageThat().isEqualTo("at 1:1: duration out of range");
+  }
+
+  @Test public void duration_overflowFractionalThrows() {
+    ParseException e = assertThrows(
+        ParseException.class, () -> Parsers.DURATION.parse("100000000000000000000.5s"));
+    assertThat(e).hasMessageThat().isEqualTo("at 1:1: duration out of range: 1.0E20s");
+  }
+
+  @Test public void duration_unorderedSegmentsThrows() {
+    ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1s2m"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo("at 1:1: Duration units must be specified in order: 1s2m");
   }
 
   @Test public void bmpCodeUnit_validHexUpper() {

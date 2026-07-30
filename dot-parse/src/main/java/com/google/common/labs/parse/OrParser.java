@@ -17,6 +17,9 @@ package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
+import static java.lang.Character.isDigit;
+import static java.lang.Character.isLowerCase;
+import static java.lang.Character.isUpperCase;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
@@ -88,7 +91,7 @@ final class OrParser<T> extends Parser<T> {
         }
       }
     }
-    if (farthestFailure.frontier() <= start) {
+    if (farthestFailure.frontier() == start) {
       String expected = getExpectedName();
       if (!expected.isEmpty()) {
         return context.expecting(expected, start);
@@ -172,22 +175,15 @@ final class OrParser<T> extends Parser<T> {
         .map(Parser::getExpectedSymbols)
         .filter(s -> !s.equals(EMPTY_PREFIX))
         .toList();
+    // if we don't have two candidates to report, return error as is.
     if (prefixes.size() < 2) return "";
-    Comparator<String> symbolOrder =
-        comparing((String s) -> {
-          if (s.equals("EOF")) {
-            return 5;
-          }
-          char first = s.charAt(0);
-          if (first >= 'a' && first <= 'z') {
-            return 1;
-          }
-          if (first >= 'A' && first <= 'Z') {
-            return 2;
-          }
-          if (first >= '0' && first <= '9') {
-            return 3;
-          }
+    Comparator<String> symbolOrder = comparing(
+        (String s) -> {
+          if (s.equals("EOF")) return 5;
+          char c = s.charAt(0);
+          if (isLowerCase(c)) return 1;
+          if (isUpperCase(c)) return 2;
+          if (isDigit(c)) return 3;
           return 4;
         })
         .thenComparing(naturalOrder());
@@ -200,6 +196,6 @@ final class OrParser<T> extends Parser<T> {
         .toList();
     return symbols.size() > 1
         ? symbols.stream().collect(Joiner.on(", ").between("one of [", "]"))
-        : "";
+        : ""; // if only one expected symbol, just return error as is without the "one of [...]".
   }
 }
