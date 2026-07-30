@@ -31,10 +31,22 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public final class CelParserTest {
+  private static final String EXPECTED_EXPR_START =
+      "expecting <one of [b, digits, false, identifier, null, r\", r\"\"\", r', r''', true, B,"
+          + " R\", R\"\"\", R', R''', 0X, 0x, !, \", \"\"\", ', ''', (, -, ., [, {]>";
+  private static final String EXPECTED_ESCAPE_CHAR =
+      "expecting <one of [a, b, f, n, r, t, v, x, X, \", ', ?, [0-3], \\, `]>";
+  private static final String EXPECTED_STRING_ESCAPE_CHAR =
+      "expecting <one of [a, b, f, n, r, t, u, v, x, U, X, \", ', ?, [0-3], \\, `]>";
+  private static final String EXPECTED_NUMBER_OR_DECIMAL = "expecting <one of [digits, .]>";
+  private static final String EXPECTED_MAP_OR_STRUCT_ELEMENT =
+      "expecting <one of [identifier, comma (,), ?, `, }]>";
+  private static final String EXPECTED_IDENTIFIER_OR_BACKTICK =
+      "expecting <one of [identifier, `]>";
+
   private final CelParser parser = new CelParser();
 
-  @Test
-  public void testLiterals() throws Exception {
+  @Test public void testLiterals() throws Exception {
     assertThat(parser.parse("123")).isEqualTo(value(123L).withSourceIndex(0));
     assertThat(parser.parse("-123")).isEqualTo(value(-123L).withSourceIndex(0));
     assertThat(parser.parse("0x1a")).isEqualTo(value(26L).withSourceIndex(0));
@@ -53,8 +65,7 @@ public final class CelParserTest {
     assertThat(parser.parse("null")).isEqualTo(new NullValue(0));
   }
 
-  @Test
-  public void testIdentifiers() throws Exception {
+  @Test public void testIdentifiers() throws Exception {
     assertThat(parser.parse("x")).isEqualTo(new Ident("x", 0));
     assertThat(parser.parse("true_var")).isEqualTo(new Ident("true_var", 0));
     assertThat(parser.parse("false_var")).isEqualTo(new Ident("false_var", 0));
@@ -62,8 +73,7 @@ public final class CelParserTest {
     assertThat(parser.parse("in_var")).isEqualTo(new Ident("in_var", 0));
   }
 
-  @Test
-  public void testUnaryOperators() throws Exception {
+  @Test public void testUnaryOperators() throws Exception {
     assertThat(parser.parse("!true"))
         .isEqualTo(not(value(true).withSourceIndex(1)).withSourceIndex(0));
     assertThat(parser.parse("-x")).isEqualTo(negative(new Ident("x", 1)).withSourceIndex(0));
@@ -81,8 +91,7 @@ public final class CelParserTest {
         .isEqualTo(negative(negative(new Ident("x", 2)).withSourceIndex(1)).withSourceIndex(0));
   }
 
-  @Test
-  public void testBinaryOperators() throws Exception {
+  @Test public void testBinaryOperators() throws Exception {
     assertThat(parser.parse("1 + 2"))
         .isEqualTo(
             value(1L).withSourceIndex(0).add(value(2L).withSourceIndex(4)).withSourceIndex(2));
@@ -140,8 +149,7 @@ public final class CelParserTest {
             value(1L).withSourceIndex(0).modulo(value(2L).withSourceIndex(2)).withSourceIndex(1));
   }
 
-  @Test
-  public void testRelations() throws Exception {
+  @Test public void testRelations() throws Exception {
     assertThat(parser.parse("a < b"))
         .isEqualTo(new Ident("a", 0).lessThan(new Ident("b", 4)).withSourceIndex(2));
     assertThat(parser.parse("a <= b"))
@@ -170,8 +178,7 @@ public final class CelParserTest {
         .isEqualTo(new Ident("a", 0).notEqualTo(new Ident("b", 3)).withSourceIndex(1));
   }
 
-  @Test
-  public void testLogical() throws Exception {
+  @Test public void testLogical() throws Exception {
     assertThat(parser.parse("a && b"))
         .isEqualTo(new Ident("a", 0).and(new Ident("b", 5)).withSourceIndex(2));
     assertThat(parser.parse("a || b"))
@@ -191,8 +198,7 @@ public final class CelParserTest {
                 .withSourceIndex(2));
   }
 
-  @Test
-  public void testTernary() throws Exception {
+  @Test public void testTernary() throws Exception {
     assertThat(parser.parse("a ? b : c"))
         .isEqualTo(new CelExpr.IfElse(new Ident("a", 0), new Ident("b", 4), new Ident("c", 8), 2));
     assertThat(parser.parse("a ? (b ? c : d) : e"))
@@ -215,8 +221,7 @@ public final class CelParserTest {
                 new Ident("e", 18).or(new Ident("f", 23)).withSourceIndex(20), 7));
   }
 
-  @Test
-  public void testMemberOperations() throws Exception {
+  @Test public void testMemberOperations() throws Exception {
     assertThat(parser.parse("a.b"))
         .isEqualTo(new Ident("a", 0).select(new Ident("b", 2)).withSourceIndex(1));
     assertThat(parser.parse("a.b.c"))
@@ -259,16 +264,14 @@ public final class CelParserTest {
                 3));
   }
 
-  @Test
-  public void testOptionalSyntax() throws Exception {
+  @Test public void testOptionalSyntax() throws Exception {
     assertThat(parser.parse("a.?b"))
         .isEqualTo(new Ident("a", 0).optionalSelect(new Ident("b", 3)).withSourceIndex(1));
     assertThat(parser.parse("a[?b]"))
         .isEqualTo(new Ident("a", 0).optionalIndex(new Ident("b", 3)).withSourceIndex(1));
   }
 
-  @Test
-  public void testStructures() throws Exception {
+  @Test public void testStructures() throws Exception {
     assertThat(parser.parse("[1, 2, 3]"))
         .isEqualTo(
             new ListOf(
@@ -306,8 +309,7 @@ public final class CelParserTest {
     assertThat(parser.parse("{}")).isEqualTo(new MapOf(List.of(), 0));
   }
 
-  @Test
-  public void testMessageCreation() throws Exception {
+  @Test public void testMessageCreation() throws Exception {
     assertThat(parser.parse("Type{field: 1}"))
         .isEqualTo(
             new Struct(
@@ -340,8 +342,7 @@ public final class CelParserTest {
                 8));
   }
 
-  @Test
-  public void testComplexLiterals() throws Exception {
+  @Test public void testComplexLiterals() throws Exception {
     assertThat(parser.parse("\"hello \\\"world\\\"\""))
         .isEqualTo(string("hello \"world\"").withSourceIndex(0));
     assertThat(parser.parse("'hello \\'world\\''"))
@@ -399,8 +400,7 @@ public final class CelParserTest {
         .isEqualTo(bytes(new byte[] {(byte) -1}).withSourceIndex(0));
   }
 
-  @Test
-  public void testComplexUnary() throws Exception {
+  @Test public void testComplexUnary() throws Exception {
     assertThat(parser.parse("!a.b"))
         .isEqualTo(
             not(new Ident("a", 1).select(new Ident("b", 3)).withSourceIndex(2)).withSourceIndex(0));
@@ -422,8 +422,7 @@ public final class CelParserTest {
                 .withSourceIndex(0));
   }
 
-  @Test
-  public void testComplexBinaryAndPrecedence() throws Exception {
+  @Test public void testComplexBinaryAndPrecedence() throws Exception {
     assertThat(parser.parse("a + b * c / d % e - f"))
         .isEqualTo(
             new Ident("a", 0)
@@ -500,8 +499,7 @@ public final class CelParserTest {
                 .withSourceIndex(8));
   }
 
-  @Test
-  public void testComplexTernary() throws Exception {
+  @Test public void testComplexTernary() throws Exception {
     assertThat(parser.parse("a ? b : c ? d : e ? f : g"))
         .isEqualTo(
             new CelExpr.IfElse(
@@ -532,8 +530,7 @@ public final class CelParserTest {
                 2));
   }
 
-  @Test
-  public void testComplexMemberOperations() throws Exception {
+  @Test public void testComplexMemberOperations() throws Exception {
     assertThat(parser.parse("a.b.c(d)"))
         .isEqualTo(
             new MemberCall(
@@ -600,8 +597,7 @@ public final class CelParserTest {
                 .withSourceIndex(14));
   }
 
-  @Test
-  public void testComplexOptionalSyntax() throws Exception {
+  @Test public void testComplexOptionalSyntax() throws Exception {
     assertThat(parser.parse("a.?b.c"))
         .isEqualTo(
             new Ident("a", 0)
@@ -639,8 +635,7 @@ public final class CelParserTest {
                 .withSourceIndex(4));
   }
 
-  @Test
-  public void testComplexStructures() throws Exception {
+  @Test public void testComplexStructures() throws Exception {
     assertThat(parser.parse("[[1, 2], [3, 4]]"))
         .isEqualTo(
             new ListOf(
@@ -720,8 +715,7 @@ public final class CelParserTest {
                 4));
   }
 
-  @Test
-  public void testTripleQuotedStrings() throws Exception {
+  @Test public void testTripleQuotedStrings() throws Exception {
     assertThat(parser.parse("\"\"\"hello\"\"\"")).isEqualTo(string("hello").withSourceIndex(0));
     assertThat(parser.parse("'''hello'''")).isEqualTo(string("hello").withSourceIndex(0));
     assertThat(parser.parse("r\"\"\"hello\"\"\"")).isEqualTo(string("hello").withSourceIndex(0));
@@ -740,8 +734,7 @@ public final class CelParserTest {
         .isEqualTo(string("hello \t world").withSourceIndex(0));
   }
 
-  @Test
-  public void testEscapes() throws Exception {
+  @Test public void testEscapes() throws Exception {
     assertThat(parser.parse("\"hello \\a \\b \\f \\n \\r \\t \\v \\? \\` \\' \\\" \\\\\""))
         .isEqualTo(
             string("hello \u0007 \u0008 \u000c \n \r \t \u000b ? ` ' \" \\").withSourceIndex(0));
@@ -750,8 +743,7 @@ public final class CelParserTest {
     assertThat(parser.parse("\"\\U0000270c\"")).isEqualTo(string("\u270c").withSourceIndex(0));
   }
 
-  @Test
-  public void testComments() throws Exception {
+  @Test public void testComments() throws Exception {
     assertThat(parser.parse("1 + 2 // comment"))
         .isEqualTo(
             value(1L).withSourceIndex(0).add(value(2L).withSourceIndex(4)).withSourceIndex(2));
@@ -766,8 +758,7 @@ public final class CelParserTest {
             value(1L).withSourceIndex(0).add(value(2L).withSourceIndex(18)).withSourceIndex(16));
   }
 
-  @Test
-  public void testMapNonStringKeys() throws Exception {
+  @Test public void testMapNonStringKeys() throws Exception {
     assertThat(parser.parse("{1: 'a', 2u: 'b', true: 'c'}"))
         .isEqualTo(
             new MapOf(
@@ -790,8 +781,7 @@ public final class CelParserTest {
                 0));
   }
 
-  @Test
-  public void testKeywordsAsFields() throws Exception {
+  @Test public void testKeywordsAsFields() throws Exception {
     assertThat(parser.parse("a.`in`"))
         .isEqualTo(new Ident("a", 0).select(new Ident("in", 2)).withSourceIndex(1));
     assertThat(parser.parse("a.` b`"))
@@ -802,8 +792,7 @@ public final class CelParserTest {
         .isEqualTo(new Ident("a", 0).select(new Ident(" b ", 2)).withSourceIndex(1));
   }
 
-  @Test
-  public void testComplexPrecedenceMixed() throws Exception {
+  @Test public void testComplexPrecedenceMixed() throws Exception {
     assertThat(parser.parse("a ? b + c : d * e"))
         .isEqualTo(
             new CelExpr.IfElse(
@@ -838,14 +827,13 @@ public final class CelParserTest {
                 .withSourceIndex(16));
   }
 
-  @Test
-  public void testInvalidSyntax() throws Exception {
-    assertParseFailure("b\"\\u270c\"", "1:4", "expecting <a>, encountered: ");
-    assertParseFailure("!-x", "1:3", "expecting <digits>, encountered: ");
+  @Test public void testInvalidSyntax() throws Exception {
+    assertParseFailure("b\"\\u270c\"", "1:4", EXPECTED_ESCAPE_CHAR + ", encountered: ");
+    assertParseFailure("!-x", "1:3", EXPECTED_NUMBER_OR_DECIMAL + ", encountered: ");
     assertParseFailure("a ? b ? c : d : e", "1:7", "expecting <:>, encountered: ");
     assertParseFailure("a[b](c)", "1:5", "expecting <EOF>, encountered: ");
-    assertParseFailure("1 + ", "1:5", "expecting <!>, encountered: ");
-    assertParseFailure("?", "1:1", "expecting <!>, encountered: ");
+    assertParseFailure("1 + ", "1:5", EXPECTED_EXPR_START + ", encountered: ");
+    assertParseFailure("?", "1:1", EXPECTED_EXPR_START + ", encountered: ");
     assertParseFailure("a ? b", "1:6", "expecting <:>, encountered: ");
     assertParseFailure("a : b", "1:3", "expecting <EOF>, encountered: ");
     assertParseFailure("{'a'}", "1:5", "expecting <:>, encountered: ");
@@ -854,13 +842,13 @@ public final class CelParserTest {
     assertParseFailure("a.true", "1:3", "expecting <identifier>, encountered: ");
     assertParseFailure("a.false", "1:3", "expecting <identifier>, encountered: ");
     assertParseFailure("a.null", "1:3", "expecting <identifier>, encountered: ");
-    assertParseFailure("b\"\"\"\\u270c\"\"\"", "1:6", "expecting <a>, encountered: ");
-    assertParseFailure("b'''\\u270c'''", "1:6", "expecting <a>, encountered: ");
+    assertParseFailure("b\"\"\"\\u270c\"\"\"", "1:6", EXPECTED_ESCAPE_CHAR + ", encountered: ");
+    assertParseFailure("b'''\\u270c'''", "1:6", EXPECTED_ESCAPE_CHAR + ", encountered: ");
     assertParseFailure("rb'hello'", "1:3", "expecting <EOF>, encountered: ");
     assertParseFailure("rb\"hello\"", "1:3", "expecting <EOF>, encountered: ");
     assertParseFailure("Type{field: 1}(1)", "1:15", "expecting <EOF>, encountered: ");
-    assertParseFailure("!-x", "1:3", "expecting <digits>, encountered: ");
-    assertParseFailure("-!x", "1:2", "expecting <digits>, encountered: ");
+    assertParseFailure("!-x", "1:3", EXPECTED_NUMBER_OR_DECIMAL + ", encountered: ");
+    assertParseFailure("-!x", "1:2", EXPECTED_NUMBER_OR_DECIMAL + ", encountered: ");
     assertParseFailure("a input", "1:5", "unexpected `[a-zA-Z0-9_]`: ");
     assertParseFailure("r \"hello\"", "1:3", "expecting <EOF>, encountered: ");
     assertParseFailure("b \"hello\"", "1:3", "expecting <EOF>, encountered: ");
@@ -868,13 +856,13 @@ public final class CelParserTest {
     assertParseFailure("b 'hello'", "1:3", "expecting <EOF>, encountered: ");
     assertParseFailure("br 'hello'", "1:4", "expecting <EOF>, encountered: ");
     assertParseFailure("rb 'hello'", "1:4", "expecting <EOF>, encountered: ");
-    assertParseFailure("\"hello\\ nworld\"", "1:8", "expecting <a>, encountered: ");
+    assertParseFailure(
+        "\"hello\\ nworld\"", "1:8", EXPECTED_STRING_ESCAPE_CHAR + ", encountered: ");
     assertParseFailure("\"hello\\3 7 7world\"", "1:9", "expecting <[0-7]>, encountered: ");
     assertParseFailure("\"hello\\x1 aworld\"", "1:9", "expecting <2 hex digits>, encountered: ");
   }
 
-  @Test
-  public void testCppSuite_valid_arithmetic() {
+  @Test public void testCppSuite_valid_arithmetic() {
     assertThat(parser.parse("x * 2"))
         .isEqualTo(new Ident("x", 0).multiply(value(2L).withSourceIndex(4)).withSourceIndex(2));
     assertThat(parser.parse("x * 2u"))
@@ -902,8 +890,7 @@ public final class CelParserTest {
                 .withSourceIndex(7));
   }
 
-  @Test
-  public void testCppSuite_valid_memberOperations() {
+  @Test public void testCppSuite_valid_memberOperations() {
     assertThat(parser.parse("x * 2.0"))
         .isEqualTo(new Ident("x", 0).multiply(value(2.0).withSourceIndex(4)).withSourceIndex(2));
     assertThat(parser.parse("a.b(5)"))
@@ -967,8 +954,7 @@ public final class CelParserTest {
         .isEqualTo(new Has(new Ident("a", 4).select(new Ident("b/c", 6)).withSourceIndex(5), 3));
   }
 
-  @Test
-  public void testCppSuite_valid_literals() {
+  @Test public void testCppSuite_valid_literals() {
     assertThat(parser.parse("\"\\u2764\"")).isEqualTo(string("\u2764").withSourceIndex(0));
     assertThat(parser.parse("\"A\"")).isEqualTo(string("A").withSourceIndex(0));
     assertThat(parser.parse("true")).isEqualTo(value(true).withSourceIndex(0));
@@ -999,8 +985,7 @@ public final class CelParserTest {
         .isEqualTo(string("\u0007\u0008\u000c\n\r\t\u000b'\"\\? Legal escapes").withSourceIndex(0));
   }
 
-  @Test
-  public void testCppSuite_valid_unaryOperators() {
+  @Test public void testCppSuite_valid_unaryOperators() {
     assertThat(parser.parse("! false"))
         .isEqualTo(not(value(false).withSourceIndex(2)).withSourceIndex(0));
     assertThat(parser.parse("-a")).isEqualTo(negative(new Ident("a", 1)).withSourceIndex(0));
@@ -1013,8 +998,7 @@ public final class CelParserTest {
                 .withSourceIndex(0));
   }
 
-  @Test
-  public void testCppSuite_valid_creators() {
+  @Test public void testCppSuite_valid_creators() {
     assertThat(parser.parse("a[3]"))
         .isEqualTo(new Ident("a", 0).index(value(3L).withSourceIndex(2)).withSourceIndex(1));
     assertThat(parser.parse("SomeMessage{foo: 5, bar: \"xyz\"}"))
@@ -1219,8 +1203,7 @@ public final class CelParserTest {
                 0));
   }
 
-  @Test
-  public void testCppSuite_valid_logical() {
+  @Test public void testCppSuite_valid_logical() {
     assertThat(parser.parse("a > 5 && a < 10"))
         .isEqualTo(
             new Ident("a", 0)
@@ -1244,8 +1227,7 @@ public final class CelParserTest {
         .isEqualTo(new Ident("a", 0).and(new Ident("b", 5)).withSourceIndex(2));
   }
 
-  @Test
-  public void testCppSuite_valid_ternary() {
+  @Test public void testCppSuite_valid_ternary() {
     assertThat(parser.parse("a?b:c"))
         .isEqualTo(new CelExpr.IfElse(new Ident("a", 0), new Ident("b", 2), new Ident("c", 4), 1));
     assertThat(parser.parse("false && !true || false ? 2 : 3"))
@@ -1261,8 +1243,7 @@ public final class CelParserTest {
                 24));
   }
 
-  @Test
-  public void testCppSuite_valid_relations() {
+  @Test public void testCppSuite_valid_relations() {
     assertThat(parser.parse("a in b"))
         .isEqualTo(new Ident("a", 0).in(new Ident("b", 5)).withSourceIndex(2));
     assertThat(parser.parse("a == b"))
@@ -1304,8 +1285,7 @@ public final class CelParserTest {
                 .withSourceIndex(7));
   }
 
-  @Test
-  public void testCppSuite_valid_macros() {
+  @Test public void testCppSuite_valid_macros() {
     assertThat(parser.parse("m.exists_one(v, f)"))
         .isEqualTo(new ExistsOne(new Ident("m", 0), new Ident("v", 13), new Ident("f", 16), 12));
     assertThat(parser.parse("m.map(v, f)"))
@@ -1363,9 +1343,7 @@ public final class CelParserTest {
                 new MemberCall(
                     new Has(new Ident("a", 4).select(new Ident("b", 6)).withSourceIndex(5), 3),
                     new Ident("asList", 9), List.of(), 15),
-                new Ident("c", 25),
-                new Ident("c", 28),
-                24));
+                new Ident("c", 25), new Ident("c", 28), 24));
     assertThat(parser.parse("m.all(x, x > 0)"))
         .isEqualTo(
             new All(
@@ -1429,8 +1407,7 @@ public final class CelParserTest {
                 3));
   }
 
-  @Test
-  public void testCppSuite_valid_optionalSyntax() {
+  @Test public void testCppSuite_valid_optionalSyntax() {
     assertThat(parser.parse("a.?b[?0] && a[?c]"))
         .isEqualTo(
             new Ident("a", 0)
@@ -1471,8 +1448,7 @@ public final class CelParserTest {
                 List.of(new Ident("v", 13), new Ident("f", 16)), 12));
   }
 
-  @Test
-  public void testCppSuite_valid_logicalChaining() {
+  @Test public void testCppSuite_valid_logicalChaining() {
     assertThat(parser.parse("a || b || c || d || e || f"))
         .isEqualTo(
             new Ident("a", 0)
@@ -1517,25 +1493,25 @@ public final class CelParserTest {
                 .withSourceIndex(17));
   }
 
-  @Test
-  public void testCppSuite_invalid() {
-    assertParseFailure("{", "1:2", "expecting <?>, encountered: ");
-    assertParseFailure("*@a | b", "1:1", "expecting <!>, encountered: ");
+  @Test public void testCppSuite_invalid() {
+    assertParseFailure("{", "1:2", "expecting <one of [comma (,), ?, }]>, encountered: ");
+    assertParseFailure("*@a | b", "1:1", EXPECTED_EXPR_START + ", encountered: ");
     assertParseFailure("a | b", "1:3", "expecting <EOF>, encountered: ");
-    assertParseFailure("?", "1:1", "expecting <!>, encountered: ");
-    assertParseFailure("t{>C}", "1:3", "expecting <}>, encountered: ");
+    assertParseFailure("?", "1:1", EXPECTED_EXPR_START + ", encountered: ");
+    assertParseFailure("t{>C}", "1:3", EXPECTED_MAP_OR_STRUCT_ELEMENT + ", encountered: ");
     assertParseFailure(
         "TestAllTypes(){single_int32: 1, single_int64: 2}", "1:15",
         "expecting <EOF>, encountered: ");
-    assertParseFailure("1 + $", "1:5", "expecting <!>, encountered: ");
+    assertParseFailure("1 + $", "1:5", EXPECTED_EXPR_START + ", encountered: ");
     assertParseFailure("1 + 2\n3 +", "2:1", "expecting <EOF>, encountered: ");
     assertParseFailure("1.all(2, 3)", "1:1", "identifier expected for the 1st arg of all()");
-    assertParseFailure("1 + +", "1:5", "expecting <!>, encountered: ");
-    assertParseFailure("{\"a\": 1}.\"a\"", "1:10", "expecting <`>, encountered: ");
+    assertParseFailure("1 + +", "1:5", EXPECTED_EXPR_START + ", encountered: ");
+    assertParseFailure(
+        "{\"a\": 1}.\"a\"", "1:10", EXPECTED_IDENTIFIER_OR_BACKTICK + ", encountered: ");
     assertParseFailure("\"\\xFh\"", "1:4", "expecting <2 hex digits>, encountered: ");
     assertParseFailure(
         "\"\\a\\b\\f\\n\\r\\t\\v\\'\\\"\\\\\\? Illegal escape \\>\"", "1:41",
-        "expecting <a>, encountered: ");
+        EXPECTED_STRING_ESCAPE_CHAR + ", encountered: ");
     assertParseFailure(
         "'😁' in ['😁', '😑', '😦']\n   && in.😁", "2:7", "expecting <identifier>, encountered: ");
     assertParseFailure("as", "1:1", "expecting <identifier>, encountered: ");
@@ -1565,71 +1541,61 @@ public final class CelParserTest {
         "a.`@foo`", "1:4", "expecting <one or more [a-zA-Z0-9_./ -]>, encountered: ");
     assertParseFailure(
         "a.`$foo`", "1:4", "expecting <one or more [a-zA-Z0-9_./ -]>, encountered: ");
-    assertParseFailure("`a.b`", "1:1", "expecting <!>, encountered: ");
-    assertParseFailure("`a.b`()", "1:1", "expecting <!>, encountered: ");
-    assertParseFailure("b'\\UFFFFFFFF'", "1:4", "expecting <a>, encountered: ");
+    assertParseFailure("`a.b`", "1:1", EXPECTED_EXPR_START + ", encountered: ");
+    assertParseFailure("`a.b`()", "1:1", EXPECTED_EXPR_START + ", encountered: ");
+    assertParseFailure("b'\\UFFFFFFFF'", "1:4", EXPECTED_ESCAPE_CHAR + ", encountered: ");
   }
 
-  @Test
-  public void testFailures() {
+  @Test public void testFailures() {
     assertParseFailure("1(2)", "1:2", "expecting <EOF>, encountered: ");
     assertParseFailure("1{foo: 2}", "1:2", "expecting <EOF>, encountered: ");
   }
 
-  @Test
-  public void testIntegerOverflow_signedPositive() {
+  @Test public void testIntegerOverflow_signedPositive() {
     assertParseFailure("9223372036854775808", "1:1", "integer overflow");
   }
 
-  @Test
-  public void testIntegerOverflow_signedNegative() {
+  @Test public void testIntegerOverflow_signedNegative() {
     assertParseFailure("-9223372036854775809", "1:1", "integer overflow");
   }
 
-  @Test
-  public void testIntegerOverflow_unsigned() {
+  @Test public void testIntegerOverflow_unsigned() {
     assertParseFailure("18446744073709551616u", "1:1", "integer overflow");
   }
 
-  @Test
-  public void testExistsMacro_invalidArgs() {
+  @Test public void testExistsMacro_invalidArgs() {
     assertParseFailure("m.exists(v, f, g)", "1:1", "exists() expects 2 args, 3 provided");
     assertParseFailure("m.exists(1, f)", "1:1", "identifier expected for the 1st arg of exists()");
     assertParseFailure("m.exists(v)", "1:1", "exists() expects 2 args, 1 provided");
   }
 
-  @Test
-  public void testMapMacro_invalidArgs() {
+  @Test public void testMapMacro_invalidArgs() {
     assertParseFailure("m.map(v)", "1:1", "map() macro expects 2 or 3 args, 1 provided");
     assertParseFailure("m.map(v, f, g, h)", "1:1", "map() macro expects 2 or 3 args, 4 provided");
     assertParseFailure("m.map(1, f)", "1:1", "identifier expected for the 1st arg of map()");
     assertParseFailure("m.map(1, f, g)", "1:1", "identifier expected for the 1st arg of map()");
   }
 
-  @Test
-  public void testAllMacro_invalidArgs() {
+  @Test public void testAllMacro_invalidArgs() {
     assertParseFailure("m.all(v, f, g)", "1:1", "all() expects 2 args, 3 provided");
     assertParseFailure("m.all(1, f)", "1:1", "identifier expected for the 1st arg of all()");
     assertParseFailure("m.all(v)", "1:1", "all() expects 2 args, 1 provided");
   }
 
-  @Test
-  public void testExistsOneMacro_invalidArgs() {
+  @Test public void testExistsOneMacro_invalidArgs() {
     assertParseFailure("m.exists_one(v, f, g)", "1:1", "exists_one() expects 2 args, 3 provided");
     assertParseFailure(
         "m.exists_one(1, f)", "1:1", "identifier expected for the 1st arg of exists_one()");
     assertParseFailure("m.exists_one(v)", "1:1", "exists_one() expects 2 args, 1 provided");
   }
 
-  @Test
-  public void testFilterMacro_invalidArgs() {
+  @Test public void testFilterMacro_invalidArgs() {
     assertParseFailure("m.filter(v, f, g)", "1:1", "filter() expects 2 args, 3 provided");
     assertParseFailure("m.filter(1, f)", "1:1", "identifier expected for the 1st arg of filter()");
     assertParseFailure("m.filter(v)", "1:1", "filter() expects 2 args, 1 provided");
   }
 
-  @Test
-  public void testSourceIndex() throws Exception {
+  @Test public void testSourceIndex() throws Exception {
     CelExpr ast = parser.parse("a + b * 3");
     assertThat(ast.sourceIndex()).isEqualTo(2);
     CelExpr.Add add = (CelExpr.Add) ast;
@@ -1640,22 +1606,19 @@ public final class CelParserTest {
     assertThat(mult.right().sourceIndex()).isEqualTo(8);
   }
 
-  @Test
-  public void parseToProto_positions() {
+  @Test public void parseToProto_positions() {
     ParsedExpr parsed = parser.parseToProto("a + b * 3");
     SourceInfo sourceInfo = parsed.getSourceInfo();
     assertThat(sourceInfo.getPositionsMap()).containsExactly(1L, 2, 2L, 0, 3L, 6, 4L, 4, 5L, 8);
   }
 
-  @Test
-  public void parseToProtoWithComments_lineOffsets() {
+  @Test public void parseToProtoWithComments_lineOffsets() {
     ParsedExpr parsed = parser.parseToProto("a\n+ b\n* 3");
     SourceInfo sourceInfo = parsed.getSourceInfo();
     assertThat(sourceInfo.getLineOffsetsList()).containsExactly(2, 6, 10).inOrder();
   }
 
-  @Test
-  public void parseToProto_macroCalls() {
+  @Test public void parseToProto_macroCalls() {
     ParsedExpr parsed = parser.parseToProto("has(a.b)");
     SourceInfo sourceInfo = parsed.getSourceInfo();
     Expr expr = parsed.getExpr();
@@ -1665,21 +1628,17 @@ public final class CelParserTest {
             Expr.newBuilder()
                 .setCallExpr(Expr.Call.newBuilder()
                     .setFunction("has")
-                    .addArgs(
-                        Expr.newBuilder()
-                            .setId(3)
-                            .setSelectExpr(
-                                Expr.Select.newBuilder()
-                                    .setOperand(
-                                        Expr.newBuilder()
-                                            .setId(2)
-                                            .setIdentExpr(Expr.Ident.newBuilder().setName("a")))
-                                    .setField("b"))))
+                    .addArgs(Expr.newBuilder()
+                        .setId(3)
+                        .setSelectExpr(Expr.Select.newBuilder()
+                            .setOperand(Expr.newBuilder()
+                                .setId(2)
+                                .setIdentExpr(Expr.Ident.newBuilder().setName("a")))
+                            .setField("b"))))
                 .build());
   }
 
-  @Test
-  public void parseToProto_balancedLogical() {
+  @Test public void parseToProto_balancedLogical() {
     ParsedExpr parsed = parser.parseToProto("a && b && c && d");
     SourceInfo sourceInfo = parsed.getSourceInfo();
     Expr expr = parsed.getExpr();
@@ -1694,8 +1653,7 @@ public final class CelParserTest {
         .containsExactly(1L, 7, 2L, 2, 3L, 0, 4L, 5, 5L, 12, 6L, 10, 7L, 15);
   }
 
-  @Test
-  public void parseToProto_positions_parenthesizedAndCurlyBraces() {
+  @Test public void parseToProto_positions_parenthesizedAndCurlyBraces() {
     // 1. Parenthesized expression: (a + b)
     ParsedExpr parsedParentheses = parser.parseToProto("(a + b)");
     assertThat(parsedParentheses.getSourceInfo().getPositionsMap())
@@ -1725,8 +1683,7 @@ public final class CelParserTest {
             );
   }
 
-  @Test
-  public void testNulls() {
+  @Test public void testNulls() {
     NullPointerTester tester = new NullPointerTester();
     tester.testAllPublicStaticMethods(CelParser.class);
     tester.testAllPublicInstanceMethods(new CelParser());

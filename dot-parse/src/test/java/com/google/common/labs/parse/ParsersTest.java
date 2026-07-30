@@ -91,13 +91,45 @@ public class ParsersTest {
             """);
   }
 
+  @Test public void duration_skippingWhitespace_success() {
+    assertThat(Parsers.DURATION.parseSkipping(Character::isWhitespace, "  1s2m  "))
+        .isEqualTo(Duration.ofMinutes(2).plusSeconds(1));
+  }
+
+  @Test public void duration_skippingWhitespace_spaceBetweenDigitsAndUnitThrows() {
+    ParseException e = assertThrows(
+        ParseException.class, () -> Parsers.DURATION.parseSkipping(Character::isWhitespace, "1 s"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:2: expecting <one of [d, h, m, ms, ns, s, us, w]>, encountered:\s
+                1 s
+                 ^
+            """);
+  }
+
+  @Test public void duration_skippingWhitespace_spaceBetweenSegmentsThrows() {
+    ParseException e = assertThrows(
+        ParseException.class,
+        () -> Parsers.DURATION.parseSkipping(Character::isWhitespace, "1s 2m"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <EOF>, encountered:\s
+                1s 2m
+                   ^
+            """);
+  }
+
   @Test public void duration_decimalThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1.5s"));
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:2: expecting <w>, encountered:\s
+            at 1:2: expecting <one of [d, h, m, ms, ns, s, us, w]>, encountered:\s
                 1.5s
                  ^
             """);
@@ -148,8 +180,8 @@ public class ParsersTest {
   }
 
   @Test public void duration_overflowDurationThrows() {
-    ParseException e =
-        assertThrows(ParseException.class, () -> Parsers.DURATION.parse("3w9223372036854775807d100s"));
+    ParseException e = assertThrows(
+        ParseException.class, () -> Parsers.DURATION.parse("3w9223372036854775807d100s"));
     assertThat(e).hasMessageThat().isEqualTo("at 1:3: duration out of range: 9223372036854775807d");
   }
 

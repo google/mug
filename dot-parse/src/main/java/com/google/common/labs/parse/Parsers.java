@@ -2,6 +2,7 @@ package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
+import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
@@ -18,6 +19,8 @@ import java.time.Duration;
  * @since 10.8
  */
 public final class Parsers {
+  static final Parser<String> DIGITS = consecutive(CharacterSet.DECIMAL, "digits");
+  static final Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
 
   /**
    * Parser for unsigned decimal point numbers, e.g., {@code "1.23"}, {@code "0.0"}, {@code "1"},
@@ -27,7 +30,7 @@ public final class Parsers {
    * the number is a fraction smaller than 1.
    */
   public static final Parser<String> UNSIGNED_DECIMAL =
-      literally(digits(), one('.').followedBy(digits()).optional())
+      literally(DIGITS, one('.').followedBy(DIGITS).optional())
           .source()
           .suchThat(
               s -> !s.startsWith("0") || s.startsWith("0.") || s.equals("0"),
@@ -61,20 +64,21 @@ public final class Parsers {
    * <p>Note: Decimal numbers (e.g., {@code "1.5s"}) and negative values (e.g., {@code "-2s"}) are
    * not supported.
    */
-  public static final Parser<Duration> DURATION = sequence(
-          digits(),
-          anyOf(DurationUnit.values())
-              .notImmediatelyFollowedBy(charsIn("[a-zA-Z]"), "duration unit char"),
-          (num, unit) -> {
-            try {
-              return unit.of(Long.parseLong(num));
-            } catch (NumberFormatException e) {
-              throw Parser.fail(e.getMessage());
-            } catch (ArithmeticException e) {
-              throw Parser.fail("duration out of range: " + num + unit);
-            }
-          })
-      .atLeastOnce()
+  public static final Parser<Duration> DURATION = literally(
+          sequence(
+                  digits(),
+                  anyOf(DurationUnit.values())
+                      .notImmediatelyFollowedBy(charsIn("[a-zA-Z]"), "duration unit char"),
+                  (num, unit) -> {
+                    try {
+                      return unit.of(Long.parseLong(num));
+                    } catch (NumberFormatException e) {
+                      throw Parser.fail(e.getMessage());
+                    } catch (ArithmeticException e) {
+                      throw Parser.fail("duration out of range: " + num + unit);
+                    }
+                  })
+              .atLeastOnce())
       .map(durations -> {
         try {
           return durations.stream().reduce(Duration::plus).get();

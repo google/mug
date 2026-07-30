@@ -20,8 +20,13 @@ import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
+import com.google.errorprone.annotations.concurrent.LazyInit;
+import com.google.mu.util.stream.Joiner;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -30,17 +35,18 @@ import java.util.stream.Stream;
 final class OrParser<T> extends Parser<T> {
   private final List<Parser<T>> parsers;
   private final PrefixPruneTree<Parser<T>> pruneTree;
+  @LazyInit private String expectedSymbolsMessage;
 
   OrParser(List<? extends Parser<? extends T>> candidates) {
     checkArgument(candidates.size() > 0, "parsers cannot be empty");
-    this.parsers =
-        candidates.stream()
-            .flatMap( // flatten nested Or for more effective pruning.
-                p -> covariant(p) instanceof OrParser<? extends T> or
-                    ? or.parsers.stream()
-                    : Stream.of(requireNonNull(p)))
-            .map(Parser::<T>covariant)
-            .toList();
+    this.parsers = candidates.stream()
+        .flatMap( // flatten nested Or for more effective pruning.
+            p ->
+            covariant(p) instanceof OrParser<? extends T> or
+                ? or.parsers.stream()
+                : Stream.of(requireNonNull(p)))
+        .map(Parser::<T>covariant)
+        .toList();
     this.pruneTree = makePruneTreeIfUseful(parsers);
   }
 
@@ -57,11 +63,14 @@ final class OrParser<T> extends Parser<T> {
     if (pruneTree != null) {
       candidates = pruneTree.pruneByPrefix(input, start);
       if (candidates.isEmpty()) {
-        // When no candidate match by prefix, they must have failed right at 'start',
-        // whichever candidate reports the error. So picking the first is the "farthest".
-        // getFirst() will always succeed because we've already checked that parsers
-        // cannot be empty.
-        return parsers.getFirst().skipAndMatch(skip, input, start, context);
+        String expected = getExpectedSymbolsMessage();
+        return expected.isEmpty()
+            // When no candidate match by prefix, they must have failed right at 'start',
+            // whichever candidate reports the error. So picking the first is the "farthest".
+            // getFirst() will always succeed because we've already checked that parsers
+            // cannot be empty.
+            ? parsers.getFirst().skipAndMatch(skip, input, start, context)
+            : context.expecting(expected, start);
       }
     }
     MatchResult.Failure<?> farthestFailure = null;
@@ -77,7 +86,68 @@ final class OrParser<T> extends Parser<T> {
         }
       }
     }
+    if (farthestFailure.frontier() <= start) {
+      String expected = getExpectedSymbolsMessage();
+      if (!expected.isEmpty()) {
+        return context.expecting(expected, start);
+      }
+    }
     return farthestFailure.safeCast();
+  }
+
+  private String getExpectedSymbolsMessage() {
+    String result = expectedSymbolsMessage;
+    if (result == null) {
+      expectedSymbolsMessage = result = computeExpectedSymbolsMessage();
+    }
+    return result;
+  }
+
+  private String computeExpectedSymbolsMessage() {
+    List<Set<String>> prefixes = parsers.stream()
+        .map(Parser::getExpectedSymbols)
+        .filter(s -> !s.equals(EMPTY_PREFIX))
+        .toList();
+    if (prefixes.size() < 2) return "";
+    List<String> symbols = prefixes.stream()
+        .flatMap(Set::stream)
+        .filter(s -> !s.isEmpty())
+        .distinct()
+        .sorted(SYMBOL_ORDER)
+        .map(s -> s.equals(",") ? "comma (,)" : s)
+        .toList();
+    return symbols.size() > 1
+        ? symbols.stream().collect(Joiner.on(", ").between("one of [", "]"))
+        : "";
+  }
+
+  private static int categoryRank(String s) {
+    if (s.equals("EOF")) {
+      return 5;
+    }
+    if (s.isEmpty()) {
+      return 4;
+    }
+    char first = s.charAt(0);
+    if (first >= 'a' && first <= 'z') {
+      return 1;
+    }
+    if (first >= 'A' && first <= 'Z') {
+      return 2;
+    }
+    if (first >= '0' && first <= '9') {
+      return 3;
+    }
+    return 4;
+  }
+
+  private static final Comparator<String> SYMBOL_ORDER =
+      Comparator.comparing((String s) -> categoryRank(s)).thenComparing(Comparator.naturalOrder());
+
+  @Override Set<String> getExpectedSymbols() {
+    return parsers.stream()
+        .flatMap(p -> p.getExpectedSymbols().stream())
+        .collect(toUnmodifiableSet());
   }
 
   @Override Set<String> computePrefixes() {
@@ -92,7 +162,7 @@ final class OrParser<T> extends Parser<T> {
         result.add(prefix);
       }
     }
-    return result.stream().collect(toUnmodifiableSet());
+    return Collections.unmodifiableSet(new LinkedHashSet<>(result));
   }
 
   @Override Parser<?> ignoreReturn() {

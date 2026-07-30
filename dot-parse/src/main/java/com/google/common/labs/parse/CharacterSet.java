@@ -25,34 +25,36 @@ import static com.google.mu.util.Substring.prefix;
 import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableSet;
-
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.IntStream;
 
 import com.google.errorprone.annotations.concurrent.LazyInit;
 import com.google.mu.util.CharPredicate;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.IntStream;
 
 /**
  * Represents a set of characters specified by a regex-like character set string.
  *
- * <p>For example {@code charsIn("[a-zA-Z-_]")} is a shorthand of {@code
- * CharPredicate.range('a', 'z').orRange('A', 'Z').or('-').or('_')}.
+ * <p>For example {@code charsIn("[a-zA-Z-_]")} is a shorthand of {@code CharPredicate.range('a',
+ * 'z').orRange('A', 'Z').or('-').or('_')}.
  *
- * <p>You can also use {@code '^'} to get negative character set like:
- * {@code charsIn("[^a-zA-Z]")}, which is any non-alphabet character.
+ * <p>You can also use {@code '^'} to get negative character set like: {@code charsIn("[^a-zA-Z]")},
+ * which is any non-alphabet character.
  *
- * <p>Note that it's different from {@code CharPredicate.anyOf(string)},
- * which treats the string as a list of literal characters, not a regex-like
- * character set.
+ * <p>Note that it's different from {@code CharPredicate.anyOf(string)}, which treats the string as
+ * a list of literal characters, not a regex-like character set.
  *
- * <p>It's strongly recommended to install the mug-errorprone plugin (v9.4+) in your
- * compiler's and IDE's annotationProcessorPaths so that you can get instant feedback
- * against incorrect character set syntax.
+ * <p>It's strongly recommended to install the mug-errorprone plugin (v9.4+) in your compiler's and
+ * IDE's annotationProcessorPaths so that you can get instant feedback against incorrect character
+ * set syntax.
  *
  * <p>Implementation Note: regex isn't used during parsing. The character set string is translated
- * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction time.
+ * to a {@link CharPredicate#precomputeForAscii precomputed} {@code CharPredicate}, at construction
+ * time.
  *
  * @since 9.4
  * @deprecated Use the {@code Parser} overloads that directly take a {@code characterClass} string
@@ -126,15 +128,16 @@ public final class CharacterSet implements CharPredicate {
     if (needsEscaping.matchesNoneOf(string)) {
       return string;
     }
-    return string.chars().mapToObj(
-        c -> switch (c) {
+    return string.chars()
+        .mapToObj(c -> switch (c) {
           case '\r' -> "\\r";
           case '\n' -> "\\n";
           case '\t' -> "\\t";
           case '\f' -> "\\f";
           case '\b' -> "\\b";
           case '\\' -> "\\\\";
-          default -> Character.isISOControl(c) ? String.format("\\u%04X", c) : Character.toString(c);
+          default ->
+              Character.isISOControl(c) ? String.format("\\u%04X", c) : Character.toString(c);
         })
         .collect(joining());
   }
@@ -142,9 +145,12 @@ public final class CharacterSet implements CharPredicate {
   Set<String> getAsciiPrefixes() {
     Set<String> result = asciiPrefixes;
     if (result == null) {
-      asciiPrefixes = result = candidateCharsIfAscii()
-          .map(chars -> chars.stream().map(Object::toString).collect(toUnmodifiableSet()))
-          .orElse(Set.of(""));
+      asciiPrefixes =
+          result = candidateCharsIfAscii()
+              .map(
+                  chars -> chars.stream().map(Object::toString).collect(toCollection(TreeSet::new)))
+              .map(Collections::unmodifiableSet)
+              .orElse(Set.of(""));
     }
     return result;
   }
@@ -175,11 +181,9 @@ public final class CharacterSet implements CharPredicate {
           checkArgument(c1 <= c2, "invalid range [%s-%s]", c1, c2);
           return CharPredicate.range(c1, c2);
         });
-    Parser<CharPredicate>.OrEmpty positiveSet =
-        anyOf(range, validChar.map(CharPredicate::is))
-            .zeroOrMore(reducing(CharPredicate.NONE, CharPredicate::or));
-    Parser<CharPredicate> negativeSet =
-        string("^").then(positiveSet).map(CharPredicate::not);
+    Parser<CharPredicate>.OrEmpty positiveSet = anyOf(range, validChar.map(CharPredicate::is))
+        .zeroOrMore(reducing(CharPredicate.NONE, CharPredicate::or));
+    Parser<CharPredicate> negativeSet = string("^").then(positiveSet).map(CharPredicate::not);
     return negativeSet.or(positiveSet).between("[", "]");
   }
 
@@ -194,8 +198,6 @@ public final class CharacterSet implements CharPredicate {
 
   private static Set<Character> charsInRange(char c1, char c2) {
     checkArgument(c1 <= c2, "invalid range [%s-%s]", c1, c2);
-    return IntStream.rangeClosed(c1, c2)
-      .mapToObj(c -> (char) c)
-      .collect(toUnmodifiableSet());
+    return IntStream.rangeClosed(c1, c2).mapToObj(c -> (char) c).collect(toUnmodifiableSet());
   }
 }

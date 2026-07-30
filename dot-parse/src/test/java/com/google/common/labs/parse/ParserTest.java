@@ -2038,7 +2038,7 @@ public class ParserTest {
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("xbc"));
     assertThat(parser.matches("xbc")).isFalse();
     assertThat(thrown).hasMessageThat().contains("1:1");
-    assertThat(thrown).hasMessageThat().contains("expecting <a>");
+    assertThat(thrown).hasMessageThat().contains("expecting <one of [a, b]>");
   }
 
   @Test public void orEmpty_delimitedBy_bothSides() {
@@ -2382,9 +2382,11 @@ public class ParserTest {
     assertThat(parser.parse("xy")).isEqualTo("xy"); // chars(2)
     assertThat(parser.parse("123")).isEqualTo("123"); // digits()
 
-    // Failure with pruning. farthestFailure is the first candidate ("a1")
+    // Failure with pruning.
     ParseException e1 = assertThrows(ParseException.class, () -> parser.parse("a"));
-    assertThat(e1).hasMessageThat().contains("expecting <2 char(s)>");
+    assertThat(e1)
+        .hasMessageThat()
+        .contains("expecting <one of [a1, a2, a3, a4, a5, a6, a7, a8, a9, digits, 2 char(s)]>");
 
     // Failure with completely mismatched input. "ba" matches chars(2), leftovers "r" causes EOF
     // error.
@@ -2403,9 +2405,13 @@ public class ParserTest {
     assertThat(parser.parse("a")).isEqualTo("a"); // chars(1)
     assertThat(parser.parse("abcdefgh")).isEqualTo("abcdefgh"); // chars(8)
 
-    // Failure with pruning. Reporting the first survivor candidate ("chars(8)").
+    // Failure with pruning. Reporting the expected prefixes.
     ParseException e = assertThrows(ParseException.class, () -> parser.parse(""));
-    assertThat(e).hasMessageThat().contains("expecting <8 char(s)>");
+    assertThat(e)
+        .hasMessageThat()
+        .contains(
+            "expecting <one of [a1, a2, a3, 1 char(s), 2 char(s), 3 char(s), 4 char(s), 5 char(s),"
+                + " 6 char(s), 7 char(s), 8 char(s)]>");
   }
 
   @Test public void anyOf_pruningSuppressed_withMixedSkippingBehavior() {
@@ -2418,9 +2424,11 @@ public class ParserTest {
     assertThat(parser.parse("a1")).isEqualTo("a1");
     assertThat(parser.parse("b")).isEqualTo("b");
 
-    // Failure with mixed skipping. Reporting the first candidate ("a1").
+    // Failure with mixed skipping. Reporting the expected prefixes.
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("c"));
-    assertThat(e).hasMessageThat().contains("expecting <a1>");
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [a1, a10, a2, a3, a4, a5, a6, a7, a8, a9, b]>");
   }
 
   @Test public void anyOf_commonPrefixPruning() {
@@ -2434,13 +2442,21 @@ public class ParserTest {
     assertThat(parser.parse("prefix01")).isEqualTo("prefix01");
     assertThat(parser.parse("prefix11")).isEqualTo("prefix11");
 
-    // Failure with common prefix. Reporting the first candidate "prefix01" because pruning is used.
+    // Failure with common prefix.
     ParseException e1 = assertThrows(ParseException.class, () -> parser.parse("prefix"));
-    assertThat(e1).hasMessageThat().contains("expecting <prefix01>");
+    assertThat(e1)
+        .hasMessageThat()
+        .contains(
+            "expecting <one of [prefix01, prefix02, prefix03, prefix04, prefix05, prefix06,"
+                + " prefix07, prefix08, prefix09, prefix10, prefix11]>");
 
     // Failure with completely different input.
     ParseException e2 = assertThrows(ParseException.class, () -> parser.parse("other"));
-    assertThat(e2).hasMessageThat().contains("expecting <prefix01>");
+    assertThat(e2)
+        .hasMessageThat()
+        .contains(
+            "expecting <one of [prefix01, prefix02, prefix03, prefix04, prefix05, prefix06,"
+                + " prefix07, prefix08, prefix09, prefix10, prefix11]>");
   }
 
   @Test public void anyOf_orderSensitivityWithPruning() {
@@ -2478,7 +2494,11 @@ public class ParserTest {
     assertThat(outer.parse("FOO")).isEqualTo("foo");
 
     ParseException e = assertThrows(ParseException.class, () -> outer.parse("x"));
-    assertThat(e).hasMessageThat().contains("expecting <2 char(s)>");
+    assertThat(e)
+        .hasMessageThat()
+        .contains(
+            "expecting <one of [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, bAR, bAr, baR, bar, fOO,"
+                + " fOo, foO, foo, BAR, BAr, BaR, Bar, FOO, FOo, FoO, Foo, 2 char(s)]>");
   }
 
   @Test public void anyOf_nestedAnyOf_oneNotPrunable() {
@@ -2492,7 +2512,9 @@ public class ParserTest {
     assertThat(outer.parse("bc")).isEqualTo("bc");
 
     ParseException e = assertThrows(ParseException.class, () -> outer.parse("x"));
-    assertThat(e).hasMessageThat().contains("expecting <2 char(s)>");
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, b, 2 char(s)]>");
   }
 
   @Test public void anyOf_nestedAnyOf_allPrunable() {
@@ -2508,7 +2530,9 @@ public class ParserTest {
     assertThat(outer.parse("b2")).isEqualTo("b2");
 
     ParseException e = assertThrows(ParseException.class, () -> outer.parse("b3"));
-    assertThat(e).hasMessageThat().contains("expecting <a0>");
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, b1, b2]>");
   }
 
   @Test public void anyOf_nestedAnyOf_allHonorSkipping() {
@@ -3240,7 +3264,7 @@ public class ParserTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <digits>, encountered:\s
+            at 1:1: expecting <one of [digits, comma (,)]>, encountered:\s
                 <EOF>
                 ^
             """);
@@ -4054,7 +4078,7 @@ public class ParserTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting <content>, encountered:\s
+            at 1:3: expecting <one of [content, ]]>, encountered:\s
                  [ foo]
                   ^
             """);
@@ -6267,7 +6291,9 @@ public class ParserTest {
 
     // Input "z" should prune all except chars(4).
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
-    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [one or more [abc], x1, x2, x3, x4, x5, 4 char(s)]>");
     assertThat(parser.parse("a")).isEqualTo("a");
   }
 
@@ -6281,7 +6307,9 @@ public class ParserTest {
 
     // Input "z" should prune all except chars(4).
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
-    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [x1, x2, x3, x4, x5, zero or more [abc], 4 char(s)]>");
     assertThat(parser.parse("a")).isEqualTo("a");
   }
 
@@ -6298,7 +6326,9 @@ public class ParserTest {
 
     // Input "!" should prune all except chars(4).
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("!"));
-    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [word, x1, x2, x3, x4, x5, 4 char(s)]>");
     assertThat(parser.parse("a")).isEqualTo("a");
   }
 
@@ -6311,7 +6341,9 @@ public class ParserTest {
 
     // Input "a" should prune all except chars(4).
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("a"));
-    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [digits, x1, x2, x3, x4, x5, 4 char(s)]>");
     assertThat(parser.parse("1")).isEqualTo("1");
   }
 
@@ -6349,7 +6381,9 @@ public class ParserTest {
     // [^abc] fails at index 0 (expects [^abc], got 'a').
     // abc matches farther, thus its error is reported.
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("abz"));
-    assertThat(e).hasMessageThat().contains("expecting <abc>");
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [abc, one or more [^abc], x1, x2, x3, x4, x5]>");
   }
 
   @Test public void consecutive_with_caret_pruning() {
@@ -6361,7 +6395,9 @@ public class ParserTest {
 
     // Input "z" should prune all except chars(4).
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
-    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [one or more [ab^c], x1, x2, x3, x4, x5, 4 char(s)]>");
     assertThat(parser.parse("^")).isEqualTo("^");
   }
 
@@ -6374,7 +6410,9 @@ public class ParserTest {
 
     // Input "z" should prune all except chars(4).
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
-    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [one or more [a-a], x1, x2, x3, x4, x5, 4 char(s)]>");
     assertThat(parser.parse("a")).isEqualTo("a");
   }
 
@@ -6388,7 +6426,9 @@ public class ParserTest {
 
     // Input "z" should prune all except chars(4).
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
-    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [x1, x2, x3, x4, x5, 4 char(s), [abc]]>");
     assertThat(parser.parse("a")).isEqualTo("a");
   }
 
@@ -6408,7 +6448,7 @@ public class ParserTest {
     // [^abc] fails at index 0 (expects [^abc], got 'a').
     // abc matches farther, thus its error is reported.
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("abz"));
-    assertThat(e).hasMessageThat().contains("expecting <abc>");
+    assertThat(e).hasMessageThat().contains("expecting <one of [abc, x1, x2, x3, x4, x5, [^abc]]>");
   }
 
   @Test public void anyOfEnum_success() {
@@ -6435,7 +6475,9 @@ public class ParserTest {
 
     // Input "z" should prune x1 and parser. Only chars(4) tried.
     ParseException e = assertThrows(ParseException.class, () -> anyOfParser.parse("z"));
-    assertThat(e).hasMessageThat().contains("expecting <4 char(s)>");
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [x1, 4 char(s), *, +, ++, -, --, /]>");
   }
 
   @Test public void anyOfEnum_shuffled_success() {

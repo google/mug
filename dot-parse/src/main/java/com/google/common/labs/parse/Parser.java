@@ -86,7 +86,7 @@ import java.util.stream.Stream;
  */
 @ThreadSafe
 public abstract non-sealed class Parser<T> implements Production<T> {
-  private static final Set<String> EMPTY_PREFIX = Set.of("");
+  static final Set<String> EMPTY_PREFIX = Set.of("");
 
   /**
    * Only use in context where input consumption is guaranteed. Do not use within a loop, like
@@ -165,6 +165,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(name, start);
       }
 
+      @Override Set<String> getExpectedSymbols() {
+        return Set.of(name);
+      }
+
       @Override Set<String> computePrefixes() {
         return prefixesIfAscii(matcher);
       }
@@ -188,6 +192,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return end > start
             ? new MatchResult.Success<>(start, end, null)
             : context.expecting(name, end);
+      }
+
+      @Override Set<String> getExpectedSymbols() {
+        return Set.of(name);
       }
 
       @Override Set<String> computePrefixes() {
@@ -257,6 +265,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(name, start);
       }
 
+      @Override Set<String> getExpectedSymbols() {
+        return Set.of(name);
+      }
+
       @Override Set<String> computePrefixes() {
         return prefixes;
       }
@@ -283,7 +295,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.4
    */
   public static Parser<String> word() {
-    return Constants.WORD;
+    return Parsers.WORD;
   }
 
   /**
@@ -292,7 +304,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.4
    */
   public static Parser<String> digits() {
-    return Constants.DIGITS;
+    return Parsers.DIGITS;
   }
 
   /**
@@ -1413,6 +1425,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         return left().skipAndMatch(skip, input, start, context).suchThat(condition, name, context);
       }
+
+      @Override Set<String> getExpectedSymbols() {
+        return Set.of(name);
+      }
     };
   }
 
@@ -2443,6 +2459,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return result;
   }
 
+  Set<String> getExpectedSymbols() {
+    return getPrefixes();
+  }
+
   /**
    * Returns the characters that are known to disqualify this parser if it's the next char in the
    * input. Note that characters not returned don't guarantee this parser will match.
@@ -2511,6 +2531,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
     @Override BitSet computeBlocklist() {
       return left().getBlocklist();
+    }
+
+    @Override Set<String> getExpectedSymbols() {
+      return left().getExpectedSymbols();
     }
 
     final Parser<T> left() {
@@ -2734,7 +2758,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     @SuppressWarnings("OverrideThrowableToString")
     @Override public String toString() {
       return "ParseError isn't expected to be caught or propagated outside of the Parser"
-                 + " framework.";
+          + " framework.";
     }
 
     @SuppressWarnings("AssignmentExpression")
@@ -2743,11 +2767,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       assert debugMode = true;
       return debugMode;
     }
-  }
-
-  private interface Constants {
-    static Parser<String> DIGITS = consecutive(CharacterSet.DECIMAL, "digits");
-    static Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
   }
 
   Parser() {}
