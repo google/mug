@@ -6,10 +6,12 @@ import static com.google.common.labs.parse.Parser.bmpCodeUnit;
 import static com.google.common.labs.parse.Parser.caseInsensitive;
 import static com.google.common.labs.parse.Parser.caseInsensitiveWord;
 import static com.google.common.labs.parse.Parser.chars;
+import static com.google.common.labs.parse.Parser.define;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.first;
 import static com.google.common.labs.parse.Parser.hexDigits;
 import static com.google.common.labs.parse.Parser.literally;
+import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.or;
 import static com.google.common.labs.parse.Parser.quotedBy;
 import static com.google.common.labs.parse.Parser.sequence;
@@ -1072,7 +1074,7 @@ public class ParserTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:4: expecting <bar>, encountered:\s
+            at 1:4: expecting <one of [bar, EOF]>, encountered:\s
                 foobaz
                    ^
             """);
@@ -2518,6 +2520,50 @@ public class ParserTest {
             """);
   }
 
+  @Test public void anyOf_expectedSymbolsAggregation_withFirstString() {
+    Parser<?> parser = anyOf(
+        one(DIGIT, "digit"), first("abc"), string("def").suchThat(s -> true, "non-reserved word"));
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("x"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [abc, digit, non-reserved word]>, encountered:\s
+                x
+                ^
+            """);
+  }
+
+  @Test public void anyOf_expectedSymbolsAggregation_withDefine() {
+    Parser<Object> atom = one(DIGIT, "digit").map(c -> c - '0');
+    Parser<Object> expression = define(expr -> anyOf(expr.between("(", ")"), atom));
+    Parser<?> parser = anyOf(expression, string("def").suchThat(s -> true, "non-reserved word"));
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("x"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [digit, non-reserved word, (]>, encountered:\s
+                x
+                ^
+            """);
+  }
+
+  @Test public void anyOf_expectedSymbolsAggregation_withCaseInsensitive() {
+    Parser<?> parser = anyOf(
+        one(DIGIT, "digit"), caseInsensitive("abc"),
+        string("def").suchThat(s -> true, "non-reserved word"));
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("x"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [abc, digit, non-reserved word]>, encountered:\s
+                x
+                ^
+            """);
+  }
+
   @Test public void anyOf_commonPrefixPruning() {
     // 11 candidates sharing a common prefix "prefix".
     // Use prefix01...prefix11 so none is a prefix of another.
@@ -2584,8 +2630,7 @@ public class ParserTest {
     assertThat(e)
         .hasMessageThat()
         .contains(
-            "expecting <one of [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, bAR, bAr, baR, bar, fOO,"
-                + " fOo, foO, foo, BAR, BAr, BaR, Bar, FOO, FOo, FoO, Foo, 2 char(s)]>");
+            "expecting <one of [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, bar, foo, 2 char(s)]>");
   }
 
   @Test public void anyOf_nestedAnyOf_oneNotPrunable() {

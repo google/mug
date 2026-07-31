@@ -32,17 +32,20 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public final class CelParserTest {
   private static final String EXPECTED_EXPR_START =
-      "expecting <one of [b, digits, false, identifier, null, r\", r\"\"\", r', r''', true, B,"
-          + " R\", R\"\"\", R', R''', 0X, 0x, !, \", \"\"\", ', ''', (, -, ., [, {]>";
+      "expecting <one of [b, digits, false, identifier, null, r\", r\"\"\", r', r''', true,"
+          + " R\", R\"\"\", R', R''', 0x, !, \", \"\"\", ', ''', (, -, ., [, {]>";
   private static final String EXPECTED_ESCAPE_CHAR =
-      "expecting <one of [a, b, f, n, r, t, v, x, X, \", ', ?, [0-3], \\, `]>";
+      "expecting <one of [a, b, f, n, r, t, v, x, \", ', ?, [0-3], \\, `]>";
   private static final String EXPECTED_STRING_ESCAPE_CHAR =
-      "expecting <one of [a, b, f, n, r, t, u, v, x, U, X, \", ', ?, [0-3], \\, `]>";
+      "expecting <one of [a, b, f, n, r, t, u, v, x, U, \", ', ?, [0-3], \\, `]>";
   private static final String EXPECTED_NUMBER_OR_DECIMAL = "expecting <one of [digits, .]>";
   private static final String EXPECTED_MAP_OR_STRUCT_ELEMENT =
       "expecting <one of [identifier, comma (,), ?, `, }]>";
   private static final String EXPECTED_IDENTIFIER_OR_BACKTICK =
       "expecting <one of [identifier, `]>";
+  private static final String EXPECTED_MAP_ELEMENT_OR_CLOSE =
+      "expecting <one of [b, digits, false, identifier, null, r\", r\"\"\", r', r''', true,"
+          + " R\", R\"\"\", R', R''', 0x, !, \", \"\"\", ', ''', (, comma (,), -, ., ?, [, {, }]>";
 
   private final CelParser parser = new CelParser();
 
@@ -1494,7 +1497,7 @@ public final class CelParserTest {
   }
 
   @Test public void testCppSuite_invalid() {
-    assertParseFailure("{", "1:2", "expecting <one of [comma (,), ?, }]>, encountered: ");
+    assertParseFailure("{", "1:2", EXPECTED_MAP_ELEMENT_OR_CLOSE + ", encountered: ");
     assertParseFailure("*@a | b", "1:1", EXPECTED_EXPR_START + ", encountered: ");
     assertParseFailure("a | b", "1:3", "expecting <EOF>, encountered: ");
     assertParseFailure("?", "1:1", EXPECTED_EXPR_START + ", encountered: ");

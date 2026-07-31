@@ -1,6 +1,7 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.truth.Truth.assertThat;
@@ -76,7 +77,7 @@ public final class OperatorTableTest {
     assertThat(parse(code)).isEqualTo(-416);
   }
 
-  @Test public void simpleCalculator_error_missingOperator() {
+  @Test public void simpleCalculator_missingOperator() {
     Parser.ParseException e = assertThrows(Parser.ParseException.class, () -> parse("(12 34)"));
     assertThat(e)
         .hasMessageThat()
@@ -85,6 +86,34 @@ public final class OperatorTableTest {
             at 1:5: expecting <)>, encountered:\s
                 (12 34)
                     ^
+            """);
+  }
+
+  @Test
+  public void simpleCalculator_missingOperand() {
+    String code = "1 +";
+    Parser.ParseException e = assertThrows(Parser.ParseException.class, () -> parse(code));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <one of [digits, (, -]>, encountered:\s
+                1 +
+                   ^
+            """);
+  }
+
+  @Test
+  public void simpleCalculator_missingClosingParenthesis() {
+    String code = "(1 + 2";
+    Parser.ParseException e = assertThrows(Parser.ParseException.class, () -> parse(code));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:7: expecting <)>, encountered:\s
+                (1 + 2
+                      ^
             """);
   }
 
@@ -113,8 +142,7 @@ public final class OperatorTableTest {
   private int parse(String input) {
     Parser<Integer> calculator = Parser.define(
         expr -> operatorTable.build(
-            expr.between("(", ")")
-                .or(consecutive(range('0', '9'), "number").map(Integer::parseInt))));
+            expr.between("(", ")").or(digits().map(Integer::parseInt))));
     return calculator.parseSkipping(Character::isWhitespace, input);
   }
 }

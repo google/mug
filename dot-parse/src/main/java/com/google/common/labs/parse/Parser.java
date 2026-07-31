@@ -101,6 +101,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
               ? new MatchResult.Success<>(start, start, null)
               : context.expecting("EOF", start);
         }
+
+        @Override Set<String> getExpectedSymbols() {
+          return Set.of("EOF");
+        }
       };
 
   /**
@@ -359,6 +363,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             ? new MatchResult.Success<>(found, found + needle.length(), needle)
             : context.expecting(needle, start);
       }
+
+      @Override Set<String> getExpectedSymbols() {
+        return Set.of(needle);
+      }
     };
   }
 
@@ -401,6 +409,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
       @Override Set<String> computePrefixes() {
         return caseInsensitivePrefixes(string, 4);
+      }
+
+      @Override Set<String> getExpectedSymbols() {
+        return Set.of(string);
       }
     };
   }
@@ -2420,6 +2432,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
       checkState(ref.compareAndSet(null, covariant(parser)), "definedAs() already called");
       return parser;
+    }
+
+    @Override Set<String> getExpectedSymbols() {
+      Parser<?> p = ref.get();
+      return p == null ? Set.of() : ref.get().getExpectedSymbols();
     }
   }
 
