@@ -40,7 +40,8 @@ import java.util.stream.Stream;
 final class OrParser<T> extends Parser<T> {
   private final List<Parser<T>> parsers;
   private final PrefixPruneTree<Parser<T>> pruneTree;
-  @LazyInit private String expectedName;
+
+  @LazyInit private volatile Set<String> expectedSymbols;
 
   OrParser(List<? extends Parser<? extends T>> candidates) {
     checkArgument(candidates.size() > 0, "parsers cannot be empty");
@@ -71,14 +72,14 @@ final class OrParser<T> extends Parser<T> {
     if (pruneTree != null) {
       candidates = pruneTree.pruneByPrefix(input, start);
       if (candidates.isEmpty()) {
-        String expected = getExpectedName();
+        if (getExpectedSymbols().size() > 1) {
+          return context.expecting(this, start);
+        }
         // When no candidate match by prefix, they must have failed right at 'start',
         // whichever candidate reports the error. So picking the first is the "farthest".
         // getFirst() will always succeed because we've already checked that parsers
         // cannot be empty.
-        return expected.isEmpty()
-            ? parsers.getFirst().skipAndMatch(skip, input, start, context)
-            : context.expecting(expected, start);
+        return parsers.getFirst().skipAndMatch(skip, input, start, context);
       }
     }
     MatchResult.Failure<T> farthestFailure = null;
@@ -92,11 +93,8 @@ final class OrParser<T> extends Parser<T> {
         return result;
       }
     }
-    if (farthestFailure.frontier() == start) {
-      String expected = getExpectedName();
-      if (!expected.isEmpty()) {
-        return context.expecting(expected, start);
-      }
+    if (farthestFailure.frontier() == start && getExpectedSymbols().size() > 1) {
+      return context.expecting(this, start);
     }
     return farthestFailure;
   }
@@ -179,20 +177,17 @@ final class OrParser<T> extends Parser<T> {
   }
 
   @Override Set<String> getExpectedSymbols() {
-    return parsers.stream()
-        .flatMap(p -> p.getExpectedSymbols().stream())
-        .collect(toUnmodifiableSet());
-  }
-
-  private String getExpectedName() {
-    String result = expectedName;
+    Set<String> result = expectedSymbols;
     if (result == null) {
-      expectedName = result = computeExpectedName(parsers);
+      expectedSymbols =
+          result = parsers.stream()
+              .flatMap(p -> p.getExpectedSymbols().stream().filter(s -> !s.isEmpty()))
+              .collect(toUnmodifiableSet());
     }
     return result;
   }
 
-  private static String computeExpectedName(List<? extends Parser<?>> parsers) {
+  @Override public String toString() {
     Comparator<String> friendlyOrder = comparing(
         (String s) -> {
           if (s.equals("EOF")) return 5;
@@ -202,14 +197,9 @@ final class OrParser<T> extends Parser<T> {
           if (isDigit(c)) return 3;
           return 4;
         });
-    List<String> symbols = parsers.stream()
-        .flatMap(candidate -> candidate.getExpectedSymbols().stream().filter(s -> !s.isEmpty()))
-        .distinct()
+    return getExpectedSymbols().stream()
         .sorted(friendlyOrder.thenComparing(naturalOrder()))
         .map(s -> s.equals(",") ? "comma (,)" : s)
-        .toList();
-    return symbols.size() > 1
-        ? symbols.stream().collect(Joiner.on(", ").between("one of [", "]"))
-        : ""; // if only one expected symbol, just return error as is without the "one of [...]".
+        .collect(Joiner.on(", ").between("one of [", "]"));
   }
 }

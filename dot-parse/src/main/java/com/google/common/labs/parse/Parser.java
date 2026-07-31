@@ -2621,9 +2621,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * Represents failure with an index in the source, and an error message with predefined {name}
      * and {snippet} template placeholders to be filled when throwing exception.
      */
-    record Failure<V>(int at, long frontier, String messageTemplate, String symbolName)
+    record Failure<V>(int at, long frontier, String messageTemplate, Object symbolName)
         implements MatchResult<V> {
-      Failure(int at, String messageTemplate, String symbolName) {
+      Failure(int at, String messageTemplate, Object symbolName) {
         this(at, at, messageTemplate, symbolName);
       }
 
@@ -2644,7 +2644,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             .replaceAllFrom(
                 messageTemplate,
                 placeholder -> switch (placeholder.toString()) {
-                  case "{name}" -> symbolName;
+                  case "{name}" -> String.valueOf(symbolName);
                   case "{snippet}" -> new Snippet(input, at).toString();
                   default -> placeholder;
                 });
@@ -2670,20 +2670,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   static class ErrorContext {
     static final ErrorContext MINIMAL = new ErrorContext();
 
-    final <V> MatchResult.Failure<V> expecting(String symbolName, int at) {
+    final <V> MatchResult.Failure<V> expecting(Object symbolName, int at) {
       return expecting(symbolName, at, at);
     }
 
-    <V> MatchResult.Failure<V> expecting(String symbolName, int at, long frontier) {
+    <V> MatchResult.Failure<V> expecting(Object symbolName, int at, long frontier) {
       return failAt(at, frontier, "expecting <{name}>.", symbolName);
     }
 
-    final <V> MatchResult.Failure<V> failAt(int at, String messageTemplate, String symbolName) {
+    final <V> MatchResult.Failure<V> failAt(int at, String messageTemplate, Object symbolName) {
       return failAt(at, at, messageTemplate, symbolName);
     }
 
     <V> MatchResult.Failure<V> failAt(
-        int at, long frontier, String messageTemplate, String symbolName) {
+        int at, long frontier, String messageTemplate, Object symbolName) {
       return new MatchResult.Failure<V>(at, frontier, messageTemplate, symbolName);
     }
 
@@ -2695,12 +2695,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private static final class ErrorTracker extends ErrorContext {
     private MatchResult.Failure<?> farthestFailure = null;
 
-    @Override <V> MatchResult.Failure<V> expecting(String symbolName, int at, long frontier) {
+    @Override <V> MatchResult.Failure<V> expecting(Object symbolName, int at, long frontier) {
       return failAt(at, frontier, "expecting <{name}>, encountered: {snippet}", symbolName);
     }
 
     @Override <V> MatchResult.Failure<V> failAt(
-        int at, long frontier, String messageTemplate, String symbolName) {
+        int at, long frontier, String messageTemplate, Object symbolName) {
       MatchResult.Failure<V> failure = super.failAt(at, frontier, messageTemplate, symbolName);
       // prefer the farthest then the most recent failure
       if (farthestFailure == null || failure.frontier >= farthestFailure.frontier) {

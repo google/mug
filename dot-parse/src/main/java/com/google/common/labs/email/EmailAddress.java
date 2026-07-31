@@ -29,10 +29,9 @@ import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.last;
+import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.filtering;
-import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import com.google.common.labs.parse.Parser;
@@ -47,12 +46,13 @@ import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 import com.google.mu.util.stream.Joiner;
 import java.net.IDN;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collector;
 
 /**
  * Represents a strictly validated email address according to RFC 5322, designed as a modern,
@@ -233,8 +233,6 @@ public final class EmailAddress {
   private static final Parser<AddrSpecAlike> ADDR_SPEC_ALIKE =
       literally(sequence(LOCAL_PART.followedBy("@"), DOMAIN, AddrSpecAlike::new));
 
-  private static final Parser<?> ADDRESS_LIST_DELIMITER = one("[,;]").atLeastOnce(counting());
-
   /**
    * Parser that strictly matches only the RFC 5322 {@code addr-spec} (i.e., {@code
    * local-part@domain}), rejecting display names and angle brackets.
@@ -262,6 +260,12 @@ public final class EmailAddress {
   private static final Parser<Object> ADDRESS_OR_JUNK = anyOf(
       PARSER.notFollowedBy(one("[^,;]"), "non-separator"), // don't extract a@b from a@b@c
       consecutive("[^,;]").map(String::trim));
+
+  private static final Parser<?> ADDRESS_LIST_DELIMITER = one("[,;]").atLeastOnce(counting());
+  private static final Parser<List<Object>>.OrEmpty ADDRESS_OR_JUNK_LIST =
+      ADDRESS_OR_JUNK
+          .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
+          .optionallyFollowedBy(ADDRESS_LIST_DELIMITER);
 
   private final String localPart;
   private final String domain;
@@ -469,10 +473,17 @@ public final class EmailAddress {
    */
   public static List<EmailAddress> parseAddressList(
       String addressList, Consumer<? super String> ifInvalid) {
-    return ADDRESS_OR_JUNK
-        .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, onlyEmailAddresses(ifInvalid))
-        .followedBy(ADDRESS_LIST_DELIMITER.orElse(null))
-        .parseSkipping(SAFE_WHITESPACE, addressList);
+    requireNonNull(ifInvalid);
+    List<?> parsed = ADDRESS_OR_JUNK_LIST.parseSkipping(SAFE_WHITESPACE, addressList);
+    List<EmailAddress> result = new ArrayList<>(parsed.size());
+    for (Object element : parsed) {
+      if (element instanceof EmailAddress address) {
+        result.add(address);
+      } else if (element instanceof String s) {
+        ifInvalid.accept(s);
+      }
+    }
+    return unmodifiableList(result);
   }
 
   @Override public boolean equals(Object obj) {
@@ -599,19 +610,6 @@ public final class EmailAddress {
     @Override public String toString() {
       return localPart + '@' + domain;
     }
-  }
-
-  private static Collector<Object, ?, List<EmailAddress>> onlyEmailAddresses(
-      Consumer<? super String> ifInvalid) {
-    requireNonNull(ifInvalid);
-    return filtering(
-        e -> {
-          if (e instanceof String s) {
-            ifInvalid.accept(s);
-          }
-          return e instanceof EmailAddress;
-        },
-        mapping(e -> (EmailAddress) e, toUnmodifiableList()));
   }
 
   @FormatMethod
