@@ -171,7 +171,7 @@ final class OrParser<T> extends Parser<T> {
   }
 
   private static String computeExpectedName(List<? extends Parser<?>> parsers) {
-    Comparator<String> symbolOrder = comparing(
+    Comparator<String> friendlyOrder = comparing(
         (String s) -> {
           if (s.equals("EOF")) return 5;
           char c = s.charAt(0);
@@ -179,13 +179,11 @@ final class OrParser<T> extends Parser<T> {
           if (isUpperCase(c)) return 2;
           if (isDigit(c)) return 3;
           return 4;
-        })
-        .thenComparing(naturalOrder());
+        });
     List<String> symbols = parsers.stream()
-        .flatMap(candidate -> candidate.getExpectedSymbols().stream())
-        .filter(s -> !s.isEmpty())
+        .flatMap(candidate -> candidate.getExpectedSymbols().stream().filter(s -> !s.isEmpty()))
         .distinct()
-        .sorted(symbolOrder)
+        .sorted(friendlyOrder.thenComparing(naturalOrder()))
         .map(s -> s.equals(",") ? "comma (,)" : s)
         .toList();
     return symbols.size() > 1

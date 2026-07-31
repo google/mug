@@ -43,7 +43,6 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
@@ -2446,51 +2445,9 @@ public class ParserTest {
   }
 
   @Test public void anyOf_pruning_allCandidatesPruned_emptyExpectedName() {
-    Parser<String> p1 =
-        new Parser<String>() {
-          @Override MatchResult<String> skipAndMatch(
-              Parser<?> skip, CharInput input, int start, ErrorContext context) {
-            return string("abc").skipAndMatch(skip, input, start, context);
-          }
-
-          @Override Set<String> computePrefixes() {
-            return Set.of("abc");
-          }
-
-          @Override Set<String> getExpectedSymbols() {
-            return Set.of();
-          }
-        };
-    Parser<String> p2 =
-        new Parser<String>() {
-          @Override MatchResult<String> skipAndMatch(
-              Parser<?> skip, CharInput input, int start, ErrorContext context) {
-            return string("def").skipAndMatch(skip, input, start, context);
-          }
-
-          @Override Set<String> computePrefixes() {
-            return Set.of("def");
-          }
-
-          @Override Set<String> getExpectedSymbols() {
-            return Set.of();
-          }
-        };
-    Parser<String> p3 =
-        new Parser<String>() {
-          @Override MatchResult<String> skipAndMatch(
-              Parser<?> skip, CharInput input, int start, ErrorContext context) {
-            return string("ghi").skipAndMatch(skip, input, start, context);
-          }
-
-          @Override Set<String> computePrefixes() {
-            return Set.of("ghi");
-          }
-
-          @Override Set<String> getExpectedSymbols() {
-            return Set.of();
-          }
-        };
+    Parser<String> p1 = string("abc").suchThat(s -> true, "");
+    Parser<String> p2 = string("def").suchThat(s -> true, "");
+    Parser<String> p3 = string("ghi").suchThat(s -> true, "");
     Parser<String> parser = anyOf(p1, p2, p3);
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
     assertThat(e)
@@ -2518,17 +2475,7 @@ public class ParserTest {
 
   @Test public void anyOf_noPruning_noOvershadowDueToSingleCandidateExpectedSymbols() {
     Parser<String> p1 = string("abc");
-    Parser<String> p2 =
-        new Parser<String>() {
-          @Override MatchResult<String> skipAndMatch(
-              Parser<?> skip, CharInput input, int start, ErrorContext context) {
-            return context.expecting("custom_error", start);
-          }
-
-          @Override Set<String> getExpectedSymbols() {
-            return Set.of();
-          }
-        };
+    Parser<String> p2 = string("def").suchThat(s -> true, "");
     Parser<String> parser = anyOf(p1, p2);
     ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
     assertThat(e)

@@ -210,6 +210,13 @@ public class ParsersTest {
         .isEqualTo("at 1:1: Duration units must be specified in order: 1s2m");
   }
 
+  @Test public void duration_duplicateUnitsThrows() {
+    ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1s2s"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo("at 1:1: Duration units must be specified in order: 1s2s");
+  }
+
   @Test public void bmpCodeUnit_validHexUpper() {
     assertThat(Parsers.BMP_CODE_UNIT.parse("D83D")).isEqualTo(0xD83D);
   }

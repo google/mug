@@ -8,11 +8,10 @@ import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
-
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.Joiner;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Some useful, but not-so-primitive parsers.
