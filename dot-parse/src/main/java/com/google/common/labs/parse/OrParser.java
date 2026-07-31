@@ -20,28 +20,28 @@ import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.lang.Character.isDigit;
 import static java.lang.Character.isLowerCase;
 import static java.lang.Character.isUpperCase;
+import static java.util.Collections.unmodifiableSet;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
-import com.google.errorprone.annotations.concurrent.LazyInit;
-import com.google.mu.util.stream.Joiner;
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import com.google.errorprone.annotations.concurrent.LazyInit;
+import com.google.mu.util.stream.Joiner;
+
 /** Implements {@link Parser#anyOf}. */
 final class OrParser<T> extends Parser<T> {
   private final List<Parser<T>> parsers;
   private final PrefixPruneTree<Parser<T>> pruneTree;
-
-  @LazyInit private volatile Set<String> expectedSymbols;
+  @LazyInit private Set<String> expectedSymbols;
 
   OrParser(List<? extends Parser<? extends T>> candidates) {
     checkArgument(candidates.size() > 0, "parsers cannot be empty");
@@ -132,7 +132,7 @@ final class OrParser<T> extends Parser<T> {
         result.add(prefix);
       }
     }
-    return Collections.unmodifiableSet(new LinkedHashSet<>(result));
+    return unmodifiableSet(new LinkedHashSet<>(result));
   }
 
   @Override Parser<?> ignoreReturn() {
