@@ -26,8 +26,11 @@ public final class Parsers {
    * Parser for unsigned decimal point numbers, e.g., {@code "1.23"}, {@code "0.0"}, {@code "1"},
    * {@code "0"}.
    *
-   * <p>Note that it doesn't match positive or negative signs, and leading zero is only allowed when
-   * the number is a fraction smaller than 1.
+   * <p>To support signs, you can compose it like: <pre>{@code
+   * Parser<Double> signedDecimal = sequence(
+   *     one('-').thenReturn(-1).orElse(1), UNSIGNED_DECIMAL.map(Double::parseDouble),
+   *     (sign, num) -> sign * num);
+   * }</pre>
    */
   public static final Parser<String> UNSIGNED_DECIMAL =
       literally(DIGITS, one('.').followedBy(DIGITS).optional())
