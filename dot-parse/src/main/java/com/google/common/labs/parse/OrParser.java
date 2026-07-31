@@ -105,7 +105,7 @@ final class OrParser<T> extends Parser<T> {
     if (pruneTree != null) {
       candidates = pruneTree.pruneByPrefix(input, start);
       if (candidates.isEmpty()) {
-        return context.expecting("...", start);
+        return context.expecting(this, start);
       }
     }
     MatchResult.Failure<T> anyFailure = null;
