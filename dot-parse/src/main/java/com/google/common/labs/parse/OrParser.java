@@ -64,31 +64,32 @@ final class OrParser<T> extends Parser<T> {
       Parser<?> skip, CharInput input, int start, ErrorContext context) {
     // All top-level parsers allow input to apply pre-skipping.
     start = skipIfAny(skip, input, start);
+    if (context == ErrorContext.MINIMAL) {
+      return doMatchMinimal(skip, input, start, context);
+    }
     List<Parser<T>> candidates = parsers;
     if (pruneTree != null) {
       candidates = pruneTree.pruneByPrefix(input, start);
       if (candidates.isEmpty()) {
         String expected = getExpectedName();
+        // When no candidate match by prefix, they must have failed right at 'start',
+        // whichever candidate reports the error. So picking the first is the "farthest".
+        // getFirst() will always succeed because we've already checked that parsers
+        // cannot be empty.
         return expected.isEmpty()
-            // When no candidate match by prefix, they must have failed right at 'start',
-            // whichever candidate reports the error. So picking the first is the "farthest".
-            // getFirst() will always succeed because we've already checked that parsers
-            // cannot be empty.
             ? parsers.getFirst().skipAndMatch(skip, input, start, context)
             : context.expecting(expected, start);
       }
     }
-    MatchResult.Failure<?> farthestFailure = null;
+    MatchResult.Failure<T> farthestFailure = null;
     for (Parser<T> parser : candidates) {
-      switch (parser.skipAndMatch(skip, input, start, context)) {
-        case MatchResult.Success(int head, int tail, T value) -> {
-          return new MatchResult.Success<>(head, tail, value);
+      MatchResult<T> result = parser.skipAndMatch(skip, input, start, context);
+      if (result instanceof MatchResult.Failure<T> failure) {
+        if (farthestFailure == null || farthestFailure.frontier() < failure.frontier()) {
+          farthestFailure = failure;
         }
-        case MatchResult.Failure<?> failure -> {
-          if (farthestFailure == null || farthestFailure.frontier() < failure.frontier()) {
-            farthestFailure = failure;
-          }
-        }
+      } else {
+        return result;
       }
     }
     if (farthestFailure.frontier() == start) {
@@ -97,7 +98,28 @@ final class OrParser<T> extends Parser<T> {
         return context.expecting(expected, start);
       }
     }
-    return farthestFailure.safeCast();
+    return farthestFailure;
+  }
+
+  private MatchResult<T> doMatchMinimal(
+      Parser<?> skip, CharInput input, int start, ErrorContext context) {
+    List<Parser<T>> candidates = parsers;
+    if (pruneTree != null) {
+      candidates = pruneTree.pruneByPrefix(input, start);
+      if (candidates.isEmpty()) {
+        return context.expecting("...", start);
+      }
+    }
+    MatchResult.Failure<T> anyFailure = null;
+    for (Parser<T> parser : candidates) {
+      MatchResult<T> result = parser.skipAndMatch(skip, input, start, context);
+      if (result instanceof MatchResult.Failure<T> failure) {
+        anyFailure = failure;
+      } else {
+        return result;
+      }
+    }
+    return anyFailure;
   }
 
   @Override Set<String> computePrefixes() {

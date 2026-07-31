@@ -2435,8 +2435,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     @Override Set<String> getExpectedSymbols() {
-      Parser<?> p = ref.get();
-      return p == null ? Set.of() : ref.get().getExpectedSymbols();
+      return ref.get().getExpectedSymbols();
     }
   }
 
