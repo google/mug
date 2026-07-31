@@ -1439,7 +1439,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       @Override Set<String> getExpectedSymbols() {
-        return Set.of(name);
+        return name.isEmpty() ? left().getExpectedSymbols() : Set.of(name);
       }
     };
   }

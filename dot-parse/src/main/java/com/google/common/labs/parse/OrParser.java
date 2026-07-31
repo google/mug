@@ -26,6 +26,8 @@ import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
+import com.google.errorprone.annotations.concurrent.LazyInit;
+import com.google.mu.util.stream.Joiner;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Comparator;
@@ -33,9 +35,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
-
-import com.google.errorprone.annotations.concurrent.LazyInit;
-import com.google.mu.util.stream.Joiner;
 
 /** Implements {@link Parser#anyOf}. */
 final class OrParser<T> extends Parser<T> {
@@ -65,21 +64,11 @@ final class OrParser<T> extends Parser<T> {
       Parser<?> skip, CharInput input, int start, ErrorContext context) {
     // All top-level parsers allow input to apply pre-skipping.
     start = skipIfAny(skip, input, start);
-    if (context == ErrorContext.MINIMAL) {
-      return doMatchMinimal(skip, input, start, context);
-    }
     List<Parser<T>> candidates = parsers;
     if (pruneTree != null) {
       candidates = pruneTree.pruneByPrefix(input, start);
       if (candidates.isEmpty()) {
-        if (getExpectedSymbols().size() > 1) {
-          return context.expecting(this, start);
-        }
-        // When no candidate match by prefix, they must have failed right at 'start',
-        // whichever candidate reports the error. So picking the first is the "farthest".
-        // getFirst() will always succeed because we've already checked that parsers
-        // cannot be empty.
-        return parsers.getFirst().skipAndMatch(skip, input, start, context);
+        return context.expecting(this, start);
       }
     }
     MatchResult.Failure<T> farthestFailure = null;
@@ -93,31 +82,7 @@ final class OrParser<T> extends Parser<T> {
         return result;
       }
     }
-    if (farthestFailure.frontier() == start && getExpectedSymbols().size() > 1) {
-      return context.expecting(this, start);
-    }
-    return farthestFailure;
-  }
-
-  private MatchResult<T> doMatchMinimal(
-      Parser<?> skip, CharInput input, int start, ErrorContext context) {
-    List<Parser<T>> candidates = parsers;
-    if (pruneTree != null) {
-      candidates = pruneTree.pruneByPrefix(input, start);
-      if (candidates.isEmpty()) {
-        return context.expecting(this, start);
-      }
-    }
-    MatchResult.Failure<T> anyFailure = null;
-    for (Parser<T> parser : candidates) {
-      MatchResult<T> result = parser.skipAndMatch(skip, input, start, context);
-      if (result instanceof MatchResult.Failure<T> failure) {
-        anyFailure = failure;
-      } else {
-        return result;
-      }
-    }
-    return anyFailure;
+    return farthestFailure.frontier() == start ? context.expecting(this, start) : farthestFailure;
   }
 
   @Override Set<String> computePrefixes() {

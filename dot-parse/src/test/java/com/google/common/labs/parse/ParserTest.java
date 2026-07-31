@@ -2456,7 +2456,7 @@ public class ParserTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <abc>, encountered:\s
+            at 1:1: expecting <one of [abc, def, ghi]>, encountered:\s
                 xyz
                 ^
             """);
@@ -2484,7 +2484,7 @@ public class ParserTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <abc>, encountered:\s
+            at 1:1: expecting <one of [abc, def]>, encountered:\s
                 xyz
                 ^
             """);
@@ -2499,7 +2499,7 @@ public class ParserTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <abc>, encountered:\s
+            at 1:1: expecting <one of [abc]>, encountered:\s
                 xyz
                 ^
             """);
@@ -8279,15 +8279,11 @@ public class ParserTest {
     assertThat(thrown).hasMessageThat().contains("1:1");
   }
 
-  @Test
-  public void anyOf_mutuallyRecursiveRules_expectedSymbols() {
+  @Test public void anyOf_mutuallyRecursiveRules_expectedSymbols() {
     Parser.Rule<String> rule1 = new Parser.Rule<>();
     Parser.Rule<String> rule2 = new Parser.Rule<>();
 
-    rule1.definedAs(
-        rule2.orElse("").then(string("a"))
-            .or(string("b"))
-            .or(string("c")));
+    rule1.definedAs(rule2.orElse("").then(string("a")).or(string("b")).or(string("c")));
     rule2.definedAs(string("d").then(rule1));
 
     ParseException e = assertThrows(ParseException.class, () -> rule1.parse("x"));
