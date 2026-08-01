@@ -2670,12 +2670,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   static class ErrorContext {
     static final ErrorContext MINIMAL = new ErrorContext();
 
-    final <V> MatchResult.Failure<V> expecting(Object symbolName, int at) {
+    final <V> MatchResult.Failure<V> expecting(String symbolName, int at) {
       return expecting(symbolName, at, at);
     }
 
-    <V> MatchResult.Failure<V> expecting(Object symbolName, int at, long frontier) {
+    final <V> MatchResult.Failure<V> expecting(Object symbol, int at) {
+      return expecting(symbol, at, at);
+    }
+
+    <V> MatchResult.Failure<V> expecting(String symbolName, int at, long frontier) {
       return failAt(at, frontier, "expecting <{name}>.", symbolName);
+    }
+
+    <V> MatchResult.Failure<V> expecting(Object symbol, int at, long frontier) {
+      return failAt(at, frontier, "expecting {name}.", symbol);
     }
 
     final <V> MatchResult.Failure<V> failAt(int at, String messageTemplate, Object symbolName) {
@@ -2683,8 +2691,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     <V> MatchResult.Failure<V> failAt(
-        int at, long frontier, String messageTemplate, Object symbolName) {
-      return new MatchResult.Failure<V>(at, frontier, messageTemplate, symbolName);
+        int at, long frontier, String messageTemplate, Object symbol) {
+      return new MatchResult.Failure<V>(at, frontier, messageTemplate, symbol);
     }
 
     final <V> MatchResult.Failure<V> errorAt(int at, long frontier, ParseError error) {
@@ -2695,13 +2703,17 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private static final class ErrorTracker extends ErrorContext {
     private MatchResult.Failure<?> farthestFailure = null;
 
-    @Override <V> MatchResult.Failure<V> expecting(Object symbolName, int at, long frontier) {
+    @Override <V> MatchResult.Failure<V> expecting(String symbolName, int at, long frontier) {
       return failAt(at, frontier, "expecting <{name}>, encountered: {snippet}", symbolName);
     }
 
+    @Override <V> MatchResult.Failure<V> expecting(Object symbol, int at, long frontier) {
+      return failAt(at, frontier, "expecting {name}, encountered: {snippet}", symbol);
+    }
+
     @Override <V> MatchResult.Failure<V> failAt(
-        int at, long frontier, String messageTemplate, Object symbolName) {
-      MatchResult.Failure<V> failure = super.failAt(at, frontier, messageTemplate, symbolName);
+        int at, long frontier, String messageTemplate, Object symbol) {
+      MatchResult.Failure<V> failure = super.failAt(at, frontier, messageTemplate, symbol);
       // prefer the farthest then the most recent failure
       if (farthestFailure == null || failure.frontier >= farthestFailure.frontier) {
         farthestFailure = failure;

@@ -32,20 +32,19 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public final class CelParserTest {
   private static final String EXPECTED_EXPR_START =
-      "expecting <one of [b, digits, false, identifier, null, r\", r\"\"\", r', r''', true,"
-          + " R\", R\"\"\", R', R''', 0x, !, \", \"\"\", ', ''', (, -, ., [, {]>";
+      "expecting one of [b, digits, false, identifier, null, r\", r\"\"\", r', r''', true,"
+          + " R\", R\"\"\", R', R''', 0x, !, \", \"\"\", ', ''', (, -, ., [, {]";
   private static final String EXPECTED_ESCAPE_CHAR =
-      "expecting <one of [a, b, f, n, r, t, v, x, \", ', ?, [0-3], \\, `]>";
+      "expecting one of [a, b, f, n, r, t, v, x, \", ', ?, [0-3], \\, `]";
   private static final String EXPECTED_STRING_ESCAPE_CHAR =
-      "expecting <one of [a, b, f, n, r, t, u, v, x, U, \", ', ?, [0-3], \\, `]>";
-  private static final String EXPECTED_NUMBER_OR_DECIMAL = "expecting <one of [digits, .]>";
+      "expecting one of [a, b, f, n, r, t, u, v, x, U, \", ', ?, [0-3], \\, `]";
+  private static final String EXPECTED_NUMBER_OR_DECIMAL = "expecting one of [digits, .]";
   private static final String EXPECTED_MAP_OR_STRUCT_ELEMENT =
-      "expecting <one of [identifier, comma (,), ?, `, }]>";
-  private static final String EXPECTED_IDENTIFIER_OR_BACKTICK =
-      "expecting <one of [identifier, `]>";
+      "expecting one of [identifier, comma (,), ?, `, }]";
+  private static final String EXPECTED_IDENTIFIER_OR_BACKTICK = "expecting one of [identifier, `]";
   private static final String EXPECTED_MAP_ELEMENT_OR_CLOSE =
-      "expecting <one of [b, digits, false, identifier, null, r\", r\"\"\", r', r''', true,"
-          + " R\", R\"\"\", R', R''', 0x, !, \", \"\"\", ', ''', (, comma (,), -, ., ?, [, {, }]>";
+      "expecting one of [b, digits, false, identifier, null, r\", r\"\"\", r', r''', true,"
+          + " R\", R\"\"\", R', R''', 0x, !, \", \"\"\", ', ''', (, comma (,), -, ., ?, [, {, }]";
 
   private final CelParser parser = new CelParser();
 

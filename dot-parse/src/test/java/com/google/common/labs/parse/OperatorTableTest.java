@@ -1,11 +1,9 @@
 package com.google.common.labs.parse;
 
-import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.util.CharPredicate.range;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.testing.NullPointerTester;
@@ -89,22 +87,20 @@ public final class OperatorTableTest {
             """);
   }
 
-  @Test
-  public void simpleCalculator_missingOperand() {
-    String code = "1 +";
+  @Test public void simpleCalculator_missingOperand() {
+    String code = "123 +";
     Parser.ParseException e = assertThrows(Parser.ParseException.class, () -> parse(code));
     assertThat(e)
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:4: expecting <one of [digits, (, -]>, encountered:\s
-                1 +
-                   ^
+            at 1:6: expecting one of [digits, (, -], encountered:\s
+                123 +
+                     ^
             """);
   }
 
-  @Test
-  public void simpleCalculator_missingClosingParenthesis() {
+  @Test public void simpleCalculator_missingClosingParenthesis() {
     String code = "(1 + 2";
     Parser.ParseException e = assertThrows(Parser.ParseException.class, () -> parse(code));
     assertThat(e)
@@ -141,8 +137,7 @@ public final class OperatorTableTest {
 
   private int parse(String input) {
     Parser<Integer> calculator = Parser.define(
-        expr -> operatorTable.build(
-            expr.between("(", ")").or(digits().map(Integer::parseInt))));
+        expr -> operatorTable.build(expr.between("(", ")").or(digits().map(Integer::parseInt))));
     return calculator.parseSkipping(Character::isWhitespace, input);
   }
 }
