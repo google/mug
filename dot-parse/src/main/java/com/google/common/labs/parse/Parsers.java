@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Some useful, but not-so-primitive parsers.
+ * Some common composite parsers in addition to the core parsers provided by {@link Parser}.
  *
  * @since 10.8
  */
