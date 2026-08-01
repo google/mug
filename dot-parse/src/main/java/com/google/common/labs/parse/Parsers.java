@@ -9,10 +9,9 @@ import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.mu.util.stream.BiStream.adjacentPairsFrom;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
+import com.google.mu.util.stream.Joiner;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
-
-import com.google.mu.util.stream.Joiner;
 
 /**
  * Some common composite parsers in addition to the core parsers provided by {@link Parser}.
@@ -24,10 +23,11 @@ public final class Parsers {
   static final Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
 
   /**
-   * Parses unsigned decimal point numbers, e.g., {@code 1.23}, {@code 0.0}, {@code 15},
-   * {@code "0"}.
+   * Parses unsigned decimal point numbers, e.g., {@code 1.23}, {@code 0.0}, {@code 15}, {@code 0}.
    *
-   * <p>To support signs, you can compose it like: <pre>{@code
+   * <p>To support signs, you can compose it like:
+   *
+   * <pre>{@code
    * Parser<Double> signedDecimal = sequence(
    *     one('-').thenReturn(-1).orElse(1), UNSIGNED_DECIMAL.map(Double::parseDouble),
    *     (sign, num) -> sign * num);
@@ -41,7 +41,7 @@ public final class Parsers {
               "decimal point number");
 
   /**
-   * Parses duration in the shorthand format of {@code 1.5h}, {@code 10m30s} etc.
+   * Parses duration in the shorthand format of {@code 1.5h}, {@code 30d}, {@code 10m30s} etc.
    *
    * <p>Matches one or more unit specs consisting of a positive decimal number followed by a unit
    * suffix. For example:
@@ -69,8 +69,8 @@ public final class Parsers {
    * <p>Note:
    *
    * <ul>
-   *   <li>The duration components must be specified in strictly descending order of unit size (e.g.,
-   *       {@code "1d2h"} is allowed, but {@code "2h1d"} or {@code "1d1d"} are not).
+   *   <li>The duration components must be specified in strictly descending order of unit size
+   *       (e.g., {@code "1d2h"} is allowed, but {@code "2h1d"} or {@code "1d1d"} are not).
    *   <li>Only the last component can contain a decimal point (e.g., {@code "1.5h"} or {@code
    *       "1h2.5m"} are allowed, but {@code "1.5h2m"} is not).
    *   <li>Negative values (e.g., {@code "-2s"}) are not supported.
@@ -255,7 +255,8 @@ public final class Parsers {
    * Joiner.on(delimiter)}) in place of JDK {@code Collectors.joining(delimiter)} because {@code
    * Joiner} optimizes for single-string input, which is a common case in the context of parsing.
    *
-   * <p>You can also compose it with {@link Parser#quotedByWithEscapes Parser.quotedByWithEscapes()}:
+   * <p>You can also compose it with {@link Parser#quotedByWithEscapes
+   * Parser.quotedByWithEscapes()}:
    *
    * <pre>{@code
    * Parser.quotedByWithEscapes('"', '"', Parser.string("u").then(BMP_CODE_UNIT).map(Character::toString));
