@@ -23,7 +23,7 @@ public final class Parsers {
   static final Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
 
   /**
-   * Parser for unsigned decimal point numbers, e.g., {@code 1.23}, {@code 0.0}, {@code 15},
+   * Parses unsigned decimal point numbers, e.g., {@code 1.23}, {@code 0.0}, {@code 15},
    * {@code "0"}.
    *
    * <p>To support signs, you can compose it like: <pre>{@code
@@ -40,7 +40,7 @@ public final class Parsers {
               "decimal point number");
 
   /**
-   * Parser for duration in the shorthand systems format ({@code 1.5h}, {@code 10m30s} etc).
+   * Parses duration in the shorthand format of {@code 1.5h}, {@code 10m30s} etc.
    *
    * <p>Matches one or more unit specs consisting of a positive decimal number followed by a unit
    * suffix. For example:
