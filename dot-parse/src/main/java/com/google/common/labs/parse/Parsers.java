@@ -6,12 +6,13 @@ import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
+import static com.google.mu.util.stream.BiStream.adjacentPairsFrom;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
-import com.google.mu.util.stream.BiStream;
-import com.google.mu.util.stream.Joiner;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+
+import com.google.mu.util.stream.Joiner;
 
 /**
  * Some common composite parsers in addition to the core parsers provided by {@link Parser}.
@@ -68,9 +69,9 @@ public final class Parsers {
    * <p>Note:
    *
    * <ul>
-   *   <li>The duration segments must be specified in strictly descending order of unit size (e.g.,
+   *   <li>The duration components must be specified in strictly descending order of unit size (e.g.,
    *       {@code "1d2h"} is allowed, but {@code "2h1d"} or {@code "1d1d"} are not).
-   *   <li>Only the last segment can contain a decimal point (e.g., {@code "1.5h"} or {@code
+   *   <li>Only the last component can contain a decimal point (e.g., {@code "1.5h"} or {@code
    *       "1h2.5m"} are allowed, but {@code "1.5h2m"} is not).
    *   <li>Negative values (e.g., {@code "-2s"}) are not supported.
    * </ul>
@@ -83,17 +84,17 @@ public final class Parsers {
                   (num, unit) -> {
                     try {
                       return num.contains(".")
-                          ? new DurationSegment.Fractional(Double.parseDouble(num), unit)
-                          : new DurationSegment.Integral(Long.parseLong(num), unit);
+                          ? new TimeSpan.Fractional(Double.parseDouble(num), unit)
+                          : new TimeSpan.Integral(Long.parseLong(num), unit);
                     } catch (NumberFormatException e) {
                       throw Parser.fail(e.getMessage());
                     }
                   })
               .atLeastOnce())
       .map(durations -> {
-        BiStream.adjacentPairsFrom(durations)
+        adjacentPairsFrom(durations)
             .forEach((prev, next) -> {
-              if (prev instanceof DurationSegment.Fractional) {
+              if (prev instanceof TimeSpan.Fractional) {
                 throw Parser.fail(
                     "Only the last duration segment is allowed to be fractional: " + prev);
               }
@@ -117,11 +118,11 @@ public final class Parsers {
         }
       });
 
-  private sealed interface DurationSegment {
+  private sealed interface TimeSpan {
     DurationUnit unit();
     Duration toDuration();
 
-    record Integral(long n, DurationUnit unit) implements DurationSegment {
+    record Integral(long n, DurationUnit unit) implements TimeSpan {
       @Override public Duration toDuration() {
         return unit.of(n);
       }
@@ -131,7 +132,7 @@ public final class Parsers {
       }
     }
 
-    record Fractional(double n, DurationUnit unit) implements DurationSegment {
+    record Fractional(double n, DurationUnit unit) implements TimeSpan {
       @Override public Duration toDuration() {
         return unit.of(n);
       }
