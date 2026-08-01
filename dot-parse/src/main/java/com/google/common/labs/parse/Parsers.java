@@ -23,7 +23,7 @@ public final class Parsers {
   static final Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
 
   /**
-   * Parser for unsigned decimal point numbers, e.g., {@code "1.23"}, {@code "0.0"}, {@code "1"},
+   * Parser for unsigned decimal point numbers, e.g., {@code 1.23}, {@code 0.0}, {@code 15},
    * {@code "0"}.
    *
    * <p>To support signs, you can compose it like: <pre>{@code
@@ -40,7 +40,7 @@ public final class Parsers {
               "decimal point number");
 
   /**
-   * Parser for duration strings in the shorthand systems format.
+   * Parser for duration in the shorthand systems format ({@code 1.5h}, {@code 10m30s} etc).
    *
    * <p>Matches one or more unit specs consisting of a positive decimal number followed by a unit
    * suffix. For example:
@@ -254,7 +254,7 @@ public final class Parsers {
    * Joiner.on(delimiter)}) in place of JDK {@code Collectors.joining(delimiter)} because {@code
    * Joiner} optimizes for single-string input, which is a common case in the context of parsing.
    *
-   * <p>You can also compose it with {@link Parser#quotedByWithEscapes}:
+   * <p>You can also compose it with {@link Parser#quotedByWithEscapes Parser.quotedByWithEscapes()}:
    *
    * <pre>{@code
    * Parser.quotedByWithEscapes('"', '"', Parser.string("u").then(BMP_CODE_UNIT).map(Character::toString));
