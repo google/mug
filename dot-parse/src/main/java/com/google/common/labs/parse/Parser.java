@@ -2686,8 +2686,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return failAt(at, frontier, "expecting {name}.", symbol);
     }
 
-    final <V> MatchResult.Failure<V> failAt(int at, String messageTemplate, Object symbolName) {
-      return failAt(at, at, messageTemplate, symbolName);
+    final <V> MatchResult.Failure<V> failAt(int at, String messageTemplate, Object symbol) {
+      return failAt(at, at, messageTemplate, symbol);
     }
 
     <V> MatchResult.Failure<V> failAt(
