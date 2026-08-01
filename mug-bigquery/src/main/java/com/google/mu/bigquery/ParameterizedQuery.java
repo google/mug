@@ -2,6 +2,8 @@ package com.google.mu.bigquery;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.mapping;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -15,7 +17,11 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
+import java.util.stream.Collector.Characteristics;
 import java.util.stream.Stream;
 
 import com.google.cloud.bigquery.BigQuery.JobOption;
@@ -27,7 +33,6 @@ import com.google.cloud.bigquery.TableResult;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import com.google.errorprone.annotations.Immutable;
-import com.google.mu.annotations.RequiresBigQuery;
 import com.google.mu.annotations.TemplateFormatMethod;
 import com.google.mu.annotations.TemplateString;
 import com.google.mu.util.StringFormat;
@@ -87,7 +92,6 @@ import com.google.mu.util.stream.BiStream;
  * @since 7.1
  */
 @Immutable
-@RequiresBigQuery
 public final class ParameterizedQuery {
   private static final DateTimeFormatter TIMESTAMP_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSSZZ");
@@ -110,6 +114,13 @@ public final class ParameterizedQuery {
   }
 
   /**
+   * An empty query
+   *
+   * @since 8.2
+   */
+  public static final ParameterizedQuery EMPTY = of("");
+
+  /**
    * Convenience method when you need to create the {@link ParameterizedQuery} inline, with both the
    * query template and the arguments.
    *
@@ -124,6 +135,26 @@ public final class ParameterizedQuery {
   public static ParameterizedQuery of(
       @CompileTimeConstant @TemplateString String query, Object... args) {
     return template(query).with(args);
+  }
+
+  /**
+   * An optional query that's only rendered if {@code arg} is present; otherwise returns {@link
+   * #EMPTY}. It's for use cases where a subquery is only added when present, for example the
+   * following query will add the WHERE clause if the filter is present:
+   *
+   * <pre>{@code
+   * SafeQuery query = ParameterizedQuery.of(
+   *     "SELECT * FROM jobs {where}",
+   *     ParameterizedQuery.optionally("WHERE {filter}", getOptionalFilter()));
+   * }</pre>
+   *
+   * @since 8.2
+   */
+  @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
+  @TemplateFormatMethod
+  public static ParameterizedQuery optionally(
+      @CompileTimeConstant @TemplateString String query, Optional<?> arg) {
+    return arg.map(v -> of(query, v)).orElse(EMPTY);
   }
 
   /**
@@ -190,11 +221,41 @@ public final class ParameterizedQuery {
 
   /**
    * Returns the stream of enum constants defined by {@code enumClass},
-   * with the names wrapped in ParameterizedQuery}.
+   * with the names wrapped in ParameterizedQuery.
    */
   public static Stream<ParameterizedQuery> enumConstants(Class<? extends Enum<?>> enumClass) {
     return Arrays.stream(enumClass.getEnumConstants())
         .map(e -> new ParameterizedQuery(e.name(), emptyMap(), emptyMap()));
+  }
+
+  /**
+   * A collector that joins boolean query snippets using {@code AND} operator. The
+   * AND'ed sub-queries will be enclosed in pairs of parenthesis to avoid
+   * ambiguity. If the input is empty, the result will be "TRUE".
+   *
+   * <p>Empty ParameterizedQuery elements are ignored and not joined.
+   *
+   * @since 8.2
+   */
+  public static Collector<ParameterizedQuery, ?, ParameterizedQuery> and() {
+    return collectingAndThen(
+        nonEmptyQueries(mapping(ParameterizedQuery::parenthesized, joining(" AND "))),
+        query -> query.query.isEmpty() ? of("TRUE") : query);
+  }
+
+  /**
+   * A collector that joins boolean query snippets using {@code OR} operator. The
+   * OR'ed sub-queries will be enclosed in pairs of parenthesis to avoid
+   * ambiguity. If the input is empty, the result will be "FALSE".
+   *
+   * <p>Empty ParameterizedQuery elements are ignored and not joined.
+   *
+   * @since 8.2
+   */
+  public static Collector<ParameterizedQuery, ?, ParameterizedQuery> or() {
+    return collectingAndThen(
+        nonEmptyQueries(mapping(ParameterizedQuery::parenthesized, joining(" OR "))),
+        query -> query.query.isEmpty() ? of("FALSE") : query);
   }
 
   /**
@@ -345,13 +406,11 @@ public final class ParameterizedQuery {
     }
   }
 
-  @Override
-  public int hashCode() {
+  @Override public int hashCode() {
     return Objects.hash(query, parameters);
   }
 
-  @Override
-  public boolean equals(Object obj) {
+  @Override public boolean equals(Object obj) {
     if (obj instanceof ParameterizedQuery) {
       ParameterizedQuery that = (ParameterizedQuery) obj;
       return query.equals(that.query) && parameters.equals(that.parameters);
@@ -359,8 +418,28 @@ public final class ParameterizedQuery {
     return false;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return query;
+  }
+
+  private ParameterizedQuery parenthesized() {
+    return new ParameterizedQuery("(" + query + ")", parameters, originalValues);
+  }
+
+  private static <R> Collector<ParameterizedQuery, ?, R> nonEmptyQueries(
+      Collector<ParameterizedQuery, ?, R> downstream) {
+    return filtering(q -> !q.query.isEmpty(), downstream);
+  }
+
+  // Not in Java 8
+  private static <T, A, R> Collector<T, A, R> filtering(
+      Predicate<? super T> filter, Collector<? super T, A, R> collector) {
+    BiConsumer<A, ? super T> accumulator = collector.accumulator();
+    return Collector.of(
+        collector.supplier(),
+        (a, input) -> {if (filter.test(input)) {accumulator.accept(a, input);}},
+        collector.combiner(),
+        collector.finisher(),
+        collector.characteristics().toArray(new Characteristics[0]));
   }
 }

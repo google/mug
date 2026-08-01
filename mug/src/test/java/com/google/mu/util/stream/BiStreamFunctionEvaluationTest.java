@@ -35,14 +35,12 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.truth.MultimapSubject;
 
-import junit.framework.TestCase;
-
 /**
  * Tests to ensure {@link BiStream#from(Stream, Function, Function)} maintains the invariant that
  * the functions are invoked at most once per entry.
  */
 @RunWith(JUnit4.class)
-public final class BiStreamFunctionEvaluationTest extends TestCase {
+public final class BiStreamFunctionEvaluationTest {
   private final List<Object> evaluatedKeys = new ArrayList<>();
   private final List<Object> evaluatedValues = new ArrayList<>();
 
@@ -370,8 +368,7 @@ public final class BiStreamFunctionEvaluationTest extends TestCase {
 
   private static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
     Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K, V>>() {
-      @Override
-      public <E> Collector<E, ?, Multimap<K, V>> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
+      @Override public <E> Collector<E, ?, Multimap<K, V>> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
         return BiStreamFunctionEvaluationTest.toLinkedListMultimap(toKey,toValue);
       }
     });

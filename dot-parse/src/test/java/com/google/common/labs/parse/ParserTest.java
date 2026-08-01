@@ -1,0 +1,8299 @@
+package com.google.common.labs.parse;
+
+import static com.google.common.labs.parse.CharacterSet.charsIn;
+import static com.google.common.labs.parse.Parser.anyOf;
+import static com.google.common.labs.parse.Parser.bmpCodeUnit;
+import static com.google.common.labs.parse.Parser.caseInsensitive;
+import static com.google.common.labs.parse.Parser.caseInsensitiveWord;
+import static com.google.common.labs.parse.Parser.chars;
+import static com.google.common.labs.parse.Parser.define;
+import static com.google.common.labs.parse.Parser.digits;
+import static com.google.common.labs.parse.Parser.first;
+import static com.google.common.labs.parse.Parser.hexDigits;
+import static com.google.common.labs.parse.Parser.literally;
+import static com.google.common.labs.parse.Parser.one;
+import static com.google.common.labs.parse.Parser.or;
+import static com.google.common.labs.parse.Parser.quotedBy;
+import static com.google.common.labs.parse.Parser.sequence;
+import static com.google.common.labs.parse.Parser.string;
+import static com.google.common.labs.parse.Parser.word;
+import static com.google.common.labs.parse.Parser.zeroOrMoreDelimited;
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
+import static com.google.mu.util.CharPredicate.is;
+import static com.google.mu.util.CharPredicate.isNot;
+import static com.google.mu.util.CharPredicate.noneOf;
+import static com.google.mu.util.stream.BiCollectors.toMap;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.range;
+import static java.util.stream.Stream.concat;
+import static org.junit.Assert.assertThrows;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.labs.parse.Parser.ParseException;
+import com.google.common.testing.NullPointerTester;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.stream.BiStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BinaryOperator;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+@RunWith(JUnit4.class)
+public class ParserTest {
+  private static final CharacterSet DIGIT = charsIn("[0-9]");
+
+  @Test public void first_atBeginning_followedBy() {
+    assertThat(first("foo").followedBy(string("bar")).parse("foobar")).isEqualTo("foo");
+    assertThat(first("foo").followedBy(string("bar")).matches("foobar")).isTrue();
+  }
+
+  @Test public void first_severalCharsIn_followedBy() {
+    assertThat(first("foo").followedBy(string("bar")).parse("skip foobar")).isEqualTo("foo");
+    assertThat(first("foo").followedBy(string("bar")).matches("skip foobar")).isTrue();
+  }
+
+  @Test public void first_notFound() {
+    ParseException thrown = assertThrows(
+        ParseException.class, () -> first("skip").then(first("foo")).parse("skip fobar"));
+    assertThat(first("skip").then(first("foo")).matches("skip fobar")).isFalse();
+    assertThat(thrown).hasMessageThat().contains("1:5");
+    assertThat(thrown).hasMessageThat().contains("expecting <foo>");
+  }
+
+  @Test public void first_withReader_targetInSecondPage() {
+    CharInput input = CharInput.from(new StringReader("0123456789foo_"), 10, 5);
+    assertThat(first("foo").followedBy("_").parseToStream(input, 0)).containsExactly("foo");
+  }
+
+  @Test public void first_withReader_targetInThirdPage() {
+    CharInput input = CharInput.from(new StringReader("01234567890123456789foo_"), 10, 5);
+    assertThat(first("foo").followedBy("_").parseToStream(input, 0)).containsExactly("foo");
+  }
+
+  @Test public void first_withReader_targetAcrossPageBoundary() {
+    CharInput input = CharInput.from(new StringReader("0123456789012345678foobar_"), 10, 5);
+    assertThat(first("foobar").followedBy("_").parseToStream(input, 0)).containsExactly("foobar");
+  }
+
+  @Test public void first_skippingWhitespace() {
+    assertThat(first("foo").skipping(whitespace()).parse("    foo")).isEqualTo("foo");
+    assertThat(first("foo").skipping(whitespace()).matches("    foo")).isTrue();
+  }
+
+  @Test public void first_skippingCommentsAndWhitespace() {
+    Parser<String> ignored = anyOf(quotedBy("/*", "*/"), consecutive(whitespace(), "whitespace"));
+    assertThat(first("*").parseSkipping(ignored, "/* comment */ +-* /* comment again */"))
+        .isEqualTo("*");
+  }
+
+  @Test public void first_withReader_largeInput_notFound() {
+    String page = "fo".repeat(8192);
+    Reader reader = new StringReader(page + page + "bar");
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> first("foo").parseToStream(reader).count());
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <foo>");
+  }
+
+  @Test public void first_withReader_largeInput_foundNearEnd() {
+    String page = "fo".repeat(8192);
+    Reader reader = new StringReader(page + page + "foo");
+    assertThat(first("foo").parseToStream(reader)).containsExactly("foo");
+  }
+
+  @Test public void first_emptyString_throws() {
+    assertThrows(IllegalArgumentException.class, () -> first(""));
+  }
+
+  @Test public void string_success() {
+    Parser<String> parser = string("foo");
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+    assertThat(parser.matches("foo")).isTrue();
+    assertThat(parser.parseToStream("foo")).containsExactly("foo");
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void string_success_source() {
+    Parser<String> parser = string("foo");
+    assertThat(parser.source().parse("foo")).isEqualTo("foo");
+    assertThat(parser.source().matches("foo")).isTrue();
+    assertThat(parser.source().parseToStream("foo")).containsExactly("foo");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void string_failure_withLeftover() {
+    assertThrows(ParseException.class, () -> string("foo").parse("fooa"));
+    assertThat(string("foo").matches("fooa")).isFalse();
+    assertThrows(ParseException.class, () -> string("foo").parseToStream("fooa").toList());
+  }
+
+  @Test public void string_failure() {
+    assertThrows(ParseException.class, () -> string("foo").parse("fo"));
+    assertThat(string("foo").matches("fo")).isFalse();
+    assertThrows(ParseException.class, () -> string("foo").parseToStream("fo").toList());
+    assertThrows(ParseException.class, () -> string("foo").parse("food"));
+    assertThat(string("foo").matches("food")).isFalse();
+    assertThrows(ParseException.class, () -> string("foo").parseToStream("food").toList());
+    assertThrows(ParseException.class, () -> string("foo").parse("bar"));
+    assertThat(string("foo").matches("bar")).isFalse();
+    assertThrows(ParseException.class, () -> string("foo").parseToStream("bar").toList());
+  }
+
+  @Test public void string_cannotBeEmpty() {
+    assertThrows(IllegalArgumentException.class, () -> string(""));
+  }
+
+  @Test public void caseInsensitive_success() {
+    Parser<String> parser = caseInsensitive("foo").source();
+    assertThat(parser.parse("FoO")).isEqualTo("FoO");
+    assertThat(parser.matches("FoO")).isTrue();
+    assertThat(parser.parseToStream("fOo")).containsExactly("fOo");
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void caseInsensitive_success_source() {
+    Parser<String> parser = caseInsensitive("foo").source();
+    assertThat(parser.source().parse("FoO")).isEqualTo("FoO");
+    assertThat(parser.source().matches("FoO")).isTrue();
+    assertThat(parser.source().parseToStream("fOo")).containsExactly("fOo");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void caseInsensitive_failure_withLeftover() {
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parse("Fooa"));
+    assertThat(caseInsensitive("foo").matches("Fooa")).isFalse();
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parseToStream("Fooa").toList());
+  }
+
+  @Test public void caseInsensitive_failure() {
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parse("fo"));
+    assertThat(caseInsensitive("foo").matches("fo")).isFalse();
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parseToStream("fo").toList());
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parse("Food"));
+    assertThat(caseInsensitive("foo").matches("Food")).isFalse();
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parseToStream("Food").toList());
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parse("bar"));
+    assertThat(caseInsensitive("foo").matches("bar")).isFalse();
+    assertThrows(ParseException.class, () -> caseInsensitive("foo").parseToStream("bar").toList());
+  }
+
+  @Test public void caseInsensitive_cannotBeEmpty() {
+    assertThrows(IllegalArgumentException.class, () -> caseInsensitive(""));
+  }
+
+  @Test public void word_success() {
+    assertThat(word("foo").parse("foo")).isEqualTo("foo");
+    assertThat(word("foo").matches("foo")).isTrue();
+  }
+
+  @Test public void word_failIfFollowedByWordChar() {
+    assertThrows(ParseException.class, () -> word("foo").parse("foobar"));
+    assertThat(word("foo").matches("foobar")).isFalse();
+    assertThrows(ParseException.class, () -> word("foo").parse("foo_bar"));
+    assertThat(word("foo").matches("foo_bar")).isFalse();
+    assertThrows(ParseException.class, () -> word("foo").parse("foo1"));
+    assertThat(word("foo").matches("foo1")).isFalse();
+  }
+
+  @Test public void word_successIfNotFollowedByWordChar() {
+    assertThat(word("foo").probe("foo?")).containsExactly("foo");
+    assertThat(word("foo").probe("foo-")).containsExactly("foo");
+  }
+
+  @Test public void word_skipping_success() {
+    assertThat(word("foo").skipping(whitespace()).parseToStream("foo")).containsExactly("foo");
+    assertThat(word("foo").skipping(whitespace()).parseToStream("foo foo"))
+        .containsExactly("foo", "foo");
+    assertThat(word("foo").skipping(whitespace()).probe(" foo-foo")).containsExactly("foo");
+  }
+
+  @Test public void word_skipping_failIfFollowedByWordChar() {
+    assertThrows(ParseException.class, () -> word("foo").parseSkipping(whitespace(), "foobar"));
+    assertThat(word("foo").skipping(whitespace()).matches("foobar")).isFalse();
+    assertThrows(ParseException.class, () -> word("foo").parseSkipping(whitespace(), "foo_bar"));
+    assertThat(word("foo").skipping(whitespace()).matches("foo_bar")).isFalse();
+    assertThrows(ParseException.class, () -> word("foo").parseSkipping(whitespace(), "foo1"));
+    assertThat(word("foo").skipping(whitespace()).matches("foo1")).isFalse();
+    assertThrows(ParseException.class, () -> word("foo").parseSkipping(whitespace(), " foo1"));
+    assertThat(word("foo").skipping(whitespace()).matches(" foo1")).isFalse();
+  }
+
+  @Test public void caseInsensitiveWord_success() {
+    assertThat(caseInsensitiveWord("foo").source().parse("FoO")).isEqualTo("FoO");
+    assertThat(caseInsensitiveWord("foo").source().matches("FoO")).isTrue();
+  }
+
+  @Test public void caseInsensitiveWord_failIfFollowedByWordChar() {
+    assertThrows(ParseException.class, () -> caseInsensitiveWord("foo").parse("FoObar"));
+    assertThat(caseInsensitiveWord("foo").matches("FoObar")).isFalse();
+    assertThrows(ParseException.class, () -> caseInsensitiveWord("foo").parse("FoO_bar"));
+    assertThat(caseInsensitiveWord("foo").matches("FoO_bar")).isFalse();
+    assertThrows(ParseException.class, () -> caseInsensitiveWord("foo").parse("FoO1"));
+    assertThat(caseInsensitiveWord("foo").matches("FoO1")).isFalse();
+  }
+
+  @Test public void caseInsensitiveWord_successIfNotFollowedByWordChar() {
+    assertThat(caseInsensitiveWord("foo").source().probe("FoO?")).containsExactly("FoO");
+    assertThat(caseInsensitiveWord("foo").source().probe("FoO-")).containsExactly("FoO");
+  }
+
+  @Test public void caseInsensitiveWord_skipping_success() {
+    assertThat(caseInsensitiveWord("foo").source().skipping(whitespace()).parseToStream("fOo"))
+        .containsExactly("fOo");
+    assertThat(caseInsensitiveWord("foo").source().skipping(whitespace()).parseToStream("FoO fOO"))
+        .containsExactly("FoO", "fOO");
+    assertThat(caseInsensitiveWord("foo").source().skipping(whitespace()).probe(" FoO-fOo"))
+        .containsExactly("FoO");
+  }
+
+  @Test public void caseInsensitiveWord_skipping_failIfFollowedByWordChar() {
+    assertThrows(
+        ParseException.class,
+        () -> caseInsensitiveWord("foo").parseSkipping(whitespace(), "FoObar"));
+    assertThat(caseInsensitiveWord("foo").skipping(whitespace()).matches("FoObar")).isFalse();
+    assertThrows(
+        ParseException.class,
+        () -> caseInsensitiveWord("foo").parseSkipping(whitespace(), "FoO_bar"));
+    assertThat(caseInsensitiveWord("foo").skipping(whitespace()).matches("FoO_bar")).isFalse();
+    assertThrows(
+        ParseException.class, () -> caseInsensitiveWord("foo").parseSkipping(whitespace(), "FoO1"));
+    assertThat(caseInsensitiveWord("foo").skipping(whitespace()).matches("FoO1")).isFalse();
+    assertThrows(
+        ParseException.class,
+        () -> caseInsensitiveWord("foo").parseSkipping(whitespace(), " FoO1"));
+    assertThat(caseInsensitiveWord("foo").skipping(whitespace()).matches(" FoO1")).isFalse();
+  }
+
+  @Test public void quotedBy_emptyDelimiters_throws() {
+    assertThrows(IllegalArgumentException.class, () -> quotedBy("", "}"));
+    assertThrows(IllegalArgumentException.class, () -> quotedBy("{", ""));
+  }
+
+  @Test public void quotedBy_emptyContent() {
+    assertThat(quotedBy('{', '}').parse("{}")).isEmpty();
+    assertThat(quotedBy('{', '}').matches("{}")).isTrue();
+    assertThat(quotedBy('{', '}').source().parse("{}")).isEqualTo("{}");
+    assertThat(quotedBy('{', '}').source().matches("{}")).isTrue();
+  }
+
+  @Test public void quotedBy_success() {
+    assertThat(quotedBy('{', '}').parse("{foo}")).isEqualTo("foo");
+    assertThat(quotedBy('{', '}').matches("{foo}")).isTrue();
+    assertThat(quotedBy('{', '}').source().parse("{foo}")).isEqualTo("{foo}");
+    assertThat(quotedBy('{', '}').source().matches("{foo}")).isTrue();
+  }
+
+  @Test public void quotedBy_beforeNotMatched() {
+    ParseException e = assertThrows(ParseException.class, () -> quotedBy('{', '}').parse("a}"));
+    assertThat(quotedBy('{', '}').matches("a}")).isFalse();
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <{>");
+  }
+
+  @Test public void quotedBy_afterNotMatched() {
+    ParseException e = assertThrows(ParseException.class, () -> quotedBy('{', '}').parse("{a"));
+    assertThat(quotedBy('{', '}').matches("{a")).isFalse();
+    assertThat(e).hasMessageThat().contains("1:2");
+    assertThat(e).hasMessageThat().contains("expecting <}>");
+  }
+
+  @Test public void quotedBy_withSkipping() {
+    assertThat(quotedBy('{', '}').parseSkipping(whitespace(), " { foo } ")).isEqualTo(" foo ");
+    assertThat(quotedBy('{', '}').skipping(whitespace()).matches(" { foo } ")).isTrue();
+    assertThat(quotedBy('{', '}').source().parseSkipping(whitespace(), " { foo } "))
+        .isEqualTo("{ foo }");
+    assertThat(quotedBy('{', '}').source().skipping(whitespace()).matches(" { foo } ")).isTrue();
+  }
+
+  @Test public void quotedBy_stringDelimiters_success() {
+    assertThat(quotedBy("{{", "}}").parse("{{foo}}")).isEqualTo("foo");
+    assertThat(quotedBy("{{", "}}").matches("{{foo}}")).isTrue();
+    assertThat(quotedBy("{{", "}}").source().parse("{{foo}}")).isEqualTo("{{foo}}");
+    assertThat(quotedBy("{{", "}}").source().matches("{{foo}}")).isTrue();
+  }
+
+  @Test public void quotedBy_stringDelimiters_partialDelimiterInContent() {
+    assertThat(quotedBy("{{", "}}").parse("{{f}o{o}}")).isEqualTo("f}o{o");
+    assertThat(quotedBy("{{", "}}").matches("{{f}o{o}}")).isTrue();
+    assertThat(quotedBy("{{", "}}").source().parse("{{f}o{o}}")).isEqualTo("{{f}o{o}}");
+    assertThat(quotedBy("{{", "}}").source().matches("{{f}o{o}}")).isTrue();
+  }
+
+  @Test public void quotedBy_stringDelimiters_emptyContent() {
+    assertThat(quotedBy("{{", "}}").parse("{{}}")).isEmpty();
+    assertThat(quotedBy("{{", "}}").matches("{{}}")).isTrue();
+    assertThat(quotedBy("{{", "}}").source().parse("{{}}")).isEqualTo("{{}}");
+    assertThat(quotedBy("{{", "}}").source().matches("{{}}")).isTrue();
+  }
+
+  @Test public void quotedBy_stringDelimiters_beforeNotMatched() {
+    ParseException e = assertThrows(ParseException.class, () -> quotedBy("{{", "}}").parse("{a}}"));
+    assertThat(quotedBy("{{", "}}").matches("{a}}")).isFalse();
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <{{>");
+  }
+
+  @Test public void quotedBy_stringDelimiters_afterNotMatched() {
+    ParseException e = assertThrows(ParseException.class, () -> quotedBy("{{", "}}").parse("{{a"));
+    assertThat(quotedBy("{{", "}}").matches("{{a")).isFalse();
+    assertThat(e).hasMessageThat().contains("1:3");
+    assertThat(e).hasMessageThat().contains("expecting <}}>");
+  }
+
+  @Test public void quotedBy_stringDelimiters_withSkipping() {
+    assertThat(quotedBy("{{", "}}").parseSkipping(whitespace(), " {{ foo }} ")).isEqualTo(" foo ");
+    assertThat(quotedBy("{{", "}}").skipping(whitespace()).matches(" {{ foo }} ")).isTrue();
+    assertThat(quotedBy("{{", "}}").source().parseSkipping(whitespace(), " {{ foo }} "))
+        .isEqualTo("{{ foo }}");
+    assertThat(quotedBy("{{", "}}").source().skipping(whitespace()).matches(" {{ foo }} "))
+        .isTrue();
+  }
+
+  @Test public void quotedByWithEscapes_singleQuote_success() {
+    Parser<String> singleQuoted = Parser.quotedByWithEscapes('\'', '\'', chars(1));
+    assertThat(singleQuoted.parse("''")).isEmpty();
+    assertThat(singleQuoted.matches("''")).isTrue();
+    assertThat(singleQuoted.parse("'foo'")).isEqualTo("foo");
+    assertThat(singleQuoted.matches("'foo'")).isTrue();
+    assertThat(singleQuoted.parse("'foo\\'s'")).isEqualTo("foo's");
+    assertThat(singleQuoted.matches("'foo\\'s'")).isTrue();
+    assertThat(singleQuoted.parse("'foo\\\\bar'")).isEqualTo("foo\\bar");
+    assertThat(singleQuoted.matches("'foo\\\\bar'")).isTrue();
+    assertThat(singleQuoted.parse("'\\''")).isEqualTo("'");
+    assertThat(singleQuoted.matches("'\\''")).isTrue();
+    assertThat(singleQuoted.parse("'\\\\'")).isEqualTo("\\");
+    assertThat(singleQuoted.matches("'\\\\'")).isTrue();
+  }
+
+  @Test public void quotedByWithEscapes_doubleQuote_success() {
+    Parser<String> doubleQuoted = Parser.quotedByWithEscapes('"', '"', chars(1));
+    assertThat(doubleQuoted.parse("\"\"")).isEmpty();
+    assertThat(doubleQuoted.matches("\"\"")).isTrue();
+    assertThat(doubleQuoted.parse("\"bar\"")).isEqualTo("bar");
+    assertThat(doubleQuoted.matches("\"bar\"")).isTrue();
+    assertThat(doubleQuoted.parse("\"bar\\\"baz\"")).isEqualTo("bar\"baz");
+    assertThat(doubleQuoted.matches("\"bar\\\"baz\"")).isTrue();
+    assertThat(doubleQuoted.parse("\"bar\\\\baz\"")).isEqualTo("bar\\baz");
+    assertThat(doubleQuoted.matches("\"bar\\\\baz\"")).isTrue();
+  }
+
+  @Test public void quotedByWithEscapes_differentBeforeAndAfterChars_success() {
+    Parser<String> parser = Parser.quotedByWithEscapes('<', '>', chars(1));
+    assertThat(parser.parse("<foo>")).isEqualTo("foo");
+    assertThat(parser.matches("<foo>")).isTrue();
+    assertThat(parser.parse("<foo<bar>")).isEqualTo("foo<bar");
+    assertThat(parser.matches("<foo<bar>")).isTrue();
+    assertThat(parser.parse("<foo\\>bar>")).isEqualTo("foo>bar");
+    assertThat(parser.matches("<foo\\>bar>")).isTrue();
+  }
+
+  @Test public void quotedByWithEscapes_failures() {
+    Parser<String> singleQuoted = Parser.quotedByWithEscapes('\'', '\'', chars(1));
+    assertThrows(ParseException.class, () -> singleQuoted.parse("'foo")); // unclosed
+    assertThat(singleQuoted.matches("'foo")).isFalse();
+    assertThrows(ParseException.class, () -> singleQuoted.parse("'foo'bar")); // leftover
+    assertThat(singleQuoted.matches("'foo'bar")).isFalse();
+    assertThrows(ParseException.class, () -> singleQuoted.parse("'foo\\")); // dangling escape
+    assertThat(singleQuoted.matches("'foo\\'")).isFalse();
+  }
+
+  @Test public void quotedByWithEscapes_invalidQuoteChar_throws() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('"', '\\', chars(1)));
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('"', '\n', chars(1)));
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('"', '\r', chars(1)));
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('"', '\t', chars(1)));
+  }
+
+  @Test public void quotedByWithEscapes_throwsOnHighSurrogateBefore() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('\uD83D', '"', chars(1)));
+  }
+
+  @Test public void quotedByWithEscapes_throwsOnLowSurrogateAfter() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.quotedByWithEscapes('"', '\uDE80', chars(1)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Parser.quotedByWithEscapes("begin:", '\uDE80', chars(1)));
+  }
+
+  @Test public void quotedBy_throwsOnHighSurrogateBefore() {
+    assertThrows(IllegalArgumentException.class, () -> Parser.quotedBy('\uD83D', '"'));
+  }
+
+  @Test public void quotedBy_throwsOnLowSurrogateAfter() {
+    assertThrows(IllegalArgumentException.class, () -> Parser.quotedBy('"', '\uDE80'));
+  }
+
+  @Test public void quotedByWithEscapes_unicodeEscape_success() {
+    Parser<String> unicodeEscaped = string("u").then(bmpCodeUnit()).map(Character::toString);
+    Parser<String> quotedString =
+        Parser.quotedByWithEscapes('\'', '\'', unicodeEscaped.or(chars(1)));
+    assertThat(quotedString.parse("''")).isEmpty();
+    assertThat(quotedString.matches("''")).isTrue();
+    assertThat(quotedString.parse("'emoji: \\uD83D\\uDe00'")).isEqualTo("emoji: 😀");
+    assertThat(quotedString.matches("'emoji: \\uD83D\\uDe00'")).isTrue();
+  }
+
+  @Test public void quotedByWithEscapes_stringBeforeCharAfter_success() {
+    Parser<String> parser = Parser.quotedByWithEscapes("<<", '>', chars(1));
+    assertThat(parser.parse("<<foo>")).isEqualTo("foo");
+    assertThat(parser.matches("<<foo>")).isTrue();
+    assertThat(parser.parse("<<foo<bar>")).isEqualTo("foo<bar");
+    assertThat(parser.matches("<<foo<bar>")).isTrue();
+    assertThat(parser.parse("<<foo\\>bar>")).isEqualTo("foo>bar");
+    assertThat(parser.matches("<<foo\\>bar>")).isTrue();
+  }
+
+  @Test public void quotedByWithEscapes_stringBeforeCharAfter_failures() {
+    Parser<String> parser = Parser.quotedByWithEscapes("<<", '>', chars(1));
+    assertThrows(ParseException.class, () -> parser.parse("<<foo")); // unclosed
+    assertThat(parser.matches("<<foo")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parse("<<foo>bar")); // leftover
+    assertThat(parser.matches("<<foo>bar")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parse("<<foo\\")); // dangling escape
+    assertThat(parser.matches("<<foo\\>")).isFalse();
+  }
+
+  @Test public void quotedByWithEscapes_stringBeforeCharAfter_unicodeEscape_success() {
+    Parser<String> unicodeEscaped = string("u").then(bmpCodeUnit()).map(Character::toString);
+    Parser<String> quotedString =
+        Parser.quotedByWithEscapes("begin:", ';', unicodeEscaped.or(chars(1)));
+    assertThat(quotedString.parse("begin:;")).isEmpty();
+    assertThat(quotedString.matches("begin:;")).isTrue();
+    assertThat(quotedString.parse("begin:emoji: \\uD83D\\uDe00;")).isEqualTo("emoji: 😀");
+    assertThat(quotedString.matches("begin:emoji: \\uD83D\\uDe00;")).isTrue();
+  }
+
+  @Test public void quotedByWithEscapes_orEmpty_success() {
+    Parser<String> parser = Parser.quotedByWithEscapes(
+        "[", ']',
+        Parser.one("[!\"#$%&'()*+,-./:;<=>?@\\[\\]^_`{|}~]").map(String::valueOf).orElse("\\"));
+    // Escapable punctuation gets resolved:
+    assertThat(parser.parse("[a\\!b]")).isEqualTo("a!b");
+    assertThat(parser.parse("[a\\\\]")).isEqualTo("a\\");
+    // Non-escapable character gets resolved to the default value (only backslash consumed)
+    assertThat(parser.parse("[a\\xb]")).isEqualTo("a\\xb");
+  }
+
+  @Test public void nestedByWithEscapes_markdownLink() {
+    record MarkdownLink(String text, String url) {}
+    Parser<String> escapedChar = Parser.one("[!\"#$%&'()*+,-./:;<=>?@\\[\\]^_`{|}~]")
+        .map(c -> Character.toString(c))
+        .or(one(c -> true, "non-escapable char").map(c -> "\\" + c));
+    Parser<MarkdownLink> parser = Parser.sequence(
+        Parser.quotedByWithEscapes("![", ']', escapedChar),
+        Parser.nestedByWithEscapes('(', ')', chars(1)), MarkdownLink::new);
+    assertThat(parser.parse("![text](http://\\)url)"))
+        .isEqualTo(new MarkdownLink("text", "http://)url"));
+    assertThat(parser.parse("![text\\a](http://\\)url)"))
+        .isEqualTo(new MarkdownLink("text\\a", "http://)url"));
+    assertThat(parser.parse("![text](http://foo(bar)baz)"))
+        .isEqualTo(new MarkdownLink("text", "http://foo(bar)baz"));
+    assertThat(parser.parse("![text](http://foo(bar(baz))qux)"))
+        .isEqualTo(new MarkdownLink("text", "http://foo(bar(baz))qux"));
+  }
+
+  @Test public void nestedByWithEscapes_charDelimiters_success() {
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', chars(1));
+    assertThat(parser.getPrefixes()).containsExactly("(");
+    assertThat(parser.parse("()")).isEqualTo("");
+    assertThat(parser.matches("()")).isTrue();
+    assertThat(parser.parse("(foo)")).isEqualTo("foo");
+    assertThat(parser.matches("(foo)")).isTrue();
+    assertThat(parser.parse("(foo (bar) baz)")).isEqualTo("foo (bar) baz");
+    assertThat(parser.matches("(foo (bar) baz)")).isTrue();
+    assertThat(parser.parse("(foo (bar (baz) qux) etc)")).isEqualTo("foo (bar (baz) qux) etc");
+    assertThat(parser.matches("(foo (bar (baz) qux) etc)")).isTrue();
+    assertThat(parser.parse("(foo \\( bar \\(baz\\) )")).isEqualTo("foo ( bar (baz) ");
+    assertThat(parser.matches("(foo \\( bar \\(baz\\) )")).isTrue();
+    assertThat(parser.parse("(foo \\\\bar)")).isEqualTo("foo \\bar");
+    assertThat(parser.matches("(foo \\\\bar)")).isTrue();
+  }
+
+  @Test public void nestedByWithEscapes_source_success() {
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', chars(1)).source();
+    assertThat(parser.parse("(foo \\(bar\\))")).isEqualTo("(foo \\(bar\\))");
+  }
+
+  @Test public void nestedBy_charDelimiters_success() {
+    Parser<String> parser = Parser.nestedBy("(", ")");
+    assertThat(parser.getPrefixes()).containsExactly("(");
+    assertThat(parser.parse("()")).isEqualTo("");
+    assertThat(parser.matches("()")).isTrue();
+    assertThat(parser.parse("(foo)")).isEqualTo("foo");
+    assertThat(parser.matches("(foo)")).isTrue();
+    assertThat(parser.parse("(foo (bar) baz)")).isEqualTo("foo (bar) baz");
+    assertThat(parser.matches("(foo (bar) baz)")).isTrue();
+    assertThat(parser.parse("(foo (bar (baz) qux) etc)")).isEqualTo("foo (bar (baz) qux) etc");
+    assertThat(parser.matches("(foo (bar (baz) qux) etc)")).isTrue();
+  }
+
+  @Test public void nestedBy_stringDelimiters_success() {
+    Parser<String> parser = Parser.nestedBy("<<", ">>");
+    assertThat(parser.getPrefixes()).containsExactly("<<");
+    assertThat(parser.parse("<<>>")).isEqualTo("");
+    assertThat(parser.matches("<<>>")).isTrue();
+    assertThat(parser.parse("<<foo>>")).isEqualTo("foo");
+    assertThat(parser.matches("<<foo>>")).isTrue();
+    assertThat(parser.parse("<<foo <<bar>> baz>>")).isEqualTo("foo <<bar>> baz");
+    assertThat(parser.matches("<<foo <<bar>> baz>>")).isTrue();
+    assertThat(parser.parse("<<foo <<bar <<baz>> qux>> etc>>"))
+        .isEqualTo("foo <<bar <<baz>> qux>> etc");
+    assertThat(parser.matches("<<foo <<bar <<baz>> qux>> etc>>")).isTrue();
+  }
+
+  @Test public void nestedBy_source_success() {
+    Parser<String> parser = Parser.nestedBy("(", ")").source();
+    assertThat(parser.parse("(foo (bar) baz)")).isEqualTo("(foo (bar) baz)");
+  }
+
+  @Test public void nestedByWithEscapes_failures() {
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', chars(1));
+    assertThrows(ParseException.class, () -> parser.parse("(foo (bar)")); // unclosed outer
+    assertThat(parser.matches("(foo (bar)")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parse("(foo (bar))baz")); // leftover
+    assertThat(parser.matches("(foo (bar))baz")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parse("(foo (bar")); // unclosed inner
+    assertThat(parser.matches("(foo (bar")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parse("(foo \\")); // dangling escape
+    assertThat(parser.matches("(foo \\")).isFalse();
+  }
+
+  @Test public void nestedBy_failures() {
+    Parser<String> parser = Parser.nestedBy("(", ")");
+    assertThrows(ParseException.class, () -> parser.parse("(foo (bar)")); // unclosed outer
+    assertThat(parser.matches("(foo (bar)")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parse("(foo (bar))baz")); // leftover
+    assertThat(parser.matches("(foo (bar))baz")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parse("(foo (bar")); // unclosed inner
+    assertThat(parser.matches("(foo (bar")).isFalse();
+  }
+
+  @Test public void nestedByWithEscapes_invalidQuoteChar_throws() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('\\', ')', chars(1)));
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('(', '\\', chars(1)));
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('(', '(', chars(1)));
+  }
+
+  @Test public void nestedByWithEscapes_throwsOnHighSurrogateBefore() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('\uD83D', ')', chars(1)));
+  }
+
+  @Test public void nestedByWithEscapes_throwsOnLowSurrogateAfter() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.nestedByWithEscapes('(', '\uDE80', chars(1)));
+  }
+
+  @Test public void nestedBy_invalidQuoteChar_throws() {
+    assertThrows(IllegalArgumentException.class, () -> Parser.nestedBy("", ")"));
+    assertThrows(IllegalArgumentException.class, () -> Parser.nestedBy("(", ""));
+    assertThrows(IllegalArgumentException.class, () -> Parser.nestedBy("(", "("));
+  }
+
+  @Test public void nestedByWithEscapes_utf32CodePoints() {
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', chars(1));
+    // Regular UTF-32 code point: rocket emoji 🚀 (\uD83D\uDE80)
+    assertThat(parser.parse("(foo 🚀 bar)")).isEqualTo("foo 🚀 bar");
+
+    // Escaped UTF-32 code point: \🚀
+    assertThat(parser.parse("(foo \\🚀 bar)")).isEqualTo("foo 🚀 bar");
+
+    // UTF-32 characters nested
+    assertThat(parser.parse("(foo 🚀 (bar 🍕) baz)")).isEqualTo("foo 🚀 (bar 🍕) baz");
+  }
+
+  @Test public void nestedByWithEscapes_customEscapedParser_success() {
+    // Only allow '(' and ')' to be escaped by backslash.
+    Parser<String> parser =
+        Parser.nestedByWithEscapes('(', ')', Parser.one("[()]").map(c -> String.valueOf(c)));
+    assertThat(parser.parse("(foo \\( bar \\) baz)")).isEqualTo("foo ( bar ) baz");
+  }
+
+  @Test public void nestedByWithEscapes_customEscapedParser_failure() {
+    // Only allow '(' and ')' to be escaped by backslash.
+    Parser<String> parser =
+        Parser.nestedByWithEscapes('(', ')', Parser.one("[()]").map(c -> String.valueOf(c)));
+    // '\a' is not a valid escape in this custom parser, so parsing should fail!
+    assertThrows(ParseException.class, () -> parser.parse("(foo \\a bar)"));
+  }
+
+  @Test public void nestedBy_utf32CodePoints() {
+    Parser<String> parser = Parser.nestedBy("(", ")");
+    assertThat(parser.parse("(foo 🚀 bar)")).isEqualTo("foo 🚀 bar");
+    assertThat(parser.parse("(foo 🚀 (bar 🍕) baz)")).isEqualTo("foo 🚀 (bar 🍕) baz");
+  }
+
+  @Test public void nestedBy_emojiDelimitersAndContentSharingHighSurrogate() {
+    // before: 🚀 (\uD83D\uDE80)
+    // after: 🙏 (\uD83D\uDE4F)
+    // content: 😀 (\uD83D\uDE00)
+    // All three share the high surrogate '\uD83D'!
+    Parser<String> parser = Parser.nestedBy("🚀", "🙏");
+    assertThat(parser.parse("🚀😀🙏")).isEqualTo("😀");
+    assertThat(parser.matches("🚀😀🙏")).isTrue();
+
+    // With nesting
+    assertThat(parser.parse("🚀😀🚀🍕🙏🙏")).isEqualTo("😀🚀🍕🙏");
+    assertThat(parser.matches("🚀😀🚀🍕🙏🙏")).isTrue();
+  }
+
+  @Test public void quotedBy_emojiDelimitersAndContentSharingHighSurrogate() {
+    // before: 🚀 (\uD83D\uDE80)
+    // after: 🙏 (\uD83D\uDE4F)
+    // content: 😀 (\uD83D\uDE00)
+    // All three share the high surrogate '\uD83D'!
+    Parser<String> parser = Parser.quotedBy("🚀", "🙏");
+    assertThat(parser.parse("🚀😀🙏")).isEqualTo("😀");
+    assertThat(parser.matches("🚀😀🙏")).isTrue();
+  }
+
+  @Test public void nestedByWithEscapes_deepNesting_noStackOverflow() {
+    int depth = 10000;
+    String input = "(".repeat(depth) + "foo" + ")".repeat(depth);
+    Parser<String> parser = Parser.nestedByWithEscapes('(', ')', chars(1));
+    assertThat(parser.parse(input))
+        .isEqualTo("(".repeat(depth - 1) + "foo" + ")".repeat(depth - 1));
+  }
+
+  @Test public void nestedBy_deepNesting_noStackOverflow() {
+    int depth = 10000;
+    String input = "(".repeat(depth) + "foo" + ")".repeat(depth);
+    Parser<String> parser = Parser.nestedBy("(", ")");
+    assertThat(parser.parse(input))
+        .isEqualTo("(".repeat(depth - 1) + "foo" + ")".repeat(depth - 1));
+  }
+
+  @Test public void nestedBy_insideAnyOfWithOtherCandidates_success() {
+    Parser<String> parser = anyOf(
+        string("foo"), string("bar"), string("baz"), string("qux"), string("etc"),
+        Parser.nestedBy("(", ")"));
+    assertThat(parser.parse("(abc)")).isEqualTo("abc");
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+    assertThat(parser.parse("bar")).isEqualTo("bar");
+  }
+
+  @Test public void nestedByWithEscapes_insideAnyOfWithOtherCandidates_success() {
+    Parser<String> parser = anyOf(
+        string("foo"), string("bar"), string("baz"), string("qux"), string("etc"),
+        Parser.nestedByWithEscapes('(', ')', chars(1)));
+    assertThat(parser.parse("(abc)")).isEqualTo("abc");
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+    assertThat(parser.parse("bar")).isEqualTo("bar");
+  }
+
+  @Test public void nestedByWithEscapes_orEmpty_success() {
+    Parser<String> parser = Parser.nestedByWithEscapes(
+        '(', ')',
+        Parser.one("[!\"#$%&'()*+,-./:;<=>?@\\[\\]^_`{|}~]").map(String::valueOf).orElse("\\"));
+    // Escapable punctuation gets resolved:
+    assertThat(parser.parse("(a\\!b)")).isEqualTo("a!b");
+    assertThat(parser.parse("(a\\\\)")).isEqualTo("a\\");
+    // Non-escapable character gets resolved to the default value (only backslash consumed)
+    assertThat(parser.parse("(a\\xb)")).isEqualTo("a\\xb");
+  }
+
+  @Test public void bmpCodeUnit_emoji() {
+    assertThat(bmpCodeUnit().map(Character::toString).zeroOrMore(joining()).parse("d83dDE00"))
+        .isEqualTo("😀");
+    assertThat(bmpCodeUnit().map(Character::toString).zeroOrMore(joining()).matches("d83dDE00"))
+        .isTrue();
+  }
+
+  @Test public void bmpCodeUnit_invalidHexChar_fails() {
+    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123g"));
+    assertThat(bmpCodeUnit().matches("123g")).isFalse();
+    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123G"));
+    assertThat(bmpCodeUnit().matches("123G")).isFalse();
+    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123Z"));
+    assertThat(bmpCodeUnit().matches("123Z")).isFalse();
+  }
+
+  @Test public void testNulls() throws Exception {
+    NullPointerTester tester = new NullPointerTester()
+        .setDefault(Parser.class, string("a"))
+        .setDefault(Parser.OrEmpty.class, string("a").orElse("default"))
+        .setDefault(String.class, "test")
+        .setDefault(char.class, '`')
+        .setDefault(Production.class, zeroOrMore("[]"));
+    tester.ignore(Parser.class.getMethod("fail", String.class))
+        .testAllPublicStaticMethods(Parser.class);
+    tester.ignore(Parser.class.getMethod("orElse", Object.class))
+        .ignore(Parser.class.getMethod("thenReturn", Object.class))
+        .testAllPublicInstanceMethods(string("a"));
+  }
+
+  @Test public void thenReturn_success() {
+    Parser<Integer> parser1 = string("one").thenReturn(1);
+    assertThat(parser1.parse("one")).isEqualTo(1);
+    assertThat(parser1.matches("one")).isTrue();
+    assertThat(parser1.parseToStream("one")).containsExactly(1);
+    assertThat(parser1.parseToStream("")).isEmpty();
+
+    Parser<String> parser2 = string("two").thenReturn("deux");
+    assertThat(parser2.parse("two")).isEqualTo("deux");
+    assertThat(parser2.matches("two")).isTrue();
+    assertThat(parser2.parseToStream("two")).containsExactly("deux");
+    assertThat(parser2.parseToStream("")).isEmpty();
+  }
+
+  @Test public void thenReturn_success_source() {
+    Parser<Integer> parser1 = string("one").thenReturn(1);
+    assertThat(parser1.source().parse("one")).isEqualTo("one");
+    assertThat(parser1.source().matches("one")).isTrue();
+    assertThat(parser1.source().parseToStream("one")).containsExactly("one");
+    assertThat(parser1.source().parseToStream("")).isEmpty();
+
+    Parser<String> parser2 = string("two").thenReturn("deux");
+    assertThat(parser2.source().parse("two")).isEqualTo("two");
+    assertThat(parser2.source().matches("two")).isTrue();
+    assertThat(parser2.source().parseToStream("two")).containsExactly("two");
+    assertThat(parser2.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void thenReturn_failure_withLeftover() {
+    assertThrows(ParseException.class, () -> string("one").thenReturn(1).parse("onea"));
+    assertThat(string("one").thenReturn(1).matches("onea")).isFalse();
+    assertThrows(
+        ParseException.class, () -> string("one").thenReturn(1).parseToStream("onea").toList());
+  }
+
+  @Test public void thenReturn_failure() {
+    assertThrows(ParseException.class, () -> string("one").thenReturn(1).parse("two"));
+    assertThat(string("one").thenReturn(1).matches("two")).isFalse();
+    assertThrows(
+        ParseException.class, () -> string("one").thenReturn(1).parseToStream("two").toList());
+  }
+
+  @Test public void map_success() {
+    Parser<Integer> parser1 = string("123").map(Integer::parseInt);
+    assertThat(parser1.parse("123")).isEqualTo(123);
+    assertThat(parser1.matches("123")).isTrue();
+    assertThat(parser1.parseToStream("123")).containsExactly(123);
+    assertThat(parser1.parseToStream("")).isEmpty();
+
+    Parser<Boolean> parser2 = string("true").map(Boolean::parseBoolean);
+    assertThat(parser2.parse("true")).isTrue();
+    assertThat(parser2.matches("true")).isTrue();
+    assertThat(parser2.parseToStream("true")).containsExactly(true);
+    assertThat(parser2.parseToStream("")).isEmpty();
+  }
+
+  @Test public void map_success_source() {
+    Parser<Integer> parser1 = string("123").map(Integer::parseInt);
+    assertThat(parser1.source().parse("123")).isEqualTo("123");
+    assertThat(parser1.source().matches("123")).isTrue();
+    assertThat(parser1.source().parseToStream("123")).containsExactly("123");
+    assertThat(parser1.source().parseToStream("")).isEmpty();
+
+    Parser<Boolean> parser2 = string("true").map(Boolean::parseBoolean);
+    assertThat(parser2.source().parse("true")).isEqualTo("true");
+    assertThat(parser2.source().matches("true")).isTrue();
+    assertThat(parser2.source().parseToStream("true")).containsExactly("true");
+    assertThat(parser2.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void map_failure_withLeftover() {
+    assertThrows(ParseException.class, () -> string("123").map(Integer::parseInt).parse("123a"));
+    assertThat(string("123").map(Integer::parseInt).matches("123a")).isFalse();
+    assertThrows(
+        ParseException.class,
+        () -> string("123").map(Integer::parseInt).parseToStream("123a").toList());
+  }
+
+  @Test public void map_failure() {
+    assertThrows(ParseException.class, () -> string("abc").map(Integer::parseInt).parse("def"));
+    assertThat(string("abc").map(Integer::parseInt).matches("def")).isFalse();
+    assertThrows(
+        ParseException.class,
+        () -> string("abc").map(Integer::parseInt).parseToStream("def").toList());
+  }
+
+  @Test public void suchThat_parserFails() {
+    ImmutableSet<String> keywords = ImmutableSet.of("if", "else");
+    Parser<String> parser = word().suchThat(keywords::contains, "keyword");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("b"));
+    assertThat(parser.matches("b")).isFalse();
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <keyword>, encountered:\s
+                b
+                ^
+            """);
+  }
+
+  @Test public void suchThat_conditionSucceeds() {
+    ImmutableSet<String> magicNumbers = ImmutableSet.of("888", "911");
+    Parser<String> parser = digits().suchThat(magicNumbers::contains, "magic");
+    assertThat(parser.parse("888")).isEqualTo("888");
+    assertThat(parser.matches("888")).isTrue();
+    assertThat(parser.skipping(whitespace()).parseToStream("911 888"))
+        .containsExactly("911", "888")
+        .inOrder();
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void suchThat_conditionFails() {
+    Parser<Integer> parser =
+        string("23").map(Integer::parseInt).suchThat(i -> i > 100, "larger than 100");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("23"));
+    assertThat(parser.matches("23")).isFalse();
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <larger than 100>, encountered:\s
+                23
+                ^
+            """);
+  }
+
+  @Test public void suchThat_farthestFailurePrefersSuchThatOverSuffix() {
+    Parser<?> parser =
+        anyOf(word().suchThat(w -> w.length() > 10, "long word"), string("foo").followedBy("d"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("fooled"));
+    assertThat(thrown).hasMessageThat().contains("expecting <long word>");
+  }
+
+  @Test public void notFollowedBy_farthestFailurePrefersLongerSuffix() {
+    Parser<?> parser = anyOf(string("foo").notFollowedBy("b"), string("foo").notFollowedBy("bar"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("foobar"));
+    assertThat(thrown).hasMessageThat().contains("unexpected `bar`");
+  }
+
+  @Test public void flatMap_success() {
+    Parser<String> parser = digits().flatMap(number -> string("=" + number));
+    assertThat(parser.parse("123=123")).isEqualTo("=123");
+    assertThat(parser.matches("123=123")).isTrue();
+    assertThat(parser.parseToStream("123=123")).containsExactly("=123");
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void flatMap_success_source() {
+    Parser<String> parser = digits().flatMap(number -> string("=" + number));
+    assertThat(parser.source().parse("123=123")).isEqualTo("123=123");
+    assertThat(parser.source().matches("123=123")).isTrue();
+    assertThat(parser.source().parseToStream("123=123")).containsExactly("123=123");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void flatMap_failure_withLeftover() {
+    Parser<String> parser = digits().flatMap(number -> string("=" + number));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("123=123???"));
+    assertThat(parser.matches("123=123???")).isFalse();
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:8: expecting <EOF>, encountered:\s
+                123=123???
+                       ^
+            """);
+    assertThrows(ParseException.class, () -> parser.parseToStream("123=123???").toList());
+  }
+
+  @Test public void flatMap_failure() {
+    Parser<String> parser = digits().flatMap(number -> string("=" + number));
+    assertThrows(ParseException.class, () -> parser.parse("=123"));
+    assertThat(parser.matches("=123")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parseToStream("=123").toList());
+    assertThrows(ParseException.class, () -> parser.parse("123=124"));
+    assertThat(parser.matches("123=124")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parseToStream("123=124").toList());
+  }
+
+  @Test public void flatMap_lambdaReturnsOrEmpty_outerFails() {
+    Parser<String> parser = string("a").flatMap(r -> string("b").orElse("B"));
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+    assertThat(parser.matches("c")).isFalse();
+  }
+
+  @Test public void flatMap_lambdaReturnsOrEmpty_innerMatches() {
+    Parser<String> parser = string("a").flatMap(r -> string("b").orElse("B"));
+    assertThat(parser.parse("ab")).isEqualTo("b");
+    assertThat(parser.matches("ab")).isTrue();
+  }
+
+  @Test public void flatMap_lambdaReturnsOrEmpty_innerDoesNotMatch() {
+    Parser<String> parser = string("a").flatMap(r -> string("b").orElse("B"));
+    assertThat(parser.parse("a")).isEqualTo("B");
+    assertThat(parser.matches("a")).isTrue();
+  }
+
+  @Test public void then_success() {
+    Parser<Integer> parser = string("value:").then(string("123").map(Integer::parseInt));
+    assertThat(parser.parse("value:123")).isEqualTo(123);
+    assertThat(parser.matches("value:123")).isTrue();
+    assertThat(parser.parseToStream("value:123")).containsExactly(123);
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void then_success_source() {
+    Parser<Integer> parser = string("value:").then(string("123").map(Integer::parseInt));
+    assertThat(parser.source().parse("value:123")).isEqualTo("value:123");
+    assertThat(parser.source().matches("value:123")).isTrue();
+    assertThat(parser.source().parseToStream("value:123")).containsExactly("value:123");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void then_failure_withLeftover() {
+    Parser<Integer> parser = string("value:").then(string("123").map(Integer::parseInt));
+    assertThrows(ParseException.class, () -> parser.parse("value:123a"));
+    assertThat(parser.matches("value:123a")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parseToStream("value:123a").toList());
+  }
+
+  @Test public void then_failure() {
+    Parser<Integer> parser = string("value:").then(string("123").map(Integer::parseInt));
+    assertThrows(ParseException.class, () -> parser.parse("value:abc"));
+    assertThat(parser.matches("value:abc")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parseToStream("value:abc").toList());
+    assertThrows(ParseException.class, () -> parser.parse("val:123"));
+    assertThat(parser.matches("val:123")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parseToStream("val:123").toList());
+  }
+
+  @Test public void then_orEmpty_p1Fails() {
+    Parser<List<String>> parser = string("a").then(string("b").zeroOrMore());
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+    assertThat(parser.matches("c")).isFalse();
+  }
+
+  @Test public void then_orEmpty_p2MatchesZeroTimes() {
+    Parser<List<String>> parser = string("a").then(string("b").zeroOrMore());
+    assertThat(parser.parse("a")).isEmpty();
+    assertThat(parser.matches("a")).isTrue();
+  }
+
+  @Test public void then_orEmpty_p2MatchesZeroTimes_source() {
+    Parser<List<String>> parser = string("a").then(string("b").zeroOrMore());
+    assertThat(parser.source().parse("a")).isEqualTo("a");
+    assertThat(parser.source().matches("a")).isTrue();
+  }
+
+  @Test public void then_orEmpty_p2MatchesOnce() {
+    Parser<List<String>> parser = string("a").then(string("b").zeroOrMore());
+    assertThat(parser.parse("ab")).containsExactly("b");
+    assertThat(parser.matches("ab")).isTrue();
+  }
+
+  @Test public void then_orEmpty_p2MatchesOnce_source() {
+    Parser<List<String>> parser = string("a").then(string("b").zeroOrMore());
+    assertThat(parser.source().parse("ab")).isEqualTo("ab");
+    assertThat(parser.source().matches("ab")).isTrue();
+  }
+
+  @Test public void then_orEmpty_p2MatchesMultipleTimes() {
+    Parser<List<String>> parser = string("a").then(string("b").zeroOrMore());
+    assertThat(parser.parse("abb")).containsExactly("b", "b");
+    assertThat(parser.matches("abb")).isTrue();
+  }
+
+  @Test public void then_orEmpty_p2MatchesMultipleTimes_source() {
+    Parser<List<String>> parser = string("a").then(string("b").zeroOrMore());
+    assertThat(parser.source().parse("abb")).isEqualTo("abb");
+    assertThat(parser.source().matches("abb")).isTrue();
+  }
+
+  @Test public void followedBy_success() {
+    Parser<String> parser = string("123").followedBy(string("บาท"));
+    assertThat(parser.parse("123บาท")).isEqualTo("123");
+    assertThat(parser.matches("123บาท")).isTrue();
+    assertThat(parser.parseToStream("123บาท")).containsExactly("123");
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void followedBy_success_source() {
+    Parser<String> parser = string("123").followedBy(string("บาท"));
+    assertThat(parser.source().parse("123บาท")).isEqualTo("123บาท");
+    assertThat(parser.source().matches("123บาท")).isTrue();
+    assertThat(parser.source().parseToStream("123บาท")).containsExactly("123บาท");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void followedBy_failure_withLeftover() {
+    Parser<String> parser = string("123").followedBy(string("บาท"));
+    assertThrows(ParseException.class, () -> parser.parse("123บาทa"));
+    assertThat(parser.matches("123บาทa")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parseToStream("123บาทa").toList());
+  }
+
+  @Test public void followedBy_failure() {
+    Parser<String> parser = string("123").followedBy(string("บาท"));
+    assertThrows(ParseException.class, () -> parser.parse("123baht"));
+    assertThat(parser.matches("123baht")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parseToStream("123baht").toList());
+    assertThrows(ParseException.class, () -> parser.parse("456บาท"));
+    assertThat(parser.matches("456บาท")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parseToStream("456บาท").toList());
+  }
+
+  @Test public void followedByOrEof_suffixMatches() {
+    Parser<String> parser = string("foo").followedByOrEof(string("bar"));
+    assertThat(parser.parse("foobar")).isEqualTo("foo");
+    assertThat(parser.matches("foobar")).isTrue();
+  }
+
+  @Test public void followedByOrEof_eofMatches() {
+    Parser<String> parser = string("foo").followedByOrEof(string("bar"));
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+    assertThat(parser.matches("foo")).isTrue();
+  }
+
+  @Test public void followedByOrEof_neitherMatches() {
+    Parser<String> parser = string("foo").followedByOrEof(string("bar"));
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("foobaz"));
+    assertThat(parser.matches("foobaz")).isFalse();
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <one of [bar, EOF]>, encountered:\s
+                foobaz
+                   ^
+            """);
+  }
+
+  @Test public void followedByOrEof_mainParserFails() {
+    Parser<String> parser = string("foo").followedByOrEof(string("bar"));
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("fobar"));
+    assertThat(parser.matches("fobar")).isFalse();
+    assertThat(e).hasMessageThat().contains("expecting <foo>");
+  }
+
+  @Test public void optionallyFollowedBy_suffixCannotBeEmpty() {
+    assertThrows(IllegalArgumentException.class, () -> string("123").optionallyFollowedBy(""));
+  }
+
+  @Test public void optionallyFollowedBy_success() {
+    Parser<Integer> parser =
+        string("123").map(Integer::parseInt).optionallyFollowedBy("++", n -> n + 1);
+    assertThat(parser.parse("123++")).isEqualTo(124);
+    assertThat(parser.matches("123++")).isTrue();
+    assertThat(parser.parseToStream("123++")).containsExactly(124);
+    assertThat(parser.parse("123")).isEqualTo(123);
+    assertThat(parser.matches("123")).isTrue();
+    assertThat(parser.parseToStream("123")).containsExactly(123);
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void optionallyFollowedBy_success_source() {
+    Parser<Integer> parser =
+        string("123").map(Integer::parseInt).optionallyFollowedBy("++", n -> n + 1);
+    assertThat(parser.source().parse("123++")).isEqualTo("123++");
+    assertThat(parser.source().matches("123++")).isTrue();
+    assertThat(parser.source().parseToStream("123++")).containsExactly("123++");
+    assertThat(parser.source().parse("123")).isEqualTo("123");
+    assertThat(parser.source().matches("123")).isTrue();
+    assertThat(parser.source().parseToStream("123")).containsExactly("123");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void optionallyFollowedBy_unconsumedInput() {
+    Parser<Integer> parser =
+        string("123").map(Integer::parseInt).optionallyFollowedBy("++", n -> n + 1);
+    Parser.ParseException thrown =
+        assertThrows(Parser.ParseException.class, () -> parser.parse("123+"));
+    assertThat(parser.matches("123+")).isFalse();
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <EOF>, encountered:\s
+                123+
+                   ^
+            """);
+    assertThrows(ParseException.class, () -> parser.parseToStream("123+").toList());
+  }
+
+  @Test public void optionallyFollowedBy_failedToMatch() {
+    Parser<Integer> parser =
+        string("123").map(Integer::parseInt).optionallyFollowedBy("++", n -> n + 1);
+    Parser.ParseException thrown =
+        assertThrows(Parser.ParseException.class, () -> parser.parse("abc"));
+    assertThat(parser.matches("abc")).isFalse();
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <123>, encountered:\s
+                abc
+                ^
+            """);
+    assertThrows(ParseException.class, () -> parser.parseToStream("abc").toList());
+  }
+
+  @Test public void optionallyFollowedBy_parserSuffix_suffixExists() {
+    Parser<Integer> parser = string("123")
+        .map(Integer::parseInt)
+        .optionallyFollowedBy(string("+").then(digits()).map(Integer::parseInt), (n, i) -> n + i);
+    assertThat(parser.parse("123+1")).isEqualTo(124);
+    assertThat(parser.matches("123+1")).isTrue();
+    assertThat(parser.parseToStream("123+2")).containsExactly(125);
+  }
+
+  @Test public void optionallyFollowedBy_parserSuffix_suffixDoesNotExist() {
+    Parser<Integer> parser = string("123")
+        .map(Integer::parseInt)
+        .optionallyFollowedBy(string("+").then(digits()).map(Integer::parseInt), (n, i) -> n + i);
+    assertThat(parser.parse("123")).isEqualTo(123);
+    assertThat(parser.matches("123")).isTrue();
+    assertThat(parser.parseToStream("123+3")).containsExactly(126);
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void notFollowedBy_emptySuffix_throws() {
+    assertThrows(IllegalArgumentException.class, () -> string("a").notFollowedBy(""));
+  }
+
+  @Test public void notFollowedBy_selfFailsToMatch() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> string("a").notFollowedBy("b").parse("c"));
+    assertThat(string("a").notFollowedBy("b").matches("c")).isFalse();
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <a>, encountered:\s
+                c
+                ^
+            """);
+  }
+
+  @Test public void notFollowedBy_suffixFollows() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> string("a").notFollowedBy("b").parse("ab"));
+    assertThat(string("a").notFollowedBy("b").matches("ab")).isFalse();
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:2: unexpected `b`:\s
+                ab
+                 ^
+            """);
+  }
+
+  @Test public void notFollowedBy_suffixDoesNotFollow() {
+    assertThat(string("a").notFollowedBy("b").parse("a")).isEqualTo("a");
+    assertThat(string("a").notFollowedBy("b").matches("a")).isTrue();
+    assertThrows(ParseException.class, () -> string("a").notFollowedBy("b").parse("ac"));
+    assertThat(string("a").notFollowedBy("b").matches("ac")).isFalse();
+  }
+
+  @Test public void notFollowedBy_suffixDoesNotFollow_source() {
+    Parser<String> parser = string("a").notFollowedBy("b");
+    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThat(parser.matches("a")).isTrue();
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+    assertThat(parser.matches("ac")).isFalse();
+  }
+
+  @Test public void notFollowedByEof_followedByEof() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> string("a").notFollowedByEof().parse("a"));
+    assertThat(string("a").notFollowedByEof().matches("a")).isFalse();
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:2: unexpected `eof`:\s
+                a
+                 ^
+            """);
+  }
+
+  @Test public void notFollowedByEof_notFollowedByEof() {
+    Parser<String> parser = string("a").notFollowedByEof().then(string("b"));
+    assertThat(parser.parse("ab")).isEqualTo("b");
+    assertThat(parser.matches("ab")).isTrue();
+  }
+
+  @Test public void notFollowedByEof_skipping_success() {
+    Parser<String> parser = string("a").notFollowedByEof().then(string("b"));
+    assertThat(parser.parseSkipping(whitespace(), "a  b")).isEqualTo("b");
+    assertThat(parser.skipping(whitespace()).matches("a  b")).isTrue();
+  }
+
+  @Test public void notFollowedByEof_skipping_failure() {
+    Parser<String> parser = string("a").notFollowedByEof();
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "a  "));
+    assertThat(parser.skipping(whitespace()).matches("a  ")).isFalse();
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: unexpected `eof`:\s
+                a \s
+                   ^
+            """);
+  }
+
+  @Test public void notImmediatelyFollowedBy_selfFailsToMatch() {
+    assertThrows(
+        ParseException.class, () -> string("a").notImmediatelyFollowedBy(is('b'), "b").parse("c"));
+    assertThat(string("a").notImmediatelyFollowedBy(is('b'), "b").matches("c")).isFalse();
+  }
+
+  @Test public void notImmediatelyFollowedBy_suffixFollows() {
+    assertThrows(
+        ParseException.class, () -> string("a").notImmediatelyFollowedBy(is('b'), "b").parse("ab"));
+    assertThat(string("a").notImmediatelyFollowedBy(is('b'), "b").matches("ab")).isFalse();
+  }
+
+  @Test public void notImmediatelyFollowedBy_suffixDoesNotFollow() {
+    assertThat(string("a").notImmediatelyFollowedBy(is('b'), "b").parse("a")).isEqualTo("a");
+    assertThat(string("a").notImmediatelyFollowedBy(is('b'), "b").matches("a")).isTrue();
+    assertThrows(
+        ParseException.class, () -> string("a").notImmediatelyFollowedBy(is('b'), "b").parse("ac"));
+    assertThat(string("a").notImmediatelyFollowedBy(is('b'), "b").matches("ac")).isFalse();
+  }
+
+  @Test public void notImmediatelyFollowedBy_suffixDoesNotFollow_source() {
+    Parser<String> parser = string("a").notImmediatelyFollowedBy(is('b'), "b");
+    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThat(parser.matches("a")).isTrue();
+    assertThrows(
+        ParseException.class, () -> string("a").notImmediatelyFollowedBy(is('b'), "b").parse("ac"));
+    assertThat(string("a").notImmediatelyFollowedBy(is('b'), "b").matches("ac")).isFalse();
+  }
+
+  @Test public void notImmediatelyFollowedBy_suffixDoesNotLiterallyFollow() {
+    assertThat(
+            string("a").notImmediatelyFollowedBy(is('b'), "b")
+                .followedBy("b")
+                .parseSkipping(whitespace(), "a b"))
+        .isEqualTo("a");
+    assertThat(
+            string("a").notImmediatelyFollowedBy(is('b'), "b")
+                .followedBy("b")
+                .skipping(whitespace())
+                .matches("a b"))
+        .isTrue();
+  }
+
+  @Test public void notImmediatelyFollowedBy_suffixDoesNotLiterallyFollow_source() {
+    assertThat(
+            string("a").notImmediatelyFollowedBy(is('b'), "b")
+                .followedBy("b")
+                .source()
+                .parseSkipping(whitespace(), "a b"))
+        .isEqualTo("a b");
+    assertThat(
+            string("a").notImmediatelyFollowedBy(is('b'), "b")
+                .followedBy("b")
+                .source()
+                .skipping(whitespace())
+                .matches("a b"))
+        .isTrue();
+  }
+
+  @Test public void notFollowedBy_skipping_suffixFollows() {
+    assertThrows(
+        ParseException.class,
+        () -> string("a").notFollowedBy("b").parseSkipping(whitespace(), "a b"));
+    assertThat(string("a").notFollowedBy("b").skipping(whitespace()).matches("a b")).isFalse();
+  }
+
+  @Test public void notFollowedBy_skipping_suffixDoesNotFollow() {
+    assertThat(string("a").notFollowedBy("b").parseSkipping(whitespace(), "a")).isEqualTo("a");
+    assertThat(string("a").notFollowedBy("b").skipping(whitespace()).matches("a")).isTrue();
+    assertThrows(
+        ParseException.class,
+        () -> string("a").notFollowedBy("b").parseSkipping(whitespace(), "a c"));
+    assertThat(string("a").notFollowedBy("b").skipping(whitespace()).matches("a c")).isFalse();
+  }
+
+  @Test public void notFollowedBy_skipping_suffixDoesNotFollow_source() {
+    Parser<String> parser = string("a").notFollowedBy("b");
+    assertThat(parser.source().parseSkipping(whitespace(), "a")).isEqualTo("a");
+    assertThat(parser.source().skipping(whitespace()).matches("a")).isTrue();
+    assertThrows(
+        ParseException.class,
+        () -> string("a").notFollowedBy("b").parseSkipping(whitespace(), "a c"));
+    assertThat(string("a").notFollowedBy("b").skipping(whitespace()).matches("a c")).isFalse();
+  }
+
+  @Test public void expecting_eof() {
+    Parser<String> parser = string("f");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThat(parser.matches("")).isFalse();
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <f>, encountered:\s
+                <EOF>
+                ^
+            """);
+  }
+
+  @Test public void expecting_differentChar() {
+    Parser<String> parser = string("foo");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("bar"));
+    assertThat(parser.matches("bar")).isFalse();
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <foo>, encountered:\s
+                bar
+                ^
+            """);
+  }
+
+  @Test public void parseFailure_exactMessageFormat() {
+    Parser<String> parser = string("prefix ").followedBy("foo");
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parse("prefix bar suffix"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:8: expecting <foo>, encountered:\s
+                prefix bar suffix
+                       ^
+            """);
+  }
+
+  @Test public void simpleCalculator_expectingClosingParen_eof() {
+    Parser<Integer> parser = simpleCalculator();
+    ParseException thrown = assertThrows(
+        ParseException.class, () -> parser.parseSkipping(whitespace(), "(1 + \n( 2 + 3)"));
+    assertThat(parser.skipping(whitespace()).matches("(1 + \n( 2 + 3)")).isFalse();
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 2:9: expecting <)>, encountered:\s
+                (1 +\s
+                ( 2 + 3)
+                        ^
+            """);
+  }
+
+  @Test public void simpleCalculator_expectingClosingParen_differentChar() {
+    Parser<Integer> parser = simpleCalculator();
+    ParseException thrown = assertThrows(
+        ParseException.class, () -> parser.parseSkipping(whitespace(), "(1 + \n( 2 ? 3)"));
+    assertThat(parser.skipping(whitespace()).matches("(1 + \n( 2 ? 3)")).isFalse();
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 2:5: expecting <)>, encountered:\s
+                (1 +\s
+                ( 2 ? 3)
+                    ^
+            """);
+  }
+
+  @Test public void sequence_success() {
+    Parser<String> parser = sequence(
+        string("one").map(s -> 1), string("two").map(s -> 2),
+        (a, b) -> String.format("%d+%d=%d", a, b, a + b));
+    assertThat(parser.parse("onetwo")).isEqualTo("1+2=3");
+    assertThat(parser.matches("onetwo")).isTrue();
+    assertThat(parser.parseToStream("onetwo")).containsExactly("1+2=3");
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void sequence_success_source() {
+    Parser<String> parser = sequence(
+        string("one").map(s -> 1), string("two").map(s -> 2),
+        (a, b) -> String.format("%d+%d=%d", a, b, a + b));
+    assertThat(parser.source().parse("onetwo")).isEqualTo("onetwo");
+    assertThat(parser.source().matches("onetwo")).isTrue();
+    assertThat(parser.source().parseToStream("onetwo")).containsExactly("onetwo");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void sequence_failure_withLeftover() {
+    Parser<String> parser = sequence(
+        string("one").map(s -> 1), string("two").map(s -> 2),
+        (a, b) -> String.format("%d+%d=%d", a, b, a + b));
+    assertThrows(ParseException.class, () -> parser.parse("onetwoa"));
+    assertThat(parser.matches("onetwoa")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parseToStream("onetwoa").toList());
+  }
+
+  @Test public void sequence_failure() {
+    Parser<String> parser = sequence(
+        string("one").map(s -> 1), string("two").map(s -> 2),
+        (a, b) -> String.format("%d+%d=%d", a, b, a + b));
+    assertThrows(ParseException.class, () -> parser.parse("one-two"));
+    assertThat(parser.matches("one-two")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parseToStream("one-two").toList());
+  }
+
+  @Test public void sequence_orEmpty_leftFails() {
+    Parser<String> parser = sequence(string("a"), string("b").zeroOrMore(), (a, list) -> a + list);
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+    assertThat(parser.matches("c")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parseToStream("c").toList());
+  }
+
+  @Test public void sequence_orEmpty_rightIsEmpty() {
+    Parser<String> parser = sequence(string("a"), string("b").zeroOrMore(), (a, list) -> a + list);
+    assertThat(parser.parse("a")).isEqualTo("a[]");
+    assertThat(parser.matches("a")).isTrue();
+    assertThat(parser.parseToStream("a")).containsExactly("a[]");
+  }
+
+  @Test public void sequence_orEmpty_rightIsEmpty_source() {
+    Parser<String> parser = sequence(string("a"), string("b").zeroOrMore(), (a, list) -> a + list);
+    assertThat(parser.source().parse("a")).isEqualTo("a");
+    assertThat(parser.source().matches("a")).isTrue();
+    assertThat(parser.source().parseToStream("a")).containsExactly("a");
+  }
+
+  @Test public void sequence_orEmpty_bothSucceed() {
+    Parser<String> parser = sequence(string("a"), string("b").zeroOrMore(), (a, list) -> a + list);
+    assertThat(parser.parse("ab")).isEqualTo("a[b]");
+    assertThat(parser.matches("ab")).isTrue();
+    assertThat(parser.parseToStream("ab")).containsExactly("a[b]");
+    assertThat(parser.parse("abb")).isEqualTo("a[b, b]");
+    assertThat(parser.matches("abb")).isTrue();
+    assertThat(parser.parseToStream("abb")).containsExactly("a[b, b]");
+  }
+
+  @Test public void sequence_orEmpty_bothSucceed_source() {
+    Parser<String> parser = sequence(string("a"), string("b").zeroOrMore(), (a, list) -> a + list);
+    assertThat(parser.source().parse("ab")).isEqualTo("ab");
+    assertThat(parser.source().matches("ab")).isTrue();
+    assertThat(parser.source().parseToStream("ab")).containsExactly("ab");
+    assertThat(parser.source().parse("abb")).isEqualTo("abb");
+    assertThat(parser.source().matches("abb")).isTrue();
+    assertThat(parser.source().parseToStream("abb")).containsExactly("abb");
+  }
+
+  @Test public void sequence_leftOrEmpty_bothSucceed() {
+    Parser<String> parser = sequence(string("a").zeroOrMore(), string("b"), (list, b) -> list + b);
+    assertThat(parser.parse("ab")).isEqualTo("[a]b");
+    assertThat(parser.matches("ab")).isTrue();
+    assertThat(parser.parseToStream("ab")).containsExactly("[a]b");
+    assertThat(parser.parse("aab")).isEqualTo("[a, a]b");
+    assertThat(parser.matches("aab")).isTrue();
+    assertThat(parser.parseToStream("aab")).containsExactly("[a, a]b");
+  }
+
+  @Test public void sequence_leftOrEmpty_bothSucceed_source() {
+    Parser<String> parser = sequence(string("a").zeroOrMore(), string("b"), (list, b) -> list + b);
+    assertThat(parser.source().parse("ab")).isEqualTo("ab");
+    assertThat(parser.source().matches("ab")).isTrue();
+    assertThat(parser.source().parseToStream("ab")).containsExactly("ab");
+    assertThat(parser.source().parse("aab")).isEqualTo("aab");
+    assertThat(parser.source().matches("aab")).isTrue();
+    assertThat(parser.source().parseToStream("aab")).containsExactly("aab");
+  }
+
+  @Test public void sequence_leftOrEmpty_leftIsEmpty() {
+    Parser<String> parser = sequence(string("a").zeroOrMore(), string("b"), (list, b) -> list + b);
+    assertThat(parser.parse("b")).isEqualTo("[]b");
+    assertThat(parser.matches("b")).isTrue();
+    assertThat(parser.parseToStream("b")).containsExactly("[]b");
+  }
+
+  @Test public void sequence_leftOrEmpty_leftIsEmpty_source() {
+    Parser<String> parser = sequence(string("a").zeroOrMore(), string("b"), (list, b) -> list + b);
+    assertThat(parser.source().parse("b")).isEqualTo("b");
+    assertThat(parser.source().matches("b")).isTrue();
+    assertThat(parser.source().parseToStream("b")).containsExactly("b");
+  }
+
+  @Test public void sequence_leftOrEmpty_rightFails() {
+    Parser<String> parser = sequence(string("a").zeroOrMore(), string("b"), (list, b) -> list + b);
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(parser.matches("a")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parseToStream("a").toList());
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+    assertThat(parser.matches("c")).isFalse();
+    assertThrows(ParseException.class, () -> parser.parseToStream("c").toList());
+  }
+
+  @Test public void sequence_bothOrEmpty_bothSucceed() {
+    Parser<String>.OrEmpty parser = sequence(
+        string("a").orElse("default-a"), string("b").orElse("default-b"), (a, b) -> a + ":" + b);
+    assertThat(parser.parse("ab")).isEqualTo("a:b");
+    assertThat(parser.matches("ab")).isTrue();
+  }
+
+  @Test public void sequence_bothOrEmpty_bothSucceed_source() {
+    Parser<String>.OrEmpty parser = sequence(
+        string("a").source().orElse("default-a"), string("b").source().orElse("default-b"),
+        (a, b) -> a + ":" + b);
+    assertThat(parser.parse("ab")).isEqualTo("a:b");
+    assertThat(parser.matches("ab")).isTrue();
+  }
+
+  @Test public void sequence_bothOrEmpty_leftIsEmpty() {
+    Parser<String>.OrEmpty parser = sequence(
+        string("a").orElse("default-a"), string("b").orElse("default-b"), (a, b) -> a + ":" + b);
+    assertThat(parser.notEmpty().parse("b")).isEqualTo("default-a:b");
+  }
+
+  @Test public void sequence_bothOrEmpty_leftIsEmpty_source() {
+    Parser<String>.OrEmpty parser = sequence(
+        string("a").source().orElse("default-a"), string("b").source().orElse("default-b"),
+        (a, b) -> a + ":" + b);
+    assertThat(parser.notEmpty().parse("b")).isEqualTo("default-a:b");
+  }
+
+  @Test public void sequence_bothOrEmpty_rightIsEmpty() {
+    Parser<String>.OrEmpty parser = sequence(
+        string("a").orElse("default-a"), string("b").orElse("default-b"), (a, b) -> a + ":" + b);
+    assertThat(parser.notEmpty().parse("a")).isEqualTo("a:default-b");
+  }
+
+  @Test public void sequence_bothOrEmpty_rightIsEmpty_source() {
+    Parser<String>.OrEmpty parser = sequence(
+        string("a").source().orElse("default-a"), string("b").source().orElse("default-b"),
+        (a, b) -> a + ":" + b);
+    assertThat(parser.notEmpty().parse("a")).isEqualTo("a:default-b");
+  }
+
+  @Test public void sequence_bothOrEmpty_bothEmpty() {
+    Parser<String>.OrEmpty parser = sequence(
+        string("a").orElse("default-a"), string("b").orElse("default-b"), (a, b) -> a + ":" + b);
+    assertThrows(ParseException.class, () -> parser.notEmpty().parse(""));
+  }
+
+  @Test public void sequence_bothOrEmpty_bothEmpty_source() {
+    Parser<String>.OrEmpty parser = sequence(
+        string("a").source().orElse("default-a"), string("b").source().orElse("default-b"),
+        (a, b) -> a + ":" + b);
+    assertThrows(ParseException.class, () -> parser.notEmpty().parse(""));
+  }
+
+  @Test public void orEmpty_map_match() {
+    Production<String> parser = string("abc").orElse("default").map(String::toUpperCase);
+    assertThat(parser.parse("abc")).isEqualTo("ABC");
+    assertThat(parser.matches("abc")).isTrue();
+  }
+
+  @Test public void orEmpty_map_mismatch() {
+    Production<String> parser = string("abc").orElse("default").map(String::toUpperCase);
+    assertThat(parser.parse("")).isEqualTo("DEFAULT");
+    assertThat(parser.matches("")).isTrue();
+  }
+
+  @Test public void orEmpty_map_differentType() {
+    Production<Integer> parser = string("123").orElse("0").map(Integer::parseInt);
+    assertThat(parser.parse("123")).isEqualTo(123);
+    assertThat(parser.parse("")).isEqualTo(0);
+  }
+
+  @Test public void optionalPrefixPruning() {
+    Parser<String> arm1 = word("X").map(s -> "X");
+    Parser<String> arm2 = word("Y").map(s -> "Y");
+    Parser<String> arm3 = word("Z").map(s -> "Z");
+
+    // Optional "a" prefix in front of a required "B".
+    Parser<String> arm4 =
+        sequence(word("a").orElse(""), word("B"), (a, b) -> a.isEmpty() ? b : a + " " + b);
+
+    // Four or more alternatives triggers the prune tree
+    // (see OrParser.makePruneTreeIfUseful).
+    Parser<String> dispatch = anyOf(arm1, arm2, arm3, arm4);
+
+    assertThat(dispatch.parseSkipping(whitespace(), "a B")).isEqualTo("a B");
+    // Returns "a B" — `arm4` succeeds with the optional consumed.
+
+    assertThat(dispatch.parseSkipping(whitespace(), "B")).isEqualTo("B");
+  }
+
+  @Test public void optionalPrefixPruning_sequenceWithLiteralDoesNotHonorSkipping() {
+    Parser<String> arm1 = string("foo");
+    Parser<String> arm2 = string("bar");
+    Parser<String> arm3 = string("zoo");
+    Parser<String> seq = sequence(string("baz").orElse(""), literally(string(" ")), String::concat);
+    Parser<String> parser = anyOf(arm1, arm2, arm3, seq);
+    assertThat(parser.parseSkipping(whitespace(), " foo")).isEqualTo("foo");
+    assertThat(parser.parseSkipping(whitespace(), "bar ")).isEqualTo("bar");
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " baz "));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " "));
+  }
+
+  @Test public void sequence3_success() {
+    Parser<String> parser = sequence(string("a"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+    assertThat(parser.matches("abc")).isTrue();
+    assertThat(parser.parseToStream("abc")).containsExactly("abc");
+    assertThat(parser.probe("abc")).containsExactly("abc");
+    assertThat(parser.parseToStream("")).isEmpty();
+    assertThat(parser.probe("")).isEmpty();
+  }
+
+  @Test public void sequence3_success_source() {
+    Parser<String> parser = sequence(string("a"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(parser.source().parse("abc")).isEqualTo("abc");
+    assertThat(parser.source().matches("abc")).isTrue();
+    assertThat(parser.source().parseToStream("abc")).containsExactly("abc");
+    assertThat(parser.source().probe("abc")).containsExactly("abc");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+    assertThat(parser.source().probe("")).isEmpty();
+  }
+
+  @Test public void sequence3_failure() {
+    Parser<String> parser = sequence(string("a"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThrows(ParseException.class, () -> parser.parse("xbc"));
+    assertThrows(ParseException.class, () -> parser.parse("axc"));
+    assertThrows(ParseException.class, () -> parser.parse("abx"));
+    assertThat(parser.matches("xbc")).isFalse();
+    assertThat(parser.matches("axc")).isFalse();
+    assertThat(parser.matches("abx")).isFalse();
+    assertThat(parser.probe("xbc")).isEmpty();
+    assertThat(parser.probe("axc")).isEmpty();
+    assertThat(parser.probe("abx")).isEmpty();
+  }
+
+  @Test public void sequence4_success() {
+    Parser<String> parser =
+        sequence(string("a"), string("b"), string("c"), string("d"), (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.parse("abcd")).isEqualTo("abcd");
+    assertThat(parser.matches("abcd")).isTrue();
+    assertThat(parser.parseToStream("abcd")).containsExactly("abcd");
+    assertThat(parser.probe("abcd")).containsExactly("abcd");
+    assertThat(parser.parseToStream("")).isEmpty();
+    assertThat(parser.probe("")).isEmpty();
+  }
+
+  @Test public void sequence4_success_source() {
+    Parser<String> parser =
+        sequence(string("a"), string("b"), string("c"), string("d"), (a, b, c, d) -> a + b + c + d);
+    assertThat(parser.source().parse("abcd")).isEqualTo("abcd");
+    assertThat(parser.source().matches("abcd")).isTrue();
+    assertThat(parser.source().parseToStream("abcd")).containsExactly("abcd");
+    assertThat(parser.source().probe("abcd")).containsExactly("abcd");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+    assertThat(parser.source().probe("")).isEmpty();
+  }
+
+  @Test public void sequence4_failure() {
+    Parser<String> parser =
+        sequence(string("a"), string("b"), string("c"), string("d"), (a, b, c, d) -> a + b + c + d);
+    assertThrows(ParseException.class, () -> parser.parse("xbcd"));
+    assertThrows(ParseException.class, () -> parser.parse("axcd"));
+    assertThrows(ParseException.class, () -> parser.parse("abxd"));
+    assertThrows(ParseException.class, () -> parser.parse("abcx"));
+    assertThat(parser.matches("xbcd")).isFalse();
+    assertThat(parser.matches("axcd")).isFalse();
+    assertThat(parser.matches("abxd")).isFalse();
+    assertThat(parser.matches("abcx")).isFalse();
+    assertThat(parser.probe("xbcd")).isEmpty();
+    assertThat(parser.probe("axcd")).isEmpty();
+    assertThat(parser.probe("abxd")).isEmpty();
+    assertThat(parser.probe("abcx")).isEmpty();
+  }
+
+  @Test public void sequence3_secondRuleOptional_optionalRuleMatches() {
+    Parser<String> seq =
+        sequence(string("a"), string("b").orElse("B"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test public void sequence3_secondRuleOptional_optionalRuleDoesNotMatch() {
+    Parser<String> seq =
+        sequence(string("a"), string("b").orElse("B"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.parse("ac")).isEqualTo("aBc");
+  }
+
+  @Test public void sequence3_thirdRuleOptional_optionalRuleMatches() {
+    Parser<String> seq =
+        sequence(string("a"), string("b"), string("c").orElse("C"), (a, b, c) -> a + b + c);
+    assertThat(seq.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test public void sequence3_thirdRuleOptional_optionalRuleDoesNotMatch() {
+    Parser<String> seq =
+        sequence(string("a"), string("b"), string("c").orElse("C"), (a, b, c) -> a + b + c);
+    assertThat(seq.parse("ab")).isEqualTo("abC");
+  }
+
+  @Test public void sequence3_firstRuleOptional_optionalRuleMatches_parse() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test public void sequence3_firstRuleOptional_optionalRuleMatches_matches() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.matches("abc")).isTrue();
+  }
+
+  @Test public void sequence3_firstRuleOptional_optionalRuleMatches_parseToStream() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.parseToStream("abc")).containsExactly("abc");
+  }
+
+  @Test public void sequence3_firstRuleOptional_optionalRuleMatches_probe() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.probe("abc")).containsExactly("abc");
+  }
+
+  @Test public void sequence3_firstRuleOptional_optionalRuleDoesNotMatch_parse() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.parse("bc")).isEqualTo("Abc");
+  }
+
+  @Test public void sequence3_firstRuleOptional_optionalRuleDoesNotMatch_matches() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.matches("bc")).isTrue();
+  }
+
+  @Test public void sequence3_firstRuleOptional_optionalRuleDoesNotMatch_parseToStream() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.parseToStream("bc")).containsExactly("Abc");
+  }
+
+  @Test public void sequence3_firstRuleOptional_optionalRuleDoesNotMatch_probe() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThat(seq.probe("bc")).containsExactly("Abc");
+  }
+
+  @Test public void sequence3_firstRuleOptional_matches_secondRuleFails() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThrows(ParseException.class, () -> seq.parse("axc"));
+  }
+
+  @Test public void sequence3_firstRuleOptional_doesNotMatch_secondRuleFails() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThrows(ParseException.class, () -> seq.parse("xc"));
+  }
+
+  @Test public void sequence3_firstRuleOptional_matches_thirdRuleFails() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThrows(ParseException.class, () -> seq.parse("abx"));
+  }
+
+  @Test public void sequence3_firstRuleOptional_doesNotMatch_thirdRuleFails() {
+    Parser<String> seq =
+        sequence(string("a").orElse("A"), string("b"), string("c"), (a, b, c) -> a + b + c);
+    assertThrows(ParseException.class, () -> seq.parse("bx"));
+  }
+
+  @Test public void sequence4_secondRuleOptional_optionalRuleMatches() {
+    Parser<String> seq = sequence(
+        string("a"), string("b").orElse("B"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.parse("abcd")).isEqualTo("abcd");
+  }
+
+  @Test public void sequence4_secondRuleOptional_optionalRuleDoesNotMatch() {
+    Parser<String> seq = sequence(
+        string("a"), string("b").orElse("B"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.parse("acd")).isEqualTo("aBcd");
+  }
+
+  @Test public void sequence4_thirdRuleOptional_optionalRuleMatches() {
+    Parser<String> seq = sequence(
+        string("a"), string("b"), string("c").orElse("C"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.parse("abcd")).isEqualTo("abcd");
+  }
+
+  @Test public void sequence4_thirdRuleOptional_optionalRuleDoesNotMatch() {
+    Parser<String> seq = sequence(
+        string("a"), string("b"), string("c").orElse("C"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.parse("abd")).isEqualTo("abCd");
+  }
+
+  @Test public void sequence4_fourthRuleOptional_optionalRuleMatches() {
+    Parser<String> seq = sequence(
+        string("a"), string("b"), string("c"), string("d").orElse("D"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.parse("abcd")).isEqualTo("abcd");
+  }
+
+  @Test public void sequence4_fourthRuleOptional_optionalRuleDoesNotMatch() {
+    Parser<String> seq = sequence(
+        string("a"), string("b"), string("c"), string("d").orElse("D"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.parse("abc")).isEqualTo("abcD");
+  }
+
+  @Test public void sequence4_firstRuleOptional_optionalRuleMatches_parse() {
+    Parser<String> seq = sequence(
+        string("a").orElse("A"), string("b"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.parse("abcd")).isEqualTo("abcd");
+  }
+
+  @Test public void sequence4_firstRuleOptional_optionalRuleMatches_matches() {
+    Parser<String> seq = sequence(
+        string("a").orElse("A"), string("b"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.matches("abcd")).isTrue();
+  }
+
+  @Test public void sequence4_firstRuleOptional_optionalRuleMatches_parseToStream() {
+    Parser<String> seq = sequence(
+        string("a").orElse("A"), string("b"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.parseToStream("abcd")).containsExactly("abcd");
+  }
+
+  @Test public void sequence4_firstRuleOptional_optionalRuleMatches_probe() {
+    Parser<String> seq = sequence(
+        string("a").orElse("A"), string("b"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.probe("abcd")).containsExactly("abcd");
+  }
+
+  @Test public void sequence4_firstRuleOptional_optionalRuleDoesNotMatch_parse() {
+    Parser<String> seq = sequence(
+        string("a").orElse("A"), string("b"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.parse("bcd")).isEqualTo("Abcd");
+  }
+
+  @Test public void sequence4_firstRuleOptional_optionalRuleDoesNotMatch_matches() {
+    Parser<String> seq = sequence(
+        string("a").orElse("A"), string("b"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.matches("bcd")).isTrue();
+  }
+
+  @Test public void sequence4_firstRuleOptional_optionalRuleDoesNotMatch_parseToStream() {
+    Parser<String> seq = sequence(
+        string("a").orElse("A"), string("b"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.parseToStream("bcd")).containsExactly("Abcd");
+  }
+
+  @Test public void sequence4_firstRuleOptional_optionalRuleDoesNotMatch_probe() {
+    Parser<String> seq = sequence(
+        string("a").orElse("A"), string("b"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThat(seq.probe("bcd")).containsExactly("Abcd");
+  }
+
+  @Test public void sequence4_firstRuleOptional_matches_secondRuleFails() {
+    Parser<String> seq = sequence(
+        string("a").orElse("A"), string("b"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThrows(ParseException.class, () -> seq.parse("axcd"));
+  }
+
+  @Test public void sequence4_firstRuleOptional_doesNotMatch_secondRuleFails() {
+    Parser<String> seq = sequence(
+        string("a").orElse("A"), string("b"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThrows(ParseException.class, () -> seq.parse("xcd"));
+  }
+
+  @Test public void sequence4_firstRuleOptional_matches_thirdRuleFails() {
+    Parser<String> seq = sequence(
+        string("a").orElse("A"), string("b"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThrows(ParseException.class, () -> seq.parse("abxd"));
+  }
+
+  @Test public void sequence4_firstRuleOptional_doesNotMatch_thirdRuleFails() {
+    Parser<String> seq = sequence(
+        string("a").orElse("A"), string("b"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThrows(ParseException.class, () -> seq.parse("bxd"));
+  }
+
+  @Test public void sequence4_firstRuleOptional_matches_fourthRuleFails() {
+    Parser<String> seq = sequence(
+        string("a").orElse("A"), string("b"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThrows(ParseException.class, () -> seq.parse("abcx"));
+  }
+
+  @Test public void sequence4_firstRuleOptional_doesNotMatch_fourthRuleFails() {
+    Parser<String> seq = sequence(
+        string("a").orElse("A"), string("b"), string("c"), string("d"),
+        (a, b, c, d) -> a + b + c + d);
+    assertThrows(ParseException.class, () -> seq.parse("bcx"));
+  }
+
+  @Test public void sequence_noResultLambda_firstParserFails() {
+    Parser<?> parser = sequence(string("a"), string("b"), string("c"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("xbc"));
+    assertThat(parser.matches("xbc")).isFalse();
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <a>");
+  }
+
+  @Test public void sequence_noResultLambda_secondParserFails() {
+    Parser<?> parser = sequence(string("a"), string("b"), string("c"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("axc"));
+    assertThat(parser.matches("axc")).isFalse();
+    assertThat(thrown).hasMessageThat().contains("1:2");
+    assertThat(thrown).hasMessageThat().contains("expecting <b>");
+  }
+
+  @Test public void sequence_noResultLambda_thirdParserFails() {
+    Parser<String> first = string("a");
+    Parser<Integer> second = digits().map(Integer::parseInt);
+    Parser<Character> third = string("c").map(s -> s.charAt(0));
+    Parser<?> parser = sequence(first, second, third);
+
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a12x"));
+    assertThat(parser.matches("a12x")).isFalse();
+    assertThat(thrown).hasMessageThat().contains("1:4");
+    assertThat(thrown).hasMessageThat().contains("expecting <c>");
+  }
+
+  @Test public void sequence_noResultLambda_optionalParserDoesNotMatch() {
+    Parser<?> parser = sequence(string("a"), string("b").optional(), string("c"));
+    assertThat(parser.source().parse("ac")).isEqualTo("ac");
+    assertThat(parser.matches("ac")).isTrue();
+  }
+
+  @Test public void sequence_noResultLambda_optionalParserMatches() {
+    Parser<?> parser = sequence(string("a"), string("b").optional(), string("c"));
+    assertThat(parser.source().parse("abc")).isEqualTo("abc");
+    assertThat(parser.matches("abc")).isTrue();
+  }
+
+  @Test public void sequence_noResultLambda_allMatch() {
+    Parser<?> parser = sequence(string("a"), string("b"), string("c"));
+    assertThat(parser.source().parse("abc")).isEqualTo("abc");
+    assertThat(parser.matches("abc")).isTrue();
+  }
+
+  @Test public void sequence_optionalFirst_matches() {
+    Parser<?> parser = sequence(string("a").optional(), string("b"), string("c"));
+    assertThat(parser.source().parse("abc")).isEqualTo("abc");
+    assertThat(parser.matches("abc")).isTrue();
+  }
+
+  @Test public void sequence_optionalFirst_doesNotMatch() {
+    Parser<?> parser = sequence(string("a").optional(), string("b"), string("c"));
+    assertThat(parser.source().parse("bc")).isEqualTo("bc");
+    assertThat(parser.matches("bc")).isTrue();
+  }
+
+  @Test public void sequence_optionalFirst_ambiguous_firstMatches() {
+    Parser<?> parser = sequence(string("a").optional(), string("a"), string("b"));
+    assertThat(parser.source().parse("aab")).isEqualTo("aab");
+    assertThat(parser.matches("aab")).isTrue();
+  }
+
+  @Test public void sequence_optionalFirst_ambiguous_firstBypassed() {
+    Parser<?> parser = sequence(string("a").optional(), string("a"), string("b"));
+    assertThat(parser.source().parse("ab")).isEqualTo("ab");
+    assertThat(parser.matches("ab")).isTrue();
+  }
+
+  @Test public void sequence_optionalFirst_failsOnRemaining_whenFirstMatched() {
+    Parser<?> parser = sequence(string("a").optional(), string("b"), string("c"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abx"));
+    assertThat(parser.matches("abx")).isFalse();
+    assertThat(thrown).hasMessageThat().contains("1:3");
+    assertThat(thrown).hasMessageThat().contains("expecting <c>");
+  }
+
+  @Test public void sequence_optionalFirst_failsOnRemaining_whenFirstNotMatched() {
+    Parser<?> parser = sequence(string("a").optional(), string("b"), string("c"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("bx"));
+    assertThat(parser.matches("bx")).isFalse();
+    assertThat(thrown).hasMessageThat().contains("1:2");
+    assertThat(thrown).hasMessageThat().contains("expecting <c>");
+  }
+
+  @Test public void sequence_optionalFirst_failsAll_whenIncorrectFirstChar() {
+    Parser<?> parser = sequence(string("a").optional(), string("b"), string("c"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("xbc"));
+    assertThat(parser.matches("xbc")).isFalse();
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <one of [a, b]>");
+  }
+
+  @Test public void orEmpty_delimitedBy_bothSides() {
+    assertThat(word().orElse("").delimitedBy(",").parse("foo,bar"))
+        .containsExactly("foo", "bar")
+        .inOrder();
+    assertThat(word().orElse("").delimitedBy(",").matches("foo,bar")).isTrue();
+    assertThat(word().orElse("").delimitedBy(",").notEmpty().parse("foo,bar"))
+        .containsExactly("foo", "bar")
+        .inOrder();
+  }
+
+  @Test public void orEmpty_delimitedBy_withNulls() {
+    Parser<String>.OrEmpty nullParser = string("n").map(x -> (String) null).orElse("");
+    Parser<List<String>> parser =
+        nullParser.delimitedBy(",", java.util.stream.Collectors.toList()).notEmpty();
+    assertThat(parser.parse("n,n")).containsExactly(null, null);
+  }
+
+  @Test public void orEmpty_delimitedBy_bothSides_source() {
+    assertThat(word().source().orElse("").delimitedBy(",").parse("foo,bar"))
+        .containsExactly("foo", "bar")
+        .inOrder();
+    assertThat(word().source().orElse("").delimitedBy(",").matches("foo,bar")).isTrue();
+    assertThat(word().source().orElse("").delimitedBy(",").notEmpty().parse("foo,bar"))
+        .containsExactly("foo", "bar")
+        .inOrder();
+  }
+
+  @Test public void orEmpty_delimitedBy_single() {
+    assertThat(word().orElse("").delimitedBy(",").parse("foo")).containsExactly("foo");
+    assertThat(word().orElse("").delimitedBy(",").matches("foo")).isTrue();
+    assertThat(word().orElse("").delimitedBy(",").notEmpty().parse("foo")).containsExactly("foo");
+  }
+
+  @Test public void orEmpty_delimitedBy_single_source() {
+    assertThat(word().source().orElse("").delimitedBy(",").parse("foo")).containsExactly("foo");
+    assertThat(word().source().orElse("").delimitedBy(",").matches("foo")).isTrue();
+    assertThat(word().source().orElse("").delimitedBy(",").notEmpty().parse("foo"))
+        .containsExactly("foo");
+  }
+
+  @Test public void orEmpty_delimitedBy_trailingEmpty() {
+    assertThat(word().orElse("").delimitedBy(",").parse("foo,"))
+        .containsExactly("foo", "")
+        .inOrder();
+    assertThat(word().orElse("").delimitedBy(",").matches("foo,")).isTrue();
+    assertThat(word().orElse("").delimitedBy(",").notEmpty().parse("foo,"))
+        .containsExactly("foo", "")
+        .inOrder();
+  }
+
+  @Test public void orEmpty_delimitedBy_trailingEmpty_source() {
+    assertThat(word().source().orElse("").delimitedBy(",").parse("foo,"))
+        .containsExactly("foo", "")
+        .inOrder();
+    assertThat(word().source().orElse("").delimitedBy(",").matches("foo,")).isTrue();
+    assertThat(word().source().orElse("").delimitedBy(",").notEmpty().parse("foo,"))
+        .containsExactly("foo", "")
+        .inOrder();
+  }
+
+  @Test public void orEmpty_delimitedBy_leadingEmpty() {
+    assertThat(word().orElse("").delimitedBy(",").parse(",bar"))
+        .containsExactly("", "bar")
+        .inOrder();
+    assertThat(word().orElse("").delimitedBy(",").matches(",bar")).isTrue();
+    assertThat(word().orElse("").delimitedBy(",").notEmpty().parse(",bar"))
+        .containsExactly("", "bar")
+        .inOrder();
+  }
+
+  @Test public void orEmpty_delimitedBy_leadingEmpty_source() {
+    assertThat(word().source().orElse("").delimitedBy(",").parse(",bar"))
+        .containsExactly("", "bar")
+        .inOrder();
+    assertThat(word().source().orElse("").delimitedBy(",").matches(",bar")).isTrue();
+    assertThat(word().source().orElse("").delimitedBy(",").notEmpty().parse(",bar"))
+        .containsExactly("", "bar")
+        .inOrder();
+  }
+
+  @Test public void orEmpty_delimitedBy_kitchenSink() {
+    assertThat(word().orElse("").delimitedBy(",").parse(",foo,bar,,"))
+        .containsExactly("", "foo", "bar", "", "")
+        .inOrder();
+    assertThat(word().orElse("").delimitedBy(",").matches(",foo,bar,,")).isTrue();
+    assertThat(word().orElse("").delimitedBy(",").notEmpty().parse(",foo,bar,,"))
+        .containsExactly("", "foo", "bar", "", "")
+        .inOrder();
+  }
+
+  @Test public void orEmpty_delimitedBy_kitchenSink_source() {
+    assertThat(word().source().orElse("").delimitedBy(",").parse(",foo,bar,,"))
+        .containsExactly("", "foo", "bar", "", "")
+        .inOrder();
+    assertThat(word().source().orElse("").delimitedBy(",").matches(",foo,bar,,")).isTrue();
+    assertThat(word().source().orElse("").delimitedBy(",").notEmpty().parse(",foo,bar,,"))
+        .containsExactly("", "foo", "bar", "", "");
+  }
+
+  @Test public void orEmpty_delimitedBy_allEmpty() {
+    assertThat(word().orElse("").delimitedBy(",").parse(",,,")).containsExactly("", "", "", "");
+    assertThat(word().orElse("").delimitedBy(",").matches(",,,")).isTrue();
+    assertThat(word().orElse("").delimitedBy(",").notEmpty().parse(",,,"))
+        .containsExactly("", "", "", "");
+  }
+
+  @Test public void orEmpty_delimitedBy_allEmpty_source() {
+    assertThat(word().source().orElse("").delimitedBy(",").parse(",,,"))
+        .containsExactly("", "", "", "");
+    assertThat(word().source().orElse("").delimitedBy(",").matches(",,,")).isTrue();
+    assertThat(word().source().orElse("").delimitedBy(",").notEmpty().parse(",,,"))
+        .containsExactly("", "", "", "");
+  }
+
+  @Test public void orEmpty_delimitedBy_emptyInput() {
+    assertThat(word().orElse("").delimitedBy(",").parse("")).containsExactly("");
+    assertThat(word().orElse("").delimitedBy(",").matches("")).isTrue();
+    assertThrows(
+        ParseException.class, () -> word().orElse("").delimitedBy(",").notEmpty().parse(""));
+  }
+
+  @Test public void orEmpty_delimitedBy_emptyInput_source() {
+    assertThat(word().source().orElse("").delimitedBy(",").parse("")).containsExactly("");
+    assertThat(word().source().orElse("").delimitedBy(",").matches("")).isTrue();
+    assertThrows(
+        ParseException.class,
+        () -> word().source().orElse("").delimitedBy(",").notEmpty().parse(""));
+  }
+
+  @Test public void orEmpty_then_parser_orEmptyMatches() {
+    Parser<String> parser = string("a").orElse("x").then(string("b"));
+    assertThat(parser.parse("ab")).isEqualTo("b");
+  }
+
+  @Test public void orEmpty_then_parser_orEmptyEmitsDefault() {
+    Parser<String> parser = string("a").orElse("x").then(string("b"));
+    assertThat(parser.parse("b")).isEqualTo("b");
+  }
+
+  @Test public void orEmpty_then_parser_suffixFails() {
+    Parser<String> parser = string("a").orElse("x").then(string("b"));
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+  }
+
+  @Test public void orEmpty_followedBy_parser_orEmptyMatches() {
+    Parser<String> parser = string("a").orElse("x").followedBy(string("b"));
+    assertThat(parser.parse("ab")).isEqualTo("a");
+  }
+
+  @Test public void orEmpty_followedBy_parser_orEmptyEmitsDefault() {
+    Parser<String> parser = string("a").orElse("x").followedBy(string("b"));
+    assertThat(parser.parse("b")).isEqualTo("x");
+  }
+
+  @Test public void orEmpty_followedBy_parser_suffixFails() {
+    Parser<String> parser = string("a").orElse("x").followedBy(string("b"));
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+  }
+
+  @Test public void orEmpty_parseSkipping_emptyInput() {
+    Parser<String>.OrEmpty parser = string("foo").orElse("bar");
+    assertThat(parser.parseSkipping(whitespace(), "")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), "")).isEqualTo("bar");
+  }
+
+  @Test public void orEmpty_parseSkipping_emptyInput_source() {
+    Parser<String>.OrEmpty parser = string("foo").source().orElse("bar");
+    assertThat(parser.parseSkipping(whitespace(), "")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), "")).isEqualTo("bar");
+  }
+
+  @Test public void orEmpty_parseSkipping_inputWithSingleSkip() {
+    Parser<String>.OrEmpty parser = string("foo").orElse("bar");
+    assertThat(parser.parseSkipping(whitespace(), " ")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), " ")).isEqualTo("bar");
+  }
+
+  @Test public void orEmpty_parseSkipping_inputWithSingleSkip_source() {
+    Parser<String>.OrEmpty parser = string("foo").source().orElse("bar");
+    assertThat(parser.parseSkipping(whitespace(), " ")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), " ")).isEqualTo("bar");
+  }
+
+  @Test public void orEmpty_parseSkipping_inputWithMultipleSkips() {
+    Parser<String>.OrEmpty parser = string("foo").orElse("bar");
+    assertThat(parser.parseSkipping(whitespace(), "   ")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), "   ")).isEqualTo("bar");
+  }
+
+  @Test public void orEmpty_parseSkipping_inputWithMultipleSkips_source() {
+    Parser<String>.OrEmpty parser = string("foo").source().orElse("bar");
+    assertThat(parser.parseSkipping(whitespace(), "   ")).isEqualTo("bar");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), "   ")).isEqualTo("bar");
+  }
+
+  @Test public void orEmpty_parseSkipping_inputWithSkipsAndValue() {
+    Parser<String>.OrEmpty parser = string("foo").orElse("bar");
+    assertThat(parser.parseSkipping(whitespace(), " foo ")).isEqualTo("foo");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), " foo ")).isEqualTo("foo");
+  }
+
+  @Test public void orEmpty_parseSkipping_inputWithSkipsAndValue_source() {
+    Parser<String>.OrEmpty parser = string("foo").source().orElse("bar");
+    assertThat(parser.parseSkipping(whitespace(), " foo ")).isEqualTo("foo");
+    assertThat(parser.parseSkipping(consecutive(whitespace(), "skip"), " foo ")).isEqualTo("foo");
+  }
+
+  @Test public void orEmpty_parseSkipping_invalidInputWithoutSkips() {
+    Parser<String>.OrEmpty parser = string("foo").orElse("bar");
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "fo"));
+    assertThrows(
+        ParseException.class, () -> parser.parseSkipping(consecutive(whitespace(), "skip"), "fo"));
+  }
+
+  @Test public void orEmpty_parseSkipping_invalidInputWithoutSkips_source() {
+    Parser<String>.OrEmpty parser = string("foo").source().orElse("bar");
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "fo"));
+    assertThrows(
+        ParseException.class, () -> parser.parseSkipping(consecutive(whitespace(), "skip"), "fo"));
+  }
+
+  @Test public void orEmpty_parseSkipping_invalidInputWithSkips() {
+    Parser<String>.OrEmpty parser = string("foo").orElse("bar");
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " fo "));
+    assertThrows(
+        ParseException.class,
+        () -> parser.parseSkipping(consecutive(whitespace(), "skip"), " fo "));
+  }
+
+  @Test public void orEmpty_parseSkipping_invalidInputWithSkips_source() {
+    Parser<String>.OrEmpty parser = string("foo").source().orElse("bar");
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " fo "));
+    assertThrows(
+        ParseException.class,
+        () -> parser.parseSkipping(consecutive(whitespace(), "skip"), " fo "));
+  }
+
+  @Test public void or_success() {
+    Parser<String> parser = string("foo").or(string("bar"));
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+    assertThat(parser.parseToStream("foo")).containsExactly("foo");
+    assertThat(parser.parse("bar")).isEqualTo("bar");
+    assertThat(parser.parseToStream("bar")).containsExactly("bar");
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void or_success_source() {
+    Parser<String> parser = string("foo").or(string("bar"));
+    assertThat(parser.source().parse("foo")).isEqualTo("foo");
+    assertThat(parser.source().parseToStream("foo")).containsExactly("foo");
+    assertThat(parser.source().parse("bar")).isEqualTo("bar");
+    assertThat(parser.source().parseToStream("bar")).containsExactly("bar");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void or_failure_withLeftover() {
+    Parser<String> parser = string("foo").or(string("bar"));
+    assertThrows(ParseException.class, () -> parser.parse("fooa"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("fooa").toList());
+    assertThrows(ParseException.class, () -> parser.parse("bara"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("bara").toList());
+  }
+
+  @Test public void or_failure() {
+    Parser<String> parser = string("foo").or(string("bar"));
+    assertThrows(ParseException.class, () -> parser.parse("baz"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("baz").toList());
+  }
+
+  @Test public void or_collectorWithSingleParser_returnsSameInstance() {
+    Parser<String> parser = string("a");
+    assertThat(Stream.of(parser).collect(Parser.or())).isSameInstanceAs(parser);
+  }
+
+  @Test public void or_collectorWithEmptyStream_throws() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Stream.<Parser<String>>of().collect(Parser.or()));
+  }
+
+  @Test public void or_withOrEmpty() {
+    Parser<String>.OrEmpty parser = string("foo").or(string("bar").orElse("default"));
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+    assertThat(parser.matches("foo")).isTrue();
+    assertThat(parser.parse("bar")).isEqualTo("bar");
+    assertThat(parser.matches("bar")).isTrue();
+    assertThat(parser.parse("")).isEqualTo("default");
+    assertThat(parser.matches("")).isTrue();
+  }
+
+  @Test public void anyOf_success() {
+    Parser<String> parser = anyOf(string("one"), string("two"), string("three"));
+    assertThat(parser.parse("one")).isEqualTo("one");
+    assertThat(parser.parseToStream("one")).containsExactly("one");
+    assertThat(parser.parse("two")).isEqualTo("two");
+    assertThat(parser.parseToStream("two")).containsExactly("two");
+    assertThat(parser.parse("three")).isEqualTo("three");
+    assertThat(parser.parseToStream("three")).containsExactly("three");
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void anyOf_success_source() {
+    Parser<String> parser = anyOf(string("one"), string("two"), string("three"));
+    assertThat(parser.source().parse("one")).isEqualTo("one");
+    assertThat(parser.source().parseToStream("one")).containsExactly("one");
+    assertThat(parser.source().parse("two")).isEqualTo("two");
+    assertThat(parser.source().parseToStream("two")).containsExactly("two");
+    assertThat(parser.source().parse("three")).isEqualTo("three");
+    assertThat(parser.source().parseToStream("three")).containsExactly("three");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void anyOf_failure_withLeftover() {
+    Parser<String> parser = anyOf(string("one"), string("two"), string("three"));
+    assertThrows(ParseException.class, () -> parser.parse("onea"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("onea").toList());
+    assertThrows(ParseException.class, () -> parser.parse("twoa"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("twoa").toList());
+    assertThrows(ParseException.class, () -> parser.parse("threea"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("threea").toList());
+  }
+
+  @Test public void anyOf_failure() {
+    Parser<String> parser = anyOf(string("one"), string("two"), string("three"));
+    assertThrows(ParseException.class, () -> parser.parse("four"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("four").toList());
+  }
+
+  @Test public void anyOf_pruningTriggered_withTwoNonPrunableCandidates() {
+    // 9 prunable strings + 2 non-prunable candidates = 11 total.
+    // Pruning should be triggered because numSurvivors(3) * 2 < 11.
+    Parser<String> parser = anyOf(
+        string("a1"), string("a2"), string("a3"), string("a4"), string("a5"), string("a6"),
+        string("a7"), string("a8"), string("a9"), digits(), chars(2));
+
+    assertThat(parser.parse("a1")).isEqualTo("a1");
+    assertThat(parser.parse("a9")).isEqualTo("a9");
+    assertThat(parser.parse("xy")).isEqualTo("xy"); // chars(2)
+    assertThat(parser.parse("123")).isEqualTo("123"); // digits()
+
+    // Failure with pruning.
+    ParseException e1 = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(e1)
+        .hasMessageThat()
+        .contains("expecting <one of [a1, a2, a3, a4, a5, a6, a7, a8, a9, digits, 2 char(s)]>");
+
+    // Failure with completely mismatched input. "ba" matches chars(2), leftovers "r" causes EOF
+    // error.
+    ParseException e2 = assertThrows(ParseException.class, () -> parser.parse("bar"));
+    assertThat(e2).hasMessageThat().contains("expecting <EOF>");
+  }
+
+  @Test public void anyOf_pruningEnabled_withManyNonPrunableCandidates() {
+    // 3 prunable strings + 8 non-prunable candidates = 11 total.
+    // Pruning triggered because numSurvivors(9) < 11.
+    Parser<String> parser = anyOf(
+        string("a1"), string("a2"), string("a3"), chars(8), chars(7), chars(6), chars(5), chars(4),
+        chars(3), chars(2), chars(1));
+
+    assertThat(parser.parse("a1")).isEqualTo("a1");
+    assertThat(parser.parse("a")).isEqualTo("a"); // chars(1)
+    assertThat(parser.parse("abcdefgh")).isEqualTo("abcdefgh"); // chars(8)
+
+    // Failure with pruning. Reporting the expected prefixes.
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThat(e)
+        .hasMessageThat()
+        .contains(
+            "expecting <one of [a1, a2, a3, 1 char(s), 2 char(s), 3 char(s), 4 char(s), 5 char(s),"
+                + " 6 char(s), 7 char(s), 8 char(s)]>");
+  }
+
+  @Test public void anyOf_pruningSuppressed_withMixedSkippingBehavior() {
+    // 10 prunable skippable strings + 1 non-prunable non-skippable candidate = 11 total.
+    // Pruning NOT triggered because honorsSkipping varies among candidates.
+    Parser<String> parser = anyOf(
+        string("a1"), string("a2"), string("a3"), string("a4"), string("a5"), string("a6"),
+        string("a7"), string("a8"), string("a9"), string("a10"), literally(string("b")));
+
+    assertThat(parser.parse("a1")).isEqualTo("a1");
+    assertThat(parser.parse("b")).isEqualTo("b");
+
+    // Failure with mixed skipping. Reporting the expected prefixes.
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("c"));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [a1, a10, a2, a3, a4, a5, a6, a7, a8, a9, b]>");
+  }
+
+  @Test public void anyOf_pruning_allCandidatesPruned_hasExpectedName() {
+    Parser<String> parser = anyOf(string("abc"), string("def"), string("ghi"));
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [abc, def, ghi]>, encountered:\s
+                xyz
+                ^
+            """);
+  }
+
+  @Test public void anyOf_pruning_allCandidatesPruned_emptyExpectedName() {
+    Parser<String> p1 = string("abc").suchThat(s -> true, "");
+    Parser<String> p2 = string("def").suchThat(s -> true, "");
+    Parser<String> p3 = string("ghi").suchThat(s -> true, "");
+    Parser<String> parser = anyOf(p1, p2, p3);
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [abc, def, ghi]>, encountered:\s
+                xyz
+                ^
+            """);
+  }
+
+  @Test public void anyOf_noPruning_overshadowsFailedCandidate() {
+    Parser<String> parser = anyOf(string("abc"), string("def"));
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [abc, def]>, encountered:\s
+                xyz
+                ^
+            """);
+  }
+
+  @Test public void anyOf_noPruning_noOvershadowDueToSingleCandidateExpectedSymbols() {
+    Parser<String> p1 = string("abc");
+    Parser<String> p2 = string("def").suchThat(s -> true, "");
+    Parser<String> parser = anyOf(p1, p2);
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [abc, def]>, encountered:\s
+                xyz
+                ^
+            """);
+  }
+
+  @Test public void anyOf_noPruning_noOvershadowDueToSingleExpectedSymbol() {
+    Parser<String> p1 = string("abc");
+    Parser<String> p2 = string("abc").map(x -> x);
+    Parser<String> parser = anyOf(p1, p2);
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("xyz"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [abc]>, encountered:\s
+                xyz
+                ^
+            """);
+  }
+
+  @Test public void anyOf_expectedSymbolsAggregation() {
+    Parser<?> parser = anyOf(
+        one(DIGIT, "digit"), consecutive(DIGIT, "digits"), chars(3),
+        string("abc").suchThat(s -> true, "non-reserved word"));
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("x"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [digit, digits, non-reserved word, 3 char(s)]>, encountered:\s
+                x
+                ^
+            """);
+  }
+
+  @Test public void anyOf_expectedSymbolsAggregation_withFirstString() {
+    Parser<?> parser = anyOf(
+        one(DIGIT, "digit"), first("abc"), string("def").suchThat(s -> true, "non-reserved word"));
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("x"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [abc, digit, non-reserved word]>, encountered:\s
+                x
+                ^
+            """);
+  }
+
+  @Test public void anyOf_expectedSymbolsAggregation_withDefine() {
+    Parser<Object> atom = one(DIGIT, "digit").map(c -> c - '0');
+    Parser<Object> expression = define(expr -> anyOf(expr.between("(", ")"), atom));
+    Parser<?> parser = anyOf(expression, string("def").suchThat(s -> true, "non-reserved word"));
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("x"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [digit, non-reserved word, (]>, encountered:\s
+                x
+                ^
+            """);
+  }
+
+  @Test public void anyOf_expectedSymbolsAggregation_withCaseInsensitive() {
+    Parser<?> parser = anyOf(
+        one(DIGIT, "digit"), caseInsensitive("abc"),
+        string("def").suchThat(s -> true, "non-reserved word"));
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("x"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [abc, digit, non-reserved word]>, encountered:\s
+                x
+                ^
+            """);
+  }
+
+  @Test public void anyOf_commonPrefixPruning() {
+    // 11 candidates sharing a common prefix "prefix".
+    // Use prefix01...prefix11 so none is a prefix of another.
+    Parser<String> parser = anyOf(
+        string("prefix01"), string("prefix02"), string("prefix03"), string("prefix04"),
+        string("prefix05"), string("prefix06"), string("prefix07"), string("prefix08"),
+        string("prefix09"), string("prefix10"), string("prefix11"));
+
+    assertThat(parser.parse("prefix01")).isEqualTo("prefix01");
+    assertThat(parser.parse("prefix11")).isEqualTo("prefix11");
+
+    // Failure with common prefix.
+    ParseException e1 = assertThrows(ParseException.class, () -> parser.parse("prefix"));
+    assertThat(e1)
+        .hasMessageThat()
+        .contains(
+            "expecting <one of [prefix01, prefix02, prefix03, prefix04, prefix05, prefix06,"
+                + " prefix07, prefix08, prefix09, prefix10, prefix11]>");
+
+    // Failure with completely different input.
+    ParseException e2 = assertThrows(ParseException.class, () -> parser.parse("other"));
+    assertThat(e2)
+        .hasMessageThat()
+        .contains(
+            "expecting <one of [prefix01, prefix02, prefix03, prefix04, prefix05, prefix06,"
+                + " prefix07, prefix08, prefix09, prefix10, prefix11]>");
+  }
+
+  @Test public void anyOf_orderSensitivityWithPruning() {
+    // 11 candidates, where some are prefixes of others to test order sensitivity.
+    Parser<String> parser = anyOf(
+        string("abc").followedBy("d"), string("ab").followedBy("cd").thenReturn("ab_cd"),
+        string("a"), string("x1"), string("x2"), string("x3"), string("x4"), string("x5"),
+        string("x6"), string("x7"), string("x8"));
+
+    assertThat(parser.parse("abcd")).isEqualTo("abc");
+
+    // "ab" followed by "cd" would match "abcd" too, but "abc" is earlier.
+    // If input is "ax", "a" matches but followed by leftover "x", so it fails.
+    assertThrows(ParseException.class, () -> parser.parse("ax"));
+
+    // Test that "ab_cd" can be matched if the first one fails.
+    assertThat(
+            anyOf(
+                    string("abc").followedBy("e"),
+                    string("ab").followedBy("cd").thenReturn("ab_cd"), string("a"))
+                .parse("abcd"))
+        .isEqualTo("ab_cd");
+  }
+
+  @Test public void anyOf_nestedAnyOf_nonePrunable() {
+    Parser<String> nested =
+        anyOf(caseInsensitive("foo"), caseInsensitive("bar"), chars(2)).map(Object::toString);
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("a" + i)), Stream.of(nested)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("a1")).isEqualTo("a1");
+    assertThat(outer.parse("a9")).isEqualTo("a9");
+    assertThat(outer.parse("bc")).isEqualTo("bc");
+    assertThat(outer.parse("FOO")).isEqualTo("foo");
+
+    ParseException e = assertThrows(ParseException.class, () -> outer.parse("x"));
+    assertThat(e)
+        .hasMessageThat()
+        .contains(
+            "expecting <one of [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, bar, foo, 2 char(s)]>");
+  }
+
+  @Test public void anyOf_nestedAnyOf_oneNotPrunable() {
+    Parser<String> nested = anyOf(chars(2), string("b")).map(Object::toString);
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("a" + i)), Stream.of(nested)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("a1")).isEqualTo("a1");
+    assertThat(outer.parse("b ")).isEqualTo("b ");
+    assertThat(outer.parse("bc")).isEqualTo("bc");
+
+    ParseException e = assertThrows(ParseException.class, () -> outer.parse("x"));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, b, 2 char(s)]>");
+  }
+
+  @Test public void anyOf_nestedAnyOf_allPrunable() {
+    List<Parser<String>> parsers =
+        concat(
+                range(0, 10).mapToObj(i -> string("a" + i)),
+                Stream.of(anyOf(string("b1"), string("b2")).map(Object::toString)))
+            .toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("a1")).isEqualTo("a1");
+    assertThat(outer.parse("b1")).isEqualTo("b1");
+    assertThat(outer.parse("b2")).isEqualTo("b2");
+
+    ParseException e = assertThrows(ParseException.class, () -> outer.parse("b3"));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, b1, b2]>");
+  }
+
+  @Test public void anyOf_nestedAnyOf_allHonorSkipping() {
+    Parser<String> nested = anyOf(string("b1"), string("b2")).map(Object::toString);
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("a" + i)), Stream.of(nested)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parseSkipping(whitespace(), "  b1")).isEqualTo("b1");
+    assertThat(outer.parseSkipping(whitespace(), "  a1")).isEqualTo("a1");
+  }
+
+  @Test public void anyOf_nestedAnyOf_mixedSkippingSuppressesPruning() {
+    Parser<String> nested = anyOf(literally(string("b1")), string("b2")).map(Object::toString);
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("a" + i)), Stream.of(nested)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parseSkipping(whitespace(), "  b2")).isEqualTo("b2");
+    assertThat(outer.parseSkipping(whitespace(), "b1")).isEqualTo("b1");
+    assertThat(outer.parseSkipping(whitespace(), "  b1")).isEqualTo("b1");
+  }
+
+  @Test public void anyOf_nestedAnyOf_allLiterallyPrunable() {
+    Parser<String> nested =
+        anyOf(literally(string("b1")), literally(string("b2"))).map(Object::toString);
+    List<Parser<String>> parsers =
+        concat(
+                range(0, 10).mapToObj(i -> literally(string("a" + i)).map(Object::toString)),
+                Stream.of(nested))
+            .toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("b1")).isEqualTo("b1");
+    assertThat(outer.parse("a1")).isEqualTo("a1");
+    assertThat(outer.parseSkipping(whitespace(), "  b1")).isEqualTo("b1");
+    assertThat(outer.parseSkipping(whitespace(), " a1")).isEqualTo("a1");
+  }
+
+  @Test public void anyOf_pruning_propagatesThroughSequence() {
+    Parser<String> p = sequence(string("a"), string("b"), (a, b) -> a + b);
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("x" + i)), Stream.of(p)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("ab")).isEqualTo("ab");
+    assertThat(outer.parse("x1")).isEqualTo("x1");
+    assertThrows(ParseException.class, () -> outer.parse("ac"));
+  }
+
+  @Test public void anyOf_pruning_propagatesThroughAtLeastOnce() {
+    Parser<String> p = string("a").atLeastOnce().map(list -> list.get(0));
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("x" + i)), Stream.of(p)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("aaa")).isEqualTo("a");
+    assertThat(outer.parse("x1")).isEqualTo("x1");
+  }
+
+  @Test public void anyOf_pruning_withLargeNestedPrefixSet() {
+    // Nested anyOf with multiple prefixes: ["a", "b"]
+    Parser<String> nested = anyOf(string("a"), string("b")).map(Object::toString);
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("x" + i)), Stream.of(nested)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("a")).isEqualTo("a");
+    assertThat(outer.parse("b")).isEqualTo("b");
+    assertThat(outer.parse("x1")).isEqualTo("x1");
+    assertThrows(ParseException.class, () -> outer.parse("c"));
+  }
+
+  @Test public void anyOf_pruning_withOneNestedCandidateHavingNoPrefix() {
+    // Nested anyOf where one candidate has no prefix (digits)
+    Parser<String> nested = anyOf(string("a"), chars(3)).map(Object::toString);
+    assertThat(nested.getPrefixes()).containsExactly("");
+
+    List<Parser<String>> parsers =
+        concat(range(0, 10).mapToObj(i -> string("x" + i)), Stream.of(nested)).toList();
+    Parser<String> outer = parsers.stream().collect(or());
+
+    assertThat(outer.parse("a")).isEqualTo("a");
+    assertThat(outer.parse("123")).isEqualTo("123");
+    assertThat(outer.parse("x1")).isEqualTo("x1");
+  }
+
+  @Test public void anyOf_pruning_withCaseInsensitive() {
+    List<Parser<String>> parsers =
+        range(0, 10).mapToObj(i -> caseInsensitive("a" + i).map(Object::toString)).toList();
+    Parser<String> parser = parsers.stream().collect(or());
+
+    assertThat(parser.parse("A5")).isEqualTo("a5");
+    assertThat(parser.parse("a5")).isEqualTo("a5");
+    // verify pruning by providing an input that doesn't start with any 'a' or 'A'
+    assertThrows(ParseException.class, () -> parser.parse("B1"));
+  }
+
+  @Test public void anyOf_pruning_withCaseInsensitiveWord() {
+    List<Parser<String>> parsers =
+        range(0, 10).mapToObj(i -> caseInsensitiveWord("word" + i).map(Object::toString)).toList();
+    Parser<String> parser = parsers.stream().collect(or());
+
+    assertThat(parser.parse("WORD5")).isEqualTo("word5");
+    assertThat(parser.parse("word5")).isEqualTo("word5");
+    // verify pruning
+    assertThrows(ParseException.class, () -> parser.parse("A1"));
+  }
+
+  @Test public void anyOf_pruning_withLongInputAndShortPrefix() {
+    List<Parser<String>> parsers = range(0, 100).mapToObj(i -> string("a" + i)).toList();
+    Parser<String> parser = parsers.stream().collect(or());
+
+    // Very long trailing data should not affect prefix pruning efficiency.
+    String longInput = "a1" + "z".repeat(10000);
+    Parser<String> p = parser.followedBy(zeroOrMore(is('z'), "z"));
+    assertThat(p.parse(longInput)).isEqualTo("a1");
+  }
+
+  @Test public void anyOf_pruning_withWord() {
+    List<Parser<String>> parsers = range(0, 10).mapToObj(i -> word("word" + i)).toList();
+    Parser<String> parser = parsers.stream().collect(or());
+
+    assertThat(parser.parse("word5")).isEqualTo("word5");
+    // verify that word("word5") doesn't match "word5x"
+    assertThrows(ParseException.class, () -> parser.parse("word5x"));
+    // verify that word("word5") works as a prefix for "word5 "
+    assertThat(parser.parseSkipping(whitespace(), "word5 ")).isEqualTo("word5");
+  }
+
+  @Test public void anyOf_derivedBlocklistFromPrefixes_blocklist() {
+    Parser<Character> parser = anyOf(one(','), one('.'), one(isNot('<'), "not <"));
+    assertThat(parser.getBlocklist().get('<')).isTrue();
+    assertThat(parser.getBlocklist().get(',')).isFalse();
+    assertThat(parser.getBlocklist().get('.')).isFalse();
+    assertThat(parser.getBlocklist().get('a')).isFalse();
+  }
+
+  @Test public void anyOf_derivedBlocklistFromPrefixes_parsing() {
+    Parser<Character> parser = anyOf(one(','), one('.'), one(isNot('<'), "not <"));
+    assertThat(parser.parse(",")).isEqualTo(',');
+    assertThat(parser.parse(".")).isEqualTo('.');
+    assertThat(parser.parse("a")).isEqualTo('a');
+    assertThrows(ParseException.class, () -> parser.parse("<"));
+  }
+
+  @Test public void anyOf_pruning_withOneChar() {
+    List<Parser<Character>> parsers = range(0, 20).mapToObj(i -> one((char) ('a' + i))).toList();
+    Parser<Character> parser = parsers.stream().collect(or());
+
+    assertThat(parser.parse("f")).isEqualTo('f');
+    assertThat(parser.parse("s")).isEqualTo('s');
+    assertThrows(ParseException.class, () -> parser.parse("z"));
+    assertThrows(ParseException.class, () -> parser.parse("!"));
+  }
+
+  @Test public void anyOf_getPrefixes_lazyInit() {
+    Parser<String> parser = anyOf(string("foo"), string("bar"));
+    assertThat(parser.getPrefixes()).containsExactly("foo", "bar");
+    // Second call should return the cached prefixes correctly.
+    assertThat(parser.getPrefixes()).containsExactly("foo", "bar");
+  }
+
+  @Test public void anyOf_strings_success() {
+    Parser<String> parser = anyOf("one", "two", "three");
+    assertThat(parser.parse("one")).isEqualTo("one");
+    assertThat(parser.parseToStream("one")).containsExactly("one");
+    assertThat(parser.parse("two")).isEqualTo("two");
+    assertThat(parser.parseToStream("two")).containsExactly("two");
+    assertThat(parser.parse("three")).isEqualTo("three");
+    assertThat(parser.parseToStream("three")).containsExactly("three");
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void anyOf_strings_duplicateStrings() {
+    Parser<String> parser = anyOf("one", "one", "two", "one", "two");
+    assertThat(parser.parse("one")).isEqualTo("one");
+    assertThat(parser.parse("two")).isEqualTo("two");
+  }
+
+  @Test public void anyOf_strings_longestMatch() {
+    Parser<String> parser = anyOf("a", "abc", "ab");
+    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThat(parser.parse("ab")).isEqualTo("ab");
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+
+    // Order of arguments should not affect output
+    Parser<String> parser2 = anyOf("abc", "ab", "a");
+    assertThat(parser2.parse("a")).isEqualTo("a");
+    assertThat(parser2.parse("ab")).isEqualTo("ab");
+    assertThat(parser2.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test public void anyOf_strings_noMatch_failure() {
+    Parser<String> parser = anyOf("one", "two", "three");
+    assertThrows(ParseException.class, () -> parser.parse("four"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("four").count());
+
+    // Partial match at start but leftover remaining characters
+    assertThrows(ParseException.class, () -> parser.parse("onea"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("onea").count());
+  }
+
+  @Test public void anyOf_strings_emptyString_throwsIllegalArgumentException() {
+    assertThrows(IllegalArgumentException.class, () -> anyOf("", "two"));
+    assertThrows(IllegalArgumentException.class, () -> anyOf("one", ""));
+    assertThrows(IllegalArgumentException.class, () -> anyOf("one", "two", "three", ""));
+  }
+
+  @Test public void anyOf_strings_nullString_throwsNullPointerException() {
+    assertThrows(NullPointerException.class, () -> anyOf(null, "two"));
+    assertThrows(NullPointerException.class, () -> anyOf("one", null));
+    assertThrows(NullPointerException.class, () -> anyOf("one", "two", "three", null));
+    assertThrows(NullPointerException.class, () -> anyOf("one", "two", (String[]) null));
+  }
+
+  @Test public void anyOf_withEmptyPrefixParsers() {
+    Parser<?> p = anyOf(one("[]"), consecutive("[]"));
+    assertThat(p.getPrefixes()).isEmpty();
+  }
+
+  @Test public void anyOf_withEmptyPrefixParsers_correctness() {
+    Parser<?> p = anyOf(string("abc"), one("[]"));
+    assertThat(p.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test public void atLeastOnce_success() {
+    Parser<List<String>> parser = string("a").atLeastOnce();
+    assertThat(parser.parse("a")).containsExactly("a");
+    assertThat(parser.parseToStream("a")).containsExactly(List.of("a"));
+    assertThat(parser.parse("aa")).containsExactly("a", "a").inOrder();
+    assertThat(parser.parseToStream("aa")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("aaa")).containsExactly("a", "a", "a").inOrder();
+    assertThat(parser.parseToStream("aaa")).containsExactly(List.of("a", "a", "a")).inOrder();
+    assertThat(parser.parseToStream("")).isEmpty();
+
+    assertThat(digits().atLeastOnce().parse("1230")).containsExactly("1230");
+    assertThat(digits().atLeastOnce().parseToStream("1230")).containsExactly(List.of("1230"));
+    assertThat(digits().atLeastOnce().parseToStream("")).isEmpty();
+  }
+
+  @Test public void atLeastOnce_success_source() {
+    Parser<List<String>> parser = string("a").atLeastOnce();
+    assertThat(parser.source().parse("a")).isEqualTo("a");
+    assertThat(parser.source().parseToStream("a")).containsExactly("a");
+    assertThat(parser.source().parse("aa")).isEqualTo("aa");
+    assertThat(parser.source().parseToStream("aa")).containsExactly("aa");
+    assertThat(parser.source().parse("aaa")).isEqualTo("aaa");
+    assertThat(parser.source().parseToStream("aaa")).containsExactly("aaa");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+
+    assertThat(digits().atLeastOnce().source().parse("1230")).isEqualTo("1230");
+    assertThat(digits().atLeastOnce().source().parseToStream("1230")).containsExactly("1230");
+    assertThat(digits().atLeastOnce().source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void atLeastOnce_withNulls() {
+    Parser<String> nullParser = string("n").map(x -> (String) null);
+    Parser<List<String>> parser = nullParser.atLeastOnce(java.util.stream.Collectors.toList());
+    assertThat(parser.parse("nn")).containsExactly(null, null);
+  }
+
+  @Test public void atLeastOnceDelimitedBy_withNulls() {
+    Parser<String> nullParser = string("n").map(x -> (String) null);
+    Parser<List<String>> parser =
+        nullParser.atLeastOnceDelimitedBy(",", java.util.stream.Collectors.toList());
+    assertThat(parser.parse("n,n")).containsExactly(null, null);
+  }
+
+  @Test public void atLeastOnce_failure_withLeftover() {
+    Parser<List<String>> parser = string("a").atLeastOnce();
+    assertThrows(ParseException.class, () -> parser.parse("ab"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("ab").toList());
+    assertThrows(ParseException.class, () -> parser.parse("aab"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("aab").toList());
+  }
+
+  @Test public void atLeastOnce_failure() {
+    Parser<List<String>> parser = string("a").atLeastOnce();
+    assertThrows(ParseException.class, () -> parser.parse("b"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("b").toList());
+    assertThrows(ParseException.class, () -> parser.parse("aab"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("aab").toList());
+  }
+
+  @Test public void atLeastOnce_withReducer_success() {
+    Parser<Integer> integer = one(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> parser = integer.atLeastOnce((a, b) -> a - b);
+    assertThat(parser.parse("1")).isEqualTo(1);
+    assertThat(parser.parse("12")).isEqualTo(-1);
+    assertThat(parser.parse("123")).isEqualTo(-4);
+  }
+
+  @Test public void atLeastOnce_withReducer_failure_withLeftover() {
+    Parser<Integer> integer = one(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> parser = integer.atLeastOnce((a, b) -> a - b);
+    assertThrows(ParseException.class, () -> parser.parse("1a"));
+    assertThrows(ParseException.class, () -> parser.parse("12a"));
+  }
+
+  @Test public void atLeastOnce_withReducer_failure() {
+    Parser<Integer> integer = one(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> parser = integer.atLeastOnce((a, b) -> a - b);
+    assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+  }
+
+  @Test public void zeroOrMore_between_zeroMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMore().between("[", "]");
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]")).containsExactly(List.of());
+  }
+
+  @Test public void zeroOrMore_between_zeroMatch_source() {
+    Parser<List<String>> parser = string("a").source().zeroOrMore().between("[", "]");
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+    assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
+  }
+
+  @Test public void zeroOrMore_between_oneMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMore().between("[", "]");
+    assertThat(parser.parse("[a]")).containsExactly("a");
+    assertThat(parser.parseToStream("[a]")).containsExactly(List.of("a"));
+  }
+
+  @Test public void zeroOrMore_between_oneMatch_source() {
+    Parser<List<String>> parser = string("a").source().zeroOrMore().between("[", "]");
+    assertThat(parser.source().parse("[a]")).isEqualTo("[a]");
+    assertThat(parser.source().parseToStream("[a]")).containsExactly("[a]");
+  }
+
+  @Test public void zeroOrMore_between_multipleMatches() {
+    Parser<List<String>> parser = string("a").zeroOrMore().between("[", "]");
+    assertThat(parser.parse("[aa]")).containsExactly("a", "a").inOrder();
+    assertThat(parser.parseToStream("[aa]")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("[aaa]")).containsExactly("a", "a", "a").inOrder();
+    assertThat(parser.parseToStream("[aaa]")).containsExactly(List.of("a", "a", "a"));
+  }
+
+  @Test public void zeroOrMore_between_multipleMatches_source() {
+    Parser<List<String>> parser = string("a").source().zeroOrMore().between("[", "]");
+    assertThat(parser.source().parse("[aa]")).isEqualTo("[aa]");
+    assertThat(parser.source().parseToStream("[aa]")).containsExactly("[aa]");
+    assertThat(parser.source().parse("[aaa]")).isEqualTo("[aaa]");
+    assertThat(parser.source().parseToStream("[aaa]")).containsExactly("[aaa]");
+  }
+
+  @Test public void zeroOrMore_followedBy_zeroMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMore().followedBy(";");
+    assertThat(parser.parse(";")).isEmpty();
+    assertThat(parser.parseToStream(";")).containsExactly(List.of());
+  }
+
+  @Test public void zeroOrMore_followedBy_zeroMatch_source() {
+    Parser<List<String>> parser = string("a").source().zeroOrMore().followedBy(";");
+    assertThat(parser.source().parse(";")).isEqualTo(";");
+    assertThat(parser.source().parseToStream(";")).containsExactly(";");
+  }
+
+  @Test public void zeroOrMore_followedBy_oneMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMore().followedBy(";");
+    assertThat(parser.parse("a;")).containsExactly("a");
+    assertThat(parser.parseToStream("a;")).containsExactly(List.of("a"));
+  }
+
+  @Test public void zeroOrMore_followedBy_oneMatch_source() {
+    Parser<List<String>> parser = string("a").source().zeroOrMore().followedBy(";");
+    assertThat(parser.source().parse("a;")).isEqualTo("a;");
+    assertThat(parser.source().parseToStream("a;")).containsExactly("a;");
+  }
+
+  @Test public void zeroOrMore_followedBy_multipleMatches() {
+    Parser<List<String>> parser = string("a").zeroOrMore().followedBy(";");
+    assertThat(parser.parse("aa;")).containsExactly("a", "a").inOrder();
+    assertThat(parser.parseToStream("aa;")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("aaa;")).containsExactly("a", "a", "a").inOrder();
+    assertThat(parser.parseToStream("aaa;")).containsExactly(List.of("a", "a", "a"));
+  }
+
+  @Test public void zeroOrMore_followedBy_multipleMatches_source() {
+    Parser<List<String>> parser = string("a").source().zeroOrMore().followedBy(";");
+    assertThat(parser.source().parse("aa;")).isEqualTo("aa;");
+    assertThat(parser.source().parseToStream("aa;")).containsExactly("aa;");
+    assertThat(parser.source().parse("aaa;")).isEqualTo("aaa;");
+    assertThat(parser.source().parseToStream("aaa;")).containsExactly("aaa;");
+  }
+
+  @Test public void zeroOrMore_betweenParsers_zeroMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMore().between(string("["), string("]"));
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]")).containsExactly(List.of());
+  }
+
+  @Test public void zeroOrMore_betweenParsers_zeroMatch_source() {
+    Parser<List<String>> parser =
+        string("a").source().zeroOrMore().between(string("["), string("]"));
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+    assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
+  }
+
+  @Test public void zeroOrMore_betweenParsers_oneMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMore().between(string("["), string("]"));
+    assertThat(parser.parse("[a]")).containsExactly("a");
+    assertThat(parser.parseToStream("[a]")).containsExactly(List.of("a"));
+  }
+
+  @Test public void zeroOrMore_betweenParsers_oneMatch_source() {
+    Parser<List<String>> parser =
+        string("a").source().zeroOrMore().between(string("["), string("]"));
+    assertThat(parser.source().parse("[a]")).isEqualTo("[a]");
+    assertThat(parser.source().parseToStream("[a]")).containsExactly("[a]");
+  }
+
+  @Test public void zeroOrMore_betweenParsers_multipleMatches() {
+    Parser<List<String>> parser = string("a").zeroOrMore().between(string("["), string("]"));
+    assertThat(parser.parse("[aa]")).containsExactly("a", "a").inOrder();
+    assertThat(parser.parseToStream("[aa]")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("[aaa]")).containsExactly("a", "a", "a").inOrder();
+    assertThat(parser.parseToStream("[aaa]")).containsExactly(List.of("a", "a", "a"));
+  }
+
+  @Test public void zeroOrMore_betweenParsers_multipleMatches_source() {
+    Parser<List<String>> parser =
+        string("a").source().zeroOrMore().between(string("["), string("]"));
+    assertThat(parser.source().parse("[aa]")).isEqualTo("[aa]");
+    assertThat(parser.source().parseToStream("[aa]")).containsExactly("[aa]");
+    assertThat(parser.source().parse("[aaa]")).isEqualTo("[aaa]");
+    assertThat(parser.source().parseToStream("[aaa]")).containsExactly("[aaa]");
+  }
+
+  @Test public void zeroOrMore_followedByParser_zeroMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMore().followedBy(string(";"));
+    assertThat(parser.parse(";")).isEmpty();
+    assertThat(parser.parseToStream(";")).containsExactly(List.of());
+  }
+
+  @Test public void zeroOrMore_followedByParser_zeroMatch_source() {
+    Parser<List<String>> parser = string("a").source().zeroOrMore().followedBy(string(";"));
+    assertThat(parser.source().parse(";")).isEqualTo(";");
+    assertThat(parser.source().parseToStream(";")).containsExactly(";");
+  }
+
+  @Test public void zeroOrMore_followedByParser_oneMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMore().followedBy(string(";"));
+    assertThat(parser.parse("a;")).containsExactly("a");
+    assertThat(parser.parseToStream("a;")).containsExactly(List.of("a"));
+  }
+
+  @Test public void zeroOrMore_followedByParser_oneMatch_source() {
+    Parser<List<String>> parser = string("a").source().zeroOrMore().followedBy(string(";"));
+    assertThat(parser.source().parse("a;")).isEqualTo("a;");
+    assertThat(parser.source().parseToStream("a;")).containsExactly("a;");
+  }
+
+  @Test public void zeroOrMore_followedByParser_multipleMatches() {
+    Parser<List<String>> parser = string("a").zeroOrMore().followedBy(string(";"));
+    assertThat(parser.parse("aa;")).containsExactly("a", "a").inOrder();
+    assertThat(parser.parseToStream("aa;")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("aaa;")).containsExactly("a", "a", "a").inOrder();
+    assertThat(parser.parseToStream("aaa;")).containsExactly(List.of("a", "a", "a"));
+  }
+
+  @Test public void zeroOrMore_followedByParser_multipleMatches_source() {
+    Parser<List<String>> parser = string("a").source().zeroOrMore().followedBy(string(";"));
+    assertThat(parser.source().parse("aa;")).isEqualTo("aa;");
+    assertThat(parser.source().parseToStream("aa;")).containsExactly("aa;");
+    assertThat(parser.source().parse("aaa;")).isEqualTo("aaa;");
+    assertThat(parser.source().parseToStream("aaa;")).containsExactly("aaa;");
+  }
+
+  @Test public void zeroOrMore_between_failure() {
+    Parser<List<String>> parser = string("a").zeroOrMore().between("[", "]");
+    assertThrows(ParseException.class, () -> parser.parse("[ab]"));
+    assertThrows(ParseException.class, () -> parser.parse("[a]b"));
+  }
+
+  @Test public void zeroOrMore_parseEmpty() {
+    assertThat(string("a").zeroOrMore().parse("")).isEmpty();
+  }
+
+  @Test public void zeroOrMore_parseEmpty_source() {
+    assertThat(string("a").source().zeroOrMore().parse("")).isEmpty();
+  }
+
+  @Test public void zeroOrMore_parseNonEmpty() {
+    assertThat(string("a").zeroOrMore().parse("aa")).containsExactly("a", "a").inOrder();
+  }
+
+  @Test public void zeroOrMore_parseNonEmpty_source() {
+    assertThat(string("a").source().zeroOrMore().parse("aa")).containsExactly("a", "a").inOrder();
+  }
+
+  @Test public void zeroOrMore_parseFail() {
+    assertThrows(ParseException.class, () -> string("a").zeroOrMore().parse("b"));
+    assertThat(string("a").zeroOrMore().matches("b")).isFalse();
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_between_zeroMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").between("[", "]");
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]")).containsExactly(List.of());
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_between_zeroMatch_source() {
+    Parser<List<String>> parser = string("a").source().zeroOrMoreDelimitedBy(",").between("[", "]");
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+    assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_between_oneMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").between("[", "]");
+    assertThat(parser.parse("[a]")).containsExactly("a");
+    assertThat(parser.parseToStream("[a]")).containsExactly(List.of("a"));
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_between_oneMatch_source() {
+    Parser<List<String>> parser = string("a").source().zeroOrMoreDelimitedBy(",").between("[", "]");
+    assertThat(parser.source().parse("[a]")).isEqualTo("[a]");
+    assertThat(parser.source().parseToStream("[a]")).containsExactly("[a]");
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_between_multipleMatches() {
+    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").between("[", "]");
+    assertThat(parser.parse("[a,a]")).containsExactly("a", "a").inOrder();
+    assertThat(parser.parseToStream("[a,a]")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("[a,a,a]")).containsExactly("a", "a", "a").inOrder();
+    assertThat(parser.parseToStream("[a,a,a]")).containsExactly(List.of("a", "a", "a"));
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_between_multipleMatches_source() {
+    Parser<List<String>> parser = string("a").source().zeroOrMoreDelimitedBy(",").between("[", "]");
+    assertThat(parser.source().parse("[a,a]")).isEqualTo("[a,a]");
+    assertThat(parser.source().parseToStream("[a,a]")).containsExactly("[a,a]");
+    assertThat(parser.source().parse("[a,a,a]")).isEqualTo("[a,a,a]");
+    assertThat(parser.source().parseToStream("[a,a,a]")).containsExactly("[a,a,a]");
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_followedBy_zeroMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").followedBy(";");
+    assertThat(parser.parse(";")).isEmpty();
+    assertThat(parser.parseToStream(";")).containsExactly(List.of());
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_followedBy_zeroMatch_source() {
+    Parser<List<String>> parser = string("a").source().zeroOrMoreDelimitedBy(",").followedBy(";");
+    assertThat(parser.source().parse(";")).isEqualTo(";");
+    assertThat(parser.source().parseToStream(";")).containsExactly(";");
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_followedBy_oneMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").followedBy(";");
+    assertThat(parser.parse("a;")).containsExactly("a");
+    assertThat(parser.parseToStream("a;")).containsExactly(List.of("a"));
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_followedBy_oneMatch_source() {
+    Parser<List<String>> parser = string("a").source().zeroOrMoreDelimitedBy(",").followedBy(";");
+    assertThat(parser.source().parse("a;")).isEqualTo("a;");
+    assertThat(parser.source().parseToStream("a;")).containsExactly("a;");
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_followedBy_multipleMatches() {
+    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").followedBy(";");
+    assertThat(parser.parse("a,a;")).containsExactly("a", "a").inOrder();
+    assertThat(parser.parseToStream("a,a;")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("a,a,a;")).containsExactly("a", "a", "a").inOrder();
+    assertThat(parser.parseToStream("a,a,a;")).containsExactly(List.of("a", "a", "a"));
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_followedBy_multipleMatches_source() {
+    Parser<List<String>> parser = string("a").source().zeroOrMoreDelimitedBy(",").followedBy(";");
+    assertThat(parser.source().parse("a,a;")).isEqualTo("a,a;");
+    assertThat(parser.source().parseToStream("a,a;")).containsExactly("a,a;");
+    assertThat(parser.source().parse("a,a,a;")).isEqualTo("a,a,a;");
+    assertThat(parser.source().parseToStream("a,a,a;")).containsExactly("a,a,a;");
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_betweenParsers_zeroMatch() {
+    Parser<List<String>> parser =
+        string("a").zeroOrMoreDelimitedBy(",").between(string("["), string("]"));
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]")).containsExactly(List.of());
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_betweenParsers_zeroMatch_source() {
+    Parser<List<String>> parser =
+        string("a").source().zeroOrMoreDelimitedBy(",").between(string("["), string("]"));
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+    assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_betweenParsers_oneMatch() {
+    Parser<List<String>> parser =
+        string("a").zeroOrMoreDelimitedBy(",").between(string("["), string("]"));
+    assertThat(parser.parse("[a]")).containsExactly("a");
+    assertThat(parser.parseToStream("[a]")).containsExactly(List.of("a"));
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_betweenParsers_oneMatch_source() {
+    Parser<List<String>> parser =
+        string("a").source().zeroOrMoreDelimitedBy(",").between(string("["), string("]"));
+    assertThat(parser.source().parse("[a]")).isEqualTo("[a]");
+    assertThat(parser.source().parseToStream("[a]")).containsExactly("[a]");
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_betweenParsers_multipleMatches() {
+    Parser<List<String>> parser =
+        string("a").zeroOrMoreDelimitedBy(",").between(string("["), string("]"));
+    assertThat(parser.parse("[a,a]")).containsExactly("a", "a").inOrder();
+    assertThat(parser.parseToStream("[a,a]")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("[a,a,a]")).containsExactly("a", "a", "a").inOrder();
+    assertThat(parser.parseToStream("[a,a,a]")).containsExactly(List.of("a", "a", "a"));
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_betweenParsers_multipleMatches_source() {
+    Parser<List<String>> parser =
+        string("a").source().zeroOrMoreDelimitedBy(",").between(string("["), string("]"));
+    assertThat(parser.source().parse("[a,a]")).isEqualTo("[a,a]");
+    assertThat(parser.source().parseToStream("[a,a]")).containsExactly("[a,a]");
+    assertThat(parser.source().parse("[a,a,a]")).isEqualTo("[a,a,a]");
+    assertThat(parser.source().parseToStream("[a,a,a]")).containsExactly("[a,a,a]");
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_followedByParser_zeroMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").followedBy(string(";"));
+    assertThat(parser.parse(";")).isEmpty();
+    assertThat(parser.parseToStream(";")).containsExactly(List.of());
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_followedByParser_zeroMatch_source() {
+    Parser<List<String>> parser =
+        string("a").source().zeroOrMoreDelimitedBy(",").followedBy(string(";"));
+    assertThat(parser.source().parse(";")).isEqualTo(";");
+    assertThat(parser.source().parseToStream(";")).containsExactly(";");
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_followedByParser_oneMatch() {
+    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").followedBy(string(";"));
+    assertThat(parser.parse("a;")).containsExactly("a");
+    assertThat(parser.parseToStream("a;")).containsExactly(List.of("a"));
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_followedByParser_oneMatch_source() {
+    Parser<List<String>> parser =
+        string("a").source().zeroOrMoreDelimitedBy(",").followedBy(string(";"));
+    assertThat(parser.source().parse("a;")).isEqualTo("a;");
+    assertThat(parser.source().parseToStream("a;")).containsExactly("a;");
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_followedByParser_multipleMatches() {
+    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").followedBy(string(";"));
+    assertThat(parser.parse("a,a;")).containsExactly("a", "a").inOrder();
+    assertThat(parser.parseToStream("a,a;")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("a,a,a;")).containsExactly("a", "a", "a").inOrder();
+    assertThat(parser.parseToStream("a,a,a;")).containsExactly(List.of("a", "a", "a"));
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_followedByParser_multipleMatches_source() {
+    Parser<List<String>> parser =
+        string("a").source().zeroOrMoreDelimitedBy(",").followedBy(string(";"));
+    assertThat(parser.source().parse("a,a;")).isEqualTo("a,a;");
+    assertThat(parser.source().parseToStream("a,a;")).containsExactly("a,a;");
+    assertThat(parser.source().parse("a,a,a;")).isEqualTo("a,a,a;");
+    assertThat(parser.source().parseToStream("a,a,a;")).containsExactly("a,a,a;");
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_between_failure() {
+    Parser<List<String>> parser = string("a").zeroOrMoreDelimitedBy(",").between("[", "]");
+    assertThrows(ParseException.class, () -> parser.parse("[a,b]"));
+    assertThrows(ParseException.class, () -> parser.parse("[a,]"));
+    assertThrows(ParseException.class, () -> parser.parse("[a,a,]"));
+    assertThrows(ParseException.class, () -> parser.parse("[,a]"));
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_parseEmpty() {
+    assertThat(string("a").zeroOrMoreDelimitedBy(",").parse("")).isEmpty();
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_parseEmpty_source() {
+    assertThat(string("a").source().zeroOrMoreDelimitedBy(",").parse("")).isEmpty();
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_parseNonEmpty() {
+    assertThat(string("a").zeroOrMoreDelimitedBy(",").parse("a,a"))
+        .containsExactly("a", "a")
+        .inOrder();
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_parseNonEmpty_source() {
+    assertThat(string("a").source().zeroOrMoreDelimitedBy(",").parse("a,a"))
+        .containsExactly("a", "a")
+        .inOrder();
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_parseFail() {
+    assertThrows(ParseException.class, () -> string("a").zeroOrMoreDelimitedBy(",").parse("b"));
+    assertThat(string("a").zeroOrMoreDelimitedBy(",").matches("b")).isFalse();
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_withOptionalTrailingDelimiter() {
+    Parser<List<String>> parser =
+        digits().zeroOrMoreDelimitedBy(",").followedBy(string(",").optional()).notEmpty();
+    assertThat(parser.parse(",")).isEmpty();
+    assertThat(parser.parse("1")).containsExactly("1");
+    assertThat(parser.parse("1,")).containsExactly("1");
+    assertThat(parser.parse("1,2")).containsExactly("1", "2").inOrder();
+    assertThat(parser.parse("1,2,")).containsExactly("1", "2").inOrder();
+    assertThat(parser.parse("1,2,3")).containsExactly("1", "2", "3").inOrder();
+    assertThat(parser.parse("1,2,3,")).containsExactly("1", "2", "3").inOrder();
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_withOptionalTrailingDelimiter_source() {
+    Parser<List<String>> parser =
+        digits().zeroOrMoreDelimitedBy(",").followedBy(string(",").optional()).notEmpty();
+    assertThat(parser.source().parse(",")).isEqualTo(",");
+    assertThat(parser.source().parse("1")).isEqualTo("1");
+    assertThat(parser.source().parse("1,")).isEqualTo("1,");
+    assertThat(parser.source().parse("1,2")).isEqualTo("1,2");
+    assertThat(parser.source().parse("1,2,")).isEqualTo("1,2,");
+    assertThat(parser.source().parse("1,2,3")).isEqualTo("1,2,3");
+    assertThat(parser.source().parse("1,2,3,")).isEqualTo("1,2,3,");
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_withOptionalTrailingDelimiter_failOnEmpty() {
+    Parser<List<String>> parser =
+        digits().zeroOrMoreDelimitedBy(",").followedBy(string(",").optional()).notEmpty();
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [digits, comma (,)]>, encountered:\s
+                <EOF>
+                ^
+            """);
+  }
+
+  @Test public void zeroOrMoreDelimited_empty() {
+    Parser<ImmutableListMultimap<String, String>> parser = zeroOrMoreDelimited(
+            word().followedBy(string(":")), Parser.quotedByWithEscapes('"', '"', chars(1)), ",",
+            ImmutableListMultimap::toImmutableListMultimap)
+        .between("{", "}");
+    assertThat(parser.parse("{}")).isEmpty();
+  }
+
+  @Test public void zeroOrMoreDelimited_single() {
+    Parser<ImmutableListMultimap<String, String>> parser = zeroOrMoreDelimited(
+            word().followedBy(string(":")), Parser.quotedByWithEscapes('"', '"', chars(1)), ",",
+            ImmutableListMultimap::toImmutableListMultimap)
+        .between("{", "}");
+    assertThat(parser.parse("{k:\"v\"}")).containsExactly("k", "v");
+  }
+
+  @Test public void zeroOrMoreDelimited_multiple() {
+    Parser<ImmutableListMultimap<String, String>> parser = zeroOrMoreDelimited(
+            word().followedBy(string(":")), Parser.quotedByWithEscapes('"', '"', chars(1)), ",",
+            ImmutableListMultimap::toImmutableListMultimap)
+        .between("{", "}");
+    assertThat(parser.parse("{k1:\"v1\",k2:\"v2\"}"))
+        .containsExactly("k1", "v1", "k2", "v2")
+        .inOrder();
+  }
+
+  @Test public void zeroOrMoreDelimited_skippingWhitespace() {
+    Parser<ImmutableListMultimap<String, String>> parser = zeroOrMoreDelimited(
+            word().followedBy(string(":")), Parser.quotedByWithEscapes('"', '"', chars(1)), ",",
+            ImmutableListMultimap::toImmutableListMultimap)
+        .between("{", "}");
+    assertThat(parser.skipping(whitespace()).parse(" { k1 : \"v1\" , k2 : \"v2\" } "))
+        .containsExactly("k1", "v1", "k2", "v2")
+        .inOrder();
+    assertThat(parser.skipping(whitespace()).matches(" { k1 : \"v1\" , k2 : \"v2\" } ")).isTrue();
+  }
+
+  @Test public void zeroOrMoreDelimited_withTrailingComma() {
+    Parser<ImmutableListMultimap<String, String>> parser = zeroOrMoreDelimited(
+            word().followedBy(string(":")), Parser.quotedByWithEscapes('"', '"', chars(1)), ",",
+            ImmutableListMultimap::toImmutableListMultimap)
+        .followedBy(string(",").optional())
+        .between("{", "}");
+    assertThat(parser.skipping(whitespace()).parse(" { k1 : \"v1\" , k2 : \"v2\", } "))
+        .containsExactly("k1", "v1", "k2", "v2")
+        .inOrder();
+    assertThat(parser.skipping(whitespace()).matches(" { k1 : \"v1\" , k2 : \"v2\", } ")).isTrue();
+  }
+
+  @Test public void zeroOrMoreDelimited_withOptionalValue_empty() {
+    Parser<ImmutableMap<String, Integer>> parser = zeroOrMoreDelimited(
+            word(), string("=").then(digits()).map(Integer::parseInt).orElse(0), ",",
+            ImmutableMap::toImmutableMap)
+        .between("{", "}");
+    assertThat(parser.parse("{}")).isEmpty();
+  }
+
+  @Test public void zeroOrMoreDelimited_withOptionalValue_singleWithNoValue() {
+    Parser<ImmutableMap<String, Integer>> parser = zeroOrMoreDelimited(
+            word(), string("=").then(digits()).map(Integer::parseInt).orElse(0), ",",
+            ImmutableMap::toImmutableMap)
+        .between("{", "}");
+    assertThat(parser.parse("{a}")).containsExactly("a", 0);
+  }
+
+  @Test public void zeroOrMoreDelimited_withOptionalValue_singleWithValue() {
+    Parser<ImmutableMap<String, Integer>> parser = zeroOrMoreDelimited(
+            word(), string("=").then(digits()).map(Integer::parseInt).orElse(0), ",",
+            ImmutableMap::toImmutableMap)
+        .between("{", "}");
+    assertThat(parser.parse("{a=1}")).containsExactly("a", 1);
+  }
+
+  @Test public void zeroOrMoreDelimited_withOptionalValue_multiple() {
+    Parser<ImmutableMap<String, Integer>> parser = zeroOrMoreDelimited(
+            word(), string("=").then(digits()).map(Integer::parseInt).orElse(0), ",",
+            ImmutableMap::toImmutableMap)
+        .between("{", "}");
+    assertThat(parser.parse("{a=1,b,c=3}")).containsExactly("a", 1, "b", 0, "c", 3);
+  }
+
+  @Test public void zeroOrMoreDelimited_withOptionalValue_skippingWhitespace() {
+    Parser<ImmutableMap<String, Integer>> parser = zeroOrMoreDelimited(
+            word(), string("=").then(digits()).map(Integer::parseInt).orElse(0), ",",
+            ImmutableMap::toImmutableMap)
+        .between("{", "}");
+    assertThat(parser.skipping(whitespace()).parse(" { a=1 , b , c=3 } "))
+        .containsExactly("a", 1, "b", 0, "c", 3);
+    assertThat(parser.skipping(whitespace()).matches(" { a=1 , b , c=3 } ")).isTrue();
+  }
+
+  @Test public void zeroOrMoreDelimited_withOptionalValue_withTrailingComma() {
+    Parser<ImmutableMap<String, Integer>> parser = zeroOrMoreDelimited(
+            word(), string("=").then(digits()).map(Integer::parseInt).orElse(0), ",",
+            ImmutableMap::toImmutableMap)
+        .followedBy(string(",").optional())
+        .between("{", "}");
+    assertThat(parser.skipping(whitespace()).parse(" { a=1 , b , c=3, } "))
+        .containsExactly("a", 1, "b", 0, "c", 3)
+        .inOrder();
+    assertThat(parser.skipping(whitespace()).matches(" { a=1 , b , c=3, } ")).isTrue();
+  }
+
+  @Test public void zeroOrMoreDelimited_empty_collectorReturnsFreshInstance() {
+    var parser = zeroOrMoreDelimited(word().followedBy(":"), word(), ",", BiStream::toBiStream);
+    assertThat(parser.parse("").toMap()).isEmpty();
+    assertThat(parser.parse("").toMap()).isEmpty();
+  }
+
+  @Test public void optional_between_zeroMatch() {
+    Parser<Optional<String>> parser = string("a").optional().between("[", "]");
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]")).containsExactly(Optional.empty());
+  }
+
+  @Test public void optional_between_zeroMatch_source() {
+    Parser<Optional<String>> parser = string("a").source().optional().between("[", "]");
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+    assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
+  }
+
+  @Test public void optional_between_oneMatch() {
+    Parser<Optional<String>> parser = string("a").optional().between("[", "]");
+    assertThat(parser.parse("[a]")).hasValue("a");
+    assertThat(parser.parseToStream("[a]")).containsExactly(Optional.of("a"));
+  }
+
+  @Test public void optional_between_oneMatch_source() {
+    Parser<Optional<String>> parser = string("a").source().optional().between("[", "]");
+    assertThat(parser.source().parse("[a]")).isEqualTo("[a]");
+    assertThat(parser.source().parseToStream("[a]")).containsExactly("[a]");
+  }
+
+  @Test public void optional_followedBy_zeroMatch() {
+    Parser<Optional<String>> parser = string("a").optional().followedBy(";");
+    assertThat(parser.parse(";")).isEmpty();
+    assertThat(parser.parseToStream(";")).containsExactly(Optional.empty());
+  }
+
+  @Test public void optional_followedBy_zeroMatch_source() {
+    Parser<Optional<String>> parser = string("a").source().optional().followedBy(";");
+    assertThat(parser.source().parse(";")).isEqualTo(";");
+    assertThat(parser.source().parseToStream(";")).containsExactly(";");
+  }
+
+  @Test public void optional_followedBy_oneMatch() {
+    Parser<Optional<String>> parser = string("a").optional().followedBy(";");
+    assertThat(parser.parse("a;")).hasValue("a");
+    assertThat(parser.parseToStream("a;")).containsExactly(Optional.of("a"));
+  }
+
+  @Test public void optional_followedBy_oneMatch_source() {
+    Parser<Optional<String>> parser = string("a").source().optional().followedBy(";");
+    assertThat(parser.source().parse("a;")).isEqualTo("a;");
+    assertThat(parser.source().parseToStream("a;")).containsExactly("a;");
+  }
+
+  @Test public void optional_betweenParsers_zeroMatch() {
+    Parser<Optional<String>> parser = string("a").optional().between(string("["), string("]"));
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]")).containsExactly(Optional.empty());
+  }
+
+  @Test public void optional_betweenParsers_zeroMatch_source() {
+    Parser<Optional<String>> parser =
+        string("a").source().optional().between(string("["), string("]"));
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+    assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
+  }
+
+  @Test public void optional_betweenParsers_oneMatch() {
+    Parser<Optional<String>> parser = string("a").optional().between(string("["), string("]"));
+    assertThat(parser.parse("[a]")).hasValue("a");
+    assertThat(parser.parseToStream("[a]")).containsExactly(Optional.of("a"));
+  }
+
+  @Test public void optional_betweenParsers_oneMatch_source() {
+    Parser<Optional<String>> parser =
+        string("a").source().optional().between(string("["), string("]"));
+    assertThat(parser.source().parse("[a]")).isEqualTo("[a]");
+    assertThat(parser.source().parseToStream("[a]")).containsExactly("[a]");
+  }
+
+  @Test public void optional_followedByParser_zeroMatch() {
+    Parser<Optional<String>> parser = string("a").optional().followedBy(string(";"));
+    assertThat(parser.parse(";")).isEmpty();
+    assertThat(parser.parseToStream(";")).containsExactly(Optional.empty());
+  }
+
+  @Test public void optional_followedByParser_zeroMatch_source() {
+    Parser<Optional<String>> parser = string("a").source().optional().followedBy(string(";"));
+    assertThat(parser.source().parse(";")).isEqualTo(";");
+    assertThat(parser.source().parseToStream(";")).containsExactly(";");
+  }
+
+  @Test public void optional_followedByParser_oneMatch() {
+    Parser<Optional<String>> parser = string("a").optional().followedBy(string(";"));
+    assertThat(parser.parse("a;")).hasValue("a");
+    assertThat(parser.parseToStream("a;")).containsExactly(Optional.of("a"));
+  }
+
+  @Test public void optional_followedByParser_oneMatch_source() {
+    Parser<Optional<String>> parser = string("a").source().optional().followedBy(string(";"));
+    assertThat(parser.source().parse("a;")).isEqualTo("a;");
+    assertThat(parser.source().parseToStream("a;")).containsExactly("a;");
+  }
+
+  @Test public void optional_parseEmpty() {
+    assertThat(string("a").optional().parse("")).isEmpty();
+  }
+
+  @Test public void optional_parseEmpty_source() {
+    assertThat(string("a").source().optional().parse("")).isEmpty();
+  }
+
+  @Test public void optional_parseNonEmpty() {
+    assertThat(string("a").optional().parse("a")).hasValue("a");
+  }
+
+  @Test public void optional_parseNonEmpty_source() {
+    assertThat(string("a").source().optional().parse("a")).hasValue("a");
+  }
+
+  @Test public void optional_parseFail() {
+    assertThrows(ParseException.class, () -> string("a").optional().parse("b"));
+    assertThat(string("a").optional().matches("b")).isFalse();
+  }
+
+  @Test public void optional_withLeftOverInput() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> string("a").optional().parse("a bc"));
+    assertThat(string("a").optional().matches("a bc")).isFalse();
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:2: expecting <EOF>, encountered:\s
+                a bc
+                 ^
+            """);
+  }
+
+  @Test public void orElse_between_zeroMatch() {
+    Parser<String> parser = string("a").orElse("default").between("[", "]");
+    assertThat(parser.parse("[]")).isEqualTo("default");
+    assertThat(parser.parseToStream("[]")).containsExactly("default");
+  }
+
+  @Test public void orElse_between_zeroMatch_source() {
+    Parser<String> parser = string("a").source().orElse("default").between("[", "]");
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+    assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
+  }
+
+  @Test public void orElse_between_oneMatch() {
+    Parser<String> parser = string("a").orElse("default").between("[", "]");
+    assertThat(parser.parse("[a]")).isEqualTo("a");
+    assertThat(parser.parseToStream("[a]")).containsExactly("a");
+  }
+
+  @Test public void orElse_between_oneMatch_source() {
+    Parser<String> parser = string("a").source().orElse("default").between("[", "]");
+    assertThat(parser.source().parse("[a]")).isEqualTo("[a]");
+    assertThat(parser.source().parseToStream("[a]")).containsExactly("[a]");
+  }
+
+  @Test public void orElse_followedBy_zeroMatch() {
+    Parser<String> parser = string("a").orElse("default").followedBy(";");
+    assertThat(parser.parse(";")).isEqualTo("default");
+    assertThat(parser.parseToStream(";")).containsExactly("default");
+  }
+
+  @Test public void orElse_followedBy_zeroMatch_source() {
+    Parser<String> parser = string("a").source().orElse("default").followedBy(";");
+    assertThat(parser.source().parse(";")).isEqualTo(";");
+    assertThat(parser.source().parseToStream(";")).containsExactly(";");
+  }
+
+  @Test public void orElse_followedBy_oneMatch() {
+    Parser<String> parser = string("a").orElse("default").followedBy(";");
+    assertThat(parser.parse("a;")).isEqualTo("a");
+    assertThat(parser.parseToStream("a;")).containsExactly("a");
+  }
+
+  @Test public void orElse_followedBy_oneMatch_source() {
+    Parser<String> parser = string("a").source().orElse("default").followedBy(";");
+    assertThat(parser.source().parse("a;")).isEqualTo("a;");
+    assertThat(parser.source().parseToStream("a;")).containsExactly("a;");
+  }
+
+  @Test public void orElse_betweenParsers_zeroMatch() {
+    Parser<String> parser = string("a").orElse("default").between(string("["), string("]"));
+    assertThat(parser.parse("[]")).isEqualTo("default");
+    assertThat(parser.parseToStream("[]")).containsExactly("default");
+  }
+
+  @Test public void orElse_betweenParsers_zeroMatch_source() {
+    Parser<String> parser =
+        string("a").source().orElse("default").between(string("["), string("]"));
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+    assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
+  }
+
+  @Test public void orElse_betweenParsers_oneMatch() {
+    Parser<String> parser = string("a").orElse("default").between(string("["), string("]"));
+    assertThat(parser.parse("[a]")).isEqualTo("a");
+    assertThat(parser.parseToStream("[a]")).containsExactly("a");
+  }
+
+  @Test public void orElse_betweenParsers_oneMatch_source() {
+    Parser<String> parser =
+        string("a").source().orElse("default").between(string("["), string("]"));
+    assertThat(parser.source().parse("[a]")).isEqualTo("[a]");
+    assertThat(parser.source().parseToStream("[a]")).containsExactly("[a]");
+  }
+
+  @Test public void orElse_followedByParser_zeroMatch() {
+    Parser<String> parser = string("a").orElse("default").followedBy(string(";"));
+    assertThat(parser.parse(";")).isEqualTo("default");
+    assertThat(parser.parseToStream(";")).containsExactly("default");
+  }
+
+  @Test public void orElse_followedByParser_zeroMatch_source() {
+    Parser<String> parser = string("a").source().orElse("default").followedBy(string(";"));
+    assertThat(parser.source().parse(";")).isEqualTo(";");
+    assertThat(parser.source().parseToStream(";")).containsExactly(";");
+  }
+
+  @Test public void orElse_followedByParser_oneMatch() {
+    Parser<String> parser = string("a").orElse("default").followedBy(string(";"));
+    assertThat(parser.parse("a;")).isEqualTo("a");
+    assertThat(parser.parseToStream("a;")).containsExactly("a");
+  }
+
+  @Test public void orElse_followedByParser_oneMatch_source() {
+    Parser<String> parser = string("a").source().orElse("default").followedBy(string(";"));
+    assertThat(parser.source().parse("a;")).isEqualTo("a;");
+    assertThat(parser.source().parseToStream("a;")).containsExactly("a;");
+  }
+
+  @Test public void orElse_parseEmpty() {
+    assertThat(string("a").orElse("default").parse("")).isEqualTo("default");
+  }
+
+  @Test public void orElse_parseEmpty_source() {
+    assertThat(string("a").source().orElse("default").parse("")).isEqualTo("default");
+  }
+
+  @Test public void orElse_parseNonEmpty() {
+    assertThat(string("a").orElse("default").parse("a")).isEqualTo("a");
+  }
+
+  @Test public void orElse_parseNonEmpty_source() {
+    assertThat(string("a").source().orElse("default").parse("a")).isEqualTo("a");
+  }
+
+  @Test public void orElse_parseFail() {
+    assertThrows(ParseException.class, () -> string("a").orElse("default").parse("b"));
+    assertThat(string("a").orElse("default").matches("b")).isFalse();
+  }
+
+  @Test public void orElse_nullDefault_between_zeroMatch() {
+    Parser<String> parser = string("a").orElse(null).between("[", "]");
+    assertThat(parser.parse("[]")).isNull();
+    assertThat(parser.parseToStream("[]")).containsExactly((String) null);
+  }
+
+  @Test public void orElse_nullDefault_between_zeroMatch_source() {
+    Parser<String> parser = string("a").source().orElse(null).between("[", "]");
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+    assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
+  }
+
+  @Test public void orElse_nullDefault_parseEmpty() {
+    assertThat(string("a").orElse(null).parse("")).isNull();
+  }
+
+  @Test public void orElse_nullDefault_parseEmpty_source() {
+    assertThat(string("a").source().orElse(null).parse("")).isNull();
+  }
+
+  @Test public void atLeastOnceDelimitedBy_success() {
+    Parser<List<String>> parser = string("a").atLeastOnceDelimitedBy(",");
+    assertThat(parser.parse("a")).containsExactly("a");
+    assertThat(parser.parseToStream("a")).containsExactly(List.of("a"));
+    assertThat(parser.parse("a,a")).containsExactly("a", "a").inOrder();
+    assertThat(parser.parseToStream("a,a")).containsExactly(List.of("a", "a"));
+    assertThat(parser.parse("a,a,a")).containsExactly("a", "a", "a").inOrder();
+    assertThat(parser.parseToStream("a,a,a")).containsExactly(List.of("a", "a", "a")).inOrder();
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void atLeastOnceDelimitedBy_success_source() {
+    Parser<List<String>> parser = string("a").atLeastOnceDelimitedBy(",");
+    assertThat(parser.source().parse("a")).isEqualTo("a");
+    assertThat(parser.source().parseToStream("a")).containsExactly("a");
+    assertThat(parser.source().parse("a,a")).isEqualTo("a,a");
+    assertThat(parser.source().parseToStream("a,a")).containsExactly("a,a");
+    assertThat(parser.source().parse("a,a,a")).isEqualTo("a,a,a");
+    assertThat(parser.source().parseToStream("a,a,a")).containsExactly("a,a,a").inOrder();
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void atLeastOnceDelimitedBy_failure_withLeftover() {
+    Parser<List<String>> parser = string("a").atLeastOnceDelimitedBy(",");
+    assertThrows(ParseException.class, () -> parser.parse("aa"));
+    assertThrows(ParseException.class, () -> parser.parse("a,ab"));
+  }
+
+  @Test public void atLeastOnceDelimitedBy_failure() {
+    Parser<List<String>> parser = string("a").atLeastOnceDelimitedBy(",");
+    assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThrows(ParseException.class, () -> parser.parse("b"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("b").toList());
+    assertThrows(ParseException.class, () -> parser.parse("a,"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("a,").toList());
+    assertThrows(ParseException.class, () -> parser.parse(",a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream(",a").toList());
+    assertThrows(ParseException.class, () -> parser.parse("a,b"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("a,b").toList());
+    assertThrows(ParseException.class, () -> parser.parse("a,,a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("a,,a").toList());
+  }
+
+  @Test public void atLeastOnceDelimitedBy_suchThat_errorReported() {
+    Parser<List<String>> parser = word().atLeastOnceDelimitedBy(",")
+        .suchThat(words -> words.size() > 10, "more than 10 words");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("foo,bar"));
+    assertThat(e.getMessage()).contains("more than 10 words");
+    assertThat(e.getMessage()).doesNotContain("expecting <,>");
+  }
+
+  @Test public void atLeastOnceDelimitedBy_remainderInput_errorReported() {
+    Parser<List<String>> parser = word().atLeastOnceDelimitedBy(",");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("foo,bar;baz"));
+    assertThat(e.getMessage()).contains(";baz");
+    assertThat(e.getMessage()).doesNotContain("expecting <,>");
+  }
+
+  @Test public void atLeastOnceDelimitedBy_itemError_errorReported() {
+    Parser<List<String>> parser =
+        sequence(string("a"), digits(), (w, d) -> w + d).atLeastOnceDelimitedBy(",");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("a1,abc?,b2"));
+    assertThat(e.getMessage()).contains("bc?,b2");
+    assertThat(e.getMessage()).doesNotContain("expecting <,>");
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_suchThat_errorReported() {
+    Parser<List<String>> parser = word().zeroOrMoreDelimitedBy(",")
+        .notEmpty()
+        .suchThat(words -> words.size() > 10, "more than 10 words");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("foo,bar"));
+    assertThat(e.getMessage()).contains("more than 10 words");
+    assertThat(e.getMessage()).doesNotContain("expecting <,>");
+  }
+
+  @Test public void orEmpty_delimitedBy_suchThat_errorReported() {
+    Parser<List<String>> parser = word().orElse("")
+        .delimitedBy(",")
+        .notEmpty()
+        .suchThat(words -> words.size() > 10, "more than 10 words");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("foo,bar"));
+    assertThat(e.getMessage()).contains("more than 10 words");
+    assertThat(e.getMessage()).doesNotContain("expecting <,>");
+  }
+
+  @Test public void atLeastOnceDelimitedBy_cannotBeEmpty() {
+    assertThrows(IllegalArgumentException.class, () -> string("a").atLeastOnceDelimitedBy(""));
+  }
+
+  @Test public void atLeastOnceDelimitedBy_withReducer_success() {
+    Parser<Integer> integer = one(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> parser = integer.atLeastOnceDelimitedBy(",", (a, b) -> a - b);
+    assertThat(parser.parse("1")).isEqualTo(1);
+    assertThat(parser.parse("1,2")).isEqualTo(-1);
+    assertThat(parser.parse("1,2,3")).isEqualTo(-4);
+  }
+
+  @Test public void atLeastOnceDelimitedBy_withReducer_failure_withLeftover() {
+    Parser<Integer> integer = one(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> parser = integer.atLeastOnceDelimitedBy(",", (a, b) -> a - b);
+    assertThrows(ParseException.class, () -> parser.parse("1a"));
+    assertThrows(ParseException.class, () -> parser.parse("1,2a"));
+  }
+
+  @Test public void atLeastOnceDelimitedBy_withReducer_failure() {
+    Parser<Integer> integer = one(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> parser = integer.atLeastOnceDelimitedBy(",", (a, b) -> a - b);
+    assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parse("1,"));
+    assertThrows(ParseException.class, () -> parser.parse(",1"));
+    assertThrows(ParseException.class, () -> parser.parse("1,,2"));
+  }
+
+  @Test public void atLeastOnceDelimitedBy_withOptionalTrailingDelimiter() {
+    Parser<List<String>> parser = digits().atLeastOnceDelimitedBy(",").optionallyFollowedBy(",");
+    assertThat(parser.parse("12")).containsExactly("12");
+    assertThat(parser.parse("12,")).containsExactly("12");
+    assertThat(parser.parse("1,23")).containsExactly("1", "23").inOrder();
+    assertThat(parser.parse("1,23,")).containsExactly("1", "23").inOrder();
+    assertThat(parser.parse("1,2,3")).containsExactly("1", "2", "3").inOrder();
+    assertThat(parser.parse("1,2,3,")).containsExactly("1", "2", "3").inOrder();
+    assertThat(parser.parse("1,2,3,4")).containsExactly("1", "2", "3", "4").inOrder();
+    assertThat(parser.parse("1,2,3,4,")).containsExactly("1", "2", "3", "4").inOrder();
+  }
+
+  @Test public void atLeastOnceDelimitedBy_withOptionalTrailingDelimiter_source() {
+    Parser<List<String>> parser = digits().atLeastOnceDelimitedBy(",").optionallyFollowedBy(",");
+    assertThat(parser.source().parse("12")).isEqualTo("12");
+    assertThat(parser.source().parse("12,")).isEqualTo("12,");
+    assertThat(parser.source().parse("1,23")).isEqualTo("1,23");
+    assertThat(parser.source().parse("1,23,")).isEqualTo("1,23,");
+    assertThat(parser.source().parse("1,2,3")).isEqualTo("1,2,3");
+    assertThat(parser.source().parse("1,2,3,")).isEqualTo("1,2,3,");
+    assertThat(parser.source().parse("1,2,3,4")).isEqualTo("1,2,3,4");
+    assertThat(parser.source().parse("1,2,3,4,")).isEqualTo("1,2,3,4,");
+  }
+
+  @Test public void atLeastOnceDelimitedBy_withOptionalTrailingDelimiter_onlyTrailingDelimiter() {
+    Parser<List<String>> parser = digits().atLeastOnceDelimitedBy(",").optionallyFollowedBy(",");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse(","));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <digits>, encountered:\s
+                ,
+                ^
+            """);
+  }
+
+  @Test public void atLeastOnceDelimitedBy_withTrailingDelimiter_emptyInput() {
+    Parser<List<String>> parser = digits().atLeastOnceDelimitedBy(",").optionallyFollowedBy(",");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <digits>, encountered:\s
+                <EOF>
+                ^
+            """);
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_parserDelimiter_success() {
+    var parser = digits().zeroOrMoreDelimitedBy(consecutive(is('.'), "dot"), toList());
+    assertThat(parser.parse("1")).containsExactly("1");
+    assertThat(parser.parse("1.2")).containsExactly("1", "2").inOrder();
+    assertThat(parser.parse("1..2")).containsExactly("1", "2").inOrder();
+    assertThat(parser.parse("1...2..3")).containsExactly("1", "2", "3").inOrder();
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_parserDelimiter_empty() {
+    var parser = digits().zeroOrMoreDelimitedBy(consecutive(is('.'), "dot"), toList());
+    assertThat(parser.parse("")).isEmpty();
+  }
+
+  @Test public void zeroOrMoreDelimitedBy_parserDelimiter_failure() {
+    var parser = digits().zeroOrMoreDelimitedBy(consecutive(is('.'), "dot"), toList());
+    assertThrows(ParseException.class, () -> parser.parse("1_2"));
+    assertThrows(ParseException.class, () -> parser.parse("."));
+    assertThrows(ParseException.class, () -> parser.parse("1."));
+  }
+
+  @Test public void atLeastOnceDelimitedBy_parserDelimiter_success() {
+    Parser<List<String>> parser =
+        digits().atLeastOnceDelimitedBy(consecutive(is('.'), "dot"), toList());
+    assertThat(parser.parse("1")).containsExactly("1");
+    assertThat(parser.parse("1.2")).containsExactly("1", "2").inOrder();
+    assertThat(parser.parse("1..2")).containsExactly("1", "2").inOrder();
+    assertThat(parser.parse("1...2..3")).containsExactly("1", "2", "3").inOrder();
+  }
+
+  @Test public void atLeastOnceDelimitedBy_parserDelimiter_failure() {
+    Parser<List<String>> parser =
+        digits().atLeastOnceDelimitedBy(consecutive(is('.'), "dot"), toList());
+    assertThrows(ParseException.class, () -> parser.parse("1_2"));
+    assertThrows(ParseException.class, () -> parser.parse("1."));
+  }
+
+  @Test public void between_success() {
+    Parser<String> parser = string("content").between("[", "]");
+    assertThat(parser.parse("[content]")).isEqualTo("content");
+    assertThat(parser.parseToStream("[content]")).containsExactly("content");
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void between_success_source() {
+    Parser<String> parser = string("content").between("[", "]");
+    assertThat(parser.source().parse("[content]")).isEqualTo("[content]");
+    assertThat(parser.source().parseToStream("[content]")).containsExactly("[content]");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void between_failure_withLeftover() {
+    Parser<String> parser = string("content").between("[", "]");
+    assertThrows(ParseException.class, () -> parser.parse("[content]a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("[content]a").toList());
+  }
+
+  @Test public void between_failure() {
+    Parser<String> parser = string("content").between("[", "]");
+    assertThrows(ParseException.class, () -> parser.parse("content]"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("content]").toList());
+    assertThrows(ParseException.class, () -> parser.parse("[content"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("[content").toList());
+    assertThrows(ParseException.class, () -> parser.parse("content"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("content").toList());
+    assertThrows(ParseException.class, () -> parser.parse("[wrong]"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("[wrong]").toList());
+    assertThrows(ParseException.class, () -> parser.parse(" [content]"));
+    assertThrows(ParseException.class, () -> parser.parseToStream(" [content]").toList());
+  }
+
+  @Test public void between_cannotBeEmpty() {
+    Parser<String> parser = string("content");
+    assertThrows(IllegalArgumentException.class, () -> parser.between("", "]"));
+    assertThrows(IllegalArgumentException.class, () -> parser.between("[", ""));
+  }
+
+  @Test public void between_orEmpty_success() {
+    Parser<String> parser = string("content")
+        .between(zeroOrMore(whitespace(), "ignore"), zeroOrMore(whitespace(), "ignore"));
+    assertThat(parser.parse("content")).isEqualTo("content");
+    assertThat(parser.parse(" content")).isEqualTo("content");
+    assertThat(parser.parse("content ")).isEqualTo("content");
+    assertThat(parser.parse(" content ")).isEqualTo("content");
+    assertThat(parser.parse("  content  ")).isEqualTo("content");
+  }
+
+  @Test public void between_orEmpty_success_source() {
+    Parser<String> parser = string("content")
+        .between(zeroOrMore(whitespace(), "ignore"), zeroOrMore(whitespace(), "ignore"));
+    assertThat(parser.source().parse("content")).isEqualTo("content");
+    assertThat(parser.source().parse(" content")).isEqualTo(" content");
+    assertThat(parser.source().parse("content ")).isEqualTo("content ");
+    assertThat(parser.source().parse(" content ")).isEqualTo(" content ");
+    assertThat(parser.source().parse("  content  ")).isEqualTo("  content  ");
+  }
+
+  @Test public void between_orEmpty_failure() {
+    Parser<String> parser = string("content")
+        .between(zeroOrMore(whitespace(), "ignore"), zeroOrMore(whitespace(), "ignore"));
+    assertThrows(ParseException.class, () -> parser.parse("Content"));
+    assertThrows(ParseException.class, () -> parser.parse(" contentX"));
+  }
+
+  @Test public void parser_between_parser_and_orEmptySuffix_suffixPresent() {
+    Parser<String> parser = string("a").between(string("p"), string("s").orElse(null));
+    assertThat(parser.parse("pas")).isEqualTo("a");
+    assertThat(parser.matches("pas")).isTrue();
+  }
+
+  @Test public void parser_between_parser_and_orEmptySuffix_suffixAbsent() {
+    Parser<String> parser = string("a").between(string("p"), string("s").orElse(null));
+    assertThat(parser.parse("pa")).isEqualTo("a");
+    assertThat(parser.matches("pa")).isTrue();
+  }
+
+  @Test public void orEmpty_between_parser_and_orEmptySuffix_orEmptyPresent_suffixPresent() {
+    Parser<String> parser =
+        string("a").orElse("default").between(string("p"), string("s").orElse(null));
+    assertThat(parser.parse("pas")).isEqualTo("a");
+    assertThat(parser.matches("pas")).isTrue();
+  }
+
+  @Test public void orEmpty_between_parser_and_orEmptySuffix_orEmptyPresent_suffixAbsent() {
+    Parser<String> parser =
+        string("a").orElse("default").between(string("p"), string("s").orElse(null));
+    assertThat(parser.parse("pa")).isEqualTo("a");
+    assertThat(parser.matches("pa")).isTrue();
+  }
+
+  @Test public void orEmpty_between_parser_and_orEmptySuffix_orEmptyAbsent_suffixPresent() {
+    Parser<String> parser =
+        string("x").orElse("default").between(string("p"), string("s").orElse(null));
+    assertThat(parser.parse("ps")).isEqualTo("default");
+    assertThat(parser.matches("ps")).isTrue();
+  }
+
+  @Test public void orEmpty_between_parser_and_orEmptySuffix_orEmptyAbsent_suffixAbsent() {
+    Parser<String> parser =
+        string("x").orElse("default").between(string("p"), string("s").orElse(null));
+    assertThat(parser.parse("p")).isEqualTo("default");
+    assertThat(parser.matches("p")).isTrue();
+  }
+
+  @Test public void parser_between_orEmptyPrefix_and_parserSuffix_prefixPresent() {
+    Parser<String> parser = string("a").between(string("p").orElse(null), string("s"));
+    assertThat(parser.parse("pas")).isEqualTo("a");
+    assertThat(parser.matches("pas")).isTrue();
+  }
+
+  @Test public void parser_between_orEmptyPrefix_and_parserSuffix_prefixAbsent() {
+    Parser<String> parser = string("a").between(string("p").orElse(null), string("s"));
+    assertThat(parser.parse("as")).isEqualTo("a");
+    assertThat(parser.matches("as")).isTrue();
+  }
+
+  @Test public void orEmpty_between_orEmptyPrefix_and_parserSuffix_orEmptyPresent_prefixPresent() {
+    Parser<String> parser =
+        string("a").orElse("default").between(string("p").orElse(null), string("s"));
+    assertThat(parser.parse("pas")).isEqualTo("a");
+    assertThat(parser.matches("pas")).isTrue();
+  }
+
+  @Test public void orEmpty_between_orEmptyPrefix_and_parserSuffix_orEmptyPresent_prefixAbsent() {
+    Parser<String> parser =
+        string("a").orElse("default").between(string("p").orElse(null), string("s"));
+    assertThat(parser.parse("as")).isEqualTo("a");
+    assertThat(parser.matches("as")).isTrue();
+  }
+
+  @Test public void orEmpty_between_orEmptyPrefix_and_parserSuffix_orEmptyAbsent_prefixPresent() {
+    Parser<String> parser =
+        string("x").orElse("default").between(string("p").orElse(null), string("s"));
+    assertThat(parser.parse("ps")).isEqualTo("default");
+    assertThat(parser.matches("ps")).isTrue();
+  }
+
+  @Test public void orEmpty_between_orEmptyPrefix_and_parserSuffix_orEmptyAbsent_prefixAbsent() {
+    Parser<String> parser =
+        string("x").orElse("default").between(string("p").orElse(null), string("s"));
+    assertThat(parser.parse("s")).isEqualTo("default");
+    assertThat(parser.matches("s")).isTrue();
+  }
+
+  @Test public void orEmpty_between_orEmpty_success() {
+    Parser<String>.OrEmpty parser = zeroOrMore(is('a'), "a's")
+        .between(zeroOrMore(whitespace(), "ignore"), zeroOrMore(whitespace(), "ignore"));
+    assertThat(parser.parse("aa")).isEqualTo("aa");
+    assertThat(parser.parse(" aa")).isEqualTo("aa");
+    assertThat(parser.parse("aa ")).isEqualTo("aa");
+    assertThat(parser.parse(" aa ")).isEqualTo("aa");
+    assertThat(parser.parse("  ")).isEmpty();
+    assertThat(parser.parse("")).isEmpty();
+  }
+
+  @Test public void orEmpty_between_orEmpty_failure() {
+    Parser<String>.OrEmpty parser = zeroOrMore(is('a'), "a's")
+        .between(zeroOrMore(whitespace(), "ignore"), zeroOrMore(whitespace(), "ignore"));
+    assertThrows(ParseException.class, () -> parser.parse("a a"));
+    assertThat(parser.matches("a a")).isFalse();
+  }
+
+  @Test public void orEmpty_immediatelyBetween_success() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.parse("[foo]")).isEqualTo("foo");
+  }
+
+  @Test public void orEmpty_immediatelyBetween_success_source() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.source().parse("[foo]")).isEqualTo("[foo]");
+  }
+
+  @Test public void orEmpty_immediatelyBetween_emptyContent() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.parse("[]")).isEmpty();
+  }
+
+  @Test public void orEmpty_immediatelyBetween_emptyContent_source() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+  }
+
+  @Test public void orEmpty_immediatelyBetween_prefixMismatch_throws() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThrows(ParseException.class, () -> parser.parse("foo]"));
+  }
+
+  @Test public void orEmpty_immediatelyBetween_suffixMismatch_throws() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThrows(ParseException.class, () -> parser.parse("[foo"));
+  }
+
+  @Test public void orEmpty_immediatelyBetween_withSkipping_aroundQuotes() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.parseSkipping(whitespace(), " [foo] ")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).matches(" [foo] ")).isTrue();
+  }
+
+  @Test public void orEmpty_immediatelyBetween_withSkipping_aroundQuotes_source() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [foo] ")).isEqualTo("[foo]");
+    assertThat(parser.source().skipping(whitespace()).matches(" [foo] ")).isTrue();
+  }
+
+  @Test public void orEmpty_immediatelyBetween_withSkipping_spacesInsideQuotes() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.parseSkipping(whitespace(), " [ foo ] ")).isEqualTo(" foo ");
+    assertThat(parser.skipping(whitespace()).matches(" [ foo ] ")).isTrue();
+  }
+
+  @Test public void orEmpty_immediatelyBetween_withSkipping_spacesInsideQuotes_source() {
+    Parser<String> parser = zeroOrMore(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [ foo ] ")).isEqualTo("[ foo ]");
+    assertThat(parser.source().skipping(whitespace()).matches(" [ foo ] ")).isTrue();
+  }
+
+  @Test public void orEmpty_immediatelyBetween_withSkipping_spaceFollowingPrefixNotIgnored() {
+    Parser<String> parser = zeroOrMore(noneOf("[ ]"), "content").immediatelyBetween("[", "]");
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " [ foo] "));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting <one of [content, ]]>, encountered:\s
+                 [ foo]
+                  ^
+            """);
+    assertThat(parser.skipping(whitespace()).matches(" [ foo] ")).isFalse();
+  }
+
+  @Test public void orEmpty_immediatelyBetween_withSkipping_spacePrecedingSuffixNotIgnored() {
+    Parser<String> parser = zeroOrMore(noneOf("[ ]"), "content").immediatelyBetween("[", "]");
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " [foo ] "));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:6: expecting <]>, encountered:\s
+                 [foo ]\s
+                     ^
+            """);
+    assertThat(parser.skipping(whitespace()).matches(" [foo ] ")).isFalse();
+  }
+
+  @Test public void orEmpty_optionallyFollowedBy_suffix() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's").optionallyFollowedBy(",").between("[", "]");
+    assertThat(parser.parse("[aa,]")).isEqualTo("aa");
+    assertThat(parser.parse("[aa]")).isEqualTo("aa");
+    assertThat(parser.parse("[,]")).isEmpty();
+    assertThat(parser.parse("[]")).isEmpty();
+  }
+
+  @Test public void orEmpty_optionallyFollowedBy_suffix_source() {
+    Parser<String> parser = zeroOrMore(is('a'), "a's").optionallyFollowedBy(",").between("[", "]");
+    assertThat(parser.source().parse("[aa,]")).isEqualTo("[aa,]");
+    assertThat(parser.source().parse("[aa]")).isEqualTo("[aa]");
+    assertThat(parser.source().parse("[,]")).isEqualTo("[,]");
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+  }
+
+  @Test public void orEmpty_optionallyFollowedBy_stringAndFunction() {
+    Parser<String>.OrEmpty parser =
+        string("foo").orElse("default").optionallyFollowedBy("!", s -> s + "!");
+    // prefix present + suffix absent
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+    // prefix present + suffix present
+    assertThat(parser.parse("foo!")).isEqualTo("foo!");
+    // prefix absent + suffix absent
+    assertThat(parser.parse("")).isEqualTo("default");
+    // prefix absent + suffix present
+    assertThat(parser.parse("!")).isEqualTo("default!");
+  }
+
+  @Test public void orEmpty_optionallyFollowedBy_parserAndCombiner() {
+    Parser<String> suffix = string("suffix").map(s -> ":" + s);
+    Parser<String>.OrEmpty parser =
+        string("foo").orElse("default").optionallyFollowedBy(suffix, (p, s) -> p + s);
+    // prefix present + suffix absent
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+    // prefix present + suffix present
+    assertThat(parser.parse("foosuffix")).isEqualTo("foo:suffix");
+    // prefix absent + suffix absent
+    assertThat(parser.parse("")).isEqualTo("default");
+    // prefix absent + suffix present
+    assertThat(parser.parse("suffix")).isEqualTo("default:suffix");
+  }
+
+  @Test public void parser_immediatelyBetween_success() {
+    Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.parse("[foo]")).isEqualTo("foo");
+  }
+
+  @Test public void parser_immediatelyBetween_success_source() {
+    Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.source().parse("[foo]")).isEqualTo("[foo]");
+  }
+
+  @Test public void parser_immediatelyBetween_mainParserFails_throws() {
+    assertThrows(ParseException.class, () -> word().immediatelyBetween("[", "]").parse("[!123]"));
+  }
+
+  @Test public void parser_immediatelyBetween_prefixMismatch_throws() {
+    Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThrows(ParseException.class, () -> parser.parse("foo]"));
+  }
+
+  @Test public void parser_immediatelyBetween_suffixMismatch_throws() {
+    Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThrows(ParseException.class, () -> parser.parse("[foo"));
+  }
+
+  @Test public void parser_immediatelyBetween_withSkipping_aroundQuotes() {
+    Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.parseSkipping(whitespace(), " [foo] ")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).matches(" [foo] ")).isTrue();
+  }
+
+  @Test public void parser_immediatelyBetween_withSkipping_aroundQuotes_source() {
+    Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [foo] ")).isEqualTo("[foo]");
+    assertThat(parser.source().skipping(whitespace()).matches(" [foo] ")).isTrue();
+  }
+
+  @Test public void parser_immediatelyBetween_withSkipping_spacesInsideQuotes() {
+    Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.parseSkipping(whitespace(), " [ foo ] ")).isEqualTo(" foo ");
+    assertThat(parser.skipping(whitespace()).matches(" [ foo ] ")).isTrue();
+  }
+
+  @Test public void parser_immediatelyBetween_withSkipping_spacesInsideQuotes_source() {
+    Parser<String> parser = consecutive(noneOf("[]"), "content").immediatelyBetween("[", "]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [ foo ] ")).isEqualTo("[ foo ]");
+    assertThat(parser.source().skipping(whitespace()).matches(" [ foo ] ")).isTrue();
+  }
+
+  @Test public void parser_immediatelyBetween_withSkipping_spaceFollowingPrefixNotIgnored() {
+    Parser<String> parser = consecutive(noneOf("[ ]"), "content").immediatelyBetween("[", "]");
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " [ foo] "));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting <content>, encountered:\s
+                 [ foo]
+                  ^
+            """);
+    assertThat(parser.skipping(whitespace()).matches(" [ foo] ")).isFalse();
+  }
+
+  @Test public void parser_immediatelyBetween_withSkipping_spacePrecedingSuffixNotIgnored() {
+    Parser<String> parser = consecutive(noneOf("[ ]"), "content").immediatelyBetween("[", "]");
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " [foo ] "));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:6: expecting <]>, encountered:\s
+                 [foo ]\s
+                     ^
+            """);
+    assertThat(parser.skipping(whitespace()).matches(" [foo ] ")).isFalse();
+  }
+
+  @Test public void one_char_success() {
+    Parser<Character> parser = one('x');
+    assertThat(parser.parse("x")).isEqualTo('x');
+    assertThat(parser.parseToStream("x")).containsExactly('x');
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void one_char_success_source() {
+    Parser<Character> parser = one('x');
+    assertThat(parser.source().parse("x")).isEqualTo("x");
+    assertThat(parser.source().parseToStream("x")).containsExactly("x");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void one_char_failure_withLeftover() {
+    Parser<Character> parser = one('x');
+    assertThrows(ParseException.class, () -> parser.parse("xy"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("xy").toList());
+  }
+
+  @Test public void one_char_failure() {
+    Parser<Character> parser = one('x');
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("a").toList());
+    assertThrows(ParseException.class, () -> parser.parse("xx"));
+  }
+
+  @Test public void one_success() {
+    Parser<Character> parser = one(DIGIT, "digit");
+    assertThat(parser.parse("1")).isEqualTo('1');
+    assertThat(parser.parseToStream("1")).containsExactly('1');
+    assertThat(parser.parse("9")).isEqualTo('9');
+    assertThat(parser.parseToStream("9")).containsExactly('9');
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void one_success_source() {
+    Parser<Character> parser = one(DIGIT, "digit");
+    assertThat(parser.source().parse("1")).isEqualTo("1");
+    assertThat(parser.source().parseToStream("1")).containsExactly("1");
+    assertThat(parser.source().parse("9")).isEqualTo("9");
+    assertThat(parser.source().parseToStream("9")).containsExactly("9");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void one_failure_withLeftover() {
+    Parser<Character> parser = one(DIGIT, "digit");
+    assertThrows(ParseException.class, () -> parser.parse("1a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("1a").toList());
+  }
+
+  @Test public void one_failure() {
+    Parser<Character> parser = one(DIGIT, "digit");
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <digit>, encountered:\s
+                a
+                ^
+            """);
+    assertThrows(ParseException.class, () -> parser.parseToStream("a").toList());
+    assertThrows(ParseException.class, () -> parser.parse("12"));
+  }
+
+  @Test public void one_characterClass_success() {
+    Parser<Character> parser = one("[0-9]");
+    assertThat(parser.parse("1")).isEqualTo('1');
+    assertThat(parser.parseToStream("1")).containsExactly('1');
+    assertThat(parser.parse("9")).isEqualTo('9');
+    assertThat(parser.parseToStream("9")).containsExactly('9');
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void one_characterClass_success_source() {
+    Parser<Character> parser = one("[0-9]");
+    assertThat(parser.source().parse("1")).isEqualTo("1");
+    assertThat(parser.source().parseToStream("1")).containsExactly("1");
+    assertThat(parser.source().parse("9")).isEqualTo("9");
+    assertThat(parser.source().parseToStream("9")).containsExactly("9");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void one_characterClass_failure_withLeftover() {
+    Parser<Character> parser = one("[0-9]");
+    assertThrows(ParseException.class, () -> parser.parse("1a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("1a").toList());
+  }
+
+  @Test public void one_characterClass_failure() {
+    Parser<Character> parser = one("[0-9]");
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("a").toList());
+    assertThrows(ParseException.class, () -> parser.parse("12"));
+  }
+
+  @Test public void consecutive_success() {
+    assertThat(digits().parse("1")).isEqualTo("1");
+    assertThat(digits().parseToStream("1")).containsExactly("1");
+    assertThat(digits().parse("123")).isEqualTo("123");
+    assertThat(digits().parseToStream("123")).containsExactly("123");
+    assertThat(digits().parseToStream("")).isEmpty();
+  }
+
+  @Test public void consecutive_success_source() {
+    assertThat(digits().source().parse("1")).isEqualTo("1");
+    assertThat(digits().source().parseToStream("1")).containsExactly("1");
+    assertThat(digits().source().parse("123")).isEqualTo("123");
+    assertThat(digits().source().parseToStream("123")).containsExactly("123");
+    assertThat(digits().source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void consecutive_failure_withLeftover() {
+    assertThrows(ParseException.class, () -> digits().parse("1a"));
+    assertThrows(ParseException.class, () -> digits().parseToStream("1a").toList());
+    assertThrows(ParseException.class, () -> digits().parse("123a"));
+    assertThrows(ParseException.class, () -> digits().parseToStream("123a").toList());
+  }
+
+  @Test public void consecutive_failure() {
+    ParseException e = assertThrows(ParseException.class, () -> digits().parse("a"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <digits>, encountered:\s
+                a
+                ^
+            """);
+    assertThrows(ParseException.class, () -> digits().parseToStream("a").toList());
+    assertThrows(ParseException.class, () -> digits().parse("12a"));
+    assertThrows(ParseException.class, () -> digits().parseToStream("12a").toList());
+    assertThrows(ParseException.class, () -> digits().parse(""));
+  }
+
+  @Test public void digits_parse() {
+    assertThat(digits(3).parse("123")).isEqualTo("123");
+  }
+
+  @Test public void digits_parseToStream() {
+    assertThat(digits(3).parseToStream("123456")).containsExactly("123", "456");
+  }
+
+  @Test public void digits_singleDigit() {
+    assertThat(digits(1).parse("0")).isEqualTo("0");
+  }
+
+  @Test public void digits_failure_partialMatch() {
+    ParseException e = assertThrows(ParseException.class, () -> digits(3).parse("12a"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <3 digits>");
+  }
+
+  @Test public void digits_failure_insufficientInput() {
+    ParseException e = assertThrows(ParseException.class, () -> digits(3).parse("12"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <3 digits>");
+  }
+
+  @Test public void digits_failure_emptyInput() {
+    ParseException e = assertThrows(ParseException.class, () -> digits(3).parse(""));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <3 digits>");
+  }
+
+  @Test public void digits_zero_throws() {
+    assertThrows(IllegalArgumentException.class, () -> digits(0));
+  }
+
+  @Test public void digits_negative_throws() {
+    assertThrows(IllegalArgumentException.class, () -> digits(-1));
+  }
+
+  @Test public void hexDigits_parse() {
+    assertThat(hexDigits(4).parse("01aF")).isEqualTo("01aF");
+  }
+
+  @Test public void hexDigits_parseToStream() {
+    assertThat(hexDigits(4).parseToStream("01aF89bC")).containsExactly("01aF", "89bC");
+  }
+
+  @Test public void hexDigits_twoDigits() {
+    assertThat(hexDigits(2).parse("FF")).isEqualTo("FF");
+  }
+
+  @Test public void hexDigits_failure_partialMatch() {
+    ParseException e = assertThrows(ParseException.class, () -> hexDigits(4).parse("01gF"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <4 hex digits>");
+  }
+
+  @Test public void hexDigits_failure_insufficientInput() {
+    ParseException e = assertThrows(ParseException.class, () -> hexDigits(4).parse("01a"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <4 hex digits>");
+  }
+
+  @Test public void hexDigits_failure_emptyInput() {
+    ParseException e = assertThrows(ParseException.class, () -> hexDigits(4).parse(""));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <4 hex digits>");
+  }
+
+  @Test public void hexDigits_zero_throws() {
+    assertThrows(IllegalArgumentException.class, () -> hexDigits(0));
+  }
+
+  @Test public void hexDigits_negative_throws() {
+    assertThrows(IllegalArgumentException.class, () -> hexDigits(-1));
+  }
+
+  @Test public void consecutive_charClass_success() {
+    assertThat(consecutive("[0-9]").parse("1")).isEqualTo("1");
+    assertThat(consecutive("[0-9]").parseToStream("1")).containsExactly("1");
+    assertThat(consecutive("[0-9]").parse("123")).isEqualTo("123");
+    assertThat(consecutive("[0-9]").parseToStream("123")).containsExactly("123");
+    assertThat(consecutive("[0-9]").parseToStream("")).isEmpty();
+  }
+
+  @Test public void consecutive_charClass_success_source() {
+    assertThat(consecutive("[0-9]").source().parse("1")).isEqualTo("1");
+    assertThat(consecutive("[0-9]").source().parseToStream("1")).containsExactly("1");
+    assertThat(consecutive("[0-9]").source().parse("123")).isEqualTo("123");
+    assertThat(consecutive("[0-9]").source().parseToStream("123")).containsExactly("123");
+    assertThat(consecutive("[0-9]").source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void consecutive_charClass_failure_withLeftover() {
+    assertThrows(ParseException.class, () -> consecutive("[0-9]").parse("1a"));
+    assertThrows(ParseException.class, () -> consecutive("[0-9]").parseToStream("1a").toList());
+    assertThrows(ParseException.class, () -> consecutive("[0-9]").parse("123a"));
+    assertThrows(ParseException.class, () -> consecutive("[0-9]").parseToStream("123a").toList());
+  }
+
+  @Test public void consecutive_charClass_failure() {
+    assertThrows(ParseException.class, () -> consecutive("[0-9]").parse("a"));
+    assertThrows(ParseException.class, () -> consecutive("[0-9]").parseToStream("a").toList());
+    assertThrows(ParseException.class, () -> consecutive("[0-9]").parse("12a"));
+    assertThrows(ParseException.class, () -> consecutive("[0-9]").parseToStream("12a").toList());
+    assertThrows(ParseException.class, () -> consecutive("[0-9]").parse(""));
+  }
+
+  @Test public void chars_unicodeEscapeExample() {
+    CharPredicate hexDigit = CharPredicate.range('0', '9').orRange('A', 'F');
+    Parser<Integer> uncodeEscape = string("\\u")
+        .then(chars(4).suchThat(hexDigit::matchesAllOf, "4 hex"))
+        .map(hex -> Integer.parseInt(hex, 16));
+    assertThat(uncodeEscape.parseToStream("\\uD83D\\uDE00"))
+        .containsExactly(0xD83D, 0xDE00)
+        .inOrder();
+  }
+
+  @Test public void chars_zeroTimes_fails() {
+    assertThrows(IllegalArgumentException.class, () -> chars(0));
+  }
+
+  @Test public void chars_notSufficientChars_fails() {
+    Parser<String> parser = chars(2);
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <2 char(s)>, encountered:\s
+                a
+                ^
+            """);
+  }
+
+  @Test public void chars_sufficientChars_succeeds() {
+    assertThat(chars(2).parse("ab")).isEqualTo("ab");
+  }
+
+  @Test public void chars_moreThanSufficientChars_succeeds() {
+    assertThat(chars(2).parseToStream("abcd")).containsExactly("ab", "cd").inOrder();
+  }
+
+  @Test public void chars_source_moreThanSufficientChars_succeeds() {
+    assertThat(chars(2).source().parseToStream("abcd")).containsExactly("ab", "cd").inOrder();
+  }
+
+  @Test public void chars_skipping() {
+    assertThat(chars(2).skipping(whitespace()).parseToStream(" ab cd"))
+        .containsExactly("ab", "cd")
+        .inOrder();
+    assertThat(chars(2).parseToStream(" ab cd")).containsExactly(" a", "b ", "cd").inOrder();
+    assertThat(literally(chars(2)).skipping(whitespace()).parseToStream(" ab cd"))
+        .containsExactly("ab", "cd")
+        .inOrder();
+  }
+
+  @Test public void withPrefixes_zeroOperator_success() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
+    Parser<Integer> parser = number.withPrefixes(neg);
+    assertThat(parser.parse("10")).isEqualTo(10);
+    assertThat(parser.parseToStream("10")).containsExactly(10);
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void withPrefixes_zeroOperator_success_source() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
+    Parser<Integer> parser = number.withPrefixes(neg);
+    assertThat(parser.source().parse("10")).isEqualTo("10");
+    assertThat(parser.source().parseToStream("10")).containsExactly("10");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void withPrefixes_oneOperator_success() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
+    Parser<Integer> parser = number.withPrefixes(neg);
+    assertThat(parser.parse("-10")).isEqualTo(-10);
+    assertThat(parser.parseToStream("-10")).containsExactly(-10);
+  }
+
+  @Test public void withPrefixes_oneOperator_success_source() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
+    Parser<Integer> parser = number.withPrefixes(neg);
+    assertThat(parser.source().parse("-10")).isEqualTo("-10");
+    assertThat(parser.source().parseToStream("-10")).containsExactly("-10");
+  }
+
+  @Test public void withPrefixes_multipleOperators_success() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
+    Parser<UnaryOperator<Integer>> plus = string("+").thenReturn(i -> i);
+    Parser<UnaryOperator<Integer>> flip = string("~").thenReturn(i -> ~i);
+    Parser<UnaryOperator<Integer>> op = anyOf(neg, plus, flip);
+    Parser<Integer> parser = number.withPrefixes(op);
+    assertThat(parser.parse("--10")).isEqualTo(10);
+    assertThat(parser.parse("-~10")).isEqualTo(- ~10);
+    assertThat(parser.parse("~-10")).isEqualTo(~-10);
+    assertThat(parser.parseToStream("--10")).containsExactly(10);
+    assertThat(parser.parse("-+10")).isEqualTo(-10);
+    assertThat(parser.parseToStream("-+10")).containsExactly(-10);
+    assertThat(parser.parse("+-10")).isEqualTo(-10);
+    assertThat(parser.parseToStream("+-10")).containsExactly(-10);
+  }
+
+  @Test public void withPrefixes_multipleOperators_success_source() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
+    Parser<UnaryOperator<Integer>> plus = string("+").thenReturn(i -> i);
+    Parser<UnaryOperator<Integer>> flip = string("~").thenReturn(i -> ~i);
+    Parser<UnaryOperator<Integer>> op = anyOf(neg, plus, flip);
+    Parser<Integer> parser = number.withPrefixes(op);
+    assertThat(parser.source().parse("--10")).isEqualTo("--10");
+    assertThat(parser.source().parse("-~10")).isEqualTo("-~10");
+    assertThat(parser.source().parse("~-10")).isEqualTo("~-10");
+    assertThat(parser.source().parseToStream("--10")).containsExactly("--10");
+    assertThat(parser.source().parse("-+10")).isEqualTo("-+10");
+    assertThat(parser.source().parseToStream("-+10")).containsExactly("-+10");
+    assertThat(parser.source().parse("+-10")).isEqualTo("+-10");
+    assertThat(parser.source().parseToStream("+-10")).containsExactly("+-10");
+  }
+
+  @Test public void withPrefixes_operandParseFails() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
+    Parser<Integer> parser = number.withPrefixes(neg);
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("a").toList());
+    assertThrows(ParseException.class, () -> parser.parse("-a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("-a").toList());
+  }
+
+  @Test public void withPrefixes_failure_withLeftover() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
+    Parser<Integer> parser = number.withPrefixes(neg);
+    assertThrows(ParseException.class, () -> parser.parse("10a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("10a").toList());
+    assertThrows(ParseException.class, () -> parser.parse("-10a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("-10a").toList());
+  }
+
+  @Test public void withPostfixes_success() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
+    Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
+    Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
+    Parser<Integer> parser = number.withPostfixes(op);
+    assertThat(parser.parse("10")).isEqualTo(10);
+    assertThat(parser.parseToStream("10")).containsExactly(10);
+    assertThat(parser.parse("10++")).isEqualTo(11);
+    assertThat(parser.parseToStream("10++")).containsExactly(11);
+    assertThat(parser.parse("10--")).isEqualTo(9);
+    assertThat(parser.parseToStream("10--")).containsExactly(9);
+    assertThat(parser.parse("10++--++")).isEqualTo(11);
+    assertThat(parser.parseToStream("10++--++")).containsExactly(11);
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void withPostfixes_success_source() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
+    Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
+    Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
+    Parser<Integer> parser = number.withPostfixes(op);
+    assertThat(parser.source().parse("10")).isEqualTo("10");
+    assertThat(parser.source().parseToStream("10")).containsExactly("10");
+    assertThat(parser.source().parse("10++")).isEqualTo("10++");
+    assertThat(parser.source().parseToStream("10++")).containsExactly("10++");
+    assertThat(parser.source().parse("10--")).isEqualTo("10--");
+    assertThat(parser.source().parseToStream("10--")).containsExactly("10--");
+    assertThat(parser.source().parse("10++--++")).isEqualTo("10++--++");
+    assertThat(parser.source().parseToStream("10++--++")).containsExactly("10++--++");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void withPostfixes_failure() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
+    Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
+    Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
+    Parser<Integer> parser = number.withPostfixes(op);
+    assertThrows(ParseException.class, () -> parser.parse("a++"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("a++").toList());
+    assertThrows(ParseException.class, () -> parser.parse("10+"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("10+").toList());
+  }
+
+  @Test public void withPostfixes_failure_withLeftover() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
+    Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
+    Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
+    Parser<Integer> parser = number.withPostfixes(op);
+    assertThrows(ParseException.class, () -> parser.parse("10++a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("10++a").toList());
+    assertThrows(ParseException.class, () -> parser.parse("10 a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("10 a").toList());
+  }
+
+  @Test public void withPostfixes_withBiFunction_success() {
+    Parser<Integer> parser =
+        digits().map(Integer::parseInt).withPostfixes(string("++").map(s -> 1), (a, b) -> a + b);
+    assertThat(parser.parse("10")).isEqualTo(10);
+    assertThat(parser.parse("10++")).isEqualTo(11);
+    assertThat(parser.parse("10++++")).isEqualTo(12);
+  }
+
+  @Test public void withPostfixes_withBiFunction_failure() {
+    Parser<Integer> parser =
+        digits().map(Integer::parseInt).withPostfixes(string("!").map(s -> 1), (a, b) -> a + b);
+    assertThrows(ParseException.class, () -> parser.parse("10!a"));
+  }
+
+  @Test public void withPostfixes_unaryOperator_success() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<Integer> parser = number.withPostfixes("++", i -> i + 1);
+    assertThat(parser.parse("10")).isEqualTo(10);
+    assertThat(parser.parse("10++")).isEqualTo(11);
+    assertThat(parser.parse("10++++")).isEqualTo(12);
+  }
+
+  @Test public void withPostfixes_unaryOperator_failure() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<Integer> parser = number.withPostfixes("++", i -> i + 1);
+    assertThrows(ParseException.class, () -> parser.parse("10++a"));
+  }
+
+  @Test public void parse_fromIndex() {
+    assertThat(string("bar").parse("foobar", 3)).isEqualTo("bar");
+    assertThat(string("bar").source().parse("foobar", 3)).isEqualTo("bar");
+    assertThat(digits().skipping(whitespace()).parse("a 123", 1)).isEqualTo("123");
+    assertThat(digits().source().skipping(whitespace()).parse("a 123", 1)).isEqualTo("123");
+  }
+
+  @Test public void parse_fromIndex_atEnd() {
+    assertThrows(ParseException.class, () -> string("a").parse("a", 1));
+    assertThrows(ParseException.class, () -> string("a").skipping(whitespace()).parse("a  ", 1));
+  }
+
+  @Test public void parse_fromIndex_outOfBounds() {
+    assertThrows(IndexOutOfBoundsException.class, () -> string("a").parse("a", 2));
+    assertThrows(
+        IndexOutOfBoundsException.class, () -> string("a").skipping(whitespace()).parse("a", 2));
+  }
+
+  @Test public void skipping_aroundIdentifier() {
+    Parser<String> parser = string("foo");
+    assertThat(parser.parseSkipping(whitespace(), "foo")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream("foo")).containsExactly("foo");
+    assertThat(parser.parseSkipping(whitespace(), " foo")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(" foo")).containsExactly("foo");
+    assertThat(parser.parseSkipping(whitespace(), "foo \n ")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream("foo \n  ")).containsExactly("foo");
+    assertThat(parser.parseSkipping(whitespace(), " foo ")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(" foo ")).containsExactly("foo");
+    assertThat(parser.parseSkipping(whitespace(), "   foo   ")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream("   foo   ")).containsExactly("foo");
+  }
+
+  @Test public void skipping_aroundIdentifier_withReader() {
+    Parser<String> parser = string("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(new StringReader("foo")))
+        .containsExactly("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(new StringReader(" foo")))
+        .containsExactly("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(new StringReader("foo \n  ")))
+        .containsExactly("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(new StringReader(" foo ")))
+        .containsExactly("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(new StringReader("   foo   ")))
+        .containsExactly("foo");
+  }
+
+  @Test public void skipping_aroundIdentifier_source() {
+    Parser<String> parser = string("foo");
+    assertThat(parser.source().parseSkipping(whitespace(), "foo")).isEqualTo("foo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foo")).containsExactly("foo");
+    assertThat(parser.source().parseSkipping(whitespace(), " foo")).isEqualTo("foo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" foo")).containsExactly("foo");
+    assertThat(parser.source().parseSkipping(whitespace(), "foo \n ")).isEqualTo("foo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foo \n  "))
+        .containsExactly("foo");
+    assertThat(parser.source().parseSkipping(whitespace(), " foo ")).isEqualTo("foo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" foo "))
+        .containsExactly("foo");
+    assertThat(parser.source().parseSkipping(whitespace(), "   foo   ")).isEqualTo("foo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("   foo   "))
+        .containsExactly("foo");
+  }
+
+  @Test public void skipping_parseToStream_allCharactersSkipped() {
+    assertThat(digits().skipping(whitespace()).parseToStream("     ")).isEmpty();
+  }
+
+  @Test public void skipping_parseToStream_reader_allCharactersSkipped() {
+    assertThat(digits().skipping(whitespace()).parseToStream(new StringReader("     "))).isEmpty();
+  }
+
+  @Test public void skipping_parseToStream_allSkippablePatternsSkipped() {
+    assertThat(
+            digits().skipping(
+                    string("#").then(consecutive(isNot('\n'), "comment"))
+                        .optionallyFollowedBy("\n"))
+                .parseToStream("#comment1\n#comment2"))
+        .isEmpty();
+  }
+
+  @Test public void skipping_parseToStream_reader_allSkippablePatternsSkipped() {
+    assertThat(
+            digits().skipping(
+                    string("#").then(consecutive(isNot('\n'), "comment"))
+                        .optionallyFollowedBy("\n"))
+                .parseToStream(new StringReader("#comment1\n#comment2")))
+        .isEmpty();
+  }
+
+  @Test public void skipping_aroundIdentifier_failure() {
+    Parser<String> parser = string("foo");
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " foobar "));
+    assertThrows(
+        ParseException.class,
+        () -> parser.skipping(whitespace()).parseToStream(" foobar ").toList());
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " foo bar "));
+    assertThrows(
+        ParseException.class,
+        () -> parser.skipping(whitespace()).parseToStream(" foo bar ").toList());
+  }
+
+  @Test public void skipping_aroundIdentifier_reader_failure() {
+    Parser<String> parser = string("foo");
+    assertThrows(
+        ParseException.class,
+        () -> parser.skipping(whitespace()).parseToStream(new StringReader(" foobar ")).toList());
+    assertThrows(
+        ParseException.class,
+        () -> parser.skipping(whitespace()).parseToStream(new StringReader(" foo bar ")).toList());
+  }
+
+  @Test public void skipping_withAnyOf() {
+    Parser<String> foobar = anyOf(string("foo"), string("bar"));
+    assertThat(foobar.parseSkipping(whitespace(), " foo ")).isEqualTo("foo");
+    assertThat(foobar.skipping(whitespace()).parseToStream(" foo bar "))
+        .containsExactly("foo", "bar");
+  }
+
+  @Test public void skipping_withAnyOf_source() {
+    Parser<String> foobar = anyOf(string("foo"), string("bar"));
+    assertThat(foobar.source().parseSkipping(whitespace(), " foo ")).isEqualTo("foo");
+    assertThat(foobar.source().skipping(whitespace()).parseToStream(" foo bar "))
+        .containsExactly("foo", "bar");
+  }
+
+  @Test public void skipping_propagatesThroughOr() {
+    Parser<String> foo = string("foo");
+    Parser<String> bar = string("bar");
+    Parser<String> parser = foo.or(bar);
+    assertThat(parser.skipping(whitespace()).parseToStream("foobar")).containsExactly("foo", "bar");
+    assertThat(parser.skipping(whitespace()).parseToStream("foo bar"))
+        .containsExactly("foo", "bar");
+    assertThat(parser.skipping(whitespace()).parseToStream(" foo bar "))
+        .containsExactly("foo", "bar");
+  }
+
+  @Test public void skipping_propagatesThroughOr_source() {
+    Parser<String> foo = string("foo");
+    Parser<String> bar = string("bar");
+    Parser<String> parser = foo.or(bar);
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foobar"))
+        .containsExactly("foo", "bar");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foo bar"))
+        .containsExactly("foo", "bar");
+  }
+
+  @Test public void skipping_propagatesThroughSequence() {
+    Parser<String> foo = string("foo");
+    Parser<String> bar = string("bar");
+    Parser<String> parser = sequence(foo, bar, (f, b) -> f + b);
+    assertThat(parser.parseSkipping(whitespace(), "foobar")).isEqualTo("foobar");
+    assertThat(parser.skipping(whitespace()).parseToStream("foobar")).containsExactly("foobar");
+    assertThat(parser.parseSkipping(whitespace(), "foo bar")).isEqualTo("foobar");
+    assertThat(parser.skipping(whitespace()).parseToStream("foo bar")).containsExactly("foobar");
+    assertThat(parser.parseSkipping(whitespace(), " foo bar ")).isEqualTo("foobar");
+    assertThat(parser.skipping(whitespace()).parseToStream(" foo bar ")).containsExactly("foobar");
+    assertThat(parser.parseSkipping(whitespace(), " foo   bar ")).isEqualTo("foobar");
+    assertThat(parser.skipping(whitespace()).parseToStream(" foo   bar "))
+        .containsExactly("foobar");
+  }
+
+  @Test public void skipping_propagatesThroughSequence_source() {
+    Parser<String> foo = string("foo");
+    Parser<String> bar = string("bar");
+    Parser<String> parser = sequence(foo, bar, (f, b) -> f + b);
+    assertThat(parser.source().parseSkipping(whitespace(), "foobar")).isEqualTo("foobar");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foobar"))
+        .containsExactly("foobar");
+    assertThat(parser.source().parseSkipping(whitespace(), "foo bar")).isEqualTo("foo bar");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foo bar"))
+        .containsExactly("foo bar");
+    assertThat(parser.source().parseSkipping(whitespace(), " foo bar ")).isEqualTo("foo bar");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" foo bar "))
+        .containsExactly("foo bar");
+    assertThat(parser.source().parseSkipping(whitespace(), " foo   bar ")).isEqualTo("foo   bar");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" foo   bar "))
+        .containsExactly("foo   bar");
+  }
+
+  @Test public void skipping_propagatesThroughConsecutive() {
+    assertThat(digits().parseSkipping(whitespace(), "123")).isEqualTo("123");
+    assertThat(digits().skipping(whitespace()).parseToStream("123")).containsExactly("123");
+    assertThat(digits().parseSkipping(whitespace(), " 123 ")).isEqualTo("123");
+    assertThat(digits().skipping(whitespace()).parseToStream(" 123 ")).containsExactly("123");
+    assertThrows(ParseException.class, () -> digits().parseSkipping(whitespace(), "123a"));
+    assertThrows(ParseException.class, () -> digits().parseSkipping(whitespace(), "1 23"));
+  }
+
+  @Test public void skipping_propagatesThroughConsecutive_source() {
+    assertThat(digits().source().parseSkipping(whitespace(), "123")).isEqualTo("123");
+    assertThat(digits().source().skipping(whitespace()).parseToStream("123"))
+        .containsExactly("123");
+    assertThat(digits().source().parseSkipping(whitespace(), " 123 ")).isEqualTo("123");
+    assertThat(digits().source().skipping(whitespace()).parseToStream(" 123 "))
+        .containsExactly("123");
+    assertThrows(ParseException.class, () -> digits().source().parseSkipping(whitespace(), "123a"));
+    assertThrows(ParseException.class, () -> digits().source().parseSkipping(whitespace(), "1 23"));
+  }
+
+  @Test public void skipping_propagatesThroughSingle() {
+    Parser<Character> parser = one(DIGIT, "digit");
+    assertThat(parser.parseSkipping(whitespace(), "1")).isEqualTo('1');
+    assertThat(parser.skipping(whitespace()).parseToStream("1")).containsExactly('1');
+    assertThat(parser.parseSkipping(whitespace(), " 1 ")).isEqualTo('1');
+    assertThat(parser.skipping(whitespace()).parseToStream(" 1 ")).containsExactly('1');
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "12"));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "a"));
+  }
+
+  @Test public void skipping_propagatesThroughSingle_source() {
+    Parser<Character> parser = one(DIGIT, "digit");
+    assertThat(parser.source().parseSkipping(whitespace(), "1")).isEqualTo("1");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("1")).containsExactly("1");
+    assertThat(parser.source().parseSkipping(whitespace(), " 1 ")).isEqualTo("1");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" 1 ")).containsExactly("1");
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), "12"));
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), "a"));
+  }
+
+  @Test public void skipping_propagatesThroughAtLeastOnce() {
+    Parser<String> foo = string("foo");
+    Parser<List<String>> parser = foo.atLeastOnce();
+    assertThat(parser.parseSkipping(whitespace(), "foofoo"))
+        .containsExactly("foo", "foo")
+        .inOrder();
+    assertThat(parser.skipping(whitespace()).parseToStream("foofoo"))
+        .containsExactly(List.of("foo", "foo"));
+    assertThat(parser.parseSkipping(whitespace(), "foo foo"))
+        .containsExactly("foo", "foo")
+        .inOrder();
+    assertThat(parser.skipping(whitespace()).parseToStream("foo foo"))
+        .containsExactly(List.of("foo", "foo"));
+    assertThat(parser.parseSkipping(whitespace(), " foo   foo "))
+        .containsExactly("foo", "foo")
+        .inOrder();
+    assertThat(parser.skipping(whitespace()).parseToStream(" foo   foo "))
+        .containsExactly(List.of("foo", "foo"));
+  }
+
+  @Test public void skipping_propagatesThroughAtLeastOnce_source() {
+    Parser<String> foo = string("foo");
+    Parser<List<String>> parser = foo.atLeastOnce();
+    assertThat(parser.source().parseSkipping(whitespace(), "foofoo")).isEqualTo("foofoo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foofoo"))
+        .containsExactly("foofoo");
+    assertThat(parser.source().parseSkipping(whitespace(), "foo foo")).isEqualTo("foo foo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foo foo"))
+        .containsExactly("foo foo");
+    assertThat(parser.source().parseSkipping(whitespace(), " foo   foo ")).isEqualTo("foo   foo");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" foo   foo "))
+        .containsExactly("foo   foo");
+  }
+
+  @Test public void skipping_propagatesThroughDelimitedBy() {
+    Parser<List<String>> parser = word().atLeastOnceDelimitedBy(",");
+    assertThat(parser.parseSkipping(whitespace(), "foo,bar"))
+        .containsExactly("foo", "bar")
+        .inOrder();
+    assertThat(parser.skipping(whitespace()).parseToStream("foo,bar"))
+        .containsExactly(List.of("foo", "bar"));
+    assertThat(parser.parseSkipping(whitespace(), " foo, bar "))
+        .containsExactly("foo", "bar")
+        .inOrder();
+    assertThat(parser.parseSkipping(whitespace(), " foo , bar "))
+        .containsExactly("foo", "bar")
+        .inOrder();
+    assertThat(parser.skipping(whitespace()).parseToStream(" foo, bar "))
+        .containsExactly(List.of("foo", "bar"));
+    assertThat(parser.parseSkipping(whitespace(), " bar,foo, bar "))
+        .containsExactly("bar", "foo", "bar")
+        .inOrder();
+    assertThat(parser.skipping(whitespace()).parseToStream(" bar,foo, bar "))
+        .containsExactly(List.of("bar", "foo", "bar"));
+  }
+
+  @Test public void skipping_propagatesThroughDelimitedBy_source() {
+    Parser<List<String>> parser = word().atLeastOnceDelimitedBy(",");
+    assertThat(parser.source().parseSkipping(whitespace(), "foo,bar")).isEqualTo("foo,bar");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("foo,bar"))
+        .containsExactly("foo,bar");
+    assertThat(parser.source().parseSkipping(whitespace(), " foo, bar ")).isEqualTo("foo, bar");
+    assertThat(parser.source().parseSkipping(whitespace(), " foo , bar ")).isEqualTo("foo , bar");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" foo, bar "))
+        .containsExactly("foo, bar");
+    assertThat(parser.source().parseSkipping(whitespace(), " bar,foo, bar "))
+        .isEqualTo("bar,foo, bar");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" bar,foo, bar "))
+        .containsExactly("bar,foo, bar");
+  }
+
+  @Test public void skipping_propagatesThroughFlatMap() {
+    Parser<Integer> parser =
+        digits().flatMap(number -> string("=").then(string(number).map(Integer::parseInt)));
+    assertThat(parser.parseSkipping(whitespace(), "123=123")).isEqualTo(123);
+    assertThat(parser.skipping(whitespace()).parseToStream("123=123")).containsExactly(123);
+    assertThat(parser.parseSkipping(whitespace(), "123 =123")).isEqualTo(123);
+    assertThat(parser.skipping(whitespace()).parseToStream("123 =123")).containsExactly(123);
+    assertThat(parser.parseSkipping(whitespace(), "123 = 123 ")).isEqualTo(123);
+    assertThat(parser.skipping(whitespace()).parseToStream("123 = 123 ")).containsExactly(123);
+    assertThat(parser.parseSkipping(whitespace(), " 123  =123 ")).isEqualTo(123);
+    assertThat(parser.skipping(whitespace()).parseToStream(" 123  =123 ")).containsExactly(123);
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "123 == 123"));
+    assertThrows(
+        ParseException.class,
+        () -> parser.skipping(whitespace()).parseToStream("123 == 123").toList());
+  }
+
+  @Test public void skipping_propagatesThroughFlatMap_source() {
+    Parser<Integer> parser =
+        digits().flatMap(number -> string("=").then(string(number).map(Integer::parseInt)));
+    assertThat(parser.source().parseSkipping(whitespace(), "123=123")).isEqualTo("123=123");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("123=123"))
+        .containsExactly("123=123");
+    assertThat(parser.source().parseSkipping(whitespace(), "123 =123")).isEqualTo("123 =123");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("123 =123"))
+        .containsExactly("123 =123");
+    assertThat(parser.source().parseSkipping(whitespace(), "123 = 123 ")).isEqualTo("123 = 123");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("123 = 123 "))
+        .containsExactly("123 = 123");
+    assertThat(parser.source().parseSkipping(whitespace(), " 123  =123 ")).isEqualTo("123  =123");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" 123  =123 "))
+        .containsExactly("123  =123");
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "123 == 123"));
+    assertThrows(
+        ParseException.class,
+        () -> parser.skipping(whitespace()).parseToStream("123 == 123").toList());
+  }
+
+  @Test public void skipping_propagatesThroughOrElse() {
+    Parser<String> foo = string("foo");
+    Parser<String> parser = foo.orElse("default").between("[", "]");
+    assertThat(parser.parseSkipping(whitespace(), "[foo]")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream("[foo]")).containsExactly("foo");
+    assertThat(parser.parseSkipping(whitespace(), " [ foo ] ")).isEqualTo("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(" [ foo ] ")).containsExactly("foo");
+    assertThat(parser.parseSkipping(whitespace(), "[]")).isEqualTo("default");
+    assertThat(parser.skipping(whitespace()).parseToStream("[]")).containsExactly("default");
+    assertThat(parser.parseSkipping(whitespace(), "[ ]")).isEqualTo("default");
+    assertThat(parser.skipping(whitespace()).parseToStream("[ ]")).containsExactly("default");
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), ""));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " "));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "[bar]"));
+  }
+
+  @Test public void skipping_propagatesThroughOrElse_source() {
+    Parser<String> foo = string("foo");
+    Parser<String> parser = foo.orElse("default").between("[", "]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[foo]")).isEqualTo("[foo]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[foo]"))
+        .containsExactly("[foo]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [ foo ] ")).isEqualTo("[ foo ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [ foo ] "))
+        .containsExactly("[ foo ]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[]")).isEqualTo("[]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[]")).containsExactly("[]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ ]")).isEqualTo("[ ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ ]")).containsExactly("[ ]");
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), ""));
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), " "));
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), "[bar]"));
+  }
+
+  @Test public void skipping_propagatesThroughZeroOrMore() {
+    Parser<String> foo = string("foo");
+    Parser<List<String>> parser = foo.zeroOrMore().between("[", "]");
+    assertThat(parser.parseSkipping(whitespace(), "[foo foo]"))
+        .containsExactly("foo", "foo")
+        .inOrder();
+    assertThat(parser.skipping(whitespace()).parseToStream("[foo foo]"))
+        .containsExactly(List.of("foo", "foo"));
+    assertThat(parser.parseSkipping(whitespace(), " [ foo foo ] "))
+        .containsExactly("foo", "foo")
+        .inOrder();
+    assertThat(parser.skipping(whitespace()).parseToStream(" [ foo foo ] "))
+        .containsExactly(List.of("foo", "foo"));
+    assertThat(parser.parseSkipping(whitespace(), "[]")).isEmpty();
+    assertThat(parser.skipping(whitespace()).parseToStream("[]")).containsExactly(List.of());
+    assertThat(parser.parseSkipping(whitespace(), "[ ]")).isEmpty();
+    assertThat(parser.skipping(whitespace()).parseToStream("[ ]")).containsExactly(List.of());
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), ""));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " "));
+  }
+
+  @Test public void skipping_propagatesThroughZeroOrMore_source() {
+    Parser<String> foo = string("foo");
+    Parser<List<String>> parser = foo.zeroOrMore().between("[", "]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[foo foo]")).isEqualTo("[foo foo]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[foo foo]"))
+        .containsExactly("[foo foo]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [ foo foo ] "))
+        .isEqualTo("[ foo foo ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [ foo foo ] "))
+        .containsExactly("[ foo foo ]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[]")).isEqualTo("[]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[]")).containsExactly("[]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ ]")).isEqualTo("[ ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ ]")).containsExactly("[ ]");
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), ""));
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), " "));
+  }
+
+  @Test public void zeroOrMore_CharPredicate_matchesZeroTimes() {
+    Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]")).containsExactly("");
+    assertThat(parser.parseSkipping(whitespace(), "[ ]")).isEmpty();
+    assertThat(parser.skipping(whitespace()).parseToStream("[ ]")).containsExactly("");
+  }
+
+  @Test public void zeroOrMore_CharPredicate_matchesZeroTimes_source() {
+    Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+    assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ ]")).isEqualTo("[ ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ ]")).containsExactly("[ ]");
+  }
+
+  @Test public void zeroOrMore_CharPredicate_matchesOneTime() {
+    Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
+    assertThat(parser.parse("[1]")).isEqualTo("1");
+    assertThat(parser.parseToStream("[1]")).containsExactly("1");
+    assertThat(parser.parseSkipping(whitespace(), "[ 1 ]")).isEqualTo("1");
+    assertThat(parser.skipping(whitespace()).parseToStream("[ 1 ]")).containsExactly("1");
+  }
+
+  @Test public void zeroOrMore_CharPredicate_matchesOneTime_source() {
+    Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
+    assertThat(parser.source().parse("[1]")).isEqualTo("[1]");
+    assertThat(parser.source().parseToStream("[1]")).containsExactly("[1]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ 1 ]")).isEqualTo("[ 1 ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ 1 ]"))
+        .containsExactly("[ 1 ]");
+  }
+
+  @Test public void zeroOrMore_CharPredicate_matchesMultipleTimes() {
+    Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
+    assertThat(parser.parse("[123]")).isEqualTo("123");
+    assertThat(parser.parseToStream("[123]")).containsExactly("123");
+    assertThat(parser.parseSkipping(whitespace(), "[ 123 ]")).isEqualTo("123");
+    assertThat(parser.skipping(whitespace()).parseToStream("[ 123 ]")).containsExactly("123");
+  }
+
+  @Test public void zeroOrMore_CharPredicate_matchesMultipleTimes_source() {
+    Parser<String> parser = zeroOrMore(DIGIT, "digit").between("[", "]");
+    assertThat(parser.source().parse("[123]")).isEqualTo("[123]");
+    assertThat(parser.source().parseToStream("[123]")).containsExactly("[123]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ 123 ]")).isEqualTo("[ 123 ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ 123 ]"))
+        .containsExactly("[ 123 ]");
+  }
+
+  @Test public void zeroOrMore_characterClass_matchesZeroTimes() {
+    Parser<String> parser = zeroOrMore("[0-9]").between("[", "]");
+    assertThat(parser.parse("[]")).isEmpty();
+    assertThat(parser.parseToStream("[]")).containsExactly("");
+    assertThat(parser.parseSkipping(whitespace(), "[ ]")).isEmpty();
+    assertThat(parser.skipping(whitespace()).parseToStream("[ ]")).containsExactly("");
+  }
+
+  @Test public void zeroOrMore_characterClass_matchesZeroTimes_source() {
+    Parser<String> parser = zeroOrMore("[0-9]").between("[", "]");
+    assertThat(parser.source().parse("[]")).isEqualTo("[]");
+    assertThat(parser.source().parseToStream("[]")).containsExactly("[]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ ]")).isEqualTo("[ ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ ]")).containsExactly("[ ]");
+  }
+
+  @Test public void zeroOrMore_characterClass_matchesOneTime() {
+    Parser<String> parser = zeroOrMore("[0-9]").between("[", "]");
+    assertThat(parser.parse("[1]")).isEqualTo("1");
+    assertThat(parser.parseToStream("[1]")).containsExactly("1");
+    assertThat(parser.parseSkipping(whitespace(), "[ 1 ]")).isEqualTo("1");
+    assertThat(parser.skipping(whitespace()).parseToStream("[ 1 ]")).containsExactly("1");
+  }
+
+  @Test public void zeroOrMore_characterClass_matchesOneTime_source() {
+    Parser<String> parser = zeroOrMore("[0-9]").between("[", "]");
+    assertThat(parser.source().parse("[1]")).isEqualTo("[1]");
+    assertThat(parser.source().parseToStream("[1]")).containsExactly("[1]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ 1 ]")).isEqualTo("[ 1 ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ 1 ]"))
+        .containsExactly("[ 1 ]");
+  }
+
+  @Test public void zeroOrMore_characterClass_matchesMultipleTimes() {
+    Parser<String> parser = zeroOrMore("[0-9]").between("[", "]");
+    assertThat(parser.parse("[123]")).isEqualTo("123");
+    assertThat(parser.parseToStream("[123]")).containsExactly("123");
+    assertThat(parser.parseSkipping(whitespace(), "[ 123 ]")).isEqualTo("123");
+    assertThat(parser.skipping(whitespace()).parseToStream("[ 123 ]")).containsExactly("123");
+  }
+
+  @Test public void zeroOrMore_characterClass_matchesMultipleTimes_source() {
+    Parser<String> parser = zeroOrMore("[0-9]").between("[", "]");
+    assertThat(parser.source().parse("[123]")).isEqualTo("[123]");
+    assertThat(parser.source().parseToStream("[123]")).containsExactly("[123]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ 123 ]")).isEqualTo("[ 123 ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ 123 ]"))
+        .containsExactly("[ 123 ]");
+  }
+
+  @Test public void skipping_propagatesThroughOptional() {
+    Parser<String> foo = string("foo");
+    Parser<Optional<String>> parser = foo.optional().between("[", "]");
+    assertThat(parser.parseSkipping(whitespace(), "[foo]")).hasValue("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream("[foo]"))
+        .containsExactly(Optional.of("foo"));
+    assertThat(parser.parseSkipping(whitespace(), " [ foo ] ")).hasValue("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(" [ foo ] "))
+        .containsExactly(Optional.of("foo"));
+    assertThat(parser.parseSkipping(whitespace(), "[]")).isEmpty();
+    assertThat(parser.skipping(whitespace()).parseToStream("[]")).containsExactly(Optional.empty());
+    assertThat(parser.parseSkipping(whitespace(), "[ ]")).isEmpty();
+    assertThat(parser.skipping(whitespace()).parseToStream("[ ]"))
+        .containsExactly(Optional.empty());
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), ""));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), " "));
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "[bar]"));
+  }
+
+  @Test public void skipping_propagatesThroughOptional_source() {
+    Parser<String> foo = string("foo");
+    Parser<Optional<String>> parser = foo.optional().between("[", "]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[foo]")).isEqualTo("[foo]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[foo]"))
+        .containsExactly("[foo]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [ foo ] ")).isEqualTo("[ foo ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [ foo ] "))
+        .containsExactly("[ foo ]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[]")).isEqualTo("[]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[]")).containsExactly("[]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ ]")).isEqualTo("[ ]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ ]")).containsExactly("[ ]");
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), ""));
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), " "));
+    assertThrows(ParseException.class, () -> parser.source().parseSkipping(whitespace(), "[bar]"));
+  }
+
+  @Test public void skipping_simpleLanguage() {
+    Parser<?> lineComment = string("//").then(consecutive(isNot('\n'), "line comment"));
+    Parser<?> blockComment = anyOf(
+            consecutive(isNot('*'), "block comment"),
+            one(is('*'), "*").notFollowedBy("/").map(Object::toString))
+        .zeroOrMore(joining())
+        .between("/*", "*/");
+    Parser<String> quotedLiteral = zeroOrMore(isNot('\''), "quoted").immediatelyBetween("'", "'");
+    Parser<String> language = anyOf(quotedLiteral, digits(), word(), string("("), string(")"));
+    Parser<?> skippable = anyOf(consecutive(whitespace(), "whitespace"), lineComment, blockComment);
+
+    assertThat(language.skipping(skippable).parseToStream("foo123(bar)"))
+        .containsExactly("foo123", "(", "bar", ")")
+        .inOrder();
+    assertThat(language.skipping(skippable).parseToStream(" ' foo 123 ' (bar) "))
+        .containsExactly(" foo 123 ", "(", "bar", ")")
+        .inOrder();
+    assertThat(language.skipping(skippable).parseToStream("foo 123 ( bar )"))
+        .containsExactly("foo", "123", "(", "bar", ")")
+        .inOrder();
+    assertThat(
+            language.skipping(skippable)
+                .parseToStream(
+                    "foo // ignore this\n123 /* ignore this */ ( bar\n" + "/* and * also */)"))
+        .containsExactly("foo", "123", "(", "bar", ")")
+        .inOrder();
+  }
+
+  @Test public void skipping_simpleLanguage_source() {
+    Parser<?> lineComment = string("//").then(consecutive(isNot('\n'), "line comment"));
+    Parser<?> blockComment = anyOf(
+            consecutive(isNot('*'), "block comment"),
+            one(is('*'), "*").notFollowedBy("/").map(Object::toString))
+        .zeroOrMore(joining())
+        .between("/*", "*/");
+    Parser<String> quotedLiteral = zeroOrMore(isNot('\''), "quoted").immediatelyBetween("'", "'");
+    Parser<String> language = anyOf(quotedLiteral, digits(), word(), string("("), string(")"));
+    Parser<?> skippable = anyOf(consecutive(whitespace(), "whitespace"), lineComment, blockComment);
+
+    assertThat(language.source().skipping(skippable).parseToStream("foo123(bar)"))
+        .containsExactly("foo123", "(", "bar", ")")
+        .inOrder();
+    assertThat(language.source().skipping(skippable).parseToStream(" ' foo 123 ' (bar) "))
+        .containsExactly("' foo 123 '", "(", "bar", ")")
+        .inOrder();
+    assertThat(language.source().skipping(skippable).parseToStream("foo 123 ( bar )"))
+        .containsExactly("foo", "123", "(", "bar", ")")
+        .inOrder();
+    assertThat(
+            language.source()
+                .skipping(skippable)
+                .parseToStream(
+                    "foo // ignore this\n123 /* ignore this */ ( bar\n" + "/* and * also */)"))
+        .containsExactly("foo", "123", "(", "bar", ")")
+        .inOrder();
+  }
+
+  @Test public void literally_doesNotSkip() {
+    assertThat(literally(digits()).parseSkipping(whitespace(), "123")).isEqualTo("123");
+    assertThat(literally(digits()).parseSkipping(whitespace(), "123 ")).isEqualTo("123");
+    // pre-skipping leading/trailing spaces on the literal parser is allowed
+    assertThat(literally(digits()).parseSkipping(whitespace(), " 123")).isEqualTo("123");
+    assertThat(literally(digits()).parseSkipping(whitespace(), " 123 ")).isEqualTo("123");
+
+    // but skip inside the literal parser is disallowed
+    Parser<String> literalSeq = sequence(string("1"), string("2"), (a, b) -> a + b);
+    assertThrows(
+        ParseException.class, () -> literally(literalSeq).parseSkipping(whitespace(), "1 2"));
+  }
+
+  @Test public void literally_doesNotSkip_source() {
+    assertThat(literally(digits()).source().parseSkipping(whitespace(), "123")).isEqualTo("123");
+    assertThat(literally(digits()).source().parseSkipping(whitespace(), "123 ")).isEqualTo("123");
+    // pre-skipping leading/trailing spaces on the literal parser is allowed
+    assertThat(literally(digits()).source().parseSkipping(whitespace(), " 123")).isEqualTo("123");
+    assertThat(literally(digits()).source().parseSkipping(whitespace(), " 123 ")).isEqualTo("123");
+
+    // but skip inside the literal parser is disallowed
+    Parser<String> literalSeq = sequence(string("1"), string("2"), (a, b) -> a + b);
+    assertThrows(
+        ParseException.class,
+        () -> literally(literalSeq).source().parseSkipping(whitespace(), "1 2"));
+  }
+
+  @Test public void literally_multipleParsers_matches() {
+    Parser<String> p = literally(string("1"), string("2"), string("3")).source();
+    assertThat(p.parseSkipping(whitespace(), "123")).isEqualTo("123");
+    assertThat(p.parseSkipping(whitespace(), " 123")).isEqualTo("123");
+  }
+
+  @Test public void literally_multipleParsers_disallowsInnerSkipping() {
+    Parser<String> p = literally(string("1"), string("2"), string("3")).source();
+    assertThrows(ParseException.class, () -> p.parseSkipping(whitespace(), "1 23"));
+  }
+
+  @Test public void literally_optionalFirstPresent_matches() {
+    Parser<String> p = literally(string("1").optional(), string("2"), string("3")).source();
+    assertThat(p.parseSkipping(whitespace(), "123")).isEqualTo("123");
+    assertThat(p.parseSkipping(whitespace(), " 123 ")).isEqualTo("123");
+  }
+
+  @Test public void literally_optionalFirstPresent_disallowsInnerSkipping() {
+    Parser<String> p = literally(string("1").optional(), string("2"), string("3")).source();
+    assertThrows(ParseException.class, () -> p.parseSkipping(whitespace(), "1 23"));
+  }
+
+  @Test public void literally_optionalFirstAbsent_matches() {
+    Parser<String> p = literally(string("1").optional(), string("2"), string("3")).source();
+    assertThat(p.parseSkipping(whitespace(), "23")).isEqualTo("23");
+    assertThat(p.parseSkipping(whitespace(), " 23 ")).isEqualTo("23");
+  }
+
+  @Test public void literally_optionalFirstAbsent_disallowsInnerSkipping() {
+    Parser<String> p = literally(string("1").optional(), string("2"), string("3")).source();
+    assertThrows(ParseException.class, () -> p.parseSkipping(whitespace(), "2 3"));
+  }
+
+  @Test public void zeroOrMoreChars_literally_between_zeroMatch() {
+    Parser<String> parser = literally(zeroOrMore(noneOf("[]"), "name")).between("[", "]");
+    assertThat(parser.parseSkipping(whitespace(), "[]")).isEmpty();
+    assertThat(parser.parseSkipping(whitespace(), " [] ")).isEmpty();
+    assertThat(parser.parseSkipping(whitespace(), " [ ] ")).isEmpty();
+
+    assertThat(parser.skipping(whitespace()).parseToStream("[]")).containsExactly("");
+    assertThat(parser.skipping(whitespace()).parseToStream(" [] ")).containsExactly("");
+    assertThat(parser.skipping(whitespace()).parseToStream(" [  ] ")).containsExactly("");
+  }
+
+  @Test public void zeroOrMoreChars_literally_between_zeroMatch_source() {
+    Parser<String> parser = literally(zeroOrMore(noneOf("[]"), "name")).between("[", "]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[]")).isEqualTo("[]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [] ")).isEqualTo("[]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [ ] ")).isEqualTo("[ ]");
+
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[]")).containsExactly("[]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [] ")).containsExactly("[]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [  ] "))
+        .containsExactly("[  ]");
+  }
+
+  @Test public void zeroOrMoreChars_literally_between_oneMatch() {
+    Parser<String> parser = literally(zeroOrMore(noneOf("[]"), "name")).between("[", "]");
+    assertThat(parser.parseSkipping(whitespace(), "[foo]")).isEqualTo("foo");
+    assertThat(parser.parseSkipping(whitespace(), " [foo] ")).isEqualTo("foo");
+    assertThat(parser.parseSkipping(whitespace(), " [ foo ] ")).isEqualTo("foo ");
+
+    assertThat(parser.skipping(whitespace()).parseToStream("[foo]")).containsExactly("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(" [foo] ")).containsExactly("foo");
+    assertThat(parser.skipping(whitespace()).parseToStream(" [ foo ] ")).containsExactly("foo ");
+  }
+
+  @Test public void zeroOrMoreChars_literally_between_oneMatch_source() {
+    Parser<String> parser = literally(zeroOrMore(noneOf("[]"), "name")).between("[", "]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[foo]")).isEqualTo("[foo]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [foo] ")).isEqualTo("[foo]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [ foo ] ")).isEqualTo("[ foo ]");
+
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[foo]"))
+        .containsExactly("[foo]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [foo] "))
+        .containsExactly("[foo]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [ foo ] "))
+        .containsExactly("[ foo ]");
+  }
+
+  @Test public void zeroOrMoreChars_literally_between_multipleMatches() {
+    Parser<String> parser = literally(word().orElse("")).between("[", "]");
+    assertThat(parser.parseSkipping(whitespace(), "[foofoo]")).isEqualTo("foofoo");
+    assertThat(parser.parseSkipping(whitespace(), " [foofoo] ")).isEqualTo("foofoo");
+    assertThat(parser.parseSkipping(whitespace(), "[ foofoo]")).isEqualTo("foofoo");
+    assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "[foo foo]"));
+    assertThat(parser.skipping(whitespace()).parseToStream("[foofoo]")).containsExactly("foofoo");
+    assertThat(parser.skipping(whitespace()).parseToStream(" [foofoo] ")).containsExactly("foofoo");
+    assertThat(parser.skipping(whitespace()).parseToStream("[ foofoo]")).containsExactly("foofoo");
+    assertThrows(
+        ParseException.class,
+        () -> parser.skipping(whitespace()).parseToStream("[foo foo]").toList());
+  }
+
+  @Test public void zeroOrMoreChars_literally_between_multipleMatches_source() {
+    Parser<String> parser = literally(word().orElse("")).between("[", "]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[foofoo]")).isEqualTo("[foofoo]");
+    assertThat(parser.source().parseSkipping(whitespace(), " [foofoo] ")).isEqualTo("[foofoo]");
+    assertThat(parser.source().parseSkipping(whitespace(), "[ foofoo]")).isEqualTo("[ foofoo]");
+    assertThrows(
+        ParseException.class, () -> parser.source().parseSkipping(whitespace(), "[foo foo]"));
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[foofoo]"))
+        .containsExactly("[foofoo]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" [foofoo] "))
+        .containsExactly("[foofoo]");
+    assertThat(parser.source().skipping(whitespace()).parseToStream("[ foofoo]"))
+        .containsExactly("[ foofoo]");
+    assertThrows(
+        ParseException.class,
+        () -> parser.source().skipping(whitespace()).parseToStream("[foo foo]").toList());
+  }
+
+  @Test public void notEmpty_twoOptionalParsers_firstOptionalParserFails() {
+    var numbers =
+        digits().orElse("").delimitedBy(",").followedBy(string(".").optional()).notEmpty();
+    assertThat(numbers.parse(".")).containsExactly("");
+  }
+
+  @Test public void notEmpty_twoOptionalParsers_firstOptionalParserFails_source() {
+    var numbers =
+        digits().orElse("").delimitedBy(",").followedBy(string(".").optional()).notEmpty();
+    assertThat(numbers.source().parse(".")).isEqualTo(".");
+  }
+
+  @Test public void notEmpty_twoOptionalParsers_secondOptionalParserFails() {
+    var numbers =
+        digits().orElse("").delimitedBy(",").followedBy(string(".").optional()).notEmpty();
+    assertThat(numbers.parse(",123,,")).containsExactly("", "123", "", "").inOrder();
+  }
+
+  @Test public void notEmpty_twoOptionalParsers_secondOptionalParserFails_source() {
+    var numbers =
+        digits().orElse("").delimitedBy(",").followedBy(string(".").optional()).notEmpty();
+    assertThat(numbers.source().parse(",123,,")).isEqualTo(",123,,");
+  }
+
+  @Test public void notEmpty_twoOptionalParsers_bothOptionalParsersMatch() {
+    var numbers =
+        digits().orElse("").delimitedBy(",").followedBy(string(".").optional()).notEmpty();
+    assertThat(numbers.parse(",123,,456.")).containsExactly("", "123", "", "456").inOrder();
+  }
+
+  @Test public void notEmpty_twoOptionalParsers_bothOptionalParsersMatch_source() {
+    var numbers =
+        digits().orElse("").delimitedBy(",").followedBy(string(".").optional()).notEmpty();
+    assertThat(numbers.source().parse(",123,,456.")).isEqualTo(",123,,456.");
+  }
+
+  @Test public void notEmpty_twoOptionalParsers_bothFail_firstErrorIsFarther() {
+    var numbers =
+        digits().orElse("").delimitedBy(",").followedBy(string(".").optional()).notEmpty();
+    ParseException thrown = assertThrows(ParseException.class, () -> numbers.parse("123,a."));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:5: expecting <EOF>, encountered:\s
+                123,a.
+                    ^
+            """);
+  }
+
+  @Test public void notEmpty_twoOptionalParsers_bothFail_secondErrorIsFarther() {
+    var numbers = digits().orElse("")
+        .delimitedBy(",")
+        .followedBy(string("abc,1").followedBy("!").optional())
+        .notEmpty();
+    ParseException thrown = assertThrows(ParseException.class, () -> numbers.parse("abc,1."));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:6: expecting <!>, encountered:\s
+                abc,1.
+                     ^
+            """);
+  }
+
+  @Test public void skipping_anyOfWithLiterally() {
+    assertThat(anyOf(string("foo"), literally(digits())).parseSkipping(whitespace(), " foo"))
+        .isEqualTo("foo");
+    assertThat(
+            anyOf(string("foo"), literally(digits())).skipping(whitespace()).parseToStream(" foo"))
+        .containsExactly("foo");
+    assertThat(anyOf(string("foo"), literally(digits())).parseSkipping(whitespace(), " 123"))
+        .isEqualTo("123");
+    assertThat(
+            anyOf(string("foo"), literally(digits()))
+                .skipping(whitespace())
+                .parseToStream(" 123")
+                .toList())
+        .containsExactly("123");
+  }
+
+  @Test public void skipping_anyOfWithLiterally_source() {
+    assertThat(
+            anyOf(string("foo"), literally(digits())).source().parseSkipping(whitespace(), " foo"))
+        .isEqualTo("foo");
+    assertThat(
+            anyOf(string("foo"), literally(digits()))
+                .source()
+                .skipping(whitespace())
+                .parseToStream(" foo"))
+        .containsExactly("foo");
+    assertThat(
+            anyOf(string("foo"), literally(digits())).source().parseSkipping(whitespace(), " 123"))
+        .isEqualTo("123");
+    assertThat(
+            anyOf(string("foo"), literally(digits()))
+                .source()
+                .skipping(whitespace())
+                .parseToStream(" 123")
+                .toList())
+        .containsExactly("123");
+  }
+
+  @Test public void skipping_anyOfWithoutLiterally() {
+    assertThat(anyOf(string("foo"), digits()).parseSkipping(whitespace(), " foo")).isEqualTo("foo");
+    assertThat(anyOf(string("foo"), digits()).skipping(whitespace()).parseToStream(" foo"))
+        .containsExactly("foo");
+    assertThat(anyOf(string("foo"), digits()).parseSkipping(whitespace(), " 123")).isEqualTo("123");
+    assertThat(anyOf(string("foo"), digits()).skipping(whitespace()).parseToStream(" 123"))
+        .containsExactly("123");
+  }
+
+  @Test public void skipping_anyOfWithoutLiterally_source() {
+    assertThat(anyOf(string("foo"), digits()).source().parseSkipping(whitespace(), " foo"))
+        .isEqualTo("foo");
+    assertThat(anyOf(string("foo"), digits()).source().skipping(whitespace()).parseToStream(" foo"))
+        .containsExactly("foo");
+    assertThat(anyOf(string("foo"), digits()).source().parseSkipping(whitespace(), " 123"))
+        .isEqualTo("123");
+    assertThat(anyOf(string("foo"), digits()).source().skipping(whitespace()).parseToStream(" 123"))
+        .containsExactly("123");
+  }
+
+  @Test public void skipping_propagatesThroughRuleParser() {
+    Parser<Integer> parser = simpleCalculator();
+    assertThat(parser.parseSkipping(whitespace(), " ( 2 ) + 3 ")).isEqualTo(5);
+    assertThat(parser.skipping(whitespace()).parseToStream(" ( 2 ) + 3 ")).containsExactly(5);
+    assertThat(parser.parseSkipping(whitespace(), " ( 2 + ( 3 + 4 ) ) ")).isEqualTo(9);
+    assertThat(parser.skipping(whitespace()).parseToStream(" ( 2 + ( 3 + 4 ) ) "))
+        .containsExactly(9);
+  }
+
+  @Test public void skipping_propagatesThroughRuleParser_source() {
+    Parser<Integer> parser = simpleCalculator();
+    assertThat(parser.source().parseSkipping(whitespace(), " ( 2 ) + 3 ")).isEqualTo("( 2 ) + 3");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" ( 2 ) + 3 "))
+        .containsExactly("( 2 ) + 3");
+    assertThat(parser.source().parseSkipping(whitespace(), " ( 2 + ( 3 + 4 ) ) "))
+        .isEqualTo("( 2 + ( 3 + 4 ) )");
+    assertThat(parser.source().skipping(whitespace()).parseToStream(" ( 2 + ( 3 + 4 ) ) "))
+        .containsExactly("( 2 + ( 3 + 4 ) )");
+  }
+
+  @Test public void recursiveGrammar() {
+    Parser<Integer> parser = simpleCalculator();
+    assertThat(parser.parse("1")).isEqualTo(1);
+    assertThat(parser.parseToStream("1")).containsExactly(1);
+    assertThat(parser.parse("(2)")).isEqualTo(2);
+    assertThat(parser.parseToStream("(2)")).containsExactly(2);
+    assertThat(parser.parse("(2)+3")).isEqualTo(5);
+    assertThat(parser.parseToStream("(2)+3")).containsExactly(5);
+    assertThat(parser.parse("(2)+3+(4)")).isEqualTo(9);
+    assertThat(parser.parseToStream("(2)+3+(4)")).containsExactly(9);
+    assertThat(parser.parse("(2+(3+4))")).isEqualTo(9);
+    assertThat(parser.parseToStream("(2+(3+4))")).containsExactly(9);
+  }
+
+  private static Parser<Integer> simpleCalculator() {
+    Parser.Rule<Integer> rule = new Parser.Rule<>();
+    Parser<Integer> num = Parser.one(DIGIT, "digit").map(c -> c - '0');
+    Parser<Integer> atomic = rule.between("(", ")").or(num);
+    Parser<Integer> expr =
+        atomic.atLeastOnceDelimitedBy("+").map(nums -> nums.stream().mapToInt(n -> n).sum());
+    return rule.definedAs(expr);
+  }
+
+  @Test public void recursiveGrammar_source() {
+    Parser<Integer> parser = simpleCalculator();
+    assertThat(parser.source().parse("1")).isEqualTo("1");
+    assertThat(parser.source().parseToStream("1")).containsExactly("1");
+    assertThat(parser.source().parse("(2)")).isEqualTo("(2)");
+    assertThat(parser.source().parseToStream("(2)")).containsExactly("(2)");
+    assertThat(parser.source().parse("(2)+3")).isEqualTo("(2)+3");
+    assertThat(parser.source().parseToStream("(2)+3")).containsExactly("(2)+3");
+    assertThat(parser.source().parse("(2)+3+(4)")).isEqualTo("(2)+3+(4)");
+    assertThat(parser.source().parseToStream("(2)+3+(4)")).containsExactly("(2)+3+(4)");
+    assertThat(parser.source().parse("(2+(3+4))")).isEqualTo("(2+(3+4))");
+    assertThat(parser.source().parseToStream("(2+(3+4))")).containsExactly("(2+(3+4))");
+  }
+
+  @Test public void rule_setTwice_throws() {
+    Parser.Rule<String> rule = new Parser.Rule<>();
+    rule.definedAs(string("a"));
+    assertThrows(IllegalStateException.class, () -> rule.definedAs(string("b")));
+  }
+
+  @Test public void rule_setNull_throws() {
+    Parser.Rule<String> rule = new Parser.Rule<>();
+    Parser<String> parser = null;
+    assertThrows(NullPointerException.class, () -> rule.definedAs(parser));
+  }
+
+  @Test public void rule_ruleParseBeforeDefined_throws() {
+    Parser.Rule<String> rule = new Parser.Rule<>();
+    assertThrows(IllegalStateException.class, () -> rule.parse("a"));
+    assertThrows(IllegalStateException.class, () -> rule.parseToStream("a").toList());
+  }
+
+  @Test public void rule_definedAsRule_throws() {
+    Parser.Rule<String> rule = new Parser.Rule<>();
+    Parser<String> actuallyRule = rule;
+    assertThrows(IllegalArgumentException.class, () -> rule.definedAs(actuallyRule));
+  }
+
+  @Test public void define_leftRecursive_throws() {
+    assertThrows(
+        IllegalStateException.class,
+        () -> Parser.<String>define(self -> string("/").orElse("").then(self)));
+  }
+
+  @Test public void rule_recursiveParser_parseCorrectly() {
+    var rule = new Parser.Rule<Integer>();
+    Parser<Integer> num = one("[0-9]").map(c -> c - '0');
+    Parser<Integer> atomic = rule.between("(", ")").or(num);
+    Parser<Integer> expr =
+        atomic.atLeastOnceDelimitedBy("+").map(nums -> nums.stream().mapToInt(n -> n).sum());
+    rule.definedAs(expr);
+
+    assertThat(rule.parse("1+2")).isEqualTo(3);
+    assertThat(rule.parse("(1+2)+3")).isEqualTo(6);
+    assertThat(rule.parse("((1+2)+3)+4")).isEqualTo(10);
+  }
+
+  @Test public void rule_recursionLimit_underLimitSucceeds() {
+    Parser.Rule<String> rule = new Parser.Rule<>(5);
+    Parser<String> parser = rule.between("(", ")").or(string("x"));
+    rule.definedAs(parser);
+
+    assertThat(rule.parse("((((x))))")).isEqualTo("x");
+  }
+
+  @Test public void rule_recursionLimit_exceededThrows() {
+    Parser.Rule<String> rule = new Parser.Rule<>(5);
+    Parser<String> parser = rule.between("(", ")").or(string("x"));
+    rule.definedAs(parser);
+
+    Parser.ParseException thrown =
+        assertThrows(Parser.ParseException.class, () -> rule.parse("(((((x)))))"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:6: max recursion depth (5) exceeded:
+                (((((x)))))
+                     ^
+            """);
+    assertThat(thrown.getSourceIndex()).isEqualTo(5);
+  }
+
+  @Test public void rule_defaultRecursionLimit_exceededThrows() {
+    Parser.Rule<String> rule = new Parser.Rule<>();
+    Parser<String> parser = rule.between("(", ")").or(string("x"));
+    rule.definedAs(parser);
+
+    String input = "(".repeat(101) + "x" + ")".repeat(101);
+    Parser.ParseException thrown =
+        assertThrows(Parser.ParseException.class, () -> rule.parse(input));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "at 1:101: max recursion depth (100) exceeded:\n"
+                + "    "
+                + "(".repeat(26)
+                + "x"
+                + ")".repeat(48)
+                + "\n"
+                + "    "
+                + " ".repeat(25)
+                + "^\n");
+    assertThat(thrown.getSourceIndex()).isEqualTo(100);
+  }
+
+  @Test public void rule_recursionLimitOfOne_allowsNoRecursionButExceedsOnFirstRecursion() {
+    Parser.Rule<String> rule = new Parser.Rule<>(1);
+    Parser<String> parser = rule.between("(", ")").or(string("x"));
+    rule.definedAs(parser);
+
+    // No recursion (depth 1) succeeds
+    assertThat(rule.parse("x")).isEqualTo("x");
+
+    // One level of recursion (depth 2) throws
+    Parser.ParseException thrown =
+        assertThrows(Parser.ParseException.class, () -> rule.parse("(x)"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:2: max recursion depth (1) exceeded:
+                (x)
+                 ^
+            """);
+    assertThat(thrown.getSourceIndex()).isEqualTo(1);
+  }
+
+  @Test public void rule_mutuallyRecursiveGrammar() {
+    Parser.Rule<String> expr = new Parser.Rule<>();
+    Parser.Rule<String> type = new Parser.Rule<>();
+
+    // expr = type | word
+    expr.definedAs(type.or(word()));
+
+    // type = id < expr, ... >
+    type.definedAs(
+        word().followedBy("<").then(expr.atLeastOnceDelimitedBy(",")).followedBy(">").source());
+
+    assertThat(expr.parse("Foo<Int,Bar<Double>>")).isEqualTo("Foo<Int,Bar<Double>>");
+    assertThat(expr.parse("Int")).isEqualTo("Int");
+  }
+
+  @Test public void rule_indirectLeftRecursion_throws() {
+    Parser.Rule<String> a = new Parser.Rule<>();
+    Parser.Rule<String> b = new Parser.Rule<>();
+
+    a.definedAs(b.or(word()));
+
+    // b = a | digits
+    // This should throw because validation of b will traverse into a, which then traverses back
+    // into b.
+    var e = assertThrows(IllegalStateException.class, () -> b.definedAs(a.or(digits())));
+    assertThat(e).hasMessageThat().contains("Left recursion not supported");
+  }
+
+  @Test public void rule_directLeftRecursion_throws() {
+    Parser.Rule<String> a = new Parser.Rule<>();
+    var e = assertThrows(IllegalStateException.class, () -> a.definedAs(a.or(word())));
+    assertThat(e).hasMessageThat().contains("Left recursion not supported");
+  }
+
+  @Test public void rule_tripleIndirectLeftRecursion_throws() {
+    Parser.Rule<String> a = new Parser.Rule<>();
+    Parser.Rule<String> b = new Parser.Rule<>();
+    Parser.Rule<String> c = new Parser.Rule<>();
+
+    a.definedAs(b.or(word()));
+    b.definedAs(c.or(digits()));
+
+    var e = assertThrows(IllegalStateException.class, () -> c.definedAs(a.or(word())));
+    assertThat(e).hasMessageThat().contains("Left recursion not supported");
+  }
+
+  @Test public void parseToStream_success() {
+    Parser<Character> parser = one(DIGIT, "digit");
+    assertThat(parser.parseToStream("123")).containsExactly('1', '2', '3').inOrder();
+    assertThat(parser.parseToStream("").toList()).isEmpty();
+  }
+
+  @Test public void parseToStream_reader_success() {
+    Parser<Character> parser = one(DIGIT, "digit");
+    assertThat(parser.parseToStream(new StringReader("123")))
+        .containsExactly('1', '2', '3')
+        .inOrder();
+    assertThat(parser.parseToStream(new StringReader("")).toList()).isEmpty();
+  }
+
+  @Test public void parseToStream_withCompactingReader() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    assertThat(one(DIGIT, "digit").parseToStream(input, 0))
+        .containsExactly('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
+        .inOrder();
+  }
+
+  @Test public void parseToStream_withCompactingReader_fails() {
+    CharInput input = CharInput.from(new StringReader("01 \n234 \n567 \n89 x"), 4, 3);
+    ParseException e = assertThrows(
+        ParseException.class,
+        () -> digits().skipping(whitespace()).parseToStream(input, 0).count());
+    assertThat(e).hasMessageThat().isEqualTo("at 17: expecting <digits>, encountered: [x]");
+  }
+
+  @Test public void parseToStream_success_source() {
+    Parser<Character> parser = one(DIGIT, "digit");
+    assertThat(parser.source().parseToStream("123")).containsExactly("1", "2", "3").inOrder();
+  }
+
+  @Test public void parseToStream_emptyInput() {
+    Parser<Character> parser = one(DIGIT, "digit");
+    assertThat(parser.parseToStream("").toList()).isEmpty();
+  }
+
+  @Test public void parseToStream_fromIndex() {
+    assertThat(digits().skipping(string(",")).parseToStream("1,2,3,4", 2))
+        .containsExactly("2", "3", "4");
+    assertThat(digits().source().skipping(string(",")).parseToStream("1,2,3,4", 2))
+        .containsExactly("2", "3", "4");
+  }
+
+  @Test public void parseToStream_fromIndex_atEnd() {
+    assertThat(digits().parseToStream("123", 3)).isEmpty();
+    assertThat(digits().skipping(whitespace()).parseToStream("123  ", 3)).isEmpty();
+  }
+
+  @Test public void parseToStream_fromIndex_outOfBounds() {
+    assertThrows(IndexOutOfBoundsException.class, () -> digits().parseToStream("123", 4));
+    assertThrows(
+        IndexOutOfBoundsException.class,
+        () -> digits().skipping(whitespace()).parseToStream("123 ", 5));
+  }
+
+  @Test public void parseToStream_reader_emptyInput() {
+    Parser<Character> parser = one(DIGIT, "digit");
+    assertThat(parser.parseToStream(new StringReader("")).toList()).isEmpty();
+  }
+
+  @Test public void parseToStream_fail() {
+    Parser<Character> parser = one(DIGIT, "digit");
+    assertThrows(ParseException.class, () -> parser.parseToStream("1a2").toList());
+  }
+
+  @Test public void parseToStream_reader_fail() {
+    Parser<Character> parser = one(DIGIT, "digit");
+    assertThrows(
+        ParseException.class, () -> parser.parseToStream(new StringReader("1a2")).toList());
+  }
+
+  @Test public void probe_emptyInput_returnsEmpty() {
+    assertThat(string("foo").probe("")).isEmpty();
+  }
+
+  @Test public void probe_singleMatch_returnsValue() {
+    assertThat(string("foo").probe("foo")).containsExactly("foo");
+  }
+
+  @Test public void probe_singleMatch_returnsValue_source() {
+    assertThat(string("foo").source().probe("foo")).containsExactly("foo");
+  }
+
+  @Test public void probe_multipleMatches_returnsValue() {
+    assertThat(string("foo").probe("foofoo")).containsExactly("foo", "foo");
+  }
+
+  @Test public void probe_reader_singleMatch_returnsValue() {
+    assertThat(string("foo").probe(new StringReader("foo"))).containsExactly("foo");
+  }
+
+  @Test public void probe_reader_multipleMatches_returnsValue() {
+    assertThat(string("foo").probe(new StringReader("foofoo"))).containsExactly("foo", "foo");
+  }
+
+  @Test public void probe_withCompactingReader() {
+    CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
+    assertThat(one(DIGIT, "digit").probe(input, 0))
+        .containsExactly('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
+        .inOrder();
+  }
+
+  @Test public void probe_multipleMatches_returnsValue_source() {
+    assertThat(string("foo").source().probe("foofoo")).containsExactly("foo", "foo");
+  }
+
+  @Test public void probe_fromIndex() {
+    assertThat(digits().skipping(string(",")).probe("1,2,3,4", 2)).containsExactly("2", "3", "4");
+    assertThat(digits().source().skipping(string(",")).probe("1,2,3,4", 2))
+        .containsExactly("2", "3", "4");
+  }
+
+  @Test public void probe_fromIndex_atEnd() {
+    assertThat(digits().probe("123", 3)).isEmpty();
+    assertThat(digits().skipping(whitespace()).probe("123  ", 3)).isEmpty();
+  }
+
+  @Test public void probe_fromIndex_outOfBounds() {
+    assertThrows(IndexOutOfBoundsException.class, () -> digits().probe("123", 4));
+    assertThrows(
+        IndexOutOfBoundsException.class, () -> digits().skipping(whitespace()).probe("123 ", 5));
+  }
+
+  @Test public void probe_prefixMatch_returnsValue() {
+    assertThat(string("foo").probe("foobar")).containsExactly("foo");
+  }
+
+  @Test public void probe_reader_prefixMatch_returnsValue() {
+    assertThat(string("foo").probe(new StringReader("foobar"))).containsExactly("foo");
+  }
+
+  @Test public void probe_prefixMatch_returnsValue_source() {
+    assertThat(string("foo").source().probe("foobar")).containsExactly("foo");
+  }
+
+  @Test public void probe_noMatch_returnsEmpty() {
+    assertThat(string("foo").probe("bar")).isEmpty();
+  }
+
+  @Test public void probe_reader_noMatch_returnsEmpty() {
+    assertThat(string("foo").probe(new StringReader("bar"))).isEmpty();
+  }
+
+  @Test public void probe_noMatch_returnsEmpty_source() {
+    assertThat(string("foo").source().probe("bar")).isEmpty();
+  }
+
+  @Test public void isPrefixOf_matchesPrefix() {
+    assertThat(Parser.string("a").isPrefixOf("a")).isTrue();
+    assertThat(Parser.string("a").isPrefixOf("ab")).isTrue();
+    assertThat(Parser.string("b").isPrefixOf("ab")).isFalse();
+    assertThat(Parser.string("a").isPrefixOf("")).isFalse();
+  }
+
+  @Test public void isPrefixOf_emptyString() {
+    assertThat(Parser.string("a").isPrefixOf("")).isFalse();
+  }
+
+  @Test public void isPrefixOf_exactMatch() {
+    assertThat(Parser.string("abc").isPrefixOf("abc")).isTrue();
+  }
+
+  @Test public void isPrefixOf_notAPrefix() {
+    assertThat(Parser.string("abc").isPrefixOf("ab")).isFalse();
+  }
+
+  @Test public void skipping_probeCharPredicate_emptyInput_returnsEmpty() {
+    assertThat(string("foo").skipping(whitespace()).probe(" ")).isEmpty();
+  }
+
+  @Test public void skipping_probeReader_emptyInput_returnsEmpty() {
+    assertThat(string("foo").skipping(whitespace()).probe(new StringReader(" "))).isEmpty();
+  }
+
+  @Test public void skipping_probeCharPredicate_emptyInput_returnsEmpty_source() {
+    assertThat(string("foo").source().skipping(whitespace()).probe(" ")).isEmpty();
+  }
+
+  @Test public void skipping_probeCharPredicate_singleMatch_returnsValue() {
+    assertThat(string("foo").skipping(whitespace()).probe(" foo ")).containsExactly("foo");
+  }
+
+  @Test public void skipping_probeReader_singleMatch_returnsValue() {
+    assertThat(string("foo").skipping(whitespace()).probe(new StringReader(" foo ")))
+        .containsExactly("foo");
+  }
+
+  @Test public void skipping_probeCharPredicate_singleMatch_returnsValue_source() {
+    assertThat(string("foo").source().skipping(whitespace()).probe(" foo ")).containsExactly("foo");
+  }
+
+  @Test public void skipping_probeCharPredicate_multipleMatches_returnsValues() {
+    assertThat(digits().skipping(whitespace()).probe(" 123  456 "))
+        .containsExactly("123", "456")
+        .inOrder();
+  }
+
+  @Test public void skipping_probeReader_multipleMatches_returnsValues() {
+    assertThat(digits().skipping(whitespace()).probe(new StringReader(" 123  456 ")))
+        .containsExactly("123", "456")
+        .inOrder();
+  }
+
+  @Test public void skipping_probeCharPredicate_multipleMatches_returnsValues_source() {
+    assertThat(digits().source().skipping(whitespace()).probe(" 123  456 "))
+        .containsExactly("123", "456")
+        .inOrder();
+  }
+
+  @Test public void skipping_probeCharPredicate_prefixMatchWithSkipping_returnsValue() {
+    assertThat(string("foo").skipping(whitespace()).probe(" foobar ")).containsExactly("foo");
+  }
+
+  @Test public void skipping_probeReader_prefixMatchWithSkipping_returnsValue() {
+    assertThat(string("foo").skipping(whitespace()).probe(new StringReader(" foobar ")))
+        .containsExactly("foo");
+  }
+
+  @Test public void skipping_probeCharPredicate_prefixMatchWithSkipping_returnsValue_source() {
+    assertThat(string("foo").source().skipping(whitespace()).probe(" foobar "))
+        .containsExactly("foo");
+  }
+
+  @Test public void skipping_probeCharPredicate_noMatch_returnsEmpty() {
+    assertThat(string("foo").skipping(whitespace()).probe("bar")).isEmpty();
+  }
+
+  @Test public void skipping_probeReader_noMatch_returnsEmpty() {
+    assertThat(string("foo").skipping(whitespace()).probe(new StringReader("bar"))).isEmpty();
+  }
+
+  @Test public void skipping_probeCharPredicate_noMatch_returnsEmpty_source() {
+    assertThat(string("foo").source().skipping(whitespace()).probe("bar")).isEmpty();
+  }
+
+  @Test public void skipping_probeParser_singleMatch_returnsValue() {
+    assertThat(string("foo").skipping(consecutive(whitespace(), "skip")).probe(" \n foo "))
+        .containsExactly("foo");
+  }
+
+  @Test public void skipping_probeParser_singleMatch_returnsValue_source() {
+    assertThat(string("foo").source().skipping(consecutive(whitespace(), "skip")).probe(" \n foo "))
+        .containsExactly("foo");
+  }
+
+  @Test public void skipping_probeParser_multipleMatches() {
+    assertThat(word().skipping(consecutive(whitespace(), "skip")).probe(" \n foo 123"))
+        .containsExactly("foo", "123")
+        .inOrder();
+  }
+
+  @Test public void skipping_probeParser_multipleMatches_source() {
+    assertThat(word().source().skipping(consecutive(whitespace(), "skip")).probe(" \n foo 123"))
+        .containsExactly("foo", "123")
+        .inOrder();
+  }
+
+  @Test public void skipping_probeParser_prefixMatchWithSkipping_returnsValue() {
+    assertThat(string("foo").skipping(consecutive(whitespace(), "skip")).probe(" foobar "))
+        .containsExactly("foo");
+  }
+
+  @Test public void skipping_probeParser_prefixMatchWithSkipping_returnsValue_source() {
+    assertThat(string("foo").source().skipping(consecutive(whitespace(), "skip")).probe(" foobar "))
+        .containsExactly("foo");
+  }
+
+  @Test public void skipping_probeParser_noMatch_returnsEmpty() {
+    assertThat(string("foo").skipping(consecutive(whitespace(), "skip")).probe("bar")).isEmpty();
+  }
+
+  @Test public void skipping_probeParser_noMatch_returnsEmpty_source() {
+    assertThat(string("foo").source().skipping(consecutive(whitespace(), "skip")).probe("bar"))
+        .isEmpty();
+  }
+
+  @Test public void parse_fromIndex_negative_throws() {
+    Parser<String> parser = string("foo");
+    IndexOutOfBoundsException e =
+        assertThrows(IndexOutOfBoundsException.class, () -> parser.parse("foo", -1));
+    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0..3]");
+  }
+
+  @Test public void parse_fromIndex_negative_skipping_throws() {
+    Parser<String>.Lexical lexical = string("foo").skipping(whitespace());
+    IndexOutOfBoundsException e =
+        assertThrows(IndexOutOfBoundsException.class, () -> lexical.parse("foo", -1));
+    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0..3]");
+  }
+
+  @Test public void parseToStream_fromIndex_negative_throws() {
+    Parser<String> parser = string("foo");
+    IndexOutOfBoundsException e =
+        assertThrows(IndexOutOfBoundsException.class, () -> parser.parseToStream("foo", -1));
+    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0..3]");
+  }
+
+  @Test public void parseToStream_fromIndex_negative_skipping_throws() {
+    Parser<String>.Lexical lexical = string("foo").skipping(whitespace());
+    IndexOutOfBoundsException e =
+        assertThrows(IndexOutOfBoundsException.class, () -> lexical.parseToStream("foo", -1));
+    assertThat(e).hasMessageThat().contains("fromIndex (-1)");
+  }
+
+  @Test public void probe_fromIndex_negative_throws() {
+    Parser<String> parser = string("foo");
+    IndexOutOfBoundsException e =
+        assertThrows(IndexOutOfBoundsException.class, () -> parser.probe("foo", -1));
+    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0..3]");
+  }
+
+  @Test public void probe_fromIndex_negative_skipping_throws() {
+    Parser<String>.Lexical lexical = string("foo").skipping(whitespace());
+    IndexOutOfBoundsException e =
+        assertThrows(IndexOutOfBoundsException.class, () -> lexical.probe("foo", -1));
+    assertThat(e).hasMessageThat().isEqualTo("fromIndex (-1) must be in range of [0..3]");
+  }
+
+  @Test public void testNestedPlaceholderGrammar() {
+    assertThat(Format.parse("a{b=xy{foo=bar}z}d{e=f}{{not a placeholder}}"))
+        .isEqualTo(
+            new Format(
+                "a{b}d{e}{not a placeholder}",
+                List.of(
+                    new Format.Placeholder(
+                        "b",
+                        new Format(
+                            "xy{foo}z",
+                            List.of(new Format.Placeholder("foo", new Format("bar", List.of()))))),
+                    new Format.Placeholder("e", new Format("f", List.of())))));
+  }
+
+  @Test public void testNestedPlaceholderGrammar_source() {
+    String input = "a{b=xy{foo=bar}z}d{e=f}{{not a placeholder}}";
+    assertThat(Format.parser().source().parse(input)).isEqualTo(input);
+  }
+
+  /** An example nested placeholder grammar for demo purpose. */
+  private record Format(String template, List<Placeholder> placeholders) {
+
+    record Placeholder(String name, Format format) {}
+
+    static class Builder {
+      private final ImmutableList.Builder<Placeholder> placeholders = ImmutableList.builder();
+      private final StringBuilder template = new StringBuilder();
+
+      @CanIgnoreReturnValue
+      Builder append(String text) {
+        template.append(text);
+        return this;
+      }
+
+      @CanIgnoreReturnValue
+      Builder append(Placeholder placeholder) {
+        template.append("{").append(placeholder.name()).append("}");
+        placeholders.add(placeholder);
+        return this;
+      }
+
+      @CanIgnoreReturnValue
+      Builder addAll(Builder that) {
+        template.append(that.template);
+        placeholders.addAll(that.placeholders.build());
+        return this;
+      }
+
+      Format build() {
+        return new Format(template.toString(), placeholders.build());
+      }
+    }
+
+    static Parser<Format> parser() {
+      Parser.Rule<Format> rule = new Parser.Rule<>();
+      Parser<String> placeholderName = consecutive("[a-z]");
+      Parser<Placeholder> placeholder = Parser.sequence(
+              placeholderName.followedBy("="), rule, Placeholder::new)
+          .between("{", "}");
+      Parser<Format> parser = anyOf(
+              placeholder, Parser.string("{{").thenReturn("{"), // escape {
+              Parser.string("}}").thenReturn("}"), // escape }
+              Parser.consecutive(noneOf("{}"), "literal text"))
+          .atLeastOnce(
+              Collector.of(
+                  Format.Builder::new,
+                  (Format.Builder b, Object v) -> {
+                    if (v instanceof Placeholder p) {
+                      b.append(p);
+                    } else {
+                      b.append((String) v);
+                    }
+                  },
+                  Format.Builder::addAll,
+                  Format.Builder::build));
+      return rule.definedAs(parser);
+    }
+
+    static Format parse(String format) {
+      return parser().parse(format);
+    }
+  }
+
+  /** An example resource name pattern for demo purpose. */
+  record ResourceNamePattern(List<PathElement> path, String revision) {
+    ResourceNamePattern(List<PathElement> path) {
+      this(path, null);
+    }
+
+    ResourceNamePattern withRevision(String revision) {
+      return new ResourceNamePattern(path, revision);
+    }
+
+    static Parser<ResourceNamePattern> parser() {
+      Parser<String> name = Parser.word();
+      Parser<String> revision = string("@").then(name);
+      Parser<PathElement.Subpath> subpath = Parser.sequence(
+              name.followedBy("="),
+              Parser.<PathElement>anyOf(
+                      name.map(PathElement.Literal::new),
+                      string("**").thenReturn(new PathElement.SubpathWildcard()),
+                      string("*").thenReturn(new PathElement.PathElementWildcard()))
+                  .atLeastOnceDelimitedBy("/")
+                  .map(ResourceNamePattern::new),
+              PathElement.Subpath::new)
+          .between("{", "}");
+      return Parser.<PathElement>anyOf(
+              name.map(PathElement.Literal::new),
+              name.between("{", "}").map(PathElement.Placeholder::new), subpath)
+          .atLeastOnceDelimitedBy("/")
+          .map(ResourceNamePattern::new)
+          .optionallyFollowedBy(revision, ResourceNamePattern::withRevision);
+    }
+
+    static ResourceNamePattern parse(String path) {
+      return parser().parse(path);
+    }
+  }
+
+  private sealed interface PathElement
+      permits PathElement.Literal,
+          PathElement.Placeholder,
+          PathElement.Subpath,
+          PathElement.PathElementWildcard,
+          PathElement.SubpathWildcard {
+    record Literal(String value) implements PathElement {}
+
+    record Placeholder(String name) implements PathElement {}
+
+    record Subpath(String name, ResourceNamePattern pattern) implements PathElement {}
+
+    record PathElementWildcard() implements PathElement {}
+
+    record SubpathWildcard() implements PathElement {}
+  }
+
+  @Test public void resourceNamePattern_noPlaceholder() {
+    assertThat(ResourceNamePattern.parse("users"))
+        .isEqualTo(new ResourceNamePattern(List.of(new PathElement.Literal("users"))));
+    assertThat(ResourceNamePattern.parser().matches("users")).isTrue();
+  }
+
+  @Test public void resourceNamePattern_noPlaceholder_source() {
+    String input = "users";
+    assertThat(ResourceNamePattern.parser().source().parse(input)).isEqualTo(input);
+    assertThat(ResourceNamePattern.parser().source().matches(input)).isTrue();
+  }
+
+  @Test public void resourceNamePattern_withSimplePlaceholder() {
+    assertThat(ResourceNamePattern.parse("users/{userId}/messages/{messageId}"))
+        .isEqualTo(
+            new ResourceNamePattern(
+                List.of(
+                    new PathElement.Literal("users"), new PathElement.Placeholder("userId"),
+                    new PathElement.Literal("messages"),
+                    new PathElement.Placeholder("messageId"))));
+    assertThat(ResourceNamePattern.parser().matches("users/{userId}/messages/{messageId}"))
+        .isTrue();
+  }
+
+  @Test public void resourceNamePattern_withSimplePlaceholder_source() {
+    String input = "users/{userId}/messages/{messageId}";
+    assertThat(ResourceNamePattern.parser().source().parse(input)).isEqualTo(input);
+    assertThat(ResourceNamePattern.parser().source().matches(input)).isTrue();
+  }
+
+  @Test public void resourceNamePattern_withSubpathPlaceholder() {
+    assertThat(ResourceNamePattern.parse("v1/{name=projects/*/locations/*}/messages"))
+        .isEqualTo(
+            new ResourceNamePattern(
+                List.of(
+                    new PathElement.Literal("v1"),
+                    new PathElement.Subpath(
+                        "name",
+                        new ResourceNamePattern(
+                            List.of(
+                                new PathElement.Literal("projects"),
+                                new PathElement.PathElementWildcard(),
+                                new PathElement.Literal("locations"),
+                                new PathElement.PathElementWildcard()))),
+                    new PathElement.Literal("messages"))));
+    assertThat(ResourceNamePattern.parser().matches("v1/{name=projects/*/locations/*}/messages"))
+        .isTrue();
+  }
+
+  @Test public void resourceNamePattern_withSubpathPlaceholder_source() {
+    String input = "v1/{name=projects/*/locations/*}/messages";
+    assertThat(ResourceNamePattern.parser().source().parse(input)).isEqualTo(input);
+    assertThat(ResourceNamePattern.parser().source().matches(input)).isTrue();
+  }
+
+  @Test public void resourceNamePattern_withSubpathWildcard() {
+    assertThat(ResourceNamePattern.parse("v1/{name=projects/**}/messages"))
+        .isEqualTo(
+            new ResourceNamePattern(
+                List.of(
+                    new PathElement.Literal("v1"),
+                    new PathElement.Subpath(
+                        "name",
+                        new ResourceNamePattern(
+                            List.of(
+                                new PathElement.Literal("projects"),
+                                new PathElement.SubpathWildcard()))),
+                    new PathElement.Literal("messages"))));
+    assertThat(ResourceNamePattern.parser().matches("v1/{name=projects/**}/messages")).isTrue();
+  }
+
+  @Test public void resourceNamePattern_withSubpathWildcard_source() {
+    String input = "v1/{name=projects/**}/messages";
+    assertThat(ResourceNamePattern.parser().source().parse(input)).isEqualTo(input);
+    assertThat(ResourceNamePattern.parser().source().matches(input)).isTrue();
+  }
+
+  @Test public void consecutive_pruning() {
+    assertThat(consecutive("[abc]").getPrefixes()).containsExactly("a", "b", "c");
+    assertThat(consecutive("[a-c]").getPrefixes()).containsExactly("a", "b", "c");
+
+    Parser<String> parser = anyOf(
+        string("x1"), string("x2"), string("x3"), string("x4"), string("x5"), consecutive("[abc]"),
+        chars(4));
+
+    // Input "z" should prune all except chars(4).
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [one or more [abc], x1, x2, x3, x4, x5, 4 char(s)]>");
+    assertThat(parser.parse("a")).isEqualTo("a");
+  }
+
+  @Test public void zeroOrMore_pruning() {
+    assertThat(zeroOrMore("[abc]").notEmpty().getPrefixes()).containsExactly("a", "b", "c");
+    assertThat(zeroOrMore("[a-c]").notEmpty().getPrefixes()).containsExactly("a", "b", "c");
+
+    Parser<String> parser = anyOf(
+        string("x1"), string("x2"), string("x3"), string("x4"), string("x5"),
+        zeroOrMore("[abc]").notEmpty(), chars(4));
+
+    // Input "z" should prune all except chars(4).
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [x1, x2, x3, x4, x5, zero or more [abc], 4 char(s)]>");
+    assertThat(parser.parse("a")).isEqualTo("a");
+  }
+
+  @Test public void word_pruning() {
+    assertThat(word().getPrefixes())
+        .containsExactly(
+            "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q",
+            "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H",
+            "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y",
+            "Z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "_");
+
+    Parser<String> parser = anyOf(
+        string("x1"), string("x2"), string("x3"), string("x4"), string("x5"), word(), chars(4));
+
+    // Input "!" should prune all except chars(4).
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("!"));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [word, x1, x2, x3, x4, x5, 4 char(s)]>");
+    assertThat(parser.parse("a")).isEqualTo("a");
+  }
+
+  @Test public void digits_pruning() {
+    assertThat(digits().getPrefixes())
+        .containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+
+    Parser<String> parser = anyOf(
+        string("x1"), string("x2"), string("x3"), string("x4"), string("x5"), digits(), chars(4));
+
+    // Input "a" should prune all except chars(4).
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [digits, x1, x2, x3, x4, x5, 4 char(s)]>");
+    assertThat(parser.parse("1")).isEqualTo("1");
+  }
+
+  @Test public void word_getPrefixes_containsAlphabetAndNumbers() {
+    assertThat(word().getPrefixes())
+        .containsAtLeastElementsIn(
+            range('a', 'z' + 1).mapToObj(c -> String.valueOf((char) c)).collect(toList()));
+    assertThat(word().getPrefixes())
+        .containsAtLeastElementsIn(
+            range('A', 'Z' + 1).mapToObj(c -> String.valueOf((char) c)).collect(toList()));
+    assertThat(word().getPrefixes())
+        .containsAtLeastElementsIn(
+            range('0', '9' + 1).mapToObj(c -> String.valueOf((char) c)).collect(toList()));
+    assertThat(word().getPrefixes()).contains("_");
+  }
+
+  @Test public void digits_getPrefixes_containsTenDigits() {
+    assertThat(digits().getPrefixes())
+        .containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+  }
+
+  @Test public void consecutive_negative_pruning() {
+    // Negated class returns empty prefix, making it non-prunable.
+    assertThat(consecutive("[^abc]").getPrefixes()).containsExactly("");
+
+    Parser<String> parser = anyOf(
+        string("x1"), string("x2"), string("x3"), string("x4"), string("x5"), string("abc"),
+        consecutive("[^abc]"));
+
+    assertThat(parser.parse("d")).isEqualTo("d");
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+
+    // Input "abz" prunes x1-x5. abc and [^abc] are tried.
+    // abc matches "ab", fails at index 2 (expects 'c', got 'z').
+    // [^abc] fails at index 0 (expects [^abc], got 'a').
+    // abc matches farther, thus its error is reported.
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("abz"));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [abc, one or more [^abc], x1, x2, x3, x4, x5]>");
+  }
+
+  @Test public void consecutive_with_caret_pruning() {
+    assertThat(consecutive("[ab^c]").getPrefixes()).containsExactly("a", "b", "^", "c");
+
+    Parser<String> parser = anyOf(
+        string("x1"), string("x2"), string("x3"), string("x4"), string("x5"), consecutive("[ab^c]"),
+        chars(4));
+
+    // Input "z" should prune all except chars(4).
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [one or more [ab^c], x1, x2, x3, x4, x5, 4 char(s)]>");
+    assertThat(parser.parse("^")).isEqualTo("^");
+  }
+
+  @Test public void consecutive_identical_range_pruning() {
+    assertThat(consecutive("[a-a]").getPrefixes()).containsExactly("a");
+
+    Parser<String> parser = anyOf(
+        string("x1"), string("x2"), string("x3"), string("x4"), string("x5"), consecutive("[a-a]"),
+        chars(4));
+
+    // Input "z" should prune all except chars(4).
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [one or more [a-a], x1, x2, x3, x4, x5, 4 char(s)]>");
+    assertThat(parser.parse("a")).isEqualTo("a");
+  }
+
+  @Test public void one_pruning() {
+    assertThat(one("[abc]").getPrefixes()).containsExactly("a", "b", "c");
+    assertThat(one("[a-c]").getPrefixes()).containsExactly("a", "b", "c");
+
+    Parser<String> parser = anyOf(
+        string("x1"), string("x2"), string("x3"), string("x4"), string("x5"), one("[abc]").source(),
+        chars(4));
+
+    // Input "z" should prune all except chars(4).
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("z"));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [x1, x2, x3, x4, x5, 4 char(s), [abc]]>");
+    assertThat(parser.parse("a")).isEqualTo("a");
+  }
+
+  @Test public void one_negative_pruning() {
+    // Negated class returns empty prefix, making it non-prunable.
+    assertThat(one("[^abc]").getPrefixes()).containsExactly("");
+
+    Parser<Object> parser = anyOf(
+        string("x1"), string("x2"), string("x3"), string("x4"), string("x5"), string("abc"),
+        one("[^abc]"));
+
+    assertThat(parser.parse("d")).isEqualTo('d');
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+
+    // Input "abz" prunes x1-x5. abc and [^abc] are tried.
+    // abc matches "ab", fails at index 2 (expects 'c', got 'z').
+    // [^abc] fails at index 0 (expects [^abc], got 'a').
+    // abc matches farther, thus its error is reported.
+    ParseException e = assertThrows(ParseException.class, () -> parser.parse("abz"));
+    assertThat(e).hasMessageThat().contains("expecting <one of [abc, x1, x2, x3, x4, x5, [^abc]]>");
+  }
+
+  @Test public void anyOfEnum_success() {
+    Parser<IntOperator> parser = Parser.anyOf(IntOperator.values());
+    assertThat(parser.parse("+")).isEqualTo(IntOperator.PLUS);
+    assertThat(parser.parse("-")).isEqualTo(IntOperator.MINUS);
+    assertThat(parser.parse("++")).isEqualTo(IntOperator.INCREMENT);
+    assertThat(parser.parse("--")).isEqualTo(IntOperator.DECREMENT);
+  }
+
+  @Test public void anyOfEnum_failure() {
+    Parser<IntOperator> parser = Parser.anyOf(IntOperator.values());
+    assertThrows(ParseException.class, () -> parser.parse("="));
+  }
+
+  @Test public void anyOfEnum_pruning() {
+    Parser<IntOperator> parser = Parser.anyOf(IntOperator.values());
+    assertThat(parser.getPrefixes()).containsExactly("+", "-", "*", "/");
+
+    Parser<Object> anyOfParser = anyOf(string("x1"), parser, chars(4));
+
+    // Input "+" should match Operator.PLUS.
+    assertThat(anyOfParser.parse("+")).isEqualTo(IntOperator.PLUS);
+
+    // Input "z" should prune x1 and parser. Only chars(4) tried.
+    ParseException e = assertThrows(ParseException.class, () -> anyOfParser.parse("z"));
+    assertThat(e)
+        .hasMessageThat()
+        .contains("expecting <one of [x1, 4 char(s), *, +, ++, -, --, /]>");
+  }
+
+  @Test public void anyOfEnum_shuffled_success() {
+    // Specifically shuffle them so that we have ++ before + but -- after -
+    Parser<IntOperator> parser = Parser.anyOf(
+        IntOperator.INCREMENT, IntOperator.PLUS, IntOperator.DIVIDE, IntOperator.MINUS,
+        IntOperator.DECREMENT, IntOperator.MULTIPLY);
+    assertThat(parser.parse("++")).isEqualTo(IntOperator.INCREMENT);
+    assertThat(parser.parse("+")).isEqualTo(IntOperator.PLUS);
+    assertThat(parser.parse("--")).isEqualTo(IntOperator.DECREMENT);
+    assertThat(parser.parse("-")).isEqualTo(IntOperator.MINUS);
+    assertThat(parser.parse("*")).isEqualTo(IntOperator.MULTIPLY);
+    assertThat(parser.parse("/")).isEqualTo(IntOperator.DIVIDE);
+  }
+
+  @Test public void anyOfEnum_duplicate_failure() {
+    assertThrows(
+        IllegalArgumentException.class, () -> Parser.anyOf(IntOperator.PLUS, IntOperator.PLUS));
+  }
+
+  @Test public void anyOfEnum_empty_failure() {
+    assertThrows(IllegalArgumentException.class, () -> Parser.anyOf(new IntOperator[0]));
+  }
+
+  @Test public void anyOfEnum_nullValue_failure() {
+    assertThrows(
+        NullPointerException.class, () -> Parser.anyOf(IntOperator.PLUS, (IntOperator) null));
+  }
+
+  @Test public void anyOfEnum_emptyString_failure() {
+    assertThrows(IllegalArgumentException.class, () -> Parser.anyOf(EmptyStringEnum.EMPTY));
+  }
+
+  @Test public void anyOfEnum_anyEmptyString_failure() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Parser.anyOf(IntOperator.PLUS, EmptyStringEnum.EMPTY));
+  }
+
+  @Test public void anyOfEnum_oneElement_success() {
+    Parser<IntOperator> parser = Parser.anyOf(IntOperator.PLUS);
+    assertThat(parser.parse("+")).isEqualTo(IntOperator.PLUS);
+    assertThrows(ParseException.class, () -> parser.parse("-"));
+    assertThat(parser.getPrefixes()).containsExactly("+");
+  }
+
+  private enum IntOperator {
+    PLUS("+"),
+    MINUS("-"),
+    MULTIPLY("*"),
+    DIVIDE("/"),
+    INCREMENT("++"),
+    DECREMENT("--"),
+    ;
+
+    private final String s;
+
+    IntOperator(String s) {
+      this.s = s;
+    }
+
+    @Override public String toString() {
+      return s;
+    }
+  }
+
+  private enum EmptyStringEnum {
+    EMPTY("");
+
+    private final String s;
+
+    EmptyStringEnum(String s) {
+      this.s = s;
+    }
+
+    @Override public String toString() {
+      return s;
+    }
+  }
+
+  @SuppressWarnings("CharacterSetLiteralCheck")
+  private static Parser<Character> one(String characterClass) {
+    return Parser.one(characterClass);
+  }
+
+  private static Parser<Character> one(char c) {
+    return Parser.one(c);
+  }
+
+  private static Parser<Character> one(CharPredicate c, String name) {
+    return Parser.one(c, name);
+  }
+
+  @SuppressWarnings("CharacterSetLiteralCheck")
+  private static Parser<String> consecutive(String characterClass) {
+    return Parser.consecutive(characterClass);
+  }
+
+  private static Parser<String> consecutive(CharPredicate predicate, String name) {
+    return Parser.consecutive(predicate, name);
+  }
+
+  @SuppressWarnings("CharacterSetLiteralCheck")
+  private static Parser<String>.OrEmpty zeroOrMore(String characterClass) {
+    return Parser.zeroOrMore(characterClass);
+  }
+
+  private static Parser<String>.OrEmpty zeroOrMore(CharPredicate predicate, String name) {
+    return Parser.zeroOrMore(predicate, name);
+  }
+
+  private static CharPredicate whitespace() {
+    return Character::isWhitespace;
+  }
+
+  @Test public void ignoreReturn_then_parser() {
+    Parser<String> parser = string("a").then(string("b")).thenReturn("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+  }
+
+  @Test public void ignoreReturn_then_orEmpty() {
+    Parser<String> parser = string("a").then(string("b").orElse("")).thenReturn("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+  }
+
+  @Test public void ignoreReturn_followedBy_parser() {
+    Parser<String> parser = string("a").followedBy(string("b")).thenReturn("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+  }
+
+  @Test public void ignoreReturn_followedBy_orEmpty() {
+    Parser<String> parser = string("a").followedBy(string("b").orElse("")).thenReturn("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+  }
+
+  @Test public void ignoreReturn_followedByOrEof() {
+    Parser<String> parser = string("a").followedByOrEof(string("b")).thenReturn("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+  }
+
+  @Test public void ignoreReturn_sequence() {
+    Parser<String> parser = sequence(string("a"), string("b"), string("c")).thenReturn("ok");
+    assertThat(parser.parse("abc")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ab"));
+    assertThrows(ParseException.class, () -> parser.parse("abd"));
+  }
+
+  @Test public void ignoreReturn_notFollowedBy() {
+    Parser<String> parser = string("a").notFollowedBy(string("b"), "b").thenReturn("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("ab"));
+    assertThrows(ParseException.class, () -> parser.parse("ac"));
+  }
+
+  @Test public void ignoreReturn_source() {
+    Parser<String> parser = string("a").source().thenReturn("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("b"));
+  }
+
+  @Test public void ignoreReturn_literally() {
+    Parser<String> parser = literally(string("a")).thenReturn("ok");
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("b"));
+  }
+
+  @Test public void ignoreReturn_orEmpty_then_parser() {
+    Parser<String> parser = string("a").zeroOrMore().then(string("b")).thenReturn("ok");
+    assertThat(parser.parse("b")).isEqualTo("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("aab")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parse("aac"));
+  }
+
+  @Test public void ignoreReturn_orEmpty_then_orEmpty() {
+    Parser<String> parser =
+        string("a").zeroOrMore().then(string("b").zeroOrMore()).notEmpty().thenReturn("ok");
+    assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThat(parser.parse("b")).isEqualTo("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("aab")).isEqualTo("ok");
+    assertThat(parser.parse("abb")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+  }
+
+  @Test public void ignoreReturn_orEmpty_followedBy_parser() {
+    Parser<String> parser = string("a").zeroOrMore().followedBy(string("b")).thenReturn("ok");
+    assertThat(parser.parse("b")).isEqualTo("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("aab")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThrows(ParseException.class, () -> parser.parse("aac"));
+  }
+
+  @Test public void ignoreReturn_orEmpty_followedBy_orEmpty() {
+    Parser<String> parser =
+        string("a").zeroOrMore().followedBy(string("b").zeroOrMore()).notEmpty().thenReturn("ok");
+    assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThat(parser.parse("a")).isEqualTo("ok");
+    assertThat(parser.parse("b")).isEqualTo("ok");
+    assertThat(parser.parse("ab")).isEqualTo("ok");
+    assertThat(parser.parse("aab")).isEqualTo("ok");
+    assertThat(parser.parse("abb")).isEqualTo("ok");
+    assertThrows(ParseException.class, () -> parser.parse("c"));
+  }
+
+  @Test public void source_propagatesIgnoreReturn() {
+    Parser<String> parser = string("a").source();
+    assertThat(parser.parse("a")).isEqualTo("a");
+    assertThrows(ParseException.class, () -> parser.parse("b"));
+  }
+
+  @Test public void source_propagatesIgnoreReturn_zeroOrMore() {
+    Parser<String> parser = string("a").zeroOrMore().notEmpty().source();
+    assertThat(parser.parse("aaa")).isEqualTo("aaa");
+    assertThrows(ParseException.class, () -> parser.parse("b"));
+  }
+
+  @Test public void sequence_propagatesIgnoreReturn() {
+    Parser<?> parser = sequence(string("a"), string("b"), string("c"));
+    assertThat(parser.parse("abc")).isEqualTo("a");
+    assertThrows(ParseException.class, () -> parser.parse("ab"));
+    assertThrows(ParseException.class, () -> parser.parse("abd"));
+  }
+
+  private static String toStringWithIndex(Object v, int begin, int end) {
+    return begin + "-" + end + ": " + v;
+  }
+
+  @Test public void mapWithIndex_success() {
+    assertThat(string("foo").mapWithIndex(ParserTest::toStringWithIndex).parse("foo"))
+        .isEqualTo("0-3: foo");
+    assertThat(string("foo").mapWithIndex(ParserTest::toStringWithIndex).parseToStream("foo"))
+        .containsExactly("0-3: foo");
+    assertThat(string("foo").mapWithIndex(ParserTest::toStringWithIndex).matches("foo")).isTrue();
+  }
+
+  @Test public void mapWithIndex_failure() {
+    ParseException thrown = assertThrows(
+        ParseException.class,
+        () -> string("foo").mapWithIndex(ParserTest::toStringWithIndex).parse("bar"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <foo>");
+  }
+
+  @Test public void mapWithIndex_string() {
+    assertThat(string("foo").mapWithIndex(ParserTest::toStringWithIndex).parse("foo"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test public void mapWithIndex_caseInsensitive() {
+    assertThat(
+            caseInsensitive("foo")
+                .source()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("FoO"))
+        .isEqualTo("0-3: FoO");
+  }
+
+  @Test public void mapWithIndex_word() {
+    assertThat(word("foo").mapWithIndex(ParserTest::toStringWithIndex).parse("foo"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test public void mapWithIndex_caseInsensitiveWord() {
+    assertThat(
+            caseInsensitiveWord("foo")
+                .source()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("FoO"))
+        .isEqualTo("0-3: FoO");
+  }
+
+  @Test public void mapWithIndex_quotedBy() {
+    assertThat(quotedBy('[', ']').mapWithIndex(ParserTest::toStringWithIndex).parse("[foo]"))
+        .isEqualTo("0-5: foo");
+  }
+
+  @Test public void mapWithIndex_quotedBy_stringDelimiters() {
+    assertThat(quotedBy("<<", ">>").mapWithIndex(ParserTest::toStringWithIndex).parse("<<foo>>"))
+        .isEqualTo("0-7: foo");
+  }
+
+  @Test public void mapWithIndex_quotedByWithEscapes() {
+    assertThat(
+            Parser.quotedByWithEscapes('[', ']', chars(1))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("[foo]"))
+        .isEqualTo("0-5: foo");
+  }
+
+  @Test public void mapWithIndex_nestedBy() {
+    assertThat(
+            Parser.nestedBy("[", "]").mapWithIndex(ParserTest::toStringWithIndex).parse("[[foo]]"))
+        .isEqualTo("0-7: [foo]");
+  }
+
+  @Test public void mapWithIndex_nestedBy_stringDelimiters() {
+    assertThat(
+            Parser.nestedBy("<<", ">>")
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("<<<<foo>>>>"))
+        .isEqualTo("0-11: <<foo>>");
+  }
+
+  @Test public void mapWithIndex_nestedByWithEscapes() {
+    assertThat(
+            Parser.nestedByWithEscapes('[', ']', chars(1))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("[[foo]]"))
+        .isEqualTo("0-7: [foo]");
+  }
+
+  @Test public void mapWithIndex_thenReturn() {
+    assertThat(
+            string("foo")
+                .thenReturn("bar")
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foo"))
+        .isEqualTo("0-3: bar");
+  }
+
+  @Test public void mapWithIndex_map() {
+    assertThat(
+            string("123")
+                .map(Integer::parseInt)
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("123"))
+        .isEqualTo("0-3: 123");
+  }
+
+  @Test public void mapWithIndex_flatMap() {
+    assertThat(
+            string("foo")
+                .flatMap(s -> string("bar"))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foobar"))
+        .isEqualTo("0-6: bar");
+  }
+
+  @Test public void mapWithIndex_then() {
+    assertThat(
+            string("foo")
+                .then(string("bar"))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foobar"))
+        .isEqualTo("0-6: bar");
+  }
+
+  @Test public void mapWithIndex_followedBy() {
+    assertThat(
+            string("foo")
+                .followedBy(string("bar"))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foobar"))
+        .isEqualTo("0-6: foo");
+  }
+
+  @Test public void mapWithIndex_optionallyFollowedBy() {
+    assertThat(
+            string("foo")
+                .optionallyFollowedBy(string("bar"))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foobar"))
+        .isEqualTo("0-6: foo");
+  }
+
+  @Test public void mapWithIndex_notFollowedBy() {
+    assertThat(
+            string("foo")
+                .notFollowedBy("baz")
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .followedBy(string("bar"))
+                .parse("foobar"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test public void mapWithIndex_notFollowedByEof() {
+    assertThat(
+            string("foo")
+                .notFollowedByEof()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .followedBy(string("bar"))
+                .parse("foobar"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test public void mapWithIndex_sequence() {
+    assertThat(
+            sequence(string("foo"), string("bar"), (a, b) -> a + b)
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foobar"))
+        .isEqualTo("0-6: foobar");
+  }
+
+  @Test public void mapWithIndex_or() {
+    assertThat(
+            string("foo")
+                .or(string("bar"))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("bar"))
+        .isEqualTo("0-3: bar");
+  }
+
+  @Test public void mapWithIndex_anyOf() {
+    assertThat(
+            anyOf(string("foo"), string("bar"))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("bar"))
+        .isEqualTo("0-3: bar");
+  }
+
+  @Test public void mapWithIndex_atLeastOnce() {
+    assertThat(
+            string("foo").atLeastOnce().mapWithIndex(ParserTest::toStringWithIndex).parse("foofoo"))
+        .isEqualTo("0-6: [foo, foo]");
+  }
+
+  @Test public void mapWithIndex_zeroOrMore() {
+    assertThat(
+            string("foo")
+                .zeroOrMore()
+                .notEmpty()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foofoo"))
+        .isEqualTo("0-6: [foo, foo]");
+  }
+
+  @Test public void mapWithIndex_atLeastOnceDelimitedBy() {
+    assertThat(
+            string("foo")
+                .atLeastOnceDelimitedBy(",")
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foo,foo"))
+        .isEqualTo("0-7: [foo, foo]");
+  }
+
+  @Test public void mapWithIndex_zeroOrMoreDelimitedBy() {
+    assertThat(
+            string("foo")
+                .zeroOrMoreDelimitedBy(",")
+                .notEmpty()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foo,foo"))
+        .isEqualTo("0-7: [foo, foo]");
+  }
+
+  @Test public void mapWithIndex_between() {
+    assertThat(
+            string("foo")
+                .between(string("("), string(")"))
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("(foo)"))
+        .isEqualTo("0-5: foo");
+  }
+
+  @Test public void mapWithIndex_immediatelyBetween() {
+    assertThat(
+            string("foo")
+                .immediatelyBetween("(", ")")
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("(foo)"))
+        .isEqualTo("0-5: foo");
+  }
+
+  @Test public void mapWithIndex_one() {
+    assertThat(one('[').mapWithIndex(ParserTest::toStringWithIndex).parse("[")).isEqualTo("0-1: [");
+  }
+
+  @Test public void mapWithIndex_consecutive() {
+    assertThat(consecutive("[0-9]").mapWithIndex(ParserTest::toStringWithIndex).parse("123"))
+        .isEqualTo("0-3: 123");
+  }
+
+  @Test public void mapWithIndex_first() {
+    assertThat(first("bar").mapWithIndex(ParserTest::toStringWithIndex).parse("foobar"))
+        .isEqualTo("3-6: bar");
+  }
+
+  @Test public void mapWithIndex_optional() {
+    assertThat(
+            string("foo")
+                .optional()
+                .notEmpty()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foo"))
+        .isEqualTo("0-3: Optional[foo]");
+  }
+
+  @Test public void mapWithIndex_orElse() {
+    assertThat(
+            string("foo")
+                .orElse("default")
+                .notEmpty()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foo"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test public void mapWithIndex_source() {
+    assertThat(
+            string("foo")
+                .map(String::toUpperCase)
+                .source()
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foo"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test public void mapWithIndex_ignoreReturn() {
+    assertThat(
+            string("foo").ignoreReturn().mapWithIndex(ParserTest::toStringWithIndex).parse("foo"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test public void mapWithIndex_suchThat() {
+    assertThat(
+            string("foo")
+                .suchThat(s -> true, "true")
+                .mapWithIndex(ParserTest::toStringWithIndex)
+                .parse("foo"))
+        .isEqualTo("0-3: foo");
+  }
+
+  @Test public void mapWithIndex_skipping() {
+    assertThat(
+            word("foo").mapWithIndex(ParserTest::toStringWithIndex)
+                .skipping(whitespace())
+                .parse("  foo  "))
+        .isEqualTo("2-5: foo");
+  }
+
+  @Test public void mapWithIndex_bmpCodeUnit() {
+    assertThat(bmpCodeUnit().mapWithIndex(ParserTest::toStringWithIndex).parse("0000"))
+        .isEqualTo("0-4: 0");
+  }
+
+  @Test public void mapWithIndex_definedAs() {
+    Parser.Rule<String> rule = new Parser.Rule<>();
+    rule.definedAs(string("foo"));
+    assertThat(rule.mapWithIndex(ParserTest::toStringWithIndex).parse("foo")).isEqualTo("0-3: foo");
+  }
+
+  @Test public void mapWithIndex_withPostfixes() {
+    Parser<Integer> parser =
+        digits().map(Integer::parseInt).withPostfixes(string("++").map(s -> 1), (a, b) -> a + b);
+    assertThat(parser.mapWithIndex(ParserTest::toStringWithIndex).parse("123++"))
+        .isEqualTo("0-5: 124");
+  }
+
+  @Test public void returnElision_atLeastOnce_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = string("a").atLeastOnce(collectingAndAdd(joining(","), joined));
+    assertThat(parser.parse("aaa")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test public void returnElision_atLeastOnce_withoutElision_skipping() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = string("a").atLeastOnce(collectingAndAdd(joining(","), joined));
+    assertThat(parser.parseSkipping(whitespace(), "  aaa  ")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test public void returnElision_atLeastOnce_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("a").atLeastOnce(collectingAndAdd(joining(","), joined)).thenReturn("ok");
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_atLeastOnce_withElision_skipping() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("a").atLeastOnce(collectingAndAdd(joining(","), joined)).thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "  aaa  ")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_zeroOrMore_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Production<String> parser = string("a").zeroOrMore(collectingAndAdd(joining(","), joined));
+    assertThat(parser.parse("aaa")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test public void returnElision_zeroOrMore_withoutElision_skipping() {
+    List<String> joined = new ArrayList<>();
+    Production<String> parser = string("a").zeroOrMore(collectingAndAdd(joining(","), joined));
+    assertThat(parser.parseSkipping(whitespace(), "  aaa  ")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test public void returnElision_zeroOrMore_withElision() {
+    List<String> joined = new ArrayList<>();
+    Production<String> parser = string("a").zeroOrMore(collectingAndAdd(joining(","), joined));
+    assertThat(parser.matches("aaa")).isTrue();
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_atLeastOnceDelimitedBy_withoutElision() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Parser<String> parser =
+        inner.atLeastOnceDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined));
+
+    assertThat(parser.parse("a,b,c;d,e;f")).isEqualTo("abc;de;f");
+    assertThat(innerJoined).containsExactly("abc", "de", "f").inOrder();
+    assertThat(outerJoined).containsExactly("abc;de;f");
+  }
+
+  @Test public void returnElision_atLeastOnceDelimitedBy_withoutElision_skipping() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Parser<String> parser =
+        inner.atLeastOnceDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined));
+
+    assertThat(parser.parseSkipping(whitespace(), "  a , b , c ; d , e ; f  "))
+        .isEqualTo("abc;de;f");
+    assertThat(innerJoined).containsExactly("abc", "de", "f").inOrder();
+    assertThat(outerJoined).containsExactly("abc;de;f");
+  }
+
+  @Test public void returnElision_atLeastOnceDelimitedBy_withElision() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Parser<String> parser =
+        inner.atLeastOnceDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined))
+            .thenReturn("ok");
+
+    assertThat(parser.parse("a,b,c;d,e;f")).isEqualTo("ok");
+    assertThat(innerJoined).isEmpty();
+    assertThat(outerJoined).isEmpty();
+  }
+
+  @Test public void returnElision_atLeastOnceDelimitedBy_withElision_skipping() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Parser<String> parser =
+        inner.atLeastOnceDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined))
+            .thenReturn("ok");
+
+    assertThat(parser.parseSkipping(whitespace(), "  a , b , c ; d , e ; f  ")).isEqualTo("ok");
+    assertThat(innerJoined).isEmpty();
+    assertThat(outerJoined).isEmpty();
+  }
+
+  @Test public void returnElision_zeroOrMoreDelimitedBy_withoutElision() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Production<String> parser =
+        inner.zeroOrMoreDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined));
+
+    assertThat(parser.parse("a,b,c;d,e;f")).isEqualTo("abc;de;f");
+    assertThat(innerJoined).containsExactly("abc", "de", "f").inOrder();
+    assertThat(outerJoined).containsExactly("abc;de;f");
+  }
+
+  @Test public void returnElision_zeroOrMoreDelimitedBy_withoutElision_skipping() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Production<String> parser =
+        inner.zeroOrMoreDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined));
+
+    assertThat(parser.parseSkipping(whitespace(), "  a , b , c ; d , e ; f  "))
+        .isEqualTo("abc;de;f");
+    assertThat(innerJoined).containsExactly("abc", "de", "f").inOrder();
+    assertThat(outerJoined).containsExactly("abc;de;f");
+  }
+
+  @Test public void returnElision_zeroOrMoreDelimitedBy_withElision() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Production<String> parser =
+        inner.zeroOrMoreDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined));
+
+    assertThat(parser.matches("a,b,c;d,e;f")).isTrue();
+    assertThat(innerJoined).isEmpty();
+    assertThat(outerJoined).isEmpty();
+  }
+
+  @Test public void returnElision_source_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("a").atLeastOnce(collectingAndAdd(joining(","), joined)).source();
+
+    assertThat(parser.parse("aaa")).isEqualTo("aaa");
+    // source() always elides the inner parser internally because the original values are discarded
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_source_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("a").atLeastOnce(collectingAndAdd(joining(","), joined)).source().thenReturn("ok");
+
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_zeroOrMoreDelimitedBy_withElision_skipping() {
+    List<String> innerJoined = new ArrayList<>();
+    List<String> outerJoined = new ArrayList<>();
+    Parser<String> inner =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), innerJoined));
+    Parser<String> parser =
+        inner.zeroOrMoreDelimitedBy(";", collectingAndAdd(joining(";"), outerJoined))
+            .then(string("x"))
+            .thenReturn("ok");
+
+    assertThat(parser.parseSkipping(whitespace(), "  a , b , c ; d , e ; f  x  ")).isEqualTo("ok");
+    assertThat(innerJoined).isEmpty();
+    assertThat(outerJoined).isEmpty();
+  }
+
+  @Test public void returnElision_notFollowedBy_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("a").atLeastOnce(collectingAndAdd(joining(","), joined)).notFollowedBy("b");
+
+    assertThat(parser.parse("aaa")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test public void returnElision_notFollowedBy_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = string("a").atLeastOnce(collectingAndAdd(joining(","), joined))
+        .notFollowedBy("b")
+        .thenReturn("ok");
+
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_literally_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        literally(string("a").atLeastOnce(collectingAndAdd(joining(","), joined)));
+
+    assertThat(parser.parse("aaa")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test public void returnElision_literally_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        literally(string("a").atLeastOnce(collectingAndAdd(joining(","), joined))).thenReturn("ok");
+
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_skipping_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = string("a").atLeastOnce(collectingAndAdd(joining(","), joined));
+
+    assertThat(parser.skipping(whitespace()).parse("  aaa  ")).isEqualTo("a,a,a");
+    assertThat(joined).containsExactly("a,a,a");
+  }
+
+  @Test public void returnElision_skipping_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = string("a").atLeastOnce(collectingAndAdd(joining(","), joined));
+
+    assertThat(parser.skipping(whitespace()).matches("  aaa  ")).isTrue();
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_then_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        string("b").then(word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)));
+    assertThat(parser.parseSkipping(whitespace(), "b a,b,c")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test public void returnElision_then_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = string("b").then(
+            word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)))
+        .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "b a,b,c")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_followedBy_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+        .followedBy(string("b"));
+    assertThat(parser.parseSkipping(whitespace(), "a,b,c b")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test public void returnElision_followedBy_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+        .followedBy(string("b"))
+        .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "a,b,c b")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_between_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser =
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)).between("[", "]");
+    assertThat(parser.parse("[a,b,c]")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test public void returnElision_between_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+        .between("[", "]")
+        .thenReturn("ok");
+    assertThat(parser.parse("[a,b,c]")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_immediatelyBetween_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+        .immediatelyBetween("[", "]");
+    assertThat(parser.parse("[a,b,c]")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test public void returnElision_immediatelyBetween_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+        .immediatelyBetween("[", "]")
+        .thenReturn("ok");
+    assertThat(parser.parse("[a,b,c]")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_regularSequence_isNotElided() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = sequence(
+            word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)), string("b"),
+            (a, b) -> a) // custom lambda not elidable
+        .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "a,b,c b")).isEqualTo("ok");
+    assertThat(joined).containsExactly("abc"); // Must NOT be elided!
+  }
+
+  @Test public void returnElision_optionallyFollowedByString_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+        .optionallyFollowedBy("b");
+    assertThat(parser.parse("a,b,c")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test public void returnElision_optionallyFollowedByString_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+        .optionallyFollowedBy("b")
+        .thenReturn("ok");
+    assertThat(parser.parse("a,b,c")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_optionallyFollowedByWithFunction_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+        .optionallyFollowedBy("b", s -> s + "x");
+    assertThat(parser.parseSkipping(whitespace(), "a,b,c b")).isEqualTo("abcx");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test public void returnElision_optionallyFollowedByWithFunction_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined))
+        .optionallyFollowedBy("b", s -> s + "x")
+        .thenReturn("ok");
+    assertThat(parser.parseSkipping(whitespace(), "a,b,c b")).isEqualTo("ok");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_orNull_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<String> parser = string("[").then(
+            word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)).orElse(null))
+        .followedBy(string("]"));
+    assertThat(parser.parse("[a,b,c]")).isEqualTo("abc");
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test public void returnElision_orNull_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<?> parser = sequence(
+        string("["),
+        word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)).orElse(null),
+        string("]"));
+    assertThat(parser.matches("[a,b,c]")).isTrue();
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_optional_withoutElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<Optional<String>>.OrEmpty parser =
+        word().atLeastOnce(collectingAndAdd(joining(), joined)).optional();
+    assertThat(parser.parse("abc")).isEqualTo(Optional.of("abc"));
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test public void returnElision_optional_withoutElision_noMatch() {
+    List<String> joined = new ArrayList<>();
+    Parser<?> parser = sequence(
+        string("["),
+        word().atLeastOnce(collectingAndAdd(joining(), joined))
+            .followedBy("absentSuffix")
+            .optional(),
+        string("]"), (l, m, r) -> null);
+    assertThrows(ParseException.class, () -> parser.parse("[abc]"));
+    assertThat(joined).containsExactly("abc");
+  }
+
+  @Test public void returnElision_optional_withElision() {
+    List<String> joined = new ArrayList<>();
+    Parser<Optional<String>>.OrEmpty parser =
+        word().atLeastOnce(collectingAndAdd(joining(), joined)).optional();
+    assertThat(parser.matches("abc")).isTrue();
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_optional_withElision_noMatch() {
+    List<String> joined = new ArrayList<>();
+    Parser<?> parser = sequence(
+        string("["),
+        word().atLeastOnce(collectingAndAdd(joining(), joined))
+            .followedBy("absentSuffix")
+            .optional(),
+        string("]"));
+    assertThat(parser.matches("[abc]")).isFalse();
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_sequenceWithOrEmptyFirst_firstMatched_elidesAll() {
+    List<String> joined1 = new ArrayList<>();
+    List<String> joined2 = new ArrayList<>();
+    List<String> joined3 = new ArrayList<>();
+    Parser<?> parser = sequence(
+        string("a").atLeastOnce(collectingAndAdd(joining(), joined1)).optional(),
+        string("b").atLeastOnce(collectingAndAdd(joining(), joined2)),
+        string("c").atLeastOnce(collectingAndAdd(joining(), joined3)));
+    parser.parse("abc");
+    assertThat(joined1).isEmpty();
+    assertThat(joined2).isEmpty();
+    assertThat(joined3).isEmpty();
+  }
+
+  @Test public void returnElision_sequenceWithOrEmptyFirst_firstNotMatched_elidesAll() {
+    List<String> joined1 = new ArrayList<>();
+    List<String> joined2 = new ArrayList<>();
+    List<String> joined3 = new ArrayList<>();
+    Parser<?> parser = sequence(
+        string("a").atLeastOnce(collectingAndAdd(joining(), joined1)).optional(),
+        string("b").atLeastOnce(collectingAndAdd(joining(), joined2)),
+        string("c").atLeastOnce(collectingAndAdd(joining(), joined3)));
+    parser.parse("bc");
+    assertThat(joined1).isEmpty();
+    assertThat(joined2).isEmpty();
+    assertThat(joined3).isEmpty();
+  }
+
+  @Test public void returnElision_bmpCodeUnit_matches() {
+    assertThat(bmpCodeUnit().parse("123F")).isEqualTo(0x123F);
+    assertThat(bmpCodeUnit().matches("123F")).isTrue();
+  }
+
+  @Test public void returnElision_bmpCodeUnit_doesNotMatch() {
+    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123g"));
+    assertThat(bmpCodeUnit().matches("123g")).isFalse();
+    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123"));
+    assertThat(bmpCodeUnit().matches("123")).isFalse();
+  }
+
+  @Test public void returnElision_consecutive_charClass_matches() {
+    assertThat(consecutive("[0-9]").parse("123")).isEqualTo("123");
+    assertThat(consecutive("[0-9]").matches("123")).isTrue();
+  }
+
+  @Test public void returnElision_consecutive_charPredicate_matches() {
+    assertThat(consecutive(is('a'), "a's").parse("aaa")).isEqualTo("aaa");
+    assertThat(consecutive(is('a'), "a's").matches("aaa")).isTrue();
+  }
+
+  @Test public void returnElision_consecutive_charClass_notEnoughChars_doesNotMatch() {
+    assertThrows(ParseException.class, () -> consecutive("[0-9]").parse("12a"));
+    assertThat(consecutive("[0-9]").matches("12a")).isFalse();
+  }
+
+  @Test public void returnElision_consecutive_charClass_emptyInput_doesNotMatch() {
+    assertThrows(ParseException.class, () -> consecutive("[0-9]").parse(""));
+    assertThat(consecutive("[0-9]").matches("")).isFalse();
+  }
+
+  @Test public void returnElision_consecutive_charPredicate_notEnoughChars_doesNotMatch() {
+    assertThrows(ParseException.class, () -> consecutive(is('a'), "a's").parse("aab"));
+    assertThat(consecutive(is('a'), "a's").matches("aab")).isFalse();
+  }
+
+  @Test public void returnElision_consecutive_charPredicate_emptyInput_doesNotMatch() {
+    assertThrows(ParseException.class, () -> consecutive(is('a'), "a's").parse(""));
+    assertThat(consecutive(is('a'), "a's").matches("")).isFalse();
+  }
+
+  @Test public void returnElision_consecutive_charClass_withElision() {
+    Parser<String> parser = consecutive("[0-9]").thenReturn("ok");
+    assertThat(parser.parse("123")).isEqualTo("ok");
+  }
+
+  @Test public void returnElision_consecutive_charPredicate_withElision() {
+    Parser<String> parser = consecutive(is('a'), "a's").thenReturn("ok");
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+  }
+
+  @Test public void returnElision_atLeastOnceReducer_withoutElision() {
+    AtomicInteger count = new AtomicInteger();
+    Parser<String> parser = word().atLeastOnce(counted((x, y) -> x + y, count));
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+    assertThat(count.get()).isEqualTo(0);
+
+    Parser<String> aParser = string("a").atLeastOnce(counted((x, y) -> x + y, count));
+    assertThat(aParser.parse("aaa")).isEqualTo("aaa");
+    assertThat(count.get()).isEqualTo(2);
+  }
+
+  @Test public void returnElision_atLeastOnceReducer_withElision() {
+    AtomicInteger count = new AtomicInteger();
+    Parser<String> parser = string("a").atLeastOnce(counted((x, y) -> x + y, count));
+    assertThat(parser.matches("aaa")).isTrue();
+    assertThat(count.get()).isEqualTo(0);
+  }
+
+  @Test public void returnElision_atLeastOnceDelimitedByReducer_withoutElision() {
+    AtomicInteger count = new AtomicInteger();
+    Parser<String> parser =
+        string("a").atLeastOnceDelimitedBy(",", counted((x, y) -> x + y, count));
+    assertThat(parser.parse("a,a,a")).isEqualTo("aaa");
+    assertThat(count.get()).isEqualTo(2);
+  }
+
+  @Test public void returnElision_atLeastOnceDelimitedByReducer_withElision() {
+    AtomicInteger count = new AtomicInteger();
+    Parser<String> parser =
+        string("a").atLeastOnceDelimitedBy(",", counted((x, y) -> x + y, count));
+    assertThat(parser.matches("a,a,a")).isTrue();
+    assertThat(count.get()).isEqualTo(0);
+  }
+
+  @Test public void testSnippetCaretPlacementWithNewline() {
+    Parser<java.util.Map<String, String>> parser = Parser.zeroOrMoreDelimited(
+            quotedBy('"', '"').followedBy(":"), digits(), ",", toMap())
+        .between("{", "}");
+    String malformedJson =
+        """
+        {"a": 1
+         "b"}
+        """;
+    ParseException thrown = assertThrows(
+        ParseException.class, () -> parser.parseSkipping(Character::isWhitespace, malformedJson));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            """
+            at 2:2: expecting <}>, encountered:\s
+                {"a": 1
+                 "b"}
+                 ^\
+            """);
+  }
+
+  @Test public void testSnippetCaretPlacement_multipleNewlinesInPrelue() {
+    Parser<?> parser = Parser.zeroOrMoreDelimited(
+            quotedBy('"', '"').followedBy(":"), digits(), ",", toMap())
+        .between("{", "}");
+    String malformedJson =
+        """
+        {"a":
+            1
+         "b"}
+        """;
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), malformedJson));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            """
+            at 3:2: expecting <}>, encountered:\s
+                {"a":
+                    1
+                 "b"}
+                 ^
+            """);
+  }
+
+  @Test public void testSnippetCaretPlacement_truncateAtTrailingNewline() {
+    Parser<?> parser = Parser.zeroOrMoreDelimited(
+            quotedBy('"', '"').followedBy(":"), digits(), ",", toMap())
+        .between("{", "}");
+    String malformedJson =
+        """
+        {"a":
+            1
+         "b"
+         2
+         }
+        """;
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), malformedJson));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            """
+            at 3:2: expecting <}>, encountered:\s
+                {"a":
+                    1
+                 "b"
+                 ^
+            """);
+  }
+
+  @Test public void testSnippetCaretPlacementAtEofAfterNewline() {
+    Parser<String> parser = string("abc").followedBy("\n").then(string("foo"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc\n"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            """
+            at 2:1: expecting <foo>, encountered:\s
+                abc
+               \s
+                ^\
+            """);
+  }
+
+  @Test public void testSnippetCaretPlacementAtEofAfterMultipleNewlines() {
+    Parser<String> parser = string("abc").followedBy("\n\n").then(string("foo"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc\n\n"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            """
+            at 3:1: expecting <foo>, encountered:\s
+                abc
+               \s
+               \s
+                ^\
+            """);
+  }
+
+  @Test public void productionSource_success() {
+    Production<String> production = string("foo");
+    Production<String> source = production.source();
+    assertThat(source.parse("foo")).isEqualTo("foo");
+    assertThat(source.matches("foo")).isTrue();
+  }
+
+  @Test public void productionSource_failure() {
+    Production<String> production = string("foo");
+    Production<String> source = production.source();
+    assertThrows(ParseException.class, () -> source.parse("bar"));
+    assertThat(source.matches("bar")).isFalse();
+  }
+
+  @Test public void orEmptySource_success() {
+    Parser<Optional<String>>.OrEmpty orEmpty = string("foo").optional();
+    Parser<String>.OrEmpty source = orEmpty.source();
+    assertThat(source.parse("foo")).isEqualTo("foo");
+    assertThat(source.parse("")).isEqualTo("");
+    assertThat(source.matches("foo")).isTrue();
+    assertThat(source.matches("")).isTrue();
+  }
+
+  @Test public void orEmptySource_failure() {
+    Parser<Optional<String>>.OrEmpty orEmpty = string("foo").optional();
+    Parser<String>.OrEmpty source = orEmpty.source();
+    assertThrows(ParseException.class, () -> source.parse("bar"));
+    assertThat(source.matches("bar")).isFalse();
+  }
+
+  @Test public void returnElision_orEmptySource() {
+    List<String> joined = new ArrayList<>();
+    Parser<String>.OrEmpty orEmpty = string("a").zeroOrMore(collectingAndAdd(joining(","), joined));
+    Parser<String>.OrEmpty source = orEmpty.source();
+    assertThat(source.parse("aaa")).isEqualTo("aaa");
+    assertThat(joined).isEmpty();
+    assertThat(source.parse("")).isEqualTo("");
+    assertThat(joined).isEmpty();
+  }
+
+  @Test public void returnElision_anyOf_twoCandidates_withElision() {
+    List<String> joined1 = new ArrayList<>();
+    List<String> joined2 = new ArrayList<>();
+    Parser<String> parser = anyOf(
+            string("a").atLeastOnce(collectingAndAdd(joining(","), joined1)),
+            string("b").atLeastOnce(collectingAndAdd(joining(","), joined2)))
+        .thenReturn("ok");
+
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(joined1).isEmpty();
+    assertThat(joined2).isEmpty();
+
+    assertThat(parser.parse("bbb")).isEqualTo("ok");
+    assertThat(joined1).isEmpty();
+    assertThat(joined2).isEmpty();
+  }
+
+  @Test public void returnElision_anyOf_threeCandidates_noElision() {
+    List<String> joined1 = new ArrayList<>();
+    List<String> joined2 = new ArrayList<>();
+    List<String> joined3 = new ArrayList<>();
+    Parser<String> parser = anyOf(
+            string("a").atLeastOnce(collectingAndAdd(joining(","), joined1)),
+            string("b").atLeastOnce(collectingAndAdd(joining(","), joined2)),
+            string("c").atLeastOnce(collectingAndAdd(joining(","), joined3)))
+        .thenReturn("ok");
+
+    assertThat(parser.parse("aaa")).isEqualTo("ok");
+    assertThat(joined1).containsExactly("a,a,a");
+    assertThat(joined2).isEmpty();
+    assertThat(joined3).isEmpty();
+  }
+
+  private static <T, A, R> Collector<T, A, R> collectingAndAdd(
+      Collector<T, A, R> collector, List<? super R> results) {
+    return collectingAndThen(
+        collector,
+        r -> {
+          results.add(r);
+          return r;
+        });
+  }
+
+  private static <T> BinaryOperator<T> counted(
+      BinaryOperator<T> reducer, AtomicInteger invocationCount) {
+    return (a, b) -> {
+      invocationCount.incrementAndGet();
+      return reducer.apply(a, b);
+    };
+  }
+
+  @Test public void fail_mapperThrows() {
+    Parser<Integer> parser = word().map(
+            d -> {
+              try {
+                return Integer.parseInt(d);
+              } catch (NumberFormatException e) {
+                throw Parser.fail(e.getMessage());
+              }
+            });
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("xyzabc", 3));
+    assertThat(thrown).hasMessageThat().contains("\"abc\"");
+    assertThat(thrown).hasMessageThat().contains("1:4");
+  }
+
+  @Test public void fail_parseSkipping_errorPositionAfterSkipping() {
+    Parser<Integer> parser = word().map(
+            d -> {
+              try {
+                return Integer.parseInt(d);
+              } catch (NumberFormatException e) {
+                throw Parser.fail(e.getMessage());
+              }
+            });
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parseSkipping(whitespace(), "   abc"));
+    assertThat(thrown).hasMessageThat().contains("\"abc\"");
+    assertThat(thrown).hasMessageThat().contains("1:4");
+  }
+
+  @Test public void fail_unexpectedExceptionType_propagatedAsIs() {
+    Parser<Integer> parser = word().map(Integer::parseInt);
+    assertThrows(NumberFormatException.class, () -> parser.parse("abc"));
+  }
+
+  @Test public void fail_recoveredFailure_reportedOnSubsequentFailure() {
+    Parser<List<String>> parser = anyOf(
+            word().map(d -> {
+                  try {
+                    return Integer.parseInt(d);
+                  } catch (NumberFormatException e) {
+                    throw Parser.fail(e.getMessage());
+                  }
+                })
+                .then(string(";")),
+            word().then(string(";")))
+        .atLeastOnceDelimitedBy(",");
+
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parse("12345678901234567890;,,;"));
+
+    assertThat(thrown).hasMessageThat().contains("For input string: \"12345678901234567890\"");
+    assertThat(thrown).hasMessageThat().contains("1:1");
+  }
+
+  @Test public void fail_frontierIsTailOfMatch() {
+    Parser<?> parser = anyOf(
+        word().map(d -> {
+              try {
+                return Integer.parseInt(d);
+              } catch (NumberFormatException e) {
+                throw Parser.fail(e.getMessage());
+              }
+            }),
+        sequence(string("ab"), string("X")));
+
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
+
+    // We expect the NumberFormatException from Branch 1 to be reported because its frontier
+    // is the tail of the match ("abc" -> index 3), which is further than Branch 2's failure (index
+    // 2).
+    assertThat(thrown).hasMessageThat().contains("For input string:");
+    assertThat(thrown).hasMessageThat().contains("1:1");
+  }
+
+  @Test public void fail_frontierIsTailOfMatch_notOverruledByFurtherFailure() {
+    Parser<?> parser = anyOf(
+        word().map(d -> {
+              try {
+                return Integer.parseInt(d);
+              } catch (NumberFormatException e) {
+                throw Parser.fail(e.getMessage());
+              }
+            }),
+        sequence(string("abcd "), string("Y")));
+
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abcd "));
+
+    // We expect the semantic failure from Branch 1 to be reported
+    // because it unconditionally overshadows Branch 2's syntactic failure.
+    assertThat(thrown).hasMessageThat().contains("For input string: \"abcd\"");
+    assertThat(thrown).hasMessageThat().contains("1:1");
+  }
+
+  @Test public void fail_staleSuccessStateFromOtherBranch_doesNotLeak() {
+    Parser<?> parser = anyOf(
+        sequence(string("ab"), digits().map(Integer::parseInt), string("X")),
+        sequence(
+            string("ab"),
+            string("1").map(s -> {
+                  throw Parser.fail("custom IAE");
+                })),
+        sequence(string("ab"), string("c"), string("Y")));
+
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("ab123"));
+
+    // Branch 1: matches "ab123" but fails expecting "X" at index 5.
+    // Branch 2: matches "ab", then string("1").map throws ParseError at index 3.
+    // Branch 3: matches "ab" (2 chars), fails expecting "c" at index 2.
+    // The semantic error ("custom IAE") from Branch 2 is reported because it
+    // unconditionally overshadows syntactic mismatches.
+    assertThat(thrown).hasMessageThat().contains("custom IAE");
+    assertThat(thrown).hasMessageThat().contains("1:3");
+  }
+
+  @Test public void fail_mapSucceeds() {
+    Parser<Integer> parser = digits().map(
+            d -> {
+              try {
+                return Integer.parseInt(d);
+              } catch (NumberFormatException e) {
+                throw Parser.fail(e.getMessage());
+              }
+            });
+    assertThat(parser.parse("123")).isEqualTo(123);
+  }
+
+  @Test public void fail_mapFails() {
+    Parser<Integer> parser = digits().map(
+            d -> {
+              try {
+                return Integer.parseInt(d);
+              } catch (NumberFormatException e) {
+                throw Parser.fail(e.getMessage());
+              }
+            });
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
+    assertThat(thrown).hasMessageThat().contains("expecting <digits>");
+    assertThat(thrown).hasMessageThat().contains("1:1");
+  }
+
+  @Test public void fail_mapThrows_reportedAtCorrectPosition() {
+    Parser<?> parser = sequence(
+        digits().map(d -> {
+              try {
+                return Integer.parseInt(d);
+              } catch (NumberFormatException e) {
+                throw Parser.fail(e.getMessage());
+              }
+            }),
+        string("X").map(s -> {
+              throw Parser.fail("custom IAE");
+            }));
+
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("\n123X", 1));
+    assertThat(thrown).hasMessageThat().contains("custom IAE");
+    assertThat(thrown).hasMessageThat().contains("2:4");
+  }
+
+  @Test public void fail_sequenceSucceeds() {
+    Parser<String> parser = sequence(string("ab"), string("cd"), (a, b) -> a + b);
+    assertThat(parser.parse("abcd")).isEqualTo("abcd");
+  }
+
+  @Test public void fail_sequenceFails() {
+    Parser<String> parser = sequence(string("ab"), string("cd"), (a, b) -> a + b);
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abxx"));
+    assertThat(thrown).hasMessageThat().contains("expecting <cd>");
+    assertThat(thrown).hasMessageThat().contains("1:3");
+  }
+
+  @Test public void fail_sequenceThrows_reportedAtCorrectPosition() {
+    Parser<?> parser = sequence(
+        string("ab"), string("cd"),
+        (a, b) -> {
+          throw Parser.fail("combiner IAE");
+        });
+
+    Parser<?> combinedParser = anyOf(parser, sequence(string("abc"), string("Y")));
+
+    ParseException combinedThrown =
+        assertThrows(ParseException.class, () -> combinedParser.parse("__\n__abcd", 5));
+    assertThat(combinedThrown).hasMessageThat().contains("combiner IAE");
+    assertThat(combinedThrown).hasMessageThat().contains("2:3");
+  }
+
+  @Test public void fail_triSequenceThrows_reportedAtCorrectPosition() {
+    Parser<?> parser = sequence(
+        string("a"), string("b"), string("c"),
+        (a, b, c) -> {
+          throw Parser.fail("tri combiner fail");
+        });
+
+    Parser<?> combinedParser = anyOf(parser, sequence(string("ab"), string("Y")));
+
+    ParseException combinedThrown =
+        assertThrows(ParseException.class, () -> combinedParser.parse("\n\nabc", 2));
+    assertThat(combinedThrown).hasMessageThat().contains("tri combiner fail");
+    assertThat(combinedThrown).hasMessageThat().contains("3:1");
+  }
+
+  @Test public void fail_sequencePropagates_reportedAtStartOfFailingComponent() {
+    Parser<?> parser = sequence(
+        string("xyz"),
+        digits().map(d -> {
+              try {
+                return Integer.parseInt(d);
+              } catch (NumberFormatException e) {
+                throw Parser.fail(e.getMessage());
+              }
+            }),
+        string("X").map(s -> {
+              throw Parser.fail("custom IAE");
+            }));
+
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("__xyz123X", 2));
+
+    // Without except(), the failure is caught locally inside the string("X").map() mapper.
+    // So the error is reported exactly at the start of string("X") (index 8, position 1:9).
+    assertThat(thrown).hasMessageThat().contains("custom IAE");
+    assertThat(thrown).hasMessageThat().contains("1:9");
+  }
+
+  @Test public void fail_suchThatSucceeds() {
+    Parser<String> parser = word().suchThat(w -> w.length() > 2, "long word");
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test public void fail_suchThatFails() {
+    Parser<String> parser = word().suchThat(w -> w.length() > 2, "long word");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("ab"));
+    assertThat(thrown).hasMessageThat().contains("expecting <long word>");
+    assertThat(thrown).hasMessageThat().contains("1:1");
+  }
+
+  @Test public void fail_suchThatThrowsCustomMessage() {
+    Parser<String> parser = word().suchThat(
+            w -> {
+              if (w.length() <= 2) throw Parser.fail("too short");
+              return true;
+            },
+            "long word");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("ab"));
+    assertThat(thrown).hasMessageThat().contains("too short");
+    assertThat(thrown).hasMessageThat().contains("1:1");
+  }
+
+  @Test public void fail_sequenceThenSuchThatThrows_reportedAtCorrectPosition() {
+    Parser<?> parser = sequence(string("ab"), string("cd"))
+        .suchThat(
+            v -> {
+              throw Parser.fail("suchThat IAE");
+            },
+            "suchThat");
+
+    Parser<?> combinedParser = anyOf(parser, sequence(string("abc"), string("Y")));
+
+    ParseException combinedThrown =
+        assertThrows(ParseException.class, () -> combinedParser.parse("\n\n_abcd", 3));
+    assertThat(combinedThrown).hasMessageThat().contains("suchThat IAE");
+    assertThat(combinedThrown).hasMessageThat().contains("3:2");
+  }
+
+  @Test public void fail_mapWithIndexSucceeds() {
+    Parser<String> parser = word().mapWithIndex((w, begin, end) -> w + ":" + begin + "-" + end);
+    assertThat(parser.parse("abc")).isEqualTo("abc:0-3");
+  }
+
+  @Test public void fail_mapWithIndexFails() {
+    Parser<String> parser = word().mapWithIndex((w, begin, end) -> w + ":" + begin + "-" + end);
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse(""));
+    assertThat(thrown).hasMessageThat().contains("expecting <word>");
+    assertThat(thrown).hasMessageThat().contains("1:1");
+  }
+
+  @Test public void fail_mapWithIndexThrows_reportedAtCorrectPosition() {
+    Parser<?> parser = word().mapWithIndex(
+            (w, begin, end) -> {
+              throw Parser.fail("mapWithIndex IAE");
+            });
+
+    Parser<?> combinedParser = anyOf(parser, sequence(string("abc"), string("Y")));
+
+    ParseException combinedThrown =
+        assertThrows(ParseException.class, () -> combinedParser.parse("\nabcd", 1));
+    assertThat(combinedThrown).hasMessageThat().contains("mapWithIndex IAE");
+    assertThat(combinedThrown).hasMessageThat().contains("2:1");
+  }
+
+  @Test public void fail_flatMapSucceeds() {
+    Parser<String> parser = digits().flatMap(number -> string("=" + number));
+    assertThat(parser.parse("123=123")).isEqualTo("=123");
+  }
+
+  @Test public void fail_flatMapFails() {
+    Parser<String> parser = digits().flatMap(number -> string("=" + number));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("123x"));
+    assertThat(thrown).hasMessageThat().contains("expecting <=123>");
+    assertThat(thrown).hasMessageThat().contains("1:4");
+  }
+
+  @Test public void fail_flatMapThrows_reportedAtCorrectPosition() {
+    Parser<?> parser = digits().flatMap(
+            number -> {
+              throw Parser.fail("flatMap IAE");
+            });
+
+    Parser<?> combinedParser = anyOf(parser, sequence(string("12"), string("Y")));
+
+    ParseException combinedThrown =
+        assertThrows(ParseException.class, () -> combinedParser.parse("____123", 4));
+    assertThat(combinedThrown).hasMessageThat().contains("flatMap IAE");
+    assertThat(combinedThrown).hasMessageThat().contains("1:5");
+  }
+
+  @Test public void fail_flatMapReturnedParserThrows_reportedAtCorrectPosition() {
+    Parser<?> parser = digits().flatMap(
+            number -> string("X").map(
+                    x -> {
+                      throw Parser.fail("right-hand parser IAE");
+                    }));
+
+    Parser<?> combinedParser = anyOf(parser, sequence(string("123"), string("Y")));
+
+    ParseException combinedThrown =
+        assertThrows(ParseException.class, () -> combinedParser.parse("\n\n123X", 2));
+    assertThat(combinedThrown).hasMessageThat().contains("right-hand parser IAE");
+    assertThat(combinedThrown).hasMessageThat().contains("3:4");
+  }
+
+  @Test public void fail_betweenTwoFailErrors_furtherWins() {
+    Parser<?> parser = anyOf(
+        sequence(
+            string("ab").map(s -> {
+                  throw Parser.fail("closer fail");
+                }),
+            string("X")),
+        sequence(
+            string("abcd")
+                .map(s -> {
+                  throw Parser.fail("further fail");
+                }),
+            string("Y")));
+
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abcd"));
+
+    // We expect "further fail" (frontier 4) to win over "closer fail" (frontier 2)
+    assertThat(thrown).hasMessageThat().contains("further fail");
+    assertThat(thrown).hasMessageThat().contains("1:1");
+  }
+
+  @Test public void fail_returnsErrorWithStackTraceAndSuppression() {
+    Error error = assertThrows(Error.class, () -> Parser.fail("test error"));
+    assertThat(error.getMessage()).isEqualTo("test error");
+    assertThat(error.getStackTrace()).isNotEmpty();
+
+    Throwable suppressed = new RuntimeException("suppressed");
+    error.addSuppressed(suppressed);
+    assertThat(error.getSuppressed()).asList().containsExactly(suppressed);
+  }
+
+  @Test public void fail_overridesRemainingInputError() {
+    Parser<?> parser = anyOf(
+        digits().map(s -> {
+              try {
+                return Integer.parseInt(s);
+              } catch (NumberFormatException e) {
+                throw Parser.fail(e.getMessage());
+              }
+            }),
+        chars(12));
+
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> parser.parse("12345678901abc"));
+
+    // Expected failure from Branch 1: semantic error pointing to index 11 (tail of digits).
+    // The syntactic failure from parser EOF is at index 12 (since chars(12) matches 12 characters).
+    // The semantic error should win despite index 11 < index 12.
+    assertThat(thrown).hasMessageThat().contains("For input string: \"12345678901\"");
+    assertThat(thrown).hasMessageThat().contains("1:1");
+  }
+
+  @Test public void anyOf_mutuallyRecursiveRules_expectedSymbols() {
+    Parser.Rule<String> rule1 = new Parser.Rule<>();
+    Parser.Rule<String> rule2 = new Parser.Rule<>();
+
+    rule1.definedAs(rule2.orElse("").then(string("a")).or(string("b")).or(string("c")));
+    rule2.definedAs(string("d").then(rule1));
+
+    ParseException e = assertThrows(ParseException.class, () -> rule1.parse("x"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <one of [a, b, c, d]>, encountered:\s
+                x
+                ^
+            """);
+  }
+}

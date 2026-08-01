@@ -19,15 +19,19 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Map;
+import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.function.IntConsumer;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * Transforms eager, recursive algorithms into <em>lazy</em> streams. {@link #yield yield()} is used
- * to <a href="https://en.wikipedia.org/wiki/Generator_(computer_programming)">generate</a> a
- * sequence that computes each value on-demand.
+ * Transforms eager, recursive algorithms into <em>lazy</em> streams. {@link #emit emit()} is used
+ * to <a href= "https://en.wikipedia.org/wiki/Generator_(computer_programming)">emit</a> a sequence
+ * of values; and {@link #lazily lazily()} is used to lazily generate elements.
  *
  * <p>{@code Iteration} can be used to adapt iterative or recursive algorithms to lazy streams. The
  * size of the stack is O(1) and execution is deferred.
@@ -48,19 +52,19 @@ import java.util.stream.Stream;
  * }
  * }</pre>
  *
- * To turn the above code into a lazy stream using Iteration, the key is to wrap the recursive
- * calls into a lambda and pass it to {@link #yield(Continuation) yield(() -> recursiveCall())}.
- * This allows callers to short-circuit when they need to:
+ * To turn the above code into a lazy stream using Iteration, the key is to wrap the recursive calls
+ * into a lambda and pass it to {@link #lazily(Continuation) lazily(() -> recursiveCall())}. This
+ * allows callers to short-circuit when they need to:
  *
  * <pre>{@code
  * Stream<Foo> listAllFoos() {
  *   class Pagination extends new Iteration<Foo>() {
  *     Pagination paginate(ListFooRequest request) {
  *       ListFooResponse response = service.listFoos(request);
- *       yieldAll(response.getFoos());
+ *       emit(response.getFoos());
  *       String nextPage = response.getNextPageToken();
  *       if (!nextPage.isEmpty()) {
- *         yield(() -> paginate(request.toBuilder().setNextPageToken(nextPage).build()));
+ *         lazily(() -> paginate(request.toBuilder().setNextPageToken(nextPage).build()));
  *       }
  *       return this;
  *     }
@@ -85,22 +89,19 @@ import java.util.stream.Stream;
  *
  * Instead of traversing eagerly and hard coding {@code System.out.println()}, it can be intuitively
  * transformed to a lazy stream, again, by wrapping the recursive {@code inOrder()} calls in a
- * lambda and passing it to {@code yeidl()}:
+ * lambda and passing it to {@code lazily()}:
  *
  * <pre>{@code
  * class DepthFirst<T> extends Iteration<T> {
  *   DepthFirst<T> inOrder(Tree<T> tree) {
  *     if (tree == null) return this;
- *     yield(() -> inOrder(tree.left));
- *     yield(tree.value);
- *     yield(() -> inOrder(tree.right));
+ *     lazily(() -> inOrder(tree.left));
+ *     emit(tree.value);
+ *     lazily(() -> inOrder(tree.right));
  *   }
  * }
  *
- * new DepthFirst<>()
- *     .inOrder(root)
- *     .iterate()
- *     .forEachOrdered(System.out::println);
+ * new DepthFirst<>().inOrder(root).iterate().forEachOrdered(System.out::println);
  * }</pre>
  *
  * <p>One may ask why not use {@code flatMap()} like the following?
@@ -113,11 +114,13 @@ import java.util.stream.Stream;
  * }
  * }</pre>
  *
- * This unfortunately doesn't scale, for two reasons: <ol>
- * <li>The code will recursively call {@code inOrder()} all the way from the root node to the leaf
- *     node. If the tree is deep, you may run into stack overflow error.
- * <li>{@code flatMap()} was not lazy in JDK 8. While it was later fixed in JDK 10 and backported
- *     to JDK 8, the JDK 8 you use may not carry the fix.
+ * This unfortunately doesn't scale, for two reasons:
+ *
+ * <ol>
+ *   <li>The code will recursively call {@code inOrder()} all the way from the root node to the leaf
+ *       node. If the tree is deep, you may run into stack overflow error.
+ *   <li>{@code flatMap()} was not lazy in JDK 8. While it was later fixed in JDK 10 and backported
+ *       to JDK 8, the JDK 8 you use may not carry the fix.
  * </ol>
  *
  * <p>Similarly, the following recursive graph post-order traversal code:
@@ -129,8 +132,8 @@ import java.util.stream.Stream;
  *   void postOrder(N node) {
  *     if (visited.add(node)) {
  *       for (N successor : node.getSuccessors()) {
- *         postOrder(successor);
- *        }
+ *          postOrder(successor);
+ *       }
  *       System.out.println("node: " + node);
  *     }
  *   }
@@ -146,36 +149,34 @@ import java.util.stream.Stream;
  *   DepthFirst<N> postOrder(N node) {
  *     if (visited.add(node)) {
  *       for (N successor : node.getSuccessors()) {
- *         yield(() -> postOrder(successor));
+ *         lazily(() -> postOrder(successor));
  *       }
- *       yield(node);
+ *       emit(node);
  *     }
  *     return this;
  *   }
  * }
  *
- * new DepthFirst<>()
- *     .postOrder(startNode)
- *     .iterate()
- *     .forEachOrdered(System.out::println);
+ * new DepthFirst<>().postOrder(startNode).iterate().forEachOrdered(System.out::println);
  * }</pre>
  *
  * <p>If transforming tail-recursive algorithms, the space requirement is O(1) and execution is
  * deferred.
  *
- * <p>While not required, users are encouraged to create a subclass and then be able to call {@code
- * yield()} as if it were a keyword.
+ * <p>While not required, users are encouraged to create a subclass because you need a class to
+ * define recursive methods anyways.
  *
- * <p>Keep in mind that, unlike {@code return} or {@code System.out.println()}, {@code yield()} is
+ * <p>Keep in mind that, unlike {@code return} or {@code System.out.println()}, {@code lazily()} is
  * lazy and does not evaluate until the stream iterates over it. So it's critical that <em>all side
- * effects</em> should be wrapped inside {@code Continuation} objects passed to {@code yield()}.
+ * effects</em> should be wrapped inside {@code Continuation} objects passed to {@code lazily()} or
+ * {@code forEachLazily()}.
  *
- * <p>Unlike Python's yield statement or C#'s yield return, this {@code yield()} is a normal Java
+ * <p>Unlike Python's yield statement or C#'s yield return, the {@code lazily()} is a normal Java
  * method. It doesn't "return" execution to the caller. Laziness is achieved by wrapping code block
  * inside the {@code Continuation} lambda.
  *
- * <p>Like most manual iterative adaptation of recursive algorithms, yielding is implemented using
- * a stack. No threads or synchronization is used.
+ * <p>Like most manual iterative adaptation of recursive algorithms, laziness is implemented using a
+ * stack. No threads or synchronization is used.
  *
  * <p>This class is not threadsafe.
  *
@@ -184,90 +185,110 @@ import java.util.stream.Stream;
  * @since 4.4
  */
 public class Iteration<T> {
-  private final Deque<Object> stack = new ArrayDeque<>();
-  private final Deque<Object> stackFrame = new ArrayDeque<>(8);
+  private final Deque<Object> inbox = new ArrayDeque<>(8);
+  private final Deque<Object> outbox = new ArrayDeque<>();
   private final AtomicBoolean started = new AtomicBoolean();
 
-  /** Yields {@code element} to the result stream. */
-  public final Iteration<T> yield(T element) {
+  /**
+   * Emits {@code element} to the result stream.
+   *
+   * @since 0.6
+   */
+  public final void emit(T element) {
     if (element instanceof Continuation) {
       throw new IllegalArgumentException("Do not stream Continuation objects");
     }
-    stackFrame.push(element);
-    return this;
+    inbox.push(element);
   }
 
   /**
-   * Yields to the stream a recursive iteration or lazy side-effect
-   * wrapped in {@code continuation}.
+   * Emits all of {@code elements} to the result stream.
+   *
+   * @since 9.6
    */
-  public final Iteration<T> yield(Continuation continuation) {
-    stackFrame.push(continuation);
-    return this;
+  public final void emit(Iterable<? extends T> elements) {
+    elements.forEach(this::emit);
   }
 
   /**
-   * Yields to the stream the result of {@code computation}. Upon evaluation, also passes the
-   * computation result to {@code consumer}. Useful when the computation result of a recursive call
-   * is needed. For example, if you have a recursive algorithm to sum all node values of a tree:
+   * Lazily generate into the stream a recursive iteration or lazy side-effect wrapped in {@code
+   * continuation}.
    *
-   * <pre>{@code
-   * int sumNodeValues(Tree tree) {
-   *   if (tree == null) return 0;
-   *   return tree.value + sumNodeValues(tree.left) + sumNodeValues(tree.right);
-   * }
-   * }</pre>
-   *
-   * It can be transformed to iterative stream as in:
-   *
-   * <pre>{@code
-   * class SumNodeValues extends Iteration<Integer> {
-   *   SumNodeValues sum(Tree tree, AtomicInteger result) {
-   *     if (tree == null) return this;
-   *     AtomicInteger leftSum = new AtomicInteger();
-   *     AtomicInteger rightSum = new AtomicInteger();
-   *     yield(() -> sum(tree.left, leftSum));
-   *     yield(() -> sum(tree.right, rightSum));
-   *     yield(() -> tree.value + leftSum.get() + rightSum.get(), result::set);
-   *     return this;
-   *   }
-   * }
-   *
-   * Stream<Integer> sums =
-   *     new SumNodeValues()
-   *         .sum((root: 1, left: 2, right: 3), new AtomicInteger())
-   *         .iterate();
-   *
-   *     => [2, 3, 6]
-   * }</pre>
-   *
-   * @since 4.5
+   * @since 9.6
    */
-  public final Iteration<T> yield(
-      Supplier<? extends T> computation, Consumer<? super T> consumer) {
-    requireNonNull(computation);
+  public final void lazily(Continuation continuation) {
+    inbox.push(continuation);
+  }
+
+  /**
+   * Applies {@code consumer} lazily on each element in {@code iterable}. An element is only
+   * iterated when consumed by the result stream.
+   *
+   * <p>Note that if you have a small iterable of elements to be emitted, using {@link
+   * #emit(Iterable)} is more efficient. Only use this method if it's critical that the iterable
+   * elements must be lazily consumed (for example it's a large list).
+   *
+   * <p>Upon return, you shouldn't add or remove from {@code iterable} any more or else {@link
+   * java.util.ConcurrentModificationException} may be thrown while streaming.
+   *
+   * @since 9.6
+   */
+  public final <V> void forEachLazily(Iterable<V> iterable, Consumer<? super V> consumer) {
+    forEachLazily(iterable.spliterator(), requireNonNull(consumer));
+  }
+
+  /**
+   * Applies {@code consumer} lazily on each element from {@code stream}. An element is only
+   * iterated when consumed by the result stream.
+   *
+   * @since 9.6
+   */
+  public final <V> void forEachLazily(Stream<V> stream, Consumer<? super V> consumer) {
+    forEachLazily(stream.spliterator(), requireNonNull(consumer));
+  }
+
+  /**
+   * Applies {@code consumer} lazily on each int element from {@code stream}. An element is only
+   * iterated when consumed by the result stream.
+   *
+   * @since 9.6
+   */
+  public final void forEachLazily(IntStream stream, IntConsumer consumer) {
+    forEachLazily(stream.spliterator(), requireNonNull(consumer));
+  }
+
+  /**
+   * Applies {@code consumer} lazily on each entry from {@code map}. An entry is only iterated when
+   * consumed by the result stream.
+   *
+   * <p>Upon return, you shouldn't add or remove from {@code map} any more or else {@link
+   * java.util.ConcurrentModificationException} may be thrown while streaming.
+   *
+   * @since 9.6
+   */
+  public final <K, V> void forEachLazily(Map<K, V> map, BiConsumer<? super K, ? super V> consumer) {
     requireNonNull(consumer);
-    return this.yield(() -> {
-      T result = computation.get();
-      consumer.accept(result);
-      this.yield(result);
-    });
+    forEachLazily(map.entrySet(), e -> consumer.accept(e.getKey(), e.getValue()));
+  }
+
+  private <V> void forEachLazily(Spliterator<V> spliterator, Consumer<? super V> consumer) {
+    lazily(() -> spliterator.tryAdvance(
+        e -> {
+          consumer.accept(e);
+          forEachLazily(spliterator, consumer);
+        }));
+  }
+
+  private void forEachLazily(Spliterator.OfInt spliterator, IntConsumer consumer) {
+    lazily(() -> spliterator.tryAdvance(
+        (int i) -> {
+          consumer.accept(i);
+          forEachLazily(spliterator, consumer);
+        }));
   }
 
   /**
-   * Yields all of {@code elements} to the result stream.
-   *
-   * @since 5.4
-   */
-  public final Iteration<T> yieldAll(Iterable<? extends T> elements) {
-    for (T element : elements) {
-      this.yield(element);
-    }
-    return this;
-  }
-
-  /**
-   * Starts iteration over the {@link #yield yielded} elements.
+   * Starts iteration over the {@link #emit emitted} elements.
    *
    * <p>Because an {@code Iteration} instance is stateful and mutable, {@code iterate()} can be
    * called at most once per instance.
@@ -279,16 +300,16 @@ public class Iteration<T> {
     if (started.getAndSet(true)) {
       throw new IllegalStateException("Iteration already started.");
     }
-    return whileNotNull(this::next);
+    return whileNotNull(this::nextOrNull);
   }
 
   /**
    * Encapsulates recursive iteration or a lazy block of code with side-effect.
    *
-   * <p>Note that if after a {@link #yield(Continuation) yielded} recursive iteration, the
-   * subsequent code expects state change (for example, the nodes being visited will keep changing
-   * during graph traversal), the subsequent code also needs to be yielded to be able to observe
-   * the expected state change.
+   * <p>Note that if after a {@link #lazily(Continuation) lazy} recursive call, the subsequent code
+   * expects state change (for example, the nodes being visited will keep changing during graph
+   * traversal), the subsequent code also needs to be lazy to be able to observe the expected state
+   * change.
    */
   @FunctionalInterface
   public interface Continuation {
@@ -296,13 +317,13 @@ public class Iteration<T> {
     void run();
   }
 
-  private T next() {
-    for (; ;) {
+  private T nextOrNull() {
+    for (; ; ) {
       Object top = poll();
       if (top instanceof Continuation) {
         ((Continuation) top).run();
       } else {
-        @SuppressWarnings("unchecked")  // we only put either T or Continuation in the stack.
+        @SuppressWarnings("unchecked") // we only put either T or Continuation in the stack.
         T element = (T) top;
         return element;
       }
@@ -310,12 +331,12 @@ public class Iteration<T> {
   }
 
   private Object poll() {
-    Object top = stackFrame.poll();
+    Object top = inbox.poll();
     if (top == null) {
-      return stack.poll();
+      return outbox.poll();
     }
-    for (Object second = stackFrame.poll(); second != null; second = stackFrame.poll()) {
-      stack.push(top);
+    for (Object second = inbox.poll(); second != null; second = inbox.poll()) {
+      outbox.push(top);
       top = second;
     }
     return top;

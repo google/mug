@@ -15,7 +15,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.mu.safesql.SafeQuery;
+import com.google.mu.safesql.SafeSql;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 
@@ -43,11 +43,9 @@ public class HowToUseStringFormatTest {
         .containsExactly("front desk", "12:00");
   }
 
-  @Test public void safeQueryExample() {
-    String id = "foo";
-    StringFormat.Template<SafeQuery> whereClause = SafeQuery.template("WHERE id = '{id}'");
-    assertThat(whereClause.with(id))
-        .isEqualTo(SafeQuery.of("WHERE id = 'foo'"));
+  @Test public void safeSqlExample() {
+    assertThat(SafeSql.of("WHERE id = '{id}'", "foo").debugString())
+        .isEqualTo("WHERE id = ? /* foo */");
   }
 
   @Test public void parse2dArray() {
@@ -83,8 +81,8 @@ public class HowToUseStringFormatTest {
   }
 
   @SuppressWarnings("StringFormatArgsCheck")
-  SafeQuery mismatchingPlaceholderInSafeQueryTemplate(String name) {
-    return SafeQuery.template("WHERE id = '{id}'").with(name);
+  SafeSql mismatchingPlaceholderInSafeSqlTemplate(String name) {
+    return SafeSql.template("WHERE id = '{id}'").with(name);
   }
 
   @SuppressWarnings("StringUnformatArgsCheck")

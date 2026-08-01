@@ -2,8 +2,8 @@ package com.google.mu.examples;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.guava.labs.collect.GuavaCollectors.toImmutableListMultimap;
 import static com.google.mu.util.stream.BiStream.groupingBy;
-import static com.google.mu.util.stream.GuavaCollectors.toImmutableListMultimap;
 import static com.google.mu.util.stream.MoreCollectors.flatteningMaps;
 import static java.util.Arrays.asList;
 
@@ -31,8 +31,7 @@ public class HowToDoGroupingFluentlyTest {
     Map<Integer, ImmutableSet<Integer>> byLeastSignificantDigit = Stream.of(1, 2, 11, 32)
         .collect(groupingBy(n -> n % 10, toImmutableSet()))
         .collect(new BiCollector<Integer, ImmutableSet<Integer>, ImmutableMap<Integer, ImmutableSet<Integer>>>() {
-          @Override
-          public <E> Collector<E, ?, ImmutableMap<Integer, ImmutableSet<Integer>>> collectorOf(Function<E, Integer> toKey, Function<E, ImmutableSet<Integer>> toValue) {
+          @Override public <E> Collector<E, ?, ImmutableMap<Integer, ImmutableSet<Integer>>> collectorOf(Function<E, Integer> toKey, Function<E, ImmutableSet<Integer>> toValue) {
             return ImmutableMap.toImmutableMap(toKey,toValue);
           }
         });

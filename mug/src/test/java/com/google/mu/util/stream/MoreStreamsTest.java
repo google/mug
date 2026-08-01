@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.MoreStreams.groupConsecutive;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
+import static com.google.mu.util.stream.MoreStreams.mergeConsecutive;
 import static com.google.mu.util.stream.MoreStreams.runLengthEncode;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.util.Arrays.asList;
@@ -76,70 +77,6 @@ public class MoreStreamsTest {
     Stream<Integer> generated = MoreStreams.generate(1, i -> Stream.of(i + 1));
     assertThat(Iterables.limit(MoreStreams.iterateOnce(generated), 5))
         .containsExactly(1, 2, 3, 4, 5);
-  }
-
-  @Test public void flattenEmptyStream() throws Exception {
-    Stream<Integer> flattened = MoreStreams.flatten(Stream.empty());
-    assertThat(flattened.collect(toList())).isEmpty();
-  }
-
-  @Test public void flattenEmptyInnerStream() throws Exception {
-    Stream<Integer> flattened = MoreStreams.flatten(Stream.of(Stream.empty()));
-    assertThat(flattened.collect(toList())).isEmpty();
-  }
-
-  @Test public void flattenSingleElement() throws Exception {
-    Stream<Integer> flattened = MoreStreams.flatten(Stream.of(Stream.of(1)));
-    assertThat(flattened.collect(toList())).containsExactly(1);
-  }
-
-  @Test public void flattenTwoElementsFromSingleBlock() throws Exception {
-    Stream<Integer> flattened = MoreStreams.flatten(Stream.of(Stream.of(1, 2)));
-    assertThat(flattened.collect(toList())).containsExactly(1, 2).inOrder();
-  }
-
-  @Test public void flattenTwoElementsFromTwoBlocks() throws Exception {
-    Stream<Integer> flattened = MoreStreams.flatten(Stream.of(Stream.of(1), Stream.of(2)));
-    assertThat(flattened.collect(toList())).containsExactly(1, 2).inOrder();
-  }
-
-  @Test public void flattenMultipleElements() throws Exception {
-    Stream<Integer> flattened = MoreStreams.flatten(Stream.of(Stream.of(1, 2), Stream.of(3, 4)));
-    assertThat(flattened.collect(toList())).containsExactly(1, 2, 3, 4).inOrder();
-  }
-
-  @Test public void flattenWithTrailingInfiniteStream() throws Exception {
-    Stream<Integer> flattened =
-        MoreStreams.flatten(Stream.of(Stream.of(1), Stream.iterate(2, i -> i + 1)));
-    assertThat(flattened.limit(5).collect(toList()))
-        .containsExactly(1, 2, 3, 4, 5).inOrder();
-  }
-
-  @Test public void flattenWithLeadingInfiniteStream() throws Exception {
-    Stream<Integer> flattened =
-        MoreStreams.flatten(Stream.of(Stream.iterate(1, i -> i + 1), Stream.of(100)));
-    assertThat(flattened.limit(5).collect(toList()))
-        .containsExactly(1, 2, 3, 4, 5).inOrder();
-  }
-
-  @Test public void flattenWithInfiniteOuterStream() throws Exception {
-    Stream<List<Integer>> infinite = Stream.iterate(
-        ImmutableList.of(1), l -> l.stream().map(i -> i + 1).collect(toImmutableList()));
-    Stream<Integer> flattened = MoreStreams.flatten(infinite.map(l -> l.stream()));
-    assertThat(flattened.limit(5).collect(toList()))
-        .containsExactly(1, 2, 3, 4, 5).inOrder();
-  }
-
-  @Test public void flattenReturnsSequentialStream() throws Exception {
-    Stream<Integer> flattened = MoreStreams.flatten(Stream.of(Stream.of(1, 2), Stream.of(3)).parallel());
-    assertThat(flattened.isParallel()).isFalse();
-  }
-
-  @Test public void flattenWithLeadingInfiniteStream_runInParallel() throws Exception {
-    Stream<Integer> flattened =
-        MoreStreams.flatten(Stream.of(Stream.iterate(1, i -> i + 1), Stream.of(100)));
-    assertThat(flattened.parallel().limit(1000).collect(toList()))
-        .hasSize(1000);
   }
 
   @Test public void diceParallelStream() {
@@ -343,14 +280,6 @@ public class MoreStreamsTest {
     assertThat(set).containsExactlyElementsIn(source);
   }
 
-  @Test public void testNulls() throws Exception {
-    NullPointerTester tester = new NullPointerTester();
-    asList(MoreStreams.class.getDeclaredMethods()).stream()
-        .filter(m -> m.getName().equals("generate"))
-        .forEach(tester::ignore);
-    tester.testAllPublicStaticMethods(MoreStreams.class);
-  }
-
   @Test public void withSideEffectInOrder() {
     int num = 10000;
     ImmutableList<Integer> source =  indexesFrom(1).limit(num).collect(toImmutableList());
@@ -359,6 +288,60 @@ public class MoreStreamsTest {
     MoreStreams.withSideEffect(source.stream(), peeked::add).parallel().forEachOrdered(result::add);
     assertThat(result).containsExactlyElementsIn(source).inOrder();
     assertThat(peeked).containsExactlyElementsIn(source).inOrder();
+  }
+
+  @Test public void consume_emptyStream() {
+    List<Integer> consumed = new ArrayList<>();
+    Stream<Integer> remaining = MoreStreams.consume(Stream.empty(), 2, consumed::add);
+    assertThat(consumed).isEmpty();
+    assertThat(remaining).isEmpty();
+    assertThat(consumed).isEmpty();
+  }
+
+  @Test public void consume_lessThanNumberOfElements() {
+    List<Integer> consumed = new ArrayList<>();
+    Stream<Integer> stream = Stream.of(1, 2, 3, 4, 5);
+    Stream<Integer> remaining = MoreStreams.consume(stream, 2, consumed::add);
+    assertThat(consumed).containsExactly(1, 2).inOrder();
+    assertThat(remaining).containsExactly(3, 4, 5).inOrder();
+    assertThat(consumed).containsExactly(1, 2).inOrder();
+  }
+
+  @Test public void consume_moreThanNumberOfElements() {
+    List<Integer> consumed = new ArrayList<>();
+    Stream<Integer> stream = Stream.of(1, 2, 3);
+    Stream<Integer> remaining = MoreStreams.consume(stream, 4, consumed::add);
+    assertThat(consumed).containsExactly(1, 2, 3).inOrder();
+    assertThat(remaining).isEmpty();
+    assertThat(consumed).containsExactly(1, 2, 3).inOrder();
+  }
+
+  @Test public void consume_equalToNumberOfElements() {
+    List<Integer> consumed = new ArrayList<>();
+    Stream<Integer> stream = Stream.of(1, 2, 3);
+    Stream<Integer> remaining = MoreStreams.consume(stream, 3, consumed::add);
+    assertThat(consumed).containsExactly(1, 2, 3).inOrder();
+    assertThat(remaining).isEmpty();
+    assertThat(consumed).containsExactly(1, 2, 3).inOrder();
+  }
+
+  @Test public void consume_zero() {
+    Stream<Integer> stream = Stream.of(1, 2, 3);
+    assertThat(MoreStreams.consume(stream, 0, x -> { throw new AssertionError("shouldn't be called"); }))
+        .containsExactly(1, 2, 3)
+        .inOrder();
+  }
+
+  @Test public void consume_streamReferenceNoLongerUsable() {
+    Stream<Integer> stream = Stream.of(1, 2, 3);
+    Stream<Integer> remaining =
+        MoreStreams.consume(stream, 0, x -> { throw new AssertionError("shouldn't be called"); });
+    assertThrows(IllegalStateException.class, () -> stream.forEach(e -> {}));
+    assertThat(remaining).containsExactly(1, 2, 3).inOrder();
+  }
+
+  @Test public void consume_negative() {
+    assertThrows(IllegalArgumentException.class, () -> MoreStreams.consume(Stream.of(1), -1, x -> {}));
   }
 
   @Test public void testGroupConsecutive_byPredicate() {
@@ -379,6 +362,57 @@ public class MoreStreamsTest {
         .inOrder();
   }
 
+  @Test
+  public void testMergeConsecutive() {
+    Stream<Number> stream = Stream.of(1, 2, 3.0, 4, 5);
+    assertThat(mergeConsecutive(stream, Integer.class, Integer::sum).collect(toList()))
+        .containsExactly(3, 3.0, 9)
+        .inOrder();
+  }
+
+  @Test
+  public void testMergeConsecutive_emptyStream() {
+    Stream<Number> stream = Stream.empty();
+    assertThat(mergeConsecutive(stream, Integer.class, Integer::sum).collect(toList()))
+        .isEmpty();
+  }
+
+  @Test
+  public void testMergeConsecutive_singleElementMatching() {
+    Stream<Number> stream = Stream.of(1);
+    assertThat(mergeConsecutive(stream, Integer.class, Integer::sum).collect(toList()))
+        .containsExactly(1);
+  }
+
+  @Test
+  public void testMergeConsecutive_singleElementNonMatching() {
+    Stream<Number> stream = Stream.of(3.0);
+    assertThat(mergeConsecutive(stream, Integer.class, Integer::sum).collect(toList()))
+        .containsExactly(3.0);
+  }
+
+  @Test
+  public void testMergeConsecutive_noConsecutiveMatching() {
+    Stream<Number> stream = Stream.of(1, 2.0, 3, 4.0);
+    assertThat(mergeConsecutive(stream, Integer.class, Integer::sum).collect(toList()))
+        .containsExactly(1, 2.0, 3, 4.0)
+        .inOrder();
+  }
+
+  @Test
+  public void testMergeConsecutive_nullType() {
+    assertThrows(
+        NullPointerException.class,
+        () -> mergeConsecutive(Stream.of(1), null, (a, b) -> a));
+  }
+
+  @Test
+  public void testMergeConsecutive_nullMergeFunction() {
+    assertThrows(
+        NullPointerException.class,
+        () -> mergeConsecutive(Stream.of(1), Integer.class, null));
+  }
+
   @Test public void testRunLengthEncode() {
     ImmutableListMultimap<Integer, Long> encoded =
         runLengthEncode(Stream.of(10, 20, 9, 10, 11, 8), (a, b) -> a < b)
@@ -387,4 +421,18 @@ public class MoreStreamsTest {
         .containsExactly(10, 2L, 9, 3L, 8, 1L)
         .inOrder();
   }
+
+  @Test public void testNulls() throws Exception {
+    NullPointerTester tester = new NullPointerTester();
+    asList(MoreStreams.class.getDeclaredMethods()).stream()
+        .filter(m -> m.getName().equals("generate"))
+        .forEach(tester::ignore);
+    tester.testAllPublicStaticMethods(MoreStreams.class);
+  }
+
+  void testIt() {
+    cat(List.of(1, 2), List.of(3));
+  }
+  void cat(List<String> a, List<String> b) {}
+  <T> void cat(T a, Iterable<T> b) {}
 }

@@ -1,0 +1,191 @@
+package com.google.mu.benchmarks.parsers.jparsec;
+
+import static com.google.common.truth.Truth.assertThat;
+import static java.util.stream.Collectors.toList;
+import static org.jparsec.Parsers.or;
+import static org.jparsec.Parsers.sequence;
+import static org.jparsec.Parsers.tokenType;
+import static org.jparsec.Scanners.DEC_INTEGER;
+import static org.jparsec.Scanners.DOUBLE_QUOTE_STRING;
+import static org.jparsec.Scanners.WHITESPACES;
+import static org.jparsec.Scanners.isChar;
+import static org.jparsec.Scanners.nestableBlockComment;
+import static org.junit.Assert.assertThrows;
+
+import com.google.mu.benchmarks.parsers.BenchmarkInputs;
+import com.google.mu.benchmarks.parsers.BenchmarkInputs.Keyword;
+import java.util.List;
+import org.jparsec.OperatorTable;
+import org.jparsec.Parser;
+import org.jparsec.Scanners;
+import org.jparsec.Terminals;
+import org.jparsec.error.ParserException;
+import org.jparsec.pattern.Pattern;
+import org.jparsec.pattern.Patterns;
+
+public final class JparsecShowdown {
+
+  public static class IpFixture {
+    private static final Parser<String> PARSER = buildParser();
+
+    private static Parser<String> buildParser() {
+      Parser<Void> dot = isChar('.');
+      Parser<String> digits = DEC_INTEGER;
+      return sequence(digits, dot, digits, dot, digits, dot, digits).source();
+    }
+
+    static {
+      assertThat(PARSER.parse(BenchmarkInputs.IP)).isEqualTo(BenchmarkInputs.IP);
+    }
+
+    public String run() {
+      return PARSER.parse(BenchmarkInputs.IP);
+    }
+  }
+
+  public static class StringFixture {
+    private static final Parser<String> PARSER =
+        DOUBLE_QUOTE_STRING.source().map(BenchmarkInputs::unescape);
+
+    static {
+      assertThat(PARSER.parse(BenchmarkInputs.STRING_SIMPLE)).isEqualTo("hello world!");
+      assertThat(PARSER.parse(BenchmarkInputs.STRING_ESCAPED)).isEqualTo("hello \"world\"!");
+    }
+
+    public String run(String input) {
+      return PARSER.parse(input);
+    }
+  }
+
+  public static class KeywordsFixture {
+    private static final Parser<Keyword> KEYWORD =
+        or(
+            BenchmarkInputs.KEYWORDS.stream()
+                .map(kw -> Scanners.string(kw).retn(BenchmarkInputs.KEYWORD_MAP.get(kw)))
+                .collect(toList()));
+    private static final Parser<List<Keyword>> PARSER = KEYWORD.sepBy(isChar(','));
+
+    static {
+      List<Keyword> result = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CS);
+      assertThat(result.size()).isEqualTo(500);
+
+      assertThrows(
+          ParserException.class, () -> PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID));
+    }
+
+    public List<Keyword> run(String input) {
+      return PARSER.parse(input);
+    }
+  }
+
+  public static class IgnoreCaseFixture {
+    private static final Parser<Keyword> KEYWORD_CI =
+        or(
+            BenchmarkInputs.KEYWORDS.stream()
+                .map(
+                    kw ->
+                        Scanners.stringCaseInsensitive(kw)
+                            .retn(BenchmarkInputs.KEYWORD_MAP.get(kw)))
+                .collect(toList()));
+    private static final Parser<List<Keyword>> PARSER = KEYWORD_CI.sepBy(isChar(','));
+
+    static {
+      List<Keyword> result = PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_CI);
+      assertThat(result.size()).isEqualTo(500);
+      assertThrows(
+          ParserException.class, () -> PARSER.parse(BenchmarkInputs.KEYWORDS_LIST_INVALID_CI));
+    }
+
+    public List<Keyword> run(String input) {
+      return PARSER.parse(input);
+    }
+  }
+
+  public static class CalculatorFixture {
+    private static final Parser<Integer> PARSER = buildParser();
+
+    private static Parser<Integer> buildParser() {
+      var terms = Terminals.operators("+", "-", "*", "/", "(", ")");
+      var ignored = WHITESPACES.optional();
+
+      var tokenizer = or(DEC_INTEGER, terms.tokenizer());
+
+      var number = tokenType(String.class, "integer").map(Integer::parseInt);
+      var ref = Parser.<Integer>newReference();
+      var atom = or(number, ref.lazy().between(terms.token("("), terms.token(")")));
+      var expr =
+          new OperatorTable<Integer>()
+              .prefix(terms.token("-").retn(n -> -n), 3)
+              .infixl(terms.token("+").retn((a, b) -> a + b), 1)
+              .infixl(terms.token("-").retn((a, b) -> a - b), 1)
+              .infixl(terms.token("*").retn((a, b) -> a * b), 2)
+              .infixl(terms.token("/").retn((a, b) -> a / b), 2)
+              .build(atom);
+      ref.set(expr);
+
+      return expr.from(tokenizer, ignored);
+    }
+
+    static {
+      int res = PARSER.parse(BenchmarkInputs.CALCULATOR);
+      assertThat(res).isEqualTo(BenchmarkInputs.CALCULATOR_EXPECTED);
+    }
+
+    public Integer run() {
+      return PARSER.parse(BenchmarkInputs.CALCULATOR);
+    }
+  }
+
+  public static class NestedCommentFixture {
+    private static final Parser<Void> PARSER = nestableBlockComment("/*", "*/");
+
+    static {
+      // Verify
+      PARSER.parse(BenchmarkInputs.NESTED_COMMENT);
+    }
+
+    public Void run() {
+      return run(BenchmarkInputs.NESTED_COMMENT);
+    }
+
+    public Void run(String input) {
+      return PARSER.parse(input);
+    }
+  }
+
+  public static class UsPhoneFixture {
+    private static final Pattern D = Patterns.range('0', '9');
+    private static final Pattern D3 = D.next(D).next(D);
+    private static final Pattern D4 = D3.next(D);
+    private static final Pattern PHONE_PATTERN =
+        Patterns.isChar('(').next(D3).next(Patterns.isChar(')')).next(D3).next(Patterns.isChar('-')).next(D4);
+    private static final Parser<String> PARSER =
+        Scanners.pattern(PHONE_PATTERN, "US phone").source();
+
+    static {
+      assertThat(PARSER.parse(BenchmarkInputs.US_PHONE)).isEqualTo(BenchmarkInputs.US_PHONE);
+    }
+
+    public String run(String input) {
+      return PARSER.parse(input);
+    }
+  }
+
+  public static class UsPhoneListFixture {
+    private static final Parser<List<String>> PARSER =
+        UsPhoneFixture.PARSER
+            .sepBy(Scanners.WHITESPACES)
+            .between(Scanners.WHITESPACES.optional(), Scanners.WHITESPACES.optional());
+
+    static {
+      List<String> result = PARSER.parse(BenchmarkInputs.US_PHONE_LIST);
+      assertThat(result.size()).isEqualTo(1000);
+    }
+
+    public List<String> run(String input) {
+      return PARSER.parse(input);
+    }
+  }
+
+  private JparsecShowdown() {}
+}

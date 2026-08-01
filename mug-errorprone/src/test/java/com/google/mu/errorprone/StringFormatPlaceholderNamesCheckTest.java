@@ -231,6 +231,32 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
+  @Test
+  public void equalSignBeforeArrow() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final StringFormat FORMAT =",
+            "      new StringFormat(\"{pattern=a->b}\");",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void trailingSpacesBeforeArrowSignIgnored() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final StringFormat FORMAT =",
+            "      new StringFormat(\"{only_active -> status = 'ACTIVE'}\");",
+            "}")
+        .doTest();
+  }
+
   @Ignore
   @Test
   public void squareBracketedPlaceholdersChecked() {

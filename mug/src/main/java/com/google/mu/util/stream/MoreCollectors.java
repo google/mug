@@ -16,7 +16,6 @@ package com.google.mu.util.stream;
 
 import static java.lang.Math.max;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
@@ -84,7 +83,7 @@ public final class MoreCollectors {
    */
   public static <T, A, B, R> Collector<T, ?, R> mapping(
       Function<? super T, ? extends Both<? extends A, ? extends B>> mapper,
-      BiCollector<A, B, R> downstream) {
+      BiCollector<? super A, ? super B, R> downstream) {
     return Collectors.mapping(
         requireNonNull(mapper), downstream.collectorOf(BiStream::left, BiStream::right));
   }
@@ -96,7 +95,7 @@ public final class MoreCollectors {
    */
   public static <T, K, V, R> Collector<T, ?, R> flatMapping(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> flattener,
-      BiCollector<K, V, R> downstream) {
+      BiCollector<? super K, ? super V, R> downstream) {
     return Java9Collectors.flatMapping(
         flattener.andThen(BiStream::mapToEntry),
         downstream.<Map.Entry<? extends K, ? extends V>>collectorOf(
@@ -196,6 +195,23 @@ public final class MoreCollectors {
       arranger.accept(list);
       return Collections.unmodifiableList(list);
     });
+  }
+
+  /**
+   * Returns a {@link Collector} that maps the result of {@code upstream} collector using the {@code
+   * finisher} BiFunction. Useful when combined with collectors like {@link #partitioningBy}.
+   *
+   * <p>For example: <pre>{@code
+   * collectingAndThen(partitioningBy(Person::isGood), (good, evil) -> ...)
+   * }</pre>
+   *
+   * @since 8.1
+   */
+  public static <T, A, B, R> Collector<T, ?, R> collectingAndThen(
+      Collector<T, ?, ? extends Both<? extends A, ? extends B>> upstream,
+      BiFunction<? super A, ? super B, ? extends R> finisher) {
+    requireNonNull(finisher);
+    return Collectors.collectingAndThen(upstream, ab -> ab.andThen(finisher));
   }
 
   /**
@@ -335,8 +351,7 @@ public final class MoreCollectors {
       MapFrom7<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
-      @Override
-      R reduce(List<? extends T> list) {
+      @Override R reduce(List<? extends T> list) {
         return mapper.map(
             list.get(0),
             list.get(1),
@@ -347,8 +362,7 @@ public final class MoreCollectors {
             list.get(6));
       }
 
-      @Override
-      int arity() {
+      @Override int arity() {
         return 7;
       }
     };
@@ -369,8 +383,7 @@ public final class MoreCollectors {
       MapFrom8<? super T, ? extends R> mapper) {
     requireNonNull(mapper);
     return new ShortListCollector<T, R>() {
-      @Override
-      R reduce(List<? extends T> list) {
+      @Override R reduce(List<? extends T> list) {
         return mapper.map(
             list.get(0),
             list.get(1),
@@ -382,8 +395,7 @@ public final class MoreCollectors {
             list.get(7));
       }
 
-      @Override
-      int arity() {
+      @Override int arity() {
         return 8;
       }
     };
@@ -534,7 +546,7 @@ public final class MoreCollectors {
    * @since 6.0
    */
   public static <E, R> Collector<E, ?, Both<R, R>> partitioningBy(
-      Predicate<? super E> predicate, Collector<E, ?, R> downstream) {
+      Predicate<? super E> predicate, Collector<E, ?, ? extends R> downstream) {
     return partitioningBy(predicate, downstream, downstream);
   }
 
@@ -564,8 +576,8 @@ public final class MoreCollectors {
    */
   public static <E, A1, A2, T, F> Collector<E, ?, Both<T, F>> partitioningBy(
       Predicate<? super E> predicate,
-      Collector<E, A1, T> downstreamIfTrue,
-      Collector<E, A2, F> downstreamIfFalse) {
+      Collector<E, A1, ? extends T> downstreamIfTrue,
+      Collector<E, A2, ? extends F> downstreamIfFalse) {
     requireNonNull(predicate);
     Supplier<A1> factory1 = downstreamIfTrue.supplier();
     Supplier<A2> factory2 = downstreamIfFalse.supplier();
@@ -713,11 +725,12 @@ public final class MoreCollectors {
     return Collector.of(Builder::new, Builder::add, Builder::merge, Builder::build);
   }
 
+
   private static <T, R> Collector<T, ?, R> switching(List<FixedSizeCollector<T, ?, R>> cases) {
     if (cases.size() == 1) {
       return cases.get(0);
     }
-    return collectingAndThen(toList(), list -> {
+    return Collectors.collectingAndThen(toList(), list -> {
       int elementsToShow = 1;
       for (FixedSizeCollector<T, ?, R> c : cases) {
         if (c.appliesTo(list)) {

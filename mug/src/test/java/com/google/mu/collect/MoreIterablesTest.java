@@ -77,15 +77,13 @@ public class MoreIterablesTest {
 
   private enum IterableKind {
     ARRAY_LIST {
-      @Override
-      @SafeVarargs
+      @Override @SafeVarargs
       final <E> List<E> of(E... elements) {
         return asList(elements);
       }
     },
     IMMUTABLE_SET {
-      @Override
-      @SafeVarargs
+      @Override @SafeVarargs
       final <E> ImmutableSet<E> of(E... elements) {
         return ImmutableSet.copyOf(elements);
       }

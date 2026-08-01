@@ -113,25 +113,6 @@ public final class MoreStreams {
   }
 
   /**
-   * Flattens {@code streamOfStream} and returns an unordered sequential stream of the nested
-   * elements.
-   *
-   * <p>Logically, {@code stream.flatMap(fanOut)} is equivalent to
-   * {@code MoreStreams.flatten(stream.map(fanOut))}.
-   * Due to this <a href="https://bugs.openjdk.java.net/browse/JDK-8075939">JDK bug</a>,
-   * {@code flatMap()} uses {@code forEach()} internally and doesn't support short-circuiting for
-   * the passed-in stream. {@code flatten()} supports short-circuiting and can be used to
-   * flatten infinite streams.
-   *
-   * @since 1.9
-   * @deprecated Use {@code flatMap()} in Java 10+
-   */
-  @Deprecated
-  public static <T> Stream<T> flatten(Stream<? extends Stream<? extends T>> streamOfStream) {
-    return mapBySpliterator(streamOfStream.sequential(), 0, FlattenedSpliterator<T>::new);
-  }
-
-  /**
    * Groups consecutive elements from {@code stream} lazily. Two consecutive elements belong to the
    * same group if {@code sameGroup} evaluates to true. Consecutive elements belonging to the same
    * group will be collected together using {@code groupCollector}.
@@ -217,6 +198,30 @@ public final class MoreStreams {
   public static <T> Stream<T> groupConsecutive(
       Stream<T> stream, Function<? super T, ?> groupKeyFunction, BinaryOperator<T> groupReducer) {
     return groupConsecutive(stream, by(groupKeyFunction), groupReducer);
+  }
+
+  /**
+   * Merges consecutive elements of {@code mergedType} from {@code stream} lazily using {@code
+   * mergeFunction}.
+   *
+   * <p>For example, you can merge consecutive literals from an abstract syntax tree:
+   *
+   * <pre>{@code
+   * List<AstNode> merged =
+   *     mergeConsecutive(astNodes, LiteralNode.class, (a, b) -> new LiteralNode(a.value + b.value))
+   *         .toList());
+   * }</pre>
+   *
+   * @since 10.2
+   */
+  public static <T, S extends T> Stream<T> mergeConsecutive(
+      Stream<T> stream, Class<S> mergedType, BinaryOperator<S> mergeFunction) {
+    requireNonNull(mergedType);
+    requireNonNull(mergeFunction);
+    return groupConsecutive(
+        stream,
+        (a, b) -> mergedType.isInstance(a) && mergedType.isInstance(b),
+        (a, b) -> mergeFunction.apply(mergedType.cast(a), mergedType.cast(b)));
   }
 
   /**
@@ -338,7 +343,9 @@ public final class MoreStreams {
   public static <T> Stream<List<T>> dice(Stream<? extends T> stream, int maxSize) {
     requireNonNull(stream);
     if (maxSize <= 0) throw new IllegalArgumentException();
-    return mapBySpliterator(stream, Spliterator.NONNULL, it -> dice(it, maxSize));
+    Stream<List<T>> mapped = StreamSupport.stream(
+        () -> dice(stream.spliterator(), maxSize), Spliterator.NONNULL, stream.isParallel());
+    return mapped.onClose(stream::close);
   }
 
   /**
@@ -476,7 +483,7 @@ public final class MoreStreams {
   }
 
   /**
-   * Returns a sequential stream with {@code sideEfect} attached on every element.
+   * Returns a sequential stream with {@code sideEffect} attached on every element.
    *
    * <p>Unlike {@link Stream#peek}, which should only be used for debugging purpose,
    * the side effect is allowed to interfere with the source of the stream, and is
@@ -492,12 +499,13 @@ public final class MoreStreams {
   public static <T> Stream<T> withSideEffect(Stream<T> stream, Consumer<? super T> sideEffect) {
     requireNonNull(stream);
     requireNonNull(sideEffect);
-    return StreamSupport.stream(() -> withSideEffect(stream.spliterator(), sideEffect), 0, false);
+    return StreamSupport.stream(
+        () -> withSideEffect(stream.spliterator(), sideEffect), Spliterator.ORDERED, false);
   }
 
   private static <T> Spliterator<T> withSideEffect(
       Spliterator<T> spliterator, Consumer<? super T> sideEffect) {
-    return new AbstractSpliterator<T>(spliterator.estimateSize(), 0) {
+    return new AbstractSpliterator<T>(spliterator.estimateSize(), Spliterator.ORDERED) {
       @Override public boolean tryAdvance(Consumer<? super T> action) {
         return spliterator.tryAdvance(e -> {
           sideEffect.accept(e);
@@ -508,6 +516,26 @@ public final class MoreStreams {
   }
 
   /**
+   * Consume up to {@code n} elements from {@code stream}, pass them to {@code consumer}
+   * in encounter order, then return the remaining elements in a stream.
+   *
+   * <p>Upon return, to-be-consumed (up to {@code n}) elements have been consumed.
+   * The {@code stream} reference should no longer be used.
+   *
+   * @throws IllegalArgumentException if {@code n} is negative;
+   * @since 9.9.5
+   */
+  public static <T> Stream<T> consume(Stream<T> stream, int n, Consumer<? super T> consumer) {
+    if (n < 0) {
+      throw new IllegalArgumentException("n (" + n + ") shouldn't be negative");
+    }
+    Spliterator<T> spliterator = stream.spliterator();
+    requireNonNull(consumer);
+    for (int i = 0; i < n && spliterator.tryAdvance(consumer); i++) {}
+    return StreamSupport.stream(spliterator, /* parallel= */ false);
+  }
+
+  /**
    * Returns a collector that first copies all input elements into a new {@code Stream} and then
    * passes the stream to the {@code finisher} function, which translates it to the final result.
    */
@@ -515,17 +543,8 @@ public final class MoreStreams {
     return Collectors.collectingAndThen(toStream(), finisher);
   }
 
-  static <F, T> Stream<T> mapBySpliterator(
-      Stream<F> stream, int characteristics,
-      Function<? super Spliterator<F>, ? extends Spliterator<T>> mapper) {
-    requireNonNull(mapper);
-    Stream<T> mapped = StreamSupport.stream(
-        () -> mapper.apply(stream.spliterator()), characteristics, stream.isParallel());
-    return mapped.onClose(stream::close);
-  }
-
   /** Copying input elements into another stream. */
-  private static <T> Collector<T, ?, Stream<T>> toStream() {
+  static <T> Collector<T, ?, Stream<T>> toStream() {
     return Collector.of(
         Stream::<T>builder,
         Stream.Builder::add,
@@ -539,12 +558,6 @@ public final class MoreStreams {
   private static <T> BiPredicate<T, T> by(Function<? super T, ?> keyFunction) {
     requireNonNull(keyFunction);
     return (a, b) -> Objects.equals(keyFunction.apply(a), keyFunction.apply(b));
-  }
-
-  private static <F, T> T splitThenWrap(
-      Spliterator<F> from, Function<? super Spliterator<F>, ? extends T> wrapper) {
-    Spliterator<F> it = from.trySplit();
-    return it == null ? null : wrapper.apply(it);
   }
 
   private static final class DicedSpliterator<T> implements Spliterator<List<T>> {
@@ -566,7 +579,8 @@ public final class MoreStreams {
     }
 
     @Override public Spliterator<List<T>> trySplit() {
-      return splitThenWrap(underlying, it -> new DicedSpliterator<>(it, maxSize));
+      Spliterator<? extends T> it = underlying.trySplit();
+      return it == null ? null : new DicedSpliterator<>(it, maxSize);
     }
 
     @Override public long estimateSize() {
@@ -598,62 +612,6 @@ public final class MoreStreams {
     private long estimateChunks(long size) {
       long lower = size / maxSize;
       return lower + ((size % maxSize == 0) ? 0 : 1);
-    }
-  }
-
-  private static final class FlattenedSpliterator<T> implements Spliterator<T> {
-    private final Spliterator<? extends Stream<? extends T>> blocks;
-    private Spliterator<? extends T> currentBlock;
-    private final Consumer<Stream<? extends T>> nextBlock = block -> {
-      currentBlock = block.spliterator();
-    };
-
-    FlattenedSpliterator(Spliterator<? extends Stream<? extends T>> blocks) {
-      this.blocks = requireNonNull(blocks);
-    }
-
-    private FlattenedSpliterator(
-        Spliterator<? extends T> currentBlock, Spliterator<? extends Stream<? extends T>> blocks) {
-      this.blocks = requireNonNull(blocks);
-      this.currentBlock = currentBlock;
-    }
-
-    @Override public boolean tryAdvance(Consumer<? super T> action) {
-      requireNonNull(action);
-      if (currentBlock == null && !tryAdvanceBlock()) {
-        return false;
-      }
-      boolean advanced = false;
-      while ((!(advanced = currentBlock.tryAdvance(action))) && tryAdvanceBlock()) {}
-      return advanced;
-    }
-
-    @Override public Spliterator<T> trySplit() {
-      return splitThenWrap(blocks, it -> {
-        Spliterator<T> result = new FlattenedSpliterator<>(currentBlock, it);
-        currentBlock = null;
-        return result;
-      });
-    }
-
-    @Override public long estimateSize() {
-      return Long.MAX_VALUE;
-    }
-
-    @Override public long getExactSizeIfKnown() {
-      return -1;
-    }
-
-    @Override public int characteristics() {
-      // While we maintain encounter order as long as 'blocks' does, returning an ordered stream
-      // (which can be infinite) could surprise users when the user does things like
-      // "parallel().limit(n)". It's sufficient for normal use cases to respect encounter order
-      // without reporting order-ness.
-      return 0;
-    }
-
-    private boolean tryAdvanceBlock() {
-      return blocks.tryAdvance(nextBlock);
     }
   }
 

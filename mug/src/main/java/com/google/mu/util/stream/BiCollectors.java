@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -112,8 +113,7 @@ public final class BiCollectors {
   public static <K, V> BiCollector<K, V, Map<K, V>> toMap(BinaryOperator<V> valueMerger) {
     requireNonNull(valueMerger);
     return new BiCollector<K, V, Map<K, V>>() {
-      @Override
-      public <E> Collector<E, ?, Map<K, V>> collectorOf(
+      @Override public <E> Collector<E, ?, Map<K, V>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.toMap(toKey, toValue, valueMerger);
       }
@@ -137,8 +137,7 @@ public final class BiCollectors {
   public static <K, V1, V> BiCollector<K, V1, Map<K, V>> toMap(Collector<V1, ?, V> valueCollector) {
     requireNonNull(valueCollector);
     return new BiCollector<K, V1, Map<K, V>>() {
-      @Override
-      public <E> Collector<E, ?, Map<K, V>> collectorOf(
+      @Override public <E> Collector<E, ?, Map<K, V>> collectorOf(
           Function<E, K> toKey, Function<E, V1> toValue) {
         return Collectors.collectingAndThen(
             Collectors.groupingBy(
@@ -185,8 +184,7 @@ public final class BiCollectors {
       ToIntBiFunction<? super K, ? super V> mapper) {
     requireNonNull(mapper);
     return new BiCollector<K, V, Integer>() {
-      @Override
-      public <E> Collector<E, ?, Integer> collectorOf(
+      @Override public <E> Collector<E, ?, Integer> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.summingInt(e -> mapper.applyAsInt(toKey.apply(e), toValue.apply(e)));
       }
@@ -204,8 +202,7 @@ public final class BiCollectors {
       ToLongBiFunction<? super K, ? super V> mapper) {
     requireNonNull(mapper);
     return new BiCollector<K, V, Long>() {
-      @Override
-      public <E> Collector<E, ?, Long> collectorOf(
+      @Override public <E> Collector<E, ?, Long> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.summingLong(e -> mapper.applyAsLong(toKey.apply(e), toValue.apply(e)));
       }
@@ -223,8 +220,7 @@ public final class BiCollectors {
       ToDoubleBiFunction<? super K, ? super V> mapper) {
     requireNonNull(mapper);
     return new BiCollector<K, V, Double>() {
-      @Override
-      public <E> Collector<E, ?, Double> collectorOf(
+      @Override public <E> Collector<E, ?, Double> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.summingDouble(e -> mapper.applyAsDouble(toKey.apply(e), toValue.apply(e)));
       }
@@ -242,8 +238,7 @@ public final class BiCollectors {
       ToIntBiFunction<? super K, ? super V> mapper) {
     requireNonNull(mapper);
     return new BiCollector<K, V, Double>() {
-      @Override
-      public <E> Collector<E, ?, Double> collectorOf(
+      @Override public <E> Collector<E, ?, Double> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.averagingInt(e -> mapper.applyAsInt(toKey.apply(e), toValue.apply(e)));
       }
@@ -261,8 +256,7 @@ public final class BiCollectors {
       ToLongBiFunction<? super K, ? super V> mapper) {
     requireNonNull(mapper);
     return new BiCollector<K, V, Double>() {
-      @Override
-      public <E> Collector<E, ?, Double> collectorOf(
+      @Override public <E> Collector<E, ?, Double> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.averagingLong(e -> mapper.applyAsLong(toKey.apply(e), toValue.apply(e)));
       }
@@ -280,8 +274,7 @@ public final class BiCollectors {
       ToDoubleBiFunction<? super K, ? super V> mapper) {
     requireNonNull(mapper);
     return new BiCollector<K, V, Double>() {
-      @Override
-      public <E> Collector<E, ?, Double> collectorOf(
+      @Override public <E> Collector<E, ?, Double> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.averagingDouble(e -> mapper.applyAsDouble(toKey.apply(e), toValue.apply(e)));
       }
@@ -300,8 +293,7 @@ public final class BiCollectors {
       ToIntBiFunction<? super K, ? super V> mapper) {
     requireNonNull(mapper);
     return new BiCollector<K, V, IntSummaryStatistics>() {
-      @Override
-      public <E> Collector<E, ?, IntSummaryStatistics> collectorOf(
+      @Override public <E> Collector<E, ?, IntSummaryStatistics> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.summarizingInt(e -> mapper.applyAsInt(toKey.apply(e), toValue.apply(e)));
       }
@@ -320,8 +312,7 @@ public final class BiCollectors {
       ToLongBiFunction<? super K, ? super V> mapper) {
     requireNonNull(mapper);
     return new BiCollector<K, V, LongSummaryStatistics>() {
-      @Override
-      public <E> Collector<E, ?, LongSummaryStatistics> collectorOf(
+      @Override public <E> Collector<E, ?, LongSummaryStatistics> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.summarizingLong(e -> mapper.applyAsLong(toKey.apply(e), toValue.apply(e)));
       }
@@ -340,8 +331,7 @@ public final class BiCollectors {
       ToDoubleBiFunction<? super K, ? super V> mapper) {
     requireNonNull(mapper);
     return new BiCollector<K, V, DoubleSummaryStatistics>() {
-      @Override
-      public <E> Collector<E, ?, DoubleSummaryStatistics> collectorOf(
+      @Override public <E> Collector<E, ?, DoubleSummaryStatistics> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.summarizingDouble(e -> mapper.applyAsDouble(toKey.apply(e), toValue.apply(e)));
       }
@@ -391,8 +381,7 @@ public final class BiCollectors {
     requireNonNull(classifier);
     requireNonNull(groupCollector);
     return new BiCollector<K, V, BiStream<G, R>>() {
-      @Override
-      public <E> Collector<E, ?, BiStream<G, R>> collectorOf(
+      @Override public <E> Collector<E, ?, BiStream<G, R>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return BiStream.groupingBy(
             e -> classifier.apply(toKey.apply(e), toValue.apply(e)),
@@ -445,13 +434,88 @@ public final class BiCollectors {
     requireNonNull(classifier);
     requireNonNull(groupReducer);
     return new BiCollector<K, V, BiStream<G, V>>() {
-      @Override
-      public <E> Collector<E, ?, BiStream<G, V>> collectorOf(
+      @Override public <E> Collector<E, ?, BiStream<G, V>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return BiStream.groupingBy(toKey.andThen(classifier), toValue, groupReducer);
       }
     };
   }
+
+/**
+ * Returns a BiCollector that partitions the incoming pairs into two groups: elements that match
+ * {@code predicate}, and those that don't. Both groups are stored in a BiStream.
+ *
+ * <p>For example:
+ *
+ * <pre>{@code
+ * timeSeries
+ *     .collect(partitioningBy((time, event) -> event.isImportant()))
+ *     .andThen((importantEvents, unimportantEvents) -> ...);
+ * }</pre>
+ *
+ * @since 8.1
+ */
+public static <K, V> BiCollector<K, V, Both<BiStream<K, V>, BiStream<K, V>>> partitioningBy(
+    BiPredicate<? super K, ? super V> predicate) {
+  return partitioningBy(predicate, BiStream::toBiStream);
+}
+
+/**
+ * Returns a BiCollector that partitions the incoming pairs into two groups: elements that match
+ * {@code predicate}, and those that don't, and use {@code downstream} collector to collect the
+ * pairs.
+ *
+ * <p>For example:
+ *
+ * <pre>{@code
+ * timeSeries
+ *     .collect(partitioningBy((time, event) -> event.isImportant(), toSortedImmutableMap()))
+ *     .andThen((importantEvents, unimportantEvents) -> ...);
+ * }</pre>
+ *
+ * @param <K> the input key type
+ * @param <V> the input value type
+ * @param <R> the result type of the downstream collector
+ * @since 8.1
+ */
+public static <K, V, R> BiCollector<K, V, Both<R, R>> partitioningBy(
+    BiPredicate<? super K, ? super V> predicate,
+    BiCollector<? super K, ? super V, ? extends R> downstream) {
+  return partitioningBy(predicate, downstream, downstream);
+}
+
+/**
+ * Returns a BiCollector that partitions the incoming pairs into two groups: elements that match
+ * {@code predicate}, and those that don't, and use {@code ifTrue} and {@code ifFalse} downstream
+ * collectors respectively to collect the pairs.
+ *
+ * <p>For example:
+ *
+ * <pre>{@code
+ * timeSeries
+ *     .collect(
+ *         partitioningBy((time, event) -> event.isImportant(), toImmutableMap(), counting()))
+ *     .andThen((importantEvents, unimportantCount) -> ...);
+ * }</pre>
+ *
+ * @param <K> the input key type
+ * @param <V> the input value type
+ * @param <T> the result type for the pairs that evaluate to true
+ * @param <F> the result type for the pairs that evaluate to false
+ * @since 8.1
+ */
+public static <K, V, T, F> BiCollector<K, V, Both<T, F>> partitioningBy(
+    BiPredicate<? super K, ? super V> predicate,
+    BiCollector<? super K, ? super V, ? extends T> ifTrue,
+    BiCollector<? super K, ? super V, ? extends F> ifFalse) {
+  requireNonNull(predicate);
+  return mapping(
+      AbstractMap.SimpleImmutableEntry<K, V>::new,
+      MoreCollectors.partitioningBy(
+          (Map.Entry<K, V> e) -> predicate.test(e.getKey(), e.getValue()),
+          ifTrue.collectorOf(Map.Entry::getKey, Map.Entry::getValue),
+          ifFalse.collectorOf(Map.Entry::getKey, Map.Entry::getValue)));
+}
 
   /**
    * Returns a {@link BiCollector} that maps the result of {@code upstream} collector using
@@ -464,11 +528,29 @@ public final class BiCollectors {
     requireNonNull(upstream);
     requireNonNull(finisher);
     return new BiCollector<K, V, R>() {
-      @Override
-      public <E> Collector<E, ?, R> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
+      @Override public <E> Collector<E, ?, R> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.collectingAndThen(upstream.collectorOf(toKey, toValue), finisher::apply);
       }
     };
+  }
+
+  /**
+   * Returns a {@link BiCollector} that maps the result of {@code collector} using the {@code
+   * finisher} BiFunction. Useful when combined with BiCollectors like {@link #partitioningBy}.
+   *
+   * <p>For example: <pre>{@code
+   * collectingAndThen(
+   *     partitioningBy((time, request) -> isAllowed(time, request), toMap(), counting()),
+   *     (allowedRequests, disallowed) -> ...)
+   * }</pre>
+   *
+   * @since 8.1
+   */
+  public static <K, V, A, B, R> BiCollector<K, V, R> collectingAndThen(
+      BiCollector<K, V, ? extends Both<? extends A, ? extends B>> collector,
+      BiFunction<? super A, ? super B, ? extends R> finisher) {
+    requireNonNull(finisher);
+    return collectingAndThen(collector, ab -> ab.andThen(finisher));
   }
 
   /**
@@ -525,11 +607,31 @@ public final class BiCollectors {
     requireNonNull(keyMapper);
     requireNonNull(valueMapper);
     requireNonNull(downstream);
+    return mapping(
+        AbstractMap.SimpleImmutableEntry<K, V>::new,
+        downstream.collectorOf(
+            kv -> keyMapper.apply(kv.getKey(), kv.getValue()),
+            kv -> valueMapper.apply(kv.getKey(), kv.getValue())));
+  }
+
+  /**
+   * Returns a {@link BiCollector} that first maps the input pair using {@code keyMapper} and {@code
+   * valueMapper}, then collects the results using the {@code downstream} collector.
+   *
+   * @since 8.2
+   */
+  public static <K, V, K1, V1, R> BiCollector<K, V, R> mapping(
+      Function<? super K, ? extends K1> keyMapper,
+      Function<? super V, ? extends V1> valueMapper,
+      BiCollector<K1, V1, R> downstream) {
+    requireNonNull(keyMapper);
+    requireNonNull(valueMapper);
+    requireNonNull(downstream);
     return new BiCollector<K, V, R>() {
       @Override public <E> Collector<E, ?, R> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
         return downstream.collectorOf(
-            e -> keyMapper.apply(toKey.apply(e), toValue.apply(e)),
-            e -> valueMapper.apply(toKey.apply(e), toValue.apply(e)));
+            e -> keyMapper.apply(toKey.apply(e)),
+            e -> valueMapper.apply(toValue.apply(e)));
       }
     };
   }
@@ -635,6 +737,16 @@ public final class BiCollectors {
   }
 
   /**
+   * Returns a BiCollector that inverses the input pairs of {@code (a, b)} into {@code (b, a)}
+   * before passing it to {@code downstream} collector.
+   *
+   * @since 8.1
+   */
+  public static <A, B, R> BiCollector<A, B, R> inverse(BiCollector<B, A, R> downstream) {
+    return mapping((k, v) -> v, (k, v) -> k, downstream);
+  }
+
+  /**
    * Returns a {@link BiCollector} that finds the pair with the maximum key according to {@code
    * comparator}.
    *
@@ -725,8 +837,7 @@ public final class BiCollectors {
       Comparator<? super Map.Entry<K, V>> comparator) {
     requireNonNull(comparator);
     return new BiCollector<K, V, BiOptional<K, V>>() {
-      @Override
-      public <E> Collector<E, ?, BiOptional<K, V>> collectorOf(
+      @Override public <E> Collector<E, ?, BiOptional<K, V>> collectorOf(
           Function<E, K> toKey, Function<E, V> toValue) {
         return Collectors.collectingAndThen(
             Collectors.mapping(

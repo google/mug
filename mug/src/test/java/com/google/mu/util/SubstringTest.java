@@ -6,6 +6,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.BEGINNING;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.after;
+import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.before;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
@@ -121,6 +122,7 @@ public class SubstringTest {
     assertThat(prefix("foo").in("")).isEmpty();
     assertThat(prefix("foo").repeatedly().match("notfoo")).isEmpty();
     assertThat(prefix("foo").repeatedly().match("")).isEmpty();
+    assertThat(prefix("foo").repeatedly().match("notfoo", 1)).isEmpty();
   }
 
   @Test public void prefix_matchesFullString() {
@@ -1051,6 +1053,139 @@ public class SubstringTest {
     assertThrows(IndexOutOfBoundsException.class, () -> first(Pattern.compile("f(o.)(ba.)"), 3));
   }
 
+  @Test public void regexGroup_optionalGroupNotParticipating() {
+    // Pattern: (a)?(b) - first group optional
+    // Input: "b" - group 1 doesn't participate, should return empty Optional
+    assertThat(first(Pattern.compile("(a)?(b)"), 1).in("b")).isEmpty();
+    // Group 2 still participates
+    assertThat(first(Pattern.compile("(a)?(b)"), 2).in("b").map(Match::index)).hasValue(0);
+  }
+
+  @Test public void regexGroup_optionalGroupParticipates() {
+    // When optional group does participate
+    assertThat(first(Pattern.compile("(a)?(b)"), 1).in("ab").map(Match::index)).hasValue(0);
+    assertThat(first(Pattern.compile("(a)?(b)"), 2).in("ab").map(Match::index)).hasValue(1);
+  }
+
+  @Test public void regexGroup_optionalGroupNotParticipating_repeatedly() {
+    // repeatedly() stops when first match has non-participating group
+    assertThat(first(Pattern.compile("(a)?(b)"), 1).repeatedly().from("b"))
+        .isEmpty();
+    assertThat(first(Pattern.compile("(a)?(b)"), 1).repeatedly().from("bb"))
+        .isEmpty();
+  }
+
+  @Test public void regexGroup_decimalNumberOptional() {
+    // Pattern: \d+(\.\d+)? - optional decimal part
+    // "price: 42" - no decimal part, group 1 doesn't participate
+    assertThat(first(Pattern.compile("\\d+(\\.\\d+)?"), 1).in("price: 42")).isEmpty();
+    // "price: 42.99" - has decimal, should return ".99"
+    Substring.Match match = first(Pattern.compile("\\d+(\\.\\d+)?"), 1).in("price: 42.99").get();
+    assertThat(match.toString()).isEqualTo(".99");
+    assertThat(match.before()).isEqualTo("price: 42");
+    assertThat(match.after()).isEmpty();
+  }
+
+  @Test public void regexGroup_multipleOptionalGroups() {
+    // Pattern: (a)?(b)?(c) - two optional groups
+    // Only group 3 participates
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 1).from("c")).isEmpty();
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 2).from("c")).isEmpty();
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 3).in("c").map(Match::index))
+        .hasValue(0);
+    // Groups 1 and 3 participate, group 2 doesn't
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 1).in("ac").map(Match::index))
+        .hasValue(0);
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 2).from("ac")).isEmpty();
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 3).in("ac").map(Match::index))
+        .hasValue(1);
+  }
+
+  @Test public void regexGroup_nestedOptionalGroups() {
+    // Pattern with nested optional groups: ((a)b)?(c)
+    // "c" - outer group doesn't participate, inner group (c) does
+    assertThat(first(Pattern.compile("((a)b)?(c)"), 1).in("c")).isEmpty();
+  }
+
+  @Test public void regexGroup_alternationWithOptionalGroup() {
+    // Pattern: (a)?b|c - group 1 is optional in first alternative
+    assertThat(first(Pattern.compile("(a)?b|c"), 1).in("b")).isEmpty();
+    assertThat(first(Pattern.compile("(a)?b|c"), 1).in("ab").map(Match::index)).hasValue(0);
+    // "c" matches second alternative, group 1 doesn't participate
+    assertThat(first(Pattern.compile("(a)?b|c"), 1).in("c")).isEmpty();
+  }
+
+  @Test public void regexGroup_secondMatchHasOptionalGroup() {
+    assertThat(first(Pattern.compile("(a)?b|c"), 1).in("bab").map(Match::index))
+        .hasValue(1);
+  }
+
+  @Test public void all_regexGroup_secondAndFourthMatchHasOptionalGroup() {
+    assertThat(first(Pattern.compile("(a)?(b|c)"), 1).repeatedly().match("babcac").map(Match::index))
+        .containsExactly(1, 4)
+        .inOrder();
+  }
+
+  @Test public void regexGroup_zeroLengthMatch() {
+    // Pattern with * quantifier that can match zero times
+    // a*b* - both can match zero times (but still participate)
+    // When pattern matches but group is empty, it should still return a match
+    assertThat(first(Pattern.compile("(a*)(b*)"), 1).from("c")).hasValue("");
+    assertThat(first(Pattern.compile("(a*)(b*)"), 2).from("c")).hasValue("");
+    assertThat(first(Pattern.compile("(a*)(b*)"), 1).from("aa")).hasValue("aa");
+    assertThat(first(Pattern.compile("(a*)(b*)"), 2).from("aa")).hasValue("");
+  }
+
+  @Test public void all_regexGroup_zeroLengthMatch() {
+    // Pattern with * quantifier that can match zero times
+    // a*b* - both can match zero times (but still participate)
+    // When pattern matches but group is empty, it should still return a match
+    assertThat(first(Pattern.compile("(a*)(b*)"), 1).repeatedly().from("c"))
+        .containsExactly("", "");
+  }
+
+  @Test public void all_regexGroup_optionalGroup_zeroLengthMatch() {
+    // Pattern with * quantifier that can match zero times
+    // a*b* - both can match zero times (but still participate)
+    // When pattern matches but group is empty, it should still return a match
+    assertThat(first(Pattern.compile("((a)?)"), 2).repeatedly().from("c"))
+        .isEmpty();
+  }
+
+  @Test public void all_regex_multipleOccurrences() {
+    assertThat(all(Pattern.compile("\\w+")).from("foo > bar = baz"))
+        .containsExactly("foo", "bar", "baz")
+        .inOrder();
+  }
+
+  @Test public void all_regex_oneOccurrence() {
+    assertThat(all(Pattern.compile("\\w+")).from("<foo..>"))
+        .containsExactly("foo")
+        .inOrder();
+  }
+
+  @Test public void all_regex_noOccurrence() {
+    assertThat(all(Pattern.compile("\\w+")).from("<...>")).isEmpty();
+  }
+
+  @Test public void all_regex_withAnchors() {
+    assertThat(all(Pattern.compile("^\\w+")).from("foo.bar/baz"))
+        .containsExactly("foo")
+        .inOrder();
+    assertThat(all(Pattern.compile("\\w+$")).from("foo.bar/baz"))
+        .containsExactly("baz")
+        .inOrder();
+    assertThat(all(Pattern.compile("\\b\\w+\\b")).from("foo.bar/baz"))
+        .containsExactly("foo", "bar", "baz")
+        .inOrder();
+  }
+
+  @Test public void all_regex_withGroups() {
+    assertThat(all(Pattern.compile("(\\w+)")).from("<foo.bar/baz>"))
+        .containsExactly("foo", "bar", "baz")
+        .inOrder();
+  }
+
   @Test public void lastSnippet_toString() {
     assertThat(last("foo").toString()).isEqualTo("last('foo')");
   }
@@ -1557,10 +1692,6 @@ public class SubstringTest {
         .inOrder();
   }
 
-  @Test public void split_cannotSplit() {
-    assertThat(first('=').split("foo:bar")).isEqualTo(BiOptional.empty());
-  }
-
   @Test public void repeatedly_split_distinct() {
     assertThat(first(',').repeatedly().split("b,a,c,a,c,b,d").map(Match::toString).distinct())
         .containsExactly("b", "a", "c", "d")
@@ -1589,6 +1720,11 @@ public class SubstringTest {
         .containsExactly("foo", "bar");
     assertThat(first("/").repeatedly().splitThenTrim(" foo/bar/").map(Match::toString))
         .containsExactly("foo", "bar", "");
+  }
+
+  @Test public void repeatedly_splitThenTrim_emptyParts() {
+    assertThat(first("//").repeatedly().splitThenTrim(" // //   ").map(Match::toString))
+        .containsExactly("", "", "");
   }
 
   @Test public void repeatedly_splitKeyValuesAround_empty() {
@@ -1706,10 +1842,73 @@ public class SubstringTest {
         .isEqualTo(Spliterator.ORDERED);
   }
 
-  @Test public void split_canSplit() {
+  @Test public void match_trim_toEmpty() {
+    Substring.Match match = Substring.between('(', ')').in("(  )").get().trim();
+    assertThat(match.length()).isEqualTo(0);
+    assertThat(match.isNotEmpty()).isFalse();
+    assertThat(match.toString()).isEmpty();
+  }
+
+  @Test
+  public void split_cannotSplit() {
+    assertThat(first('=').split("foo:bar")).isEqualTo(BiOptional.empty());
+    assertThat(first('=').split("foo:bar", (k, v) -> k + v)).isEmpty();
+  }
+
+  @Test
+  public void split_canSplit() {
     assertThat(first('=').split(" foo=bar").map((String k, String v) -> k)).hasValue(" foo");
     assertThat(first('=').split("foo=bar ").map((String k, String v) -> v)).hasValue("bar ");
-    assertThat(first('=').split(" foo=bar").map((String k, String v) -> k)).hasValue(" foo");
+    assertThat(first('=').split(" foo=bar", (k, v) -> k)).hasValue(" foo");
+    assertThat(first('=').split("foo=bar ", (k, v) -> v)).hasValue("bar ");
+  }
+
+  @Test
+  public void split_beginning() {
+    assertThat(BEGINNING.split(" foo").map((String k, String v) -> k)).hasValue("");
+    assertThat(BEGINNING.split(" foo").map((String k, String v) -> v)).hasValue(" foo");
+    assertThat(BEGINNING.split(" foo", (k, v) -> k)).hasValue("");
+    assertThat(BEGINNING.split(" foo", (k, v) -> v)).hasValue(" foo");
+  }
+
+  @Test
+  public void split_end() {
+    assertThat(END.split(" foo").map((String k, String v) -> k)).hasValue(" foo");
+    assertThat(END.split(" foo").map((String k, String v) -> v)).hasValue("");
+    assertThat(END.split(" foo", (k, v) -> k)).hasValue(" foo");
+    assertThat(END.split(" foo", (k, v) -> v)).hasValue("");
+  }
+
+  @Test
+  public void splitThenTrim_cannotSplit() {
+    assertThat(first('=').splitThenTrim("foo:bar")).isEqualTo(BiOptional.empty());
+    assertThat(first('=').splitThenTrim("foo:bar", (k, v) -> k + v)).isEmpty();
+  }
+
+  @Test
+  public void splitThenTrim_canSplit() {
+    assertThat(first('=').splitThenTrim(" foo =bar").map((String k, String v) -> k))
+        .hasValue("foo");
+    assertThat(first('=').splitThenTrim("foo = bar ").map((String k, String v) -> v))
+        .hasValue("bar");
+    assertThat(first('=').splitThenTrim(" foo =bar", (k, v) -> k)).hasValue("foo");
+    assertThat(first('=').splitThenTrim("foo = bar ", (k, v) -> v)).hasValue("bar");
+  }
+
+  @Test
+  public void splitThenTrim_beginning() {
+    assertThat(BEGINNING.splitThenTrim(" foo").map((String k, String v) -> k)).hasValue("");
+    assertThat(BEGINNING.splitThenTrim(" foo").map((String k, String v) -> v)).hasValue("foo");
+    assertThat(BEGINNING.splitThenTrim(" foo", (k, v) -> k)).hasValue("");
+    assertThat(BEGINNING.splitThenTrim(" foo", (k, v) -> v)).hasValue("foo");
+  }
+
+  @Test
+  public void splitThenTrim_end() {
+    assertThat(END.splitThenTrim(" foo ").map((String k, String v) -> k)).hasValue("foo");
+    assertThat(END.splitThenTrim(" foo").map((String k, String v) -> v)).hasValue("");
+    assertThat(END.splitThenTrim(" foo ", (k, v) -> k)).hasValue("foo");
+    assertThat(END.splitThenTrim(" foo", (k, v) -> v)).hasValue("");
   }
 
   @Test public void splitThenTrim_intoTwoParts_cannotSplit() {
@@ -2361,7 +2560,13 @@ public class SubstringTest {
     assertThat(
             Substring.between(delimiter, delimiter).repeatedly().match("-foo-bar-baz-")
                 .map(Object::toString))
-        .containsExactly("foo", "bar", "baz");
+        .containsExactly("foo", "bar", "baz")
+        .inOrder();
+    assertThat(
+            Substring.between(delimiter, delimiter).repeatedly().match("-foo-bar-baz-", 1)
+                .map(Object::toString))
+        .containsExactly("bar", "baz")
+        .inOrder();;
   }
 
   @Test public void between_matchedFully() {
@@ -2404,6 +2609,14 @@ public class SubstringTest {
             Substring.between(last('<'), last('>')).repeatedly().match("<foo><bar> <baz>")
                 .map(Object::toString))
         .containsExactly("baz");
+    assertThat(
+            Substring.between(last('<'), last('>')).repeatedly().match("<foo><bar> <baz>", 11)
+                .map(Object::toString))
+        .containsExactly("baz");
+    assertThat(
+            Substring.between(last('<'), last('>')).repeatedly().match("<foo><bar> <baz>", 12)
+                .map(Object::toString))
+        .isEmpty();
   }
 
   @Test public void between_matchedIncludingDelimiters() {
@@ -2430,6 +2643,14 @@ public class SubstringTest {
             Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE).repeatedly().match("begin<foo>end")
                 .map(Object::toString))
         .containsExactly("<foo>");
+    assertThat(
+            Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE).repeatedly().match("begin<foo>end", 5)
+                .map(Object::toString))
+        .containsExactly("<foo>");
+    assertThat(
+            Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE).repeatedly().match("begin<foo>end", 6)
+                .map(Object::toString))
+        .isEmpty();
   }
 
   @Test public void between_nothingBetweenSameChar() {
@@ -2510,16 +2731,19 @@ public class SubstringTest {
   @Test public void between_closeOverlapsWithOpen() {
     assertThat(Substring.between(first("abc"), last("cde")).in("abcde")).isEmpty();
     assertThat(Substring.between(first("abc"), last("cde")).repeatedly().match("abcde")).isEmpty();
+    assertThat(Substring.between(first("abc"), last("cde")).repeatedly().match("abcde", 1)).isEmpty();
     assertThat(Substring.between(first("abc"), last('c')).in("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), last('c')).repeatedly().match("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), suffix("cde")).in("abcde")).isEmpty();
     assertThat(Substring.between(first("abc"), suffix("cde")).repeatedly().match("abcde")).isEmpty();
+    assertThat(Substring.between(first("abc"), suffix("cde")).repeatedly().match("abcde", 2)).isEmpty();
     assertThat(Substring.between(first("abc"), suffix('c')).in("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), suffix('c')).repeatedly().match("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), prefix("a")).in("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), prefix("a")).repeatedly().match("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), prefix('a')).in("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), prefix('a')).repeatedly().match("abc")).isEmpty();
+    assertThat(Substring.between(first("abc"), prefix('a')).repeatedly().match("abc", 3)).isEmpty();
     assertThat(Substring.between("abc", "a").in("abc")).isEmpty();
     assertThat(Substring.between("abc", "a").repeatedly().match("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), first('a')).in("abc")).isEmpty();
@@ -2580,6 +2804,18 @@ public class SubstringTest {
             Substring.between("-", "-").repeatedly().match("foo-bar-baz-duh")
                 .map(Object::toString))
         .containsExactly("bar", "baz");
+    assertThat(
+            Substring.between("-", "-").repeatedly().match("foo-bar-baz-duh", 1)
+                .map(Object::toString))
+        .containsExactly("bar", "baz");
+    assertThat(
+            Substring.between("-", "-").repeatedly().match("foo-bar-baz-duh", 3)
+                .map(Object::toString))
+        .containsExactly("bar", "baz");
+    assertThat(
+            Substring.between("-", "-").repeatedly().match("foo-bar-baz-duh", 4)
+                .map(Object::toString))
+        .containsExactly("baz");
   }
 
   @Test public void between_closeBeforeOpenIgnored() {
@@ -2614,6 +2850,9 @@ public class SubstringTest {
         .hasValue("GET:http");
     assertThat(
             before(first('/')).then(prefix("")).repeatedly().match("foo/bar/").map(Match::before))
+        .containsExactly("foo", "foo/bar");
+    assertThat(
+            before(first('/')).then(prefix("")).repeatedly().match("foo/bar/", 1).map(Match::before))
         .containsExactly("foo", "foo/bar");
   }
 
@@ -3793,6 +4032,209 @@ public class SubstringTest {
         .isEmpty();
   }
 
+  @Test public void testRegexTopLevelGroups_matchWithFromIndex() {
+    assertThat(
+            Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+                .match("fffcde", 1)
+                .map(Object::toString))
+        .containsExactly("ff", "cde");
+    assertThat(
+            Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+                .match("fffcde", 2)
+                .map(Object::toString))
+        .containsExactly("f", "cde");
+  }
+
+  @Test public void testRegexTopLevelGroups_beforeAfter_withFromIndex() {
+    // Test that before() and after() return text relative to ORIGINAL input, not the substring
+    // Original: "abcfffcde123"
+    // From index 3: "fffcde" -> matches "(f+)(cde)" -> ["fff", "cde"]
+    // The first group is "fff" at index 3-6 in the original input
+    // before() should be "abc" (text before index 3)
+    // after() should be "cde123" (text after index 6, including the second group)
+    Substring.Match match =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match("abcfffcde123", 3)
+            .findFirst()
+            .get();
+    assertThat(match.before()).isEqualTo("abc");
+    assertThat(match.after()).isEqualTo("cde123");
+    assertThat(match.toString()).isEqualTo("fff");
+
+    // Test with match at the beginning (fromIndex = 0)
+    Substring.Match matchAtStart =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match("fffcde123", 0)
+            .findFirst()
+            .get();
+    assertThat(matchAtStart.before()).isEmpty();
+    assertThat(matchAtStart.after()).isEqualTo("cde123");
+
+    // Test with match at the end
+    Substring.Match matchAtEnd =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match("123fffcde", 3)
+            .findFirst()
+            .get();
+    assertThat(matchAtEnd.before()).isEqualTo("123");
+    assertThat(matchAtEnd.after()).isEqualTo("cde");
+  }
+
+  @Test public void testRegexTopLevelGroups_remove_withFromIndex() {
+    // Test that remove() correctly removes the first group match from the ORIGINAL input
+    String input = "abcfffcde123";
+    Substring.Match match =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input, 3)
+            .findFirst()
+            .get();
+    // Should remove "fff" (first group) from the original, leaving "abccde123"
+    assertThat(match.remove()).isEqualTo("abccde123");
+
+    // Test with match at the beginning
+    String input2 = "fffcde123";
+    Substring.Match match2 =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input2, 0)
+            .findFirst()
+            .get();
+    assertThat(match2.remove()).isEqualTo("cde123");
+
+    // Test with match at the end
+    String input3 = "123fffcde";
+    Substring.Match match3 =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input3, 3)
+            .findFirst()
+            .get();
+    assertThat(match3.remove()).isEqualTo("123cde");
+
+    // Test with match in the middle only
+    String input4 = "xxxfffcdeyyy";
+    Substring.Match match4 =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input4, 3)
+            .findFirst()
+            .get();
+    assertThat(match4.remove()).isEqualTo("xxxcdeyyy");
+  }
+
+  @Test public void testRegexTopLevelGroups_fullString_withFromIndex() {
+    // Test that fullString() returns the ORIGINAL input, not the substring
+    String input = "abcfffcde123";
+    Substring.Match match =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input, 3)
+            .findFirst()
+            .get();
+    assertThat(match.fullString()).isEqualTo(input);
+
+    // Even when matching from middle of string, fullString() returns original
+    String input2 = "start-fffcde-end";
+    Substring.Match match2 =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(fff)(cde)"))
+            .match(input2, 6)
+            .findFirst()
+            .get();
+    assertThat(match2.fullString()).isEqualTo(input2);
+  }
+
+  @Test public void testRegexTopLevelGroups_index_withFromIndex() {
+    // Test that index() and length() are absolute positions in ORIGINAL input
+    String input = "abcfffcde123";
+    Substring.Match match =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input, 3)
+            .findFirst()
+            .get();
+    // First group "fff" starts at index 3 and has length 3
+    assertThat(match.index()).isEqualTo(3);
+    assertThat(match.length()).isEqualTo(3);
+
+    // Test with match at different positions
+    String input2 = "xfffcde";
+    Substring.Match match2 =
+        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+            .match(input2, 1)
+            .findFirst()
+            .get();
+    assertThat(match2.index()).isEqualTo(1);
+    assertThat(match2.length()).isEqualTo(3);
+
+    // Verify indices are consistent with before() and after()
+    assertThat(match2.before()).isEqualTo(input2.substring(0, match2.index()));
+    assertThat(match2.after()).isEqualTo(input2.substring(match2.index() + match2.length()));
+  }
+
+  @Test public void testRegexTopLevelGroups_optionalGroupNotParticipating() {
+    // Pattern: (a)?(b) - first group optional
+    // Input: "b" - group 1 doesn't participate, should skip it and return only group 2
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)")).from("b"))
+        .containsExactly("b");
+  }
+
+  @Test public void testRegexTopLevelGroups_optionalGroupParticipating() {
+    // When optional group does participate, both groups are returned
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)")).from("ab"))
+        .containsExactly("a", "b");
+  }
+
+  @Test public void testRegexTopLevelGroups_multipleOptionalGroups() {
+    // Pattern: (a)?(b)?(c) - two optional groups
+    // Only group 3 participates
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)?(c)")).from("c"))
+        .containsExactly("c");
+    // Groups 1 and 3 participate, group 2 doesn't
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)?(c)")).from("ac"))
+        .containsExactly("a", "c");
+    // All groups participate
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)?(c)")).from("abc"))
+        .containsExactly("a", "b", "c");
+  }
+
+  @Test public void testRegexTopLevelGroups_nestedOptionalGroups() {
+    // Pattern: ((a)b)?(c) - outer group is optional
+    // "c" - outer group doesn't participate, only group 2
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("((a)b)?(c)")).from("c"))
+        .containsExactly("c");
+    // "abc" - both groups participate
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("((a)b)?(c)")).from("abc"))
+        .containsExactly("ab", "c");
+  }
+
+  @Test public void testRegexTopLevelGroups_trailingOptionalGroup() {
+    // Pattern: (\d+)(\.\d+)? - optional decimal part
+    // "42" - no decimal part
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(\\d+)(\\.\\d+)?")).from("42"))
+        .containsExactly("42");
+    // "42.99" - has decimal part
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(\\d+)(\\.\\d+)?")).from("42.99"))
+        .containsExactly("42", ".99");
+  }
+
+  @Test public void testRegexTopLevelGroups_optionalGroupInMiddle() {
+    // Pattern: (a+)(b)?(c+) - optional middle group
+    // "ac" - middle group doesn't participate
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a+)(b)?(c+)")).from("ac"))
+        .containsExactly("a", "c");
+    // "abc" - all groups participate
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a+)(b)?(c+)")).from("abc"))
+        .containsExactly("a", "b", "c");
+  }
+
+  @Test public void testRegexTopLevelGroups_allOptionalGroups() {
+    // Pattern with all top-level groups optional: (a)?(b)?
+    // Only "b" participates
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)?")).from("b"))
+        .containsExactly("b");
+    // Only "a" participates
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)?")).from("a"))
+        .containsExactly("a");
+    // Both participate
+    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a)?(b)?")).from("ab"))
+        .containsExactly("a", "b");
+  }
+
   @Test
   public void match_contentEquals_false() {
     Substring.Match match = first("bar").in("foobarbaz").get();
@@ -3860,6 +4302,17 @@ public class SubstringTest {
     assertThat(match.isFollowedBy("")).isTrue();
   }
 
+  @Test public void match_isFollowedByChar_notAtTheEnd() {
+    Substring.Match match = first("foo").in("foobar").get();
+    assertThat(match.isFollowedBy(c -> c == 'a')).isFalse();
+    assertThat(match.isFollowedBy(c -> c == 'b')).isTrue();
+  }
+
+  @Test public void match_isFollowedByByChar_atTheEnd() {
+    Substring.Match match = first("bar").in("foobar").get();
+    assertThat(match.isFollowedBy(c -> true)).isFalse();
+  }
+
   @Test public void match_isPrecededBy_notAtTheBeginning() {
     Substring.Match match = first("bar").in("foobar").get();
     assertThat(match.isPrecededBy("b")).isFalse();
@@ -3877,6 +4330,17 @@ public class SubstringTest {
     assertThat(match.isPrecededBy("foo")).isFalse();
     assertThat(match.isPrecededBy("bar")).isFalse();
     assertThat(match.isPrecededBy("")).isTrue();
+  }
+
+  @Test public void match_isPrecededByChar_notAtTheBeginning() {
+    Substring.Match match = first("bar").in("foobar").get();
+    assertThat(match.isPrecededBy(c -> c == 'b')).isFalse();
+    assertThat(match.isPrecededBy(c -> c == 'o')).isTrue();
+  }
+
+  @Test public void match_isPrecededByChar_atTheBeginning() {
+    Substring.Match match = first("foo").in("foobar").get();
+    assertThat(match.isPrecededBy(c -> true)).isFalse();
   }
 
   @Test public void match_isImmediatelyBetween_inTheMiddle() {
@@ -3937,6 +4401,18 @@ public class SubstringTest {
     assertThat(match.isNotEmpty()).isFalse();
   }
 
+  @Test public void repeatingPattern_matchWithNegativeFromIndex() {
+    assertThrows(
+        IndexOutOfBoundsException.class,
+        () -> Substring.between('-', '-').repeatedly().match("-foo-bar", -1));
+  }
+
+  @Test public void repeatingPattern_matchWithTooLargeFromIndex() {
+    assertThrows(
+        IndexOutOfBoundsException.class,
+        () -> Substring.between('-', '-').repeatedly().match("foo", 4));
+  }
+
   @Test public void testNulls() throws Exception {
     new NullPointerTester().testAllPublicInstanceMethods(prefix("foo").in("foobar").get());
     newClassSanityTester().testNulls(Substring.class);
@@ -3953,8 +4429,7 @@ public class SubstringTest {
 
   private static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
     Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K, V>>() {
-      @Override
-      public <E> Collector<E, ?, Multimap<K, V>> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
+      @Override public <E> Collector<E, ?, Multimap<K, V>> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
         return SubstringTest.toLinkedListMultimap(toKey,toValue);
       }
     });

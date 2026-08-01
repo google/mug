@@ -14,7 +14,7 @@
  *****************************************************************************/
 package com.google.mu.util.stream;
 
-import static com.google.mu.util.stream.MoreStreams.collectingAndThen;
+import static com.google.mu.util.stream.MoreStreams.toStream;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.Map.Entry.comparingByValue;
 import static java.util.Objects.requireNonNull;
@@ -28,6 +28,7 @@ import static java.util.stream.StreamSupport.longStream;
 import static java.util.stream.StreamSupport.stream;
 
 import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -333,7 +334,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public static <T, K, V> Collector<T, ?, BiStream<K, V>> concatenating(
       Function<? super T, ? extends BiStream<? extends K, ? extends V>> toBiStream) {
-    return collectingAndThen(stream -> concat(stream.map(toBiStream)));
+    return collectingAndThen(Collectors.mapping(toBiStream, toStream()), BiStream::concat);
   }
 
   /**
@@ -377,7 +378,36 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 3.2
    */
   public static <T> Collector<T, ?, BiStream<T, T>> toAdjacentPairs() {
-    return collectingAndThen(toList(), list -> zip(list.stream(), list.stream().skip(1)));
+    return collectingAndThen(toList(), BiStream::adjacentPairsFrom);
+  }
+
+  /**
+   * Returns a BiStream of every neighboring pair from {@code elements}.
+   * For example {@code adjacentPairsFrom(1, 2, 3, 4)} will
+   * return {@code [{1, 2}, {2, 3}, {3, 4}]}.
+   *
+   * <p>If the input has 0 or 1 elements then the output is an empty {@code BiStream}. Otherwise the
+   * length of the output {@code BiStream} is one less than the length of the input.
+   *
+   * @since 9.9.1
+   */
+  @SafeVarargs
+  public static <T> BiStream<T, T> adjacentPairsFrom(T... elements) {
+    return adjacentPairsFrom(Arrays.asList(elements));
+  }
+
+  /**
+   * Returns a BiStream of every neighboring pair from {@code collection}.
+   * For example {@code adjacentPairsFrom(List.of(1, 2, 3, 4))} will
+   * return {@code [{1, 2}, {2, 3}, {3, 4}]}.
+   *
+   * <p>If the input has 0 or 1 elements then the output is an empty {@code BiStream}. Otherwise the
+   * length of the output {@code BiStream} is one less than the length of the input.
+   *
+   * @since 9.9.1
+   */
+  public static <T> BiStream<T, T> adjacentPairsFrom(Collection<? extends T> collection) {
+    return zip(collection.stream(), collection.stream().skip(1));
   }
 
   /**
@@ -394,7 +424,9 @@ public abstract class BiStream<K, V> implements AutoCloseable {
       Function<? super E, ? extends K> toKey, Function<? super E, ? extends V> toValue) {
     requireNonNull(toKey);
     requireNonNull(toValue);
-    return collectingAndThen(stream -> from(stream, toKey, toValue));
+    return collectingAndThen(
+        Collectors.mapping((E e) -> kv(toKey.apply(e), toValue.apply(e)), toStream()),
+        BiStream::fromEntries);
   }
 
   /**
@@ -409,8 +441,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public static <E, K, V> Collector<E, ?, BiStream<K, V>> toBiStream(
       Function<? super E, ? extends Both<? extends K, ? extends V>> toPair) {
-    requireNonNull(toPair);;
-    return collectingAndThen(stream -> from(stream.map(toPair)));
+    return collectingAndThen(Collectors.mapping(toPair, toStream()), BiStream::from);
   }
 
   /**
@@ -438,20 +469,13 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /** Returns a {@code BiStream} of two pairs, containing the supplied keys and values. */
-  public static <K, V> BiStream<K, V> of(
-      K key1, V value1, K key2, V value2) {
-    return fromEntries(Stream.of(kv(key1, value1), kv(key2, value2)));
+  public static <K, V> BiStream<K, V> of(K k1, V v1, K k2, V v2) {
+    return fromEntries(Stream.of(kv(k1, v1), kv(k2, v2)));
   }
 
   /** Returns a {@code BiStream} of three pairs, containing the supplied keys and values. */
-  public static <K, V> BiStream<K, V> of(
-      K key1,
-      V value1,
-      K key2,
-      V value2,
-      K key3,
-      V value3) {
-    return fromEntries(Stream.of(kv(key1, value1), kv(key2, value2), kv(key3, value3)));
+  public static <K, V> BiStream<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3) {
+    return fromEntries(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3)));
   }
 
   /**
@@ -459,15 +483,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @since 5.6
    */
-  public static <K, V> BiStream<K, V> of(
-      K k1,
-      V v1,
-      K k2,
-      V v2,
-      K k3,
-      V v3,
-      K k4,
-      V v4) {
+  public static <K, V> BiStream<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
     return fromEntries(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4)));
   }
 
@@ -477,16 +493,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public static <K, V> BiStream<K, V> of(
-      K k1,
-      V v1,
-      K k2,
-      V v2,
-      K k3,
-      V v3,
-      K k4,
-      V v4,
-      K k5,
-      V v5) {
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
     return fromEntries(Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4), kv(k5, v5)));
   }
 
@@ -496,18 +503,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public static <K, V> BiStream<K, V> of(
-      K k1,
-      V v1,
-      K k2,
-      V v2,
-      K k3,
-      V v3,
-      K k4,
-      V v4,
-      K k5,
-      V v5,
-      K k6,
-      V v6) {
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6) {
     return fromEntries(
         Stream.of(kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4), kv(k5, v5), kv(k6, v6)));
   }
@@ -518,20 +514,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public static <K, V> BiStream<K, V> of(
-      K k1,
-      V v1,
-      K k2,
-      V v2,
-      K k3,
-      V v3,
-      K k4,
-      V v4,
-      K k5,
-      V v5,
-      K k6,
-      V v6,
-      K k7,
-      V v7) {
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7) {
     return fromEntries(
         Stream.of(
             kv(k1, v1), kv(k2, v2), kv(k3, v3), kv(k4, v4), kv(k5, v5), kv(k6, v6), kv(k7, v7)));
@@ -543,22 +526,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public static <K, V> BiStream<K, V> of(
-      K k1,
-      V v1,
-      K k2,
-      V v2,
-      K k3,
-      V v3,
-      K k4,
-      V v4,
-      K k5,
-      V v5,
-      K k6,
-      V v6,
-      K k7,
-      V v7,
-      K k8,
-      V v8) {
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8) {
     return fromEntries(
         Stream.of(
             kv(k1, v1),
@@ -577,24 +545,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public static <K, V> BiStream<K, V> of(
-      K k1,
-      V v1,
-      K k2,
-      V v2,
-      K k3,
-      V v3,
-      K k4,
-      V v4,
-      K k5,
-      V v5,
-      K k6,
-      V v6,
-      K k7,
-      V v7,
-      K k8,
-      V v8,
-      K k9,
-      V v9) {
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
+      K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9) {
     return fromEntries(
         Stream.of(
             kv(k1, v1),
@@ -614,26 +566,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * @since 5.6
    */
   public static <K, V> BiStream<K, V> of(
-      K k1,
-      V v1,
-      K k2,
-      V v2,
-      K k3,
-      V v3,
-      K k4,
-      V v4,
-      K k5,
-      V v5,
-      K k6,
-      V v6,
-      K k7,
-      V v7,
-      K k8,
-      V v8,
-      K k9,
-      V v9,
-      K k10,
-      V v10) {
+      K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
+      K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10) {
     return fromEntries(
         Stream.of(
             kv(k1, v1),
@@ -715,7 +649,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @since 3.0
    */
-  public static <L, R> BiStream<L, R> zip(Collection<L> left, Collection<R> right) {
+  public static <L, R> BiStream<L, R> zip(
+      Collection<? extends L> left, Collection<? extends R> right) {
     return zip(left.stream(), right.stream());
   }
 
@@ -733,7 +668,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    * href="http://gee.cs.oswego.edu/dl/html/StreamParallelGuidance.html">efficiently splittable</a>.
    * and may not perform well if run in parallel.
    */
-  public static <L, R> BiStream<L, R> zip(Stream<L> left, Stream<R> right) {
+  public static <L, R> BiStream<L, R> zip(Stream<? extends L> left, Stream<? extends R> right) {
     return new ZippingStream<>(left, right);
   }
 
@@ -859,12 +794,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Returns a {@code BiStream} of {@code elements}, each transformed to a pair of values with
    * {@code toKey} and {@code toValue}.
-   *
-   * @deprecated Use {@code biStream(User::id, users)} to create {@code BiStream<UserId, User>},
-   *     or, use {@code biStream(users, User::getAccount)} to create {@code BiStream<User, Account>}.
-   *     Then use {@link #mapKeys} or {@link #mapValues} to apply further mappings.
    */
-  @Deprecated
   public static <T, K, V> BiStream<K, V> from(
       Collection<T> elements,
       Function<? super T, ? extends K> toKey,
@@ -875,12 +805,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Returns a {@code BiStream} of the elements from {@code stream}, each transformed to a pair of
    * values with {@code toKey} and {@code toValue}.
-   *
-   * @deprecated Use {@code biStream(User::id, users)} to create {@code BiStream<UserId, User>},
-   *     or, use {@code biStream(users, User::getAccount)} to create {@code BiStream<User, Account>}.
-   *     Then use {@link #mapKeys} or {@link #mapValues} to apply further mappings.
    */
-  @Deprecated
   public static <T, K, V> BiStream<K, V> from(
       Stream<T> stream,
       Function<? super T, ? extends K> toKey,
@@ -985,7 +910,11 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     boolean belong(A a1, B b1, A a2, B b2);
   }
 
-  /** @since 7.1 */
+  /**
+   * Returns a {@code BiStream} wrapping {@code entryStream}.
+   *
+   * @since 7.1
+   */
   public static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> fromEntries(
       Stream<E> entryStream) {
     return new GenericEntryStream<E, K, V>(entryStream, Map.Entry::getKey, Map.Entry::getValue) {
@@ -1497,6 +1426,20 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   /**
+   * Returns a {@code BiStream} consisting of the pairs in this stream, followed by the pairs in
+   * {@code map}.
+   *
+   * <p>NOTE: This method is implemented using {@link Stream#concat}; therefore, the same warnings
+   *     about deeply-nested combined streams also apply to this method. In particular, avoid
+   *     calling this method in a loop to combine many streams together.
+   *
+   * @since 8.7
+   */
+  public final BiStream<K, V> append(Map<? extends K, ? extends V> map) {
+    return fromEntries(Stream.concat(mapToEntry(), map.entrySet().stream()));
+  }
+
+  /**
    * Returns a {@code BiStream} consisting of the pairs in this stream, followed by the pair of
    * {@code key} and {@code value}.
    *
@@ -1852,7 +1795,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    *
    * @since 5.5
    */
-  public final <G, A, R> BiStream<G, R> groupConsecutiveBy(
+  public final <G, R> BiStream<G, R> groupConsecutiveBy(
       BiFunction<? super K, ? super V, ? extends G> classifier,
       BiCollector<? super K, ? super V, R> groupCollector) {
     return this
@@ -1863,7 +1806,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   /**
    * Returns a lazy {@code Stream} of the consecutive groups of values from this stream. Two
    * consecutive entries belong to the same group if {@code sameGroup.belong(key1, value1, key2,
-   * valuue2)} is true. Pairs belonging to the same group are grouped together using {@code
+   * value2)} is true. Pairs belonging to the same group are grouped together using {@code
    * groupCollector}.
    *
    * <p>The {@code sameGroup} predicate is always evaluated with two consecutive pairs in encounter
@@ -2003,8 +1946,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
         super(Long.MAX_VALUE, characteristics);
       }
 
-      @Override
-      public boolean tryAdvance(Consumer<? super R> action) {
+      @Override public boolean tryAdvance(Consumer<? super R> action) {
         while (iterator.tryAdvance(this)) {
           if (hasRunResult) {
             action.accept(runResult);
@@ -2022,8 +1964,7 @@ public abstract class BiStream<K, V> implements AutoCloseable {
         return true;
       }
 
-      @Override
-      public void accept(K key, V value) {
+      @Override public void accept(K key, V value) {
         if (currentRun == null) {
           start();
         } else if (!sameGroup.test(previousKey, key)) {
@@ -2191,10 +2132,10 @@ public abstract class BiStream<K, V> implements AutoCloseable {
   }
 
   private static final class ZippingStream<K, V> extends BiStream<K, V> {
-    private final Stream<K> left;
-    private final Stream<V> right;
+    private final Stream<? extends K> left;
+    private final Stream<? extends V> right;
 
-    ZippingStream(Stream<K> left, Stream<V> right) {
+    ZippingStream(Stream<? extends K> left, Stream<? extends V> right) {
       this.left = requireNonNull(left);
       this.right = requireNonNull(right);
     }
@@ -2277,14 +2218,14 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     }
 
     @Override public final void close() {
-      try (Stream<K> closeLeft = left) {
+      try (Stream<? extends K> closeLeft = left) {
         right.close();
       }
     }
 
     @Override public final BiIterator<K, V> iterator() {
-      Spliterator<K> leftSpliterator = left.spliterator();
-      Spliterator<V> rightSpliterator = right.spliterator();
+      Spliterator<? extends K> leftSpliterator = left.spliterator();
+      Spliterator<? extends V> rightSpliterator = right.spliterator();
       Temp<K> tempLeft = new Temp<>();
       Temp<V> tempRight = new Temp<>();
       return consumer -> {
@@ -2299,8 +2240,8 @@ public abstract class BiStream<K, V> implements AutoCloseable {
     private final class Spliteration {
       private final Temp<K> currentLeft = new Temp<>();
       private final Temp<V> currentRight = new Temp<>();
-      private final Spliterator<K> leftIt = left.spliterator();
-      private final Spliterator<V> rightIt = right.spliterator();
+      private final Spliterator<? extends K> leftIt = left.spliterator();
+      private final Spliterator<? extends V> rightIt = right.spliterator();
 
       /**
        * Returns {@code dominatingResult} if {@code predicate} evaluates to {@code dominatingResult}
@@ -2414,13 +2355,6 @@ public abstract class BiStream<K, V> implements AutoCloseable {
 
   static <T> T right(Both<?, T> both) {
     return both.andThen((l, r) -> r);
-  }
-
-  private static <K, V> BiOptional<K, V> fromOptionalEntry(
-      Optional<? extends Map.Entry<? extends K, ? extends V>> optional) {
-    return optional.isPresent()
-        ? BiOptional.of(optional.get().getKey(), optional.get().getValue())
-        : BiOptional.empty();
   }
 
   private BiStream() {}

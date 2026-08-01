@@ -66,6 +66,7 @@ junit_tests(
     srcs = glob(["src/test/java/**/*Test.java"]),
     deps = [
         ":errorprone",
+        "//mug:base",
         "//mug:format",
         "//mug:time",
         "//mug-guava:safe_sql",

@@ -18,11 +18,12 @@ import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.stream.IterationTest.Tree.tree;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.ClassSanityTester;
 
 public class IterationTest {
@@ -30,8 +31,37 @@ public class IterationTest {
     assertThat(new Iteration<Object>().iterate()).isEmpty();
   }
 
-  @Test public void yield_eagerElements() {
-    assertThat(new Iteration<>().yield(1).yield(2).iterate()).containsExactly(1, 2).inOrder();
+  @Test public void emit_eagerElements() {
+    Iteration<Integer> iteration = new Iteration<>();
+    iteration.emit(1);
+    iteration.emit(2);
+    assertThat(iteration.iterate()).containsExactly(1, 2).inOrder();
+  }
+
+  @Test public void emit_lazyElements() {
+    Iteration<Integer> iteration = new Iteration<>();
+    iteration.forEachLazily(Stream.of(1, 2, 3), iteration::emit);
+    assertThat(iteration.iterate())
+        .containsExactly(1, 2, 3)
+        .inOrder();
+  }
+
+  @Test public void emit_lazyIntElements() {
+    Iteration<Integer> iteration = new Iteration<>();
+    iteration.forEachLazily(IntStream.of(1, 2, 3), iteration::emit);
+    assertThat(iteration.iterate())
+        .containsExactly(1, 2, 3)
+        .inOrder();
+  }
+
+  @Test public void emit_lazyEntries() {
+    Iteration<String> iteration = new Iteration<>();
+    iteration.forEachLazily(
+        ImmutableMap.of(1, "one", 2, "two"),
+        (k, v) -> iteration.emit(k + ":" + v));
+    assertThat(iteration.iterate())
+        .containsExactly("1:one", "2:two")
+        .inOrder();
   }
 
   @Test public void preOrder_deep() {
@@ -78,7 +108,8 @@ public class IterationTest {
   }
 
   @Test public void nullChecks() {
-    new ClassSanityTester().testNulls(Iteration.class);
+    new ClassSanityTester().setDefault(BiStream.class, BiStream.empty())
+        .testNulls(Iteration.class);
   }
 
   private static <T> Stream<T> preOrderFrom(Tree<T> tree) {
@@ -93,50 +124,28 @@ public class IterationTest {
     return new DepthFirst<T>().postOrder(tree).iterate();
   }
 
-  @Test public void sumStream() {
-    assertThat(computeSum(tree(1))).containsExactly(1);
-    assertThat(computeSum(tree(1).setLeft(tree(2)).setRight(tree(3).setLeft(5))))
-        .containsExactly(2, 5, 8, 11)
-        .inOrder();
-  }
-
-  private static Stream<Integer> computeSum(Tree<Integer> tree) {
-    class SumNodes extends Iteration<Integer> {
-      SumNodes sum(Tree<Integer> tree, AtomicInteger result) {
-        if (tree == null) return this;
-        AtomicInteger fromLeft = new AtomicInteger();
-        AtomicInteger fromRight = new AtomicInteger();
-        yield(() -> sum(tree.left(), fromLeft));
-        yield(() -> sum(tree.right(), fromRight));
-        yield(() -> tree.value() + fromLeft.get() + fromRight.get(), result::set);
-        return this;
-      }
-    }
-    return new SumNodes().sum(tree, new AtomicInteger()).iterate();
-  }
-
   private static final class DepthFirst<T> extends Iteration<T> {
     DepthFirst<T> preOrder(Tree<T> tree) {
       if (tree == null) return this;
-      yield(tree.value());
-      yield(() -> preOrder(tree.left()));
-      yield(() -> preOrder(tree.right()));
+      emit(tree.value());
+     lazily(() -> preOrder(tree.left()));
+     lazily(() -> preOrder(tree.right()));
       return this;
     }
 
     DepthFirst<T> inOrder(Tree<T> tree) {
       if (tree == null) return this;
-      yield(() -> inOrder(tree.left()));
-      yield(tree.value());
-      yield(() -> inOrder(tree.right()));
+     lazily(() -> inOrder(tree.left()));
+      emit(tree.value());
+     lazily(() -> inOrder(tree.right()));
       return this;
     }
 
     DepthFirst<T> postOrder(Tree<T> tree) {
       if (tree == null) return this;
-      yield(() -> postOrder(tree.left()));
-      yield(() -> postOrder(tree.right()));
-      yield(tree.value());
+     lazily(() -> postOrder(tree.left()));
+     lazily(() -> postOrder(tree.right()));
+      emit(tree.value());
       return this;
     }
   }
@@ -271,11 +280,11 @@ public class IterationTest {
          return this;
        }
        int mid = (low + high) / 2;
-       yield(mid);
+       emit(mid);
        if (mid < number) {
-         yield(() -> guess(mid + 1, high, number));
+        lazily(() -> guess(mid + 1, high, number));
        } else if (mid > number) {
-         yield(() -> guess(low, mid - 1, number));
+        lazily(() -> guess(low, mid - 1, number));
        }
        return this;
      }

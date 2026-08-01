@@ -18,6 +18,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
@@ -42,6 +43,11 @@ import java.util.stream.Collectors;
  *
  * Except that JDK {@code joining()} requires the inputs to be strings; while Joiner can join any input,
  * e.g. numbers.
+ *
+ * <p>Starting from v9.6, {@code Joiner.on()} is optimized to be more efficient than {@code
+ * Collectors.joining()} when the input has only one string element because it will return the
+ * string element as is, whereas JDK {@code Collectors.joining()} delegates to {@link StringJoiner},
+ * which performs a deep copy even when there is only one string with no prefix and suffix.
  *
  * <p>You can also chain {@link #between} to further enclose the joined result between a pair of strings.
  * The following code joins a list of ids and their corresponding names in the format of
@@ -68,7 +74,7 @@ import java.util.stream.Collectors;
  *
  * @since 5.6
  */
-public final class Joiner implements Collector<Object, StringJoiner, String> {
+public final class Joiner implements Collector<Object, Joiner.FasterStringJoiner, String> {
   private final String prefix;
   private final String delimiter;
   private final String suffix;
@@ -102,6 +108,12 @@ public final class Joiner implements Collector<Object, StringJoiner, String> {
    * @since 5.7
    */
   public String join(Collection<?> collection) {
+    if (collection.size() == 1
+        && prefix.isEmpty()
+        && suffix.isEmpty()
+        && collection instanceof List<?>) {  // common path
+      return String.valueOf(((List<?>) collection).get(0));
+    }
     return collection.stream().collect(this);
   }
 
@@ -115,7 +127,7 @@ public final class Joiner implements Collector<Object, StringJoiner, String> {
     return new Joiner(before + prefix, delimiter, suffix + after);
   }
 
-  /*
+  /**
    * Returns an instance that wraps the join result between {@code before} and {@code after}.
    *
    * <p>For example both {@code Joiner.on(',').between("[", "]").join([1, 2])} and
@@ -138,23 +150,79 @@ public final class Joiner implements Collector<Object, StringJoiner, String> {
     return Java9Collectors.filtering(s -> s != null && s.length() > 0, this);
   }
 
-  @Override public Supplier<StringJoiner> supplier() {
-    return () -> new StringJoiner(delimiter, prefix, suffix);
+  @Override public Supplier<FasterStringJoiner> supplier() {
+    return () -> new FasterStringJoiner(prefix, delimiter, suffix);
   }
 
-  @Override public BiConsumer<StringJoiner, Object> accumulator() {
+  @Override public BiConsumer<FasterStringJoiner, Object> accumulator() {
     return (joiner, obj) -> joiner.add(String.valueOf(obj));
   }
 
-  @Override public BinaryOperator<StringJoiner> combiner() {
-    return StringJoiner::merge;
+  @Override public BinaryOperator<FasterStringJoiner> combiner() {
+    return FasterStringJoiner::merge;
   }
 
-  @Override public Function<StringJoiner, String> finisher() {
-    return StringJoiner::toString;
+  @Override public Function<FasterStringJoiner, String> finisher() {
+    return FasterStringJoiner::toString;
   }
 
   @Override public Set<Characteristics> characteristics() {
     return Collections.emptySet();
+  }
+
+  /**
+   * Faster than StringJoiner when there is only one string to join.
+   *
+   * <p>Benchmark result (50% faster for 1-element):
+   *
+   * <pre>
+   * JoinerBenchmark.jdkJoinerOnDelimiter_0     thrpt    5    15459455.875 ±   352409.649  ops/s
+   * JoinerBenchmark.jdkJoinerOnDelimiter_1     thrpt    5    10136456.867 ±   315453.742  ops/s
+   * JoinerBenchmark.jdkJoinerOnDelimiter_10    thrpt    5     1820908.505 ±    97917.965  ops/s
+   * JoinerBenchmark.joinerOnDelimiter_0        thrpt    5    16653265.076 ±   151067.211  ops/s
+   * JoinerBenchmark.joinerOnDelimiter_1        thrpt    5    15801647.373 ±  1198936.678  ops/s
+   * JoinerBenchmark.joinerOnDelimiter_10       thrpt    5     1813032.864 ±   217044.024  ops/s
+   * </pre>
+   */
+  static final class FasterStringJoiner {
+    private final StringJoiner buffer;
+    private final String prefix;
+    private final String suffix;
+    private int count;
+    private String outstanding;
+
+    FasterStringJoiner(String prefix, String delim, String suffix) {
+      this.buffer = new StringJoiner(delim, prefix, suffix);
+      this.prefix = prefix;
+      this.suffix = suffix;
+    }
+
+    void add(String str) {
+      if (++count == 1 && prefix.isEmpty() && suffix.isEmpty()) {
+        outstanding = str;
+        return;
+      }
+      flushOutstanding();
+      buffer.add(str);
+    }
+
+    FasterStringJoiner merge(FasterStringJoiner that) {
+      flushOutstanding();
+      that.flushOutstanding();
+      this.buffer.merge(that.buffer);
+      this.count += that.count;
+      return this;
+    }
+
+    @Override public String toString() {
+      return outstanding == null ? buffer.toString() : outstanding;
+    }
+
+    private void flushOutstanding() {
+      if (outstanding != null) {
+        buffer.add(outstanding);
+        outstanding = null;
+      }
+    }
   }
 }

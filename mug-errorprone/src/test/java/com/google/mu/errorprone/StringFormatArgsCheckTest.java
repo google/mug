@@ -1,11 +1,11 @@
 package com.google.mu.errorprone;
 
-import com.google.errorprone.CompilationTestHelper;
-
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import com.google.errorprone.CompilationTestHelper;
 
 @RunWith(JUnit4.class)
 public final class StringFormatArgsCheckTest {
@@ -166,6 +166,61 @@ public final class StringFormatArgsCheckTest {
             "  @TemplateFormatMethod",
             "  void report(@TemplateString String template, Object... args) {}",
             "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_good_onMethod_noDebugInfo() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    report(\"{foo}-{bar_id}-{camelCase}\", foo, barId, camelCase);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .setArgs("-g:none")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_argsOutOfOrder_noDebugInfo_passed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo, String barId) {",
+            "    report(\"{foo}-{bar_id}\", barId, foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .setArgs("-g:none")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_tooFewArgs_noDebugInfo_stillFails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "class Test {",
+            "  void test(String foo) {",
+            "    // BUG: Diagnostic contains: 2 placeholders defined; 1 provided",
+            "    report(\"{foo}-{bar_id}\", foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .setArgs("-g:none")
         .doTest();
   }
 
@@ -1393,7 +1448,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.annotations.TemplateString;",
             "class Test {",
             "  void test(String foo, int barId, String baz) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: 3 provided",
             "    report(\"{foo}-{bar_id}\", foo, barId, baz);",
             "  }",
             "  @TemplateFormatMethod",
@@ -1411,7 +1466,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.annotations.TemplateString;",
             "class Test {",
             "  void test(String foo, int barId, String baz) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: 3 provided",
             "    new Test(\"{foo}-{bar_id}\", foo, barId, baz);",
             "  }",
             "  @TemplateFormatMethod",
@@ -1429,9 +1484,29 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.annotations.TemplateString;",
             "class Test {",
             "  void test(String foo) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: No value is provided for placeholder {bar_id}",
             "    report(\"{foo}-{bar_id}\", foo);",
             "  }",
+            "  @TemplateFormatMethod",
+            "  void report(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_noArgProvided_onMethod() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "",
+            "class Test {",
+            "  void test(String foo) {",
+            "    // BUG: Diagnostic contains: No value is provided for placeholder {foo}",
+            "    report(\"{foo}-{bar_id}\");",
+            "  }",
+            "",
             "  @TemplateFormatMethod",
             "  void report(@TemplateString String template, Object... args) {}",
             "}")
@@ -1447,7 +1522,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.annotations.TemplateString;",
             "class Test {",
             "  void test(String foo) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: No value is provided for placeholder {bar_id}",
             "    new Test(\"{foo}-{bar_id}\", foo);",
             "  }",
             "  @TemplateFormatMethod",
@@ -2097,7 +2172,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String foo, int barId, String baz) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: 3 provided",
             "    StringFormat.using(\"{foo}-{bar_id}\", foo, barId, baz);",
             "  }",
             "}")
@@ -2112,7 +2187,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String foo) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: placeholder {bar_id}",
             "    StringFormat.using(\"{foo}-{bar_id}\", foo);",
             "  }",
             "}")
@@ -2202,6 +2277,22 @@ public final class StringFormatArgsCheckTest {
             "  void test(String foo1, String foo2) {",
             "    // BUG: Diagnostic contains: {foo}",
             "    new StringFormat(\"{foo}={foo}\").format(foo1, foo2);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void to_wildcardDoesNotCountAsDuplicateName() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final StringFormat.Template<IllegalArgumentException> TEMPLATE =",
+            "      StringFormat.to(IllegalArgumentException::new, \"{...}={...}\");",
+            "  void test() {",
+            "    TEMPLATE.with(1, 2);",
             "  }",
             "}")
         .doTest();
@@ -2681,7 +2772,7 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String foo, int barId, String baz) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: 3 provided",
             "    new StringFormat(\"{foo}-{bar_id}\").format(foo, barId, baz);",
             "  }",
             "}")
@@ -2696,8 +2787,89 @@ public final class StringFormatArgsCheckTest {
             "import com.google.mu.util.StringFormat;",
             "class Test {",
             "  void test(String foo) {",
-            "    // BUG: Diagnostic contains:",
+            "    // BUG: Diagnostic contains: placeholder {bar_id}",
             "    new StringFormat(\"{foo}-{bar_id}\").format(foo);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void format_good_noDebugInfo() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final StringFormat FORMAT =",
+            "      new StringFormat(\"{foo}-{bar_id}-{camelCase}\");",
+            "  void test(String foo, String barId, String camelCase) {",
+            "    FORMAT.format(foo, barId, camelCase);",
+            "  }",
+            "}")
+        .setArgs("-g:none")
+        .doTest();
+  }
+
+  @Test
+  public void format_argsOutOfOrder_noDebugInfo_passed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo, String barId) {",
+            "    new StringFormat(\"{foo}-{bar_id}\").format(barId, foo);",
+            "  }",
+            "}")
+        .setArgs("-g:none")
+        .doTest();
+  }
+
+  @Test
+  public void format_tooFewArgs_noDebugInfo_stillFails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  void test(String foo) {",
+            "    // BUG: Diagnostic contains: 2 placeholders defined; 1 provided",
+            "    new StringFormat(\"{foo}-{bar_id}\").format(foo);",
+            "  }",
+            "}")
+        .setArgs("-g:none")
+        .doTest();
+  }
+
+  @Test
+  public void format_manyArgs_bad() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final StringFormat FORMAT = ",
+            "      new StringFormat(\"{a}.{b}.{c}.{d}.{e}.{f}.{g}.{h}.{i}.{j}\");",
+            "  void test(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j) {",
+            "    // BUG: Diagnostic contains:",
+            "    FORMAT.format(b, a, c, d, e, f, g, h, i, j);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void format_manyArgs_good() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.util.StringFormat;",
+            "class Test {",
+            "  private static final StringFormat FORMAT = ",
+            "      new StringFormat(\"{a}.{b}.{c}.{d}.{e}.{f}.{g}.{h}.{i}.{j}\");",
+            "  void test(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j) {",
+            "    FORMAT.format(a, b, c, d, e, f, g, h, i, j);",
             "  }",
             "}")
         .doTest();
@@ -2731,7 +2903,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(String foo, int barId, String baz) {",
             "    StringFormat.to(IllegalArgumentException::new, \"{foo}-{bar_id}\")",
-            "        // BUG: Diagnostic contains:",
+            "        // BUG: Diagnostic contains: 3 provided",
             "        .with(foo, barId, baz);",
             "  }",
             "}")
@@ -2748,7 +2920,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test(String foo, int barId, String baz) {",
             "    StringFormat.to(IllegalArgumentException::new, \"{foo}-{bar_id}\")",
-            "        // BUG: Diagnostic contains:",
+            "        // BUG: Diagnostic contains: placeholder #2 {bar_id}",
             "        .with(foo);",
             "  }",
             "}")
@@ -2770,7 +2942,7 @@ public final class StringFormatArgsCheckTest {
   }
 
   @Test
-  public void optionalArgDisallowed() {
+  public void optionalArgAllowed() {
     helper
         .addSourceLines(
             "Test.java",
@@ -2779,8 +2951,7 @@ public final class StringFormatArgsCheckTest {
             "class Test {",
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
-            "        // BUG: Diagnostic contains:",
-            "        .format(Optional.empty());",
+            "        .format(Optional.of(\"foo\"));",
             "  }",
             "}")
         .doTest();
@@ -2797,7 +2968,7 @@ public final class StringFormatArgsCheckTest {
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
             "        // BUG: Diagnostic contains:",
-            "        .format(OptionalInt.empty());",
+            "        .format(/* foo */ OptionalInt.empty());",
             "  }",
             "}")
         .doTest();
@@ -2814,7 +2985,7 @@ public final class StringFormatArgsCheckTest {
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
             "        // BUG: Diagnostic contains:",
-            "        .format(OptionalLong.empty());",
+            "        .format(/* foo */ OptionalLong.empty());",
             "  }",
             "}")
         .doTest();
@@ -2831,7 +3002,7 @@ public final class StringFormatArgsCheckTest {
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
             "        // BUG: Diagnostic contains:",
-            "        .format(OptionalDouble.empty());",
+            "        .format(/* foo */ OptionalDouble.empty());",
             "  }",
             "}")
         .doTest();
@@ -2848,7 +3019,7 @@ public final class StringFormatArgsCheckTest {
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
             "        // BUG: Diagnostic contains:",
-            "        .format(Stream.empty());",
+            "        .format(Stream.of(\"foo\"));",
             "  }",
             "}")
         .doTest();
@@ -2865,7 +3036,7 @@ public final class StringFormatArgsCheckTest {
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
             "        // BUG: Diagnostic contains:",
-            "        .format(IntStream.empty());",
+            "        .format(/* foo */ IntStream.empty());",
             "  }",
             "}")
         .doTest();
@@ -2882,7 +3053,7 @@ public final class StringFormatArgsCheckTest {
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
             "        // BUG: Diagnostic contains:",
-            "        .format(LongStream.empty());",
+            "        .format(/* foo */ LongStream.empty());",
             "  }",
             "}")
         .doTest();
@@ -2899,24 +3070,436 @@ public final class StringFormatArgsCheckTest {
             "  void test() {",
             "    new StringFormat(\"{foo}\")",
             "        // BUG: Diagnostic contains:",
-            "        .format(DoubleStream.empty());",
+            "        .format(/* foo */ DoubleStream.empty());",
             "  }",
             "}")
         .doTest();
   }
 
   @Test
-  public void arrayArgDisallowed() {
+  public void templateFormatMethod_nonBooleanForArrowOperator_disallowed() {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.mu.util.StringFormat;",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
             "class Test {",
-            "  void test() {",
-            "    new StringFormat(\"{foo}\")",
-            "        // BUG: Diagnostic contains:",
-            "        .format(new int[] {1});",
+            "  void test(int fooId) {",
+            "    // BUG: Diagnostic contains: guard placeholder {foo_id ->} is",
+            "    // expected to be boolean, Optional or Collection,",
+            "    // whereas argument <fooId> at line 9 is of type int",
+            "    query(\"SELECT {foo_id -> foo_id}\", fooId);",
             "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_integerForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(Integer fooId) {",
+            "    query(\"SELECT {foo_id? -> foo_id?}\", fooId);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_longForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(Long fooId) {",
+            "    query(\"SELECT {foo_id? -> foo_id?}\", fooId);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_stringForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(String fooId) {",
+            "    query(\"SELECT {foo_id? -> foo_id?}\", fooId);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_instantForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.time.Instant;",
+            "class Test {",
+            "  void test(Instant time) {",
+            "    query(\"SELECT * from USER {time? -> WHERE time > time?}\", time);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_zonedDateTimeForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.time.ZonedDateTime;",
+            "class Test {",
+            "  void test(ZonedDateTime time) {",
+            "    query(\"SELECT * from USER {time? -> WHERE time > time?}\", time);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_booleanForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import static java.util.Optional.ofNullable;",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(Boolean isActive) {",
+            "    query(\"SELECT * from Users {isActive? -> WHERE isActive = isActive?}\", ofNullable(isActive));",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_bigDecimalForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.math.BigDecimal;",
+            "class Test {",
+            "  void test(BigDecimal money) {",
+            "    query(\"SELECT * from USER {money? -> WHERE revenue > money?}\", money);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_arrayForGuardOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.math.BigDecimal;",
+            "class Test {",
+            "  void test(byte[] payload) {",
+            "    query(\"SELECT * from USER {payload? -> WHERE payload > payload?}\", payload);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_nonBooleanForGuardOperator_disallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(int fooId) {",
+            "    // BUG: Diagnostic contains: guard placeholder {foo_id? ->} is",
+            "    // expected to be boolean, Optional or Collection,",
+            "    // whereas argument <fooId> at line 9 is of type int",
+            "    query(\"SELECT {foo_id? -> foo_id?}\", fooId);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_primitiveBooleanForArrowOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(boolean isFoo) {",
+            "    query(\"SELECT {is_foo -> foo}\", isFoo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_wrapperBooleanForArrowOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(Boolean isFoo) {",
+            "    query(\"SELECT {is_foo -> foo}\", isFoo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_booleanWithArrowOperator_questionMarkAllowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(boolean isFoo) {",
+            "    query(\"SELECT {is_foo? -> foo}\", isFoo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_booleanWithArrowOperator_questionMarkReferenceDisallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.stream.Stream;",
+            "class Test {",
+            "  void test(boolean isFoo) {",
+            "    query(",
+            "        // BUG: Diagnostic contains: placeholder {is_foo? ->}",
+            "        // <isFoo> at line 11. The optional placeholder references [is_foo?] to the",
+            "        // right of the `->` operator should only be used for an optional placeholder",
+            "        \"SELECT {is_foo? -> is_foo?}\",",
+            "        isFoo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_optionalParameterForArrowOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.Optional;",
+            "class Test {",
+            "  void test(Optional<String> foo) {",
+            "    query(\"SELECT {foo? -> , concat(foo?, 'foo?')}\", foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_optionalParameterForArrowOperator_notProperWord_disallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.Optional;",
+
+            "class Test {",
+            "  void test(Optional<String> foo) {",
+            "    // BUG: Diagnostic contains: {foo->} must be an identifier followed by a '?'",
+            "    query(\"SELECT {foo -> , concat(foo, 'foo')}\", foo);",
+            "  }",
+
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_optionalParameterForArrowOperator_missingQuestionMark_disallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.Optional;",
+
+            "class Test {",
+            "  void test(Optional<String> foo) {",
+            "    // BUG: Diagnostic contains: {foo->} must be an identifier followed by a '?'",
+            "    query(\"SELECT {foo -> , concat(foo, 'foo')}\", foo);",
+            "  }",
+
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_optionalParameterForArrowOperator_typoInReference_disallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.Optional;",
+
+            "class Test {",
+            "  void test(Optional<String> foo) {",
+            "    // BUG: Diagnostic contains: to the right of {foo?->}: [food?]",
+            "    query(\"SELECT {foo? -> , concat(food?, 'foo')}\", foo);",
+            "  }",
+
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_collectionParameterForArrowOperator_allowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.Set;",
+            "class Test {",
+            "  void test(Set<String> foo) {",
+            "    query(\"SELECT {foo? -> , concat(foo?, 'foo?')}\", foo);",
+            "  }",
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_collectionParameterForArrowOperator_notProperWord_disallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.List;",
+
+            "class Test {",
+            "  void test(List<String> foo) {",
+            "    // BUG: Diagnostic contains: {foo->} must be an identifier followed by a '?'",
+            "    query(\"SELECT {foo -> , concat(foo, 'foo')}\", foo);",
+            "  }",
+
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void
+      templateFormatMethod_collectionParameterForArrowOperator_missingQuestionMark_disallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.List;",
+
+            "class Test {",
+            "  void test(List<String> foo) {",
+            "    // BUG: Diagnostic contains: {foo->} must be an identifier followed by a '?'",
+            "    query(\"SELECT {foo -> , concat(foo, 'foo')}\", foo);",
+            "  }",
+
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
+            "}")
+        .doTest();
+  }
+
+  @Test
+  public void templateFormatMethod_collectionParameterForArrowOperator_typoInReference_disallowed() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.TemplateFormatMethod;",
+            "import com.google.mu.annotations.TemplateString;",
+            "import java.util.List;",
+
+            "class Test {",
+            "  void test(List<String> foo) {",
+            "    // BUG: Diagnostic contains: to the right of {foo?->}: [food?]",
+            "    query(\"SELECT {foo? -> , concat(food?, 'foo')}\", foo);",
+            "  }",
+
+            "  @TemplateFormatMethod",
+            "  void query(@TemplateString String template, Object... args) {}",
             "}")
         .doTest();
   }
@@ -3281,5 +3864,23 @@ public final class StringFormatArgsCheckTest {
             "  }",
             "}")
         .doTest();
+  }
+
+  @Test
+  public void reproduceMessedUpFormat() {
+    helper
+    .addSourceLines(
+        "Test.java",
+        "import com.google.mu.util.StringFormat;",
+        "class Test {",
+        "  private static final StringFormat FORMAT =",
+        "      new StringFormat(\"{foo}={foo}\");",
+        "  void test() {",
+        "    FORMAT.format(",
+        "         /* foo */ 1, /* foo expected to be the same */",
+        "         1);",
+        "  }",
+        "}")
+    .doTest();
   }
 }

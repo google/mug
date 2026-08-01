@@ -1,0 +1,3326 @@
+/*
+ * Copyright (c) 2019-2024 Ronald Brill.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+options {
+    IGNORE_CASE = true;
+
+    UNICODE_INPUT = true;
+    USER_CHAR_STREAM = true;
+
+    STATIC = false;
+
+//    DEBUG_TOKEN_MANAGER = true;
+//    DEBUG_PARSER = true;
+
+    JDK_VERSION = "11";
+//    JAVA_TEMPLATE_TYPE = "modern"
+}
+
+PARSER_BEGIN(CSS3Parser)
+
+package org.htmlunit.cssparser.parser.javacc;
+
+import java.util.LinkedList;
+import java.util.Locale;
+
+import org.htmlunit.cssparser.dom.CSSValueImpl;
+import org.htmlunit.cssparser.dom.Property;
+import org.htmlunit.cssparser.parser.AbstractCSSParser;
+import org.htmlunit.cssparser.parser.CSSParseException;
+import org.htmlunit.cssparser.parser.LexicalUnit;
+import org.htmlunit.cssparser.parser.LexicalUnitImpl;
+import org.htmlunit.cssparser.parser.LexicalUnit.LexicalUnitType;
+import org.htmlunit.cssparser.parser.Locatable;
+import org.htmlunit.cssparser.parser.Locator;
+import org.htmlunit.cssparser.parser.condition.AttributeCondition;
+import org.htmlunit.cssparser.parser.condition.BeginHyphenAttributeCondition;
+import org.htmlunit.cssparser.parser.condition.ClassCondition;
+import org.htmlunit.cssparser.parser.condition.Condition;
+import org.htmlunit.cssparser.parser.condition.IdCondition;
+import org.htmlunit.cssparser.parser.condition.LangCondition;
+import org.htmlunit.cssparser.parser.condition.HasPseudoClassCondition;
+import org.htmlunit.cssparser.parser.condition.IsPseudoClassCondition;
+import org.htmlunit.cssparser.parser.condition.NotPseudoClassCondition;
+import org.htmlunit.cssparser.parser.condition.OneOfAttributeCondition;
+import org.htmlunit.cssparser.parser.condition.PrefixAttributeCondition;
+import org.htmlunit.cssparser.parser.condition.PseudoClassCondition;
+import org.htmlunit.cssparser.parser.condition.SubstringAttributeCondition;
+import org.htmlunit.cssparser.parser.condition.SuffixAttributeCondition;
+import org.htmlunit.cssparser.parser.condition.WherePseudoClassCondition;
+import org.htmlunit.cssparser.parser.media.MediaQuery;
+import org.htmlunit.cssparser.parser.media.MediaQueryList;
+import org.htmlunit.cssparser.parser.selector.ChildSelector;
+import org.htmlunit.cssparser.parser.selector.Combinator;
+import org.htmlunit.cssparser.parser.selector.DescendantSelector;
+import org.htmlunit.cssparser.parser.selector.DirectAdjacentSelector;
+import org.htmlunit.cssparser.parser.selector.ElementSelector;
+import org.htmlunit.cssparser.parser.selector.GeneralAdjacentSelector;
+import org.htmlunit.cssparser.parser.selector.PseudoElementSelector;
+import org.htmlunit.cssparser.parser.selector.RelativeSelector;
+import org.htmlunit.cssparser.parser.selector.Selector;
+import org.htmlunit.cssparser.parser.selector.SelectorList;
+import org.htmlunit.cssparser.parser.selector.SelectorListImpl;
+import org.htmlunit.cssparser.parser.selector.SimpleSelector;
+import org.htmlunit.cssparser.util.ParserUtils;
+
+/**
+ * @author David Schweinsberg
+ * @author waldbaer
+ * @author Ahmed Ashour
+ * @author Ronald Brill
+ */
+public class CSS3Parser extends AbstractCSSParser {
+
+    public CSS3Parser() {
+        this((CharStream) null);
+    }
+
+    @Override
+    public String getParserVersion() {
+        return "https://www.w3.org/Style/CSS/";
+    }
+
+    protected String getGrammarUri()
+    {
+        return "https://www.w3.org/TR/css-syntax-3/";
+    }
+}
+
+PARSER_END(CSS3Parser)
+
+TOKEN_MGR_DECLS :
+{
+}
+
+<DEFAULT> TOKEN :
+{
+// s        [ \t\r\n\f]+
+// {s}          {return S;}
+    < S: ( " "|"\t"|"\r"|"\n"|"\f" )+ >
+// w        {s}?
+//    | < W: ( <S> )? >
+}
+
+<DEFAULT> MORE :
+{
+  < "/*" > : COMMENT
+}
+
+<COMMENT> SKIP :
+{
+  < "*/" > : DEFAULT
+}
+
+<COMMENT> MORE :
+{
+  < ~[] > : COMMENT
+}
+
+<DEFAULT> TOKEN :
+{
+// h        [0-9a-f]
+  < #H: ["0"-"9","a"-"f"] >
+| < #HNUM: <H> | <H><H> | <H><H><H> | <H><H><H><H> | <H><H><H><H><H> | <H><H><H><H><H><H> >
+
+// nonascii [\200-\377]
+// The two occurrences of "\377" represent the highest character number that
+// current versions of Flex can deal with (decimal 255). They should be read as
+// "\4177777" (decimal 1114111), which is the highest possible code point in
+// Unicode/ISO-10646.
+// Limitation: This parser can only handle Unicode characters up to \uFFFF
+// (decimal 65535).
+| < #NONASCII: ["\u0080"-"\uFFFF"] >
+
+// unicode      \\{h}{1,6}(\r\n|[ \t\r\n\f])?
+| < #UNICODE: "\\" <HNUM> ( "\r\n" | [" ","\t","\r","\n","\f"] )? >
+
+// escape       {unicode}|\\[^\r\n\f0-9a-f]
+| < #ESCAPE: <UNICODE> | ( "\\" ~["\r","\n","\f","0"-"9","a"-"f"] ) >
+
+// nmstart      [_a-z]|{nonascii}|{escape}
+| < #NMSTART: ["_","a"-"z"] | <NONASCII> | <ESCAPE> >
+
+// nmchar       [_a-z0-9-]|{nonascii}|{escape}
+| < #NMCHAR: ["_","a"-"z","0"-"9","-"] | <NONASCII> | <ESCAPE> >
+
+// nl       \n|\r\n|\r|\f
+| < #NL: "\n" | "\r\n" | "\r" | "\f" >
+
+// string1      \"([^\n\r\f\\"]|\\{nl}|{escape})*\"
+| < #STRING1: ( ~["\n","\r","\f","\\","\""] | "\\" <NL> | <ESCAPE> )* >
+
+// string2      \'([^\n\r\f\\']|\\{nl}|{escape})*\'
+| < #STRING2: ( ~["\n","\r","\f","\\","\'"] | "\\" <NL> | <ESCAPE> )* >
+
+// comment      \/\*[^*]*\*+([^/*][^*]*\*+)*\/
+| < #COMMENT_: "/" "*" ( ~["*"] )* ("*")+ ( ~["/","*"] ( ~["*"] )* ( "*" )+ )* "/">
+
+| < AND: "and" >
+| < NOT: "not" >
+| < ONLY: "only" >
+
+// {num}            {return NUMBER;}
+| < NUMBER: <NUM> >
+
+| < INHERIT: "inherit" >
+| < NONE: "none" >
+| < FROM: "from" >
+
+// ident        -?{nmstart}{nmchar}*
+// {ident}         {return IDENT;}
+| < IDENT: (< MINUS >)? <NMSTART> ( <NMCHAR> )* >
+
+// name     {nmchar}+
+| < #NAME: ( <NMCHAR> )+ >
+
+// num      [0-9]+|[0-9]*"."[0-9]+
+| < NUM: ( ( ["0"-"9"] )+ | ( ["0"-"9"] )* "." ( ["0"-"9"] )+ ) (["e", "E"] ( ["+", "-"] )? ( ["0"-"9"] )+)? >
+
+// string       {string1}|{string2}
+// {string}        {return STRING;}
+| < STRING: ( "\"" <STRING1> "\"" ) | ( "\'" <STRING2> "\'" ) > { matchedToken.image = ParserUtils.trimBy(image, 1, 1); }
+
+// url      ([!#$%&*-~]|{nonascii}|{escape})*
+| < #URL: ( ["!","#","$","%","&","*"-"[","]"-"~"] | <NONASCII> | <ESCAPE> )* >
+
+// "<!--"               {return CDO;}
+| < CDO: "<!--" >
+
+// "-->"                {return CDC;}
+| < CDC: "-->" >
+
+// "~="                 {return INCLUDES;}
+| < INCLUDES: "~=" >
+
+// "|="                 {return DASHMATCH;}
+| < DASHMATCH: "|=" >
+
+// "^="                 {return PREFIXMATCH;}
+| < PREFIXMATCH: "^=" >
+
+// "$="                 {return SUFFIXMATCH;}
+| < SUFFIXMATCH: "$=" >
+
+// "*="                 {return SUBSTRINGMATCH;}
+| < SUBSTRINGMATCH: "*=" >
+
+// {w}"{"               {return LBRACE;}
+| < LBRACE: "{" >
+| < RBRACE: "}" >
+
+| < LROUND: "(" >
+| < RROUND: ")" >
+
+| < DOT: "." >
+| < SEMICOLON: ";" >
+| < COLON: ":" >
+| < ASTERISK: "*" >
+| < SLASH: "/" >
+| < MINUS: "-" >
+| < EQUALS: "=" >
+| < LSQUARE: "[" >
+| < RSQUARE: "]" >
+
+// {w}"+"               {return PLUS;}
+| < PLUS: "+" >
+
+// {w}">"               {return GREATER;}
+| < GREATER: ">" >
+
+// {w}"~"               {return TILDE;}
+| < TILDE: "~" >
+
+// {w}","               {return COMMA;}
+| < COMMA: "," >
+
+// "#"{name}            {return HASH;}
+| < HASH: "#" <NAME> >
+
+// @{I}{M}{P}{O}{R}{T}  {return IMPORT_SYM;}
+| < IMPORT_SYM: "@import" >
+
+// @{P}{A}{G}{E}        {return PAGE_SYM;}
+| < PAGE_SYM: "@page" >
+
+// @{M}{E}{D}{I}{A}     {return MEDIA_SYM;}
+| < MEDIA_SYM: "@media" >
+
+// "@{F}{O}{N}{T}-{F}{A}{C}{E}"    {return FONT_FACE_SYM;}
+| < FONT_FACE_SYM: "@font-face" >
+
+// @{C}{H}{A}{R}{S}{E}{T}   {return CHARSET_SYM;}
+| < CHARSET_SYM: "@charset" >
+
+// "!"({w}|{comment})*{I}{M}{P}{O}{R}{T}{A}{N}{T}   {return IMPORTANT_SYM;}
+| < IMPORTANT_SYM: "!" ( <S> | <COMMENT_> )* "important" >
+
+// {num}{E}{M}          {return EMS;}
+| < EMS: <NUM> "em" > { matchedToken.image = ParserUtils.trimBy(image, 0, 2); }
+
+// {num}{R}{E}{M}       {return REM;}
+| < REM: <NUM> "rem" > { matchedToken.image = ParserUtils.trimBy(image, 0, 3); }
+
+// {num}{E}{X}          {return EXS;}
+| < EXS: <NUM> "ex" > { matchedToken.image = ParserUtils.trimBy(image, 0, 2); }
+
+// {num}{C}{H}          {return CH;}
+| < CH: <NUM> "ch" > { matchedToken.image = ParserUtils.trimBy(image, 0, 2); }
+
+// {num}{V}{W}          {return VW;}
+| < VW: <NUM> "vw" > { matchedToken.image = ParserUtils.trimBy(image, 0, 2); }
+
+// {num}{V}{H}          {return VH;}
+| < VH: <NUM> "vh" > { matchedToken.image = ParserUtils.trimBy(image, 0, 2); }
+
+// {num}{V}{M}{I}{N}    {return VMIN;}
+| < VMIN: <NUM> "vmin" > { matchedToken.image = ParserUtils.trimBy(image, 0, 4); }
+
+// {num}{V}{M}{A}{X}    {return VMAX;}
+| < VMAX: <NUM> "vmax" > { matchedToken.image = ParserUtils.trimBy(image, 0, 4); }
+
+// Dynamic viewport units
+| < DVW: <NUM> "dvw" > { matchedToken.image = ParserUtils.trimBy(image, 0, 3); }
+| < DVH: <NUM> "dvh" > { matchedToken.image = ParserUtils.trimBy(image, 0, 3); }
+| < DVMIN: <NUM> "dvmin" > { matchedToken.image = ParserUtils.trimBy(image, 0, 5); }
+| < DVMAX: <NUM> "dvmax" > { matchedToken.image = ParserUtils.trimBy(image, 0, 5); }
+
+// Large viewport units
+| < LVW: <NUM> "lvw" > { matchedToken.image = ParserUtils.trimBy(image, 0, 3); }
+| < LVH: <NUM> "lvh" > { matchedToken.image = ParserUtils.trimBy(image, 0, 3); }
+| < LVMIN: <NUM> "lvmin" > { matchedToken.image = ParserUtils.trimBy(image, 0, 5); }
+| < LVMAX: <NUM> "lvmax" > { matchedToken.image = ParserUtils.trimBy(image, 0, 5); }
+
+// Small viewport units
+| < SVW: <NUM> "svw" > { matchedToken.image = ParserUtils.trimBy(image, 0, 3); }
+| < SVH: <NUM> "svh" > { matchedToken.image = ParserUtils.trimBy(image, 0, 3); }
+| < SVMIN: <NUM> "svmin" > { matchedToken.image = ParserUtils.trimBy(image, 0, 5); }
+| < SVMAX: <NUM> "svmax" > { matchedToken.image = ParserUtils.trimBy(image, 0, 5); }
+
+// {num}{P}{X}          {return LENGTH;}
+| < LENGTH_PX: <NUM> "px" > { matchedToken.image = ParserUtils.trimBy(image, 0, 2); }
+
+// {num}{C}{M}          {return LENGTH;}
+| < LENGTH_CM: <NUM> "cm" > { matchedToken.image = ParserUtils.trimBy(image, 0, 2); }
+
+// {num}{M}{M}          {return LENGTH;}
+| < LENGTH_MM: <NUM> "mm" > { matchedToken.image = ParserUtils.trimBy(image, 0, 2); }
+
+// {num}{I}{N}          {return LENGTH;}
+| < LENGTH_IN: <NUM> "in" > { matchedToken.image = ParserUtils.trimBy(image, 0, 2); }
+
+// {num}{P}{T}          {return LENGTH;}
+| < LENGTH_PT: <NUM> "pt" > { matchedToken.image = ParserUtils.trimBy(image, 0, 2); }
+
+// {num}{P}{C}          {return LENGTH;}
+| < LENGTH_PC: <NUM> "pc" > { matchedToken.image = ParserUtils.trimBy(image, 0, 2); }
+
+// {num}{Q}             {return LENGTH;}
+| < LENGTH_Q: <NUM> "q" > { matchedToken.image = ParserUtils.trimBy(image, 0, 1); }
+
+// {num}{D}{E}{G}       {return ANGLE;}
+| < ANGLE_DEG: <NUM> "deg" > { matchedToken.image = ParserUtils.trimBy(image, 0, 3); }
+
+// {num}{R}{A}{D}       {return ANGLE;}
+| < ANGLE_RAD: <NUM> "rad" > { matchedToken.image = ParserUtils.trimBy(image, 0, 3); }
+
+// {num}{G}{R}{A}{D}    {return ANGLE;}
+| < ANGLE_GRAD: <NUM> "grad" > { matchedToken.image = ParserUtils.trimBy(image, 0, 4); }
+
+// {num}{T}{U}{R}{N}    {return ANGLE;}
+| < ANGLE_TURN: <NUM> "turn" > { matchedToken.image = ParserUtils.trimBy(image, 0, 4); }
+
+// {num}{M}{S}          {return TIME;}
+| < TIME_MS: <NUM> "ms" > { matchedToken.image = ParserUtils.trimBy(image, 0, 2); }
+
+// {num}{S}             {return TIME;}
+| < TIME_S: <NUM> "s" > { matchedToken.image = ParserUtils.trimBy(image, 0, 1); }
+
+// {num}{H}{Z}          {return FREQ;}
+| < FREQ_HZ: <NUM> "hz" > { matchedToken.image = ParserUtils.trimBy(image, 0, 2); }
+
+// {num}{K}{H}{Z}       {return FREQ;}
+| < FREQ_KHZ: <NUM> "khz" > { matchedToken.image = ParserUtils.trimBy(image, 0, 3); }
+
+// {num}{D}{P}{I}       {return RESOLUTION;}
+| < RESOLUTION_DPI: <NUM> "dpi" > { matchedToken.image = ParserUtils.trimBy(image, 0, 3); }
+
+// {num}{D}{P}{C}{M}       {return RESOLUTION;}
+| < RESOLUTION_DPCM: <NUM> "dpcm" > { matchedToken.image = ParserUtils.trimBy(image, 0, 4); }
+
+// {num}%               {return PERCENTAGE;}
+| < PERCENTAGE: <NUM> "%" > { matchedToken.image = ParserUtils.trimBy(image, 0, 1); }
+
+// {num}{ident}         {return DIMENSION;}
+| < DIMENSION: <NUM> <NMSTART> ( ["a"-"z","0"-"9"] | <NONASCII> | <ESCAPE> )* >
+
+| < #H_PLACEHOLDER: (<H> | "?"){1,6} >
+| < UNICODE_RANGE: "u+" <H_PLACEHOLDER > (< MINUS > < H_PLACEHOLDER >)? >
+
+// "url("{w}{string}{w}")"  {return URI;}
+// "url("{w}{url}{w}")" {return URI;}
+| < URI: "url" <LROUND> ( <S> )* ( <STRING> | <URL> ) ( <S> )* <RROUND> > { matchedToken.image = ParserUtils.trimUrl(image); }
+
+// {N}{O}{T} "("        {return FUNCTION_NOT;}
+| < FUNCTION_NOT: "not" <LROUND> >
+
+// {L}{A}{N}{G} "("        {return FUNCTION_LANG;}
+| < FUNCTION_LANG: "lang" <LROUND> >
+
+// {C}{A}{L}{C} "("        {return FUNCTION_CALC;}
+| < FUNCTION_CALC: "calc" <LROUND> >
+
+// {V}{A}{R} "("        {return FUNCTION_VAR;}
+| < FUNCTION_VAR: "var" <LROUND> >
+
+| < FUNCTION_RGB: "rgb" ("a")? <LROUND> >
+| < FUNCTION_HSL: "hsl" ("a")? <LROUND> >
+| < FUNCTION_HWB: "hwb" <LROUND> >
+| < FUNCTION_LAB: ("ok")? "lab" <LROUND> >
+| < FUNCTION_LCH: ("ok")? "lch" <LROUND> >
+
+| < FUNCTION_IS: "is" <LROUND> >
+| < FUNCTION_WHERE: "where" <LROUND> >
+| < FUNCTION_HAS: "has" <LROUND> >
+
+| < CUSTOM_PROPERTY_NAME: < MINUS > <MINUS > <NMSTART> ( <NMCHAR> )* >
+
+// {ident} "("          {return FUNCTION;}
+| < FUNCTION: <IDENT> <LROUND> >
+
+| < ATKEYWORD: "@" <IDENT> >
+}
+
+<*> TOKEN:
+{
+    < UNKNOWN: ~[] >
+    {
+        // System.err.println("Illegal character : " + image.toString());
+    }
+}
+
+//
+// stylesheet
+//  : [ CHARSET_SYM STRING ';' ]?
+//    [S|CDO|CDC]* [ import [S|CDO|CDC]* ]*
+//    [ [ ruleset | media | page | font_face ] [S|CDO|CDC]* ]*
+//  ;
+//
+void styleSheet() :
+{
+}
+{
+    try
+    {
+        { handleStartDocument(); }
+        styleSheetRuleList()
+        <EOF>
+    }
+    finally
+    {
+        handleEndDocument();
+    }
+}
+
+void styleSheetRuleList() :
+{
+  boolean ruleFound = false;
+}
+{
+    ( <S> | <CDO> | <CDC> )*
+    (
+        charsetRule()
+        ( <S> | <CDO> | <CDC> )*
+    )?
+    (
+      (
+        (
+            importRule(ruleFound)
+            |
+            (
+                styleRule() | mediaRule() | pageRule() | fontFaceRule() | unknownAtRule()
+            )
+            {
+                ruleFound = true;
+            }
+        )
+        |
+        (
+            // skip until the next RBRACE
+            { ParseException e = generateParseException(); }
+            invalidRule()
+            {
+                Token t = getNextToken();
+
+                boolean charsetProcessed = false;
+                if (t.kind == CHARSET_SYM) {
+                    t = getNextToken();
+                    if (t.kind == S) {
+                        t = getNextToken();
+                        if (t.kind == STRING) {
+                            t = getNextToken();
+                            if (t.kind == SEMICOLON) {
+                                getNextToken();
+                                charsetProcessed = true;
+                            }
+                        }
+                    }
+                    CSSParseException cpe = toCSSParseException("misplacedCharsetRule", e);
+                    getErrorHandler().error(cpe);
+                    getErrorHandler().warning(createSkipWarning("ignoringRule", cpe));
+                }
+
+                if (!charsetProcessed) {
+                    if (t.kind == EOF) {
+                        return;
+                    }
+
+                    CSSParseException cpe = toCSSParseException("invalidRule", e);
+                    getErrorHandler().error(cpe);
+                    getErrorHandler().warning(createSkipWarning("ignoringRule", cpe));
+                    if (t.kind != RBRACE) {
+                        error_skipblock(null, null);
+                    }
+                }
+            }
+        )
+      )
+      ( <S> | <CDO> | <CDC> )*
+    )*
+}
+
+JAVACODE
+void invalidRule()
+{
+}
+
+//
+// This is used by ASTStyleSheet.insertRule to parse a single rule
+//
+void styleSheetRuleSingle() :
+{
+}
+{
+    ( <S> )*
+    ( charsetRule() | importRule(false) | styleRule() | mediaRule() | pageRule() | fontFaceRule() | unknownAtRule() )
+    ( <S> )*
+}
+
+void charsetRule() :
+{
+  Token t;
+  Locator locator;
+}
+{
+    try
+    {
+        <CHARSET_SYM>
+        {
+            locator = createLocator(token);
+        }
+        <S>
+        t = <STRING>
+        <SEMICOLON>
+        {
+            handleCharset(t.toString(), locator);
+        }
+    }
+    catch (ParseException e)
+    {
+        getErrorHandler().error(toCSSParseException("invalidCharsetRule", e));
+    }
+}
+
+void unknownAtRule() :
+{
+    String s;
+    Locator locator;
+}
+{
+    try
+    {
+        <ATKEYWORD>
+        {
+            locator = createLocator(token);
+            s = skip();
+            handleIgnorableAtRule(s, locator);
+        }
+    }
+    catch (ParseException e)
+    {
+        getErrorHandler().error(toCSSParseException("invalidUnknownRule", e));
+    }
+}
+
+//
+// import
+//  : IMPORT_SYM S*
+//    [STRING|URI] S* [ medium [ COMMA S* medium]* ]? ';' S*
+//  ;
+//
+void importRule(final boolean nonImportRuleFoundBefore) :
+{
+    Token t;
+    MediaQueryList ml = new MediaQueryList();
+    Locator locator;
+}
+{
+    try
+    {
+        {
+            ParseException e = null;
+            if (nonImportRuleFoundBefore)
+            {
+                e = generateParseException();
+            }
+        }
+        <IMPORT_SYM>
+        {
+            locator = createLocator(token);
+        }
+        ( <S> )*
+        ( t = <STRING> | t = <URI> ) ( <S> )*
+        ( mediaList(ml) )?
+        <SEMICOLON>
+        {
+            if (nonImportRuleFoundBefore)
+            {
+                getErrorHandler().error(toCSSParseException("invalidImportRuleIgnored2", e));
+            }
+            else
+            {
+                handleImportStyle(unescape(t.image, false), ml, null, locator);
+            }
+        }
+    }
+    catch (CSSParseException e)
+    {
+        getErrorHandler().error(e);
+        error_skipAtRule();
+    }
+    catch (ParseException e)
+    {
+        getErrorHandler().error(toCSSParseException("invalidImportRule", e));
+        error_skipAtRule();
+    }
+}
+
+//
+// media
+//  : MEDIA_SYM S* medium [ COMMA S* medium ]* '{' S* ruleset* '}' S*
+//  ;
+//
+void mediaRule() :
+{
+    boolean start = false;
+    MediaQueryList ml = new MediaQueryList();
+    Locator locator;
+}
+{
+    try
+    {
+        <MEDIA_SYM>
+        {
+            locator = createLocator(token);
+        }
+        ( <S> )*
+        mediaList(ml)
+        {
+            start = true;
+            handleStartMedia(ml, locator);
+        }
+        <LBRACE> ( <S> )*
+        ( mediaRuleList() )?
+        <RBRACE>
+    }
+    catch (CSSParseException e)
+    {
+        getErrorHandler().error(e);
+        error_skipblock("ignoringRule", e);
+    }
+    catch(ParseException e)
+    {
+        CSSParseException cpe = toCSSParseException("invalidMediaRule", e);
+        getErrorHandler().error(cpe);
+        error_skipblock("ignoringRule", cpe);
+    }
+    finally
+    {
+        if (start) {
+            handleEndMedia(ml);
+        }
+    }
+}
+
+void mediaList(MediaQueryList ml) :
+{
+    MediaQuery mq;
+}
+{
+    try
+    {
+        mq = mediaQuery()
+        {
+            ml.setLocator(createLocator(token));
+        }
+        ( <COMMA> ( <S> )* { ml.add(mq); } mq = mediaQuery() )*
+        { ml.add(mq); }
+    }
+    catch(ParseException e)
+    {
+        throw toCSSParseException("invalidMediaList", e);
+    }
+}
+
+//
+// media_query
+//   : [ONLY | NOT]? S* media_type S* [ AND S* expression ]*
+//   | expression [ AND S* expression ]*
+//   ;
+//
+MediaQuery mediaQuery() :
+{
+    String s;
+    MediaQuery mq;
+    Property p;
+    boolean only = false;
+    boolean not = false;
+}
+{
+  (
+    (
+      (
+        (
+          <ONLY> { only = true; }
+          |
+          <NOT> { not = true; }
+        ) ( <S> )*
+      )?
+      s = medium()
+      { mq = new MediaQuery(s, only, not); mq.setLocator(createLocator(token)); }
+      (
+        <AND> ( <S> )*
+        p = mediaExpression()
+        {
+            mq.addMediaProperty(p);
+        }
+      )*
+    )
+    |
+    (
+      p = mediaExpression()
+      {
+          mq = new MediaQuery(null, only, not);
+          mq.setLocator(createLocator(token));
+          mq.addMediaProperty(p);
+      }
+      (
+        <AND> ( <S> )*
+        p = mediaExpression()
+        {
+            mq.addMediaProperty(p);
+        }
+      )*
+    )
+  )
+  { return mq; }
+}
+
+//
+// expression
+//   : '(' S* media_feature S* [ ':' S* expr ]? ')' S*
+//   ;
+//
+Property mediaExpression() :
+{
+  String p;
+  LexicalUnit e = null;
+  Property prop;
+  Token t;
+}
+{
+    <LROUND>
+    ( <S> )*
+    (
+        t = identExcludingOnly() ( <S> )*                    { p = unescape(t.image, false); }
+        | t = <CUSTOM_PROPERTY_NAME> ( <S> )*   { p = unescape(t.image, false); }
+    )
+    (
+      <COLON> ( <S> )*
+      e = expr()
+    )?
+    <RROUND>
+    ( <S> )*
+    {
+        if(e==null)
+        {
+          prop = new Property(p, null, false);
+        }
+        else
+        {
+          prop = new Property(p, new CSSValueImpl(e), false);
+        }
+        return prop;
+    }
+}
+
+void mediaRuleList() :
+{
+}
+{
+  ( ( styleRule() | mediaRule() | pageRule() | importRule(true) | unknownAtRule() ) ( <S> )* )+
+}
+
+//
+// medium
+//   : IDENT S*
+//   ;
+//
+String medium() :
+{
+  Token t;
+}
+{
+    t = identExcludingOnly() ( <S> )*
+    {
+        return unescape(t.image, false);
+    }
+}
+
+//
+// page
+//  : PAGE_SYM S* pseudo_page? S*
+//    '{' S* declaration [ ';' S* declaration ]* '}' S*
+//  ;
+//
+void pageRule() :
+{
+    String sel = null;
+    boolean start = false;
+    Locator locator;
+}
+{
+    try {
+        <PAGE_SYM>
+        {
+            locator = createLocator(token);
+        }
+        ( <S> )*
+
+        ( sel = pageSelectorList() )?
+
+        <LBRACE> ( <S> )*
+        {
+            start = true;
+            handleStartPage(null, sel, locator);
+        }
+
+        styleDeclaration()
+        <RBRACE>
+    }
+    catch (CSSParseException e)
+    {
+        getErrorHandler().error(e);
+        error_skipblock("ignoringRule", e);
+    }
+    catch(ParseException e)
+    {
+        CSSParseException cpe = toCSSParseException("invalidPageRule", e);
+        getErrorHandler().error(cpe);
+        error_skipblock("ignoringRule", cpe);
+    }
+    finally {
+        if (start) {
+            handleEndPage(null, sel);
+        }
+    }
+}
+
+//
+// pageSelectorList
+//   : [ pageSelector S* [ ',' pageSelector S* ]* ]?
+//   ;
+//
+String pageSelectorList() :
+{
+  String sel;
+  LinkedList<String> selectors = new LinkedList<>();
+}
+{
+  sel = pageSelector() { selectors.add(sel); }
+  (
+    <COMMA> ( <S> )* sel = pageSelector() { selectors.add(sel); }
+  )*
+
+  { return String.join(", ", selectors); }
+}
+
+//
+// pageSelector
+//   : pseudoPage+ | IDENT pseudoPage*
+//   ;
+//
+String pageSelector() :
+{
+  StringBuilder pseudos = new StringBuilder();
+  String pseudo;
+  Token ident;
+}
+{
+  (
+    pseudo = pseudoPage() { pseudos.append(pseudo); }
+    |
+    ident = ident() { pseudos.append(unescape(ident.image, false)); }
+  )
+  ( pseudo = pseudoPage() { pseudos.append(pseudo); } )*
+  ( <S> )*
+
+  { return pseudos.toString(); }
+}
+
+//
+// pseudoPage
+//   : ':' IDENT
+//   ;
+//
+String pseudoPage() :
+{
+  Token t;
+}
+{
+  <COLON> t = ident() { return ":" + normalizeAndValidatePagePseudoClass(t); }
+}
+
+//
+// font_face
+//  : FONT_FACE_SYM S*
+//    '{' S* declaration [ ';' S* declaration ]* '}' S*
+//  ;
+//
+void fontFaceRule() :
+{
+    boolean start = false;
+    Locator locator;
+}
+{
+    try {
+        <FONT_FACE_SYM>
+        {
+            locator = createLocator(token);
+        }
+        ( <S> )*
+        <LBRACE> ( <S> )* { start = true; handleStartFontFace(locator); }
+        styleDeclaration()
+        <RBRACE>
+    }
+    catch(ParseException e)
+    {
+        CSSParseException cpe = toCSSParseException("invalidFontFaceRule", e);
+        getErrorHandler().error(cpe);
+        error_skipblock("invalidFontFaceRule", cpe);
+    }
+    finally {
+        if (start) {
+            handleEndFontFace();
+        }
+    }
+}
+
+//
+// operator
+//  : '/' S* | COMMA S* | /* empty */
+//  ;
+//
+LexicalUnit operator(LexicalUnit prev) :
+{
+}
+{
+  <SLASH> ( <S> )*   { return new LexicalUnitImpl(prev, LexicalUnitType.OPERATOR_SLASH); }
+  | <COMMA> ( <S> )* { return LexicalUnitImpl.createComma(prev); }
+}
+
+//
+// combinator
+//  : PLUS S*
+//  | GREATER S*
+//  | TILDE S*
+//  | S
+//  ;
+//
+Combinator combinator() :
+{
+  Combinator c = Combinator.DESCENDANT_COMBINATOR;
+}
+{
+  (
+    <PLUS> { c = Combinator.NEXT_SIBLING_COMBINATOR; } ( <S> )*
+    | <GREATER> { c = Combinator.CHILD_COMBINATOR; } ( <S> )*
+    | <TILDE> { c = Combinator.SUBSEQUENT_SIBLING_COMBINATOR; } ( <S> )*
+    | <S>
+      (
+        ( <PLUS> { c = Combinator.NEXT_SIBLING_COMBINATOR; }
+            | <GREATER> { c = Combinator.CHILD_COMBINATOR; }
+            | <TILDE> { c = Combinator.SUBSEQUENT_SIBLING_COMBINATOR; }
+        ) ( <S> )*
+      )?
+  )
+  { return c; }
+}
+
+Combinator relativeCombinator() :
+{
+  Combinator c = Combinator.DESCENDANT_COMBINATOR;
+}
+{
+  (
+    <PLUS> { c = Combinator.NEXT_SIBLING_COMBINATOR; } ( <S> )*
+    | <GREATER> { c = Combinator.CHILD_COMBINATOR; } ( <S> )*
+    | <TILDE> { c = Combinator.SUBSEQUENT_SIBLING_COMBINATOR; } ( <S> )*
+  )?
+  { return c; }
+}
+
+//
+// unary_operator
+//  : '-' | PLUS
+//  ;
+//
+char unaryOperator() :
+{
+}
+{
+  ( <MINUS> { return '-'; } | <PLUS> { return '+'; } )
+}
+
+
+//
+// ruleset
+//  : selector [ COMMA S* selector ]*
+//    '{' S* declaration [ ';' S* declaration ]* '}' S*
+//  ;
+//
+void styleRule() :
+{
+    SelectorList selList = null;
+    boolean start = false;
+    Token t;
+}
+{
+    try {
+        {
+            t = token;
+        }
+        selList = selectorList()
+        <LBRACE> ( <S> )*
+        {
+            start = true;
+            handleStartSelector(selList, createLocator(t.next));
+        }
+        styleDeclaration()
+        ( <RBRACE> | <EOF> )
+    }
+    catch(CSSParseException e)
+    {
+        getErrorHandler().error(e);
+        error_skipblock("ignoringRule", e);
+    }
+    catch(ParseException e)
+    {
+        CSSParseException cpe = toCSSParseException("invalidStyleRule", e);
+        getErrorHandler().error(cpe);
+        error_skipblock("ignoringRule", cpe);
+    }
+    finally {
+        if (start) {
+            handleEndSelector(selList);
+        }
+    }
+}
+
+SelectorList parseSelectorsInternal() :
+{
+    SelectorList selectors;
+}
+{
+    ( <S> )*
+    selectors = selectorList()
+    <EOF>
+    {
+        return selectors;
+    }
+}
+
+SelectorList selectorList() :
+{
+    SelectorListImpl selList = new SelectorListImpl();
+    Selector sel;
+}
+{
+    sel = selector() { selList.setLocator(sel.getLocator()); }
+    (   <COMMA> ( <S> )*
+        { selList.add(sel); }
+        sel = selector() { selList.setLocator(sel.getLocator()); }
+    )*
+    {
+        selList.add(sel);
+        return selList;
+    }
+}
+
+SelectorList relativeSelectorList() :
+{
+    SelectorListImpl selList = new SelectorListImpl();
+    Selector sel;
+    Combinator comb;
+}
+{
+    comb = relativeCombinator()
+    sel = selector() { selList.setLocator(sel.getLocator()); }
+    (   <COMMA> ( <S> )*
+        { selList.add(new RelativeSelector(comb, sel)); }
+
+        comb = relativeCombinator()
+        sel = selector() { selList.setLocator(sel.getLocator()); }
+    )*
+    {
+        selList.add(new RelativeSelector(comb, sel));
+        return selList;
+    }
+}
+
+//
+// selector
+//   : simple_selector_sequence [ combinator simple_selector_sequence ]*
+//   ;
+//
+Selector selector() :
+{
+    Selector sel;
+    Combinator comb;
+}
+{
+    try {
+        sel = simpleSelector(null, Combinator.DESCENDANT_COMBINATOR)
+        ( LOOKAHEAD(2) comb = combinator() sel = simpleSelector(sel, comb) )* ( <S> )*
+        {
+            return sel;
+        }
+    } catch (ParseException e) {
+        throw toCSSParseException("invalidSelector", e);
+    }
+}
+
+//
+// simple_selector
+//  : element_name [ HASH | class | attrib | pseudo ]*
+//  | [ HASH | class | attrib | pseudo ]+
+//  ;
+//
+Selector simpleSelector(Selector sel, Combinator comb) :
+{
+    ElementSelector elemSel = null;
+    SimpleSelector simpleSel = null;
+    Condition c = null;
+    SimpleSelector pseudoElementSel = null;
+    Object o = null;
+}
+{
+    try
+    {
+        (
+            ( elemSel = elementName()
+                ( c = hash(null != pseudoElementSel) { elemSel.addCondition(c); }
+                | c = _class(null != pseudoElementSel) { elemSel.addCondition(c); }
+                | c = attrib(null != pseudoElementSel) { elemSel.addCondition(c); }
+                | (
+                    o = pseudo(null != pseudoElementSel)
+                    { if (o instanceof Condition)
+                      {  elemSel.addCondition((Condition) o);
+                      } else {
+                        pseudoElementSel = (SimpleSelector) o;
+                      }
+                    }
+                  )
+                )*
+            )
+            |
+            ( { elemSel = new ElementSelector(null, createLocator(token)); }
+                ( c = hash(null != pseudoElementSel) { elemSel.addCondition(c); }
+                | c = _class(null != pseudoElementSel) { elemSel.addCondition(c); }
+                | c = attrib(null != pseudoElementSel) { elemSel.addCondition(c); }
+                | (
+                    o = pseudo(null != pseudoElementSel)
+                    { if (o instanceof Condition)
+                      { elemSel.addCondition((Condition) o);
+                      } else {
+                        pseudoElementSel = (SimpleSelector) o;
+                      }
+                    }
+                  )
+                )+
+            )
+        )
+
+        {
+            simpleSel = elemSel;
+            if (sel == null) {
+                sel = simpleSel;
+            } else {
+                switch (comb) {
+                case DESCENDANT_COMBINATOR:
+                    sel = new DescendantSelector(sel, simpleSel);
+                    break;
+                case NEXT_SIBLING_COMBINATOR:
+                    sel = new DirectAdjacentSelector(sel, simpleSel);
+                    break;
+                case CHILD_COMBINATOR:
+                    sel = new ChildSelector(sel, simpleSel);
+                    break;
+                case SUBSEQUENT_SIBLING_COMBINATOR:
+                    sel = new GeneralAdjacentSelector(sel, simpleSel);
+                    break;
+                }
+            }
+            if (pseudoElementSel != null)
+            {
+                sel = new DescendantSelector(sel, pseudoElementSel);
+            }
+
+            return sel;
+        }
+    }
+    catch (ParseException e)
+    {
+        throw toCSSParseException("invalidSimpleSelector", e);
+    }
+}
+
+//
+// class
+//   : '.' IDENT
+//   ;
+//
+Condition _class(boolean pseudoElementFound) :
+{
+    Token t;
+    Locator locator;
+    ParseException pe = null;
+}
+{
+    try
+    {
+        { if (pseudoElementFound) { pe = generateParseException(); } }
+        <DOT>
+        {
+            locator = createLocator(token);
+        }
+
+        t = ident()
+        {
+            if (pseudoElementFound) { throw pe; }
+            return new ClassCondition(unescape(t.image, false), locator);
+        }
+    }
+    catch (ParseException e)
+    {
+        throw toCSSParseException("invalidClassSelector", e);
+    }
+}
+
+//
+// element_name
+//   : IDENT | '*'
+//   ;
+//
+ElementSelector elementName() :
+{
+    Token t;
+}
+{
+    try
+    {
+        t = ident()
+        {
+            return new ElementSelector(unescape(t.image, false), createLocator(t));
+        }
+        | <ASTERISK>
+        {
+            return new ElementSelector(null, createLocator(token));
+        }
+    }
+    catch (ParseException e)
+    {
+        throw toCSSParseException("invalidElementName", e);
+    }
+}
+
+//
+// attrib
+//   : '[' S* IDENT S* [ [ '=' | INCLUDES | DASHMATCH | PREFIXMATCH | SUFFIXMATCH | SUBSTRINGMATCH ] S*
+//     [ IDENT | STRING ] S* ]? ']'
+//   ;
+//
+Condition attrib(boolean pseudoElementFound) :
+{
+    Token t;
+    String name = null;
+    String value = null;
+    Boolean insensitive = null;
+    int type = 0;
+    Locator locator;
+}
+{
+    try
+    {
+        <LSQUARE>
+        {
+            locator = createLocator(token);
+        }
+        ( <S> )*
+        { if (pseudoElementFound) { throw generateParseException(); } }
+
+        t = ident() { name = unescape(t.image, false); }
+        ( <S> )*
+        (
+            (
+                <PREFIXMATCH> { type = 4; }
+                |
+                <SUFFIXMATCH> { type = 5; }
+                |
+                <SUBSTRINGMATCH> { type = 6; }
+                |
+                "=" { type = 1; } // don't use <EQUALS> because of the leading whitespace
+                |
+                <INCLUDES> { type = 2; }
+                |
+                <DASHMATCH> { type = 3; }
+            )
+            ( <S> )*
+            (
+                (
+                    t = ident() { value = unescape(t.image, false); }
+                    |
+                    t = <STRING> { value = unescape(t.image, false); }
+                )
+
+                ( <S> )*
+            )
+            (
+                t = ident() { insensitive = handleCaseInSensitive(t); }
+                ( <S> )*
+            )?
+        )?
+        <RSQUARE>
+        {
+            Condition c = null;
+            switch (type) {
+            case 0:
+                c = new AttributeCondition(name, null, insensitive);
+                break;
+            case 1:
+                c = new AttributeCondition(name, value, insensitive);
+                break;
+            case 2:
+                c = new OneOfAttributeCondition(name, value, insensitive);
+                break;
+            case 3:
+                c = new BeginHyphenAttributeCondition(name, value, insensitive);
+                break;
+            case 4:
+                c = new PrefixAttributeCondition(name, value, insensitive);
+                break;
+            case 5:
+                c = new SuffixAttributeCondition(name, value, insensitive);
+                break;
+            case 6:
+                c = new SubstringAttributeCondition(name, value, insensitive);
+                break;
+            }
+            c.setLocator(locator);
+            return c;
+        }
+    }
+    catch (ParseException e)
+    {
+        throw toCSSParseException("invalidAttrib", e);
+    }
+}
+
+//
+// pseudo
+//  : ':' (':')?
+//        [ IDENT
+//          | FUNCTION_NOT S* selector() S* ')'
+//          | FUNCTION_LANG S* IDENT S* ')'
+//          | FUNCTION S* ((PLUS | MINUS | DIMENSION | NUMBER | STRING | IDENT)? S*)+ ')'
+//        ]
+//  ;
+//
+Object pseudo(boolean pseudoElementFound) :
+{
+    Token t;
+    String function;
+    boolean doubleColon = false;
+    SelectorList selectorList;
+    SelectorList relativeSelectorList;
+    Locator locator;
+}
+{
+    try
+    {
+        <COLON> { locator = createLocator(token); }
+        (<COLON> { doubleColon = true; } )?
+
+        (
+            t = ident()
+            {
+                String s = unescape(t.image, false);
+                if (pseudoElementFound) { throw toCSSParseException("duplicatePseudo", new String[] { s }, locator); }
+                if ("first-line".equals(s)
+                    || "first-letter".equals(s)
+                    || "before".equals(s)
+                    || "after".equals(s))
+                {
+                    return new PseudoElementSelector(s, locator, doubleColon);
+                }
+                return new PseudoClassCondition(s, locator, doubleColon);
+            }
+            |
+            (
+                t = <FUNCTION_NOT> { function = unescape(t.image, false); }
+                ( <S> )*
+                selectorList = selectorList()
+                <RROUND>
+                {
+                    if (pseudoElementFound) { throw toCSSParseException("duplicatePseudo", new String[] { function + selectorList + ")" }, locator); }
+                    if (doubleColon) { throw toCSSParseException("invalidPseudoColon", new String[] { ":" + function + selectorList + ")" }, locator); }
+                    return new NotPseudoClassCondition(selectorList, locator);
+                }
+            )
+            |
+            (
+                t = <FUNCTION_IS> { function = unescape(t.image, false); }
+                ( <S> )*
+                selectorList = selectorList()
+                <RROUND>
+                {
+                    if (pseudoElementFound) { throw toCSSParseException("duplicatePseudo", new String[] { function + selectorList + ")" }, locator); }
+                    if (doubleColon) { throw toCSSParseException("invalidPseudoColon", new String[] { ":" + function + selectorList + ")" }, locator); }
+                    return new IsPseudoClassCondition(selectorList, locator);
+                }
+            )
+            |
+            (
+                t = <FUNCTION_WHERE> { function = unescape(t.image, false); }
+                ( <S> )*
+                selectorList = selectorList()
+                <RROUND>
+                {
+                    if (pseudoElementFound) { throw toCSSParseException("duplicatePseudo", new String[] { function + selectorList + ")" }, locator); }
+                    if (doubleColon) { throw toCSSParseException("invalidPseudoColon", new String[] { ":" + function + selectorList + ")" }, locator); }
+                    return new WherePseudoClassCondition(selectorList, locator);
+                }
+            )
+            |
+            (
+                t = <FUNCTION_HAS> { function = unescape(t.image, false); }
+                ( <S> )*
+                relativeSelectorList = relativeSelectorList()
+                <RROUND>
+                {
+                    if (pseudoElementFound) { throw toCSSParseException("duplicatePseudo", new String[] { function + relativeSelectorList + ")" }, locator); }
+                    if (doubleColon) { throw toCSSParseException("invalidPseudoColon", new String[] { ":" + function + relativeSelectorList + ")" }, locator); }
+                    return new HasPseudoClassCondition(relativeSelectorList, locator);
+                }
+            )
+            |
+            (
+                t = <FUNCTION_LANG> { function = unescape(t.image, false); }
+                ( <S> )*
+                t = ident() { String lang = unescape(t.image, false); }
+                ( <S> )*
+                <RROUND>
+                {
+                    if (pseudoElementFound) { throw toCSSParseException("duplicatePseudo", new String[] { "lang(" + lang + ")" }, locator); }
+                    return new LangCondition(lang, locator);
+                }
+            )
+            |
+            (
+                t = <FUNCTION> { function = unescape(t.image, false); StringBuilder args = new StringBuilder(); }
+                ( <S> )*
+                (
+                    (t = <PLUS> | t = <MINUS> | t = <DIMENSION> | t = <NUMBER> | t = <STRING> | t = ident())
+                    { args.append(unescape(t.image, false)); }
+                    ( t = <S>
+                        { args.append(unescape(t.image, false)); }
+                    )*
+                )+
+                <RROUND>
+                {
+                    if (pseudoElementFound) { throw toCSSParseException("duplicatePseudo", new String[] { function + args.toString().trim() + ")" }, locator); }
+                    return new PseudoClassCondition(function + args.toString().trim() + ")", locator, doubleColon);
+                }
+            )
+        )
+    }
+    catch (ParseException e)
+    {
+        throw toCSSParseException("invalidPseudo", e);
+    }
+}
+
+Condition hash(boolean pseudoElementFound) :
+{
+    Token t;
+    ParseException pe = null;
+}
+{
+    try
+    {
+        { if (pseudoElementFound) { pe = generateParseException(); } }
+        t = <HASH>
+        {
+            if (pseudoElementFound) { throw pe; }
+            return new IdCondition(unescape(t.image.substring(1), false), createLocator(t));
+        }
+    }
+    catch (ParseException e)
+    {
+        throw toCSSParseException("invalidHash", e);
+    }
+}
+
+void styleDeclaration()  :
+{
+}
+{
+    ( declaration() )?
+    ( <SEMICOLON> ( <S> )* ( declaration() )? )*
+}
+
+//
+// declaration
+//   : property ':' S* expr prio?
+//   |
+//   ;
+//
+void declaration() :
+{
+  String p;
+  LexicalUnit e = null;
+  Token t;
+  boolean priority = false;
+  Locator starHack = null;
+  Locator locator = null;
+}
+{
+    try
+    {
+        // at the moment i have no better idea how to handle the
+        // infamous css-star-hack (http://en.wikipedia.org/wiki/CSS_filter#Star_hack)
+        // smart (means: ignoring only one decl)
+        ( <ASTERISK> { starHack = createLocator(token); } )?
+        (
+            (
+                t = ident()                           { p = unescape(t.image, false); locator = createLocator(t); }
+                ( <S> )*
+                <COLON> ( <S> )*
+                e = expr()
+            )
+            |
+            (
+                t = <CUSTOM_PROPERTY_NAME> ( <S> )*   { p = unescape(t.image, false); locator = createLocator(t); }
+                <COLON> ( <S> )*
+                ( e = expr() )?
+            )
+        )
+        
+        ( priority = prio() )?
+
+        // maybe there are strange characters at the end - create error and skip
+        ( t = <UNKNOWN>
+          {
+            locator = createLocator(t);
+            CSSParseException cpe = toCSSParseException("invalidDeclarationInvalidChar", new String[] {t.image}, locator);
+            getErrorHandler().error(cpe);
+            error_skipdecl();
+          }
+        )?
+
+        {
+            if (starHack != null)
+            {
+                CSSParseException cpe = toCSSParseException("invalidDeclarationStarHack", new Object[0], starHack);
+                getErrorHandler().error(cpe);
+                return;
+            }
+            handleProperty(p, e, priority, locator);
+        }
+    }
+    catch (CSSParseException ex)
+    {
+        getErrorHandler().error(ex);
+        error_skipdecl();
+    }
+    catch (ParseException ex)
+    {
+        CSSParseException cpe = toCSSParseException("invalidDeclaration", ex);
+        getErrorHandler().error(cpe);
+        error_skipdecl();
+    }
+}
+
+//
+// prio
+//   : IMPORTANT_SYM S*
+//   ;
+boolean prio() :
+{
+}
+{
+  <IMPORTANT_SYM> ( <S> )*
+  { return true; }
+}
+
+//
+// expr
+//   : term [ operator term ]*
+//   ;
+LexicalUnit expr() :
+{
+    LexicalUnit head;
+    LexicalUnit body;
+}
+{
+    try
+    {
+        head = term(null) { body = head; }
+        (
+            ( body = operator(body) )?
+            body = term(body)
+        )*
+        { return head; }
+    }
+    catch (ParseException ex)
+    {
+        throw toCSSParseException("invalidExpr", ex);
+    }
+}
+
+//
+// term
+//  : unary_operator?
+//    [ NUMBER | PERCENTAGE | LENGTH | EMS | REM | EXS | ANGLE | TIME | FREQ | function ]
+//  | STRING | IDENT | URI | hexcolor | DIMENSION
+//  S*
+//  ;
+//
+LexicalUnit term(LexicalUnit prev) :
+{
+  Token t;
+  char op = ' ';
+  LexicalUnit value = null;
+  Locator locator = null;
+}
+{
+    ( op = unaryOperator() )?    { if (op != ' ') { locator = createLocator(token); } }
+    (
+        (   value = number(prev, op)
+            | value = dimension(prev, op)
+            | value = percentage(prev, op)
+            | value = function(prev)
+            | value = rgbColor(prev)
+            | value = hslColor(prev)
+            | value = hwbColor(prev)
+            | value = labColor(prev)
+            | value = lchColor(prev)
+            | value = calc(prev)
+            | value = var(prev)
+        )
+        | t = <STRING>          { value = LexicalUnitImpl.createString(prev, unescape(t.image, false)); }
+        | t = "progid:"         { value = LexicalUnitImpl.createIdent(prev, skipUnit().trim()); }
+        |
+            (
+                t = identExcludingInherit()
+                ( <COLON> { throw toCSSParseException("invalidExprColon", new String[]{ unescape(t.image, false) }, createLocator(t)); } )?
+            )
+            { value = LexicalUnitImpl.createIdent(prev, unescape(t.image, false)); }
+        | t = <URI>             { value = LexicalUnitImpl.createURI(prev, unescape(t.image, true)); }
+        | value = unicodeRange(prev)
+        | value = hexcolor(prev)
+        | t = <DIMENSION>
+            {
+                int n = getLastNumPos(t.image);
+                value = LexicalUnitImpl.createDimension(
+                    prev,
+                    doubleValue(op, t.image.substring(0, n+1)),
+                    t.image.substring(n+1));
+            }
+        | t = <INHERIT>         { value = LexicalUnitImpl.createInherit(prev); }
+    )
+        {
+            if (locator == null)
+            {
+                locator = createLocator(token);
+            }
+        }
+    ( <S> )*
+        {
+            if(value != null)
+            {
+              value.setLocator(locator);
+            }
+            return value;
+        }
+}
+
+//
+// function
+//   : FUNCTION S* ((EQUALS | COMMA | (unaryOperator? NUMBER) | STRING | IDENT | URI)? S*)+ ')' S*
+//   ;
+//
+LexicalUnit function(LexicalUnit prev) :
+{
+    Token t;
+    LexicalUnit param = null;
+    LexicalUnit body = null;
+    String funct = "";
+}
+{
+    t = <FUNCTION> { funct = funct + unescape(t.image, false); }
+    ( <S> )*
+    (
+        param = term(null) { body = param; }
+        (
+            (
+                (
+                  t = <COMMA>    { body = LexicalUnitImpl.createComma(body); }
+                  | t = <EQUALS>   { body = LexicalUnitImpl.createIdent(body, t.image); }
+                )
+                ( <S> )*
+            )?
+            body = term(body)
+        )*
+    )?
+    <RROUND>
+    {
+        return functionInternal(prev, funct, param);
+    }
+}
+
+//
+// calc()
+// https://www.w3.org/TR/css3-values/#calc-syntax
+// <calc()> = calc( <calc-sum> )
+//
+LexicalUnit calc(LexicalUnit prev) :
+{
+    Token t;
+    LexicalUnit head = LexicalUnitImpl.createIdent(null, "");
+    String funct = "";
+}
+{
+    t = <FUNCTION_CALC> { funct = unescape(t.image, false); }
+    ( <S> )*
+    calcSum(head)
+    <RROUND>
+    {
+        return functionInternal(prev, funct, head.getNextLexicalUnit());
+    }
+}
+
+//
+// calcSum()
+// <calc-sum> = <calc-product> [ [ '+' | '-' ] <calc-product> ]*
+//
+LexicalUnit calcSum(LexicalUnit prev) :
+{
+}
+{
+    (
+        prev = calcProduct(prev)
+        (
+            (
+                <PLUS>       { prev = LexicalUnitImpl.createPlus(prev); }
+                | <MINUS>    { prev = LexicalUnitImpl.createMinus(prev); }
+            )
+            ( <S> )*
+            prev = calcProduct(prev)
+        )*
+    )
+    {
+        if (prev != null)
+        {
+            prev.setLocator(createLocator(token));
+        }
+        return prev;
+    }
+}
+
+//
+// calcProduct()
+// <calc-product> = <calc-value> [ '*' <calc-value> | '/' <calc-number-value> ]*
+//
+LexicalUnit calcProduct(LexicalUnit prev) :
+{
+}
+{
+    (
+        prev = calcValue(prev)
+        (
+            (
+                <ASTERISK>  { prev = LexicalUnitImpl.createMultiply(prev); }
+                ( <S> )*
+                prev = calcValue(prev)
+            )
+            |
+            (
+                <SLASH>  { prev = LexicalUnitImpl.createDivide(prev); }
+                ( <S> )*
+                prev = calcNumberValue(prev)
+            )
+        )*
+    )
+    {
+        if (prev != null)
+        {
+            prev.setLocator(createLocator(token));
+        }
+        return prev;
+    }
+}
+
+//
+// calcValue()
+// <calc-value> = <number> | <dimension> | <percentage> | ( <calc-sum> )
+//
+LexicalUnit calcValue(LexicalUnit prev) :
+{
+    Token t;
+    char op = ' ';
+    LexicalUnit head = LexicalUnitImpl.createIdent(null, "");
+}
+{
+    (
+        (
+            (
+                (op = unaryOperator() )?
+                (
+                    prev = number(prev, op)
+                    | prev = dimension(prev, op)
+                    | prev = percentage(prev, op)
+                    | t = ident()                  { prev = LexicalUnitImpl.createIdent(prev, unescape(t.image, false)); }
+                )
+            )
+            | prev = var(prev)
+            |
+                (
+                    (<FUNCTION_CALC> | <LROUND>)
+                    calcSum(head)
+                    <RROUND>
+                )
+                {
+                    // use an empty function as block scope
+                    prev = functionInternal(prev, "(", head.getNextLexicalUnit());
+                }
+        )
+        ( <S> )*
+    )
+    {
+        if (prev != null)
+        {
+            prev.setLocator(createLocator(token));
+        }
+        return prev;
+    }
+}
+
+//
+// calcNumberSum()
+// <calc-number-sum> = <calc-number-product> [ [ '+' | '-' ] <calc-number-product> ]*
+//
+LexicalUnit calcNumberSum(LexicalUnit prev) :
+{
+}
+{
+    (
+        prev = calcNumberProduct(prev)
+        (
+            (
+                <PLUS>       { prev = LexicalUnitImpl.createPlus(prev); }
+                | <MINUS>    { prev = LexicalUnitImpl.createMinus(prev); }
+            )
+            ( <S> )*
+            prev = calcNumberProduct(prev)
+        )*
+    )
+    {
+        if (prev != null)
+        {
+            prev.setLocator(createLocator(token));
+        }
+        return prev;
+    }
+}
+
+//
+// calcNumberProduct()
+// <calc-number-product> = <calc-number-value> [ '*' <calc-number-value> | '/' <calc-number-value> ]*
+//
+LexicalUnit calcNumberProduct(LexicalUnit prev) :
+{
+}
+{
+    (
+        prev = calcNumberValue(prev)
+        (
+            (
+                <ASTERISK>  { prev = LexicalUnitImpl.createMultiply(prev); }
+                ( <S> )*
+                prev = calcNumberValue(prev)
+            )
+            |
+            (
+                <SLASH>  { prev = LexicalUnitImpl.createDivide(prev); }
+                ( <S> )*
+                prev = calcNumberValue(prev)
+            )
+        )*
+    )
+    {
+        if (prev != null)
+        {
+            prev.setLocator(createLocator(token));
+        }
+        return prev;
+    }
+}
+
+//
+// calcNumberValue()
+// <calc-number-value> = <number> | ( <calc-number-sum> )
+//
+LexicalUnit calcNumberValue(LexicalUnit prev) :
+{
+    Token t;
+    char op = ' ';
+    String funct = "(";
+    LexicalUnit head = LexicalUnitImpl.createIdent(null, "");
+}
+{
+    (
+        (
+            (
+                (op = unaryOperator() )?
+                prev = number(prev, op)
+                | t = ident()         { prev = LexicalUnitImpl.createIdent(prev, unescape(t.image, false)); }
+            )
+            | prev = var(prev)
+            |
+            (
+                (
+                    t = <FUNCTION_CALC> { funct = unescape(t.image, false); }
+                    | t = <LROUND>      { funct = unescape(t.image, false); }
+                )
+                calcNumberSum(head)
+                <RROUND>
+            )
+            {
+                // use an empty function as block scope
+                prev = functionInternal(prev, funct, head.getNextLexicalUnit());
+            }
+        )
+        ( <S> )*
+    )
+    {
+        if (prev != null)
+        {
+            prev.setLocator(createLocator(token));
+        }
+        return prev;
+    }
+}
+
+// var()
+// https://developer.mozilla.org/en-US/docs/Web/CSS/var
+// var( <custom-property-name> , <declaration-value>? )
+//
+LexicalUnit var(LexicalUnit prev) :
+{
+    Token t;
+    LexicalUnit current, propertyName;
+    String funct = "";
+}
+{
+    t = <FUNCTION_VAR> { funct = unescape(t.image, false); }
+    ( <S> )*
+    t = <CUSTOM_PROPERTY_NAME> { current = LexicalUnitImpl.createIdent(prev, unescape(t.image, false)); propertyName = current; }
+    ( <S> )*
+    (
+        <COMMA> { current = LexicalUnitImpl.createComma(current); }
+        ( <S> )*
+        (
+            // inline expr here because we need a differnt prev handling
+            current = term(current)
+            (   LOOKAHEAD(2)
+                ( current = operator(current) )?
+                current = term(current)
+            )*
+        )?
+    )*
+    <RROUND>
+    {
+        return functionInternal(prev, funct, propertyName);
+    }
+}
+
+
+// rgb() / rgba()
+//
+LexicalUnit rgbColor(LexicalUnit prev) :
+{
+    Token t;
+    char op = ' ';
+    LexicalUnit param = null;
+    LexicalUnit next = null;
+    String funct;
+}
+{
+    t = <FUNCTION_RGB> { funct = unescape(t.image.substring(0, t.image.length() - 1), false); }
+    ( <S> )*
+
+    (
+        (
+            <FROM> { param = LexicalUnitImpl.createFrom(null); }
+            { next = param; }
+
+            ( <S> )*
+
+            (
+                t = ident()     { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                | next = rgbColor(next)
+                | next = hslColor(next)
+                | next = hwbColor(next)
+                | next = labColor(next)
+                | next = lchColor(next)
+                | next = var(next)
+            )
+
+            ( <S> )*
+
+            (
+                (op = unaryOperator() )?
+                (
+                    next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+            (
+                (
+                    <SLASH>  { next = LexicalUnitImpl.createSlash(next); }
+                    ( <S> )*
+                )?
+          
+                (op = unaryOperator() )?
+                (
+                    next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+        
+                ( <S> )*
+            )?
+        )
+
+        |
+
+        (
+            (
+                (op = unaryOperator() )?
+                (
+                    <NONE> { param = LexicalUnitImpl.createNone(null); }
+                    | param = number(null, op)
+                    | param = percentage(null, op)
+
+                    | param = calc(null)
+                    | param = var(null)
+                )
+            )
+            { op = ' '; next = param; }
+        
+            ( <S> )*
+            (
+                <COMMA> { next = LexicalUnitImpl.createComma(next); }
+                ( <S> )*
+            )?
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    <NONE> { next = LexicalUnitImpl.createNone(next); }
+                    | next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+            (
+                <COMMA> { next = LexicalUnitImpl.createComma(next); }
+                ( <S> )*
+            )?
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    <NONE> { next = LexicalUnitImpl.createNone(next); }
+                    | next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+            (
+                (
+                    (
+                        <COMMA> { next = LexicalUnitImpl.createComma(next); }
+                        | <SLASH>  { next = LexicalUnitImpl.createSlash(next); }
+                    )
+                    ( <S> )*
+                )?
+          
+                (op = unaryOperator() )?
+                (
+                    <NONE> { next = LexicalUnitImpl.createNone(next); }
+                    | next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | next = calc(next)
+                    | next = var(next)
+                )
+        
+                ( <S> )*
+            )?
+        )
+    )
+    <RROUND>
+    {
+        return rgbColorInternal(prev, funct, param);
+    }
+}
+
+
+// hsl() / hsla()
+//
+LexicalUnit hslColor(LexicalUnit prev) :
+{
+    Token t;
+    char op = ' ';
+    LexicalUnit param = null;
+    LexicalUnit next = null;
+    String funct;
+}
+{
+    t = <FUNCTION_HSL> { funct = unescape(t.image.substring(0, t.image.length() - 1), false); }
+    ( <S> )*
+
+    (
+        (
+            <FROM> { param = LexicalUnitImpl.createFrom(null); }
+            { next = param; }
+
+            ( <S> )*
+
+            (
+                t = ident()     { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                | next = rgbColor(next)
+                | next = hslColor(next)
+                | next = hwbColor(next)
+                | next = labColor(next)
+                | next = lchColor(next)
+                | next = var(next)
+            )
+
+            ( <S> )*
+
+            (
+                (op = unaryOperator() )?
+                (
+                    next = number(next, op)
+                    | next = angle(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+
+            ( <S> )*
+
+            (
+                (op = unaryOperator() )?
+                (
+                    next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+
+            ( <S> )*
+
+            (
+                (
+                    <SLASH>  { next = LexicalUnitImpl.createSlash(next); }
+                    ( <S> )*
+                )?
+          
+                (op = unaryOperator() )?
+                (
+                    next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+        
+                ( <S> )*
+            )?
+        )
+
+        |
+
+        (
+            (
+                (op = unaryOperator() )?
+                (
+                    <NONE> { param = LexicalUnitImpl.createNone(null); }
+                    | param = number(null, op)
+                    | param = angle(null, op)
+
+                    | param = calc(null)
+                    | param = var(null)
+                )
+            )
+            { op = ' '; next = param; }
+        
+            ( <S> )*
+            (
+                <COMMA> { next = LexicalUnitImpl.createComma(next); }
+                ( <S> )*
+            )?
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    <NONE> { next = LexicalUnitImpl.createNone(next); }
+                    | next = percentage(next, op)
+
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+            (
+                <COMMA> { next = LexicalUnitImpl.createComma(next); }
+                ( <S> )*
+            )?
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    <NONE> { next = LexicalUnitImpl.createNone(next); }
+                    | next = percentage(next, op)
+
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+
+            ( <S> )*
+            (
+                (
+                    (
+                        <COMMA> { next = LexicalUnitImpl.createComma(next); }
+                        | <SLASH>  { next = LexicalUnitImpl.createSlash(next); }
+                    )
+                    ( <S> )*
+                )?
+          
+                (op = unaryOperator() )?
+                (
+                    <NONE> { next = LexicalUnitImpl.createNone(next); }
+                    | next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | next = calc(next)
+                    | next = var(next)
+                )
+        
+                ( <S> )*
+            )?
+        )
+    )
+    <RROUND>
+    {
+        return hslColorInternal(prev, funct, param);
+    }
+}
+
+
+// hwb()
+//
+LexicalUnit hwbColor(LexicalUnit prev) :
+{
+    Token t;
+    char op = ' ';
+    LexicalUnit param = null;
+    LexicalUnit next = null;
+    String funct;
+}
+{
+    t = <FUNCTION_HWB> { funct = unescape(t.image.substring(0, t.image.length() - 1), false); }
+    ( <S> )*
+
+    (
+        (
+            <FROM> { param = LexicalUnitImpl.createFrom(null); }
+            { next = param; }
+
+            ( <S> )*
+
+            (
+                t = ident()     { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                | next = rgbColor(next)
+                | next = hslColor(next)
+                | next = hwbColor(next)
+                | next = labColor(next)
+                | next = lchColor(next)
+                | next = var(next)
+            )
+
+            ( <S> )*
+
+            (
+                (op = unaryOperator() )?
+                (
+                    next = number(next, op)
+                    | next = angle(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+            (
+                (
+                    <SLASH>  { next = LexicalUnitImpl.createSlash(next); }
+                    ( <S> )*
+                )?
+          
+                (op = unaryOperator() )?
+                (
+                    next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+        
+                ( <S> )*
+            )?
+        )
+
+        |
+
+        (
+            (
+                (op = unaryOperator() )?
+                (
+                    <NONE> { param = LexicalUnitImpl.createNone(null); }
+                    | param = number(null, op)
+                    | param = angle(null, op)
+
+                    | param = calc(null)
+                    | param = var(null)
+                )
+            )
+            { op = ' '; next = param; }
+        
+            ( <S> )*
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    <NONE> { next = LexicalUnitImpl.createNone(next); }
+                    | next = percentage(next, op)
+
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    <NONE> { next = LexicalUnitImpl.createNone(next); }
+                    | next = percentage(next, op)
+
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+            (
+                (
+                    <SLASH>  { next = LexicalUnitImpl.createSlash(next); }
+                    ( <S> )*
+                )?
+          
+                (op = unaryOperator() )?
+                (
+                    <NONE> { next = LexicalUnitImpl.createNone(next); }
+                    | next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | next = calc(next)
+                    | next = var(next)
+                )
+        
+                ( <S> )*
+            )?
+        )
+    )
+    <RROUND>
+    {
+        return hwbColorInternal(prev, funct, param);
+    }
+}
+
+
+// lab()
+//
+LexicalUnit labColor(LexicalUnit prev) :
+{
+    Token t;
+    char op = ' ';
+    LexicalUnit param = null;
+    LexicalUnit next = null;
+    String funct;
+}
+{
+    t = <FUNCTION_LAB> { funct = unescape(t.image.substring(0, t.image.length() - 1), false); }
+    ( <S> )*
+
+    (
+        (
+            <FROM> { param = LexicalUnitImpl.createFrom(null); }
+            { next = param; }
+
+            ( <S> )*
+
+            (
+                t = ident()     { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                | next = rgbColor(next)
+                | next = hslColor(next)
+                | next = hwbColor(next)
+                | next = labColor(next)
+                | next = lchColor(next)
+                | next = var(next)
+            )
+
+            ( <S> )*
+
+            (
+                (op = unaryOperator() )?
+                (
+                    next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+            (
+                (
+                    <SLASH>  { next = LexicalUnitImpl.createSlash(next); }
+                    ( <S> )*
+                )?
+          
+                (op = unaryOperator() )?
+                (
+                    next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+        
+                ( <S> )*
+            )?
+        )
+
+        |
+
+        (
+            (
+                (op = unaryOperator() )?
+                (
+                    <NONE> { param = LexicalUnitImpl.createNone(null); }
+                    | param = number(null, op)
+                    | param = percentage(null, op)
+
+                    | param = calc(null)
+                    | param = var(null)
+                )
+            )
+            { op = ' '; next = param; }
+        
+            ( <S> )*
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    <NONE> { next = LexicalUnitImpl.createNone(next); }
+                    | next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    <NONE> { next = LexicalUnitImpl.createNone(next); }
+                    | next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+            (
+                (
+                    <SLASH>  { next = LexicalUnitImpl.createSlash(next); }
+                    ( <S> )*
+                )?
+          
+                (op = unaryOperator() )?
+                (
+                    <NONE> { next = LexicalUnitImpl.createNone(next); }
+                    | next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | next = calc(next)
+                    | next = var(next)
+                )
+        
+                ( <S> )*
+            )?
+        )
+    )
+    <RROUND>
+    {
+        return labColorInternal(prev, funct, param);
+    }
+}
+
+
+// lch()
+//
+LexicalUnit lchColor(LexicalUnit prev) :
+{
+    Token t;
+    char op = ' ';
+    LexicalUnit param = null;
+    LexicalUnit next = null;
+    String funct;
+}
+{
+    t = <FUNCTION_LCH> { funct = unescape(t.image.substring(0, t.image.length() - 1), false); }
+    ( <S> )*
+
+    (
+        (
+            <FROM> { param = LexicalUnitImpl.createFrom(null); }
+            { next = param; }
+
+            ( <S> )*
+
+            (
+                t = ident()     { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                | next = rgbColor(next)
+                | next = hslColor(next)
+                | next = hwbColor(next)
+                | next = labColor(next)
+                | next = lchColor(next)
+                | next = var(next)
+            )
+
+            ( <S> )*
+
+            (
+                (op = unaryOperator() )?
+                (
+                    next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    next = angle(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+            (
+                (
+                    <SLASH>  { next = LexicalUnitImpl.createSlash(next); }
+                    ( <S> )*
+                )?
+          
+                (op = unaryOperator() )?
+                (
+                    next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | t = ident()         { next = LexicalUnitImpl.createIdent(next, unescape(t.image, false)); }
+                    | next = calc(next)
+                    | next = var(next)
+                )
+        
+                ( <S> )*
+            )?
+        )
+
+        |
+
+        (
+            (
+                (op = unaryOperator() )?
+                (
+                    <NONE> { param = LexicalUnitImpl.createNone(null); }
+                    | param = number(null, op)
+                    | param = percentage(null, op)
+
+                    | param = calc(null)
+                    | param = var(null)
+                )
+            )
+            { op = ' '; next = param; }
+        
+            ( <S> )*
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    <NONE> { next = LexicalUnitImpl.createNone(next); }
+                    | next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+        
+            (
+                (op = unaryOperator() )?
+                (
+                    <NONE> { next = LexicalUnitImpl.createNone(next); }
+                    | next = angle(next, op)
+
+                    | next = calc(next)
+                    | next = var(next)
+                )
+            )
+            { op = ' '; }
+        
+            ( <S> )*
+            (
+                (
+                    <SLASH>  { next = LexicalUnitImpl.createSlash(next); }
+                    ( <S> )*
+                )?
+          
+                (op = unaryOperator() )?
+                (
+                    <NONE> { next = LexicalUnitImpl.createNone(next); }
+                    | next = number(next, op)
+                    | next = percentage(next, op)
+
+                    | next = calc(next)
+                    | next = var(next)
+                )
+        
+                ( <S> )*
+            )?
+        )
+    )
+    <RROUND>
+    {
+        return lchColorInternal(prev, funct, param);
+    }
+}
+
+
+//
+// Helper to process various keywords as IDENT
+//
+Token ident() :
+{
+    Token t;
+}
+{
+    t = <IDENT> { return t; }
+    |
+        (
+            t = <INHERIT>
+            | t = <AND>
+            | t = <ONLY>
+            | t = <NONE>
+            | t = <FROM>
+        )
+        {
+            Token ident = new Token(IDENT, unescape(t.image, false));
+            ident.beginLine = t.beginLine;
+            ident.beginColumn = t.endColumn;
+            ident.endLine = t.beginLine;
+            ident.endColumn = t.endColumn;
+            ident.next = t.next;
+            ident.specialToken = t.specialToken;
+            return ident;
+            
+        }
+}
+
+Token identExcludingInherit() :
+{
+    Token t;
+}
+{
+    t = <IDENT> { return t; }
+    |
+        (
+            t = <ONLY>
+            | t = <NONE>
+            | t = <FROM>
+        )
+        {
+            Token ident = new Token(IDENT, unescape(t.image, false));
+            ident.beginLine = t.beginLine;
+            ident.beginColumn = t.endColumn;
+            ident.endLine = t.beginLine;
+            ident.endColumn = t.endColumn;
+            ident.next = t.next;
+            ident.specialToken = t.specialToken;
+            return ident;
+            
+        }
+}
+
+Token identExcludingOnly() :
+{
+    Token t;
+}
+{
+    t = <IDENT> { return t; }
+    |
+        (
+            t = <INHERIT>
+            | t = <NONE>
+            | t = <FROM>
+        )
+        {
+            Token ident = new Token(IDENT, unescape(t.image, false));
+            ident.beginLine = t.beginLine;
+            ident.beginColumn = t.endColumn;
+            ident.endLine = t.beginLine;
+            ident.endColumn = t.endColumn;
+            ident.next = t.next;
+            ident.specialToken = t.specialToken;
+            return ident;
+            
+        }
+}
+
+
+//
+// number()
+//
+LexicalUnit number(LexicalUnit prev, char op) :
+{
+    Token t;
+    LexicalUnit value = null;
+}
+{
+    (
+        t = <NUMBER>
+    )
+    {
+        try
+        {
+            value = LexicalUnitImpl.createNumber(prev, intValue(op, t.image));
+        }
+        catch (NumberFormatException e)
+        {
+            value = LexicalUnitImpl.createNumber(prev, doubleValue(op, t.image));
+        }
+        if (value != null)
+        {
+            value.setLocator(createLocator(token));
+        }
+        return value;
+    }
+}
+
+//
+// percentage()
+//
+LexicalUnit percentage(LexicalUnit prev, char op) :
+{
+    Token t;
+    LexicalUnit value = null;
+}
+{
+    (
+        t = <PERCENTAGE>        { value = LexicalUnitImpl.createPercentage(prev, doubleValue(op, t.image)); }
+    )
+    {
+        if (value != null)
+        {
+            value.setLocator(createLocator(token));
+        }
+        return value;
+    }
+}
+
+//
+// dimension()
+//
+LexicalUnit dimension(LexicalUnit prev, char op) :
+{
+    Token t;
+    LexicalUnit value = null;
+}
+{
+    (
+        t = <LENGTH_PX>         { value = LexicalUnitImpl.createPixel(prev, doubleValue(op, t.image)); }
+        | t = <LENGTH_CM>         { value = LexicalUnitImpl.createCentimeter(prev, doubleValue(op, t.image)); }
+        | t = <LENGTH_MM>         { value = LexicalUnitImpl.createMillimeter(prev, doubleValue(op, t.image)); }
+        | t = <LENGTH_IN>         { value = LexicalUnitImpl.createInch(prev, doubleValue(op, t.image)); }
+        | t = <LENGTH_PT>         { value = LexicalUnitImpl.createPoint(prev, doubleValue(op, t.image)); }
+        | t = <LENGTH_PC>         { value = LexicalUnitImpl.createPica(prev, doubleValue(op, t.image)); }
+        | t = <LENGTH_Q>          { value = LexicalUnitImpl.createQuater(prev, doubleValue(op, t.image)); }
+        | t = <EMS>               { value = LexicalUnitImpl.createEm(prev, doubleValue(op, t.image)); }
+        | t = <REM>               { value = LexicalUnitImpl.createRem(prev, doubleValue(op, t.image)); }
+        | t = <EXS>               { value = LexicalUnitImpl.createEx(prev, doubleValue(op, t.image)); }
+        | t = <CH>                { value = LexicalUnitImpl.createCh(prev, doubleValue(op, t.image)); }
+        | t = <VW>                { value = LexicalUnitImpl.createVw(prev, doubleValue(op, t.image)); }
+        | t = <VH>                { value = LexicalUnitImpl.createVh(prev, doubleValue(op, t.image)); }
+        | t = <VMIN>              { value = LexicalUnitImpl.createVMin(prev, doubleValue(op, t.image)); }
+        | t = <VMAX>              { value = LexicalUnitImpl.createVMax(prev, doubleValue(op, t.image)); }
+        | t = <DVW>               { value = LexicalUnitImpl.createDvw(prev, doubleValue(op, t.image)); }
+        | t = <DVH>               { value = LexicalUnitImpl.createDvh(prev, doubleValue(op, t.image)); }
+        | t = <DVMIN>             { value = LexicalUnitImpl.createDvMin(prev, doubleValue(op, t.image)); }
+        | t = <DVMAX>             { value = LexicalUnitImpl.createDvMax(prev, doubleValue(op, t.image)); }
+        | t = <LVW>               { value = LexicalUnitImpl.createLvw(prev, doubleValue(op, t.image)); }
+        | t = <LVH>               { value = LexicalUnitImpl.createLvh(prev, doubleValue(op, t.image)); }
+        | t = <LVMIN>             { value = LexicalUnitImpl.createLvMin(prev, doubleValue(op, t.image)); }
+        | t = <LVMAX>             { value = LexicalUnitImpl.createLvMax(prev, doubleValue(op, t.image)); }
+        | t = <SVW>               { value = LexicalUnitImpl.createSvw(prev, doubleValue(op, t.image)); }
+        | t = <SVH>               { value = LexicalUnitImpl.createSvh(prev, doubleValue(op, t.image)); }
+        | t = <SVMIN>             { value = LexicalUnitImpl.createSvMin(prev, doubleValue(op, t.image)); }
+        | t = <SVMAX>             { value = LexicalUnitImpl.createSvMax(prev, doubleValue(op, t.image)); }
+        | t = <ANGLE_DEG>         { value = LexicalUnitImpl.createDegree(prev, doubleValue(op, t.image)); }
+        | t = <ANGLE_RAD>         { value = LexicalUnitImpl.createRadian(prev, doubleValue(op, t.image)); }
+        | t = <ANGLE_GRAD>        { value = LexicalUnitImpl.createGradian(prev, doubleValue(op, t.image)); }
+        | t = <ANGLE_TURN>        { value = LexicalUnitImpl.createTurn(prev, doubleValue(op, t.image)); }
+        | t = <TIME_MS>           { value = LexicalUnitImpl.createMillisecond(prev, doubleValue(op, t.image)); }
+        | t = <TIME_S>            { value = LexicalUnitImpl.createSecond(prev, doubleValue(op, t.image)); }
+        | t = <FREQ_HZ>           { value = LexicalUnitImpl.createHertz(prev, doubleValue(op, t.image)); }
+        | t = <FREQ_KHZ>          { value = LexicalUnitImpl.createKiloHertz(prev, doubleValue(op, t.image)); }
+        | t = <RESOLUTION_DPI>    { value = LexicalUnitImpl.createDimension(prev, doubleValue(op, t.image), "dpi"); }
+        | t = <RESOLUTION_DPCM>   { value = LexicalUnitImpl.createDimension(prev, doubleValue(op, t.image), "dpcm"); }
+    )
+    {
+        if (value != null)
+        {
+            value.setLocator(createLocator(token));
+        }
+        return value;
+    }
+}
+
+
+//
+// angle()
+//
+LexicalUnit angle(LexicalUnit prev, char op) :
+{
+    Token t;
+    LexicalUnit value = null;
+}
+{
+    (
+        t = <ANGLE_DEG>           { value = LexicalUnitImpl.createDegree(prev, doubleValue(op, t.image)); }
+        | t = <ANGLE_RAD>         { value = LexicalUnitImpl.createRadian(prev, doubleValue(op, t.image)); }
+        | t = <ANGLE_GRAD>        { value = LexicalUnitImpl.createGradian(prev, doubleValue(op, t.image)); }
+        | t = <ANGLE_TURN>        { value = LexicalUnitImpl.createTurn(prev, doubleValue(op, t.image)); }
+    )
+    {
+        if (value != null)
+        {
+            value.setLocator(createLocator(token));
+        }
+        return value;
+    }
+}
+
+
+//
+// unicodeRange
+//
+LexicalUnit unicodeRange(LexicalUnit prev) :
+{
+    Token t;
+    StringBuilder range = new StringBuilder();
+}
+{
+    t = <UNICODE_RANGE>    { range.append(unescape(t.image, false)); }
+    {
+        return LexicalUnitImpl.createIdent(prev, range.toString().toUpperCase(Locale.ROOT));
+    }
+}
+
+//
+// hexcolor
+//   : HASH S*
+//   ;
+//
+LexicalUnit hexcolor(LexicalUnit prev) :
+{
+    Token t;
+}
+{
+    t = <HASH>
+    {
+        return hexColorInternal(prev, t);
+    }
+}
+
+JAVACODE
+String skip() {
+    StringBuilder sb = new StringBuilder();
+    int nesting = 0;
+    Token t = getToken(0);
+    if (t.image != null) {
+        sb.append(t.image);
+    }
+
+    do {
+        t = getNextToken();
+        if (t.kind == EOF) {
+            break;
+        }
+        sb.append(t.image);
+        appendUnit(t, sb);
+
+        if (t.kind == LBRACE) {
+            nesting++;
+        }
+        else if (t.kind == RBRACE) {
+            nesting--;
+        }
+    }
+    while ((t.kind != RBRACE && t.kind != SEMICOLON) || nesting > 0);
+
+    return sb.toString();
+}
+
+JAVACODE
+String skipUnit() {
+    StringBuilder sb = new StringBuilder();
+
+    Token t = token;
+    Token oldToken = null;
+    while (t.kind != SEMICOLON && t.kind != RBRACE && t.kind != EOF ) {
+        oldToken = t;
+        sb.append(t.image);
+        appendUnit(t, sb);
+
+        t = getNextToken();
+    }
+    if (t.kind != EOF) {
+        token = oldToken;
+    }
+
+    return sb.toString();
+}
+
+JAVACODE
+void appendUnit(Token t, StringBuilder sb) {
+    if (t.kind == EMS) {
+      sb.append("em");
+      return;
+    }
+    if (t.kind == REM) {
+      sb.append("rem");
+      return;
+    }
+    if (t.kind == EXS) {
+      sb.append("ex");
+      return;
+    }
+    if (t.kind == CH) {
+      sb.append("ch");
+      return;
+    }
+    if (t.kind == VW) {
+      sb.append("vw");
+      return;
+    }
+    if (t.kind == VH) {
+      sb.append("vh");
+      return;
+    }
+    if (t.kind == VMIN) {
+      sb.append("vmin");
+      return;
+    }
+    if (t.kind == VMAX) {
+      sb.append("vmax");
+      return;
+    }
+    if (t.kind == LENGTH_PX) {
+      sb.append("px");
+      return;
+    }
+    if (t.kind == LENGTH_CM) {
+      sb.append("cm");
+      return;
+    }
+    if (t.kind == LENGTH_MM) {
+      sb.append("mm");
+      return;
+    }
+    if (t.kind == LENGTH_IN) {
+      sb.append("in");
+      return;
+    }
+    if (t.kind == LENGTH_PT) {
+      sb.append("pt");
+      return;
+    }
+    if (t.kind == LENGTH_PC) {
+      sb.append("pc");
+      return;
+    }
+    if (t.kind == LENGTH_Q) {
+      sb.append("Q");
+      return;
+    }
+    if (t.kind == ANGLE_DEG) {
+      sb.append("deg");
+      return;
+    }
+    if (t.kind == ANGLE_RAD) {
+      sb.append("rad");
+      return;
+    }
+    if (t.kind == ANGLE_GRAD) {
+      sb.append("grad");
+      return;
+    }
+    if (t.kind == ANGLE_TURN) {
+      sb.append("turn");
+      return;
+    }
+    if (t.kind == TIME_MS) {
+      sb.append("ms");
+      return;
+    }
+    if (t.kind == TIME_S) {
+      sb.append('s');
+      return;
+    }
+    if (t.kind == FREQ_HZ) {
+      sb.append("hz");
+      return;
+    }
+    if (t.kind == FREQ_KHZ) {
+      sb.append("khz");
+      return;
+    }
+    if (t.kind == RESOLUTION_DPI) {
+      sb.append("dpi");
+      return;
+    }
+    if (t.kind == RESOLUTION_DPCM) {
+      sb.append("dpcm");
+      return;
+    }
+    if (t.kind == PERCENTAGE) {
+      sb.append('%');
+      return;
+    }
+}
+
+JAVACODE
+void error_skipblock(String msgKey, CSSParseException e)
+{
+    if (msgKey != null) {
+        getErrorHandler().warning(createSkipWarning(msgKey, e));
+    }
+
+    Token t;
+    int nesting = 0;
+    do {
+        t = getNextToken();
+        if (t.kind == LBRACE) {
+            nesting++;
+        }
+        else if (t.kind == RBRACE) {
+            nesting--;
+        }
+    }
+    while (t.kind != EOF && (t.kind != RBRACE || nesting > 0));
+}
+
+JAVACODE
+void error_skipdecl()
+{
+    Token t = getToken(1);
+    if (t.kind == LBRACE) {
+        error_skipblock(null, null);
+        return;
+    }
+    if (t.kind == RBRACE) {
+        // next will be RBRACE so we are finished
+        return;
+    }
+
+    Token oldToken = token;
+    while (t.kind != SEMICOLON && t.kind != RBRACE && t.kind != EOF) {
+        oldToken = t;
+        t = getNextToken();
+    }
+    if (t.kind != EOF) {
+        token = oldToken;
+    }
+}
+
+JAVACODE
+void error_skipAtRule()
+{
+    Token t = null;
+    do {
+        t = getNextToken();
+    }
+    while (t.kind != SEMICOLON && t.kind != EOF);
+}
+
+JAVACODE
+Boolean handleCaseInSensitive(Token t)
+{
+    String s = unescape(t.image, false);
+    if ("i".equalsIgnoreCase(s)) {
+      return Boolean.TRUE;
+    }
+    if ("s".equalsIgnoreCase(s)) {
+      return Boolean.FALSE;
+    }
+
+    throw toCSSParseException("invalidCaseInSensitivelyIdentifier", new String[] { s }, createLocator(t));
+}

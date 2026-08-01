@@ -38,7 +38,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -152,54 +151,20 @@ public final class Parallelizer {
   private static final Logger logger = Logger.getLogger(Parallelizer.class.getName());
 
   private final ExecutorService executor;
-  private final int maxInFlight;
+  private final int maxConcurrency;
 
   /**
    * Constructs a {@code Parallelizer} that runs tasks with {@code executor}.
-   * At any given time, at most {@code maxInFlight} tasks are allowed to be submitted to
+   * At any given time, at most {@code maxConcurrency} tasks are allowed to be submitted to
    * {@code executor}.
    *
    * <p>Note that a task being submitted to {@code executor} doesn't guarantee immediate
    * execution, if for example all worker threads in {@code executor} are busy.
    */
-  public Parallelizer(ExecutorService executor, int maxInFlight) {
+  public Parallelizer(ExecutorService executor, int maxConcurrency) {
     this.executor = requireNonNull(executor);
-    this.maxInFlight = maxInFlight;
-    if (maxInFlight <= 0) throw new IllegalArgumentException("maxInFlight = " + maxInFlight);
-  }
-
-  /**
-   * Returns a {@link Parallelizer} using virtual threads for running tasks, with at most
-   * {@code maxInFlight} tasks running concurrently.
-   *
-   * <p>Only applicable in JDK 21 (throws if below JDK 21).
-   *
-   * @since 7.2
-   */
-  public static Parallelizer virtualThreadParallelizer(int maxInFlight) {
-    return new Parallelizer(VirtualThread.executor, maxInFlight);
-  }
-
-  /**
-   * Returns a new {@link Parallelizer} based on an ExecutorService that exits when the application
-   * is complete. It does so by using daemon threads.
-   *
-   * <p>Typically used by the {@code main()} method or as a static final field.
-   *
-   * @since 6.5
-   */
-  public static Parallelizer newDaemonParallelizer(int maxInFlight) {
-    AtomicInteger threadCount = new AtomicInteger();
-    return new Parallelizer(
-        Executors.newFixedThreadPool(
-            maxInFlight,
-            runnable -> {
-              Thread thread = new Thread(runnable);
-              thread.setDaemon(true);
-              thread.setName("DaemonParallelizer#" + threadCount.getAndIncrement());
-              return thread;
-            }),
-        maxInFlight);
+    this.maxConcurrency = maxConcurrency;
+    if (maxConcurrency <= 0) throw new IllegalArgumentException("maxConcurrency = " + maxConcurrency);
   }
 
   /**
@@ -437,14 +402,18 @@ public final class Parallelizer {
    * Parallelizer} and returns the inputs and outputs in a {@link BiStream}, in encounter order of
    * the input elements.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
+   * int concurrency = ...;
    * ImmutableListMultimap<String, Asset> resourceAssets =
    *     resources.stream()
-   *         .collect(parallelizer.inParallel(this::listAssets))
+   *         .collect(withMaxConcurrency(concurrency).inParallel(this::listAssets))
    *         .collect(flatteningToImmutableListMultimap(List::stream));
    * }</pre>
    *
-   * <p>In Java 20 using structured concurrency, it can be implemented equivalently as in:
+   * <p>In Java 22 using structured concurrency, it can be implemented equivalently as in:
+   *
    * <pre>{@code
    * ImmutableListMultimap<String, Asset> resourceAssets;
    * try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
@@ -460,9 +429,6 @@ public final class Parallelizer {
    * }
    * }</pre>
    *
-   * @param concurrentFunction a function that's safe to be run concurrently, and is usually
-   *     IO-intensive (such as an outgoing RPC or reading distributed storage).
-   *
    * @since 6.5
    */
   public <I, O> Collector<I, ?, BiStream<I, O>> inParallel(
@@ -473,9 +439,13 @@ public final class Parallelizer {
         inputs -> {
           List<O> outputs = new ArrayList<>(inputs.size());
           outputs.addAll(Collections.nCopies(inputs.size(), null));
-          parallelizeUninterruptibly(
-              IntStream.range(0, inputs.size()).boxed(),
-              i -> outputs.set(i, concurrentFunction.apply(inputs.get(i))));
+          try {
+            parallelize(
+                IntStream.range(0, inputs.size()).boxed(),
+                i -> outputs.set(i, concurrentFunction.apply(inputs.get(i))));
+          } catch (InterruptedException e) {
+            throw new StructuredConcurrencyInterruptedException(e);
+          }
           return BiStream.zip(inputs, outputs);
         });
   }
@@ -487,7 +457,7 @@ public final class Parallelizer {
 
   private final class Flight {
     // fairness is irrelevant here since only the main thread ever calls acquire().
-    private final Semaphore semaphore = new Semaphore(maxInFlight);
+    private final Semaphore semaphore = new Semaphore(maxConcurrency);
     private final ConcurrentMap<Object, Future<?>> onboard = new ConcurrentHashMap<>();
     private volatile ConcurrentLinkedQueue<Throwable> thrown = new ConcurrentLinkedQueue<>();
 
@@ -571,7 +541,7 @@ public final class Parallelizer {
 
     private void checkInFlight() {
       int inflight = onboard.size();
-      if (inflight > maxInFlight) throw new IllegalStateException("inflight = " + inflight);
+      if (inflight > maxConcurrency) throw new IllegalStateException("inflight = " + inflight);
     }
 
     /** If any task has thrown, propagate all task exceptions. */
@@ -592,19 +562,19 @@ public final class Parallelizer {
     }
 
     private int freeze() {
-      int remaining = maxInFlight - semaphore.drainPermits();
+      int remaining = maxConcurrency - semaphore.drainPermits();
       propagateExceptions();
       return remaining;
     }
   }
 
-  private static final class VirtualThread {
-    private static final ExecutorService executor;
+  static final class VirtualThread {
+    static final ExecutorService executor;
     static {
       try {
         executor = (ExecutorService) Executors.class.getMethod("newVirtualThreadPerTaskExecutor").invoke(null);
       } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-        throw new AssertionError(e);
+        throw new LinkageError(e.getMessage(), e);
       }
     }
   }

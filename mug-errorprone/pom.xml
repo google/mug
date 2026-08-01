@@ -3,16 +3,33 @@
   <parent>
     <groupId>com.google.mug</groupId>
     <artifactId>mug-root</artifactId>
-    <version>8.1-SNAPSHOT</version>
+    <version>10.7.1-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-errorprone</artifactId>
   <name>Compile-time plugins</name>
+  <packaging>jar</packaging>
   <properties>
+    <!-- Reproducible builds: fixed timestamp for build artifacts -->
+    <project.build.outputTimestamp>2026-07-21T00:15:49Z</project.build.outputTimestamp>
     <maven.javadoc.skip>true</maven.javadoc.skip>
+    <module.name>errorprone</module.name>
   </properties>
   <build>
     <pluginManagement>
       <plugins>
+        <plugin>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>0.8.0</version> <!-- or latest -->
+          <extensions>true</extensions>
+          <configuration>
+            <publishingServerId>ossrh</publishingServerId>
+            <!-- optional but recommended in CI -->
+            <autoPublish>true</autoPublish>
+            <waitUntil>published</waitUntil>
+          </configuration>
+        </plugin>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
           <configuration>
@@ -25,7 +42,7 @@
               <path>
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_core</artifactId>
-                <version>2.23.0</version>
+                <version>${error_prone.version}</version>
               </path>
             </annotationProcessorPaths>
           </configuration>
@@ -47,6 +64,7 @@
             --add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED
             --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
             --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+	    --add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
             --add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED
             --add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED
             --add-opens=java.base/java.math=ALL-UNNAMED
@@ -77,19 +95,20 @@
     <dependency>
       <groupId>com.google.errorprone</groupId>
       <artifactId>error_prone_check_api</artifactId>
-      <version>2.23.0</version>
+      <version>2.40.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.google.errorprone</groupId>
       <artifactId>error_prone_test_helpers</artifactId>
-      <version>2.23.0</version>
+      <version>2.40.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <scope>compile</scope>
+      <version>33.1.0-jre</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -112,10 +131,17 @@
       <artifactId>guava-testlib</artifactId>
       <scope>test</scope>
     </dependency>
-	<dependency>
-	  <groupId>com.google.mug</groupId>
-	  <artifactId>mug-guava</artifactId>
-	  <version>${project.version}</version>
-	</dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>mug-guava</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>dot-parse</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 </project>

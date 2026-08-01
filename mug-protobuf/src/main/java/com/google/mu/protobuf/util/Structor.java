@@ -37,7 +37,6 @@ import com.google.common.primitives.ImmutableDoubleArray;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.primitives.ImmutableLongArray;
 import com.google.errorprone.annotations.CheckReturnValue;
-import com.google.mu.annotations.RequiresProtobuf;
 import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 import com.google.protobuf.ListValue;
@@ -100,7 +99,6 @@ import com.google.protobuf.Value;
  * @since 5.8
  */
 @CheckReturnValue
-@RequiresProtobuf
 public class Structor {
 
   /**
@@ -358,7 +356,7 @@ public class Structor {
       return convertNonNull(((Optional<?>) object).orElse(null));
     }
     if (object instanceof Enum) {
-      return valueOf((((Enum<?>) object).name()));
+      return valueOf(((Enum<?>) object).name());
     }
     if (object instanceof int[]) {
       return stream((int[]) object)

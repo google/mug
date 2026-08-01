@@ -20,15 +20,14 @@ import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
+import com.google.mu.annotations.TemplateFormatMethod;
+import com.google.mu.annotations.TemplateString;
+import com.google.mu.util.stream.BiStream;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
-
-import com.google.mu.annotations.TemplateFormatMethod;
-import com.google.mu.annotations.TemplateString;
-import com.google.mu.util.stream.BiStream;
 
 /**
  * A string parser to extract placeholder values from input strings according to a format string.
@@ -84,10 +83,10 @@ import com.google.mu.util.stream.BiStream;
  * @since 6.6
  */
 public final class StringFormat extends AbstractStringFormat {
-  private static final Substring.RepeatingPattern PLACEHOLDERS =
-      Substring.consecutive(c -> c != '{' && c != '}') // Find the inner-most pairs of curly braces.
-          .immediatelyBetween("{", INCLUSIVE, "}", INCLUSIVE)
-          .repeatedly();
+  private static final Substring.RepeatingPattern PLACEHOLDERS = Substring.consecutive(
+          c -> c != '{' && c != '}') // Find the inner-most pairs of curly braces.
+      .immediatelyBetween("{", INCLUSIVE, "}", INCLUSIVE)
+      .repeatedly();
 
   /**
    * Constructs a StringFormat with placeholders in the syntax of {@code "{foo}"}. For example:
@@ -101,8 +100,8 @@ public final class StringFormat extends AbstractStringFormat {
    * record-like strings such as "{name: Joe, age: 25}".
    *
    * @param format the template format with placeholders
-   * @throws IllegalArgumentException if {@code format} is invalid
-   *     (e.g. a placeholder immediately followed by another placeholder)
+   * @throws IllegalArgumentException if {@code format} is invalid (e.g. a placeholder immediately
+   *     followed by another placeholder)
    */
   public StringFormat(String format) {
     super(format, PLACEHOLDERS, "{...}");
@@ -144,16 +143,15 @@ public final class StringFormat extends AbstractStringFormat {
   @TemplateFormatMethod
   public static String using(@TemplateString String template, Object... args) {
     Iterator<Object> argsIterator = asList(args).iterator();
-    String result =
-        PLACEHOLDERS.replaceAllFrom(
-            template,
-            placeholder -> {
-              try {
-                return String.valueOf(argsIterator.next());
-              } catch (NoSuchElementException argExpected) {
-                throw incorrectNumberOfFormatArgs(template, args.length);
-              }
-            });
+    String result = PLACEHOLDERS.replaceAllFrom(
+        template,
+        placeholder -> {
+          try {
+            return String.valueOf(argsIterator.next());
+          } catch (NoSuchElementException argExpected) {
+            throw incorrectNumberOfFormatArgs(template, args.length);
+          }
+        });
     if (argsIterator.hasNext()) {
       throw incorrectNumberOfFormatArgs(template, args.length);
     }
@@ -207,19 +205,16 @@ public final class StringFormat extends AbstractStringFormat {
    *
    * @since 7.0
    */
-  public static <T> Template<T> to(
-      Function<? super String, ? extends T> creator, String format) {
+  public static <T> Template<T> to(Function<? super String, ? extends T> creator, String format) {
     requireNonNull(creator);
     StringFormat fmt = new StringFormat(format);
     return new Template<T>() {
-      @Override
-      @SuppressWarnings("StringFormatArgsCheck")
+      @Override @SuppressWarnings("StringFormatArgsCheck")
       public T with(Object... params) {
         return creator.apply(fmt.format(params));
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return format;
       }
     };
@@ -252,7 +247,7 @@ public final class StringFormat extends AbstractStringFormat {
    * <p>This way, the StringFormat API provides compile-time safety, and the SPI plugs in custom
    * interpolation logic.
    *
-   * <p>Calling {@link To#with} with unexpected number of parameters will throw {@link
+   * <p>Calling {@link Template#with} with unexpected number of parameters will throw {@link
    * IllegalArgumentException} without invoking {@code interpolator}.
    *
    * @since 7.0
@@ -260,54 +255,39 @@ public final class StringFormat extends AbstractStringFormat {
   public static <T> Template<T> template(String template, Interpolator<? extends T> interpolator) {
     requireNonNull(interpolator);
     StringFormat formatter = new StringFormat(template);
-    List<Substring.Match> placeholders =
-        PLACEHOLDERS.match(template).collect(toImmutableList());
+    List<Substring.Match> placeholders = PLACEHOLDERS.match(template).collect(toImmutableList());
     return new Template<T>() {
-      @Override
-      public T with(Object... params) {
+      @Override public T with(Object... params) {
         formatter.checkFormatArgs(params);
         return interpolator.interpolate(
-            formatter.fragments, BiStream.zip(placeholders.stream(), Arrays.stream(params)));
+            formatter.fragments(), BiStream.zip(placeholders.stream(), Arrays.stream(params)));
       }
 
-      @Override
-      public String toString() {
+      @Override public String toString() {
         return template;
       }
     };
   }
 
   /**
-   * A template that will produce instances of type {@code T}, after filling the
-   * template placeholders with the given variadic parameters.
+   * A template that will produce instances of type {@code T}, after filling the template
+   * placeholders with the given variadic parameters.
    *
    * @since 8.0
    */
-  public interface Template<T> extends To<T> {
-    /** Returns an instance of {@code T} from the string format filled with {@code params}. */
-    @Override
+  public interface Template<T> {
+    /**
+     * Returns an instance of {@code T} from the string format filled with {@code params}.
+     *
+     * <p>The correctness of the number of parameters and them being in the expected order (as
+     * defined by the template's placeholders) is checked by a compile-time plugin so for example
+     * {@code template("WHERE id = {user_id} AND name = {name}").with(name, userId)} will fail to
+     * compile.
+     */
     T with(Object... params);
 
     /** Returns the string representation of the format. */
-    @Override
-    public abstract String toString();
-  }
-
-  /**
-   * A view of the {@code StringFormat} that returns an instance of {@code T}, after filling the
-   * format with the given variadic parameters.
-   *
-   * @since 7.0
-   * @deprecated Use {@link Template} instead
-   */
-  @Deprecated
-  public interface To<T> {
-    /** Returns an instance of {@code T} from the string format filled with {@code params}. */
-    T with(Object... params);
-
-    /** Returns the string representation of the format. */
-    @Override
-    public abstract String toString();
+    @Override public abstract String toString();
   }
 
   /**
@@ -320,7 +300,7 @@ public final class StringFormat extends AbstractStringFormat {
      * Interpolates with {@code fragments} of size {@code N + 1} and {@code placeholders} of size
      * {@code N}. The {@code placeholders} BiStream includes pairs of placeholder names in the form
      * of "{foo}" and their corresponding values passed through the varargs parameter of {@link
-     * To#with}.
+     * Template#with}.
      */
     T interpolate(List<String> fragments, BiStream<Substring.Match, Object> placeholders);
   }

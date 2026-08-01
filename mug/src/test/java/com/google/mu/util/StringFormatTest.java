@@ -29,13 +29,13 @@ public class StringFormatTest {
   @Test
   public void parse_noPlaceholder() {
     StringFormat format = new StringFormat("this is literal");
-    assertThat(format.parse("this is literal").get()).isEmpty();
+    assertThat(format.parseAsList("this is literal").get()).isEmpty();
   }
 
   @Test
   public void parse_emptyCurlyBrace_doesNotCountAsPlaceholder() {
     StringFormat format = new StringFormat("curly brace: {}");
-    assertThat(format.parse("curly brace: {}").get()).isEmpty();
+    assertThat(format.parseAsList("curly brace: {}").get()).isEmpty();
   }
 
   @Test
@@ -48,7 +48,7 @@ public class StringFormatTest {
   @Test
   public void parse_onlyEllipsis() {
     StringFormat format = new StringFormat("{...}");
-    assertThat(format.parse("Hello Tom!")).hasValue(ImmutableList.of());
+    assertThat(format.parseAsList("Hello Tom!")).hasValue(ImmutableList.of());
   }
 
   @Test
@@ -76,7 +76,7 @@ public class StringFormatTest {
   }
 
   @Test
-  public void replaceAllFrom_placeholderAtEnd_found() {
+  public void replaceAllFrom_formaAtEnd_found() {
     assertThat(new StringFormat(":{x}").replaceAllFrom(":.?", x -> "")).isEqualTo("");
     assertThat(new StringFormat(":{x}").replaceAllFrom(":.?", x -> "foo")).isEqualTo("foo");
     assertThat(new StringFormat(":{x}").replaceAllFrom(".:", x -> "foo")).isEqualTo(".foo");
@@ -104,14 +104,14 @@ public class StringFormatTest {
   @Test
   public void parse_singlePlaceholder_withEllipsis() {
     StringFormat format = new StringFormat("Hello {...}!");
-    assertThat(format.parse("Hello Tom!")).hasValue(ImmutableList.of());
+    assertThat(format.parseAsList("Hello Tom!")).hasValue(ImmutableList.of());
   }
 
   @Test
   public void parse_multiplePlaceholders() {
     StringFormat format = new StringFormat("Hello {person}, welcome to {place}!");
     assertThat(
-            format.parse("Hello Gandolf, welcome to Isengard!").get().stream()
+            format.parseAsList("Hello Gandolf, welcome to Isengard!").get().stream()
                 .map(Object::toString))
         .containsExactly("Gandolf", "Isengard")
         .inOrder();
@@ -121,7 +121,7 @@ public class StringFormatTest {
   public void parse_multiplePlaceholders_withEllipsis() {
     StringFormat format = new StringFormat("Hello {...}, welcome to {place}!");
     assertThat(
-            format.parse("Hello Gandolf, welcome to Isengard!").get().stream()
+            format.parseAsList("Hello Gandolf, welcome to Isengard!").get().stream()
                 .map(Object::toString))
         .containsExactly("Isengard");
   }
@@ -137,7 +137,7 @@ public class StringFormatTest {
   @Test
   public void parse_multiplePlaceholdersWithSameName() {
     StringFormat format = new StringFormat("Hello {name} and {name}!");
-    assertThat(format.parse("Hello Gandolf and Aragon!").get().stream().map(Object::toString))
+    assertThat(format.parseAsList("Hello Gandolf and Aragon!").get().stream().map(Object::toString))
         .containsExactly("Gandolf", "Aragon")
         .inOrder();
   }
@@ -145,40 +145,40 @@ public class StringFormatTest {
   @Test
   public void parse_emptyPlaceholderValue() {
     StringFormat format = new StringFormat("Hello {what}!");
-    assertThat(format.parse("Hello !").get().stream().map(Substring.Match::toString))
+    assertThat(format.parseAsList("Hello !").get().stream().map(Substring.Match::toString))
         .containsExactly("");
   }
 
   @Test
   public void parse_preludeFailsToMatch() {
     StringFormat format = new StringFormat("Hello {person}!");
-    assertThat(format.parse("Hell Tom!")).isEmpty();
-    assertThat(format.parse("elloh Tom!")).isEmpty();
-    assertThat(format.parse(" Hello Tom!")).isEmpty();
+    assertThat(format.parseAsList("Hell Tom!")).isEmpty();
+    assertThat(format.parseAsList("elloh Tom!")).isEmpty();
+    assertThat(format.parseAsList(" Hello Tom!")).isEmpty();
   }
 
   @Test
   public void parse_postludeFailsToMatch() {
     StringFormat format = new StringFormat("Hello {person}!");
-    assertThat(format.parse("Hello Tom?")).isEmpty();
-    assertThat(format.parse("Hello Tom! ")).isEmpty();
-    assertThat(format.parse("Hello Tom")).isEmpty();
+    assertThat(format.parseAsList("Hello Tom?")).isEmpty();
+    assertThat(format.parseAsList("Hello Tom! ")).isEmpty();
+    assertThat(format.parseAsList("Hello Tom")).isEmpty();
   }
 
   @Test
   public void parse_nonEmptyTemplate_emptyInput() {
     StringFormat format = new StringFormat("Hello {person}!");
-    assertThat(format.parse("")).isEmpty();
+    assertThat(format.parseAsList("")).isEmpty();
   }
 
   @Test
   public void parse_emptyTemplate_nonEmptyInput() {
-    assertThat(new StringFormat("").parse(".")).isEmpty();
+    assertThat(new StringFormat("").parseAsList(".")).isEmpty();
   }
 
   @Test
   public void parse_emptyTemplate_emptyInput() {
-    assertThat(new StringFormat("").parse("")).hasValue(ImmutableList.of());
+    assertThat(new StringFormat("").parseAsList("")).hasValue(ImmutableList.of());
   }
 
   @Test
@@ -217,10 +217,9 @@ public class StringFormatTest {
   @Test
   public void parse_withTwoArgsLambda_emptyInput() {
     assertThat(new StringFormat("1 is {x}, 2 is {y}").parse("", (x, y) -> null)).isEmpty();
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> new StringFormat("1 is {x}, 2 is {y}").parseOrThrow("", (x, y) -> null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new StringFormat("1 is {x}, 2 is {y}").parseOrThrow("", (x, y) -> null));
   }
 
   @Test
@@ -538,7 +537,7 @@ public class StringFormatTest {
   @Test
   @SuppressWarnings("StringUnformatArgsCheck")
   public void twoPlaceholdersNextToEachOther_invalid() {
-    assertThrows(IllegalArgumentException.class, () -> new StringFormat("{a}{b}").parse("ab"));
+    assertThrows(IllegalArgumentException.class, () -> new StringFormat("{a}{b}").parseAsList("ab"));
   }
 
   @Test
@@ -677,16 +676,16 @@ public class StringFormatTest {
 
   @Test
   public void scan_emptyTemplate_nonEmptyInput() {
-    assertThat(new StringFormat("").scan("."))
+    assertThat(new StringFormat("").scanAsLists("."))
         .containsExactly(ImmutableList.of(), ImmutableList.of());
-    assertThat(new StringFormat("").scan("foo"))
+    assertThat(new StringFormat("").scanAsLists("foo"))
         .containsExactly(
             ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of());
   }
 
   @Test
   public void scan_emptyTemplate_emptyInput() {
-    assertThat(new StringFormat("").scan("")).containsExactly(ImmutableList.of());
+    assertThat(new StringFormat("").scanAsLists("")).containsExactly(ImmutableList.of());
   }
 
   @Test
@@ -700,9 +699,9 @@ public class StringFormatTest {
 
   @Test
   public void scan_singlePlaceholder_withEllipsis() {
-    assertThat(new StringFormat("[id={...}]").scan("id=1")).isEmpty();
-    assertThat(new StringFormat("[id={...}]").scan("[id=foo]")).containsExactly(ImmutableList.of());
-    assertThat(new StringFormat("[id={...}]").scan("[id=foo][id=bar]"))
+    assertThat(new StringFormat("[id={...}]").scanAsLists("id=1")).isEmpty();
+    assertThat(new StringFormat("[id={...}]").scanAsLists("[id=foo]")).containsExactly(ImmutableList.of());
+    assertThat(new StringFormat("[id={...}]").scanAsLists("[id=foo][id=bar]"))
         .containsExactly(ImmutableList.of(), ImmutableList.of())
         .inOrder();
   }
@@ -745,13 +744,11 @@ public class StringFormatTest {
   @Test
   public void scan_twoPlaceholders_withEllipsis() {
     assertThat(
-            new StringFormat("[id={...}, name={name}]")
-                .scan("[id=foo, name=bar]")
+            new StringFormat("[id={...}, name={name}]").scanAsLists("[id=foo, name=bar]")
                 .map(l -> l.stream().map(Substring.Match::toString).collect(toImmutableList())))
         .containsExactly(ImmutableList.of("bar"));
     assertThat(
-            new StringFormat("[id={...}, name={name}]")
-                .scan("[id=, name=bar][id=zoo, name=boo]")
+            new StringFormat("[id={...}, name={name}]").scanAsLists("[id=, name=bar][id=zoo, name=boo]")
                 .map(l -> l.stream().map(Substring.Match::toString).collect(toImmutableList())))
         .containsExactly(ImmutableList.of("bar"), ImmutableList.of("boo"))
         .inOrder();
@@ -1522,8 +1519,8 @@ public class StringFormatTest {
 
   @Test
   public void scan_singleEllipsisOnly() {
-    assertThat(new StringFormat("{...}").scan("whatever")).containsExactly(ImmutableList.of());
-    assertThat(new StringFormat("{...}").scan("")).containsExactly(ImmutableList.of());
+    assertThat(new StringFormat("{...}").scanAsLists("whatever")).containsExactly(ImmutableList.of());
+    assertThat(new StringFormat("{...}").scanAsLists("")).containsExactly(ImmutableList.of());
   }
 
   @Test
@@ -1635,6 +1632,262 @@ public class StringFormatTest {
   public void format_noPlaceholder() {
     assertThat(new StringFormat("hello").format()).isEqualTo("hello");
     assertThat(StringFormat.using("hello")).isEqualTo("hello");
+  }
+
+  @Test
+  public void format_oneIntPlaceholder() {
+    assertThat(new StringFormat("a = {a}").format(1)).isEqualTo("a = 1");
+  }
+
+  @Test
+  public void format_nullIntegerPlaceholder() {
+    Integer a = null;
+    assertThat(new StringFormat("a = {a}").format(a)).isEqualTo("a = null");
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void format_oneIntArg_incorrectNumberOfPlaceholders() {
+    assertThrows(IllegalArgumentException.class, () -> new StringFormat("{a} + {b} = c").format(1));
+  }
+
+  @Test
+  public void format_oneLongPlaceholder() {
+    assertThat(new StringFormat("a = {a}").format(1L)).isEqualTo("a = 1");
+  }
+
+  @Test
+  public void format_nullLongPlaceholder() {
+    Long a = null;
+    assertThat(new StringFormat("a = {a}").format(a)).isEqualTo("a = null");
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void format_oneLongArg_incorrectNumberOfPlaceholders() {
+    assertThrows(
+        IllegalArgumentException.class, () -> new StringFormat("{a} + {b} = c").format(1L));
+  }
+
+  @Test
+  public void format_oneBoolPlaceholder() {
+    assertThat(new StringFormat("a = {a}").format(true)).isEqualTo("a = true");
+  }
+
+  @Test
+  public void format_nullBooleanPlaceholder() {
+    Boolean a = null;
+    assertThat(new StringFormat("a = {a}").format(a)).isEqualTo("a = null");
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void format_oneBoolArg_incorrectNumberOfPlaceholders() {
+    assertThrows(
+        IllegalArgumentException.class, () -> new StringFormat("{a} + {b} = c").format(true));
+  }
+
+  @Test
+  public void format_oneDoublePlaceholder() {
+    assertThat(new StringFormat("a = {a}").format(1.5D)).isEqualTo("a = 1.5");
+  }
+
+  @Test
+  public void format_nullDoublePlaceholder() {
+    Double a = null;
+    assertThat(new StringFormat("a = {a}").format(a)).isEqualTo("a = null");
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void format_oneDoubleArg_incorrectNumberOfPlaceholders() {
+    assertThrows(
+        IllegalArgumentException.class, () -> new StringFormat("{a} + {b} = c").format(1.5D));
+  }
+
+  @Test
+  public void format_onePlaceholder() {
+    assertThat(new StringFormat("hello {who}").format("Tom")).isEqualTo("hello Tom");
+    assertThat(StringFormat.using("hello {who}", "Tom")).isEqualTo("hello Tom");
+  }
+
+  @Test
+  public void format_twoPlaceholders() {
+    assertThat(new StringFormat("{who} visits {where}").format("Arya", "Braavos"))
+        .isEqualTo("Arya visits Braavos");
+    assertThat(StringFormat.using("{who} visits {where}", "Arya", "Braavos"))
+        .isEqualTo("Arya visits Braavos");
+  }
+
+  @Test
+  public void format_threePlaceholders() {
+    assertThat(new StringFormat("{a} + {b} = {sum}").format(1, 2, 3)).isEqualTo("1 + 2 = 3");
+    assertThat(StringFormat.using("{a} + {b} = {sum}", 1, 2, 3)).isEqualTo("1 + 2 = 3");
+  }
+
+  @Test
+  public void format_fourPlaceholders() {
+    assertThat(
+            new StringFormat("{a} + {b} + {c} = {sum}")
+                .format(/* a */ 1, /* b */ 2, /* c */ 3, /* sum */ 6))
+        .isEqualTo("1 + 2 + 3 = 6");
+    assertThat(
+            StringFormat.using(
+                "{a} + {b} + {c} = {sum}", /* a */ 1, /* b */ 2, /* c */ 3, /* sum */ 6))
+        .isEqualTo("1 + 2 + 3 = 6");
+  }
+
+  @Test
+  public void format_fivePlaceholders() {
+    assertThat(
+            new StringFormat("{a} + {b} + {c} + {d} = {sum}")
+                .format(/* a */ 1, /* b */ 2, /* c */ 3, /* d */ 4, /* sum */ 10))
+        .isEqualTo("1 + 2 + 3 + 4 = 10");
+    assertThat(
+            StringFormat.using(
+                "{a} + {b} + {c} + {d} = {sum}",
+                /* a */ 1,
+                /* b */ 2,
+                /* c */ 3,
+                /* d */ 4,
+                /* sum */ 10))
+        .isEqualTo("1 + 2 + 3 + 4 = 10");
+  }
+
+  @Test
+  public void format_sixPlaceholders() {
+    assertThat(
+            new StringFormat("{a} + {b} + {c} + {d} + {e} = {sum}")
+                .format(/* a */ 1, /* b */ 2, /* c */ 3, /* d */ 4, /* e */ 5, /* sum */ 15))
+        .isEqualTo("1 + 2 + 3 + 4 + 5 = 15");
+    assertThat(
+            StringFormat.using(
+                "{a} + {b} + {c} + {d} + {e} = {sum}",
+                /* a */ 1,
+                /* b */ 2,
+                /* c */ 3,
+                /* d */ 4,
+                /* e */ 5,
+                /* sum */ 15))
+        .isEqualTo("1 + 2 + 3 + 4 + 5 = 15");
+  }
+
+  @Test
+  public void format_sevenPlaceholders() {
+    assertThat(
+            new StringFormat("{a} + {b} + {c} + {d} + {e} + {f} = {sum}")
+                .format(
+                    /* a */ 1, /* b */ 2, /* c */ 3, /* d */ 4, /* e */ 5, /* f */ 6, /* sum */ 21))
+        .isEqualTo("1 + 2 + 3 + 4 + 5 + 6 = 21");
+    assertThat(
+            StringFormat.using(
+                "{a} + {b} + {c} + {d} + {e} + {f} = {sum}",
+                /* a */ 1,
+                /* b */ 2,
+                /* c */ 3,
+                /* d */ 4,
+                /* e */ 5,
+                /* f */ 6,
+                /* sum */ 21))
+        .isEqualTo("1 + 2 + 3 + 4 + 5 + 6 = 21");
+  }
+
+  @Test
+  public void format_eightPlaceholders() {
+    assertThat(
+            new StringFormat("{a} + {b} + {c} + {d} + {e} + {f} + {g} = {sum}")
+                .format(
+                    /* a */ 1,
+                    /* b */ 2,
+                    /* c */ 3,
+                    /* d */ 4,
+                    /* e */ 5,
+                    /* f */ 6,
+                    /* g */ 7,
+                    /* sum */ 28))
+        .isEqualTo("1 + 2 + 3 + 4 + 5 + 6 + 7 = 28");
+    assertThat(
+            StringFormat.using(
+                "{a} + {b} + {c} + {d} + {e} + {f} + {g} = {sum}",
+                /* a */ 1,
+                /* b */ 2,
+                /* c */ 3,
+                /* d */ 4,
+                /* e */ 5,
+                /* f */ 6,
+                /* g */ 7,
+                /* sum */ 28))
+        .isEqualTo("1 + 2 + 3 + 4 + 5 + 6 + 7 = 28");
+  }
+
+  @Test
+  public void format_ninePlaceholders() {
+    assertThat(
+            new StringFormat("{a} + {b} + {c} + {d} + {e} + {f} + {g} + {h} = {sum}")
+                .format(
+                    /* a */ 1,
+                    /* b */ 2,
+                    /* c */ 3,
+                    /* d */ 4,
+                    /* e */ 5,
+                    /* f */ 6,
+                    /* g */ 7,
+                    /* h */ 8,
+                    /* sum */ 36))
+        .isEqualTo("1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 = 36");
+    assertThat(
+            StringFormat.using(
+                "{a} + {b} + {c} + {d} + {e} + {f} + {g} + {h} = {sum}",
+                /* a */ 1,
+                /* b */ 2,
+                /* c */ 3,
+                /* d */ 4,
+                /* e */ 5,
+                /* f */ 6,
+                /* g */ 7,
+                /* h */ 8,
+                /* sum */ 36))
+        .isEqualTo("1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 = 36");
+  }
+
+  @Test
+  public void format_tenPlaceholders() {
+    assertThat(
+            new StringFormat("{a} + {b} + {c} + {d} + {e} + {f} + {g} + {h} + {i} = {sum}")
+                .format(
+                    /* a */ 1,
+                    /* b */ 2,
+                    /* c */ 3,
+                    /* d */ 4,
+                    /* e */ 5,
+                    /* f */ 6,
+                    /* g */ 7,
+                    /* h */ 8,
+                    /* i */ 9,
+                    /* sum */ 45))
+        .isEqualTo("1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 = 45");
+    assertThat(
+            StringFormat.using(
+                "{a} + {b} + {c} + {d} + {e} + {f} + {g} + {h} + {i} = {sum}",
+                /* a */ 1,
+                /* b */ 2,
+                /* c */ 3,
+                /* d */ 4,
+                /* e */ 5,
+                /* f */ 6,
+                /* g */ 7,
+                /* h */ 8,
+                /* i */ 9,
+                /* sum */ 45))
+        .isEqualTo("1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 = 45");
+  }
+
+  @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void format_arrayArg() {
+    Object[] arr = new Object[] {1, 2};
+    assertThat(new StringFormat("{a} + {b}").format(arr)).isEqualTo("1 + 2");
+    assertThat(StringFormat.using("{a} + {b}", arr)).isEqualTo("1 + 2");
   }
 
   @Test
@@ -1858,7 +2111,6 @@ public class StringFormatTest {
 
   @Test
   public void testNulls() throws Exception {
-    new ClassSanityTester().testNulls(StringFormat.class);
     new ClassSanityTester().forAllPublicStaticMethods(StringFormat.class).testNulls();
   }
 
@@ -1910,8 +2162,7 @@ public class StringFormatTest {
           .replaceAllFrom(s, c -> "\\" + c);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return query;
     }
   }

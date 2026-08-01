@@ -3,7 +3,7 @@
   <parent>
       <groupId>com.google.mug</groupId>
       <artifactId>mug-root</artifactId>
-      <version>8.1-SNAPSHOT</version>
+      <version>10.7.1-SNAPSHOT</version>
       <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-benchmarks</artifactId>
@@ -12,9 +12,60 @@
   <name>benchmarks</name>
   <properties>
     <maven.javadoc.skip>true</maven.javadoc.skip>
+    <module.name>benchmarks</module.name>
+    <maven.compiler.release>21</maven.compiler.release>
   </properties>
 
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>0.8.0</version> <!-- or latest -->
+          <extensions>true</extensions>
+          <configuration>
+            <publishingServerId>ossrh</publishingServerId>
+            <!-- optional but recommended in CI -->
+            <autoPublish>true</autoPublish>
+            <waitUntil>published</waitUntil>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <!-- Exclude the mixed Java/Scala showdown benchmark from default build -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <testExcludes>
+            <exclude>**/benchmarks/parsers/**</exclude>
+          </testExcludes>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>com.google.errorprone</groupId>
+              <artifactId>error_prone_core</artifactId>
+              <version>${error_prone.version}</version>
+            </path>
+            <path>
+              <groupId>org.openjdk.jmh</groupId>
+              <artifactId>jmh-generator-annprocess</artifactId>
+              <version>1.37</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
   <dependencies>
+    <dependency>
+      <groupId>com.norswap</groupId>
+      <artifactId>autumn</artifactId>
+      <version>1.2.0</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>com.google.caliper</groupId>
       <artifactId>caliper</artifactId>
@@ -24,6 +75,18 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>mug</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>dot-parse</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>dot-cel</artifactId>
       <version>${project.version}</version>
     </dependency>
 
@@ -38,8 +101,25 @@
     </dependency>
 
     <dependency>
+      <groupId>com.google.testparameterinjector</groupId>
+      <artifactId>test-parameter-injector</artifactId>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-lite</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
       <groupId>com.google.truth</groupId>
       <artifactId>truth</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.truth.extensions</groupId>
+      <artifactId>truth-java8-extension</artifactId>
     </dependency>
 
     <dependency>
@@ -51,6 +131,389 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava-testlib</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.openjdk.jmh</groupId>
+      <artifactId>jmh-core</artifactId>
+      <version>1.37</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.angus</groupId>
+      <artifactId>jakarta.mail</artifactId>
+      <version>2.0.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.sanctionco.jmail</groupId>
+      <artifactId>jmail</artifactId>
+      <version>2.1.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.openjdk.jmh</groupId>
+      <artifactId>jmh-generator-annprocess</artifactId>
+      <version>1.37</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
+  <profiles>
+    <profile>
+      <id>showdown</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.github.petitparser</groupId>
+          <artifactId>petitparser-core</artifactId>
+          <version>2.3.1</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>io.github.parseworks</groupId>
+          <artifactId>taker</artifactId>
+          <version>1.0-SNAPSHOT</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>com.opencsv</groupId>
+          <artifactId>opencsv</artifactId>
+          <version>5.10</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-csv</artifactId>
+          <version>1.11.0</version>
+          <scope>test</scope>
+        </dependency>
+
+        <dependency>
+          <groupId>org.scala-lang</groupId>
+          <artifactId>scala-library</artifactId>
+          <version>2.13.12</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>com.lihaoyi</groupId>
+          <artifactId>fastparse_2.13</artifactId>
+          <version>3.0.2</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.typelevel</groupId>
+          <artifactId>cats-parse_2.13</artifactId>
+          <version>1.0.0</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.jparsec</groupId>
+          <artifactId>jparsec</artifactId>
+          <version>3.1</version>
+        </dependency>
+        <dependency>
+          <groupId>org.parboiled</groupId>
+          <artifactId>parboiled-java</artifactId>
+          <version>1.4.1</version>
+        </dependency>
+        <dependency>
+          <groupId>org.javafp</groupId>
+          <artifactId>parsecj</artifactId>
+          <version>0.6</version>
+        </dependency>
+        <dependency>
+          <groupId>io.github.bjoernloetters</groupId>
+          <artifactId>jjparse-core</artifactId>
+          <version>1.2.5</version>
+        </dependency>
+        <dependency>
+          <groupId>org.antlr</groupId>
+          <artifactId>antlr4-runtime</artifactId>
+          <version>4.13.1</version>
+        </dependency>
+        <dependency>
+          <groupId>org.scala-lang.modules</groupId>
+          <artifactId>scala-parser-combinators_2.13</artifactId>
+          <version>2.3.0</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.htmlunit</groupId>
+          <artifactId>htmlunit-cssparser</artifactId>
+          <version>5.2.0</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.parboiled</groupId>
+          <artifactId>parboiled_2.13</artifactId>
+          <version>2.5.0</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>com.github.h0tk3y.betterParse</groupId>
+          <artifactId>better-parse-jvm</artifactId>
+          <version>0.4.4</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>kotlin-stdlib</artifactId>
+          <version>1.9.22</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>dev.cel</groupId>
+          <artifactId>cel</artifactId>
+          <version>0.13.1</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.projectnessie.cel</groupId>
+          <artifactId>cel-generated-pb</artifactId>
+          <version>0.4.5</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+          <version>4.33.4</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <version>1.9.22</version>
+            <executions>
+              <execution>
+                <id>test-compile</id>
+                <phase>process-test-sources</phase>
+                <goals>
+                  <goal>test-compile</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- Re-include the showdown benchmark for compilation -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <useIncrementalCompilation>false</useIncrementalCompilation>
+              <testExcludes combine.self="override">
+                <exclude>**/grappa/**</exclude>
+              </testExcludes>
+              <annotationProcessorPaths>
+                <path>
+                  <groupId>com.google.errorprone</groupId>
+                  <artifactId>error_prone_core</artifactId>
+                  <version>${error_prone.version}</version>
+                </path>
+                <path>
+                  <groupId>org.openjdk.jmh</groupId>
+                  <artifactId>jmh-generator-annprocess</artifactId>
+                  <version>1.37</version>
+                </path>
+              </annotationProcessorPaths>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.6.0</version>
+            <executions>
+              <execution>
+                <id>add-test-scala-sources</id>
+                <phase>generate-test-sources</phase>
+                <goals>
+                  <goal>add-test-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>src/test/scala</source>
+                    <source>src/test/kotlin</source>
+                    <source>${project.build.directory}/generated-test-sources/antlr4</source>
+                    <source>${project.build.directory}/generated-test-sources/javacc</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-maven-plugin</artifactId>
+            <version>4.13.1</version>
+            <executions>
+              <execution>
+                <id>antlr</id>
+                <goals>
+                  <goal>antlr4</goal>
+                </goals>
+                 <configuration>
+                   <sourceDirectory>src/test/antlr4</sourceDirectory>
+                   <outputDirectory>${project.build.directory}/generated-test-sources/antlr4</outputDirectory>
+                   <visitor>true</visitor>
+                   <listener>false</listener>
+                 </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>javacc-maven-plugin</artifactId>
+            <version>3.0.1</version>
+            <executions>
+              <execution>
+                <id>javacc</id>
+                <phase>generate-test-sources</phase>
+                <goals>
+                  <goal>javacc</goal>
+                </goals>
+                <configuration>
+                  <sourceDirectory>src/test/javacc</sourceDirectory>
+                  <outputDirectory>${project.build.directory}/generated-test-sources/javacc</outputDirectory>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>com.google.code.maven-replacer-plugin</groupId>
+            <artifactId>replacer</artifactId>
+            <version>1.5.3</version>
+            <executions>
+              <execution>
+                <phase>process-test-sources</phase>
+                <goals>
+                  <goal>replace</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <basedir>${project.build.directory}/generated-test-sources/javacc/org/htmlunit/cssparser/parser/javacc</basedir>
+              <includes>
+                <include>CharStream.java</include>
+              </includes>
+              <replacements>
+                <replacement>
+                  <token>char BeginToken\(\) throws java.io.IOException;</token>
+                  <value><![CDATA[
+  default char BeginToken() throws java.io.IOException {
+    return beginToken();
+  }
+  char beginToken() throws java.io.IOException;
+                  ]]></value>
+                </replacement>
+                <replacement>
+                  <token>String GetImage\(\);</token>
+                  <value><![CDATA[
+  default String GetImage() {
+    return getImage();
+  }
+  String getImage();
+                  ]]></value>
+                </replacement>
+                <replacement>
+                  <token>char\[\] GetSuffix\(int len\);</token>
+                  <value><![CDATA[
+  default char[] GetSuffix(int len) {
+    return getSuffix(len);
+  }
+  char[] getSuffix(int len);
+                  ]]></value>
+                </replacement>
+                <replacement>
+                  <token>void Done\(\);</token>
+                  <value><![CDATA[
+  default void Done() {
+    done();
+  }
+  void done();
+                  ]]></value>
+                </replacement>
+              </replacements>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <version>4.8.1</version>
+            <executions>
+              <execution>
+                <id>scala-compile-first</id>
+                <phase>process-resources</phase>
+                <goals>
+                  <goal>add-source</goal>
+                  <goal>compile</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>scala-test-compile-first</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>testCompile</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <scalaVersion>2.13.12</scalaVersion>
+              <includes>
+                <include>**/*.scala</include>
+                <include>**/*.java</include>
+              </includes>
+              <excludes>
+                <exclude>**/grappa/**</exclude>
+                <exclude>**/parsecj/ParsecjJavaTypeParser.java</exclude>
+                <exclude>**/parsecj/ParsecjJavaTypeParserTest.java</exclude>
+                <exclude>**/taker/TakerJavaTypeParser.java</exclude>
+                <exclude>**/taker/TakerJavaTypeParserTest.java</exclude>
+                <exclude>**/javatype/JavaTypeBenchmark.java</exclude>
+                <exclude>**/dotparse/StringInBenchmark.java</exclude>
+                <exclude>**/dotparse/JsonShootoutBenchmark.java</exclude>
+                <exclude>**/EmailAddressBenchmark.java</exclude>
+                <exclude>**/WhitespaceBenchmark.java</exclude>
+                <exclude>**/LetterBenchmark.java</exclude>
+                <exclude>**/WordBenchmark.java</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-clean-plugin</artifactId>
+            <version>3.2.0</version>
+            <executions>
+              <execution>
+                <id>clean-jmh-benchmark-class</id>
+                <phase>process-test-resources</phase>
+                <goals>
+                  <goal>clean</goal>
+                </goals>
+                <configuration>
+                  <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                  <filesets>
+                    <fileset>
+                      <directory>${project.build.directory}/test-classes/com/google/mu/benchmarks/parsers</directory>
+                      <includes>
+                        <include>ParserShowdownBenchmark*.class</include>
+                        <include>CssBenchmark*.class</include>
+                        <include>CelParserBenchmark*.class</include>
+                      </includes>
+                    </fileset>
+                    <fileset>
+                      <directory>${project.build.directory}/test-classes/com/google/mu/benchmarks</directory>
+                      <includes>
+                        <include>AbcNoteBenchmark*.class</include>
+                        <include>ChemicalNotationBenchmark*.class</include>
+                        <include>ChessMoveBenchmark*.class</include>
+                        <include>DiceNotationBenchmark*.class</include>
+                      </includes>
+                    </fileset>
+                  </filesets>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

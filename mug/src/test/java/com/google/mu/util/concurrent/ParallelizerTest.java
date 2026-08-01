@@ -16,7 +16,6 @@ package com.google.mu.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.concurrent.Parallelizer.forAll;
-import static com.google.mu.util.concurrent.Parallelizer.newDaemonParallelizer;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
@@ -56,7 +55,6 @@ import org.junit.runners.Parameterized.Parameters;
 import com.google.common.base.Preconditions;
 import com.google.common.truth.IterableSubject;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.google.mu.util.concurrent.Parallelizer.UncheckedExecutionException;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
@@ -76,21 +74,15 @@ public class ParallelizerTest {
       threadPool.shutdownNow();
     }
 
-    @Test public void testInParallel_emptyInputStream() {
+    @Test public void testInParallel_emptyInputStream() throws InterruptedException{
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
-      assertThat(
-              Stream.empty()
-                  .collect(parallelizer.inParallel(Object::toString))
-                  .toMap())
+      assertThat(Stream.empty().collect(parallelizer.inParallel(Object::toString)).toMap())
           .isEmpty();
     }
 
-    @Test public void testInParallel_fromSequentialStream() {
+    @Test public void testInParallel_fromSequentialStream() throws InterruptedException {
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
-      assertThat(
-              Stream.of(1, 2, 3)
-                  .collect(parallelizer.inParallel(Object::toString))
-                  .toMap())
+      assertThat(Stream.of(1, 2, 3).collect(parallelizer.inParallel(Object::toString)).toMap())
           .containsExactly(1, "1", 2, "2", 3, "3")
           .inOrder();
     }
@@ -106,46 +98,20 @@ public class ParallelizerTest {
           .inOrder();
     }
 
-    @Test public void testInParallel_failure() {
+    @Test public void testInParallel_failure() throws InterruptedException {
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
-      UncheckedExecutionException thrown = assertThrows(
-          UncheckedExecutionException.class,
-          () -> Stream.of(1, 2, 3)
-              .collect(
-                  parallelizer.inParallel(i -> {
-                    Preconditions.checkState(i < 3);
-                    return i.toString();
-                  })));
+      RuntimeException thrown = assertThrows(
+          RuntimeException.class,
+          () ->  Stream.of(1, 2, 3).collect(parallelizer.inParallel(i -> {
+            Preconditions.checkState(i < 3);
+            return i.toString();
+          })));
       assertThat(thrown).hasCauseThat().isInstanceOf(IllegalStateException.class);
     }
 
     @Test public void testNulls() {
       Parallelizer parallelizer = new Parallelizer(threadPool, 3);
       assertThrows(NullPointerException.class, () -> parallelizer.inParallel(null));
-    }
-  }
-
-  @RunWith(TestParameterInjector.class)
-  public static class FactoryMethodsTest {
-    @Test
-    public void newExitingParallelizer_doesNotHangVm() {
-      assertThat(
-              Stream.of(1, 2, 3, 4, 5)
-                  .collect(newDaemonParallelizer(2).inParallel(Object::toString))
-                  .toMap())
-          .containsExactly(1, "1", 2, "2", 3, "3", 4, "4", 5, "5")
-          .inOrder();
-    }
-
-    @Test
-    public void newExitingParallelizer_zeroMaxInflight() {
-      assertThrows(IllegalArgumentException.class, () -> newDaemonParallelizer(0));
-    }
-
-    @Test
-    public void newExitingParallelizer_negativeMaxInflight() {
-      assertThrows(IllegalArgumentException.class, () -> newDaemonParallelizer(-1));
-      assertThrows(IllegalArgumentException.class, () -> newDaemonParallelizer(Integer.MIN_VALUE));
     }
   }
 
@@ -208,8 +174,8 @@ public class ParallelizerTest {
 
     @Test public void testTaskExceptionDismissesPendingTasks() {
       maxInFlight = 2;
-      UncheckedExecutionException exception = assertThrows(
-          UncheckedExecutionException.class,
+      RuntimeException exception = assertThrows(
+          RuntimeException.class,
           () -> parallelize(Stream.of(
               // With maxInflight=2, at least one will print, even if a fail() task races it.
               () -> translateToString(1), () -> translateToString(1),
@@ -223,8 +189,8 @@ public class ParallelizerTest {
     @Test public void testTaskExceptionCancelsInFlightTasks() throws InterruptedException {
       assumeFalse(threading == Threading.DIRECT);
       maxInFlight = 2;
-      UncheckedExecutionException exception = assertThrows(
-          UncheckedExecutionException.class,
+      RuntimeException exception = assertThrows(
+          RuntimeException.class,
           () -> parallelize(serialTasks(
               () -> translateToString(1),  // should print
               () -> blockFor(2), // Will be interrupted
@@ -333,16 +299,16 @@ public class ParallelizerTest {
 
     @Test public void testErrorPropagated() {
       Error error = new Error();
-      UncheckedExecutionException exception = assertThrows(
-          UncheckedExecutionException.class,
+      RuntimeException exception = assertThrows(
+          RuntimeException.class,
           () -> parallelize(Stream.of(() -> raise(error))));
       assertThat(exception.getCause()).isSameInstanceAs(error);
     }
 
     @Test public void testExceptionPropagated() {
       RuntimeException exception = new RuntimeException();
-      UncheckedExecutionException caught = assertThrows(
-          UncheckedExecutionException.class,
+      RuntimeException caught = assertThrows(
+          RuntimeException.class,
           () -> parallelize(Stream.of(() -> raise(exception))));
       assertThat(caught.getCause()).isSameInstanceAs(exception);
     }
@@ -389,7 +355,7 @@ public class ParallelizerTest {
       }
     }
 
-    // Returns a consumer that delegates to {@code consumer} after {@code delay}. */
+    /** Returns a consumer that delegates to {@code consumer} after {@code delay}. */
     private static <T> Consumer<T> delayed(Duration delay, Consumer<T> consumer) {
       return input -> {
         try {
@@ -506,9 +472,5 @@ public class ParallelizerTest {
     },
     ;
     abstract ExecutorService newExecutorService();
-  }
-
-  private static <E extends Throwable> void raise(E throwable) throws E {
-    throw throwable;
   }
 }

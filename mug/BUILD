@@ -16,7 +16,20 @@ java_library(
         "src/main/java/com/google/mu/function/*.java",
         "src/main/java/com/google/mu/collect/*.java",
       ],
-      exclude = glob(["src/main/java/com/google/mu/util/*StringFormat.java"])),
+      exclude = glob([
+          "src/main/java/com/google/mu/util/*StringFormat.java",
+          "src/main/java/com/google/mu/collect/Chain.java",
+      ])),
+)
+
+java_library(
+    name = "chain",
+    visibility = ["//visibility:public"],
+    srcs = ["src/main/java/com/google/mu/collect/Chain.java"],
+    deps = [
+        ":base",
+        ":graph",
+    ],
 )
 
 java_library(
@@ -64,6 +77,7 @@ load("@com_googlesource_gerrit_bazlets//tools:junit.bzl", "junit_tests")
 java_library(
     name = "tests",
     srcs = glob(["src/test/java/**/*.java"], exclude =  glob(["src/test/java/**/*Test.java"])),
+    resources = glob(["src/test/resources/**"]),
     deps = [
         ":base",
         ":concurrent",
@@ -85,6 +99,7 @@ junit_tests(
     srcs = glob(["src/test/java/**/*Test.java"]),
     deps = [
         ":base",
+        ":chain",
         ":concurrent",
         ":format",
         ":graph",

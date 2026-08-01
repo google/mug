@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -17,6 +18,7 @@ import org.junit.runners.JUnit4;
 
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.QueryParameterValue;
+import com.google.common.collect.ImmutableList;
 import com.google.common.testing.EqualsTester;
 import com.google.mu.util.StringFormat.Template;
 
@@ -200,7 +202,7 @@ public class ParameterizedQueryTest {
   @SuppressWarnings("StringFormatArgsCheck")
   public void template_duplicatePlaceholderName_throwsWithConflictingValues() {
     Template<ParameterizedQuery> query =
-        template("SELECT * WHERE status in ({status}, {status}");
+        template("SELECT * WHERE status in ({status}, {status})");
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class, () -> query.with(Status.ACTIVE, Status.INACTIVE));
@@ -219,9 +221,40 @@ public class ParameterizedQueryTest {
   }
 
   @Test
+  @SuppressWarnings("StringFormatArgsCheck")
+  public void of_duplicatePlaceholderName_throwsWithConflictingValues() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> ParameterizedQuery.of("SELECT * WHERE status in ({status}, {status})", 123, 456));
+    assertThat(thrown).hasMessageThat().contains("status");
+  }
+
+  @Test
   public void template_iterableArgNotSupported() {
     Template<ParameterizedQuery> query = template("SELECT * WHERE status = {status}");
     assertThrows(IllegalArgumentException.class, () -> query.with(asList(Status.ACTIVE)));
+  }
+
+  @Test
+  public void optionally_argIsEmpty() {
+    ParameterizedQuery query =
+        ParameterizedQuery.of(
+            "SELECT * FROM tbl {where}",
+            ParameterizedQuery.optionally("where id = {id}", /* id */ Optional.empty()));
+    assertThat(query.jobConfiguration())
+        .isEqualTo(QueryJobConfiguration.newBuilder("SELECT * FROM tbl ").build());
+  }
+
+  @Test
+  public void optionally_argIsNotEmpty() {
+    ParameterizedQuery query =
+        ParameterizedQuery.optionally("SELECT * FROM tbl where id = {id}", /* id */ Optional.of(123));
+    assertThat(query.jobConfiguration())
+        .isEqualTo(
+            QueryJobConfiguration.newBuilder("SELECT * FROM tbl where id = @id")
+                .addNamedParameter("id", QueryParameterValue.int64(123))
+                .build());
   }
 
   @Test
@@ -250,6 +283,80 @@ public class ParameterizedQueryTest {
             .parallel()
             .collect(ParameterizedQuery.joining(", "));
     assertThat(query).isEqualTo(ParameterizedQuery.of("{v1}, {v2}, {v3}", 1, "2", 3));
+  }
+
+  @Test
+  public void andCollector_empty() {
+    ImmutableList<ParameterizedQuery> queries = ImmutableList.of();
+    assertThat(queries.stream().collect(ParameterizedQuery.and())).isEqualTo(ParameterizedQuery.of("TRUE"));
+  }
+
+  @Test
+  public void andCollector_singleCondition() {
+    ImmutableList<ParameterizedQuery> queries = ImmutableList.of(ParameterizedQuery.of("a = 1"));
+    assertThat(queries.stream().collect(ParameterizedQuery.and())).isEqualTo(ParameterizedQuery.of("(a = 1)"));
+  }
+
+  @Test
+  public void andCollector_twoConditions() {
+    ImmutableList<ParameterizedQuery> queries =
+        ImmutableList.of(ParameterizedQuery.of("a = 1"), ParameterizedQuery.of("b = 2 OR c = 3"));
+    assertThat(queries.stream().collect(ParameterizedQuery.and()))
+        .isEqualTo(ParameterizedQuery.of("(a = 1) AND (b = 2 OR c = 3)"));
+  }
+
+  @Test
+  public void andCollector_threeConditions() {
+    ImmutableList<ParameterizedQuery> queries =
+        ImmutableList.of(
+            ParameterizedQuery.of("a = 1"), ParameterizedQuery.of("b = 2 OR c = 3"), ParameterizedQuery.of("d = 4"));
+    assertThat(queries.stream().collect(ParameterizedQuery.and()))
+        .isEqualTo(ParameterizedQuery.of("(a = 1) AND (b = 2 OR c = 3) AND (d = 4)"));
+  }
+
+  @Test
+  public void andCollector_ignoresEmpty() {
+    ImmutableList<ParameterizedQuery> queries =
+        ImmutableList.of(ParameterizedQuery.EMPTY, ParameterizedQuery.of("b = 2 OR c = 3"), ParameterizedQuery.of("d = 4"));
+    assertThat(queries.stream().collect(ParameterizedQuery.and()))
+        .isEqualTo(ParameterizedQuery.of("(b = 2 OR c = 3) AND (d = 4)"));
+  }
+
+  @Test
+  public void orCollector_empty() {
+    ImmutableList<ParameterizedQuery> queries = ImmutableList.of();
+    assertThat(queries.stream().collect(ParameterizedQuery.or())).isEqualTo(ParameterizedQuery.of("FALSE"));
+  }
+
+  @Test
+  public void orCollector_singleCondition() {
+    ImmutableList<ParameterizedQuery> queries = ImmutableList.of(ParameterizedQuery.of("a = 1"));
+    assertThat(queries.stream().collect(ParameterizedQuery.or())).isEqualTo(ParameterizedQuery.of("(a = 1)"));
+  }
+
+  @Test
+  public void orCollector_twoConditions() {
+    ImmutableList<ParameterizedQuery> queries =
+        ImmutableList.of(ParameterizedQuery.of("a = 1"), ParameterizedQuery.of("b = 2 AND c = 3"));
+    assertThat(queries.stream().collect(ParameterizedQuery.or()))
+        .isEqualTo(ParameterizedQuery.of("(a = 1) OR (b = 2 AND c = 3)"));
+  }
+
+  @Test
+  public void orCollector_threeConditions() {
+    ImmutableList<ParameterizedQuery> queries =
+        ImmutableList.of(
+            ParameterizedQuery.of("a = 1"), ParameterizedQuery.of("b = 2 AND c = 3"), ParameterizedQuery.of("d = 4"));
+    assertThat(queries.stream().collect(ParameterizedQuery.or()))
+        .isEqualTo(ParameterizedQuery.of("(a = 1) OR (b = 2 AND c = 3) OR (d = 4)"));
+  }
+
+  @Test
+  public void orCollector_ignoresEmpty() {
+    ImmutableList<ParameterizedQuery> queries =
+        ImmutableList.of(ParameterizedQuery.EMPTY, ParameterizedQuery.of("b = 2 AND c = 3"), ParameterizedQuery.of("d = 4"));
+    assertThat(queries.stream().collect(ParameterizedQuery.or()))
+        .isEqualTo(ParameterizedQuery.of("(b = 2 AND c = 3) OR (d = 4)"));
   }
 
   @Test

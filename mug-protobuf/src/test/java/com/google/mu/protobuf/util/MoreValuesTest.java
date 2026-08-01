@@ -1,8 +1,6 @@
 package com.google.mu.protobuf.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.mu.collect.Immutables.list;
-import static com.google.mu.collect.Immutables.map;
 import static com.google.mu.protobuf.util.MoreStructs.struct;
 import static com.google.mu.protobuf.util.MoreValues.FALSE;
 import static com.google.mu.protobuf.util.MoreValues.NULL;
@@ -18,6 +16,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.NullPointerTester;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
@@ -29,13 +29,13 @@ public class MoreValuesTest {
   @Test public void testToListValue() {
     Structor converter = new Structor();
     assertThat(
-            Stream.of(1, "foo", list(true, false), map("k", 20L)).map(converter::toValue).collect(toListValue()))
+            Stream.of(1, "foo", list(true, false), ImmutableMap.of("k", 20L)).map(converter::toValue).collect(toListValue()))
         .isEqualTo(
             ListValue.newBuilder()
                 .addValues(Values.of(1))
                 .addValues(Values.of("foo"))
                 .addValues(converter.toValue(list(true, false)))
-                .addValues(converter.toValue(map("k", 20L)))
+                .addValues(converter.toValue(ImmutableMap.of("k", 20L)))
                 .build());
   }
 
@@ -198,9 +198,9 @@ public class MoreValuesTest {
 
   @Test public void testFromValue_struct() {
     assertThat(MoreValues.fromValue(Values.of(struct("one", 1))))
-        .isEqualTo(map("one", 1));
+        .isEqualTo(ImmutableMap.of("one", 1));
     assertThat(MoreValues.fromValue(Value.newBuilder().setStructValue(struct("one", 0.5))))
-        .isEqualTo(map("one", 0.5D));
+        .isEqualTo(ImmutableMap.of("one", 0.5D));
   }
 
   @Test public void testFromValue_builder_listValueChangeNotReflected() {
@@ -214,7 +214,7 @@ public class MoreValuesTest {
     Value.Builder builder = Value.newBuilder().setStructValue(struct("one", 1));
     Object object = MoreValues.fromValue(builder);
     builder.getStructValueBuilder().clear();
-    assertThat(object).isEqualTo(map("one", 1));
+    assertThat(object).isEqualTo(ImmutableMap.of("one", 1));
   }
 
   @Test public void testTrue() {
@@ -227,5 +227,9 @@ public class MoreValuesTest {
 
   @Test public void testNulls() {
     new NullPointerTester().testAllPublicStaticMethods(MoreValues.class);
+  }
+
+  private static <T> ImmutableList<T> list(T... values) {
+    return ImmutableList.copyOf(values);
   }
 }

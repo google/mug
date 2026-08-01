@@ -15,7 +15,7 @@
  *****************************************************************************/
 package com.google.mu.function;
 
-/*
+/**
  * A runnable that can throw checked exceptions.
  *
  * @since 1.14

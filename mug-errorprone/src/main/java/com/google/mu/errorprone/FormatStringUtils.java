@@ -1,5 +1,18 @@
+/*****************************************************************************
+ * ------------------------------------------------------------------------- *
+ * Licensed under the Apache License, Version 2.0 (the "License");           *
+ * you may not use this file except in compliance with the License.          *
+ * You may obtain a copy of the License at                                   *
+ *                                                                           *
+ * http://www.apache.org/licenses/LICENSE-2.0                                *
+ *                                                                           *
+ * Unless required by applicable law or agreed to in writing, software       *
+ * distributed under the License is distributed on an "AS IS" BASIS,         *
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+ * See the License for the specific language governing permissions and       *
+ * limitations under the License.                                            *
+ *****************************************************************************/
 package com.google.mu.errorprone;
-
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.mu.util.Optionals.optionally;
@@ -29,16 +42,23 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 
 /** Some common utils for format and unformat checks. */
+@SuppressWarnings("restriction")
 final class FormatStringUtils {
   static final Substring.Pattern PLACEHOLDER_PATTERN =
       consecutive(CharMatcher.noneOf("{}")::matches).immediatelyBetween("{", INCLUSIVE, "}", INCLUSIVE);
-  static final Substring.RepeatingPattern PLACEHOLDER_NAMES_PATTERN =
-      consecutive(CharMatcher.noneOf("{}")::matches).immediatelyBetween("{", "}").repeatedly();
+
+
+  static ImmutableList<Placeholder> placeholdersFrom(String formatString) {
+    return PLACEHOLDER_PATTERN
+        .repeatedly()
+        .match(formatString)
+        .map(Placeholder::new)
+        .collect(toImmutableList());
+  }
 
   static ImmutableList<String> placeholderVariableNames(String formatString) {
-    return PLACEHOLDER_NAMES_PATTERN
-        .from(formatString)
-        .map(first('=').toEnd()::removeFrom) // for Cloud resource name syntax
+    return placeholdersFrom(formatString).stream()
+        .map(Placeholder::name)
         .collect(toImmutableList());
   }
 
@@ -52,18 +72,22 @@ final class FormatStringUtils {
   }
 
   static Optional<String> findFormatString(Tree unformatter, VisitorState state) {
+    return findFormatStringNode(unformatter, state)
+        .map(tree -> ASTHelpers.constValue(tree, String.class));
+  }
+
+  static Optional<ExpressionTree> findFormatStringNode(Tree unformatter, VisitorState state) {
     if (unformatter instanceof IdentifierTree) {
       Symbol symbol = ASTHelpers.getSymbol(unformatter);
       if (symbol instanceof VarSymbol) {
         Tree def = JavacTrees.instance(state.context).getTree(symbol);
         if (def instanceof VariableTree) {
-          return findFormatString(((VariableTree) def).getInitializer(), state);
+          return findFormatStringNode(((VariableTree) def).getInitializer(), state);
         }
       }
       return Optional.empty();
     }
-    return getInlineStringArg(unformatter, state)
-        .map(tree -> ASTHelpers.constValue(tree, String.class));
+    return getInlineStringArg(unformatter, state);
   }
 
   static boolean looksLikeSql(String template) {

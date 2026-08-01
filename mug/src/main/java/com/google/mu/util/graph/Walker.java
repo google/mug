@@ -45,6 +45,8 @@ import java.util.stream.Stream;
  * the same graph collaboratively by sharing a concurrent node tracker. See
  * {@link #inGraph(Function, Predicate) inGraph(findSuccessors, nodeTracker)} for details.
  *
+ * <p>Tree nodes are not allowed to be null.
+ *
  * <p>For binary trees, use {@link #inBinaryTree inBinaryTree(Tree::left, Tree::right)}.
  *
  * @since 4.0

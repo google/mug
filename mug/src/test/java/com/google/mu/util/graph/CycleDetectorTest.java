@@ -91,6 +91,16 @@ public class CycleDetectorTest {
         .containsExactly("bar", "baz", "zoo", "foo", "bar").inOrder();
   }
 
+  @Test public void detectCycle_spuriousBranchOffCycle() {
+    Graph<String> graph = toDirectedGraph(ImmutableMap.of(
+        "A", asList("B"),
+        "B", asList("C"),
+        "C", asList("B", "E"),
+        "E", asList()));
+    assertThat(detectCycle(graph, "A"))
+        .containsExactly("A", "B", "C", "B").inOrder();
+  }
+
   @Test public void detectCycle_noStartingNodes() {
     assertThat(detectCycle(toUndirectedGraph(ImmutableListMultimap.of("foo", "bar"))))
         .isEmpty();

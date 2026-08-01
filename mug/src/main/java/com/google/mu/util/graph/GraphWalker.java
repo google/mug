@@ -15,6 +15,7 @@
 package com.google.mu.util.graph;
 
 import static com.google.mu.util.stream.MoreCollectors.toListAndThen;
+import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static com.google.mu.util.stream.MoreStreams.withSideEffect;
 import static java.util.Objects.requireNonNull;
@@ -270,26 +271,27 @@ public abstract class GraphWalker<N> extends Walker<N> {
 
     List<N> topologicalOrder(Iterable<? extends N> startNodes) {
       CycleTracker cycleDetector = new CycleTracker();
-      return cycleDetector.startPostOrder(startNodes, n -> {
-        throw new CyclicGraphException(
-            cycleDetector.currentPath().collect(toListAndThen(l -> l.add(n))));
+      return cycleDetector.startPostOrder(startNodes, path -> {
+        throw new CyclicGraphException(path);
       }).collect(toListAndThen(Collections::reverse));
     }
 
     Optional<Stream<N>> detectCycle(Iterable<? extends N> startNodes) {
-      AtomicReference<N> cyclic = new AtomicReference<>();
+      AtomicReference<List<N>> cyclePath = new AtomicReference<>();
       CycleTracker detector = new CycleTracker();
-      return detector.startPostOrder(startNodes, n -> cyclic.compareAndSet(null, n))
-          .filter(n -> cyclic.get() != null)
-          .findFirst()
-          .map(last ->
-              Stream.concat(detector.currentPath(), Stream.of(last, cyclic.getAndSet(null))));
+      for (N n : iterateOnce(detector.startPostOrder(startNodes, cyclePath::set))) {
+        List<N> found = cyclePath.get();
+        if (found != null) {
+          return Optional.of(found.stream());
+        }
+      }
+      return Optional.empty();
     }
 
     private final class CycleTracker {
       private final LinkedHashSet<N> currentPath = new LinkedHashSet<>();
 
-      Stream<N> startPostOrder(Iterable<? extends N> startNodes, Consumer<N> foundCycle) {
+      Stream<N> startPostOrder(Iterable<? extends N> startNodes, Consumer<List<N>> foundCycle) {
         Walk<N> walk = new Walk<>(
             findSuccessors,
             node -> {
@@ -297,15 +299,13 @@ public abstract class GraphWalker<N> extends Walker<N> {
               if (newNode) {
                 currentPath.add(node);
               } else if (currentPath.contains(node)) {
-                foundCycle.accept(node);
+                List<N> cycle = new ArrayList<>(currentPath);
+                cycle.add(node);
+                foundCycle.accept(cycle);
               }
               return newNode;
             });
         return withSideEffect(walk.postOrder(startNodes), currentPath::remove);
-      }
-
-      Stream<N> currentPath() {
-        return currentPath.stream();
       }
     }
 
@@ -318,7 +318,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
       Stream<List<N>> componentsFrom(Iterable<? extends N> startNodes) {
         return new Walk<>(findSuccessors, this::track)
             .postOrder(startNodes, roots)
-            .map(currentPath::remove)
+            .map(currentPath::get)
             .filter(Tarjan::isComponentRoot)
             .map(this::toConnectedComponent);
       }
@@ -348,6 +348,7 @@ public abstract class GraphWalker<N> extends Walker<N> {
         List<N> list = new ArrayList<>();
         for (; ;) {
           Tarjan<N> node = connected.pop();
+          currentPath.remove(node.payload);
           list.add(node.payload);
           if (node == root) {
             return list;

@@ -4,23 +4,24 @@
   <groupId>com.google.mug</groupId>
   <artifactId>mug-root</artifactId>
   <packaging>pom</packaging>
-  <version>8.1-SNAPSHOT</version>
+  <version>10.7.1-SNAPSHOT</version>
   <name>mug-root</name>
   <description>Google Mug Library</description>
   <url>http://github.com/google/mug</url>
 
-  <distributionManagement>
-    <repository>
-      <id>sonatype-nexus-staging</id>
-      <name>Sonatype Nexus release repository</name>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <name>Sonatype Nexus snapshot repository</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-    </snapshotRepository>
-  </distributionManagement>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <powermock.version>1.6.6</powermock.version>
+    <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
+    <error_prone.version>2.40.0</error_prone.version>
+    <error_prone_annotations.version>2.40.0</error_prone_annotations.version>
+    <maven_compiler_plugin.version>3.14.0</maven_compiler_plugin.version>
+    <maven.compiler.source>8</maven.compiler.source>
+    <maven.compiler.target>8</maven.compiler.target>
+    <mug.version>9.9-SNAPSHOT</mug.version>
+    <!-- Reproducible builds: fixed timestamp for build artifacts -->
+    <project.build.outputTimestamp>2026-07-21T00:15:49Z</project.build.outputTimestamp>
+  </properties>
 
   <licenses>
     <license>
@@ -33,11 +34,12 @@
     <url>http://github.com/google/mug</url>
     <connection>scm:git:git@github.com:google/mug.git</connection>
     <developerConnection>scm:git:git@github.com:google/mug.git</developerConnection>
-    <tag>mug-root-1.0</tag>
+    <tag>mug-root-10.6.1-SNAPSHOT</tag>
   </scm>
 
   <developers>
     <developer>
+      <id>benyu</id>
       <name>Ben Yu</name>
       <roles>
       <role>Original Developer</role>
@@ -47,23 +49,40 @@
 
   <modules>
     <module>mug</module>
+    <module>mug-errorprone</module>
+    <module>mug-bom</module>
     <module>mug-benchmarks</module>
     <module>mug-examples</module>
-    <module>mug-algorithms</module>
     <module>mug-guava</module>
     <module>mug-protobuf</module>
-    <module>mug-errorprone</module>
     <module>mug-bigquery</module>
+    <module>mug-safesql</module>
+    <module>mug-spanner</module>
+    <module>mug-concurrent24</module>
+    <module>mug-safesql-java16tests</module>
+    <module>dot-parse</module>
+    <module>dot-cel</module>
+    <module>mug-concurrent-testing</module>
   </modules>
-
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <powermock.version>1.6.6</powermock.version>
-    <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
-  </properties>
-
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://central.sonatype.com/content/repositories/releases/</url>
+    </repository>
+  </distributionManagement>
   <dependencyManagement>
   <dependencies>
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>libraries-bom</artifactId>
+      <version>26.63.0</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -107,28 +126,28 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava-testlib</artifactId>
-      <version>[20.0,)</version>
+      <version>33.5.0-jre</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>[20.0,)</version>
+      <version>33.5.0-jre</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.google.errorprone</groupId>
       <artifactId>error_prone_annotation</artifactId>
       <scope>compile</scope>
-      <version>2.23.0</version>
+      <version>${error_prone_annotations.version}</version>
       <classifier>sources</classifier>
     </dependency>
     <dependency>
       <groupId>com.google.errorprone</groupId>
       <artifactId>error_prone_annotations</artifactId>
       <scope>compile</scope>
-      <version>2.23.0</version>
+      <version>${error_prone_annotations.version}</version>
       <classifier>sources</classifier>
     </dependency>
     <dependency>
@@ -144,27 +163,44 @@
   <build>
     <pluginManagement>
       <plugins>
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>0.8.0</version> <!-- or latest -->
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>ossrh</publishingServerId>
+              <!-- optional but recommended in CI -->
+              <autoPublish>true</autoPublish>
+              <checksums>all</checksums>
+              <waitUntil>published</waitUntil>
+            </configuration>
+          </plugin>
         <plugin>
           <artifactId>maven-release-plugin</artifactId>
-          <version>3.0.0-M1</version>
+          <version>3.3.1</version>
           <configuration>
+            <arguments>-pl !mug-safesql-java16tests</arguments>
+            <projectBuildOutputTimestampPolicy>always</projectBuildOutputTimestampPolicy>
             <autoVersionSubmodules>true</autoVersionSubmodules>
             <useReleaseProfile>false</useReleaseProfile>
             <releaseProfiles>release</releaseProfiles>
             <goals>deploy</goals>
+            <scmCommentPrefix>[maven-release-plugin] [skip ci] </scmCommentPrefix>
           </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.1</version>
+          <version>${maven_compiler_plugin.version}</version>
           <configuration>
             <fork>true</fork>
-            <source>8</source>
-            <target>8</target>
+            <source>${maven.compiler.source}</source>
+            <target>${maven.compiler.target}</target>
             <encoding>UTF-8</encoding>
             <compilerArgs>
               <arg>-XDcompilePolicy=simple</arg>
               <arg>-Xplugin:ErrorProne</arg>
+              <arg>--should-stop=ifError=FLOW</arg>
               <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
               <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
               <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
@@ -180,7 +216,7 @@
               <path>
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_core</artifactId>
-                <version>2.23.0</version>
+                <version>${error_prone.version}</version>
               </path>
             <!-- Other annotation processors go here.
             If 'annotationProcessorPaths' is set, processors will no longer be
@@ -191,43 +227,89 @@
         </plugin>
         <plugin>
           <artifactId>maven-source-plugin</artifactId>
-          <version>2.2.1</version>
+          <version>3.4.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
-          <version>2.4.1</version>
+          <version>3.5.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-install-plugin</artifactId>
-          <version>2.3.1</version>
+          <version>3.1.4</version>
         </plugin>
         <plugin>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>2.5</version>
+          <version>3.4.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.22.0</version>
+          <version>3.2.5</version>
+          <configuration>
+            <threadCount>1</threadCount>
+            <includes>
+              <include>**/*Test.java</include>
+            </includes>
+          </configuration>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.maven.surefire</groupId>
+              <artifactId>surefire-junit4</artifactId>
+              <version>3.2.5</version>
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.1.0</version>
-            <executions>
-                <execution>
-                    <id>javadoc-jar</id>
-                    <phase>package</phase>
-                    <goals>
-                        <goal>jar</goal>
-                    </goals>
-                    <configuration>
-                        <classifier>javadoc</classifier>
-                    </configuration>
-                </execution>
-            </executions>
+          <version>3.4.2</version>
+          <configuration>
+            <archive>
+              <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+              <manifest>
+                <addBuildEnvironmentEntries>false</addBuildEnvironmentEntries>
+              </manifest>
+            </archive>
+          </configuration>
+          <executions>
+            <execution>
+              <id>javadoc-jar</id>
+              <phase>package</phase>
+              <goals><goal>jar</goal></goals>
+              <configuration>
+                <classifier>javadoc</classifier>
+                <archive>
+                  <manifestEntries>
+                    <Automatic-Module-Name>
+                      ${project.groupId}.${module.name}
+                    </Automatic-Module-Name>
+                  </manifestEntries>
+                </archive>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>biz.aQute.bnd</groupId>
+          <artifactId>bnd-maven-plugin</artifactId>
+          <version>6.4.0</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>bnd-process</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <bnd><![CDATA[
+              Bundle-SymbolicName: ${project.groupId}.${project.artifactId}
+              -exportcontents: !*.impl.*, !*.internal.*, *
+              -noextraheaders: true
+              -snapshot: DAILY
+            ]]></bnd>
+          </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-deploy-plugin</artifactId>
-          <version>2.7</version>
+          <version>3.1.4</version>
         </plugin>
         <plugin>
           <artifactId>maven-site-plugin</artifactId>
@@ -237,23 +319,29 @@
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>3.6.3</version>
           <configuration>
-            <sourcepath>mug/src/main/java;mug-guava/src/main/java;mug-protobuf/src/main/java;mug-bigquery/src/main/java;</sourcepath>
+            <source>24</source>
+            <sourcepath>mug/src/main/java;mug-safesql/src/main/java;dot-parse/src/main/java;dot-cel/src/main/java;mug-guava/src/main/java;mug-spanner/src/main/java;mug-protobuf/src/main/java;mug-bigquery/src/main/java;mug-concurrent24/src/main/java;mug-concurrent-testing/src/main/java;</sourcepath>
             <includeDependencySources>true</includeDependencySources>
             <additionalDependencies>
               <additionalDependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>33.1.0-jre</version>
+                <version>33.5.0-jre</version>
               </additionalDependency>
               <additionalDependency>
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
-                <version>2.23.0</version>
+                <version>2.39.0</version>
               </additionalDependency>
               <additionalDependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
-                <version>4.26.0</version>
+                <version>4.31.1</version>
+              </additionalDependency>
+              <additionalDependency>
+                <groupId>org.projectnessie.cel</groupId>
+                <artifactId>cel-generated-pb</artifactId>
+                <version>0.4.5</version>
               </additionalDependency>
               <additionalDependency>
                 <groupId>org.checkerframework</groupId>
@@ -265,7 +353,22 @@
                 <artifactId>google-cloud-bigquery</artifactId>
                 <version>2.34.2</version>
               </additionalDependency>
+              <additionalDependency>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>google-cloud-spanner</artifactId>
+                <version>6.96.1</version>
+              </additionalDependency>
+              <additionalDependency>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>google-cloud-core</artifactId>
+                <version>2.58.0</version>
+              </additionalDependency>
             </additionalDependencies>
+            <links>
+              <link>https://javadoc.io/doc/com.google.cloud/google-cloud-spanner/latest</link>
+              <link>https://javadoc.io/doc/com.google.cloud/google-cloud-core/latest</link>
+              <link>https://javadoc.io/doc/com.google.guava/guava/latest</link>
+            </links>
           </configuration>
           <executions>
           <execution>
@@ -276,25 +379,50 @@
           </executions>
         </plugin>
         <plugin>
-          <groupId>org.sonatype.plugins</groupId>
-          <artifactId>nexus-staging-maven-plugin</artifactId>
-          <version>1.6.6</version>
-          <extensions>true</extensions>
-          <configuration>
-          <serverId>ossrh</serverId>
-          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-          <autoReleaseAfterClose>true</autoReleaseAfterClose>
-          </configuration>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>0.8.14</version>
+          <executions>
+            <execution>
+              <id>default-prepare-agent</id>
+              <phase>initialize</phase>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>report</id>
+              <phase>test</phase>
+              <goals>
+                <goal>report</goal>
+              </goals>
+              <configuration>
+                <formats>
+                    <format>HTML</format>
+                    <format>XML</format>
+                    <format>CSV</format>
+                </formats>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
       </plugins>
     </pluginManagement>
   
     <plugins>
+	  <plugin>
+	    <groupId>org.jacoco</groupId>
+	    <artifactId>jacoco-maven-plugin</artifactId>
+	  </plugin>
+      <plugin>
+        <groupId>biz.aQute.bnd</groupId>
+        <artifactId>bnd-maven-plugin</artifactId>
+      </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
         </configuration>
       </plugin>
   
@@ -369,17 +497,18 @@
     <profile>
       <id>release</id>
       <activation>
-      <property>
-        <name>performRelease</name>
-        <value>true</value>
-      </property>
+        <activeByDefault>false</activeByDefault> 
       </activation>
       <build>
         <plugins>
           <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+          </plugin>
+          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.5</version>
+            <version>3.2.8</version>
             <configuration>
               <arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
             </configuration>
@@ -394,6 +523,24 @@
             </executions>
           </plugin>
         </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>playground</id>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <configuration>
+                <!-- This specifically overrides the '8' set in the main build -->
+                <source>21</source>
+                <target>21</target>
+                <release>21</release>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
       </build>
     </profile>
   </profiles>

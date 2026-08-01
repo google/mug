@@ -5,10 +5,13 @@ import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Optionals.ifPresent;
 import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.Optionals.optionally;
+import static java.util.Arrays.asList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
@@ -71,6 +74,31 @@ public class OptionalsTest {
 
   @Test public void asSet_notEmpty() {
     assertThat(Optionals.asSet(Optional.of(123))).containsExactly(123);
+  }
+
+  @Test public void nonEmpty_nullCollection() {
+    List<?> list = null;
+    assertThat(Optionals.nonEmpty(list)).isEmpty();
+  }
+
+  @Test public void nonEmpty_emptyCollection() {
+    assertThat(Optionals.nonEmpty(asList())).isEmpty();
+  }
+
+  @Test public void nonEmpty_nonEmptyCollection() {
+    assertThat(Optionals.nonEmpty(asList(1))).hasValue(asList(1));
+  }
+
+  @Test public void nonEmpty_nullString() {
+    assertThat(Optionals.nonEmpty("")).isEmpty();
+  }
+
+  @Test public void nonEmpty_emptyString() {
+    assertThat(Optionals.nonEmpty("")).isEmpty();
+  }
+
+  @Test public void nonEmpty_nonEmptyString() {
+    assertThat(Optionals.nonEmpty("foo")).hasValue("foo");
   }
 
   @Test public void ifPresent_or_firstIsAbsent_secondSupplierIsPresent() {
@@ -204,6 +232,40 @@ public class OptionalsTest {
         .isEqualTo(BiOptional.of(1, "one"));
   }
 
+  @Test
+  public void inOrder_firstStepIsEmpty_secondStepNotEvaluated() {
+    assertThat(
+            Optionals.inOrder(
+                    Optional.empty(),
+                    () -> {
+                      throw new AssertionError();
+                    })
+                .isPresent())
+        .isFalse();
+    assertThat(
+            Optionals.inOrder(
+                    Optional.empty(),
+                    x -> {
+                      throw new AssertionError();
+                    })
+                .isPresent())
+        .isFalse();
+  }
+
+  @Test
+  public void inOrder_secondStepEvaluatesToEmpty() {
+    assertThat(Optionals.inOrder(Optional.of(1), Optional::empty).isPresent()).isFalse();
+    assertThat(Optionals.inOrder(Optional.empty(), x -> Optional.empty()).isPresent()).isFalse();
+  }
+
+  @Test
+  public void inOrder_bothStepsArePresent() {
+    assertThat(Optionals.inOrder(Optional.of(1), () -> Optional.of(2)).map((a, b) -> a + b))
+        .hasValue(3);
+    assertThat(Optionals.inOrder(Optional.of(10), a -> Optional.of(a * 20)).map((a, b) -> a + b))
+        .hasValue(210);
+  }
+
   @Test public void testNulls() throws Exception {
     new NullPointerTester()
         .setDefault(Optional.class, Optional.empty())
@@ -213,12 +275,16 @@ public class OptionalsTest {
         .setDefault(BiOptional.class, BiOptional.of(1, "one"))
         .ignore(Optionals.class.getMethod("optional", boolean.class, Object.class))
         .ignore(Optionals.class.getMethod("both", Optional.class, Optional.class))
+        .ignore(Optionals.class.getMethod("nonEmpty", CharSequence.class))
+        .ignore(Optionals.class.getMethod("nonEmpty", Collection.class))
         .testAllPublicStaticMethods(Optionals.class);
     new NullPointerTester()
         .setDefault(Optional.class, Optional.of("foo"))
         .setDefault(OptionalInt.class, OptionalInt.of(123))
         .setDefault(OptionalLong.class, OptionalLong.of(123))
         .setDefault(OptionalDouble.class, OptionalDouble.of(123))
+        .ignore(Optionals.class.getMethod("nonEmpty", CharSequence.class))
+        .ignore(Optionals.class.getMethod("nonEmpty", Collection.class))
         .setDefault(BiOptional.class, BiOptional.of(1, "one"))
         .ignore(Optionals.class.getMethod("optional", boolean.class, Object.class))
         .testAllPublicStaticMethods(Optionals.class);

@@ -1,0 +1,1 @@
+find . -name pom.xml | xargs -I '{}' sed -i -e "s/$1/$2/g" "{}"

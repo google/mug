@@ -3,16 +3,31 @@
   <parent>
       <groupId>com.google.mug</groupId>
       <artifactId>mug-root</artifactId>
-      <version>8.1-SNAPSHOT</version>
+      <version>10.7.1-SNAPSHOT</version>
       <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>mug-examples</artifactId>
   <packaging>jar</packaging>
   <name>Examples</name>
+  <properties>
+    <module.name>examples</module.name>
+  </properties>
 
   <build>
     <pluginManagement>
       <plugins>
+        <plugin>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>0.8.0</version> <!-- or latest -->
+          <extensions>true</extensions>
+          <configuration>
+            <publishingServerId>ossrh</publishingServerId>
+            <!-- optional but recommended in CI -->
+            <autoPublish>true</autoPublish>
+            <waitUntil>published</waitUntil>
+          </configuration>
+        </plugin>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
           <configuration>
@@ -20,7 +35,7 @@
               <path>
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_core</artifactId>
-                <version>2.23.0</version>
+                <version>${error_prone.version}</version>
               </path>
               <path>
                 <groupId>${project.groupId}</groupId>
@@ -41,6 +56,11 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>mug</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>mug-safesql</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

@@ -80,6 +80,14 @@ public class TopologicalOrderTest {
     assertThat(thrown.cyclicPath()).containsExactly("foo", "bar", "baz", "foo").inOrder();
   }
 
+  @Test public void topologicalOrder_spuriousBranchOffCycle() {
+    Graph<String> graph = toDirectedGraph(ImmutableListMultimap.of(
+        "A", "B", "B", "C", "C", "B", "C", "E"));
+    CyclicGraphException thrown =
+        assertThrows(CyclicGraphException.class, () -> topologicalOrder(graph, "A"));
+    assertThat(thrown.cyclicPath()).containsExactly("A", "B", "C", "B").inOrder();
+  }
+
   @SafeVarargs
   private static <N> List<N> topologicalOrder(Graph<N> graph, N... startNodes) {
     return Walker.inGraph((N n) -> graph.successors(n).stream())

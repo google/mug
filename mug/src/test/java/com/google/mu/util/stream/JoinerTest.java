@@ -2,6 +2,7 @@ package com.google.mu.util.stream;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -17,17 +18,86 @@ public class JoinerTest {
     assertThat(Joiner.on('=').join(null, null)).isEqualTo("null=null");
   }
 
+  @Test public void join_collection_singleElement() {
+    List<String> list = List.of("one");
+    assertThat(Joiner.on(',').join(list)).isSameInstanceAs(list.get(0));
+    assertThat(Joiner.on(',').between('(', ')').join(list)).isEqualTo("(one)");
+  }
+
+  @Test public void join_collection_empty() {
+    List<String> empty = List.of();
+    assertThat(Joiner.on(',').join(empty)).isEqualTo("");
+    assertThat(Joiner.on(',').between('(', ')').join(empty)).isEqualTo("()");
+  }
+
+  @Test public void join_collection_multipleElements() {
+    List<String> multiple = List.of("one", "two");
+    assertThat(Joiner.on(',').join(multiple)).isEqualTo("one,two");
+    assertThat(Joiner.on(',').between('(', ')').join(multiple)).isEqualTo("(one,two)");
+  }
+
   @Test public void join_bistream() {
     assertThat(BiStream.of(1, "one", 2, "two").mapToObj(Joiner.on('-')::join).collect(Joiner.on(", ")))
         .isEqualTo("1-one, 2-two");
   }
 
-  @Test public void between_joinTwoObjects() {
+  @Test public void joinEmptyInput() {
+    assertThat(Stream.empty().collect(Joiner.on(", ")))
+        .isEmpty();
+    assertThat(Stream.empty().collect(Joiner.on(", ").between("(", ")")))
+        .isEqualTo("()");
+  }
+
+  @Test public void joinSingleString() {
+    assertThat(Stream.of("str").collect(Joiner.on(", ")))
+        .isEqualTo("str");
+    assertThat(Stream.of("str").collect(Joiner.on(", ").between("(", ")")))
+        .isEqualTo("(str)");
+    assertThat(Stream.of("str").collect(Joiner.on(", ").between("", ".")))
+        .isEqualTo("str.");
+    assertThat(Stream.of("str").collect(Joiner.on(", ").between("$", "")))
+        .isEqualTo("$str");
+  }
+
+
+  @Test public void joinTwoObjects() {
     assertThat(
             BiStream.of(1, "one", 2, "two")
                 .mapToObj(Joiner.on(", ").between('(', ')')::join)
                 .collect(Joiner.on(", ")))
         .isEqualTo("(1, one), (2, two)");
+    assertThat(
+            BiStream.of(1, "one", 2, "two")
+                .mapToObj(Joiner.on(", ").between('(', ')')::join)
+                .collect(Joiner.on(", ").between("[", "]")))
+        .isEqualTo("[(1, one), (2, two)]");
+  }
+
+  @Test public void joinParallel() {
+    assertThat(
+            BiStream.of(1, "one")
+                .mapToObj(Joiner.on(", ").between('(', ')')::join)
+                .parallel()
+                .collect(Joiner.on(", ")))
+        .isEqualTo("(1, one)");
+    assertThat(
+            BiStream.of(1, "one", 2, "two")
+                .mapToObj(Joiner.on(", ").between('(', ')')::join)
+                .parallel()
+                .collect(Joiner.on(", ")))
+        .isEqualTo("(1, one), (2, two)");
+    assertThat(
+            BiStream.of(1, "one", 2, "two", 3, "three")
+                .mapToObj(Joiner.on(", ").between('(', ')')::join)
+                .parallel()
+                .collect(Joiner.on(", ")))
+        .isEqualTo("(1, one), (2, two), (3, three)");
+    assertThat(
+            BiStream.of(1, "one", 2, "two", 3, "three", 4, "four", 5, "five", 6, "six", 7, "seven", 8, "eight")
+                .mapToObj(Joiner.on(", ").between('(', ')')::join)
+                .parallel()
+                .collect(Joiner.on(", ")))
+        .isEqualTo("(1, one), (2, two), (3, three), (4, four), (5, five), (6, six), (7, seven), (8, eight)");
   }
 
   @Test public void between_joinStreamOfObjects() {

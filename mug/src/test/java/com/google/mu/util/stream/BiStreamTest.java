@@ -19,11 +19,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Optionals.optional;
 import static com.google.mu.util.stream.BiCollectors.toMap;
+import static com.google.mu.util.stream.BiStream.adjacentPairsFrom;
 import static com.google.mu.util.stream.BiStream.biStream;
-import static com.google.mu.util.stream.BiStream.crossJoining;
 import static com.google.mu.util.stream.BiStream.concatenating;
+import static com.google.mu.util.stream.BiStream.crossJoining;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static com.google.mu.util.stream.BiStream.toAdjacentPairs;
+import static com.google.mu.util.stream.BiStream.toBiStream;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
@@ -66,6 +68,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.MultimapSubject;
 import com.google.mu.util.BiOptional;
+import com.google.mu.util.Both;
 import com.google.mu.util.Substring;
 
 @RunWith(JUnit4.class)
@@ -744,6 +747,15 @@ public class BiStreamTest {
         .inOrder();
   }
 
+  @Test public void testToBiStream_exceptionThrownEagerly() {
+    assertThrows(
+        NumberFormatException.class,
+        () -> Stream.of("1", "b").collect(toBiStream(identity(), v -> Integer.parseInt(v))));
+    assertThrows(
+        NumberFormatException.class,
+        () -> Stream.of("1", "b").collect(toBiStream(v -> Both.of(v, Integer.parseInt(v)))));
+  }
+
   @Test public void testGroupingBy() {
     Map<Integer, List<Integer>> groups =
         Stream.of(0, 1, 2).collect(BiStream.groupingBy(n -> n / 2)).toMap();
@@ -1001,6 +1013,37 @@ public class BiStreamTest {
     assertThat(stream).containsExactly("null:1", "1:2", "2:3", "3:null").inOrder();
   }
 
+  @Test public void adjacentPairsFrom_empty() {
+    Stream<String> stream = adjacentPairsFrom().mapToObj(Joiner.on(':')::join);
+    assertThat(stream).isEmpty();
+  }
+
+  @Test public void adjacentPairsFrom_oneElement() {
+    Stream<String> stream = adjacentPairsFrom(1).mapToObj(Joiner.on(':')::join);
+    assertThat(stream).isEmpty();
+  }
+
+  @Test public void adjacentPairsFrom_twoElements() {
+    Stream<String> stream = adjacentPairsFrom(1, 2).mapToObj(Joiner.on(':')::join);
+    assertThat(stream).containsExactly("1:2").inOrder();
+  }
+
+  @Test public void adjacentPairsFrom_threeElements() {
+    Stream<String> stream = adjacentPairsFrom(1, 2, 3).mapToObj(Joiner.on(':')::join);
+    assertThat(stream).containsExactly("1:2", "2:3").inOrder();
+  }
+
+  @Test public void adjacentPairsFrom_fourElements() {
+    Stream<String> stream = adjacentPairsFrom(1, 2, 3, 4).mapToObj(Joiner.on(':')::join);
+    assertThat(stream).containsExactly("1:2", "2:3", "3:4").inOrder();
+  }
+
+  @Test public void adjacentPairs_nullPadding() {
+    Stream<String> stream =
+        adjacentPairsFrom(null, 1, 2, 3, null).mapToObj(Joiner.on(':')::join);
+    assertThat(stream).containsExactly("null:1", "1:2", "2:3", "3:null").inOrder();
+  }
+
   @Test public void testBuilder_cannotAddAfterBuild() {
     BiStream.Builder<String, String> builder = BiStream.builder();
     assertKeyValues(builder.build()).isEmpty();
@@ -1115,8 +1158,7 @@ public class BiStreamTest {
 
   static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
     Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K, V>>() {
-      @Override
-      public <E> Collector<E, ?, Multimap<K, V>> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
+      @Override public <E> Collector<E, ?, Multimap<K, V>> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
         return BiStreamTest.toLinkedListMultimap(toKey,toValue);
       }
     });

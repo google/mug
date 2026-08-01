@@ -45,11 +45,10 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
   }
 
   /**
-   * Returns a lazy stream for breadth-first traversal from {@code root}.
+   * Returns a lazy stream for breadth-first traversal from {@code roots}.
    * Empty stream is returned if {@code roots} is empty.
    */
-  @Override
-  public Stream<N> breadthFirstFrom(Iterable<? extends N> roots) {
+  @Override public Stream<N> breadthFirstFrom(Iterable<? extends N> roots) {
     return topDown(roots, Queue::add);
   }
 
@@ -62,7 +61,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
   }
 
   /**
-   * Returns a lazy stream for post-order traversal from {@code root}.
+   * Returns a lazy stream for post-order traversal from {@code roots}.
    * Empty stream is returned if {@code roots} is empty.
    *
    * <p>For small or medium sized in-memory trees, it's equivalent and more efficient to first
@@ -85,8 +84,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
    *           .collect(toListAndThen(Collections::reverse));
    * }</pre>
    */
-  @Override
-  public Stream<N> postOrderFrom(Iterable<? extends N> roots) {
+  @Override public Stream<N> postOrderFrom(Iterable<? extends N> roots) {
     return whileNotNull(new PostOrder(roots)::nextOrNull);
   }
 
@@ -150,7 +148,7 @@ public final class BinaryTreeWalker<N> extends Walker<N> {
       }
       return !leftPath.isEmpty();
     }
-  };
+  }
 
   private final class PostOrder {
     private final Queue<N> roots;

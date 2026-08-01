@@ -314,25 +314,21 @@ public class WalkerTest {
 
   private enum DataType {
     GRAPH {
-      @Override
-      <N> Walker<N> newWalker(Multimap<N, N> edges) {
+      @Override <N> Walker<N> newWalker(Multimap<N, N> edges) {
         Graph<N> graph = toUndirectedGraph(edges);
         return newWalker((N n) -> graph.adjacentNodes(n).stream().sorted());
       }
 
-      @Override
-      <N> Walker<N> newWalker(Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
+      @Override <N> Walker<N> newWalker(Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
         return Walker.inGraph(findSuccessors);
       }
     },
     TREE {
-      @Override
-      <N> Walker<N> newWalker(Multimap<N, N> edges) {
+      @Override <N> Walker<N> newWalker(Multimap<N, N> edges) {
         return newWalker((N n) -> edges.get(n).stream().sorted());
       }
 
-      @Override
-      <N> Walker<N> newWalker(Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
+      @Override <N> Walker<N> newWalker(Function<? super N, ? extends Stream<? extends N>> findSuccessors) {
         return Walker.inTree(findSuccessors);
       }
     },
