@@ -2674,15 +2674,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return expecting(symbolName, at, at);
     }
 
-    final <V> MatchResult.Failure<V> expecting(Object symbol, int at) {
-      return expecting(symbol, at, at);
+    final <V> MatchResult.Failure<V> expectingInternal(Object symbol, int at) {
+      return expectingInternal(symbol, at, at);
     }
 
     <V> MatchResult.Failure<V> expecting(String symbolName, int at, long frontier) {
       return failAt(at, frontier, "expecting <{name}>.", symbolName);
     }
 
-    <V> MatchResult.Failure<V> expecting(Object symbol, int at, long frontier) {
+    <V> MatchResult.Failure<V> expectingInternal(Object symbol, int at, long frontier) {
       return failAt(at, frontier, "expecting {name}.", symbol);
     }
 
@@ -2707,7 +2707,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return failAt(at, frontier, "expecting <{name}>, encountered: {snippet}", symbolName);
     }
 
-    @Override <V> MatchResult.Failure<V> expecting(Object symbol, int at, long frontier) {
+    @Override <V> MatchResult.Failure<V> expectingInternal(Object symbol, int at, long frontier) {
       return failAt(at, frontier, "expecting {name}, encountered: {snippet}", symbol);
     }
 
