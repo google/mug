@@ -17,6 +17,7 @@ import com.google.mu.util.CharPredicate;
 
 import java.util.stream.Collectors;
 import com.google.common.labs.parse.Parser;
+import com.google.common.labs.parse.Parsers;
 import com.google.mu.benchmarks.parsers.dotparse.JsonValue.*;
 
 /** Fully RFC 8259-compliant JSON parser built with dot-parse. */
@@ -47,8 +48,8 @@ public final class JsonParser {
   private static final Parser<JsonNumber> JSON_NUMBER = 
       literally(
           sequence(
-              anyOf(INTEGER, sequence(one('-'), INTEGER)),
-              sequence(one('.'), digits()).optional(),
+              one('-').optional(),
+              Parsers.UNSIGNED_DECIMAL,
               sequence(caseInsensitive("e"), one("[+-]").optional(), digits())
                   .optional()))
         .source()

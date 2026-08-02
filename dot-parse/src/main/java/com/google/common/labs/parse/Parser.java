@@ -492,9 +492,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * <p>You can also support unicode escaping:
    *
    * <pre>{@code
-   * Parser<String> unicodeEscaped = string("u")
-   *     .then(hexDigits(4))
-   *     .map(digits -> Character.toString(Integer.parseInt(digits, 16)));
+   * import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
+   *
+   * Parser<String> unicodeEscaped = string("u").then(BMP_CODE_UNIT);
    * quotedByWithEscapes('"', '"', unicodeEscaped.or(chars(1))).parse("foo\\uD83D");
    * }</pre>
    *
@@ -647,7 +647,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   @Deprecated
   public static Parser<Integer> bmpCodeUnit() {
-    return hexDigits(4).elidableMap(digits -> Integer.parseInt(digits, 16));
+    return Parsers.BMP_CODE_UNIT;
   }
 
   /**
@@ -2156,13 +2156,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return notEmpty().ignoreReturn().new OrEmpty(() -> null);
     }
 
-    private <B, R> Parser<R>.OrEmpty and(
-        Parser<B>.OrEmpty right, ElidableBiFunction<? super T, ? super B, R> combiner) {
+    private <B, R> Parser<R> and(
+        Parser<B> right, ElidableBiFunction<? super T, ? super B, R> combiner) {
       return sequence(this, right, combiner);
     }
 
-    private <B, R> Parser<R> and(
-        Parser<B> right, ElidableBiFunction<? super T, ? super B, R> combiner) {
+    private <B, R> Parser<R>.OrEmpty and(
+        Parser<B>.OrEmpty right, ElidableBiFunction<? super T, ? super B, R> combiner) {
       return sequence(this, right, combiner);
     }
   }
