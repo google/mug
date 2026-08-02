@@ -2019,7 +2019,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * empty list, but each element is guaranteed to be non-empty.
      */
     public Parser<List<T>>.OrEmpty delimitedBy(String delimiter) {
-      return delimitedBy(delimiter, toUnmodifiableList());
+      return this.delimitedBy(delimiter, toUnmodifiableList());
     }
 
     @Override public <S> Parser<S> then(Parser<S> suffix) {
@@ -2052,7 +2052,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * @since 9.5
      */
     @Override public OrEmpty optionallyFollowedBy(String suffix) {
-      return optionallyFollowedBy(string(suffix));
+      return this.optionallyFollowedBy(string(suffix));
     }
 
     /**
@@ -2061,7 +2061,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * @since 10.5
      */
     @Override public OrEmpty optionallyFollowedBy(Parser<?> suffix) {
-      return followedBy(suffix.new OrEmpty(() -> null));
+      return this.followedBy(suffix.new OrEmpty(() -> null));
     }
 
     /**
@@ -2072,7 +2072,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      */
     @Override public final OrEmpty optionallyFollowedBy(
         String suffix, Function<? super T, ? extends T> op) {
-      return withOptionalSuffix(string(suffix).thenReturn(op::apply));
+      return this.withOptionalSuffix(string(suffix).thenReturn(op::apply));
     }
 
     /**
@@ -2083,7 +2083,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      */
     @Override public final <S> OrEmpty optionallyFollowedBy(
         Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> op) {
-      return withOptionalSuffix(postfix(suffix, op));
+      return this.withOptionalSuffix(postfix(suffix, op));
     }
 
     private OrEmpty withOptionalSuffix(Parser<UnaryOperator<T>> suffix) {
@@ -2126,7 +2126,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * there's nothing to parse except skippable content, returns the default empty value.
      */
     @Override public T parseSkipping(CharPredicate charsToSkip, String input) {
-      return parseSkipping(consecutive(charsToSkip, "skipped"), input);
+      return this.parseSkipping(consecutive(charsToSkip, "skipped"), input);
     }
 
     /**
@@ -2220,7 +2220,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * tokens.
      */
     public Stream<T> parseToStream(String input) {
-      return parseToStream(input, 0);
+      return this.parseToStream(input, 0);
     }
 
     /**
@@ -2229,7 +2229,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      */
     public Stream<T> parseToStream(String input, int fromIndex) {
       checkPositionIndex(fromIndex, input.length(), "fromIndex");
-      return parseToStream(CharInput.from(input), fromIndex);
+      return this.parseToStream(CharInput.from(input), fromIndex);
     }
 
     /**
@@ -2241,7 +2241,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * <p>Characters are internally buffered, so you don't need to pass in {@code BufferedReader}.
      */
     public Stream<T> parseToStream(Reader input) {
-      return parseToStream(CharInput.from(input), 0);
+      return this.parseToStream(CharInput.from(input), 0);
     }
 
     Stream<T> parseToStream(CharInput input, int fromIndex) {
