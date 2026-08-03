@@ -266,12 +266,20 @@ public final class Parsers {
   public static final Parser<Integer> BMP_CODE_UNIT =
       Parser.hexDigits(4).elidableMap(digits -> Integer.parseInt(digits, 16));
 
-  /** Returns an equivalent parser that <em>internally</em> uses {@code spacing} between tokens. */
+  /**
+   * Returns an equivalent parser that <em>internally</em> uses {@code spacing} between tokens.
+   *
+   * @hidden
+   */
   public static <T> Parser<T> spacingMode(CharPredicate spacing, Parser<T> parser) {
     return parser.withSpacingMode(consecutive(spacing, "skipped").ignoreReturn());
   }
 
-  /** Returns an equivalent parser that <em>internally</em> uses {@code spacing} between tokens. */
+  /**
+   * Returns an equivalent parser that <em>internally</em> uses {@code spacing} between tokens.
+   *
+   * @hidden
+   */
   public static <T> Parser<T> spacingMode(Parser<?> spacing, Parser<T> parser) {
     return parser.withSpacingMode(spacing.atLeastOnce().ignoreReturn());
   }
