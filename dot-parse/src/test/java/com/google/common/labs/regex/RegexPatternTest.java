@@ -14,6 +14,7 @@ import com.google.common.labs.parse.Parser;
 import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.Group;
 import com.google.common.labs.regex.RegexPattern.Literal;
+import com.google.common.labs.regex.RegexPattern.ModifierFlag;
 import com.google.common.labs.regex.RegexPattern.PosixCharClass;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantified;
@@ -21,6 +22,7 @@ import com.google.common.labs.regex.RegexPattern.Quantifier;
 import com.google.common.labs.regex.RegexPattern.UnicodeProperty;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -534,17 +536,66 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.parse("a(?x: b c )d"))
         .isEqualTo(
             sequence(
-                new Literal("a"), new Group.NonCapturing(new Literal("bc")), new Literal("d")));
+                new Literal("a"),
+                new Group.NonCapturing(
+                    new Literal("bc"), List.of(ModifierFlag.COMMENTS), List.of()),
+                new Literal("d")));
   }
 
   @Test public void parse_nestedFreeSpacingMode_disabled() {
     assertThat(RegexPattern.parse("(?x)a(?-x: b c )d"))
         .isEqualTo(
             sequence(
-                new Literal("a"), new Group.NonCapturing(new Literal(" b c ")), new Literal("d")));
+                new Literal("a"),
+                new Group.NonCapturing(
+                    new Literal(" b c "), List.of(), List.of(ModifierFlag.COMMENTS)),
+                new Literal("d")));
   }
 
   @Test public void parse_nestedFreeSpacingMode_invalidFlags() {
     assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?z:a)"));
+  }
+
+  @Test public void parse_nestedModifierFlags_caseInsensitive() {
+    assertThat(RegexPattern.parse("a(?i:b)c"))
+        .isEqualTo(
+            sequence(
+                new Literal("a"),
+                new Group.NonCapturing(
+                    new Literal("b"), List.of(ModifierFlag.CASE_INSENSITIVE), List.of()),
+                new Literal("c")));
+  }
+
+  @Test public void parse_nestedModifierFlags_multiple() {
+    assertThat(RegexPattern.parse("a(?is-U:b)c"))
+        .isEqualTo(
+            sequence(
+                new Literal("a"),
+                new Group.NonCapturing(
+                    new Literal("b"), List.of(ModifierFlag.CASE_INSENSITIVE, ModifierFlag.DOTALL),
+                    List.of(ModifierFlag.UNICODE_CHARACTER_CLASS)),
+                new Literal("c")));
+  }
+
+  @Test public void parse_toString_preservesModifiers() {
+    assertThat(RegexPattern.parse("(?is-U:b)").toString()).isEqualTo("(?is-U:b)");
+    assertThat(RegexPattern.parse("(?:b)").toString()).isEqualTo("(?:b)");
+  }
+
+  @Test public void parse_nestedModifierFlags_contradictoryFlagsThrow() {
+    assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?x-x:a)"));
+    assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?i-i:a)"));
+    assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?is-s:a)"));
+  }
+
+  @Test public void parse_nestedModifierFlags_syntaxBoundaries() {
+    assertThat(RegexPattern.parse("(?ii:a)"))
+        .isEqualTo(
+            new Group.NonCapturing(
+                new Literal("a"),
+                List.of(ModifierFlag.CASE_INSENSITIVE, ModifierFlag.CASE_INSENSITIVE), List.of()));
+
+    assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?-:a)"));
+    assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?i-:a)"));
   }
 }

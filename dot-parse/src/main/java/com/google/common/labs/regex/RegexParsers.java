@@ -22,6 +22,7 @@ import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
+import static com.google.mu.collect.Selection.toSelection;
 import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
@@ -36,10 +37,16 @@ import com.google.common.labs.regex.RegexPattern.Group;
 import com.google.common.labs.regex.RegexPattern.Literal;
 import com.google.common.labs.regex.RegexPattern.LiteralChar;
 import com.google.common.labs.regex.RegexPattern.Lookaround;
+import com.google.common.labs.regex.RegexPattern.ModifierFlag;
 import com.google.common.labs.regex.RegexPattern.PosixCharClass;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
+import com.google.mu.collect.Selection;
+
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /** Parsers for {@link RegexPattern}. */
@@ -50,6 +57,9 @@ final class RegexParsers {
           PosixCharClass.values())
       .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
       .collect(Collectors::toUnmodifiableMap);
+  private static final Map<Character, ModifierFlag> CHAR_TO_MODIFIER_FLAG = stream(
+          ModifierFlag.values())
+      .collect(Collectors.toUnmodifiableMap(m -> m.toString().charAt(0), identity()));
   static final Parser<?> FREE_SPACES = anyOf(
       consecutive(Character::isWhitespace, "whitespace"),
       string("#").then(consecutive(c -> c != '\n', "comment").followedByOrEof(string("\n"))));
@@ -116,27 +126,37 @@ final class RegexParsers {
     Parser<Group.Named> named = word().between(string("?<").or(string("?P<")), string(">"))
         .flatMap(n -> content.map(c -> new Group.Named(n, c)))
         .between("(", ")");
-    Parser<Boolean> x = consecutive("[idmsuxU]").map(s -> s.contains("x"));
+    Parser<ModifierFlag> modifier = one("[idmsuxU]").map(CHAR_TO_MODIFIER_FLAG::get);
+    Parser<List<ModifierFlag>>.OrEmpty flagList = modifier.atLeastOnce().orElse(List.of());
+    Parser<List<ModifierFlag>>.OrEmpty disabledFlags =
+        string("-").then(modifier.atLeastOnce()).orElse(List.of());
     var modifierFlags = sequence(
-        x.orElse(false),
-        one('-').then(x).orElse(false),
+        flagList,
+        disabledFlags,
         (enabled, disabled) -> {
-          if (enabled && disabled) {
-            throw Parser.fail("cannot enable and disable x flag at the same time");
+          var intersection = enabled.stream().collect(toSelection())
+              .intersect(disabled.stream().collect(toSelection()));
+          if (!intersection.isEmpty()) {
+            throw Parser.fail(
+                "cannot enable and disable same flag(s) at the same time: " + intersection);
           }
+          boolean enabledX = enabled.contains(ModifierFlag.COMMENTS);
+          boolean disabledX = disabled.contains(ModifierFlag.COMMENTS);
           Parser<RegexPattern> result = content.followedBy(")");
-          if (enabled) return result.skipping(FREE_SPACES).within();
-          if (disabled) return literally(result);
-          return result;
+          if (enabledX) {
+            result = result.skipping(FREE_SPACES).within();
+          } else if (disabledX) {
+            result = literally(result);
+          }
+          return result.map(c -> new Group.NonCapturing(c, enabled, disabled));
         });
-    Parser<Group.NonCapturing> modifierGroup = literally(
-        modifierFlags.between("(?", ":").flatMap(identity()).map(Group.NonCapturing::new));
+    Parser<RegexPattern> modifierGroup =
+        literally(modifierFlags.between("(?", ":").flatMap(identity()));
     return anyOf(
         named, modifierGroup, content.between("(?=", ")").map(Lookaround.Lookahead::new),
         content.between("(?!", ")").map(Lookaround.NegativeLookahead::new),
         content.between("(?<=", ")").map(Lookaround.Lookbehind::new),
         content.between("(?<!", ")").map(Lookaround.NegativeLookbehind::new),
-        content.between("(?:", ")").map(Group.NonCapturing::new),
         content.between("(", ")").map(Group.Capturing::new));
   }
 }
