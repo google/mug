@@ -119,7 +119,7 @@ final class RegexParsers {
         sequence(word().between(anyOf("?<", "?P<"), string(">")), content, Group.Named::new)
             .between("(", ")");
     Parser<ModifierFlag> modifier = anyOf(ModifierFlag.values());
-    var withModifiers = sequence(
+    var flagModifiers = sequence(
         modifier.zeroOrMore(),
         string("-").then(modifier.atLeastOnce()).orElse(List.of()),
         (enabled, disabled) -> {
@@ -132,7 +132,7 @@ final class RegexParsers {
           return result.map(c -> new Group.NonCapturing(c, enabled, disabled));
         });
     Parser<RegexPattern> modifierGroup =
-        literally(string("(?").then(withModifiers)).flatMap(identity());
+        literally(string("(?").then(flagModifiers)).flatMap(identity());
     return anyOf(
         named,
         content.between("(?=", ")").map(Lookaround.Lookahead::new),
