@@ -52,9 +52,6 @@ final class RegexParsers {
           PosixCharClass.values())
       .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
       .collect(Collectors::toUnmodifiableMap);
-  private static final Map<Character, ModifierFlag> CHAR_TO_MODIFIER_FLAG = stream(
-          ModifierFlag.values())
-      .collect(Collectors.toUnmodifiableMap(m -> m.toString().charAt(0), identity()));
   static final Parser<?> FREE_SPACES = anyOf(
       consecutive(Character::isWhitespace, "whitespace"),
       string("#").then(consecutive(c -> c != '\n', "comment").followedByOrEof(string("\n"))));
@@ -121,17 +118,15 @@ final class RegexParsers {
     Parser<Group.Named> named =
         sequence(word().between(anyOf("?<", "?P<"), string(">")), content, Group.Named::new)
             .between("(", ")");
-    Parser<ModifierFlag> modifier = one("[idmsuxU]").map(CHAR_TO_MODIFIER_FLAG::get);
+    Parser<ModifierFlag> modifier = anyOf(ModifierFlag.values());
     var modifierFlags = sequence(
         modifier.zeroOrMore(),
         string("-").then(modifier.atLeastOnce()).orElse(List.of()),
         (enabled, disabled) -> {
-          boolean disabledX = disabled.contains(ModifierFlag.COMMENTS);
-          boolean enabledX = enabled.contains(ModifierFlag.COMMENTS);
           Parser<RegexPattern> result = content.followedBy(")");
-          if (disabledX) {
+          if (disabled.contains(ModifierFlag.COMMENTS)) {
             result = literally(result);
-          } else if (enabledX) {
+          } else if (enabled.contains(ModifierFlag.COMMENTS)) {
             result = result.skipping(FREE_SPACES).within();
           }
           return result.map(c -> new Group.NonCapturing(c, enabled, disabled));
