@@ -24,7 +24,6 @@ import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
-import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.stream;
@@ -41,7 +40,6 @@ import com.google.common.labs.regex.RegexPattern.Lookaround;
 import com.google.common.labs.regex.RegexPattern.PosixCharClass;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
-import com.google.mu.util.CharPredicate;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -53,8 +51,6 @@ final class RegexParsers {
           PosixCharClass.values())
       .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
       .collect(Collectors::toUnmodifiableMap);
-  private static final CharPredicate VALID_FLAGS =
-      CharPredicate.anyOf("idmsuxU").precomputeForAscii();
   static final Parser<?> FREE_SPACES = anyOf(
       consecutive(Character::isWhitespace, "whitespace"),
       string("#").then(consecutive(c -> c != '\n', "comment").followedByOrEof(string("\n"))));
@@ -121,23 +117,21 @@ final class RegexParsers {
     Parser<Group.Named> named = word().between(string("?<").or(string("?P<")), string(">"))
         .flatMap(n -> content.map(c -> new Group.Named(n, c)))
         .between("(", ")");
-    Parser<String> modifierFlags = consecutive(CharPredicate.anyOf("idmsuxU-"), "modifier flags");
+    Parser<Boolean> x = consecutive("[idmsuxU]").map(s -> s.contains("x"));
+    var modifierFlags = sequence(
+        x.orElse(false),
+        one('-').then(x).orElse(false),
+        (enabled, disabled) -> {
+          if (enabled && disabled) {
+            throw Parser.fail("cannot enable and disable x flag at the same time");
+          }
+          Parser<RegexPattern> result = content.followedBy(")");
+          if (enabled) return Parsers.spacingMode(FREE_SPACES, result);
+          if (disabled) return literally(result);
+          return result;
+        });
     Parser<Group.NonCapturing> modifierGroup = literally(
-        string("(?").then(modifierFlags)
-            .followedBy(":")
-            .suchThat(RegexParsers::isValidFlags, "valid flags")
-            .flatMap(flags -> {
-              Parser<RegexPattern> groupContent = content.followedBy(")");
-              int x = flags.indexOf('x');
-              if (x >= 0) {
-                int dash = flags.indexOf('-');
-                groupContent =
-                    dash >= 0 && x > dash
-                        ? literally(groupContent)
-                        : Parsers.spacingMode(FREE_SPACES, groupContent);
-              }
-              return groupContent.map(Group.NonCapturing::new);
-            }));
+        modifierFlags.between("(?", ":").flatMap(identity()).map(Group.NonCapturing::new));
     return anyOf(
         named, modifierGroup, content.between("(?=", ")").map(Lookaround.Lookahead::new),
         content.between("(?!", ")").map(Lookaround.NegativeLookahead::new),
@@ -145,13 +139,5 @@ final class RegexParsers {
         content.between("(?<!", ")").map(Lookaround.NegativeLookbehind::new),
         content.between("(?:", ")").map(Group.NonCapturing::new),
         content.between("(", ")").map(Group.Capturing::new));
-  }
-
-  private static boolean isValidFlags(String flags) {
-    return first('-').split(flags)
-        .map((on, off) ->
-            !off.isEmpty() && !off.contains("-") && VALID_FLAGS.matchesAllOf(on)
-                && VALID_FLAGS.matchesAllOf(off))
-        .orElseGet(() -> VALID_FLAGS.matchesAllOf(flags));
   }
 }
