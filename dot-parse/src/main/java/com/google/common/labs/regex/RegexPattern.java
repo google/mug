@@ -284,22 +284,22 @@ public sealed interface RegexPattern {
 
   /** Regex modifiers that can be enabled or disabled inline. */
   enum ModifierFlag {
-    CASE_INSENSITIVE('i'),
-    UNIX_LINES('d'),
-    MULTILINE('m'),
-    DOTALL('s'),
-    UNICODE_CASE('u'),
-    COMMENTS('x'),
-    UNICODE_CHARACTER_CLASS('U');
+    CASE_INSENSITIVE("i"),
+    UNIX_LINES("d"),
+    MULTILINE("m"),
+    DOTALL("s"),
+    UNICODE_CASE("u"),
+    COMMENTS("x"),
+    UNICODE_CHARACTER_CLASS("U");
 
-    private final char flagChar;
+    private final String shortName;
 
-    ModifierFlag(char flagChar) {
-      this.flagChar = flagChar;
+    ModifierFlag(String shortName) {
+      this.shortName = shortName;
     }
 
     @Override public String toString() {
-      return String.valueOf(flagChar);
+      return shortName;
     }
   }
 
