@@ -332,9 +332,6 @@ public sealed interface RegexPattern {
       }
 
       private String formatFlags() {
-        if (enabledModifierFlags.isEmpty() && disabledModifierFlags.isEmpty()) {
-          return "";
-        }
         String enabledStr = enabledModifierFlags.stream().map(Object::toString).collect(joining());
         if (disabledModifierFlags.isEmpty()) {
           return enabledStr;
