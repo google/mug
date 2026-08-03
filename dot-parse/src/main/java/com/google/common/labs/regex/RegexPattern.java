@@ -527,10 +527,21 @@ public sealed interface RegexPattern {
   /**
    * Parses the given regular expression string and returns its {@link RegexPattern} representation.
    *
+   * @deprecated use {@link #of} instead
+   */
+  @Deprecated
+  static RegexPattern parse(String regex) {
+    return of(regex);
+  }
+
+  /**
+   * Parses the given regular expression string and returns its {@link RegexPattern} representation.
+   *
    * @throws Parser.ParseException if the regex pattern is malformed
    * @throws IllegalArgumentException if the regex pattern is invalid
+   * @since 10.8
    */
-  static RegexPattern parse(String regex) {
+  static RegexPattern of(String regex) {
     Parser<RegexPattern>.OrEmpty parser = RegexParsers.pattern().orElse(new Literal(""));
     return after(prefix("(?x)"))
         .from(regex)
