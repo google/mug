@@ -58,8 +58,7 @@ final class RegexParsers {
           .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
           .collect(Collectors::toUnmodifiableMap);
   static final Parser<?> FREE_SPACES = anyOf(
-      consecutive(Character::isWhitespace, "whitespace"),
-      string("#").then(consecutive(c -> c != '\n', "comment").followedByOrEof(string("\n"))));
+      consecutive(Character::isWhitespace, "whitespace"), one('#').then(consecutive("[^\n]")));
 
   static Parser<RegexPattern> pattern() {
     return Parser.define(me -> {
@@ -120,7 +119,7 @@ final class RegexParsers {
         sequence(word().between(anyOf("?<", "?P<"), string(">")), content, Group.Named::new)
             .between("(", ")");
     Parser<ModifierFlag> modifier = anyOf(ModifierFlag.values());
-    var modifierFlags = sequence(
+    var withModifiers = sequence(
         modifier.zeroOrMore(),
         string("-").then(modifier.atLeastOnce()).orElse(List.of()),
         (enabled, disabled) -> {
@@ -133,14 +132,14 @@ final class RegexParsers {
           return result.map(c -> new Group.NonCapturing(c, enabled, disabled));
         });
     Parser<RegexPattern> modifierGroup =
-        literally(string("(?").then(modifierFlags)).flatMap(identity());
+        literally(string("(?").then(withModifiers)).flatMap(identity());
     return anyOf(
         named,
-        modifierGroup,
         content.between("(?=", ")").map(Lookaround.Lookahead::new),
         content.between("(?!", ")").map(Lookaround.NegativeLookahead::new),
         content.between("(?<=", ")").map(Lookaround.Lookbehind::new),
         content.between("(?<!", ")").map(Lookaround.NegativeLookbehind::new),
+        modifierGroup,
         content.between("(", ")").map(Group.Capturing::new));
   }
 }
