@@ -127,12 +127,9 @@ final class RegexParsers {
         .flatMap(n -> content.map(c -> new Group.Named(n, c)))
         .between("(", ")");
     Parser<ModifierFlag> modifier = one("[idmsuxU]").map(CHAR_TO_MODIFIER_FLAG::get);
-    Parser<List<ModifierFlag>>.OrEmpty flagList = modifier.atLeastOnce().orElse(List.of());
-    Parser<List<ModifierFlag>>.OrEmpty disabledFlags =
-        string("-").then(modifier.atLeastOnce()).orElse(List.of());
     var modifierFlags = sequence(
-        flagList,
-        disabledFlags,
+        modifier.zeroOrMore(),
+        string("-").then(modifier.atLeastOnce()).orElse(List.of()),
         (enabled, disabled) -> {
           var intersection = enabled.stream().collect(toSelection())
               .intersect(disabled.stream().collect(toSelection()));
