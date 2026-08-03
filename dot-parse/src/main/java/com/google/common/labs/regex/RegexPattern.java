@@ -42,7 +42,6 @@ import com.google.mu.util.CharPredicate;
  * <p>This AST is used to represent parsed regular expressions, as a basis to enable static analysis
  * of regexes.
  */
-// TODO(benyu): Add support for free-spacing mode (?x:...).
 public sealed interface RegexPattern {
   /** Returns a {@link Sequence} of the given elements. */
   @SafeVarargs

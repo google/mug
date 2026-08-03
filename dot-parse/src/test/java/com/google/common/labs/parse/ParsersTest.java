@@ -1,6 +1,7 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Parser.sequence;
+import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
@@ -482,5 +483,54 @@ public class ParsersTest {
                 0 . 1
                   ^
             """);
+  }
+
+  @Test public void spacingMode_charPredicate_internalSpacingSkipped() {
+    Parser<String> parser = Parsers.spacingMode(
+        Character::isWhitespace, sequence(string("a"), string("b"), (a, b) -> a + b));
+    assertThat(parser.parse("a  b")).isEqualTo("ab");
+  }
+
+  @Test public void spacingMode_charPredicate_leadingSpacingSkipped() {
+    Parser<String> parser = Parsers.spacingMode(
+        Character::isWhitespace, sequence(string("a"), string("b"), (a, b) -> a + b));
+    assertThat(parser.parse(" a b")).isEqualTo("ab");
+  }
+
+  @Test public void spacingMode_charPredicate_trailingSpacingNotSkipped() {
+    Parser<String> parser = Parsers.spacingMode(
+        Character::isWhitespace, sequence(string("a"), string("b"), (a, b) -> a + b));
+    assertThrows(ParseException.class, () -> parser.parse("a b "));
+  }
+
+  @Test public void spacingMode_parser_internalSpacingSkipped() {
+    Parser<String> parser =
+        Parsers.spacingMode(string(" "), sequence(string("a"), string("b"), (a, b) -> a + b));
+    assertThat(parser.parse("a   b")).isEqualTo("ab");
+  }
+
+  @Test public void spacingMode_parser_leadingSpacingSkipped() {
+    Parser<String> parser =
+        Parsers.spacingMode(string(" "), sequence(string("a"), string("b"), (a, b) -> a + b));
+    assertThat(parser.parse(" a b")).isEqualTo("ab");
+  }
+
+  @Test public void spacingMode_parser_trailingSpacingNotSkipped() {
+    Parser<String> parser =
+        Parsers.spacingMode(string(" "), sequence(string("a"), string("b"), (a, b) -> a + b));
+    assertThrows(ParseException.class, () -> parser.parse("a b "));
+  }
+
+  @Test public void spacingMode_outerSkipperNuance() {
+    Parser<?> innerSkip =
+        string("/*").then(Parser.consecutive(c -> c != '*', "comment")).followedBy("*/");
+    Parser<?> outerSkip = string("/*");
+
+    Parser<String> parser =
+        sequence(string("a"), Parsers.spacingMode(innerSkip, string("b")), (x, y) -> x + y);
+
+    ParseException thrown = assertThrows(
+        ParseException.class, () -> parser.skipping(outerSkip).parse("/*comment*/a b"));
+    assertThat(thrown).hasMessageThat().contains("expecting <a>");
   }
 }
