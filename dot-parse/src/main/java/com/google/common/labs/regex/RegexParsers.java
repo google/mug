@@ -22,6 +22,8 @@ import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
+import static com.google.common.labs.regex.RegexPattern.asAlternation;
+import static com.google.common.labs.regex.RegexPattern.inSequence;
 import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
@@ -32,6 +34,8 @@ import static java.util.function.UnaryOperator.identity;
 import com.google.common.labs.parse.Parser;
 import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.CharRange;
+import com.google.common.labs.regex.RegexPattern.CharacterProperty;
+import com.google.common.labs.regex.RegexPattern.CharacterSet;
 import com.google.common.labs.regex.RegexPattern.Group;
 import com.google.common.labs.regex.RegexPattern.Literal;
 import com.google.common.labs.regex.RegexPattern.LiteralChar;
@@ -40,6 +44,7 @@ import com.google.common.labs.regex.RegexPattern.ModifierFlag;
 import com.google.common.labs.regex.RegexPattern.PosixCharClass;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
+import com.google.common.labs.regex.RegexPattern.UnicodeProperty;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -48,10 +53,10 @@ import java.util.stream.Collectors;
 final class RegexParsers {
   private static final Parser<Character> ESCAPED_CHAR =
       literally(string("\\").then(one(ANY, "escaped char")));
-  private static final Map<String, RegexPattern.CharacterProperty> POSIX_CHAR_CLASS_MAP = stream(
-          PosixCharClass.values())
-      .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
-      .collect(Collectors::toUnmodifiableMap);
+  private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES =
+      stream(PosixCharClass.values())
+          .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
+          .collect(Collectors::toUnmodifiableMap);
   static final Parser<?> FREE_SPACES = anyOf(
       consecutive(Character::isWhitespace, "whitespace"),
       string("#").then(consecutive(c -> c != '\n', "comment").followedByOrEof(string("\n"))));
@@ -64,9 +69,9 @@ final class RegexParsers {
           consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
           consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
           ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))));
-      Parser<RegexPattern> sequence =
-          atomic.withPostfixes(quantifier()).atLeastOnce(RegexPattern.inSequence());
-      return sequence.atLeastOnceDelimitedBy("|", RegexPattern.asAlternation());
+      return atomic.withPostfixes(quantifier())
+          .atLeastOnce(inSequence())
+          .atLeastOnceDelimitedBy("|", asAlternation());
     });
   }
 
@@ -85,27 +90,23 @@ final class RegexParsers {
         .optionallyFollowedBy("+", Quantifier::possessive);
   }
 
-  private static Parser<RegexPattern.CharacterProperty> positiveCharacterProperty() {
+  private static Parser<CharacterProperty> positiveCharacterProperty() {
     return string("\\p").then(characterPropertySuffix());
   }
 
-  private static Parser<RegexPattern.CharacterProperty.Negated> negativeCharacterProperty() {
-    return string("\\P")
-        .then(characterPropertySuffix())
-        .map(RegexPattern.CharacterProperty::negated);
+  private static Parser<CharacterProperty.Negated> negativeCharacterProperty() {
+    return string("\\P").then(characterPropertySuffix()).map(CharacterProperty::negated);
   }
 
-  private static Parser<RegexPattern.CharacterProperty> characterPropertySuffix() {
+  private static Parser<CharacterProperty> characterPropertySuffix() {
     return word().between("{", "}")
-        .map(name ->
-            POSIX_CHAR_CLASS_MAP.getOrDefault(name, new RegexPattern.UnicodeProperty(name)));
+        .map(name -> POSIX_CHAR_CLASSES.getOrDefault(name, new UnicodeProperty(name)));
   }
 
-  private static Parser<RegexPattern.CharacterSet> charClass() {
+  private static Parser<CharacterSet> charClass() {
     Parser<Character> literalChar = anyOf(ESCAPED_CHAR, one("[^-]\\]"));
     Parser<Character> literalCharOrDash = anyOf(ESCAPED_CHAR, one("[^\\]]"));
-    Parser<CharRange> range =
-        sequence(literalChar, string("-").then(literalChar), RegexPattern.CharRange::new);
+    Parser<CharRange> range = sequence(literalChar, string("-").then(literalChar), CharRange::new);
     var element = anyOf(
         positiveCharacterProperty(), negativeCharacterProperty(),
         anyOf(PredefinedCharClass.values()), range, literalCharOrDash.map(LiteralChar::new));
@@ -123,7 +124,7 @@ final class RegexParsers {
         modifier.zeroOrMore(),
         string("-").then(modifier.atLeastOnce()).orElse(List.of()),
         (enabled, disabled) -> {
-          Parser<RegexPattern> result = content.followedBy(")");
+          Parser<RegexPattern> result = content.between(":", ")");
           if (disabled.contains(ModifierFlag.COMMENTS)) {
             result = literally(result);
           } else if (enabled.contains(ModifierFlag.COMMENTS)) {
@@ -132,9 +133,11 @@ final class RegexParsers {
           return result.map(c -> new Group.NonCapturing(c, enabled, disabled));
         });
     Parser<RegexPattern> modifierGroup =
-        literally(modifierFlags.between("(?", ":").flatMap(identity()));
+        literally(string("(?").then(modifierFlags)).flatMap(identity());
     return anyOf(
-        named, modifierGroup, content.between("(?=", ")").map(Lookaround.Lookahead::new),
+        named,
+        modifierGroup,
+        content.between("(?=", ")").map(Lookaround.Lookahead::new),
         content.between("(?!", ")").map(Lookaround.NegativeLookahead::new),
         content.between("(?<=", ")").map(Lookaround.Lookbehind::new),
         content.between("(?<!", ")").map(Lookaround.NegativeLookbehind::new),

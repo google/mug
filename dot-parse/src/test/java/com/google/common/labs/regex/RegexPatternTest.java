@@ -609,4 +609,23 @@ public final class RegexPatternTest {
     assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?-:a)"));
     assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?i-:a)"));
   }
+
+  @Test public void parse_nestedModifierFlags_inheritsFreeSpacing() {
+    assertThat(RegexPattern.parse("(?x) a (?i: b ) c"))
+        .isEqualTo(
+            sequence(
+                new Literal("a"),
+                new Group.NonCapturing(
+                    new Literal("b"), List.of(ModifierFlag.CASE_INSENSITIVE), List.of()),
+                new Literal("c")));
+  }
+
+  @Test public void parse_nestedModifierFlags_disabledCommentsPreservesLeadingSpace() {
+    assertThat(RegexPattern.parse("(?x)a(?-x: b)"))
+        .isEqualTo(
+            sequence(
+                new Literal("a"),
+                new Group.NonCapturing(
+                    new Literal(" b"), List.of(), List.of(ModifierFlag.COMMENTS))));
+  }
 }
