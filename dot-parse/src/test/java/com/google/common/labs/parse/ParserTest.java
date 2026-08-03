@@ -8293,4 +8293,56 @@ public class ParserTest {
                 ^
             """);
   }
+
+  @Test public void skipping_within_charPredicate_internalSpacingSkipped() {
+    Parser<String> parser = sequence(string("a"), string("b"), (a, b) -> a + b)
+        .skipping(Character::isWhitespace)
+        .within();
+    assertThat(parser.parse("a  b")).isEqualTo("ab");
+  }
+
+  @Test public void skipping_within_charPredicate_leadingSpacingSkipped() {
+    Parser<String> parser = sequence(string("a"), string("b"), (a, b) -> a + b)
+        .skipping(Character::isWhitespace)
+        .within();
+    assertThat(parser.parse(" a b")).isEqualTo("ab");
+  }
+
+  @Test public void skipping_within_charPredicate_trailingSpacingNotSkipped() {
+    Parser<String> parser = sequence(string("a"), string("b"), (a, b) -> a + b)
+        .skipping(Character::isWhitespace)
+        .within();
+    assertThrows(ParseException.class, () -> parser.parse("a b "));
+  }
+
+  @Test public void skipping_within_parser_internalSpacingSkipped() {
+    Parser<String> parser =
+        sequence(string("a"), string("b"), (a, b) -> a + b).skipping(string(" ")).within();
+    assertThat(parser.parse("a   b")).isEqualTo("ab");
+  }
+
+  @Test public void skipping_within_parser_leadingSpacingSkipped() {
+    Parser<String> parser =
+        sequence(string("a"), string("b"), (a, b) -> a + b).skipping(string(" ")).within();
+    assertThat(parser.parse(" a b")).isEqualTo("ab");
+  }
+
+  @Test public void skipping_within_parser_trailingSpacingNotSkipped() {
+    Parser<String> parser =
+        sequence(string("a"), string("b"), (a, b) -> a + b).skipping(string(" ")).within();
+    assertThrows(ParseException.class, () -> parser.parse("a b "));
+  }
+
+  @Test public void skipping_within_outerSkipperNuance() {
+    Parser<?> innerSkip =
+        string("/*").then(Parser.consecutive(c -> c != '*', "comment")).followedBy("*/");
+    Parser<?> outerSkip = string("/*");
+
+    Parser<String> parser =
+        sequence(string("a"), string("b").skipping(innerSkip).within(), (x, y) -> x + y);
+
+    ParseException thrown = assertThrows(
+        ParseException.class, () -> parser.skipping(outerSkip).parse("/*comment*/a b"));
+    assertThat(thrown).hasMessageThat().contains("expecting <a>");
+  }
 }

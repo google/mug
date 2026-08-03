@@ -9,7 +9,6 @@ import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.mu.util.stream.BiStream.adjacentPairsFrom;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
-import com.google.mu.util.CharPredicate;
 import com.google.mu.util.stream.Joiner;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -265,24 +264,6 @@ public final class Parsers {
    */
   public static final Parser<Integer> BMP_CODE_UNIT =
       Parser.hexDigits(4).elidableMap(digits -> Integer.parseInt(digits, 16));
-
-  /**
-   * Returns an equivalent parser that <em>internally</em> uses {@code spacing} between tokens.
-   *
-   * @hidden
-   */
-  public static <T> Parser<T> spacingMode(CharPredicate spacing, Parser<T> parser) {
-    return parser.withSpacingMode(consecutive(spacing, "skipped").ignoreReturn());
-  }
-
-  /**
-   * Returns an equivalent parser that <em>internally</em> uses {@code spacing} between tokens.
-   *
-   * @hidden
-   */
-  public static <T> Parser<T> spacingMode(Parser<?> spacing, Parser<T> parser) {
-    return parser.withSpacingMode(spacing.atLeastOnce().ignoreReturn());
-  }
 
   private Parsers() {}
 }

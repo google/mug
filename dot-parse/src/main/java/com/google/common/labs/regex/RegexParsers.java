@@ -30,7 +30,6 @@ import static java.util.Arrays.stream;
 import static java.util.function.UnaryOperator.identity;
 
 import com.google.common.labs.parse.Parser;
-import com.google.common.labs.parse.Parsers;
 import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.CharRange;
 import com.google.common.labs.regex.RegexPattern.Group;
@@ -126,7 +125,7 @@ final class RegexParsers {
             throw Parser.fail("cannot enable and disable x flag at the same time");
           }
           Parser<RegexPattern> result = content.followedBy(")");
-          if (enabled) return Parsers.spacingMode(FREE_SPACES, result);
+          if (enabled) return result.skipping(FREE_SPACES).within();
           if (disabled) return literally(result);
           return result;
         });

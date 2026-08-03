@@ -1692,20 +1692,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return literally(rule.notEmpty()).new OrEmpty(rule::computeDefaultValue);
   }
 
-  final Parser<T> withSpacingMode(Parser<?> spacing) {
-    return new SamePrefix<T>() {
-      @Override MatchResult<T> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        return left().skipAndMatch(spacing, input, start, context);
-      }
-
-      @Override Parser<?> ignoreReturn() {
-        return left().ignoreReturn().withSpacingMode(spacing);
-      }
-    };
-  }
-
   /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
   public final Lexical skipping(Parser<?> skip) {
     return new Lexical(skip.ignoreReturn().atLeastOnce(toNull()));
@@ -2307,6 +2293,26 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      */
     public Stream<T> probe(Reader input) {
       return forTokens().probe(input);
+    }
+
+    /**
+     * Returns a parser that skips between tokens <em>within</em> the matched range.
+     *
+     * @hidden
+     * @since 10.8
+     */
+    public final Parser<T> within() {
+      return new SamePrefix<T>() {
+        @Override MatchResult<T> skipAndMatch(
+            Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          start = skipIfAny(skip, input, start);
+          return left().skipAndMatch(toSkip, input, start, context);
+        }
+
+        @Override Parser<?> ignoreReturn() {
+          return Lexical.this.ignoreReturn().within();
+        }
+      };
     }
 
     private Parser<T> forTokens() {
