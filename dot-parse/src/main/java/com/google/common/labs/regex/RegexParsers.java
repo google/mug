@@ -131,15 +131,13 @@ final class RegexParsers {
           }
           return result.map(c -> new Group.NonCapturing(c, enabled, disabled));
         });
-    Parser<RegexPattern> modifierGroup =
-        literally(string("(?").then(modifierFlags)).flatMap(identity());
     return anyOf(
         named,
         content.between("(?=", ")").map(Lookaround.Lookahead::new),
         content.between("(?!", ")").map(Lookaround.NegativeLookahead::new),
         content.between("(?<=", ")").map(Lookaround.Lookbehind::new),
         content.between("(?<!", ")").map(Lookaround.NegativeLookbehind::new),
-        modifierGroup,
+        literally(string("(?").then(modifierFlags)).flatMap(identity()),
         content.between("(", ")").map(Group.Capturing::new));
   }
 }
