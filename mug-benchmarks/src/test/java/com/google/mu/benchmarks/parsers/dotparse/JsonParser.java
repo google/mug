@@ -41,9 +41,6 @@ public final class JsonParser {
 
   private static final Parser<JsonString> JSON_STRING =
       quotedByWithEscapes('"', '"', ESCAPED).map(JsonString::new);
-  
-  private static final Parser<?> INTEGER =
-      anyOf(one('0'), sequence(one("[1-9]"), zeroOrMore("[0-9]")));
 
   private static final Parser<JsonNumber> JSON_NUMBER = 
       literally(
