@@ -22,7 +22,6 @@ import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
-import static com.google.mu.collect.Selection.toSelection;
 import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
@@ -41,12 +40,8 @@ import com.google.common.labs.regex.RegexPattern.ModifierFlag;
 import com.google.common.labs.regex.RegexPattern.PosixCharClass;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
-import com.google.mu.collect.Selection;
-
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /** Parsers for {@link RegexPattern}. */
@@ -123,27 +118,21 @@ final class RegexParsers {
   }
 
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {
-    Parser<Group.Named> named = word().between(string("?<").or(string("?P<")), string(">"))
-        .flatMap(n -> content.map(c -> new Group.Named(n, c)))
-        .between("(", ")");
+    Parser<Group.Named> named =
+        sequence(word().between(anyOf("?<", "?P<"), string(">")), content, Group.Named::new)
+            .between("(", ")");
     Parser<ModifierFlag> modifier = one("[idmsuxU]").map(CHAR_TO_MODIFIER_FLAG::get);
     var modifierFlags = sequence(
         modifier.zeroOrMore(),
         string("-").then(modifier.atLeastOnce()).orElse(List.of()),
         (enabled, disabled) -> {
-          var intersection = enabled.stream().collect(toSelection())
-              .intersect(disabled.stream().collect(toSelection()));
-          if (!intersection.isEmpty()) {
-            throw Parser.fail(
-                "cannot enable and disable same flag(s) at the same time: " + intersection);
-          }
-          boolean enabledX = enabled.contains(ModifierFlag.COMMENTS);
           boolean disabledX = disabled.contains(ModifierFlag.COMMENTS);
+          boolean enabledX = enabled.contains(ModifierFlag.COMMENTS);
           Parser<RegexPattern> result = content.followedBy(")");
-          if (enabledX) {
-            result = result.skipping(FREE_SPACES).within();
-          } else if (disabledX) {
+          if (disabledX) {
             result = literally(result);
+          } else if (enabledX) {
+            result = result.skipping(FREE_SPACES).within();
           }
           return result.map(c -> new Group.NonCapturing(c, enabled, disabled));
         });

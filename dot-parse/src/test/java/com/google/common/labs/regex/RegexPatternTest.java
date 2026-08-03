@@ -582,10 +582,21 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.parse("(?:b)").toString()).isEqualTo("(?:b)");
   }
 
-  @Test public void parse_nestedModifierFlags_contradictoryFlagsThrow() {
-    assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?x-x:a)"));
-    assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?i-i:a)"));
-    assertThrows(Parser.ParseException.class, () -> RegexPattern.parse("(?is-s:a)"));
+  @Test public void parse_nestedModifierFlags_contradictoryFlagsResolved() {
+    assertThat(RegexPattern.parse("(?x-x:a)"))
+        .isEqualTo(
+            new Group.NonCapturing(
+                new Literal("a"), List.of(ModifierFlag.COMMENTS), List.of(ModifierFlag.COMMENTS)));
+    assertThat(RegexPattern.parse("(?i-i:a)"))
+        .isEqualTo(
+            new Group.NonCapturing(
+                new Literal("a"), List.of(ModifierFlag.CASE_INSENSITIVE),
+                List.of(ModifierFlag.CASE_INSENSITIVE)));
+    assertThat(RegexPattern.parse("(?is-s:a)"))
+        .isEqualTo(
+            new Group.NonCapturing(
+                new Literal("a"), List.of(ModifierFlag.CASE_INSENSITIVE, ModifierFlag.DOTALL),
+                List.of(ModifierFlag.DOTALL)));
   }
 
   @Test public void parse_nestedModifierFlags_syntaxBoundaries() {
