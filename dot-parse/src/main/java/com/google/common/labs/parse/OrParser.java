@@ -68,7 +68,7 @@ final class OrParser<T> extends Parser<T> {
     if (pruneTree != null) {
       candidates = pruneTree.pruneByPrefix(input, start);
       if (candidates.isEmpty()) {
-        return context.expecting(this, start);
+        return context.expectingInternal(this, start);
       }
     }
     MatchResult.Failure<T> farthestFailure = null;
@@ -82,7 +82,7 @@ final class OrParser<T> extends Parser<T> {
         return result;
       }
     }
-    return farthestFailure.frontier() == start ? context.expecting(this, start) : farthestFailure;
+    return farthestFailure.frontier() == start ? context.expectingInternal(this, start) : farthestFailure;
   }
 
   @Override Set<String> computePrefixes() {

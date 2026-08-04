@@ -24,6 +24,8 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
+import com.google.common.labs.parse.Parser;
+import com.google.mu.util.CharPredicate;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -32,24 +34,18 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
-import com.google.common.labs.parse.Parser;
-import com.google.mu.util.CharPredicate;
-
-
 /**
  * Defines the Abstract Syntax Tree (AST) for a regular expression.
  *
  * <p>This AST is used to represent parsed regular expressions, as a basis to enable static analysis
  * of regexes.
  */
-// TODO(benyu): Add support for free-spacing mode (?x:...).
 public sealed interface RegexPattern {
   /** Returns a {@link Sequence} of the given elements. */
   @SafeVarargs
   static Sequence sequence(RegexPattern... elements) {
     return new Sequence(Arrays.stream(elements).collect(toUnmodifiableList()));
   }
-
 
   /**
    * A collector that collects the input {@code RegexPattern} as a sequence. Nested sequences are
@@ -60,13 +56,12 @@ public sealed interface RegexPattern {
         toList(),
         list -> {
           // First flatten the nested Sequence elements
-          var flattened =
-              list.stream()
-                  .flatMap(p -> p instanceof Sequence seq ? seq.elements().stream() : Stream.of(p));
+          var flattened = list.stream()
+              .flatMap(p -> p instanceof Sequence seq ? seq.elements().stream() : Stream.of(p));
           // Then merge adjacent literals
-          List<RegexPattern> segments =
-              mergeConsecutive(flattened, Literal.class, (a, b) -> new Literal(a.value() + b.value()))
-                  .collect(toUnmodifiableList());
+          List<RegexPattern> segments = mergeConsecutive(
+                  flattened, Literal.class, (a, b) -> new Literal(a.value() + b.value()))
+              .collect(toUnmodifiableList());
           // Wrap in sequence if needed.
           return segments.size() == 1 ? segments.get(0) : new Sequence(segments);
         });
@@ -163,8 +158,7 @@ public sealed interface RegexPattern {
   /** Represents a regex pattern that is modified by a quantifier. */
   record Quantified(RegexPattern element, Quantifier quantifier) implements RegexPattern {
     @Override public String toString() {
-      return element instanceof Sequence
-              || element instanceof Alternation
+      return element instanceof Sequence || element instanceof Alternation
               || element instanceof Quantified
           ? "(?:" + element + ")" + quantifier
           : element.toString() + quantifier;
@@ -174,11 +168,8 @@ public sealed interface RegexPattern {
   /** Base interface for all quantifier types. */
   sealed interface Quantifier extends UnaryOperator<RegexPattern> {
     boolean isReluctant();
-
     boolean isPossessive();
-
     Quantifier reluctant();
-
     Quantifier possessive();
 
     @Override default Quantified apply(RegexPattern pattern) {
@@ -268,7 +259,8 @@ public sealed interface RegexPattern {
    * Represents a quantifier with both minimum and maximum bounds, like {@code {n}} or {@code
    * {min,max}}.
    */
-  record Limited(int min, int max, boolean isReluctant, boolean isPossessive) implements Quantifier {
+  record Limited(int min, int max, boolean isReluctant, boolean isPossessive)
+      implements Quantifier {
     @Override public Limited reluctant() {
       return new Limited(min, max, true, isPossessive);
     }
@@ -290,6 +282,27 @@ public sealed interface RegexPattern {
     }
   }
 
+  /** Regex modifiers that can be enabled or disabled inline. */
+  enum ModifierFlag {
+    CASE_INSENSITIVE("i"),
+    UNIX_LINES("d"),
+    MULTILINE("m"),
+    DOTALL("s"),
+    UNICODE_CASE("u"),
+    COMMENTS("x"),
+    UNICODE_CHARACTER_CLASS("U");
+
+    private final String shortName;
+
+    ModifierFlag(String shortName) {
+      this.shortName = shortName;
+    }
+
+    @Override public String toString() {
+      return shortName;
+    }
+  }
+
   /** Represents a grouping construct in a regex. */
   sealed interface Group extends RegexPattern {
 
@@ -301,9 +314,31 @@ public sealed interface RegexPattern {
     }
 
     /** A non-capturing group, like {@code (?:a)}. */
-    record NonCapturing(RegexPattern content) implements Group {
+    record NonCapturing(
+        RegexPattern content, List<ModifierFlag> enabledModifierFlags,
+        List<ModifierFlag> disabledModifierFlags)
+        implements Group {
+      public NonCapturing {
+        enabledModifierFlags = List.copyOf(enabledModifierFlags);
+        disabledModifierFlags = List.copyOf(disabledModifierFlags);
+      }
+
+      public NonCapturing(RegexPattern content) {
+        this(content, List.of(), List.of());
+      }
+
       @Override public String toString() {
-        return "(?:" + content + ")";
+        return "(?" + formatFlags() + ":" + content + ")";
+      }
+
+      private String formatFlags() {
+        String enabledStr = enabledModifierFlags.stream().map(Object::toString).collect(joining());
+        if (disabledModifierFlags.isEmpty()) {
+          return enabledStr;
+        }
+        String disabledStr =
+            disabledModifierFlags.stream().map(Object::toString).collect(joining());
+        return enabledStr + "-" + disabledStr;
       }
     }
 
@@ -490,7 +525,10 @@ public sealed interface RegexPattern {
     }
   }
 
-  /** Represents a lookaround assertion: {@code (?=...)}, {@code (?!...)}, {@code (?<=...)}, {@code (?<!...)}. */
+  /**
+   * Represents a lookaround assertion: {@code (?=...)}, {@code (?!...)}, {@code (?<=...)}, {@code
+   * (?<!...)}.
+   */
   sealed interface Lookaround extends RegexPattern {
 
     /** Returns the AST node representing the pattern inside the lookaround. */
@@ -528,10 +566,21 @@ public sealed interface RegexPattern {
   /**
    * Parses the given regular expression string and returns its {@link RegexPattern} representation.
    *
+   * @deprecated use {@link #of} instead
+   */
+  @Deprecated
+  static RegexPattern parse(String regex) {
+    return of(regex);
+  }
+
+  /**
+   * Parses the given regular expression string and returns its {@link RegexPattern} representation.
+   *
    * @throws Parser.ParseException if the regex pattern is malformed
    * @throws IllegalArgumentException if the regex pattern is invalid
+   * @since 10.8
    */
-  static RegexPattern parse(String regex) {
+  static RegexPattern of(String regex) {
     Parser<RegexPattern>.OrEmpty parser = RegexParsers.pattern().orElse(new Literal(""));
     return after(prefix("(?x)"))
         .from(regex)

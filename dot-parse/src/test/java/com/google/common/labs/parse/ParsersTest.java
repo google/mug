@@ -108,7 +108,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:2: expecting <one of [d, h, m, ms, ns, s, us, w]>, encountered:\s
+            at 1:2: expecting one of [d, h, m, ms, ns, s, us, w], encountered:\s
                 1 s
                  ^
             """);

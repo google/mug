@@ -655,7 +655,7 @@ public sealed interface CelExpr {
   record FunctionCall(Ident function, List<CelExpr> args, int sourceIndex) implements CelExpr {
     public FunctionCall {
       requireNonNull(function);
-      requireNonNull(args);
+      args = List.copyOf(args);
     }
 
     public FunctionCall(Ident function, List<CelExpr> args) {
@@ -677,7 +677,7 @@ public sealed interface CelExpr {
     public MemberCall {
       requireNonNull(target);
       requireNonNull(member);
-      requireNonNull(args);
+      args = List.copyOf(args);
     }
 
     public MemberCall(CelExpr target, Ident member, List<CelExpr> args) {
@@ -689,10 +689,7 @@ public sealed interface CelExpr {
     }
 
     @Override public String toString() {
-      return "("
-          + target
-          + ")."
-          + member.name()
+      return "(" + target + ")." + member.name()
           + args.stream().collect(Joiner.on(", ").between('(', ')'));
     }
   }
@@ -700,7 +697,7 @@ public sealed interface CelExpr {
   /** List creation, such as {@code [1, ?optional_var]}. */
   record ListOf(List<Element> elements, int sourceIndex) implements CelExpr {
     public ListOf {
-      requireNonNull(elements);
+      elements = List.copyOf(elements);
     }
 
     @Override public ListOf withSourceIndex(int index) {
@@ -715,7 +712,7 @@ public sealed interface CelExpr {
   /** Map creation, such as {@code {"key": value, ? "opt_key": value}}. */
   record MapOf(List<KeyedBy<CelExpr>> entries, int sourceIndex) implements CelExpr {
     public MapOf {
-      requireNonNull(entries);
+      entries = List.copyOf(entries);
     }
 
     @Override public MapOf withSourceIndex(int index) {
@@ -731,7 +728,7 @@ public sealed interface CelExpr {
   record Struct(String typeName, List<KeyedBy<Ident>> fields, int sourceIndex) implements CelExpr {
     public Struct {
       requireNonNull(typeName);
-      requireNonNull(fields);
+      fields = List.copyOf(fields);
     }
 
     public Struct(String typeName, List<KeyedBy<Ident>> fields) {
@@ -934,15 +931,14 @@ public sealed interface CelExpr {
 
   private static String escapeString(String s) {
     return s.codePoints()
-        .mapToObj(
-            c -> switch (c) {
-              case '\\' -> "\\\\";
-              case '"' -> "\\\"";
-              case '\n' -> "\\n";
-              case '\r' -> "\\r";
-              case '\t' -> "\\t";
-              default -> Character.toString(c);
-            })
+        .mapToObj(c -> switch (c) {
+          case '\\' -> "\\\\";
+          case '"' -> "\\\"";
+          case '\n' -> "\\n";
+          case '\r' -> "\\r";
+          case '\t' -> "\\t";
+          default -> Character.toString(c);
+        })
         .collect(Joiner.on("").between('"', '"'));
   }
 
