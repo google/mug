@@ -69,6 +69,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
 <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
 <ol class="toc-list">
+<li><a href="#%3Cinit%3E(com.google.common.labs.regex.RegexPattern,java.util.List,java.util.List)" tabindex="0">NonCapturing(RegexPattern, List, List)</a></li>
 <li><a href="#%3Cinit%3E(com.google.common.labs.regex.RegexPattern)" tabindex="0">NonCapturing(RegexPattern)</a></li>
 </ol>
 </li>
@@ -78,6 +79,8 @@ loadScripts(document, 'script');</script>
 <li><a href="#hashCode()" tabindex="0">hashCode()</a></li>
 <li><a href="#equals(java.lang.Object)" tabindex="0">equals(Object)</a></li>
 <li><a href="#content()" tabindex="0">content()</a></li>
+<li><a href="#enabledModifierFlags()" tabindex="0">enabledModifierFlags()</a></li>
+<li><a href="#disabledModifierFlags()" tabindex="0">disabledModifierFlags()</a></li>
 </ol>
 </li>
 </ol>
@@ -103,7 +106,7 @@ loadScripts(document, 'script');</script>
 </dl>
 <hr>
 <div class="horizontal-scroll">
-<div class="type-signature"><span class="modifiers">public static record </span><span class="element-name type-name-label">RegexPattern.Group.NonCapturing</span>(<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>&nbsp;content)
+<div class="type-signature"><span class="modifiers">public static record </span><span class="element-name type-name-label">RegexPattern.Group.NonCapturing</span>(<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>&nbsp;content, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="RegexPattern.ModifierFlag.html" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a>&gt;&nbsp;enabledModifierFlags, <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="RegexPattern.ModifierFlag.html" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a>&gt;&nbsp;disabledModifierFlags)
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a>
 implements <a href="RegexPattern.Group.html" title="interface in com.google.common.labs.regex">RegexPattern.Group</a></span></div>
 <div class="block">A non-capturing group, like <code>(?:a)</code>.</div>
@@ -117,7 +120,7 @@ implements <a href="RegexPattern.Group.html" title="interface in com.google.comm
 <h2>Nested Class Summary</h2>
 <div class="inherited-list">
 <h3 id="nested-classes-inherited-from-class-com.google.common.labs.regex.RegexPattern">Nested classes/interfaces inherited from interface&nbsp;com.google.common.labs.regex.<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></h3>
-<code><a href="RegexPattern.Alternation.html" title="class in com.google.common.labs.regex">RegexPattern.Alternation</a>, <a href="RegexPattern.Anchor.html" title="enum class in com.google.common.labs.regex">RegexPattern.Anchor</a>, <a href="RegexPattern.AtLeast.html" title="class in com.google.common.labs.regex">RegexPattern.AtLeast</a>, <a href="RegexPattern.AtMost.html" title="class in com.google.common.labs.regex">RegexPattern.AtMost</a>, <a href="RegexPattern.CharacterProperty.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterProperty</a>, <a href="RegexPattern.CharacterSet.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterSet</a>, <a href="RegexPattern.CharRange.html" title="class in com.google.common.labs.regex">RegexPattern.CharRange</a>, <a href="RegexPattern.CharSetElement.html" title="interface in com.google.common.labs.regex">RegexPattern.CharSetElement</a>, <a href="RegexPattern.Group.html" title="interface in com.google.common.labs.regex">RegexPattern.Group</a>, <a href="RegexPattern.Limited.html" title="class in com.google.common.labs.regex">RegexPattern.Limited</a>, <a href="RegexPattern.Literal.html" title="class in com.google.common.labs.regex">RegexPattern.Literal</a>, <a href="RegexPattern.LiteralChar.html" title="class in com.google.common.labs.regex">RegexPattern.LiteralChar</a>, <a href="RegexPattern.Lookaround.html" title="interface in com.google.common.labs.regex">RegexPattern.Lookaround</a>, <a href="RegexPattern.PosixCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PosixCharClass</a>, <a href="RegexPattern.PredefinedCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PredefinedCharClass</a>, <a href="RegexPattern.Quantified.html" title="class in com.google.common.labs.regex">RegexPattern.Quantified</a>, <a href="RegexPattern.Quantifier.html" title="interface in com.google.common.labs.regex">RegexPattern.Quantifier</a>, <a href="RegexPattern.Sequence.html" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a>, <a href="RegexPattern.UnicodeProperty.html" title="class in com.google.common.labs.regex">RegexPattern.UnicodeProperty</a></code></div>
+<code><a href="RegexPattern.Alternation.html" title="class in com.google.common.labs.regex">RegexPattern.Alternation</a>, <a href="RegexPattern.Anchor.html" title="enum class in com.google.common.labs.regex">RegexPattern.Anchor</a>, <a href="RegexPattern.AtLeast.html" title="class in com.google.common.labs.regex">RegexPattern.AtLeast</a>, <a href="RegexPattern.AtMost.html" title="class in com.google.common.labs.regex">RegexPattern.AtMost</a>, <a href="RegexPattern.CharacterProperty.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterProperty</a>, <a href="RegexPattern.CharacterSet.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterSet</a>, <a href="RegexPattern.CharRange.html" title="class in com.google.common.labs.regex">RegexPattern.CharRange</a>, <a href="RegexPattern.CharSetElement.html" title="interface in com.google.common.labs.regex">RegexPattern.CharSetElement</a>, <a href="RegexPattern.Group.html" title="interface in com.google.common.labs.regex">RegexPattern.Group</a>, <a href="RegexPattern.Limited.html" title="class in com.google.common.labs.regex">RegexPattern.Limited</a>, <a href="RegexPattern.Literal.html" title="class in com.google.common.labs.regex">RegexPattern.Literal</a>, <a href="RegexPattern.LiteralChar.html" title="class in com.google.common.labs.regex">RegexPattern.LiteralChar</a>, <a href="RegexPattern.Lookaround.html" title="interface in com.google.common.labs.regex">RegexPattern.Lookaround</a>, <a href="RegexPattern.ModifierFlag.html" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a>, <a href="RegexPattern.PosixCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PosixCharClass</a>, <a href="RegexPattern.PredefinedCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PredefinedCharClass</a>, <a href="RegexPattern.Quantified.html" title="class in com.google.common.labs.regex">RegexPattern.Quantified</a>, <a href="RegexPattern.Quantifier.html" title="interface in com.google.common.labs.regex">RegexPattern.Quantifier</a>, <a href="RegexPattern.Sequence.html" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a>, <a href="RegexPattern.UnicodeProperty.html" title="class in com.google.common.labs.regex">RegexPattern.UnicodeProperty</a></code></div>
 <div class="inherited-list">
 <h3 id="nested-classes-inherited-from-class-com.google.common.labs.regex.RegexPattern.Group">Nested classes/interfaces inherited from interface&nbsp;com.google.common.labs.regex.<a href="RegexPattern.Group.html" title="interface in com.google.common.labs.regex">RegexPattern.Group</a></h3>
 <code><a href="RegexPattern.Group.Capturing.html" title="class in com.google.common.labs.regex">RegexPattern.Group.Capturing</a>, <a href="RegexPattern.Group.Named.html" title="class in com.google.common.labs.regex">RegexPattern.Group.Named</a>, <a href="RegexPattern.Group.NonCapturing.html" title="class in com.google.common.labs.regex">RegexPattern.Group.NonCapturing</a></code></div>
@@ -132,7 +135,11 @@ implements <a href="RegexPattern.Group.html" title="interface in com.google.comm
 <div class="table-header col-first">Constructor</div>
 <div class="table-header col-last">Description</div>
 <div class="col-constructor-name even-row-color"><code><a href="#%3Cinit%3E(com.google.common.labs.regex.RegexPattern)" class="member-name-link">NonCapturing</a><wbr>(<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>&nbsp;content)</code></div>
-<div class="col-last even-row-color">
+<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-constructor-name odd-row-color"><code><a href="#%3Cinit%3E(com.google.common.labs.regex.RegexPattern,java.util.List,java.util.List)" class="member-name-link">NonCapturing</a><wbr>(<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>&nbsp;content,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="RegexPattern.ModifierFlag.html" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a>&gt;&nbsp;enabledModifierFlags,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="RegexPattern.ModifierFlag.html" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a>&gt;&nbsp;disabledModifierFlags)</code></div>
+<div class="col-last odd-row-color">
 <div class="block">Creates an instance of a <code>NonCapturing</code> record class.</div>
 </div>
 </div>
@@ -153,6 +160,16 @@ implements <a href="RegexPattern.Group.html" title="interface in com.google.comm
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#content()" class="member-name-link">content</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns the value of the <code>content</code> record component.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a><wbr>&lt;<a href="RegexPattern.ModifierFlag.html" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#disabledModifierFlags()" class="member-name-link">disabledModifierFlags</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Returns the value of the <code>disabledModifierFlags</code> record component.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a><wbr>&lt;<a href="RegexPattern.ModifierFlag.html" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#enabledModifierFlags()" class="member-name-link">enabledModifierFlags</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Returns the value of the <code>enabledModifierFlags</code> record component.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final boolean</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#equals(java.lang.Object)" class="member-name-link">equals</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;o)</code></div>
@@ -190,15 +207,27 @@ implements <a href="RegexPattern.Group.html" title="interface in com.google.comm
 <h2>Constructor Details</h2>
 <ul class="member-list">
 <li>
-<section class="detail" id="&lt;init&gt;(com.google.common.labs.regex.RegexPattern)">
+<section class="detail" id="&lt;init&gt;(com.google.common.labs.regex.RegexPattern,java.util.List,java.util.List)">
 <h3>NonCapturing</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">NonCapturing</span><wbr><span class="parameters">(<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>&nbsp;content)</span></div>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">NonCapturing</span><wbr><span class="parameters">(<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>&nbsp;content,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="RegexPattern.ModifierFlag.html" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a>&gt;&nbsp;enabledModifierFlags,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="RegexPattern.ModifierFlag.html" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a>&gt;&nbsp;disabledModifierFlags)</span></div>
 <div class="block">Creates an instance of a <code>NonCapturing</code> record class.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>content</code> - the value for the <code>content</code> record component</dd>
+<dd><code>enabledModifierFlags</code> - the value for the <code>enabledModifierFlags</code> record component</dd>
+<dd><code>disabledModifierFlags</code> - the value for the <code>disabledModifierFlags</code> record component</dd>
 </dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="&lt;init&gt;(com.google.common.labs.regex.RegexPattern)">
+<h3>NonCapturing</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">NonCapturing</span><wbr><span class="parameters">(<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>&nbsp;content)</span></div>
 </div>
 </section>
 </li>
@@ -266,6 +295,32 @@ implements <a href="RegexPattern.Group.html" title="interface in com.google.comm
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>the value of the <code>content</code> record component</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="enabledModifierFlags()">
+<h3>enabledModifierFlags</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="RegexPattern.ModifierFlag.html" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a>&gt;</span>&nbsp;<span class="element-name">enabledModifierFlags</span>()</div>
+<div class="block">Returns the value of the <code>enabledModifierFlags</code> record component.</div>
+<dl class="notes">
+<dt>Returns:</dt>
+<dd>the value of the <code>enabledModifierFlags</code> record component</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="disabledModifierFlags()">
+<h3>disabledModifierFlags</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="RegexPattern.ModifierFlag.html" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a>&gt;</span>&nbsp;<span class="element-name">disabledModifierFlags</span>()</div>
+<div class="block">Returns the value of the <code>disabledModifierFlags</code> record component.</div>
+<dl class="notes">
+<dt>Returns:</dt>
+<dd>the value of the <code>disabledModifierFlags</code> record component</dd>
 </dl>
 </div>
 </section>

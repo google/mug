@@ -1244,9 +1244,9 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  <p>You can also support unicode escaping:
 
  <pre><code>
- Parser&lt;String&gt; unicodeEscaped = string("u")
-     .then(hexDigits(4))
-     .map(digits -&gt; Character.toString(Integer.parseInt(digits, 16)));
+ import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
+
+ Parser&lt;String&gt; unicodeEscaped = string("u").then(BMP_CODE_UNIT);
  quotedByWithEscapes('"', '"', unicodeEscaped.or(chars(1))).parse("foo\\uD83D");
  </code></pre></div>
 <dl class="notes">
