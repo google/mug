@@ -185,20 +185,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /** Matches one or more consecutive characters as specified by {@code matcher}. */
   public static Parser<String> consecutive(CharPredicate matcher, String name) {
     requireNonNull(matcher);
-    requireNonNull(name);
-    return new Parser<Void>() {
-      @Override MatchResult<Void> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        int end = start;
-        for (; input.isInRange(end) && matcher.test(input.charAt(end)); end++) {}
-        return end > start
-            ? new MatchResult.Success<>(start, end, null)
-            : context.expecting(name, end);
-      }
-
-      @Override Set<String> getExpectedSymbols() {
-        return Set.of(name);
+    return new Scanner(name) {
+      @Override int scan(CharInput input, int index) {
+        while (matcher.test(input.charAt(index)) && input.isInRange(++index)) {}
+        return index;
       }
 
       @Override Set<String> computePrefixes() {

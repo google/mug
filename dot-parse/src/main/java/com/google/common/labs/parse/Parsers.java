@@ -35,32 +35,18 @@ public final class Parsers {
    * }</pre>
    */
   public static final Parser<String> UNSIGNED_INTEGER =
-      new Parser<Void>() {
-        @Override MatchResult<Void> skipAndMatch(
-            Parser<?> skip, CharInput input, int start, ErrorContext context) {
-          start = skipIfAny(skip, input, start);
-          int end = consume(input, start);
-          return end > start
-              ? new MatchResult.Success<>(start, end, null)
-              : context.expecting("integer", start);
-        }
-
-        private int consume(CharInput input, int start) {
-          if (input.isEof(start)) return start;
-          char c = input.charAt(start);
-          int index = start + 1;
+      new Scanner("integer") {
+        @Override int scan(CharInput input, final int from) {
+          char c = input.charAt(from);
+          int index = from + 1;
           if (c >= '1' && c <= '9') {
             while (input.isInRange(index) && isDigit(input.charAt(index))) index++;
             return index;
           }
           if (c == '0') {
-            return input.isInRange(index) && isDigit(input.charAt(index)) ? start : index;
+            return input.isInRange(index) && isDigit(input.charAt(index)) ? from : index;
           }
-          return start;
-        }
-
-        @Override Set<String> getExpectedSymbols() {
-          return Set.of("integer");
+          return from;
         }
 
         @Override Set<String> computePrefixes() {
