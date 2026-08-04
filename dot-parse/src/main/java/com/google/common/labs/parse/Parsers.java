@@ -30,21 +30,19 @@ public final class Parsers {
    *
    * <pre>{@code
    * Parser<Long> signed = sequence(
-   *     one('-').thenReturn(-1).orElse(1), UNSIGNED_DECIMAL_INTEGER.map(Long::parseLong),
+   *     one('-').thenReturn(-1).orElse(1), UNSIGNED_INTEGER.map(Long::parseLong),
    *     (sign, num) -> sign * num);
    * }</pre>
    */
-  public static final Parser<String> UNSIGNED_DECIMAL_INTEGER =
+  public static final Parser<String> UNSIGNED_INTEGER =
       new Parser<Void>() {
-        private static final String NAME = "decimal number";
-
         @Override MatchResult<Void> skipAndMatch(
             Parser<?> skip, CharInput input, int start, ErrorContext context) {
           start = skipIfAny(skip, input, start);
           int end = consume(input, start);
           return end > start
               ? new MatchResult.Success<>(start, end, null)
-              : context.expecting(NAME, start);
+              : context.expecting("integer", start);
         }
 
         private int consume(CharInput input, int start) {
@@ -62,7 +60,7 @@ public final class Parsers {
         }
 
         @Override Set<String> getExpectedSymbols() {
-          return Set.of(NAME);
+          return Set.of("integer");
         }
 
         @Override Set<String> computePrefixes() {
@@ -86,7 +84,7 @@ public final class Parsers {
    * }</pre>
    */
   public static final Parser<String> UNSIGNED_DECIMAL =
-      literally(UNSIGNED_DECIMAL_INTEGER, sequence(one('.'), consecutive("[0-9]")).optional())
+      literally(UNSIGNED_INTEGER, sequence(one('.'), consecutive("[0-9]")).optional())
           .source();
 
   /**
