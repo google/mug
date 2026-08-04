@@ -1,6 +1,7 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Parser.sequence;
+import static com.google.common.labs.parse.Parsers.UNSIGNED_DECIMAL_INTEGER;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
@@ -78,7 +79,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <digits>, encountered:\s
+            at 1:1: expecting <decimal number>, encountered:\s
                 <EOF>
                 ^
             """);
@@ -147,7 +148,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <digits>, encountered:\s
+            at 1:1: expecting <decimal number>, encountered:\s
                 -1s
                 ^
             """);
@@ -159,7 +160,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <digits>, encountered:\s
+            at 1:1: expecting <decimal number>, encountered:\s
                 foo
                 ^
             """);
@@ -306,7 +307,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <digits>, encountered:\s
+            at 1:1: expecting <decimal number>, encountered:\s
                 -1
                 ^
             """);
@@ -319,7 +320,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <digits>, encountered:\s
+            at 1:1: expecting <decimal number>, encountered:\s
                 +1
                 ^
             """);
@@ -332,7 +333,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <digits>, encountered:\s
+            at 1:1: expecting <decimal number>, encountered:\s
                 .5
                 ^
             """);
@@ -345,7 +346,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:5: expecting <digits>, encountered:\s
+            at 1:5: expecting <one or more [0-9]>, encountered:\s
                 123.
                     ^
             """);
@@ -358,7 +359,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <digits>, encountered:\s
+            at 1:1: expecting <decimal number>, encountered:\s
                 .
                 ^
             """);
@@ -371,7 +372,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <decimal point number>, encountered:\s
+            at 1:1: expecting <decimal number>, encountered:\s
                 05
                 ^
             """);
@@ -384,7 +385,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <decimal point number>, encountered:\s
+            at 1:1: expecting <decimal number>, encountered:\s
                 00.5
                 ^
             """);
@@ -410,7 +411,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:3: expecting <digits>, encountered:\s
+            at 1:3: expecting <one or more [0-9]>, encountered:\s
                 1..2
                   ^
             """);
@@ -436,7 +437,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <digits>, encountered:\s
+            at 1:1: expecting <decimal number>, encountered:\s
                 a
                 ^
             """);
@@ -449,7 +450,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <digits>, encountered:\s
+            at 1:1: expecting <decimal number>, encountered:\s
                 <EOF>
                 ^
             """);
@@ -480,6 +481,95 @@ public class ParsersTest {
             """
             at 1:3: expecting <EOF>, encountered:\s
                 0 . 1
+                  ^
+            """);
+  }
+
+  @Test public void unsignedDecimalInteger_parseZero() {
+    assertThat(UNSIGNED_DECIMAL_INTEGER.parse("0")).isEqualTo("0");
+  }
+
+  @Test public void unsignedDecimalInteger_parseTen() {
+    assertThat(UNSIGNED_DECIMAL_INTEGER.parse("10")).isEqualTo("10");
+  }
+
+  @Test public void unsignedDecimalInteger_parseMultipleDigits() {
+    assertThat(UNSIGNED_DECIMAL_INTEGER.parse("123")).isEqualTo("123");
+  }
+
+  @Test public void unsignedDecimalInteger_delimited() {
+    assertThat(UNSIGNED_DECIMAL_INTEGER.atLeastOnceDelimitedBy(",").parse("1,2"))
+        .containsExactly("1", "2")
+        .inOrder();
+  }
+
+  @Test public void unsignedDecimalInteger_rejectsAlphabetic() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> UNSIGNED_DECIMAL_INTEGER.parse("foo"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <decimal number>, encountered:\s
+                foo
+                ^
+            """);
+  }
+
+  @Test public void unsignedDecimalInteger_rejectsRedundantLeadingZeroInteger() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> UNSIGNED_DECIMAL_INTEGER.parse("00"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <decimal number>, encountered:\s
+                00
+                ^
+            """);
+  }
+
+  @Test public void unsignedDecimalInteger_rejectsRedundantLeadingZeroWithDigits() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> UNSIGNED_DECIMAL_INTEGER.parse("001"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <decimal number>, encountered:\s
+                001
+                ^
+            """);
+  }
+
+  @Test public void unsignedDecimalInteger_rejectsEmptyString() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> UNSIGNED_DECIMAL_INTEGER.parse(""));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <decimal number>, encountered:\s
+                <EOF>
+                ^
+            """);
+  }
+
+  @Test public void unsignedDecimalInteger_parseSkipping_success() {
+    assertThat(UNSIGNED_DECIMAL_INTEGER.atLeastOnce().parseSkipping(Character::isWhitespace, " 1 2 3 "))
+        .containsExactly("1", "2", "3");
+  }
+
+  @Test public void unsignedDecimalInteger_parseSkipping_internalWhitespaceThrows() {
+    ParseException thrown = assertThrows(
+        ParseException.class,
+        () -> UNSIGNED_DECIMAL_INTEGER.parseSkipping(Character::isWhitespace, "1 2"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting <EOF>, encountered:\s
+                1 2
                   ^
             """);
   }

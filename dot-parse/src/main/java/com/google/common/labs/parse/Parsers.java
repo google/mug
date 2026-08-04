@@ -11,6 +11,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 import com.google.mu.util.stream.Joiner;
 import java.time.Duration;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -21,6 +22,57 @@ import java.util.concurrent.TimeUnit;
 public final class Parsers {
   static final Parser<String> DIGITS = consecutive(CharacterSet.DECIMAL, "digits");
   static final Parser<String> WORD = consecutive(charsIn("[a-zA-Z0-9_]"), "word");
+
+  /**
+   * Parses unsigned decimal integer numbers, e.g., {@code 15}, {@code 0}.
+   *
+   * <p>To support signs, you can compose it like:
+   *
+   * <pre>{@code
+   * Parser<Long> signed = sequence(
+   *     one('-').thenReturn(-1).orElse(1), UNSIGNED_DECIMAL_INTEGER.map(Long::parseLong),
+   *     (sign, num) -> sign * num);
+   * }</pre>
+   */
+  public static final Parser<String> UNSIGNED_DECIMAL_INTEGER =
+      new Parser<Void>() {
+        private static final String NAME = "decimal number";
+
+        @Override MatchResult<Void> skipAndMatch(
+            Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          start = skipIfAny(skip, input, start);
+          int end = consume(input, start);
+          return end > start
+              ? new MatchResult.Success<>(start, end, null)
+              : context.expecting(NAME, start);
+        }
+
+        private int consume(CharInput input, int start) {
+          if (input.isEof(start)) return start;
+          char c = input.charAt(start);
+          int index = start + 1;
+          if (c >= '1' && c <= '9') {
+            while (input.isInRange(index) && isDigit(input.charAt(index))) index++;
+            return index;
+          }
+          if (c == '0') {
+            return input.isInRange(index) && isDigit(input.charAt(index)) ? start : index;
+          }
+          return start;
+        }
+
+        @Override Set<String> getExpectedSymbols() {
+          return Set.of(NAME);
+        }
+
+        @Override Set<String> computePrefixes() {
+          return Set.of("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+        }
+
+        private static boolean isDigit(char c) {
+          return c >= '0' && c <= '9';
+        }
+      }.source();
 
   /**
    * Parses unsigned decimal point numbers, e.g., {@code 1.23}, {@code 0.0}, {@code 15}, {@code 0}.
@@ -34,11 +86,8 @@ public final class Parsers {
    * }</pre>
    */
   public static final Parser<String> UNSIGNED_DECIMAL =
-      literally(DIGITS, one('.').followedBy(DIGITS).optional())
-          .source()
-          .suchThat(
-              s -> !s.startsWith("0") || s.startsWith("0.") || s.equals("0"),
-              "decimal point number");
+      literally(UNSIGNED_DECIMAL_INTEGER, sequence(one('.'), consecutive("[0-9]")).optional())
+          .source();
 
   /**
    * Parses duration in the shorthand format of {@code 1.5h}, {@code 30d}, {@code 10m30s} etc.
