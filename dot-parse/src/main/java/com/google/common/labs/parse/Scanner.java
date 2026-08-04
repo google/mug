@@ -12,7 +12,7 @@ abstract class Scanner extends Parser<Void> {
     this.name = requireNonNull(name);
   }
 
-  @Override MatchResult<Void> skipAndMatch(
+  @Override final MatchResult<Void> skipAndMatch(
       Parser<?> skip, CharInput input, int start, ErrorContext context) {
     start = skipIfAny(skip, input, start);
     if (input.isEof(start)) return context.expecting(name, start);
