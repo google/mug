@@ -37,6 +37,7 @@ public final class Parsers {
   public static final Parser<String> UNSIGNED_INTEGER =
       new Scanner("integer") {
         @Override int scan(CharInput input, final int from) {
+          if (input.isEof(from)) return from;
           char c = input.charAt(from);
           int index = from + 1;
           if (c >= '1' && c <= '9') {

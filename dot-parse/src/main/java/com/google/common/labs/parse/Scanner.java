@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import java.util.Set;
 
 abstract class Scanner extends Parser<Void> {
-
   private final String name;
 
   Scanner(String name) {
@@ -15,7 +14,6 @@ abstract class Scanner extends Parser<Void> {
   @Override final MatchResult<Void> skipAndMatch(
       Parser<?> skip, CharInput input, int start, ErrorContext context) {
     start = skipIfAny(skip, input, start);
-    if (input.isEof(start)) return context.expecting(name, start);
     int end = scan(input, start);
     return end > start
         ? new MatchResult.Success<>(start, end, null)

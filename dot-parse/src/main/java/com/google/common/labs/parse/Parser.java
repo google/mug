@@ -187,7 +187,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(matcher);
     return new Scanner(name) {
       @Override int scan(CharInput input, int index) {
-        while (matcher.test(input.charAt(index)) && input.isInRange(++index)) {}
+        for (; input.isInRange(index) && matcher.test(input.charAt(index)); index++) {}
         return index;
       }
 
@@ -249,23 +249,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private static Parser<String> chars(int n, Set<String> prefixes, String name) {
     checkArgument(n > 0, "chars count (%s) must be positive", n);
-    return new Parser<>() {
-      @Override MatchResult<String> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        return input.isInRange(start + n - 1)
-            ? new MatchResult.Success<>(start, start + n, input.snippet(start, n))
-            : context.expecting(name, start);
-      }
-
-      @Override Set<String> getExpectedSymbols() {
-        return Set.of(name);
+    return new Scanner(name) {
+      @Override int scan(CharInput input, int from) {
+        return input.isInRange(from + n - 1) ? from + n : from;
       }
 
       @Override Set<String> computePrefixes() {
         return prefixes;
       }
-    };
+    }.source();
   }
 
   private static Parser<String> chars(int n, CharacterSet characterSet, String name) {
