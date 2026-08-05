@@ -42,15 +42,8 @@ public final class JsonParser {
   private static final Parser<JsonString> JSON_STRING =
       quotedByWithEscapes('"', '"', ESCAPED).map(JsonString::new);
 
-  private static final Parser<JsonNumber> JSON_NUMBER = 
-      literally(
-          sequence(
-              one('-').optional(),
-              Parsers.UNSIGNED_DECIMAL,
-              sequence(caseInsensitive("e"), one("[+-]").optional(), digits())
-                  .optional()))
-        .source()
-        .map(s -> new JsonNumber(Double.parseDouble(s)));
+  private static final Parser<JsonNumber> JSON_NUMBER =
+      Parsers.SIGNED_DOUBLE.map(JsonNumber::new);
  
   private static final Parser<JsonNull> JSON_NULL = string("null").thenReturn(JsonNull.INSTANCE);
   private static final Parser<JsonBoolean> JSON_BOOLEAN = anyOf(JsonBoolean.values());

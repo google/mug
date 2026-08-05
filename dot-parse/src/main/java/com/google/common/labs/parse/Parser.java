@@ -185,20 +185,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /** Matches one or more consecutive characters as specified by {@code matcher}. */
   public static Parser<String> consecutive(CharPredicate matcher, String name) {
     requireNonNull(matcher);
-    requireNonNull(name);
-    return new Parser<Void>() {
-      @Override MatchResult<Void> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        int end = start;
-        for (; input.isInRange(end) && matcher.test(input.charAt(end)); end++) {}
-        return end > start
-            ? new MatchResult.Success<>(start, end, null)
-            : context.expecting(name, end);
-      }
-
-      @Override Set<String> getExpectedSymbols() {
-        return Set.of(name);
+    return new Scanner(name) {
+      @Override int scan(CharInput input, int index) {
+        for (; input.isInRange(index) && matcher.test(input.charAt(index)); index++) {}
+        return index;
       }
 
       @Override Set<String> computePrefixes() {
@@ -259,23 +249,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private static Parser<String> chars(int n, Set<String> prefixes, String name) {
     checkArgument(n > 0, "chars count (%s) must be positive", n);
-    return new Parser<>() {
-      @Override MatchResult<String> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
-        start = skipIfAny(skip, input, start);
-        return input.isInRange(start + n - 1)
-            ? new MatchResult.Success<>(start, start + n, input.snippet(start, n))
-            : context.expecting(name, start);
-      }
-
-      @Override Set<String> getExpectedSymbols() {
-        return Set.of(name);
+    return new Scanner(name) {
+      @Override int scan(CharInput input, int from) {
+        return input.isInRange(from + n - 1) ? from + n : from;
       }
 
       @Override Set<String> computePrefixes() {
         return prefixes;
       }
-    };
+    }.source();
   }
 
   private static Parser<String> chars(int n, CharacterSet characterSet, String name) {
