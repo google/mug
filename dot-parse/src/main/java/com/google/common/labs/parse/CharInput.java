@@ -37,9 +37,7 @@ abstract class CharInput {
   abstract int indexOf(String str, int fromIndex);
 
   final boolean startsWith(CharPredicate predicate, int index) {
-    if (isEof(index)) return false;
-    char c = charAt(index);
-    return predicate.test(c);
+    return isInRange(index) && predicate.test(charAt(index));
   }
 
   /** Do the characters starting from {@code index} start with {@code prefix}? */
