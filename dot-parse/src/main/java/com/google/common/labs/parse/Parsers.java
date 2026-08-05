@@ -80,16 +80,15 @@ public final class Parsers {
    *
    * <p>E.g., {@code 123}, {@code -0.5}, {@code 1e10}, {@code -1.23e+4}, {@code 0.0e-5}.
    *
-   * <p>Parses the input into a {@link Double}. You can also call {@code .source()} if you prefer to
-   * obtain the raw matched string.
+   * <p>The input string is parsed into a {@link Double}. You can also call {@code .source()} if you
+   * prefer to obtain the raw matched string.
    *
    * <p>Note that leading plus signs (e.g., {@code +1}), leading zeros on integers (e.g., {@code
    * 05}), and missing integer or fractional parts (e.g., {@code .5} or {@code 5.}) are not allowed,
    * as per the JSON standard.
    */
   public static final Parser<Double> SIGNED_DOUBLE = literally(
-          one('-').optional(),
-          UNSIGNED_DECIMAL,
+          one('-').optional(), UNSIGNED_DECIMAL,
           sequence(caseInsensitive("e"), one("[+-]").optional(), DIGITS).optional())
       .source()
       .elidableMap(Double::parseDouble);
