@@ -121,7 +121,7 @@ public final class OperatorTable<T> {
       Parser<S> operator,
       BiFunction<? super T, ? super S, ? extends T> postfixFunction,
       int precedence) {
-    return postfix(Suffix.postfix(operator, postfixFunction), precedence);
+    return postfix(Parsers.Suffix.postfix(operator, postfixFunction), precedence);
   }
 
   /**

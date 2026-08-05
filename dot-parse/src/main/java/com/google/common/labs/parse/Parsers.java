@@ -20,7 +20,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
- * Some common composite parsers in addition to the core parsers provided by {@link Parser}.
+ * More advanced composite parsers in addition to the core parsers provided by {@link Parser}.
  *
  * @since 10.8
  */
@@ -403,6 +403,17 @@ public final class Parsers {
    */
   public static class Suffix {
     /**
+     * Returns a parser that applies the {@code prefix} zero or more times before {@code
+     * suffix} and applies the result unary operator functions iteratively.
+     */
+    public static <T> Parser<T> withPrefixes(
+        Parser<? extends UnaryOperator<T>> prefix, Parser<? extends T> suffix) {
+      return sequence(
+          prefix.zeroOrMore(), suffix,
+          (ops, operand) -> Parser.applyOperators(ops.reversed(), operand));
+    }
+
+    /**
      * A suffix parser that combines together with its prefix parse's result using the {@code
      * combiner} function.
      */
@@ -424,11 +435,6 @@ public final class Parsers {
       return postfix.map(s -> p -> op.apply(p, s));
     }
 
-    static <T> Parser<UnaryOperator<T>> postfix(
-        String postfix, Function<? super T, ? extends T> op) {
-      return string(postfix).thenReturn(op::apply);
-    }
-
     /**
      * A convenience method to apply a suffix to a prefix. When passed to the {@link
      * Parser#optionallyFollowedBy(Parser, BiFunction) optionallyFollowedBy()} as a method reference
@@ -436,17 +442,6 @@ public final class Parsers {
      */
     public static <T, R> R apply(T prefix, Function<? super T, ? extends R> suffix) {
       return suffix.apply(prefix);
-    }
-
-    /**
-     * Returns a parser that applies the {@code prefix} zero or more times before {@code
-     * suffix} and applies the result unary operator functions iteratively.
-     */
-    public static <T> Parser<T> withPrefixes(
-        Parser<? extends UnaryOperator<T>> prefix, Parser<? extends T> suffix) {
-      return sequence(
-          prefix.zeroOrMore(), suffix,
-          (ops, operand) -> Parser.applyOperators(ops.reversed(), operand));
     }
 
     Suffix() {}
