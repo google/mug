@@ -334,4 +334,6 @@ public final class Parsers {
   public static final Parser<Integer> CODE_POINT = Parser.hexDigits(8)
       .map(digits -> Integer.parseUnsignedInt(digits, 16))
       .suchThat(Character::isValidCodePoint, "valid code point");
+
+  private Parsers() {}
 }
