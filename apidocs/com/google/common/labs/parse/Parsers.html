@@ -71,6 +71,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#SIGNED_DOUBLE" tabindex="0">SIGNED_DOUBLE</a></li>
 <li><a href="#DURATION" tabindex="0">DURATION</a></li>
 <li><a href="#BMP_CODE_UNIT" tabindex="0">BMP_CODE_UNIT</a></li>
+<li><a href="#CODE_POINT" tabindex="0">CODE_POINT</a></li>
 </ol>
 </li>
 </ol>
@@ -106,29 +107,35 @@ loadScripts(document, 'script');</script>
 <div class="table-header col-first">Modifier and Type</div>
 <div class="table-header col-second">Field</div>
 <div class="table-header col-last">Description</div>
-<div class="col-first even-row-color"><code>static final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;</code></div>
+<div class="col-first even-row-color"><code>static final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Character.html" title="class or interface in java.lang" class="external-link">Character</a>&gt;</code></div>
 <div class="col-second even-row-color"><code><a href="#BMP_CODE_UNIT" class="member-name-link">BMP_CODE_UNIT</a></code></div>
 <div class="col-last even-row-color">
 <div class="block">Parses a 4-digit hex BMP code unit.</div>
 </div>
-<div class="col-first odd-row-color"><code>static final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&gt;</code></div>
-<div class="col-second odd-row-color"><code><a href="#DURATION" class="member-name-link">DURATION</a></code></div>
+<div class="col-first odd-row-color"><code>static final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;</code></div>
+<div class="col-second odd-row-color"><code><a href="#CODE_POINT" class="member-name-link">CODE_POINT</a></code></div>
 <div class="col-last odd-row-color">
+<div class="block">Parses an 8-digit hex Unicode code point (such as those following <code>\U</code> in string
+ escapes).</div>
+</div>
+<div class="col-first even-row-color"><code>static final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&gt;</code></div>
+<div class="col-second even-row-color"><code><a href="#DURATION" class="member-name-link">DURATION</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Parses duration in the shorthand format of <code>1.5h</code>, <code>30d</code>, <code>10m30s</code> etc.</div>
 </div>
-<div class="col-first even-row-color"><code>static final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Double.html" title="class or interface in java.lang" class="external-link">Double</a>&gt;</code></div>
-<div class="col-second even-row-color"><code><a href="#SIGNED_DOUBLE" class="member-name-link">SIGNED_DOUBLE</a></code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>static final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Double.html" title="class or interface in java.lang" class="external-link">Double</a>&gt;</code></div>
+<div class="col-second odd-row-color"><code><a href="#SIGNED_DOUBLE" class="member-name-link">SIGNED_DOUBLE</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Parses double-precision numbers that support scientific notation, conforming to <a href="https://tools.ietf.org/html/rfc8259">RFC 8259</a> (JSON spec).</div>
 </div>
-<div class="col-first odd-row-color"><code>static final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
-<div class="col-second odd-row-color"><code><a href="#UNSIGNED_DECIMAL" class="member-name-link">UNSIGNED_DECIMAL</a></code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code>static final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
+<div class="col-second even-row-color"><code><a href="#UNSIGNED_DECIMAL" class="member-name-link">UNSIGNED_DECIMAL</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Parses unsigned decimal point numbers, e.g., <code>1.23</code>, <code>0.0</code>, <code>15</code>, <code>0</code>.</div>
 </div>
-<div class="col-first even-row-color"><code>static final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
-<div class="col-second even-row-color"><code><a href="#UNSIGNED_INTEGER" class="member-name-link">UNSIGNED_INTEGER</a></code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>static final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
+<div class="col-second odd-row-color"><code><a href="#UNSIGNED_INTEGER" class="member-name-link">UNSIGNED_INTEGER</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Parses unsigned decimal integer numbers, e.g., <code>15</code>, <code>0</code>.</div>
 </div>
 </div>
@@ -250,13 +257,13 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="BMP_CODE_UNIT">
 <h3>BMP_CODE_UNIT</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;</span>&nbsp;<span class="element-name">BMP_CODE_UNIT</span></div>
+<div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Character.html" title="class or interface in java.lang" class="external-link">Character</a>&gt;</span>&nbsp;<span class="element-name">BMP_CODE_UNIT</span></div>
 <div class="block">Parses a 4-digit hex BMP code unit. The following example parses a surrogate pair of two UTF-16
  code units and will return the emoji <code>😀</code>:
 
  <pre><code>
  BMP_CODE_UNIT
-     .map(Character::toString)
+     .map(String::valueOf)
      .zeroOrMore(Collectors.joining())
      .parse("D83DDE00");
  </code></pre>
@@ -268,7 +275,26 @@ loadScripts(document, 'script');</script>
  <p>You can also compose it with <a href="Parser.html#quotedByWithEscapes(char,char,com.google.common.labs.parse.Production)"><code>Parser.quotedByWithEscapes()</code></a>:
 
  <pre><code>
- Parser.quotedByWithEscapes('"', '"', Parser.string("u").then(BMP_CODE_UNIT).map(Character::toString));
+ Parser.quotedByWithEscapes('"', '"', Parser.string("u").then(BMP_CODE_UNIT).map(String::valueOf));
+ </code></pre></div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="CODE_POINT">
+<h3>CODE_POINT</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html" title="class or interface in java.lang" class="external-link">Integer</a>&gt;</span>&nbsp;<span class="element-name">CODE_POINT</span></div>
+<div class="block">Parses an 8-digit hex Unicode code point (such as those following <code>\U</code> in string
+ escapes).
+
+ <p>The parsed integer is guaranteed to be a valid Unicode code point (between <code>0</code> and
+ <code>0x10FFFF</code>).
+
+ <pre><code>
+ CODE_POINT
+     .map(Character::toString)
+     .parse("0001F600"); // returns "😀"
  </code></pre></div>
 </div>
 </section>
