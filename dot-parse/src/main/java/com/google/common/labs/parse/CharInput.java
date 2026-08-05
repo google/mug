@@ -36,6 +36,12 @@ abstract class CharInput {
   /** Returns the index of {@code str} starting from {@code fromIndex}, or -1 if not found. */
   abstract int indexOf(String str, int fromIndex);
 
+  final boolean startsWith(CharPredicate predicate, int index) {
+    if (isEof(index)) return false;
+    char c = charAt(index);
+    return predicate.test(c);
+  }
+
   /** Do the characters starting from {@code index} start with {@code prefix}? */
   abstract boolean startsWith(String prefix, int index);
 
@@ -47,12 +53,6 @@ abstract class CharInput {
 
   final boolean isInRange(int index) {
     return !isEof(index);
-  }
-
-  final boolean hasChar(int index, CharPredicate predicate) {
-    if (isEof(index)) return false;
-    char c = charAt(index);
-    return predicate.test(c);
   }
 
   /** Returns a snippet of string starting from {@code index} with at most {@code maxChars}. */

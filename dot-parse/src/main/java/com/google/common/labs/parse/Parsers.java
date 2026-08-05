@@ -46,11 +46,11 @@ public final class Parsers {
           char c = input.charAt(from);
           int index = from + 1;
           if (c >= '1' && c <= '9') {
-            while (input.hasChar(index, CharacterSet.DECIMAL)) index++;
+            while (input.startsWith(CharacterSet.DECIMAL, index)) index++;
             return index;
           }
           if (c == '0') {
-            return input.hasChar(index, CharacterSet.DECIMAL) ? from : index;
+            return input.startsWith(CharacterSet.DECIMAL, index) ? from : index;
           }
           return from;
         }
