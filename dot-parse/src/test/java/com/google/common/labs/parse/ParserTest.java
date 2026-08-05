@@ -6271,9 +6271,9 @@ public class ParserTest {
     static Parser<Format> parser() {
       Parser.Rule<Format> rule = new Parser.Rule<>();
       Parser<String> placeholderName = consecutive("[a-z]");
-      Parser<Placeholder> placeholder = Parser.sequence(
-              placeholderName.followedBy("="), rule, Placeholder::new)
-          .between("{", "}");
+      Parser<Placeholder> placeholder =
+          Parser.sequence(placeholderName.followedBy("="), rule, Placeholder::new)
+              .between("{", "}");
       Parser<Format> parser = anyOf(
               placeholder, Parser.string("{{").thenReturn("{"), // escape {
               Parser.string("}}").thenReturn("}"), // escape }
@@ -7428,9 +7428,9 @@ public class ParserTest {
 
   @Test public void returnElision_then_withElision() {
     List<String> joined = new ArrayList<>();
-    Parser<String> parser = string("b").then(
-            word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)))
-        .thenReturn("ok");
+    Parser<String> parser =
+        string("b").then(word().atLeastOnceDelimitedBy(",", collectingAndAdd(joining(), joined)))
+            .thenReturn("ok");
     assertThat(parser.parseSkipping(whitespace(), "b a,b,c")).isEqualTo("ok");
     assertThat(joined).isEmpty();
   }
@@ -7704,9 +7704,9 @@ public class ParserTest {
   }
 
   @Test public void testSnippetCaretPlacementWithNewline() {
-    Parser<java.util.Map<String, String>> parser = Parser.zeroOrMoreDelimited(
-            quotedBy('"', '"').followedBy(":"), digits(), ",", toMap())
-        .between("{", "}");
+    Parser<java.util.Map<String, String>> parser =
+        Parser.zeroOrMoreDelimited(quotedBy('"', '"').followedBy(":"), digits(), ",", toMap())
+            .between("{", "}");
     String malformedJson =
         """
         {"a": 1
@@ -7726,9 +7726,9 @@ public class ParserTest {
   }
 
   @Test public void testSnippetCaretPlacement_multipleNewlinesInPrelue() {
-    Parser<?> parser = Parser.zeroOrMoreDelimited(
-            quotedBy('"', '"').followedBy(":"), digits(), ",", toMap())
-        .between("{", "}");
+    Parser<?> parser =
+        Parser.zeroOrMoreDelimited(quotedBy('"', '"').followedBy(":"), digits(), ",", toMap())
+            .between("{", "}");
     String malformedJson =
         """
         {"a":
@@ -7750,9 +7750,9 @@ public class ParserTest {
   }
 
   @Test public void testSnippetCaretPlacement_truncateAtTrailingNewline() {
-    Parser<?> parser = Parser.zeroOrMoreDelimited(
-            quotedBy('"', '"').followedBy(":"), digits(), ",", toMap())
-        .between("{", "}");
+    Parser<?> parser =
+        Parser.zeroOrMoreDelimited(quotedBy('"', '"').followedBy(":"), digits(), ",", toMap())
+            .between("{", "}");
     String malformedJson =
         """
         {"a":

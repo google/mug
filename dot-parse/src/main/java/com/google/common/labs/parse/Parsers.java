@@ -299,7 +299,7 @@ public final class Parsers {
    *
    * <pre>{@code
    * BMP_CODE_UNIT
-   *     .map(Character::toString)
+   *     .map(String::valueOf)
    *     .zeroOrMore(Collectors.joining())
    *     .parse("D83DDE00");
    * }</pre>
@@ -312,11 +312,28 @@ public final class Parsers {
    * Parser.quotedByWithEscapes()}:
    *
    * <pre>{@code
-   * Parser.quotedByWithEscapes('"', '"', Parser.string("u").then(BMP_CODE_UNIT).map(Character::toString));
+   * Parser.quotedByWithEscapes('"', '"', Parser.string("u").then(BMP_CODE_UNIT).map(String::valueOf));
    * }</pre>
    */
-  public static final Parser<Integer> BMP_CODE_UNIT =
-      Parser.hexDigits(4).elidableMap(digits -> Integer.parseInt(digits, 16));
+  public static final Parser<Character> BMP_CODE_UNIT =
+      Parser.hexDigits(4).elidableMap(digits -> (char) Integer.parseInt(digits, 16));
+
+  /**
+   * Parses an 8-digit hex Unicode code point (such as those following {@code \U} in string
+   * escapes).
+   *
+   * <p>The parsed integer is guaranteed to be a valid Unicode code point (between {@code 0} and
+   * {@code 0x10FFFF}).
+   *
+   * <pre>{@code
+   * CODE_POINT
+   *     .map(Character::toString)
+   *     .parse("0001F600"); // returns "😀"
+   * }</pre>
+   */
+  public static final Parser<Integer> CODE_POINT = Parser.hexDigits(8)
+      .map(digits -> Integer.parseUnsignedInt(digits, 16))
+      .suchThat(Character::isValidCodePoint, "valid code point");
 
   private Parsers() {}
 }
