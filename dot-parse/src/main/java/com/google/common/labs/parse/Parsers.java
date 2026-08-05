@@ -75,8 +75,8 @@ public final class Parsers {
       literally(UNSIGNED_INTEGER, sequence(one('.'), consecutive("[0-9]")).optional()).source();
 
   /**
-   * Parses double-precision numbers that support scientific notation, conforming to RFC 8259 (JSON
-   * spec).
+   * Parses double-precision numbers that support scientific notation, conforming to <a
+   * href="https://tools.ietf.org/html/rfc8259">RFC 8259</a> (JSON spec).
    *
    * <p>E.g., {@code 123}, {@code -0.5}, {@code 1e10}, {@code -1.23e+4}, {@code 0.0e-5}.
    *
