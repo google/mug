@@ -766,4 +766,20 @@ public class ParsersTest {
                 ^
             """);
   }
+
+  @Test public void signedDouble_overflow() {
+    assertThat(SIGNED_DOUBLE.parse("1e999")).isEqualTo(Double.POSITIVE_INFINITY);
+  }
+
+  @Test public void signedDouble_negativeOverflow() {
+    assertThat(SIGNED_DOUBLE.parse("-1e999")).isEqualTo(Double.NEGATIVE_INFINITY);
+  }
+
+  @Test public void signedDouble_underflow() {
+    assertThat(SIGNED_DOUBLE.parse("1e-999")).isEqualTo(0.0);
+  }
+
+  @Test public void signedDouble_sourceMatchesOverflow() {
+    assertThat(SIGNED_DOUBLE.source().parse("1e999")).isEqualTo("1e999");
+  }
 }

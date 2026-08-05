@@ -75,9 +75,13 @@ public final class Parsers {
       literally(UNSIGNED_INTEGER, sequence(one('.'), consecutive("[0-9]")).optional()).source();
 
   /**
-   * Parses double-precision numbers that support scientific notation, conforming to RFC 8259 (JSON spec).
+   * Parses double-precision numbers that support scientific notation, conforming to RFC 8259 (JSON
+   * spec).
    *
    * <p>E.g., {@code 123}, {@code -0.5}, {@code 1e10}, {@code -1.23e+4}, {@code 0.0e-5}.
+   *
+   * <p>Parses the input into a {@link Double}. You can also call {@code .source()} if you prefer to
+   * obtain the raw matched string.
    *
    * <p>Note that leading plus signs (e.g., {@code +1}), leading zeros on integers (e.g., {@code
    * 05}), and missing integer or fractional parts (e.g., {@code .5} or {@code 5.}) are not allowed,
