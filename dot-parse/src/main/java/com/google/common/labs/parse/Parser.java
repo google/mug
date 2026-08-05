@@ -163,7 +163,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override MatchResult<Character> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-        return input.isInRange(start) && matcher.test(input.charAt(start))
+        return input.hasChar(start, matcher)
             ? new MatchResult.Success<>(start, start + 1, input.charAt(start))
             : context.expecting(name, start);
       }
@@ -187,7 +187,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(matcher);
     return new Scanner(name) {
       @Override int scan(CharInput input, int index) {
-        for (; input.isInRange(index) && matcher.test(input.charAt(index)); index++) {}
+        for (; input.hasChar(index, matcher); index++) {}
         return index;
       }
 

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 
+import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
 
 /** An abstraction over sequentially read characters. */
@@ -46,6 +47,12 @@ abstract class CharInput {
 
   final boolean isInRange(int index) {
     return !isEof(index);
+  }
+
+  final boolean hasChar(int index, CharPredicate predicate) {
+    if (isEof(index)) return false;
+    char c = charAt(index);
+    return predicate.test(c);
   }
 
   /** Returns a snippet of string starting from {@code index} with at most {@code maxChars}. */
