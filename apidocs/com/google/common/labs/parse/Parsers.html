@@ -66,7 +66,9 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
 <li><a href="#field-detail" tabindex="0">Field Details</a>
 <ol class="toc-list">
+<li><a href="#UNSIGNED_INTEGER" tabindex="0">UNSIGNED_INTEGER</a></li>
 <li><a href="#UNSIGNED_DECIMAL" tabindex="0">UNSIGNED_DECIMAL</a></li>
+<li><a href="#SIGNED_DOUBLE" tabindex="0">SIGNED_DOUBLE</a></li>
 <li><a href="#DURATION" tabindex="0">DURATION</a></li>
 <li><a href="#BMP_CODE_UNIT" tabindex="0">BMP_CODE_UNIT</a></li>
 </ol>
@@ -114,10 +116,21 @@ loadScripts(document, 'script');</script>
 <div class="col-last odd-row-color">
 <div class="block">Parses duration in the shorthand format of <code>1.5h</code>, <code>30d</code>, <code>10m30s</code> etc.</div>
 </div>
-<div class="col-first even-row-color"><code>static final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
-<div class="col-second even-row-color"><code><a href="#UNSIGNED_DECIMAL" class="member-name-link">UNSIGNED_DECIMAL</a></code></div>
+<div class="col-first even-row-color"><code>static final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Double.html" title="class or interface in java.lang" class="external-link">Double</a>&gt;</code></div>
+<div class="col-second even-row-color"><code><a href="#SIGNED_DOUBLE" class="member-name-link">SIGNED_DOUBLE</a></code></div>
 <div class="col-last even-row-color">
+<div class="block">Parses double-precision numbers that support scientific notation, conforming to RFC 8259 (JSON
+ spec).</div>
+</div>
+<div class="col-first odd-row-color"><code>static final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
+<div class="col-second odd-row-color"><code><a href="#UNSIGNED_DECIMAL" class="member-name-link">UNSIGNED_DECIMAL</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Parses unsigned decimal point numbers, e.g., <code>1.23</code>, <code>0.0</code>, <code>15</code>, <code>0</code>.</div>
+</div>
+<div class="col-first even-row-color"><code>static final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
+<div class="col-second even-row-color"><code><a href="#UNSIGNED_INTEGER" class="member-name-link">UNSIGNED_INTEGER</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Parses unsigned decimal integer numbers, e.g., <code>15</code>, <code>0</code>.</div>
 </div>
 </div>
 </section>
@@ -141,6 +154,23 @@ loadScripts(document, 'script');</script>
 <h2>Field Details</h2>
 <ul class="member-list">
 <li>
+<section class="detail" id="UNSIGNED_INTEGER">
+<h3>UNSIGNED_INTEGER</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">UNSIGNED_INTEGER</span></div>
+<div class="block">Parses unsigned decimal integer numbers, e.g., <code>15</code>, <code>0</code>.
+
+ <p>To support signs, you can compose it like:
+
+ <pre><code>
+ Parser&lt;Long&gt; signed = sequence(
+     one('-').thenReturn(-1).orElse(1), UNSIGNED_INTEGER.map(Long::parseLong),
+     (sign, num) -&gt; sign * num);
+ </code></pre></div>
+</div>
+</section>
+</li>
+<li>
 <section class="detail" id="UNSIGNED_DECIMAL">
 <h3>UNSIGNED_DECIMAL</h3>
 <div class="horizontal-scroll">
@@ -154,6 +184,25 @@ loadScripts(document, 'script');</script>
      one('-').thenReturn(-1).orElse(1), UNSIGNED_DECIMAL.map(Double::parseDouble),
      (sign, num) -&gt; sign * num);
  </code></pre></div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="SIGNED_DOUBLE">
+<h3>SIGNED_DOUBLE</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Double.html" title="class or interface in java.lang" class="external-link">Double</a>&gt;</span>&nbsp;<span class="element-name">SIGNED_DOUBLE</span></div>
+<div class="block">Parses double-precision numbers that support scientific notation, conforming to RFC 8259 (JSON
+ spec).
+
+ <p>E.g., <code>123</code>, <code>-0.5</code>, <code>1e10</code>, <code>-1.23e+4</code>, <code>0.0e-5</code>.
+
+ <p>Parses the input into a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Double.html" title="class or interface in java.lang" class="external-link"><code>Double</code></a>. You can also call <code>.source()</code> if you prefer to
+ obtain the raw matched string.
+
+ <p>Note that leading plus signs (e.g., <code>+1</code>), leading zeros on integers (e.g., <code>
+ 05</code>), and missing integer or fractional parts (e.g., <code>.5</code> or <code>5.</code>) are not allowed,
+ as per the JSON standard.</div>
 </div>
 </section>
 </li>
