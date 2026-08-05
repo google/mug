@@ -3,6 +3,7 @@ package com.google.common.labs.parse;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
+import static com.google.common.labs.parse.Parsers.CODE_POINT;
 import static com.google.common.labs.parse.Parsers.SIGNED_DOUBLE;
 import static com.google.common.labs.parse.Parsers.UNSIGNED_INTEGER;
 import static com.google.common.truth.Truth.assertThat;
@@ -781,5 +782,93 @@ public class ParsersTest {
 
   @Test public void signedDouble_sourceMatchesOverflow() {
     assertThat(SIGNED_DOUBLE.source().parse("1e999")).isEqualTo("1e999");
+  }
+
+  @Test public void codePoint_zero() {
+    assertThat(CODE_POINT.parse("00000000")).isEqualTo(0);
+  }
+
+  @Test public void codePoint_validBmp() {
+    assertThat(CODE_POINT.parse("00000041")).isEqualTo(0x41);
+  }
+
+  @Test public void codePoint_validSupplementary() {
+    assertThat(CODE_POINT.parse("0001F600")).isEqualTo(0x1F600);
+  }
+
+  @Test public void codePoint_upperBound() {
+    assertThat(CODE_POINT.parse("0010FFFF")).isEqualTo(0x10FFFF);
+  }
+
+  @Test public void codePoint_tooLargeThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse("00110000"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <valid code point>, encountered:\s
+                00110000
+                ^
+            """);
+  }
+
+  @Test public void codePoint_negativeWrappedThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse("FFFFFFFF"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <valid code point>, encountered:\s
+                FFFFFFFF
+                ^
+            """);
+  }
+
+  @Test public void codePoint_invalidHexThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse("0001G600"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <8 hex digits>, encountered:\s
+                0001G600
+                ^
+            """);
+  }
+
+  @Test public void codePoint_emptyThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse(""));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <8 hex digits>, encountered:\s
+                <EOF>
+                ^
+            """);
+  }
+
+  @Test public void codePoint_insufficientDigitsThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse("000041"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting <8 hex digits>, encountered:\s
+                000041
+                ^
+            """);
+  }
+
+  @Test public void codePoint_excessiveDigitsThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse("000000412"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:9: expecting <EOF>, encountered:\s
+                000000412
+                        ^
+            """);
   }
 }
