@@ -1253,7 +1253,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.9.3
    */
   public final Parser<T> withPostfixes(Parser<? extends UnaryOperator<T>> operator) {
-    return sequence(this, operator.zeroOrMore(), (operand, ops) -> applyOperators(ops, operand));
+    return sequence(this, operator.zeroOrMore(), Parsers.Suffix::applyOperators);
   }
 
   /**
@@ -2559,11 +2559,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     var supplier = collector.supplier();
     var finisher = collector.finisher();
     return () -> finisher.apply(supplier.get());
-  }
-
-  static <T> T applyOperators(Iterable<? extends UnaryOperator<T>> ops, T operand) {
-    for (UnaryOperator<T> op : ops) operand = op.apply(operand);
-    return operand;
   }
 
   private static <T, A, R> Collector<T, A, R> toNull() {

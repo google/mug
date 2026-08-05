@@ -410,7 +410,7 @@ public final class Parsers {
         Parser<? extends UnaryOperator<T>> prefix, Parser<? extends T> suffix) {
       return sequence(
           prefix.zeroOrMore(), suffix,
-          (ops, operand) -> Parser.applyOperators(ops.reversed(), operand));
+          (ops, operand) -> Suffix.applyOperators(operand, ops.reversed()));
     }
 
     /**
@@ -445,6 +445,11 @@ public final class Parsers {
     }
 
     Suffix() {}
+
+    static <T> T applyOperators(T operand, Iterable<? extends UnaryOperator<T>> ops) {
+      for (UnaryOperator<T> op : ops) operand = op.apply(operand);
+      return operand;
+    }
   }
 
   private Parsers() {}
