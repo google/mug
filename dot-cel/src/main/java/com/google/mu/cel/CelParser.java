@@ -12,6 +12,7 @@ import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
+import static com.google.common.labs.parse.Parsers.Suffix.withPrefixes;
 import static com.google.mu.util.CharPredicate.isNot;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -174,8 +175,8 @@ public final class CelParser {
                 .between("[", "]")
                 .mapWithIndex((op, begin, end) -> e -> op.apply(e).withSourceIndex(begin))));
     Parser<CelExpr> unaryExpr = anyOf(
-        subjectDot.withPrefixes(unary('!', CelExpr.Not::new)),
-        subjectDot.withPrefixes(unary('-', CelExpr.Negative::new)));
+        withPrefixes(unary('!', CelExpr.Not::new), subjectDot),
+        withPrefixes(unary('-', CelExpr.Negative::new), subjectDot));
     Parser<CelExpr> binary = new OperatorTable<CelExpr>()
         .leftAssociative(binary("*", CelExpr::multiply), 30)
         .leftAssociative(binary("/", CelExpr::divide), 30)

@@ -218,7 +218,7 @@ public final class OperatorTable<T> {
 
   private static final class Prefix<T> extends Unary<T> {
     @Override public Parser<T> makeExpressionParser(Parser<T> operand) {
-      return operand.withPrefixes(opParser());
+      return Parsers.Suffix.withPrefixes(opParser(), operand);
     }
   }
 
