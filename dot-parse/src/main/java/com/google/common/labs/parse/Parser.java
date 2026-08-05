@@ -623,12 +623,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             });
   }
 
-  /**
-   * @deprecated use {@link Parsers#BMP_CODE_UNIT} instead.
-   */
+  /** @deprecated use {@link Parsers#BMP_CODE_UNIT} instead. */
   @Deprecated
   public static Parser<Integer> bmpCodeUnit() {
-    return Parsers.BMP_CODE_UNIT;
+    return Parsers.BMP_CODE_UNIT.elidableMap(c -> (int) c);
   }
 
   /**

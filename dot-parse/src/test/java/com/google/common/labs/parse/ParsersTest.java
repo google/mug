@@ -223,19 +223,19 @@ public class ParsersTest {
   }
 
   @Test public void bmpCodeUnit_validHexUpper() {
-    assertThat(Parsers.BMP_CODE_UNIT.parse("D83D")).isEqualTo(0xD83D);
+    assertThat(Parsers.BMP_CODE_UNIT.parse("D83D")).isEqualTo((char) 0xD83D);
   }
 
   @Test public void bmpCodeUnit_validHexLower() {
-    assertThat(Parsers.BMP_CODE_UNIT.parse("d83d")).isEqualTo(0xD83D);
+    assertThat(Parsers.BMP_CODE_UNIT.parse("d83d")).isEqualTo((char) 0xD83D);
   }
 
   @Test public void bmpCodeUnit_zero() {
-    assertThat(Parsers.BMP_CODE_UNIT.parse("0000")).isEqualTo(0);
+    assertThat(Parsers.BMP_CODE_UNIT.parse("0000")).isEqualTo('\0');
   }
 
   @Test public void bmpCodeUnit_max() {
-    assertThat(Parsers.BMP_CODE_UNIT.parse("FFFF")).isEqualTo(65535);
+    assertThat(Parsers.BMP_CODE_UNIT.parse("FFFF")).isEqualTo((char) 65535);
   }
 
   @Test public void bmpCodeUnit_tooShortThrows() {

@@ -1,7 +1,6 @@
 package com.google.mu.benchmarks.parsers.dotparse;
 
 import static com.google.common.labs.parse.Parser.anyOf;
-import static com.google.common.labs.parse.Parser.bmpCodeUnit;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.define;
 import static com.google.common.labs.parse.Parser.first;
@@ -10,6 +9,7 @@ import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
+import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
 
 import com.google.common.labs.parse.Parser;
 import com.google.common.labs.parse.Parsers;
@@ -34,7 +34,7 @@ public final class JsonParser {
       one('\\').thenReturn("\\"),
       one('/').thenReturn("/"),
       one('"').thenReturn("\""),
-      one('u').then(bmpCodeUnit()).map(Character::toString));
+      one('u').then(BMP_CODE_UNIT).map(Object::toString));
 
   private static final Parser<JsonString> JSON_STRING =
       quotedByWithEscapes('"', '"', ESCAPED).map(JsonString::new);

@@ -299,7 +299,7 @@ public final class Parsers {
    *
    * <pre>{@code
    * BMP_CODE_UNIT
-   *     .map(Character::toString)
+   *     .map(String::valueOf)
    *     .zeroOrMore(Collectors.joining())
    *     .parse("D83DDE00");
    * }</pre>
@@ -312,11 +312,11 @@ public final class Parsers {
    * Parser.quotedByWithEscapes()}:
    *
    * <pre>{@code
-   * Parser.quotedByWithEscapes('"', '"', Parser.string("u").then(BMP_CODE_UNIT).map(Character::toString));
+   * Parser.quotedByWithEscapes('"', '"', Parser.string("u").then(BMP_CODE_UNIT).map(String::valueOf));
    * }</pre>
    */
-  public static final Parser<Integer> BMP_CODE_UNIT =
-      Parser.hexDigits(4).elidableMap(digits -> Integer.parseInt(digits, 16));
+  public static final Parser<Character> BMP_CODE_UNIT =
+      Parser.hexDigits(4).elidableMap(digits -> (char) Integer.parseInt(digits, 16));
 
   /**
    * Parses an 8-digit hex Unicode code point (such as those following {@code \U} in string
