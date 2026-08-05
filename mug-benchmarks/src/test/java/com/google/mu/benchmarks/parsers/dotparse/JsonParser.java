@@ -2,23 +2,20 @@ package com.google.mu.benchmarks.parsers.dotparse;
 
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.bmpCodeUnit;
-import static com.google.common.labs.parse.Parser.caseInsensitive;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.define;
-import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.first;
-import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
-import com.google.mu.util.CharPredicate;
 
-import java.util.stream.Collectors;
 import com.google.common.labs.parse.Parser;
 import com.google.common.labs.parse.Parsers;
 import com.google.mu.benchmarks.parsers.dotparse.JsonValue.*;
+import com.google.mu.util.CharPredicate;
+import java.util.stream.Collectors;
 
 /** Fully RFC 8259-compliant JSON parser built with dot-parse. */
 public final class JsonParser {
@@ -42,25 +39,22 @@ public final class JsonParser {
   private static final Parser<JsonString> JSON_STRING =
       quotedByWithEscapes('"', '"', ESCAPED).map(JsonString::new);
 
-  private static final Parser<JsonNumber> JSON_NUMBER =
-      Parsers.SIGNED_DOUBLE.map(JsonNumber::new);
- 
+  private static final Parser<JsonNumber> JSON_NUMBER = Parsers.SIGNED_DOUBLE.map(JsonNumber::new);
+
   private static final Parser<JsonNull> JSON_NULL = string("null").thenReturn(JsonNull.INSTANCE);
   private static final Parser<JsonBoolean> JSON_BOOLEAN = anyOf(JsonBoolean.values());
 
   public static final Parser<JsonValue> PARSER = define(
       me -> {
-        Parser<JsonArray> jsonArray = me.zeroOrMoreDelimitedBy(",")
-            .between("[", "]")
-            .map(JsonArray::new);
-        Parser<JsonObject> jsonObject = 
-            Parser.zeroOrMoreDelimited(
+        Parser<JsonArray> jsonArray =
+            me.zeroOrMoreDelimitedBy(",").between("[", "]").map(JsonArray::new);
+        Parser<JsonObject> jsonObject = Parser.zeroOrMoreDelimited(
                 JSON_STRING.map(JsonString::value).followedBy(":"),
                 me,
                 ",",
                 Collectors::toUnmodifiableMap)
-              .between("{", "}")
-              .map(JsonObject::new);
+            .between("{", "}")
+            .map(JsonObject::new);
         return anyOf(JSON_NULL, JSON_BOOLEAN, JSON_NUMBER, JSON_STRING, jsonArray, jsonObject);
       });
 
@@ -74,7 +68,8 @@ public final class JsonParser {
   }
 
   /**
-   * Parses the given JSON string (which may contain line or block comments) into a structured JsonValue.
+   * Parses the given JSON string (which may contain line or block comments) into a structured
+   * JsonValue.
    *
    * @throws Parser.ParseException if the input is not a valid JSON document.
    */
