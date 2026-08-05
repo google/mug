@@ -2,6 +2,7 @@ package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.CharacterSet.charsIn;
 import static com.google.common.labs.parse.Parser.anyOf;
+import static com.google.common.labs.parse.Parser.caseInsensitive;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
@@ -72,6 +73,22 @@ public final class Parsers {
    */
   public static final Parser<String> UNSIGNED_DECIMAL =
       literally(UNSIGNED_INTEGER, sequence(one('.'), consecutive("[0-9]")).optional()).source();
+
+  /**
+   * Parses double-precision numbers that support scientific notation, conforming to RFC 8259 (JSON spec).
+   *
+   * <p>E.g., {@code 123}, {@code -0.5}, {@code 1e10}, {@code -1.23e+4}, {@code 0.0e-5}.
+   *
+   * <p>Note that leading plus signs (e.g., {@code +1}), leading zeros on integers (e.g., {@code
+   * 05}), and missing integer or fractional parts (e.g., {@code .5} or {@code 5.}) are not allowed,
+   * as per the JSON standard.
+   */
+  public static final Parser<Double> SIGNED_DOUBLE = literally(
+          one('-').optional(),
+          UNSIGNED_DECIMAL,
+          sequence(caseInsensitive("e"), one("[+-]").optional(), DIGITS).optional())
+      .source()
+      .elidableMap(Double::parseDouble);
 
   /**
    * Parses duration in the shorthand format of {@code 1.5h}, {@code 30d}, {@code 10m30s} etc.

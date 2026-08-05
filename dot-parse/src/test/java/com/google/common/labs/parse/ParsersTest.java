@@ -3,6 +3,7 @@ package com.google.common.labs.parse;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
+import static com.google.common.labs.parse.Parsers.SIGNED_DOUBLE;
 import static com.google.common.labs.parse.Parsers.UNSIGNED_INTEGER;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
@@ -579,5 +580,190 @@ public class ParsersTest {
     assertThat(parser.parse("2")).isEqualTo("2");
     assertThat(parser.parse("9")).isEqualTo("9");
     assertThat(parser.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test public void signedDouble_zero() {
+    assertThat(SIGNED_DOUBLE.parse("0")).isEqualTo(0.0);
+  }
+
+  @Test public void signedDouble_positiveInteger() {
+    assertThat(SIGNED_DOUBLE.parse("123")).isEqualTo(123.0);
+  }
+
+  @Test public void signedDouble_negativeInteger() {
+    assertThat(SIGNED_DOUBLE.parse("-123")).isEqualTo(-123.0);
+  }
+
+  @Test public void signedDouble_positiveFloat() {
+    assertThat(SIGNED_DOUBLE.parse("0.5")).isEqualTo(0.5);
+  }
+
+  @Test public void signedDouble_negativeFloat() {
+    assertThat(SIGNED_DOUBLE.parse("-0.5")).isEqualTo(-0.5);
+  }
+
+  @Test public void signedDouble_exponent() {
+    assertThat(SIGNED_DOUBLE.parse("1.23e4")).isEqualTo(12300.0);
+  }
+
+  @Test public void signedDouble_negativeExponent() {
+    assertThat(SIGNED_DOUBLE.parse("1.23e-4")).isEqualTo(0.000123);
+  }
+
+  @Test public void signedDouble_positiveExponent() {
+    assertThat(SIGNED_DOUBLE.parse("1.23e+4")).isEqualTo(12300.0);
+  }
+
+  @Test public void signedDouble_capitalExponent() {
+    assertThat(SIGNED_DOUBLE.parse("1.23E4")).isEqualTo(12300.0);
+  }
+
+  @Test public void signedDouble_zeroWithExponent() {
+    assertThat(SIGNED_DOUBLE.parse("0e1")).isEqualTo(0.0);
+  }
+
+  @Test public void signedDouble_emptyThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse(""));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting one of [integer, -], encountered:\s
+                <EOF>
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_leadingPlusThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("+123"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting one of [integer, -], encountered:\s
+                +123
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_leadingZeroThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("05"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting one of [integer, -], encountered:\s
+                05
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_leadingZeroFloatThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("00.5"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting one of [integer, -], encountered:\s
+                00.5
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_missingIntegerThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse(".5"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting one of [integer, -], encountered:\s
+                .5
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_missingFractionThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("5."));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting <one or more [0-9]>, encountered:\s
+                5.
+                  ^
+            """);
+  }
+
+  @Test public void signedDouble_emptyExponentThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("1e"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting <digits>, encountered:\s
+                1e
+                  ^
+            """);
+  }
+
+  @Test public void signedDouble_emptyExponentSignThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("1e+"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <digits>, encountered:\s
+                1e+
+                   ^
+            """);
+  }
+
+  @Test public void signedDouble_fractionalExponentThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("1e4.5"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <EOF>, encountered:\s
+                1e4.5
+                   ^
+            """);
+  }
+
+  @Test public void signedDouble_suffixThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("1e4f"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <EOF>, encountered:\s
+                1e4f
+                   ^
+            """);
+  }
+
+  @Test public void signedDouble_nanThrows() {
+    ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("NaN"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting one of [integer, -], encountered:\s
+                NaN
+                ^
+            """);
+  }
+
+  @Test public void signedDouble_infinityThrows() {
+    ParseException thrown =
+        assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("Infinity"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: expecting one of [integer, -], encountered:\s
+                Infinity
+                ^
+            """);
   }
 }
