@@ -56,7 +56,7 @@ public final class Parsers {
         }
 
         @Override Set<String> computePrefixes() {
-          return Set.of("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+          return DIGITS.getPrefixes();
         }
 
         private static boolean isDigit(char c) {
