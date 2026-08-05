@@ -58,10 +58,6 @@ public final class Parsers {
         @Override Set<String> computePrefixes() {
           return DIGITS.getPrefixes();
         }
-
-        private static boolean isDigit(char c) {
-          return c >= '0' && c <= '9';
-        }
       }.source();
 
   /**
