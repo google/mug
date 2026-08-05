@@ -1235,17 +1235,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
-  /**
-   * Returns a parser that applies the {@code operator} parser zero or more times before {@code
-   * this} and applies the result unary operator functions iteratively.
-   *
-   * @since 9.9.3
-   * @deprecated Use {@link OperatorTable} instead
-   */
+  /** @deprecated Use {@link Parsers.Suffix#withPrefixes(Parser, Parser) withPrefixes(prefix, suffix)} instead */
   @Deprecated
   public final Parser<T> withPrefixes(Parser<? extends UnaryOperator<T>> operator) {
-    return sequence(
-        operator.zeroOrMore(), this, (ops, operand) -> applyOperators(ops.reversed(), operand));
+    return Parsers.Suffix.withPrefixes(operator, this);
   }
 
   /**
@@ -2568,7 +2561,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return () -> finisher.apply(supplier.get());
   }
 
-  private static <T> T applyOperators(Iterable<? extends UnaryOperator<T>> ops, T operand) {
+  static <T> T applyOperators(Iterable<? extends UnaryOperator<T>> ops, T operand) {
     for (UnaryOperator<T> op : ops) operand = op.apply(operand);
     return operand;
   }

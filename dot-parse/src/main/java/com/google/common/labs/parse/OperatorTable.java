@@ -121,7 +121,7 @@ public final class OperatorTable<T> {
       Parser<S> operator,
       BiFunction<? super T, ? super S, ? extends T> postfixFunction,
       int precedence) {
-    return postfix(Suffix.postfix(operator, postfixFunction), precedence);
+    return postfix(Parsers.Suffix.postfix(operator, postfixFunction), precedence);
   }
 
   /**
@@ -218,7 +218,7 @@ public final class OperatorTable<T> {
 
   private static final class Prefix<T> extends Unary<T> {
     @Override public Parser<T> makeExpressionParser(Parser<T> operand) {
-      return operand.withPrefixes(opParser());
+      return Parsers.Suffix.withPrefixes(opParser(), operand);
     }
   }
 
