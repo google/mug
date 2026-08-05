@@ -62,6 +62,7 @@ loadScripts(document, 'script');</script>
 <button class="hide-sidebar"><span>Hide sidebar&nbsp;</span>&#10094;</button><button class="show-sidebar">&#10095;<span>&nbsp;Show sidebar</span></button>
 <ol class="toc-list">
 <li><a href="#" tabindex="0">Description</a></li>
+<li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
 <li><a href="#field-summary" tabindex="0">Field Summary</a></li>
 <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
 <li><a href="#field-detail" tabindex="0">Field Details</a>
@@ -89,7 +90,7 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public final class </span><span class="element-name type-name-label">Parsers</span>
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span></div>
-<div class="block">Some common composite parsers in addition to the core parsers provided by <a href="Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a>.</div>
+<div class="block">More advanced composite parsers in addition to the core parsers provided by <a href="Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>10.8</dd>
@@ -98,6 +99,23 @@ loadScripts(document, 'script');</script>
 </section>
 <section class="summary">
 <ul class="summary-list">
+<!-- ======== NESTED CLASS SUMMARY ======== -->
+<li>
+<section class="nested-class-summary" id="nested-class-summary">
+<h2>Nested Class Summary</h2>
+<div class="caption"><span>Nested Classes</span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Class</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="Parsers.Suffix.html" class="type-name-link" title="class in com.google.common.labs.parse">Parsers.Suffix</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">A convenience helper to left-factor a common prefix followed by multiple optional suffixes.</div>
+</div>
+</div>
+</section>
+</li>
 <!-- =========== FIELD SUMMARY =========== -->
 <li>
 <section class="field-summary" id="field-summary">
@@ -203,7 +221,12 @@ loadScripts(document, 'script');</script>
  <p>E.g., <code>123</code>, <code>-0.5</code>, <code>1e10</code>, <code>-1.23e+4</code>, <code>0.0e-5</code>.
 
  <p>The input string is parsed into a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Double.html" title="class or interface in java.lang" class="external-link"><code>Double</code></a>. You can also call <code>.source()</code> if you
- prefer to obtain the raw matched string.
+ prefer to obtain the raw matched string or parse into a different type such as <code>
+ BigDecimal</code>:
+
+ <pre><code>
+ Parser&lt;BigDecimal&gt; bigDecimal = Parsers.SIGNED_DOUBLE.source().map(BigDecimal::new);
+ </code></pre>
 
  <p>Note that leading plus signs (e.g., <code>+1</code>), leading zeros on integers (e.g., <code>
  05</code>), and missing integer or fractional parts (e.g., <code>.5</code> or <code>5.</code>) are not allowed,
@@ -260,7 +283,8 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Character.html" title="class or interface in java.lang" class="external-link">Character</a>&gt;</span>&nbsp;<span class="element-name">BMP_CODE_UNIT</span></div>
 <div class="block">Parses a 4-digit hex BMP code unit.
 
- <p>You can use it together with <a href="Parser.html#quotedByWithEscapes(char,char,com.google.common.labs.parse.Production)"><code>Parser.quotedByWithEscapes()</code></a> to parse unicode escapes like:
+ <p>You can use it together with <a href="Parser.html#quotedByWithEscapes(char,char,com.google.common.labs.parse.Production)"><code>Parser.quotedByWithEscapes()</code></a>
+ to parse unicode escapes like:
 
  <pre><code>
  Parser.quotedByWithEscapes('"', '"', Parser.one('u').then(BMP_CODE_UNIT).map(String::valueOf));
@@ -279,7 +303,8 @@ loadScripts(document, 'script');</script>
  <p>The parsed integer is guaranteed to be a valid Unicode code point (between <code>0</code> and
  <code>0x10FFFF</code>).
 
- <p>You can use it together with <a href="Parser.html#quotedByWithEscapes(char,char,com.google.common.labs.parse.Production)"><code>Parser.quotedByWithEscapes()</code></a> to parse unicode escapes like:
+ <p>You can use it together with <a href="Parser.html#quotedByWithEscapes(char,char,com.google.common.labs.parse.Production)"><code>Parser.quotedByWithEscapes()</code></a>
+ to parse unicode escapes like:
 
  <pre><code>
  Parser&lt;String&gt; quotedStringWithUnicodeEscape = Parser.quotedByWithEscapes(
