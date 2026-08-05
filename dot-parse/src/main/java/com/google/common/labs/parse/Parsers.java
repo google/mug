@@ -294,25 +294,13 @@ public final class Parsers {
   }
 
   /**
-   * Parses a 4-digit hex BMP code unit. The following example parses a surrogate pair of two UTF-16
-   * code units and will return the emoji {@code 😀}:
+   * Parses a 4-digit hex BMP code unit.
+   *
+   * <p>You can use it together with {@link Parser#quotedByWithEscapes
+   * Parser.quotedByWithEscapes()} to parse unicode escapes like:
    *
    * <pre>{@code
-   * BMP_CODE_UNIT
-   *     .map(String::valueOf)
-   *     .zeroOrMore(Collectors.joining())
-   *     .parse("D83DDE00");
-   * }</pre>
-   *
-   * <p>Note that starting from v9.6, it's recommended to use {@link Joiner} ({@code
-   * Joiner.on(delimiter)}) in place of JDK {@code Collectors.joining(delimiter)} because {@code
-   * Joiner} optimizes for single-string input, which is a common case in the context of parsing.
-   *
-   * <p>You can also compose it with {@link Parser#quotedByWithEscapes
-   * Parser.quotedByWithEscapes()}:
-   *
-   * <pre>{@code
-   * Parser.quotedByWithEscapes('"', '"', Parser.string("u").then(BMP_CODE_UNIT).map(String::valueOf));
+   * Parser.quotedByWithEscapes('"', '"', Parser.one('u').then(BMP_CODE_UNIT).map(String::valueOf));
    * }</pre>
    */
   public static final Parser<Character> BMP_CODE_UNIT =
@@ -325,10 +313,14 @@ public final class Parsers {
    * <p>The parsed integer is guaranteed to be a valid Unicode code point (between {@code 0} and
    * {@code 0x10FFFF}).
    *
+   * <p>You can use it together with {@link Parser#quotedByWithEscapes
+   * Parser.quotedByWithEscapes()} to parse unicode escapes like:
+   *
    * <pre>{@code
-   * CODE_POINT
-   *     .map(Character::toString)
-   *     .parse("0001F600"); // returns "😀"
+   * Parser<String> quotedStringWithUnicodeEscape = Parser.quotedByWithEscapes(
+   *     '"', '"',
+   *     Parser.one('U').then(CODE_POINT).map(Character::toString));
+   * quotedStringWithUnicodeEscape.parse("\\U0001F600"); // returns "😀"
    * }</pre>
    */
   public static final Parser<Integer> CODE_POINT = Parser.hexDigits(8)
