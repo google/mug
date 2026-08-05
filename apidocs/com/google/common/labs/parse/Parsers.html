@@ -258,24 +258,12 @@ loadScripts(document, 'script');</script>
 <h3>BMP_CODE_UNIT</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Character.html" title="class or interface in java.lang" class="external-link">Character</a>&gt;</span>&nbsp;<span class="element-name">BMP_CODE_UNIT</span></div>
-<div class="block">Parses a 4-digit hex BMP code unit. The following example parses a surrogate pair of two UTF-16
- code units and will return the emoji <code>😀</code>:
+<div class="block">Parses a 4-digit hex BMP code unit.
+
+ <p>You can use it together with <a href="Parser.html#quotedByWithEscapes(char,char,com.google.common.labs.parse.Production)"><code>Parser.quotedByWithEscapes()</code></a> to parse unicode escapes like:
 
  <pre><code>
- BMP_CODE_UNIT
-     .map(String::valueOf)
-     .zeroOrMore(Collectors.joining())
-     .parse("D83DDE00");
- </code></pre>
-
- <p>Note that starting from v9.6, it's recommended to use <a href="../../../mu/util/stream/Joiner.html" title="class in com.google.mu.util.stream"><code>Joiner</code></a> (<code>
- Joiner.on(delimiter)</code>) in place of JDK <code>Collectors.joining(delimiter)</code> because <code>
- Joiner</code> optimizes for single-string input, which is a common case in the context of parsing.
-
- <p>You can also compose it with <a href="Parser.html#quotedByWithEscapes(char,char,com.google.common.labs.parse.Production)"><code>Parser.quotedByWithEscapes()</code></a>:
-
- <pre><code>
- Parser.quotedByWithEscapes('"', '"', Parser.string("u").then(BMP_CODE_UNIT).map(String::valueOf));
+ Parser.quotedByWithEscapes('"', '"', Parser.one('u').then(BMP_CODE_UNIT).map(String::valueOf));
  </code></pre></div>
 </div>
 </section>
@@ -291,10 +279,13 @@ loadScripts(document, 'script');</script>
  <p>The parsed integer is guaranteed to be a valid Unicode code point (between <code>0</code> and
  <code>0x10FFFF</code>).
 
+ <p>You can use it together with <a href="Parser.html#quotedByWithEscapes(char,char,com.google.common.labs.parse.Production)"><code>Parser.quotedByWithEscapes()</code></a> to parse unicode escapes like:
+
  <pre><code>
- CODE_POINT
-     .map(Character::toString)
-     .parse("0001F600"); // returns "😀"
+ Parser&lt;String&gt; quotedStringWithUnicodeEscape = Parser.quotedByWithEscapes(
+     '"', '"',
+     Parser.one('U').then(CODE_POINT).map(Character::toString));
+ quotedStringWithUnicodeEscape.parse("\\U0001F600"); // returns "😀"
  </code></pre></div>
 </div>
 </section>
