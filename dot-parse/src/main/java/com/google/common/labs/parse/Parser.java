@@ -39,6 +39,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import com.google.common.labs.parse.ErrorContext.ErrorTracker;
+import com.google.common.labs.parse.Parsers.Suffix;
 import com.google.errorprone.annotations.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.LazyInit;
 import com.google.mu.function.Function4;
@@ -1247,7 +1248,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   @Deprecated
   public final Parser<T> withPrefixes(Parser<? extends UnaryOperator<T>> operator) {
-    return Parsers.Suffix.withPrefixes(operator, this);
+    return Suffix.withPrefixes(operator, this);
   }
 
   /**
@@ -1256,7 +1257,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   @Deprecated
   public final Parser<T> withPostfixes(Parser<? extends UnaryOperator<T>> operator) {
-    return Parsers.Suffix.withPostfixes(this, operator);
+    return Suffix.withPostfixes(this, operator);
   }
 
   /**
@@ -1275,7 +1276,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final <S> Parser<T> withPostfixes(
       Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
-    return Parsers.Suffix.withPostfixes(this, postfix(operator, postfixFunction));
+    return Suffix.withPostfixes(this, postfix(operator, postfixFunction));
   }
 
   /**
@@ -1293,8 +1294,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.9.9
    */
   public final Parser<T> withPostfixes(String operator, UnaryOperator<T> postfixFunction) {
-    return Parsers.Suffix.withPostfixes(
-        this, string(operator).thenReturn(requireNonNull(postfixFunction)));
+    return Suffix.withPostfixes(this, string(operator).thenReturn(requireNonNull(postfixFunction)));
   }
 
   /**
