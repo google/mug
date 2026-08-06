@@ -1261,7 +1261,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /**
    * Returns a parser that after this parser succeeds, applies the {@code operator} parser zero or
-   * more times and applies the result unary operator function iteratively. For example:
+   * more times and applies the result function iteratively. For example:
    *
    * <pre>{@code
    * Parser<Expr> parser = word()
@@ -1280,7 +1280,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /**
    * Returns a parser that after this parser succeeds, applies the {@code operator} parser zero or
-   * more times and applies the result unary operator function iteratively. For example:
+   * more times and applies the result function iteratively. For example:
    *
    * <pre>{@code
    * Parser<AbcNote> middleNote = one("[ABCDEFG]")
