@@ -423,7 +423,7 @@ public final class Parsers {
         Parser<? extends Function<? super T, ? extends T>> prefix, Parser<? extends T> suffix) {
       return sequence(
           prefix.zeroOrMore(), suffix,
-          (ops, operand) -> Suffix.applyOperators(operand, ops.reversed()));
+          (ops, operand) -> applyOperators(operand, ops.reversed()));
     }
 
     /**
