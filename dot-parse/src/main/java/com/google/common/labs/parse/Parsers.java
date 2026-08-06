@@ -438,17 +438,23 @@ public final class Parsers {
     }
 
     /**
-     * Returns a parser that after {@code operand} succeeds, applies the {@code postfix} parser zero
-     * or more times and applies the result function iteratively.
+     * Returns a parser that after this parser succeeds, applies the {@code operator} parser zero or
+     * more times and applies the result function iteratively. For example:
      *
-     * <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
-     * postfix.
+     * <pre>{@code
+     * Parser<AbcNote> middleNote = one("[ABCDEFG]")
+     *     .map(AbcNote::middle)
+     *     .withPostfixes(",", AbcNote::down);
+     * }</pre>
      *
      * <p>For infix operator support, consider using {@link OperatorTable}.
      */
     public static <T> Parser<T> withPostfixes(
-        Parser<? extends T> operand, Parser<? extends Function<? super T, ? extends T>> postfix) {
-      return sequence(operand, postfix.zeroOrMore(), Suffix::applyOperators);
+        Parser<? extends T> operand, String postfix, UnaryOperator<T> postfixFunction) {
+      requireNonNull(postfixFunction);
+      return sequence(
+          operand, string(postfix).zeroOrMore(counting()),
+          (prefix, times) -> applyOperator(prefix, postfixFunction, times));
     }
 
     /**
@@ -470,23 +476,17 @@ public final class Parsers {
     }
 
     /**
-     * Returns a parser that after this parser succeeds, applies the {@code operator} parser zero or
-     * more times and applies the result function iteratively. For example:
+     * Returns a parser that after {@code operand} succeeds, applies the {@code postfix} parser zero
+     * or more times and applies the result function iteratively.
      *
-     * <pre>{@code
-     * Parser<AbcNote> middleNote = one("[ABCDEFG]")
-     *     .map(AbcNote::middle)
-     *     .withPostfixes(",", AbcNote::down);
-     * }</pre>
+     * <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
+     * postfix.
      *
      * <p>For infix operator support, consider using {@link OperatorTable}.
      */
     public static <T> Parser<T> withPostfixes(
-        Parser<? extends T> operand, String postfix, UnaryOperator<T> postfixFunction) {
-      requireNonNull(postfixFunction);
-      return sequence(
-          operand, string(postfix).zeroOrMore(counting()),
-          (prefix, times) -> applyOperator(prefix, postfixFunction, times));
+        Parser<? extends T> operand, Parser<? extends Function<? super T, ? extends T>> postfix) {
+      return sequence(operand, postfix.zeroOrMore(), Suffix::applyOperators);
     }
 
     /**
