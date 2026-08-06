@@ -193,7 +193,7 @@ standard pattern in Java—any left-recursion bug is caught immediately at
 class-loading time, before the application even begins handling requests.)
 
 ```
-java.lang.IllegalStateException: Left recursion not supported! Consider using withPostfixes() or the OperatorTable class to define the left recursive grammar.
+java.lang.IllegalStateException: Left recursion not supported! Consider using followedByZeroOrMore() or the OperatorTable class to define the left recursive grammar.
 	at com.google.common.labs.parse.Utils.checkState(Utils.java:35)
 	at com.google.common.labs.parse.Parser$Rule.skipAndMatch(Parser.java:2070)
 	at com.google.common.labs.parse.Parser$11.skipAndMatch(Parser.java:625)

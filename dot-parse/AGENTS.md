@@ -215,7 +215,7 @@ Nested type parser:
 ```java
 Parser<TypeDecl> simpleType = word().map(TypeDecl::simple);
 Parser<TypeDecl> typeDecl =
-    withPostfixes(simpleType, string(".").then(word()), TypeDecl::nested);
+    simpleType.followedByZeroOrMore(string(".").then(word()), TypeDecl::nested);
 ```
 
 ## 6. Idiomatic Combinators
@@ -476,7 +476,7 @@ Parser<TypeDecl> typeDecl =
   - **Use** combinators: `anyOf(...)`, `sequence(...)`, `zeroOrMore()`,
     `atLeastOnce()`, `zeroOrMoreDelimitedBy()`, `atLeastOnceDelimitedBy()`
   - **Use** safe optionals: `optionallyFollowedBy(...)`, `withPrefixes(...)`,
-    `withPostfixes(...)`
+    `followedByZeroOrMore(...)`
   - **Use** boundaries: `between(...)`, `immediatelyBetween(...)`,
     `followedBy(...)`, `then(...)`
 - If you need a method not listed above, you MUST open and read `Parser.java`

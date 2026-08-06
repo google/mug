@@ -33,6 +33,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toList;
@@ -1250,33 +1251,86 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public final Parser<T> withPrefixes(Parser<? extends UnaryOperator<T>> operator) {
     return Suffix.withPrefixes(operator, this);
   }
-
   /**
-   * @deprecated Use {@link Parsers.Suffix#withPostfixes(Parser, Parser) withPostfixes(operand,
-   *     postfix)} instead.
+   * Returns a parser that after {@code this} parser succeeds, matches the {@code postfix} string
+   * zero or more times and applies the {@code postfixFunction} iteratively. For example:
+   *
+   * <pre>{@code
+   * Parser<AbcNote> middleNote = one("[ABCDEFG]").map(AbcNote::middle);
+   * Parser<AbcNote> note = middleNote.followedByZeroOrMore(",", AbcNote::down);
+   * }</pre>
+   *
+   * <p>For infix operator support, consider using {@link OperatorTable}.
+   *
+   * @since 10.8
    */
-  @Deprecated
-  public final Parser<T> withPostfixes(Parser<? extends UnaryOperator<T>> operator) {
-    return Suffix.withPostfixes(this, operator);
+  public final Parser<T> followedByZeroOrMore(String postfix, UnaryOperator<T> postfixFunction) {
+    requireNonNull(postfixFunction);
+    return sequence(
+        this,
+        string(postfix).zeroOrMore(counting()),
+        (prefix, times) -> Suffix.applyOperator(prefix, postfixFunction, times));
   }
 
   /**
-   * @deprecated Use {@link Parser.Suffix#withPostfixes(Parser, Parser, BiFunction)
-   *     withPostfixes(operand, postfix, postfixFunction)} instead.
+   * Returns a parser that after {@code this} parser succeeds, matches the {@code postfix} parser
+   * zero or more times and applies the {@code postfixFunction} iteratively. For example:
+   *
+   * <pre>{@code
+   * Parser<Expr> variable = word().map(Expr::variable);
+   * Parser<Expr> parser = variable.followedByZeroOrMore(
+   *     string(".").then(word()),
+   *     (expr, field) -> Expr.fieldAccess(expr, field));
+   * }</pre>
+   *
+   * <p>For infix operator support, consider using {@link OperatorTable}.
+   *
+   * @since 10.8
+   */
+  public final <S> Parser<T> followedByZeroOrMore(
+      Parser<S> postfix, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
+    return followedByZeroOrMore(Suffix.postfix(postfix, postfixFunction));
+  }
+
+  /**
+   * Returns a parser that after {@code this} parser succeeds, matches the {@code postfix} parser
+   * zero or more times and applies the result functions iteratively.
+   *
+   * <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
+   * postfix.
+   *
+   * <p>For infix operator support, consider using {@link OperatorTable}.
+   *
+   * @since 10.8
+   */
+  public final Parser<T> followedByZeroOrMore(
+      Parser<? extends Function<? super T, ? extends T>> postfix) {
+    return sequence(this, postfix.zeroOrMore(), Suffix::applyOperators);
+  }
+
+  /**
+   * @deprecated Use {@link #followedByZeroOrMore(Parser)} instead.
+   */
+  @Deprecated
+  public final Parser<T> withPostfixes(Parser<? extends UnaryOperator<T>> operator) {
+    return followedByZeroOrMore(operator);
+  }
+
+  /**
+   * @deprecated Use {@link #followedByZeroOrMore(Parser, BiFunction)} instead.
    */
   @Deprecated
   public final <S> Parser<T> withPostfixes(
       Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
-    return Suffix.withPostfixes(this, postfix(operator, postfixFunction));
+    return followedByZeroOrMore(operator, postfixFunction);
   }
 
   /**
-   * @deprecated Use {@link Parser.Suffix#withPostfixes(Parser, String, BiFunction)
-   *     withPostfixes(operand, postfix, postfixFunction)} instead.
+   * @deprecated Use {@link #followedByZeroOrMore(String, UnaryOperator)} instead.
    */
   @Deprecated
   public final Parser<T> withPostfixes(String operator, UnaryOperator<T> postfixFunction) {
-    return Suffix.withPostfixes(this, operator, postfixFunction);
+    return followedByZeroOrMore(operator, postfixFunction);
   }
 
   /**
@@ -2377,8 +2431,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       if (start == 0 && input.isEof(0)) {
         checkState(
             !dryRun,
-            "Left recursion not supported! Consider using withPostfixes() or the OperatorTable"
-                + " class to define the left recursive grammar.");
+            "Left recursion not supported! Consider using followedByZeroOrMore() or the"
+                + " OperatorTable class to define the left recursive grammar.");
         if (p == null) { // can happen when dry-running mutually recursive rules.
           return context.failAt(0, "empty input", ""); // A Parser must consume input.
         }

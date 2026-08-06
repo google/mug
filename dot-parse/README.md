@@ -570,13 +570,12 @@ precedence across regular operators and the abstract operators, all in the same 
 
 This saves you from manually composing and maintaining layers on top of layers of sub-rules just to encode precedences.
 
-If you have only one left associative operator with no other operator, consider using `withPostfixes()`:
+If you have only one left associative operator with no other operator, consider using `followedByZeroOrMore()`:
 
 ```java {.good}
-Parser<Expr> expr = withPostfixes(
-    identifier.map(IdentifierRef::new),
-    string(".").then(identifier),
-    FieldRef::new);
+Parser<Expr> expr = identifier
+    .map(IdentifierRef::new)
+    .followedByZeroOrMore(string(".").then(identifier), FieldRef::new);
 ```
 
 For more details, check out [left-recursion.md](./left-recursion.md).
