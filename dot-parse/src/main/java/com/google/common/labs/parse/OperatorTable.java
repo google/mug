@@ -224,13 +224,13 @@ public final class OperatorTable<T> {
 
   private static final class Postfix<T> extends Unary<T> {
     @Override public Parser<T> makeExpressionParser(Parser<T> operand) {
-      return operand.withPostfixes(opParser());
+      return Parsers.Suffix.withPostfixes(operand, opParser());
     }
   }
 
   private static final class Infixl<T> extends Binary<T> {
     @Override public Parser<T> makeExpressionParser(Parser<T> operand) {
-      return operand.withPostfixes(opWithRightHandSide(operand));
+      return Parsers.Suffix.withPostfixes(operand, opWithRightHandSide(operand));
     }
   }
 

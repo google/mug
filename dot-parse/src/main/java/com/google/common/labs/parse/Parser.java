@@ -627,7 +627,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             });
   }
 
-  /** @deprecated use {@link Parsers#BMP_CODE_UNIT} instead. */
+  /**
+   * @deprecated use {@link Parsers#BMP_CODE_UNIT} instead.
+   */
   @Deprecated
   public static Parser<Integer> bmpCodeUnit() {
     return Parsers.BMP_CODE_UNIT.elidableMap(c -> (int) c);
@@ -1239,25 +1241,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
-  /** @deprecated Use {@link Parsers.Suffix#withPrefixes(Parser, Parser) withPrefixes(prefix, suffix)} instead */
+  /**
+   * @deprecated Use {@link Parsers.Suffix#withPrefixes(Parser, Parser) withPrefixes(prefix,
+   *     suffix)} instead
+   */
   @Deprecated
   public final Parser<T> withPrefixes(Parser<? extends UnaryOperator<T>> operator) {
     return Parsers.Suffix.withPrefixes(operator, this);
   }
 
   /**
-   * Returns a parser that after this parser succeeds, applies the {@code operator} parser zero or
-   * more times and applies the result unary operator function iteratively.
-   *
-   * <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
-   * postfix.
-   *
-   * <p>For infix operator support, consider using {@link OperatorTable}.
-   *
-   * @since 9.9.3
+   * @deprecated Use {@link Parsers.Suffix#withPostfixes(Parser, Parser) withPostfixes(operand,
+   *     postfix)} instead.
    */
+  @Deprecated
   public final Parser<T> withPostfixes(Parser<? extends UnaryOperator<T>> operator) {
-    return sequence(this, operator.zeroOrMore(), Parsers.Suffix::applyOperators);
+    return Parsers.Suffix.withPostfixes(this, operator);
   }
 
   /**
@@ -1276,7 +1275,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final <S> Parser<T> withPostfixes(
       Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
-    return withPostfixes(postfix(operator, postfixFunction));
+    return Parsers.Suffix.withPostfixes(this, postfix(operator, postfixFunction));
   }
 
   /**
@@ -1294,7 +1293,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.9.9
    */
   public final Parser<T> withPostfixes(String operator, UnaryOperator<T> postfixFunction) {
-    return withPostfixes(string(operator).thenReturn(requireNonNull(postfixFunction)));
+    return Parsers.Suffix.withPostfixes(
+        this, string(operator).thenReturn(requireNonNull(postfixFunction)));
   }
 
   /**

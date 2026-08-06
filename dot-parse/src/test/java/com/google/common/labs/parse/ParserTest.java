@@ -4649,7 +4649,7 @@ public class ParserTest {
     Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
     Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
     Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
-    Parser<Integer> parser = number.withPostfixes(op);
+    Parser<Integer> parser = Parsers.Suffix.withPostfixes(number, op);
     assertThat(parser.parse("10")).isEqualTo(10);
     assertThat(parser.parseToStream("10")).containsExactly(10);
     assertThat(parser.parse("10++")).isEqualTo(11);
@@ -4666,7 +4666,7 @@ public class ParserTest {
     Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
     Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
     Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
-    Parser<Integer> parser = number.withPostfixes(op);
+    Parser<Integer> parser = Parsers.Suffix.withPostfixes(number, op);
     assertThat(parser.source().parse("10")).isEqualTo("10");
     assertThat(parser.source().parseToStream("10")).containsExactly("10");
     assertThat(parser.source().parse("10++")).isEqualTo("10++");
@@ -4683,7 +4683,7 @@ public class ParserTest {
     Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
     Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
     Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
-    Parser<Integer> parser = number.withPostfixes(op);
+    Parser<Integer> parser = Parsers.Suffix.withPostfixes(number, op);
     assertThrows(ParseException.class, () -> parser.parse("a++"));
     assertThrows(ParseException.class, () -> parser.parseToStream("a++").toList());
     assertThrows(ParseException.class, () -> parser.parse("10+"));
@@ -4695,7 +4695,7 @@ public class ParserTest {
     Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
     Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
     Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
-    Parser<Integer> parser = number.withPostfixes(op);
+    Parser<Integer> parser = Parsers.Suffix.withPostfixes(number, op);
     assertThrows(ParseException.class, () -> parser.parse("10++a"));
     assertThrows(ParseException.class, () -> parser.parseToStream("10++a").toList());
     assertThrows(ParseException.class, () -> parser.parse("10 a"));

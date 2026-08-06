@@ -403,10 +403,24 @@ public final class Parsers {
      * suffix} and applies the result unary operator functions iteratively.
      */
     public static <T> Parser<T> withPrefixes(
-        Parser<? extends UnaryOperator<T>> prefix, Parser<? extends T> suffix) {
+        Parser<? extends Function<? super T, ? extends T>> prefix, Parser<? extends T> suffix) {
       return sequence(
           prefix.zeroOrMore(), suffix,
           (ops, operand) -> Suffix.applyOperators(operand, ops.reversed()));
+    }
+
+    /**
+     * Returns a parser that after {@code operand} succeeds, applies the {@code postfix} parser zero or
+     * more times and applies the result unary operator function iteratively.
+     *
+     * <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
+     * postfix.
+     *
+     * <p>For infix operator support, consider using {@link OperatorTable}.
+     */
+    public static <T> Parser<T> withPostfixes(
+        Parser<? extends T> operand, Parser<? extends UnaryOperator<T>> postfix) {
+      return sequence(operand, postfix.zeroOrMore(), Suffix::applyOperators);
     }
 
     /**
@@ -442,8 +456,9 @@ public final class Parsers {
 
     Suffix() {}
 
-    static <T> T applyOperators(T operand, Iterable<? extends UnaryOperator<T>> ops) {
-      for (UnaryOperator<T> op : ops) operand = op.apply(operand);
+    static <T> T applyOperators(
+        T operand, Iterable<? extends Function<? super T, ? extends T>> ops) {
+      for (var op : ops) operand = op.apply(operand);
       return operand;
     }
   }
