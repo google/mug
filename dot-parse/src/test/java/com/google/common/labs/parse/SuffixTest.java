@@ -119,8 +119,7 @@ public class SuffixTest {
 
   @Test public void withPrefixes_zeroOperator_success() {
     Parser<Integer> number = digits().map(Integer::parseInt);
-    Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
-    Parser<Integer> parser = Suffix.withPrefixes(neg, number);
+    Parser<Integer> parser = Suffix.withPrefixes("-", number, i -> -i);
     assertThat(parser.parse("10")).isEqualTo(10);
     assertThat(parser.parseToStream("10")).containsExactly(10);
     assertThat(parser.parseToStream("")).isEmpty();
@@ -128,8 +127,7 @@ public class SuffixTest {
 
   @Test public void withPrefixes_zeroOperator_success_source() {
     Parser<Integer> number = digits().map(Integer::parseInt);
-    Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
-    Parser<Integer> parser = Suffix.withPrefixes(neg, number);
+    Parser<Integer> parser = Suffix.withPrefixes("-", number, i -> -i);
     assertThat(parser.source().parse("10")).isEqualTo("10");
     assertThat(parser.source().parseToStream("10")).containsExactly("10");
     assertThat(parser.source().parseToStream("")).isEmpty();
@@ -137,16 +135,14 @@ public class SuffixTest {
 
   @Test public void withPrefixes_oneOperator_success() {
     Parser<Integer> number = digits().map(Integer::parseInt);
-    Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
-    Parser<Integer> parser = Suffix.withPrefixes(neg, number);
+    Parser<Integer> parser = Suffix.withPrefixes("-", number, i -> -i);
     assertThat(parser.parse("-10")).isEqualTo(-10);
     assertThat(parser.parseToStream("-10")).containsExactly(-10);
   }
 
   @Test public void withPrefixes_oneOperator_success_source() {
     Parser<Integer> number = digits().map(Integer::parseInt);
-    Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
-    Parser<Integer> parser = Suffix.withPrefixes(neg, number);
+    Parser<Integer> parser = Suffix.withPrefixes("-", number, i -> -i);
     assertThat(parser.source().parse("-10")).isEqualTo("-10");
     assertThat(parser.source().parseToStream("-10")).containsExactly("-10");
   }
@@ -187,8 +183,7 @@ public class SuffixTest {
 
   @Test public void withPrefixes_operandParseFails() {
     Parser<Integer> number = digits().map(Integer::parseInt);
-    Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
-    Parser<Integer> parser = Suffix.withPrefixes(neg, number);
+    Parser<Integer> parser = Suffix.withPrefixes("-", number, i -> -i);
     assertThrows(ParseException.class, () -> parser.parse("a"));
     assertThrows(ParseException.class, () -> parser.parseToStream("a").toList());
     assertThrows(ParseException.class, () -> parser.parse("-a"));
@@ -197,8 +192,7 @@ public class SuffixTest {
 
   @Test public void withPrefixes_failure_withLeftover() {
     Parser<Integer> number = digits().map(Integer::parseInt);
-    Parser<UnaryOperator<Integer>> neg = string("-").thenReturn(i -> -i);
-    Parser<Integer> parser = Suffix.withPrefixes(neg, number);
+    Parser<Integer> parser = Suffix.withPrefixes("-", number, i -> -i);
     assertThrows(ParseException.class, () -> parser.parse("10a"));
     assertThrows(ParseException.class, () -> parser.parseToStream("10a").toList());
     assertThrows(ParseException.class, () -> parser.parse("-10a"));
