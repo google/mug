@@ -11,6 +11,7 @@ import static com.google.common.labs.parse.Parser.string;
 import static com.google.mu.util.stream.BiStream.adjacentPairsFrom;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.stream.Collectors.counting;
 
 import java.time.Duration;
 import java.util.Set;
@@ -18,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 /**
  * More advanced composite parsers in addition to the core parsers provided by {@link Parser}.
@@ -402,8 +404,20 @@ public final class Parsers {
    */
   public static class Suffix {
     /**
+     * Returns a parser that matches zero or more {@code prefix}'s before {@code suffix} and applies
+     * the {@code operator} function for each prefix.
+     */
+    public static <T> Parser<T> withPrefixes(
+        String prefix, Parser<? extends T> suffix, UnaryOperator<T> operator) {
+      requireNonNull(operator);
+      return sequence(
+          string(prefix).zeroOrMore(counting()), suffix,
+          (times, operand) -> applyOperator(operand, operator, times));
+    }
+
+    /**
      * Returns a parser that applies the {@code prefix} zero or more times before {@code
-     * suffix} and applies the result functions iteratively.
+     * suffix} and applies the result functions iteratively, in First-In, Last-Out order.
      */
     public static <T> Parser<T> withPrefixes(
         Parser<? extends Function<? super T, ? extends T>> prefix, Parser<? extends T> suffix) {
@@ -455,6 +469,13 @@ public final class Parsers {
      */
     public static <T, R> R apply(T prefix, Function<? super T, ? extends R> suffix) {
       return suffix.apply(prefix);
+    }
+
+    static <T> T applyOperator(T operand, Function<? super T, ? extends T> op, long times) {
+      for (long i = 0; i < times; i++) {
+        operand = op.apply(operand);
+      }
+      return operand;
     }
 
     static <T> T applyOperators(
