@@ -333,7 +333,7 @@ public final class Parsers {
       .suchThat(Character::isValidCodePoint, "code point");
 
   /**
-   * A convenience helper to left-factor a common prefix followed by multiple optional suffixes.
+   * Provides helpers to left-factor common prefixes followed by one or multiple optional suffixes.
    *
    * <p>Usually when you have an optional suffix, you should use {@link
    * Parser#optionallyFollowedBy(String, Function) optionallyFollowedBy()} directly, such as:
@@ -361,12 +361,13 @@ public final class Parsers {
    *
    * <pre>{@code
    * import static com.google.common.labs.parse.Parsers.Suffix.suffix;
+   * import com.google.common.labs.parse.Parsers.Suffix;
    *
    * expr.optionallyFollowedBy(
    *     anyOf(
    *         suffix("!", (Expr n) -> factorial(n)),
    *         suffix(exponential, (Expr i, Expr e) -> pow(i, e))),
-   *     Parsers.Suffix::apply);
+   *     Suffix::apply);
    * }</pre>
    *
    * <p>Occasionally you may need to wrap the left parser's result with or without optional
@@ -376,6 +377,7 @@ public final class Parsers {
    *
    * <pre>{@code
    * import static com.google.common.labs.parse.Parsers.Suffix.suffix;
+   * import com.google.common.labs.parse.Parsers.Suffix;
    *
    * Parser.sequence(
    *     expr,
@@ -383,18 +385,19 @@ public final class Parsers {
    *             suffix("!", FactorialExpr::new),
    *             suffix(exponential, PowExpr::new))
    *         .orElse(LiteralExpr::new),
-   *     Parsers.Suffix::apply);
+   *     Suffix::apply);
    * }</pre>
    *
    * Or even a single optional suffix can benefit too:
    *
    * <pre>{@code
    * import static com.google.common.labs.parse.Parsers.Suffix.suffix;
+   * import com.google.common.labs.parse.Parsers.Suffix;
    *
    * Parser.sequence(
    *     expr,
    *     suffix(exponential, PowExpr::new).orElse(LiteralExpr::new),
-   *     Parsers.Suffix::apply);
+   *     Suffix::apply);
    * }</pre>
    */
   public static class Suffix {
