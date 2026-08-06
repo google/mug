@@ -22,16 +22,16 @@ Regex Pattern      | Parser Equivalent                                          
 `[a-zA-Z0-9_]+`    | `word()`                                                    | Matches a "word" (alphanumeric and underscore).
 `[0-9]{5}`         | `digits(5)`                                                 | Matches exactly 5 digits.
 `[0-9a-fA-F]{4}`   | `hexDigits(4)`                                              | Matches exactly 4 hex digits.
-`[a-zA-Z]{2,4}`    | `consecutive("[a-zA-Z]").suchThat(... length() >=2 ...)` | Matches 2-4 alpha chars.
+`[a-zA-Z]{2,4}`    | `consecutive("[a-zA-Z]").suchThat(... length() >=2 ...)`    | Matches 2-4 alpha chars.
 `(foo\|bar\|baz)`  | `anyOf("foo", "bar", "baz")`                                | Matches one of the alternatives.
 `/\*.*\*/`         | `sequence(string("/*"), first("*/"))`                       | Matches block comment.
 `//[^\n]*`         | `sequence(string("//"), zeroOrMore("[^\n]"))`               | Matches line comment.
 `'[^']*'`          | `quotedBy("'", "'")`                                        | Matches a single-quoted string, excluding the quotes from the result.
-`u[a-fA-F0-9]{4}`  | `string("u").then(bmpCodeUnit())`                           | Matches 'u' followed by 4 hex digits.
+`u[a-fA-F0-9]{4}`  | `string("u").then(Parsers.BMP_CODE_UNIT)`                   | Matches 'u' followed by 4 hex digits.
 `\d+(\.\d+)?`      | `digits().optionallyFollowedBy(string(".").then(digits()))` | Matches an integer or a simple float.
-`0\|[1-9]\d*`       | `Parsers.UNSIGNED_INTEGER`                                  | Matches an unsigned integer without leading zeros.
-`(?:0\|[1-9]\d*)(?:\.\d+)?` | `Parsers.UNSIGNED_DECIMAL`                          | Matches an unsigned decimal point number.
-`-?(?:0\|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?` | `Parsers.SIGNED_DOUBLE`          | Matches a JSON-compliant signed double-precision number.
+`0\|[1-9]\d*`       | `Parsers.UNSIGNED_INTEGER`                                 | Matches an unsigned integer without leading zeros.
+`(?:0\|[1-9]\d*)(?:\.\d+)?` | `Parsers.UNSIGNED_DECIMAL`                         | Matches an unsigned decimal point number.
+`-?(?:0\|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?` | `Parsers.SIGNED_DOUBLE`         | Matches a JSON-compliant signed double-precision number.
 `\[(\w+(,\w+)*)?\]`| `word().zeroOrMoreDelimitedBy(",").between("[", "]")`       | Comma-delimited list of words inside square brackets.
 `if\b`             | `word("if")`                                                | Matches the whole word "if".
 `(?i)select\b`     | `caseInsensitiveWord("select")`                             | Matches a word case insensitively.
@@ -189,12 +189,17 @@ Parser<String> cStyleEscaped = Parser.anyOf(
 The same technique can be used to handle Unicode escaping:
 
 ```java {.good}
-import static com.google.common.labs.parse.Parser.bmpCodeUnit;
 import static com.google.common.labs.parse.Parser.one;
+import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
+import static com.google.common.labs.parse.Parsers.CODE_POINT;
 
-Parser<String> unicodeEscaped = one('u')
-    .then(bmpCodeUnit())
-    .map(Character::toString);
+Parser<String> unicodeEscaped = anyOf(
+    one('u')
+        .then(BMP_CODE_UNIT)
+        .map(Object::toString),
+    one('U')
+        .then(CODE_POINT)
+        .map(Character::toString));
 ```
 
 Combine the `cStyleEscaped` and `unicodeEscaped` parsers created above,
