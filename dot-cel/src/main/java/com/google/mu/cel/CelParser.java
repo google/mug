@@ -19,7 +19,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.api.expr.v1alpha1.ParsedExpr;
 import com.google.common.labs.parse.OperatorTable;
 import com.google.common.labs.parse.Parser;
-import com.google.common.labs.parse.Parsers;
 import com.google.common.labs.parse.Suffix;
 import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.Immutable;
@@ -150,20 +149,20 @@ public final class CelParser {
     Parser<CelExpr.MapOf> mapExpr = entries(expr, expr)
         .mapWithIndex((entries, begin, end) -> new CelExpr.MapOf(entries, begin));
 
-    Parser<CelExpr> callOrStructOrIdent = Parsers.Suffix.withPostfixes(
-            sequence(string(".").orElse(""), PLAIN_IDENTIFIER, String::concat)
-                .<CelExpr>mapWithIndex((name, begin, end) -> new CelExpr.Ident(name, begin)),
-            sequence(indexOf('.'), IDENT, (index, f) -> e -> new Select(e, f, index)))
-        .optionallyFollowedBy(
-            anyOf(
-                suffixWithIndex(entries(IDENT, expr), CelParser::structExpr),
-                suffixWithIndex(args, CelParser::callExpr)),
-            Suffix::apply);
+    Parser<CelExpr> callOrStructOrIdent =
+        sequence(string(".").orElse(""), PLAIN_IDENTIFIER, String::concat)
+            .<CelExpr>mapWithIndex((name, begin, end) -> new CelExpr.Ident(name, begin))
+            .followedByZeroOrMore(
+                sequence(indexOf('.'), IDENT, (index, f) -> e -> new Select(e, f, index)))
+            .optionallyFollowedBy(
+                anyOf(
+                    suffixWithIndex(entries(IDENT, expr), CelParser::structExpr),
+                    suffixWithIndex(args, CelParser::callExpr)),
+                Suffix::apply);
 
     Parser<CelExpr> subject =
         anyOf(CONSTANT_LITERAL, callOrStructOrIdent, listExpr, mapExpr, parenthesized);
-    Parser<CelExpr> subjectDot = Parsers.Suffix.withPostfixes(
-        subject,
+    Parser<CelExpr> subjectDot = subject.followedByZeroOrMore(
         anyOf(
             suffixWithIndex(
                 sequence(one('.'), one('?')).then(IDENT),

@@ -6,7 +6,6 @@ import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
-import static com.google.common.labs.parse.Parsers.Suffix.withPostfixes;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.labs.parse.Parser;
@@ -60,8 +59,8 @@ public class AbcNoteBenchmark {
       DURATION_DENOMINATOR.map(d -> new NoteDuration(1, d)));
 
   private static final Parser<AbcNote> NOTE = anyOf(
-      withPostfixes(one("[ABCDEFG]").map(AbcNote::middle), ",", AbcNote::down),
-      withPostfixes(one("[abcdefg]").map(AbcNote::high), "'", AbcNote::up));
+      one("[ABCDEFG]").map(AbcNote::middle).followedByZeroOrMore(",", AbcNote::down),
+      one("[abcdefg]").map(AbcNote::high).followedByZeroOrMore("'", AbcNote::up));
 
   private static final Parser<AbcNote> PARSER =
       anyOf(sequence(ACCIDENTAL, NOTE, (acc, note) -> note.withAccidental(acc)), NOTE)

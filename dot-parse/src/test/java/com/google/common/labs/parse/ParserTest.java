@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BinaryOperator;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 import org.junit.Test;
@@ -4643,6 +4644,108 @@ public class ParserTest {
         .inOrder();
   }
 
+  @Test public void followedByZeroOrMore_success() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
+    Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
+    Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
+    Parser<Integer> parser = number.followedByZeroOrMore(op);
+    assertThat(parser.parse("10")).isEqualTo(10);
+    assertThat(parser.parseToStream("10")).containsExactly(10);
+    assertThat(parser.parse("10++")).isEqualTo(11);
+    assertThat(parser.parseToStream("10++")).containsExactly(11);
+    assertThat(parser.parse("10--")).isEqualTo(9);
+    assertThat(parser.parseToStream("10--")).containsExactly(9);
+    assertThat(parser.parse("10++--++")).isEqualTo(11);
+    assertThat(parser.parseToStream("10++--++")).containsExactly(11);
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void followedByZeroOrMore_success_source() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
+    Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
+    Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
+    Parser<Integer> parser = number.followedByZeroOrMore(op);
+    assertThat(parser.source().parse("10")).isEqualTo("10");
+    assertThat(parser.source().parseToStream("10")).containsExactly("10");
+    assertThat(parser.source().parse("10++")).isEqualTo("10++");
+    assertThat(parser.source().parseToStream("10++")).containsExactly("10++");
+    assertThat(parser.source().parse("10--")).isEqualTo("10--");
+    assertThat(parser.source().parseToStream("10--")).containsExactly("10--");
+    assertThat(parser.source().parse("10++--++")).isEqualTo("10++--++");
+    assertThat(parser.source().parseToStream("10++--++")).containsExactly("10++--++");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void followedByZeroOrMore_failure() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
+    Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
+    Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
+    Parser<Integer> parser = number.followedByZeroOrMore(op);
+    assertThrows(ParseException.class, () -> parser.parse("a++"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("a++").toList());
+    assertThrows(ParseException.class, () -> parser.parse("10+"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("10+").toList());
+  }
+
+  @Test public void followedByZeroOrMore_failure_withLeftover() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
+    Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
+    Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
+    Parser<Integer> parser = number.followedByZeroOrMore(op);
+    assertThrows(ParseException.class, () -> parser.parse("10++a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("10++a").toList());
+    assertThrows(ParseException.class, () -> parser.parse("10 a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("10 a").toList());
+  }
+
+  @Test public void followedByZeroOrMore_withBiFunction_success() {
+    Parser<Integer> parser = digits().map(Integer::parseInt)
+        .followedByZeroOrMore(string("++").map(s -> 1), (a, b) -> a + b);
+    assertThat(parser.parse("10")).isEqualTo(10);
+    assertThat(parser.parse("10++")).isEqualTo(11);
+    assertThat(parser.parse("10++++")).isEqualTo(12);
+  }
+
+  @Test public void followedByZeroOrMore_withBiFunction_failure() {
+    Parser<Integer> parser = digits().map(Integer::parseInt)
+        .followedByZeroOrMore(string("!").map(s -> 1), (a, b) -> a + b);
+    assertThrows(ParseException.class, () -> parser.parse("10!a"));
+  }
+
+  @Test public void followedByZeroOrMore_unaryOperator_success() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<Integer> parser = number.followedByZeroOrMore("++", i -> i + 1);
+    assertThat(parser.parse("10")).isEqualTo(10);
+    assertThat(parser.parse("10++")).isEqualTo(11);
+    assertThat(parser.parse("10++++")).isEqualTo(12);
+  }
+
+  @Test public void followedByZeroOrMore_unaryOperator_failure() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<Integer> parser = number.followedByZeroOrMore("++", i -> i + 1);
+    assertThrows(ParseException.class, () -> parser.parse("10++a"));
+  }
+
+  @SuppressWarnings("deprecation")
+  @Test public void deprecated_withPostfixes_success() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
+    Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
+    Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
+    Parser<Integer> parser = number.withPostfixes(op);
+    assertThat(parser.parse("10++--++")).isEqualTo(11);
+
+    Parser<Integer> parser2 = number.withPostfixes(string("++").map(s -> 1), (a, b) -> a + b);
+    assertThat(parser2.parse("10++")).isEqualTo(11);
+
+    Parser<Integer> parser3 = number.withPostfixes("++", i -> i + 1);
+    assertThat(parser3.parse("10++")).isEqualTo(11);
+  }
+
   @Test public void parse_fromIndex() {
     assertThat(string("bar").parse("foobar", 3)).isEqualTo("bar");
     assertThat(string("bar").source().parse("foobar", 3)).isEqualTo("bar");
@@ -7003,9 +7106,9 @@ public class ParserTest {
     assertThat(rule.mapWithIndex(ParserTest::toStringWithIndex).parse("foo")).isEqualTo("0-3: foo");
   }
 
-  @Test public void mapWithIndex_withPostfixes() {
-    Parser<Integer> parser = Parsers.Suffix.withPostfixes(
-        digits().map(Integer::parseInt), string("++").map(s -> 1), (a, b) -> a + b);
+  @Test public void mapWithIndex_followedByZeroOrMore() {
+    Parser<Integer> parser = digits().map(Integer::parseInt)
+        .followedByZeroOrMore(string("++").map(s -> 1), (a, b) -> a + b);
     assertThat(parser.mapWithIndex(ParserTest::toStringWithIndex).parse("123++"))
         .isEqualTo("0-5: 124");
   }

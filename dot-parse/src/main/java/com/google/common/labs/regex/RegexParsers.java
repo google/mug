@@ -69,7 +69,7 @@ final class RegexParsers {
           consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
           consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
           ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))));
-      return Parsers.Suffix.withPostfixes(atomic, quantifier())
+      return atomic.followedByZeroOrMore(quantifier())
           .atLeastOnce(inSequence())
           .atLeastOnceDelimitedBy("|", asAlternation());
     });
