@@ -163,8 +163,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override MatchResult<Character> skipAndMatch(
           Parser<?> skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
-        return input.startsWith(matcher, start)
-            ? new MatchResult.Success<>(start, start + 1, input.charAt(start))
+        if (input.isEof(start)) {
+          return context.expecting(name, start);
+        }
+        char c = input.charAt(start);
+        return matcher.test(c)
+            ? new MatchResult.Success<>(start, start + 1, c)
             : context.expecting(name, start);
       }
 
