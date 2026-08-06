@@ -806,7 +806,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <valid code point>, encountered:\s
+            at 1:1: expecting <code point>, encountered:\s
                 00110000
                 ^
             """);
@@ -818,7 +818,7 @@ public class ParsersTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:1: expecting <valid code point>, encountered:\s
+            at 1:1: expecting <code point>, encountered:\s
                 FFFFFFFF
                 ^
             """);

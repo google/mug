@@ -19,6 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.api.expr.v1alpha1.ParsedExpr;
 import com.google.common.labs.parse.OperatorTable;
 import com.google.common.labs.parse.Parser;
+import com.google.common.labs.parse.Parsers;
 import com.google.common.labs.parse.Suffix;
 import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.Immutable;
@@ -149,20 +150,20 @@ public final class CelParser {
     Parser<CelExpr.MapOf> mapExpr = entries(expr, expr)
         .mapWithIndex((entries, begin, end) -> new CelExpr.MapOf(entries, begin));
 
-    Parser<CelExpr> callOrStructOrIdent =
-        sequence(string(".").orElse(""), PLAIN_IDENTIFIER, String::concat)
-            .<CelExpr>mapWithIndex((name, begin, end) -> new CelExpr.Ident(name, begin))
-            .withPostfixes(
-                sequence(indexOf('.'), IDENT, (index, f) -> e -> new Select(e, f, index)))
-            .optionallyFollowedBy(
-                anyOf(
-                    suffixWithIndex(entries(IDENT, expr), CelParser::structExpr),
-                    suffixWithIndex(args, CelParser::callExpr)),
-                Suffix::apply);
+    Parser<CelExpr> callOrStructOrIdent = Parsers.Suffix.withPostfixes(
+            sequence(string(".").orElse(""), PLAIN_IDENTIFIER, String::concat)
+                .<CelExpr>mapWithIndex((name, begin, end) -> new CelExpr.Ident(name, begin)),
+            sequence(indexOf('.'), IDENT, (index, f) -> e -> new Select(e, f, index)))
+        .optionallyFollowedBy(
+            anyOf(
+                suffixWithIndex(entries(IDENT, expr), CelParser::structExpr),
+                suffixWithIndex(args, CelParser::callExpr)),
+            Suffix::apply);
 
     Parser<CelExpr> subject =
         anyOf(CONSTANT_LITERAL, callOrStructOrIdent, listExpr, mapExpr, parenthesized);
-    Parser<CelExpr> subjectDot = subject.withPostfixes(
+    Parser<CelExpr> subjectDot = Parsers.Suffix.withPostfixes(
+        subject,
         anyOf(
             suffixWithIndex(
                 sequence(one('.'), one('?')).then(IDENT),
@@ -200,9 +201,8 @@ public final class CelParser {
     return new OperatorTable<CelExpr>()
         .rightAssociative(
             operand.between("?", ":")
-                .mapWithIndex(
-                    (ifTrue, begin, end) ->
-                        (cond, ifFalse) -> new CelExpr.IfElse(cond, ifTrue, ifFalse, begin)),
+                .mapWithIndex((ifTrue, begin, end) ->
+                    (cond, ifFalse) -> new CelExpr.IfElse(cond, ifTrue, ifFalse, begin)),
             1)
         .build(operand);
   }

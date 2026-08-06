@@ -32,6 +32,7 @@ import static java.util.Arrays.stream;
 import static java.util.function.UnaryOperator.identity;
 
 import com.google.common.labs.parse.Parser;
+import com.google.common.labs.parse.Parsers;
 import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.CharRange;
 import com.google.common.labs.regex.RegexPattern.CharacterProperty;
@@ -68,7 +69,7 @@ final class RegexParsers {
           consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
           consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
           ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))));
-      return atomic.withPostfixes(quantifier())
+      return Parsers.Suffix.withPostfixes(atomic, quantifier())
           .atLeastOnce(inSequence())
           .atLeastOnceDelimitedBy("|", asAlternation());
     });

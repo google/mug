@@ -46,21 +46,17 @@ public final class Parsers {
           char c = input.charAt(from);
           int index = from + 1;
           if (c >= '1' && c <= '9') {
-            while (input.isInRange(index) && isDigit(input.charAt(index))) index++;
+            while (input.startsWith(CharacterSet.DECIMAL, index)) index++;
             return index;
           }
           if (c == '0') {
-            return input.isInRange(index) && isDigit(input.charAt(index)) ? from : index;
+            return input.startsWith(CharacterSet.DECIMAL, index) ? from : index;
           }
           return from;
         }
 
         @Override Set<String> computePrefixes() {
-          return Set.of("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
-        }
-
-        private static boolean isDigit(char c) {
-          return c >= '0' && c <= '9';
+          return DIGITS.getPrefixes();
         }
       }.source();
 
@@ -334,7 +330,7 @@ public final class Parsers {
    */
   public static final Parser<Integer> CODE_POINT = Parser.hexDigits(8)
       .map(digits -> Integer.parseUnsignedInt(digits, 16))
-      .suchThat(Character::isValidCodePoint, "valid code point");
+      .suchThat(Character::isValidCodePoint, "code point");
 
   /**
    * A convenience helper to left-factor a common prefix followed by multiple optional suffixes.
@@ -407,10 +403,24 @@ public final class Parsers {
      * suffix} and applies the result unary operator functions iteratively.
      */
     public static <T> Parser<T> withPrefixes(
-        Parser<? extends UnaryOperator<T>> prefix, Parser<? extends T> suffix) {
+        Parser<? extends Function<? super T, ? extends T>> prefix, Parser<? extends T> suffix) {
       return sequence(
           prefix.zeroOrMore(), suffix,
-          (ops, operand) -> Parser.applyOperators(ops.reversed(), operand));
+          (ops, operand) -> Suffix.applyOperators(operand, ops.reversed()));
+    }
+
+    /**
+     * Returns a parser that after {@code operand} succeeds, applies the {@code postfix} parser zero or
+     * more times and applies the result unary operator function iteratively.
+     *
+     * <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
+     * postfix.
+     *
+     * <p>For infix operator support, consider using {@link OperatorTable}.
+     */
+    public static <T> Parser<T> withPostfixes(
+        Parser<? extends T> operand, Parser<? extends Function<? super T, ? extends T>> postfix) {
+      return sequence(operand, postfix.zeroOrMore(), Suffix::applyOperators);
     }
 
     /**
@@ -445,6 +455,12 @@ public final class Parsers {
     }
 
     Suffix() {}
+
+    static <T> T applyOperators(
+        T operand, Iterable<? extends Function<? super T, ? extends T>> ops) {
+      for (var op : ops) operand = op.apply(operand);
+      return operand;
+    }
   }
 
   private Parsers() {}

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 
+import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
 
 /** An abstraction over sequentially read characters. */
@@ -34,6 +35,10 @@ abstract class CharInput {
 
   /** Returns the index of {@code str} starting from {@code fromIndex}, or -1 if not found. */
   abstract int indexOf(String str, int fromIndex);
+
+  final boolean startsWith(CharPredicate predicate, int index) {
+    return isInRange(index) && predicate.test(charAt(index));
+  }
 
   /** Do the characters starting from {@code index} start with {@code prefix}? */
   abstract boolean startsWith(String prefix, int index);
