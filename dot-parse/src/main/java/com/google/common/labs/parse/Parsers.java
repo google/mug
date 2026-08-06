@@ -419,7 +419,7 @@ public final class Parsers {
      * <p>For infix operator support, consider using {@link OperatorTable}.
      */
     public static <T> Parser<T> withPostfixes(
-        Parser<? extends T> operand, Parser<? extends UnaryOperator<T>> postfix) {
+        Parser<? extends T> operand, Parser<? extends Function<? super T, ? extends T>> postfix) {
       return sequence(operand, postfix.zeroOrMore(), Suffix::applyOperators);
     }
 
