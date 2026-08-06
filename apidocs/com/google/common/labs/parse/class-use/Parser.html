@@ -689,7 +689,7 @@ loadScripts(document, 'script');</script>
  <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super T, ? extends T&gt;&gt;&nbsp;postfix)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Returns a parser that after <code>operand</code> succeeds, applies the <code>postfix</code> parser zero or
- more times and applies the result unary operator function iteratively.</div>
+ more times and applies the result function iteratively.</div>
 </div>
 <div class="col-first odd-row-color"><code>final <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#withPrefixes(com.google.common.labs.parse.Parser)" class="member-name-link">withPrefixes</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;operator)</code></div>
@@ -704,7 +704,7 @@ loadScripts(document, 'script');</script>
  <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends T&gt;&nbsp;suffix)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Returns a parser that applies the <code>prefix</code> zero or more times before <code>
- suffix</code> and applies the result unary operator functions iteratively.</div>
+ suffix</code> and applies the result functions iteratively.</div>
 </div>
 <div class="col-first odd-row-color"><code>static <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#word()" class="member-name-link">word</a>()</code></div>
@@ -1043,7 +1043,7 @@ loadScripts(document, 'script');</script>
  <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super T, ? extends T&gt;&gt;&nbsp;postfix)</code></div>
 <div class="col-last odd-row-color">
 <div class="block">Returns a parser that after <code>operand</code> succeeds, applies the <code>postfix</code> parser zero or
- more times and applies the result unary operator function iteratively.</div>
+ more times and applies the result function iteratively.</div>
 </div>
 <div class="col-first even-row-color"><code>final <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
 <div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#withPrefixes(com.google.common.labs.parse.Parser)" class="member-name-link">withPrefixes</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;operator)</code></div>
@@ -1058,7 +1058,7 @@ loadScripts(document, 'script');</script>
  <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends T&gt;&nbsp;suffix)</code></div>
 <div class="col-last odd-row-color">
 <div class="block">Returns a parser that applies the <code>prefix</code> zero or more times before <code>
- suffix</code> and applies the result unary operator functions iteratively.</div>
+ suffix</code> and applies the result functions iteratively.</div>
 </div>
 <div class="col-first even-row-color"><code>static &lt;A,<wbr>B,<wbr>R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;R&gt;.<a href="../Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
 <div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#zeroOrMoreDelimited(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.lang.String,com.google.mu.util.stream.BiCollector)" class="member-name-link">zeroOrMoreDelimited</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;A&gt;&nbsp;first,

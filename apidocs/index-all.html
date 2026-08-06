@@ -7724,7 +7724,7 @@ the order they are declared.</div>
 <dt><a href="com/google/common/labs/parse/Parsers.Suffix.html#withPostfixes(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser)" class="member-name-link">withPostfixes(Parser&lt;? extends T&gt;, Parser&lt;? extends Function&lt;? super T, ? extends T&gt;&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parsers.Suffix.html" title="class in com.google.common.labs.parse">Parsers.Suffix</a></dt>
 <dd>
 <div class="block">Returns a parser that after <code>operand</code> succeeds, applies the <code>postfix</code> parser zero or
- more times and applies the result unary operator function iteratively.</div>
+ more times and applies the result function iteratively.</div>
 </dd>
 <dt><a href="com/google/common/labs/parse/Parser.html#withPostfixes(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">withPostfixes(Parser&lt;S&gt;, BiFunction&lt;? super T, ? super S, ? extends T&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>
@@ -7739,7 +7739,7 @@ the order they are declared.</div>
 <dt><a href="com/google/common/labs/parse/Parsers.Suffix.html#withPrefixes(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser)" class="member-name-link">withPrefixes(Parser&lt;? extends Function&lt;? super T, ? extends T&gt;&gt;, Parser&lt;? extends T&gt;)</a> - Static method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parsers.Suffix.html" title="class in com.google.common.labs.parse">Parsers.Suffix</a></dt>
 <dd>
 <div class="block">Returns a parser that applies the <code>prefix</code> zero or more times before <code>
- suffix</code> and applies the result unary operator functions iteratively.</div>
+ suffix</code> and applies the result functions iteratively.</div>
 </dd>
 <dt><a href="com/google/common/labs/parse/Parser.html#withPrefixes(com.google.common.labs.parse.Parser)" class="member-name-link">withPrefixes(Parser&lt;? extends UnaryOperator&lt;T&gt;&gt;)</a> - Method in class com.google.common.labs.parse.<a href="com/google/common/labs/parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a></dt>
 <dd>
