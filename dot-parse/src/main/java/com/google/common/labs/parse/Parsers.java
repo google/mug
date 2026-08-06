@@ -361,12 +361,13 @@ public final class Parsers {
    *
    * <pre>{@code
    * import static com.google.common.labs.parse.Parsers.Suffix.suffix;
+   * import com.google.common.labs.parse.Parsers.Suffix;
    *
    * expr.optionallyFollowedBy(
    *     anyOf(
    *         suffix("!", (Expr n) -> factorial(n)),
    *         suffix(exponential, (Expr i, Expr e) -> pow(i, e))),
-   *     Parsers.Suffix::apply);
+   *     Suffix::apply);
    * }</pre>
    *
    * <p>Occasionally you may need to wrap the left parser's result with or without optional
