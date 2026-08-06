@@ -400,7 +400,7 @@ public final class Parsers {
   public static class Suffix {
     /**
      * Returns a parser that applies the {@code prefix} zero or more times before {@code
-     * suffix} and applies the result unary operator functions iteratively.
+     * suffix} and applies the result functions iteratively.
      */
     public static <T> Parser<T> withPrefixes(
         Parser<? extends Function<? super T, ? extends T>> prefix, Parser<? extends T> suffix) {
@@ -411,7 +411,7 @@ public final class Parsers {
 
     /**
      * Returns a parser that after {@code operand} succeeds, applies the {@code postfix} parser zero or
-     * more times and applies the result unary operator function iteratively.
+     * more times and applies the result function iteratively.
      *
      * <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
      * postfix.
@@ -454,13 +454,13 @@ public final class Parsers {
       return suffix.apply(prefix);
     }
 
-    Suffix() {}
-
     static <T> T applyOperators(
         T operand, Iterable<? extends Function<? super T, ? extends T>> ops) {
       for (var op : ops) operand = op.apply(operand);
       return operand;
     }
+
+    Suffix() {}
   }
 
   private Parsers() {}
