@@ -33,7 +33,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toList;
@@ -67,7 +66,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -1263,44 +1261,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Returns a parser that after this parser succeeds, applies the {@code operator} parser zero or
-   * more times and applies the result function iteratively. For example:
-   *
-   * <pre>{@code
-   * Parser<Expr> parser = word()
-   *     .map(Expr::variable)
-   *     .withPostfixes(string(".").then(word()), (expr, field) -> Expr.fieldAccess(expr, field)));
-   * }</pre>
-   *
-   * <p>For infix operator support, consider using {@link OperatorTable}.
-   *
-   * @since 9.9.3
+   * @deprecated Use {@link Parser.Suffix#withPostfixes(Parser, Parser, BiFunction)
+   *     withPostfixes(operand, postfix, postfixFunction)} instead.
    */
+  @Deprecated
   public final <S> Parser<T> withPostfixes(
       Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
     return Suffix.withPostfixes(this, postfix(operator, postfixFunction));
   }
 
   /**
-   * Returns a parser that after this parser succeeds, applies the {@code operator} parser zero or
-   * more times and applies the result function iteratively. For example:
-   *
-   * <pre>{@code
-   * Parser<AbcNote> middleNote = one("[ABCDEFG]")
-   *     .map(AbcNote::middle)
-   *     .withPostfixes(",", AbcNote::down);
-   * }</pre>
-   *
-   * <p>For infix operator support, consider using {@link OperatorTable}.
-   *
-   * @since 9.9.9
+   * @deprecated Use {@link Parser.Suffix#withPostfixes(Parser, String, BiFunction)
+   *     withPostfixes(operand, postfix, postfixFunction)} instead.
    */
+  @Deprecated
   public final Parser<T> withPostfixes(String operator, UnaryOperator<T> postfixFunction) {
-    requireNonNull(postfixFunction);
-    return sequence(
-        this,
-        string(operator).zeroOrMore(counting()),
-        (operand, times) -> Suffix.applyOperator(operand, postfixFunction, times));
+    return Suffix.withPostfixes(this, operator, postfixFunction);
   }
 
   /**

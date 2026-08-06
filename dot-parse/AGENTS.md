@@ -215,7 +215,7 @@ Nested type parser:
 ```java
 Parser<TypeDecl> simpleType = word().map(TypeDecl::simple);
 Parser<TypeDecl> typeDecl =
-    simpleType.withPostfixes(string(".").then(word()), TypeDecl::nested);
+    withPostfixes(simpleType, string(".").then(word()), TypeDecl::nested);
 ```
 
 ## 6. Idiomatic Combinators

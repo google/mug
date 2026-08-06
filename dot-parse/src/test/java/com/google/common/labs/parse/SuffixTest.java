@@ -154,6 +154,8 @@ public class SuffixTest {
     Parser<UnaryOperator<Integer>> flip = string("~").thenReturn(i -> ~i);
     Parser<UnaryOperator<Integer>> op = anyOf(neg, plus, flip);
     Parser<Integer> parser = Suffix.withPrefixes(op, number);
+    assertThat(parser.parse("10")).isEqualTo(10);
+    assertThat(parser.parseToStream("10")).containsExactly(10);
     assertThat(parser.parse("--10")).isEqualTo(10);
     assertThat(parser.parse("-~10")).isEqualTo(- ~10);
     assertThat(parser.parse("~-10")).isEqualTo(~-10);
@@ -171,6 +173,8 @@ public class SuffixTest {
     Parser<UnaryOperator<Integer>> flip = string("~").thenReturn(i -> ~i);
     Parser<UnaryOperator<Integer>> op = anyOf(neg, plus, flip);
     Parser<Integer> parser = Suffix.withPrefixes(op, number);
+    assertThat(parser.source().parse("10")).isEqualTo("10");
+    assertThat(parser.source().parseToStream("10")).containsExactly("10");
     assertThat(parser.source().parse("--10")).isEqualTo("--10");
     assertThat(parser.source().parse("-~10")).isEqualTo("-~10");
     assertThat(parser.source().parse("~-10")).isEqualTo("~-10");
@@ -197,6 +201,122 @@ public class SuffixTest {
     assertThrows(ParseException.class, () -> parser.parseToStream("10a").toList());
     assertThrows(ParseException.class, () -> parser.parse("-10a"));
     assertThrows(ParseException.class, () -> parser.parseToStream("-10a").toList());
+  }
+
+  @Test public void withPrefixes_stringPrefix_multiplePrefixes() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<Integer> parser = Suffix.withPrefixes("-", number, i -> -i);
+    assertThat(parser.parse("--10")).isEqualTo(10);
+    assertThat(parser.parse("---10")).isEqualTo(-10);
+    assertThat(parser.parseToStream("---10")).containsExactly(-10);
+  }
+
+  @Test public void withPrefixes_withBiFunction_success() {
+    Parser<Integer> prefix = anyOf(string("2x").thenReturn(2), string("3x").thenReturn(3));
+    Parser<Integer> suffix = digits().map(Integer::parseInt);
+    Parser<Integer> parser =
+        Suffix.withPrefixes(prefix, suffix, (multiplier, val) -> multiplier * val);
+    assertThat(parser.parse("5")).isEqualTo(5);
+    assertThat(parser.parse("2x5")).isEqualTo(10);
+    assertThat(parser.parse("3x2x5")).isEqualTo(30);
+    assertThat(parser.parseToStream("3x2x5")).containsExactly(30);
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void withPrefixes_withBiFunction_failure() {
+    Parser<Integer> prefix = anyOf(string("2x").thenReturn(2), string("3x").thenReturn(3));
+    Parser<Integer> suffix = digits().map(Integer::parseInt);
+    Parser<Integer> parser =
+        Suffix.withPrefixes(prefix, suffix, (multiplier, val) -> multiplier * val);
+    assertThrows(ParseException.class, () -> parser.parse("2x"));
+    assertThrows(ParseException.class, () -> parser.parse("2x3x"));
+    assertThrows(ParseException.class, () -> parser.parse("2x5a"));
+  }
+
+  @Test public void withPostfixes_success() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
+    Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
+    Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
+    Parser<Integer> parser = Suffix.withPostfixes(number, op);
+    assertThat(parser.parse("10")).isEqualTo(10);
+    assertThat(parser.parseToStream("10")).containsExactly(10);
+    assertThat(parser.parse("10++")).isEqualTo(11);
+    assertThat(parser.parseToStream("10++")).containsExactly(11);
+    assertThat(parser.parse("10--")).isEqualTo(9);
+    assertThat(parser.parseToStream("10--")).containsExactly(9);
+    assertThat(parser.parse("10++--++")).isEqualTo(11);
+    assertThat(parser.parseToStream("10++--++")).containsExactly(11);
+    assertThat(parser.parseToStream("")).isEmpty();
+  }
+
+  @Test public void withPostfixes_success_source() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
+    Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
+    Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
+    Parser<Integer> parser = Suffix.withPostfixes(number, op);
+    assertThat(parser.source().parse("10")).isEqualTo("10");
+    assertThat(parser.source().parseToStream("10")).containsExactly("10");
+    assertThat(parser.source().parse("10++")).isEqualTo("10++");
+    assertThat(parser.source().parseToStream("10++")).containsExactly("10++");
+    assertThat(parser.source().parse("10--")).isEqualTo("10--");
+    assertThat(parser.source().parseToStream("10--")).containsExactly("10--");
+    assertThat(parser.source().parse("10++--++")).isEqualTo("10++--++");
+    assertThat(parser.source().parseToStream("10++--++")).containsExactly("10++--++");
+    assertThat(parser.source().parseToStream("")).isEmpty();
+  }
+
+  @Test public void withPostfixes_failure() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
+    Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
+    Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
+    Parser<Integer> parser = Suffix.withPostfixes(number, op);
+    assertThrows(ParseException.class, () -> parser.parse("a++"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("a++").toList());
+    assertThrows(ParseException.class, () -> parser.parse("10+"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("10+").toList());
+  }
+
+  @Test public void withPostfixes_failure_withLeftover() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
+    Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
+    Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
+    Parser<Integer> parser = Suffix.withPostfixes(number, op);
+    assertThrows(ParseException.class, () -> parser.parse("10++a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("10++a").toList());
+    assertThrows(ParseException.class, () -> parser.parse("10 a"));
+    assertThrows(ParseException.class, () -> parser.parseToStream("10 a").toList());
+  }
+
+  @Test public void withPostfixes_withBiFunction_success() {
+    Parser<Integer> parser = Suffix.withPostfixes(
+        digits().map(Integer::parseInt), string("++").map(s -> 1), (a, b) -> a + b);
+    assertThat(parser.parse("10")).isEqualTo(10);
+    assertThat(parser.parse("10++")).isEqualTo(11);
+    assertThat(parser.parse("10++++")).isEqualTo(12);
+  }
+
+  @Test public void withPostfixes_withBiFunction_failure() {
+    Parser<Integer> parser = Suffix.withPostfixes(
+        digits().map(Integer::parseInt), string("!").map(s -> 1), (a, b) -> a + b);
+    assertThrows(ParseException.class, () -> parser.parse("10!a"));
+  }
+
+  @Test public void withPostfixes_unaryOperator_success() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<Integer> parser = Suffix.withPostfixes(number, "++", i -> i + 1);
+    assertThat(parser.parse("10")).isEqualTo(10);
+    assertThat(parser.parse("10++")).isEqualTo(11);
+    assertThat(parser.parse("10++++")).isEqualTo(12);
+  }
+
+  @Test public void withPostfixes_unaryOperator_failure() {
+    Parser<Integer> number = digits().map(Integer::parseInt);
+    Parser<Integer> parser = Suffix.withPostfixes(number, "++", i -> i + 1);
+    assertThrows(ParseException.class, () -> parser.parse("10++a"));
   }
 
   @Test public void testNulls() {

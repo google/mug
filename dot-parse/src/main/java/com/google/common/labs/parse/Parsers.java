@@ -8,18 +8,19 @@ import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
+import static com.google.common.labs.parse.Parsers.Suffix.postfix;
 import static com.google.mu.util.stream.BiStream.adjacentPairsFrom;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.counting;
 
+import com.google.common.labs.parse.Parsers.Suffix;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 /**
  * More advanced composite parsers in addition to the core parsers provided by {@link Parser}.
@@ -405,30 +406,78 @@ public final class Parsers {
   public static class Suffix {
     /**
      * Returns a parser that matches zero or more {@code prefix}'s before {@code suffix} and applies
-     * the {@code operator} function for each prefix.
+     * the {@code prefixFunction} function for each prefix.
      */
     public static <T> Parser<T> withPrefixes(
-        String prefix, Parser<? extends T> suffix, UnaryOperator<T> operator) {
-      requireNonNull(operator);
+        String prefix, Parser<? extends T> suffix, UnaryOperator<T> prefixFunction) {
+      requireNonNull(prefixFunction);
       return sequence(
           string(prefix).zeroOrMore(counting()), suffix,
-          (times, operand) -> applyOperator(operand, operator, times));
+          (times, operand) -> applyOperator(operand, prefixFunction, times));
     }
 
     /**
-     * Returns a parser that applies the {@code prefix} zero or more times before {@code
-     * suffix} and applies the result functions iteratively, in First-In, Last-Out order.
+     * Returns a parser that matches zero or more {@code prefix}'s before {@code suffix} and applies
+     * the {@code prefixFunction} iteratively in First-In, Last-Out order.
+     */
+    public static <P, T> Parser<T> withPrefixes(
+        Parser<P> prefix, Parser<? extends T> suffix,
+        BiFunction<? super P, ? super T, ? extends T> prefixFunction) {
+      requireNonNull(prefixFunction);
+      return withPrefixes(prefix.map(p -> s -> prefixFunction.apply(p, s)), suffix);
+    }
+
+    /**
+     * Returns a parser that applies the {@code prefix} zero or more times before {@code suffix} and
+     * applies the result functions iteratively, in First-In, Last-Out order.
      */
     public static <T> Parser<T> withPrefixes(
         Parser<? extends Function<? super T, ? extends T>> prefix, Parser<? extends T> suffix) {
       return sequence(
-          prefix.zeroOrMore(), suffix,
-          (ops, operand) -> Suffix.applyOperators(operand, ops.reversed()));
+          prefix.zeroOrMore(), suffix, (ops, operand) -> applyOperators(operand, ops.reversed()));
     }
 
     /**
-     * Returns a parser that after {@code operand} succeeds, applies the {@code postfix} parser zero or
-     * more times and applies the result function iteratively.
+     * Returns a parser that after this parser succeeds, applies the {@code operator} parser zero or
+     * more times and applies the result function iteratively. For example:
+     *
+     * <pre>{@code
+     * Parser<AbcNote> middleNote = one("[ABCDEFG]")
+     *     .map(AbcNote::middle)
+     *     .withPostfixes(",", AbcNote::down);
+     * }</pre>
+     *
+     * <p>For infix operator support, consider using {@link OperatorTable}.
+     */
+    public static <T> Parser<T> withPostfixes(
+        Parser<? extends T> operand, String postfix, UnaryOperator<T> postfixFunction) {
+      requireNonNull(postfixFunction);
+      return sequence(
+          operand, string(postfix).zeroOrMore(counting()),
+          (prefix, times) -> applyOperator(prefix, postfixFunction, times));
+    }
+
+    /**
+     * Returns a parser that after this parser succeeds, applies the {@code operator} parser zero or
+     * more times and applies the result function iteratively. For example:
+     *
+     * <pre>{@code
+     * Parser<Expr> parser = word()
+     *     .map(Expr::variable)
+     *     .withPostfixes(string(".").then(word()), (expr, field) -> Expr.fieldAccess(expr, field)));
+     * }</pre>
+     *
+     * <p>For infix operator support, consider using {@link OperatorTable}.
+     */
+    public static <T, S> Parser<T> withPostfixes(
+        Parser<? extends T> operand, Parser<S> postfix,
+        BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
+      return withPostfixes(operand, postfix(postfix, postfixFunction));
+    }
+
+    /**
+     * Returns a parser that after {@code operand} succeeds, applies the {@code postfix} parser zero
+     * or more times and applies the result function iteratively.
      *
      * <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
      * postfix.
