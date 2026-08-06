@@ -330,7 +330,7 @@ public final class Parsers {
    */
   public static final Parser<Integer> CODE_POINT = Parser.hexDigits(8)
       .map(digits -> Integer.parseUnsignedInt(digits, 16))
-      .suchThat(Character::isValidCodePoint, "valid code point");
+      .suchThat(Character::isValidCodePoint, "code point");
 
   /**
    * A convenience helper to left-factor a common prefix followed by multiple optional suffixes.
