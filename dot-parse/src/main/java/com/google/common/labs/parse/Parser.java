@@ -1923,23 +1923,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * {@link Parser#followedBy(Parser.OrEmpty)} methods can be used to specify that a {@code
    * Parser.OrEmpty} production rule follows a regular consuming {@code Parser}.
    *
-   * <p>The following is a simplified example of parsing a CSV line: a comma-separated list of
-   * fields with an optional trailing newline. The field values can be empty; empty line results in
-   * empty list {@code []}, not {@code [""]}:
-   *
-   * <pre>{@code
-   * Parser<String> field = consecutive(noneOf(",\n"));
-   * Parser<?> newline = string("\n");
-   * Parser<List<String>> csvRow =
-   *     anyOf(
-   *         newline.thenReturn(List.of()),          // empty line -> []
-   *         field
-   *             .orElse("")                         // empty field is ok
-   *             .delimitedBy(",")                   // comma-separated
-   *             .notEmpty()                         // non-empty line
-   *             .followedByOrEof(newline));         // trailing newline optional on last line
-   * }</pre>
-   *
    * <p>In addition, the {@link #parse} convenience method is provided to parse potentially-empty
    * input in this one stop shop without having to remember to check for emptiness, because this
    * class already knows the default value to use when the input is empty.
