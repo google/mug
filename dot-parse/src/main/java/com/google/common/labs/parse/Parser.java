@@ -1251,6 +1251,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public final Parser<T> withPrefixes(Parser<? extends UnaryOperator<T>> operator) {
     return Suffix.withPrefixes(operator, this);
   }
+
   /**
    * Returns a parser that after {@code this} parser succeeds, matches the {@code suffix} string
    * zero or more times and applies the {@code postfixFunction} iteratively. For example:
@@ -1307,26 +1308,20 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return sequence(this, suffix.zeroOrMore(), Suffix::applyOperators);
   }
 
-  /**
-   * @deprecated Use {@link #followedByZeroOrMore(Parser)} instead.
-   */
+  /** @deprecated Use {@link #followedByZeroOrMore(Parser)} instead. */
   @Deprecated
   public final Parser<T> withPostfixes(Parser<? extends UnaryOperator<T>> operator) {
     return followedByZeroOrMore(operator);
   }
 
-  /**
-   * @deprecated Use {@link #followedByZeroOrMore(Parser)} instead.
-   */
+  /** @deprecated Use {@link #followedByZeroOrMore(Parser, BiFunction)} instead. */
   @Deprecated
   public final <S> Parser<T> withPostfixes(
       Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
     return followedByZeroOrMore(operator, postfixFunction);
   }
 
-  /**
-   * @deprecated Use {@link #followedByZeroOrMore(String, UnaryOperator)} instead.
-   */
+  /** @deprecated Use {@link #followedByZeroOrMore(String, UnaryOperator)} instead. */
   @Deprecated
   public final Parser<T> withPostfixes(String operator, UnaryOperator<T> postfixFunction) {
     return followedByZeroOrMore(operator, postfixFunction);

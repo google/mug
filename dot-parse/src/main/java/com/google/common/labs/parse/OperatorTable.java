@@ -19,6 +19,10 @@ import static com.google.common.labs.parse.Parser.string;
 import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.labs.parse.Parsers.Suffix;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.mu.util.stream.BiStream;
+import com.google.mu.util.stream.MoreStreams;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,11 +30,6 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
-
-import com.google.common.labs.parse.Parsers.Suffix;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.mu.util.stream.BiStream;
-import com.google.mu.util.stream.MoreStreams;
 
 /**
  * Provides a fluent API for building an operator precedence grammar.
@@ -90,17 +89,19 @@ public final class OperatorTable<T> {
   }
 
   /**
-   * Adds a postfix operator with the given precedence to the table. This operator will call
-   * {@code postfixFunction.apply(operand, postfixValue)}, where {@code postfixValue} is the result
-   * of the postfix {@code operator} parser. The higher {@code precedence} value the higher
-   * precedence it is.
+   * Adds a postfix operator with the given precedence to the table. This operator will call {@code
+   * postfixFunction.apply(operand, postfixValue)}, where {@code postfixValue} is the result of the
+   * postfix {@code operator} parser. The higher {@code precedence} value the higher precedence it
+   * is.
    *
-   * <p>This method is particularly useful to express otherwise-left-recursive grammars. For example,
-   * if you need to parse Java method invocations such as {@code expression.doSomething(foo, bar)},
-   * the receiver part is an expression and the method invocation is also an expression, resulting
-   * in a left recursive grammar. Using {@code OperatorTable.postfix()}, you basically think of
-   * the {@code .doSomething(foo, bar)} part as an abstract postfix operator that turns an
-   * expression into another expression: <pre>{@code
+   * <p>This method is particularly useful to express otherwise-left-recursive grammars. For
+   * example, if you need to parse Java method invocations such as {@code
+   * expression.doSomething(foo, bar)}, the receiver part is an expression and the method invocation
+   * is also an expression, resulting in a left recursive grammar. Using {@code
+   * OperatorTable.postfix()}, you basically think of the {@code .doSomething(foo, bar)} part as an
+   * abstract postfix operator that turns an expression into another expression:
+   *
+   * <pre>{@code
    * Parser<Expression> expression = Parser.define(
    *     rule -> {  // recursive because the parameters are also expressions
    *       Parser<FunctionInvocation> invocation = Parser.sequence(
@@ -119,8 +120,7 @@ public final class OperatorTable<T> {
    */
   @CanIgnoreReturnValue
   public <S> OperatorTable<T> postfix(
-      Parser<S> operator,
-      BiFunction<? super T, ? super S, ? extends T> postfixFunction,
+      Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction,
       int precedence) {
     return postfix(Suffix.postfix(operator, postfixFunction), precedence);
   }
@@ -156,9 +156,8 @@ public final class OperatorTable<T> {
   }
 
   /**
-   * Adds a non-associative infix operator (e.g. a comparison operator like '>'),
-   * with the given precedence to the table. The higher {@code precedence} value
-   * the higher precedence it is.
+   * Adds a non-associative infix operator (e.g. a comparison operator like '>'), with the given
+   * precedence to the table. The higher {@code precedence} value the higher precedence it is.
    */
   @CanIgnoreReturnValue
   public OperatorTable<T> nonAssociative(String op, BinaryOperator<T> operator, int precedence) {
@@ -166,9 +165,8 @@ public final class OperatorTable<T> {
   }
 
   /**
-   * Adds a non-associative infix operator (e.g. a comparison operator like '>'),
-   * with the given precedence to the table. The higher {@code precedence} value
-   * the higher precedence it is.
+   * Adds a non-associative infix operator (e.g. a comparison operator like '>'), with the given
+   * precedence to the table. The higher {@code precedence} value the higher precedence it is.
    */
   @CanIgnoreReturnValue
   public OperatorTable<T> nonAssociative(
@@ -202,11 +200,10 @@ public final class OperatorTable<T> {
     Parser<T> result = Parser.covariant(operand);
     // higher precedence first and then stable order by
     // prefix -> postfix -> infixl - > infixn - > infixr
-    for (OperatorGroup<T> group :
-        MoreStreams.iterateOnce(
-            BiStream.concat(prefixTable, postfixTable, infixlTable, infixnTable, infixrTable)
-                .sortedByKeys(reverseOrder())
-                .values())) {
+    for (OperatorGroup<T> group : MoreStreams.iterateOnce(
+        BiStream.concat(prefixTable, postfixTable, infixlTable, infixnTable, infixrTable)
+            .sortedByKeys(reverseOrder())
+            .values())) {
       result = group.makeExpressionParser(result);
     }
     return result;
