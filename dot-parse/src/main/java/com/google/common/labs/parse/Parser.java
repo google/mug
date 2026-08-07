@@ -1463,8 +1463,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * suffixes allowed.
    *
    * @since 9.4
-   * @hidden
+   * @deprecated too niche
    */
+  @Deprecated
   public final Parser<T> followedByOrEof(Parser<?> suffix) {
     return followedBy(anyOf(suffix.ignoreReturn(), UNSAFE_EOF));
   }

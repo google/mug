@@ -138,7 +138,7 @@ public final class Csv {
             .orElse("")
             .delimitedBy(String.valueOf(delim))
             .notEmpty()
-            .followedByOrEof(NEW_LINE));
+            .notImmediatelyFollowedBy(noneOf("\r\n"), "unexpected char"));
   }
 
   /** Returns an otherwise equivalent CSV parser but using {@code delimiter} instead of comma. */
