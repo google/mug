@@ -1308,20 +1308,26 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return sequence(this, suffix.zeroOrMore(), Suffix::applyOperators);
   }
 
-  /** @deprecated Use {@link #followedByZeroOrMore(Parser)} instead. */
+  /**
+   * @deprecated Use {@link #followedByZeroOrMore(Parser)} instead.
+   */
   @Deprecated
   public final Parser<T> withPostfixes(Parser<? extends UnaryOperator<T>> operator) {
     return followedByZeroOrMore(operator);
   }
 
-  /** @deprecated Use {@link #followedByZeroOrMore(Parser, BiFunction)} instead. */
+  /**
+   * @deprecated Use {@link #followedByZeroOrMore(Parser, BiFunction)} instead.
+   */
   @Deprecated
   public final <S> Parser<T> withPostfixes(
       Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
     return followedByZeroOrMore(operator, postfixFunction);
   }
 
-  /** @deprecated Use {@link #followedByZeroOrMore(String, UnaryOperator)} instead. */
+  /**
+   * @deprecated Use {@link #followedByZeroOrMore(String, UnaryOperator)} instead.
+   */
   @Deprecated
   public final Parser<T> withPostfixes(String operator, UnaryOperator<T> postfixFunction) {
     return followedByZeroOrMore(operator, postfixFunction);
@@ -1582,14 +1588,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * string("if").notImmediatelyFollowedBy(IDENTIFIER_CHAR, "identifier char")}.
    */
   public final Parser<T> notImmediatelyFollowedBy(CharPredicate predicate, String name) {
-    return notFollowedBy(
-        one(predicate, name).new SamePrefix<Character>() {
-          @Override MatchResult<Character> skipAndMatch(
-              Parser<?> ignored, CharInput input, int start, ErrorContext context) {
-            return left().skipAndMatch(null, input, start, context);
-          }
-        },
-        name);
+    requireNonNull(name);
+    requireNonNull(predicate);
+    return new SamePrefix<>() {
+      @Override MatchResult<T> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        var result = left().skipAndMatch(skip, input, start, context);
+        return result instanceof MatchResult.Success<T> success
+                && input.startsWith(predicate, success.tail())
+            ? context.failAt(success.tail(), "unexpected `{name}`: {snippet}", name)
+            : result;
+      }
+
+      @Override Parser<?> ignoreReturn() {
+        return left().ignoreReturn().notImmediatelyFollowedBy(predicate, name);
+      }
+    };
   }
 
   /**
