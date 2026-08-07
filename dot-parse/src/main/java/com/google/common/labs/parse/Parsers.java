@@ -14,7 +14,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.counting;
 
-import com.google.common.labs.parse.Parsers.Suffix;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
