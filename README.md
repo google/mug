@@ -28,7 +28,7 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
         stockPrices, (p1, p2) -> p1 <= p2, toUnmodifiableList());
     ```
 
-## Others
+## Compile-Time Plugins
 - ✅ [`@ParametersMustMatchByName`](https://google.github.io/mug/apidocs/com/google/mu/annotations/ParametersMustMatchByName.html)```record Profile(String userId, String userName) {}``` 
   - `new Profile(user.id(), user.name())`   Compiles ✅
   - `new Profile(user.name(), user.id())` Does Not Compile ❌
