@@ -16,7 +16,7 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.CharacterSet.charsIn;
-import static com.google.common.labs.parse.Suffix.postfix;
+import static com.google.common.labs.parse.Parsers.Suffix.postfix;
 import static com.google.common.labs.parse.Utils.caseInsensitivePrefixes;
 import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.common.labs.parse.Utils.checkPositionIndex;
@@ -39,17 +39,6 @@ import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-import com.google.common.labs.parse.ErrorContext.ErrorTracker;
-import com.google.common.labs.parse.Parsers.Suffix;
-import com.google.errorprone.annotations.ThreadSafe;
-import com.google.errorprone.annotations.concurrent.LazyInit;
-import com.google.mu.function.Function4;
-import com.google.mu.function.ObjInt2Function;
-import com.google.mu.function.TriFunction;
-import com.google.mu.util.Both;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.stream.BiCollector;
-import com.google.mu.util.stream.BiStream;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.AbstractMap;
@@ -68,6 +57,18 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
+
+import com.google.common.labs.parse.ErrorContext.ErrorTracker;
+import com.google.common.labs.parse.Parsers.Suffix;
+import com.google.errorprone.annotations.ThreadSafe;
+import com.google.errorprone.annotations.concurrent.LazyInit;
+import com.google.mu.function.Function4;
+import com.google.mu.function.ObjInt2Function;
+import com.google.mu.function.TriFunction;
+import com.google.mu.util.Both;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiStream;
 
 /**
  * A simple recursive descent parser combinator intended to parse simple grammars such as regex, csv
@@ -1289,7 +1290,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final <S> Parser<T> followedByZeroOrMore(
       Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
-    return followedByZeroOrMore(Suffix.postfix(suffix, postfixFunction));
+    return followedByZeroOrMore(postfix(suffix, postfixFunction));
   }
 
   /**
