@@ -1252,7 +1252,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return Suffix.withPrefixes(operator, this);
   }
   /**
-   * Returns a parser that after {@code this} parser succeeds, matches the {@code postfix} string
+   * Returns a parser that after {@code this} parser succeeds, matches the {@code suffix} string
    * zero or more times and applies the {@code postfixFunction} iteratively. For example:
    *
    * <pre>{@code
@@ -1264,16 +1264,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * @since 10.8
    */
-  public final Parser<T> followedByZeroOrMore(String postfix, UnaryOperator<T> postfixFunction) {
+  public final Parser<T> followedByZeroOrMore(String suffix, UnaryOperator<T> postfixFunction) {
     requireNonNull(postfixFunction);
     return sequence(
-        this,
-        string(postfix).zeroOrMore(counting()),
+        this, string(suffix).zeroOrMore(counting()),
         (prefix, times) -> Suffix.applyOperator(prefix, postfixFunction, times));
   }
 
   /**
-   * Returns a parser that after {@code this} parser succeeds, matches the {@code postfix} parser
+   * Returns a parser that after {@code this} parser succeeds, matches the {@code suffix} parser
    * zero or more times and applies the {@code postfixFunction} iteratively. For example:
    *
    * <pre>{@code
@@ -1288,12 +1287,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.8
    */
   public final <S> Parser<T> followedByZeroOrMore(
-      Parser<S> postfix, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
-    return followedByZeroOrMore(Suffix.postfix(postfix, postfixFunction));
+      Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
+    return followedByZeroOrMore(Suffix.postfix(suffix, postfixFunction));
   }
 
   /**
-   * Returns a parser that after {@code this} parser succeeds, matches the {@code postfix} parser
+   * Returns a parser that after {@code this} parser succeeds, matches the {@code suffix} parser
    * zero or more times and applies the result functions iteratively.
    *
    * <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
@@ -1304,8 +1303,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.8
    */
   public final Parser<T> followedByZeroOrMore(
-      Parser<? extends Function<? super T, ? extends T>> postfix) {
-    return sequence(this, postfix.zeroOrMore(), Suffix::applyOperators);
+      Parser<? extends Function<? super T, ? extends T>> suffix) {
+    return sequence(this, suffix.zeroOrMore(), Suffix::applyOperators);
   }
 
   /**
@@ -1317,7 +1316,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * @deprecated Use {@link #followedByZeroOrMore(Parser, BiFunction)} instead.
+   * @deprecated Use {@link #followedByZeroOrMore(Parser)} instead.
    */
   @Deprecated
   public final <S> Parser<T> withPostfixes(
