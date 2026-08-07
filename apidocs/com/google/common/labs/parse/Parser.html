@@ -413,23 +413,23 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="block">Specifies that the matched pattern must be either followed by <code>suffix</code> or EOF.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser)" class="member-name-link">followedByZeroOrMore</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;postfix)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser)" class="member-name-link">followedByZeroOrMore</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;suffix)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>postfix</code> parser
+<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>suffix</code> parser
  zero or more times and applies the result functions iteratively.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;S&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">followedByZeroOrMore</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;postfix,
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">followedByZeroOrMore</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? super S, ? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>postfix</code> parser
+<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>suffix</code> parser
  zero or more times and applies the <code>postfixFunction</code> iteratively.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedByZeroOrMore(java.lang.String,java.util.function.UnaryOperator)" class="member-name-link">followedByZeroOrMore</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;postfix,
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#followedByZeroOrMore(java.lang.String,java.util.function.UnaryOperator)" class="member-name-link">followedByZeroOrMore</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>postfix</code> string
+<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>suffix</code> string
  zero or more times and applies the <code>postfixFunction</code> iteratively.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
@@ -2002,9 +2002,9 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <section class="detail" id="followedByZeroOrMore(java.lang.String,java.util.function.UnaryOperator)">
 <h3>followedByZeroOrMore</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedByZeroOrMore</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;postfix,
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedByZeroOrMore</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</span></div>
-<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>postfix</code> string
+<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>suffix</code> string
  zero or more times and applies the <code>postfixFunction</code> iteratively. For example:
 
  <pre><code>
@@ -2024,9 +2024,9 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <section class="detail" id="followedByZeroOrMore(com.google.common.labs.parse.Parser,java.util.function.BiFunction)">
 <h3>followedByZeroOrMore</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="type-parameters">&lt;S&gt;</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedByZeroOrMore</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;postfix,
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="type-parameters">&lt;S&gt;</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedByZeroOrMore</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? super S, ? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</span></div>
-<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>postfix</code> parser
+<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>suffix</code> parser
  zero or more times and applies the <code>postfixFunction</code> iteratively. For example:
 
  <pre><code>
@@ -2048,8 +2048,8 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <section class="detail" id="followedByZeroOrMore(com.google.common.labs.parse.Parser)">
 <h3>followedByZeroOrMore</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedByZeroOrMore</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;postfix)</span></div>
-<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>postfix</code> parser
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedByZeroOrMore</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;suffix)</span></div>
+<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>suffix</code> parser
  zero or more times and applies the result functions iteratively.
 
  <p>This is useful to parse postfix operators such as in regex the quantifiers are usually

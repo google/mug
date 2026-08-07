@@ -302,17 +302,19 @@ loadScripts(document, 'script');</script>
 </span><span class="modifiers">public</span>&nbsp;<span class="type-parameters">&lt;S&gt;</span>&nbsp;<span class="return-type"><a href="OperatorTable.html" title="class in com.google.common.labs.parse">OperatorTable</a>&lt;<a href="#type-param-T" title="type parameter in OperatorTable">T</a>&gt;</span>&nbsp;<span class="element-name">postfix</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;operator,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-T" title="type parameter in OperatorTable">T</a>, ? super S, ? extends <a href="#type-param-T" title="type parameter in OperatorTable">T</a>&gt;&nbsp;postfixFunction,
  int&nbsp;precedence)</span></div>
-<div class="block">Adds a postfix operator with the given precedence to the table. This operator will call
- <code>postfixFunction.apply(operand, postfixValue)</code>, where <code>postfixValue</code> is the result
- of the postfix <code>operator</code> parser. The higher <code>precedence</code> value the higher
- precedence it is.
+<div class="block">Adds a postfix operator with the given precedence to the table. This operator will call <code>
+ postfixFunction.apply(operand, postfixValue)</code>, where <code>postfixValue</code> is the result of the
+ postfix <code>operator</code> parser. The higher <code>precedence</code> value the higher precedence it
+ is.
 
- <p>This method is particularly useful to express otherwise-left-recursive grammars. For example,
- if you need to parse Java method invocations such as <code>expression.doSomething(foo, bar)</code>,
- the receiver part is an expression and the method invocation is also an expression, resulting
- in a left recursive grammar. Using <code>OperatorTable.postfix()</code>, you basically think of
- the <code>.doSomething(foo, bar)</code> part as an abstract postfix operator that turns an
- expression into another expression: <pre><code>
+ <p>This method is particularly useful to express otherwise-left-recursive grammars. For
+ example, if you need to parse Java method invocations such as <code>
+ expression.doSomething(foo, bar)</code>, the receiver part is an expression and the method invocation
+ is also an expression, resulting in a left recursive grammar. Using <code>
+ OperatorTable.postfix()</code>, you basically think of the <code>.doSomething(foo, bar)</code> part as an
+ abstract postfix operator that turns an expression into another expression:
+
+ <pre><code>
  Parser&lt;Expression&gt; expression = Parser.define(
      rule -&gt; {  // recursive because the parameters are also expressions
        Parser&lt;FunctionInvocation&gt; invocation = Parser.sequence(
@@ -378,9 +380,8 @@ loadScripts(document, 'script');</script>
 </span><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="OperatorTable.html" title="class in com.google.common.labs.parse">OperatorTable</a>&lt;<a href="#type-param-T" title="type parameter in OperatorTable">T</a>&gt;</span>&nbsp;<span class="element-name">nonAssociative</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;op,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BinaryOperator.html" title="class or interface in java.util.function" class="external-link">BinaryOperator</a>&lt;<a href="#type-param-T" title="type parameter in OperatorTable">T</a>&gt;&nbsp;operator,
  int&nbsp;precedence)</span></div>
-<div class="block">Adds a non-associative infix operator (e.g. a comparison operator like '&gt;'),
- with the given precedence to the table. The higher <code>precedence</code> value
- the higher precedence it is.</div>
+<div class="block">Adds a non-associative infix operator (e.g. a comparison operator like '&gt;'), with the given
+ precedence to the table. The higher <code>precedence</code> value the higher precedence it is.</div>
 </div>
 </section>
 </li>
@@ -391,9 +392,8 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="annotations">@CanIgnoreReturnValue
 </span><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="OperatorTable.html" title="class in com.google.common.labs.parse">OperatorTable</a>&lt;<a href="#type-param-T" title="type parameter in OperatorTable">T</a>&gt;</span>&nbsp;<span class="element-name">nonAssociative</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BinaryOperator.html" title="class or interface in java.util.function" class="external-link">BinaryOperator</a>&lt;<a href="#type-param-T" title="type parameter in OperatorTable">T</a>&gt;&gt;&nbsp;operator,
  int&nbsp;precedence)</span></div>
-<div class="block">Adds a non-associative infix operator (e.g. a comparison operator like '&gt;'),
- with the given precedence to the table. The higher <code>precedence</code> value
- the higher precedence it is.</div>
+<div class="block">Adds a non-associative infix operator (e.g. a comparison operator like '&gt;'), with the given
+ precedence to the table. The higher <code>precedence</code> value the higher precedence it is.</div>
 </div>
 </section>
 </li>
