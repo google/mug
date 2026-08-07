@@ -19,7 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.api.expr.v1alpha1.ParsedExpr;
 import com.google.common.labs.parse.OperatorTable;
 import com.google.common.labs.parse.Parser;
-import com.google.common.labs.parse.Suffix;
+import com.google.common.labs.parse.Parsers.Suffix;
 import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.Immutable;
 import com.google.mu.cel.CelExpr.Ident;

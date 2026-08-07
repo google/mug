@@ -27,6 +27,7 @@ import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
+import com.google.common.labs.parse.Parsers.Suffix;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.MoreStreams;
@@ -121,7 +122,7 @@ public final class OperatorTable<T> {
       Parser<S> operator,
       BiFunction<? super T, ? super S, ? extends T> postfixFunction,
       int precedence) {
-    return postfix(Parsers.Suffix.postfix(operator, postfixFunction), precedence);
+    return postfix(Suffix.postfix(operator, postfixFunction), precedence);
   }
 
   /**
@@ -161,8 +162,7 @@ public final class OperatorTable<T> {
    */
   @CanIgnoreReturnValue
   public OperatorTable<T> nonAssociative(String op, BinaryOperator<T> operator, int precedence) {
-    requireNonNull(operator);
-    return nonAssociative(string(op).thenReturn(operator), precedence);
+    return nonAssociative(string(op).thenReturn(requireNonNull(operator)), precedence);
   }
 
   /**
@@ -218,7 +218,7 @@ public final class OperatorTable<T> {
 
   private static final class Prefix<T> extends Unary<T> {
     @Override public Parser<T> makeExpressionParser(Parser<T> operand) {
-      return Parsers.Suffix.withPrefixes(opParser(), operand);
+      return Suffix.withPrefixes(opParser(), operand);
     }
   }
 
