@@ -17,6 +17,7 @@ package com.google.common.labs.csv;
 
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.mu.util.CharPredicate.isNot;
@@ -109,10 +110,7 @@ public final class Csv {
   private static final CharPredicate UNRESERVED_CHAR = noneOf("\"\r\n");
   private static final Parser<?>.OrEmpty IGNORED_WHITESPACES = zeroOrMore("[ \t]");
   private static final Parser<?> NEW_LINE = anyOf("\n", "\r\n", "\r");
-  private static final Parser<?> COMMENT =
-      string("#")
-          .followedBy(zeroOrMore(isNot('\n'), "comment"))
-          .followedByOrEof(NEW_LINE);
+  private static final Parser<?> COMMENT = one('#').followedBy(zeroOrMore("[^\n]"));
   private static final Parser<String> QUOTED =
       anyOf(consecutive(isNot('"'), "quoted"), string("\"\"").thenReturn("\""))
           .zeroOrMore(Collectors.joining())
