@@ -3,9 +3,13 @@ on:
   push:
     branches-ignore:
       - 'gh-pages'
+    paths-ignore:
+      - '**/*.md'
   pull_request:
     branches-ignore:
       - 'gh-pages'
+    paths-ignore:
+      - '**/*.md'
 
 permissions:
   contents: write    # Required to push the badge SVG back to the repo
