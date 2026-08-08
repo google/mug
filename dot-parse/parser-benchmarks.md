@@ -68,12 +68,12 @@ Throughput was measured in **operations per millisecond** (higher is better):
 
 | Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`Javacc`](https://github.com/apache/tomcat/blob/main/java/org/apache/tomcat/util/json/JSONParser.jjt) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | [`parboiled`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/parboiled/ParboiledJsonParser.java) | [`autumn`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/autumn/AutumnJsonParser.java) | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Complex JSON Payload** | 0.178 | 0.137 | **0.371** ☕ | 0.119 | 0.091 | **0.516** 🚀 | 0.226 | 0.014 | 0.092 | 0.080 | 0.063 | 0.077 | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Complex JSON with Comments** | 0.097 | 0.059 | **0.186** ☕ | 0.090 | 0.050 | **0.345** 🚀 | 0.077 | 0.002 | 0.030 | 0.030 | 0.022 | 0.036 | **`fast`** 🚀<br>**`dot`** ☕ |
-| **`qux2.json` (Medium JSON)** | — | — | **0.155** ☕ | — | — | **0.244** 🚀 | 0.137 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
-| **`bla25.json` (Large JSON)** | — | — | **0.058** ☕ | — | — | **0.120** 🚀 | 0.048 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
-| **`countries.geo.json` (Geographic JSON)** | — | — | **0.254** ☕ | — | — | **0.342** 🚀 | 0.152 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
-| **`ugh10k.json` (Very Large JSON)** | — | — | **0.020** ☕ | — | — | **0.034** 🚀 | 0.016 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex JSON Payload** | 0.179 | 0.137 | **0.297** ☕ | 0.120 | 0.095 | **0.522** 🚀 | 0.228 | 0.014 | 0.098 | 0.079 | 0.065 | 0.077 | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex JSON with Comments** | 0.094 | 0.063 | **0.199** ☕ | 0.094 | 0.052 | **0.330** 🚀 | 0.078 | 0.001 | 0.031 | 0.030 | 0.022 | 0.036 | **`fast`** 🚀<br>**`dot`** ☕ |
+| **`qux2.json` (Medium JSON)** | — | — | **0.187** ☕ | — | — | **0.253** 🚀 | 0.144 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
+| **`bla25.json` (Large JSON)** | — | — | **0.066** ☕ | — | — | **0.128** 🚀 | 0.051 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
+| **`countries.geo.json` (Geographic JSON)** | — | — | **0.268** ☕ | — | — | **0.367** 🚀 | 0.167 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
+| **`ugh10k.json` (Very Large JSON)** | — | — | **0.022** ☕ | — | — | **0.036** 🚀 | 0.018 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
 
 #### Reference Production Baselines (JSON)
 To provide an absolute performance ceiling, we stacked our combinator shootout against production-grade, hand-written and generated parsers on the exact same JSON payloads:
@@ -81,9 +81,9 @@ To provide an absolute performance ceiling, we stacked our combinator shootout a
 | Parser Engine | Complex JSON (ops/ms) | Complex JSON with Comments (ops/ms) |
 | :--- | :---: | :---: |
 | **Jackson Databind** (Lenient) | 1.565 | 0.373 |
-| **Gson** (Lenient) | 1.096 | 0.325 |
-| **`dot-parse`** (Our leading Java combinator) | 0.371 | 0.186 |
-| **JavaCC** (Optimized / Best) | 0.137 | 0.059 |
+| **Gson** (Lenient) | 1.122 | 0.336 |
+| **`dot-parse`** (Our leading Java combinator) | 0.297 | 0.199 |
+| **JavaCC** (Tomcat / Best) | 0.137 | 0.063 |
 
 ### Key Takeaways from the JSON Shootout
 
@@ -121,10 +121,10 @@ Throughput was measured in **operations per millisecond** (higher is better), wi
 
 | Parser Engine | Throughput (ops/ms) | Relative Performance (vs. `fastparse`) | Notes / Optimizations |
 | :--- | :---: | :---: | :--- |
-| [**`dot-parse`**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/CssParser.java) | **0.329 ± 0.003** | **1.39x** 🚀 ☕ | Stateless, zero-allocation radix-tree scanning on hot paths. |
-| [**`fastparse`**](../mug-benchmarks/src/test/scala/com/google/mu/benchmarks/parsers/fastparse/FastparseCssParser.scala) | 0.236 ± 0.002 | 1.00x (Baseline) | Official fastparse benchmark implementation (Scala macro-based). |
-| [**`cats-parse`**](../mug-benchmarks/src/test/scala/com/google/mu/benchmarks/parsers/catsparse/CatsParseCssParser.scala) | 0.222 ± 0.007 | 0.94x | Optimized via left-factoring numeric/identifier choices. |
-| [**`parboiled` (v1)**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/parboiled/ParboiledCssParser.java) | 0.110 ± 0.002 | 0.47x | Classic PEG combinators with ASM bytecode generation. |
+| [**`dot-parse`**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/CssParser.java) | **0.345 ± 0.005** | **1.47x** 🚀 ☕ | Stateless, zero-allocation radix-tree scanning on hot paths. |
+| [**`fastparse`**](../mug-benchmarks/src/test/scala/com/google/mu/benchmarks/parsers/fastparse/FastparseCssParser.scala) | 0.235 ± 0.002 | 1.00x (Baseline) | Official fastparse benchmark implementation (Scala macro-based). |
+| [**`cats-parse`**](../mug-benchmarks/src/test/scala/com/google/mu/benchmarks/parsers/catsparse/CatsParseCssParser.scala) | 0.219 ± 0.004 | 0.93x | Optimized via left-factoring numeric/identifier choices. |
+| [**`parboiled` (v1)**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/parboiled/ParboiledCssParser.java) | 0.109 ± 0.001 | 0.46x | Classic PEG combinators with ASM bytecode generation. |
 | [**`htmlUnit` (javacc)**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/javacc/HtmlUnitCssParser.java) | 0.023 ± 0.001 | 0.10x | Official HtmlUnit CSS Parser implementation (JavaCC-generated). |
 | [**`antlr4`**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/antlr4/Antlr4CssParser.java) | 0.007 ± 0.001 | 0.03x | Official ANTLR grammars-v4 CSS3 parser grammar. |
 
@@ -151,17 +151,17 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 
 | Benchmark Scenario | `dot-parse` | `jparsec` | `fastparse` | `cats-parse` | `taker` | `parsecj` | `parboiled` | `antlr4` | `scalaParser` | `petitparser` | `better-parse` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **IPv4 Address** | **15,892** ☕ | 8,961 | **24,041** 🚀 | 12,615 | 4,712 | 12,108 | 868 | 1,985 | 3,511 | 6,897 | 1,863 | **`fast`** 🚀<br>Java: **`dot`** ☕ |
-| **String (Simple)** | 10,913 | 5,665 | 21,142 | 11,406 | **29,496** 🚀 ☕ | 4,850 | 497 | 5,110 | 3,755 | 2,837 | 4,912 | **`taker`** 🚀 ☕ |
-| **String (Escaped)** | 4,164 | 3,998 | **10,552** 🚀 | 3,167 | **9,249** ☕ | 2,586 | 519 | 4,038 | 3,174 | 2,299 | 1,500 | **`fast`** 🚀<br>Java: **`taker`** ☕ |
+| **IPv4 Address** | 4,463 | **8,997** ☕ | **24,624** 🚀 | 12,340 | 4,956 | 12,125 | 883 | 1,996 | 3,562 | 7,051 | 1,831 | **`fast`** 🚀<br>Java: **`jparsec`** ☕ |
+| **String (Simple)** | 8,416 | 5,433 | **21,814** 🚀 | 11,658 | **13,671** ☕ | 4,870 | 561 | 5,373 | 3,903 | 3,027 | 5,037 | **`fast`** 🚀<br>Java: **`taker`** ☕ |
+| **String (Escaped)** | 4,030 | 3,943 | 12,889 | 3,020 | **21,018** 🚀 ☕ | 2,480 | 529 | 3,640 | 3,152 | 2,392 | 1,556 | **`taker`** 🚀 ☕ |
 | **120 Programming Keywords (CS)** | **216.83** 🚀 ☕ | 15.43 | 12.08 | 13.74 | 10.59 | 5.11 | 88.22 | 36.29 | 1.70 | 13.06 | — | **`dot`** 🚀 ☕ |
 | **120 Programming Keywords (CI)** | **152.10** 🚀 ☕ | 14.64 | 11.31 | 13.37 | 10.67 | 4.01 | 8.25 | 34.10 | 1.28 | 10.76 | — | **`dot`** 🚀 ☕ |
-| **500 City Names (CS)** | **28.27** 🚀 ☕ | 0.82 | 0.45 | 0.70 | 0.47 | 0.20 | 14.60 | 7.14 | 0.10 | 0.75 | — | **`dot`** 🚀 ☕ |
-| **500 City Names (CI)** | **18.28** 🚀 ☕ | 0.77 | 0.44 | 0.73 | 0.50 | 0.07 | 0.46 | 6.78 | 0.06 | 0.61 | — | **`dot`** 🚀 ☕ |
-| **Calculator (Math)** | **433** ☕ | 332 | **1,022** 🚀 | 419 | 392 | 192 | 109 | 380 | 197 | 336 | 233 | **`fastparse`** 🚀<br>Java: **`dot`** ☕ |
-| **Nested Comments** | **11,180** 🚀 ☕ | 2,160 | 4,884 | 2,174 | 602 | 608 | 384 | 1,078 | 256 | 1,013 | 1,331 | **`dot`** 🚀 ☕ |
-| **US Phone (Single)** | **18,216** 🚀 ☕ | 9,676 | 6,789 | 11,989 | 13,562 | 9,080 | 4,171 | 4,268 | 2,971 | 6,681 | 9,331 | **`dot`** 🚀 ☕ |
-| **US Phone (1,000-List)** | 10.25 | 7.60 | 8.91 | **11.18** 🚀 | 7.90 | 1.87 | 3.73 | 7.40 | 2.79 | 5.32 | 5.27 | **`cats`** 🚀<br>Java: **`dot`** ☕ |
+| **500 City Names (CS)** | **28.82** 🚀 ☕ | 0.91 | 0.47 | 0.70 | 0.57 | 0.18 | 15.12 | 6.02 | 0.11 | 0.77 | — | **`dot`** 🚀 ☕ |
+| **500 City Names (CI)** | **18.92** 🚀 ☕ | 0.82 | 0.45 | 0.74 | 0.48 | 0.08 | 0.45 | 6.82 | 0.07 | 0.64 | — | **`dot`** 🚀 ☕ |
+| **Calculator (Math)** | 366 | 336 | **1,098** 🚀 | 400 | **436** ☕ | 194 | 111 | 360 | 196 | 377 | 234 | **`fastparse`** 🚀<br>Java: **`taker`** ☕ |
+| **Nested Comments** | **11,110** 🚀 ☕ | 2,234 | 4,451 | 2,144 | 735 | 617 | 388 | 1,076 | 259 | 1,050 | 1,317 | **`dot`** 🚀 ☕ |
+| **US Phone (Single)** | **14,976** 🚀 ☕ | 9,734 | 8,483 | 12,099 | 12,854 | 8,707 | 4,144 | 5,749 | 3,376 | 7,044 | 9,309 | **`dot`** 🚀 ☕ |
+| **US Phone (1,000-List)** | 7.56 | **9.52** ☕ | 8.93 | **10.89** 🚀 | 8.51 | 1.73 | 3.68 | 8.12 | 2.98 | 5.56 | 5.05 | **`cats`** 🚀<br>Java: **`jparsec`** ☕ |
 
 ### Showdown Scenario Analysis & Rationalization
 
@@ -235,11 +235,11 @@ Every engine was validated against the **exact same 14 deep structural AST test 
 
 | Benchmark Scenario | `antlr4` | `dot-parse` | `jparsec` | `petitparser` | `fastparse` | `parsecj` | `taker` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Simple Type (`String`)** | 3,563 | **8,260** ☕ | 1,494 | 3,519 | **9,350** 🚀 | 1,505 | 2,540 | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Fully Qualified** | 1,667 | **4,329** ☕ | 649 | 2,153 | **5,554** 🚀 | 907 | 1,524 | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Nested Generics** | 318 | **884** ☕ | 152 | 428 | **1,215** 🚀 | 193 | 328 | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Annotated Array** | 358 | **791** ☕ | 151 | 412 | **981** 🚀 | 203 | 306 | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Complex Annotation** | 247 | **314** ☕ | 103 | 166 | **664** 🚀 | 83 | 130 | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Simple Type (`String`)** | 3,646 | **8,625** ☕ | 1,513 | 3,457 | **9,149** 🚀 | 1,485 | 2,575 | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Fully Qualified** | 1,699 | **4,627** ☕ | 656 | 2,119 | **5,572** 🚀 | 895 | 1,512 | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Nested Generics** | 309 | **899** ☕ | 153 | 437 | **1,231** 🚀 | 187 | 332 | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Annotated Array** | 353 | **838** ☕ | 148 | 411 | **956** 🚀 | 213 | 301 | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex Annotation** | 242 | **326** ☕ | 106 | 168 | **685** 🚀 | 84 | 128 | **`fast`** 🚀<br>**`dot`** ☕ |
 
 ### Key Takeaways from the Java Type Shootout
 
@@ -266,8 +266,8 @@ We compared the performance of matching one of many literal strings in a flat ch
 
 | Scenario | Candidate Strings | `dot-parse` (ns/op) | `cats-parse` (ns/op) |
 | :--- | :--- | :---: | :---: |
-| **`stringIn` (foo)** | 5 overlapping strings | **73 ns** | **78 ns** |
-| **`stringIn` (broad)** | 676 generated strings | **1065 ns** | **1066 ns** |
+| **`stringIn` (foo)** | 5 overlapping strings | **74 ns** | **75 ns** |
+| **`stringIn` (broad)** | 676 generated strings | **1112 ns** | **1069 ns** |
 
 Both libraries perform on par because they both compile the flat list of strings into an optimized trie structure at runtime:
 *   **`cats-parse`** compiles them into an internal `RadixNode` (trie).

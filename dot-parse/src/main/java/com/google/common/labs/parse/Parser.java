@@ -39,6 +39,17 @@ import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+import com.google.common.labs.parse.ErrorContext.ErrorTracker;
+import com.google.common.labs.parse.Parsers.Suffix;
+import com.google.errorprone.annotations.ThreadSafe;
+import com.google.errorprone.annotations.concurrent.LazyInit;
+import com.google.mu.function.Function4;
+import com.google.mu.function.ObjInt2Function;
+import com.google.mu.function.TriFunction;
+import com.google.mu.util.Both;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiStream;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.AbstractMap;
@@ -57,18 +68,6 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
-
-import com.google.common.labs.parse.ErrorContext.ErrorTracker;
-import com.google.common.labs.parse.Parsers.Suffix;
-import com.google.errorprone.annotations.ThreadSafe;
-import com.google.errorprone.annotations.concurrent.LazyInit;
-import com.google.mu.function.Function4;
-import com.google.mu.function.ObjInt2Function;
-import com.google.mu.function.TriFunction;
-import com.google.mu.util.Both;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.stream.BiCollector;
-import com.google.mu.util.stream.BiStream;
 
 /**
  * A simple recursive descent parser combinator intended to parse simple grammars such as regex, csv
@@ -97,7 +96,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   private static final Parser<Void> UNSAFE_EOF =
       new Parser<>() {
         @Override MatchResult<Void> skipAndMatch(
-            Parser<?> skip, CharInput input, int start, ErrorContext context) {
+            Skipper skip, CharInput input, int start, ErrorContext context) {
           start = skipIfAny(skip, input, start);
           return input.isEof(start)
               ? new MatchResult.Success<>(start, start, null)
@@ -164,7 +163,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(name);
     return new Parser<>() {
       @Override MatchResult<Character> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         if (input.isEof(start)) {
           return context.expecting(name, start);
@@ -194,7 +193,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(matcher);
     return new Scanner(name) {
       @Override int scan(CharInput input, int index) {
-        for (; input.startsWith(matcher, index); index++) {}
+        while (input.startsWith(matcher, index)) {
+          index++;
+        }
         return index;
       }
 
@@ -344,7 +345,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(needle.length() > 0, "needle cannot be empty");
     return new Parser<>() {
       @Override MatchResult<String> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         int found = input.indexOf(needle, start);
         return found >= 0
@@ -363,7 +364,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(string.length() > 0, "string cannot be empty");
     return new Parser<>() {
       @Override MatchResult<String> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         return input.startsWith(string, start)
             ? new MatchResult.Success<>(start, start + string.length(), string)
@@ -388,7 +389,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(string.length() > 0, "string cannot be empty");
     return new Parser<String>() {
       @Override MatchResult<String> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         return input.startsWithCaseInsensitive(string, start)
             ? new MatchResult.Success<>(start, start + string.length(), string)
@@ -453,7 +454,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return before.then(
         new Parser<>() {
           @Override MatchResult<String> skipAndMatch(
-              Parser<?> skip, CharInput input, int start, ErrorContext context) {
+              Skipper skip, CharInput input, int start, ErrorContext context) {
             return switch (after.skipAndMatch(skip, input, start, context)) {
               case MatchResult.Success<?> success -> new MatchResult.Success<>(
                   start, success.tail(), input.snippet(start, success.head() - start));
@@ -546,7 +547,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         .then(
             new Parser<String>() {
               @Override MatchResult<String> skipAndMatch(
-                  Parser<?> skip, CharInput input, final int start, ErrorContext context) {
+                  Skipper skip, CharInput input, final int start, ErrorContext context) {
                 for (int index = start, depth = 1; ; ) {
                   if (input.isEof(index)) {
                     return context.expecting(after, index); // Unclosed block
@@ -599,7 +600,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return one(before).then(
             new Parser<String>() {
               @Override MatchResult<String> skipAndMatch(
-                  Parser<?> skip, CharInput input, final int start, ErrorContext context) {
+                  Skipper skip, CharInput input, final int start, ErrorContext context) {
                 StringBuilder builder = new StringBuilder();
                 for (int index = start, depth = 1; ; ) {
                   if (input.isEof(index)) {
@@ -648,7 +649,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(combiner);
     return left.new SamePrefix<>() {
       @Override MatchResult<R> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<A> a ->
               switch (right.skipAndMatch(skip, input, a.tail(), context)) {
@@ -1184,7 +1185,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     var finisher = collector.finisher();
     return new SamePrefix<>() {
       @Override MatchResult<R> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success(int head, int tail, T value) -> {
             A buffer = supplier.get();
@@ -1227,7 +1228,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(delimiter.length() > 0, "delimiter cannot be empty");
     return new Parser<>() {
       @Override MatchResult<T> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         return input.startsWith(delimiter, start)
             ? Parser.this.skipAndMatch(skip, input, start + delimiter.length(), context)
@@ -1349,7 +1350,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(f);
     return new SamePrefix<>() {
       @Override MatchResult<R> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         return left().skipAndMatch(skip, input, start, context).map(f, context);
       }
 
@@ -1377,7 +1378,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(f);
     return new SamePrefix<>() {
       @Override MatchResult<R> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         return left().skipAndMatch(skip, input, start, context).mapWithIndex(f, context);
       }
     };
@@ -1398,7 +1399,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(f);
     return new SamePrefix<>() {
       @Override MatchResult<R> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<T> success -> success.<R>andThen(
               () -> allowZeroWidth(f.apply(success.value()))
@@ -1447,7 +1448,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(name);
     return new SamePrefix<>() {
       @Override MatchResult<T> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         return left().skipAndMatch(skip, input, start, context).suchThat(condition, name, context);
       }
 
@@ -1470,7 +1471,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * suffixes allowed.
    *
    * @since 9.4
-   * @deprecated too niche
+   * @deprecated Use {@code notImmediatelyFollowedBy(noneOf("\r\n"))} instead of {@code
+   *     followedByOrEof(one("[\r\n]"))}.
    */
   @Deprecated
   public final Parser<T> followedByOrEof(Parser<?> suffix) {
@@ -1484,7 +1486,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         .toArray(Parser<?>[]::new);
     return new SamePrefix<T>() {
       @Override MatchResult<T> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<T> result -> {
             int index = result.tail();
@@ -1553,7 +1555,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     Parser<?> elidedSuffix = suffix.ignoreReturn();
     return new SamePrefix<>() {
       @Override MatchResult<T> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<T> success -> {
             yield switch (elidedSuffix.skipAndMatch(
@@ -1593,7 +1595,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(predicate);
     return new SamePrefix<>() {
       @Override MatchResult<T> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         var result = left().skipAndMatch(skip, input, start, context);
         return result instanceof MatchResult.Success<T> success
                 && input.startsWith(predicate, success.tail())
@@ -1647,7 +1649,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     Parser<Object> elided = (Parser<Object>) ignoreReturn();
     return elided.new SamePrefix<String>() {
       @Override MatchResult<String> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         return switch (left().skipAndMatch(skip, input, start, context)) {
           case MatchResult.Success<?>(int head, int tail, Object value) ->
               new MatchResult.Success<>(head, tail, input.snippet(head, tail - head));
@@ -1678,7 +1680,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(parser);
     return parser.new SamePrefix<T>() {
       @Override MatchResult<T> skipAndMatch(
-          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+          Skipper skip, CharInput input, int start, ErrorContext context) {
         start = skipIfAny(skip, input, start);
         return left().skipAndMatch(null, input, start, context);
       }
@@ -1717,7 +1719,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
   public final Lexical skipping(Parser<?> skip) {
-    return new Lexical(skip.ignoreReturn().atLeastOnce(toNull()));
+    return new Lexical(Skipper.zeroOrMore(skip));
   }
 
   /**
@@ -1730,7 +1732,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * }</pre>
    */
   public final Lexical skipping(CharPredicate charsToSkip) {
-    return new Lexical(consecutive(charsToSkip, "skipped"));
+    return new Lexical(Skipper.zeroOrMore(charsToSkip));
   }
 
   /**
@@ -1952,7 +1954,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     private final Parser<T> unsafeZeroWidthParser =
         new Parser<T>() {
           @Override MatchResult<T> skipAndMatch(
-              Parser<?> skip, CharInput input, int start, ErrorContext context) {
+              Skipper skip, CharInput input, int start, ErrorContext context) {
             return switch (notEmpty().skipAndMatch(skip, input, start, context)) {
               case MatchResult.Success<T> success -> success;
               default -> new MatchResult.Success<>(start, start, computeDefaultValue());
@@ -2188,10 +2190,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * }</pre>
    */
   public final class Lexical {
-    private final Parser<?> toSkip;
+    private final Skipper toSkip;
 
-    private Lexical(Parser<?> toSkip) {
-      this.toSkip = toSkip.ignoreReturn();
+    private Lexical(Skipper toSkip) {
+      this.toSkip = requireNonNull(toSkip);
     }
 
     /** Parses {@code input} while skipping the skippable patterns around lexical tokens. */
@@ -2253,10 +2255,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     Stream<T> parseToStream(CharInput input, int fromIndex) {
       // forTokens().parseToStream() checks isEof() to terminate, and only skip the trailing upon
       // success. So if everything is skippable, it will fail to match.
-      return switch (toSkip.tryParse(input, fromIndex, ErrorContext.MINIMAL)) {
-        case MatchResult.Success<?> skipped -> forTokens().parseToStream(input, skipped.tail());
-        default -> forTokens().parseToStream(input, fromIndex);
-      };
+      return forTokens().parseToStream(input, toSkip.skip(input, fromIndex));
     }
 
     /**
@@ -2310,7 +2309,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     public final Parser<T> within() {
       return new SamePrefix<T>() {
         @Override MatchResult<T> skipAndMatch(
-            Parser<?> skip, CharInput input, int start, ErrorContext context) {
+            Skipper skip, CharInput input, int start, ErrorContext context) {
           start = skipIfAny(skip, input, start);
           return left().skipAndMatch(toSkip, input, start, context);
         }
@@ -2324,7 +2323,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     private Parser<T> forTokens() {
       return new SamePrefix<>() {
         @Override MatchResult<T> skipAndMatch(
-            Parser<?> ignored, CharInput input, int start, ErrorContext context) {
+            Skipper ignored, CharInput input, int start, ErrorContext context) {
           return left().skipAndMatch(toSkip, input, start, context);
         }
 
@@ -2420,7 +2419,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     @Override MatchResult<T> skipAndMatch(
-        Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        Skipper skip, CharInput input, int start, ErrorContext context) {
       Parser<T> p = ref.get();
       if (start == 0 && input.isEof(0)) {
         checkState(
@@ -2546,16 +2545,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   abstract MatchResult<T> skipAndMatch(
-      Parser<?> skip, CharInput input, int start, ErrorContext context);
+      Skipper skip, CharInput input, int start, ErrorContext context);
 
-  static int skipIfAny(Parser<?> skip, CharInput input, int start) {
-    if (skip == null) {
-      return start;
-    }
-    return switch (skip.tryParse(input, start, ErrorContext.MINIMAL)) {
-      case MatchResult.Success<?> success -> success.tail();
-      case MatchResult.Failure<?> failure -> start;
-    };
+  static int skipIfAny(Skipper skip, CharInput input, int start) {
+    return skip == null ? start : skip.skip(input, start);
   }
 
   static <T> Parser<T> allowZeroWidth(Production<T> production) {

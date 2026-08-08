@@ -12,8 +12,8 @@ abstract class Scanner extends Parser<Void> {
   }
 
   @Override final MatchResult<Void> skipAndMatch(
-      Parser<?> skip, CharInput input, int start, ErrorContext context) {
-    start = skipIfAny(skip, input, start);
+      Skipper skip, CharInput input, int start, ErrorContext context) {
+    start = Parser.skipIfAny(skip, input, start);
     int end = scan(input, start);
     return end > start
         ? new MatchResult.Success<>(start, end, null)
