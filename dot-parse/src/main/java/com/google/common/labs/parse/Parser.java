@@ -193,9 +193,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(matcher);
     return new Scanner(name) {
       @Override int scan(CharInput input, int index) {
-        while (input.startsWith(matcher, index)) {
-          index++;
-        }
+        while (input.startsWith(matcher, index)) index++;
         return index;
       }
 
