@@ -8,7 +8,6 @@ import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
-import static com.google.common.labs.parse.Parsers.Suffix.postfix;
 import static com.google.mu.util.stream.BiStream.adjacentPairsFrom;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -452,12 +451,6 @@ public final class Parsers {
       return string(suffix).thenReturn(mapper::apply);
     }
 
-    static <T, S> Parser<UnaryOperator<T>> postfix(
-        Parser<S> postfix, BiFunction<? super T, ? super S, ? extends T> op) {
-      requireNonNull(op);
-      return postfix.map(s -> p -> op.apply(p, s));
-    }
-
     /**
      * A convenience method to apply a suffix to a prefix. When passed to the {@link
      * Parser#optionallyFollowedBy(Parser, BiFunction) optionallyFollowedBy()} as a method reference
@@ -465,6 +458,12 @@ public final class Parsers {
      */
     public static <T, R> R apply(T prefix, Function<? super T, ? extends R> suffix) {
       return suffix.apply(prefix);
+    }
+
+    static <T, S> Parser<UnaryOperator<T>> postfix(
+        Parser<S> postfix, BiFunction<? super T, ? super S, ? extends T> op) {
+      requireNonNull(op);
+      return postfix.map(s -> p -> op.apply(p, s));
     }
 
     static <T> T applyOperator(T operand, Function<? super T, ? extends T> op, long times) {

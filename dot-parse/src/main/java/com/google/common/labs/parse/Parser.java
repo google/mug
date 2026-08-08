@@ -16,7 +16,7 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.CharacterSet.charsIn;
-import static com.google.common.labs.parse.Suffix.postfix;
+import static com.google.common.labs.parse.Parsers.Suffix.postfix;
 import static com.google.common.labs.parse.Utils.caseInsensitivePrefixes;
 import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.common.labs.parse.Utils.checkPositionIndex;
@@ -39,17 +39,6 @@ import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-import com.google.common.labs.parse.ErrorContext.ErrorTracker;
-import com.google.common.labs.parse.Parsers.Suffix;
-import com.google.errorprone.annotations.ThreadSafe;
-import com.google.errorprone.annotations.concurrent.LazyInit;
-import com.google.mu.function.Function4;
-import com.google.mu.function.ObjInt2Function;
-import com.google.mu.function.TriFunction;
-import com.google.mu.util.Both;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.stream.BiCollector;
-import com.google.mu.util.stream.BiStream;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.AbstractMap;
@@ -68,6 +57,18 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
+
+import com.google.common.labs.parse.ErrorContext.ErrorTracker;
+import com.google.common.labs.parse.Parsers.Suffix;
+import com.google.errorprone.annotations.ThreadSafe;
+import com.google.errorprone.annotations.concurrent.LazyInit;
+import com.google.mu.function.Function4;
+import com.google.mu.function.ObjInt2Function;
+import com.google.mu.function.TriFunction;
+import com.google.mu.util.Both;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiStream;
 
 /**
  * A simple recursive descent parser combinator intended to parse simple grammars such as regex, csv
@@ -1289,7 +1290,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final <S> Parser<T> followedByZeroOrMore(
       Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
-    return followedByZeroOrMore(Suffix.postfix(suffix, postfixFunction));
+    return followedByZeroOrMore(postfix(suffix, postfixFunction));
   }
 
   /**
@@ -1308,20 +1309,26 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return sequence(this, suffix.zeroOrMore(), Suffix::applyOperators);
   }
 
-  /** @deprecated Use {@link #followedByZeroOrMore(Parser)} instead. */
+  /**
+   * @deprecated Use {@link #followedByZeroOrMore(Parser)} instead.
+   */
   @Deprecated
   public final Parser<T> withPostfixes(Parser<? extends UnaryOperator<T>> operator) {
     return followedByZeroOrMore(operator);
   }
 
-  /** @deprecated Use {@link #followedByZeroOrMore(Parser, BiFunction)} instead. */
+  /**
+   * @deprecated Use {@link #followedByZeroOrMore(Parser, BiFunction)} instead.
+   */
   @Deprecated
   public final <S> Parser<T> withPostfixes(
       Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
     return followedByZeroOrMore(operator, postfixFunction);
   }
 
-  /** @deprecated Use {@link #followedByZeroOrMore(String, UnaryOperator)} instead. */
+  /**
+   * @deprecated Use {@link #followedByZeroOrMore(String, UnaryOperator)} instead.
+   */
   @Deprecated
   public final Parser<T> withPostfixes(String operator, UnaryOperator<T> postfixFunction) {
     return followedByZeroOrMore(operator, postfixFunction);
@@ -1463,7 +1470,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * suffixes allowed.
    *
    * @since 9.4
+   * @deprecated too niche
    */
+  @Deprecated
   public final Parser<T> followedByOrEof(Parser<?> suffix) {
     return followedBy(anyOf(suffix.ignoreReturn(), UNSAFE_EOF));
   }
@@ -1580,14 +1589,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * string("if").notImmediatelyFollowedBy(IDENTIFIER_CHAR, "identifier char")}.
    */
   public final Parser<T> notImmediatelyFollowedBy(CharPredicate predicate, String name) {
-    return notFollowedBy(
-        one(predicate, name).new SamePrefix<Character>() {
-          @Override MatchResult<Character> skipAndMatch(
-              Parser<?> ignored, CharInput input, int start, ErrorContext context) {
-            return left().skipAndMatch(null, input, start, context);
-          }
-        },
-        name);
+    requireNonNull(name);
+    requireNonNull(predicate);
+    return new SamePrefix<>() {
+      @Override MatchResult<T> skipAndMatch(
+          Parser<?> skip, CharInput input, int start, ErrorContext context) {
+        var result = left().skipAndMatch(skip, input, start, context);
+        return result instanceof MatchResult.Success<T> success
+                && input.startsWith(predicate, success.tail())
+            ? context.failAt(success.tail(), "unexpected `{name}`: {snippet}", name)
+            : result;
+      }
+
+      @Override Parser<?> ignoreReturn() {
+        return left().ignoreReturn().notImmediatelyFollowedBy(predicate, name);
+      }
+    };
   }
 
   /**
@@ -1920,23 +1937,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * followedBy()}, the {@link Parser#sequence(Parser, Production, BiFunction) sequence()} and
    * {@link Parser#followedBy(Parser.OrEmpty)} methods can be used to specify that a {@code
    * Parser.OrEmpty} production rule follows a regular consuming {@code Parser}.
-   *
-   * <p>The following is a simplified example of parsing a CSV line: a comma-separated list of
-   * fields with an optional trailing newline. The field values can be empty; empty line results in
-   * empty list {@code []}, not {@code [""]}:
-   *
-   * <pre>{@code
-   * Parser<String> field = consecutive(noneOf(",\n"));
-   * Parser<?> newline = string("\n");
-   * Parser<List<String>> csvRow =
-   *     anyOf(
-   *         newline.thenReturn(List.of()),          // empty line -> []
-   *         field
-   *             .orElse("")                         // empty field is ok
-   *             .delimitedBy(",")                   // comma-separated
-   *             .notEmpty()                         // non-empty line
-   *             .followedByOrEof(newline));         // trailing newline optional on last line
-   * }</pre>
    *
    * <p>In addition, the {@link #parse} convenience method is provided to parse potentially-empty
    * input in this one stop shop without having to remember to check for emptiness, because this
