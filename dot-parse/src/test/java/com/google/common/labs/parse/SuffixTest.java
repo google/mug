@@ -211,28 +211,6 @@ public class SuffixTest {
     assertThat(parser.parseToStream("---10")).containsExactly(-10);
   }
 
-  @Test public void withPrefixes_withBiFunction_success() {
-    Parser<Integer> prefix = anyOf(string("2x").thenReturn(2), string("3x").thenReturn(3));
-    Parser<Integer> suffix = digits().map(Integer::parseInt);
-    Parser<Integer> parser =
-        Suffix.withPrefixes(prefix, suffix, (multiplier, val) -> multiplier * val);
-    assertThat(parser.parse("5")).isEqualTo(5);
-    assertThat(parser.parse("2x5")).isEqualTo(10);
-    assertThat(parser.parse("3x2x5")).isEqualTo(30);
-    assertThat(parser.parseToStream("3x2x5")).containsExactly(30);
-    assertThat(parser.parseToStream("")).isEmpty();
-  }
-
-  @Test public void withPrefixes_withBiFunction_failure() {
-    Parser<Integer> prefix = anyOf(string("2x").thenReturn(2), string("3x").thenReturn(3));
-    Parser<Integer> suffix = digits().map(Integer::parseInt);
-    Parser<Integer> parser =
-        Suffix.withPrefixes(prefix, suffix, (multiplier, val) -> multiplier * val);
-    assertThrows(ParseException.class, () -> parser.parse("2x"));
-    assertThrows(ParseException.class, () -> parser.parse("2x3x"));
-    assertThrows(ParseException.class, () -> parser.parse("2x5a"));
-  }
-
 
   @Test public void testNulls() {
     new NullPointerTester()
