@@ -1717,7 +1717,14 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
   public final Lexical skipping(Parser<?> skip) {
-    return new Lexical(Skipper.zeroOrMore(skip));
+    Parser<?> elided = skip.ignoreReturn();
+    return new Lexical((input, index) -> {
+      while (elided.tryParse(input, index, ErrorContext.MINIMAL)
+          instanceof MatchResult.Success<?> success) {
+        index = success.tail();
+      }
+      return index;
+    });
   }
 
   /**
@@ -1730,7 +1737,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * }</pre>
    */
   public final Lexical skipping(CharPredicate charsToSkip) {
-    return new Lexical(Skipper.zeroOrMore(charsToSkip));
+    requireNonNull(charsToSkip);
+    return new Lexical((input, index) -> {
+      while (input.startsWith(charsToSkip, index)) index++;
+      return index;
+    });
   }
 
   /**
@@ -1950,10 +1961,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * with a parser that does consume!
      */
     private final Parser<T> unsafeZeroWidthParser =
-        new Parser<T>() {
+        new SamePrefix<T>() {
           @Override MatchResult<T> skipAndMatch(
               Skipper skip, CharInput input, int start, ErrorContext context) {
-            return switch (notEmpty().skipAndMatch(skip, input, start, context)) {
+            return switch (left().skipAndMatch(skip, input, start, context)) {
               case MatchResult.Success<T> success -> success;
               default -> new MatchResult.Success<>(start, start, computeDefaultValue());
             };
@@ -2132,7 +2143,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * there's nothing to parse except skippable content, returns the default empty value.
      */
     @Override public T parseSkipping(CharPredicate charsToSkip, String input) {
-      return this.parseSkipping(consecutive(charsToSkip, "skipped"), input);
+      return unsafeZeroWidthParser.parseSkipping(charsToSkip, input);
     }
 
     /**
@@ -2545,8 +2556,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   abstract MatchResult<T> skipAndMatch(
       Skipper skip, CharInput input, int start, ErrorContext context);
 
-  static int skipIfAny(Skipper skip, CharInput input, int start) {
-    return skip == null ? start : skip.skip(input, start);
+  static int skipIfAny(Skipper skipper, CharInput input, int start) {
+    return skipper == null ? start : skipper.skip(input, start);
   }
 
   static <T> Parser<T> allowZeroWidth(Production<T> production) {
@@ -2554,6 +2565,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       case Parser<T> parser -> parser;
       case Parser<T>.OrEmpty orEmpty -> orEmpty.unsafeZeroWidthParser;
     };
+  }
+
+  interface Skipper {
+    int skip(CharInput input, int index);
   }
 
   /** A derived parser, with {@code this} being the left-most rule. */
