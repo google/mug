@@ -61,9 +61,9 @@ final class OrParser<T> extends Parser<T> {
   }
 
   @Override MatchResult<T> skipAndMatch(
-      Parser<?> skip, CharInput input, int start, ErrorContext context) {
+      Skipper skip, CharInput input, int start, ErrorContext context) {
     // All top-level parsers allow input to apply pre-skipping.
-    start = skipIfAny(skip, input, start);
+    start = Parser.skipIfAny(skip, input, start);
     List<Parser<T>> candidates = parsers;
     if (pruneTree != null) {
       candidates = pruneTree.pruneByPrefix(input, start);
@@ -82,7 +82,9 @@ final class OrParser<T> extends Parser<T> {
         return result;
       }
     }
-    return farthestFailure.frontier() == start ? context.expectingInternal(this, start) : farthestFailure;
+    return farthestFailure.frontier() == start
+        ? context.expectingInternal(this, start)
+        : farthestFailure;
   }
 
   @Override Set<String> computePrefixes() {

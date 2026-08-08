@@ -11,15 +11,14 @@ import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.mu.util.CharPredicate.WHITESPACE;
 import static org.junit.Assert.assertThrows;
-
-import java.util.List;
 
 import com.google.common.labs.parse.OperatorTable;
 import com.google.common.labs.parse.Parser;
-import static com.google.mu.util.CharPredicate.WHITESPACE;
 import com.google.mu.benchmarks.parsers.BenchmarkInputs;
 import com.google.mu.benchmarks.parsers.BenchmarkInputs.Keyword;
+import java.util.List;
 
 public final class DotParseShowdown {
 
@@ -41,8 +40,7 @@ public final class DotParseShowdown {
   }
 
   public static class StringFixture {
-    private static final Parser<String> PARSER =
-        quotedByWithEscapes("\"", '"', chars(1));
+    private static final Parser<String> PARSER = quotedByWithEscapes("\"", '"', chars(1));
 
     static {
       assertThat(PARSER.parse(BenchmarkInputs.STRING_SIMPLE)).isEqualTo("hello world!");
@@ -55,10 +53,9 @@ public final class DotParseShowdown {
   }
 
   public static class KeywordsFixture {
-    private static final Parser<Keyword> KEYWORD =
-        BenchmarkInputs.KEYWORDS.stream()
-            .map(kw -> Parser.string(kw).thenReturn(BenchmarkInputs.KEYWORD_MAP.get(kw)))
-            .collect(or());
+    private static final Parser<Keyword> KEYWORD = BenchmarkInputs.KEYWORDS.stream()
+        .map(kw -> Parser.string(kw).thenReturn(BenchmarkInputs.KEYWORD_MAP.get(kw)))
+        .collect(or());
     private static final Parser<List<Keyword>> PARSER = KEYWORD.atLeastOnceDelimitedBy(",");
 
     static {
@@ -74,10 +71,9 @@ public final class DotParseShowdown {
   }
 
   public static class IgnoreCaseFixture {
-    private static final Parser<Keyword> KEYWORD =
-        BenchmarkInputs.KEYWORDS.stream()
-            .map(kw -> Parser.caseInsensitive(kw).thenReturn(BenchmarkInputs.KEYWORD_MAP.get(kw)))
-            .collect(or());
+    private static final Parser<Keyword> KEYWORD = BenchmarkInputs.KEYWORDS.stream()
+        .map(kw -> Parser.caseInsensitive(kw).thenReturn(BenchmarkInputs.KEYWORD_MAP.get(kw)))
+        .collect(or());
     private static final Parser<List<Keyword>> PARSER = KEYWORD.atLeastOnceDelimitedBy(",");
 
     static {
@@ -94,16 +90,14 @@ public final class DotParseShowdown {
   }
 
   public static class CalculatorFixture {
-    private static final Parser<Integer> PARSER =
-        define(
-            expr ->
-                new OperatorTable<Integer>()
-                    .leftAssociative("+", (l, r) -> l + r, 1)
-                    .leftAssociative("-", (l, r) -> l - r, 1)
-                    .leftAssociative("*", (l, r) -> l * r, 2)
-                    .leftAssociative("/", (l, r) -> l / r, 2)
-                    .prefix("-", n -> -n, 3)
-                    .build(anyOf(digits().map(Integer::parseInt), expr.between("(", ")"))));
+    private static final Parser<Integer> PARSER = define(
+        expr -> new OperatorTable<Integer>()
+            .leftAssociative("+", (l, r) -> l + r, 1)
+            .leftAssociative("-", (l, r) -> l - r, 1)
+            .leftAssociative("*", (l, r) -> l * r, 2)
+            .leftAssociative("/", (l, r) -> l / r, 2)
+            .prefix("-", n -> -n, 3)
+            .build(anyOf(digits().map(Integer::parseInt), expr.between("(", ")"))));
 
     static {
       // Verify
@@ -136,8 +130,7 @@ public final class DotParseShowdown {
 
   public static class UsPhoneFixture {
     private static final Parser<String> PARSER =
-        sequence(one('('), digits(3), one(')'), digits(3), one('-'), digits(4))
-            .source();
+        sequence(one('('), digits(3), one(')'), digits(3), one('-'), digits(4)).source();
 
     static {
       assertThat(PARSER.parse(BenchmarkInputs.US_PHONE)).isEqualTo(BenchmarkInputs.US_PHONE);
@@ -149,11 +142,11 @@ public final class DotParseShowdown {
   }
 
   public static class UsPhoneListFixture {
-    private static final Parser<List<String>>.OrEmpty PARSER = literally(UsPhoneFixture.PARSER).zeroOrMore();
+    private static final Parser<List<String>> PARSER =
+        literally(UsPhoneFixture.PARSER).atLeastOnce();
 
     static {
-      List<String> result =
-          PARSER.parseSkipping(WHITESPACE, BenchmarkInputs.US_PHONE_LIST);
+      List<String> result = PARSER.parseSkipping(WHITESPACE, BenchmarkInputs.US_PHONE_LIST);
       assertThat(result.size()).isEqualTo(1000);
     }
 
