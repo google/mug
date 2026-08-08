@@ -142,8 +142,8 @@ public final class DotParseShowdown {
   }
 
   public static class UsPhoneListFixture {
-    private static final Parser<List<String>>.OrEmpty PARSER =
-        literally(UsPhoneFixture.PARSER).zeroOrMore();
+    private static final Parser<List<String>> PARSER =
+        literally(UsPhoneFixture.PARSER).atLeastOnce();
 
     static {
       List<String> result = PARSER.parseSkipping(WHITESPACE, BenchmarkInputs.US_PHONE_LIST);

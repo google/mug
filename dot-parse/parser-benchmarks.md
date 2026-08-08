@@ -120,9 +120,7 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 | **Calculator (Math)** | 366 | 336 | **1,098** 🚀 | 400 | **436** ☕ | 194 | 111 | 360 | 196 | 377 | 234 | **`fastparse`** 🚀<br>Java: **`taker`** ☕ |
 | **Nested Comments** | **11,110** 🚀 ☕ | 2,234 | 4,451 | 2,144 | 735 | 617 | 388 | 1,076 | 259 | 1,050 | 1,317 | **`dot`** 🚀 ☕ |
 | **US Phone (Single)** | **14,976** 🚀 ☕ | 9,734 | 8,483 | 12,099 | 12,854 | 8,707 | 4,144 | 5,749 | 3,376 | 7,044 | 9,309 | **`dot`** 🚀 ☕ |
-| **US Phone (1,000-List)** | 7.54 [^1] | **9.52** ☕ | 8.93 | **10.89** 🚀 | 8.51 | 1.73 | 3.68 | 8.12 | 2.98 | 5.56 | 5.05 | **`cats`** 🚀<br>Java: **`jparsec`** ☕ |
-
-[^1]: When using the standard `zeroOrMore()` combinator. Using the non-empty `atLeastOnce()` loop optimization increases `dot-parse` throughput to **`11.20 ops/ms`**, making it the overall #1 leader in this category (surpassing `cats-parse`).
+| **US Phone (1,000-List)** | **11.20** 🚀 ☕ | 9.52 | 8.93 | 10.89 | 8.51 | 1.73 | 3.68 | 8.12 | 2.98 | 5.56 | 5.05 | **`dot`** 🚀 ☕ |
 
 ---
 
@@ -174,18 +172,6 @@ Our benchmarks highlight four key architectural factors that govern parser perfo
 ### 4. Vectorized Delimiter Scanning
 *   **The Problem**: Scanning comments (like `/* ... */`) or block delimiters in traditional parsers relies on character-by-character DFA transition loops, which scan memory slowly.
 *   **The Solution**: `dot-parse` leverages native string search (`String.indexOf`) for block delimiters. The JVM JIT compiler optimizes these calls using vectorized SIMD instructions, allowing it to scan blocks in parallel and skip pointers instantly.
-
-### 5. Loop Delegation & Skipping Overhead (`zeroOrMore` vs. `atLeastOnce`)
-*   **The Problem**: In PEG combinators, loops like `zeroOrMore()` wrap the underlying repeating parser in an optional/zero-width wrapper (`OrEmpty`) to handle empty matches and provide default values. During whitespace-skipping runs (`parseSkipping()`), this wrapper intercepts every loop iteration result to check if it should supply the default value. This introduces extra method delegation layers and conditional checks on every token boundary.
-*   **The Solution**: When a list is guaranteed to be non-empty, using `atLeastOnce()` bypasses this zero-width interception wrapper entirely, delegating directly to the underlying loop parser. On the 1,000-phone-number list benchmark, this optimization reduces the regression from ~23% down to ~3%, boosting `dot-parse` throughput from **7.5 ops/ms** to **11.2 ops/ms** (surpassing both `cats-parse` and `jparsec`).
-
-    #### Phone List Scaling Comparison (Throughput in ops/ms)
-    | Input Size | `zeroOrMore()` (With Wrapper Interception) | `atLeastOnce()` (Direct Loop Parser) | Throughput Delta |
-    | :--- | :---: | :---: | :---: |
-    | **1K List** | 7.54 ± 0.09 ops/ms | 11.20 ± 0.10 ops/ms | **+48.5%** |
-    | **10K List** | 0.88 ± 0.01 ops/ms | 1.18 ± 0.01 ops/ms | **+34.1%** |
-    | **100K List** | 0.09 ± 0.00 ops/ms | 0.12 ± 0.00 ops/ms | **+33.3%** |
-
 ---
 
 ## How to Run the Benchmarks
