@@ -1715,18 +1715,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return literally(rule.notEmpty()).new OrEmpty(rule::computeDefaultValue);
   }
 
-  /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
-  public final Lexical skipping(Parser<?> skip) {
-    Parser<?> elided = skip.ignoreReturn();
-    return new Lexical((input, index) -> {
-      while (elided.tryParse(input, index, ErrorContext.MINIMAL)
-          instanceof MatchResult.Success<?> success) {
-        index = success.tail();
-      }
-      return index;
-    });
-  }
-
   /**
    * Starts a fluent chain for parsing inputs while skipping {@code charsToSkip}.
    *
@@ -1740,6 +1728,18 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     requireNonNull(charsToSkip);
     return new Lexical((input, index) -> {
       while (input.startsWith(charsToSkip, index)) index++;
+      return index;
+    });
+  }
+
+  /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
+  public final Lexical skipping(Parser<?> skip) {
+    Parser<?> elided = skip.ignoreReturn();
+    return new Lexical((input, index) -> {
+      while (elided.tryParse(input, index, ErrorContext.MINIMAL)
+          instanceof MatchResult.Success<?> success) {
+        index = success.tail();
+      }
       return index;
     });
   }
