@@ -99,7 +99,8 @@ loadScripts(document, 'script');</script>
 </div>
 <div class="col-summary-item-name odd-row-color"><a href="com/google/common/labs/parse/Parser.html#followedByOrEof(com.google.common.labs.parse.Parser)">com.google.common.labs.parse.Parser.followedByOrEof<wbr>(Parser&lt;?&gt;)</a></div>
 <div class="col-last odd-row-color">
-<div class="block">too niche</div>
+<div class="block">Use <code>notImmediatelyFollowedBy(noneOf("\r\n"))</code> instead of <code>
+     followedByOrEof(one("[\r\n]"))</code>.</div>
 </div>
 <div class="col-summary-item-name even-row-color"><a href="com/google/common/labs/parse/Parser.html#one(com.google.common.labs.parse.CharacterSet)">com.google.common.labs.parse.Parser.one<wbr>(CharacterSet)</a></div>
 <div class="col-last even-row-color">

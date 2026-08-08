@@ -368,7 +368,8 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#followedByOrEof(com.google.common.labs.parse.Parser)" class="member-name-link">followedByOrEof</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;suffix)</code></div>
 <div class="col-last even-row-color">
 <div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">too niche</div>
+<div class="deprecation-comment">Use <code>notImmediatelyFollowedBy(noneOf("\r\n"))</code> instead of <code>
+     followedByOrEof(one("[\r\n]"))</code>.</div>
 </div>
 </div>
 <div class="col-first odd-row-color"><code>final <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
@@ -421,7 +422,7 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#literally(com.google.common.labs.parse.Parser)" class="member-name-link">literally</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;&nbsp;parser)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Returns an equivalent parser that suppresses character skipping that's otherwise applied if
- <a href="../Parser.html#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="../Parser.html#skipping(com.google.common.labs.parse.Parser)"><code>skipping()</code></a> are called.</div>
+ <a href="../Parser.html#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="../Parser.html#skipping(com.google.mu.util.CharPredicate)"><code>skipping()</code></a> are called.</div>
 </div>
 <div class="col-first odd-row-color"><code>final &lt;R&gt;&nbsp;<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#map(java.util.function.Function)" class="member-name-link">map</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>, ? extends R&gt;&nbsp;f)</code></div>
@@ -829,7 +830,8 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#followedByOrEof(com.google.common.labs.parse.Parser)" class="member-name-link">followedByOrEof</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;suffix)</code></div>
 <div class="col-last even-row-color">
 <div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">too niche</div>
+<div class="deprecation-comment">Use <code>notImmediatelyFollowedBy(noneOf("\r\n"))</code> instead of <code>
+     followedByOrEof(one("[\r\n]"))</code>.</div>
 </div>
 </div>
 <div class="col-first odd-row-color"><code>final <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="../Parser.html#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
@@ -869,7 +871,7 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#literally(com.google.common.labs.parse.Parser)" class="member-name-link">literally</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;&nbsp;parser)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Returns an equivalent parser that suppresses character skipping that's otherwise applied if
- <a href="../Parser.html#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="../Parser.html#skipping(com.google.common.labs.parse.Parser)"><code>skipping()</code></a> are called.</div>
+ <a href="../Parser.html#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="../Parser.html#skipping(com.google.mu.util.CharPredicate)"><code>skipping()</code></a> are called.</div>
 </div>
 <div class="col-first odd-row-color"><code><a href="../OperatorTable.html" title="class in com.google.common.labs.parse">OperatorTable</a><wbr>&lt;<a href="../OperatorTable.html#type-param-T" title="type parameter in OperatorTable">T</a>&gt;</code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">OperatorTable.</span><code><a href="../OperatorTable.html#nonAssociative(com.google.common.labs.parse.Parser,int)" class="member-name-link">nonAssociative</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BinaryOperator.html" title="class or interface in java.util.function" class="external-link">BinaryOperator</a>&lt;<a href="../OperatorTable.html#type-param-T" title="type parameter in OperatorTable">T</a>&gt;&gt;&nbsp;operator,

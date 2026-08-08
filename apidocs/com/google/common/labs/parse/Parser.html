@@ -124,9 +124,6 @@ loadScripts(document, 'script');</script>
 <li><a href="#zeroOrMoreDelimitedBy(com.google.common.labs.parse.Parser,java.util.stream.Collector)" tabindex="0">zeroOrMoreDelimitedBy(Parser, Collector)</a></li>
 <li><a href="#zeroOrMoreDelimited(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,java.lang.String,com.google.mu.util.stream.BiCollector)" tabindex="0">zeroOrMoreDelimited(Parser, Production, String, BiCollector)</a></li>
 <li><a href="#withPrefixes(com.google.common.labs.parse.Parser)" tabindex="0">withPrefixes(Parser)</a></li>
-<li><a href="#followedByZeroOrMore(java.lang.String,java.util.function.UnaryOperator)" tabindex="0">followedByZeroOrMore(String, UnaryOperator)</a></li>
-<li><a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" tabindex="0">followedByZeroOrMore(Parser, BiFunction)</a></li>
-<li><a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser)" tabindex="0">followedByZeroOrMore(Parser)</a></li>
 <li><a href="#withPostfixes(com.google.common.labs.parse.Parser)" tabindex="0">withPostfixes(Parser)</a></li>
 <li><a href="#withPostfixes(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" tabindex="0">withPostfixes(Parser, BiFunction)</a></li>
 <li><a href="#withPostfixes(java.lang.String,java.util.function.UnaryOperator)" tabindex="0">withPostfixes(String, UnaryOperator)</a></li>
@@ -140,6 +137,9 @@ loadScripts(document, 'script');</script>
 <li><a href="#suchThat(java.util.function.Predicate,java.lang.String)" tabindex="0">suchThat(Predicate, String)</a></li>
 <li><a href="#followedBy(com.google.common.labs.parse.Parser)" tabindex="0">followedBy(Parser)</a></li>
 <li><a href="#followedBy(com.google.common.labs.parse.Parser.OrEmpty)" tabindex="0">followedBy(Parser.OrEmpty)</a></li>
+<li><a href="#followedByZeroOrMore(java.lang.String,java.util.function.UnaryOperator)" tabindex="0">followedByZeroOrMore(String, UnaryOperator)</a></li>
+<li><a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" tabindex="0">followedByZeroOrMore(Parser, BiFunction)</a></li>
+<li><a href="#followedByZeroOrMore(com.google.common.labs.parse.Parser)" tabindex="0">followedByZeroOrMore(Parser)</a></li>
 <li><a href="#followedByOrEof(com.google.common.labs.parse.Parser)" tabindex="0">followedByOrEof(Parser)</a></li>
 <li><a href="#optionallyFollowedBy(java.lang.String)" tabindex="0">optionallyFollowedBy(String)</a></li>
 <li><a href="#optionallyFollowedBy(com.google.common.labs.parse.Parser)" tabindex="0">optionallyFollowedBy(Parser)</a></li>
@@ -156,8 +156,8 @@ loadScripts(document, 'script');</script>
 <li><a href="#literally(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production...)" tabindex="0">literally(Parser, Production, Production...)</a></li>
 <li><a href="#literally(com.google.common.labs.parse.Parser.OrEmpty,com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production...)" tabindex="0">literally(Parser.OrEmpty, Parser, Production...)</a></li>
 <li><a href="#literally(com.google.common.labs.parse.Parser.OrEmpty)" tabindex="0">literally(Parser.OrEmpty)</a></li>
-<li><a href="#skipping(com.google.common.labs.parse.Parser)" tabindex="0">skipping(Parser)</a></li>
 <li><a href="#skipping(com.google.mu.util.CharPredicate)" tabindex="0">skipping(CharPredicate)</a></li>
+<li><a href="#skipping(com.google.common.labs.parse.Parser)" tabindex="0">skipping(Parser)</a></li>
 <li><a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)" tabindex="0">parseSkipping(Parser, String)</a></li>
 <li><a href="#parseSkipping(com.google.mu.util.CharPredicate,java.lang.String)" tabindex="0">parseSkipping(CharPredicate, String)</a></li>
 <li><a href="#parse(java.lang.String)" tabindex="0">parse(String)</a></li>
@@ -411,7 +411,8 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6"><code><a href="#followedByOrEof(com.google.common.labs.parse.Parser)" class="member-name-link">followedByOrEof</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;suffix)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4 method-summary-table-tab6">
 <div class="block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">too niche</div>
+<div class="deprecation-comment">Use <code>notImmediatelyFollowedBy(noneOf("\r\n"))</code> instead of <code>
+     followedByOrEof(one("[\r\n]"))</code>.</div>
 </div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
@@ -462,13 +463,13 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#literally(com.google.common.labs.parse.Parser)" class="member-name-link">literally</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;&nbsp;parser)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Returns an equivalent parser that suppresses character skipping that's otherwise applied if
- <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.common.labs.parse.Parser)"><code>skipping()</code></a> are called.</div>
+ <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.mu.util.CharPredicate)"><code>skipping()</code></a> are called.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#literally(com.google.common.labs.parse.Parser.OrEmpty)" class="member-name-link">literally</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;rule)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Specifies that the optional (or zero-or-more) <code>rule</code> should be matched literally even if
- <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.common.labs.parse.Parser)"><code>skipping()</code></a> is called.</div>
+ <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.mu.util.CharPredicate)"><code>skipping()</code></a> is called.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final &lt;R&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;R&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#map(java.util.function.Function)" class="member-name-link">map</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? extends R&gt;&nbsp;f)</code></div>
@@ -1528,7 +1529,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
      .then(digits())
  </code></pre>
 
- <p>If you need to ensure no skipping between the constituent sub-parsers even when <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.common.labs.parse.Parser)"><code>skipping()</code></a> is used, wrap the returned
+ <p>If you need to ensure no skipping between the constituent sub-parsers even when <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.mu.util.CharPredicate)"><code>skipping()</code></a> is used, wrap the returned
  sequence with <a href="#literally(com.google.common.labs.parse.Parser)"><code>literally()</code></a>.
 
  <p>The returned parser's match spans all of the constituent parsers. To access the matched
@@ -1555,7 +1556,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 
  <pre><code>sequence(string("-").optional(), digits())</code></pre>
 
- <p>If you need to ensure no skipping between the constituent sub-parsers even when <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.common.labs.parse.Parser)"><code>skipping()</code></a> is used, wrap the returned
+ <p>If you need to ensure no skipping between the constituent sub-parsers even when <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.mu.util.CharPredicate)"><code>skipping()</code></a> is used, wrap the returned
  sequence with <a href="#literally(com.google.common.labs.parse.Parser)"><code>literally()</code></a>.
 
  <p>The returned parser's match spans all of the constituent parsers. To access the matched
@@ -2001,71 +2002,6 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 </section>
 </li>
 <li>
-<section class="detail" id="followedByZeroOrMore(java.lang.String,java.util.function.UnaryOperator)">
-<h3>followedByZeroOrMore</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedByZeroOrMore</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</span></div>
-<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>suffix</code> string
- zero or more times and applies the <code>postfixFunction</code> iteratively. For example:
-
- <pre><code>
- Parser&lt;AbcNote&gt; middleNote = one("[ABCDEFG]").map(AbcNote::middle);
- Parser&lt;AbcNote&gt; note = middleNote.followedByZeroOrMore(",", AbcNote::down);
- </code></pre>
-
- <p>For infix operator support, consider using <a href="OperatorTable.html" title="class in com.google.common.labs.parse"><code>OperatorTable</code></a>.</div>
-<dl class="notes">
-<dt>Since:</dt>
-<dd>10.8</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="followedByZeroOrMore(com.google.common.labs.parse.Parser,java.util.function.BiFunction)">
-<h3>followedByZeroOrMore</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="type-parameters">&lt;S&gt;</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedByZeroOrMore</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix,
- <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? super S, ? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</span></div>
-<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>suffix</code> parser
- zero or more times and applies the <code>postfixFunction</code> iteratively. For example:
-
- <pre><code>
- Parser&lt;Expr&gt; variable = word().map(Expr::variable);
- Parser&lt;Expr&gt; parser = variable.followedByZeroOrMore(
-     string(".").then(word()),
-     (expr, field) -&gt; Expr.fieldAccess(expr, field));
- </code></pre>
-
- <p>For infix operator support, consider using <a href="OperatorTable.html" title="class in com.google.common.labs.parse"><code>OperatorTable</code></a>.</div>
-<dl class="notes">
-<dt>Since:</dt>
-<dd>10.8</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="followedByZeroOrMore(com.google.common.labs.parse.Parser)">
-<h3>followedByZeroOrMore</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedByZeroOrMore</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;suffix)</span></div>
-<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>suffix</code> parser
- zero or more times and applies the result functions iteratively.
-
- <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
- postfix.
-
- <p>For infix operator support, consider using <a href="OperatorTable.html" title="class in com.google.common.labs.parse"><code>OperatorTable</code></a>.</div>
-<dl class="notes">
-<dt>Since:</dt>
-<dd>10.8</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
 <section class="detail" id="withPostfixes(com.google.common.labs.parse.Parser)">
 <h3>withPostfixes</h3>
 <div class="horizontal-scroll">
@@ -2261,13 +2197,79 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 </section>
 </li>
 <li>
+<section class="detail" id="followedByZeroOrMore(java.lang.String,java.util.function.UnaryOperator)">
+<h3>followedByZeroOrMore</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedByZeroOrMore</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/UnaryOperator.html" title="class or interface in java.util.function" class="external-link">UnaryOperator</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</span></div>
+<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>suffix</code> string
+ zero or more times and applies the <code>postfixFunction</code> iteratively. For example:
+
+ <pre><code>
+ Parser&lt;AbcNote&gt; middleNote = one("[ABCDEFG]").map(AbcNote::middle);
+ Parser&lt;AbcNote&gt; note = middleNote.followedByZeroOrMore(",", AbcNote::down);
+ </code></pre>
+
+ <p>For infix operator support, consider using <a href="OperatorTable.html" title="class in com.google.common.labs.parse"><code>OperatorTable</code></a>.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.8</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="followedByZeroOrMore(com.google.common.labs.parse.Parser,java.util.function.BiFunction)">
+<h3>followedByZeroOrMore</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="type-parameters">&lt;S&gt;</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedByZeroOrMore</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix,
+ <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? super S, ? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&nbsp;postfixFunction)</span></div>
+<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>suffix</code> parser
+ zero or more times and applies the <code>postfixFunction</code> iteratively. For example:
+
+ <pre><code>
+ Parser&lt;Expr&gt; variable = word().map(Expr::variable);
+ Parser&lt;Expr&gt; parser = variable.followedByZeroOrMore(
+     string(".").then(word()),
+     (expr, field) -&gt; Expr.fieldAccess(expr, field));
+ </code></pre>
+
+ <p>For infix operator support, consider using <a href="OperatorTable.html" title="class in com.google.common.labs.parse"><code>OperatorTable</code></a>.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.8</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="followedByZeroOrMore(com.google.common.labs.parse.Parser)">
+<h3>followedByZeroOrMore</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedByZeroOrMore</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-T" title="type parameter in Parser">T</a>, ? extends <a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;&nbsp;suffix)</span></div>
+<div class="block">Returns a parser that after <code>this</code> parser succeeds, matches the <code>suffix</code> parser
+ zero or more times and applies the result functions iteratively.
+
+ <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
+ postfix.
+
+ <p>For infix operator support, consider using <a href="OperatorTable.html" title="class in com.google.common.labs.parse"><code>OperatorTable</code></a>.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.8</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
 <section class="detail" id="followedByOrEof(com.google.common.labs.parse.Parser)">
 <h3>followedByOrEof</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
 </span><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">followedByOrEof</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;suffix)</span></div>
 <div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
-<div class="deprecation-comment">too niche</div>
+<div class="deprecation-comment">Use <code>notImmediatelyFollowedBy(noneOf("\r\n"))</code> instead of <code>
+     followedByOrEof(one("[\r\n]"))</code>.</div>
 </div>
 <div class="block">Specifies that the matched pattern must be either followed by <code>suffix</code> or EOF. No other
  suffixes allowed.</div>
@@ -2458,7 +2460,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;</span>&nbsp;<span class="element-name">literally</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;&nbsp;parser)</span></div>
 <div class="block">Returns an equivalent parser that suppresses character skipping that's otherwise applied if
- <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.common.labs.parse.Parser)"><code>skipping()</code></a> are called. For example
+ <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.mu.util.CharPredicate)"><code>skipping()</code></a> are called. For example
  quoted string literals should not skip whitespaces.</div>
 </div>
 </section>
@@ -2499,16 +2501,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a></span>&nbsp;<span class="element-name">literally</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;rule)</span></div>
 <div class="block">Specifies that the optional (or zero-or-more) <code>rule</code> should be matched literally even if
- <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.common.labs.parse.Parser)"><code>skipping()</code></a> is called.</div>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="skipping(com.google.common.labs.parse.Parser)">
-<h3>skipping</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;.<a href="Parser.Lexical.html" title="class in com.google.common.labs.parse">Lexical</a></span>&nbsp;<span class="element-name">skipping</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;skip)</span></div>
-<div class="block">Starts a fluent chain for parsing inputs while skipping patterns matched by <code>skip</code>.</div>
+ <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.mu.util.CharPredicate)"><code>skipping()</code></a> is called.</div>
 </div>
 </section>
 </li>
@@ -2524,6 +2517,15 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  <pre><code>
  jsonRecord.skipping(whitespace()).parseToStream(input);
  </code></pre></div>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="skipping(com.google.common.labs.parse.Parser)">
+<h3>skipping</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public final</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;.<a href="Parser.Lexical.html" title="class in com.google.common.labs.parse">Lexical</a></span>&nbsp;<span class="element-name">skipping</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;skip)</span></div>
+<div class="block">Starts a fluent chain for parsing inputs while skipping patterns matched by <code>skip</code>.</div>
 </div>
 </section>
 </li>
