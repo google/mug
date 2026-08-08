@@ -415,17 +415,6 @@ public final class Parsers {
     }
 
     /**
-     * Returns a parser that matches zero or more prefixes before {@code suffix} and applies the
-     * {@code prefixFunction} iteratively in First-In, Last-Out order.
-     */
-    public static <P, T> Parser<T> withPrefixes(
-        Parser<P> prefix, Parser<? extends T> suffix,
-        BiFunction<? super P, ? super T, ? extends T> prefixFunction) {
-      requireNonNull(prefixFunction);
-      return withPrefixes(prefix.map(p -> s -> prefixFunction.apply(p, s)), suffix);
-    }
-
-    /**
      * Returns a parser that matches the {@code prefix} parser zero or more times before {@code
      * suffix} and applies the result functions iteratively, in First-In, Last-Out order.
      */
