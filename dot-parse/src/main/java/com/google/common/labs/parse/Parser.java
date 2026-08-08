@@ -1253,62 +1253,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Returns a parser that after {@code this} parser succeeds, matches the {@code suffix} string
-   * zero or more times and applies the {@code postfixFunction} iteratively. For example:
-   *
-   * <pre>{@code
-   * Parser<AbcNote> middleNote = one("[ABCDEFG]").map(AbcNote::middle);
-   * Parser<AbcNote> note = middleNote.followedByZeroOrMore(",", AbcNote::down);
-   * }</pre>
-   *
-   * <p>For infix operator support, consider using {@link OperatorTable}.
-   *
-   * @since 10.8
-   */
-  public final Parser<T> followedByZeroOrMore(String suffix, UnaryOperator<T> postfixFunction) {
-    requireNonNull(postfixFunction);
-    return sequence(
-        this, string(suffix).zeroOrMore(counting()),
-        (prefix, times) -> Suffix.applyOperator(prefix, postfixFunction, times));
-  }
-
-  /**
-   * Returns a parser that after {@code this} parser succeeds, matches the {@code suffix} parser
-   * zero or more times and applies the {@code postfixFunction} iteratively. For example:
-   *
-   * <pre>{@code
-   * Parser<Expr> variable = word().map(Expr::variable);
-   * Parser<Expr> parser = variable.followedByZeroOrMore(
-   *     string(".").then(word()),
-   *     (expr, field) -> Expr.fieldAccess(expr, field));
-   * }</pre>
-   *
-   * <p>For infix operator support, consider using {@link OperatorTable}.
-   *
-   * @since 10.8
-   */
-  public final <S> Parser<T> followedByZeroOrMore(
-      Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
-    return followedByZeroOrMore(postfix(suffix, postfixFunction));
-  }
-
-  /**
-   * Returns a parser that after {@code this} parser succeeds, matches the {@code suffix} parser
-   * zero or more times and applies the result functions iteratively.
-   *
-   * <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
-   * postfix.
-   *
-   * <p>For infix operator support, consider using {@link OperatorTable}.
-   *
-   * @since 10.8
-   */
-  public final Parser<T> followedByZeroOrMore(
-      Parser<? extends Function<? super T, ? extends T>> suffix) {
-    return sequence(this, suffix.zeroOrMore(), Suffix::applyOperators);
-  }
-
-  /**
    * @deprecated Use {@link #followedByZeroOrMore(Parser)} instead.
    */
   @Deprecated
@@ -1462,6 +1406,62 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   @Override public final <S> Parser<T> followedBy(Parser<S>.OrEmpty suffix) {
     return followedBy(suffix.unsafeZeroWidthParser);
+  }
+
+  /**
+   * Returns a parser that after {@code this} parser succeeds, matches the {@code suffix} string
+   * zero or more times and applies the {@code postfixFunction} iteratively. For example:
+   *
+   * <pre>{@code
+   * Parser<AbcNote> middleNote = one("[ABCDEFG]").map(AbcNote::middle);
+   * Parser<AbcNote> note = middleNote.followedByZeroOrMore(",", AbcNote::down);
+   * }</pre>
+   *
+   * <p>For infix operator support, consider using {@link OperatorTable}.
+   *
+   * @since 10.8
+   */
+  public final Parser<T> followedByZeroOrMore(String suffix, UnaryOperator<T> postfixFunction) {
+    requireNonNull(postfixFunction);
+    return sequence(
+        this, string(suffix).zeroOrMore(counting()),
+        (prefix, times) -> Suffix.applyOperator(prefix, postfixFunction, times));
+  }
+
+  /**
+   * Returns a parser that after {@code this} parser succeeds, matches the {@code suffix} parser
+   * zero or more times and applies the {@code postfixFunction} iteratively. For example:
+   *
+   * <pre>{@code
+   * Parser<Expr> variable = word().map(Expr::variable);
+   * Parser<Expr> parser = variable.followedByZeroOrMore(
+   *     string(".").then(word()),
+   *     (expr, field) -> Expr.fieldAccess(expr, field));
+   * }</pre>
+   *
+   * <p>For infix operator support, consider using {@link OperatorTable}.
+   *
+   * @since 10.8
+   */
+  public final <S> Parser<T> followedByZeroOrMore(
+      Parser<S> suffix, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
+    return followedByZeroOrMore(postfix(suffix, postfixFunction));
+  }
+
+  /**
+   * Returns a parser that after {@code this} parser succeeds, matches the {@code suffix} parser
+   * zero or more times and applies the result functions iteratively.
+   *
+   * <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
+   * postfix.
+   *
+   * <p>For infix operator support, consider using {@link OperatorTable}.
+   *
+   * @since 10.8
+   */
+  public final Parser<T> followedByZeroOrMore(
+      Parser<? extends Function<? super T, ? extends T>> suffix) {
+    return sequence(this, suffix.zeroOrMore(), Suffix::applyOperators);
   }
 
   /**
