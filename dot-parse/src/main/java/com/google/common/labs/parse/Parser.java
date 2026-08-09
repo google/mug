@@ -1706,7 +1706,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * useful for matching a pattern of characters without spaces in between.
    *
    * <p>For example, you can use {@code
-   * literally(one('('), digits(3), one(')'), digits(3), one('-'), digits(4)} to match US phone
+   * literally(one('('), digits(3), one(')'), digits(3), one('-'), digits(4))} to match US phone
    * numbers.
    *
    * @since 10.7
@@ -1717,6 +1717,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /**
    * {@code literally(p1, p2, p3)} is short-hand for {@code literally(sequence(p1, p2, p3))}.
+   *
+   * <p>For example the following parser matches a signed decimal number:
+   *
+   * <pre>{@code
+   * literally(
+   *     one("[+-]").optional(),
+   *     digits(),
+   *     sequence(one('.'), digits()).optional());
+   * }</pre>
    *
    * @since 10.7
    */
