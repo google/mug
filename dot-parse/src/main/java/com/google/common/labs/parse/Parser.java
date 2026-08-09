@@ -785,7 +785,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *     .then(digits())
    * }</pre>
    *
-   * <p>If you need to ensure no skipping between the constituent sub-parsers even when {@link
+   * <p>If you need to ensure no spaces between the constituent components even when {@link
    * #parseSkipping parseSkipping()} or {@link #skipping skipping()} is used, use the {@link
    * #literally(Parser, Production, Production...) literally(Parser...)} overload instead.
    *
