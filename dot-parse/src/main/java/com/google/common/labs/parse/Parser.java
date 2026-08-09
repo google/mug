@@ -1417,7 +1417,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * Parser<AbcNote> note = middleNote.followedByZeroOrMore(",", AbcNote::down);
    * }</pre>
    *
-   * <p>For infix operator support, consider using {@link OperatorTable}.
+   * <p>For prefix operators, use {@link Parsers.Suffix#withPrefixes(String, Parser, UnaryOperator)
+   * withPrefixes()} such as {@code withPrefixes("-", unsigned, n -> -n)}.
+   *
+   * <p>For infix operator support or multiple operators with precedence, consider using {@link
+   * OperatorTable}.
    *
    * @since 10.8
    */
@@ -1439,7 +1443,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *     (expr, field) -> Expr.fieldAccess(expr, field));
    * }</pre>
    *
-   * <p>For infix operator support, consider using {@link OperatorTable}.
+   * <p>For prefix operators, use {@link Parsers.Suffix#withPrefixes(Parser, Parser)
+   * withPrefixes(prefix, suffix)}.
+   *
+   * <p>For infix operator support or multiple operators with precedence, consider using {@link
+   * OperatorTable}.
    *
    * @since 10.8
    */
@@ -1455,7 +1463,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * <p>This is useful to parse postfix operators such as in regex the quantifiers are usually
    * postfix.
    *
-   * <p>For infix operator support, consider using {@link OperatorTable}.
+   * <p>For prefix operators, use {@link Parsers.Suffix#withPrefixes(Parser, Parser)
+   * withPrefixes(prefix, suffix)}.
+   *
+   * <p>For infix operator support or multiple operators with precedence, consider using {@link
+   * OperatorTable}.
    *
    * @since 10.8
    */
