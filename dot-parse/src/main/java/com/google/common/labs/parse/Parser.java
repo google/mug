@@ -785,9 +785,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *     .then(digits())
    * }</pre>
    *
-   * <p>If you need to ensure no skipping between the constituent sub-parsers even when {@link
-   * #parseSkipping parseSkipping()} or {@link #skipping skipping()} is used, wrap the returned
-   * sequence with {@link #literally literally()}.
+   * <p>If you need to ensure no spaces between the constituent components even when {@link
+   * #parseSkipping parseSkipping()} or {@link #skipping skipping()} is used, use the {@link
+   * #literally(Parser, Production, Production...) literally(Parser...)} overload instead.
    *
    * <p>The returned parser's match spans all of the constituent parsers. To access the matched
    * source, use {@link #source}.
@@ -1702,7 +1702,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * {@code literally(p1, p2, p3)} is short-hand for {@code literally(sequence(p1, p2, p3))}.
+   * {@code literally(p1, p2, p3)} is short-hand for {@code literally(sequence(p1, p2, p3))};
+   * useful for matching a pattern of characters without spaces in between.
+   *
+   * <p>For example, you can use {@code
+   * literally(one('('), digits(3), one(')'), digits(3), one('-'), digits(4)} to match US phone
+   * numbers.
    *
    * @since 10.7
    */
