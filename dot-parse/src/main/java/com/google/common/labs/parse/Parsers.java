@@ -405,6 +405,13 @@ public final class Parsers {
     /**
      * Returns a parser that matches zero or more occurrences of the {@code prefix} string before
      * {@code suffix} and applies the {@code prefixFunction} iteratively for each matched prefix.
+     *
+     * <p>For example: <pre>{@code
+     * import static com.google.common.labs.parse.Parsers.UNSIGNED_INTEGER;
+     * import static com.google.common.labs.parse.Parsers.Suffix.withPrefixes;
+     *
+     * Parser<Integer> number = withPrefixes("-", UNSIGNED_INTEGER.map(Integer::parseInt), n -> -n);
+     * }</pre>
      */
     public static <T> Parser<T> withPrefixes(
         String prefix, Parser<? extends T> suffix, UnaryOperator<T> prefixFunction) {
@@ -417,6 +424,11 @@ public final class Parsers {
     /**
      * Returns a parser that matches the {@code prefix} parser zero or more times before {@code
      * suffix} and applies the result functions iteratively, in First-In, Last-Out order.
+     *
+     * <p>For example: <pre>{@code
+     * Parser<Declaration> declaration =
+     *     withPrefixes(modifier.map(m -> id -> id.withModifier(m)), IDENTIFIER);
+     * }</pre>
      */
     public static <T> Parser<T> withPrefixes(
         Parser<? extends Function<? super T, ? extends T>> prefix, Parser<? extends T> suffix) {
