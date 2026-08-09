@@ -2482,7 +2482,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  useful for matching a pattern of characters without spaces in between.
 
  <p>For example, you can use <code>
- literally(one('('), digits(3), one(')'), digits(3), one('-'), digits(4)</code> to match US phone
+ literally(one('('), digits(3), one(')'), digits(3), one('-'), digits(4))</code> to match US phone
  numbers.</div>
 <dl class="notes">
 <dt>Since:</dt>
@@ -2498,7 +2498,16 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;</span>&nbsp;<span class="element-name">literally</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;.<a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse">OrEmpty</a>&nbsp;p1,
  <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;p2,
  <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;...&nbsp;more)</span></div>
-<div class="block"><code>literally(p1, p2, p3)</code> is short-hand for <code>literally(sequence(p1, p2, p3))</code>.</div>
+<div class="block"><code>literally(p1, p2, p3)</code> is short-hand for <code>literally(sequence(p1, p2, p3))</code>.
+
+ <p>For example the following parser matches a signed decimal number:
+
+ <pre><code>
+ literally(
+     one("[+-]").optional(),
+     digits(),
+     sequence(one('.'), digits()).optional());
+ </code></pre></div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>10.7</dd>
