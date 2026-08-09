@@ -457,7 +457,8 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
  <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;&nbsp;p2,
  <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;...&nbsp;more)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block"><code>literally(p1, p2, p3)</code> is short-hand for <code>literally(sequence(p1, p2, p3))</code>.</div>
+<div class="block"><code>literally(p1, p2, p3)</code> is short-hand for <code>literally(sequence(p1, p2, p3))</code>;
+ useful for matching a pattern of characters without spaces in between.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static &lt;T&gt;&nbsp;<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;T&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#literally(com.google.common.labs.parse.Parser)" class="member-name-link">literally</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;T&gt;&nbsp;parser)</code></div>
@@ -1529,8 +1530,7 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
      .then(digits())
  </code></pre>
 
- <p>If you need to ensure no skipping between the constituent sub-parsers even when <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.mu.util.CharPredicate)"><code>skipping()</code></a> is used, wrap the returned
- sequence with <a href="#literally(com.google.common.labs.parse.Parser)"><code>literally()</code></a>.
+ <p>If you need to ensure no spaces between the constituent components even when <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> or <a href="#skipping(com.google.mu.util.CharPredicate)"><code>skipping()</code></a> is used, use the <a href="#literally(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Production,com.google.common.labs.parse.Production...)"><code>literally(Parser...)</code></a> overload instead.
 
  <p>The returned parser's match spans all of the constituent parsers. To access the matched
  source, use <a href="#source()"><code>source()</code></a>.</div>
@@ -2478,7 +2478,12 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;</span>&nbsp;<span class="element-name">literally</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;?&gt;&nbsp;p1,
  <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;&nbsp;p2,
  <a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;...&nbsp;more)</span></div>
-<div class="block"><code>literally(p1, p2, p3)</code> is short-hand for <code>literally(sequence(p1, p2, p3))</code>.</div>
+<div class="block"><code>literally(p1, p2, p3)</code> is short-hand for <code>literally(sequence(p1, p2, p3))</code>;
+ useful for matching a pattern of characters without spaces in between.
+
+ <p>For example, you can use <code>
+ literally(one('('), digits(3), one(')'), digits(3), one('-'), digits(4)</code> to match US phone
+ numbers.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>10.7</dd>
