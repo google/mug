@@ -10,6 +10,7 @@ import static com.google.common.labs.parse.Parser.or;
 import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
+import static com.google.common.labs.parse.Parsers.regex;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.CharPredicate.WHITESPACE;
 import static org.junit.Assert.assertThrows;
@@ -144,6 +145,32 @@ public final class DotParseShowdown {
   public static class UsPhoneListFixture {
     private static final Parser<List<String>> PARSER =
         literally(UsPhoneFixture.PARSER).atLeastOnce();
+
+    static {
+      List<String> result = PARSER.parseSkipping(WHITESPACE, BenchmarkInputs.US_PHONE_LIST);
+      assertThat(result.size()).isEqualTo(1000);
+    }
+
+    public List<String> run(String input) {
+      return PARSER.parseSkipping(WHITESPACE, input);
+    }
+  }
+
+  public static class RegexUsPhoneFixture {
+    private static final Parser<String> PARSER = regex("\\(\\d{3}\\)\\d{3}-\\d{4}");
+
+    static {
+      assertThat(PARSER.parse(BenchmarkInputs.US_PHONE)).isEqualTo(BenchmarkInputs.US_PHONE);
+    }
+
+    public String run(String input) {
+      return PARSER.parse(input);
+    }
+  }
+
+  public static class RegexUsPhoneListFixture {
+    private static final Parser<List<String>> PARSER =
+        literally(RegexUsPhoneFixture.PARSER).atLeastOnce();
 
     static {
       List<String> result = PARSER.parseSkipping(WHITESPACE, BenchmarkInputs.US_PHONE_LIST);

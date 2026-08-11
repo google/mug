@@ -12,7 +12,6 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.Range;
 import com.google.common.labs.parse.Parser.ParseException;
-
 import java.io.StringReader;
 import java.time.Duration;
 import java.util.List;
@@ -156,32 +155,32 @@ public class ParsersTest {
 
   @Test public void regex_caseInsensitiveFlag() {
     Parser<String> parser = regex("(?i:abc)");
-    assertThat(parser.parse("abc")).isEqualTo("abc");
-    assertThat(parser.parse("ABC")).isEqualTo("ABC");
-    assertThat(parser.parse("aBc")).isEqualTo("aBc");
-    assertThrows(ParseException.class, () -> parser.parse("abd"));
+    assertRegexParse(parser, "abc", "abc");
+    assertRegexParse(parser, "ABC", "ABC");
+    assertRegexParse(parser, "aBc", "aBc");
+    assertRegexParseFails(parser, "abd");
   }
 
   @Test public void regex_dotallFlag() {
     Parser<String> parserDefault = regex(".");
-    assertThrows(ParseException.class, () -> parserDefault.parse("\n"));
+    assertRegexParseFails(parserDefault, "\n");
 
     Parser<String> parserDotall = regex("(?s:.)");
-    assertThat(parserDotall.parse("\n")).isEqualTo("\n");
+    assertRegexParse(parserDotall, "\n", "\n");
   }
 
   @Test public void regex_freeSpacingFlag() {
     Parser<String> parser = regex("(?x)a b c");
-    assertThat(parser.parse("abc")).isEqualTo("abc");
-    assertThrows(ParseException.class, () -> parser.parse("a b c"));
+    assertRegexParse(parser, "abc", "abc");
+    assertRegexParseFails(parser, "a b c");
   }
 
   @Test public void regex_enclosedCaseInsensitiveFlag() {
     Parser<String> parser = regex("a(?i:b)c");
-    assertThat(parser.parse("abc")).isEqualTo("abc");
-    assertThat(parser.parse("aBc")).isEqualTo("aBc");
-    assertThrows(ParseException.class, () -> parser.parse("Abc"));
-    assertThrows(ParseException.class, () -> parser.parse("abC"));
+    assertRegexParse(parser, "abc", "abc");
+    assertRegexParse(parser, "aBc", "aBc");
+    assertRegexParseFails(parser, "Abc");
+    assertRegexParseFails(parser, "abC");
   }
 
   @Test public void regex_doesNotMatchSubstringsAfterCursor() {
@@ -191,23 +190,34 @@ public class ParsersTest {
 
   @Test public void regex_choicePruning_caseInsensitiveFlag() {
     Parser<String> parser = anyOf(regex("(?i:b)"), regex("x"), regex("y"));
-    assertThat(parser.parse("B")).isEqualTo("B");
+    assertRegexParse(parser, "B", "B");
   }
 
   @Test public void regex_choicePruning_unicodeCharacterClassFlag() {
     Parser<String> parser = anyOf(regex("(?U:\\d)"), regex("x"), regex("y"));
-    assertThat(parser.parse("\u0661")).isEqualTo("\u0661");
+    assertRegexParse(parser, "\u0661", "\u0661");
   }
 
   @Test public void regex_choicePruning_nonBmp() {
     Parser<String> parser = anyOf(regex("a\uD83D\uDE00b"), regex("x"), regex("y"));
-    assertThat(parser.parse("a\uD83D\uDE00b")).isEqualTo("a\uD83D\uDE00b");
+    assertRegexParse(parser, "a\uD83D\uDE00b", "a\uD83D\uDE00b");
   }
 
   @Test public void regex_usPhoneNumberExample() {
     Parser<String> usPhoneNumber = regex("\\(\\d{3}\\)\\d{3}-\\d{4}");
-    assertThat(usPhoneNumber.parse("(123)456-7890")).isEqualTo("(123)456-7890");
-    assertThrows(ParseException.class, () -> usPhoneNumber.parse("123-456-7890"));
+    assertRegexParse(usPhoneNumber, "(123)456-7890", "(123)456-7890");
+    assertRegexParseFails(usPhoneNumber, "123-456-7890");
+  }
+
+  private static void assertRegexParse(Parser<String> parser, String input, String expected) {
+    assertThat(parser.parse(input)).isEqualTo(expected);
+    assertThat(parser.parseToStream(new StringReader(input)).findFirst().get()).isEqualTo(expected);
+  }
+
+  private static void assertRegexParseFails(Parser<String> parser, String input) {
+    assertThrows(ParseException.class, () -> parser.parse(input));
+    assertThrows(
+        ParseException.class, () -> parser.parseToStream(new StringReader(input)).findFirst());
   }
 
   @Test public void regex_throwsForReaderBasedInput() {

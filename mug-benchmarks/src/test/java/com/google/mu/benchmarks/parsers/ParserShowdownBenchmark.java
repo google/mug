@@ -70,6 +70,10 @@ public class ParserShowdownBenchmark {
         new DotParseShowdown.UsPhoneFixture();
     public final DotParseShowdown.UsPhoneListFixture dotParseUsPhoneList =
         new DotParseShowdown.UsPhoneListFixture();
+    public final DotParseShowdown.RegexUsPhoneFixture dotParseRegexUsPhone =
+        new DotParseShowdown.RegexUsPhoneFixture();
+    public final DotParseShowdown.RegexUsPhoneListFixture dotParseRegexUsPhoneList =
+        new DotParseShowdown.RegexUsPhoneListFixture();
 
     // 3. cats-parse Fixtures
     public final CatsParseShowdown.IpFixture catsParseIp = new CatsParseShowdown.IpFixture();
@@ -1109,6 +1113,11 @@ public class ParserShowdownBenchmark {
   }
 
   @Benchmark
+  public void dotParse_regexSimpleUsPhonePerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.dotParseRegexUsPhone.run(BenchmarkInputs.US_PHONE));
+  }
+
+  @Benchmark
   public void catsParse_simpleUsPhonePerformance(BenchmarkState s, Blackhole bh) {
     bh.consume(s.catsParseUsPhone.run(BenchmarkInputs.US_PHONE));
   }
@@ -1174,6 +1183,11 @@ public class ParserShowdownBenchmark {
   @Benchmark
   public void dotParse_usPhoneListPerformance(BenchmarkState s, Blackhole bh) {
     bh.consume(s.dotParseUsPhoneList.run(BenchmarkInputs.US_PHONE_LIST));
+  }
+
+  @Benchmark
+  public void dotParse_regexUsPhoneListPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(s.dotParseRegexUsPhoneList.run(BenchmarkInputs.US_PHONE_LIST));
   }
 
   @Benchmark
