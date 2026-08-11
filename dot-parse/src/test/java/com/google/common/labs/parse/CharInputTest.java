@@ -416,6 +416,22 @@ public final class CharInputTest {
     assertThat(matchLength).isEqualTo(10);
   }
 
+  @Test public void fromReader_matchRegex_maxSizeOverflowsSaturatedAdd() {
+    CharInput input = CharInput.from(new OneCharReader("0123456789a"));
+    // Read the first 10 characters to advance the stream
+    for (int i = 0; i < 10; i++) {
+      assertThat(input.charAt(i)).isEqualTo((char) ('0' + i));
+    }
+    // Now match "a{1,2147483640}" at index 10.
+    // Since start + maxSize overflows Integer.MAX_VALUE, it must throw
+    // UnsupportedOperationException.
+    var patternMetadata = com.google.common.labs.regex.RegexPattern.of("a{1,2147483640}");
+    assertThat(patternMetadata.maxSize()).isEqualTo(2147483640);
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> input.match(java.util.regex.Pattern.compile("a{1,2147483640}"), patternMetadata, 10));
+  }
+
   private static class OneCharReader extends java.io.Reader {
     private final String content;
     private int index = 0;

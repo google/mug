@@ -165,13 +165,13 @@ abstract class CharInput {
       }
 
       @Override int match(Pattern pattern, RegexPattern metadata, int start) {
-        int maxSize = metadata.maxSize();
-        if (maxSize == Integer.MAX_VALUE) {
+        long requiredCharCount = (long) start + metadata.maxSize();
+        if (requiredCharCount >= Integer.MAX_VALUE) {
           throw new UnsupportedOperationException(
-              "regex with infinite matching size is not supported on Reader-based input: "
+              "regex with unbounded matching size is not supported on Reader-based input: "
                   + pattern);
         }
-        ensureCharCount(saturatedAdd(start, maxSize));
+        ensureCharCount((int) requiredCharCount);
         Matcher matcher = pattern.matcher(chars);
         int startPhysical = toPhysicalIndex(start);
         matcher.region(startPhysical, chars.length());
@@ -261,11 +261,6 @@ abstract class CharInput {
             throw new UncheckedIOException(e);
           }
         }
-      }
-
-      private static int saturatedAdd(int a, int b) {
-        long sum = (long) a + b;
-        return sum > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) sum;
       }
     };
   }
