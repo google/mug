@@ -44,7 +44,7 @@ import java.util.stream.Stream;
 public sealed interface RegexPattern {
 
   /**
-   * Holds metadata of a regex pattern.
+   * Useful metadata of a regex pattern.
    *
    * @since 10.9
    */
@@ -58,7 +58,7 @@ public sealed interface RegexPattern {
   }
 
   /**
-   * Returns this pattern's metadata.
+   * Returns this pattern's metadata that may be useful for static analysis.
    *
    * @since 10.9
    */
