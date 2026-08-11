@@ -41,6 +41,24 @@ import java.util.stream.Stream;
  * of regexes.
  */
 public sealed interface RegexPattern {
+
+  /**
+   * Returns the minimum match size of this pattern in UTF-16 code units (chars). Particularly,
+   * optional patterns like {@code .?}, {@code .*}, {@code c+}, <code>foo{,2}</code> will return 0.
+   *
+   * @since 10.9
+   */
+  int minSize();
+
+  /**
+   * Returns the maximum match size of this pattern in UTF-16 code units (chars), or {@link
+   * Integer#MAX_VALUE} if it can match infinitely long strings (e.g. {@code .*}, {@code \d+},
+   * <code>foo{1,}</code> etc).
+   *
+   * @since 10.9
+   */
+  int maxSize();
+
   /** Returns a {@link Sequence} of the given elements. */
   @SafeVarargs
   static Sequence sequence(RegexPattern... elements) {
@@ -139,6 +157,14 @@ public sealed interface RegexPattern {
       checkArgument(elements.size() > 0, "elements cannot be empty");
     }
 
+    @Override public int minSize() {
+      return elements.stream().mapToInt(RegexPattern::minSize).reduce(0, SafeMath::saturatedAdd);
+    }
+
+    @Override public int maxSize() {
+      return elements.stream().mapToInt(RegexPattern::maxSize).reduce(0, SafeMath::saturatedAdd);
+    }
+
     @Override public String toString() {
       return elements.stream().map(Object::toString).collect(joining());
     }
@@ -150,6 +176,14 @@ public sealed interface RegexPattern {
       checkArgument(alternatives.size() > 0, "alternatives cannot be empty");
     }
 
+    @Override public int minSize() {
+      return alternatives.stream().mapToInt(RegexPattern::minSize).min().orElse(0);
+    }
+
+    @Override public int maxSize() {
+      return alternatives.stream().mapToInt(RegexPattern::maxSize).max().orElse(0);
+    }
+
     @Override public String toString() {
       return alternatives.stream().map(Object::toString).collect(joining("|"));
     }
@@ -157,6 +191,31 @@ public sealed interface RegexPattern {
 
   /** Represents a regex pattern that is modified by a quantifier. */
   record Quantified(RegexPattern element, Quantifier quantifier) implements RegexPattern {
+
+    @Override public int minSize() {
+      int elementSize = element.minSize();
+      if (elementSize == 0) {
+        return 0;
+      }
+      return switch (quantifier) {
+        case AtLeast atLeast -> SafeMath.saturatedMultiply(elementSize, atLeast.min());
+        case AtMost atMost -> 0;
+        case Limited limited -> SafeMath.saturatedMultiply(elementSize, limited.min());
+      };
+    }
+
+    @Override public int maxSize() {
+      int elementSize = element.maxSize();
+      if (elementSize == 0) {
+        return 0;
+      }
+      return switch (quantifier) {
+        case AtLeast atLeast -> Integer.MAX_VALUE;
+        case AtMost atMost -> SafeMath.saturatedMultiply(elementSize, atMost.max());
+        case Limited limited -> SafeMath.saturatedMultiply(elementSize, limited.max());
+      };
+    }
+
     @Override public String toString() {
       return element instanceof Sequence || element instanceof Alternation
               || element instanceof Quantified
@@ -305,6 +364,15 @@ public sealed interface RegexPattern {
 
   /** Represents a grouping construct in a regex. */
   sealed interface Group extends RegexPattern {
+    RegexPattern content();
+
+    @Override default int minSize() {
+      return content().minSize();
+    }
+
+    @Override default int maxSize() {
+      return content().maxSize();
+    }
 
     /** A capturing group, like {@code (a)}. */
     record Capturing(RegexPattern content) implements Group {
@@ -354,6 +422,14 @@ public sealed interface RegexPattern {
   record Literal(String value) implements RegexPattern {
     private static final CharPredicate META_CHARS = CharPredicate.anyOf(".[]{}()*+-?^$|\\");
 
+    @Override public int minSize() {
+      return value.length();
+    }
+
+    @Override public int maxSize() {
+      return value.length();
+    }
+
     @Override public String toString() {
       StringBuilder builder = new StringBuilder();
       for (int i = 0; i < value.length(); i++) {
@@ -364,6 +440,34 @@ public sealed interface RegexPattern {
         builder.append(c);
       }
       return builder.toString();
+    }
+  }
+
+  /** Represents a backreference to a capturing group. */
+  sealed interface Backreference extends RegexPattern {
+
+    @Override default int minSize() {
+      return 0;
+    }
+
+    @Override default int maxSize() {
+      return Integer.MAX_VALUE;
+    }
+
+    record Numbered(int groupNumber) implements Backreference {
+      public Numbered {
+        checkArgument(groupNumber > 0, "group number must be positive: %s", groupNumber);
+      }
+
+      @Override public String toString() {
+        return "\\" + groupNumber;
+      }
+    }
+
+    record Named(String groupName) implements Backreference {
+      @Override public String toString() {
+        return "\\k<" + groupName + ">";
+      }
     }
   }
 
@@ -383,6 +487,14 @@ public sealed interface RegexPattern {
       this.pattern = pattern;
     }
 
+    @Override public int minSize() {
+      return 1;
+    }
+
+    @Override public int maxSize() {
+      return 2;
+    }
+
     @Override public String toString() {
       return pattern;
     }
@@ -390,6 +502,14 @@ public sealed interface RegexPattern {
 
   /** Represents a custom character class, like {@code [a-z]} or {@code [^0-9]}. */
   sealed interface CharacterSet extends RegexPattern {
+
+    @Override default int minSize() {
+      return 1;
+    }
+
+    @Override default int maxSize() {
+      return 2;
+    }
 
     /** A positive character class, like {@code [a-z]}. */
     record AnyOf(List<CharSetElement> elements) implements CharacterSet {
@@ -443,12 +563,29 @@ public sealed interface RegexPattern {
   sealed interface CharacterProperty extends CharSetElement, RegexPattern {
     String propertyName();
 
+    @Override default int minSize() {
+      return 1;
+    }
+
+    @Override default int maxSize() {
+      return 2;
+    }
+
     default Negated negated() {
       return new Negated(this);
     }
 
     /** Represents a negated character property, like {@code \P{Lower}}. */
     record Negated(CharacterProperty property) implements CharSetElement, RegexPattern {
+
+      @Override public int minSize() {
+        return 1;
+      }
+
+      @Override public int maxSize() {
+        return 2;
+      }
+
       @Override public String toString() {
         return "\\P{" + property.propertyName() + "}";
       }
@@ -520,6 +657,14 @@ public sealed interface RegexPattern {
       this.pattern = pattern;
     }
 
+    @Override public int minSize() {
+      return 0;
+    }
+
+    @Override public int maxSize() {
+      return 0;
+    }
+
     @Override public String toString() {
       return pattern;
     }
@@ -530,6 +675,14 @@ public sealed interface RegexPattern {
    * (?<!...)}.
    */
   sealed interface Lookaround extends RegexPattern {
+
+    @Override default int minSize() {
+      return 0;
+    }
+
+    @Override default int maxSize() {
+      return 0;
+    }
 
     /** Returns the AST node representing the pattern inside the lookaround. */
     RegexPattern target();
@@ -581,7 +734,8 @@ public sealed interface RegexPattern {
    * @since 10.8
    */
   static RegexPattern of(String regex) {
-    Parser<RegexPattern>.OrEmpty parser = Parser.define(RegexParsers::pattern).orElse(new Literal(""));
+    Parser<RegexPattern>.OrEmpty parser =
+        Parser.define(RegexParsers::pattern).orElse(new Literal(""));
     return after(prefix("(?x)"))
         .from(regex)
         .map(p -> parser.parseSkipping(RegexParsers.FREE_SPACES, p))
