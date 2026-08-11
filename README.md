@@ -1,7 +1,7 @@
 Disclaimer: This is not an official Google product.
 
 # Mug (![Coverage](.github/badges/mug-coverage.svg))
-A small Java 8+ string processing and streams library ([javadoc](http://google.github.io/mug/apidocs/index.html)), widely used in Google's internal Java codebase, with **0 deps** (Proto, BigQuery, Guava addons are in separate artifacts). ![](https://travis-ci.org/google/mug.svg?branch=master)
+A small Java 8+ string processing and streams library ([javadoc](http://google.github.io/mug/apidocs/index.html)), battle tested in Google's internal codebase, with **0 deps** (Proto, BigQuery, Guava addons are in separate artifacts). ![](https://travis-ci.org/google/mug.svg?branch=master)
 
 ## Strings
 
