@@ -32,7 +32,7 @@ final class Regexes {
   static RegexPattern validate(String regex) {
     RegexPattern pattern = RegexPattern.of(regex);
     Regexes.checkSupportedFeatures(pattern);
-    checkArgument(!pattern.mayMatchEmpty(), "regex must not match empty string: %s", regex);
+    checkArgument(pattern.minSize() > 0, "regex must not match empty string: %s", regex);
     return pattern;
   }
 
@@ -60,6 +60,11 @@ final class Regexes {
     }
   }
 
+  static int saturatedAdd(int a, int b) {
+    long sum = (long) a + b;
+    return sum > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) sum;
+  }
+
   static Set<String> prefixesOf(RegexPattern pattern) {
     return prefixesOf(pattern, /* caseInsensitive= */ false, /* unicodeCharClass= */ false);
   }
@@ -82,7 +87,7 @@ final class Regexes {
             yield EMPTY_PREFIX;
           }
           result.addAll(prefixes);
-          if (!element.mayMatchEmpty()) {
+          if (element.minSize() > 0) {
             // once we reach a never-empty pattern, chars after it can't be safely used as prefixes.
             break;
           }

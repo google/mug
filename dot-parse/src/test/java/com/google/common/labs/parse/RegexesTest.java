@@ -17,9 +17,8 @@ package com.google.common.labs.parse;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.util.Set;
-
 import com.google.common.labs.regex.RegexPattern;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -99,7 +98,47 @@ public class RegexesTest {
     assertThat(prefixes("(a)\\1")).containsExactly("a");
   }
 
+  @Test public void maxSize_literal() {
+    assertThat(maxSize("abc")).isEqualTo(3);
+  }
+
+  @Test public void maxSize_optional() {
+    assertThat(maxSize("a?")).isEqualTo(1);
+  }
+
+  @Test public void maxSize_infiniteQuantifier() {
+    assertThat(maxSize("a*")).isEqualTo(Integer.MAX_VALUE);
+  }
+
+  @Test public void maxSize_limitedQuantifier() {
+    assertThat(maxSize("(abc){2,4}")).isEqualTo(12);
+  }
+
+  @Test public void maxSize_caseInsensitive() {
+    assertThat(maxSize("(?i:abc)")).isEqualTo(3);
+  }
+
+  @Test public void maxSize_dot() {
+    assertThat(maxSize(".")).isEqualTo(2);
+  }
+
+  @Test public void maxSize_characterClass() {
+    assertThat(maxSize("[abc]")).isEqualTo(2);
+  }
+
+  @Test public void maxSize_predefinedCharacterClass() {
+    assertThat(maxSize("\\d")).isEqualTo(2);
+  }
+
+  @Test public void maxSize_alternation() {
+    assertThat(maxSize("a|bc")).isEqualTo(2);
+  }
+
   private static Set<String> prefixes(String regex) {
     return Regexes.prefixesOf(RegexPattern.of(regex));
+  }
+
+  private static int maxSize(String regex) {
+    return RegexPattern.of(regex).maxSize();
   }
 }

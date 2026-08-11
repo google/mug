@@ -13,6 +13,8 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.counting;
 
+import com.google.common.labs.regex.RegexPattern;
+import com.google.errorprone.annotations.CompileTimeConstant;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -20,9 +22,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
-
-import com.google.common.labs.regex.RegexPattern;
-import com.google.errorprone.annotations.CompileTimeConstant;
 
 /**
  * More advanced composite parsers in addition to the core parsers provided by {@link Parser}.
@@ -338,8 +337,8 @@ public final class Parsers {
       .suchThat(Character::isValidCodePoint, "code point");
 
   /**
-   * Returns a parser that matches a leaf-level atomic regular expression {@code pattern}.
-   * For example, you could define a parser for US phone numbers using:
+   * Returns a parser that matches a leaf-level atomic regular expression {@code pattern}. For
+   * example, you could define a parser for US phone numbers using:
    *
    * <pre>{@code
    * Parser<String> usPhoneNumber = Parsers.regex("\\(\\d{3}\\)\\d{3}-\\d{4}");
@@ -355,8 +354,12 @@ public final class Parsers {
    * contain anchors (like {@code ^}, {@code $}), lookarounds (like {@code (?=...)}), or
    * backreferences (like {@code \1}).
    *
-   * <p>The returned parser does not support parsing from a {@link java.io.Reader} input, because
-   * JDK regular expressions require a contiguous in-memory string.
+   * <p>The returned parser supports parsing from a {@link java.io.Reader} input only if the regex
+   * has an upper bound in the match size (e.g. <code>[a-z]{3}</code> or {@code (abc|d)}). Regex
+   * patterns with unbounded match size (e.g. {@code [a-z]+}) will throw {@link
+   * UnsupportedOperationException} when parsing from a {@code Reader} because it defeats the
+   * purpose of lazy loading from {@code Reader} - you might as well just eagerly load into a {@code
+   * String} before parsing.
    *
    * <p>The {@code pattern} string is validated at compile-time by the {@code mug-errorprone}
    * compiler plugin.
@@ -369,15 +372,15 @@ public final class Parsers {
    * @since 10.9
    */
   public static Parser<String> regex(@CompileTimeConstant String pattern) {
-    RegexPattern ast = Regexes.validate(pattern);
+    RegexPattern metadata = Regexes.validate(pattern);
     Pattern jdkPattern = Pattern.compile(pattern);
     return new Scanner("=~/" + pattern + "/") {
       @Override int scan(CharInput input, int from) {
-        return input.match(jdkPattern, from);
+        return input.match(jdkPattern, metadata, from);
       }
 
       @Override Set<String> computePrefixes() {
-        return Regexes.prefixesOf(ast);
+        return Regexes.prefixesOf(metadata);
       }
     }.source();
   }

@@ -41,12 +41,23 @@ import java.util.stream.Stream;
  * of regexes.
  */
 public sealed interface RegexPattern {
+
   /**
-   * Returns false if this pattern can't match empty strings.
+   * Returns the minimum match size of this pattern in UTF-16 code units (chars). Particularly,
+   * optional patterns like {@code .?}, {@code .*}, {@code c+}, <code>foo{,2}</code> will return 0.
    *
    * @since 10.9
    */
-  boolean mayMatchEmpty();
+  int minSize();
+
+  /**
+   * Returns the maximum match size of this pattern in UTF-16 code units (chars), or {@link
+   * Integer#MAX_VALUE} if it can match infinitely long strings (e.g. {@code .*}, {@code \d+},
+   * <code>foo{1,}</code> etc).
+   *
+   * @since 10.9
+   */
+  int maxSize();
 
   /** Returns a {@link Sequence} of the given elements. */
   @SafeVarargs
@@ -146,8 +157,12 @@ public sealed interface RegexPattern {
       checkArgument(elements.size() > 0, "elements cannot be empty");
     }
 
-    @Override public boolean mayMatchEmpty() {
-      return elements.stream().allMatch(RegexPattern::mayMatchEmpty);
+    @Override public int minSize() {
+      return elements.stream().mapToInt(RegexPattern::minSize).reduce(0, SafeMath::saturatedAdd);
+    }
+
+    @Override public int maxSize() {
+      return elements.stream().mapToInt(RegexPattern::maxSize).reduce(0, SafeMath::saturatedAdd);
     }
 
     @Override public String toString() {
@@ -161,8 +176,12 @@ public sealed interface RegexPattern {
       checkArgument(alternatives.size() > 0, "alternatives cannot be empty");
     }
 
-    @Override public boolean mayMatchEmpty() {
-      return alternatives.stream().anyMatch(RegexPattern::mayMatchEmpty);
+    @Override public int minSize() {
+      return alternatives.stream().mapToInt(RegexPattern::minSize).min().orElse(0);
+    }
+
+    @Override public int maxSize() {
+      return alternatives.stream().mapToInt(RegexPattern::maxSize).max().orElse(0);
     }
 
     @Override public String toString() {
@@ -172,17 +191,29 @@ public sealed interface RegexPattern {
 
   /** Represents a regex pattern that is modified by a quantifier. */
   record Quantified(RegexPattern element, Quantifier quantifier) implements RegexPattern {
-    @Override public boolean mayMatchEmpty() {
-      if (quantifier instanceof AtLeast atLeast) {
-        return atLeast.min() == 0 || element.mayMatchEmpty();
+
+    @Override public int minSize() {
+      int elementSize = element.minSize();
+      if (elementSize == 0) {
+        return 0;
       }
-      if (quantifier instanceof AtMost) {
-        return true;
+      return switch (quantifier) {
+        case AtLeast atLeast -> SafeMath.saturatedMultiply(elementSize, atLeast.min());
+        case AtMost atMost -> 0;
+        case Limited limited -> SafeMath.saturatedMultiply(elementSize, limited.min());
+      };
+    }
+
+    @Override public int maxSize() {
+      int elementSize = element.maxSize();
+      if (elementSize == 0) {
+        return 0;
       }
-      if (quantifier instanceof Limited limited) {
-        return limited.min() == 0 || element.mayMatchEmpty();
-      }
-      return false;
+      return switch (quantifier) {
+        case AtLeast atLeast -> Integer.MAX_VALUE;
+        case AtMost atMost -> SafeMath.saturatedMultiply(elementSize, atMost.max());
+        case Limited limited -> SafeMath.saturatedMultiply(elementSize, limited.max());
+      };
     }
 
     @Override public String toString() {
@@ -335,8 +366,12 @@ public sealed interface RegexPattern {
   sealed interface Group extends RegexPattern {
     RegexPattern content();
 
-    @Override default boolean mayMatchEmpty() {
-      return content().mayMatchEmpty();
+    @Override default int minSize() {
+      return content().minSize();
+    }
+
+    @Override default int maxSize() {
+      return content().maxSize();
     }
 
     /** A capturing group, like {@code (a)}. */
@@ -387,8 +422,12 @@ public sealed interface RegexPattern {
   record Literal(String value) implements RegexPattern {
     private static final CharPredicate META_CHARS = CharPredicate.anyOf(".[]{}()*+-?^$|\\");
 
-    @Override public boolean mayMatchEmpty() {
-      return value.isEmpty();
+    @Override public int minSize() {
+      return value.length();
+    }
+
+    @Override public int maxSize() {
+      return value.length();
     }
 
     @Override public String toString() {
@@ -406,8 +445,13 @@ public sealed interface RegexPattern {
 
   /** Represents a backreference to a capturing group. */
   sealed interface Backreference extends RegexPattern {
-    @Override default boolean mayMatchEmpty() {
-      return true;
+
+    @Override default int minSize() {
+      return 0;
+    }
+
+    @Override default int maxSize() {
+      return Integer.MAX_VALUE;
     }
 
     record Numbered(int groupNumber) implements Backreference {
@@ -443,8 +487,12 @@ public sealed interface RegexPattern {
       this.pattern = pattern;
     }
 
-    @Override public boolean mayMatchEmpty() {
-      return false;
+    @Override public int minSize() {
+      return 1;
+    }
+
+    @Override public int maxSize() {
+      return 2;
     }
 
     @Override public String toString() {
@@ -454,8 +502,13 @@ public sealed interface RegexPattern {
 
   /** Represents a custom character class, like {@code [a-z]} or {@code [^0-9]}. */
   sealed interface CharacterSet extends RegexPattern {
-    @Override default boolean mayMatchEmpty() {
-      return false;
+
+    @Override default int minSize() {
+      return 1;
+    }
+
+    @Override default int maxSize() {
+      return 2;
     }
 
     /** A positive character class, like {@code [a-z]}. */
@@ -510,8 +563,12 @@ public sealed interface RegexPattern {
   sealed interface CharacterProperty extends CharSetElement, RegexPattern {
     String propertyName();
 
-    @Override default boolean mayMatchEmpty() {
-      return false;
+    @Override default int minSize() {
+      return 1;
+    }
+
+    @Override default int maxSize() {
+      return 2;
     }
 
     default Negated negated() {
@@ -520,8 +577,13 @@ public sealed interface RegexPattern {
 
     /** Represents a negated character property, like {@code \P{Lower}}. */
     record Negated(CharacterProperty property) implements CharSetElement, RegexPattern {
-      @Override public boolean mayMatchEmpty() {
-        return false;
+
+      @Override public int minSize() {
+        return 1;
+      }
+
+      @Override public int maxSize() {
+        return 2;
       }
 
       @Override public String toString() {
@@ -595,8 +657,12 @@ public sealed interface RegexPattern {
       this.pattern = pattern;
     }
 
-    @Override public boolean mayMatchEmpty() {
-      return true;
+    @Override public int minSize() {
+      return 0;
+    }
+
+    @Override public int maxSize() {
+      return 0;
     }
 
     @Override public String toString() {
@@ -609,8 +675,13 @@ public sealed interface RegexPattern {
    * (?<!...)}.
    */
   sealed interface Lookaround extends RegexPattern {
-    @Override default boolean mayMatchEmpty() {
-      return true;
+
+    @Override default int minSize() {
+      return 0;
+    }
+
+    @Override default int maxSize() {
+      return 0;
     }
 
     /** Returns the AST node representing the pattern inside the lookaround. */

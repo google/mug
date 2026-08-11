@@ -12,6 +12,8 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.Range;
 import com.google.common.labs.parse.Parser.ParseException;
+
+import java.io.StringReader;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.Stream;
@@ -210,8 +212,14 @@ public class ParsersTest {
 
   @Test public void regex_throwsForReaderBasedInput() {
     Parser<String> p = regex("[a-z]+");
-    Stream<String> stream = p.parseToStream(new java.io.StringReader("abc"));
+    Stream<String> stream = p.parseToStream(new StringReader("abc"));
     assertThrows(UnsupportedOperationException.class, () -> stream.findFirst());
+  }
+
+  @Test public void regex_finiteOnReaderInput() {
+    Parser<String> parser = regex("a?b{1,3}c");
+    Stream<String> stream = parser.parseToStream(new StringReader("abbc"));
+    assertThat(stream.findFirst().get()).isEqualTo("abbc");
   }
 
   @Test public void regex_prefixPruning() {

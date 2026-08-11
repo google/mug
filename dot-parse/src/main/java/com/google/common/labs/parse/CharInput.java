@@ -19,6 +19,7 @@ import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.util.CharPredicate;
 import com.google.mu.util.Substring;
 import java.io.IOException;
@@ -41,7 +42,7 @@ abstract class CharInput {
    * Matches the given regex pattern starting from {@code start} index and returns the ending index
    * (exclusive). Returns -1 if no match is found.
    */
-  abstract int match(Pattern pattern, int start);
+  abstract int match(Pattern pattern, RegexPattern metadata, int start);
 
   final boolean startsWith(CharPredicate predicate, int index) {
     return isInRange(index) && predicate.test(charAt(index));
@@ -84,7 +85,7 @@ abstract class CharInput {
         return text.indexOf(str, fromIndex);
       }
 
-      @Override int match(Pattern pattern, int start) {
+      @Override int match(Pattern pattern, RegexPattern metadata, int start) {
         Matcher matcher = pattern.matcher(text);
         matcher.region(start, text.length());
         return matcher.lookingAt() ? matcher.end() : -1;
@@ -163,8 +164,21 @@ abstract class CharInput {
         }
       }
 
-      @Override int match(Pattern pattern, int start) {
-        throw new UnsupportedOperationException("regex is only supported on in-memory String");
+      @Override int match(Pattern pattern, RegexPattern metadata, int start) {
+        int maxSize = metadata.maxSize();
+        if (maxSize == Integer.MAX_VALUE) {
+          throw new UnsupportedOperationException(
+              "regex with infinite matching size is not supported on Reader-based input: "
+                  + pattern);
+        }
+        ensureCharCount(saturatedAdd(start, maxSize));
+        Matcher matcher = pattern.matcher(chars);
+        int startPhysical = toPhysicalIndex(start);
+        matcher.region(startPhysical, chars.length());
+        if (matcher.lookingAt()) {
+          return toLogicalIndex(matcher.end());
+        }
+        return -1;
       }
 
       @Override boolean startsWith(String prefix, int index) {
@@ -247,6 +261,11 @@ abstract class CharInput {
             throw new UncheckedIOException(e);
           }
         }
+      }
+
+      private static int saturatedAdd(int a, int b) {
+        long sum = (long) a + b;
+        return sum > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) sum;
       }
     };
   }
