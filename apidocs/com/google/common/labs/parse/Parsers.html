@@ -362,31 +362,20 @@ loadScripts(document, 'script');</script>
  refrain from creating complex regex patterns, and prefer using the declarative <code>Parser</code>
  API unless it's too verbose.
 
- <p><b>WARNING: ReDoS Vulnerabilities <span class="invalid-tag">invalid input: '&amp;'</span> Disastrous Backtracking</b>
+ <p><b>WARNING: ReDoS Vulnerabilities &amp; Disastrous Backtracking</b>
 
  <p>Using regular expressions exposes the application to Regular Expression Denial of Service
  (ReDoS) attacks. In many regex engines (including <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/regex/Pattern.html" title="class or interface in java.util.regex" class="external-link"><code>Pattern</code></a>), even
- "simple" patterns can cause exponential backtracking if matched against malicious
- inputs designed to trigger worst-case paths.
+ "simple" patterns can cause exponential backtracking if matched against malicious inputs
+ designed to trigger worst-case paths.
 
  <p>For example, the pattern <code>(a+)+</code> or <code>(a|ab)+</code> can easily freeze a thread or
  crash a service with CPU exhaustion when attempting to match a string like <code>
  "aaaaaaaaaaaaaaaaaaaaaaaaaaaa!"</code>. See the <a href="https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS">OWASP
  ReDoS Attack Reference</a> for a detailed analysis of this issue.
 
- <p>To avoid ReDoS and keep parsing execution linear and safe,
- prefer the declarative, backtracking-free <a href="Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a> combinator API (using methods like
- <a href="Parser.html#followedBy(com.google.common.labs.parse.Parser)"><code>Parser.followedBy(com.google.common.labs.parse.Parser&lt;?&gt;)</code></a>, 
-<details class="invalid-tag">
-<summary>invalid reference</summary>
-<pre><code>Parsers#sequence</code></pre>
-</details>
-, 
-<details class="invalid-tag">
-<summary>invalid reference</summary>
-<pre><code>Parsers#anyOf</code></pre>
-</details>
-, etc.) and only
+ <p>To avoid ReDoS and keep parsing execution linear and safe, prefer the declarative,
+ backtracking-free <a href="Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a> combinator API (using methods like <a href="Parser.html#followedBy(com.google.common.labs.parse.Parser)"><code>followedBy()</code></a>, <a href="Parser.html#sequence(com.google.common.labs.parse.Parser,com.google.common.labs.parse.Parser,java.util.function.BiFunction)"><code>sequence()</code></a>, <a href="Parser.html#anyOf(com.google.common.labs.parse.Parser...)"><code>anyOf()</code></a>, etc.) and only
  use <code>regex</code> on trusted input (such as a config file, command line tool etc).
 
  <p>The pattern must be a compile-time constant, must not match the empty string, and must not
@@ -400,7 +389,7 @@ loadScripts(document, 'script');</script>
  String</code> before parsing.
 
  <p>The <code>pattern</code> string is validated at compile-time by the <code>mug-errorprone</code>
- compiler plugin.
+ (v10.9+) compiler plugin.
 
  <p>NOTE that this method internally compiles the <code>pattern</code> so you should almost always
  pre-create and reuse the returned <code>Parser</code> object instead of calling <code>
