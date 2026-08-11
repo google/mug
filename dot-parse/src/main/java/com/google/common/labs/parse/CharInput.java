@@ -173,12 +173,8 @@ abstract class CharInput {
         }
         ensureCharCount((int) requiredCharCount);
         Matcher matcher = pattern.matcher(chars);
-        int startPhysical = toPhysicalIndex(start);
-        matcher.region(startPhysical, chars.length());
-        if (matcher.lookingAt()) {
-          return toLogicalIndex(matcher.end());
-        }
-        return start;
+        matcher.region(toPhysicalIndex(start), chars.length());
+        return matcher.lookingAt() ? toLogicalIndex(matcher.end()) : start;
       }
 
       @Override boolean startsWith(String prefix, int index) {
