@@ -380,7 +380,7 @@ public final class Parsers {
    * String} before parsing.
    *
    * <p>The {@code pattern} string is validated at compile-time by the {@code mug-errorprone}
-   * compiler plugin.
+   * (v10.9+) compiler plugin.
    *
    * <p>NOTE that this method internally compiles the {@code pattern} so you should almost always
    * pre-create and reuse the returned {@code Parser} object instead of calling {@code
