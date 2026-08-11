@@ -66,8 +66,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
 <ol class="toc-list">
-<li><a href="#minSize()" tabindex="0">minSize()</a></li>
-<li><a href="#maxSize()" tabindex="0">maxSize()</a></li>
+<li><a href="#metadata()" tabindex="0">metadata()</a></li>
 <li><a href="#sequence(com.google.common.labs.regex.RegexPattern...)" tabindex="0">sequence(RegexPattern...)</a></li>
 <li><a href="#inSequence()" tabindex="0">inSequence()</a></li>
 <li><a href="#alternation(com.google.common.labs.regex.RegexPattern...)" tabindex="0">alternation(RegexPattern...)</a></li>
@@ -194,39 +193,44 @@ loadScripts(document, 'script');</script>
 <div class="block">Represents a lookaround assertion: <code>(?=...)</code>, <code>(?!...)</code>, <code>(?&lt;=...)</code>, <code>
  (?&lt;!...)</code>.</div>
 </div>
-<div class="col-first even-row-color"><code>static enum&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="RegexPattern.ModifierFlag.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a></code></div>
+<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="RegexPattern.Metadata.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Metadata</a></code></div>
 <div class="col-last even-row-color">
-<div class="block">Regex modifiers that can be enabled or disabled inline.</div>
+<div class="block">Useful metadata of a regex pattern.</div>
 </div>
 <div class="col-first odd-row-color"><code>static enum&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="RegexPattern.PosixCharClass.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.PosixCharClass</a></code></div>
+<div class="col-second odd-row-color"><code><a href="RegexPattern.ModifierFlag.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a></code></div>
 <div class="col-last odd-row-color">
-<div class="block">Represents a POSIX character class inside a CharacterSet: e.g.</div>
+<div class="block">Regex modifiers that can be enabled or disabled inline.</div>
 </div>
 <div class="col-first even-row-color"><code>static enum&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="RegexPattern.PredefinedCharClass.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.PredefinedCharClass</a></code></div>
+<div class="col-second even-row-color"><code><a href="RegexPattern.PosixCharClass.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.PosixCharClass</a></code></div>
 <div class="col-last even-row-color">
+<div class="block">Represents a POSIX character class inside a CharacterSet: e.g.</div>
+</div>
+<div class="col-first odd-row-color"><code>static enum&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="RegexPattern.PredefinedCharClass.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.PredefinedCharClass</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Represents a predefined character class like <code>\d</code> or <code>\w</code>.</div>
 </div>
-<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="RegexPattern.Quantified.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Quantified</a></code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="RegexPattern.Quantified.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Quantified</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Represents a regex pattern that is modified by a quantifier.</div>
 </div>
-<div class="col-first even-row-color"><code>static interface&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="RegexPattern.Quantifier.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.Quantifier</a></code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>static interface&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="RegexPattern.Quantifier.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.Quantifier</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Base interface for all quantifier types.</div>
 </div>
-<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="RegexPattern.Sequence.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a></code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="RegexPattern.Sequence.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Represents a sequence of regex patterns that must match consecutively.</div>
 </div>
-<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="RegexPattern.UnicodeProperty.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.UnicodeProperty</a></code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="RegexPattern.UnicodeProperty.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.UnicodeProperty</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Represents a Unicode property class: e.g.</div>
 </div>
 </div>
@@ -273,56 +277,51 @@ loadScripts(document, 'script');</script>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1">
 <div class="block">A collector that collects the input <code>RegexPattern</code> as a sequence.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>int</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#maxSize()" class="member-name-link">maxSize</a>()</code></div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="RegexPattern.Metadata.html" title="class in com.google.common.labs.regex">RegexPattern.Metadata</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#metadata()" class="member-name-link">metadata</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
-<div class="block">Returns the maximum match size of this pattern in UTF-16 code units (chars), or <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html#MAX_VALUE" title="class or interface in java.lang" class="external-link"><code>Integer.MAX_VALUE</code></a> if it can match infinitely long strings (e.g.</div>
-</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>int</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#minSize()" class="member-name-link">minSize</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
-<div class="block">Returns the minimum match size of this pattern in UTF-16 code units (chars).</div>
-</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1"><code>static <a href="RegexPattern.CharacterSet.NoneOf.html" title="class in com.google.common.labs.regex">RegexPattern.CharacterSet.NoneOf</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1"><code><a href="#noneOf(com.google.common.labs.regex.RegexPattern.CharSetElement...)" class="member-name-link">noneOf</a><wbr>(<a href="RegexPattern.CharSetElement.html" title="interface in com.google.common.labs.regex">RegexPattern.CharSetElement</a>...&nbsp;elements)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1">
-<div class="block">Returns a negated <a href="RegexPattern.CharacterSet.html" title="interface in com.google.common.labs.regex"><code>RegexPattern.CharacterSet</code></a> of the given elements.</div>
+<div class="block">Returns this pattern's metadata that may be useful for static analysis.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1"><code>static <a href="RegexPattern.CharacterSet.NoneOf.html" title="class in com.google.common.labs.regex">RegexPattern.CharacterSet.NoneOf</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1"><code><a href="#noneOf(java.util.Collection)" class="member-name-link">noneOf</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;? extends <a href="RegexPattern.CharSetElement.html" title="interface in com.google.common.labs.regex">RegexPattern.CharSetElement</a>&gt;&nbsp;elements)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1"><code><a href="#noneOf(com.google.common.labs.regex.RegexPattern.CharSetElement...)" class="member-name-link">noneOf</a><wbr>(<a href="RegexPattern.CharSetElement.html" title="interface in com.google.common.labs.regex">RegexPattern.CharSetElement</a>...&nbsp;elements)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1">
 <div class="block">Returns a negated <a href="RegexPattern.CharacterSet.html" title="interface in com.google.common.labs.regex"><code>RegexPattern.CharacterSet</code></a> of the given elements.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#notFollowedBy(com.google.common.labs.regex.RegexPattern)" class="member-name-link">notFollowedBy</a><wbr>(<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>&nbsp;suffix)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
-<div class="block">Returns a pattern that matches <code>this</code> only if it is NOT followed by <code>suffix</code>.</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1"><code>static <a href="RegexPattern.CharacterSet.NoneOf.html" title="class in com.google.common.labs.regex">RegexPattern.CharacterSet.NoneOf</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1"><code><a href="#noneOf(java.util.Collection)" class="member-name-link">noneOf</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;? extends <a href="RegexPattern.CharSetElement.html" title="interface in com.google.common.labs.regex">RegexPattern.CharSetElement</a>&gt;&nbsp;elements)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1">
+<div class="block">Returns a negated <a href="RegexPattern.CharacterSet.html" title="interface in com.google.common.labs.regex"><code>RegexPattern.CharacterSet</code></a> of the given elements.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#notPrecededBy(com.google.common.labs.regex.RegexPattern)" class="member-name-link">notPrecededBy</a><wbr>(<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>&nbsp;prefix)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#notFollowedBy(com.google.common.labs.regex.RegexPattern)" class="member-name-link">notFollowedBy</a><wbr>(<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>&nbsp;suffix)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
+<div class="block">Returns a pattern that matches <code>this</code> only if it is NOT followed by <code>suffix</code>.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#notPrecededBy(com.google.common.labs.regex.RegexPattern)" class="member-name-link">notPrecededBy</a><wbr>(<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>&nbsp;prefix)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
 <div class="block">Returns a pattern that matches <code>this</code> only if it is NOT preceded by <code>prefix</code>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1"><code>static <a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1"><code><a href="#of(java.lang.String)" class="member-name-link">of</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;regex)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1"><code>static <a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1"><code><a href="#of(java.lang.String)" class="member-name-link">of</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;regex)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1">
 <div class="block">Parses the given regular expression string and returns its <a href="RegexPattern.html" title="interface in com.google.common.labs.regex"><code>RegexPattern</code></a> representation.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab6"><code>static <a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab6"><code><a href="#parse(java.lang.String)" class="member-name-link">parse</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;regex)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab6">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab6"><code>static <a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab6"><code><a href="#parse(java.lang.String)" class="member-name-link">parse</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;regex)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab6">
 <div class="block"><span class="deprecated-label">Deprecated.</span>
 <div class="deprecation-comment">use <a href="#of(java.lang.String)"><code>of(java.lang.String)</code></a> instead</div>
 </div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#precededBy(com.google.common.labs.regex.RegexPattern)" class="member-name-link">precededBy</a><wbr>(<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>&nbsp;prefix)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#precededBy(com.google.common.labs.regex.RegexPattern)" class="member-name-link">precededBy</a><wbr>(<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>&nbsp;prefix)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
 <div class="block">Returns a pattern that matches <code>this</code> only if it is preceded by <code>prefix</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1"><code>static <a href="RegexPattern.Sequence.html" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1"><code><a href="#sequence(com.google.common.labs.regex.RegexPattern...)" class="member-name-link">sequence</a><wbr>(<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>...&nbsp;elements)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1"><code>static <a href="RegexPattern.Sequence.html" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1"><code><a href="#sequence(com.google.common.labs.regex.RegexPattern...)" class="member-name-link">sequence</a><wbr>(<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a>...&nbsp;elements)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1">
 <div class="block">Returns a <a href="RegexPattern.Sequence.html" title="class in com.google.common.labs.regex"><code>RegexPattern.Sequence</code></a> of the given elements.</div>
 </div>
 </div>
@@ -340,26 +339,11 @@ loadScripts(document, 'script');</script>
 <h2>Method Details</h2>
 <ul class="member-list">
 <li>
-<section class="detail" id="minSize()">
-<h3>minSize</h3>
+<section class="detail" id="metadata()">
+<h3>metadata</h3>
 <div class="horizontal-scroll">
-<div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="element-name">minSize</span>()</div>
-<div class="block">Returns the minimum match size of this pattern in UTF-16 code units (chars). Particularly,
- optional patterns like <code>.?</code>, <code>.*</code>, <code>c+</code>, <code>foo{,2}</code> will return 0.</div>
-<dl class="notes">
-<dt>Since:</dt>
-<dd>10.9</dd>
-</dl>
-</div>
-</section>
-</li>
-<li>
-<section class="detail" id="maxSize()">
-<h3>maxSize</h3>
-<div class="horizontal-scroll">
-<div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="element-name">maxSize</span>()</div>
-<div class="block">Returns the maximum match size of this pattern in UTF-16 code units (chars), or <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html#MAX_VALUE" title="class or interface in java.lang" class="external-link"><code>Integer.MAX_VALUE</code></a> if it can match infinitely long strings (e.g. <code>.*</code>, <code>\d+</code>,
- <code>foo{1,}</code> etc).</div>
+<div class="member-signature"><span class="return-type"><a href="RegexPattern.Metadata.html" title="class in com.google.common.labs.regex">RegexPattern.Metadata</a></span>&nbsp;<span class="element-name">metadata</span>()</div>
+<div class="block">Returns this pattern's metadata that may be useful for static analysis.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>10.9</dd>
