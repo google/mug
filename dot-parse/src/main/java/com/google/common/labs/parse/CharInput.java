@@ -42,7 +42,7 @@ abstract class CharInput {
    * Matches the given regex pattern starting from {@code start} index and returns the ending index
    * (exclusive). Returns -1 if no match is found.
    */
-  abstract int match(Pattern pattern, RegexPattern metadata, int start);
+  abstract int match(Pattern pattern, RegexPattern.Metadata metadata, int start);
 
   final boolean startsWith(CharPredicate predicate, int index) {
     return isInRange(index) && predicate.test(charAt(index));
@@ -85,7 +85,7 @@ abstract class CharInput {
         return text.indexOf(str, fromIndex);
       }
 
-      @Override int match(Pattern pattern, RegexPattern metadata, int start) {
+      @Override int match(Pattern pattern, RegexPattern.Metadata metadata, int start) {
         Matcher matcher = pattern.matcher(text);
         matcher.region(start, text.length());
         return matcher.lookingAt() ? matcher.end() : start;
@@ -164,7 +164,7 @@ abstract class CharInput {
         }
       }
 
-      @Override int match(Pattern pattern, RegexPattern metadata, int start) {
+      @Override int match(Pattern pattern, RegexPattern.Metadata metadata, int start) {
         long requiredCharCount = (long) start + metadata.maxSize();
         if (requiredCharCount >= Integer.MAX_VALUE) {
           throw new UnsupportedOperationException(

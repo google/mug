@@ -33,6 +33,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.common.labs.parse.Parser;
+import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
 import com.google.mu.time.DateTimeFormats;
 import com.google.mu.util.Both;
 import com.google.mu.util.Substring;
@@ -379,7 +381,8 @@ record IniConfig(Map<String, List<Section>> sections) {
       return value;
     }
 
-    private <T> T getAndParse(String key, Function<String, T> parse, String message, Object... args) {
+    @FormatMethod
+    private <T> T getAndParse(String key, Function<String, T> parse, @FormatString String message, Object... args) {
       String value = getString(key);
       try {
         return parse.apply(value);

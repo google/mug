@@ -679,7 +679,7 @@ public final class RegexPatternTest {
   @Test public void maxSize_overflowOnMultiply() {
     // 2000000000 * 3 overflows Integer.MAX_VALUE
     RegexPattern multipliedOverflow = new Quantified(new Literal("abc"), repeated(2000000000));
-    assertThat(multipliedOverflow.maxSize()).isEqualTo(Integer.MAX_VALUE);
+    assertThat(multipliedOverflow.metadata().maxSize()).isEqualTo(Integer.MAX_VALUE);
   }
 
   @Test public void maxSize_overflowOnAdd() {
@@ -687,125 +687,157 @@ public final class RegexPatternTest {
     RegexPattern addedOverflow = sequence(
         new Quantified(new Literal("a"), repeated(2000000000)),
         new Quantified(new Literal("b"), repeated(2000000000)));
-    assertThat(addedOverflow.maxSize()).isEqualTo(Integer.MAX_VALUE);
+    assertThat(addedOverflow.metadata().maxSize()).isEqualTo(Integer.MAX_VALUE);
   }
 
   @Test public void maxSize_zeroOrMore_yieldsMaxValue() {
-    assertThat(new Quantified(new Literal("a"), repeated(0, Integer.MAX_VALUE)).maxSize())
+    assertThat(
+            new Quantified(new Literal("a"), repeated(0, Integer.MAX_VALUE)).metadata().maxSize())
         .isEqualTo(Integer.MAX_VALUE);
   }
 
   @Test public void maxSize_oneOrMore_yieldsMaxValue() {
-    assertThat(new Quantified(new Literal("a"), atLeast(1)).maxSize()).isEqualTo(Integer.MAX_VALUE);
+    assertThat(new Quantified(new Literal("a"), atLeast(1)).metadata().maxSize())
+        .isEqualTo(Integer.MAX_VALUE);
   }
 
   @Test public void maxSize_optional_preservesSize() {
-    assertThat(new Quantified(new Literal("abc"), atMost(1)).maxSize()).isEqualTo(3);
+    assertThat(new Quantified(new Literal("abc"), atMost(1)).metadata().maxSize()).isEqualTo(3);
   }
 
   @Test public void maxSize_group() {
-    assertThat(RegexPattern.of("(abc)").maxSize()).isEqualTo(3);
-    assertThat(RegexPattern.of("(?:abc)").maxSize()).isEqualTo(3);
-    assertThat(RegexPattern.of("(?i:abc)").maxSize()).isEqualTo(3);
-    assertThat(RegexPattern.of("(?i:.)").maxSize()).isEqualTo(2);
-    assertThat(RegexPattern.of("(?i:a)b").maxSize()).isEqualTo(2);
+    assertThat(RegexPattern.of("(abc)").metadata().maxSize()).isEqualTo(3);
+    assertThat(RegexPattern.of("(?:abc)").metadata().maxSize()).isEqualTo(3);
+    assertThat(RegexPattern.of("(?i:abc)").metadata().maxSize()).isEqualTo(3);
+    assertThat(RegexPattern.of("(?i:.)").metadata().maxSize()).isEqualTo(2);
+    assertThat(RegexPattern.of("(?i:a)b").metadata().maxSize()).isEqualTo(2);
   }
 
   @Test public void minSize_literal() {
-    assertThat(RegexPattern.of("abc").minSize()).isEqualTo(3);
+    assertThat(RegexPattern.of("abc").metadata().minSize()).isEqualTo(3);
   }
 
   @Test public void minSize_optional() {
-    assertThat(RegexPattern.of("a?").minSize()).isEqualTo(0);
+    assertThat(RegexPattern.of("a?").metadata().minSize()).isEqualTo(0);
   }
 
   @Test public void minSize_zeroOrMore() {
-    assertThat(RegexPattern.of("a*").minSize()).isEqualTo(0);
+    assertThat(RegexPattern.of("a*").metadata().minSize()).isEqualTo(0);
   }
 
   @Test public void minSize_oneOrMore() {
-    assertThat(RegexPattern.of("a+").minSize()).isEqualTo(1);
+    assertThat(RegexPattern.of("a+").metadata().minSize()).isEqualTo(1);
   }
 
   @Test public void minSize_alternation() {
-    assertThat(RegexPattern.of("abc|d").minSize()).isEqualTo(1);
+    assertThat(RegexPattern.of("abc|d").metadata().minSize()).isEqualTo(1);
   }
 
   @Test public void minSize_optionalGroup() {
-    assertThat(RegexPattern.of("(?i:abc)?").minSize()).isEqualTo(0);
+    assertThat(RegexPattern.of("(?i:abc)?").metadata().minSize()).isEqualTo(0);
   }
 
   @Test public void minSize_group() {
-    assertThat(RegexPattern.of("(abc)").minSize()).isEqualTo(3);
-    assertThat(RegexPattern.of("(?:abc)").minSize()).isEqualTo(3);
-    assertThat(RegexPattern.of("(?i:abc)").minSize()).isEqualTo(3);
-    assertThat(RegexPattern.of("(?i:.)").minSize()).isEqualTo(1);
-    assertThat(RegexPattern.of("(?i:a)b").minSize()).isEqualTo(2);
+    assertThat(RegexPattern.of("(abc)").metadata().minSize()).isEqualTo(3);
+    assertThat(RegexPattern.of("(?:abc)").metadata().minSize()).isEqualTo(3);
+    assertThat(RegexPattern.of("(?i:abc)").metadata().minSize()).isEqualTo(3);
+    assertThat(RegexPattern.of("(?i:.)").metadata().minSize()).isEqualTo(1);
+    assertThat(RegexPattern.of("(?i:a)b").metadata().minSize()).isEqualTo(2);
   }
 
   @Test public void minSize_dot() {
-    assertThat(RegexPattern.of(".").minSize()).isEqualTo(1);
+    assertThat(RegexPattern.of(".").metadata().minSize()).isEqualTo(1);
   }
 
   @Test public void minSize_characterClass() {
-    assertThat(RegexPattern.of("[abc]").minSize()).isEqualTo(1);
+    assertThat(RegexPattern.of("[abc]").metadata().minSize()).isEqualTo(1);
   }
 
   @Test public void minSize_negatedCharacterClass() {
-    assertThat(RegexPattern.of("[^abc]").minSize()).isEqualTo(1);
+    assertThat(RegexPattern.of("[^abc]").metadata().minSize()).isEqualTo(1);
   }
 
   @Test public void minSize_characterProperty() {
-    assertThat(RegexPattern.of("\\p{Lower}").minSize()).isEqualTo(1);
+    assertThat(RegexPattern.of("\\p{Lower}").metadata().minSize()).isEqualTo(1);
   }
 
   @Test public void minSize_negatedCharacterProperty() {
-    assertThat(RegexPattern.of("\\P{Lower}").minSize()).isEqualTo(1);
+    assertThat(RegexPattern.of("\\P{Lower}").metadata().minSize()).isEqualTo(1);
   }
 
   @Test public void maxSize_negatedCharacterClass() {
-    assertThat(RegexPattern.of("[^abc]").maxSize()).isEqualTo(2);
+    assertThat(RegexPattern.of("[^abc]").metadata().maxSize()).isEqualTo(2);
   }
 
   @Test public void maxSize_characterProperty() {
-    assertThat(RegexPattern.of("\\p{Lower}").maxSize()).isEqualTo(2);
+    assertThat(RegexPattern.of("\\p{Lower}").metadata().maxSize()).isEqualTo(2);
   }
 
   @Test public void maxSize_negatedCharacterProperty() {
-    assertThat(RegexPattern.of("\\P{Lower}").maxSize()).isEqualTo(2);
+    assertThat(RegexPattern.of("\\P{Lower}").metadata().maxSize()).isEqualTo(2);
   }
 
   @Test public void minSize_anchor() {
-    assertThat(RegexPattern.of("^").minSize()).isEqualTo(0);
-    assertThat(RegexPattern.of("$").minSize()).isEqualTo(0);
-    assertThat(RegexPattern.of("\\b").minSize()).isEqualTo(0);
+    assertThat(RegexPattern.of("^").metadata().minSize()).isEqualTo(0);
+    assertThat(RegexPattern.of("$").metadata().minSize()).isEqualTo(0);
+    assertThat(RegexPattern.of("\\b").metadata().minSize()).isEqualTo(0);
   }
 
   @Test public void maxSize_anchor() {
-    assertThat(RegexPattern.of("^").maxSize()).isEqualTo(0);
-    assertThat(RegexPattern.of("$").maxSize()).isEqualTo(0);
-    assertThat(RegexPattern.of("\\b").maxSize()).isEqualTo(0);
+    assertThat(RegexPattern.of("^").metadata().maxSize()).isEqualTo(0);
+    assertThat(RegexPattern.of("$").metadata().maxSize()).isEqualTo(0);
+    assertThat(RegexPattern.of("\\b").metadata().maxSize()).isEqualTo(0);
   }
 
   @Test public void minSize_lookaround() {
-    assertThat(RegexPattern.of("(?=a)").minSize()).isEqualTo(0);
-    assertThat(RegexPattern.of("(?!a)").minSize()).isEqualTo(0);
+    assertThat(RegexPattern.of("(?=a)").metadata().minSize()).isEqualTo(0);
+    assertThat(RegexPattern.of("(?!a)").metadata().minSize()).isEqualTo(0);
   }
 
   @Test public void maxSize_lookaround() {
-    assertThat(RegexPattern.of("(?=a)").maxSize()).isEqualTo(0);
-    assertThat(RegexPattern.of("(?!a)").maxSize()).isEqualTo(0);
+    assertThat(RegexPattern.of("(?=a)").metadata().maxSize()).isEqualTo(0);
+    assertThat(RegexPattern.of("(?!a)").metadata().maxSize()).isEqualTo(0);
   }
 
   @Test public void minSize_backreference() {
-    assertThat(RegexPattern.of("(a)\\1").minSize())
+    assertThat(RegexPattern.of("(a)\\1").metadata().minSize())
         .isEqualTo(
             1); // Group matches "a" (size 1), but wait, what about just the backreference itself?
     // Let's construct a raw Backreference record to test it directly without Sequence wrappers!
-    assertThat(new Backreference.Numbered(1).minSize()).isEqualTo(0);
+    assertThat(new Backreference.Numbered(1).metadata().minSize()).isEqualTo(0);
   }
 
   @Test public void maxSize_backreference() {
-    assertThat(new Backreference.Numbered(1).maxSize()).isEqualTo(Integer.MAX_VALUE);
+    assertThat(new Backreference.Numbered(1).metadata().maxSize()).isEqualTo(Integer.MAX_VALUE);
+  }
+
+  @Test public void metadata_constructorThrows_whenMinSizeIsNegative() {
+    int minSizeNeg = -1;
+    int maxSizeFive = 5;
+    assertThrows(
+        IllegalArgumentException.class, () -> new RegexPattern.Metadata(minSizeNeg, maxSizeFive));
+  }
+
+  @Test public void metadata_constructorThrows_whenMaxSizeIsNegative() {
+    int minSizeFive = 5;
+    int maxSizeNeg = -1;
+    assertThrows(
+        IllegalArgumentException.class, () -> new RegexPattern.Metadata(minSizeFive, maxSizeNeg));
+  }
+
+  @Test public void metadata_constructorThrows_whenMaxSizeIsLessThanMinSize() {
+    int minSizeFiveForCompare = 5;
+    int maxSizeFour = 4;
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new RegexPattern.Metadata(minSizeFiveForCompare, maxSizeFour));
+  }
+
+  @Test public void metadata_constructsSuccessfully() {
+    int minSize = 5;
+    int maxSize = 5;
+    RegexPattern.Metadata metadata = new RegexPattern.Metadata(minSize, maxSize);
+    assertThat(metadata.minSize()).isEqualTo(5);
+    assertThat(metadata.maxSize()).isEqualTo(5);
   }
 }

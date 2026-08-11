@@ -200,6 +200,7 @@ public class CharacterSetTest {
   }
 
   @Test
+  @SuppressWarnings("CharacterSetLiteralCheck")
   public void invalidRange_throws() {
     IllegalArgumentException e =
         assertThrows(IllegalArgumentException.class, () -> charsIn("[1-0]"));
