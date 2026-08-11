@@ -354,9 +354,9 @@ public final class Parsers {
    * contain anchors (like {@code ^}, {@code $}), lookarounds (like {@code (?=...)}), or
    * backreferences (like {@code \1}).
    *
-   * <p>The returned parser supports parsing from a {@link java.io.Reader} input only if the regex
-   * has an upper bound in the match size (e.g. <code>[a-z]{3}</code> or {@code (abc|d)}). Regex
-   * patterns with unbounded match size (e.g. {@code [a-z]+}) will throw {@link
+   * <p>The returned parser supports parsing from a {@link java.io.Reader} input <em>only if</em>
+   * the regex has an upper bound in the match size (e.g. <code>[a-z]{3}</code> or {@code (abc|d)}).
+   * Regex patterns with unbounded match size (e.g. {@code [a-z]+}) will throw {@link
    * UnsupportedOperationException} when parsing from a {@code Reader} because it defeats the
    * purpose of lazy loading from {@code Reader} - you might as well just eagerly load into a {@code
    * String} before parsing.
