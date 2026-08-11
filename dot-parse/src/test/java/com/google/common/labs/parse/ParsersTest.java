@@ -122,6 +122,14 @@ public class ParsersTest {
     assertThrows(ParseException.class, () -> parser.parse("abd"));
   }
 
+  @Test public void regex_dotallFlag() {
+    Parser<String> parserDefault = regex(".");
+    assertThrows(ParseException.class, () -> parserDefault.parse("\n"));
+
+    Parser<String> parserDotall = regex("(?s:.)");
+    assertThat(parserDotall.parse("\n")).isEqualTo("\n");
+  }
+
   @Test public void regex_freeSpacingFlag() {
     Parser<String> parser = regex("(?x)a b c");
     assertThat(parser.parse("abc")).isEqualTo("abc");
