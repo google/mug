@@ -543,9 +543,7 @@ public final class Parsers {
     }
 
     static <T> T applyOperator(T operand, Function<? super T, ? extends T> op, long times) {
-      for (long i = 0; i < times; i++) {
-        operand = op.apply(operand);
-      }
+      for (long i = 0; i < times; i++)  operand = op.apply(operand);
       return operand;
     }
 

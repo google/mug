@@ -100,12 +100,21 @@ public class RegexesTest {
     assertThat(prefixes("(?i:a?(?-i:b))")).containsExactly("a", "A", "b");
   }
 
+  @Test public void prefixesOf_conflictingCaseInsensitive() {
+    assertThat(prefixes("(?i-i:b)")).containsExactly("b");
+  }
+
   @Test public void prefixesOf_unicodeCharacterClass() {
     assertThat(prefixes("(?U:\\d)")).containsExactly("");
   }
 
   @Test public void prefixesOf_disabledUnicodeCharacterClass() {
     assertThat(prefixes("(?U:(?-U:\\d))"))
+        .containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+  }
+
+  @Test public void prefixesOf_conflictingUnicodeCharacterClass() {
+    assertThat(prefixes("(?U-U:\\d)"))
         .containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
   }
 
