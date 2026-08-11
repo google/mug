@@ -366,9 +366,9 @@ loadScripts(document, 'script');</script>
  contain anchors (like <code>^</code>, <code>$</code>), lookarounds (like <code>(?=...)</code>), or
  backreferences (like <code>\1</code>).
 
- <p>The returned parser supports parsing from a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/io/Reader.html" title="class or interface in java.io" class="external-link"><code>Reader</code></a> input only if the regex
- has an upper bound in the match size (e.g. <code>[a-z]{3}</code> or <code>(abc|d)</code>). Regex
- patterns with unbounded match size (e.g. <code>[a-z]+</code>) will throw <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/UnsupportedOperationException.html" title="class or interface in java.lang" class="external-link"><code>UnsupportedOperationException</code></a> when parsing from a <code>Reader</code> because it defeats the
+ <p>The returned parser supports parsing from a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/io/Reader.html" title="class or interface in java.io" class="external-link"><code>Reader</code></a> input <em>only if</em>
+ the regex has an upper bound in the match size (e.g. <code>[a-z]{3}</code> or <code>(abc|d)</code>).
+ Regex patterns with unbounded match size (e.g. <code>[a-z]+</code>) will throw <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/UnsupportedOperationException.html" title="class or interface in java.lang" class="external-link"><code>UnsupportedOperationException</code></a> when parsing from a <code>Reader</code> because it defeats the
  purpose of lazy loading from <code>Reader</code> - you might as well just eagerly load into a <code>
  String</code> before parsing.
 
