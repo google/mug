@@ -3,8 +3,11 @@ package com.google.common.labs.parse;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import com.google.common.labs.regex.RegexPattern;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
+import java.util.regex.Pattern;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -392,10 +395,7 @@ public final class CharInputTest {
 
   @Test public void fromReader_matchRegex_loadsLazilyBasedOnStartAndMaxSize() {
     CharInput input = CharInput.from(new OneCharReader("abcdefg"));
-    int matchLength = input.match(
-        java.util.regex.Pattern.compile("cde"),
-        com.google.common.labs.regex.RegexPattern.of("cde"),
-        2);
+    int matchLength = input.match(Pattern.compile("cde"), RegexPattern.of("cde").metadata(), 2);
     assertThat(matchLength).isEqualTo(5);
   }
 
@@ -409,14 +409,27 @@ public final class CharInputTest {
 
     // Match "789" at index 7.
     // If the logical conversion is correct, it will return logical end index 10.
-    int matchLength = input.match(
-        java.util.regex.Pattern.compile("789"),
-        com.google.common.labs.regex.RegexPattern.of("789"),
-        7);
+    int matchLength = input.match(Pattern.compile("789"), RegexPattern.of("789").metadata(), 7);
     assertThat(matchLength).isEqualTo(10);
   }
 
-  private static class OneCharReader extends java.io.Reader {
+  @Test public void fromReader_matchRegex_maxSizeOverflowsSaturatedAdd() {
+    CharInput input = CharInput.from(new OneCharReader("0123456789a"));
+    // Read the first 10 characters to advance the stream
+    for (int i = 0; i < 10; i++) {
+      assertThat(input.charAt(i)).isEqualTo((char) ('0' + i));
+    }
+    // Now match "a{1,2147483640}" at index 10.
+    // Since start + maxSize overflows Integer.MAX_VALUE, it must throw
+    // UnsupportedOperationException.
+    var patternMetadata = RegexPattern.of("a{1,2147483640}");
+    assertThat(patternMetadata.metadata().maxSize()).isEqualTo(2147483640);
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> input.match(Pattern.compile("a{1,2147483640}"), patternMetadata.metadata(), 10));
+  }
+
+  private static class OneCharReader extends Reader {
     private final String content;
     private int index = 0;
 

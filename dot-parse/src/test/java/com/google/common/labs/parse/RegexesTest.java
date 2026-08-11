@@ -139,6 +139,6 @@ public class RegexesTest {
   }
 
   private static int maxSize(String regex) {
-    return RegexPattern.of(regex).maxSize();
+    return RegexPattern.of(regex).metadata().maxSize();
   }
 }

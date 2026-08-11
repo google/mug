@@ -10,6 +10,7 @@ import static com.google.common.labs.parse.Parser.or;
 import static com.google.common.labs.parse.Parser.quotedByWithEscapes;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
+import static com.google.common.labs.parse.Parsers.regex;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.CharPredicate.WHITESPACE;
 import static org.junit.Assert.assertThrows;
@@ -128,6 +129,16 @@ public final class DotParseShowdown {
     }
   }
 
+  /**
+   * Parses a single US phone number using parser combinators.
+   *
+   * <p>Benchmark comparison (throughput on JDK 24):
+   *
+   * <ul>
+   *   <li>Combinator (this): ~15,088 ops/ms (1.24x)
+   *   <li>Regex ({@link RegexUsPhoneFixture}): ~12,125 ops/ms (1.00x)
+   * </ul>
+   */
   public static class UsPhoneFixture {
     private static final Parser<String> PARSER =
         sequence(one('('), digits(3), one(')'), digits(3), one('-'), digits(4)).source();
@@ -141,9 +152,65 @@ public final class DotParseShowdown {
     }
   }
 
+  /**
+   * Parses a list of 1000 US phone numbers using parser combinators.
+   *
+   * <p>Benchmark comparison (throughput on JDK 24):
+   *
+   * <ul>
+   *   <li>Combinator (this): ~9.79 ops/ms (1.28x)
+   *   <li>Regex ({@link RegexUsPhoneListFixture}): ~7.67 ops/ms (1.00x)
+   * </ul>
+   */
   public static class UsPhoneListFixture {
     private static final Parser<List<String>> PARSER =
         literally(UsPhoneFixture.PARSER).atLeastOnce();
+
+    static {
+      List<String> result = PARSER.parseSkipping(WHITESPACE, BenchmarkInputs.US_PHONE_LIST);
+      assertThat(result.size()).isEqualTo(1000);
+    }
+
+    public List<String> run(String input) {
+      return PARSER.parseSkipping(WHITESPACE, input);
+    }
+  }
+
+  /**
+   * Parses a single US phone number using {@link Parser#regex}.
+   *
+   * <p>Benchmark comparison (throughput on JDK 24):
+   *
+   * <ul>
+   *   <li>Combinator ({@link UsPhoneFixture}): ~15,088 ops/ms (1.24x)
+   *   <li>Regex (this): ~12,125 ops/ms (1.00x)
+   * </ul>
+   */
+  public static class RegexUsPhoneFixture {
+    private static final Parser<String> PARSER = regex("\\(\\d{3}\\)\\d{3}-\\d{4}");
+
+    static {
+      assertThat(PARSER.parse(BenchmarkInputs.US_PHONE)).isEqualTo(BenchmarkInputs.US_PHONE);
+    }
+
+    public String run(String input) {
+      return PARSER.parse(input);
+    }
+  }
+
+  /**
+   * Parses a list of 1000 US phone numbers using {@link Parser#regex}.
+   *
+   * <p>Benchmark comparison (throughput on JDK 24):
+   *
+   * <ul>
+   *   <li>Combinator ({@link UsPhoneListFixture}): ~9.79 ops/ms (1.28x)
+   *   <li>Regex (this): ~7.67 ops/ms (1.00x)
+   * </ul>
+   */
+  public static class RegexUsPhoneListFixture {
+    private static final Parser<List<String>> PARSER =
+        literally(RegexUsPhoneFixture.PARSER).atLeastOnce();
 
     static {
       List<String> result = PARSER.parseSkipping(WHITESPACE, BenchmarkInputs.US_PHONE_LIST);

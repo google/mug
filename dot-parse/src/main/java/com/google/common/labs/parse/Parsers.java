@@ -350,6 +350,24 @@ public final class Parsers {
    * refrain from creating complex regex patterns, and prefer using the declarative {@code Parser}
    * API unless it's too verbose.
    *
+   * <p><b>WARNING: ReDoS Vulnerabilities & Disastrous Backtracking</b>
+   *
+   * <p>Using regular expressions exposes the application to Regular Expression Denial of Service
+   * (ReDoS) attacks. In many regex engines (including {@link java.util.regex.Pattern}), even
+   * "simple" patterns can cause exponential backtracking if matched against malicious
+   * inputs designed to trigger worst-case paths.
+   *
+   * <p>For example, the pattern {@code (a+)+} or {@code (a|ab)+} can easily freeze a thread or
+   * crash a service with CPU exhaustion when attempting to match a string like {@code
+   * "aaaaaaaaaaaaaaaaaaaaaaaaaaaa!"}. See the <a
+   * href="https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS">OWASP
+   * ReDoS Attack Reference</a> for a detailed analysis of this issue.
+   *
+   * <p>To avoid ReDoS and keep parsing execution linear and safe,
+   * prefer the declarative, backtracking-free {@link Parser} combinator API (using methods like
+   * {@link Parser#followedBy}, {@link Parsers#sequence}, {@link Parsers#anyOf}, etc.) and only
+   * use {@code regex} on trusted input (such as a config file, command line tool etc).
+   *
    * <p>The pattern must be a compile-time constant, must not match the empty string, and must not
    * contain anchors (like {@code ^}, {@code $}), lookarounds (like {@code (?=...)}), or
    * backreferences (like {@code \1}).
@@ -372,7 +390,8 @@ public final class Parsers {
    * @since 10.9
    */
   public static Parser<String> regex(@CompileTimeConstant String pattern) {
-    RegexPattern metadata = Regexes.strict(pattern);
+    RegexPattern ast = Regexes.strict(pattern);
+    RegexPattern.Metadata metadata = ast.metadata();
     Pattern jdkPattern = Pattern.compile(pattern);
     return new Scanner("=~/" + pattern + "/") {
       @Override int scan(CharInput input, int from) {
@@ -380,7 +399,7 @@ public final class Parsers {
       }
 
       @Override Set<String> computePrefixes() {
-        return Regexes.prefixesOf(metadata);
+        return Regexes.prefixesOf(ast);
       }
     }.source();
   }

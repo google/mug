@@ -32,7 +32,7 @@ final class Regexes {
   static RegexPattern strict(String regex) {
     RegexPattern pattern = RegexPattern.of(regex);
     Regexes.checkSupportedFeatures(pattern);
-    checkArgument(pattern.minSize() > 0, "regex must not match empty string: %s", regex);
+    checkArgument(pattern.metadata().minSize() > 0, "regex must not match empty string: %s", regex);
     return pattern;
   }
 
@@ -87,7 +87,7 @@ final class Regexes {
             yield EMPTY_PREFIX;
           }
           result.addAll(prefixes);
-          if (element.minSize() > 0) {
+          if (element.metadata().minSize() > 0) {
             // once we reach a never-empty pattern, chars after it can't be safely used as prefixes.
             break;
           }
