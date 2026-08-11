@@ -61,6 +61,7 @@ public class RegexesTest {
 
   @Test public void prefixesOf_literal() {
     assertThat(prefixes("abc")).containsExactly("abc");
+    assertThat(prefixes("")).containsExactly("");
   }
 
   @Test public void prefixesOf_sequence() {
@@ -103,6 +104,21 @@ public class RegexesTest {
   @Test public void prefixesOf_predefinedCharClass() {
     assertThat(prefixes("\\d")).containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
     assertThat(prefixes("\\w")).containsExactly("");
+  }
+
+  @Test public void prefixesOf_caseInsensitive() {
+    assertThat(prefixes("(?i:b)")).containsExactly("b", "B");
+    assertThat(prefixes("(?i:abc)"))
+        .containsExactly("abc", "abC", "aBc", "aBC", "Abc", "AbC", "ABc", "ABC");
+    assertThat(prefixes("(?i:abcd)"))
+        .containsExactly("abc", "abC", "aBc", "aBC", "Abc", "AbC", "ABc", "ABC");
+    assertThat(prefixes("(?i:a)b")).containsExactly("a", "A");
+    assertThat(prefixes("(?i:[a])")).containsExactly("a", "A");
+    assertThat(prefixes("(?i:[a-c])")).containsExactly("a", "A", "b", "B", "c", "C");
+  }
+
+  @Test public void prefixesOf_unicodeCharacterClass() {
+    assertThat(prefixes("(?U:\\d)")).containsExactly("");
   }
 
   @Test public void prefixesOf_anchorsAndLookaroundsAndBackreferences() {

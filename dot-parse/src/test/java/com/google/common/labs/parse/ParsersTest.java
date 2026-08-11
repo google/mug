@@ -149,12 +149,14 @@ public class ParsersTest {
     assertThrows(ParseException.class, () -> parser.parse("123abc"));
   }
 
-  // Case-insensitive choice pruning is a known limitation because prefix extraction in
-  // Regexes.prefixesOf is case-sensitive and does not account for the inline (?i) flag,
-  // causing "B" to be pruned when the indexed prefix is only "b".
-  @Test public void regex_choicePruning_caseInsensitiveFlag_pruningLimitation() {
+  @Test public void regex_choicePruning_caseInsensitiveFlag() {
     Parser<String> parser = anyOf(regex("(?i:b)"), regex("x"), regex("y"));
-    assertThrows(ParseException.class, () -> parser.parse("B"));
+    assertThat(parser.parse("B")).isEqualTo("B");
+  }
+
+  @Test public void regex_choicePruning_unicodeCharacterClassFlag() {
+    Parser<String> parser = anyOf(regex("(?U:\\d)"), regex("x"), regex("y"));
+    assertThat(parser.parse("\u0661")).isEqualTo("\u0661");
   }
 
   @Test public void regex_throwsForReaderBasedInput() {
@@ -286,7 +288,7 @@ public class ParsersTest {
   }
 
   @Test public void regex_failureMessage_inSequence() {
-    Parser<String> parser = sequence(string("["), regex("[a-z]+"), string("]"), (l, r, rt) -> r);
+    Parser<?> parser = sequence(string("["), regex("[a-z]+"), string("]"));
     var exception = assertThrows(ParseException.class, () -> parser.parse("[123]"));
     assertThat(exception.getMessage())
         .isEqualTo(

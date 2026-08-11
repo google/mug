@@ -287,6 +287,33 @@ public final class RegexPatternTest {
         .isEqualTo(new Quantified(new Literal("a"), Quantifier.repeated(2, 5).possessive()));
   }
 
+  @Test public void parse_quantifiedMultiChar() {
+    assertThat(RegexPattern.parse("(abc)*"))
+        .isEqualTo(new Quantified(new Group.Capturing(new Literal("abc")), Quantifier.repeated()));
+    assertThat(RegexPattern.parse("(abc)+"))
+        .isEqualTo(new Quantified(new Group.Capturing(new Literal("abc")), Quantifier.atLeast(1)));
+    assertThat(RegexPattern.parse("(abc){2}"))
+        .isEqualTo(
+            new Quantified(new Group.Capturing(new Literal("abc")), Quantifier.repeated(2, 2)));
+    assertThat(RegexPattern.parse("(abc){2,}"))
+        .isEqualTo(new Quantified(new Group.Capturing(new Literal("abc")), Quantifier.atLeast(2)));
+    assertThat(RegexPattern.parse("(abc){,4}"))
+        .isEqualTo(new Quantified(new Group.Capturing(new Literal("abc")), Quantifier.atMost(4)));
+    assertThat(RegexPattern.parse("(abc){2,4}"))
+        .isEqualTo(
+            new Quantified(new Group.Capturing(new Literal("abc")), Quantifier.repeated(2, 4)));
+    assertThat(RegexPattern.parse("abc*"))
+        .isEqualTo(new Quantified(new Literal("abc"), Quantifier.repeated()));
+    assertThat(RegexPattern.parse("abc{2}"))
+        .isEqualTo(new Quantified(new Literal("abc"), Quantifier.repeated(2, 2)));
+    assertThat(RegexPattern.parse("abc{2,}"))
+        .isEqualTo(new Quantified(new Literal("abc"), Quantifier.atLeast(2)));
+    assertThat(RegexPattern.parse("abc{,4}"))
+        .isEqualTo(new Quantified(new Literal("abc"), Quantifier.atMost(4)));
+    assertThat(RegexPattern.parse("abc{2,4}"))
+        .isEqualTo(new Quantified(new Literal("abc"), Quantifier.repeated(2, 4)));
+  }
+
   @Test public void parse_group() {
     assertThat(RegexPattern.parse("(a)")).isEqualTo(new Group.Capturing(new Literal("a")));
     assertThat(RegexPattern.parse("(?:a)")).isEqualTo(new Group.NonCapturing(new Literal("a")));
