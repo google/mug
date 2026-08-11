@@ -73,6 +73,8 @@ loadScripts(document, 'script');</script>
 </li>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
 <ol class="toc-list">
+<li><a href="#minSize()" tabindex="0">minSize()</a></li>
+<li><a href="#maxSize()" tabindex="0">maxSize()</a></li>
 <li><a href="#toString()" tabindex="0">toString()</a></li>
 <li><a href="#hashCode()" tabindex="0">hashCode()</a></li>
 <li><a href="#equals(java.lang.Object)" tabindex="0">equals(Object)</a></li>
@@ -116,7 +118,7 @@ implements <a href="RegexPattern.html" title="interface in com.google.common.lab
 <h2>Nested Class Summary</h2>
 <div class="inherited-list">
 <h3 id="nested-classes-inherited-from-class-com.google.common.labs.regex.RegexPattern">Nested classes/interfaces inherited from interface&nbsp;com.google.common.labs.regex.<a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></h3>
-<code><a href="RegexPattern.Alternation.html" title="class in com.google.common.labs.regex">RegexPattern.Alternation</a>, <a href="RegexPattern.Anchor.html" title="enum class in com.google.common.labs.regex">RegexPattern.Anchor</a>, <a href="RegexPattern.AtLeast.html" title="class in com.google.common.labs.regex">RegexPattern.AtLeast</a>, <a href="RegexPattern.AtMost.html" title="class in com.google.common.labs.regex">RegexPattern.AtMost</a>, <a href="RegexPattern.CharacterProperty.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterProperty</a>, <a href="RegexPattern.CharacterSet.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterSet</a>, <a href="RegexPattern.CharRange.html" title="class in com.google.common.labs.regex">RegexPattern.CharRange</a>, <a href="RegexPattern.CharSetElement.html" title="interface in com.google.common.labs.regex">RegexPattern.CharSetElement</a>, <a href="RegexPattern.Group.html" title="interface in com.google.common.labs.regex">RegexPattern.Group</a>, <a href="RegexPattern.Limited.html" title="class in com.google.common.labs.regex">RegexPattern.Limited</a>, <a href="RegexPattern.Literal.html" title="class in com.google.common.labs.regex">RegexPattern.Literal</a>, <a href="RegexPattern.LiteralChar.html" title="class in com.google.common.labs.regex">RegexPattern.LiteralChar</a>, <a href="RegexPattern.Lookaround.html" title="interface in com.google.common.labs.regex">RegexPattern.Lookaround</a>, <a href="RegexPattern.ModifierFlag.html" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a>, <a href="RegexPattern.PosixCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PosixCharClass</a>, <a href="RegexPattern.PredefinedCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PredefinedCharClass</a>, <a href="RegexPattern.Quantified.html" title="class in com.google.common.labs.regex">RegexPattern.Quantified</a>, <a href="RegexPattern.Quantifier.html" title="interface in com.google.common.labs.regex">RegexPattern.Quantifier</a>, <a href="RegexPattern.Sequence.html" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a>, <a href="RegexPattern.UnicodeProperty.html" title="class in com.google.common.labs.regex">RegexPattern.UnicodeProperty</a></code></div>
+<code><a href="RegexPattern.Alternation.html" title="class in com.google.common.labs.regex">RegexPattern.Alternation</a>, <a href="RegexPattern.Anchor.html" title="enum class in com.google.common.labs.regex">RegexPattern.Anchor</a>, <a href="RegexPattern.AtLeast.html" title="class in com.google.common.labs.regex">RegexPattern.AtLeast</a>, <a href="RegexPattern.AtMost.html" title="class in com.google.common.labs.regex">RegexPattern.AtMost</a>, <a href="RegexPattern.Backreference.html" title="interface in com.google.common.labs.regex">RegexPattern.Backreference</a>, <a href="RegexPattern.CharacterProperty.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterProperty</a>, <a href="RegexPattern.CharacterSet.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterSet</a>, <a href="RegexPattern.CharRange.html" title="class in com.google.common.labs.regex">RegexPattern.CharRange</a>, <a href="RegexPattern.CharSetElement.html" title="interface in com.google.common.labs.regex">RegexPattern.CharSetElement</a>, <a href="RegexPattern.Group.html" title="interface in com.google.common.labs.regex">RegexPattern.Group</a>, <a href="RegexPattern.Limited.html" title="class in com.google.common.labs.regex">RegexPattern.Limited</a>, <a href="RegexPattern.Literal.html" title="class in com.google.common.labs.regex">RegexPattern.Literal</a>, <a href="RegexPattern.LiteralChar.html" title="class in com.google.common.labs.regex">RegexPattern.LiteralChar</a>, <a href="RegexPattern.Lookaround.html" title="interface in com.google.common.labs.regex">RegexPattern.Lookaround</a>, <a href="RegexPattern.ModifierFlag.html" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a>, <a href="RegexPattern.PosixCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PosixCharClass</a>, <a href="RegexPattern.PredefinedCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PredefinedCharClass</a>, <a href="RegexPattern.Quantified.html" title="class in com.google.common.labs.regex">RegexPattern.Quantified</a>, <a href="RegexPattern.Quantifier.html" title="interface in com.google.common.labs.regex">RegexPattern.Quantifier</a>, <a href="RegexPattern.Sequence.html" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a>, <a href="RegexPattern.UnicodeProperty.html" title="class in com.google.common.labs.regex">RegexPattern.UnicodeProperty</a></code></div>
 </section>
 </li>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
@@ -159,6 +161,16 @@ implements <a href="RegexPattern.html" title="interface in com.google.common.lab
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#hashCode()" class="member-name-link">hashCode</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns a hash code value for this object.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>int</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#maxSize()" class="member-name-link">maxSize</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Returns the maximum match size of this pattern in UTF-16 code units (chars), or <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html#MAX_VALUE" title="class or interface in java.lang" class="external-link"><code>Integer.MAX_VALUE</code></a> if it can match infinitely long strings (e.g.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>int</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#minSize()" class="member-name-link">minSize</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Returns the minimum match size of this pattern in UTF-16 code units (chars).</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#toString()" class="member-name-link">toString</a>()</code></div>
@@ -206,6 +218,36 @@ implements <a href="RegexPattern.html" title="interface in com.google.common.lab
 <section class="method-details" id="method-detail">
 <h2>Method Details</h2>
 <ul class="member-list">
+<li>
+<section class="detail" id="minSize()">
+<h3>minSize</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">minSize</span>()</div>
+<div class="block"><span class="description-from-type-label">Description copied from interface:&nbsp;<code><a href="RegexPattern.html#minSize()">RegexPattern</a></code></span></div>
+<div class="block">Returns the minimum match size of this pattern in UTF-16 code units (chars). Particularly,
+ optional patterns like <code>.?</code>, <code>.*</code>, <code>c+</code>, <code>foo{,2}</code> will return 0.</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="RegexPattern.html#minSize()">minSize</a></code>&nbsp;in interface&nbsp;<code><a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="maxSize()">
+<h3>maxSize</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">maxSize</span>()</div>
+<div class="block"><span class="description-from-type-label">Description copied from interface:&nbsp;<code><a href="RegexPattern.html#maxSize()">RegexPattern</a></code></span></div>
+<div class="block">Returns the maximum match size of this pattern in UTF-16 code units (chars), or <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html#MAX_VALUE" title="class or interface in java.lang" class="external-link"><code>Integer.MAX_VALUE</code></a> if it can match infinitely long strings (e.g. <code>.*</code>, <code>\d+</code>,
+ <code>foo{1,}</code> etc).</div>
+<dl class="notes">
+<dt>Specified by:</dt>
+<dd><code><a href="RegexPattern.html#maxSize()">maxSize</a></code>&nbsp;in interface&nbsp;<code><a href="RegexPattern.html" title="interface in com.google.common.labs.regex">RegexPattern</a></code></dd>
+</dl>
+</div>
+</section>
+</li>
 <li>
 <section class="detail" id="toString()">
 <h3>toString</h3>

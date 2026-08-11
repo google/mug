@@ -66,6 +66,8 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
 <ol class="toc-list">
+<li><a href="#minSize()" tabindex="0">minSize()</a></li>
+<li><a href="#maxSize()" tabindex="0">maxSize()</a></li>
 <li><a href="#sequence(com.google.common.labs.regex.RegexPattern...)" tabindex="0">sequence(RegexPattern...)</a></li>
 <li><a href="#inSequence()" tabindex="0">inSequence()</a></li>
 <li><a href="#alternation(com.google.common.labs.regex.RegexPattern...)" tabindex="0">alternation(RegexPattern...)</a></li>
@@ -92,16 +94,16 @@ loadScripts(document, 'script');</script>
 <section class="class-description" id="class-description">
 <dl class="notes">
 <dt>All Known Subinterfaces:</dt>
-<dd><code><a href="RegexPattern.CharacterProperty.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterProperty</a></code>, <code><a href="RegexPattern.CharacterSet.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterSet</a></code>, <code><a href="RegexPattern.Group.html" title="interface in com.google.common.labs.regex">RegexPattern.Group</a></code>, <code><a href="RegexPattern.Lookaround.html" title="interface in com.google.common.labs.regex">RegexPattern.Lookaround</a></code></dd>
+<dd><code><a href="RegexPattern.Backreference.html" title="interface in com.google.common.labs.regex">RegexPattern.Backreference</a></code>, <code><a href="RegexPattern.CharacterProperty.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterProperty</a></code>, <code><a href="RegexPattern.CharacterSet.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterSet</a></code>, <code><a href="RegexPattern.Group.html" title="interface in com.google.common.labs.regex">RegexPattern.Group</a></code>, <code><a href="RegexPattern.Lookaround.html" title="interface in com.google.common.labs.regex">RegexPattern.Lookaround</a></code></dd>
 </dl>
 <dl class="notes">
 <dt>All Known Implementing Classes:</dt>
-<dd><code><a href="RegexPattern.Alternation.html" title="class in com.google.common.labs.regex">RegexPattern.Alternation</a></code>, <code><a href="RegexPattern.Anchor.html" title="enum class in com.google.common.labs.regex">RegexPattern.Anchor</a></code>, <code><a href="RegexPattern.CharacterProperty.Negated.html" title="class in com.google.common.labs.regex">RegexPattern.CharacterProperty.Negated</a></code>, <code><a href="RegexPattern.CharacterSet.AnyOf.html" title="class in com.google.common.labs.regex">RegexPattern.CharacterSet.AnyOf</a></code>, <code><a href="RegexPattern.CharacterSet.NoneOf.html" title="class in com.google.common.labs.regex">RegexPattern.CharacterSet.NoneOf</a></code>, <code><a href="RegexPattern.Group.Capturing.html" title="class in com.google.common.labs.regex">RegexPattern.Group.Capturing</a></code>, <code><a href="RegexPattern.Group.Named.html" title="class in com.google.common.labs.regex">RegexPattern.Group.Named</a></code>, <code><a href="RegexPattern.Group.NonCapturing.html" title="class in com.google.common.labs.regex">RegexPattern.Group.NonCapturing</a></code>, <code><a href="RegexPattern.Literal.html" title="class in com.google.common.labs.regex">RegexPattern.Literal</a></code>, <code><a href="RegexPattern.Lookaround.Lookahead.html" title="class in com.google.common.labs.regex">RegexPattern.Lookaround.Lookahead</a></code>, <code><a href="RegexPattern.Lookaround.Lookbehind.html" title="class in com.google.common.labs.regex">RegexPattern.Lookaround.Lookbehind</a></code>, <code><a href="RegexPattern.Lookaround.NegativeLookahead.html" title="class in com.google.common.labs.regex">RegexPattern.Lookaround.NegativeLookahead</a></code>, <code><a href="RegexPattern.Lookaround.NegativeLookbehind.html" title="class in com.google.common.labs.regex">RegexPattern.Lookaround.NegativeLookbehind</a></code>, <code><a href="RegexPattern.PosixCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PosixCharClass</a></code>, <code><a href="RegexPattern.PredefinedCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PredefinedCharClass</a></code>, <code><a href="RegexPattern.Quantified.html" title="class in com.google.common.labs.regex">RegexPattern.Quantified</a></code>, <code><a href="RegexPattern.Sequence.html" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a></code>, <code><a href="RegexPattern.UnicodeProperty.html" title="class in com.google.common.labs.regex">RegexPattern.UnicodeProperty</a></code></dd>
+<dd><code><a href="RegexPattern.Alternation.html" title="class in com.google.common.labs.regex">RegexPattern.Alternation</a></code>, <code><a href="RegexPattern.Anchor.html" title="enum class in com.google.common.labs.regex">RegexPattern.Anchor</a></code>, <code><a href="RegexPattern.Backreference.Named.html" title="class in com.google.common.labs.regex">RegexPattern.Backreference.Named</a></code>, <code><a href="RegexPattern.Backreference.Numbered.html" title="class in com.google.common.labs.regex">RegexPattern.Backreference.Numbered</a></code>, <code><a href="RegexPattern.CharacterProperty.Negated.html" title="class in com.google.common.labs.regex">RegexPattern.CharacterProperty.Negated</a></code>, <code><a href="RegexPattern.CharacterSet.AnyOf.html" title="class in com.google.common.labs.regex">RegexPattern.CharacterSet.AnyOf</a></code>, <code><a href="RegexPattern.CharacterSet.NoneOf.html" title="class in com.google.common.labs.regex">RegexPattern.CharacterSet.NoneOf</a></code>, <code><a href="RegexPattern.Group.Capturing.html" title="class in com.google.common.labs.regex">RegexPattern.Group.Capturing</a></code>, <code><a href="RegexPattern.Group.Named.html" title="class in com.google.common.labs.regex">RegexPattern.Group.Named</a></code>, <code><a href="RegexPattern.Group.NonCapturing.html" title="class in com.google.common.labs.regex">RegexPattern.Group.NonCapturing</a></code>, <code><a href="RegexPattern.Literal.html" title="class in com.google.common.labs.regex">RegexPattern.Literal</a></code>, <code><a href="RegexPattern.Lookaround.Lookahead.html" title="class in com.google.common.labs.regex">RegexPattern.Lookaround.Lookahead</a></code>, <code><a href="RegexPattern.Lookaround.Lookbehind.html" title="class in com.google.common.labs.regex">RegexPattern.Lookaround.Lookbehind</a></code>, <code><a href="RegexPattern.Lookaround.NegativeLookahead.html" title="class in com.google.common.labs.regex">RegexPattern.Lookaround.NegativeLookahead</a></code>, <code><a href="RegexPattern.Lookaround.NegativeLookbehind.html" title="class in com.google.common.labs.regex">RegexPattern.Lookaround.NegativeLookbehind</a></code>, <code><a href="RegexPattern.PosixCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PosixCharClass</a></code>, <code><a href="RegexPattern.PredefinedCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PredefinedCharClass</a></code>, <code><a href="RegexPattern.Quantified.html" title="class in com.google.common.labs.regex">RegexPattern.Quantified</a></code>, <code><a href="RegexPattern.Sequence.html" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a></code>, <code><a href="RegexPattern.UnicodeProperty.html" title="class in com.google.common.labs.regex">RegexPattern.UnicodeProperty</a></code></dd>
 </dl>
 <hr>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public sealed interface </span><span class="element-name type-name-label">RegexPattern</span>
-<span class="permits">permits <a href="RegexPattern.Sequence.html" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a>, <a href="RegexPattern.Alternation.html" title="class in com.google.common.labs.regex">RegexPattern.Alternation</a>, <a href="RegexPattern.Quantified.html" title="class in com.google.common.labs.regex">RegexPattern.Quantified</a>, <a href="RegexPattern.Group.html" title="interface in com.google.common.labs.regex">RegexPattern.Group</a>, <a href="RegexPattern.Literal.html" title="class in com.google.common.labs.regex">RegexPattern.Literal</a>, <a href="RegexPattern.PredefinedCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PredefinedCharClass</a>, <a href="RegexPattern.CharacterSet.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterSet</a>, <a href="RegexPattern.CharacterProperty.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterProperty</a>, <a href="RegexPattern.CharacterProperty.Negated.html" title="class in com.google.common.labs.regex">RegexPattern.CharacterProperty.Negated</a>, <a href="RegexPattern.Anchor.html" title="enum class in com.google.common.labs.regex">RegexPattern.Anchor</a>, <a href="RegexPattern.Lookaround.html" title="interface in com.google.common.labs.regex">RegexPattern.Lookaround</a></span></div>
+<span class="permits">permits <a href="RegexPattern.Sequence.html" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a>, <a href="RegexPattern.Alternation.html" title="class in com.google.common.labs.regex">RegexPattern.Alternation</a>, <a href="RegexPattern.Quantified.html" title="class in com.google.common.labs.regex">RegexPattern.Quantified</a>, <a href="RegexPattern.Group.html" title="interface in com.google.common.labs.regex">RegexPattern.Group</a>, <a href="RegexPattern.Literal.html" title="class in com.google.common.labs.regex">RegexPattern.Literal</a>, <a href="RegexPattern.Backreference.html" title="interface in com.google.common.labs.regex">RegexPattern.Backreference</a>, <a href="RegexPattern.PredefinedCharClass.html" title="enum class in com.google.common.labs.regex">RegexPattern.PredefinedCharClass</a>, <a href="RegexPattern.CharacterSet.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterSet</a>, <a href="RegexPattern.CharacterProperty.html" title="interface in com.google.common.labs.regex">RegexPattern.CharacterProperty</a>, <a href="RegexPattern.CharacterProperty.Negated.html" title="class in com.google.common.labs.regex">RegexPattern.CharacterProperty.Negated</a>, <a href="RegexPattern.Anchor.html" title="enum class in com.google.common.labs.regex">RegexPattern.Anchor</a>, <a href="RegexPattern.Lookaround.html" title="interface in com.google.common.labs.regex">RegexPattern.Lookaround</a></span></div>
 <div class="block">Defines the Abstract Syntax Tree (AST) for a regular expression.
 
  <p>This AST is used to represent parsed regular expressions, as a basis to enable static analysis
@@ -141,85 +143,90 @@ loadScripts(document, 'script');</script>
  ?</code>.</div>
 </div>
 <div class="col-first even-row-color"><code>static interface&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="RegexPattern.CharacterProperty.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.CharacterProperty</a></code></div>
+<div class="col-second even-row-color"><code><a href="RegexPattern.Backreference.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.Backreference</a></code></div>
 <div class="col-last even-row-color">
+<div class="block">Represents a backreference to a capturing group.</div>
+</div>
+<div class="col-first odd-row-color"><code>static interface&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="RegexPattern.CharacterProperty.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.CharacterProperty</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Represents a character property, like <code>\p{Lower}</code> or <code>\P{Lower}</code>.</div>
 </div>
-<div class="col-first odd-row-color"><code>static interface&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="RegexPattern.CharacterSet.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.CharacterSet</a></code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code>static interface&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="RegexPattern.CharacterSet.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.CharacterSet</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Represents a custom character class, like <code>[a-z]</code> or <code>[^0-9]</code>.</div>
 </div>
-<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="RegexPattern.CharRange.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.CharRange</a></code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="RegexPattern.CharRange.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.CharRange</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Represents a range of characters within a character class, e.g., 'a-z'.</div>
 </div>
-<div class="col-first odd-row-color"><code>static interface&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="RegexPattern.CharSetElement.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.CharSetElement</a></code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code>static interface&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="RegexPattern.CharSetElement.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.CharSetElement</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Base interface for elements within a <a href="RegexPattern.CharacterSet.html" title="interface in com.google.common.labs.regex"><code>RegexPattern.CharacterSet</code></a>.</div>
 </div>
-<div class="col-first even-row-color"><code>static interface&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="RegexPattern.Group.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.Group</a></code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>static interface&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="RegexPattern.Group.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.Group</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Represents a grouping construct in a regex.</div>
 </div>
-<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="RegexPattern.Limited.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Limited</a></code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="RegexPattern.Limited.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Limited</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Represents a quantifier with both minimum and maximum bounds, like <code>{n}</code> or <code>
  {min,max}</code>.</div>
 </div>
-<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="RegexPattern.Literal.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Literal</a></code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="RegexPattern.Literal.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Literal</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Represents a literal string to be matched.</div>
 </div>
-<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="RegexPattern.LiteralChar.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.LiteralChar</a></code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="RegexPattern.LiteralChar.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.LiteralChar</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Represents a single literal character within a character class.</div>
 </div>
-<div class="col-first even-row-color"><code>static interface&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="RegexPattern.Lookaround.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.Lookaround</a></code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>static interface&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="RegexPattern.Lookaround.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.Lookaround</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Represents a lookaround assertion: <code>(?=...)</code>, <code>(?!...)</code>, <code>(?&lt;=...)</code>, <code>
  (?&lt;!...)</code>.</div>
 </div>
-<div class="col-first odd-row-color"><code>static enum&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="RegexPattern.ModifierFlag.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a></code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code>static enum&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="RegexPattern.ModifierFlag.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.ModifierFlag</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Regex modifiers that can be enabled or disabled inline.</div>
 </div>
-<div class="col-first even-row-color"><code>static enum&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="RegexPattern.PosixCharClass.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.PosixCharClass</a></code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>static enum&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="RegexPattern.PosixCharClass.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.PosixCharClass</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Represents a POSIX character class inside a CharacterSet: e.g.</div>
 </div>
-<div class="col-first odd-row-color"><code>static enum&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="RegexPattern.PredefinedCharClass.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.PredefinedCharClass</a></code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code>static enum&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="RegexPattern.PredefinedCharClass.html" class="type-name-link" title="enum class in com.google.common.labs.regex">RegexPattern.PredefinedCharClass</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Represents a predefined character class like <code>\d</code> or <code>\w</code>.</div>
 </div>
-<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="RegexPattern.Quantified.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Quantified</a></code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="RegexPattern.Quantified.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Quantified</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Represents a regex pattern that is modified by a quantifier.</div>
 </div>
-<div class="col-first odd-row-color"><code>static interface&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="RegexPattern.Quantifier.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.Quantifier</a></code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code>static interface&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="RegexPattern.Quantifier.html" class="type-name-link" title="interface in com.google.common.labs.regex">RegexPattern.Quantifier</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Base interface for all quantifier types.</div>
 </div>
-<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second even-row-color"><code><a href="RegexPattern.Sequence.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a></code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="RegexPattern.Sequence.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.Sequence</a></code></div>
+<div class="col-last odd-row-color">
 <div class="block">Represents a sequence of regex patterns that must match consecutively.</div>
 </div>
-<div class="col-first odd-row-color"><code>static final record&nbsp;</code></div>
-<div class="col-second odd-row-color"><code><a href="RegexPattern.UnicodeProperty.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.UnicodeProperty</a></code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code>static final record&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="RegexPattern.UnicodeProperty.html" class="type-name-link" title="class in com.google.common.labs.regex">RegexPattern.UnicodeProperty</a></code></div>
+<div class="col-last even-row-color">
 <div class="block">Represents a Unicode property class: e.g.</div>
 </div>
 </div>
@@ -230,7 +237,7 @@ loadScripts(document, 'script');</script>
 <section class="method-summary" id="method-summary">
 <h2>Method Summary</h2>
 <div id="method-summary-table">
-<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab1" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab1', 3)" class="table-tab">Static Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab5" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab5', 3)" class="table-tab">Default Methods</button><button id="method-summary-table-tab6" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab6', 3)" class="table-tab">Deprecated Methods</button></div>
+<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab1" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab1', 3)" class="table-tab">Static Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab3" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab3', 3)" class="table-tab">Abstract Methods</button><button id="method-summary-table-tab5" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab5', 3)" class="table-tab">Default Methods</button><button id="method-summary-table-tab6" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab6', 3)" class="table-tab">Deprecated Methods</button></div>
 <div id="method-summary-table.tabpanel" role="tabpanel" aria-labelledby="method-summary-table-tab0">
 <div class="summary-table three-column-summary">
 <div class="table-header col-first">Modifier and Type</div>
@@ -265,6 +272,16 @@ loadScripts(document, 'script');</script>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1"><code><a href="#inSequence()" class="member-name-link">inSequence</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1">
 <div class="block">A collector that collects the input <code>RegexPattern</code> as a sequence.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>int</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#maxSize()" class="member-name-link">maxSize</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="block">Returns the maximum match size of this pattern in UTF-16 code units (chars), or <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html#MAX_VALUE" title="class or interface in java.lang" class="external-link"><code>Integer.MAX_VALUE</code></a> if it can match infinitely long strings (e.g.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>int</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#minSize()" class="member-name-link">minSize</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="block">Returns the minimum match size of this pattern in UTF-16 code units (chars).</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1"><code>static <a href="RegexPattern.CharacterSet.NoneOf.html" title="class in com.google.common.labs.regex">RegexPattern.CharacterSet.NoneOf</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1"><code><a href="#noneOf(com.google.common.labs.regex.RegexPattern.CharSetElement...)" class="member-name-link">noneOf</a><wbr>(<a href="RegexPattern.CharSetElement.html" title="interface in com.google.common.labs.regex">RegexPattern.CharSetElement</a>...&nbsp;elements)</code></div>
@@ -322,6 +339,34 @@ loadScripts(document, 'script');</script>
 <section class="method-details" id="method-detail">
 <h2>Method Details</h2>
 <ul class="member-list">
+<li>
+<section class="detail" id="minSize()">
+<h3>minSize</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="element-name">minSize</span>()</div>
+<div class="block">Returns the minimum match size of this pattern in UTF-16 code units (chars). Particularly,
+ optional patterns like <code>.?</code>, <code>.*</code>, <code>c+</code>, <code>foo{,2}</code> will return 0.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.9</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="maxSize()">
+<h3>maxSize</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="return-type">int</span>&nbsp;<span class="element-name">maxSize</span>()</div>
+<div class="block">Returns the maximum match size of this pattern in UTF-16 code units (chars), or <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Integer.html#MAX_VALUE" title="class or interface in java.lang" class="external-link"><code>Integer.MAX_VALUE</code></a> if it can match infinitely long strings (e.g. <code>.*</code>, <code>\d+</code>,
+ <code>foo{1,}</code> etc).</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>10.9</dd>
+</dl>
+</div>
+</section>
+</li>
 <li>
 <section class="detail" id="sequence(com.google.common.labs.regex.RegexPattern...)">
 <h3>sequence</h3>

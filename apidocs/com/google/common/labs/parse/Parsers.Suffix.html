@@ -240,7 +240,9 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a parser that matches zero or more occurrences of the <code>prefix</code> string before
  <code>suffix</code> and applies the <code>prefixFunction</code> iteratively for each matched prefix.
 
- <p>For example: <pre><code>
+ <p>For example:
+
+ <pre><code>
  import static com.google.common.labs.parse.Parsers.UNSIGNED_INTEGER;
  import static com.google.common.labs.parse.Parsers.Suffix.withPrefixes;
 
@@ -258,7 +260,9 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a parser that matches the <code>prefix</code> parser zero or more times before <code>
  suffix</code> and applies the result functions iteratively, in First-In, Last-Out order.
 
- <p>For example: <pre><code>
+ <p>For example:
+
+ <pre><code>
  Parser&lt;Declaration&gt; declaration =
      withPrefixes(modifier.map(m -&gt; id -&gt; id.withModifier(m)), IDENTIFIER);
  </code></pre></div>
