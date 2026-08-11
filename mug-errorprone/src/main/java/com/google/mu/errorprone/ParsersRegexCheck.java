@@ -36,7 +36,7 @@ import com.sun.source.tree.MethodInvocationTree;
     severity = ERROR)
 @AutoService(BugChecker.class)
 @SuppressWarnings("restriction")
-public final class RegexLiteralCheck extends AbstractBugChecker
+public final class ParsersRegexCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck {
   private static final Matcher<ExpressionTree> MATCHER =
       staticMethod().onClass("com.google.common.labs.parse.Parsers").named("regex");
@@ -51,13 +51,13 @@ public final class RegexLiteralCheck extends AbstractBugChecker
   }
 
   @SuppressWarnings("CompileTimeConstant")
-  private void validateRegex(ExpressionTree regexArg) throws ErrorReport {
-    String pattern = ASTHelpers.constValue(regexArg, String.class);
-    checkingOn(regexArg).require(pattern != null, "compile-time string constant expected");
+  private void validateRegex(ExpressionTree expression) throws ErrorReport {
+    String pattern = ASTHelpers.constValue(expression, String.class);
+    checkingOn(expression).require(pattern != null, "compile-time string constant expected");
     try {
       Parsers.regex(pattern);
     } catch (IllegalArgumentException e) {
-      throw checkingOn(regexArg).report(e.getMessage());
+      throw checkingOn(expression).report(e.getMessage());
     }
   }
 }

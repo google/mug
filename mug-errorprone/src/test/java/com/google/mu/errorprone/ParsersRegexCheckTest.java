@@ -20,9 +20,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public final class RegexLiteralCheckTest {
+public final class ParsersRegexCheckTest {
   private final CompilationTestHelper helper =
-      CompilationTestHelper.newInstance(RegexLiteralCheck.class, getClass());
+      CompilationTestHelper.newInstance(ParsersRegexCheck.class, getClass());
 
   @Test public void properUsage() {
     helper.addSourceLines(
