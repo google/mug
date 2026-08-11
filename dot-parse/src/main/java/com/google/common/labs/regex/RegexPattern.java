@@ -58,7 +58,7 @@ public sealed interface RegexPattern {
   }
 
   /**
-   * Returns the size metadata of this pattern.
+   * Returns this pattern's metadata.
    *
    * @since 10.9
    */
