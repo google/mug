@@ -339,6 +339,12 @@ public final class Parsers {
 
   /**
    * Returns a parser that matches a leaf-level atomic regular expression {@code pattern}.
+   * For example, you could define a parser for US phone numbers using:
+   *
+   * <pre>{@code
+   * Parser<String> usPhoneNumber = Parsers.regex("\\(\\d{3}\\)\\d{3}-\\d{4}");
+   * usPhoneNumber.matches("(123)456-7890"); // => true
+   * }</pre>
    *
    * <p>Useful when defining a compact, yet composite regex pattern that may otherwise require
    * verbose boilerplate of {@code sequence()}, {@code anyOf()} calls composed together. That said,

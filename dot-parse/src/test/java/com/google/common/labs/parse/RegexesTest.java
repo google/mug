@@ -62,6 +62,7 @@ public class RegexesTest {
   @Test public void prefixesOf_literal() {
     assertThat(prefixes("abc")).containsExactly("abc");
     assertThat(prefixes("")).containsExactly("");
+    assertThat(prefixes("a\uD83D\uDE00b")).containsExactly("a\uD83D\uDE00b");
   }
 
   @Test public void prefixesOf_sequence() {
@@ -115,6 +116,9 @@ public class RegexesTest {
     assertThat(prefixes("(?i:a)b")).containsExactly("a", "A");
     assertThat(prefixes("(?i:[a])")).containsExactly("a", "A");
     assertThat(prefixes("(?i:[a-c])")).containsExactly("a", "A", "b", "B", "c", "C");
+    assertThat(prefixes("(?i:a\uD83D\uDE00b)")).containsExactly("a\uD83D\uDE00", "A\uD83D\uDE00");
+    assertThat(prefixes("(?i:\uD83D\uDE00b)")).containsExactly("\uD83D\uDE00b", "\uD83D\uDE00B");
+    assertThat(prefixes("(?i:\uD83D\uDE00\uD83D\uDE01b)")).containsExactly("\uD83D\uDE00\uD83D");
   }
 
   @Test public void prefixesOf_unicodeCharacterClass() {

@@ -159,6 +159,17 @@ public class ParsersTest {
     assertThat(parser.parse("\u0661")).isEqualTo("\u0661");
   }
 
+  @Test public void regex_choicePruning_nonBmp() {
+    Parser<String> parser = anyOf(regex("a\uD83D\uDE00b"), regex("x"), regex("y"));
+    assertThat(parser.parse("a\uD83D\uDE00b")).isEqualTo("a\uD83D\uDE00b");
+  }
+
+  @Test public void regex_usPhoneNumberExample() {
+    Parser<String> usPhoneNumber = regex("\\(\\d{3}\\)\\d{3}-\\d{4}");
+    assertThat(usPhoneNumber.parse("(123)456-7890")).isEqualTo("(123)456-7890");
+    assertThrows(ParseException.class, () -> usPhoneNumber.parse("123-456-7890"));
+  }
+
   @Test public void regex_throwsForReaderBasedInput() {
     Parser<String> p = regex("[a-z]+");
     Stream<String> stream = p.parseToStream(new java.io.StringReader("abc"));
