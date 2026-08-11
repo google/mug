@@ -3,6 +3,7 @@ package com.google.common.labs.parse;
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
+import static com.google.common.labs.parse.ParserSubject.assertThat;
 import static com.google.common.labs.parse.Parsers.CODE_POINT;
 import static com.google.common.labs.parse.Parsers.SIGNED_DOUBLE;
 import static com.google.common.labs.parse.Parsers.UNSIGNED_INTEGER;
@@ -24,18 +25,15 @@ import org.junit.runners.JUnit4;
 public class ParsersTest {
 
   @Test public void regex_matchesSimplePattern() {
-    Parser<String> p = regex("[a-z]+");
-    assertThat(p.parse("abc")).isEqualTo("abc");
+    assertThat(regex("[a-z]+")).fromString("abc").parsesTo("abc");
   }
 
   @Test public void regex_matchesComplexPattern() {
-    Parser<String> p = regex("[0-9]{3}-[0-9]{3,4}");
-    assertThat(p.parse("123-4567")).isEqualTo("123-4567");
+    assertThat(regex("[0-9]{3}-[0-9]{3,4}")).fromStringOrReader("123-4567").parsesTo("123-4567");
   }
 
   @Test public void regex_canMatchPartially() {
-    Parser<String> p = regex("[a-z]+").followedBy("!");
-    assertThat(p.parse("abc!")).isEqualTo("abc");
+    assertThat(regex("[a-z]+").followedBy("!")).fromString("abc!").parsesTo("abc");
   }
 
   @Test public void regex_emptyPattern_throws() {
@@ -155,69 +153,54 @@ public class ParsersTest {
 
   @Test public void regex_caseInsensitiveFlag() {
     Parser<String> parser = regex("(?i:abc)");
-    assertRegexParse(parser, "abc", "abc");
-    assertRegexParse(parser, "ABC", "ABC");
-    assertRegexParse(parser, "aBc", "aBc");
-    assertRegexParseFails(parser, "abd");
+    assertThat(parser).fromStringOrReader("abc").parsesTo("abc");
+    assertThat(parser).fromStringOrReader("ABC").parsesTo("ABC");
+    assertThat(parser).fromStringOrReader("aBc").parsesTo("aBc");
+    assertThat(parser).fromStringOrReader("abd").failsToParse();
   }
 
   @Test public void regex_dotallFlag() {
-    Parser<String> parserDefault = regex(".");
-    assertRegexParseFails(parserDefault, "\n");
-
-    Parser<String> parserDotall = regex("(?s:.)");
-    assertRegexParse(parserDotall, "\n", "\n");
+    assertThat(regex(".")).fromStringOrReader("\n").failsToParse();
+    assertThat(regex("(?s:.)")).fromStringOrReader("\n").parsesTo("\n");
   }
 
   @Test public void regex_freeSpacingFlag() {
     Parser<String> parser = regex("(?x)a b c");
-    assertRegexParse(parser, "abc", "abc");
-    assertRegexParseFails(parser, "a b c");
+    assertThat(parser).fromStringOrReader("abc").parsesTo("abc");
+    assertThat(parser).fromStringOrReader("a b c").failsToParse();
   }
 
   @Test public void regex_enclosedCaseInsensitiveFlag() {
     Parser<String> parser = regex("a(?i:b)c");
-    assertRegexParse(parser, "abc", "abc");
-    assertRegexParse(parser, "aBc", "aBc");
-    assertRegexParseFails(parser, "Abc");
-    assertRegexParseFails(parser, "abC");
+    assertThat(parser).fromStringOrReader("abc").parsesTo("abc");
+    assertThat(parser).fromStringOrReader("aBc").parsesTo("aBc");
+    assertThat(parser).fromStringOrReader("Abc").failsToParse();
+    assertThat(parser).fromStringOrReader("abC").failsToParse();
   }
 
   @Test public void regex_doesNotMatchSubstringsAfterCursor() {
-    Parser<String> parser = regex("[a-z]+");
-    assertThrows(ParseException.class, () -> parser.parse("123abc"));
+    assertThat(regex("[a-z]+")).fromString("123abc").failsToParse();
   }
 
   @Test public void regex_choicePruning_caseInsensitiveFlag() {
     Parser<String> parser = anyOf(regex("(?i:b)"), regex("x"), regex("y"));
-    assertRegexParse(parser, "B", "B");
+    assertThat(parser).fromStringOrReader("B").parsesTo("B");
   }
 
   @Test public void regex_choicePruning_unicodeCharacterClassFlag() {
     Parser<String> parser = anyOf(regex("(?U:\\d)"), regex("x"), regex("y"));
-    assertRegexParse(parser, "\u0661", "\u0661");
+    assertThat(parser).fromStringOrReader("\u0661").parsesTo("\u0661");
   }
 
   @Test public void regex_choicePruning_nonBmp() {
     Parser<String> parser = anyOf(regex("a\uD83D\uDE00b"), regex("x"), regex("y"));
-    assertRegexParse(parser, "a\uD83D\uDE00b", "a\uD83D\uDE00b");
+    assertThat(parser).fromStringOrReader("a\uD83D\uDE00b").parsesTo("a\uD83D\uDE00b");
   }
 
   @Test public void regex_usPhoneNumberExample() {
     Parser<String> usPhoneNumber = regex("\\(\\d{3}\\)\\d{3}-\\d{4}");
-    assertRegexParse(usPhoneNumber, "(123)456-7890", "(123)456-7890");
-    assertRegexParseFails(usPhoneNumber, "123-456-7890");
-  }
-
-  private static void assertRegexParse(Parser<String> parser, String input, String expected) {
-    assertThat(parser.parse(input)).isEqualTo(expected);
-    assertThat(parser.parseToStream(new StringReader(input)).findFirst().get()).isEqualTo(expected);
-  }
-
-  private static void assertRegexParseFails(Parser<String> parser, String input) {
-    assertThrows(ParseException.class, () -> parser.parse(input));
-    assertThrows(
-        ParseException.class, () -> parser.parseToStream(new StringReader(input)).findFirst());
+    assertThat(usPhoneNumber).fromStringOrReader("(123)456-7890").parsesTo("(123)456-7890");
+    assertThat(usPhoneNumber).fromStringOrReader("123-456-7890").failsToParse();
   }
 
   @Test public void regex_throwsForReaderBasedInput() {
@@ -228,8 +211,7 @@ public class ParsersTest {
 
   @Test public void regex_finiteOnReaderInput() {
     Parser<String> parser = regex("a?b{1,3}c");
-    Stream<String> stream = parser.parseToStream(new StringReader("abbc"));
-    assertThat(stream.findFirst().get()).isEqualTo("abbc");
+    assertThat(parser).fromStringOrReader("abbc").parsesTo("abbc");
   }
 
   @Test public void regex_prefixPruning() {
@@ -240,19 +222,19 @@ public class ParsersTest {
 
   @Test public void regex_prefixPruning_literal() {
     Parser<String> p = anyOf(regex("abc"), regex("def"), regex("ghi"));
-    assertThat(p.parse("abc")).isEqualTo("abc");
-    assertThat(p.parse("def")).isEqualTo("def");
+    assertThat(p).fromStringOrReader("abc").parsesTo("abc");
+    assertThat(p).fromStringOrReader("def").parsesTo("def");
   }
 
   @Test public void regex_prefixPruning_alternation() {
     Parser<String> p = anyOf(regex("ab|cd"), regex("ef"), regex("gh"));
-    assertThat(p.parse("ab")).isEqualTo("ab");
-    assertThat(p.parse("cd")).isEqualTo("cd");
+    assertThat(p).fromStringOrReader("ab").parsesTo("ab");
+    assertThat(p).fromStringOrReader("cd").parsesTo("cd");
   }
 
   @Test public void regex_prefixPruning_group() {
     Parser<String> p = anyOf(regex("(abc)"), regex("def"), regex("ghi"));
-    assertThat(p.parse("abc")).isEqualTo("abc");
+    assertThat(p).fromStringOrReader("abc").parsesTo("abc");
   }
 
   @Test public void regex_prefixPruning_quantified() {
@@ -262,13 +244,13 @@ public class ParsersTest {
 
   @Test public void regex_prefixPruning_characterSet() {
     Parser<String> p = anyOf(regex("[ab]"), regex("c"), regex("d"));
-    assertThat(p.parse("a")).isEqualTo("a");
-    assertThat(p.parse("b")).isEqualTo("b");
+    assertThat(p).fromStringOrReader("a").parsesTo("a");
+    assertThat(p).fromStringOrReader("b").parsesTo("b");
   }
 
   @Test public void regex_prefixPruning_characterSetRange() {
     Parser<String> p = anyOf(regex("[a-c]"), regex("d"), regex("e"));
-    assertThat(p.parse("b")).isEqualTo("b");
+    assertThat(p).fromStringOrReader("b").parsesTo("b");
   }
 
   @Test public void regex_prefixPruning_predefinedCharClass() {
@@ -278,7 +260,7 @@ public class ParsersTest {
 
   @Test public void regex_prefixPruning_fallbackNoneOf() {
     Parser<String> p = anyOf(regex("[^ab]"), regex("c"), regex("d"));
-    assertThat(p.parse("x")).isEqualTo("x");
+    assertThat(p).fromStringOrReader("x").parsesTo("x");
   }
 
   @Test public void regex_prefixPruning_withFallback() {
