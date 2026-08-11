@@ -92,6 +92,13 @@ public class ParsersTest {
     assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: a*");
   }
 
+  @Test public void regex_sequenceOfOptionalPatterns_throws() {
+    var exception = assertThrows(IllegalArgumentException.class, () -> regex("a*foo?(c+)*"));
+    assertThat(exception)
+        .hasMessageThat()
+        .isEqualTo("regex must not match empty string: a*foo?(c+)*");
+  }
+
   @Test public void regex_quantifierOptional_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a?"));
     assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: a?");
@@ -112,6 +119,37 @@ public class ParsersTest {
                 foo|
                     ^
             """);
+  }
+
+  @Test public void regex_valid() {
+    regex("a+");
+    regex("[0-9]");
+    regex("(?:foo|bar)+");
+  }
+
+  @Test public void regex_empty_throws() {
+    assertThrows(IllegalArgumentException.class, () -> regex(""));
+  }
+
+  @Test public void regex_emptyMatchingWithSpace() {
+    regex("a* b*");
+    assertThrows(IllegalArgumentException.class, () -> regex("(?x)a* b*"));
+  }
+
+  @Test public void regex_anchor_throws() {
+    assertThrows(IllegalArgumentException.class, () -> regex("^a"));
+    assertThrows(IllegalArgumentException.class, () -> regex("a$"));
+    assertThrows(IllegalArgumentException.class, () -> regex("\\ba"));
+  }
+
+  @Test public void regex_lookaround_throws() {
+    assertThrows(IllegalArgumentException.class, () -> regex("a(?=b)"));
+    assertThrows(IllegalArgumentException.class, () -> regex("a(?!b)"));
+  }
+
+  @Test public void regex_backreference_throws() {
+    assertThrows(IllegalArgumentException.class, () -> regex("(a)\\1"));
+    assertThrows(IllegalArgumentException.class, () -> regex("(?<foo>a)\\k<foo>"));
   }
 
   @Test public void regex_caseInsensitiveFlag() {

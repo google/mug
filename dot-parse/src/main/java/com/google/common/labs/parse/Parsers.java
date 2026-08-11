@@ -8,14 +8,11 @@ import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
-import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.stream.BiStream.adjacentPairsFrom;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.counting;
 
-import com.google.common.labs.regex.RegexPattern;
-import com.google.errorprone.annotations.CompileTimeConstant;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +20,9 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
+
+import com.google.common.labs.regex.RegexPattern;
+import com.google.errorprone.annotations.CompileTimeConstant;
 
 /**
  * More advanced composite parsers in addition to the core parsers provided by {@link Parser}.

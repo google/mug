@@ -16,7 +16,8 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+
+import java.util.Set;
 
 import com.google.common.labs.regex.RegexPattern;
 import org.junit.Test;
@@ -25,39 +26,6 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class RegexesTest {
-
-  @Test public void validateRegex_valid() {
-    Regexes.validate("a+");
-    Regexes.validate("[0-9]");
-    Regexes.validate("(?:foo|bar)+");
-  }
-
-  @Test public void validateRegex_empty_throws() {
-    assertThrows(IllegalArgumentException.class, () -> Regexes.validate(""));
-  }
-
-  @Test public void validateRegex_matchesEmpty_throws() {
-    assertThrows(IllegalArgumentException.class, () -> Regexes.validate("a*"));
-    assertThrows(IllegalArgumentException.class, () -> Regexes.validate("a?"));
-    assertThrows(IllegalArgumentException.class, () -> Regexes.validate("(foo)?"));
-    assertThrows(IllegalArgumentException.class, () -> Regexes.validate("foo|"));
-  }
-
-  @Test public void validateRegex_anchor_throws() {
-    assertThrows(IllegalArgumentException.class, () -> Regexes.validate("^a"));
-    assertThrows(IllegalArgumentException.class, () -> Regexes.validate("a$"));
-    assertThrows(IllegalArgumentException.class, () -> Regexes.validate("\\ba"));
-  }
-
-  @Test public void validateRegex_lookaround_throws() {
-    assertThrows(IllegalArgumentException.class, () -> Regexes.validate("a(?=b)"));
-    assertThrows(IllegalArgumentException.class, () -> Regexes.validate("a(?!b)"));
-  }
-
-  @Test public void validateRegex_backreference_throws() {
-    assertThrows(IllegalArgumentException.class, () -> Regexes.validate("(a)\\1"));
-    assertThrows(IllegalArgumentException.class, () -> Regexes.validate("(?<foo>a)\\k<foo>"));
-  }
 
   @Test public void prefixesOf_literal() {
     assertThat(prefixes("abc")).containsExactly("abc");
@@ -131,7 +99,7 @@ public class RegexesTest {
     assertThat(prefixes("(a)\\1")).containsExactly("a");
   }
 
-  private static java.util.Set<String> prefixes(String regex) {
+  private static Set<String> prefixes(String regex) {
     return Regexes.prefixesOf(RegexPattern.of(regex));
   }
 }
