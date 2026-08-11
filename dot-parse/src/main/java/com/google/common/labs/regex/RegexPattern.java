@@ -46,6 +46,12 @@ public sealed interface RegexPattern {
   /**
    * Useful metadata of a regex pattern.
    *
+   * @param minSize the minimum match size of this pattern in UTF-16 code units (chars).
+   *     Particularly, optional patterns like {@code .?}, {@code .*}, {@code c+}, <code>foo{,2}
+   *     </code> will return 0.
+   * @param maxSize the maximum match size of this pattern in UTF-16 code units (chars), or {@link
+   *     Integer#MAX_VALUE} if it can match infinitely long strings (e.g. {@code .*}, {@code \d+},
+   *     <code>foo{1,}</code> etc).
    * @since 10.9
    */
   record Metadata(int minSize, int maxSize) {
