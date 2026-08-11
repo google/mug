@@ -60,11 +60,6 @@ final class Regexes {
     }
   }
 
-  static int saturatedAdd(int a, int b) {
-    long sum = (long) a + b;
-    return sum > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) sum;
-  }
-
   static Set<String> prefixesOf(RegexPattern pattern) {
     return prefixesOf(pattern, /* caseInsensitive= */ false, /* unicodeCharClass= */ false);
   }
