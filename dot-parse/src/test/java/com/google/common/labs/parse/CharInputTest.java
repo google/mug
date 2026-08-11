@@ -5,119 +5,101 @@ import static org.junit.Assert.assertThrows;
 
 import java.io.IOException;
 import java.io.StringReader;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-
 @RunWith(JUnit4.class)
 public final class CharInputTest {
 
-  @Test
-  public void fromString_isEof() {
+  @Test public void fromString_isEof() {
     assertThat(CharInput.from("").isEof(0)).isTrue();
     assertThat(CharInput.from("a").isEof(0)).isFalse();
     assertThat(CharInput.from("a").isEof(1)).isTrue();
   }
 
-  @Test
-  public void fromString_isInRange() {
+  @Test public void fromString_isInRange() {
     assertThat(CharInput.from("").isInRange(0)).isFalse();
     assertThat(CharInput.from("a").isInRange(0)).isTrue();
     assertThat(CharInput.from("a").isInRange(1)).isFalse();
   }
 
-  @Test
-  public void fromString_snippet() {
+  @Test public void fromString_snippet() {
     assertThat(CharInput.from("abc").snippet(0, 2)).isEqualTo("ab");
     assertThat(CharInput.from("abc").snippet(1, 5)).isEqualTo("bc");
     assertThat(CharInput.from("abc").snippet(3, 2)).isEmpty();
     assertThat(CharInput.from("").snippet(0, 1)).isEmpty();
   }
 
-  @Test
-  public void fromString_indexOf_found() {
+  @Test public void fromString_indexOf_found() {
     assertThat(CharInput.from("hello world").indexOf("world", 0)).isEqualTo(6);
     assertThat(CharInput.from("hello world").indexOf("world", 6)).isEqualTo(6);
   }
 
-  @Test
-  public void fromString_indexOf_notFound() {
+  @Test public void fromString_indexOf_notFound() {
     assertThat(CharInput.from("hello world").indexOf("moon", 0)).isEqualTo(-1);
   }
 
-  @Test
-  public void fromString_indexOf_notFound_pastTarget() {
+  @Test public void fromString_indexOf_notFound_pastTarget() {
     assertThat(CharInput.from("hello world").indexOf("hello", 1)).isEqualTo(-1);
   }
 
-  @Test
-  public void fromString_startsWithCaseInsensitive_isPrefix() {
+  @Test public void fromString_startsWithCaseInsensitive_isPrefix() {
     CharInput input = CharInput.from("AbCde");
     assertThat(input.startsWithCaseInsensitive("aBcD", 0)).isTrue();
   }
 
-  @Test
-  public void fromString_startsWithCaseInsensitive_isNotPrefix() {
+  @Test public void fromString_startsWithCaseInsensitive_isNotPrefix() {
     CharInput input = CharInput.from("AbCde");
     assertThat(input.startsWithCaseInsensitive("aBcDg", 0)).isFalse();
   }
 
-  @Test
-  public void fromReader_startsWith_isPrefix() {
+  @Test public void fromReader_startsWith_isPrefix() {
     CharInput input = CharInput.from(new StringReader("food"));
     assertThat(input.startsWith("foo", 0)).isTrue();
   }
 
-  @Test
-  public void fromReader_startsWithCaseInsensitive_isPrefix() {
+  @Test public void fromReader_startsWithCaseInsensitive_isPrefix() {
     CharInput input = CharInput.from(new StringReader("AbCde"));
     assertThat(input.startsWithCaseInsensitive("aBcD", 0)).isTrue();
   }
 
-  @Test
-  public void fromReader_startsWith_isNotPrefix() {
+  @Test public void fromReader_startsWith_isNotPrefix() {
     CharInput input = CharInput.from(new StringReader("food"));
     assertThat(input.startsWith("fobar", 0)).isFalse();
   }
 
-  @Test
-  public void fromReader_startsWithCaseInsensitive_isNotPrefix() {
+  @Test public void fromReader_startsWithCaseInsensitive_isNotPrefix() {
     CharInput input = CharInput.from(new StringReader("AbCde"));
     assertThat(input.startsWithCaseInsensitive("aBcDf", 0)).isFalse();
   }
 
-  @Test
-  public void fromReader_startsWith_prefixLongerThanBuffer_isPrefix() {
+  @Test public void fromReader_startsWith_prefixLongerThanBuffer_isPrefix() {
     String prefix = "a".repeat(9000);
     CharInput input = CharInput.from(new StringReader(prefix + "b"));
     assertThat(input.startsWith(prefix, 0)).isTrue();
   }
 
-  @Test
-  public void fromReader_startsWithCaseInsensitive_prefixLongerThanBuffer_isPrefix() {
+  @Test public void fromReader_startsWithCaseInsensitive_prefixLongerThanBuffer_isPrefix() {
     String prefix = "a".repeat(4500) + "B".repeat(4500);
     CharInput input = CharInput.from(new StringReader("A".repeat(4500) + "b".repeat(4500) + "c"));
     assertThat(input.startsWithCaseInsensitive(prefix, 0)).isTrue();
   }
 
-  @Test
-  public void fromReader_startsWith_prefixLongerThanBuffer_isNotPrefix() {
+  @Test public void fromReader_startsWith_prefixLongerThanBuffer_isNotPrefix() {
     String prefix = "a".repeat(9000);
     CharInput input = CharInput.from(new StringReader("a".repeat(8999) + "cb"));
     assertThat(input.startsWith(prefix, 0)).isFalse();
   }
 
-  @Test
-  public void fromReader_startsWithCaseInsensitive_prefixLongerThanBuffer_isNotPrefix() {
+  @Test public void fromReader_startsWithCaseInsensitive_prefixLongerThanBuffer_isNotPrefix() {
     String prefix = "a".repeat(4500) + "B".repeat(4500);
     CharInput input = CharInput.from(new StringReader("A".repeat(4500) + "b".repeat(4499) + "cD"));
     assertThat(input.startsWithCaseInsensitive(prefix, 0)).isFalse();
   }
 
-  @Test
-  public void fromReader_startsWith_prefixLongerThanBuffer_isPrefix_loadedTwice() throws Exception {
+  @Test public void fromReader_startsWith_prefixLongerThanBuffer_isPrefix_loadedTwice()
+      throws Exception {
     String prefix = "a".repeat(9000);
     MockReader reader = new MockReader(prefix + "a");
     CharInput input = CharInput.from(reader);
@@ -129,9 +111,9 @@ public final class CharInputTest {
     assertThat(reader.loadCount).isEqualTo(2);
   }
 
-  @Test
-  public void fromReader_startsWithCaseInsensitive_prefixLongerThanBuffer_isPrefix_loadedTwice()
-      throws Exception {
+  @Test public void
+      fromReader_startsWithCaseInsensitive_prefixLongerThanBuffer_isPrefix_loadedTwice()
+          throws Exception {
     String prefix = "a".repeat(4500) + "B".repeat(4500);
     MockReader reader = new MockReader("A".repeat(4500) + "b".repeat(4500) + "A");
     CharInput input = CharInput.from(reader);
@@ -143,22 +125,19 @@ public final class CharInputTest {
     assertThat(reader.loadCount).isEqualTo(2);
   }
 
-  @Test
-  public void fromReader_indexOf_prefixLongerThanBuffer_found() {
+  @Test public void fromReader_indexOf_prefixLongerThanBuffer_found() {
     String prefix = "a".repeat(9000);
     CharInput input = CharInput.from(new StringReader(prefix + "b"));
     assertThat(input.indexOf(prefix, 0)).isEqualTo(0);
   }
 
-  @Test
-  public void fromReader_indexOf_prefixLongerThanBuffer_notFound() {
+  @Test public void fromReader_indexOf_prefixLongerThanBuffer_notFound() {
     String prefix = "a".repeat(9000);
     CharInput input = CharInput.from(new StringReader("a".repeat(8999) + "cb"));
     assertThat(input.indexOf(prefix, 0)).isEqualTo(-1);
   }
 
-  @Test
-  public void fromReader_indexOf_prefixLongerThanBuffer_loadedTwice() throws Exception {
+  @Test public void fromReader_indexOf_prefixLongerThanBuffer_loadedTwice() throws Exception {
     String prefix = "a".repeat(9000);
     MockReader reader = new MockReader("b" + prefix + "a");
     CharInput input = CharInput.from(reader);
@@ -168,8 +147,7 @@ public final class CharInputTest {
     assertThat(reader.loadCount).isEqualTo(2);
   }
 
-  @Test
-  public void fromReader_isEof() {
+  @Test public void fromReader_isEof() {
     CharInput empty = CharInput.from(new StringReader(""));
     assertThat(empty.isEof(0)).isTrue();
     CharInput input = CharInput.from(new StringReader("a"));
@@ -177,8 +155,7 @@ public final class CharInputTest {
     assertThat(input.isEof(1)).isTrue();
   }
 
-  @Test
-  public void fromReader_isInRange() {
+  @Test public void fromReader_isInRange() {
     CharInput empty = CharInput.from(new StringReader(""));
     assertThat(empty.isInRange(0)).isFalse();
     CharInput input = CharInput.from(new StringReader("a"));
@@ -186,8 +163,7 @@ public final class CharInputTest {
     assertThat(input.isInRange(1)).isFalse();
   }
 
-  @Test
-  public void fromReader_snippet() {
+  @Test public void fromReader_snippet() {
     CharInput input = CharInput.from(new StringReader("abc"));
     assertThat(input.snippet(0, 2)).isEqualTo("ab");
     assertThat(input.snippet(1, 5)).isEqualTo("bc");
@@ -195,189 +171,163 @@ public final class CharInputTest {
     assertThat(CharInput.from(new StringReader("")).snippet(0, 1)).isEmpty();
   }
 
-  @Test
-  public void fromReader_indexOf_found() {
+  @Test public void fromReader_indexOf_found() {
     CharInput input = CharInput.from(new StringReader("hello world"));
     assertThat(input.indexOf("world", 0)).isEqualTo(6);
     assertThat(input.indexOf("world", 6)).isEqualTo(6);
   }
 
-  @Test
-  public void fromReader_indexOf_notFound() {
+  @Test public void fromReader_indexOf_notFound() {
     CharInput input = CharInput.from(new StringReader("hello world"));
     assertThat(input.indexOf("moon", 0)).isEqualTo(-1);
   }
 
-  @Test
-  public void fromReader_indexOf_notFound_pastTarget() {
+  @Test public void fromReader_indexOf_notFound_pastTarget() {
     CharInput input = CharInput.from(new StringReader("hello world"));
     assertThat(input.indexOf("hello", 1)).isEqualTo(-1);
   }
 
-  @Test
-  public void fromReader_indexOf_loadsMoreChars() {
+  @Test public void fromReader_indexOf_loadsMoreChars() {
     CharInput input = CharInput.from(new StringReader("0123456789abcfoo"), 10, 5);
     assertThat(input.indexOf("foo", 9)).isEqualTo(13);
   }
 
-  @Test
-  public void fromReader_indexOf_afterCompaction() {
+  @Test public void fromReader_indexOf_afterCompaction() {
     CharInput input = CharInput.from(new StringReader("0123456789abcdef"), 10, 5);
     assertThat(input.charAt(9)).isEqualTo('9'); // load first 10
     input.markCheckpoint(6);
     assertThat(input.indexOf("f", 6)).isEqualTo(15);
   }
 
-  @Test
-  public void fromReader_markCheckpoint_accessBeforeCheckpoint_charAt_throws() {
+  @Test public void fromReader_markCheckpoint_accessBeforeCheckpoint_charAt_throws() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
     assertThrows(IndexOutOfBoundsException.class, () -> input.charAt(5));
   }
 
-  @Test
-  public void fromReader_markCheckpoint_accessBeforeCheckpoint_indexOf_throws() {
+  @Test public void fromReader_markCheckpoint_accessBeforeCheckpoint_indexOf_throws() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
     assertThrows(IllegalArgumentException.class, () -> input.indexOf("5", 5));
   }
 
-  @Test
-  public void fromReader_markCheckpoint_accessBeforeCheckpoint_isEof_throws() {
+  @Test public void fromReader_markCheckpoint_accessBeforeCheckpoint_isEof_throws() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
     assertThrows(IndexOutOfBoundsException.class, () -> input.isEof(5));
   }
 
-  @Test
-  public void fromReader_markCheckpoint_accessBeforeCheckpoint_startsWith_throws() {
+  @Test public void fromReader_markCheckpoint_accessBeforeCheckpoint_startsWith_throws() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
     assertThrows(IndexOutOfBoundsException.class, () -> input.startsWith("5", 5));
   }
 
-  @Test
-  public void fromReader_markCheckpoint_accessBeforeCheckpoint_snippet_throws() {
+  @Test public void fromReader_markCheckpoint_accessBeforeCheckpoint_snippet_throws() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
     assertThrows(IndexOutOfBoundsException.class, () -> input.snippet(5, 1));
   }
 
-  @Test
-  public void fromReader_markCheckpoint_accessAtCheckpoint_charAt() {
+  @Test public void fromReader_markCheckpoint_accessAtCheckpoint_charAt() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
     assertThat(input.charAt(6)).isEqualTo('6');
   }
 
-  @Test
-  public void fromReader_markCheckpoint_accessPastCheckpoint_charAt() {
+  @Test public void fromReader_markCheckpoint_accessPastCheckpoint_charAt() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
     assertThat(input.charAt(9)).isEqualTo('9');
   }
 
-  @Test
-  public void fromReader_markCheckpoint_accessAtCheckpoint_isEof() {
+  @Test public void fromReader_markCheckpoint_accessAtCheckpoint_isEof() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
     assertThat(input.isEof(10)).isTrue();
   }
 
-  @Test
-  public void fromReader_markCheckpoint_accessPastCheckpoint_isEof() {
+  @Test public void fromReader_markCheckpoint_accessPastCheckpoint_isEof() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
     assertThat(input.isEof(10)).isTrue();
   }
 
-  @Test
-  public void fromReader_markCheckpoint_accessAtCheckpoint_startsWith() {
+  @Test public void fromReader_markCheckpoint_accessAtCheckpoint_startsWith() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
     assertThat(input.startsWith("67", 6)).isTrue();
   }
 
-  @Test
-  public void fromReader_markCheckpoint_accessPastCheckpoint_startsWith() {
+  @Test public void fromReader_markCheckpoint_accessPastCheckpoint_startsWith() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
     assertThat(input.startsWith("89", 8)).isTrue();
   }
 
-  @Test
-  public void fromReader_markCheckpoint_accessAtCheckpoint_snippet() {
+  @Test public void fromReader_markCheckpoint_accessAtCheckpoint_snippet() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
     assertThat(input.snippet(7, 2)).isEqualTo("78");
   }
 
-  @Test
-  public void fromReader_markCheckpoint_accessPastCheckpoint_snippet() {
+  @Test public void fromReader_markCheckpoint_accessPastCheckpoint_snippet() {
     CharInput input = CharInput.from(new StringReader("0123456789"), 10, 5);
     char unused = input.charAt(9); // load all
     input.markCheckpoint(6);
     assertThat(input.snippet(9, 1)).isEqualTo("9");
   }
 
-  @Test
-  public void fromString_sourcePosition_emptyString() {
+  @Test public void fromString_sourcePosition_emptyString() {
     assertThat(CharInput.from("").sourcePosition(0)).isEqualTo("1:1");
   }
 
-  @Test
-  public void fromString_sourcePosition_singleLine() {
+  @Test public void fromString_sourcePosition_singleLine() {
     assertThat(CharInput.from("abc").sourcePosition(0)).isEqualTo("1:1");
     assertThat(CharInput.from("abc").sourcePosition(1)).isEqualTo("1:2");
     assertThat(CharInput.from("abc").sourcePosition(3)).isEqualTo("1:4");
   }
 
-  @Test
-  public void fromString_sourcePosition_singleLineEndingWithNewline() {
+  @Test public void fromString_sourcePosition_singleLineEndingWithNewline() {
     assertThat(CharInput.from("abc\n").sourcePosition(3)).isEqualTo("1:4");
     assertThat(CharInput.from("abc\n").sourcePosition(4)).isEqualTo("2:1");
   }
 
-  @Test
-  public void fromString_sourcePosition_twoLines() {
+  @Test public void fromString_sourcePosition_twoLines() {
     assertThat(CharInput.from("abc\ndef").sourcePosition(3)).isEqualTo("1:4");
     assertThat(CharInput.from("abc\ndef").sourcePosition(4)).isEqualTo("2:1");
     assertThat(CharInput.from("abc\ndef").sourcePosition(5)).isEqualTo("2:2");
   }
 
-  @Test
-  public void fromString_sourcePosition_twoLinesEndingWithNewline() {
+  @Test public void fromString_sourcePosition_twoLinesEndingWithNewline() {
     assertThat(CharInput.from("abc\ndef\n").sourcePosition(7)).isEqualTo("2:4");
     assertThat(CharInput.from("abc\ndef\n").sourcePosition(8)).isEqualTo("3:1");
   }
 
-  @Test
-  public void fromString_sourcePosition_threeLines() {
+  @Test public void fromString_sourcePosition_threeLines() {
     assertThat(CharInput.from("abc\ndef\nghi").sourcePosition(5)).isEqualTo("2:2");
     assertThat(CharInput.from("abc\ndef\nghi").sourcePosition(8)).isEqualTo("3:1");
   }
 
-  @Test
-  public void fromReader_sourcePosition_emptyString() {
+  @Test public void fromReader_sourcePosition_emptyString() {
     CharInput input = CharInput.from(new StringReader(""));
     boolean unused = input.isEof(0);
     assertThat(input.sourcePosition(0)).isEqualTo("1:1");
   }
 
-  @Test
-  public void fromReader_sourcePosition_singleLine() {
+  @Test public void fromReader_sourcePosition_singleLine() {
     CharInput input = CharInput.from(new StringReader("abc"));
     boolean unused = input.isEof(3);
     assertThat(input.sourcePosition(0)).isEqualTo("1:1");
@@ -385,16 +335,14 @@ public final class CharInputTest {
     assertThat(input.sourcePosition(3)).isEqualTo("1:4");
   }
 
-  @Test
-  public void fromReader_sourcePosition_singleLineEndingWithNewline() {
+  @Test public void fromReader_sourcePosition_singleLineEndingWithNewline() {
     CharInput input = CharInput.from(new StringReader("abc\n"));
     boolean unused = input.isEof(4);
     assertThat(input.sourcePosition(3)).isEqualTo("1:4");
     assertThat(input.sourcePosition(4)).isEqualTo("2:1");
   }
 
-  @Test
-  public void fromReader_sourcePosition_twoLines() {
+  @Test public void fromReader_sourcePosition_twoLines() {
     CharInput input = CharInput.from(new StringReader("abc\ndef"));
     boolean unused = input.isEof(5);
     assertThat(input.sourcePosition(3)).isEqualTo("1:4");
@@ -402,24 +350,21 @@ public final class CharInputTest {
     assertThat(input.sourcePosition(5)).isEqualTo("2:2");
   }
 
-  @Test
-  public void fromReader_sourcePosition_twoLinesEndingWithNewline() {
+  @Test public void fromReader_sourcePosition_twoLinesEndingWithNewline() {
     CharInput input = CharInput.from(new StringReader("abc\ndef\n"));
     boolean unused = input.isEof(8);
     assertThat(input.sourcePosition(7)).isEqualTo("2:4");
     assertThat(input.sourcePosition(8)).isEqualTo("3:1");
   }
 
-  @Test
-  public void fromReader_sourcePosition_threeLines() {
+  @Test public void fromReader_sourcePosition_threeLines() {
     CharInput input = CharInput.from(new StringReader("abc\ndef\nghi"));
     boolean unused = input.isEof(8);
     assertThat(input.sourcePosition(5)).isEqualTo("2:2");
     assertThat(input.sourcePosition(8)).isEqualTo("3:1");
   }
 
-  @Test
-  public void fromReader_sourcePosition_afterCompaction() {
+  @Test public void fromReader_sourcePosition_afterCompaction() {
     CharInput input = CharInput.from(new StringReader("012\n456\n89abcdefg"), 10, 5);
     assertThat(input.charAt(10)).isEqualTo('a');
 
@@ -443,5 +388,50 @@ public final class CharInputTest {
       loadCount++;
       return super.read(cbuf);
     }
+  }
+
+  @Test public void fromReader_matchRegex_loadsLazilyBasedOnStartAndMaxSize() {
+    CharInput input = CharInput.from(new OneCharReader("abcdefg"));
+    int matchLength = input.match(
+        java.util.regex.Pattern.compile("cde"),
+        com.google.common.labs.regex.RegexPattern.of("cde"),
+        2);
+    assertThat(matchLength).isEqualTo(5);
+  }
+
+  @Test public void fromReader_matchRegex_afterCompaction() {
+    CharInput input = CharInput.from(new StringReader("0123456789abcdef"), 10, 5);
+    // Load some characters to allow compaction
+    assertThat(input.charAt(9)).isEqualTo('9');
+
+    // Mark checkpoint at 6. garbageCharCount becomes 6.
+    input.markCheckpoint(6);
+
+    // Match "789" at index 7.
+    // If the logical conversion is correct, it will return logical end index 10.
+    int matchLength = input.match(
+        java.util.regex.Pattern.compile("789"),
+        com.google.common.labs.regex.RegexPattern.of("789"),
+        7);
+    assertThat(matchLength).isEqualTo(10);
+  }
+
+  private static class OneCharReader extends java.io.Reader {
+    private final String content;
+    private int index = 0;
+
+    OneCharReader(String content) {
+      this.content = content;
+    }
+
+    @Override public int read(char[] cbuf, int off, int len) {
+      if (index >= content.length()) {
+        return -1;
+      }
+      cbuf[off] = content.charAt(index++);
+      return 1;
+    }
+
+    @Override public void close() {}
   }
 }

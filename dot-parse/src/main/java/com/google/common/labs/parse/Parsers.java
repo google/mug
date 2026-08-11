@@ -372,7 +372,7 @@ public final class Parsers {
    * @since 10.9
    */
   public static Parser<String> regex(@CompileTimeConstant String pattern) {
-    RegexPattern metadata = Regexes.validate(pattern);
+    RegexPattern metadata = Regexes.strict(pattern);
     Pattern jdkPattern = Pattern.compile(pattern);
     return new Scanner("=~/" + pattern + "/") {
       @Override int scan(CharInput input, int from) {

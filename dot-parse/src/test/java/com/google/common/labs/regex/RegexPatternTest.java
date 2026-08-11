@@ -703,6 +703,14 @@ public final class RegexPatternTest {
     assertThat(new Quantified(new Literal("abc"), atMost(1)).maxSize()).isEqualTo(3);
   }
 
+  @Test public void maxSize_group() {
+    assertThat(RegexPattern.of("(abc)").maxSize()).isEqualTo(3);
+    assertThat(RegexPattern.of("(?:abc)").maxSize()).isEqualTo(3);
+    assertThat(RegexPattern.of("(?i:abc)").maxSize()).isEqualTo(3);
+    assertThat(RegexPattern.of("(?i:.)").maxSize()).isEqualTo(2);
+    assertThat(RegexPattern.of("(?i:a)b").maxSize()).isEqualTo(2);
+  }
+
   @Test public void minSize_literal() {
     assertThat(RegexPattern.of("abc").minSize()).isEqualTo(3);
   }
@@ -725,6 +733,14 @@ public final class RegexPatternTest {
 
   @Test public void minSize_optionalGroup() {
     assertThat(RegexPattern.of("(?i:abc)?").minSize()).isEqualTo(0);
+  }
+
+  @Test public void minSize_group() {
+    assertThat(RegexPattern.of("(abc)").minSize()).isEqualTo(3);
+    assertThat(RegexPattern.of("(?:abc)").minSize()).isEqualTo(3);
+    assertThat(RegexPattern.of("(?i:abc)").minSize()).isEqualTo(3);
+    assertThat(RegexPattern.of("(?i:.)").minSize()).isEqualTo(1);
+    assertThat(RegexPattern.of("(?i:a)b").minSize()).isEqualTo(2);
   }
 
   @Test public void minSize_dot() {

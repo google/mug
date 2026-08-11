@@ -29,7 +29,7 @@ import java.util.stream.Collector;
 final class Regexes {
   private static final Set<String> EMPTY_PREFIX = Set.of("");
 
-  static RegexPattern validate(String regex) {
+  static RegexPattern strict(String regex) {
     RegexPattern pattern = RegexPattern.of(regex);
     Regexes.checkSupportedFeatures(pattern);
     checkArgument(pattern.minSize() > 0, "regex must not match empty string: %s", regex);

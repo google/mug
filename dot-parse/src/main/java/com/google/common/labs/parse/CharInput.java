@@ -88,7 +88,7 @@ abstract class CharInput {
       @Override int match(Pattern pattern, RegexPattern metadata, int start) {
         Matcher matcher = pattern.matcher(text);
         matcher.region(start, text.length());
-        return matcher.lookingAt() ? matcher.end() : -1;
+        return matcher.lookingAt() ? matcher.end() : start;
       }
 
       @Override boolean startsWith(String prefix, int index) {
@@ -178,7 +178,7 @@ abstract class CharInput {
         if (matcher.lookingAt()) {
           return toLogicalIndex(matcher.end());
         }
-        return -1;
+        return start;
       }
 
       @Override boolean startsWith(String prefix, int index) {
