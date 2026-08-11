@@ -337,7 +337,7 @@ public final class Parsers {
       .suchThat(Character::isValidCodePoint, "code point");
 
   /**
-   * Returns a parser that matches a leaf-level atomic regular expression {@code pattern}. For
+   * Returns a leaf-level parser that matches an atomic regular expression {@code pattern}. For
    * example, you could define a parser for US phone numbers using:
    *
    * <pre>{@code
