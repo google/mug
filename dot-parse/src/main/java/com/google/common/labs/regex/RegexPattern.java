@@ -41,6 +41,13 @@ import java.util.stream.Stream;
  * of regexes.
  */
 public sealed interface RegexPattern {
+  /**
+   * Returns false if this pattern can't match empty strings.
+   *
+   * @since 10.9
+   */
+  boolean mayMatchEmpty();
+
   /** Returns a {@link Sequence} of the given elements. */
   @SafeVarargs
   static Sequence sequence(RegexPattern... elements) {
@@ -139,6 +146,10 @@ public sealed interface RegexPattern {
       checkArgument(elements.size() > 0, "elements cannot be empty");
     }
 
+    @Override public boolean mayMatchEmpty() {
+      return elements.stream().allMatch(RegexPattern::mayMatchEmpty);
+    }
+
     @Override public String toString() {
       return elements.stream().map(Object::toString).collect(joining());
     }
@@ -150,6 +161,10 @@ public sealed interface RegexPattern {
       checkArgument(alternatives.size() > 0, "alternatives cannot be empty");
     }
 
+    @Override public boolean mayMatchEmpty() {
+      return alternatives.stream().anyMatch(RegexPattern::mayMatchEmpty);
+    }
+
     @Override public String toString() {
       return alternatives.stream().map(Object::toString).collect(joining("|"));
     }
@@ -157,6 +172,19 @@ public sealed interface RegexPattern {
 
   /** Represents a regex pattern that is modified by a quantifier. */
   record Quantified(RegexPattern element, Quantifier quantifier) implements RegexPattern {
+    @Override public boolean mayMatchEmpty() {
+      if (quantifier instanceof AtLeast atLeast) {
+        return atLeast.min() == 0 || element.mayMatchEmpty();
+      }
+      if (quantifier instanceof AtMost) {
+        return true;
+      }
+      if (quantifier instanceof Limited limited) {
+        return limited.min() == 0 || element.mayMatchEmpty();
+      }
+      return false;
+    }
+
     @Override public String toString() {
       return element instanceof Sequence || element instanceof Alternation
               || element instanceof Quantified
@@ -305,6 +333,11 @@ public sealed interface RegexPattern {
 
   /** Represents a grouping construct in a regex. */
   sealed interface Group extends RegexPattern {
+    RegexPattern content();
+
+    @Override default boolean mayMatchEmpty() {
+      return content().mayMatchEmpty();
+    }
 
     /** A capturing group, like {@code (a)}. */
     record Capturing(RegexPattern content) implements Group {
@@ -354,6 +387,10 @@ public sealed interface RegexPattern {
   record Literal(String value) implements RegexPattern {
     private static final CharPredicate META_CHARS = CharPredicate.anyOf(".[]{}()*+-?^$|\\");
 
+    @Override public boolean mayMatchEmpty() {
+      return value.isEmpty();
+    }
+
     @Override public String toString() {
       StringBuilder builder = new StringBuilder();
       for (int i = 0; i < value.length(); i++) {
@@ -364,6 +401,29 @@ public sealed interface RegexPattern {
         builder.append(c);
       }
       return builder.toString();
+    }
+  }
+
+  /** Represents a backreference to a capturing group. */
+  sealed interface Backreference extends RegexPattern {
+    @Override default boolean mayMatchEmpty() {
+      return true;
+    }
+
+    record Numbered(int groupNumber) implements Backreference {
+      public Numbered {
+        checkArgument(groupNumber > 0, "group number must be positive: %s", groupNumber);
+      }
+
+      @Override public String toString() {
+        return "\\" + groupNumber;
+      }
+    }
+
+    record Named(String groupName) implements Backreference {
+      @Override public String toString() {
+        return "\\k<" + groupName + ">";
+      }
     }
   }
 
@@ -383,6 +443,10 @@ public sealed interface RegexPattern {
       this.pattern = pattern;
     }
 
+    @Override public boolean mayMatchEmpty() {
+      return false;
+    }
+
     @Override public String toString() {
       return pattern;
     }
@@ -390,6 +454,9 @@ public sealed interface RegexPattern {
 
   /** Represents a custom character class, like {@code [a-z]} or {@code [^0-9]}. */
   sealed interface CharacterSet extends RegexPattern {
+    @Override default boolean mayMatchEmpty() {
+      return false;
+    }
 
     /** A positive character class, like {@code [a-z]}. */
     record AnyOf(List<CharSetElement> elements) implements CharacterSet {
@@ -443,12 +510,20 @@ public sealed interface RegexPattern {
   sealed interface CharacterProperty extends CharSetElement, RegexPattern {
     String propertyName();
 
+    @Override default boolean mayMatchEmpty() {
+      return false;
+    }
+
     default Negated negated() {
       return new Negated(this);
     }
 
     /** Represents a negated character property, like {@code \P{Lower}}. */
     record Negated(CharacterProperty property) implements CharSetElement, RegexPattern {
+      @Override public boolean mayMatchEmpty() {
+        return false;
+      }
+
       @Override public String toString() {
         return "\\P{" + property.propertyName() + "}";
       }
@@ -520,6 +595,10 @@ public sealed interface RegexPattern {
       this.pattern = pattern;
     }
 
+    @Override public boolean mayMatchEmpty() {
+      return true;
+    }
+
     @Override public String toString() {
       return pattern;
     }
@@ -530,6 +609,9 @@ public sealed interface RegexPattern {
    * (?<!...)}.
    */
   sealed interface Lookaround extends RegexPattern {
+    @Override default boolean mayMatchEmpty() {
+      return true;
+    }
 
     /** Returns the AST node representing the pattern inside the lookaround. */
     RegexPattern target();
@@ -581,7 +663,8 @@ public sealed interface RegexPattern {
    * @since 10.8
    */
   static RegexPattern of(String regex) {
-    Parser<RegexPattern>.OrEmpty parser = Parser.define(RegexParsers::pattern).orElse(new Literal(""));
+    Parser<RegexPattern>.OrEmpty parser =
+        Parser.define(RegexParsers::pattern).orElse(new Literal(""));
     return after(prefix("(?x)"))
         .from(regex)
         .map(p -> parser.parseSkipping(RegexParsers.FREE_SPACES, p))

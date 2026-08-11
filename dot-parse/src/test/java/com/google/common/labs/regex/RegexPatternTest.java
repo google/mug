@@ -12,6 +12,7 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.labs.parse.Parser;
 import com.google.common.labs.regex.RegexPattern.Anchor;
+import com.google.common.labs.regex.RegexPattern.Backreference;
 import com.google.common.labs.regex.RegexPattern.Group;
 import com.google.common.labs.regex.RegexPattern.Literal;
 import com.google.common.labs.regex.RegexPattern.ModifierFlag;
@@ -199,6 +200,19 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.parse("\\a")).isEqualTo(new Literal("a"));
     assertThat(RegexPattern.parse("\\\\")).isEqualTo(new Literal("\\"));
     assertThat(RegexPattern.parse("\\{\\}")).isEqualTo(new Literal("{}"));
+  }
+
+  @Test public void parse_backreference() {
+    assertThat(RegexPattern.parse("(a)\\1"))
+        .isEqualTo(sequence(new Group.Capturing(new Literal("a")), new Backreference.Numbered(1)));
+    assertThat(RegexPattern.parse("(?<foo>a)\\k<foo>"))
+        .isEqualTo(
+            sequence(new Group.Named("foo", new Literal("a")), new Backreference.Named("foo")));
+  }
+
+  @Test public void backreferenceToString() {
+    assertThat(new Backreference.Numbered(1).toString()).isEqualTo("\\1");
+    assertThat(new Backreference.Named("foo").toString()).isEqualTo("\\k<foo>");
   }
 
   @Test public void parse_escapedLiteralMixedWithPredefinedCharClasses() {

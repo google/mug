@@ -31,12 +31,9 @@ import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.stream;
 import static java.util.function.UnaryOperator.identity;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import com.google.common.labs.parse.Parser;
 import com.google.common.labs.regex.RegexPattern.Anchor;
+import com.google.common.labs.regex.RegexPattern.Backreference;
 import com.google.common.labs.regex.RegexPattern.CharRange;
 import com.google.common.labs.regex.RegexPattern.CharacterProperty;
 import com.google.common.labs.regex.RegexPattern.CharacterSet;
@@ -49,6 +46,9 @@ import com.google.common.labs.regex.RegexPattern.PosixCharClass;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
 import com.google.common.labs.regex.RegexPattern.UnicodeProperty;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /** Parsers for {@link RegexPattern}. */
 final class RegexParsers {
@@ -65,12 +65,22 @@ final class RegexParsers {
     Parser<RegexPattern> atomic = anyOf(
         charClass(), positiveCharacterProperty(), negativeCharacterProperty(),
         groupOrLookaround(regex), anyOf(PredefinedCharClass.values()), anyOf(Anchor.values()),
+        numberedBackreference(), namedBackreference(),
         consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
         consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
         ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))));
     return atomic.followedByZeroOrMore(quantifier())
         .atLeastOnce(inSequence())
         .atLeastOnceDelimitedBy("|", asAlternation());
+  }
+
+  private static Parser<Backreference.Numbered> numberedBackreference() {
+    return string("\\").then(sequence(one("[1-9]"), digits().optional()).source())
+        .map(s -> new Backreference.Numbered(Integer.parseInt(s)));
+  }
+
+  private static Parser<Backreference.Named> namedBackreference() {
+    return string("\\k<").then(word()).followedBy(">").map(Backreference.Named::new);
   }
 
   private static Parser<Quantifier> quantifier() {

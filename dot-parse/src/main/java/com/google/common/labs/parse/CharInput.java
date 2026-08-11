@@ -19,12 +19,13 @@ import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.stream.MoreStreams.iterateOnce;
 import static java.util.Objects.requireNonNull;
 
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.UncheckedIOException;
-
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** An abstraction over sequentially read characters. */
 abstract class CharInput {
@@ -35,6 +36,12 @@ abstract class CharInput {
 
   /** Returns the index of {@code str} starting from {@code fromIndex}, or -1 if not found. */
   abstract int indexOf(String str, int fromIndex);
+
+  /**
+   * Matches the given regex pattern starting from {@code start} index and returns the ending index
+   * (exclusive). Returns -1 if no match is found.
+   */
+  abstract int match(Pattern pattern, int start);
 
   final boolean startsWith(CharPredicate predicate, int index) {
     return isInRange(index) && predicate.test(charAt(index));
@@ -75,6 +82,12 @@ abstract class CharInput {
 
       @Override int indexOf(String str, int fromIndex) {
         return text.indexOf(str, fromIndex);
+      }
+
+      @Override int match(Pattern pattern, int start) {
+        Matcher matcher = pattern.matcher(text);
+        matcher.region(start, text.length());
+        return matcher.lookingAt() ? matcher.end() : -1;
       }
 
       @Override boolean startsWith(String prefix, int index) {
@@ -148,6 +161,10 @@ abstract class CharInput {
           // provably useless.
           i = toLogicalIndex(chars.length() - str.length() + 1);
         }
+      }
+
+      @Override int match(Pattern pattern, int start) {
+        throw new UnsupportedOperationException("regex is only supported on in-memory String");
       }
 
       @Override boolean startsWith(String prefix, int index) {

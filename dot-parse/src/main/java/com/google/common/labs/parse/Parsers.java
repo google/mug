@@ -8,17 +8,21 @@ import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
+import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.stream.BiStream.adjacentPairsFrom;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.counting;
 
+import com.google.common.labs.regex.RegexPattern;
+import com.google.errorprone.annotations.CompileTimeConstant;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 
 /**
  * More advanced composite parsers in addition to the core parsers provided by {@link Parser}.
@@ -334,6 +338,45 @@ public final class Parsers {
       .suchThat(Character::isValidCodePoint, "code point");
 
   /**
+   * Returns a parser that matches a leaf-level atomic regular expression {@code pattern}.
+   *
+   * <p>Useful when defining a compact, yet composite regex pattern that may otherwise require
+   * verbose boilerplate of {@code sequence()}, {@code anyOf()} calls composed together. That said,
+   * refrain from creating complex regex patterns, and prefer using the declarative {@code Parser}
+   * API unless it's too verbose.
+   *
+   * <p>The pattern must be a compile-time constant, must not match the empty string, and must not
+   * contain anchors (like {@code ^}, {@code $}), lookarounds (like {@code (?=...)}), or
+   * backreferences (like {@code \1}).
+   *
+   * <p>The returned parser does not support parsing from a {@link java.io.Reader} input, because
+   * JDK regular expressions require a contiguous in-memory string.
+   *
+   * <p>The {@code pattern} string is validated at compile-time by the {@code mug-errorprone}
+   * compiler plugin.
+   *
+   * <p>NOTE that this method internally compiles the {@code pattern} so you should almost always
+   * pre-create and reuse the returned {@code Parser} object instead of calling {@code
+   * regex(pattern)} in the inner loop or on-the-fly.
+   *
+   * @throws IllegalArgumentException if the pattern is invalid or contains forbidden features.
+   * @since 10.9
+   */
+  public static Parser<String> regex(@CompileTimeConstant String pattern) {
+    RegexPattern ast = Regexes.validate(pattern);
+    Pattern jdkPattern = Pattern.compile(pattern);
+    return new Scanner("=~/" + pattern + "/") {
+      @Override int scan(CharInput input, int from) {
+        return input.match(jdkPattern, from);
+      }
+
+      @Override Set<String> computePrefixes() {
+        return Regexes.prefixesOf(ast);
+      }
+    }.source();
+  }
+
+  /**
    * Provides helpers to left-factor common prefixes followed by one or multiple optional suffixes.
    *
    * <p>Usually when you have an optional suffix, you should use {@link
@@ -406,7 +449,9 @@ public final class Parsers {
      * Returns a parser that matches zero or more occurrences of the {@code prefix} string before
      * {@code suffix} and applies the {@code prefixFunction} iteratively for each matched prefix.
      *
-     * <p>For example: <pre>{@code
+     * <p>For example:
+     *
+     * <pre>{@code
      * import static com.google.common.labs.parse.Parsers.UNSIGNED_INTEGER;
      * import static com.google.common.labs.parse.Parsers.Suffix.withPrefixes;
      *
@@ -425,7 +470,9 @@ public final class Parsers {
      * Returns a parser that matches the {@code prefix} parser zero or more times before {@code
      * suffix} and applies the result functions iteratively, in First-In, Last-Out order.
      *
-     * <p>For example: <pre>{@code
+     * <p>For example:
+     *
+     * <pre>{@code
      * Parser<Declaration> declaration =
      *     withPrefixes(modifier.map(m -> id -> id.withModifier(m)), IDENTIFIER);
      * }</pre>

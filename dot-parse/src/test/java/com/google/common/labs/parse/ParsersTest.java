@@ -6,18 +6,288 @@ import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parsers.CODE_POINT;
 import static com.google.common.labs.parse.Parsers.SIGNED_DOUBLE;
 import static com.google.common.labs.parse.Parsers.UNSIGNED_INTEGER;
+import static com.google.common.labs.parse.Parsers.regex;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.Range;
 import com.google.common.labs.parse.Parser.ParseException;
 import java.time.Duration;
+import java.util.List;
+import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class ParsersTest {
+
+  @Test public void regex_matchesSimplePattern() {
+    Parser<String> p = regex("[a-z]+");
+    assertThat(p.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test public void regex_matchesComplexPattern() {
+    Parser<String> p = regex("[0-9]{3}-[0-9]{3,4}");
+    assertThat(p.parse("123-4567")).isEqualTo("123-4567");
+  }
+
+  @Test public void regex_canMatchPartially() {
+    Parser<String> p = regex("[a-z]+").followedBy("!");
+    assertThat(p.parse("abc!")).isEqualTo("abc");
+  }
+
+  @Test public void regex_emptyPattern_throws() {
+    var exception = assertThrows(IllegalArgumentException.class, () -> regex(""));
+    assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: ");
+  }
+
+  @Test public void regex_anchorStart_throws() {
+    var exception = assertThrows(IllegalArgumentException.class, () -> regex("^a"));
+    assertThat(exception).hasMessageThat().isEqualTo("anchors are not allowed in regex parser: ^");
+  }
+
+  @Test public void regex_anchorEnd_throws() {
+    var exception = assertThrows(IllegalArgumentException.class, () -> regex("a$"));
+    assertThat(exception).hasMessageThat().isEqualTo("anchors are not allowed in regex parser: $");
+  }
+
+  @Test public void regex_anchorWordBoundary_throws() {
+    var exception = assertThrows(IllegalArgumentException.class, () -> regex("\\ba"));
+    assertThat(exception)
+        .hasMessageThat()
+        .isEqualTo("anchors are not allowed in regex parser: \\b");
+  }
+
+  @Test public void regex_lookaheadPositive_throws() {
+    var exception = assertThrows(IllegalArgumentException.class, () -> regex("a(?=b)"));
+    assertThat(exception)
+        .hasMessageThat()
+        .isEqualTo("lookarounds are not allowed in regex parser: (?=b)");
+  }
+
+  @Test public void regex_lookaheadNegative_throws() {
+    var exception = assertThrows(IllegalArgumentException.class, () -> regex("a(?!b)"));
+    assertThat(exception)
+        .hasMessageThat()
+        .isEqualTo("lookarounds are not allowed in regex parser: (?!b)");
+  }
+
+  @Test public void regex_backreferenceNumeric_throws() {
+    var exception = assertThrows(IllegalArgumentException.class, () -> regex("(a)\\1"));
+    assertThat(exception)
+        .hasMessageThat()
+        .isEqualTo("backreferences are not allowed in regex parser: \\1");
+  }
+
+  @Test public void regex_backreferenceNamed_throws() {
+    var exception = assertThrows(IllegalArgumentException.class, () -> regex("(?<foo>a)\\k<foo>"));
+    assertThat(exception)
+        .hasMessageThat()
+        .isEqualTo("backreferences are not allowed in regex parser: \\k<foo>");
+  }
+
+  @Test public void regex_quantifierZeroOrMore_throws() {
+    var exception = assertThrows(IllegalArgumentException.class, () -> regex("a*"));
+    assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: a*");
+  }
+
+  @Test public void regex_quantifierOptional_throws() {
+    var exception = assertThrows(IllegalArgumentException.class, () -> regex("a?"));
+    assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: a?");
+  }
+
+  @Test public void regex_quantifierGroupOptional_throws() {
+    var exception = assertThrows(IllegalArgumentException.class, () -> regex("(foo)?"));
+    assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: (foo)?");
+  }
+
+  @Test public void regex_alternationWithEmptyAlternative_throws() {
+    var exception = assertThrows(IllegalArgumentException.class, () -> regex("foo|"));
+    assertThat(exception)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:5: expecting one of [one or more [^.[]{}()*+?^$|\\ #], whitespace or #, $, (, (?, (?!, (?<!, (?<=, (?=, ., [, [^, \\, \\A, \\B, \\D, \\P, \\S, \\W, \\Z, \\b, \\d, \\k<, \\p, \\s, \\w, \\z, ^], encountered:\s
+                foo|
+                    ^
+            """);
+  }
+
+  @Test public void regex_caseInsensitiveFlag() {
+    Parser<String> parser = regex("(?i:abc)");
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+    assertThat(parser.parse("ABC")).isEqualTo("ABC");
+    assertThat(parser.parse("aBc")).isEqualTo("aBc");
+    assertThrows(ParseException.class, () -> parser.parse("abd"));
+  }
+
+  @Test public void regex_freeSpacingFlag() {
+    Parser<String> parser = regex("(?x)a b c");
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+    assertThrows(ParseException.class, () -> parser.parse("a b c"));
+  }
+
+  @Test public void regex_enclosedCaseInsensitiveFlag() {
+    Parser<String> parser = regex("a(?i:b)c");
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+    assertThat(parser.parse("aBc")).isEqualTo("aBc");
+    assertThrows(ParseException.class, () -> parser.parse("Abc"));
+    assertThrows(ParseException.class, () -> parser.parse("abC"));
+  }
+
+  @Test public void regex_doesNotMatchSubstringsAfterCursor() {
+    Parser<String> parser = regex("[a-z]+");
+    assertThrows(ParseException.class, () -> parser.parse("123abc"));
+  }
+
+  // Case-insensitive choice pruning is a known limitation because prefix extraction in
+  // Regexes.prefixesOf is case-sensitive and does not account for the inline (?i) flag,
+  // causing "B" to be pruned when the indexed prefix is only "b".
+  @Test public void regex_choicePruning_caseInsensitiveFlag_pruningLimitation() {
+    Parser<String> parser = anyOf(regex("(?i:b)"), regex("x"), regex("y"));
+    assertThrows(ParseException.class, () -> parser.parse("B"));
+  }
+
+  @Test public void regex_throwsForReaderBasedInput() {
+    Parser<String> p = regex("[a-z]+");
+    Stream<String> stream = p.parseToStream(new java.io.StringReader("abc"));
+    assertThrows(UnsupportedOperationException.class, () -> stream.findFirst());
+  }
+
+  @Test public void regex_prefixPruning() {
+    Parser<String> p = anyOf(regex("[a-z]+"), regex("[0-9]+"), regex("foo"));
+    assertThat(p.parse("abc")).isEqualTo("abc");
+    assertThat(p.parse("123")).isEqualTo("123");
+  }
+
+  @Test public void regex_prefixPruning_literal() {
+    Parser<String> p = anyOf(regex("abc"), regex("def"), regex("ghi"));
+    assertThat(p.parse("abc")).isEqualTo("abc");
+    assertThat(p.parse("def")).isEqualTo("def");
+  }
+
+  @Test public void regex_prefixPruning_alternation() {
+    Parser<String> p = anyOf(regex("ab|cd"), regex("ef"), regex("gh"));
+    assertThat(p.parse("ab")).isEqualTo("ab");
+    assertThat(p.parse("cd")).isEqualTo("cd");
+  }
+
+  @Test public void regex_prefixPruning_group() {
+    Parser<String> p = anyOf(regex("(abc)"), regex("def"), regex("ghi"));
+    assertThat(p.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test public void regex_prefixPruning_quantified() {
+    Parser<String> p = anyOf(regex("a+"), regex("b+"), regex("c+"));
+    assertThat(p.parse("aaa")).isEqualTo("aaa");
+  }
+
+  @Test public void regex_prefixPruning_characterSet() {
+    Parser<String> p = anyOf(regex("[ab]"), regex("c"), regex("d"));
+    assertThat(p.parse("a")).isEqualTo("a");
+    assertThat(p.parse("b")).isEqualTo("b");
+  }
+
+  @Test public void regex_prefixPruning_characterSetRange() {
+    Parser<String> p = anyOf(regex("[a-c]"), regex("d"), regex("e"));
+    assertThat(p.parse("b")).isEqualTo("b");
+  }
+
+  @Test public void regex_prefixPruning_predefinedCharClass() {
+    Parser<String> p = anyOf(regex("\\d+"), regex("abc"), regex("def"));
+    assertThat(p.parse("123")).isEqualTo("123");
+  }
+
+  @Test public void regex_prefixPruning_fallbackNoneOf() {
+    Parser<String> p = anyOf(regex("[^ab]"), regex("c"), regex("d"));
+    assertThat(p.parse("x")).isEqualTo("x");
+  }
+
+  @Test public void regex_prefixPruning_withFallback() {
+    Parser<String> p = anyOf(regex("\\w+"), regex("[0-9]+"), regex("foo"));
+    assertThat(p.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test public void regex_prefixPruning_withAlternationFallback() {
+    Parser<String> p = anyOf(regex("a|\\w+"), regex("[0-9]+"), regex("foo"));
+    assertThat(p.parse("bcd")).isEqualTo("bcd");
+  }
+
+  @Test public void regex_prefixPruning_withCharacterSetFallback() {
+    Parser<String> p = anyOf(regex("[a-z\\p{Digit}]+"), regex("foo"), regex("bar"));
+    assertThat(p.parse("123")).isEqualTo("123");
+  }
+
+  @Test public void regex_optionalPrefix_doesNotPruneValidInput() {
+    Parser<String> p = anyOf(regex("a*b"), regex("c"), regex("d"));
+    assertThat(p.parse("b")).isEqualTo("b");
+  }
+
+  @Test public void regex_optionalAlternationPrefix_doesNotPruneValidInput() {
+    Parser<String> p = anyOf(regex("(a|b)?c"), regex("x"), regex("y"));
+    assertThat(p.parse("c")).isEqualTo("c");
+    assertThat(p.parse("ac")).isEqualTo("ac");
+    assertThat(p.parse("bc")).isEqualTo("bc");
+  }
+
+  @Test public void regex_multipleOptionalPrefixes_doesNotPruneValidInput() {
+    Parser<String> p = anyOf(regex("a*b*c"), regex("x"), regex("y"));
+    assertThat(p.parse("c")).isEqualTo("c");
+    assertThat(p.parse("bc")).isEqualTo("bc");
+    assertThat(p.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test public void regex_matchesInMiddle() {
+    Parser<String> parser = sequence(string("["), regex("[a-z]+"), string("]"), (l, r, rt) -> r);
+    assertThat(parser.parse("[abc]")).isEqualTo("abc");
+  }
+
+  @Test public void regex_matchesAtEnd() {
+    Parser<String> parser = sequence(string("["), regex("[a-z]+"), (l, r) -> r);
+    assertThat(parser.parse("[abc")).isEqualTo("abc");
+  }
+
+  @Test public void regex_matchesInLoop_parseToStream() {
+    Parser<String> parser = regex("[a-z]+");
+    assertThat(parser.skipping(Character::isWhitespace).parseToStream("abc def ghi").toList())
+        .containsExactly("abc", "def", "ghi")
+        .inOrder();
+  }
+
+  @Test public void regex_matchesInLoop_atLeastOnceDelimitedBy() {
+    Parser<List<String>> parser = regex("[a-z]+").atLeastOnceDelimitedBy(",");
+    assertThat(parser.parse("abc,def,ghi")).containsExactly("abc", "def", "ghi").inOrder();
+  }
+
+  @Test public void regex_parseSkipping() {
+    Parser<String> parser = sequence(string("["), regex("[a-z]+"), string("]"), (l, r, rt) -> r);
+    assertThat(parser.parseSkipping(Character::isWhitespace, "[   abc   ]")).isEqualTo("abc");
+  }
+
+  @Test public void regex_failureMessage() {
+    Parser<String> parser = regex("[a-z]+");
+    var exception = assertThrows(ParseException.class, () -> parser.parse("123"));
+    assertThat(exception.getMessage())
+        .isEqualTo(
+            """
+            at 1:1: expecting <=~/[a-z]+/>, encountered:\s
+                123
+                ^
+            """);
+  }
+
+  @Test public void regex_failureMessage_inSequence() {
+    Parser<String> parser = sequence(string("["), regex("[a-z]+"), string("]"), (l, r, rt) -> r);
+    var exception = assertThrows(ParseException.class, () -> parser.parse("[123]"));
+    assertThat(exception.getMessage())
+        .isEqualTo(
+            """
+            at 1:2: expecting <=~/[a-z]+/>, encountered:\s
+                [123]
+                 ^
+            """);
+  }
 
   @Test public void duration_oneSecond() {
     assertThat(Parsers.DURATION.parse("1s")).isEqualTo(Duration.ofSeconds(1));
