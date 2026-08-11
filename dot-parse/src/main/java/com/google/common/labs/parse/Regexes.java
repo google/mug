@@ -61,40 +61,11 @@ final class Regexes {
     }
   }
 
-  static Set<String> prefixesOf(RegexPattern pattern) {
-    return new PrefixAnalyzer(
-            CaseSensitivity.CASE_SENSITIVE, CharacterSet.DECIMAL.getAsciiPrefixes())
-        .prefixesOf(pattern);
-  }
+  record PrefixAnalyzer(CaseSensitivity forLiteral, Set<String> digitPrefixes) {
+    PrefixAnalyzer() {
+      this(CaseSensitivity.CASE_SENSITIVE, CharacterSet.DECIMAL.getAsciiPrefixes());
+    }
 
-  private enum CaseSensitivity {
-    CASE_SENSITIVE {
-      @Override Set<String> prefixesOf(String s) {
-        return Set.of(s);
-      }
-
-      @Override Set<String> prefixesOf(char c) {
-        return Set.of(Character.toString(c));
-      }
-    },
-    CASE_INSENSITIVE {
-      @Override Set<String> prefixesOf(String s) {
-        return Utils.caseInsensitivePrefixes(s, 3);
-      }
-
-      @Override Set<String> prefixesOf(char c) {
-        return Set.of(
-            Character.toString(Character.toLowerCase(c)),
-            Character.toString(Character.toUpperCase(c)));
-      }
-    },
-    ;
-
-    abstract Set<String> prefixesOf(String s);
-    abstract Set<String> prefixesOf(char c);
-  }
-
-  private record PrefixAnalyzer(CaseSensitivity forLiteral, Set<String> digitPrefixes) {
     Set<String> prefixesOf(RegexPattern pattern) {
       return switch (pattern) {
         case RegexPattern.Literal literal -> forLiteral.prefixesOf(literal.value());
@@ -179,6 +150,33 @@ final class Regexes {
     private PrefixAnalyzer usingAsciiCharClass() {
       return new PrefixAnalyzer(forLiteral, CharacterSet.DECIMAL.getAsciiPrefixes());
     }
+  }
+
+  private enum CaseSensitivity {
+    CASE_SENSITIVE {
+      @Override Set<String> prefixesOf(String s) {
+        return Set.of(s);
+      }
+
+      @Override Set<String> prefixesOf(char c) {
+        return Set.of(Character.toString(c));
+      }
+    },
+    CASE_INSENSITIVE {
+      @Override Set<String> prefixesOf(String s) {
+        return Utils.caseInsensitivePrefixes(s, 3);
+      }
+
+      @Override Set<String> prefixesOf(char c) {
+        return Set.of(
+            Character.toString(Character.toLowerCase(c)),
+            Character.toString(Character.toUpperCase(c)));
+      }
+    },
+    ;
+
+    abstract Set<String> prefixesOf(String s);
+    abstract Set<String> prefixesOf(char c);
   }
 
   private static Collector<String, ?, Set<String>> toPrefixSet() {

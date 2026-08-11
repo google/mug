@@ -17,6 +17,7 @@ package com.google.common.labs.parse;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.common.labs.parse.Regexes.PrefixAnalyzer;
 import com.google.common.labs.regex.RegexPattern;
 import java.util.Set;
 import org.junit.Test;
@@ -161,7 +162,7 @@ public class RegexesTest {
   }
 
   private static Set<String> prefixes(String regex) {
-    return Regexes.prefixesOf(RegexPattern.of(regex));
+    return new PrefixAnalyzer().prefixesOf(RegexPattern.of(regex));
   }
 
   private static int maxSize(String regex) {

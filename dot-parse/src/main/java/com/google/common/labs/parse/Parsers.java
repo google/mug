@@ -13,6 +13,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.counting;
 
+import com.google.common.labs.parse.Regexes.PrefixAnalyzer;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import java.time.Duration;
@@ -399,7 +400,7 @@ public final class Parsers {
       }
 
       @Override Set<String> computePrefixes() {
-        return Regexes.prefixesOf(ast);
+        return new PrefixAnalyzer().prefixesOf(ast);
       }
     }.source();
   }
