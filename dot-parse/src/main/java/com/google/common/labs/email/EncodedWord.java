@@ -17,6 +17,8 @@ import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Stream.concat;
 
+import com.google.common.labs.parse.Parser;
+import com.google.mu.util.CaseBreaker;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
 import java.util.Base64;
@@ -25,36 +27,27 @@ import java.util.Locale;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import com.google.common.labs.parse.Parser;
-import com.google.mu.util.CaseBreaker;
-
 /**
- * Representation of an RFC 2047 encoded-word (e.g. {@code =?UTF-8?Q?Admin?=}).
- * Parses and decodes standard MIME encoding without using regular expressions.
+ * Representation of an RFC 2047 encoded-word (e.g. {@code =?UTF-8?Q?Admin?=}). Parses and decodes
+ * standard MIME encoding without using regular expressions.
  */
 record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
   /** Parser that matches a valid RFC 2047 encoded-word. */
-  private static final Parser<EncodedWord> ENCODED =
-      sequence(
-          oneOf(US_ASCII, ISO_8859_1, UTF_8).followedBy("?"),
-          caseInsensitiveBy(Encoding::name, Encoding.values()).followedBy("?"),
-          zeroOrMore(range('!', '~').and(anyOf("?@,()<>").not()), "encoded text"),
-          EncodedWord::new);
+  private static final Parser<EncodedWord> ENCODED = sequence(
+      oneOf(US_ASCII, ISO_8859_1, UTF_8).followedBy("?"),
+      caseInsensitiveBy(Encoding::name, Encoding.values()).followedBy("?"),
+      zeroOrMore(range('!', '~').and(anyOf("?@,()<>").not()), "encoded text"), EncodedWord::new);
 
-  private static final Parser<Object> SEGMENT =
-      anyOf(
-          ENCODED.between("=?", "?="),
-          consecutive("[^= \t\r\n]"),
-          string("="),
-          consecutive("[ \t\r\n]").map(Lws::new));
+  private static final Parser<Object> SEGMENT = anyOf(
+      ENCODED.between("=?", "?="), consecutive("[^= \t\r\n]"), string("="),
+      consecutive("[ \t\r\n]").map(Lws::new));
 
   static String decodeRfc2047(String input) {
     List<?> segments = SEGMENT.zeroOrMore().parse(input);
     StringBuilder builder = new StringBuilder();
     for (int i = 0; i < segments.size(); i++) {
       Object segment = segments.get(i);
-      if (i > 0 && i < segments.size() - 1
-          && segment instanceof Lws
+      if (i > 0 && i < segments.size() - 1 && segment instanceof Lws
           && segments.get(i - 1) instanceof EncodedWord
           && segments.get(i + 1) instanceof EncodedWord) {
         continue;
@@ -93,13 +86,11 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
 
   private static Stream<String> variationsOf(String name) {
     var tokens = new CaseBreaker()
-        .withLowerCaseChars(Character::isLowerCase)  // number and letters should separate
+        .withLowerCaseChars(Character::isLowerCase) // number and letters should separate
         .breakCase(name)
         .toList();
     return Stream.of(
-        name,
-        tokens.stream().collect(joining("-")),
-        tokens.stream().collect(joining("_")),
+        name, tokens.stream().collect(joining("-")), tokens.stream().collect(joining("_")),
         tokens.stream().collect(joining()));
   }
 
@@ -129,8 +120,7 @@ record EncodedWord(Charset charset, Encoding encoding, String encodedText) {
       @Override byte[] decodeBytes(String raw) {
         return Base64.getDecoder().decode(raw);
       }
-    }
-    ;
+    };
 
     abstract byte[] decodeBytes(String raw);
   }

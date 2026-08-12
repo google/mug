@@ -107,8 +107,7 @@ public final class CharacterSet implements CharPredicate {
 
   @Override public CharacterSet not() {
     return new CharacterSet(
-        after(prefix("["))
-            .in(string)
+        after(prefix("[")).in(string)
             .map(m -> m.startsWith("^") ? "[" + m.skip(1, 0) : "[^" + m)
             .orElse(string),
         predicate.not());
@@ -128,8 +127,7 @@ public final class CharacterSet implements CharPredicate {
     if (needsEscaping.matchesNoneOf(string)) {
       return string;
     }
-    return string.chars()
-        .mapToObj(c -> switch (c) {
+    return string.chars().mapToObj(c -> switch (c) {
           case '\r' -> "\\r";
           case '\n' -> "\\n";
           case '\t' -> "\\t";
@@ -146,8 +144,7 @@ public final class CharacterSet implements CharPredicate {
     Set<String> result = asciiPrefixes;
     if (result == null) {
       asciiPrefixes =
-          result = candidateCharsIfAscii()
-              .map(
+          result = candidateCharsIfAscii().map(
                   chars -> chars.stream().map(Object::toString).collect(toCollection(TreeSet::new)))
               .map(Collections::unmodifiableSet)
               .orElse(Set.of(""));
@@ -188,7 +185,7 @@ public final class CharacterSet implements CharPredicate {
   }
 
   private static Parser<Set<Character>> makeAsciiSetParser() {
-    Parser<Character> asciiChar = one(c -> c < 128, "ascii char").notFollowedByEof();
+    Parser<Character> asciiChar = one(ASCII, "ascii char").notFollowedByEof();
     Parser<Set<Character>> range =
         sequence(asciiChar.followedBy("-"), asciiChar, CharacterSet::charsInRange);
     return anyOf(range, asciiChar.map(Set::of))

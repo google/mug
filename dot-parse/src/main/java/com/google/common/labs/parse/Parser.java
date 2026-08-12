@@ -440,17 +440,16 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public static Parser<String> quotedBy(String before, String after) {
     checkArgument(after.length() > 0, "after cannot be empty");
-    return string(before)
-        .then(new Parser<>() {
-          @Override MatchResult<String> skipAndMatch(
-              Skipper skip, CharInput input, int start, ErrorContext context) {
-            int found = input.indexOf(after, start);
-            return found >= 0
-                ? new MatchResult.Success<>(
-                    start, found + after.length(), input.snippet(start, found - start))
-                : context.expecting(after, start);
-          }
-        });
+    return string(before).then(new Parser<>() {
+      @Override MatchResult<String> skipAndMatch(
+          Skipper skip, CharInput input, int start, ErrorContext context) {
+        int found = input.indexOf(after, start);
+        return found >= 0
+            ? new MatchResult.Success<>(
+                start, found + after.length(), input.snippet(start, found - start))
+            : context.expecting(after, start);
+      }
+    });
   }
 
   /**
@@ -532,29 +531,28 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public static Parser<String> nestedBy(String before, String after) {
     checkArgument(!after.isEmpty(), "after cannot be empty");
     checkArgument(!before.equals(after), "before and after must be different for nesting");
-    return string(before)
-        .then(new Parser<String>() {
-          @Override MatchResult<String> skipAndMatch(
-              Skipper skip, CharInput input, final int start, ErrorContext context) {
-            for (int index = start, depth = 1; ; ) {
-              if (input.isEof(index)) {
-                return context.expecting(after, index); // Unclosed block
-              }
-              if (input.startsWith(after, index)) {
-                if (--depth == 0) {
-                  return new MatchResult.Success<>(
-                      start, index + after.length(), input.snippet(start, index - start));
-                }
-                index += after.length();
-              } else if (input.startsWith(before, index)) {
-                depth++;
-                index += before.length();
-              } else {
-                index++;
-              }
-            }
+    return string(before).then(new Parser<String>() {
+      @Override MatchResult<String> skipAndMatch(
+          Skipper skip, CharInput input, final int start, ErrorContext context) {
+        for (int index = start, depth = 1; ; ) {
+          if (input.isEof(index)) {
+            return context.expecting(after, index); // Unclosed block
           }
-        });
+          if (input.startsWith(after, index)) {
+            if (--depth == 0) {
+              return new MatchResult.Success<>(
+                  start, index + after.length(), input.snippet(start, index - start));
+            }
+            index += after.length();
+          } else if (input.startsWith(before, index)) {
+            depth++;
+            index += before.length();
+          } else {
+            index++;
+          }
+        }
+      }
+    });
   }
 
   /**
@@ -869,8 +867,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   @SafeVarargs
   public static <T extends Enum<?>> Parser<T> anyOf(T... values) {
     checkArgument(values.length > 0, "values cannot be empty");
-    Map<String, T> longerFirst = biStream(stream(values))
-        .mapKeys(Object::toString)
+    Map<String, T> longerFirst = biStream(stream(values)).mapKeys(Object::toString)
         // reverse alphabetical order, so that we parse "++" before "+"
         .collect(toMap(() -> new TreeMap<String, T>(reverseOrder())));
     return BiStream.from(longerFirst)

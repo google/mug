@@ -54,10 +54,10 @@ import java.util.stream.Collectors;
 final class RegexParsers {
   private static final Parser<Character> ESCAPED_CHAR =
       literally(string("\\").then(one(ANY, "escaped char")));
-  private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES =
-      stream(PosixCharClass.values())
-          .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
-          .collect(Collectors::toUnmodifiableMap);
+  private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES = stream(
+          PosixCharClass.values())
+      .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
+      .collect(Collectors::toUnmodifiableMap);
   static final Parser<?> FREE_SPACES = anyOf(
       consecutive(Character::isWhitespace, "whitespace"), one('#').then(consecutive("[^\n]")));
 
@@ -141,8 +141,7 @@ final class RegexParsers {
           return result.map(c -> new Group.NonCapturing(c, enabled, disabled));
         });
     return anyOf(
-        named,
-        content.between("(?=", ")").map(Lookaround.Lookahead::new),
+        named, content.between("(?=", ")").map(Lookaround.Lookahead::new),
         content.between("(?!", ")").map(Lookaround.NegativeLookahead::new),
         content.between("(?<=", ")").map(Lookaround.Lookbehind::new),
         content.between("(?<!", ")").map(Lookaround.NegativeLookbehind::new),

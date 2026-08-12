@@ -2,14 +2,13 @@ package com.google.common.labs.parse;
 
 import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 
+import com.google.common.labs.parse.Parser.ParseException;
+import com.google.mu.function.ObjInt2Function;
+import com.google.mu.util.Substring;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-
-import com.google.common.labs.parse.Parser.ParseException;
-import com.google.mu.function.ObjInt2Function;
-import com.google.mu.util.Substring;
 
 sealed interface MatchResult<V> {
   <T> MatchResult<T> map(Function<? super V, ? extends T> function, ErrorContext context);
@@ -71,8 +70,8 @@ sealed interface MatchResult<V> {
   }
 
   /**
-   * Represents failure with an index in the source, and an error message with predefined {name}
-   * and {snippet} template placeholders to be filled when throwing exception.
+   * Represents failure with an index in the source, and an error message with predefined {name} and
+   * {snippet} template placeholders to be filled when throwing exception.
    */
   record Failure<V>(int at, long frontier, String messageTemplate, Object symbolName)
       implements MatchResult<V> {

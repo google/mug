@@ -14,7 +14,6 @@
  *****************************************************************************/
 package com.google.common.labs.csv;
 
-
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.one;
@@ -25,6 +24,14 @@ import static com.google.mu.util.CharPredicate.noneOf;
 import static com.google.mu.util.stream.BiCollectors.toMap;
 import static java.util.Arrays.asList;
 
+import com.google.common.labs.parse.Parser;
+import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.Immutable;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiCollector;
+import com.google.mu.util.stream.BiStream;
+import com.google.mu.util.stream.MoreStreams;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Collection;
@@ -35,15 +42,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.google.common.labs.parse.Parser;
-import com.google.errorprone.annotations.FormatMethod;
-import com.google.errorprone.annotations.Immutable;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
-import com.google.mu.util.stream.BiCollector;
-import com.google.mu.util.stream.BiStream;
-import com.google.mu.util.stream.MoreStreams;
 
 /**
  * An easy-to-use CSV parser with lazy parsing support and friendly error reporting.
@@ -59,8 +57,8 @@ import com.google.mu.util.stream.MoreStreams;
  *
  * <p>Empty rows are ignored.
  *
- * <p>You can also use the header row, and parse each row to a {@link Map} keyed by the header
- * field names:
+ * <p>You can also use the header row, and parse each row to a {@link Map} keyed by the header field
+ * names:
  *
  * <pre>{@code
  * import static com.google.common.labs.csv.Csv.CSV;
@@ -117,13 +115,16 @@ public final class Csv {
           .between("\"", "\"")
           // RFC doesn't allow spaces around quotes, but no ambiguity, no harm, why not?
           .between(IGNORED_WHITESPACES, IGNORED_WHITESPACES);
+
   /** Default CSV parser. Configurable using {@link #withComments} and {@link #withDelimiter}. */
   public static final Csv CSV = new Csv(',', /* allowsComments= */ false);
 
   private final char delim;
   private final boolean allowsComments;
+
   @SuppressWarnings("Immutable")
   private final CharPredicate regularChar;
+
   @SuppressWarnings("Immutable")
   private final Parser<List<String>> line;
 
@@ -132,9 +133,8 @@ public final class Csv {
     this.allowsComments = allowsComments;
     this.regularChar = UNRESERVED_CHAR.and(isNot(delim)).precomputeForAscii();
     this.line = anyOf(
-        NEW_LINE.thenReturn(List.of()),  // empty line => [], not [""]
-        QUOTED
-            .or(consecutive(regularChar, "unquoted field"))
+        NEW_LINE.thenReturn(List.of()), // empty line => [], not [""]
+        QUOTED.or(consecutive(regularChar, "unquoted field"))
             .orElse("")
             .delimitedBy(String.valueOf(delim))
             .notEmpty()
@@ -160,7 +160,8 @@ public final class Csv {
   }
 
   /**
-   * Parses the {@code input} string into a lazy stream of immutable {@code List}, one row at a time.
+   * Parses the {@code input} string into a lazy stream of immutable {@code List}, one row at a
+   * time.
    *
    * <p>No special treatment of the header row. If you know you have a header row, consider calling
    * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
@@ -172,7 +173,8 @@ public final class Csv {
   }
 
   /**
-   * Parses the {@code input} reader into a lazy stream of immutable {@code List}, one row at a time.
+   * Parses the {@code input} reader into a lazy stream of immutable {@code List}, one row at a
+   * time.
    *
    * <p>No special treatment of the header row. If you know you have a header row, consider calling
    * {@code .skip(1)} to skip it, or use {@link #parseToMaps} with the field names as the Map keys.
@@ -187,13 +189,13 @@ public final class Csv {
   }
 
   /**
-   * Parses {@code csv} string lazily, returning each row in a {@link Map} keyed by the
-   * field names in the header row. The first non-empty row is expected to be the header row.
+   * Parses {@code csv} string lazily, returning each row in a {@link Map} keyed by the field names
+   * in the header row. The first non-empty row is expected to be the header row.
    *
-   * <p>Upon duplicate header names, the latter wins. If you need alternative strategies,
-   * such as to reject duplicate header names, or to use {@link com.google.common.collect.ListMultimap}
-   * to keep track of all duplicate header values, consider using {@link
-   * #parseWithHeaderFields(String, BiCollector)} instead. That is:
+   * <p>Upon duplicate header names, the latter wins. If you need alternative strategies, such as to
+   * reject duplicate header names, or to use {@link com.google.common.collect.ListMultimap} to keep
+   * track of all duplicate header values, consider using {@link #parseWithHeaderFields(String,
+   * BiCollector)} instead. That is:
    *
    * <pre>{@code
    * import static com.google.mu.util.stream.BiCollectors.toMap;
@@ -229,9 +231,9 @@ public final class Csv {
    * input} string into a lazy stream of {@code Map}, keyed by the header field names.
    *
    * <p>Usually, if you need a {@code Map} of field names to column values, consider using {@link
-   * #parseToMaps(String)} instead. But if you need alternative strategies, such as collecting
-   * each row to a {@link com.google.common.collect.ListMultimap} to more gracefully handle
-   * duplicate header names, you can use:
+   * #parseToMaps(String)} instead. But if you need alternative strategies, such as collecting each
+   * row to a {@link com.google.common.collect.ListMultimap} to more gracefully handle duplicate
+   * header names, you can use:
    *
    * <pre>{@code
    * import static com.google.common.collect.ImmutableListMultimap;
@@ -261,15 +263,14 @@ public final class Csv {
       Reader csv, BiCollector<? super String, ? super String, ? extends R> rowCollector) {
     AtomicReference<List<String>> fieldNames = new AtomicReference<>();
     return MoreStreams.consume(
-            parseToLists(csv).filter(row -> row.size() > 0),
-            1,
+            parseToLists(csv).filter(row -> row.size() > 0), 1,
             values -> fieldNames.compareAndSet(null, values))
         .map(values -> BiStream.zip(fieldNames.get(), values).collect(rowCollector));
   }
 
   /**
-   * Joins {@code fields} as a CSV row, quote if needed.
-   * If a field value is null, an empty string is used.
+   * Joins {@code fields} as a CSV row, quote if needed. If a field value is null, an empty string
+   * is used.
    *
    * @since 9.5
    */
@@ -289,8 +290,8 @@ public final class Csv {
   }
 
   /**
-   * Joins {@code fields} as a CSV row, quote if needed.
-   * If a field value is null, an empty string is used.
+   * Joins {@code fields} as a CSV row, quote if needed. If a field value is null, an empty string
+   * is used.
    *
    * @since 9.5
    */
@@ -301,8 +302,8 @@ public final class Csv {
   /**
    * Returns a collector that joins the input fields into a CSV row.
    *
-   * <p>Fields are quoted and optionally escaped if needed.
-   * If a field value is null, an empty string is used.
+   * <p>Fields are quoted and optionally escaped if needed. If a field value is null, an empty
+   * string is used.
    *
    * @since 9.5
    */

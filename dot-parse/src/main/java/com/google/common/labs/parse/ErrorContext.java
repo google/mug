@@ -23,8 +23,7 @@ class ErrorContext {
     return failAt(at, at, messageTemplate, symbol);
   }
 
-  <V> MatchResult.Failure<V> failAt(
-      int at, long frontier, String messageTemplate, Object symbol) {
+  <V> MatchResult.Failure<V> failAt(int at, long frontier, String messageTemplate, Object symbol) {
     return new MatchResult.Failure<V>(at, frontier, messageTemplate, symbol);
   }
 

@@ -15,11 +15,10 @@
  *****************************************************************************/
 package com.google.common.labs.parse;
 
-import java.util.function.BiFunction;
-import java.util.function.Function;
-
 import com.google.common.labs.parse.Parser.ParseException;
 import com.google.mu.util.CharPredicate;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * A sealed interface representing an abstract production rule that can either be an
@@ -38,7 +37,6 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
    * @throws ParseException if the input cannot be parsed.
    */
   T parse(String input);
-
 
   /**
    * Parses the entire input string, ignoring patterns matched by {@code skip}, and returns the
@@ -68,12 +66,16 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
    */
   <R> Production<R> map(Function<? super T, ? extends R> f);
 
-  /** The current production must be enclosed between non-empty {@code prefix} and {@code suffix}. */
+  /**
+   * The current production must be enclosed between non-empty {@code prefix} and {@code suffix}.
+   */
   default Parser<T> between(String prefix, String suffix) {
     return between(Parser.string(prefix), Parser.string(suffix));
   }
 
-  /** The current production must be enclosed between non-empty {@code prefix} and {@code suffix}. */
+  /**
+   * The current production must be enclosed between non-empty {@code prefix} and {@code suffix}.
+   */
   default Parser<T> between(Parser<?> prefix, Parser<?> suffix) {
     return prefix.then(this.followedBy(suffix));
   }
@@ -104,18 +106,16 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
   Production<T> between(Parser<?>.OrEmpty prefix, Parser<?>.OrEmpty suffix);
 
   /**
-   * The current production must be <em>immediately</em> enclosed between
-   * non-empty {@code prefix} and {@code suffix} (no skippable characters as specified by {@link
-   * #parseSkipping parseSkipping()} in between). Useful for matching a literal string, such as
-   * {@code zeroOrMore(isNot('"')).immediatelyBetween("\"", "\"")}.
+   * The current production must be <em>immediately</em> enclosed between non-empty {@code prefix}
+   * and {@code suffix} (no skippable characters as specified by {@link #parseSkipping
+   * parseSkipping()} in between). Useful for matching a literal string, such as {@code
+   * zeroOrMore(isNot('"')).immediatelyBetween("\"", "\"")}.
    */
   default Parser<T> immediatelyBetween(String prefix, String suffix) {
     return Parser.literally(between(prefix, suffix));
   }
 
-  /**
-   * After matching the current production, proceed to match {@code suffix}.
-   */
+  /** After matching the current production, proceed to match {@code suffix}. */
   <S> Parser<S> then(Parser<S> suffix);
 
   /**
@@ -150,7 +150,6 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
    */
   Production<T> optionallyFollowedBy(String suffix);
 
-
   /**
    * Returns an equivalent production except it allows {@code suffix} if present.
    *
@@ -171,8 +170,8 @@ public sealed interface Production<T> permits Parser, Parser.OrEmpty {
   Production<T> optionallyFollowedBy(String suffix, Function<? super T, ? extends T> op);
 
   /**
-   * If this production rule matches, optionally matches {@code suffix} with the {@code op} BiFunction
-   * to transform the current production's result.
+   * If this production rule matches, optionally matches {@code suffix} with the {@code op}
+   * BiFunction to transform the current production's result.
    *
    * <p>Note that the {@link Parser} and {@link Parser.OrEmpty} implementations are re-declared to
    * return the more specific {@code Parser<T>} or {@code Parser<T>.OrEmpty} subtypes respectively.

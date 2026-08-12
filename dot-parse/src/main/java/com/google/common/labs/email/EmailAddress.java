@@ -47,7 +47,6 @@ import com.google.mu.util.Substring;
 import com.google.mu.util.stream.Joiner;
 import java.net.IDN;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -263,8 +262,7 @@ public final class EmailAddress {
 
   private static final Parser<?> ADDRESS_LIST_DELIMITER = one("[,;]").atLeastOnce(counting());
   private static final Parser<List<Object>>.OrEmpty ADDRESS_OR_JUNK_LIST =
-      ADDRESS_OR_JUNK
-          .zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
+      ADDRESS_OR_JUNK.zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
           .optionallyFollowedBy(ADDRESS_LIST_DELIMITER);
 
   private final String localPart;

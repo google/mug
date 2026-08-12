@@ -707,8 +707,7 @@ public sealed interface RegexPattern {
   static RegexPattern of(String regex) {
     Parser<RegexPattern>.OrEmpty parser =
         Parser.define(RegexParsers::pattern).orElse(new Literal(""));
-    return after(prefix("(?x)"))
-        .from(regex)
+    return after(prefix("(?x)")).from(regex)
         .map(p -> parser.parseSkipping(RegexParsers.FREE_SPACES, p))
         .orElseGet(() -> parser.parse(regex));
   }
