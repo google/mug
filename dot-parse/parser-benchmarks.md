@@ -68,10 +68,10 @@ Throughput was measured in **operations per millisecond** (higher is better):
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Complex JSON Payload** | 0.179 | 0.137 | **0.535** 🚀 ☕ | 0.120 | 0.095 | 0.522 | 0.228 | 0.014 | 0.092 | 0.079 | 0.065 | 0.077 | **`dot`** 🚀 ☕ |
 | **Complex JSON with Comments** | 0.094 | 0.063 | **0.294** ☕ | 0.094 | 0.052 | **0.330** 🚀 | 0.078 | 0.001 | 0.030 | 0.030 | 0.022 | 0.036 | **`fast`** 🚀<br>**`dot`** ☕ |
-| **`qux2.json` (Medium JSON)** | — | — | **0.187** ☕ | — | — | **0.253** 🚀 | 0.144 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
-| **`bla25.json` (Large JSON)** | — | — | **0.066** ☕ | — | — | **0.128** 🚀 | 0.051 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
-| **`countries.geo.json` (Geographic JSON)** | — | — | **0.268** ☕ | — | — | **0.367** 🚀 | 0.167 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
-| **`ugh10k.json` (Very Large JSON)** | — | — | **0.022** ☕ | — | — | **0.036** 🚀 | 0.018 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
+| **`qux2.json` (Medium JSON)** | — | — | **0.220** ☕ | — | — | **0.253** 🚀 | 0.144 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
+| **`bla25.json` (Large JSON)** | — | — | **0.088** ☕ | — | — | **0.128** 🚀 | 0.051 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
+| **`countries.geo.json` (Geographic JSON)** | — | — | **0.296** ☕ | — | — | **0.367** 🚀 | 0.167 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
+| **`ugh10k.json` (Very Large JSON)** | — | — | **0.030** ☕ | — | — | **0.036** 🚀 | 0.018 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
 
 #### Reference Production Baselines (JSON)
 To provide an absolute performance ceiling, we stacked our combinator shootout against production-grade, hand-written and generated parsers on the exact same JSON payloads:
