@@ -376,8 +376,8 @@ public final class Parsers {
    * <p>The returned parser supports parsing from a {@link java.io.Reader} input <em>only if</em>
    * the regex has an upper bound in the match size (e.g. <code>[a-z]{3}</code> or {@code (abc|d)}).
    * Regex patterns with unbounded match size (e.g. {@code [a-z]+}) will throw {@link
-   * UnsupportedOperationException} when calling {@link #parseToStream(Reader)} or {@link
-   * #probe(Reader)}, because Java regex requires the input to be fully loaded into memory,
+   * UnsupportedOperationException} when calling {@link Parser#parseToStream(Reader)} or {@link
+   * Parser#probe(Reader)}, because Java regex requires the input to be fully loaded into memory,
    * defeating the purpose of lazy loading from {@code Reader} - you might as well just explicitly
    * load into a {@code String} before parsing.
    *
