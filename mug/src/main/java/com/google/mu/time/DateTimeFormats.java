@@ -16,11 +16,11 @@ package com.google.mu.time;
 
 import static com.google.mu.util.CharPredicate.anyOf;
 import static com.google.mu.util.CharPredicate.noneOf;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.Substring.consecutive;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.firstOccurrence;
 import static com.google.mu.util.Substring.leading;
-import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.BiCollectors.maxByKey;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static java.util.Arrays.asList;
@@ -28,6 +28,11 @@ import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+import com.google.mu.collect.PrefixSearchTable;
+import com.google.mu.util.BiOptional;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiStream;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -47,12 +52,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-
-import com.google.mu.collect.PrefixSearchTable;
-import com.google.mu.util.BiOptional;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
-import com.google.mu.util.stream.BiStream;
 
 /**
  * Utility class with one-stop {@link Instant} and {@link ZonedDateTime} parsing for all common date
@@ -161,6 +160,10 @@ public final class DateTimeFormats {
           .add(forExample("2011-12-3"), "yyyy-MM-d")
           .add(forExample("2011/12/03"), "yyyy/MM/dd")
           .add(forExample("2011/12/3"), "yyyy/MM/d")
+          .add(forExample("2011-2-13"), "yyyy-M-dd")
+          .add(forExample("2011/2/13"), "yyyy/M/dd")
+          .add(forExample("2011-2-3"), "yyyy-M-d")
+          .add(forExample("2011/2/3"), "yyyy/M/d")
           .add(forExample("2011年2月1日"), "yyyy年M月d日")
           .add(forExample("2011年12月1日"), "yyyy年MM月d日")
           .add(forExample("2011年2月10日"), "yyyy年M月dd日")
@@ -477,8 +480,8 @@ public final class DateTimeFormats {
   }
 
   private static String removeNanosecondsPart(String example) {
-    return consecutive(DIGIT)
-        .immediatelyBetween(":", INCLUSIVE, ".", INCLUSIVE) // the "":ss."" in "HH:mm:ss.nnnnn"
+    return consecutive(DIGIT).immediatelyBetween(
+            ":", INCLUSIVE, ".", INCLUSIVE) // the "":ss."" in "HH:mm:ss.nnnnn"
         .then(leading(DIGIT)) // the digits immediately after the ":ss." are the nanos
         .in(example)
         .map(nanos -> example.substring(0, nanos.index() - 1) + nanos.after())
@@ -505,8 +508,7 @@ public final class DateTimeFormats {
             .build();
 
     static BiOptional<List<Object>, String> resolve(List<?> signature) {
-      return RESOLUTION_TABLE
-          .getAll(signature)
+      return RESOLUTION_TABLE.getAll(signature)
           .flatMapValues(rules -> rules.stream()
               .filter(rule -> rule.predicate.test(signature))
               .map(rule -> rule.format))
@@ -514,8 +516,7 @@ public final class DateTimeFormats {
     }
 
     static Optional<DateTimeFormatter> resolveFormat(List<?> signature) {
-      return resolve(signature)
-          .filter((prefix, p) -> prefix.size() == 5)
+      return resolve(signature).filter((prefix, p) -> prefix.size() == 5)
           .map((prefix, p) -> DateTimeFormatter.ofPattern(p));
     }
 
