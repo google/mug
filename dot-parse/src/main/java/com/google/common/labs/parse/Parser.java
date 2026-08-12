@@ -514,12 +514,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override MatchResult<String> skipAndMatch(
           Skipper skip, CharInput input, int start, ErrorContext context) {
         int found = input.indexOf(quote, start);
-        if (found < 0) {
-          return context.expecting(quote, start);
-        }
-        String snippet = input.snippet(start, found - start);
-        return snippet.indexOf('\\') < 0
-            ? new MatchResult.Success<>(start, found + 1, snippet)
+        if (found < 0) return context.expecting(quote, start);
+        String quoted = input.snippet(start, found - start);
+        return quoted.indexOf('\\') < 0
+            ? new MatchResult.Success<>(start, found + 1, quoted)
             : slow.skipAndMatch(null, input, start, context);
       }
     });

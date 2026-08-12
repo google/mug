@@ -469,6 +469,10 @@
                 <exclude>**/javatype/JavaTypeBenchmark.java</exclude>
                 <exclude>**/dotparse/StringInBenchmark.java</exclude>
                 <exclude>**/dotparse/JsonShootoutBenchmark.java</exclude>
+                <exclude>**/dotparse/StringLengthBenchmark.java</exclude>
+                <exclude>**/ParserShowdownBenchmark.java</exclude>
+                <exclude>**/CssBenchmark.java</exclude>
+                <exclude>**/CelParserBenchmark.java</exclude>
                 <exclude>**/EmailAddressBenchmark.java</exclude>
                 <exclude>**/WhitespaceBenchmark.java</exclude>
                 <exclude>**/LetterBenchmark.java</exclude>

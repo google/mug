@@ -66,8 +66,8 @@ Throughput was measured in **operations per millisecond** (higher is better):
 
 | Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`Javacc`](https://github.com/apache/tomcat/blob/main/java/org/apache/tomcat/util/json/JSONParser.jjt) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | [`parboiled`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/parboiled/ParboiledJsonParser.java) | [`autumn`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/autumn/AutumnJsonParser.java) | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Complex JSON Payload** | 0.179 | 0.137 | **0.297** ☕ | 0.120 | 0.095 | **0.522** 🚀 | 0.228 | 0.014 | 0.098 | 0.079 | 0.065 | 0.077 | **`fast`** 🚀<br>**`dot`** ☕ |
-| **Complex JSON with Comments** | 0.094 | 0.063 | **0.199** ☕ | 0.094 | 0.052 | **0.330** 🚀 | 0.078 | 0.001 | 0.031 | 0.030 | 0.022 | 0.036 | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex JSON Payload** | 0.179 | 0.137 | **0.535** 🚀 ☕ | 0.120 | 0.095 | 0.522 | 0.228 | 0.014 | 0.092 | 0.079 | 0.065 | 0.077 | **`dot`** 🚀 ☕ |
+| **Complex JSON with Comments** | 0.094 | 0.063 | **0.294** ☕ | 0.094 | 0.052 | **0.330** 🚀 | 0.078 | 0.001 | 0.030 | 0.030 | 0.022 | 0.036 | **`fast`** 🚀<br>**`dot`** ☕ |
 | **`qux2.json` (Medium JSON)** | — | — | **0.187** ☕ | — | — | **0.253** 🚀 | 0.144 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
 | **`bla25.json` (Large JSON)** | — | — | **0.066** ☕ | — | — | **0.128** 🚀 | 0.051 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
 | **`countries.geo.json` (Geographic JSON)** | — | — | **0.268** ☕ | — | — | **0.367** 🚀 | 0.167 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
@@ -80,7 +80,7 @@ To provide an absolute performance ceiling, we stacked our combinator shootout a
 | :--- | :---: | :---: |
 | **Jackson Databind** (Lenient) | 1.565 | 0.373 |
 | **Gson** (Lenient) | 1.122 | 0.336 |
-| **`dot-parse`** (Our leading Java combinator) | 0.297 | 0.199 |
+| **`dot-parse`** (Our leading Java combinator) | **0.535** | **0.294** |
 | **JavaCC** (Tomcat / Best) | 0.137 | 0.063 |
 
 ---
@@ -111,8 +111,8 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 | Benchmark Scenario | `dot-parse` | `jparsec` | `fastparse` | `cats-parse` | `taker` | `parsecj` | `parboiled` | `antlr4` | `scalaParser` | `petitparser` | `better-parse` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
 | **IPv4 Address** | 4,463 | **8,997** ☕ | **24,624** 🚀 | 12,340 | 4,956 | 12,125 | 883 | 1,996 | 3,562 | 7,051 | 1,831 | **`fast`** 🚀<br>Java: **`jparsec`** ☕ |
-| **String (Simple)** | 8,416 | 5,433 | **21,814** 🚀 | 11,658 | **13,671** ☕ | 4,870 | 561 | 5,373 | 3,903 | 3,027 | 5,037 | **`fast`** 🚀<br>Java: **`taker`** ☕ |
-| **String (Escaped)** | 4,030 | 3,943 | 12,889 | 3,020 | **21,018** 🚀 ☕ | 2,480 | 529 | 3,640 | 3,152 | 2,392 | 1,556 | **`taker`** 🚀 ☕ |
+| **String (Simple)** | **64,706** 🚀 ☕ | 5,433 | **21,814** | 11,658 | 13,671 | 4,870 | 561 | 5,373 | 3,903 | 3,027 | 5,037 | **`dot`** 🚀 ☕ |
+| **String (Escaped)** | 4,194 | 3,943 | 12,889 | 3,020 | **21,018** 🚀 ☕ | 2,480 | 529 | 3,640 | 3,152 | 2,392 | 1,556 | **`taker`** 🚀 ☕ |
 | **120 Programming Keywords (CS)** | **216.83** 🚀 ☕ | 15.43 | 12.08 | 13.74 | 10.59 | 5.11 | 88.22 | 36.29 | 1.70 | 13.06 | — | **`dot`** 🚀 ☕ |
 | **120 Programming Keywords (CI)** | **152.10** 🚀 ☕ | 14.64 | 11.31 | 13.37 | 10.67 | 4.01 | 8.25 | 34.10 | 1.28 | 10.76 | — | **`dot`** 🚀 ☕ |
 | **500 City Names (CS)** | **28.82** 🚀 ☕ | 0.91 | 0.47 | 0.70 | 0.57 | 0.18 | 15.12 | 6.02 | 0.11 | 0.77 | — | **`dot`** 🚀 ☕ |
@@ -170,7 +170,7 @@ Our benchmarks highlight four key architectural factors that govern parser perfo
 *   **The Solution**: Scannerless combinators (`dot-parse`, `fastparse`) match directly on the character stream. They avoid token object allocations entirely, scanning text in-place.
 
 ### 4. Vectorized Delimiter Scanning
-*   **The Problem**: Scanning comments (like `/* ... */`) or block delimiters in traditional parsers relies on character-by-character DFA transition loops, which scan memory slowly.
+*   **The Problem**: Scanning comments (like `/* ... */`) or quoted strings in traditional parsers relies on character-by-character DFA transition loops, which scan memory slowly.
 *   **The Solution**: `dot-parse` leverages native string search (`String.indexOf`) for block delimiters. The JVM JIT compiler optimizes these calls using vectorized SIMD instructions, allowing it to scan blocks in parallel and skip pointers instantly.
 ---
 
