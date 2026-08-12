@@ -93,20 +93,19 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * Only use in context where input consumption is guaranteed. Do not use within a loop, like
    * atLeastOnce(), zeroOrMore()!
    */
-  private static final Parser<Void> UNSAFE_EOF =
-      new Parser<>() {
-        @Override MatchResult<Void> skipAndMatch(
-            Skipper skip, CharInput input, int start, ErrorContext context) {
-          start = skipIfAny(skip, input, start);
-          return input.isEof(start)
-              ? new MatchResult.Success<>(start, start, null)
-              : context.expecting("EOF", start);
-        }
+  private static final Parser<Void> UNSAFE_EOF = new Parser<>() {
+    @Override MatchResult<Void> skipAndMatch(
+        Skipper skip, CharInput input, int start, ErrorContext context) {
+      start = skipIfAny(skip, input, start);
+      return input.isEof(start)
+          ? new MatchResult.Success<>(start, start, null)
+          : context.expecting("EOF", start);
+    }
 
-        @Override Set<String> getExpectedSymbols() {
-          return Set.of("EOF");
-        }
-      };
+    @Override Set<String> getExpectedSymbols() {
+      return Set.of("EOF");
+    }
+  };
 
   /**
    * Matches the given character {@code c}.
@@ -440,24 +439,16 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.5
    */
   public static Parser<String> quotedBy(String before, String after) {
-    return quotedBy(string(before), first(after));
-  }
-
-  /**
-   * Matches the characters quoted by {@code before} and {@code after}, and returns the string in
-   * between.
-   */
-  private static Parser<String> quotedBy(Parser<?> before, Parser<?> after) {
-    requireNonNull(after);
-    return before.then(
-        new Parser<>() {
+    checkArgument(after.length() > 0, "after cannot be empty");
+    return string(before)
+        .then(new Parser<>() {
           @Override MatchResult<String> skipAndMatch(
               Skipper skip, CharInput input, int start, ErrorContext context) {
-            return switch (after.skipAndMatch(skip, input, start, context)) {
-              case MatchResult.Success<?> success -> new MatchResult.Success<>(
-                  start, success.tail(), input.snippet(start, success.head() - start));
-              case MatchResult.Failure<?> failure -> failure.safeCast();
-            };
+            int found = input.indexOf(after, start);
+            return found >= 0
+                ? new MatchResult.Success<>(
+                    start, found + after.length(), input.snippet(start, found - start))
+                : context.expecting(after, start);
           }
         });
   }
@@ -542,29 +533,28 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(!after.isEmpty(), "after cannot be empty");
     checkArgument(!before.equals(after), "before and after must be different for nesting");
     return string(before)
-        .then(
-            new Parser<String>() {
-              @Override MatchResult<String> skipAndMatch(
-                  Skipper skip, CharInput input, final int start, ErrorContext context) {
-                for (int index = start, depth = 1; ; ) {
-                  if (input.isEof(index)) {
-                    return context.expecting(after, index); // Unclosed block
-                  }
-                  if (input.startsWith(after, index)) {
-                    if (--depth == 0) {
-                      return new MatchResult.Success<>(
-                          start, index + after.length(), input.snippet(start, index - start));
-                    }
-                    index += after.length();
-                  } else if (input.startsWith(before, index)) {
-                    depth++;
-                    index += before.length();
-                  } else {
-                    index++;
-                  }
-                }
+        .then(new Parser<String>() {
+          @Override MatchResult<String> skipAndMatch(
+              Skipper skip, CharInput input, final int start, ErrorContext context) {
+            for (int index = start, depth = 1; ; ) {
+              if (input.isEof(index)) {
+                return context.expecting(after, index); // Unclosed block
               }
-            });
+              if (input.startsWith(after, index)) {
+                if (--depth == 0) {
+                  return new MatchResult.Success<>(
+                      start, index + after.length(), input.snippet(start, index - start));
+                }
+                index += after.length();
+              } else if (input.startsWith(before, index)) {
+                depth++;
+                index += before.length();
+              } else {
+                index++;
+              }
+            }
+          }
+        });
   }
 
   /**
@@ -595,38 +585,37 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(!Character.isSurrogate(before), "before cannot be a surrogate character");
     checkArgument(!Character.isSurrogate(after), "after cannot be a surrogate character");
     String suffix = Character.toString(after);
-    return one(before).then(
-            new Parser<String>() {
-              @Override MatchResult<String> skipAndMatch(
-                  Skipper skip, CharInput input, final int start, ErrorContext context) {
-                StringBuilder builder = new StringBuilder();
-                for (int index = start, depth = 1; ; ) {
-                  if (input.isEof(index)) {
-                    return context.expecting(suffix, index); // Unclosed block
-                  }
-                  char c = input.charAt(index++);
-                  if (c == after) {
-                    if (--depth == 0) {
-                      return new MatchResult.Success<>(start, index, builder.toString());
-                    }
-                  } else if (c == before) {
-                    depth++;
-                  } else if (c == '\\') {
-                    switch (followingEscape.skipAndMatch(null, input, index, context)) {
-                      case MatchResult.Success(int head, int tail, CharSequence value) -> {
-                        builder.append(value);
-                        index = tail;
-                        continue;
-                      }
-                      case MatchResult.Failure<?> failure -> {
-                        return failure.safeCast();
-                      }
-                    }
-                  }
-                  builder.append(c);
-                }
+    return one(before).then(new Parser<String>() {
+      @Override MatchResult<String> skipAndMatch(
+          Skipper skip, CharInput input, final int start, ErrorContext context) {
+        StringBuilder builder = new StringBuilder();
+        for (int index = start, depth = 1; ; ) {
+          if (input.isEof(index)) {
+            return context.expecting(suffix, index); // Unclosed block
+          }
+          char c = input.charAt(index++);
+          if (c == after) {
+            if (--depth == 0) {
+              return new MatchResult.Success<>(start, index, builder.toString());
+            }
+          } else if (c == before) {
+            depth++;
+          } else if (c == '\\') {
+            switch (followingEscape.skipAndMatch(null, input, index, context)) {
+              case MatchResult.Success(int head, int tail, CharSequence value) -> {
+                builder.append(value);
+                index = tail;
+                continue;
               }
-            });
+              case MatchResult.Failure<?> failure -> {
+                return failure.safeCast();
+              }
+            }
+          }
+          builder.append(c);
+        }
+      }
+    });
   }
 
   /**
@@ -1702,12 +1691,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * {@code literally(p1, p2, p3)} is short-hand for {@code literally(sequence(p1, p2, p3))};
-   * useful for matching a pattern of characters without spaces in between.
+   * {@code literally(p1, p2, p3)} is short-hand for {@code literally(sequence(p1, p2, p3))}; useful
+   * for matching a pattern of characters without spaces in between.
    *
-   * <p>For example, you can use {@code
-   * literally(one('('), digits(3), one(')'), digits(3), one('-'), digits(4))} to match US phone
-   * numbers.
+   * <p>For example, you can use {@code literally(one('('), digits(3), one(')'), digits(3),
+   * one('-'), digits(4))} to match US phone numbers.
    *
    * @since 10.7
    */
@@ -1986,20 +1974,19 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * A crippled zero-width parser, not safe to be used in a loop and must be carefully composed
      * with a parser that does consume!
      */
-    private final Parser<T> unsafeZeroWidthParser =
-        new SamePrefix<T>() {
-          @Override MatchResult<T> skipAndMatch(
-              Skipper skip, CharInput input, int start, ErrorContext context) {
-            return switch (left().skipAndMatch(skip, input, start, context)) {
-              case MatchResult.Success<T> success -> success;
-              default -> new MatchResult.Success<>(start, start, computeDefaultValue());
-            };
-          }
-
-          @Override Parser<?> ignoreReturn() {
-            return OrEmpty.this.ignoreReturn().unsafeZeroWidthParser;
-          }
+    private final Parser<T> unsafeZeroWidthParser = new SamePrefix<T>() {
+      @Override MatchResult<T> skipAndMatch(
+          Skipper skip, CharInput input, int start, ErrorContext context) {
+        return switch (left().skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success<T> success -> success;
+          default -> new MatchResult.Success<>(start, start, computeDefaultValue());
         };
+      }
+
+      @Override Parser<?> ignoreReturn() {
+        return OrEmpty.this.ignoreReturn().unsafeZeroWidthParser;
+      }
+    };
 
     private OrEmpty(Supplier<? extends T> defaultSupplier) {
       this.defaultSupplier = defaultSupplier;
