@@ -44,7 +44,7 @@ import java.util.stream.Stream;
 public sealed interface RegexPattern {
 
   /**
-   * Useful metadata of a regex pattern.
+   * Common metadata shared by all regex patterns.
    *
    * @param minSize the minimum match size of this pattern in UTF-16 code units (chars).
    *     Particularly, optional patterns like {@code .?}, {@code .*}, {@code c+}, <code>foo{,2}

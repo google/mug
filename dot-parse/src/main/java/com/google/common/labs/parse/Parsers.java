@@ -13,6 +13,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.counting;
 
+import com.google.common.labs.parse.Regexes.PrefixAnalyzer;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import java.time.Duration;
@@ -375,9 +376,10 @@ public final class Parsers {
    * <p>The returned parser supports parsing from a {@link java.io.Reader} input <em>only if</em>
    * the regex has an upper bound in the match size (e.g. <code>[a-z]{3}</code> or {@code (abc|d)}).
    * Regex patterns with unbounded match size (e.g. {@code [a-z]+}) will throw {@link
-   * UnsupportedOperationException} when parsing from a {@code Reader} because it defeats the
-   * purpose of lazy loading from {@code Reader} - you might as well just eagerly load into a {@code
-   * String} before parsing.
+   * UnsupportedOperationException} when calling {@link #parseToStream(Reader)} or {@link
+   * #probe(Reader)}, because Java regex requires the input to be fully loaded into memory,
+   * defeating the purpose of lazy loading from {@code Reader} - you might as well just explicitly
+   * load into a {@code String} before parsing.
    *
    * <p>The {@code pattern} string is validated at compile-time by the {@code mug-errorprone}
    * (v10.9+) compiler plugin.
@@ -399,7 +401,7 @@ public final class Parsers {
       }
 
       @Override Set<String> computePrefixes() {
-        return Regexes.prefixesOf(ast);
+        return new PrefixAnalyzer().prefixesOf(ast);
       }
     }.source();
   }
@@ -543,9 +545,7 @@ public final class Parsers {
     }
 
     static <T> T applyOperator(T operand, Function<? super T, ? extends T> op, long times) {
-      for (long i = 0; i < times; i++) {
-        operand = op.apply(operand);
-      }
+      for (long i = 0; i < times; i++) operand = op.apply(operand);
       return operand;
     }
 

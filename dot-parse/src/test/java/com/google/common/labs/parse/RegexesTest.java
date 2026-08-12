@@ -17,6 +17,7 @@ package com.google.common.labs.parse;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.common.labs.parse.Regexes.PrefixAnalyzer;
 import com.google.common.labs.regex.RegexPattern;
 import java.util.Set;
 import org.junit.Test;
@@ -69,6 +70,14 @@ public class RegexesTest {
     assertThat(prefixes("[\u0080-\u00FF]")).containsExactly(""); // non-ASCII range
   }
 
+  @Test public void prefixesOf_largeCharRange_boundary() {
+    assertThat(prefixes("[a-z]")).hasSize(26); // size 26, under 30 limit
+  }
+
+  @Test public void prefixesOf_smallNonAsciiRange_fallback() {
+    assertThat(prefixes("[\u0080-\u008A]")).containsExactly(""); // small non-ASCII range
+  }
+
   @Test public void prefixesOf_predefinedCharClass() {
     assertThat(prefixes("\\d")).containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
     assertThat(prefixes("\\w")).containsExactly("");
@@ -88,8 +97,26 @@ public class RegexesTest {
     assertThat(prefixes("(?i:\uD83D\uDE00\uD83D\uDE01b)")).containsExactly("\uD83D\uDE00\uD83D");
   }
 
+  @Test public void prefixesOf_disabledCaseInsensitive() {
+    assertThat(prefixes("(?i:a?(?-i:b))")).containsExactly("a", "A", "b");
+  }
+
+  @Test public void prefixesOf_conflictingCaseInsensitive() {
+    assertThat(prefixes("(?i-i:b)")).containsExactly("b");
+  }
+
   @Test public void prefixesOf_unicodeCharacterClass() {
     assertThat(prefixes("(?U:\\d)")).containsExactly("");
+  }
+
+  @Test public void prefixesOf_disabledUnicodeCharacterClass() {
+    assertThat(prefixes("(?U:(?-U:\\d))"))
+        .containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+  }
+
+  @Test public void prefixesOf_conflictingUnicodeCharacterClass() {
+    assertThat(prefixes("(?U-U:\\d)"))
+        .containsExactly("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
   }
 
   @Test public void prefixesOf_anchorsAndLookaroundsAndBackreferences() {
@@ -135,7 +162,7 @@ public class RegexesTest {
   }
 
   private static Set<String> prefixes(String regex) {
-    return Regexes.prefixesOf(RegexPattern.of(regex));
+    return new PrefixAnalyzer().prefixesOf(RegexPattern.of(regex));
   }
 
   private static int maxSize(String regex) {
