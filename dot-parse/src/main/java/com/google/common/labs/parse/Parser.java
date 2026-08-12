@@ -502,14 +502,27 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public static Parser<String> quotedByWithEscapes(
       String before, char after, Production<? extends CharSequence> escaped) {
-    var escape = string("\\").then(allowZeroWidth(escaped));
     checkArgument(after != '\\', "quoteChar cannot be '\\'");
     checkArgument(!Character.isISOControl(after), "quoteChar cannot be a control character");
     checkArgument(!Character.isSurrogate(after), "quoteChar cannot be a surrogate character");
-    CharPredicate literalChars = isNot(after).and(isNot('\\')).precomputeForAscii();
-    return anyOf(consecutive(literalChars, "quoted chars"), escape)
+    var escape = string("\\").then(allowZeroWidth(escaped));
+    String quote = Character.toString(after);
+    var slow = anyOf(consecutive(isNot(after).and(isNot('\\')), "quoted chars"), escape)
         .zeroOrMore(joining())
-        .immediatelyBetween(before, Character.toString(after));
+        .followedBy(quote);
+    return string(before).then(new Parser<>() {
+      @Override MatchResult<String> skipAndMatch(
+          Skipper skip, CharInput input, int start, ErrorContext context) {
+        int found = input.indexOf(quote, start);
+        if (found < 0) {
+          return context.expecting(quote, start);
+        }
+        String snippet = input.snippet(start, found - start);
+        return snippet.indexOf('\\') < 0
+            ? new MatchResult.Success<>(start, found + 1, snippet)
+            : slow.skipAndMatch(null, input, start, context);
+      }
+    });
   }
 
   /**
