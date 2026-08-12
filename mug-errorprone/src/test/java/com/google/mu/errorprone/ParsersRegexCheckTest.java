@@ -101,4 +101,17 @@ public final class ParsersRegexCheckTest {
             "}")
         .doTest();
   }
+
+  @Test public void invalidJdkRegexSyntax() {
+    helper.addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER = Parsers.regex(",
+            "      // BUG: Diagnostic contains: Illegal Unicode escape sequence",
+            "      \"\\\\u123z\");",
+            "}")
+        .doTest();
+  }
 }
