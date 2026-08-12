@@ -77,11 +77,8 @@ final class Regexes {
               yield EMPTY_PREFIX;
             }
             result.addAll(prefixes);
-            if (element.metadata().minSize() > 0) {
-              // once we reach a never-empty pattern, chars after it can't be safely used as
-              // prefixes.
-              break;
-            }
+            // once we reach a never-empty pattern, chars after it don't matter
+            if (element.metadata().minSize() > 0) break;
           }
           yield Set.copyOf(result);
         }
@@ -172,8 +169,7 @@ final class Regexes {
             Character.toString(Character.toLowerCase(c)),
             Character.toString(Character.toUpperCase(c)));
       }
-    },
-    ;
+    };
 
     abstract Set<String> prefixesOf(String s);
     abstract Set<String> prefixesOf(char c);
