@@ -92,6 +92,86 @@ public final class DateTimeFormatsTest {
   }
 
   @Test
+  public void dotFormat_dMyyyy() {
+    assertLocalDate("1.2.2011", "d.M.yyyy").isEqualTo(LocalDate.of(2011, 2, 1));
+  }
+
+  @Test
+  public void dotFormat_dMyyyy_withSpaces() {
+    assertLocalDate("1. 2. 2011", "d. M. yyyy").isEqualTo(LocalDate.of(2011, 2, 1));
+  }
+
+  @Test
+  public void dotFormat_ddMyyyy() {
+    assertLocalDate("10.2.2011", "dd.M.yyyy").isEqualTo(LocalDate.of(2011, 2, 10));
+  }
+
+  @Test
+  public void dotFormat_ddMyyyy_withSpaces() {
+    assertLocalDate("10. 2. 2011", "dd. M. yyyy").isEqualTo(LocalDate.of(2011, 2, 10));
+  }
+
+  @Test
+  public void dotFormat_dMMyyyy() {
+    assertLocalDate("1.12.2011", "d.MM.yyyy").isEqualTo(LocalDate.of(2011, 12, 1));
+  }
+
+  @Test
+  public void dotFormat_dMMyyyy_withSpaces() {
+    assertLocalDate("1. 12. 2011", "d. MM. yyyy").isEqualTo(LocalDate.of(2011, 12, 1));
+  }
+
+  @Test
+  public void dotFormat_ddMMyyyy() {
+    assertLocalDate("11.12.2011", "dd.MM.yyyy").isEqualTo(LocalDate.of(2011, 12, 11));
+  }
+
+  @Test
+  public void dotFormat_ddMMyyyy_withSpaces() {
+    assertLocalDate("11. 12. 2011", "dd. MM. yyyy").isEqualTo(LocalDate.of(2011, 12, 11));
+  }
+
+  @Test
+  public void dotFormat_yyyyMMdd() {
+    assertLocalDate("2011.11.12", "yyyy.MM.dd").isEqualTo(LocalDate.of(2011, 11, 12));
+  }
+
+  @Test
+  public void dotFormat_yyyyMMdd_withSpaces() {
+    assertLocalDate("2011. 11. 12", "yyyy. MM. dd").isEqualTo(LocalDate.of(2011, 11, 12));
+  }
+
+  @Test
+  public void dotFormat_yyyyMdd() {
+    assertLocalDate("2011.1.12", "yyyy.M.dd").isEqualTo(LocalDate.of(2011, 1, 12));
+  }
+
+  @Test
+  public void dotFormat_yyyyMdd_withSpaces() {
+    assertLocalDate("2011. 1. 12", "yyyy. M. dd").isEqualTo(LocalDate.of(2011, 1, 12));
+  }
+
+  @Test
+  public void dotFormat_yyyyMMd() {
+    assertLocalDate("2011.11.2", "yyyy.MM.d").isEqualTo(LocalDate.of(2011, 11, 2));
+  }
+
+  @Test
+  public void dotFormat_yyyyMMd_withSpaces() {
+    assertLocalDate("2011. 11. 2", "yyyy. MM. d").isEqualTo(LocalDate.of(2011, 11, 2));
+  }
+
+  @Test
+  public void dotFormat_yyyyMd() {
+    assertLocalDate("2011.1.1", "yyyy.M.d").isEqualTo(LocalDate.of(2011, 1, 1));
+  }
+
+  @Test
+  public void dotFormat_yyyyMd_withSpaces() {
+    assertLocalDate("2011. 1. 1", "yyyy. M. d").isEqualTo(LocalDate.of(2011, 1, 1));
+  }
+
+  @Test
   public void timeOnlyExamples() {
     assertLocalTime("10:30:00", "HH:mm:ss").isEqualTo(LocalTime.of(10, 30, 0));
     assertLocalTime("10:30", "HH:mm").isEqualTo(LocalTime.of(10, 30, 0));
@@ -1527,6 +1607,11 @@ public final class DateTimeFormatsTest {
   @SuppressWarnings("DateTimeExampleStringCheck")
   public void trailingDotAfterSecond_notSupported() {
     assertThrows(DateTimeException.class, () -> formatOf("2023-01-01T00:00:00."));
+  }
+
+  @Test
+  public void parseLocalDate_invalidDotDateThrows() {
+    assertThrows(DateTimeException.class, () -> DateTimeFormats.parseLocalDate("10.20.2011"));
   }
 
   private static ComparableSubject<ZonedDateTime> assertZonedDateTime(
