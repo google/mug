@@ -14,7 +14,7 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
     sequence(word().followedBy("="), digits(), Map::entry)
         .zeroOrMoreDelimitedBy(",")
         .between("{", "}")         // {k1=100, k2=200, k3=300, ...}
-        .parse(input);
+        .parseSkipping(Character::isWhitespace, input);
     ``` 
 - [`DateTimeFormats`](./mug/src/main/java/com/google/mu/time/README.md) – define datetime formats by _examples_  
   → `DateTimeFormatter format = formatOf("2024-03-14 10.8.10:00.123 America/New_York")`
