@@ -25,7 +25,7 @@ import com.sun.source.tree.MethodInvocationTree;
     severity = WARNING)
 @AutoService(BugChecker.class)
 @SuppressWarnings("restriction")
-public final class RegexCanParseFromReaderCheck extends AbstractBugChecker
+public final class RegexCannotStreamFromReader extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck {
   private static final Matcher<ExpressionTree> MATCHER =
       staticMethod().onClass("com.google.common.labs.parse.Parsers").named("regex");

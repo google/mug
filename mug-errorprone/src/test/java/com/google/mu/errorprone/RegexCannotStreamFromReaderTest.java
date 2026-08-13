@@ -6,9 +6,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public final class RegexCanParseFromReaderCheckTest {
+public final class RegexCannotStreamFromReaderTest {
   private final CompilationTestHelper helper =
-      CompilationTestHelper.newInstance(RegexCanParseFromReaderCheck.class, getClass());
+      CompilationTestHelper.newInstance(RegexCannotStreamFromReader.class, getClass());
 
   @Test public void properUsageBindsCorrectly() {
     helper.addSourceLines(
