@@ -6,18 +6,16 @@ import static com.google.common.truth.Truth8.assertThat;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThrows;
 
-import java.io.StringReader;
-import java.util.List;
-import java.util.stream.Stream;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.labs.parse.Parser;
+import java.io.StringReader;
+import java.util.List;
+import java.util.stream.Stream;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public final class CsvTest {
@@ -224,15 +222,16 @@ public final class CsvTest {
     String secondRowInvalid = "abc,1234,5678\n\"invalid";
     assertThat(CSV.parseToLists(secondRowInvalid).limit(1))
         .containsExactly(ImmutableList.of("abc", "1234", "5678"));
-    Parser.ParseException thrown =
-        assertThrows(
-            Parser.ParseException.class, () -> CSV.parseToLists(secondRowInvalid).toList());
-    assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 2:9: expecting <">, encountered:\s
-            abc,1234,5678
-            "invalid
-                    ^
-        """);
+    Parser.ParseException thrown = assertThrows(
+        Parser.ParseException.class, () -> CSV.parseToLists(secondRowInvalid).toList());
+    assertThat(thrown).hasMessageThat()
+        .isEqualTo(
+            """
+            at 2:9: expecting <">, encountered:
+                abc,1234,5678
+                "invalid
+                        ^
+            """);
   }
 
   @Test
@@ -240,16 +239,17 @@ public final class CsvTest {
     String secondRowInvalid = "abc,1234,5678\n\"invalid";
     assertThat(CSV.parseToLists(new StringReader(secondRowInvalid)).limit(1))
         .containsExactly(ImmutableList.of("abc", "1234", "5678"));
-    Parser.ParseException thrown =
-        assertThrows(
-            Parser.ParseException.class,
-            () -> CSV.parseToLists(new StringReader(secondRowInvalid)).toList());
-    assertThat(thrown).hasMessageThat().isEqualTo("""
-        at 2:9: expecting <">, encountered:\s
-            abc,1234,5678
-            "invalid
-                    ^
-        """);
+    Parser.ParseException thrown = assertThrows(
+        Parser.ParseException.class,
+        () -> CSV.parseToLists(new StringReader(secondRowInvalid)).toList());
+    assertThat(thrown).hasMessageThat()
+        .isEqualTo(
+            """
+            at 2:9: expecting <">, encountered:
+                abc,1234,5678
+                "invalid
+                        ^
+            """);
   }
 
   @Test
@@ -285,8 +285,8 @@ public final class CsvTest {
   @Test
   public void parseToLists_fromReader_multipleCommentRows() {
     assertThat(
-            CSV.withComments()
-                .parseToLists(new StringReader("# comment 1\n# comment 2\r\n# comment 3")))
+            CSV.withComments().parseToLists(
+                    new StringReader("# comment 1\n# comment 2\r\n# comment 3")))
         .isEmpty();
   }
 
@@ -299,8 +299,8 @@ public final class CsvTest {
   @Test
   public void parseToLists_fromReader_withCommentAndDataRows() {
     assertThat(
-            CSV.withComments()
-                .parseToLists(new StringReader("# header\nabc,123\n# comment\nxyz,987")))
+            CSV.withComments().parseToLists(
+                    new StringReader("# header\nabc,123\n# comment\nxyz,987")))
         .containsExactly(ImmutableList.of("abc", "123"), ImmutableList.of("xyz", "987"));
   }
 
@@ -343,62 +343,96 @@ public final class CsvTest {
   @Test
   public void parseToMaps_emptyRowsAreIgnored() {
     assertThat(CSV.parseToMaps("h1,h2\n\nv1,v2"))
-        .containsExactly(ImmutableMap.of("h1", "v1", "h2", "v2"));
+        .containsExactly(
+            ImmutableMap.of(
+                "h1", "v1",
+                "h2", "v2"));
   }
 
   @Test
   public void parseToMaps_fromReader_emptyRowsAreIgnored() {
     assertThat(CSV.parseToMaps(new StringReader("h1,h2\n\nv1,v2")))
-        .containsExactly(ImmutableMap.of("h1", "v1", "h2", "v2"));
+        .containsExactly(
+            ImmutableMap.of(
+                "h1", "v1",
+                "h2", "v2"));
   }
 
   @Test
   public void parseToMaps_oneDataRow() {
     assertThat(CSV.parseToMaps("h1,h2\nv1,v2"))
-        .containsExactly(ImmutableMap.of("h1", "v1", "h2", "v2"));
+        .containsExactly(
+            ImmutableMap.of(
+                "h1", "v1",
+                "h2", "v2"));
   }
 
   @Test
   public void parseToMaps_withEmptyHeaderName() {
     assertThat(CSV.parseToMaps("h1,\nv1,v2"))
-        .containsExactly(ImmutableMap.of("h1", "v1", "", "v2"));
+        .containsExactly(
+            ImmutableMap.of(
+                "h1", "v1",
+                "", "v2"));
   }
 
   @Test
   public void parseToMaps_fromReader_withEmptyHeaderName() {
     assertThat(CSV.parseToMaps(new StringReader("h1,\nv1,v2")))
-        .containsExactly(ImmutableMap.of("h1", "v1", "", "v2"));
+        .containsExactly(
+            ImmutableMap.of(
+                "h1", "v1",
+                "", "v2"));
   }
 
   @Test
   public void parseToMaps_twoDataRows() {
     assertThat(CSV.parseToMaps("h1,h2\nv1,v2\nv3,v4"))
         .containsExactly(
-            ImmutableMap.of("h1", "v1", "h2", "v2"), ImmutableMap.of("h1", "v3", "h2", "v4"));
+            ImmutableMap.of(
+                "h1", "v1",
+                "h2", "v2"),
+            ImmutableMap.of(
+                "h1", "v3",
+                "h2", "v4"));
   }
 
   @Test
   public void parseToMaps_fromReader_twoDataRows() {
     assertThat(CSV.parseToMaps(new StringReader("h1,h2\nv1,v2\nv3,v4")))
         .containsExactly(
-            ImmutableMap.of("h1", "v1", "h2", "v2"), ImmutableMap.of("h1", "v3", "h2", "v4"));
+            ImmutableMap.of(
+                "h1", "v1",
+                "h2", "v2"),
+            ImmutableMap.of(
+                "h1", "v3",
+                "h2", "v4"));
   }
 
   @Test
   public void parseToMaps_fewerFieldsInDataRow() {
-    assertThat(CSV.parseToMaps("h1,h2\nv1")).containsExactly(ImmutableMap.of("h1", "v1"));
+    assertThat(CSV.parseToMaps("h1,h2\nv1"))
+        .containsExactly(
+            ImmutableMap.of(
+                "h1", "v1"));
   }
 
   @Test
   public void parseToMaps_moreFieldsInDataRow() {
     assertThat(CSV.parseToMaps("h1,h2\nv1,v2,v3"))
-        .containsExactly(ImmutableMap.of("h1", "v1", "h2", "v2"));
+        .containsExactly(
+            ImmutableMap.of(
+                "h1", "v1",
+                "h2", "v2"));
   }
 
   @Test
   public void parseToMaps_fromReader_moreFieldsInDataRow() {
     assertThat(CSV.parseToMaps(new StringReader("h1,h2\nv1,v2,v3")))
-        .containsExactly(ImmutableMap.of("h1", "v1", "h2", "v2"));
+        .containsExactly(
+            ImmutableMap.of(
+                "h1", "v1",
+                "h2", "v2"));
   }
 
   @Test
@@ -406,9 +440,15 @@ public final class CsvTest {
     String input = "h1,h2,h3\nv1\nv4,v5,v6,v7\nv8,v9";
     assertThat(CSV.parseToMaps(input))
         .containsExactly(
-            ImmutableMap.of("h1", "v1"),
-            ImmutableMap.of("h1", "v4", "h2", "v5", "h3", "v6"),
-            ImmutableMap.of("h1", "v8", "h2", "v9"));
+            ImmutableMap.of(
+                "h1", "v1"),
+            ImmutableMap.of(
+                "h1", "v4",
+                "h2", "v5",
+                "h3", "v6"),
+            ImmutableMap.of(
+                "h1", "v8",
+                "h2", "v9"));
   }
 
   @Test
@@ -416,26 +456,40 @@ public final class CsvTest {
     String input = "h1,h2,h3\nv1\nv4,v5,v6,v7\nv8,v9";
     assertThat(CSV.parseToMaps(new StringReader(input)))
         .containsExactly(
-            ImmutableMap.of("h1", "v1"),
-            ImmutableMap.of("h1", "v4", "h2", "v5", "h3", "v6"),
-            ImmutableMap.of("h1", "v8", "h2", "v9"));
+            ImmutableMap.of(
+                "h1", "v1"),
+            ImmutableMap.of(
+                "h1", "v4",
+                "h2", "v5",
+                "h3", "v6"),
+            ImmutableMap.of(
+                "h1", "v8",
+                "h2", "v9"));
   }
 
   @Test
   public void parseToMaps_duplicateColumnName_lastWins() {
     assertThat(CSV.parseToMaps("name,name,age\nYang,Jing,28"))
-        .containsExactly(ImmutableMap.of("name", "Jing", "age", "28"));
+        .containsExactly(
+            ImmutableMap.of(
+                "name", "Jing",
+                "age", "28"));
   }
 
   @Test
   public void parseToMaps_fromReader_duplicateColumnName_lastWins() {
     assertThat(CSV.parseToMaps(new StringReader("name,name,age\nYang,Jing,28")))
-        .containsExactly(ImmutableMap.of("name", "Jing", "age", "28"));
+        .containsExactly(
+            ImmutableMap.of(
+                "name", "Jing",
+                "age", "28"));
   }
 
   @Test
   public void parseWithHeaderFields_duplicateColumnName_keepBoth() {
-    assertThat(CSV.parseWithHeaderFields("name,name,age\nYang,Jing,28", ImmutableListMultimap::toImmutableListMultimap))
+    assertThat(
+            CSV.parseWithHeaderFields(
+                "name,name,age\nYang,Jing,28", ImmutableListMultimap::toImmutableListMultimap))
         .containsExactly(ImmutableListMultimap.of("name", "Yang", "name", "Jing", "age", "28"));
   }
 
@@ -443,7 +497,8 @@ public final class CsvTest {
   public void parseWithHeaderFields_fromReader_duplicateColumnName_keepBoth() {
     assertThat(
             CSV.parseWithHeaderFields(
-                new StringReader("name,name,age\nYang,Jing,28"), ImmutableListMultimap::toImmutableListMultimap))
+                new StringReader("name,name,age\nYang,Jing,28"),
+                ImmutableListMultimap::toImmutableListMultimap))
         .containsExactly(ImmutableListMultimap.of("name", "Yang", "name", "Jing", "age", "28"));
   }
 
@@ -451,16 +506,26 @@ public final class CsvTest {
   public void parseToMaps_withComments_commentRowsSkipped() {
     assertThat(CSV.withComments().parseToMaps("#c1\n#c2\nh1,h2\n#c3\nv1,v2\n#c4\nv3,v4\n#c5"))
         .containsExactly(
-            ImmutableMap.of("h1", "v1", "h2", "v2"), ImmutableMap.of("h1", "v3", "h2", "v4"));
+            ImmutableMap.of(
+                "h1", "v1",
+                "h2", "v2"),
+            ImmutableMap.of(
+                "h1", "v3",
+                "h2", "v4"));
   }
 
   @Test
   public void parseToMaps_fromReader_withComments_commentRowsSkipped() {
     assertThat(
-            CSV.withComments()
-                .parseToMaps(new StringReader("#c1\n#c2\nh1,h2\n#c3\nv1,v2\n#c4\nv3,v4\n#c5")))
+            CSV.withComments().parseToMaps(
+                    new StringReader("#c1\n#c2\nh1,h2\n#c3\nv1,v2\n#c4\nv3,v4\n#c5")))
         .containsExactly(
-            ImmutableMap.of("h1", "v1", "h2", "v2"), ImmutableMap.of("h1", "v3", "h2", "v4"));
+            ImmutableMap.of(
+                "h1", "v1",
+                "h2", "v2"),
+            ImmutableMap.of(
+                "h1", "v3",
+                "h2", "v4"));
   }
 
   @Test

@@ -1568,7 +1568,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             yield switch (elidedSuffix.skipAndMatch(
                 skip, input, success.tail(), ErrorContext.MINIMAL)) {
               case MatchResult.Success<?> followed -> context.failAt(
-                  followed.head(), followed.tail(), "unexpected `{name}`: {snippet}", name);
+                  followed.head(), followed.tail(), "unexpected `{name}`:{snippet}", name);
               default -> success;
             };
           }
@@ -1606,7 +1606,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         var result = left().skipAndMatch(skip, input, start, context);
         return result instanceof MatchResult.Success<T> success
                 && input.startsWith(predicate, success.tail())
-            ? context.failAt(success.tail(), "unexpected `{name}`: {snippet}", name)
+            ? context.failAt(success.tail(), "unexpected `{name}`:{snippet}", name)
             : result;
       }
 
