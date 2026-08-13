@@ -1,7 +1,6 @@
 package com.google.mu.errorprone;
 
 import com.google.errorprone.CompilationTestHelper;
-
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,10 +11,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
   private final CompilationTestHelper helper =
       CompilationTestHelper.newInstance(StringFormatPlaceholderNamesCheck.class, getClass());
 
-  @Test
-  public void blankNameNotAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void blankNameNotAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -26,10 +23,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void dashOnlyNotAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void dashOnlyNotAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -40,10 +35,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void underscoreOnlyNotAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void underscoreOnlyNotAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -54,10 +47,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void numberOnlyNotAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void numberOnlyNotAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -68,10 +59,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void quantifierNotAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void quantifierNotAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -82,10 +71,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void i18nNotAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void i18nNotAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -96,10 +83,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void parensNotAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void parensNotAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -110,10 +95,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void ellipsisAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void ellipsisAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -123,10 +106,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void starNotAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void starNotAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -137,10 +118,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void normalNameAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void normalNameAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -150,10 +129,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void dashCaseAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void dashCaseAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -163,10 +140,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void dotCaseAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void dotCaseAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -176,10 +151,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void spaceInBetweenNotAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void spaceInBetweenNotAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -190,10 +163,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void snakeCaseAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void snakeCaseAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -203,10 +174,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void leadingSpacesNotAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void leadingSpacesNotAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -217,10 +186,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void trailingSpacesNotAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void trailingSpacesNotAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -231,10 +198,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void equalSignBeforeArrow() {
-    helper
-        .addSourceLines(
+  @Test public void equalSignBeforeArrow() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -244,10 +209,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
         .doTest();
   }
 
-  @Test
-  public void trailingSpacesBeforeArrowSignIgnored() {
-    helper
-        .addSourceLines(
+  @Test public void trailingSpacesBeforeArrowSignIgnored() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",
@@ -258,10 +221,8 @@ public final class StringFormatPlaceholderNamesCheckTest {
   }
 
   @Ignore
-  @Test
-  public void squareBracketedPlaceholdersChecked() {
-    helper
-        .addSourceLines(
+  @Test public void squareBracketedPlaceholdersChecked() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.util.StringFormat;",
             "class Test {",

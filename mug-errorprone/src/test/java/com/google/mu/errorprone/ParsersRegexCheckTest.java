@@ -26,88 +26,118 @@ public final class ParsersRegexCheckTest {
 
   @Test public void properUsage() {
     helper.addSourceLines(
-            "Test.java", "import com.google.common.labs.parse.Parsers;",
-            "import com.google.common.labs.parse.Parser;", "class Test {",
-            "  private static final Parser<String> PARSER = Parsers.regex(\"[a-zA-Z0-9]+\");", "}")
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER = Parsers.regex(\"[a-zA-Z0-9]+\");",
+            "}")
         .doTest();
   }
 
   @Test public void notCompileTimeConstant() {
     helper.addSourceLines(
-            "Test.java", "import com.google.common.labs.parse.Parsers;",
-            "import com.google.common.labs.parse.Parser;", "class Test {",
-            "  private Parser<String> myParser(String pattern) {", "    return Parsers.regex(",
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private Parser<String> myParser(String pattern) {",
+            "    return Parsers.regex(",
             "        // BUG: Diagnostic contains: compile-time string constant expected",
-            "        pattern);", "  }", "}")
+            "        pattern);",
+            "  }",
+            "}")
         .doTest();
   }
 
   @Test public void emptyMatchNotAllowed() {
     helper.addSourceLines(
-            "Test.java", "import com.google.common.labs.parse.Parsers;",
-            "import com.google.common.labs.parse.Parser;", "class Test {",
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
             "  private static final Parser<String> PARSER = Parsers.regex(",
             "      // BUG: Diagnostic contains: regex must not match empty string",
-            "      \"a*\");", "}")
+            "      \"a*\");",
+            "}")
         .doTest();
   }
 
   @Test public void anchorsNotAllowed() {
     helper.addSourceLines(
-            "Test.java", "import com.google.common.labs.parse.Parsers;",
-            "import com.google.common.labs.parse.Parser;", "class Test {",
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
             "  private static final Parser<String> PARSER = Parsers.regex(",
-            "      // BUG: Diagnostic contains: anchors are not allowed", "      \"^a\");", "}")
+            "      // BUG: Diagnostic contains: anchors are not allowed",
+            "      \"^a\");",
+            "}")
         .doTest();
   }
 
   @Test public void lookaroundsNotAllowed() {
     helper.addSourceLines(
-            "Test.java", "import com.google.common.labs.parse.Parsers;",
-            "import com.google.common.labs.parse.Parser;", "class Test {",
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
             "  private static final Parser<String> PARSER = Parsers.regex(",
-            "      // BUG: Diagnostic contains: lookarounds are not allowed", "      \"a(?=b)\");",
+            "      // BUG: Diagnostic contains: lookarounds are not allowed",
+            "      \"a(?=b)\");",
             "}")
         .doTest();
   }
 
   @Test public void backreferencesNotAllowed() {
     helper.addSourceLines(
-            "Test.java", "import com.google.common.labs.parse.Parsers;",
-            "import com.google.common.labs.parse.Parser;", "class Test {",
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
             "  private static final Parser<String> PARSER = Parsers.regex(",
             "      // BUG: Diagnostic contains: backreferences are not allowed",
-            "      \"(a)\\\\1\");", "}")
+            "      \"(a)\\\\1\");",
+            "}")
         .doTest();
   }
 
   @Test public void invalidJdkRegexSyntax() {
     helper.addSourceLines(
-            "Test.java", "import com.google.common.labs.parse.Parsers;",
-            "import com.google.common.labs.parse.Parser;", "class Test {",
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
             "  private static final Parser<String> PARSER = Parsers.regex(",
             "      // BUG: Diagnostic contains: Illegal Unicode escape sequence",
-            "      \"\\\\u123z\");", "}")
+            "      \"\\\\u123z\");",
+            "}")
         .doTest();
   }
 
   @Test public void constantRegex_valid() {
     helper.addSourceLines(
-            "Test.java", "import com.google.common.labs.parse.Parsers;",
-            "import com.google.common.labs.parse.Parser;", "class Test {",
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
             "  private static final String PATTERN = \"[a-zA-Z0-9]+\";",
-            "  private static final Parser<String> PARSER = Parsers.regex(PATTERN);", "}")
+            "  private static final Parser<String> PARSER = Parsers.regex(PATTERN);",
+            "}")
         .doTest();
   }
 
   @Test public void constantRegex_invalid() {
     helper.addSourceLines(
-            "Test.java", "import com.google.common.labs.parse.Parsers;",
-            "import com.google.common.labs.parse.Parser;", "class Test {",
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
             "  private static final String PATTERN = \"a*\";",
             "  private static final Parser<String> PARSER = Parsers.regex(",
             "      // BUG: Diagnostic contains: regex must not match empty string",
-            "      PATTERN);", "}")
+            "      PATTERN);",
+            "}")
         .doTest();
   }
 }
