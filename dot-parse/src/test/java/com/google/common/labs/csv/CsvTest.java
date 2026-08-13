@@ -19,32 +19,27 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public final class CsvTest {
-  @Test
-  public void parseToLists_empty() {
+  @Test public void parseToLists_empty() {
     assertThat(CSV.parseToLists("")).isEmpty();
   }
 
-  @Test
-  public void parseToLists_fromReader_empty() {
+  @Test public void parseToLists_fromReader_empty() {
     assertThat(CSV.parseToLists(new StringReader(""))).isEmpty();
   }
 
-  @Test
-  public void parseToLists_emptyLines() {
+  @Test public void parseToLists_emptyLines() {
     assertThat(CSV.parseToLists("\n")).isEmpty();
     assertThat(CSV.parseToLists("\n\r\n")).isEmpty();
     assertThat(CSV.parseToLists("\r\r\n")).isEmpty();
   }
 
-  @Test
-  public void parseToLists_fromReader_emptyLines() {
+  @Test public void parseToLists_fromReader_emptyLines() {
     assertThat(CSV.parseToLists(new StringReader("\n"))).isEmpty();
     assertThat(CSV.parseToLists(new StringReader("\n\r\n"))).isEmpty();
     assertThat(CSV.parseToLists(new StringReader("\r\r\n"))).isEmpty();
   }
 
-  @Test
-  public void parseToLists_emptyColumns() {
+  @Test public void parseToLists_emptyColumns() {
     assertThat(CSV.parseToLists("\"\"\n")).containsExactly(ImmutableList.of(""));
     assertThat(CSV.parseToLists("\n\"\"\r\n\"\""))
         .containsExactly(ImmutableList.of(""), ImmutableList.of(""));
@@ -52,8 +47,7 @@ public final class CsvTest {
         .containsExactly(ImmutableList.of(""), ImmutableList.of("", ""), ImmutableList.of(""));
   }
 
-  @Test
-  public void parseToLists_fromReader_emptyColumns() {
+  @Test public void parseToLists_fromReader_emptyColumns() {
     assertThat(CSV.parseToLists(new StringReader("\"\"\n"))).containsExactly(ImmutableList.of(""));
     assertThat(CSV.parseToLists(new StringReader("\n\"\"\r\n\"\"")))
         .containsExactly(ImmutableList.of(""), ImmutableList.of(""));
@@ -61,33 +55,28 @@ public final class CsvTest {
         .containsExactly(ImmutableList.of(""), ImmutableList.of("", ""), ImmutableList.of(""));
   }
 
-  @Test
-  public void parseToLists_singleColumnSingleRow() {
+  @Test public void parseToLists_singleColumnSingleRow() {
     assertThat(CSV.parseToLists("abc")).containsExactly(ImmutableList.of("abc"));
   }
 
-  @Test
-  public void parseToLists_singleColumnMultipleRows() {
+  @Test public void parseToLists_singleColumnMultipleRows() {
     assertThat(CSV.parseToLists("abc\ndef\nghi"))
         .containsExactly(ImmutableList.of("abc"), ImmutableList.of("def"), ImmutableList.of("ghi"));
   }
 
-  @Test
-  public void parseToLists_fromReader_singleColumnMultipleRows() {
+  @Test public void parseToLists_fromReader_singleColumnMultipleRows() {
     assertThat(CSV.parseToLists(new StringReader("abc\ndef\nghi")))
         .containsExactly(ImmutableList.of("abc"), ImmutableList.of("def"), ImmutableList.of("ghi"));
   }
 
-  @Test
-  public void parseToLists_emptyColumn() {
+  @Test public void parseToLists_emptyColumn() {
     assertThat(CSV.parseToLists("abc,,xyz")).containsExactly(ImmutableList.of("abc", "", "xyz"));
     assertThat(CSV.parseToLists(",,xyz")).containsExactly(ImmutableList.of("", "", "xyz"));
     assertThat(CSV.parseToLists(",,")).containsExactly(ImmutableList.of("", "", ""));
     assertThat(CSV.parseToLists(",")).containsExactly(ImmutableList.of("", ""));
   }
 
-  @Test
-  public void parseToLists_fromReader_emptyColumn() {
+  @Test public void parseToLists_fromReader_emptyColumn() {
     assertThat(CSV.parseToLists(new StringReader("abc,,xyz")))
         .containsExactly(ImmutableList.of("abc", "", "xyz"));
     assertThat(CSV.parseToLists(new StringReader(",,xyz")))
@@ -97,8 +86,7 @@ public final class CsvTest {
     assertThat(CSV.parseToLists(new StringReader(","))).containsExactly(ImmutableList.of("", ""));
   }
 
-  @Test
-  public void parseToLists_multipleColumnsSingleRow() {
+  @Test public void parseToLists_multipleColumnsSingleRow() {
     assertThat(CSV.parseToLists("abc,1234,5678"))
         .containsExactly(ImmutableList.of("abc", "1234", "5678"));
     assertThat(CSV.parseToLists("abc,1234,5678\n"))
@@ -107,8 +95,7 @@ public final class CsvTest {
         .containsExactly(ImmutableList.of("abc", "1234", "5678"));
   }
 
-  @Test
-  public void parseToLists_fromReader_multipleColumnsSingleRow() {
+  @Test public void parseToLists_fromReader_multipleColumnsSingleRow() {
     assertThat(CSV.parseToLists(new StringReader("abc,1234,5678")))
         .containsExactly(ImmutableList.of("abc", "1234", "5678"));
     assertThat(CSV.parseToLists(new StringReader("abc,1234,5678\n")))
@@ -117,108 +104,91 @@ public final class CsvTest {
         .containsExactly(ImmutableList.of("abc", "1234", "5678"));
   }
 
-  @Test
-  public void parseToLists_leadingSpaceRetained() {
+  @Test public void parseToLists_leadingSpaceRetained() {
     assertThat(CSV.parseToLists("abc, 1234,5678"))
         .containsExactly(ImmutableList.of("abc", " 1234", "5678"));
   }
 
-  @Test
-  public void parseToLists_fromReader_leadingSpaceRetained() {
+  @Test public void parseToLists_fromReader_leadingSpaceRetained() {
     assertThat(CSV.parseToLists(new StringReader("abc, 1234,5678")))
         .containsExactly(ImmutableList.of("abc", " 1234", "5678"));
   }
 
-  @Test
-  public void parseToLists_trailingSpaceRetained() {
+  @Test public void parseToLists_trailingSpaceRetained() {
     assertThat(CSV.parseToLists("abc,1234,5678 "))
         .containsExactly(ImmutableList.of("abc", "1234", "5678 "));
   }
 
-  @Test
-  public void parseToLists_fromReader_trailingSpaceRetained() {
+  @Test public void parseToLists_fromReader_trailingSpaceRetained() {
     assertThat(CSV.parseToLists(new StringReader("abc,1234,5678 ")))
         .containsExactly(ImmutableList.of("abc", "1234", "5678 "));
   }
 
-  @Test
-  public void parseToLists_spaceAroundQuotesIgnored() {
+  @Test public void parseToLists_spaceAroundQuotesIgnored() {
     assertThat(CSV.parseToLists("\"abc\", \"1234\" ,\"5678\""))
         .containsExactly(ImmutableList.of("abc", "1234", "5678"));
   }
 
-  @Test
-  public void parseToLists_fromReader_spaceAroundQuotesIgnored() {
+  @Test public void parseToLists_fromReader_spaceAroundQuotesIgnored() {
     assertThat(CSV.parseToLists(new StringReader("\"abc\", \"1234\" ,\"5678\"")))
         .containsExactly(ImmutableList.of("abc", "1234", "5678"));
   }
 
-  @Test
-  public void parseToLists_quotedColumnWithComma() {
+  @Test public void parseToLists_quotedColumnWithComma() {
     assertThat(CSV.parseToLists("abc,\"1234,5678 \""))
         .containsExactly(ImmutableList.of("abc", "1234,5678 "));
   }
 
-  @Test
-  public void parseToLists_fromReader_quotedColumnWithComma() {
+  @Test public void parseToLists_fromReader_quotedColumnWithComma() {
     assertThat(CSV.parseToLists(new StringReader("abc,\"1234,5678 \"")))
         .containsExactly(ImmutableList.of("abc", "1234,5678 "));
   }
 
-  @Test
-  public void parseToLists_quotedColumnWithNewline() {
+  @Test public void parseToLists_quotedColumnWithNewline() {
     assertThat(CSV.parseToLists("abc,\"1234\n5678\""))
         .containsExactly(ImmutableList.of("abc", "1234\n5678"));
   }
 
-  @Test
-  public void parseToLists_fromReader_quotedColumnWithNewline() {
+  @Test public void parseToLists_fromReader_quotedColumnWithNewline() {
     assertThat(CSV.parseToLists(new StringReader("abc,\"1234\n5678\"")))
         .containsExactly(ImmutableList.of("abc", "1234\n5678"));
   }
 
-  @Test
-  public void parseToLists_quotedColumnWithNewline_multipleRows() {
+  @Test public void parseToLists_quotedColumnWithNewline_multipleRows() {
     assertThat(CSV.parseToLists("abc,\"1234\n5678\"\nxyz,\"9876\n5432\"\n"))
         .containsExactly(
             ImmutableList.of("abc", "1234\n5678"), ImmutableList.of("xyz", "9876\n5432"));
   }
 
-  @Test
-  public void parseToLists_fromReader_quotedColumnWithNewline_multipleRows() {
+  @Test public void parseToLists_fromReader_quotedColumnWithNewline_multipleRows() {
     assertThat(CSV.parseToLists(new StringReader("abc,\"1234\n5678\"\nxyz,\"9876\n5432\"\n")))
         .containsExactly(
             ImmutableList.of("abc", "1234\n5678"), ImmutableList.of("xyz", "9876\n5432"));
   }
 
-  @Test
-  public void parseToLists_quotedColumnWithEscapedQuote() {
+  @Test public void parseToLists_quotedColumnWithEscapedQuote() {
     assertThat(CSV.parseToLists("abc,\"1234\"\"5678\""))
         .containsExactly(ImmutableList.of("abc", "1234\"5678"));
   }
 
-  @Test
-  public void parseToLists_fromReader_quotedColumnWithEscapedQuote() {
+  @Test public void parseToLists_fromReader_quotedColumnWithEscapedQuote() {
     assertThat(CSV.parseToLists(new StringReader("abc,\"1234\"\"5678\"")))
         .containsExactly(ImmutableList.of("abc", "1234\"5678"));
   }
 
-  @Test
-  public void parseToLists_multipleColumnsMultipleRows() {
+  @Test public void parseToLists_multipleColumnsMultipleRows() {
     assertThat(CSV.parseToLists("abc,1234,5678\nxyz,9876,5432"))
         .containsExactly(
             ImmutableList.of("abc", "1234", "5678"), ImmutableList.of("xyz", "9876", "5432"));
   }
 
-  @Test
-  public void parseToLists_fromReader_multipleColumnsMultipleRows() {
+  @Test public void parseToLists_fromReader_multipleColumnsMultipleRows() {
     assertThat(CSV.parseToLists(new StringReader("abc,1234,5678\nxyz,9876,5432")))
         .containsExactly(
             ImmutableList.of("abc", "1234", "5678"), ImmutableList.of("xyz", "9876", "5432"));
   }
 
-  @Test
-  public void parseToLists_lazy_laterInvalidRowsNotScanned() {
+  @Test public void parseToLists_lazy_laterInvalidRowsNotScanned() {
     String secondRowInvalid = "abc,1234,5678\n\"invalid";
     assertThat(CSV.parseToLists(secondRowInvalid).limit(1))
         .containsExactly(ImmutableList.of("abc", "1234", "5678"));
@@ -234,8 +204,7 @@ public final class CsvTest {
             """);
   }
 
-  @Test
-  public void parseToLists_lazy_fromReader_laterInvalidRowsNotScanned() {
+  @Test public void parseToLists_lazy_fromReader_laterInvalidRowsNotScanned() {
     String secondRowInvalid = "abc,1234,5678\n\"invalid";
     assertThat(CSV.parseToLists(new StringReader(secondRowInvalid)).limit(1))
         .containsExactly(ImmutableList.of("abc", "1234", "5678"));
@@ -252,96 +221,81 @@ public final class CsvTest {
             """);
   }
 
-  @Test
-  public void parseToLists_emptyCommentRow() {
+  @Test public void parseToLists_emptyCommentRow() {
     assertThat(CSV.withComments().parseToLists("#")).isEmpty();
     assertThat(CSV.withComments().parseToLists("#\n")).isEmpty();
   }
 
-  @Test
-  public void parseToLists_fromReader_emptyCommentRow() {
+  @Test public void parseToLists_fromReader_emptyCommentRow() {
     assertThat(CSV.withComments().parseToLists(new StringReader("#"))).isEmpty();
     assertThat(CSV.withComments().parseToLists(new StringReader("#\n"))).isEmpty();
   }
 
-  @Test
-  public void parseToLists_singleCommentRow() {
+  @Test public void parseToLists_singleCommentRow() {
     assertThat(CSV.withComments().parseToLists("# this is a comment")).isEmpty();
     assertThat(CSV.withComments().parseToLists("#this is a comment\n")).isEmpty();
   }
 
-  @Test
-  public void parseToLists_fromReader_singleCommentRow() {
+  @Test public void parseToLists_fromReader_singleCommentRow() {
     assertThat(CSV.withComments().parseToLists(new StringReader("# this is a comment"))).isEmpty();
     assertThat(CSV.withComments().parseToLists(new StringReader("#this is a comment\n"))).isEmpty();
   }
 
-  @Test
-  public void parseToLists_multipleCommentRows() {
+  @Test public void parseToLists_multipleCommentRows() {
     assertThat(CSV.withComments().parseToLists("# comment 1\n# comment 2\r\n# comment 3"))
         .isEmpty();
   }
 
-  @Test
-  public void parseToLists_fromReader_multipleCommentRows() {
+  @Test public void parseToLists_fromReader_multipleCommentRows() {
     assertThat(
             CSV.withComments().parseToLists(
                     new StringReader("# comment 1\n# comment 2\r\n# comment 3")))
         .isEmpty();
   }
 
-  @Test
-  public void parseToLists_withCommentAndDataRows() {
+  @Test public void parseToLists_withCommentAndDataRows() {
     assertThat(CSV.withComments().parseToLists("# header\nabc,123\n# comment\nxyz,987"))
         .containsExactly(ImmutableList.of("abc", "123"), ImmutableList.of("xyz", "987"));
   }
 
-  @Test
-  public void parseToLists_fromReader_withCommentAndDataRows() {
+  @Test public void parseToLists_fromReader_withCommentAndDataRows() {
     assertThat(
             CSV.withComments().parseToLists(
                     new StringReader("# header\nabc,123\n# comment\nxyz,987")))
         .containsExactly(ImmutableList.of("abc", "123"), ImmutableList.of("xyz", "987"));
   }
 
-  @Test
-  public void parseToLists_withCustomDelimiter() {
+  @Test public void parseToLists_withCustomDelimiter() {
     assertThat(CSV.withDelimiter('|').parseToLists("abc|1234|5678"))
         .containsExactly(ImmutableList.of("abc", "1234", "5678"));
   }
 
-  @Test
-  public void parseToLists_fromReader_withCustomDelimiter() {
+  @Test public void parseToLists_fromReader_withCustomDelimiter() {
     assertThat(CSV.withDelimiter('|').parseToLists(new StringReader("abc|1234|5678")))
         .containsExactly(ImmutableList.of("abc", "1234", "5678"));
   }
 
-  @Test
-  public void parseToMaps_emptyInput() {
+  @Test public void parseToMaps_emptyInput() {
     assertThat(CSV.parseToMaps("")).isEmpty();
   }
 
-  @Test
-  public void parseToMaps_withOnlyBlankLines() {
+  @Test public void parseToMaps_withOnlyBlankLines() {
     assertThat(CSV.parseToMaps("\n")).isEmpty();
     assertThat(CSV.parseToMaps("\n\n")).isEmpty();
     assertThat(CSV.parseToMaps("\n \n")).isEmpty();
   }
 
-  @Test
-  public void parseToMaps_fromReader_withOnlyBlankLines() {
+  @Test public void parseToMaps_fromReader_withOnlyBlankLines() {
     assertThat(CSV.parseToMaps(new StringReader("\n"))).isEmpty();
     assertThat(CSV.parseToMaps(new StringReader("\n\n"))).isEmpty();
     assertThat(CSV.parseToMaps(new StringReader("\n \n"))).isEmpty();
   }
 
-  @Test
-  public void parseToMaps_withOnlyHeaderRow() {
+  @Test public void parseToMaps_withOnlyHeaderRow() {
     assertThat(CSV.parseToMaps("name,publisher\n")).isEmpty();
   }
 
-  @Test
-  public void parseToMaps_emptyRowsAreIgnored() {
+  @Test public void parseToMaps_emptyRowsAreIgnored() {
     assertThat(CSV.parseToMaps("h1,h2\n\nv1,v2"))
         .containsExactly(
             ImmutableMap.of(
@@ -349,8 +303,7 @@ public final class CsvTest {
                 "h2", "v2"));
   }
 
-  @Test
-  public void parseToMaps_fromReader_emptyRowsAreIgnored() {
+  @Test public void parseToMaps_fromReader_emptyRowsAreIgnored() {
     assertThat(CSV.parseToMaps(new StringReader("h1,h2\n\nv1,v2")))
         .containsExactly(
             ImmutableMap.of(
@@ -358,8 +311,7 @@ public final class CsvTest {
                 "h2", "v2"));
   }
 
-  @Test
-  public void parseToMaps_oneDataRow() {
+  @Test public void parseToMaps_oneDataRow() {
     assertThat(CSV.parseToMaps("h1,h2\nv1,v2"))
         .containsExactly(
             ImmutableMap.of(
@@ -367,8 +319,7 @@ public final class CsvTest {
                 "h2", "v2"));
   }
 
-  @Test
-  public void parseToMaps_withEmptyHeaderName() {
+  @Test public void parseToMaps_withEmptyHeaderName() {
     assertThat(CSV.parseToMaps("h1,\nv1,v2"))
         .containsExactly(
             ImmutableMap.of(
@@ -376,8 +327,7 @@ public final class CsvTest {
                 "", "v2"));
   }
 
-  @Test
-  public void parseToMaps_fromReader_withEmptyHeaderName() {
+  @Test public void parseToMaps_fromReader_withEmptyHeaderName() {
     assertThat(CSV.parseToMaps(new StringReader("h1,\nv1,v2")))
         .containsExactly(
             ImmutableMap.of(
@@ -385,8 +335,7 @@ public final class CsvTest {
                 "", "v2"));
   }
 
-  @Test
-  public void parseToMaps_twoDataRows() {
+  @Test public void parseToMaps_twoDataRows() {
     assertThat(CSV.parseToMaps("h1,h2\nv1,v2\nv3,v4"))
         .containsExactly(
             ImmutableMap.of(
@@ -397,8 +346,7 @@ public final class CsvTest {
                 "h2", "v4"));
   }
 
-  @Test
-  public void parseToMaps_fromReader_twoDataRows() {
+  @Test public void parseToMaps_fromReader_twoDataRows() {
     assertThat(CSV.parseToMaps(new StringReader("h1,h2\nv1,v2\nv3,v4")))
         .containsExactly(
             ImmutableMap.of(
@@ -409,16 +357,14 @@ public final class CsvTest {
                 "h2", "v4"));
   }
 
-  @Test
-  public void parseToMaps_fewerFieldsInDataRow() {
+  @Test public void parseToMaps_fewerFieldsInDataRow() {
     assertThat(CSV.parseToMaps("h1,h2\nv1"))
         .containsExactly(
             ImmutableMap.of(
                 "h1", "v1"));
   }
 
-  @Test
-  public void parseToMaps_moreFieldsInDataRow() {
+  @Test public void parseToMaps_moreFieldsInDataRow() {
     assertThat(CSV.parseToMaps("h1,h2\nv1,v2,v3"))
         .containsExactly(
             ImmutableMap.of(
@@ -426,8 +372,7 @@ public final class CsvTest {
                 "h2", "v2"));
   }
 
-  @Test
-  public void parseToMaps_fromReader_moreFieldsInDataRow() {
+  @Test public void parseToMaps_fromReader_moreFieldsInDataRow() {
     assertThat(CSV.parseToMaps(new StringReader("h1,h2\nv1,v2,v3")))
         .containsExactly(
             ImmutableMap.of(
@@ -435,8 +380,7 @@ public final class CsvTest {
                 "h2", "v2"));
   }
 
-  @Test
-  public void parseToMaps_mixedDataRows() {
+  @Test public void parseToMaps_mixedDataRows() {
     String input = "h1,h2,h3\nv1\nv4,v5,v6,v7\nv8,v9";
     assertThat(CSV.parseToMaps(input))
         .containsExactly(
@@ -451,8 +395,7 @@ public final class CsvTest {
                 "h2", "v9"));
   }
 
-  @Test
-  public void parseToMaps_fromReader_mixedDataRows() {
+  @Test public void parseToMaps_fromReader_mixedDataRows() {
     String input = "h1,h2,h3\nv1\nv4,v5,v6,v7\nv8,v9";
     assertThat(CSV.parseToMaps(new StringReader(input)))
         .containsExactly(
@@ -467,8 +410,7 @@ public final class CsvTest {
                 "h2", "v9"));
   }
 
-  @Test
-  public void parseToMaps_duplicateColumnName_lastWins() {
+  @Test public void parseToMaps_duplicateColumnName_lastWins() {
     assertThat(CSV.parseToMaps("name,name,age\nYang,Jing,28"))
         .containsExactly(
             ImmutableMap.of(
@@ -476,8 +418,7 @@ public final class CsvTest {
                 "age", "28"));
   }
 
-  @Test
-  public void parseToMaps_fromReader_duplicateColumnName_lastWins() {
+  @Test public void parseToMaps_fromReader_duplicateColumnName_lastWins() {
     assertThat(CSV.parseToMaps(new StringReader("name,name,age\nYang,Jing,28")))
         .containsExactly(
             ImmutableMap.of(
@@ -485,16 +426,14 @@ public final class CsvTest {
                 "age", "28"));
   }
 
-  @Test
-  public void parseWithHeaderFields_duplicateColumnName_keepBoth() {
+  @Test public void parseWithHeaderFields_duplicateColumnName_keepBoth() {
     assertThat(
             CSV.parseWithHeaderFields(
                 "name,name,age\nYang,Jing,28", ImmutableListMultimap::toImmutableListMultimap))
         .containsExactly(ImmutableListMultimap.of("name", "Yang", "name", "Jing", "age", "28"));
   }
 
-  @Test
-  public void parseWithHeaderFields_fromReader_duplicateColumnName_keepBoth() {
+  @Test public void parseWithHeaderFields_fromReader_duplicateColumnName_keepBoth() {
     assertThat(
             CSV.parseWithHeaderFields(
                 new StringReader("name,name,age\nYang,Jing,28"),
@@ -502,8 +441,7 @@ public final class CsvTest {
         .containsExactly(ImmutableListMultimap.of("name", "Yang", "name", "Jing", "age", "28"));
   }
 
-  @Test
-  public void parseToMaps_withComments_commentRowsSkipped() {
+  @Test public void parseToMaps_withComments_commentRowsSkipped() {
     assertThat(CSV.withComments().parseToMaps("#c1\n#c2\nh1,h2\n#c3\nv1,v2\n#c4\nv3,v4\n#c5"))
         .containsExactly(
             ImmutableMap.of(
@@ -514,8 +452,7 @@ public final class CsvTest {
                 "h2", "v4"));
   }
 
-  @Test
-  public void parseToMaps_fromReader_withComments_commentRowsSkipped() {
+  @Test public void parseToMaps_fromReader_withComments_commentRowsSkipped() {
     assertThat(
             CSV.withComments().parseToMaps(
                     new StringReader("#c1\n#c2\nh1,h2\n#c3\nv1,v2\n#c4\nv3,v4\n#c5")))
@@ -528,61 +465,51 @@ public final class CsvTest {
                 "h2", "v4"));
   }
 
-  @Test
-  public void parseToMaps_withComments_onlyCommentRows() {
+  @Test public void parseToMaps_withComments_onlyCommentRows() {
     assertThat(CSV.withComments().parseToMaps("#c1\n#c2")).isEmpty();
   }
 
-  @Test
-  public void parseToMaps_withComments_headerAndCommentRows() {
+  @Test public void parseToMaps_withComments_headerAndCommentRows() {
     assertThat(CSV.withComments().parseToMaps("#c1\nh1,h2\n#c2")).isEmpty();
   }
 
-  @Test
-  public void parseToMaps_fromReader_withComments_headerAndCommentRows() {
+  @Test public void parseToMaps_fromReader_withComments_headerAndCommentRows() {
     assertThat(CSV.withComments().parseToMaps(new StringReader("#c1\nh1,h2\n#c2"))).isEmpty();
   }
 
-  @Test
-  public void join_empty() {
+  @Test public void join_empty() {
     assertThat(CSV.join()).isEmpty();
   }
 
-  @Test
-  public void join_singleField() {
+  @Test public void join_singleField() {
     assertThat(CSV.join("a")).isEqualTo("a");
     assertThat(CSV.parseToLists(CSV.join("a"))).containsExactly(ImmutableList.of("a"));
   }
 
-  @Test
-  public void join_singleEmptyField() {
+  @Test public void join_singleEmptyField() {
     List<?> fields = asList("");
     assertThat(CSV.parseToLists(CSV.join(fields))).containsExactly(fields);
     assertThat(CSV.join(fields)).isEqualTo("\"\"");
   }
 
-  @Test
-  public void join_twoEmptyFields() {
+  @Test public void join_twoEmptyFields() {
     List<?> fields = asList("", "");
     assertThat(CSV.parseToLists(CSV.join(fields))).containsExactly(fields);
     assertThat(CSV.join(fields)).isEqualTo(",");
   }
 
-  @Test
-  public void join_emptyAndNullFields() {
+  @Test public void join_emptyAndNullFields() {
     List<?> fields = asList("", null);
     assertThat(CSV.join(fields)).isEqualTo(",");
   }
 
-  @Test
-  public void join_multipleFields() {
+  @Test public void join_multipleFields() {
     assertThat(CSV.join("a", "b", "c")).isEqualTo("a,b,c");
     assertThat(CSV.parseToLists(CSV.join("a", "b", "c")))
         .containsExactly(ImmutableList.of("a", "b", "c"));
   }
 
-  @Test
-  public void join_nullField() {
+  @Test public void join_nullField() {
     assertThat(CSV.join("a", null, "c")).isEqualTo("a,,c");
     assertThat(CSV.parseToLists(CSV.join("a", null, "c")))
         .containsExactly(ImmutableList.of("a", "", "c"));
@@ -595,8 +522,7 @@ public final class CsvTest {
     assertThat(CSV.join((Object) null)).isEqualTo("\"\"");
   }
 
-  @Test
-  public void join_fieldWithComma() {
+  @Test public void join_fieldWithComma() {
     assertThat(CSV.join("a,b")).isEqualTo("\"a,b\"");
     assertThat(CSV.parseToLists(CSV.join("a,b"))).containsExactly(ImmutableList.of("a,b"));
     assertThat(CSV.join("a", "b,c", "d")).isEqualTo("a,\"b,c\",d");
@@ -604,8 +530,7 @@ public final class CsvTest {
         .containsExactly(ImmutableList.of("a", "b,c", "d"));
   }
 
-  @Test
-  public void join_fieldWithDoubleQuote() {
+  @Test public void join_fieldWithDoubleQuote() {
     assertThat(CSV.join("a\"b")).isEqualTo("\"a\"\"b\"");
     assertThat(CSV.parseToLists(CSV.join("a\"b"))).containsExactly(ImmutableList.of("a\"b"));
     assertThat(CSV.join("a", "b\"c", "d")).isEqualTo("a,\"b\"\"c\",d");
@@ -613,8 +538,7 @@ public final class CsvTest {
         .containsExactly(ImmutableList.of("a", "b\"c", "d"));
   }
 
-  @Test
-  public void join_fieldWithNewline() {
+  @Test public void join_fieldWithNewline() {
     assertThat(CSV.join("a\nb")).isEqualTo("\"a\nb\"");
     assertThat(CSV.parseToLists(CSV.join("a\nb"))).containsExactly(ImmutableList.of("a\nb"));
     assertThat(CSV.join("a", "b\nc", "d")).isEqualTo("a,\"b\nc\",d");
@@ -622,8 +546,7 @@ public final class CsvTest {
         .containsExactly(ImmutableList.of("a", "b\nc", "d"));
   }
 
-  @Test
-  public void join_fieldWithCarriageReturn() {
+  @Test public void join_fieldWithCarriageReturn() {
     assertThat(CSV.join("a\rb")).isEqualTo("\"a\rb\"");
     assertThat(CSV.parseToLists(CSV.join("a\rb"))).containsExactly(ImmutableList.of("a\rb"));
     assertThat(CSV.join("a", "b\rc", "d")).isEqualTo("a,\"b\rc\",d");
@@ -631,8 +554,7 @@ public final class CsvTest {
         .containsExactly(ImmutableList.of("a", "b\rc", "d"));
   }
 
-  @Test
-  public void join_fieldWithCrLf() {
+  @Test public void join_fieldWithCrLf() {
     assertThat(CSV.join("a\r\nb")).isEqualTo("\"a\r\nb\"");
     assertThat(CSV.parseToLists(CSV.join("a\r\nb"))).containsExactly(ImmutableList.of("a\r\nb"));
     assertThat(CSV.join("a", "b\r\nc", "d")).isEqualTo("a,\"b\r\nc\",d");
@@ -640,36 +562,31 @@ public final class CsvTest {
         .containsExactly(ImmutableList.of("a", "b\r\nc", "d"));
   }
 
-  @Test
-  public void join_withCustomDelimiter() {
+  @Test public void join_withCustomDelimiter() {
     Csv csv = CSV.withDelimiter('|');
     assertThat(csv.join("a|b", "c\"d", "e\nf", "g h")).isEqualTo("\"a|b\"|\"c\"\"d\"|\"e\nf\"|g h");
     assertThat(csv.parseToLists(csv.join("a|b", "c\"d", "e\nf", "g h")))
         .containsExactly(ImmutableList.of("a|b", "c\"d", "e\nf", "g h"));
   }
 
-  @Test
-  public void usedAsCollector() {
+  @Test public void usedAsCollector() {
     assertThat(Stream.of(1, "two,3", 4).collect(CSV.joining())).isEqualTo("1,\"two,3\",4");
   }
 
-  @Test
-  public void invalidDelimiter() {
+  @Test public void invalidDelimiter() {
     assertThrows(IllegalArgumentException.class, () -> CSV.withDelimiter('\r'));
     assertThrows(IllegalArgumentException.class, () -> CSV.withDelimiter('\n'));
     assertThrows(IllegalArgumentException.class, () -> CSV.withDelimiter('"'));
     assertThrows(IllegalArgumentException.class, () -> CSV.withDelimiter('#'));
   }
 
-  @Test
-  public void quoteNotBeforeComma() {
+  @Test public void quoteNotBeforeComma() {
     var thrown =
         assertThrows(Parser.ParseException.class, () -> CSV.parseToLists("\"a\"b, c").toList());
     assertThat(thrown).hasMessageThat().contains("1:4");
   }
 
-  @Test
-  public void unescapedQuote() {
+  @Test public void unescapedQuote() {
     var thrown =
         assertThrows(Parser.ParseException.class, () -> CSV.parseToLists("\"foo\"bar\"").toList());
     assertThat(thrown).hasMessageThat().contains("1:6");

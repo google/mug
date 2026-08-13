@@ -43,10 +43,8 @@ public final class ParsersRegexCheck extends AbstractBugChecker
 
   @Override public void checkMethodInvocation(
       MethodInvocationTree tree, VisitorState state) throws ErrorReport {
-    if (MATCHER.matches(tree, state)) {
-      if (!tree.getArguments().isEmpty()) {
-        validateRegex(tree.getArguments().get(0));
-      }
+    if (MATCHER.matches(tree, state) && tree.getArguments().size() == 1) {
+      validateRegex(tree.getArguments().get(0));
     }
   }
 
