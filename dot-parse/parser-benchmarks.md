@@ -66,8 +66,8 @@ Throughput was measured in **operations per millisecond** (higher is better):
 
 | Benchmark Scenario | [`antlr4`](../mug-benchmarks/src/test/antlr4/com/google/mu/benchmarks/parsers/antlr4/Json.g4) | [`Javacc`](https://github.com/apache/tomcat/blob/main/java/org/apache/tomcat/util/json/JSONParser.jjt) | [`dot-parse`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/JsonParser.java) | `jparsec` | [`petitparser`](https://github.com/petitparser/java-petitparser/tree/main/petitparser-json) | [`fastparse`](https://github.com/com-lihaoyi/fastparse/blob/master/perftests/bench2/src/perftests/JsonParse.scala) | [`cats-parse`](https://github.com/typelevel/cats-parse) | [`parsecj`](https://github.com/jon-hanson/parsecj/blob/master/src/test/java/org/javafp/parsecj/json/Grammar.java) | [`taker`](https://github.com/parseworks/taker/blob/main/src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java) | [`better-parse`](https://github.com/silmeth/jsonParser) | [`parboiled`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/parboiled/ParboiledJsonParser.java) | [`autumn`](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/autumn/AutumnJsonParser.java) | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Complex JSON Payload** | 0.179 | 0.137 | **0.535** 🚀 ☕ | 0.120 | 0.095 | 0.522 | 0.228 | 0.014 | 0.092 | 0.079 | 0.065 | 0.077 | **`dot`** 🚀 ☕ |
-| **Complex JSON with Comments** | 0.094 | 0.063 | **0.294** ☕ | 0.094 | 0.052 | **0.330** 🚀 | 0.078 | 0.001 | 0.030 | 0.030 | 0.022 | 0.036 | **`fast`** 🚀<br>**`dot`** ☕ |
+| **Complex JSON Payload** | 0.179 | 0.137 | **0.576** 🚀 ☕ | 0.120 | 0.095 | 0.522 | 0.228 | 0.014 | 0.092 | 0.079 | 0.065 | 0.077 | **`dot`** 🚀 ☕ |
+| **Complex JSON with Comments** | 0.094 | 0.063 | **0.302** ☕ | 0.094 | 0.052 | **0.330** 🚀 | 0.078 | 0.001 | 0.030 | 0.030 | 0.022 | 0.036 | **`fast`** 🚀<br>**`dot`** ☕ |
 | **`qux2.json` (Medium JSON)** | — | — | **0.220** ☕ | — | — | **0.253** 🚀 | 0.144 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
 | **`bla25.json` (Large JSON)** | — | — | **0.088** ☕ | — | — | **0.128** 🚀 | 0.051 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
 | **`countries.geo.json` (Geographic JSON)** | — | — | **0.296** ☕ | — | — | **0.367** 🚀 | 0.167 | — | — | — | — | — | **`fast`** 🚀<br>**`dot`** ☕ |
@@ -78,9 +78,9 @@ To provide an absolute performance ceiling, we stacked our combinator shootout a
 
 | Parser Engine | Complex JSON (ops/ms) | Complex JSON with Comments (ops/ms) |
 | :--- | :---: | :---: |
-| **Jackson Databind** (Lenient) | 1.565 | 0.373 |
-| **Gson** (Lenient) | 1.122 | 0.336 |
-| **`dot-parse`** (Our leading Java combinator) | **0.535** | **0.294** |
+| **Jackson Databind** (Lenient) | 1.054 | 0.303 |
+| **Gson** (Lenient) | 0.830 | 0.310 |
+| **`dot-parse`** (Our leading Java combinator) | **0.576** | **0.302** |
 | **JavaCC** (Tomcat / Best) | 0.137 | 0.063 |
 
 ---

@@ -939,7 +939,12 @@ public class ParserShowdownBenchmark {
 
   @Benchmark
   public void gson_jsonPerformance(BenchmarkState s, Blackhole bh) {
-    bh.consume(com.google.gson.JsonParser.parseString(s.jsonString));
+    bh.consume(com.google.mu.benchmarks.parsers.gson.GsonStreamingParser.parse(s.jsonString));
+  }
+
+  @Benchmark
+  public void jackson_jsonPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(com.google.mu.benchmarks.parsers.jackson.JacksonJsonParser.parse(s.jsonString));
   }
 
   // =========================================================================
@@ -1026,7 +1031,14 @@ public class ParserShowdownBenchmark {
 
   @Benchmark
   public void gson_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
-    bh.consume(com.google.gson.JsonParser.parseString(s.jsonWithCommentsString));
+    bh.consume(
+        com.google.mu.benchmarks.parsers.gson.GsonStreamingParser.parse(s.jsonWithCommentsString));
+  }
+
+  @Benchmark
+  public void jackson_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(
+        com.google.mu.benchmarks.parsers.jackson.JacksonJsonParser.parse(s.jsonWithCommentsString));
   }
 
   @Benchmark
