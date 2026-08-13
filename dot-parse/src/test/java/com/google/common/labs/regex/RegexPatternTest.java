@@ -729,6 +729,11 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("a+").metadata().minSize()).isEqualTo(1);
   }
 
+  @Test public void minSize_sequence() {
+    assertThat(RegexPattern.of(".*b").metadata().minSize()).isEqualTo(1);
+    assertThat(RegexPattern.of(".+bc").metadata().minSize()).isEqualTo(3);
+  }
+
   @Test public void minSize_alternation() {
     assertThat(RegexPattern.of("abc|d").metadata().minSize()).isEqualTo(1);
   }

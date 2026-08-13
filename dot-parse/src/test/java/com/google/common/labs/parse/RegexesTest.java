@@ -40,6 +40,13 @@ public class RegexesTest {
     assertThat(prefixes("a*b*c")).containsExactly("a", "b", "c");
     assertThat(prefixes("a*b\\d")).containsExactly("a", "b");
     assertThat(prefixes("a\\d")).containsExactly("a");
+    assertThat(prefixes(".*bc")).containsExactly("");
+    assertThat(prefixes(".+bc")).containsExactly("");
+    assertThat(prefixes("a+bc")).containsExactly("a");
+    assertThat(prefixes("a*bc")).containsExactly("a", "bc");
+    assertThat(prefixes("a?bc")).containsExactly("a", "bc");
+    assertThat(prefixes("(a|b)*cd")).containsExactly("a", "b", "cd");
+    assertThat(prefixes("(a|bc)?de*fg")).containsExactly("a", "bc", "de", "fg");
   }
 
   @Test public void prefixesOf_alternation() {
