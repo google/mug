@@ -25,3 +25,11 @@ This document provides a feature parity matrix of various date-time formats and 
 | **`01/02/03`** / **`01/02/2003`** | ❌ | ❌ | **Mug:** Ambiguous month/day layouts are rejected by default to prevent silent parsing bugs.<br>**Hutool:** Fails due to expected 4-digit year prefix. |
 | **`1`** / **`1:10`** (no AM/PM) | ❌ | ❌ | Single digit hour values without meridiem markers are rejected by both libraries for safety. |
 | **`2023-01-01T00:00:00.`** | ❌ | ❌ | Trailing dot without fractional seconds is rejected by both libraries. |
+
+---
+
+## Performance & Efficiency
+
+For detailed JVM performance benchmarks comparing Hutool dynamic parsing against Mug's dynamic and pre-allocated parsing patterns, please refer to [BENCHMARKS.md](file:///Users/benyu/mug/mug/src/main/java/com/google/mu/time/BENCHMARKS.md).
+
+

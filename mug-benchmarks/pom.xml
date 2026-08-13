@@ -132,6 +132,12 @@
       <artifactId>guava-testlib</artifactId>
     </dependency>
     <dependency>
+      <groupId>cn.hutool</groupId>
+      <artifactId>hutool-all</artifactId>
+      <version>5.8.47</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.openjdk.jmh</groupId>
       <artifactId>jmh-core</artifactId>
       <version>1.37</version>
@@ -505,6 +511,7 @@
                         <include>ParserShowdownBenchmark*.class</include>
                         <include>CssBenchmark*.class</include>
                         <include>CelParserBenchmark*.class</include>
+                        <include>DateTimeParsingBenchmark*.class</include>
                       </includes>
                     </fileset>
                     <fileset>
