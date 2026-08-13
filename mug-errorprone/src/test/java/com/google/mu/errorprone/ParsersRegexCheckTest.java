@@ -24,8 +24,7 @@ public final class ParsersRegexCheckTest {
   private final CompilationTestHelper helper =
       CompilationTestHelper.newInstance(ParsersRegexCheck.class, getClass());
 
-  @Test
-  public void properUsage() {
+  @Test public void properUsage() {
     helper.addSourceLines(
             "Test.java", "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;", "class Test {",
@@ -33,8 +32,7 @@ public final class ParsersRegexCheckTest {
         .doTest();
   }
 
-  @Test
-  public void notCompileTimeConstant() {
+  @Test public void notCompileTimeConstant() {
     helper.addSourceLines(
             "Test.java", "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;", "class Test {",
@@ -44,8 +42,7 @@ public final class ParsersRegexCheckTest {
         .doTest();
   }
 
-  @Test
-  public void emptyMatchNotAllowed() {
+  @Test public void emptyMatchNotAllowed() {
     helper.addSourceLines(
             "Test.java", "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;", "class Test {",
@@ -55,8 +52,7 @@ public final class ParsersRegexCheckTest {
         .doTest();
   }
 
-  @Test
-  public void anchorsNotAllowed() {
+  @Test public void anchorsNotAllowed() {
     helper.addSourceLines(
             "Test.java", "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;", "class Test {",
@@ -65,8 +61,7 @@ public final class ParsersRegexCheckTest {
         .doTest();
   }
 
-  @Test
-  public void lookaroundsNotAllowed() {
+  @Test public void lookaroundsNotAllowed() {
     helper.addSourceLines(
             "Test.java", "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;", "class Test {",
@@ -76,8 +71,7 @@ public final class ParsersRegexCheckTest {
         .doTest();
   }
 
-  @Test
-  public void backreferencesNotAllowed() {
+  @Test public void backreferencesNotAllowed() {
     helper.addSourceLines(
             "Test.java", "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;", "class Test {",
@@ -87,8 +81,7 @@ public final class ParsersRegexCheckTest {
         .doTest();
   }
 
-  @Test
-  public void invalidJdkRegexSyntax() {
+  @Test public void invalidJdkRegexSyntax() {
     helper.addSourceLines(
             "Test.java", "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;", "class Test {",
@@ -98,8 +91,7 @@ public final class ParsersRegexCheckTest {
         .doTest();
   }
 
-  @Test
-  public void constantRegex_valid() {
+  @Test public void constantRegex_valid() {
     helper.addSourceLines(
             "Test.java", "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;", "class Test {",
@@ -108,8 +100,7 @@ public final class ParsersRegexCheckTest {
         .doTest();
   }
 
-  @Test
-  public void constantRegex_invalid() {
+  @Test public void constantRegex_invalid() {
     helper.addSourceLines(
             "Test.java", "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;", "class Test {",
