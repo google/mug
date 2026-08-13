@@ -16,7 +16,7 @@ package com.google.mu.benchmarks.parsers;
 
 import cn.hutool.core.date.DateUtil;
 import com.google.mu.time.DateTimeFormats;
-import java.time.LocalDate;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -39,34 +39,16 @@ import org.openjdk.jmh.annotations.Warmup;
 @Fork(1)
 public class DateTimeParsingBenchmark {
 
-  private static final String DATE_INPUT = "2026-08-12";
   private static final String DATETIME_INPUT = "2026-08-12 10:30:00";
   private static final String ZONE_INPUT = "2020-01-01T00:00:01-07:00[America/New_York]";
-  private static final String ZONE_ID_ONLY_INPUT = "2020-01-01T12:00:00 Asia/Shanghai";
+  private static final String INSTANT_INPUT = "2020-01-01T00:00:01-07:00";
 
-  private static final DateTimeFormatter PRE_ALLOCATED_DATE_FORMATTER =
-      DateTimeFormats.formatOf(DATE_INPUT);
   private static final DateTimeFormatter PRE_ALLOCATED_DATETIME_FORMATTER =
       DateTimeFormats.formatOf(DATETIME_INPUT);
   private static final DateTimeFormatter PRE_ALLOCATED_ZONE_FORMATTER =
       DateTimeFormats.formatOf(ZONE_INPUT);
-  private static final DateTimeFormatter PRE_ALLOCATED_ZONE_ID_ONLY_FORMATTER =
-      DateTimeFormats.formatOf(ZONE_ID_ONLY_INPUT);
-
-  @Benchmark
-  public Object hutool_parseDate_dynamic() {
-    return DateUtil.parse(DATE_INPUT);
-  }
-
-  @Benchmark
-  public Object mug_parseDate_dynamic() {
-    return DateTimeFormats.parseLocalDate(DATE_INPUT);
-  }
-
-  @Benchmark
-  public Object mug_parseDate_preAllocated() {
-    return LocalDate.parse(DATE_INPUT, PRE_ALLOCATED_DATE_FORMATTER);
-  }
+  private static final DateTimeFormatter PRE_ALLOCATED_INSTANT_FORMATTER =
+      DateTimeFormats.formatOf(INSTANT_INPUT);
 
   @Benchmark
   public Object hutool_parseDateTime_dynamic() {
@@ -89,31 +71,17 @@ public class DateTimeParsingBenchmark {
   }
 
   @Benchmark
-  public Object mug_parseDateTimeWithZone_dynamic() {
-    return DateTimeFormats.parseZonedDateTime(ZONE_INPUT);
-  }
-
-  @Benchmark
   public Object mug_parseDateTimeWithZone_preAllocated() {
     return ZonedDateTime.parse(ZONE_INPUT, PRE_ALLOCATED_ZONE_FORMATTER);
   }
 
   @Benchmark
-  public Object hutool_parseDateTimeWithZoneIdOnly_dynamic() {
-    try {
-      return DateUtil.parse(ZONE_ID_ONLY_INPUT);
-    } catch (Exception e) {
-      return e;
-    }
+  public Object hutool_parseInstant_dynamic() {
+    return DateUtil.parse(INSTANT_INPUT);
   }
 
   @Benchmark
-  public Object mug_parseDateTimeWithZoneIdOnly_dynamic() {
-    return DateTimeFormats.parseZonedDateTime(ZONE_ID_ONLY_INPUT);
-  }
-
-  @Benchmark
-  public Object mug_parseDateTimeWithZoneIdOnly_preAllocated() {
-    return ZonedDateTime.parse(ZONE_ID_ONLY_INPUT, PRE_ALLOCATED_ZONE_ID_ONLY_FORMATTER);
+  public Object mug_parseInstant_preAllocated() {
+    return PRE_ALLOCATED_INSTANT_FORMATTER.parse(INSTANT_INPUT, Instant::from);
   }
 }
