@@ -449,6 +449,119 @@ Didn't take much?
 
 ---
 
+## Error Messages
+
+When the input doesn't match, `parse()` throws
+[`Parser.ParseException`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.ParseException.html)
+(an `IllegalArgumentException`), with a message pointing at where the parser gave up:
+
+```java
+calculator().parseSkipping(Character::isWhitespace, "(12 34)");
+```
+
+```
+at 1:5: expecting <)>, encountered:
+    (12 34)
+        ^
+```
+
+The message has three parts:
+
+Part               | Meaning
+------------------ | -------
+`at 1:5`           | 1-based `line:column` of the failure. The raw index is also available programmatically through `ParseException.getSourceIndex()`.
+`expecting <)>`    | the symbol the parser was looking for at that position.
+the snippet        | the offending input, with a caret under the failure position. Shown as `<EOF>` when there is nothing left to display (for example on empty input).
+
+When several branches of a grammar fail, Dot Parse reports the **farthest** failure, not the
+first one: the branch that consumed the most input is usually the one you meant to write.
+
+### Alternatives — `expecting one of [...]`
+
+If an `anyOf()` (or `or()`) fails *without any branch consuming input*, all the valid
+continuations are reported together:
+
+```java
+calculator().parseSkipping(Character::isWhitespace, "123 +");
+```
+
+```
+at 1:6: expecting one of [digits, (, -], encountered:
+    123 +
+         ^
+```
+
+As soon as one branch does consume input, that branch owns the failure and a single symbol is
+reported instead. This is deliberate: the expected symbols of an `anyOf()` are computed once,
+up front, so the error reporting stays free at parse time.
+
+### Naming what you expect
+
+Symbol names are what makes a message readable, so the leaf-level parsers that can't name
+themselves take a name parameter: `one(charPredicate, name)`, `consecutive(charPredicate, name)`,
+`zeroOrMore(charPredicate, name)`, `suchThat(condition, name)`, `notFollowedBy(parser, name)`.
+
+```java
+Parser<String> identifier = Parser.word().suchThat(w -> !RESERVED_WORDS.contains(w), "identifier");
+
+identifier.parse("class");
+```
+
+```
+at 1:1: expecting <identifier>, encountered:
+    class
+    ^
+```
+
+### Custom messages — `Parser.fail()`
+
+When a symbol name isn't enough to explain the problem, throw
+[`Parser.fail(message)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#fail(java.lang.String))
+from any `map()`, `flatMap()` or `suchThat()` lambda:
+
+```java
+Parser<Integer> port = Parser.digits().map(s -> {
+  int n = Integer.parseInt(s);
+  if (n > 65535) {
+    throw Parser.fail("port out of range: " + n);
+  }
+  return n;
+});
+
+port.parse("99999");
+```
+
+```
+at 1:1: port out of range: 99999
+```
+
+The custom message replaces the whole `expecting <...>` part and is reported at the position
+where the chained parser started. *Don't throw it outside of the parser lambdas.*
+
+### Leftover input
+
+`parse()` consumes the **entire** input, so trailing characters are a parse failure too,
+reported as `expecting <EOF>`:
+
+```java
+Parsers.DURATION.parse("1s 2m");
+```
+
+```
+at 1:3: expecting <EOF>, encountered:
+    1s 2m
+      ^
+```
+
+### What to expect from the messages
+
+Dot Parse aims for *good enough* error messages at near-zero runtime cost — enough to tell a
+user which position is wrong and what was expected there. It intentionally doesn't do error
+recovery or ANTLR-grade diagnostics: naming your leaf parsers and using `Parser.fail()` for
+domain-specific validation is how you get messages tailored to your grammar.
+
+---
+
 ## No More Infinite Loops (if you've used other combinator libraries)
 
 The infinite loop bug happens when a repeating parser succeeds without moving forward.
