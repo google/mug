@@ -961,8 +961,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         };
       }
 
-      @Override public Parser<T> as(String logicalName) {
-        return left().as(logicalName);
+      @Override public Parser<T> as(String alias) {
+        return left().as(alias);
       }
 
       @Override Parser<?> ignoreReturn() {
