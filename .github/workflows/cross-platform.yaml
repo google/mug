@@ -1,0 +1,129 @@
+# Builds and tests the whole reactor on Linux, macOS and Windows.
+#
+# WHY THIS EXISTS
+#   `ci.yaml` builds only on ubuntu-latest, so a breakage that depends on the
+#   platform stays invisible until a contributor hits it on their own machine.
+#   That already happened once: on a default Windows clone the `dot-parse` test
+#   sources failed to compile, and CI was green the entire time. The first run
+#   of this workflow reproduced it -- Linux and macOS green, Windows failing to
+#   compile ParserTest.java -- without anyone needing a Windows machine.
+#
+# WHY IT IS A SEPARATE WORKFLOW INSTEAD OF A MATRIX ON ci.yaml
+#   `ci.yaml` needs `contents: write` because it commits the JaCoCo coverage
+#   badges back to the repository. Turning it into a 3-way matrix would run that
+#   badge commit three times in parallel, racing on the same files. Keeping the
+#   badge job on a single Linux runner and the portability check here lets this
+#   workflow stay read-only.
+#
+# WHY THE JOBS PIN core.autocrlf INSTEAD OF TAKING THE DEFAULT
+#   `actions/checkout` sets no line-ending configuration of its own, so a
+#   checkout inherits whatever git config the runner image ships. As of the
+#   2026-07 images the Windows runner carries Git for Windows' own default,
+#   `core.autocrlf=true`, in its system gitconfig -- which happens to match what
+#   a contributor gets from a plain `git clone`. The CRLF scenario is therefore
+#   reproduced today, but by accident rather than by intent.
+#
+#   Pinning the value per matrix entry turns that accident into a guarantee: the
+#   job declares which scenario it covers, and it keeps covering it even if a
+#   future runner image changes its git defaults. Without the pin, such a change
+#   would silently downgrade the Windows job to a duplicate of the Linux one --
+#   still green, no longer testing anything new.
+#
+# THE CLASS OF BUG THIS CATCHES
+#   Anything sensitive to the bytes on disk rather than to the OS alone. The
+#   known example is ErrorProne's MisleadingEscapedSpace: a `\s` escape is only
+#   allowed at the end of a line in a text block, and under a CRLF checkout the
+#   `\s` is followed by a CR, so the check no longer considers it end-of-line
+#   and fails the compilation. Path separators, file encodings and
+#   locale-dependent formatting fall in the same family.
+
+name: Cross-platform build
+
+on:
+  push:
+    branches-ignore:
+      - 'gh-pages'
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    branches-ignore:
+      - 'gh-pages'
+    paths-ignore:
+      - '**/*.md'
+
+# Read-only on purpose: coverage badges are committed by ci.yaml, not here.
+permissions:
+  contents: read
+
+# A new push to the same branch makes older runs pointless; three OS jobs each
+# are worth cancelling.
+concurrency:
+  group: cross-platform-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      # Without this, the first failing OS cancels the others and hides whether
+      # the breakage is specific to one platform or common to all of them --
+      # which is the single most useful thing to know when triaging.
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: Linux (LF checkout)
+            autocrlf: input
+          - os: macos-latest
+            label: macOS (LF checkout)
+            autocrlf: input
+          - os: windows-latest
+            # Reproduces the default `git clone` of a Windows contributor:
+            # CRLF in the working tree, LF in the repository.
+            label: Windows (CRLF checkout)
+            autocrlf: 'true'
+
+    steps:
+      # Must run BEFORE actions/checkout: it decides how the checkout writes
+      # files to disk, so afterwards it would have no effect on this run.
+      - name: Configure line endings for this scenario
+        shell: bash
+        run: git config --global core.autocrlf ${{ matrix.autocrlf }}
+
+      - name: Check out
+        uses: actions/checkout@v6
+
+      # Records what the checkout actually produced, so a failure downstream can
+      # be attributed without re-running anything locally, and so a future change
+      # in the runner image's git defaults is visible rather than silent.
+      - name: Report checkout line endings
+        shell: bash
+        run: |
+          sample=dot-parse/src/test/java/com/google/common/labs/parse/ParserTest.java
+          crlf=$(grep -c $'\r$' "$sample" || true)
+          total=$(wc -l < "$sample")
+          {
+            echo "### ${{ matrix.label }}"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| requested \`core.autocrlf\` | \`${{ matrix.autocrlf }}\` |"
+            echo "| effective \`core.autocrlf\` | \`$(git config --get core.autocrlf)\` |"
+            echo "| CRLF lines in sample | $crlf of $total |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "core.autocrlf, by source:"
+          git config --show-origin --get-all core.autocrlf || true
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: '24'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # `test` rather than `verify`: compilation is where the platform-specific
+      # failures show up, and the tests are what confirm the build is usable.
+      - name: Build and test
+        run: mvn -B clean test -U
