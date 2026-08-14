@@ -124,26 +124,6 @@ at 1:1: expecting <identifier>, encountered:
     ^
 ```
 
-## Logical name — `suchThat()`
-
-The `.suchThat()` combinator can be used to apply semantic constraints with a logical symbol name.
-For example:
-
-```java
-Parser<Integer> port = Parser.digits()
-    .map(Integer.parseInt)
-    .suchThat(n -> n <= 65535, "port number");
-
-port.parse("99999");
-```
-
-```
-at 1:1: expecting <port number>, encountered:
-    99999
-    ^
-```
-
-
 ## Handling 3rd-party exceptions — `Parser.fail()`
 
 When an exception is thrown by a library method call (say, the number we are trying to parse is too large),
