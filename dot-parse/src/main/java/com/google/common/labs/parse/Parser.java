@@ -912,6 +912,45 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
+   * When {@code this} parser fails (without consuming any input), report {@code logicalName}
+   * as being expected.
+   *
+   * <p>For example: <pre>{@code
+   * Parser<String> phoneNumber = sequence(digits(3), one('-'), digits(3), one('-'), digits(4))
+   *     .source()
+   *     .as("phone number");
+   * }</pre>.
+   *
+   * @since 10.9
+   */
+  public Parser<T> as(String logicalName) {
+    checkArgument(logicalName.length() > 0, "logicalName cannot be empty");
+    return new SamePrefix<>() {
+      @Override MatchResult<T> skipAndMatch(
+          Skipper skip, CharInput input, int start, ErrorContext context) {
+        start = skipIfAny(skip, input, start);
+        return switch (left().skipAndMatch(skip, input, start, context)) {
+          case MatchResult.Success<T> success -> success;
+          case MatchResult.Failure<T> failure ->
+              failure.frontier() == start ? context.expecting(logicalName, start) : failure;
+        };
+      }
+
+      @Override Parser<?> ignoreReturn() {
+        return left().ignoreReturn().as(logicalName);
+      }
+
+      @Override Set<String> getExpectedSymbols() {
+        return Set.of(logicalName);
+      }
+
+      @Override public Parser<T> as(String alias) {
+        return left().as(alias);
+      }
+    };
+  }
+
+  /**
    * Throw this error from the lambda passed to {@link #map map()}, {@link #flatMap flatMap()} etc.
    * to report a custom parse error. The error will point to the starting position evaluated by the
    * chained parser.
