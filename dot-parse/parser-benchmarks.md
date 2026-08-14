@@ -83,6 +83,16 @@ To provide an absolute performance ceiling, we stacked our combinator shootout a
 | **`dot-parse`** (Our leading Java combinator) | **0.576** | **0.302** |
 | **JavaCC** (Tomcat / Best) | 0.137 | 0.063 |
 
+#### Reference Streaming Baselines (1,000 Rows, 8KB JSONL)
+To evaluate continuous data ingestion performance, we benchmarked incremental record streaming from a `Reader` on a 1,000-row (~8KB per line, ~8.1 MB total) JSONL file, both clean and with ~30% comments:
+
+| Streaming Parser Engine | Clean JSONL (ops/ms) | JSONL with ~30% Comments (ops/ms) |
+| :--- | :---: | :---: |
+| **Jackson Databind** (Streaming) | 0.033 | 0.027 |
+| **Gson** (Streaming) | 0.031 | 0.023 |
+| **`dot-parse`** (`parseToStream`) | **0.016** | **0.011** |
+| **JavaCC** (Parser Generator) | 0.010 | 0.007 |
+
 ---
 
 ## CSS Parser Shootout (6-Way Showdown)

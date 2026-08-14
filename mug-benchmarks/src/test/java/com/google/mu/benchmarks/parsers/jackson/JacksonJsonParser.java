@@ -24,7 +24,7 @@ public final class JacksonJsonParser {
     }
   }
 
-  private static JsonValue toJsonValue(JsonNode node) {
+  static JsonValue toJsonValue(JsonNode node) {
     if (node.isNull()) {
       return JsonNull.INSTANCE;
     }
