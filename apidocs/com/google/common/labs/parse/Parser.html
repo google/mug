@@ -278,8 +278,8 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#as(java.lang.String)" class="member-name-link">as</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;logicalName)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">When <code>this</code> parser fails (without consuming any input), report <code>logicalName</code>
- as being expected.</div>
+<div class="block">When <code>this</code> parser fails (without consuming any input), report <code>logicalName</code> as
+ being expected.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#atLeastOnce()" class="member-name-link">atLeastOnce</a>()</code></div>
@@ -1684,14 +1684,22 @@ implements <a href="Production.html" title="interface in com.google.common.labs.
 <h3>as</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Parser">T</a>&gt;</span>&nbsp;<span class="element-name">as</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;logicalName)</span></div>
-<div class="block">When <code>this</code> parser fails (without consuming any input), report <code>logicalName</code>
- as being expected.
+<div class="block">When <code>this</code> parser fails (without consuming any input), report <code>logicalName</code> as
+ being expected.
 
- <p>For example: <pre><code>
+ <p>For example:
+
+ <pre><code>
  Parser&lt;String&gt; phoneNumber = sequence(digits(3), one('-'), digits(3), one('-'), digits(4))
      .source()
      .as("phone number");
- </code></pre>.</div>
+ </code></pre>
+
+ Or, using a trivial regex for leaf-level parser:
+
+ <pre><code>
+ Parser&lt;String&gt; phoneNumber = Parsers.regex("\\d{3}-\\d{3}-\\d{4}").as("phone number");
+ </code></pre></div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>10.9</dd>
