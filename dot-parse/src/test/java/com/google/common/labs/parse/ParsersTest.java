@@ -608,8 +608,7 @@ public class ParsersTest {
   }
 
   @Test public void bmpCodeUnit_tooLongThrows() {
-    ParseException e =
-        assertThrows(ParseException.class, () -> BMP_CODE_UNIT.parse("FFFFF"));
+    ParseException e = assertThrows(ParseException.class, () -> BMP_CODE_UNIT.parse("FFFFF"));
     assertThat(e).hasMessageThat()
         .isEqualTo(
             """
@@ -620,8 +619,7 @@ public class ParsersTest {
   }
 
   @Test public void bmpCodeUnit_nonHexThrows() {
-    ParseException e =
-        assertThrows(ParseException.class, () -> BMP_CODE_UNIT.parse("FGHI"));
+    ParseException e = assertThrows(ParseException.class, () -> BMP_CODE_UNIT.parse("FGHI"));
     assertThat(e).hasMessageThat()
         .isEqualTo(
             """
@@ -643,16 +641,15 @@ public class ParsersTest {
   }
 
   @Test public void bmpCodeUnit_surrogatesToEmoji() {
-    assertThat(BMP_CODE_UNIT.map(Character::toString).zeroOrMore(joining()).parse("d83dDE00"))
+    assertThat(BMP_CODE_UNIT.map(String::valueOf).zeroOrMore(joining()).parse("d83dDE00"))
         .isEqualTo("😀");
-    assertThat(BMP_CODE_UNIT.map(Character::toString).zeroOrMore(joining()).matches("d83dDE00"))
+    assertThat(BMP_CODE_UNIT.map(String::valueOf).zeroOrMore(joining()).matches("d83dDE00"))
         .isTrue();
   }
 
   @Test public void mapWithIndex_bmpCodeUnit() {
     assertThat(
-            BMP_CODE_UNIT
-                .mapWithIndex((c, begin, end) -> begin + "-" + end + ": " + (int) c)
+            BMP_CODE_UNIT.mapWithIndex((c, begin, end) -> begin + "-" + end + ": " + (int) c)
                 .parse("0000"))
         .isEqualTo("0-4: 0");
   }

@@ -9,7 +9,6 @@ import static com.google.common.labs.parse.Parser.define;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.first;
 import static com.google.common.labs.parse.Parser.hexDigits;
-import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.or;
@@ -18,6 +17,7 @@ import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parser.zeroOrMoreDelimited;
+import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.CharPredicate.is;
@@ -446,7 +446,7 @@ public class ParserTest {
   }
 
   @Test public void quotedByWithEscapes_unicodeEscape_success() {
-    Parser<String> unicodeEscaped = string("u").then(bmpCodeUnit()).map(Character::toString);
+    Parser<String> unicodeEscaped = string("u").then(BMP_CODE_UNIT).map(String::valueOf);
     Parser<String> quotedString =
         Parser.quotedByWithEscapes('\'', '\'', unicodeEscaped.or(chars(1)));
     assertThat(quotedString.parse("''")).isEmpty();
@@ -476,7 +476,7 @@ public class ParserTest {
   }
 
   @Test public void quotedByWithEscapes_stringBeforeCharAfter_unicodeEscape_success() {
-    Parser<String> unicodeEscaped = string("u").then(bmpCodeUnit()).map(Character::toString);
+    Parser<String> unicodeEscaped = string("u").then(BMP_CODE_UNIT).map(String::valueOf);
     Parser<String> quotedString =
         Parser.quotedByWithEscapes("begin:", ';', unicodeEscaped.or(chars(1)));
     assertThat(quotedString.parse("begin:;")).isEmpty();
@@ -715,22 +715,6 @@ public class ParserTest {
     assertThat(parser.parse("(a\\\\)")).isEqualTo("a\\");
     // Non-escapable character gets resolved to the default value (only backslash consumed)
     assertThat(parser.parse("(a\\xb)")).isEqualTo("a\\xb");
-  }
-
-  @Test public void bmpCodeUnit_emoji() {
-    assertThat(bmpCodeUnit().map(Character::toString).zeroOrMore(joining()).parse("d83dDE00"))
-        .isEqualTo("😀");
-    assertThat(bmpCodeUnit().map(Character::toString).zeroOrMore(joining()).matches("d83dDE00"))
-        .isTrue();
-  }
-
-  @Test public void bmpCodeUnit_invalidHexChar_fails() {
-    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123g"));
-    assertThat(bmpCodeUnit().matches("123g")).isFalse();
-    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123G"));
-    assertThat(bmpCodeUnit().matches("123G")).isFalse();
-    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123Z"));
-    assertThat(bmpCodeUnit().matches("123Z")).isFalse();
   }
 
   @Test public void testNulls() throws Exception {
@@ -7017,9 +7001,9 @@ public class ParserTest {
         .isEqualTo("2-5: foo");
   }
 
-  @Test public void mapWithIndex_bmpCodeUnit() {
-    assertThat(bmpCodeUnit().mapWithIndex(ParserTest::toStringWithIndex).parse("0000"))
-        .isEqualTo("0-4: 0");
+  @Test public void mapWithIndex_hexDigits() {
+    assertThat(hexDigits(4).mapWithIndex(ParserTest::toStringWithIndex).parse("0000"))
+        .isEqualTo("0-4: 0000");
   }
 
   @Test public void mapWithIndex_definedAs() {
@@ -7465,18 +7449,6 @@ public class ParserTest {
     assertThat(joined1).isEmpty();
     assertThat(joined2).isEmpty();
     assertThat(joined3).isEmpty();
-  }
-
-  @Test public void returnElision_bmpCodeUnit_matches() {
-    assertThat(bmpCodeUnit().parse("123F")).isEqualTo(0x123F);
-    assertThat(bmpCodeUnit().matches("123F")).isTrue();
-  }
-
-  @Test public void returnElision_bmpCodeUnit_doesNotMatch() {
-    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123g"));
-    assertThat(bmpCodeUnit().matches("123g")).isFalse();
-    assertThrows(ParseException.class, () -> bmpCodeUnit().parse("123"));
-    assertThat(bmpCodeUnit().matches("123")).isFalse();
   }
 
   @Test public void returnElision_consecutive_charClass_matches() {
