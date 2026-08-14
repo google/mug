@@ -3,9 +3,7 @@ package com.google.common.labs.parse;
 final class ParseError extends Error {
   ParseError(String message) {
     super(
-        message, null,
-        /* enableSuppression= */ debugMode(),
-        /* writableStackTrace= */ debugMode());
+        message, null, /* enableSuppression= */ debugMode(), /* writableStackTrace= */ debugMode());
   }
 
   @SuppressWarnings("OverrideThrowableToString")

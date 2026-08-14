@@ -71,6 +71,11 @@
       <artifactId>caliper</artifactId>
       <version>1.0-beta-2</version>
     </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.14.0</version>
+    </dependency>
 
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -130,6 +135,12 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava-testlib</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>cn.hutool</groupId>
+      <artifactId>hutool-all</artifactId>
+      <version>5.8.47</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.openjdk.jmh</groupId>
@@ -275,6 +286,12 @@
           <groupId>com.google.protobuf</groupId>
           <artifactId>protobuf-java</artifactId>
           <version>4.33.4</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+          <version>2.22.1</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -469,6 +486,9 @@
                 <exclude>**/javatype/JavaTypeBenchmark.java</exclude>
                 <exclude>**/dotparse/StringInBenchmark.java</exclude>
                 <exclude>**/dotparse/JsonShootoutBenchmark.java</exclude>
+                <exclude>**/ParserShowdownBenchmark.java</exclude>
+                <exclude>**/CssBenchmark.java</exclude>
+                <exclude>**/CelParserBenchmark.java</exclude>
                 <exclude>**/EmailAddressBenchmark.java</exclude>
                 <exclude>**/WhitespaceBenchmark.java</exclude>
                 <exclude>**/LetterBenchmark.java</exclude>
@@ -496,6 +516,7 @@
                         <include>ParserShowdownBenchmark*.class</include>
                         <include>CssBenchmark*.class</include>
                         <include>CelParserBenchmark*.class</include>
+                        <include>DateTimeParsingBenchmark*.class</include>
                       </includes>
                     </fileset>
                     <fileset>

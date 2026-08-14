@@ -31,17 +31,20 @@ import org.junit.runner.RunWith;
 @RunWith(TestParameterInjector.class)
 public final class RegexPatternTest {
 
-  @Test public void sequenceToString() {
+  @Test
+  public void sequenceToString() {
     RegexPattern sequence = sequence(new Literal("a"), new Literal("b"));
     assertThat(sequence.toString()).isEqualTo("ab");
   }
 
-  @Test public void alternationToString() {
+  @Test
+  public void alternationToString() {
     RegexPattern alternation = alternation(new Literal("a"), new Literal("b"));
     assertThat(alternation.toString()).isEqualTo("a|b");
   }
 
-  @Test public void inSequence_collector_merged() {
+  @Test
+  public void inSequence_collector_merged() {
     assertThat(Stream.of(new Literal("a"), new Literal("b")).collect(RegexPattern.inSequence()))
         .isEqualTo(new Literal("ab"));
     assertThat(
@@ -50,7 +53,8 @@ public final class RegexPatternTest {
         .isEqualTo(new Literal("abc"));
   }
 
-  @Test public void inSequence_collector_notMerged() {
+  @Test
+  public void inSequence_collector_notMerged() {
     assertThat(
             Stream.of(
                     new Literal("a"), alternation(new Literal("b"), new Literal("c")),
@@ -62,62 +66,73 @@ public final class RegexPatternTest {
                 new Literal("d")));
   }
 
-  @Test public void inSequence_collector_singleElement_success() {
+  @Test
+  public void inSequence_collector_singleElement_success() {
     assertThat(Stream.of(new Literal("a")).collect(RegexPattern.inSequence()))
         .isEqualTo(new Literal("a"));
   }
 
-  @Test public void inSequence_collector_emptyStream_throwsException() {
+  @Test
+  public void inSequence_collector_emptyStream_throwsException() {
     assertThrows(
         IllegalArgumentException.class,
         () -> Stream.<RegexPattern>of().collect(RegexPattern.inSequence()));
   }
 
-  @Test public void asAlternation_collector_success() {
+  @Test
+  public void asAlternation_collector_success() {
     assertThat(Stream.of(new Literal("a"), new Literal("b")).collect(RegexPattern.asAlternation()))
         .isEqualTo(alternation(new Literal("a"), new Literal("b")));
   }
 
-  @Test public void asAlternation_collector_singleElement_success() {
+  @Test
+  public void asAlternation_collector_singleElement_success() {
     assertThat(Stream.of(new Literal("a")).collect(RegexPattern.asAlternation()))
         .isEqualTo(new Literal("a"));
   }
 
-  @Test public void asAlternation_collector_emptyStream_throwsException() {
+  @Test
+  public void asAlternation_collector_emptyStream_throwsException() {
     assertThrows(
         IllegalArgumentException.class,
         () -> Stream.<RegexPattern>of().collect(RegexPattern.asAlternation()));
   }
 
-  @Test public void quantifiedToString() {
+  @Test
+  public void quantifiedToString() {
     Quantified quantified = new Quantified(new Literal("a"), repeated());
     assertThat(quantified.toString()).isEqualTo("a*");
   }
 
-  @Test public void quantifiedSequenceToString() {
+  @Test
+  public void quantifiedSequenceToString() {
     Quantified quantified =
         new Quantified(sequence(new Literal("a"), new Literal("b")), repeated());
     assertThat(quantified.toString()).isEqualTo("(?:ab)*");
   }
 
-  @Test public void atLeastToString() {
+  @Test
+  public void atLeastToString() {
     assertThat(atLeast(0).toString()).isEqualTo("*");
     assertThat(atLeast(1).toString()).isEqualTo("+");
     assertThat(atLeast(3).toString()).isEqualTo("{3,}");
   }
 
-  @Test public void atMostToString() {
+  @Test
+  public void atMostToString() {
     assertThat(atMost(1).toString()).isEqualTo("?");
     assertThat(atMost(5).toString()).isEqualTo("{0,5}");
     assertThat(atMost(Integer.MAX_VALUE).toString()).isEqualTo("{0," + Integer.MAX_VALUE + "}");
   }
 
-  @Test public void limitedToString() {
+  @Test
+  public void limitedToString() {
     assertThat(repeated(3, 5).toString()).isEqualTo("{3,5}");
     assertThat(repeated(3, 3).toString()).isEqualTo("{3}");
   }
 
-  @Test public void possessiveToString() {
+  @Test
+  public void possessiveToString() {
     assertThat(atMost(1).possessive().toString()).isEqualTo("?+");
     assertThat(repeated().possessive().toString()).isEqualTo("*+");
     assertThat(atLeast(1).possessive().toString()).isEqualTo("++");
@@ -126,32 +141,38 @@ public final class RegexPatternTest {
     assertThat(repeated(2, 5).possessive().toString()).isEqualTo("{2,5}+");
   }
 
-  @Test public void repeatedDelegation() {
+  @Test
+  public void repeatedDelegation() {
     assertThat(repeated(0, 5)).isEqualTo(atMost(5));
     assertThat(repeated(0, Integer.MAX_VALUE)).isEqualTo(atMost(Integer.MAX_VALUE));
     assertThat(repeated(3, Integer.MAX_VALUE)).isEqualTo(atLeast(3));
   }
 
-  @Test public void groupToString_capturing() {
+  @Test
+  public void groupToString_capturing() {
     Group.Capturing capturing = new Group.Capturing(new Literal("a"));
     assertThat(capturing.toString()).isEqualTo("(a)");
   }
 
-  @Test public void groupToString_nonCapturing() {
+  @Test
+  public void groupToString_nonCapturing() {
     Group.NonCapturing nonCapturing = new Group.NonCapturing(new Literal("a"));
     assertThat(nonCapturing.toString()).isEqualTo("(?:a)");
   }
 
-  @Test public void groupToString_named() {
+  @Test
+  public void groupToString_named() {
     Group.Named named = new Group.Named("foo", new Literal("a"));
     assertThat(named.toString()).isEqualTo("(?<foo>a)");
   }
 
-  @Test public void literalToString() {
+  @Test
+  public void literalToString() {
     assertThat(new Literal("a.b").toString()).isEqualTo("a\\.b");
   }
 
-  @Test public void literalToString_withSpecialCharacters() {
+  @Test
+  public void literalToString_withSpecialCharacters() {
     assertThat(new Literal("\\").toString()).isEqualTo("\\\\");
     assertThat(new Literal("$").toString()).isEqualTo("\\$");
     assertThat(new Literal("^").toString()).isEqualTo("\\^");
@@ -168,41 +189,49 @@ public final class RegexPatternTest {
     assertThat(new Literal("}").toString()).isEqualTo("\\}");
   }
 
-  @Test public void predefinedCharClassToString() {
+  @Test
+  public void predefinedCharClassToString() {
     assertThat(PredefinedCharClass.DIGIT.toString()).isEqualTo("\\d");
   }
 
-  @Test public void characterSetToString() {
+  @Test
+  public void characterSetToString() {
     assertThat(RegexPattern.of("[ab0-9]").toString()).isEqualTo("[ab0-9]");
   }
 
-  @Test public void negatedCharacterSetToString() {
+  @Test
+  public void negatedCharacterSetToString() {
     assertThat(RegexPattern.of("[^ab0-9]").toString()).isEqualTo("[^ab0-9]");
   }
 
-  @Test public void complexRegexToString() {
+  @Test
+  public void complexRegexToString() {
     assertThat(RegexPattern.of("^(foo|bar.+)$").toString()).isEqualTo("^(foo|bar.+)$");
   }
 
-  @Test public void factoryMethods_emptyList_throwsException() {
+  @Test
+  public void factoryMethods_emptyList_throwsException() {
     assertThrows(IllegalArgumentException.class, RegexPattern::sequence);
     assertThrows(IllegalArgumentException.class, RegexPattern::alternation);
     assertThrows(IllegalArgumentException.class, RegexPattern::anyOf);
     assertThrows(IllegalArgumentException.class, RegexPattern::noneOf);
   }
 
-  @Test public void parse_literal() {
+  @Test
+  public void parse_literal() {
     assertThat(RegexPattern.of("a")).isEqualTo(new Literal("a"));
     assertThat(RegexPattern.of("foo")).isEqualTo(new Literal("foo"));
   }
 
-  @Test public void parse_escapedLiteral() {
+  @Test
+  public void parse_escapedLiteral() {
     assertThat(RegexPattern.of("\\a")).isEqualTo(new Literal("a"));
     assertThat(RegexPattern.of("\\\\")).isEqualTo(new Literal("\\"));
     assertThat(RegexPattern.of("\\{\\}")).isEqualTo(new Literal("{}"));
   }
 
-  @Test public void parse_backreference() {
+  @Test
+  public void parse_backreference() {
     assertThat(RegexPattern.of("(a)\\1"))
         .isEqualTo(sequence(new Group.Capturing(new Literal("a")), new Backreference.Numbered(1)));
     assertThat(RegexPattern.of("(?<foo>a)\\k<foo>"))
@@ -210,38 +239,44 @@ public final class RegexPatternTest {
             sequence(new Group.Named("foo", new Literal("a")), new Backreference.Named("foo")));
   }
 
-  @Test public void backreferenceToString() {
+  @Test
+  public void backreferenceToString() {
     assertThat(new Backreference.Numbered(1).toString()).isEqualTo("\\1");
     assertThat(new Backreference.Named("foo").toString()).isEqualTo("\\k<foo>");
   }
 
-  @Test public void parse_escapedLiteralMixedWithPredefinedCharClasses() {
+  @Test
+  public void parse_escapedLiteralMixedWithPredefinedCharClasses() {
     assertThat(RegexPattern.of("\\a\\d\\w"))
         .isEqualTo(sequence(new Literal("a"), PredefinedCharClass.DIGIT, PredefinedCharClass.WORD));
   }
 
-  @Test public void parse_predefinedCharClass(
-      @TestParameter PredefinedCharClass predefinedCharClass) {
+  @Test
+  public void parse_predefinedCharClass(@TestParameter PredefinedCharClass predefinedCharClass) {
     assertThat(RegexPattern.of(predefinedCharClass.toString())).isEqualTo(predefinedCharClass);
   }
 
-  @Test public void parse_anchor(@TestParameter Anchor anchor) {
+  @Test
+  public void parse_anchor(@TestParameter Anchor anchor) {
     assertThat(RegexPattern.of(anchor.toString())).isEqualTo(anchor);
   }
 
-  @Test public void parse_sequence() {
+  @Test
+  public void parse_sequence() {
     assertThat(RegexPattern.of("ab")).isEqualTo(new Literal("ab"));
     assertThat(RegexPattern.of("a."))
         .isEqualTo(sequence(new Literal("a"), PredefinedCharClass.ANY_CHAR));
   }
 
-  @Test public void parse_alternation() {
+  @Test
+  public void parse_alternation() {
     assertThat(RegexPattern.of("a|b")).isEqualTo(alternation(new Literal("a"), new Literal("b")));
     assertThat(RegexPattern.of("a|b|c"))
         .isEqualTo(alternation(new Literal("a"), new Literal("b"), new Literal("c")));
   }
 
-  @Test public void parse_quantifier_greedy() {
+  @Test
+  public void parse_quantifier_greedy() {
     assertThat(RegexPattern.of("a?"))
         .isEqualTo(new Quantified(new Literal("a"), Quantifier.atMost(1)));
     assertThat(RegexPattern.of("a*"))
@@ -256,7 +291,8 @@ public final class RegexPatternTest {
         .isEqualTo(new Quantified(new Literal("a"), Quantifier.repeated(2, 5)));
   }
 
-  @Test public void parse_quantifier_reluctant() {
+  @Test
+  public void parse_quantifier_reluctant() {
     assertThat(RegexPattern.of("a??"))
         .isEqualTo(new Quantified(new Literal("a"), Quantifier.atMost(1).reluctant()));
     assertThat(RegexPattern.of("a*?"))
@@ -271,7 +307,8 @@ public final class RegexPatternTest {
         .isEqualTo(new Quantified(new Literal("a"), Quantifier.repeated(2, 5).reluctant()));
   }
 
-  @Test public void parse_quantifier_possessive() {
+  @Test
+  public void parse_quantifier_possessive() {
     assertThat(RegexPattern.of("a?+"))
         .isEqualTo(new Quantified(new Literal("a"), Quantifier.atMost(1).possessive()));
     assertThat(RegexPattern.of("a*+"))
@@ -286,7 +323,8 @@ public final class RegexPatternTest {
         .isEqualTo(new Quantified(new Literal("a"), Quantifier.repeated(2, 5).possessive()));
   }
 
-  @Test public void parse_quantifiedMultiChar() {
+  @Test
+  public void parse_quantifiedMultiChar() {
     assertThat(RegexPattern.of("(abc)*"))
         .isEqualTo(new Quantified(new Group.Capturing(new Literal("abc")), Quantifier.repeated()));
     assertThat(RegexPattern.of("(abc)+"))
@@ -313,14 +351,16 @@ public final class RegexPatternTest {
         .isEqualTo(new Quantified(new Literal("abc"), Quantifier.repeated(2, 4)));
   }
 
-  @Test public void parse_group() {
+  @Test
+  public void parse_group() {
     assertThat(RegexPattern.of("(a)")).isEqualTo(new Group.Capturing(new Literal("a")));
     assertThat(RegexPattern.of("(?:a)")).isEqualTo(new Group.NonCapturing(new Literal("a")));
     assertThat(RegexPattern.of("(?<name>a)")).isEqualTo(new Group.Named("name", new Literal("a")));
     assertThat(RegexPattern.of("(?P<name>a)")).isEqualTo(new Group.Named("name", new Literal("a")));
   }
 
-  @Test public void parse_group_nested() {
+  @Test
+  public void parse_group_nested() {
     assertThat(RegexPattern.of("((a))"))
         .isEqualTo(new Group.Capturing(new Group.Capturing(new Literal("a"))));
     assertThat(RegexPattern.of("(a(b))"))
@@ -332,7 +372,8 @@ public final class RegexPatternTest {
         .isEqualTo(new Group.NonCapturing(new Group.Capturing(new Literal("a"))));
   }
 
-  @Test public void parse_characterSet() {
+  @Test
+  public void parse_characterSet() {
     assertThat(RegexPattern.of("[a]")).isEqualTo(anyOf(new RegexPattern.LiteralChar('a')));
     assertThat(RegexPattern.of("[ab]"))
         .isEqualTo(anyOf(new RegexPattern.LiteralChar('a'), new RegexPattern.LiteralChar('b')));
@@ -347,7 +388,8 @@ public final class RegexPatternTest {
         .isEqualTo(RegexPattern.noneOf(new RegexPattern.CharRange('a', 'z')));
   }
 
-  @Test public void parse_characterSet_withHyphen() {
+  @Test
+  public void parse_characterSet_withHyphen() {
     assertThat(RegexPattern.of("[-a]"))
         .isEqualTo(anyOf(new RegexPattern.LiteralChar('-'), new RegexPattern.LiteralChar('a')));
     assertThat(RegexPattern.of("[a-]"))
@@ -359,7 +401,8 @@ public final class RegexPatternTest {
                 new RegexPattern.LiteralChar('c')));
   }
 
-  @Test public void parse_literalHyphen() {
+  @Test
+  public void parse_literalHyphen() {
     assertThat(RegexPattern.of("-+help(short)?(=true)?"))
         .isEqualTo(
             sequence(
@@ -368,27 +411,31 @@ public final class RegexPatternTest {
                 new Quantified(new Group.Capturing(new Literal("=true")), atMost(1))));
   }
 
-  @Test public void parse_posixCharClassInSet() {
+  @Test
+  public void parse_posixCharClassInSet() {
     assertThat(RegexPattern.of("[\\p{Lower}]")).isEqualTo(anyOf(PosixCharClass.LOWER));
     assertThat(RegexPattern.of("[\\p{lower}]")).isEqualTo(anyOf(PosixCharClass.LOWER));
     assertThat(RegexPattern.of("[\\p{ASCII}]")).isEqualTo(anyOf(PosixCharClass.ASCII));
     assertThat(RegexPattern.of("[^\\p{Lower}]")).isEqualTo(noneOf(PosixCharClass.LOWER));
   }
 
-  @Test public void parse_negatedPosixCharClassInSet() {
+  @Test
+  public void parse_negatedPosixCharClassInSet() {
     assertThat(RegexPattern.of("[\\P{Lower}]")).isEqualTo(anyOf(PosixCharClass.LOWER.negated()));
     assertThat(RegexPattern.of("[\\P{lower}]")).isEqualTo(anyOf(PosixCharClass.LOWER.negated()));
     assertThat(RegexPattern.of("[\\P{ASCII}]")).isEqualTo(anyOf(PosixCharClass.ASCII.negated()));
     assertThat(RegexPattern.of("[^\\P{Lower}]")).isEqualTo(noneOf(PosixCharClass.LOWER.negated()));
   }
 
-  @Test public void parse_unicodePropertyInSet() {
+  @Test
+  public void parse_unicodePropertyInSet() {
     assertThat(RegexPattern.of("[\\p{Nd}]")).isEqualTo(anyOf(new UnicodeProperty("Nd")));
     assertThat(RegexPattern.of("[\\p{IsGreek}]")).isEqualTo(anyOf(new UnicodeProperty("IsGreek")));
     assertThat(RegexPattern.of("[^\\p{Nd}]")).isEqualTo(noneOf(new UnicodeProperty("Nd")));
   }
 
-  @Test public void parse_negatedUnicodePropertyInSet() {
+  @Test
+  public void parse_negatedUnicodePropertyInSet() {
     assertThat(RegexPattern.of("[\\P{Nd}]")).isEqualTo(anyOf(new UnicodeProperty("Nd").negated()));
     assertThat(RegexPattern.of("[\\P{IsGreek}]"))
         .isEqualTo(anyOf(new UnicodeProperty("IsGreek").negated()));
@@ -396,7 +443,8 @@ public final class RegexPatternTest {
         .isEqualTo(noneOf(new UnicodeProperty("Nd").negated()));
   }
 
-  @Test public void parse_characterSet_mixedClasses() {
+  @Test
+  public void parse_characterSet_mixedClasses() {
     assertThat(RegexPattern.of("[a-c\\p{Lower}\\p{Nd}\\w\\S]"))
         .isEqualTo(
             anyOf(
@@ -411,36 +459,42 @@ public final class RegexPatternTest {
                 PredefinedCharClass.NON_WHITESPACE));
   }
 
-  @Test public void parse_posixCharClass() {
+  @Test
+  public void parse_posixCharClass() {
     assertThat(RegexPattern.of("\\p{Lower}")).isEqualTo(PosixCharClass.LOWER);
     assertThat(RegexPattern.of("\\p{lower}")).isEqualTo(PosixCharClass.LOWER);
     assertThat(RegexPattern.of("\\p{ASCII}")).isEqualTo(PosixCharClass.ASCII);
   }
 
-  @Test public void parse_negatedPosixCharClass() {
+  @Test
+  public void parse_negatedPosixCharClass() {
     assertThat(RegexPattern.of("\\P{Lower}")).isEqualTo(PosixCharClass.LOWER.negated());
     assertThat(RegexPattern.of("\\P{lower}")).isEqualTo(PosixCharClass.LOWER.negated());
     assertThat(RegexPattern.of("\\P{ASCII}")).isEqualTo(PosixCharClass.ASCII.negated());
   }
 
-  @Test public void parse_unicodeProperty() {
+  @Test
+  public void parse_unicodeProperty() {
     assertThat(RegexPattern.of("\\p{Nd}")).isEqualTo(new UnicodeProperty("Nd"));
     assertThat(RegexPattern.of("\\p{IsGreek}")).isEqualTo(new UnicodeProperty("IsGreek"));
   }
 
-  @Test public void parse_negatedUnicodeProperty() {
+  @Test
+  public void parse_negatedUnicodeProperty() {
     assertThat(RegexPattern.of("\\P{Nd}")).isEqualTo(new UnicodeProperty("Nd").negated());
     assertThat(RegexPattern.of("\\P{IsGreek}")).isEqualTo(new UnicodeProperty("IsGreek").negated());
   }
 
-  @Test public void lookaroundToString() {
+  @Test
+  public void lookaroundToString() {
     assertThat(new Literal("a").followedBy(new Literal("b")).toString()).isEqualTo("a(?=b)");
     assertThat(new Literal("a").notFollowedBy(new Literal("b")).toString()).isEqualTo("a(?!b)");
     assertThat(new Literal("a").precededBy(new Literal("b")).toString()).isEqualTo("(?<=b)a");
     assertThat(new Literal("a").notPrecededBy(new Literal("b")).toString()).isEqualTo("(?<!b)a");
   }
 
-  @Test public void parse_lookaround() {
+  @Test
+  public void parse_lookaround() {
     assertThat(RegexPattern.of("a(?=b)"))
         .isEqualTo(
             sequence(new Literal("a"), new RegexPattern.Lookaround.Lookahead(new Literal("b"))));
@@ -458,7 +512,8 @@ public final class RegexPatternTest {
                 new Literal("b")));
   }
 
-  @Test public void parse_complex() {
+  @Test
+  public void parse_complex() {
     assertThat(RegexPattern.of("^(a|b)+[c-e]?$"))
         .isEqualTo(
             sequence(
@@ -471,7 +526,8 @@ public final class RegexPatternTest {
                 Anchor.END));
   }
 
-  @Test public void parse_complex_with_groups_lookarounds_and_quantifiers() {
+  @Test
+  public void parse_complex_with_groups_lookarounds_and_quantifiers() {
     assertThat(RegexPattern.of("(?:a|b)+(?!c)"))
         .isEqualTo(
             sequence(
@@ -507,52 +563,59 @@ public final class RegexPatternTest {
                 new Literal("c")));
   }
 
-  @Test public void parse_empty() {
+  @Test
+  public void parse_empty() {
     assertThat(RegexPattern.of("")).isEqualTo(new Literal(""));
   }
 
-  @Test public void parse_group_missingRightParen() {
+  @Test
+  public void parse_group_missingRightParen() {
     Parser.ParseException e =
         assertThrows(Parser.ParseException.class, () -> RegexPattern.of("(?:a|b"));
-    assertThat(e)
-        .hasMessageThat()
+    assertThat(e).hasMessageThat()
         .isEqualTo(
             """
-            at 1:7: expecting <)>, encountered:\s
+            at 1:7: expecting <)>, encountered:
                 (?:a|b
                       ^
             """);
   }
 
-  @Test public void parse_lookbehind_missingSubject() {
+  @Test
+  public void parse_lookbehind_missingSubject() {
     Parser.ParseException e =
         assertThrows(Parser.ParseException.class, () -> RegexPattern.of("(?<=)"));
     assertThat(e).hasMessageThat().contains("at 1:5:");
   }
 
-  @Test public void parse_failure() {
+  @Test
+  public void parse_failure() {
     assertThrows(Parser.ParseException.class, () -> RegexPattern.of("("));
     assertThrows(Parser.ParseException.class, () -> RegexPattern.of("[a-"));
     assertThrows(IllegalArgumentException.class, () -> RegexPattern.of("a{1,0}"));
     assertThrows(Parser.ParseException.class, () -> RegexPattern.of("\\"));
   }
 
-  @Test public void parse_freeSpacingMode_spacesIgnored() {
+  @Test
+  public void parse_freeSpacingMode_spacesIgnored() {
     assertThat(RegexPattern.of("(?x) a b ")).isEqualTo(new Literal("ab"));
   }
 
-  @Test public void parse_freeSpacingMode_newlinesIgnored() {
+  @Test
+  public void parse_freeSpacingMode_newlinesIgnored() {
     assertThat(RegexPattern.of("(?x) a  \n b ")).isEqualTo(new Literal("ab"));
   }
 
-  @Test public void parse_freeSpacingMode_commentsIgnored() {
+  @Test
+  public void parse_freeSpacingMode_commentsIgnored() {
     assertThat(RegexPattern.of("(?x) a  # comment \n (b ) "))
         .isEqualTo(sequence(new Literal("a"), new Group.Capturing(new Literal("b"))));
     assertThat(RegexPattern.of("(?x)a#comment\nb")).isEqualTo(new Literal("ab"));
     assertThat(RegexPattern.of("(?x)a#comment b")).isEqualTo(new Literal("a"));
   }
 
-  @Test public void parse_freeSpacingMode_spaceInCharClassIsLiteral() {
+  @Test
+  public void parse_freeSpacingMode_spaceInCharClassIsLiteral() {
     assertThat(RegexPattern.of("(?x) [ ] a"))
         .isEqualTo(sequence(anyOf(new RegexPattern.LiteralChar(' ')), new Literal("a")));
     assertThat(RegexPattern.of("(?x) [a ]"))
@@ -561,11 +624,13 @@ public final class RegexPatternTest {
         .isEqualTo(sequence(noneOf(new RegexPattern.LiteralChar(' ')), new Literal("a")));
   }
 
-  @Test public void parse_freeSpacingMode_escapedSpaceIsLiteral() {
+  @Test
+  public void parse_freeSpacingMode_escapedSpaceIsLiteral() {
     assertThat(RegexPattern.of("(?x) a\\ b")).isEqualTo(new Literal("a b"));
   }
 
-  @Test public void parse_nestedFreeSpacingMode_enabled() {
+  @Test
+  public void parse_nestedFreeSpacingMode_enabled() {
     assertThat(RegexPattern.of("a(?x: b c )d"))
         .isEqualTo(
             sequence(
@@ -575,7 +640,8 @@ public final class RegexPatternTest {
                 new Literal("d")));
   }
 
-  @Test public void parse_nestedFreeSpacingMode_disabled() {
+  @Test
+  public void parse_nestedFreeSpacingMode_disabled() {
     assertThat(RegexPattern.of("(?x)a(?-x: b c )d"))
         .isEqualTo(
             sequence(
@@ -585,11 +651,13 @@ public final class RegexPatternTest {
                 new Literal("d")));
   }
 
-  @Test public void parse_nestedFreeSpacingMode_invalidFlags() {
+  @Test
+  public void parse_nestedFreeSpacingMode_invalidFlags() {
     assertThrows(Parser.ParseException.class, () -> RegexPattern.of("(?z:a)"));
   }
 
-  @Test public void parse_nestedModifierFlags_caseInsensitive() {
+  @Test
+  public void parse_nestedModifierFlags_caseInsensitive() {
     assertThat(RegexPattern.of("a(?i:b)c"))
         .isEqualTo(
             sequence(
@@ -599,7 +667,8 @@ public final class RegexPatternTest {
                 new Literal("c")));
   }
 
-  @Test public void parse_nestedModifierFlags_multiple() {
+  @Test
+  public void parse_nestedModifierFlags_multiple() {
     assertThat(RegexPattern.of("a(?is-U:b)c"))
         .isEqualTo(
             sequence(
@@ -610,12 +679,14 @@ public final class RegexPatternTest {
                 new Literal("c")));
   }
 
-  @Test public void parse_toString_preservesModifiers() {
+  @Test
+  public void parse_toString_preservesModifiers() {
     assertThat(RegexPattern.of("(?is-U:b)").toString()).isEqualTo("(?is-U:b)");
     assertThat(RegexPattern.of("(?:b)").toString()).isEqualTo("(?:b)");
   }
 
-  @Test public void parse_nestedModifierFlags_contradictoryFlagsResolved() {
+  @Test
+  public void parse_nestedModifierFlags_contradictoryFlagsResolved() {
     assertThat(RegexPattern.of("(?x-x:a)"))
         .isEqualTo(
             new Group.NonCapturing(
@@ -632,7 +703,8 @@ public final class RegexPatternTest {
                 List.of(ModifierFlag.DOTALL)));
   }
 
-  @Test public void parse_nestedModifierFlags_syntaxBoundaries() {
+  @Test
+  public void parse_nestedModifierFlags_syntaxBoundaries() {
     assertThat(RegexPattern.of("(?ii:a)"))
         .isEqualTo(
             new Group.NonCapturing(
@@ -643,7 +715,8 @@ public final class RegexPatternTest {
     assertThrows(Parser.ParseException.class, () -> RegexPattern.of("(?i-:a)"));
   }
 
-  @Test public void parse_nestedModifierFlags_inheritsFreeSpacing() {
+  @Test
+  public void parse_nestedModifierFlags_inheritsFreeSpacing() {
     assertThat(RegexPattern.of("(?x) a (?i: b ) c"))
         .isEqualTo(
             sequence(
@@ -653,7 +726,8 @@ public final class RegexPatternTest {
                 new Literal("c")));
   }
 
-  @Test public void parse_nestedModifierFlags_disabledCommentsPreservesLeadingSpace() {
+  @Test
+  public void parse_nestedModifierFlags_disabledCommentsPreservesLeadingSpace() {
     assertThat(RegexPattern.of("(?x)a(?-x: b)"))
         .isEqualTo(
             sequence(
@@ -662,27 +736,31 @@ public final class RegexPatternTest {
                     new Literal(" b"), List.of(), List.of(ModifierFlag.COMMENTS))));
   }
 
-  @Test public void safeMath_saturatedAdd() {
+  @Test
+  public void safeMath_saturatedAdd() {
     assertThat(SafeMath.saturatedAdd(10, 20)).isEqualTo(30);
     assertThat(SafeMath.saturatedAdd(Integer.MAX_VALUE, 1)).isEqualTo(Integer.MAX_VALUE);
     assertThat(SafeMath.saturatedAdd(Integer.MAX_VALUE, Integer.MAX_VALUE))
         .isEqualTo(Integer.MAX_VALUE);
   }
 
-  @Test public void safeMath_saturatedMultiply() {
+  @Test
+  public void safeMath_saturatedMultiply() {
     assertThat(SafeMath.saturatedMultiply(10, 20)).isEqualTo(200);
     assertThat(SafeMath.saturatedMultiply(Integer.MAX_VALUE, 2)).isEqualTo(Integer.MAX_VALUE);
     assertThat(SafeMath.saturatedMultiply(Integer.MAX_VALUE, Integer.MAX_VALUE))
         .isEqualTo(Integer.MAX_VALUE);
   }
 
-  @Test public void maxSize_overflowOnMultiply() {
+  @Test
+  public void maxSize_overflowOnMultiply() {
     // 2000000000 * 3 overflows Integer.MAX_VALUE
     RegexPattern multipliedOverflow = new Quantified(new Literal("abc"), repeated(2000000000));
     assertThat(multipliedOverflow.metadata().maxSize()).isEqualTo(Integer.MAX_VALUE);
   }
 
-  @Test public void maxSize_overflowOnAdd() {
+  @Test
+  public void maxSize_overflowOnAdd() {
     // 2000000000 + 2000000000 overflows Integer.MAX_VALUE
     RegexPattern addedOverflow = sequence(
         new Quantified(new Literal("a"), repeated(2000000000)),
@@ -690,22 +768,26 @@ public final class RegexPatternTest {
     assertThat(addedOverflow.metadata().maxSize()).isEqualTo(Integer.MAX_VALUE);
   }
 
-  @Test public void maxSize_zeroOrMore_yieldsMaxValue() {
+  @Test
+  public void maxSize_zeroOrMore_yieldsMaxValue() {
     assertThat(
             new Quantified(new Literal("a"), repeated(0, Integer.MAX_VALUE)).metadata().maxSize())
         .isEqualTo(Integer.MAX_VALUE);
   }
 
-  @Test public void maxSize_oneOrMore_yieldsMaxValue() {
+  @Test
+  public void maxSize_oneOrMore_yieldsMaxValue() {
     assertThat(new Quantified(new Literal("a"), atLeast(1)).metadata().maxSize())
         .isEqualTo(Integer.MAX_VALUE);
   }
 
-  @Test public void maxSize_optional_preservesSize() {
+  @Test
+  public void maxSize_optional_preservesSize() {
     assertThat(new Quantified(new Literal("abc"), atMost(1)).metadata().maxSize()).isEqualTo(3);
   }
 
-  @Test public void maxSize_group() {
+  @Test
+  public void maxSize_group() {
     assertThat(RegexPattern.of("(abc)").metadata().maxSize()).isEqualTo(3);
     assertThat(RegexPattern.of("(?:abc)").metadata().maxSize()).isEqualTo(3);
     assertThat(RegexPattern.of("(?i:abc)").metadata().maxSize()).isEqualTo(3);
@@ -713,31 +795,44 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("(?i:a)b").metadata().maxSize()).isEqualTo(2);
   }
 
-  @Test public void minSize_literal() {
+  @Test
+  public void minSize_literal() {
     assertThat(RegexPattern.of("abc").metadata().minSize()).isEqualTo(3);
   }
 
-  @Test public void minSize_optional() {
+  @Test
+  public void minSize_optional() {
     assertThat(RegexPattern.of("a?").metadata().minSize()).isEqualTo(0);
   }
 
-  @Test public void minSize_zeroOrMore() {
+  @Test
+  public void minSize_zeroOrMore() {
     assertThat(RegexPattern.of("a*").metadata().minSize()).isEqualTo(0);
   }
 
-  @Test public void minSize_oneOrMore() {
+  @Test
+  public void minSize_oneOrMore() {
     assertThat(RegexPattern.of("a+").metadata().minSize()).isEqualTo(1);
   }
 
-  @Test public void minSize_alternation() {
+  @Test
+  public void minSize_sequence() {
+    assertThat(RegexPattern.of(".*b").metadata().minSize()).isEqualTo(1);
+    assertThat(RegexPattern.of(".+bc").metadata().minSize()).isEqualTo(3);
+  }
+
+  @Test
+  public void minSize_alternation() {
     assertThat(RegexPattern.of("abc|d").metadata().minSize()).isEqualTo(1);
   }
 
-  @Test public void minSize_optionalGroup() {
+  @Test
+  public void minSize_optionalGroup() {
     assertThat(RegexPattern.of("(?i:abc)?").metadata().minSize()).isEqualTo(0);
   }
 
-  @Test public void minSize_group() {
+  @Test
+  public void minSize_group() {
     assertThat(RegexPattern.of("(abc)").metadata().minSize()).isEqualTo(3);
     assertThat(RegexPattern.of("(?:abc)").metadata().minSize()).isEqualTo(3);
     assertThat(RegexPattern.of("(?i:abc)").metadata().minSize()).isEqualTo(3);
@@ -745,61 +840,74 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("(?i:a)b").metadata().minSize()).isEqualTo(2);
   }
 
-  @Test public void minSize_dot() {
+  @Test
+  public void minSize_dot() {
     assertThat(RegexPattern.of(".").metadata().minSize()).isEqualTo(1);
   }
 
-  @Test public void minSize_characterClass() {
+  @Test
+  public void minSize_characterClass() {
     assertThat(RegexPattern.of("[abc]").metadata().minSize()).isEqualTo(1);
   }
 
-  @Test public void minSize_negatedCharacterClass() {
+  @Test
+  public void minSize_negatedCharacterClass() {
     assertThat(RegexPattern.of("[^abc]").metadata().minSize()).isEqualTo(1);
   }
 
-  @Test public void minSize_characterProperty() {
+  @Test
+  public void minSize_characterProperty() {
     assertThat(RegexPattern.of("\\p{Lower}").metadata().minSize()).isEqualTo(1);
   }
 
-  @Test public void minSize_negatedCharacterProperty() {
+  @Test
+  public void minSize_negatedCharacterProperty() {
     assertThat(RegexPattern.of("\\P{Lower}").metadata().minSize()).isEqualTo(1);
   }
 
-  @Test public void maxSize_negatedCharacterClass() {
+  @Test
+  public void maxSize_negatedCharacterClass() {
     assertThat(RegexPattern.of("[^abc]").metadata().maxSize()).isEqualTo(2);
   }
 
-  @Test public void maxSize_characterProperty() {
+  @Test
+  public void maxSize_characterProperty() {
     assertThat(RegexPattern.of("\\p{Lower}").metadata().maxSize()).isEqualTo(2);
   }
 
-  @Test public void maxSize_negatedCharacterProperty() {
+  @Test
+  public void maxSize_negatedCharacterProperty() {
     assertThat(RegexPattern.of("\\P{Lower}").metadata().maxSize()).isEqualTo(2);
   }
 
-  @Test public void minSize_anchor() {
+  @Test
+  public void minSize_anchor() {
     assertThat(RegexPattern.of("^").metadata().minSize()).isEqualTo(0);
     assertThat(RegexPattern.of("$").metadata().minSize()).isEqualTo(0);
     assertThat(RegexPattern.of("\\b").metadata().minSize()).isEqualTo(0);
   }
 
-  @Test public void maxSize_anchor() {
+  @Test
+  public void maxSize_anchor() {
     assertThat(RegexPattern.of("^").metadata().maxSize()).isEqualTo(0);
     assertThat(RegexPattern.of("$").metadata().maxSize()).isEqualTo(0);
     assertThat(RegexPattern.of("\\b").metadata().maxSize()).isEqualTo(0);
   }
 
-  @Test public void minSize_lookaround() {
+  @Test
+  public void minSize_lookaround() {
     assertThat(RegexPattern.of("(?=a)").metadata().minSize()).isEqualTo(0);
     assertThat(RegexPattern.of("(?!a)").metadata().minSize()).isEqualTo(0);
   }
 
-  @Test public void maxSize_lookaround() {
+  @Test
+  public void maxSize_lookaround() {
     assertThat(RegexPattern.of("(?=a)").metadata().maxSize()).isEqualTo(0);
     assertThat(RegexPattern.of("(?!a)").metadata().maxSize()).isEqualTo(0);
   }
 
-  @Test public void minSize_backreference() {
+  @Test
+  public void minSize_backreference() {
     assertThat(RegexPattern.of("(a)\\1").metadata().minSize())
         .isEqualTo(
             1); // Group matches "a" (size 1), but wait, what about just the backreference itself?
@@ -807,25 +915,29 @@ public final class RegexPatternTest {
     assertThat(new Backreference.Numbered(1).metadata().minSize()).isEqualTo(0);
   }
 
-  @Test public void maxSize_backreference() {
+  @Test
+  public void maxSize_backreference() {
     assertThat(new Backreference.Numbered(1).metadata().maxSize()).isEqualTo(Integer.MAX_VALUE);
   }
 
-  @Test public void metadata_constructorThrows_whenMinSizeIsNegative() {
+  @Test
+  public void metadata_constructorThrows_whenMinSizeIsNegative() {
     int minSizeNeg = -1;
     int maxSizeFive = 5;
     assertThrows(
         IllegalArgumentException.class, () -> new RegexPattern.Metadata(minSizeNeg, maxSizeFive));
   }
 
-  @Test public void metadata_constructorThrows_whenMaxSizeIsNegative() {
+  @Test
+  public void metadata_constructorThrows_whenMaxSizeIsNegative() {
     int minSizeFive = 5;
     int maxSizeNeg = -1;
     assertThrows(
         IllegalArgumentException.class, () -> new RegexPattern.Metadata(minSizeFive, maxSizeNeg));
   }
 
-  @Test public void metadata_constructorThrows_whenMaxSizeIsLessThanMinSize() {
+  @Test
+  public void metadata_constructorThrows_whenMaxSizeIsLessThanMinSize() {
     int minSizeFiveForCompare = 5;
     int maxSizeFour = 4;
     assertThrows(
@@ -833,7 +945,8 @@ public final class RegexPatternTest {
         () -> new RegexPattern.Metadata(minSizeFiveForCompare, maxSizeFour));
   }
 
-  @Test public void metadata_constructsSuccessfully() {
+  @Test
+  public void metadata_constructsSuccessfully() {
     int minSize = 5;
     int maxSize = 5;
     RegexPattern.Metadata metadata = new RegexPattern.Metadata(minSize, maxSize);

@@ -155,15 +155,14 @@ final class OrParser<T> extends Parser<T> {
   }
 
   @Override public String toString() {
-    Comparator<String> friendlyOrder = comparing(
-        (String s) -> {
-          if (s.equals("EOF")) return 5;
-          char c = s.charAt(0);
-          if (isLowerCase(c)) return 1;
-          if (isUpperCase(c)) return 2;
-          if (isDigit(c)) return 3;
-          return 4;
-        });
+    Comparator<String> friendlyOrder = comparing((String s) -> {
+      if (s.equals("EOF")) return 5;
+      char c = s.charAt(0);
+      if (isLowerCase(c)) return 1;
+      if (isUpperCase(c)) return 2;
+      if (isDigit(c)) return 3;
+      return 4;
+    });
     return getExpectedSymbols().stream()
         .sorted(friendlyOrder.thenComparing(naturalOrder()))
         .map(s -> s.equals(",") ? "comma (,)" : s)

@@ -24,26 +24,27 @@ import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.labs.parse.Parser;
 import java.io.Reader;
 import java.util.stream.Stream;
-
-import com.google.common.labs.parse.Parser;
 
 /**
  * Represents a markdown link in the format of {@code [label](url)}.
  *
- * <p>This class offers a light-weight parser to quickly {@link #scan extract}
- * markdown links from a markdown text or file.
+ * <p>This class offers a light-weight parser to quickly {@link #scan extract} markdown links from a
+ * markdown text or file.
  *
- * <p>While roughly equivalent to <pre>{@code
+ * <p>While roughly equivalent to
+ *
+ * <pre>{@code
  * import com.google.mu.util.StringFormat;
  *
  * new StringFormat("[{label}]({url})")
  *     .scan(markdown, MarkdownLink::new);
  * }</pre>
  *
- * The parser properly handles escaping inside and outside of the link; balanced nesting within the link
- * label and link url; and won't mistakenly extract link-like syntax from backtick-quoted code
+ * The parser properly handles escaping inside and outside of the link; balanced nesting within the
+ * link label and link url; and won't mistakenly extract link-like syntax from backtick-quoted code
  * or code blocks (recognizing code blocks quoted by single backtick, double, triple or any number
  * of consecutive backticks).
  *
@@ -61,19 +62,16 @@ public record MarkdownLink(String label, String url) {
   /**
    * Parser for a {@link MarkdownLink}.
    *
-   * <p>Prefer using {@link #of} for parsing a single link and {@link #scan(String)}
-   * for extracting multiple links. This constant is meant to be composed in larger parsers.
+   * <p>Prefer using {@link #of} for parsing a single link and {@link #scan(String)} for extracting
+   * multiple links. This constant is meant to be composed in larger parsers.
    */
   public static final Parser<MarkdownLink> PARSER = literally(
       sequence(
-          nestedByWithEscapes('[', ']', ESCAPED),
-          nestedByWithEscapes('(', ')', ESCAPED),
+          nestedByWithEscapes('[', ']', ESCAPED), nestedByWithEscapes('(', ')', ESCAPED),
           MarkdownLink::new));
 
   private static final Parser<?> IGNORED = anyOf(
-      consecutive("[^\\[`]"),
-      consecutive("[`]").flatMap(Parser::first),
-      one('\\').then(chars(1)));
+      consecutive("[^\\[`]"), consecutive("[`]").flatMap(Parser::first), one('\\').then(chars(1)));
 
   /**
    * Parses {@code link} into a {@link MarkdownLink}.

@@ -23,8 +23,7 @@ class ErrorContext {
     return failAt(at, at, messageTemplate, symbol);
   }
 
-  <V> MatchResult.Failure<V> failAt(
-      int at, long frontier, String messageTemplate, Object symbol) {
+  <V> MatchResult.Failure<V> failAt(int at, long frontier, String messageTemplate, Object symbol) {
     return new MatchResult.Failure<V>(at, frontier, messageTemplate, symbol);
   }
 
@@ -36,11 +35,11 @@ class ErrorContext {
     private MatchResult.Failure<?> farthestFailure = null;
 
     @Override <V> MatchResult.Failure<V> expecting(String symbolName, int at, long frontier) {
-      return failAt(at, frontier, "expecting <{name}>, encountered: {snippet}", symbolName);
+      return failAt(at, frontier, "expecting <{name}>, encountered:{snippet}", symbolName);
     }
 
     @Override <V> MatchResult.Failure<V> expectingInternal(Object symbol, int at, long frontier) {
-      return failAt(at, frontier, "expecting {name}, encountered: {snippet}", symbol);
+      return failAt(at, frontier, "expecting {name}, encountered:{snippet}", symbol);
     }
 
     @Override <V> MatchResult.Failure<V> failAt(

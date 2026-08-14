@@ -1,5 +1,7 @@
 package com.google.mu.benchmarks.parsers.gson;
 
+import static com.google.mu.util.stream.MoreStreams.whileNotNull;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -9,7 +11,6 @@ import com.google.gson.stream.JsonToken;
 import com.google.mu.benchmarks.parsers.dotparse.JsonValue;
 import com.google.mu.benchmarks.parsers.dotparse.JsonValue.*;
 import com.google.mu.benchmarks.parsers.json.StreamingJsonParser;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
@@ -20,14 +21,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static com.google.mu.util.stream.MoreStreams.whileNotNull;
-
 /** Streaming JSON parser implemented using Gson. */
 public final class GsonStreamingParser implements StreamingJsonParser {
   private static final Gson GSON = new Gson();
 
-  @Override
-  public Stream<JsonValue> parse(Reader reader) {
+  public static JsonValue parse(String json) {
+    return toJsonValue(GSON.fromJson(json, JsonElement.class));
+  }
+
+  @Override public Stream<JsonValue> parse(Reader reader) {
     JsonReader jsonReader = new JsonReader(reader);
     jsonReader.setLenient(true);
 

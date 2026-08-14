@@ -939,7 +939,12 @@ public class ParserShowdownBenchmark {
 
   @Benchmark
   public void gson_jsonPerformance(BenchmarkState s, Blackhole bh) {
-    bh.consume(com.google.gson.JsonParser.parseString(s.jsonString));
+    bh.consume(com.google.mu.benchmarks.parsers.gson.GsonStreamingParser.parse(s.jsonString));
+  }
+
+  @Benchmark
+  public void jackson_jsonPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(com.google.mu.benchmarks.parsers.jackson.JacksonJsonParser.parse(s.jsonString));
   }
 
   // =========================================================================
@@ -1026,7 +1031,14 @@ public class ParserShowdownBenchmark {
 
   @Benchmark
   public void gson_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
-    bh.consume(com.google.gson.JsonParser.parseString(s.jsonWithCommentsString));
+    bh.consume(
+        com.google.mu.benchmarks.parsers.gson.GsonStreamingParser.parse(s.jsonWithCommentsString));
+  }
+
+  @Benchmark
+  public void jackson_jsonWithCommentsPerformance(BenchmarkState s, Blackhole bh) {
+    bh.consume(
+        com.google.mu.benchmarks.parsers.jackson.JacksonJsonParser.parse(s.jsonWithCommentsString));
   }
 
   @Benchmark
@@ -1055,45 +1067,108 @@ public class ParserShowdownBenchmark {
 
   @State(Scope.Benchmark)
   public static class StreamingState {
-    Path filePath;
+    Path cleanFilePath;
+    Path commentsFilePath;
+
     StreamingJsonParser dotParseParser;
+    StreamingJsonParser dotParseCommentsParser;
 
     StreamingJsonParser gsonParser;
+    StreamingJsonParser jacksonParser;
     StreamingJsonParser javaccParser;
 
     @Setup(Level.Trial)
     public void setUp() throws Exception {
-      var resource = StreamingState.class.getResource("/large_benchmark.jsonl");
-      if (resource == null) {
-        throw new IllegalStateException("large_benchmark.jsonl not found in classpath resources");
+      var cleanResource = StreamingState.class.getResource("/streaming_benchmark_8k.jsonl");
+      if (cleanResource == null) {
+        throw new IllegalStateException(
+            "streaming_benchmark_8k.jsonl not found in classpath resources");
       }
-      this.filePath = Paths.get(resource.toURI());
+      this.cleanFilePath = Paths.get(cleanResource.toURI());
+
+      var commentsResource =
+          StreamingState.class.getResource("/streaming_benchmark_8k_with_comments.jsonl");
+      if (commentsResource == null) {
+        throw new IllegalStateException(
+            "streaming_benchmark_8k_with_comments.jsonl not found in classpath resources");
+      }
+      this.commentsFilePath = Paths.get(commentsResource.toURI());
+
       this.dotParseParser = new DotParseStreamingParser();
+      this.dotParseCommentsParser = new DotParseStreamingParser(
+          com.google.mu.benchmarks.parsers.dotparse.JsonParser.WHITESPACES_OR_COMMENTS);
 
       this.gsonParser = new GsonStreamingParser();
+      this.jacksonParser = new com.google.mu.benchmarks.parsers.jackson.JacksonStreamingParser();
       this.javaccParser = new JavaccStreamingParser();
     }
   }
 
   @Benchmark
   public void dotParse_streamingPerformance(StreamingState s, Blackhole bh) throws Exception {
-    try (Reader reader = new FileReader(s.filePath.toFile(), StandardCharsets.UTF_8);
+    try (Reader reader = new FileReader(s.cleanFilePath.toFile(), StandardCharsets.UTF_8);
         Stream<JsonValue> stream = s.dotParseParser.parse(reader)) {
       stream.forEach(bh::consume);
     }
   }
 
   @Benchmark
+  public void dotParse_streamingWithCommentsPerformance(
+      StreamingState s, Blackhole bh) throws Exception {
+    try (Reader reader = new FileReader(s.commentsFilePath.toFile(), StandardCharsets.UTF_8);
+        Stream<JsonValue> stream = s.dotParseCommentsParser.parse(reader)) {
+      stream.forEach(bh::consume);
+    }
+  }
+
+  @Benchmark
   public void gson_streamingPerformance(StreamingState s, Blackhole bh) throws Exception {
-    try (BufferedReader reader = Files.newBufferedReader(s.filePath, StandardCharsets.UTF_8);
+    try (BufferedReader reader = Files.newBufferedReader(s.cleanFilePath, StandardCharsets.UTF_8);
         Stream<JsonValue> stream = s.gsonParser.parse(reader)) {
       stream.forEach(bh::consume);
     }
   }
 
   @Benchmark
+  public void gson_streamingWithCommentsPerformance(
+      StreamingState s, Blackhole bh) throws Exception {
+    try (BufferedReader reader =
+            Files.newBufferedReader(s.commentsFilePath, StandardCharsets.UTF_8);
+        Stream<JsonValue> stream = s.gsonParser.parse(reader)) {
+      stream.forEach(bh::consume);
+    }
+  }
+
+  @Benchmark
+  public void jackson_streamingPerformance(StreamingState s, Blackhole bh) throws Exception {
+    try (BufferedReader reader = Files.newBufferedReader(s.cleanFilePath, StandardCharsets.UTF_8);
+        Stream<JsonValue> stream = s.jacksonParser.parse(reader)) {
+      stream.forEach(bh::consume);
+    }
+  }
+
+  @Benchmark
+  public void jackson_streamingWithCommentsPerformance(
+      StreamingState s, Blackhole bh) throws Exception {
+    try (BufferedReader reader =
+            Files.newBufferedReader(s.commentsFilePath, StandardCharsets.UTF_8);
+        Stream<JsonValue> stream = s.jacksonParser.parse(reader)) {
+      stream.forEach(bh::consume);
+    }
+  }
+
+  @Benchmark
   public void javacc_streamingPerformance(StreamingState s, Blackhole bh) throws Exception {
-    try (Reader reader = new FileReader(s.filePath.toFile(), StandardCharsets.UTF_8);
+    try (Reader reader = new FileReader(s.cleanFilePath.toFile(), StandardCharsets.UTF_8);
+        Stream<JsonValue> stream = s.javaccParser.parse(reader)) {
+      stream.forEach(bh::consume);
+    }
+  }
+
+  @Benchmark
+  public void javacc_streamingWithCommentsPerformance(
+      StreamingState s, Blackhole bh) throws Exception {
+    try (Reader reader = new FileReader(s.commentsFilePath.toFile(), StandardCharsets.UTF_8);
         Stream<JsonValue> stream = s.javaccParser.parse(reader)) {
       stream.forEach(bh::consume);
     }

@@ -101,4 +101,43 @@ public final class ParsersRegexCheckTest {
             "}")
         .doTest();
   }
+
+  @Test public void invalidJdkRegexSyntax() {
+    helper.addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER = Parsers.regex(",
+            "      // BUG: Diagnostic contains: Illegal Unicode escape sequence",
+            "      \"\\\\u123z\");",
+            "}")
+        .doTest();
+  }
+
+  @Test public void constantRegex_valid() {
+    helper.addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final String PATTERN = \"[a-zA-Z0-9]+\";",
+            "  private static final Parser<String> PARSER = Parsers.regex(PATTERN);",
+            "}")
+        .doTest();
+  }
+
+  @Test public void constantRegex_invalid() {
+    helper.addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final String PATTERN = \"a*\";",
+            "  private static final Parser<String> PARSER = Parsers.regex(",
+            "      // BUG: Diagnostic contains: regex must not match empty string",
+            "      PATTERN);",
+            "}")
+        .doTest();
+  }
 }

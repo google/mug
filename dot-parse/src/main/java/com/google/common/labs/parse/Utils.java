@@ -19,11 +19,10 @@ import static java.lang.Character.toLowerCase;
 import static java.lang.Character.toUpperCase;
 import static java.lang.Math.min;
 
+import com.google.errorprone.annotations.FormatMethod;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Stream;
-
-import com.google.errorprone.annotations.FormatMethod;
 
 class Utils {
   @FormatMethod
@@ -50,7 +49,7 @@ class Utils {
   static int checkPositionIndex(int index, int size, String name) {
     if (index < 0 || index > size) {
       throw new IndexOutOfBoundsException(
-         String.format("%s (%s) must be in range of [0..%s]", name, index, size));
+          String.format("%s (%s) must be in range of [0..%s]", name, index, size));
     }
     return index;
   }

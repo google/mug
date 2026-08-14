@@ -22,18 +22,21 @@ public final class OperatorTableTest {
       .prefix("-", n -> -n, 10)
       .postfix("++", n -> n + 1, 8);
 
-  @Test public void simpleCalculator_noOperator() {
+  @Test
+  public void simpleCalculator_noOperator() {
     assertThat(parse(" 10")).isEqualTo(10);
   }
 
-  @Test public void simpleCalculator_leftAssociativeInfix() {
+  @Test
+  public void simpleCalculator_leftAssociativeInfix() {
     assertThat(parse("1+2 ")).isEqualTo(3);
     assertThat(parse("1 + 2 + 3")).isEqualTo(6);
     assertThat(parse("1 - 2 + 3")).isEqualTo(2);
     assertThat(parse("1 + 2 * 3 ^ 2")).isEqualTo(19);
   }
 
-  @Test public void simpleCalculator_rightAssociativeInfix() {
+  @Test
+  public void simpleCalculator_rightAssociativeInfix() {
     assertThat(parse("2 ^ 3 ")).isEqualTo(8);
     assertThat(parse("1 + 2 ^ 3")).isEqualTo(9);
     assertThat(parse("1 - -2 ^ 2")).isEqualTo(-3);
@@ -41,31 +44,36 @@ public final class OperatorTableTest {
     assertThat(parse("1 + 2 * 3 ^ 2")).isEqualTo(19);
   }
 
-  @Test public void simpleCalculator_nonAssociativeInfix() {
+  @Test
+  public void simpleCalculator_nonAssociativeInfix() {
     assertThat(parse("2 > 1 + 2 ^ 2")).isEqualTo(0);
     assertThat(parse("1 + 2 > 2")).isEqualTo(1);
     assertThrows(Parser.ParseException.class, () -> parse("3 > 2 > 1"));
   }
 
-  @Test public void simpleCalculator_prefix() {
+  @Test
+  public void simpleCalculator_prefix() {
     assertThat(parse("-1")).isEqualTo(-1);
     assertThat(parse("-1 + -2 - 3")).isEqualTo(-6);
     assertThat(parse("-1 - -2 + 3")).isEqualTo(4);
     assertThat(parse("-1 + --2 - 3")).isEqualTo(-2);
   }
 
-  @Test public void simpleCalculator_postfix() {
+  @Test
+  public void simpleCalculator_postfix() {
     assertThat(parse("-1++")).isEqualTo(0);
     assertThat(parse("1 - 3++")).isEqualTo(-3);
     assertThat(parse("1 - 3++++")).isEqualTo(-4);
   }
 
-  @Test public void simpleCalculator_withRecursion() {
+  @Test
+  public void simpleCalculator_withRecursion() {
     assertThat(parse("(-1)")).isEqualTo(-1);
     assertThat(parse("-1 - (-2 + 3)")).isEqualTo(-2);
   }
 
-  @Test public void simpleCalculator_multilines() {
+  @Test
+  public void simpleCalculator_multilines() {
     String code =
         """
         ((1 + 2)
@@ -75,45 +83,46 @@ public final class OperatorTableTest {
     assertThat(parse(code)).isEqualTo(-416);
   }
 
-  @Test public void simpleCalculator_missingOperator() {
+  @Test
+  public void simpleCalculator_missingOperator() {
     Parser.ParseException e = assertThrows(Parser.ParseException.class, () -> parse("(12 34)"));
-    assertThat(e)
-        .hasMessageThat()
+    assertThat(e).hasMessageThat()
         .isEqualTo(
             """
-            at 1:5: expecting <)>, encountered:\s
+            at 1:5: expecting <)>, encountered:
                 (12 34)
                     ^
             """);
   }
 
-  @Test public void simpleCalculator_missingOperand() {
+  @Test
+  public void simpleCalculator_missingOperand() {
     String code = "123 +";
     Parser.ParseException e = assertThrows(Parser.ParseException.class, () -> parse(code));
-    assertThat(e)
-        .hasMessageThat()
+    assertThat(e).hasMessageThat()
         .isEqualTo(
             """
-            at 1:6: expecting one of [digits, (, -], encountered:\s
+            at 1:6: expecting one of [digits, (, -], encountered:
                 123 +
                      ^
             """);
   }
 
-  @Test public void simpleCalculator_missingClosingParenthesis() {
+  @Test
+  public void simpleCalculator_missingClosingParenthesis() {
     String code = "(1 + 2";
     Parser.ParseException e = assertThrows(Parser.ParseException.class, () -> parse(code));
-    assertThat(e)
-        .hasMessageThat()
+    assertThat(e).hasMessageThat()
         .isEqualTo(
             """
-            at 1:7: expecting <)>, encountered:\s
+            at 1:7: expecting <)>, encountered:
                 (1 + 2
                       ^
             """);
   }
 
-  @Test public void testPostfix_parserWithBiFunction() {
+  @Test
+  public void testPostfix_parserWithBiFunction() {
     Parser<Expr> memberAccess = Parser.define(
         expr -> new OperatorTable<Expr>()
             .postfix(string(".").then(word()), Call::new, 1)
@@ -128,7 +137,8 @@ public final class OperatorTableTest {
 
   private record Call(Expr callee, String name) implements Expr {}
 
-  @Test public void testNulls() {
+  @Test
+  public void testNulls() {
     new NullPointerTester()
         .setDefault(String.class, "op")
         .setDefault(Parser.class, Parser.string("a"))

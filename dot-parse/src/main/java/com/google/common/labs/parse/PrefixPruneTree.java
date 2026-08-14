@@ -21,6 +21,9 @@ import static java.lang.Math.min;
 import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.reverseOrder;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.Immutable;
+import com.google.mu.util.stream.BiStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,10 +34,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
-
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.errorprone.annotations.Immutable;
-import com.google.mu.util.stream.BiStream;
 
 /**
  * A prune tree is used to match the character inputs against known prefixes. Candidates mapped with
@@ -69,10 +68,9 @@ import com.google.mu.util.stream.BiStream;
  * character are ignored.
  */
 @Immutable(containerOf = "V")
-record PrefixPruneTree<V>(
-    @SuppressWarnings("Immutable") List<V> survivors, Trie<V> children) {
+record PrefixPruneTree<V>(@SuppressWarnings("Immutable") List<V> survivors, Trie<V> children) {
   static final class Builder<V> {
-    private final List<Ordered<V>> survivors = new ArrayList<>();  // in encounter order
+    private final List<Ordered<V>> survivors = new ArrayList<>(); // in encounter order
     private final Map<Integer, Builder<V>> children = new HashMap<>();
     private final Set<V> blocked = new HashSet<>();
     private final AtomicInteger sequence;
@@ -112,8 +110,8 @@ record PrefixPruneTree<V>(
     }
 
     /**
-     * Registers that if the next char in the input is {@code c}, the {@code candidate}
-     * can be safely pruned.
+     * Registers that if the next char in the input is {@code c}, the {@code candidate} can be
+     * safely pruned.
      */
     @CanIgnoreReturnValue
     Builder<V> addBlocked(char c, V candidate) {
@@ -200,11 +198,7 @@ record PrefixPruneTree<V>(
 
     @SuppressWarnings("Immutable")
     static <V> Trie<V> of(
-        int c1,
-        PrefixPruneTree<V> child1,
-        int c2,
-        PrefixPruneTree<V> child2,
-        int c3,
+        int c1, PrefixPruneTree<V> child1, int c2, PrefixPruneTree<V> child2, int c3,
         PrefixPruneTree<V> child3) {
       return x -> x == c1 ? child1 : x == c2 ? child2 : x == c3 ? child3 : null;
     }
