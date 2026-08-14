@@ -124,26 +124,46 @@ at 1:1: expecting <identifier>, encountered:
     ^
 ```
 
-## Custom messages — `Parser.fail()`
+## Logical name — `suchThat()`
 
-When a symbol name isn't enough to explain the problem, throw
-[`Parser.fail(message)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#fail(java.lang.String))
-from any `map()`, `flatMap()` or `suchThat()` lambda:
+The `.suchThat()` combinator can be used to apply semantic constraints with a logical symbol name.
+For example:
 
 ```java
-Parser<Integer> port = Parser.digits().map(s -> {
-  int n = Integer.parseInt(s);
-  if (n > 65535) {
-    throw Parser.fail("port out of range: " + n);
-  }
-  return n;
-});
+Parser<Integer> port = Parser.digits()
+    .map(Integer.parseInt)
+    .suchThat(n -> n <= 65535, "port number");
 
 port.parse("99999");
 ```
 
 ```
-at 1:1: port out of range: 99999
+at 1:1: expecting <port number>, encountered:
+    99999
+    ^
+```
+
+
+## Handling 3rd-party exceptions — `Parser.fail()`
+
+When an exception is thrown by a library method call (say, the number we are trying to parse is too large),
+use [`Parser.fail(message)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#fail(java.lang.String))
+from any `map()`, `flatMap()` or `suchThat()` lambda to report it as a parse error:
+
+```java
+Parser<Integer> port = Parser.digits().map(s -> {
+  try{
+    return Integer.parseInt(s);
+  } catch (NumberFormatException e) {
+    throw Parser.fail(e.getMessage());  // or use your own custom message
+  }
+});
+
+port.parse("12345678901");
+```
+
+```
+at 1:1: For input string: "12345678901"
 ```
 
 The custom message replaces the whole `expecting <...>` part and is reported at the position
