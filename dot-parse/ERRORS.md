@@ -183,5 +183,5 @@ at 1:1: expecting one of [digits, (, -], encountered:
 Dot Parse aims for *good enough* error messages at near-zero runtime cost — enough to tell a
 user which position is wrong and what was expected there. It intentionally doesn't do error
 recovery or ANTLR-grade diagnostics: naming your leaf parsers, left-factoring the alternatives
-you care about, and using `Parser.fail()` for domain-specific validation is how you get messages
+you care about, and using `suchThat()` for domain-specific validation is how you get messages
 tailored to your grammar.
