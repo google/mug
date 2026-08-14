@@ -407,10 +407,12 @@ public final class Parsers {
    * @since 10.9
    */
   public static Parser<String> regex(@CompileTimeConstant String pattern) {
-    RegexPattern ast = Regexes.strict(pattern);
+    return regex(Regexes.strict(pattern), Pattern.compile(pattern), "=~/" + pattern + "/").source();
+  }
+
+  private static Parser<Void> regex(RegexPattern ast, Pattern jdkPattern, String name) {
     RegexPattern.Metadata metadata = ast.metadata();
-    Pattern jdkPattern = Pattern.compile(pattern);
-    return new Scanner("=~/" + pattern + "/") {
+    return new Scanner(name) {
       @Override int scan(CharInput input, int from) {
         return input.match(jdkPattern, metadata, from);
       }
@@ -418,7 +420,11 @@ public final class Parsers {
       @Override Set<String> computePrefixes() {
         return new PrefixAnalyzer().prefixesOf(ast);
       }
-    }.source();
+
+      @Override public Parser<Void> as(String logicalName) {
+        return regex(ast, jdkPattern, logicalName);
+      }
+    };
   }
 
   /**

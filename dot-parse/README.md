@@ -449,6 +449,27 @@ Didn't take much?
 
 ---
 
+## Error Messages
+
+When the input doesn't match, `parse()` throws
+[`Parser.ParseException`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.ParseException.html)
+(an `IllegalArgumentException`), with a message pointing at where the parser gave up:
+
+```
+at 1:5: expecting <)>, encountered:
+    (12 34)
+        ^
+```
+
+The messages are informational, for humans reading a failed parse — no format is guaranteed,
+so don't parse them programmatically.
+
+See **[Error Messages](ERRORS.md)** for how to name your symbols, report domain-specific
+failures with `Parser.fail()`, and get the full list of expected alternatives out of a
+choice.
+
+---
+
 ## No More Infinite Loops (if you've used other combinator libraries)
 
 The infinite loop bug happens when a repeating parser succeeds without moving forward.

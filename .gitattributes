@@ -1,0 +1,7 @@
+# Java sources must keep LF in the working tree on every platform.
+#
+# ErrorProne's MisleadingEscapedSpace check reports an error when the `\s`
+# escape in a text block is not at the end of the line. On a CRLF checkout
+# every `\s` in the expected-error text blocks is followed by a CR, so the
+# build fails on Windows before any test runs.
+*.java text eol=lf
