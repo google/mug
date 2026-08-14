@@ -940,6 +940,12 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *     .as("phone number");
    * }</pre>
    *
+   * Or, using a trivial regex for leaf-level parser:
+   *
+   * <pre>{@code
+   * Parser<String> phoneNumber = Parsers.regex("\\d{3}-\\d{3}-\\d{4}").as("phone number");
+   * }</pre>
+   *
    * @since 10.9
    */
   public Parser<T> as(String logicalName) {
