@@ -29,6 +29,13 @@
 #   would silently downgrade the Windows job to a duplicate of the Linux one --
 #   still green, no longer testing anything new.
 #
+# WHY THE ACTIONS ARE PINNED TO A COMMIT SHA
+#   The repository's GitHub Actions scan (zizmor) treats `unpinned-uses` as a
+#   mandatory check on the workflow files a change touches: a movable tag such as
+#   `@v6` can be repointed at any commit by whoever owns the action, so the SHA is
+#   what makes a run reproducible. The trailing comment keeps the human-readable
+#   version visible next to the hash.
+#
 # THE CLASS OF BUG THIS CATCHES
 #   Anything sensitive to the bytes on disk rather than to the OS alone. The
 #   known example is ErrorProne's MisleadingEscapedSpace: a `\s` escape is only
@@ -93,7 +100,7 @@ jobs:
         run: git config --global core.autocrlf ${{ matrix.autocrlf }}
 
       - name: Check out
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       # Records what the checkout actually produced, so a failure downstream can
       # be attributed without re-running anything locally, and so a future change
@@ -117,7 +124,7 @@ jobs:
           git config --show-origin --get-all core.autocrlf || true
 
       - name: Set up JDK
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           java-version: '24'
           distribution: 'temurin'
