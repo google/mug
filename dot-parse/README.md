@@ -8,7 +8,7 @@ Low-boilerplate, idiomatic Java parser combinator, aimed to replace regex and yo
 - One of the few that prioritizes **developer velocity** and learning curve over academic "monad" theory.
 - The first and only Java combinator that completely eliminates nasty **infinite loops** and ***`StackOverflowError`*** from left recursion.
 - **Freakin fast**! (faster than regex, and mainstream parser generators like ANTLR and JavaCC - [benchmark](./parser-benchmarks.md)).
-- Idiomatic Java API (you don't need to know Haskell, Scala or the Monad theory).
+- Idiomatic Java API - you don't need to know Haskell, Scala or the Monad theory.
 
 ---
 
