@@ -8194,8 +8194,11 @@ public class ParserTest {
     assertThat(thrown).hasMessageThat().contains("expecting <custom foo>");
   }
 
-  @Test public void as_emptySymbol_throwsIllegalArgumentException() {
-    assertThrows(IllegalArgumentException.class, () -> string("foo").as(""));
+  @Test public void as_emptySymbol_allowed() {
+    Parser<String> parser = string("foo").as("");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("bar"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <>");
   }
 
   @Test public void as_nullSymbol_throwsNullPointerException() {
@@ -8821,5 +8824,141 @@ public class ParserTest {
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("ax"));
     assertThat(thrown).hasMessageThat().contains("1:2");
     assertThat(thrown).hasMessageThat().contains("expecting one of [a, terminal b]");
+  }
+
+  @Test public void one_characterClass_as_success() {
+    Parser<Character> parser = one("[0-9]").as("digit");
+    assertThat(parser.parse("5")).isEqualTo('5');
+  }
+
+  @Test public void one_characterClass_as_failure() {
+    Parser<Character> parser = one("[0-9]").as("digit");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <digit>");
+  }
+
+  @Test public void one_characterClass_as_chained() {
+    Parser<Character> parser = one("[0-9]").as("digit").as("numeric char");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <numeric char>");
+  }
+
+  @Test public void one_characterClass_as_inAnyOf() {
+    Parser<?> parser = anyOf(one("[0-9]").as("digit"), one("[a-z]").as("letter"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("!"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting one of [digit, letter]");
+  }
+
+  @Test public void one_characterClass_as_source() {
+    Parser<String> parser = one("[0-9]").as("digit").source();
+    assertThat(parser.parse("5")).isEqualTo("5");
+  }
+
+  @Test public void one_characterClass_as_returnElision_success() {
+    Parser<String> parser = one("[0-9]").as("digit").thenReturn("number");
+    assertThat(parser.parse("5")).isEqualTo("number");
+  }
+
+  @Test public void one_characterClass_as_returnElision_failure() {
+    Parser<String> parser = one("[0-9]").as("digit").thenReturn("number");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <digit>");
+  }
+
+  @Test public void one_matcher_as_failure() {
+    Parser<Character> parser = one(Character::isDigit, "digit").as("number");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <number>");
+  }
+
+  @Test public void consecutive_characterClass_as_success() {
+    Parser<String> parser = consecutive("[0-9]").as("number");
+    assertThat(parser.parse("123")).isEqualTo("123");
+  }
+
+  @Test public void consecutive_characterClass_as_failure() {
+    Parser<String> parser = consecutive("[0-9]").as("number");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <number>");
+  }
+
+  @Test public void consecutive_characterClass_as_chained() {
+    Parser<String> parser = consecutive("[0-9]").as("number").as("digits");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <digits>");
+  }
+
+  @Test public void consecutive_characterClass_as_inAnyOf() {
+    Parser<?> parser = anyOf(consecutive("[0-9]").as("digits"), consecutive("[a-z]").as("letters"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("!"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting one of [digits, letters]");
+  }
+
+  @Test public void consecutive_characterClass_as_returnElision_success() {
+    Parser<String> parser = consecutive("[0-9]").as("digits").thenReturn("matched");
+    assertThat(parser.parse("123")).isEqualTo("matched");
+  }
+
+  @Test public void consecutive_characterClass_as_returnElision_failure() {
+    Parser<String> parser = consecutive("[0-9]").as("digits").thenReturn("matched");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("abc"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <digits>");
+  }
+
+  @Test public void chars_as_success() {
+    Parser<String> parser = chars(3).as("3-letter code");
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test public void chars_as_failure() {
+    Parser<String> parser = chars(3).as("3-letter code");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <3-letter code>");
+  }
+
+  @Test public void chars_as_chained() {
+    Parser<String> parser = chars(3).as("3-letter code").as("token");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <token>");
+  }
+
+  @Test public void suchThat_as_success() {
+    Parser<String> parser =
+        string("foo").suchThat(s -> s.length() == 3, "length 3").as("valid length");
+    assertThat(parser.parse("foo")).isEqualTo("foo");
+  }
+
+  @Test public void suchThat_as_failureFromCondition_preservesConditionName() {
+    Parser<String> parser =
+        string("foo").suchThat(s -> s.length() > 5, "length > 5").as("long string");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("foo"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <length > 5>");
+  }
+
+  @Test public void suchThat_as_failureFromLeft_reportsCustomAsSymbol() {
+    Parser<String> parser =
+        string("foo").suchThat(s -> s.length() > 5, "length > 5").as("custom foo");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("bar"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <custom foo>");
+  }
+
+  @Test public void digits_as_failureFromShortInput() {
+    Parser<String> parser = digits(4).as("year");
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("12"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("expecting <year>");
   }
 }

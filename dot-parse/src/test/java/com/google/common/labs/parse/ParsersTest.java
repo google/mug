@@ -24,101 +24,85 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class ParsersTest {
 
-  @Test
-  public void regex_matchesSimplePattern() {
+  @Test public void regex_matchesSimplePattern() {
     assertThat(regex("[a-z]+")).fromString("abc").parsesTo("abc");
   }
 
-  @Test
-  public void regex_matchesComplexPattern() {
+  @Test public void regex_matchesComplexPattern() {
     assertThat(regex("[0-9]{3}-[0-9]{3,4}")).fromStringOrReader("123-4567").parsesTo("123-4567");
   }
 
-  @Test
-  public void regex_canMatchPartially() {
+  @Test public void regex_canMatchPartially() {
     assertThat(regex("[a-z]+").followedBy("!")).fromString("abc!").parsesTo("abc");
   }
 
-  @Test
-  public void regex_emptyPattern_throws() {
+  @Test public void regex_emptyPattern_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex(""));
     assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: ");
   }
 
-  @Test
-  public void regex_anchorStart_throws() {
+  @Test public void regex_anchorStart_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("^a"));
     assertThat(exception).hasMessageThat().isEqualTo("anchors are not allowed in regex parser: ^");
   }
 
-  @Test
-  public void regex_anchorEnd_throws() {
+  @Test public void regex_anchorEnd_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a$"));
     assertThat(exception).hasMessageThat().isEqualTo("anchors are not allowed in regex parser: $");
   }
 
-  @Test
-  public void regex_anchorWordBoundary_throws() {
+  @Test public void regex_anchorWordBoundary_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("\\ba"));
     assertThat(exception).hasMessageThat()
         .isEqualTo("anchors are not allowed in regex parser: \\b");
   }
 
-  @Test
-  public void regex_lookaheadPositive_throws() {
+  @Test public void regex_lookaheadPositive_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a(?=b)"));
     assertThat(exception).hasMessageThat()
         .isEqualTo("lookarounds are not allowed in regex parser: (?=b)");
   }
 
-  @Test
-  public void regex_lookaheadNegative_throws() {
+  @Test public void regex_lookaheadNegative_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a(?!b)"));
     assertThat(exception).hasMessageThat()
         .isEqualTo("lookarounds are not allowed in regex parser: (?!b)");
   }
 
-  @Test
-  public void regex_backreferenceNumeric_throws() {
+  @Test public void regex_backreferenceNumeric_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("(a)\\1"));
     assertThat(exception).hasMessageThat()
         .isEqualTo("backreferences are not allowed in regex parser: \\1");
   }
 
-  @Test
-  public void regex_backreferenceNamed_throws() {
+  @Test public void regex_backreferenceNamed_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("(?<foo>a)\\k<foo>"));
     assertThat(exception).hasMessageThat()
         .isEqualTo("backreferences are not allowed in regex parser: \\k<foo>");
   }
 
-  @Test
-  public void regex_quantifierZeroOrMore_throws() {
+  @Test public void regex_quantifierZeroOrMore_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a*"));
     assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: a*");
   }
 
-  @Test
-  public void regex_sequenceOfOptionalPatterns_throws() {
+  @Test public void regex_sequenceOfOptionalPatterns_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a*foo?(c+)*"));
     assertThat(exception).hasMessageThat()
         .isEqualTo("regex must not match empty string: a*foo?(c+)*");
   }
 
-  @Test
-  public void regex_quantifierOptional_throws() {
+  @Test public void regex_quantifierOptional_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a?"));
     assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: a?");
   }
 
-  @Test
-  public void regex_quantifierGroupOptional_throws() {
+  @Test public void regex_quantifierGroupOptional_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("(foo)?"));
     assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: (foo)?");
   }
 
-  @Test
-  public void regex_alternationWithEmptyAlternative_throws() {
+  @Test public void regex_alternationWithEmptyAlternative_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("foo|"));
     assertThat(exception).hasMessageThat()
         .isEqualTo(
@@ -129,45 +113,38 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void regex_valid() {
+  @Test public void regex_valid() {
     regex("a+");
     regex("[0-9]");
     regex("(?:foo|bar)+");
   }
 
-  @Test
-  public void regex_empty_throws() {
+  @Test public void regex_empty_throws() {
     assertThrows(IllegalArgumentException.class, () -> regex(""));
   }
 
-  @Test
-  public void regex_emptyMatchingWithSpace() {
+  @Test public void regex_emptyMatchingWithSpace() {
     regex("a* b*");
     assertThrows(IllegalArgumentException.class, () -> regex("(?x)a* b*"));
   }
 
-  @Test
-  public void regex_anchor_throws() {
+  @Test public void regex_anchor_throws() {
     assertThrows(IllegalArgumentException.class, () -> regex("^a"));
     assertThrows(IllegalArgumentException.class, () -> regex("a$"));
     assertThrows(IllegalArgumentException.class, () -> regex("\\ba"));
   }
 
-  @Test
-  public void regex_lookaround_throws() {
+  @Test public void regex_lookaround_throws() {
     assertThrows(IllegalArgumentException.class, () -> regex("a(?=b)"));
     assertThrows(IllegalArgumentException.class, () -> regex("a(?!b)"));
   }
 
-  @Test
-  public void regex_backreference_throws() {
+  @Test public void regex_backreference_throws() {
     assertThrows(IllegalArgumentException.class, () -> regex("(a)\\1"));
     assertThrows(IllegalArgumentException.class, () -> regex("(?<foo>a)\\k<foo>"));
   }
 
-  @Test
-  public void regex_caseInsensitiveFlag() {
+  @Test public void regex_caseInsensitiveFlag() {
     Parser<String> parser = regex("(?i:abc)");
     assertThat(parser).fromStringOrReader("abc").parsesTo("abc");
     assertThat(parser).fromStringOrReader("ABC").parsesTo("ABC");
@@ -175,21 +152,18 @@ public class ParsersTest {
     assertThat(parser).fromStringOrReader("abd").failsToParse();
   }
 
-  @Test
-  public void regex_dotallFlag() {
+  @Test public void regex_dotallFlag() {
     assertThat(regex(".")).fromStringOrReader("\n").failsToParse();
     assertThat(regex("(?s:.)")).fromStringOrReader("\n").parsesTo("\n");
   }
 
-  @Test
-  public void regex_freeSpacingFlag() {
+  @Test public void regex_freeSpacingFlag() {
     Parser<String> parser = regex("(?x)a b c");
     assertThat(parser).fromStringOrReader("abc").parsesTo("abc");
     assertThat(parser).fromStringOrReader("a b c").failsToParse();
   }
 
-  @Test
-  public void regex_enclosedCaseInsensitiveFlag() {
+  @Test public void regex_enclosedCaseInsensitiveFlag() {
     Parser<String> parser = regex("a(?i:b)c");
     assertThat(parser).fromStringOrReader("abc").parsesTo("abc");
     assertThat(parser).fromStringOrReader("aBc").parsesTo("aBc");
@@ -197,181 +171,153 @@ public class ParsersTest {
     assertThat(parser).fromStringOrReader("abC").failsToParse();
   }
 
-  @Test
-  public void regex_doesNotMatchSubstringsAfterCursor() {
+  @Test public void regex_doesNotMatchSubstringsAfterCursor() {
     assertThat(regex("[a-z]+")).fromString("123abc").failsToParse();
   }
 
-  @Test
-  public void regex_choicePruning_caseInsensitiveFlag() {
+  @Test public void regex_choicePruning_caseInsensitiveFlag() {
     Parser<String> parser = anyOf(regex("(?i:b)"), regex("x"), regex("y"));
     assertThat(parser).fromStringOrReader("B").parsesTo("B");
   }
 
-  @Test
-  public void regex_choicePruning_unicodeCharacterClassFlag() {
+  @Test public void regex_choicePruning_unicodeCharacterClassFlag() {
     Parser<String> parser = anyOf(regex("(?U:\\d)"), regex("x"), regex("y"));
     assertThat(parser).fromStringOrReader("\u0661").parsesTo("\u0661");
   }
 
-  @Test
-  public void regex_choicePruning_nonBmp() {
+  @Test public void regex_choicePruning_nonBmp() {
     Parser<String> parser = anyOf(regex("a\uD83D\uDE00b"), regex("x"), regex("y"));
     assertThat(parser).fromStringOrReader("a\uD83D\uDE00b").parsesTo("a\uD83D\uDE00b");
   }
 
-  @Test
-  public void regex_usPhoneNumberExample() {
+  @Test public void regex_usPhoneNumberExample() {
     Parser<String> usPhoneNumber = regex("\\(\\d{3}\\)\\d{3}-\\d{4}");
     assertThat(usPhoneNumber).fromStringOrReader("(123)456-7890").parsesTo("(123)456-7890");
     assertThat(usPhoneNumber).fromStringOrReader("123-456-7890").failsToParse();
   }
 
-  @Test
-  public void regex_throwsForReaderBasedInput() {
+  @Test public void regex_throwsForReaderBasedInput() {
     Parser<String> p = regex("[a-z]+");
     Stream<String> stream = p.parseToStream(new StringReader("abc"));
     assertThrows(UnsupportedOperationException.class, () -> stream.findFirst());
   }
 
-  @Test
-  public void regex_finiteOnReaderInput() {
+  @Test public void regex_finiteOnReaderInput() {
     Parser<String> parser = regex("a?b{1,3}c");
     assertThat(parser).fromStringOrReader("abbc").parsesTo("abbc");
   }
 
-  @Test
-  public void regex_prefixPruning() {
+  @Test public void regex_prefixPruning() {
     Parser<String> p = anyOf(regex("[a-z]+"), regex("[0-9]+"), regex("foo"));
     assertThat(p.parse("abc")).isEqualTo("abc");
     assertThat(p.parse("123")).isEqualTo("123");
   }
 
-  @Test
-  public void regex_prefixPruning_literal() {
+  @Test public void regex_prefixPruning_literal() {
     Parser<String> p = anyOf(regex("abc"), regex("def"), regex("ghi"));
     assertThat(p).fromStringOrReader("abc").parsesTo("abc");
     assertThat(p).fromStringOrReader("def").parsesTo("def");
   }
 
-  @Test
-  public void regex_prefixPruning_alternation() {
+  @Test public void regex_prefixPruning_alternation() {
     Parser<String> p = anyOf(regex("ab|cd"), regex("ef"), regex("gh"));
     assertThat(p).fromStringOrReader("ab").parsesTo("ab");
     assertThat(p).fromStringOrReader("cd").parsesTo("cd");
   }
 
-  @Test
-  public void regex_prefixPruning_group() {
+  @Test public void regex_prefixPruning_group() {
     Parser<String> p = anyOf(regex("(abc)"), regex("def"), regex("ghi"));
     assertThat(p).fromStringOrReader("abc").parsesTo("abc");
   }
 
-  @Test
-  public void regex_prefixPruning_quantified() {
+  @Test public void regex_prefixPruning_quantified() {
     Parser<String> p = anyOf(regex("a+"), regex("b+"), regex("c+"));
     assertThat(p.parse("aaa")).isEqualTo("aaa");
   }
 
-  @Test
-  public void regex_prefixPruning_characterSet() {
+  @Test public void regex_prefixPruning_characterSet() {
     Parser<String> p = anyOf(regex("[ab]"), regex("c"), regex("d"));
     assertThat(p).fromStringOrReader("a").parsesTo("a");
     assertThat(p).fromStringOrReader("b").parsesTo("b");
   }
 
-  @Test
-  public void regex_prefixPruning_characterSetRange() {
+  @Test public void regex_prefixPruning_characterSetRange() {
     Parser<String> p = anyOf(regex("[a-c]"), regex("d"), regex("e"));
     assertThat(p).fromStringOrReader("b").parsesTo("b");
   }
 
-  @Test
-  public void regex_prefixPruning_predefinedCharClass() {
+  @Test public void regex_prefixPruning_predefinedCharClass() {
     Parser<String> p = anyOf(regex("\\d+"), regex("abc"), regex("def"));
     assertThat(p.parse("123")).isEqualTo("123");
   }
 
-  @Test
-  public void regex_prefixPruning_fallbackNoneOf() {
+  @Test public void regex_prefixPruning_fallbackNoneOf() {
     Parser<String> p = anyOf(regex("[^ab]"), regex("c"), regex("d"));
     assertThat(p).fromStringOrReader("x").parsesTo("x");
   }
 
-  @Test
-  public void regex_prefixPruning_withFallback() {
+  @Test public void regex_prefixPruning_withFallback() {
     Parser<String> p = anyOf(regex("\\w+"), regex("[0-9]+"), regex("foo"));
     assertThat(p.parse("abc")).isEqualTo("abc");
   }
 
-  @Test
-  public void regex_prefixPruning_withAlternationFallback() {
+  @Test public void regex_prefixPruning_withAlternationFallback() {
     Parser<String> p = anyOf(regex("a|\\w+"), regex("[0-9]+"), regex("foo"));
     assertThat(p.parse("bcd")).isEqualTo("bcd");
   }
 
-  @Test
-  public void regex_prefixPruning_withCharacterSetFallback() {
+  @Test public void regex_prefixPruning_withCharacterSetFallback() {
     Parser<String> p = anyOf(regex("[a-z\\p{Digit}]+"), regex("foo"), regex("bar"));
     assertThat(p.parse("123")).isEqualTo("123");
   }
 
-  @Test
-  public void regex_optionalPrefix_doesNotPruneValidInput() {
+  @Test public void regex_optionalPrefix_doesNotPruneValidInput() {
     Parser<String> p = anyOf(regex("a*b"), regex("c"), regex("d"));
     assertThat(p.parse("b")).isEqualTo("b");
   }
 
-  @Test
-  public void regex_optionalAlternationPrefix_doesNotPruneValidInput() {
+  @Test public void regex_optionalAlternationPrefix_doesNotPruneValidInput() {
     Parser<String> p = anyOf(regex("(a|b)?c"), regex("x"), regex("y"));
     assertThat(p.parse("c")).isEqualTo("c");
     assertThat(p.parse("ac")).isEqualTo("ac");
     assertThat(p.parse("bc")).isEqualTo("bc");
   }
 
-  @Test
-  public void regex_multipleOptionalPrefixes_doesNotPruneValidInput() {
+  @Test public void regex_multipleOptionalPrefixes_doesNotPruneValidInput() {
     Parser<String> p = anyOf(regex("a*b*c"), regex("x"), regex("y"));
     assertThat(p.parse("c")).isEqualTo("c");
     assertThat(p.parse("bc")).isEqualTo("bc");
     assertThat(p.parse("abc")).isEqualTo("abc");
   }
 
-  @Test
-  public void regex_matchesInMiddle() {
+  @Test public void regex_matchesInMiddle() {
     Parser<String> parser = sequence(string("["), regex("[a-z]+"), string("]"), (l, r, rt) -> r);
     assertThat(parser.parse("[abc]")).isEqualTo("abc");
   }
 
-  @Test
-  public void regex_matchesAtEnd() {
+  @Test public void regex_matchesAtEnd() {
     Parser<String> parser = sequence(string("["), regex("[a-z]+"), (l, r) -> r);
     assertThat(parser.parse("[abc")).isEqualTo("abc");
   }
 
-  @Test
-  public void regex_matchesInLoop_parseToStream() {
+  @Test public void regex_matchesInLoop_parseToStream() {
     Parser<String> parser = regex("[a-z]+");
     assertThat(parser.skipping(Character::isWhitespace).parseToStream("abc def ghi").toList())
         .containsExactly("abc", "def", "ghi")
         .inOrder();
   }
 
-  @Test
-  public void regex_matchesInLoop_atLeastOnceDelimitedBy() {
+  @Test public void regex_matchesInLoop_atLeastOnceDelimitedBy() {
     Parser<List<String>> parser = regex("[a-z]+").atLeastOnceDelimitedBy(",");
     assertThat(parser.parse("abc,def,ghi")).containsExactly("abc", "def", "ghi").inOrder();
   }
 
-  @Test
-  public void regex_parseSkipping() {
+  @Test public void regex_parseSkipping() {
     Parser<String> parser = sequence(string("["), regex("[a-z]+"), string("]"), (l, r, rt) -> r);
     assertThat(parser.parseSkipping(Character::isWhitespace, "[   abc   ]")).isEqualTo("abc");
   }
 
-  @Test
-  public void regex_failureMessage() {
+  @Test public void regex_failureMessage() {
     Parser<String> parser = regex("[a-z]+");
     var exception = assertThrows(ParseException.class, () -> parser.parse("123"));
     assertThat(exception.getMessage())
@@ -383,8 +329,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void regex_failureMessage_inSequence() {
+  @Test public void regex_failureMessage_inSequence() {
     Parser<?> parser = sequence(string("["), regex("[a-z]+"), string("]"));
     var exception = assertThrows(ParseException.class, () -> parser.parse("[123]"));
     assertThat(exception.getMessage())
@@ -396,65 +341,98 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void duration_oneSecond() {
+  @Test public void regex_as_success() {
+    Parser<String> parser = regex("[a-z]+").as("word");
+    assertThat(parser.parse("abc")).isEqualTo("abc");
+  }
+
+  @Test public void regex_as_failureMessage() {
+    Parser<String> parser = regex("[a-z]+").as("letters");
+    var exception = assertThrows(ParseException.class, () -> parser.parse("123"));
+    assertThat(exception).hasMessageThat().contains("1:1");
+    assertThat(exception).hasMessageThat().contains("expecting <letters>");
+  }
+
+  @Test public void regex_as_failureMessage_inSequence() {
+    Parser<?> parser = sequence(string("["), regex("[a-z]+").as("letters"), string("]"));
+    var exception = assertThrows(ParseException.class, () -> parser.parse("[123]"));
+    assertThat(exception).hasMessageThat().contains("1:2");
+    assertThat(exception).hasMessageThat().contains("expecting <letters>");
+  }
+
+  @Test public void regex_as_inAnyOf_aggregatesSymbol() {
+    Parser<?> parser = anyOf(regex("[a-z]+").as("lowercase"), regex("[A-Z]+").as("uppercase"));
+    var exception = assertThrows(ParseException.class, () -> parser.parse("123"));
+    assertThat(exception).hasMessageThat().contains("1:1");
+    assertThat(exception).hasMessageThat().contains("expecting one of [lowercase, uppercase]");
+  }
+
+  @Test public void regex_as_chainedAs() {
+    Parser<String> parser = regex("[a-z]+").as("word").as("identifier");
+    var exception = assertThrows(ParseException.class, () -> parser.parse("123"));
+    assertThat(exception).hasMessageThat().contains("1:1");
+    assertThat(exception).hasMessageThat().contains("expecting <identifier>");
+  }
+
+  @Test public void regex_as_returnElision_success() {
+    Parser<String> parser = regex("[a-z]+").as("word").thenReturn("ok");
+    assertThat(parser.parse("abc")).isEqualTo("ok");
+  }
+
+  @Test public void regex_as_returnElision_failure() {
+    Parser<String> parser = regex("[a-z]+").as("word").thenReturn("ok");
+    var exception = assertThrows(ParseException.class, () -> parser.parse("123"));
+    assertThat(exception).hasMessageThat().contains("1:1");
+    assertThat(exception).hasMessageThat().contains("expecting <word>");
+  }
+
+  @Test public void duration_oneSecond() {
     assertThat(Parsers.DURATION.parse("1s")).isEqualTo(Duration.ofSeconds(1));
   }
 
-  @Test
-  public void duration_twoHours() {
+  @Test public void duration_twoHours() {
     assertThat(Parsers.DURATION.parse("2h")).isEqualTo(Duration.ofHours(2));
   }
 
-  @Test
-  public void duration_fiveDays() {
+  @Test public void duration_fiveDays() {
     assertThat(Parsers.DURATION.parse("5d")).isEqualTo(Duration.ofDays(5));
   }
 
-  @Test
-  public void duration_oneWeek() {
+  @Test public void duration_oneWeek() {
     assertThat(Parsers.DURATION.parse("1w")).isEqualTo(Duration.ofDays(7));
   }
 
-  @Test
-  public void duration_fifteenMillis() {
+  @Test public void duration_fifteenMillis() {
     assertThat(Parsers.DURATION.parse("15ms")).isEqualTo(Duration.ofMillis(15));
   }
 
-  @Test
-  public void duration_microseconds() {
+  @Test public void duration_microseconds() {
     assertThat(Parsers.DURATION.parse("500us")).isEqualTo(Duration.ofNanos(500_000));
   }
 
-  @Test
-  public void duration_nanoseconds() {
+  @Test public void duration_nanoseconds() {
     assertThat(Parsers.DURATION.parse("100ns")).isEqualTo(Duration.ofNanos(100));
   }
 
-  @Test
-  public void duration_longMaxValueNanosSuccess() {
+  @Test public void duration_longMaxValueNanosSuccess() {
     assertThat(Parsers.DURATION.parse("9223372036854775807ns"))
         .isEqualTo(Duration.ofNanos(Long.MAX_VALUE));
   }
 
-  @Test
-  public void duration_zeroSeconds() {
+  @Test public void duration_zeroSeconds() {
     assertThat(Parsers.DURATION.parse("0s")).isEqualTo(Duration.ZERO);
   }
 
-  @Test
-  public void duration_zeroDays() {
+  @Test public void duration_zeroDays() {
     assertThat(Parsers.DURATION.parse("0d")).isEqualTo(Duration.ZERO);
   }
 
-  @Test
-  public void duration_combined() {
+  @Test public void duration_combined() {
     assertThat(Parsers.DURATION.parse("2d3h"))
         .isEqualTo(Duration.ofDays(2).plus(Duration.ofHours(3)));
   }
 
-  @Test
-  public void duration_allUnitsCombined() {
+  @Test public void duration_allUnitsCombined() {
     Duration expected = Duration.ofDays(7)
         .plus(Duration.ofDays(2))
         .plus(Duration.ofHours(3))
@@ -466,8 +444,7 @@ public class ParsersTest {
     assertThat(Parsers.DURATION.parse("1w2d3h4m5s6ms7us8ns")).isEqualTo(expected);
   }
 
-  @Test
-  public void duration_emptyStringThrows() {
+  @Test public void duration_emptyStringThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse(""));
     assertThat(e).hasMessageThat()
         .isEqualTo(
@@ -478,8 +455,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void duration_whitespaceThrows() {
+  @Test public void duration_whitespaceThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1s 2m"));
     assertThat(e).hasMessageThat()
         .isEqualTo(
@@ -490,14 +466,12 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void duration_skippingWhitespace_success() {
+  @Test public void duration_skippingWhitespace_success() {
     assertThat(Parsers.DURATION.parseSkipping(Character::isWhitespace, "  2m1s  "))
         .isEqualTo(Duration.ofMinutes(2).plusSeconds(1));
   }
 
-  @Test
-  public void duration_skippingWhitespace_spaceBetweenDigitsAndUnitThrows() {
+  @Test public void duration_skippingWhitespace_spaceBetweenDigitsAndUnitThrows() {
     ParseException e = assertThrows(
         ParseException.class, () -> Parsers.DURATION.parseSkipping(Character::isWhitespace, "1 s"));
     assertThat(e).hasMessageThat()
@@ -509,8 +483,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void duration_skippingWhitespace_spaceBetweenSegmentsThrows() {
+  @Test public void duration_skippingWhitespace_spaceBetweenSegmentsThrows() {
     ParseException e = assertThrows(
         ParseException.class,
         () -> Parsers.DURATION.parseSkipping(Character::isWhitespace, "1s 2m"));
@@ -523,22 +496,19 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void duration_decimalLastSegment() {
+  @Test public void duration_decimalLastSegment() {
     assertThat(Parsers.DURATION.parse("1.5s")).isEqualTo(Duration.ofMillis(1500));
     assertThat(Parsers.DURATION.parse("1h2.5m"))
         .isEqualTo(Duration.ofHours(1).plus(Duration.ofMinutes(2).plusSeconds(30)));
   }
 
-  @Test
-  public void duration_fractionalNotLastSegmentThrows() {
+  @Test public void duration_fractionalNotLastSegmentThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1.5h2m"));
     assertThat(e).hasMessageThat()
         .isEqualTo("at 1:1: Only the last duration segment is allowed to be fractional: 1.5h");
   }
 
-  @Test
-  public void duration_negativeThrows() {
+  @Test public void duration_negativeThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("-1s"));
     assertThat(e).hasMessageThat()
         .isEqualTo(
@@ -549,8 +519,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void duration_lettersOnlyThrows() {
+  @Test public void duration_lettersOnlyThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("foo"));
     assertThat(e).hasMessageThat()
         .isEqualTo(
@@ -561,8 +530,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void duration_invalidUnitThrows() {
+  @Test public void duration_invalidUnitThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1ss"));
     assertThat(e).hasMessageThat()
         .isEqualTo(
@@ -573,71 +541,60 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void duration_overflowLongThrows() {
+  @Test public void duration_overflowLongThrows() {
     ParseException e = assertThrows(
         ParseException.class, () -> Parsers.DURATION.parse("999999999999999999999999999s"));
     assertThat(e).hasMessageThat()
         .isEqualTo("at 1:1: For input string: \"999999999999999999999999999\"");
   }
 
-  @Test
-  public void duration_overflowDurationThrows() {
+  @Test public void duration_overflowDurationThrows() {
     ParseException e = assertThrows(
         ParseException.class, () -> Parsers.DURATION.parse("3w9223372036854775807d100s"));
     assertThat(e).hasMessageThat().contains("duration out of range: 9223372036854775807d");
   }
 
-  @Test
-  public void duration_overflowAccumulationThrows() {
+  @Test public void duration_overflowAccumulationThrows() {
     ParseException e = assertThrows(
         ParseException.class, () -> Parsers.DURATION.parse("9223372036854775800s10000ms"));
     assertThat(e).hasMessageThat().isEqualTo("at 1:1: duration out of range");
   }
 
-  @Test
-  public void duration_overflowFractionalThrows() {
+  @Test public void duration_overflowFractionalThrows() {
     ParseException e = assertThrows(
         ParseException.class, () -> Parsers.DURATION.parse("100000000000000000000.5s"));
     assertThat(e).hasMessageThat().isEqualTo("at 1:1: duration out of range: 1.0E20s");
   }
 
-  @Test
-  public void duration_unorderedSegmentsThrows() {
+  @Test public void duration_unorderedSegmentsThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1s2m"));
     assertThat(e).hasMessageThat()
         .isEqualTo("at 1:1: Duration units must be specified in order: 1s2m");
   }
 
-  @Test
-  public void duration_duplicateUnitsThrows() {
+  @Test public void duration_duplicateUnitsThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1s2s"));
     assertThat(e).hasMessageThat()
         .isEqualTo("at 1:1: Duration units must be specified in order: 1s2s");
   }
 
-  @Test
-  public void bmpCodeUnit_validHexUpper() {
+  @Test public void bmpCodeUnit_validHexUpper() {
     assertThat(Parsers.BMP_CODE_UNIT.parse("D83D")).isEqualTo((char) 0xD83D);
   }
 
-  @Test
-  public void bmpCodeUnit_validHexLower() {
+  @Test public void bmpCodeUnit_validHexLower() {
     assertThat(Parsers.BMP_CODE_UNIT.parse("d83d")).isEqualTo((char) 0xD83D);
   }
 
-  @Test
-  public void bmpCodeUnit_zero() {
+  @Test public void bmpCodeUnit_zero() {
     assertThat(Parsers.BMP_CODE_UNIT.parse("0000")).isEqualTo('\0');
   }
 
-  @Test
-  public void bmpCodeUnit_max() {
+  @Test public void bmpCodeUnit_max() {
     assertThat(Parsers.BMP_CODE_UNIT.parse("FFFF")).isEqualTo((char) 65535);
   }
 
-  @Test
-  public void bmpCodeUnit_tooShortThrows() {
+  @Test public void bmpCodeUnit_tooShortThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.BMP_CODE_UNIT.parse("FFF"));
     assertThat(e).hasMessageThat()
         .isEqualTo(
@@ -648,8 +605,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void bmpCodeUnit_tooLongThrows() {
+  @Test public void bmpCodeUnit_tooLongThrows() {
     ParseException e =
         assertThrows(ParseException.class, () -> Parsers.BMP_CODE_UNIT.parse("FFFFF"));
     assertThat(e).hasMessageThat()
@@ -661,8 +617,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void bmpCodeUnit_nonHexThrows() {
+  @Test public void bmpCodeUnit_nonHexThrows() {
     ParseException e =
         assertThrows(ParseException.class, () -> Parsers.BMP_CODE_UNIT.parse("FGHI"));
     assertThat(e).hasMessageThat()
@@ -674,8 +629,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void bmpCodeUnit_emptyStringThrows() {
+  @Test public void bmpCodeUnit_emptyStringThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.BMP_CODE_UNIT.parse(""));
     assertThat(e).hasMessageThat()
         .isEqualTo(
@@ -686,27 +640,23 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedDecimal_matchesZero() {
+  @Test public void unsignedDecimal_matchesZero() {
     assertThat(Parsers.UNSIGNED_DECIMAL.parse("0")).isEqualTo("0");
   }
 
-  @Test
-  public void unsignedDecimal_matchesValidIntegers() {
+  @Test public void unsignedDecimal_matchesValidIntegers() {
     assertThat(Parsers.UNSIGNED_DECIMAL.parse("1")).isEqualTo("1");
     assertThat(Parsers.UNSIGNED_DECIMAL.parse("123")).isEqualTo("123");
   }
 
-  @Test
-  public void unsignedDecimal_matchesValidFloats() {
+  @Test public void unsignedDecimal_matchesValidFloats() {
     assertThat(Parsers.UNSIGNED_DECIMAL.parse("0.0")).isEqualTo("0.0");
     assertThat(Parsers.UNSIGNED_DECIMAL.parse("0.5")).isEqualTo("0.5");
     assertThat(Parsers.UNSIGNED_DECIMAL.parse("1.23")).isEqualTo("1.23");
     assertThat(Parsers.UNSIGNED_DECIMAL.parse("0.007")).isEqualTo("0.007");
   }
 
-  @Test
-  public void unsignedDecimal_rejectsMinusSign() {
+  @Test public void unsignedDecimal_rejectsMinusSign() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("-1"));
     assertThat(thrown).hasMessageThat()
@@ -718,8 +668,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedDecimal_rejectsPlusSign() {
+  @Test public void unsignedDecimal_rejectsPlusSign() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("+1"));
     assertThat(thrown).hasMessageThat()
@@ -731,8 +680,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedDecimal_rejectsLeadingDot() {
+  @Test public void unsignedDecimal_rejectsLeadingDot() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse(".5"));
     assertThat(thrown).hasMessageThat()
@@ -744,8 +692,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedDecimal_rejectsTrailingDot() {
+  @Test public void unsignedDecimal_rejectsTrailingDot() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("123."));
     assertThat(thrown).hasMessageThat()
@@ -757,8 +704,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedDecimal_rejectsOnlyDot() {
+  @Test public void unsignedDecimal_rejectsOnlyDot() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("."));
     assertThat(thrown).hasMessageThat()
@@ -770,8 +716,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedDecimal_rejectsRedundantLeadingZeroInteger() {
+  @Test public void unsignedDecimal_rejectsRedundantLeadingZeroInteger() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("05"));
     assertThat(thrown).hasMessageThat()
@@ -783,8 +728,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedDecimal_rejectsRedundantLeadingZeroFloat() {
+  @Test public void unsignedDecimal_rejectsRedundantLeadingZeroFloat() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("00.5"));
     assertThat(thrown).hasMessageThat()
@@ -796,8 +740,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedDecimal_rejectsMultipleDots() {
+  @Test public void unsignedDecimal_rejectsMultipleDots() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("1.2.3"));
     assertThat(thrown).hasMessageThat()
@@ -809,8 +752,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedDecimal_rejectsDotsInARow() {
+  @Test public void unsignedDecimal_rejectsDotsInARow() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("1..2"));
     assertThat(thrown).hasMessageThat()
@@ -822,8 +764,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedDecimal_rejectsScientificNotation() {
+  @Test public void unsignedDecimal_rejectsScientificNotation() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("1.2e3"));
     assertThat(thrown).hasMessageThat()
@@ -835,8 +776,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedDecimal_rejectsAlphabetic() {
+  @Test public void unsignedDecimal_rejectsAlphabetic() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("a"));
     assertThat(thrown).hasMessageThat()
@@ -848,8 +788,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedDecimal_rejectsEmptyString() {
+  @Test public void unsignedDecimal_rejectsEmptyString() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse(""));
     assertThat(thrown).hasMessageThat()
@@ -861,8 +800,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedDecimal_rangeParsingSuccess() {
+  @Test public void unsignedDecimal_rangeParsingSuccess() {
     Parser<Range<String>> rangeParser =
         sequence(Parsers.UNSIGNED_DECIMAL.followedBy(".."), Parsers.UNSIGNED_DECIMAL, Range::closed)
             .between("[", "]");
@@ -871,8 +809,7 @@ public class ParsersTest {
     assertThat(rangeParser.parse("[1.0..2.0]")).isEqualTo(Range.closed("1.0", "2.0"));
   }
 
-  @Test
-  public void unsignedDecimal_skippingWhitespace() {
+  @Test public void unsignedDecimal_skippingWhitespace() {
     // Normal parsing without space succeeds
     assertThat(Parsers.UNSIGNED_DECIMAL.parseSkipping(Character::isWhitespace, "0.1"))
         .isEqualTo("0.1");
@@ -891,30 +828,25 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedInteger_parseZero() {
+  @Test public void unsignedInteger_parseZero() {
     assertThat(UNSIGNED_INTEGER.parse("0")).isEqualTo("0");
   }
 
-  @Test
-  public void unsignedInteger_parseTen() {
+  @Test public void unsignedInteger_parseTen() {
     assertThat(UNSIGNED_INTEGER.parse("10")).isEqualTo("10");
   }
 
-  @Test
-  public void unsignedInteger_parseMultipleDigits() {
+  @Test public void unsignedInteger_parseMultipleDigits() {
     assertThat(UNSIGNED_INTEGER.parse("123")).isEqualTo("123");
   }
 
-  @Test
-  public void unsignedInteger_delimited() {
+  @Test public void unsignedInteger_delimited() {
     assertThat(UNSIGNED_INTEGER.atLeastOnceDelimitedBy(",").parse("1,2"))
         .containsExactly("1", "2")
         .inOrder();
   }
 
-  @Test
-  public void unsignedInteger_rejectsAlphabetic() {
+  @Test public void unsignedInteger_rejectsAlphabetic() {
     ParseException thrown = assertThrows(ParseException.class, () -> UNSIGNED_INTEGER.parse("foo"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -925,8 +857,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedInteger_rejectsRedundantLeadingZeroInteger() {
+  @Test public void unsignedInteger_rejectsRedundantLeadingZeroInteger() {
     ParseException thrown = assertThrows(ParseException.class, () -> UNSIGNED_INTEGER.parse("00"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -937,8 +868,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedInteger_rejectsRedundantLeadingZeroWithDigits() {
+  @Test public void unsignedInteger_rejectsRedundantLeadingZeroWithDigits() {
     ParseException thrown = assertThrows(ParseException.class, () -> UNSIGNED_INTEGER.parse("001"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -949,8 +879,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedInteger_rejectsEmptyString() {
+  @Test public void unsignedInteger_rejectsEmptyString() {
     ParseException thrown = assertThrows(ParseException.class, () -> UNSIGNED_INTEGER.parse(""));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -961,14 +890,12 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedInteger_parseSkipping_success() {
+  @Test public void unsignedInteger_parseSkipping_success() {
     assertThat(UNSIGNED_INTEGER.atLeastOnce().parseSkipping(Character::isWhitespace, " 1 2 3 "))
         .containsExactly("1", "2", "3");
   }
 
-  @Test
-  public void unsignedInteger_parseSkipping_internalWhitespaceThrows() {
+  @Test public void unsignedInteger_parseSkipping_internalWhitespaceThrows() {
     ParseException thrown = assertThrows(
         ParseException.class, () -> UNSIGNED_INTEGER.parseSkipping(Character::isWhitespace, "1 2"));
     assertThat(thrown).hasMessageThat()
@@ -980,8 +907,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void unsignedInteger_getPrefixes_effectiveInAnyOf() {
+  @Test public void unsignedInteger_getPrefixes_effectiveInAnyOf() {
     Parser<String> parser = anyOf(UNSIGNED_INTEGER, string("abc"), string("def"));
 
     assertThat(parser.parse("0")).isEqualTo("0");
@@ -991,58 +917,47 @@ public class ParsersTest {
     assertThat(parser.parse("abc")).isEqualTo("abc");
   }
 
-  @Test
-  public void signedDouble_zero() {
+  @Test public void signedDouble_zero() {
     assertThat(SIGNED_DOUBLE.parse("0")).isEqualTo(0.0);
   }
 
-  @Test
-  public void signedDouble_positiveInteger() {
+  @Test public void signedDouble_positiveInteger() {
     assertThat(SIGNED_DOUBLE.parse("123")).isEqualTo(123.0);
   }
 
-  @Test
-  public void signedDouble_negativeInteger() {
+  @Test public void signedDouble_negativeInteger() {
     assertThat(SIGNED_DOUBLE.parse("-123")).isEqualTo(-123.0);
   }
 
-  @Test
-  public void signedDouble_positiveFloat() {
+  @Test public void signedDouble_positiveFloat() {
     assertThat(SIGNED_DOUBLE.parse("0.5")).isEqualTo(0.5);
   }
 
-  @Test
-  public void signedDouble_negativeFloat() {
+  @Test public void signedDouble_negativeFloat() {
     assertThat(SIGNED_DOUBLE.parse("-0.5")).isEqualTo(-0.5);
   }
 
-  @Test
-  public void signedDouble_exponent() {
+  @Test public void signedDouble_exponent() {
     assertThat(SIGNED_DOUBLE.parse("1.23e4")).isEqualTo(12300.0);
   }
 
-  @Test
-  public void signedDouble_negativeExponent() {
+  @Test public void signedDouble_negativeExponent() {
     assertThat(SIGNED_DOUBLE.parse("1.23e-4")).isEqualTo(0.000123);
   }
 
-  @Test
-  public void signedDouble_positiveExponent() {
+  @Test public void signedDouble_positiveExponent() {
     assertThat(SIGNED_DOUBLE.parse("1.23e+4")).isEqualTo(12300.0);
   }
 
-  @Test
-  public void signedDouble_capitalExponent() {
+  @Test public void signedDouble_capitalExponent() {
     assertThat(SIGNED_DOUBLE.parse("1.23E4")).isEqualTo(12300.0);
   }
 
-  @Test
-  public void signedDouble_zeroWithExponent() {
+  @Test public void signedDouble_zeroWithExponent() {
     assertThat(SIGNED_DOUBLE.parse("0e1")).isEqualTo(0.0);
   }
 
-  @Test
-  public void signedDouble_emptyThrows() {
+  @Test public void signedDouble_emptyThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse(""));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1053,8 +968,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void signedDouble_leadingPlusThrows() {
+  @Test public void signedDouble_leadingPlusThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("+123"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1065,8 +979,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void signedDouble_leadingZeroThrows() {
+  @Test public void signedDouble_leadingZeroThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("05"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1077,8 +990,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void signedDouble_leadingZeroFloatThrows() {
+  @Test public void signedDouble_leadingZeroFloatThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("00.5"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1089,8 +1001,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void signedDouble_missingIntegerThrows() {
+  @Test public void signedDouble_missingIntegerThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse(".5"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1101,8 +1012,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void signedDouble_missingFractionThrows() {
+  @Test public void signedDouble_missingFractionThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("5."));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1113,8 +1023,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void signedDouble_emptyExponentThrows() {
+  @Test public void signedDouble_emptyExponentThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("1e"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1125,8 +1034,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void signedDouble_emptyExponentSignThrows() {
+  @Test public void signedDouble_emptyExponentSignThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("1e+"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1137,8 +1045,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void signedDouble_fractionalExponentThrows() {
+  @Test public void signedDouble_fractionalExponentThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("1e4.5"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1149,8 +1056,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void signedDouble_suffixThrows() {
+  @Test public void signedDouble_suffixThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("1e4f"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1161,8 +1067,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void signedDouble_nanThrows() {
+  @Test public void signedDouble_nanThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("NaN"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1173,8 +1078,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void signedDouble_infinityThrows() {
+  @Test public void signedDouble_infinityThrows() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("Infinity"));
     assertThat(thrown).hasMessageThat()
@@ -1186,48 +1090,39 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void signedDouble_overflow() {
+  @Test public void signedDouble_overflow() {
     assertThat(SIGNED_DOUBLE.parse("1e999")).isEqualTo(Double.POSITIVE_INFINITY);
   }
 
-  @Test
-  public void signedDouble_negativeOverflow() {
+  @Test public void signedDouble_negativeOverflow() {
     assertThat(SIGNED_DOUBLE.parse("-1e999")).isEqualTo(Double.NEGATIVE_INFINITY);
   }
 
-  @Test
-  public void signedDouble_underflow() {
+  @Test public void signedDouble_underflow() {
     assertThat(SIGNED_DOUBLE.parse("1e-999")).isEqualTo(0.0);
   }
 
-  @Test
-  public void signedDouble_sourceMatchesOverflow() {
+  @Test public void signedDouble_sourceMatchesOverflow() {
     assertThat(SIGNED_DOUBLE.source().parse("1e999")).isEqualTo("1e999");
   }
 
-  @Test
-  public void codePoint_zero() {
+  @Test public void codePoint_zero() {
     assertThat(CODE_POINT.parse("00000000")).isEqualTo(0);
   }
 
-  @Test
-  public void codePoint_validBmp() {
+  @Test public void codePoint_validBmp() {
     assertThat(CODE_POINT.parse("00000041")).isEqualTo(0x41);
   }
 
-  @Test
-  public void codePoint_validSupplementary() {
+  @Test public void codePoint_validSupplementary() {
     assertThat(CODE_POINT.parse("0001F600")).isEqualTo(0x1F600);
   }
 
-  @Test
-  public void codePoint_upperBound() {
+  @Test public void codePoint_upperBound() {
     assertThat(CODE_POINT.parse("0010FFFF")).isEqualTo(0x10FFFF);
   }
 
-  @Test
-  public void codePoint_tooLargeThrows() {
+  @Test public void codePoint_tooLargeThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse("00110000"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1238,8 +1133,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void codePoint_negativeWrappedThrows() {
+  @Test public void codePoint_negativeWrappedThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse("FFFFFFFF"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1250,8 +1144,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void codePoint_invalidHexThrows() {
+  @Test public void codePoint_invalidHexThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse("0001G600"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1262,8 +1155,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void codePoint_emptyThrows() {
+  @Test public void codePoint_emptyThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse(""));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1274,8 +1166,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void codePoint_insufficientDigitsThrows() {
+  @Test public void codePoint_insufficientDigitsThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse("000041"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
@@ -1286,8 +1177,7 @@ public class ParsersTest {
             """);
   }
 
-  @Test
-  public void codePoint_excessiveDigitsThrows() {
+  @Test public void codePoint_excessiveDigitsThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse("000000412"));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(

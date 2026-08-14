@@ -173,6 +173,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : context.expecting(name, start);
       }
 
+      @Override public Parser<Character> as(String logicalName) {
+        return one(matcher, logicalName);
+      }
+
       @Override Set<String> getExpectedSymbols() {
         return Set.of(name);
       }
@@ -189,11 +193,19 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Matches one or more consecutive characters as specified by {@code matcher}. */
   public static Parser<String> consecutive(CharPredicate matcher, String name) {
+    return skipConsecutive(matcher, name).source();
+  }
+
+  private static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
     requireNonNull(matcher);
     return new Scanner(name) {
       @Override int scan(CharInput input, int index) {
         while (input.startsWith(matcher, index)) index++;
         return index;
+      }
+
+      @Override public Parser<Void> as(String logicalName) {
+        return skipConsecutive(matcher, logicalName);
       }
 
       @Override Set<String> computePrefixes() {
@@ -203,7 +215,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       @Override BitSet computeBlocklist() {
         return blockedCommonAsciiChars(matcher);
       }
-    }.source();
+    };
   }
 
   /**
@@ -249,24 +261,29 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.4
    */
   public static Parser<String> chars(int n) {
-    return chars(n, EMPTY_PREFIX, n + " char(s)");
+    return chars(n, EMPTY_PREFIX, n + " char(s)").source();
   }
 
-  private static Parser<String> chars(int n, Set<String> prefixes, String name) {
+  private static Parser<Void> chars(int n, Set<String> prefixes, String name) {
     checkArgument(n > 0, "chars count (%s) must be positive", n);
     return new Scanner(name) {
       @Override int scan(CharInput input, int from) {
         return input.isInRange(from + n - 1) ? from + n : from;
       }
 
+      @Override public Parser<Void> as(String logicalName) {
+        return Parser.chars(n, prefixes, logicalName);
+      }
+
       @Override Set<String> computePrefixes() {
         return prefixes;
       }
-    }.source();
+    };
   }
 
   private static Parser<String> chars(int n, CharacterSet characterSet, String name) {
     return chars(n, characterSet.getAsciiPrefixes(), name)
+        .source()
         .suchThat(characterSet::matchesAllOf, name);
   }
 
@@ -912,19 +929,21 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * When {@code this} parser fails (without consuming any input), report {@code logicalName}
-   * as being expected.
+   * When {@code this} parser fails (without consuming any input), report {@code logicalName} as
+   * being expected.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * Parser<String> phoneNumber = sequence(digits(3), one('-'), digits(3), one('-'), digits(4))
    *     .source()
    *     .as("phone number");
-   * }</pre>.
+   * }</pre>
    *
    * @since 10.9
    */
   public Parser<T> as(String logicalName) {
-    checkArgument(logicalName.length() > 0, "logicalName cannot be empty");
+    requireNonNull(logicalName);
     return new SamePrefix<>() {
       @Override MatchResult<T> skipAndMatch(
           Skipper skip, CharInput input, int start, ErrorContext context) {
@@ -936,16 +955,16 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         };
       }
 
+      @Override public Parser<T> as(String logicalName) {
+        return left().as(logicalName);
+      }
+
       @Override Parser<?> ignoreReturn() {
         return left().ignoreReturn().as(logicalName);
       }
 
       @Override Set<String> getExpectedSymbols() {
         return Set.of(logicalName);
-      }
-
-      @Override public Parser<T> as(String alias) {
-        return left().as(alias);
       }
     };
   }
@@ -1705,6 +1724,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
       @Override public <R> Parser<R> thenReturn(R result) {
         return elided.thenReturn(result);
+      }
+
+      @Override public Parser<String> as(String logicalName) {
+        return left().as(logicalName).source();
       }
 
       @Override Parser<?> ignoreReturn() {
