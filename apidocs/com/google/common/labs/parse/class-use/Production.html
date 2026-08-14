@@ -126,8 +126,8 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color"><span class="type-name-label">Production.</span><code><a href="../Production.html#optionallyFollowedBy(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">optionallyFollowedBy</a><wbr>(<a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="../Production.html#type-param-T" title="type parameter in Production">T</a>, ? super S, ? extends <a href="../Production.html#type-param-T" title="type parameter in Production">T</a>&gt;&nbsp;op)</code></div>
 <div class="col-last even-row-color">
-<div class="block">If this production rule matches, optionally matches <code>suffix</code> with the <code>op</code> BiFunction
- to transform the current production's result.</div>
+<div class="block">If this production rule matches, optionally matches <code>suffix</code> with the <code>op</code>
+ BiFunction to transform the current production's result.</div>
 </div>
 <div class="col-first odd-row-color"><code><a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a><wbr>&lt;<a href="../Production.html#type-param-T" title="type parameter in Production">T</a>&gt;</code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">Production.</span><code><a href="../Production.html#optionallyFollowedBy(java.lang.String)" class="member-name-link">optionallyFollowedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</code></div>
@@ -169,8 +169,8 @@ loadScripts(document, 'script');</script>
  <a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;&nbsp;p2,
  <a href="../Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;?&gt;...&nbsp;more)</code></div>
 <div class="col-last odd-row-color">
-<div class="block"><code>literally(p1, p2, p3)</code> is short-hand for <code>literally(sequence(p1, p2, p3))</code>;
- useful for matching a pattern of characters without spaces in between.</div>
+<div class="block"><code>literally(p1, p2, p3)</code> is short-hand for <code>literally(sequence(p1, p2, p3))</code>; useful
+ for matching a pattern of characters without spaces in between.</div>
 </div>
 <div class="col-first even-row-color"><code>static <a href="../Parser.html" title="class in com.google.common.labs.parse">Parser</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
 <div class="col-second even-row-color"><span class="type-name-label">Parser.</span><code><a href="../Parser.html#nestedByWithEscapes(char,char,com.google.common.labs.parse.Production)" class="member-name-link">nestedByWithEscapes</a><wbr>(char&nbsp;before,

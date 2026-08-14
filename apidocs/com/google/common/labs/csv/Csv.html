@@ -114,8 +114,8 @@ loadScripts(document, 'script');</script>
 
  <p>Empty rows are ignored.
 
- <p>You can also use the header row, and parse each row to a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link"><code>Map</code></a> keyed by the header
- field names:
+ <p>You can also use the header row, and parse each row to a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link"><code>Map</code></a> keyed by the header field
+ names:
 
  <pre><code>
  import static com.google.common.labs.csv.Csv.CSV;
@@ -197,12 +197,14 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parseToLists(java.io.Reader)" class="member-name-link">parseToLists</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/io/Reader.html" title="class or interface in java.io" class="external-link">Reader</a>&nbsp;csv)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Parses the <code>input</code> reader into a lazy stream of immutable <code>List</code>, one row at a time.</div>
+<div class="block">Parses the <code>input</code> reader into a lazy stream of immutable <code>List</code>, one row at a
+ time.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parseToLists(java.lang.String)" class="member-name-link">parseToLists</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;csv)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Parses the <code>input</code> string into a lazy stream of immutable <code>List</code>, one row at a time.</div>
+<div class="block">Parses the <code>input</code> string into a lazy stream of immutable <code>List</code>, one row at a
+ time.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parseToMaps(java.io.Reader)" class="member-name-link">parseToMaps</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/io/Reader.html" title="class or interface in java.io" class="external-link">Reader</a>&nbsp;csv)</code></div>
@@ -212,8 +214,8 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parseToMaps(java.lang.String)" class="member-name-link">parseToMaps</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;csv)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Parses <code>csv</code> string lazily, returning each row in a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link"><code>Map</code></a> keyed by the
- field names in the header row.</div>
+<div class="block">Parses <code>csv</code> string lazily, returning each row in a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link"><code>Map</code></a> keyed by the field names
+ in the header row.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>&lt;R&gt;&nbsp;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a><wbr>&lt;R&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#parseWithHeaderFields(java.io.Reader,com.google.mu.util.stream.BiCollector)" class="member-name-link">parseWithHeaderFields</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/io/Reader.html" title="class or interface in java.io" class="external-link">Reader</a>&nbsp;csv,
@@ -303,7 +305,8 @@ loadScripts(document, 'script');</script>
 <h3>parseToLists</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;</span>&nbsp;<span class="element-name">parseToLists</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;csv)</span></div>
-<div class="block">Parses the <code>input</code> string into a lazy stream of immutable <code>List</code>, one row at a time.
+<div class="block">Parses the <code>input</code> string into a lazy stream of immutable <code>List</code>, one row at a
+ time.
 
  <p>No special treatment of the header row. If you know you have a header row, consider calling
  <code>.skip(1)</code> to skip it, or use <a href="#parseToMaps(java.lang.String)"><code>parseToMaps(java.lang.String)</code></a> with the field names as the Map keys.</div>
@@ -315,7 +318,8 @@ loadScripts(document, 'script');</script>
 <h3>parseToLists</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;</span>&nbsp;<span class="element-name">parseToLists</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/io/Reader.html" title="class or interface in java.io" class="external-link">Reader</a>&nbsp;csv)</span></div>
-<div class="block">Parses the <code>input</code> reader into a lazy stream of immutable <code>List</code>, one row at a time.
+<div class="block">Parses the <code>input</code> reader into a lazy stream of immutable <code>List</code>, one row at a
+ time.
 
  <p>No special treatment of the header row. If you know you have a header row, consider calling
  <code>.skip(1)</code> to skip it, or use <a href="#parseToMaps(java.lang.String)"><code>parseToMaps(java.lang.String)</code></a> with the field names as the Map keys.
@@ -330,12 +334,12 @@ loadScripts(document, 'script');</script>
 <h3>parseToMaps</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Stream.html" title="class or interface in java.util.stream" class="external-link">Stream</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;</span>&nbsp;<span class="element-name">parseToMaps</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;csv)</span></div>
-<div class="block">Parses <code>csv</code> string lazily, returning each row in a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link"><code>Map</code></a> keyed by the
- field names in the header row. The first non-empty row is expected to be the header row.
+<div class="block">Parses <code>csv</code> string lazily, returning each row in a <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link"><code>Map</code></a> keyed by the field names
+ in the header row. The first non-empty row is expected to be the header row.
 
- <p>Upon duplicate header names, the latter wins. If you need alternative strategies,
- such as to reject duplicate header names, or to use <a href="https://javadoc.io/doc/com.google.guava/guava/latest/com/google/common/collect/ListMultimap.html" title="class or interface in com.google.common.collect" class="external-link"><code>ListMultimap</code></a>
- to keep track of all duplicate header values, consider using <a href="#parseWithHeaderFields(java.lang.String,com.google.mu.util.stream.BiCollector)"><code>parseWithHeaderFields(String, BiCollector)</code></a> instead. That is:
+ <p>Upon duplicate header names, the latter wins. If you need alternative strategies, such as to
+ reject duplicate header names, or to use <a href="https://javadoc.io/doc/com.google.guava/guava/latest/com/google/common/collect/ListMultimap.html" title="class or interface in com.google.common.collect" class="external-link"><code>ListMultimap</code></a> to keep
+ track of all duplicate header values, consider using <a href="#parseWithHeaderFields(java.lang.String,com.google.mu.util.stream.BiCollector)"><code>parseWithHeaderFields(String, BiCollector)</code></a> instead. That is:
 
  <pre><code>
  import static com.google.mu.util.stream.BiCollectors.toMap;
@@ -375,9 +379,9 @@ loadScripts(document, 'script');</script>
 <div class="block"><code>CSV.parseWithHeaderFields(input, toMap())</code> will parse the non-header rows in the <code>
  input</code> string into a lazy stream of <code>Map</code>, keyed by the header field names.
 
- <p>Usually, if you need a <code>Map</code> of field names to column values, consider using <a href="#parseToMaps(java.lang.String)"><code>parseToMaps(String)</code></a> instead. But if you need alternative strategies, such as collecting
- each row to a <a href="https://javadoc.io/doc/com.google.guava/guava/latest/com/google/common/collect/ListMultimap.html" title="class or interface in com.google.common.collect" class="external-link"><code>ListMultimap</code></a> to more gracefully handle
- duplicate header names, you can use:
+ <p>Usually, if you need a <code>Map</code> of field names to column values, consider using <a href="#parseToMaps(java.lang.String)"><code>parseToMaps(String)</code></a> instead. But if you need alternative strategies, such as collecting each
+ row to a <a href="https://javadoc.io/doc/com.google.guava/guava/latest/com/google/common/collect/ListMultimap.html" title="class or interface in com.google.common.collect" class="external-link"><code>ListMultimap</code></a> to more gracefully handle duplicate
+ header names, you can use:
 
  <pre><code>
  import static com.google.common.collect.ImmutableListMultimap;
@@ -412,8 +416,8 @@ loadScripts(document, 'script');</script>
 <h3>join</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">join</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;?&gt;&nbsp;fields)</span></div>
-<div class="block">Joins <code>fields</code> as a CSV row, quote if needed.
- If a field value is null, an empty string is used.</div>
+<div class="block">Joins <code>fields</code> as a CSV row, quote if needed. If a field value is null, an empty string
+ is used.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.5</dd>
@@ -426,8 +430,8 @@ loadScripts(document, 'script');</script>
 <h3>join</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">join</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>...&nbsp;fields)</span></div>
-<div class="block">Joins <code>fields</code> as a CSV row, quote if needed.
- If a field value is null, an empty string is used.</div>
+<div class="block">Joins <code>fields</code> as a CSV row, quote if needed. If a field value is null, an empty string
+ is used.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.5</dd>
@@ -442,8 +446,8 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/stream/Collector.html" title="class or interface in java.util.stream" class="external-link">Collector</a>&lt;<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>,<wbr>?,<wbr><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">joining</span>()</div>
 <div class="block">Returns a collector that joins the input fields into a CSV row.
 
- <p>Fields are quoted and optionally escaped if needed.
- If a field value is null, an empty string is used.</div>
+ <p>Fields are quoted and optionally escaped if needed. If a field value is null, an empty
+ string is used.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>9.5</dd>

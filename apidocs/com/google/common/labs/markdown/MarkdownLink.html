@@ -106,18 +106,20 @@ loadScripts(document, 'script');</script>
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/Record.html" title="class or interface in java.lang" class="external-link">Record</a></span></div>
 <div class="block">Represents a markdown link in the format of <code>[label](url)</code>.
 
- <p>This class offers a light-weight parser to quickly <a href="#scan(java.lang.String)"><code>extract</code></a>
- markdown links from a markdown text or file.
+ <p>This class offers a light-weight parser to quickly <a href="#scan(java.lang.String)"><code>extract</code></a> markdown links from a
+ markdown text or file.
 
- <p>While roughly equivalent to <pre><code>
+ <p>While roughly equivalent to
+
+ <pre><code>
  import com.google.mu.util.StringFormat;
 
  new StringFormat("[{label}]({url})")
      .scan(markdown, MarkdownLink::new);
  </code></pre>
 
- The parser properly handles escaping inside and outside of the link; balanced nesting within the link
- label and link url; and won't mistakenly extract link-like syntax from backtick-quoted code
+ The parser properly handles escaping inside and outside of the link; balanced nesting within the
+ link label and link url; and won't mistakenly extract link-like syntax from backtick-quoted code
  or code blocks (recognizing code blocks quoted by single backtick, double, triple or any number
  of consecutive backticks).</div>
 <dl class="notes">
@@ -236,8 +238,8 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type"><a href="../parse/Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="MarkdownLink.html" title="class in com.google.common.labs.markdown">MarkdownLink</a>&gt;</span>&nbsp;<span class="element-name">PARSER</span></div>
 <div class="block">Parser for a <a href="MarkdownLink.html" title="class in com.google.common.labs.markdown"><code>MarkdownLink</code></a>.
 
- <p>Prefer using <a href="#of(java.lang.String)"><code>of(java.lang.String)</code></a> for parsing a single link and <a href="#scan(java.lang.String)"><code>scan(String)</code></a>
- for extracting multiple links. This constant is meant to be composed in larger parsers.</div>
+ <p>Prefer using <a href="#of(java.lang.String)"><code>of(java.lang.String)</code></a> for parsing a single link and <a href="#scan(java.lang.String)"><code>scan(String)</code></a> for extracting
+ multiple links. This constant is meant to be composed in larger parsers.</div>
 </div>
 </section>
 </li>

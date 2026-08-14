@@ -179,8 +179,8 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#immediatelyBetween(java.lang.String,java.lang.String)" class="member-name-link">immediatelyBetween</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;prefix,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
-<div class="block">The current production must be <em>immediately</em> enclosed between
- non-empty <code>prefix</code> and <code>suffix</code> (no skippable characters as specified by <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> in between).</div>
+<div class="block">The current production must be <em>immediately</em> enclosed between non-empty <code>prefix</code>
+ and <code>suffix</code> (no skippable characters as specified by <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> in between).</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>&lt;R&gt;&nbsp;<a href="Production.html" title="interface in com.google.common.labs.parse">Production</a><wbr>&lt;R&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#map(java.util.function.Function)" class="member-name-link">map</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/Function.html" title="class or interface in java.util.function" class="external-link">Function</a>&lt;? super <a href="#type-param-T" title="type parameter in Production">T</a>, ? extends R&gt;&nbsp;f)</code></div>
@@ -201,8 +201,8 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#optionallyFollowedBy(com.google.common.labs.parse.Parser,java.util.function.BiFunction)" class="member-name-link">optionallyFollowedBy</a><wbr>(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-T" title="type parameter in Production">T</a>, ? super S, ? extends <a href="#type-param-T" title="type parameter in Production">T</a>&gt;&nbsp;op)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
-<div class="block">If this production rule matches, optionally matches <code>suffix</code> with the <code>op</code> BiFunction
- to transform the current production's result.</div>
+<div class="block">If this production rule matches, optionally matches <code>suffix</code> with the <code>op</code>
+ BiFunction to transform the current production's result.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a><wbr>&lt;<a href="#type-param-T" title="type parameter in Production">T</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#optionallyFollowedBy(java.lang.String)" class="member-name-link">optionallyFollowedBy</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</code></div>
@@ -393,9 +393,9 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="return-type"><a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;<a href="#type-param-T" title="type parameter in Production">T</a>&gt;</span>&nbsp;<span class="element-name">immediatelyBetween</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;prefix,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;suffix)</span></div>
-<div class="block">The current production must be <em>immediately</em> enclosed between
- non-empty <code>prefix</code> and <code>suffix</code> (no skippable characters as specified by <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> in between). Useful for matching a literal string, such as
- <code>zeroOrMore(isNot('"')).immediatelyBetween("\"", "\"")</code>.</div>
+<div class="block">The current production must be <em>immediately</em> enclosed between non-empty <code>prefix</code>
+ and <code>suffix</code> (no skippable characters as specified by <a href="#parseSkipping(com.google.common.labs.parse.Parser,java.lang.String)"><code>parseSkipping()</code></a> in between). Useful for matching a literal string, such as <code>
+ zeroOrMore(isNot('"')).immediatelyBetween("\"", "\"")</code>.</div>
 </div>
 </section>
 </li>
@@ -498,8 +498,8 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="type-parameters">&lt;S&gt;</span>&nbsp;<span class="return-type"><a href="Production.html" title="interface in com.google.common.labs.parse">Production</a>&lt;<a href="#type-param-T" title="type parameter in Production">T</a>&gt;</span>&nbsp;<span class="element-name">optionallyFollowedBy</span><wbr><span class="parameters">(<a href="Parser.html" title="class in com.google.common.labs.parse">Parser</a>&lt;S&gt;&nbsp;suffix,
  <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/util/function/BiFunction.html" title="class or interface in java.util.function" class="external-link">BiFunction</a>&lt;? super <a href="#type-param-T" title="type parameter in Production">T</a>, ? super S, ? extends <a href="#type-param-T" title="type parameter in Production">T</a>&gt;&nbsp;op)</span></div>
-<div class="block">If this production rule matches, optionally matches <code>suffix</code> with the <code>op</code> BiFunction
- to transform the current production's result.
+<div class="block">If this production rule matches, optionally matches <code>suffix</code> with the <code>op</code>
+ BiFunction to transform the current production's result.
 
  <p>Note that the <a href="Parser.html" title="class in com.google.common.labs.parse"><code>Parser</code></a> and <a href="Parser.OrEmpty.html" title="class in com.google.common.labs.parse"><code>Parser.OrEmpty</code></a> implementations are re-declared to
  return the more specific <code>Parser&lt;T&gt;</code> or <code>Parser&lt;T&gt;.OrEmpty</code> subtypes respectively.</div>
