@@ -1,15 +1,18 @@
 package com.google.mu.errorprone.regex;
 
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+
 import com.google.common.base.Strings;
 import com.google.common.labs.regex.RegexPattern;
-import java.util.ArrayDeque;
+import com.google.mu.util.graph.Walker;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Static analyzer for detecting Exponential Degree of Ambiguity (EDA) / Catastrophic Backtracking
@@ -37,7 +40,7 @@ public final class Redos {
               + "' (attack payload: \"" + payload + "\")" + suggestion);
     }
     Nfa nfa = Nfa.from(pattern);
-    if (hasExponentialAmbiguity(nfa)) {
+    if (hasExponentialAmbiguity(ProductGraph.from(nfa))) {
       String detail = findStructuralDetail(pattern)
           .orElse("contains ambiguous cycle across overlapping transitions");
       String sample = sampleMatchingString(pattern);
@@ -59,7 +62,7 @@ public final class Redos {
   public static void checkPolynomialBacktracking(RegexPattern pattern) {
     Optional<String> detail = findPolynomialDetail(pattern);
     Nfa nfa = Nfa.from(pattern);
-    if (detail.isPresent() || hasPolynomialAmbiguity(nfa)) {
+    if (detail.isPresent() || hasPolynomialAmbiguity(ProductGraph.from(nfa))) {
       String desc = detail.orElse("contains overlapping consecutive cycles");
       String sample = sampleMatchingString(pattern);
       String payload = attackPayload(sample);
@@ -100,29 +103,14 @@ public final class Redos {
   public static Optional<String> suggestPolynomialRewrite(RegexPattern pattern) {
     if (pattern instanceof RegexPattern.Sequence) {
       RegexPattern.Sequence seq = (RegexPattern.Sequence) pattern;
-      List<RegexPattern> elements = seq.elements();
-      for (int i = 0; i < elements.size(); i++) {
-        RegexPattern ei = elements.get(i);
-        if (isUnboundedQuantified(ei)) {
-          for (int j = i + 1; j < elements.size(); j++) {
-            RegexPattern ej = elements.get(j);
-            if (isUnboundedQuantified(ej)) {
-              CharRanges rangesI = charRangesOf(ei);
-              CharRanges rangesJ = charRangesOf(ej);
-              if (rangesI.intersects(rangesJ)) {
-                RegexPattern.Quantified qi = (RegexPattern.Quantified) ei;
-                RegexPattern rewrittenEi =
-                    new RegexPattern.Quantified(qi.element(), qi.quantifier().possessive());
-                List<RegexPattern> rewrittenElements = new ArrayList<>(elements);
-                rewrittenElements.set(i, rewrittenEi);
-                return Optional.of(new RegexPattern.Sequence(rewrittenElements).toString());
-              }
-            }
-            if (ej.metadata().minSize() > 0) {
-              break;
-            }
-          }
-        }
+      Optional<OverlappingQuantifierPair> pair = findOverlappingQuantifiers(seq);
+      if (pair.isPresent()) {
+        OverlappingQuantifierPair p = pair.get();
+        RegexPattern rewrittenFirst =
+            new RegexPattern.Quantified(p.first.element(), p.first.quantifier().possessive());
+        List<RegexPattern> rewritten = new ArrayList<>(seq.elements());
+        rewritten.set(p.firstIndex, rewrittenFirst);
+        return Optional.of(new RegexPattern.Sequence(rewritten).toString());
       }
     }
     return Optional.empty();
@@ -134,50 +122,69 @@ public final class Redos {
     return Strings.repeat(sample, repetitions) + "!";
   }
 
-  private static Optional<String> findPolynomialDetail(RegexPattern pattern) {
+  private static Stream<RegexPattern> childrenOf(RegexPattern pattern) {
     if (pattern instanceof RegexPattern.Sequence) {
-      RegexPattern.Sequence seq = (RegexPattern.Sequence) pattern;
-      List<RegexPattern> elements = seq.elements();
-      for (int i = 0; i < elements.size(); i++) {
-        RegexPattern ei = elements.get(i);
-        if (isUnboundedQuantified(ei)) {
-          for (int j = i + 1; j < elements.size(); j++) {
-            RegexPattern ej = elements.get(j);
-            if (isUnboundedQuantified(ej)) {
-              CharRanges rangesI = charRangesOf(ei);
-              CharRanges rangesJ = charRangesOf(ej);
-              if (rangesI.intersects(rangesJ)) {
-                return Optional.of(
-                    "contains consecutive overlapping quantifiers on '" + ei + "' and '" + ej
-                        + "'");
-              }
+      return ((RegexPattern.Sequence) pattern).elements().stream();
+    }
+    if (pattern instanceof RegexPattern.Alternation) {
+      return ((RegexPattern.Alternation) pattern).alternatives().stream();
+    }
+    if (pattern instanceof RegexPattern.Group) {
+      return Stream.of(((RegexPattern.Group) pattern).content());
+    }
+    if (pattern instanceof RegexPattern.Quantified) {
+      return Stream.of(((RegexPattern.Quantified) pattern).element());
+    }
+    return Stream.empty();
+  }
+
+  private static Optional<String> findPolynomialDetail(RegexPattern pattern) {
+    return Walker.inTree(Redos::childrenOf)
+        .preOrderFrom(pattern)
+        .filter(RegexPattern.Sequence.class::isInstance)
+        .map(RegexPattern.Sequence.class::cast)
+        .map(Redos::findOverlappingQuantifiers)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .map(pair ->
+            "contains consecutive overlapping quantifiers on '" + pair.first + "' and '"
+                + pair.second + "'")
+        .findFirst();
+  }
+
+  private static final class OverlappingQuantifierPair {
+    final int firstIndex;
+    final RegexPattern.Quantified first;
+    final RegexPattern.Quantified second;
+
+    OverlappingQuantifierPair(
+        int firstIndex, RegexPattern.Quantified first, RegexPattern.Quantified second) {
+      this.firstIndex = firstIndex;
+      this.first = first;
+      this.second = second;
+    }
+  }
+
+  private static Optional<OverlappingQuantifierPair> findOverlappingQuantifiers(
+      RegexPattern.Sequence seq) {
+    List<RegexPattern> elements = seq.elements();
+    for (int i = 0; i < elements.size(); i++) {
+      RegexPattern ei = elements.get(i);
+      if (isUnboundedQuantified(ei)) {
+        for (int j = i + 1; j < elements.size(); j++) {
+          RegexPattern ej = elements.get(j);
+          if (isUnboundedQuantified(ej)) {
+            if (charRangesOf(ei).intersects(charRangesOf(ej))) {
+              return Optional.of(
+                  new OverlappingQuantifierPair(
+                      i, (RegexPattern.Quantified) ei, (RegexPattern.Quantified) ej));
             }
-            if (ej.metadata().minSize() > 0) {
-              break;
-            }
+          }
+          if (ej.metadata().minSize() > 0) {
+            break;
           }
         }
       }
-      for (RegexPattern elem : elements) {
-        Optional<String> detail = findPolynomialDetail(elem);
-        if (detail.isPresent()) {
-          return detail;
-        }
-      }
-    }
-    if (pattern instanceof RegexPattern.Alternation) {
-      for (RegexPattern alt : ((RegexPattern.Alternation) pattern).alternatives()) {
-        Optional<String> detail = findPolynomialDetail(alt);
-        if (detail.isPresent()) {
-          return detail;
-        }
-      }
-    }
-    if (pattern instanceof RegexPattern.Group) {
-      return findPolynomialDetail(((RegexPattern.Group) pattern).content());
-    }
-    if (pattern instanceof RegexPattern.Quantified) {
-      return findPolynomialDetail(((RegexPattern.Quantified) pattern).element());
     }
     return Optional.empty();
   }
@@ -221,6 +228,14 @@ public final class Redos {
   }
 
   private static Optional<RegexPattern> findNullableRepeatedElement(RegexPattern pattern) {
+    return Walker.inTree(Redos::childrenOf)
+        .preOrderFrom(pattern)
+        .filter(Redos::isUnboundedNullable)
+        .map(p -> ((RegexPattern.Quantified) p).element())
+        .findFirst();
+  }
+
+  private static boolean isUnboundedNullable(RegexPattern pattern) {
     if (pattern instanceof RegexPattern.Quantified) {
       RegexPattern.Quantified q = (RegexPattern.Quantified) pattern;
       RegexPattern.Quantifier quantifier = q.quantifier();
@@ -230,83 +245,41 @@ public final class Redos {
                     && ((RegexPattern.AtLeast) quantifier).min() >= 0)
                 || (quantifier instanceof RegexPattern.Limited
                     && ((RegexPattern.Limited) quantifier).max() > 10);
-        if (isUnbounded && q.element().metadata().minSize() == 0
-            && q.element().metadata().maxSize() > 0) {
-          return Optional.of(q.element());
-        }
+        return isUnbounded && q.element().metadata().minSize() == 0
+            && q.element().metadata().maxSize() > 0;
       }
-      return findNullableRepeatedElement(q.element());
     }
-    if (pattern instanceof RegexPattern.Sequence) {
-      RegexPattern.Sequence seq = (RegexPattern.Sequence) pattern;
-      for (RegexPattern elem : seq.elements()) {
-        Optional<RegexPattern> result = findNullableRepeatedElement(elem);
-        if (result.isPresent()) {
-          return result;
-        }
-      }
-      return Optional.empty();
-    }
-    if (pattern instanceof RegexPattern.Alternation) {
-      RegexPattern.Alternation alt = (RegexPattern.Alternation) pattern;
-      for (RegexPattern altElement : alt.alternatives()) {
-        Optional<RegexPattern> result = findNullableRepeatedElement(altElement);
-        if (result.isPresent()) {
-          return result;
-        }
-      }
-      return Optional.empty();
-    }
-    if (pattern instanceof RegexPattern.Group) {
-      return findNullableRepeatedElement(((RegexPattern.Group) pattern).content());
-    }
-    return Optional.empty();
+    return false;
   }
 
   private static Optional<String> findStructuralDetail(RegexPattern pattern) {
-    if (pattern instanceof RegexPattern.Quantified) {
-      RegexPattern.Quantified q = (RegexPattern.Quantified) pattern;
-      RegexPattern inner = unwrapGroup(q.element());
-      if (inner instanceof RegexPattern.Quantified) {
-        return Optional.of("contains nested quantifiers on '" + inner + "'");
-      }
-      if (inner instanceof RegexPattern.Alternation) {
-        Optional<RegexPattern.Quantified> nestedQuantified = findNestedQuantified(inner);
-        if (nestedQuantified.isPresent()) {
-          return Optional.of("contains nested quantifiers on '" + nestedQuantified.get() + "'");
-        }
-        return Optional.of("contains overlapping alternation branches '" + inner + "'");
-      }
-      if (inner instanceof RegexPattern.Sequence) {
-        Optional<RegexPattern.Quantified> nestedQuantified = findNestedQuantified(inner);
-        if (nestedQuantified.isPresent()) {
-          return Optional.of("contains nested quantifiers on '" + nestedQuantified.get() + "'");
-        }
-      }
-      return findStructuralDetail(q.element());
-    }
-    if (pattern instanceof RegexPattern.Sequence) {
-      for (RegexPattern elem : ((RegexPattern.Sequence) pattern).elements()) {
-        Optional<String> result = findStructuralDetail(elem);
-        if (result.isPresent()) {
-          return result;
-        }
-      }
-      return Optional.empty();
-    }
-    if (pattern instanceof RegexPattern.Alternation) {
-      for (RegexPattern altElement : ((RegexPattern.Alternation) pattern).alternatives()) {
-        Optional<String> result = findStructuralDetail(altElement);
-        if (result.isPresent()) {
-          return result;
-        }
-      }
-      return Optional.empty();
-    }
-    if (pattern instanceof RegexPattern.Group) {
-      return findStructuralDetail(((RegexPattern.Group) pattern).content());
-    }
-    return Optional.empty();
+    return Walker.inTree(Redos::childrenOf)
+        .preOrderFrom(pattern)
+        .filter(RegexPattern.Quantified.class::isInstance)
+        .map(RegexPattern.Quantified.class::cast)
+        .map(q -> {
+          RegexPattern inner = unwrapGroup(q.element());
+          if (inner instanceof RegexPattern.Quantified) {
+            return Optional.of("contains nested quantifiers on '" + inner + "'");
+          }
+          if (inner instanceof RegexPattern.Alternation) {
+            Optional<RegexPattern.Quantified> nestedQuantified = findNestedQuantified(inner);
+            if (nestedQuantified.isPresent()) {
+              return Optional.of("contains nested quantifiers on '" + nestedQuantified.get() + "'");
+            }
+            return Optional.of("contains overlapping alternation branches '" + inner + "'");
+          }
+          if (inner instanceof RegexPattern.Sequence) {
+            Optional<RegexPattern.Quantified> nestedQuantified = findNestedQuantified(inner);
+            if (nestedQuantified.isPresent()) {
+              return Optional.of("contains nested quantifiers on '" + nestedQuantified.get() + "'");
+            }
+          }
+          return Optional.<String>empty();
+        })
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .findFirst();
   }
 
   private static RegexPattern unwrapGroup(RegexPattern pattern) {
@@ -317,31 +290,11 @@ public final class Redos {
   }
 
   private static Optional<RegexPattern.Quantified> findNestedQuantified(RegexPattern pattern) {
-    if (pattern instanceof RegexPattern.Quantified) {
-      return Optional.of((RegexPattern.Quantified) pattern);
-    }
-    if (pattern instanceof RegexPattern.Sequence) {
-      for (RegexPattern elem : ((RegexPattern.Sequence) pattern).elements()) {
-        Optional<RegexPattern.Quantified> result = findNestedQuantified(elem);
-        if (result.isPresent()) {
-          return result;
-        }
-      }
-      return Optional.empty();
-    }
-    if (pattern instanceof RegexPattern.Alternation) {
-      for (RegexPattern altElement : ((RegexPattern.Alternation) pattern).alternatives()) {
-        Optional<RegexPattern.Quantified> result = findNestedQuantified(altElement);
-        if (result.isPresent()) {
-          return result;
-        }
-      }
-      return Optional.empty();
-    }
-    if (pattern instanceof RegexPattern.Group) {
-      return findNestedQuantified(((RegexPattern.Group) pattern).content());
-    }
-    return Optional.empty();
+    return Walker.inTree(Redos::childrenOf)
+        .preOrderFrom(pattern)
+        .filter(RegexPattern.Quantified.class::isInstance)
+        .map(RegexPattern.Quantified.class::cast)
+        .findFirst();
   }
 
   private static String sampleMatchingString(RegexPattern pattern) {
@@ -390,146 +343,49 @@ public final class Redos {
     return "a";
   }
 
-  private static boolean hasExponentialAmbiguity(Nfa nfa) {
-    int tCount = nfa.charTransitions.size();
-    if (tCount == 0) {
+  private static boolean hasExponentialAmbiguity(ProductGraph g) {
+    if (g.tCount == 0) {
       return false;
     }
-    int vCount = tCount * tCount;
 
-    @SuppressWarnings("unchecked")
-    List<Integer>[] adj = new List[vCount];
-    @SuppressWarnings("unchecked")
-    List<Integer>[] revAdj = new List[vCount];
-    for (int i = 0; i < vCount; i++) {
-      adj[i] = new ArrayList<>();
-      revAdj[i] = new ArrayList<>();
+    // Diagonal states: check if multiple distinct epsilon paths loop around
+    for (int i = 0; i < g.tCount; i++) {
+      int u = i * g.tCount + i;
+      if (g.active[u] && g.inCycle[u]) {
+        Nfa.CharTransition ti = g.nfa.charTransitions.get(i);
+        if (g.nfa.countEpsilonPaths(ti.target, ti.source) >= 2) {
+          return true;
+        }
+      }
     }
 
-    // Build paired transition product graph
-    for (int i = 0; i < tCount; i++) {
-      Nfa.CharTransition ti = nfa.charTransitions.get(i);
-      for (int j = 0; j < tCount; j++) {
-        Nfa.CharTransition tj = nfa.charTransitions.get(j);
-        int u = i * tCount + j;
-        for (int ip = 0; ip < tCount; ip++) {
-          Nfa.CharTransition tip = nfa.charTransitions.get(ip);
-          if (nfa.countEpsilonPaths(ti.target, tip.source) == 0) {
-            continue;
+    // Off-diagonal states: check if in an EDA cycle with branching or diagonal connection
+    for (List<Integer> scc : g.sccs) {
+      if (scc.size() > 1 || (scc.size() == 1 && g.adj[scc.get(0)].contains(scc.get(0)))) {
+        Set<Integer> sccSet = new HashSet<>(scc);
+        boolean hasOffDiagonal = false;
+        boolean hasDiagonal = false;
+        boolean hasBranching = false;
+        for (int node : scc) {
+          int row = node / g.tCount;
+          int col = node % g.tCount;
+          if (row == col) {
+            hasDiagonal = true;
+          } else {
+            hasOffDiagonal = true;
           }
-          for (int jp = 0; jp < tCount; jp++) {
-            Nfa.CharTransition tjp = nfa.charTransitions.get(jp);
-            if (nfa.countEpsilonPaths(tj.target, tjp.source) == 0) {
-              continue;
-            }
-            if (!tip.chars.intersects(tjp.chars)) {
-              continue;
-            }
-            int v = ip * tCount + jp;
-            adj[u].add(v);
-            revAdj[v].add(u);
-          }
-        }
-      }
-    }
-
-    // Find nodes reachable from start
-    boolean[] reachableFromStart = new boolean[vCount];
-    Queue<Integer> queue = new ArrayDeque<>();
-    for (int i = 0; i < tCount; i++) {
-      Nfa.CharTransition ti = nfa.charTransitions.get(i);
-      if (nfa.countEpsilonPaths(nfa.startState, ti.source) == 0) {
-        continue;
-      }
-      for (int j = 0; j < tCount; j++) {
-        Nfa.CharTransition tj = nfa.charTransitions.get(j);
-        if (nfa.countEpsilonPaths(nfa.startState, tj.source) == 0) {
-          continue;
-        }
-        if (ti.chars.intersects(tj.chars)) {
-          int u = i * tCount + j;
-          reachableFromStart[u] = true;
-          queue.add(u);
-        }
-      }
-    }
-    while (!queue.isEmpty()) {
-      int u = queue.poll();
-      for (int v : adj[u]) {
-        if (!reachableFromStart[v]) {
-          reachableFromStart[v] = true;
-          queue.add(v);
-        }
-      }
-    }
-
-    // Find nodes that can reach accept
-    boolean[] canReachAccept = new boolean[vCount];
-    for (int i = 0; i < tCount; i++) {
-      Nfa.CharTransition ti = nfa.charTransitions.get(i);
-      if (nfa.countEpsilonPaths(ti.target, nfa.acceptState) == 0) {
-        continue;
-      }
-      for (int j = 0; j < tCount; j++) {
-        Nfa.CharTransition tj = nfa.charTransitions.get(j);
-        if (nfa.countEpsilonPaths(tj.target, nfa.acceptState) == 0) {
-          continue;
-        }
-        int u = i * tCount + j;
-        canReachAccept[u] = true;
-        queue.add(u);
-      }
-    }
-    while (!queue.isEmpty()) {
-      int u = queue.poll();
-      for (int v : revAdj[u]) {
-        if (!canReachAccept[v]) {
-          canReachAccept[v] = true;
-          queue.add(v);
-        }
-      }
-    }
-
-    // Filter active nodes
-    boolean[] active = new boolean[vCount];
-    for (int i = 0; i < vCount; i++) {
-      active[i] = reachableFromStart[i] && canReachAccept[i];
-    }
-
-    // Detect ambiguous cycles
-    for (int i = 0; i < tCount; i++) {
-      for (int j = 0; j < tCount; j++) {
-        int u = i * tCount + j;
-        if (!active[u]) {
-          continue;
-        }
-        if (i == j) {
-          // Diagonal state: check if multiple distinct epsilon paths loop around
-          Nfa.CharTransition ti = nfa.charTransitions.get(i);
-          if (nfa.countEpsilonPaths(ti.target, ti.source) >= 2 && canReachSelf(u, adj, active)) {
-            return true;
-          }
-        } else {
-          // Off-diagonal state: check if in an EDA cycle with branching or diagonal connection
-          Set<Integer> scc = getScc(u, adj, revAdj, active);
-          if (!scc.isEmpty()) {
-            for (int node : scc) {
-              int row = node / tCount;
-              int col = node % tCount;
-              if (row == col) {
-                return true;
-              }
-              int branchCount = 0;
-              for (int next : adj[node]) {
-                if (scc.contains(next)) {
-                  branchCount++;
-                }
-              }
-              if (branchCount >= 2) {
-                return true;
-              }
+          int branchCount = 0;
+          for (int next : g.adj[node]) {
+            if (sccSet.contains(next)) {
+              branchCount++;
             }
           }
+          if (branchCount >= 2) {
+            hasBranching = true;
+          }
+        }
+        if (hasOffDiagonal && (hasDiagonal || hasBranching)) {
+          return true;
         }
       }
     }
@@ -537,114 +393,17 @@ public final class Redos {
     return false;
   }
 
-  private static boolean hasPolynomialAmbiguity(Nfa nfa) {
-    int tCount = nfa.charTransitions.size();
-    if (tCount < 2) {
+  private static boolean hasPolynomialAmbiguity(ProductGraph g) {
+    if (g.tCount < 2) {
       return false;
-    }
-    int vCount = tCount * tCount;
-
-    @SuppressWarnings("unchecked")
-    List<Integer>[] adj = new List[vCount];
-    @SuppressWarnings("unchecked")
-    List<Integer>[] revAdj = new List[vCount];
-    for (int i = 0; i < vCount; i++) {
-      adj[i] = new ArrayList<>();
-      revAdj[i] = new ArrayList<>();
-    }
-
-    for (int i = 0; i < tCount; i++) {
-      Nfa.CharTransition ti = nfa.charTransitions.get(i);
-      for (int j = 0; j < tCount; j++) {
-        Nfa.CharTransition tj = nfa.charTransitions.get(j);
-        int u = i * tCount + j;
-        for (int ip = 0; ip < tCount; ip++) {
-          Nfa.CharTransition tip = nfa.charTransitions.get(ip);
-          if (nfa.countEpsilonPaths(ti.target, tip.source) == 0) {
-            continue;
-          }
-          for (int jp = 0; jp < tCount; jp++) {
-            Nfa.CharTransition tjp = nfa.charTransitions.get(jp);
-            if (nfa.countEpsilonPaths(tj.target, tjp.source) == 0) {
-              continue;
-            }
-            if (!tip.chars.intersects(tjp.chars)) {
-              continue;
-            }
-            int v = ip * tCount + jp;
-            adj[u].add(v);
-            revAdj[v].add(u);
-          }
-        }
-      }
-    }
-
-    boolean[] reachableFromStart = new boolean[vCount];
-    Queue<Integer> queue = new ArrayDeque<>();
-    for (int i = 0; i < tCount; i++) {
-      Nfa.CharTransition ti = nfa.charTransitions.get(i);
-      if (nfa.countEpsilonPaths(nfa.startState, ti.source) == 0) {
-        continue;
-      }
-      for (int j = 0; j < tCount; j++) {
-        Nfa.CharTransition tj = nfa.charTransitions.get(j);
-        if (nfa.countEpsilonPaths(nfa.startState, tj.source) == 0) {
-          continue;
-        }
-        if (ti.chars.intersects(tj.chars)) {
-          int u = i * tCount + j;
-          reachableFromStart[u] = true;
-          queue.add(u);
-        }
-      }
-    }
-    while (!queue.isEmpty()) {
-      int u = queue.poll();
-      for (int v : adj[u]) {
-        if (!reachableFromStart[v]) {
-          reachableFromStart[v] = true;
-          queue.add(v);
-        }
-      }
-    }
-
-    boolean[] canReachAccept = new boolean[vCount];
-    for (int i = 0; i < tCount; i++) {
-      Nfa.CharTransition ti = nfa.charTransitions.get(i);
-      if (nfa.countEpsilonPaths(ti.target, nfa.acceptState) == 0) {
-        continue;
-      }
-      for (int j = 0; j < tCount; j++) {
-        Nfa.CharTransition tj = nfa.charTransitions.get(j);
-        if (nfa.countEpsilonPaths(tj.target, nfa.acceptState) == 0) {
-          continue;
-        }
-        int u = i * tCount + j;
-        canReachAccept[u] = true;
-        queue.add(u);
-      }
-    }
-    while (!queue.isEmpty()) {
-      int u = queue.poll();
-      for (int v : revAdj[u]) {
-        if (!canReachAccept[v]) {
-          canReachAccept[v] = true;
-          queue.add(v);
-        }
-      }
-    }
-
-    boolean[] active = new boolean[vCount];
-    for (int i = 0; i < vCount; i++) {
-      active[i] = reachableFromStart[i] && canReachAccept[i];
     }
 
     List<DiagonalCycle> cycles = new ArrayList<>();
-    for (int i = 0; i < tCount; i++) {
-      int u = i * tCount + i;
-      if (active[u] && canReachSelf(u, adj, active)) {
-        Nfa.CharTransition ti = nfa.charTransitions.get(i);
-        cycles.add(new DiagonalCycle(u, ti.chars));
+    for (int i = 0; i < g.tCount; i++) {
+      int u = i * g.tCount + i;
+      if (g.active[u] && g.inCycle[u]) {
+        Nfa.CharTransition ti = g.nfa.charTransitions.get(i);
+        cycles.add(new DiagonalCycle(u, ti.chars, g.sccMap[u]));
       }
     }
 
@@ -653,7 +412,8 @@ public final class Redos {
       for (int b = 0; b < cycles.size(); b++) {
         if (a != b) {
           DiagonalCycle cb = cycles.get(b);
-          if (ca.chars.intersects(cb.chars) && canReach(ca.state, cb.state, adj, active)) {
+          if (ca.sccId != cb.sccId && ca.chars.intersects(cb.chars)
+              && g.canReach(ca.state, cb.state)) {
             return true;
           }
         }
@@ -665,104 +425,150 @@ public final class Redos {
   private static final class DiagonalCycle {
     final int state;
     final CharRanges chars;
+    final int sccId;
 
-    DiagonalCycle(int state, CharRanges chars) {
+    DiagonalCycle(int state, CharRanges chars, int sccId) {
       this.state = state;
       this.chars = chars;
+      this.sccId = sccId;
     }
   }
 
-  private static boolean canReach(int start, int target, List<Integer>[] adj, boolean[] active) {
-    boolean[] visited = new boolean[adj.length];
-    Queue<Integer> queue = new ArrayDeque<>();
-    visited[start] = true;
-    queue.add(start);
-    while (!queue.isEmpty()) {
-      int curr = queue.poll();
-      for (int next : adj[curr]) {
-        if (active[next]) {
-          if (next == target) {
-            return true;
-          }
-          if (!visited[next]) {
-            visited[next] = true;
-            queue.add(next);
-          }
-        }
-      }
-    }
-    return false;
-  }
+  private static final class ProductGraph {
+    final Nfa nfa;
+    final int tCount;
+    final List<Integer>[] adj;
+    final boolean[] active;
+    final List<List<Integer>> sccs;
+    final int[] sccMap;
+    final boolean[] inCycle;
 
-  private static Set<Integer> getScc(
-      int start, List<Integer>[] adj, List<Integer>[] revAdj, boolean[] active) {
-    Set<Integer> forward = new HashSet<>();
-    Queue<Integer> q = new ArrayDeque<>();
-    forward.add(start);
-    q.add(start);
-    while (!q.isEmpty()) {
-      int curr = q.poll();
-      for (int next : adj[curr]) {
-        if (active[next] && forward.add(next)) {
-          q.add(next);
-        }
+    static ProductGraph from(Nfa nfa) {
+      int tCount = nfa.charTransitions.size();
+      int vCount = tCount * tCount;
+      @SuppressWarnings("unchecked")
+      List<Integer>[] adj = new List[vCount];
+      @SuppressWarnings("unchecked")
+      List<Integer>[] revAdj = new List[vCount];
+      for (int i = 0; i < vCount; i++) {
+        adj[i] = new ArrayList<>();
+        revAdj[i] = new ArrayList<>();
       }
-    }
 
-    boolean canReturn = false;
-    for (int prev : revAdj[start]) {
-      if (forward.contains(prev)) {
-        canReturn = true;
-        break;
-      }
-    }
-    if (!canReturn) {
-      return Collections.emptySet();
-    }
-
-    Set<Integer> backward = new HashSet<>();
-    backward.add(start);
-    q.add(start);
-    while (!q.isEmpty()) {
-      int curr = q.poll();
-      for (int prev : revAdj[curr]) {
-        if (active[prev] && backward.add(prev)) {
-          q.add(prev);
-        }
-      }
-    }
-
-    forward.retainAll(backward);
-    return forward;
-  }
-
-  private static boolean canReachSelf(int start, List<Integer>[] adj, boolean[] active) {
-    boolean[] visited = new boolean[adj.length];
-    Queue<Integer> queue = new ArrayDeque<>();
-    for (int next : adj[start]) {
-      if (active[next]) {
-        if (next == start) {
-          return true;
-        }
-        visited[next] = true;
-        queue.add(next);
-      }
-    }
-    while (!queue.isEmpty()) {
-      int curr = queue.poll();
-      for (int next : adj[curr]) {
-        if (active[next]) {
-          if (next == start) {
-            return true;
-          }
-          if (!visited[next]) {
-            visited[next] = true;
-            queue.add(next);
+      for (int i = 0; i < tCount; i++) {
+        Nfa.CharTransition ti = nfa.charTransitions.get(i);
+        for (int j = 0; j < tCount; j++) {
+          Nfa.CharTransition tj = nfa.charTransitions.get(j);
+          int u = i * tCount + j;
+          for (int ip = 0; ip < tCount; ip++) {
+            Nfa.CharTransition tip = nfa.charTransitions.get(ip);
+            if (nfa.countEpsilonPaths(ti.target, tip.source) == 0) {
+              continue;
+            }
+            for (int jp = 0; jp < tCount; jp++) {
+              Nfa.CharTransition tjp = nfa.charTransitions.get(jp);
+              if (nfa.countEpsilonPaths(tj.target, tjp.source) == 0) {
+                continue;
+              }
+              if (!tip.chars.intersects(tjp.chars)) {
+                continue;
+              }
+              int v = ip * tCount + jp;
+              adj[u].add(v);
+              revAdj[v].add(u);
+            }
           }
         }
       }
+
+      List<Integer> initialStartNodes = new ArrayList<>();
+      for (int i = 0; i < tCount; i++) {
+        Nfa.CharTransition ti = nfa.charTransitions.get(i);
+        if (nfa.countEpsilonPaths(nfa.startState, ti.source) == 0) {
+          continue;
+        }
+        for (int j = 0; j < tCount; j++) {
+          Nfa.CharTransition tj = nfa.charTransitions.get(j);
+          if (nfa.countEpsilonPaths(nfa.startState, tj.source) == 0) {
+            continue;
+          }
+          if (ti.chars.intersects(tj.chars)) {
+            initialStartNodes.add(i * tCount + j);
+          }
+        }
+      }
+      Set<Integer> reachableFromStart = Walker.inGraph((Integer u) -> adj[u].stream())
+          .preOrderFrom(initialStartNodes)
+          .collect(toSet());
+
+      List<Integer> initialAcceptNodes = new ArrayList<>();
+      for (int i = 0; i < tCount; i++) {
+        Nfa.CharTransition ti = nfa.charTransitions.get(i);
+        if (nfa.countEpsilonPaths(ti.target, nfa.acceptState) == 0) {
+          continue;
+        }
+        for (int j = 0; j < tCount; j++) {
+          Nfa.CharTransition tj = nfa.charTransitions.get(j);
+          if (nfa.countEpsilonPaths(tj.target, nfa.acceptState) == 0) {
+            continue;
+          }
+          initialAcceptNodes.add(i * tCount + j);
+        }
+      }
+      Set<Integer> canReachAccept = Walker.inGraph((Integer u) -> revAdj[u].stream())
+          .preOrderFrom(initialAcceptNodes)
+          .collect(toSet());
+
+      boolean[] active = new boolean[vCount];
+      List<Integer> activeNodes = new ArrayList<>();
+      for (int i = 0; i < vCount; i++) {
+        active[i] = reachableFromStart.contains(i) && canReachAccept.contains(i);
+        if (active[i]) {
+          activeNodes.add(i);
+        }
+      }
+
+      List<List<Integer>> sccs = Walker.inGraph(
+              (Integer u) -> adj[u].stream().filter(v -> active[v]))
+          .stronglyConnectedComponentsFrom(activeNodes)
+          .collect(toList());
+      int[] sccMap = new int[vCount];
+      Arrays.fill(sccMap, -1);
+      boolean[] inCycle = new boolean[vCount];
+      for (int id = 0; id < sccs.size(); id++) {
+        List<Integer> scc = sccs.get(id);
+        boolean isCycle =
+            scc.size() > 1 || (scc.size() == 1 && adj[scc.get(0)].contains(scc.get(0)));
+        for (int node : scc) {
+          sccMap[node] = id;
+          inCycle[node] = isCycle;
+        }
+      }
+      return new ProductGraph(nfa, tCount, adj, active, sccs, sccMap, inCycle);
     }
-    return false;
+
+    private ProductGraph(
+        Nfa nfa,
+        int tCount,
+        List<Integer>[] adj,
+        boolean[] active,
+        List<List<Integer>> sccs,
+        int[] sccMap,
+        boolean[] inCycle) {
+      this.nfa = nfa;
+      this.tCount = tCount;
+      this.adj = adj;
+      this.active = active;
+      this.sccs = sccs;
+      this.sccMap = sccMap;
+      this.inCycle = inCycle;
+    }
+
+    boolean canReach(int start, int target) {
+      return Walker.inGraph((Integer u) -> adj[u].stream().filter(v -> active[v]))
+          .breadthFirstFrom(start)
+          .anyMatch(v -> v == target);
+    }
   }
 
   private Redos() {}
