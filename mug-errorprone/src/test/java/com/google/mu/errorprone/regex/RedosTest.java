@@ -182,4 +182,64 @@ public final class RedosTest {
     RegexPattern pattern = RegexPattern.of("((a))+");
     Redos.checkRedosVulnerability(pattern);
   }
+
+  @Test public void
+      checkPolynomialBacktracking_consecutiveIdenticalQuantifiers_throwsDetailedMessage() {
+    RegexPattern pattern = RegexPattern.of("a+a+");
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> Redos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown).hasMessageThat()
+        .isEqualTo(
+            "Regular expression is vulnerable to polynomial backtracking (PDA): 'a+a+' contains"
+                + " consecutive overlapping quantifiers on 'a+' and 'a+' (attack payload:"
+                + " \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\")");
+  }
+
+  @Test public void checkPolynomialBacktracking_digitFollowedByWordChar_throwsDetailedMessage() {
+    RegexPattern pattern = RegexPattern.of("\\d+\\w+");
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> Redos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown).hasMessageThat()
+        .contains("contains consecutive overlapping quantifiers on '\\d+' and '\\w+'");
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_overlappingCharacterClasses_throwsDetailedMessage() {
+    RegexPattern pattern = RegexPattern.of("[0-9]+[0-9a-z]+");
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> Redos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown).hasMessageThat()
+        .contains("contains consecutive overlapping quantifiers on '[0-9]+' and '[0-9a-z]+'");
+  }
+
+  @Test public void checkPolynomialBacktracking_threeIdenticalQuantifiers_throwsDetailedMessage() {
+    RegexPattern pattern = RegexPattern.of("a*a*a*");
+    assertThrows(IllegalArgumentException.class, () -> Redos.checkPolynomialBacktracking(pattern));
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_dotStarWithInterveningLiteral_throwsDetailedMessage() {
+    RegexPattern pattern = RegexPattern.of(".*a.*");
+    assertThrows(IllegalArgumentException.class, () -> Redos.checkPolynomialBacktracking(pattern));
+  }
+
+  @Test public void checkPolynomialBacktracking_disjointQuantifiers_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("a+b+");
+    Redos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkPolynomialBacktracking_disjointCharacterClasses_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("[0-9]+[a-z]+");
+    Redos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkPolynomialBacktracking_possessiveFirstQuantifier_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("a++a+");
+    Redos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkPolynomialBacktracking_linearSequence_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("a+b");
+    Redos.checkPolynomialBacktracking(pattern);
+  }
 }

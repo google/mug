@@ -71,6 +71,11 @@ public final class RegexRedosFuzzTest {
         } catch (IllegalArgumentException expectedIfVulnerable) {
           // Vulnerability detected as expected
         }
+        try {
+          Redos.checkPolynomialBacktracking(pattern);
+        } catch (IllegalArgumentException expectedIfVulnerable) {
+          // Vulnerability detected as expected
+        }
       } catch (IllegalArgumentException expectedIfJdkRejects) {
         // Some generated patterns may be invalid in JDK regex, which is expected
       }

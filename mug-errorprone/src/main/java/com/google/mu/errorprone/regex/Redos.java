@@ -13,7 +13,7 @@ import java.util.Set;
 
 /**
  * Static analyzer for detecting Exponential Degree of Ambiguity (EDA) / Catastrophic Backtracking
- * (ReDoS) vulnerabilities in {@link RegexPattern} ASTs.
+ * (ReDoS) and Polynomial Degree of Ambiguity (PDA) vulnerabilities in {@link RegexPattern} ASTs.
  */
 public final class Redos {
 
@@ -46,10 +46,115 @@ public final class Redos {
     }
   }
 
+  /**
+   * Checks whether the given {@link RegexPattern} is vulnerable to polynomial backtracking (PDA).
+   *
+   * @throws IllegalArgumentException if the pattern contains polynomial degree of ambiguity (e.g.
+   *     consecutive overlapping quantifiers)
+   */
+  public static void checkPolynomialBacktracking(RegexPattern pattern) {
+    Optional<String> detail = findPolynomialDetail(pattern);
+    Nfa nfa = Nfa.from(pattern);
+    if (detail.isPresent() || hasPolynomialAmbiguity(nfa)) {
+      String desc = detail.orElse("contains overlapping consecutive cycles");
+      String sample = sampleMatchingString(pattern);
+      String payload = attackPayload(sample);
+      throw new IllegalArgumentException(
+          "Regular expression is vulnerable to polynomial backtracking (PDA): '" + pattern + "' "
+              + desc + " (attack payload: \"" + payload + "\")");
+    }
+  }
+
   @SuppressWarnings("InlineMeInliner")
   private static String attackPayload(String sample) {
     int repetitions = Math.max(1, 30 / Math.max(1, sample.length()));
     return Strings.repeat(sample, repetitions) + "!";
+  }
+
+  private static Optional<String> findPolynomialDetail(RegexPattern pattern) {
+    if (pattern instanceof RegexPattern.Sequence) {
+      RegexPattern.Sequence seq = (RegexPattern.Sequence) pattern;
+      List<RegexPattern> elements = seq.elements();
+      for (int i = 0; i < elements.size(); i++) {
+        RegexPattern ei = elements.get(i);
+        if (isUnboundedQuantified(ei)) {
+          for (int j = i + 1; j < elements.size(); j++) {
+            RegexPattern ej = elements.get(j);
+            if (isUnboundedQuantified(ej)) {
+              CharRanges rangesI = charRangesOf(ei);
+              CharRanges rangesJ = charRangesOf(ej);
+              if (rangesI.intersects(rangesJ)) {
+                return Optional.of(
+                    "contains consecutive overlapping quantifiers on '" + ei + "' and '" + ej
+                        + "'");
+              }
+            }
+            if (ej.metadata().minSize() > 0) {
+              break;
+            }
+          }
+        }
+      }
+      for (RegexPattern elem : elements) {
+        Optional<String> detail = findPolynomialDetail(elem);
+        if (detail.isPresent()) {
+          return detail;
+        }
+      }
+    }
+    if (pattern instanceof RegexPattern.Alternation) {
+      for (RegexPattern alt : ((RegexPattern.Alternation) pattern).alternatives()) {
+        Optional<String> detail = findPolynomialDetail(alt);
+        if (detail.isPresent()) {
+          return detail;
+        }
+      }
+    }
+    if (pattern instanceof RegexPattern.Group) {
+      return findPolynomialDetail(((RegexPattern.Group) pattern).content());
+    }
+    if (pattern instanceof RegexPattern.Quantified) {
+      return findPolynomialDetail(((RegexPattern.Quantified) pattern).element());
+    }
+    return Optional.empty();
+  }
+
+  private static boolean isUnboundedQuantified(RegexPattern pattern) {
+    if (pattern instanceof RegexPattern.Quantified) {
+      RegexPattern.Quantified q = (RegexPattern.Quantified) pattern;
+      RegexPattern.Quantifier quantifier = q.quantifier();
+      if (quantifier.isPossessive()) {
+        return false;
+      }
+      return (quantifier instanceof RegexPattern.AtLeast
+              && ((RegexPattern.AtLeast) quantifier).min() >= 0)
+          || (quantifier instanceof RegexPattern.Limited
+              && ((RegexPattern.Limited) quantifier).max() > 5);
+    }
+    return false;
+  }
+
+  private static CharRanges charRangesOf(RegexPattern pattern) {
+    if (pattern instanceof RegexPattern.Quantified) {
+      return charRangesOf(((RegexPattern.Quantified) pattern).element());
+    }
+    if (pattern instanceof RegexPattern.Group) {
+      return charRangesOf(((RegexPattern.Group) pattern).content());
+    }
+    if (pattern instanceof RegexPattern.CharacterSet) {
+      return CharRanges.from((RegexPattern.CharacterSet) pattern);
+    }
+    if (pattern instanceof RegexPattern.PredefinedCharClass) {
+      return CharRanges.from((RegexPattern.PredefinedCharClass) pattern);
+    }
+    if (pattern instanceof RegexPattern.PosixCharClass) {
+      return CharRanges.from((RegexPattern.PosixCharClass) pattern);
+    }
+    if (pattern instanceof RegexPattern.Literal) {
+      String val = ((RegexPattern.Literal) pattern).value();
+      return val.isEmpty() ? CharRanges.any() : CharRanges.of(val.charAt(0));
+    }
+    return CharRanges.any();
   }
 
   private static Optional<RegexPattern> findNullableRepeatedElement(RegexPattern pattern) {
@@ -366,6 +471,163 @@ public final class Redos {
       }
     }
 
+    return false;
+  }
+
+  private static boolean hasPolynomialAmbiguity(Nfa nfa) {
+    int tCount = nfa.charTransitions.size();
+    if (tCount < 2) {
+      return false;
+    }
+    int vCount = tCount * tCount;
+
+    @SuppressWarnings("unchecked")
+    List<Integer>[] adj = new List[vCount];
+    @SuppressWarnings("unchecked")
+    List<Integer>[] revAdj = new List[vCount];
+    for (int i = 0; i < vCount; i++) {
+      adj[i] = new ArrayList<>();
+      revAdj[i] = new ArrayList<>();
+    }
+
+    for (int i = 0; i < tCount; i++) {
+      Nfa.CharTransition ti = nfa.charTransitions.get(i);
+      for (int j = 0; j < tCount; j++) {
+        Nfa.CharTransition tj = nfa.charTransitions.get(j);
+        int u = i * tCount + j;
+        for (int ip = 0; ip < tCount; ip++) {
+          Nfa.CharTransition tip = nfa.charTransitions.get(ip);
+          if (nfa.countEpsilonPaths(ti.target, tip.source) == 0) {
+            continue;
+          }
+          for (int jp = 0; jp < tCount; jp++) {
+            Nfa.CharTransition tjp = nfa.charTransitions.get(jp);
+            if (nfa.countEpsilonPaths(tj.target, tjp.source) == 0) {
+              continue;
+            }
+            if (!tip.chars.intersects(tjp.chars)) {
+              continue;
+            }
+            int v = ip * tCount + jp;
+            adj[u].add(v);
+            revAdj[v].add(u);
+          }
+        }
+      }
+    }
+
+    boolean[] reachableFromStart = new boolean[vCount];
+    Queue<Integer> queue = new ArrayDeque<>();
+    for (int i = 0; i < tCount; i++) {
+      Nfa.CharTransition ti = nfa.charTransitions.get(i);
+      if (nfa.countEpsilonPaths(nfa.startState, ti.source) == 0) {
+        continue;
+      }
+      for (int j = 0; j < tCount; j++) {
+        Nfa.CharTransition tj = nfa.charTransitions.get(j);
+        if (nfa.countEpsilonPaths(nfa.startState, tj.source) == 0) {
+          continue;
+        }
+        if (ti.chars.intersects(tj.chars)) {
+          int u = i * tCount + j;
+          reachableFromStart[u] = true;
+          queue.add(u);
+        }
+      }
+    }
+    while (!queue.isEmpty()) {
+      int u = queue.poll();
+      for (int v : adj[u]) {
+        if (!reachableFromStart[v]) {
+          reachableFromStart[v] = true;
+          queue.add(v);
+        }
+      }
+    }
+
+    boolean[] canReachAccept = new boolean[vCount];
+    for (int i = 0; i < tCount; i++) {
+      Nfa.CharTransition ti = nfa.charTransitions.get(i);
+      if (nfa.countEpsilonPaths(ti.target, nfa.acceptState) == 0) {
+        continue;
+      }
+      for (int j = 0; j < tCount; j++) {
+        Nfa.CharTransition tj = nfa.charTransitions.get(j);
+        if (nfa.countEpsilonPaths(tj.target, nfa.acceptState) == 0) {
+          continue;
+        }
+        int u = i * tCount + j;
+        canReachAccept[u] = true;
+        queue.add(u);
+      }
+    }
+    while (!queue.isEmpty()) {
+      int u = queue.poll();
+      for (int v : revAdj[u]) {
+        if (!canReachAccept[v]) {
+          canReachAccept[v] = true;
+          queue.add(v);
+        }
+      }
+    }
+
+    boolean[] active = new boolean[vCount];
+    for (int i = 0; i < vCount; i++) {
+      active[i] = reachableFromStart[i] && canReachAccept[i];
+    }
+
+    List<DiagonalCycle> cycles = new ArrayList<>();
+    for (int i = 0; i < tCount; i++) {
+      int u = i * tCount + i;
+      if (active[u] && canReachSelf(u, adj, active)) {
+        Nfa.CharTransition ti = nfa.charTransitions.get(i);
+        cycles.add(new DiagonalCycle(u, ti.chars));
+      }
+    }
+
+    for (int a = 0; a < cycles.size(); a++) {
+      DiagonalCycle ca = cycles.get(a);
+      for (int b = 0; b < cycles.size(); b++) {
+        if (a != b) {
+          DiagonalCycle cb = cycles.get(b);
+          if (ca.chars.intersects(cb.chars) && canReach(ca.state, cb.state, adj, active)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  private static final class DiagonalCycle {
+    final int state;
+    final CharRanges chars;
+
+    DiagonalCycle(int state, CharRanges chars) {
+      this.state = state;
+      this.chars = chars;
+    }
+  }
+
+  private static boolean canReach(int start, int target, List<Integer>[] adj, boolean[] active) {
+    boolean[] visited = new boolean[adj.length];
+    Queue<Integer> queue = new ArrayDeque<>();
+    visited[start] = true;
+    queue.add(start);
+    while (!queue.isEmpty()) {
+      int curr = queue.poll();
+      for (int next : adj[curr]) {
+        if (active[next]) {
+          if (next == target) {
+            return true;
+          }
+          if (!visited[next]) {
+            visited[next] = true;
+            queue.add(next);
+          }
+        }
+      }
+    }
     return false;
   }
 

@@ -85,7 +85,7 @@ final class Nfa {
     }
   }
 
-  private Nfa() {}
+  Nfa() {}
 
   State newState() {
     State s = new State(states.size());
