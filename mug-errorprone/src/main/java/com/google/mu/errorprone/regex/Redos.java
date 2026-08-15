@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -28,6 +29,7 @@ public final class Redos {
    *     vulnerability
    */
   public static void checkRedosVulnerability(RegexPattern pattern) {
+    Objects.requireNonNull(pattern);
     Optional<RegexPattern> nullable = findNullableRepeatedElement(pattern);
     if (nullable.isPresent()) {
       String sample = sampleMatchingString(nullable.get());
@@ -60,6 +62,7 @@ public final class Redos {
    *     consecutive overlapping quantifiers)
    */
   public static void checkPolynomialBacktracking(RegexPattern pattern) {
+    Objects.requireNonNull(pattern);
     Optional<String> detail = findPolynomialDetail(pattern);
     Nfa nfa = Nfa.from(pattern);
     if (detail.isPresent() || hasPolynomialAmbiguity(ProductGraph.from(nfa))) {
@@ -80,6 +83,7 @@ public final class Redos {
    * known.
    */
   public static Optional<String> suggestRedosRewrite(RegexPattern pattern) {
+    Objects.requireNonNull(pattern);
     if (pattern instanceof RegexPattern.Quantified) {
       RegexPattern.Quantified q = (RegexPattern.Quantified) pattern;
       RegexPattern inner = unwrapGroup(q.element());
@@ -101,6 +105,7 @@ public final class Redos {
    * fix is known (e.g. using possessive quantifier).
    */
   public static Optional<String> suggestPolynomialRewrite(RegexPattern pattern) {
+    Objects.requireNonNull(pattern);
     if (pattern instanceof RegexPattern.Sequence) {
       RegexPattern.Sequence seq = (RegexPattern.Sequence) pattern;
       return findOverlappingQuantifiers(seq)
@@ -355,7 +360,7 @@ public final class Redos {
       }
     }
 
-    // Off-diagonal states: check if in an EDA cycle with branching or diagonal connection
+    // Off-diagonal and multi-transition states: check if in an EDA cycle
     for (List<Integer> scc : g.sccs) {
       if (scc.size() > 1 || (scc.size() == 1 && g.adj[scc.get(0)].contains(scc.get(0)))) {
         Set<Integer> sccSet = new HashSet<>(scc);
@@ -367,6 +372,15 @@ public final class Redos {
           int col = node % g.tCount;
           if (row == col) {
             hasDiagonal = true;
+            Nfa.CharTransition ti = g.nfa.charTransitions.get(row);
+            for (int next : g.adj[node]) {
+              if (sccSet.contains(next) && (next / g.tCount == next % g.tCount)) {
+                Nfa.CharTransition tip = g.nfa.charTransitions.get(next / g.tCount);
+                if (g.nfa.countEpsilonPaths(ti.target, tip.source) >= 2) {
+                  return true;
+                }
+              }
+            }
           } else {
             hasOffDiagonal = true;
           }
@@ -399,7 +413,7 @@ public final class Redos {
       int u = i * g.tCount + i;
       if (g.active[u] && g.inCycle[u]) {
         Nfa.CharTransition ti = g.nfa.charTransitions.get(i);
-        cycles.add(new DiagonalCycle(u, ti.chars, g.sccMap[u]));
+        cycles.add(new DiagonalCycle(u, i, ti.chars, g.sccMap[u]));
       }
     }
 
@@ -408,9 +422,23 @@ public final class Redos {
       for (int b = 0; b < cycles.size(); b++) {
         if (a != b) {
           DiagonalCycle cb = cycles.get(b);
-          if (ca.sccId != cb.sccId && ca.chars.intersects(cb.chars)
-              && g.canReach(ca.state, cb.state)) {
-            return true;
+          if (ca.sccId != cb.sccId && ca.chars.intersects(cb.chars)) {
+            boolean reachable = Walker.inGraph((Integer u) -> {
+              int row = u / g.tCount;
+              int col = u % g.tCount;
+              if (row == col) {
+                Nfa.CharTransition tu = g.nfa.charTransitions.get(row);
+                if (tu.chars.intersects(ca.chars)) {
+                  return g.adj[u].stream().filter(v -> g.active[v]);
+                }
+              }
+              return Stream.empty();
+            })
+                .breadthFirstFrom(ca.state)
+                .anyMatch(v -> v == cb.state);
+            if (reachable) {
+              return true;
+            }
           }
         }
       }
@@ -420,11 +448,13 @@ public final class Redos {
 
   private static final class DiagonalCycle {
     final int state;
+    final int transitionIndex;
     final CharRanges chars;
     final int sccId;
 
-    DiagonalCycle(int state, CharRanges chars, int sccId) {
+    DiagonalCycle(int state, int transitionIndex, CharRanges chars, int sccId) {
       this.state = state;
+      this.transitionIndex = transitionIndex;
       this.chars = chars;
       this.sccId = sccId;
     }
