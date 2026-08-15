@@ -1,5 +1,6 @@
 package com.google.mu.errorprone.regex;
 
+import com.google.common.base.Strings;
 import com.google.common.labs.regex.RegexPattern;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -45,17 +46,10 @@ public final class Redos {
     }
   }
 
+  @SuppressWarnings("InlineMeInliner")
   private static String attackPayload(String sample) {
     int repetitions = Math.max(1, 30 / Math.max(1, sample.length()));
-    return repeat(sample, repetitions) + "!";
-  }
-
-  private static String repeat(String s, int count) {
-    StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < count; i++) {
-      sb.append(s);
-    }
-    return sb.toString();
+    return Strings.repeat(sample, repetitions) + "!";
   }
 
   private static Optional<RegexPattern> findNullableRepeatedElement(RegexPattern pattern) {
