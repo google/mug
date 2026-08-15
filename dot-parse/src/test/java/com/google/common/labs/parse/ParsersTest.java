@@ -4,11 +4,13 @@ import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.ParserSubject.assertThat;
+import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
 import static com.google.common.labs.parse.Parsers.CODE_POINT;
 import static com.google.common.labs.parse.Parsers.SIGNED_DOUBLE;
 import static com.google.common.labs.parse.Parsers.UNSIGNED_INTEGER;
 import static com.google.common.labs.parse.Parsers.regex;
 import static com.google.common.truth.Truth.assertThat;
+import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.Range;
@@ -579,23 +581,23 @@ public class ParsersTest {
   }
 
   @Test public void bmpCodeUnit_validHexUpper() {
-    assertThat(Parsers.BMP_CODE_UNIT.parse("D83D")).isEqualTo((char) 0xD83D);
+    assertThat(BMP_CODE_UNIT.parse("D83D")).isEqualTo((char) 0xD83D);
   }
 
   @Test public void bmpCodeUnit_validHexLower() {
-    assertThat(Parsers.BMP_CODE_UNIT.parse("d83d")).isEqualTo((char) 0xD83D);
+    assertThat(BMP_CODE_UNIT.parse("d83d")).isEqualTo((char) 0xD83D);
   }
 
   @Test public void bmpCodeUnit_zero() {
-    assertThat(Parsers.BMP_CODE_UNIT.parse("0000")).isEqualTo('\0');
+    assertThat(BMP_CODE_UNIT.parse("0000")).isEqualTo('\0');
   }
 
   @Test public void bmpCodeUnit_max() {
-    assertThat(Parsers.BMP_CODE_UNIT.parse("FFFF")).isEqualTo((char) 65535);
+    assertThat(BMP_CODE_UNIT.parse("FFFF")).isEqualTo((char) 65535);
   }
 
   @Test public void bmpCodeUnit_tooShortThrows() {
-    ParseException e = assertThrows(ParseException.class, () -> Parsers.BMP_CODE_UNIT.parse("FFF"));
+    ParseException e = assertThrows(ParseException.class, () -> BMP_CODE_UNIT.parse("FFF"));
     assertThat(e).hasMessageThat()
         .isEqualTo(
             """
@@ -606,8 +608,7 @@ public class ParsersTest {
   }
 
   @Test public void bmpCodeUnit_tooLongThrows() {
-    ParseException e =
-        assertThrows(ParseException.class, () -> Parsers.BMP_CODE_UNIT.parse("FFFFF"));
+    ParseException e = assertThrows(ParseException.class, () -> BMP_CODE_UNIT.parse("FFFFF"));
     assertThat(e).hasMessageThat()
         .isEqualTo(
             """
@@ -618,8 +619,7 @@ public class ParsersTest {
   }
 
   @Test public void bmpCodeUnit_nonHexThrows() {
-    ParseException e =
-        assertThrows(ParseException.class, () -> Parsers.BMP_CODE_UNIT.parse("FGHI"));
+    ParseException e = assertThrows(ParseException.class, () -> BMP_CODE_UNIT.parse("FGHI"));
     assertThat(e).hasMessageThat()
         .isEqualTo(
             """
@@ -630,7 +630,7 @@ public class ParsersTest {
   }
 
   @Test public void bmpCodeUnit_emptyStringThrows() {
-    ParseException e = assertThrows(ParseException.class, () -> Parsers.BMP_CODE_UNIT.parse(""));
+    ParseException e = assertThrows(ParseException.class, () -> BMP_CODE_UNIT.parse(""));
     assertThat(e).hasMessageThat()
         .isEqualTo(
             """
@@ -638,6 +638,32 @@ public class ParsersTest {
                 <EOF>
                 ^
             """);
+  }
+
+  @Test public void bmpCodeUnit_surrogatesToEmoji() {
+    assertThat(BMP_CODE_UNIT.map(String::valueOf).zeroOrMore(joining()).parse("d83dDE00"))
+        .isEqualTo("😀");
+    assertThat(BMP_CODE_UNIT.map(String::valueOf).zeroOrMore(joining()).matches("d83dDE00"))
+        .isTrue();
+  }
+
+  @Test public void mapWithIndex_bmpCodeUnit() {
+    assertThat(
+            BMP_CODE_UNIT.mapWithIndex((c, begin, end) -> begin + "-" + end + ": " + (int) c)
+                .parse("0000"))
+        .isEqualTo("0-4: 0");
+  }
+
+  @Test public void returnElision_bmpCodeUnit_matches() {
+    assertThat(BMP_CODE_UNIT.parse("123F")).isEqualTo((char) 0x123F);
+    assertThat(BMP_CODE_UNIT.matches("123F")).isTrue();
+  }
+
+  @Test public void returnElision_bmpCodeUnit_doesNotMatch() {
+    assertThrows(ParseException.class, () -> BMP_CODE_UNIT.parse("123g"));
+    assertThat(BMP_CODE_UNIT.matches("123g")).isFalse();
+    assertThrows(ParseException.class, () -> BMP_CODE_UNIT.parse("123"));
+    assertThat(BMP_CODE_UNIT.matches("123")).isFalse();
   }
 
   @Test public void unsignedDecimal_matchesZero() {

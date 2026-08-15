@@ -19,12 +19,14 @@ import static com.google.errorprone.matchers.method.MethodMatchers.staticMethod;
 
 import com.google.auto.service.AutoService;
 import com.google.common.labs.parse.Parsers;
+import com.google.common.labs.regex.RegexPattern;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.LinkType;
 import com.google.errorprone.VisitorState;
 import com.google.errorprone.bugpatterns.BugChecker;
 import com.google.errorprone.matchers.Matcher;
 import com.google.errorprone.util.ASTHelpers;
+import com.google.mu.errorprone.regex.Redos;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 
@@ -54,6 +56,7 @@ public final class ParsersRegexCheck extends AbstractBugChecker
     checkingOn(expression).require(pattern != null, "compile-time string constant expected");
     try {
       Parsers.regex(pattern);
+      Redos.checkRedosVulnerability(RegexPattern.of(pattern));
     } catch (IllegalArgumentException e) {
       throw checkingOn(expression).report(e.getMessage());
     }

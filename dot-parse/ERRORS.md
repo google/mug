@@ -124,26 +124,26 @@ at 1:1: expecting <identifier>, encountered:
     ^
 ```
 
-## Custom messages — `Parser.fail()`
+## Handling 3rd-party exceptions — `Parser.fail()`
 
-When a symbol name isn't enough to explain the problem, throw
-[`Parser.fail(message)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#fail(java.lang.String))
-from any `map()`, `flatMap()` or `suchThat()` lambda:
+When an exception is thrown by a library method call (say, the number we are trying to parse is too large),
+use [`Parser.fail(message)`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html#fail(java.lang.String))
+from any `map()`, `flatMap()` or `suchThat()` lambda to report it as a parse error:
 
 ```java
 Parser<Integer> port = Parser.digits().map(s -> {
-  int n = Integer.parseInt(s);
-  if (n > 65535) {
-    throw Parser.fail("port out of range: " + n);
+  try{
+    return Integer.parseInt(s);
+  } catch (NumberFormatException e) {
+    throw Parser.fail(e.getMessage());  // or use your own custom message
   }
-  return n;
 });
 
-port.parse("99999");
+port.parse("12345678901");
 ```
 
 ```
-at 1:1: port out of range: 99999
+at 1:1: For input string: "12345678901"
 ```
 
 The custom message replaces the whole `expecting <...>` part and is reported at the position
@@ -183,5 +183,5 @@ at 1:1: expecting one of [digits, (, -], encountered:
 Dot Parse aims for *good enough* error messages at near-zero runtime cost — enough to tell a
 user which position is wrong and what was expected there. It intentionally doesn't do error
 recovery or ANTLR-grade diagnostics: naming your leaf parsers, left-factoring the alternatives
-you care about, and using `Parser.fail()` for domain-specific validation is how you get messages
+you care about, and using `suchThat()` or `Parser.fail()` for domain-specific validation is how you get messages
 tailored to your grammar.

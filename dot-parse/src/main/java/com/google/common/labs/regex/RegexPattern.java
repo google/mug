@@ -16,6 +16,7 @@ package com.google.common.labs.regex;
 
 import static com.google.common.labs.regex.InternalUtils.checkArgument;
 import static com.google.mu.util.Substring.after;
+import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.stream.MoreStreams.mergeConsecutive;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -27,6 +28,7 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 import com.google.common.labs.parse.Parser;
 import com.google.mu.annotations.ParametersMustMatchByName;
 import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -47,7 +49,7 @@ public sealed interface RegexPattern {
    * Common metadata shared by all regex patterns.
    *
    * @param minSize the minimum match size of this pattern in UTF-16 code units (chars).
-   *     Particularly, optional patterns like {@code .?}, {@code .*}, {@code c+}, <code>foo{,2}
+   *     Particularly, optional patterns like {@code .?}, {@code .*}, {@code c*}, <code>foo{,2}
    *     </code> will return 0.
    * @param maxSize the maximum match size of this pattern in UTF-16 code units (chars), or {@link
    *     Integer#MAX_VALUE} if it can match infinitely long strings (e.g. {@code .*}, {@code \d+},
@@ -85,8 +87,7 @@ public sealed interface RegexPattern {
         toList(),
         list -> {
           // First flatten the nested Sequence elements
-          var flattened = list.stream()
-              .flatMap(p -> p instanceof Sequence seq ? seq.elements().stream() : Stream.of(p));
+          var flattened = list.stream().flatMap(RegexPattern::flattenSequences);
           // Then merge adjacent literals
           List<RegexPattern> segments = mergeConsecutive(
                   flattened, Literal.class, (a, b) -> new Literal(a.value() + b.value()))
@@ -94,6 +95,12 @@ public sealed interface RegexPattern {
           // Wrap in sequence if needed.
           return segments.size() == 1 ? segments.get(0) : new Sequence(segments);
         });
+  }
+
+  private static Stream<RegexPattern> flattenSequences(RegexPattern pattern) {
+    return pattern instanceof Sequence seq
+        ? seq.elements().stream().flatMap(RegexPattern::flattenSequences)
+        : Stream.of(pattern);
   }
 
   /** Returns an {@link Alternation} of the given alternatives. */
@@ -165,6 +172,7 @@ public sealed interface RegexPattern {
   /** Represents a sequence of regex patterns that must match consecutively. */
   record Sequence(List<RegexPattern> elements) implements RegexPattern {
     public Sequence {
+      elements = List.copyOf(elements);
       checkArgument(elements.size() > 0, "elements cannot be empty");
     }
 
@@ -184,6 +192,7 @@ public sealed interface RegexPattern {
   /** Represents a choice between multiple alternative regex patterns. */
   record Alternation(List<RegexPattern> alternatives) implements RegexPattern {
     public Alternation {
+      alternatives = List.copyOf(alternatives);
       checkArgument(alternatives.size() > 0, "alternatives cannot be empty");
     }
 
@@ -226,6 +235,7 @@ public sealed interface RegexPattern {
     @Override public String toString() {
       return element instanceof Sequence || element instanceof Alternation
               || element instanceof Quantified
+              || (element instanceof Literal lit && lit.value().length() != 1)
           ? "(?:" + element + ")" + quantifier
           : element.toString() + quantifier;
     }
@@ -275,12 +285,17 @@ public sealed interface RegexPattern {
 
   /** Represents a quantifier with a minimum bound, like {@code {min,}}, {@code *}, or {@code +}. */
   record AtLeast(int min, boolean isReluctant, boolean isPossessive) implements Quantifier {
+    public AtLeast {
+      checkArgument(min >= 0, "min must be non-negative");
+      checkArgument(!(isReluctant && isPossessive), "cannot be both reluctant and possessive");
+    }
+
     @Override public AtLeast reluctant() {
-      return new AtLeast(min, true, isPossessive);
+      return new AtLeast(min, true, false);
     }
 
     @Override public AtLeast possessive() {
-      return new AtLeast(min, isReluctant, true);
+      return new AtLeast(min, false, true);
     }
 
     @Override public String toString() {
@@ -301,12 +316,17 @@ public sealed interface RegexPattern {
    * ?}.
    */
   record AtMost(int max, boolean isReluctant, boolean isPossessive) implements Quantifier {
+    public AtMost {
+      checkArgument(max >= 0, "max must be non-negative");
+      checkArgument(!(isReluctant && isPossessive), "cannot be both reluctant and possessive");
+    }
+
     @Override public AtMost reluctant() {
-      return new AtMost(max, true, isPossessive);
+      return new AtMost(max, true, false);
     }
 
     @Override public AtMost possessive() {
-      return new AtMost(max, isReluctant, true);
+      return new AtMost(max, false, true);
     }
 
     @Override public String toString() {
@@ -327,12 +347,18 @@ public sealed interface RegexPattern {
    */
   record Limited(int min, int max, boolean isReluctant, boolean isPossessive)
       implements Quantifier {
+    public Limited {
+      checkArgument(min >= 0, "min must be non-negative");
+      checkArgument(max >= min, "max must be at least min");
+      checkArgument(!(isReluctant && isPossessive), "cannot be both reluctant and possessive");
+    }
+
     @Override public Limited reluctant() {
-      return new Limited(min, max, true, isPossessive);
+      return new Limited(min, max, true, false);
     }
 
     @Override public Limited possessive() {
-      return new Limited(min, max, isReluctant, true);
+      return new Limited(min, max, false, true);
     }
 
     @Override public String toString() {
@@ -423,22 +449,15 @@ public sealed interface RegexPattern {
 
   /** Represents a literal string to be matched. */
   record Literal(String value) implements RegexPattern {
-    private static final CharPredicate META_CHARS = CharPredicate.anyOf(".[]{}()*+-?^$|\\");
+    private static final Substring.RepeatingPattern META_CHARS =
+        all(CharPredicate.anyOf(".[]{}()*+-?^$|\\"));
 
     @Override public Metadata metadata() {
       return new Metadata(/* minSize= */ value.length(), /* maxSize= */ value.length());
     }
 
     @Override public String toString() {
-      StringBuilder builder = new StringBuilder();
-      for (int i = 0; i < value.length(); i++) {
-        char c = value.charAt(i);
-        if (META_CHARS.test(c)) {
-          builder.append('\\');
-        }
-        builder.append(c);
-      }
-      return builder.toString();
+      return META_CHARS.replaceAllFrom(value, m -> "\\" + m);
     }
   }
 
@@ -501,6 +520,7 @@ public sealed interface RegexPattern {
     /** A positive character class, like {@code [a-z]}. */
     record AnyOf(List<CharSetElement> elements) implements CharacterSet {
       public AnyOf {
+        elements = List.copyOf(elements);
         checkArgument(elements.size() > 0, "elements cannot be empty");
       }
 
@@ -512,6 +532,7 @@ public sealed interface RegexPattern {
     /** A negated character class, like {@code [^a-z]}. */
     record NoneOf(List<CharSetElement> elements) implements CharacterSet {
       public NoneOf {
+        elements = List.copyOf(elements);
         checkArgument(elements.size() > 0, "elements cannot be empty");
       }
 
@@ -533,7 +554,7 @@ public sealed interface RegexPattern {
         case '\t' -> "\\t";
         case '\f' -> "\\f";
         // Characters that are special inside character classes.
-        case ']', '\\', '^', '&' -> "\\" + value;
+        case ']', '\\', '^', '&', '-' -> "\\" + value;
         default -> String.valueOf(value);
       };
     }

@@ -74,7 +74,7 @@ import java.util.stream.Stream;
  * format string patterns etc.
  *
  * <p>Different from most parser combinators (such as Haskell Parsec), a common source of bug
- * (infinite loop or StackOverFlowError caused by accidental zero-consumption rule in the context of
+ * (infinite loop or StackOverflowError caused by accidental zero-consumption rule in the context of
  * many() or recursive grammar) is made impossible by requiring all parsers to consume at least one
  * character. Optional suffix is achieved through using the built-in combinators such as {@link
  * #optionallyFollowedBy} or {@link OperatorTable} if you have multiple operators; you can also use
@@ -961,8 +961,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         };
       }
 
-      @Override public Parser<T> as(String logicalName) {
-        return left().as(logicalName);
+      @Override public Parser<T> as(String alias) {
+        return left().as(alias);
       }
 
       @Override Parser<?> ignoreReturn() {
@@ -1441,7 +1441,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <pre>{@code
    * Set<String> reservedWords = ...;
-   * Parser<String> identifier = Parser.WORD.suchThat(w -> !reservedWords.contains(w), "identifier");
+   * Parser<String> identifier = Parser.word().suchThat(w -> !reservedWords.contains(w), "identifier");
    * }</pre>
    *
    * @since 9.4
@@ -2117,7 +2117,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     /**
      * The current optional parser repeated and delimited by {@code delimiter}. Since this is an
      * optional parser, at least one element is guaranteed to be returned, even if match failed. For
-     * example, {@code consecutive(WORD).orElse("").delimitedBy(",")} will {@link #parse parse}
+     * example, {@code word().orElse("").delimitedBy(",")} will {@link #parse parse}
      * input {@code ",a,"} as {@code List.of("", "a", "")}; and parse empty input {@code ""} as
      * {@code List.of("")}.
      *
@@ -2475,7 +2475,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    *
    * <pre>{@code
    * var rule = new Parser.Rule<Integer>();
-   * Parser<Integer> num = Parser.single(CharPredicate.inRange('0', '9')).map(c -> c - '0');
+   * Parser<Integer> num = Parser.one(CharPredicate.inRange('0', '9')).map(c -> c - '0');
    * Parser<Integer> atomic = rule.between("(", ")").or(num);
    * Parser<Integer> expr =
    *     atomic.atLeastOnceDelimitedBy("+")
