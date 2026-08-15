@@ -29,10 +29,12 @@ public final class Redos {
     if (nullable.isPresent()) {
       String sample = sampleMatchingString(nullable.get());
       String payload = attackPayload(sample);
+      String suggestion =
+          suggestRedosRewrite(pattern).map(s -> " (suggested rewrite: '" + s + "')").orElse("");
       throw new IllegalArgumentException(
           "Regular expression is vulnerable to exponential backtracking (ReDoS): '" + pattern
               + "' contains unbounded repetition of nullable sub-pattern '" + nullable.get()
-              + "' (attack payload: \"" + payload + "\")");
+              + "' (attack payload: \"" + payload + "\")" + suggestion);
     }
     Nfa nfa = Nfa.from(pattern);
     if (hasExponentialAmbiguity(nfa)) {
@@ -40,9 +42,11 @@ public final class Redos {
           .orElse("contains ambiguous cycle across overlapping transitions");
       String sample = sampleMatchingString(pattern);
       String payload = attackPayload(sample);
+      String suggestion =
+          suggestRedosRewrite(pattern).map(s -> " (suggested rewrite: '" + s + "')").orElse("");
       throw new IllegalArgumentException(
           "Regular expression is vulnerable to exponential backtracking (ReDoS): '" + pattern + "' "
-              + detail + " (attack payload: \"" + payload + "\")");
+              + detail + " (attack payload: \"" + payload + "\")" + suggestion);
     }
   }
 
@@ -59,10 +63,69 @@ public final class Redos {
       String desc = detail.orElse("contains overlapping consecutive cycles");
       String sample = sampleMatchingString(pattern);
       String payload = attackPayload(sample);
+      String suggestion = suggestPolynomialRewrite(pattern)
+          .map(s -> " (suggested rewrite: '" + s + "')")
+          .orElse("");
       throw new IllegalArgumentException(
           "Regular expression is vulnerable to polynomial backtracking (PDA): '" + pattern + "' "
-              + desc + " (attack payload: \"" + payload + "\")");
+              + desc + " (attack payload: \"" + payload + "\")" + suggestion);
     }
+  }
+
+  /**
+   * Suggests a safe rewrite for an exponential ReDoS vulnerable pattern if a high-confidence fix is
+   * known.
+   */
+  public static Optional<String> suggestRedosRewrite(RegexPattern pattern) {
+    if (pattern instanceof RegexPattern.Quantified) {
+      RegexPattern.Quantified q = (RegexPattern.Quantified) pattern;
+      RegexPattern inner = unwrapGroup(q.element());
+      if (inner instanceof RegexPattern.Quantified) {
+        RegexPattern.Quantified innerQ = (RegexPattern.Quantified) inner;
+        boolean canBeEmpty = innerQ.metadata().minSize() == 0 || q.metadata().minSize() == 0;
+        String op = canBeEmpty ? "*" : "+";
+        return Optional.of(innerQ.element().toString() + op);
+      }
+      if (inner.metadata().minSize() == 0 && inner.metadata().maxSize() > 0) {
+        return Optional.of(inner.toString() + "*");
+      }
+    }
+    return Optional.empty();
+  }
+
+  /**
+   * Suggests a safe rewrite for a polynomial backtracking vulnerable pattern if a high-confidence
+   * fix is known (e.g. using possessive quantifier).
+   */
+  public static Optional<String> suggestPolynomialRewrite(RegexPattern pattern) {
+    if (pattern instanceof RegexPattern.Sequence) {
+      RegexPattern.Sequence seq = (RegexPattern.Sequence) pattern;
+      List<RegexPattern> elements = seq.elements();
+      for (int i = 0; i < elements.size(); i++) {
+        RegexPattern ei = elements.get(i);
+        if (isUnboundedQuantified(ei)) {
+          for (int j = i + 1; j < elements.size(); j++) {
+            RegexPattern ej = elements.get(j);
+            if (isUnboundedQuantified(ej)) {
+              CharRanges rangesI = charRangesOf(ei);
+              CharRanges rangesJ = charRangesOf(ej);
+              if (rangesI.intersects(rangesJ)) {
+                RegexPattern.Quantified qi = (RegexPattern.Quantified) ei;
+                RegexPattern rewrittenEi =
+                    new RegexPattern.Quantified(qi.element(), qi.quantifier().possessive());
+                List<RegexPattern> rewrittenElements = new ArrayList<>(elements);
+                rewrittenElements.set(i, rewrittenEi);
+                return Optional.of(new RegexPattern.Sequence(rewrittenElements).toString());
+              }
+            }
+            if (ej.metadata().minSize() > 0) {
+              break;
+            }
+          }
+        }
+      }
+    }
+    return Optional.empty();
   }
 
   @SuppressWarnings("InlineMeInliner")

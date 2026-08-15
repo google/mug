@@ -1,6 +1,7 @@
 package com.google.mu.errorprone.regex;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.labs.regex.RegexPattern;
@@ -19,7 +20,7 @@ public final class RedosTest {
         .isEqualTo(
             "Regular expression is vulnerable to exponential backtracking (ReDoS): '(a+)+' contains"
                 + " nested quantifiers on 'a+' (attack payload:"
-                + " \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\")");
+                + " \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\") (suggested rewrite: 'a+')");
   }
 
   @Test public void checkRedosVulnerability_overlappingAlternation_throwsDetailedMessage() {
@@ -41,7 +42,7 @@ public final class RedosTest {
         .isEqualTo(
             "Regular expression is vulnerable to exponential backtracking (ReDoS): '(a?)*' contains"
                 + " unbounded repetition of nullable sub-pattern '(a?)' (attack payload:"
-                + " \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\")");
+                + " \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\") (suggested rewrite: 'a*')");
   }
 
   @Test public void
@@ -192,7 +193,7 @@ public final class RedosTest {
         .isEqualTo(
             "Regular expression is vulnerable to polynomial backtracking (PDA): 'a+a+' contains"
                 + " consecutive overlapping quantifiers on 'a+' and 'a+' (attack payload:"
-                + " \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\")");
+                + " \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\") (suggested rewrite: 'a++a+')");
   }
 
   @Test public void checkPolynomialBacktracking_digitFollowedByWordChar_throwsDetailedMessage() {
@@ -201,6 +202,7 @@ public final class RedosTest {
         IllegalArgumentException.class, () -> Redos.checkPolynomialBacktracking(pattern));
     assertThat(thrown).hasMessageThat()
         .contains("contains consecutive overlapping quantifiers on '\\d+' and '\\w+'");
+    assertThat(thrown).hasMessageThat().contains("(suggested rewrite: '\\d++\\w+')");
   }
 
   @Test public void
@@ -210,6 +212,27 @@ public final class RedosTest {
         IllegalArgumentException.class, () -> Redos.checkPolynomialBacktracking(pattern));
     assertThat(thrown).hasMessageThat()
         .contains("contains consecutive overlapping quantifiers on '[0-9]+' and '[0-9a-z]+'");
+    assertThat(thrown).hasMessageThat().contains("(suggested rewrite: '[0-9]++[0-9a-z]+')");
+  }
+
+  @Test public void suggestRedosRewrite_nestedQuantifier_suggestsFlattened() {
+    assertThat(Redos.suggestRedosRewrite(RegexPattern.of("(a+)+"))).hasValue("a+");
+  }
+
+  @Test public void suggestRedosRewrite_nullableRepeated_suggestsNonNullable() {
+    assertThat(Redos.suggestRedosRewrite(RegexPattern.of("(a*)+"))).hasValue("a*");
+  }
+
+  @Test public void suggestRedosRewrite_unrecognizedPattern_returnsEmpty() {
+    assertThat(Redos.suggestRedosRewrite(RegexPattern.of("(a|b)+"))).isEmpty();
+  }
+
+  @Test public void suggestPolynomialRewrite_overlappingQuantifiers_suggestsPossessive() {
+    assertThat(Redos.suggestPolynomialRewrite(RegexPattern.of("\\d+\\w+"))).hasValue("\\d++\\w+");
+  }
+
+  @Test public void suggestPolynomialRewrite_disjointQuantifiers_returnsEmpty() {
+    assertThat(Redos.suggestPolynomialRewrite(RegexPattern.of("a+b+"))).isEmpty();
   }
 
   @Test public void checkPolynomialBacktracking_threeIdenticalQuantifiers_throwsDetailedMessage() {
