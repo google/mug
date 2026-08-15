@@ -103,15 +103,15 @@ public final class Redos {
   public static Optional<String> suggestPolynomialRewrite(RegexPattern pattern) {
     if (pattern instanceof RegexPattern.Sequence) {
       RegexPattern.Sequence seq = (RegexPattern.Sequence) pattern;
-      Optional<OverlappingQuantifierPair> pair = findOverlappingQuantifiers(seq);
-      if (pair.isPresent()) {
-        OverlappingQuantifierPair p = pair.get();
-        RegexPattern rewrittenFirst =
-            new RegexPattern.Quantified(p.first.element(), p.first.quantifier().possessive());
-        List<RegexPattern> rewritten = new ArrayList<>(seq.elements());
-        rewritten.set(p.firstIndex, rewrittenFirst);
-        return Optional.of(new RegexPattern.Sequence(rewritten).toString());
-      }
+      return findOverlappingQuantifiers(seq)
+          .map(p -> {
+            RegexPattern rewrittenFirst =
+                new RegexPattern.Quantified(p.first.element(), p.first.quantifier().possessive());
+            List<RegexPattern> rewritten = new ArrayList<>(seq.elements());
+            rewritten.set(p.firstIndex, rewrittenFirst);
+            return new RegexPattern.Sequence(rewritten).toString();
+          })
+          .findFirst();
     }
     return Optional.empty();
   }
@@ -143,9 +143,7 @@ public final class Redos {
         .preOrderFrom(pattern)
         .filter(RegexPattern.Sequence.class::isInstance)
         .map(RegexPattern.Sequence.class::cast)
-        .map(Redos::findOverlappingQuantifiers)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
+        .flatMap(Redos::findOverlappingQuantifiers)
         .map(pair ->
             "contains consecutive overlapping quantifiers on '" + pair.first + "' and '"
                 + pair.second + "'")
@@ -165,7 +163,7 @@ public final class Redos {
     }
   }
 
-  private static Optional<OverlappingQuantifierPair> findOverlappingQuantifiers(
+  private static Stream<OverlappingQuantifierPair> findOverlappingQuantifiers(
       RegexPattern.Sequence seq) {
     List<RegexPattern> elements = seq.elements();
     for (int i = 0; i < elements.size(); i++) {
@@ -175,7 +173,7 @@ public final class Redos {
           RegexPattern ej = elements.get(j);
           if (isUnboundedQuantified(ej)) {
             if (charRangesOf(ei).intersects(charRangesOf(ej))) {
-              return Optional.of(
+              return Stream.of(
                   new OverlappingQuantifierPair(
                       i, (RegexPattern.Quantified) ei, (RegexPattern.Quantified) ej));
             }
@@ -186,7 +184,7 @@ public final class Redos {
         }
       }
     }
-    return Optional.empty();
+    return Stream.empty();
   }
 
   private static boolean isUnboundedQuantified(RegexPattern pattern) {
@@ -257,29 +255,28 @@ public final class Redos {
         .preOrderFrom(pattern)
         .filter(RegexPattern.Quantified.class::isInstance)
         .map(RegexPattern.Quantified.class::cast)
-        .map(q -> {
-          RegexPattern inner = unwrapGroup(q.element());
-          if (inner instanceof RegexPattern.Quantified) {
-            return Optional.of("contains nested quantifiers on '" + inner + "'");
-          }
-          if (inner instanceof RegexPattern.Alternation) {
-            Optional<RegexPattern.Quantified> nestedQuantified = findNestedQuantified(inner);
-            if (nestedQuantified.isPresent()) {
-              return Optional.of("contains nested quantifiers on '" + nestedQuantified.get() + "'");
-            }
-            return Optional.of("contains overlapping alternation branches '" + inner + "'");
-          }
-          if (inner instanceof RegexPattern.Sequence) {
-            Optional<RegexPattern.Quantified> nestedQuantified = findNestedQuantified(inner);
-            if (nestedQuantified.isPresent()) {
-              return Optional.of("contains nested quantifiers on '" + nestedQuantified.get() + "'");
-            }
-          }
-          return Optional.<String>empty();
-        })
-        .filter(Optional::isPresent)
-        .map(Optional::get)
+        .flatMap(Redos::structuralDetailOf)
         .findFirst();
+  }
+
+  private static Stream<String> structuralDetailOf(RegexPattern.Quantified q) {
+    RegexPattern inner = unwrapGroup(q.element());
+    if (inner instanceof RegexPattern.Quantified) {
+      return Stream.of("contains nested quantifiers on '" + inner + "'");
+    }
+    if (inner instanceof RegexPattern.Alternation) {
+      return Stream.of(
+          findNestedQuantified(inner)
+              .map(nq -> "contains nested quantifiers on '" + nq + "'")
+              .findFirst()
+              .orElse("contains overlapping alternation branches '" + inner + "'"));
+    }
+    if (inner instanceof RegexPattern.Sequence) {
+      return findNestedQuantified(inner)
+          .limit(1)
+          .map(nq -> "contains nested quantifiers on '" + nq + "'");
+    }
+    return Stream.empty();
   }
 
   private static RegexPattern unwrapGroup(RegexPattern pattern) {
@@ -289,12 +286,11 @@ public final class Redos {
     return pattern;
   }
 
-  private static Optional<RegexPattern.Quantified> findNestedQuantified(RegexPattern pattern) {
+  private static Stream<RegexPattern.Quantified> findNestedQuantified(RegexPattern pattern) {
     return Walker.inTree(Redos::childrenOf)
         .preOrderFrom(pattern)
         .filter(RegexPattern.Quantified.class::isInstance)
-        .map(RegexPattern.Quantified.class::cast)
-        .findFirst();
+        .map(RegexPattern.Quantified.class::cast);
   }
 
   private static String sampleMatchingString(RegexPattern pattern) {
