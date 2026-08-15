@@ -215,6 +215,24 @@ public final class RedosTest {
     assertThat(thrown).hasMessageThat().contains("(suggested rewrite: '[0-9]++[0-9a-z]+')");
   }
 
+  @Test public void
+      checkRedosVulnerability_prefixGatedNestedQuantifier_attackPayloadIncludesPrefix() {
+    RegexPattern pattern = RegexPattern.of("prefix_(a+)+");
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> Redos.checkRedosVulnerability(pattern));
+    assertThat(thrown).hasMessageThat()
+        .contains("attack payload: \"prefix_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\"");
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_prefixGatedOverlappingQuantifiers_attackPayloadIncludesPrefix() {
+    RegexPattern pattern = RegexPattern.of("prefix_\\d+\\w+");
+    IllegalArgumentException thrown = assertThrows(
+        IllegalArgumentException.class, () -> Redos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown).hasMessageThat()
+        .contains("attack payload: \"prefix_000000000000000000000000000000!\"");
+  }
+
   @Test public void suggestRedosRewrite_nestedQuantifier_suggestsFlattened() {
     assertThat(Redos.suggestRedosRewrite(RegexPattern.of("(a+)+"))).hasValue("a+");
   }

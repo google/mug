@@ -3,6 +3,8 @@ package com.google.mu.errorprone.regex;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
+import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.util.graph.Walker;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -11,9 +13,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-
-import com.google.common.labs.regex.RegexPattern;
-import com.google.mu.util.graph.Walker;
 
 /**
  * Static analyzer for detecting Exponential Degree of Ambiguity (EDA) / Catastrophic Backtracking
@@ -31,8 +30,8 @@ public final class Redos {
   public static void checkRedosVulnerability(RegexPattern pattern) {
     Optional<RegexPattern> nullable = findNullableRepeatedElement(pattern);
     if (nullable.isPresent()) {
-      String sample = sampleMatchingString(nullable.get());
-      String payload = attackPayload(sample);
+      String payload =
+          attackPayloadForSubPattern(pattern, nullable.get(), sampleMatchingString(nullable.get()));
       String suggestion =
           suggestRedosRewrite(pattern).map(s -> " (suggested rewrite: '" + s + "')").orElse("");
       throw new IllegalArgumentException(
@@ -44,8 +43,14 @@ public final class Redos {
     if (hasExponentialAmbiguity(ProductGraph.from(nfa))) {
       String detail = findStructuralDetail(pattern)
           .orElse("contains ambiguous cycle across overlapping transitions");
-      String sample = sampleMatchingString(pattern);
-      String payload = attackPayload(sample);
+      Optional<RegexPattern.Quantified> culprit = findNestedQuantified(pattern).findFirst();
+      String payload =
+          culprit.isPresent()
+              ? attackPayloadForSubPattern(
+                  pattern,
+                  culprit.get(),
+                  sampleMatchingString(unwrapGroup(culprit.get().element())))
+              : attackPayload("", sampleMatchingString(pattern));
       String suggestion =
           suggestRedosRewrite(pattern).map(s -> " (suggested rewrite: '" + s + "')").orElse("");
       throw new IllegalArgumentException(
@@ -65,8 +70,14 @@ public final class Redos {
     Nfa nfa = Nfa.from(pattern);
     if (detail.isPresent() || hasPolynomialAmbiguity(ProductGraph.from(nfa))) {
       String desc = detail.orElse("contains overlapping consecutive cycles");
-      String sample = sampleMatchingString(pattern);
-      String payload = attackPayload(sample);
+      Optional<OverlappingQuantifierPair> pair =
+          pattern instanceof RegexPattern.Sequence seq
+              ? findOverlappingQuantifiers(seq).findFirst()
+              : Optional.empty();
+      String payload =
+          pair.isPresent()
+              ? attackPayloadForOverlappingPair((RegexPattern.Sequence) pattern, pair.get())
+              : attackPayload("", sampleMatchingString(pattern));
       String suggestion = suggestPolynomialRewrite(pattern)
           .map(s -> " (suggested rewrite: '" + s + "')")
           .orElse("");
@@ -130,9 +141,41 @@ public final class Redos {
     return Optional.empty();
   }
 
-  private static String attackPayload(String sample) {
-    int repetitions = Math.max(1, 30 / Math.max(1, sample.length()));
-    return sample.repeat(repetitions) + "!";
+  private static String attackPayload(String prefix, String pump) {
+    int repetitions = Math.max(1, 30 / Math.max(1, pump.length()));
+    return prefix + pump.repeat(repetitions) + "!";
+  }
+
+  private static String attackPayloadForSubPattern(
+      RegexPattern pattern, RegexPattern target, String pump) {
+    if (pattern instanceof RegexPattern.Sequence seq) {
+      StringBuilder prefix = new StringBuilder();
+      for (RegexPattern elem : seq.elements()) {
+        if (containsNode(elem, target)) {
+          break;
+        }
+        prefix.append(sampleMatchingString(elem));
+      }
+      return attackPayload(prefix.toString(), pump);
+    }
+    return attackPayload("", pump);
+  }
+
+  private static String attackPayloadForOverlappingPair(
+      RegexPattern.Sequence seq, OverlappingQuantifierPair pair) {
+    StringBuilder prefix = new StringBuilder();
+    for (int i = 0; i < pair.firstIndex(); i++) {
+      prefix.append(sampleMatchingString(seq.elements().get(i)));
+    }
+    String pump = sampleMatchingString(pair.first().element());
+    return attackPayload(prefix.toString(), pump);
+  }
+
+  private static boolean containsNode(RegexPattern root, RegexPattern target) {
+    return root.equals(target)
+        || Walker.inTree(Redos::childrenOf)
+            .preOrderFrom(root)
+            .anyMatch(node -> node.equals(target));
   }
 
   private static Stream<RegexPattern> childrenOf(RegexPattern pattern) {
@@ -297,6 +340,7 @@ public final class Redos {
         List<RegexPattern> alts = alt.alternatives();
         yield alts.isEmpty() ? "a" : sampleMatchingString(alts.get(0));
       }
+      case RegexPattern.Anchor anchor -> "";
       default -> "a";
     };
   }
