@@ -10,8 +10,8 @@
   <name>Compile-time plugins</name>
   <packaging>jar</packaging>
   <properties>
-    <maven.compiler.source>21</maven.compiler.source>
-    <maven.compiler.target>21</maven.compiler.target>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
     <!-- Reproducible builds: fixed timestamp for build artifacts -->
     <project.build.outputTimestamp>2026-08-08T23:51:00Z</project.build.outputTimestamp>
     <maven.javadoc.skip>true</maven.javadoc.skip>
