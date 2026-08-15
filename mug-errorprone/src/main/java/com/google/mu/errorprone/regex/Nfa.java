@@ -23,31 +23,9 @@ final class Nfa {
     }
   }
 
-  static final class CharTransition {
-    final int id;
-    final int source;
-    final CharRanges chars;
-    final int target;
+  record CharTransition(int id, int source, CharRanges chars, int target) {}
 
-    CharTransition(int id, int source, CharRanges chars, int target) {
-      this.id = id;
-      this.source = source;
-      this.chars = chars;
-      this.target = target;
-    }
-  }
-
-  private static final class Fragment {
-    final int start;
-    final int accept;
-
-    Fragment(int start, int accept) {
-      this.start = start;
-      this.accept = accept;
-    }
-  }
-
-  Nfa() {}
+  private record Fragment(int start, int accept) {}
 
   State newState() {
     State s = new State(states.size());
@@ -67,7 +45,7 @@ final class Nfa {
     charTransitions.add(t);
   }
 
-  public static Nfa from(RegexPattern pattern) {
+  static Nfa from(RegexPattern pattern) {
     Nfa nfa = new Nfa();
     Fragment fragment = nfa.compile(pattern);
     nfa.startState = fragment.start;
@@ -76,37 +54,19 @@ final class Nfa {
   }
 
   private Fragment compile(RegexPattern pattern) {
-    if (pattern instanceof RegexPattern.Literal) {
-      return compileLiteral(((RegexPattern.Literal) pattern).value());
-    }
-    if (pattern instanceof RegexPattern.CharacterSet) {
-      return compileCharRanges(CharRanges.from((RegexPattern.CharacterSet) pattern));
-    }
-    if (pattern instanceof RegexPattern.PredefinedCharClass) {
-      return compileCharRanges(CharRanges.from((RegexPattern.PredefinedCharClass) pattern));
-    }
-    if (pattern instanceof RegexPattern.PosixCharClass) {
-      return compileCharRanges(CharRanges.from((RegexPattern.PosixCharClass) pattern));
-    }
-    if (pattern instanceof RegexPattern.CharacterProperty.Negated) {
-      return compileCharRanges(CharRanges.from((RegexPattern.CharacterProperty.Negated) pattern));
-    }
-    if (pattern instanceof RegexPattern.UnicodeProperty) {
-      return compileCharRanges(CharRanges.from((RegexPattern.UnicodeProperty) pattern));
-    }
-    if (pattern instanceof RegexPattern.Sequence) {
-      return compileSequence(((RegexPattern.Sequence) pattern).elements());
-    }
-    if (pattern instanceof RegexPattern.Alternation) {
-      return compileAlternation(((RegexPattern.Alternation) pattern).alternatives());
-    }
-    if (pattern instanceof RegexPattern.Group) {
-      return compile(((RegexPattern.Group) pattern).content());
-    }
-    if (pattern instanceof RegexPattern.Quantified) {
-      return compileQuantified((RegexPattern.Quantified) pattern);
-    }
-    return compileEmpty();
+    return switch (pattern) {
+      case RegexPattern.Literal lit -> compileLiteral(lit.value());
+      case RegexPattern.CharacterSet cs -> compileCharRanges(CharRanges.from(cs));
+      case RegexPattern.PredefinedCharClass pcc -> compileCharRanges(CharRanges.from(pcc));
+      case RegexPattern.PosixCharClass pcc -> compileCharRanges(CharRanges.from(pcc));
+      case RegexPattern.CharacterProperty.Negated neg -> compileCharRanges(CharRanges.from(neg));
+      case RegexPattern.UnicodeProperty up -> compileCharRanges(CharRanges.from(up));
+      case RegexPattern.Sequence seq -> compileSequence(seq.elements());
+      case RegexPattern.Alternation alt -> compileAlternation(alt.alternatives());
+      case RegexPattern.Group group -> compile(group.content());
+      case RegexPattern.Quantified q -> compileQuantified(q);
+      default -> compileEmpty();
+    };
   }
 
   private Fragment compileEmpty() {
@@ -169,85 +129,86 @@ final class Nfa {
       return compile(quantified.element());
     }
 
-    if (q instanceof RegexPattern.AtLeast) {
-      RegexPattern.AtLeast atLeast = (RegexPattern.AtLeast) q;
-      if (atLeast.min() == 0) {
-        Fragment f = compile(quantified.element());
-        State start = newState();
-        State accept = newState();
-        addEpsilon(start.id, f.start);
-        addEpsilon(start.id, accept.id);
-        addEpsilon(f.accept, f.start);
-        addEpsilon(f.accept, accept.id);
-        return new Fragment(start.id, accept.id);
-      } else if (atLeast.min() == 1) {
-        Fragment f = compile(quantified.element());
-        State start = newState();
-        State accept = newState();
-        addEpsilon(start.id, f.start);
-        addEpsilon(f.accept, f.start);
-        addEpsilon(f.accept, accept.id);
-        return new Fragment(start.id, accept.id);
-      } else {
+    return switch (q) {
+      case RegexPattern.AtLeast atLeast -> {
+        if (atLeast.min() == 0) {
+          Fragment f = compile(quantified.element());
+          State start = newState();
+          State accept = newState();
+          addEpsilon(start.id, f.start);
+          addEpsilon(start.id, accept.id);
+          addEpsilon(f.accept, f.start);
+          addEpsilon(f.accept, accept.id);
+          yield new Fragment(start.id, accept.id);
+        } else if (atLeast.min() == 1) {
+          Fragment f = compile(quantified.element());
+          State start = newState();
+          State accept = newState();
+          addEpsilon(start.id, f.start);
+          addEpsilon(f.accept, f.start);
+          addEpsilon(f.accept, accept.id);
+          yield new Fragment(start.id, accept.id);
+        } else {
+          List<Fragment> parts = new ArrayList<>();
+          for (int i = 0; i < atLeast.min() - 1; i++) {
+            parts.add(compile(quantified.element()));
+          }
+          Fragment loopPart = compileQuantified(
+              new RegexPattern.Quantified(
+                  quantified.element(), RegexPattern.Quantifier.atLeast(1)));
+          parts.add(loopPart);
+          for (int i = 0; i < parts.size() - 1; i++) {
+            addEpsilon(parts.get(i).accept, parts.get(i + 1).start);
+          }
+          yield new Fragment(parts.get(0).start, parts.get(parts.size() - 1).accept);
+        }
+      }
+      case RegexPattern.AtMost atMost -> {
+        if (atMost.max() == 1) {
+          Fragment f = compile(quantified.element());
+          State start = newState();
+          State accept = newState();
+          addEpsilon(start.id, f.start);
+          addEpsilon(start.id, accept.id);
+          addEpsilon(f.accept, accept.id);
+          yield new Fragment(start.id, accept.id);
+        } else {
+          State start = newState();
+          State current = start;
+          State accept = newState();
+          int max = Math.min(atMost.max(), 5);
+          for (int i = 0; i < max; i++) {
+            Fragment f = compile(quantified.element());
+            addEpsilon(current.id, f.start);
+            addEpsilon(current.id, accept.id);
+            addEpsilon(f.accept, accept.id);
+            current = states.get(f.accept);
+          }
+          yield new Fragment(start.id, accept.id);
+        }
+      }
+      case RegexPattern.Limited limited -> {
         List<Fragment> parts = new ArrayList<>();
-        for (int i = 0; i < atLeast.min() - 1; i++) {
+        for (int i = 0; i < limited.min(); i++) {
           parts.add(compile(quantified.element()));
         }
-        Fragment loopPart = compileQuantified(
-            new RegexPattern.Quantified(quantified.element(), RegexPattern.Quantifier.atLeast(1)));
-        parts.add(loopPart);
+        int extra = Math.min(limited.max() - limited.min(), 5);
+        for (int i = 0; i < extra; i++) {
+          Fragment opt = compile(quantified.element());
+          State s = newState();
+          State e = newState();
+          addEpsilon(s.id, opt.start);
+          addEpsilon(s.id, e.id);
+          addEpsilon(opt.accept, e.id);
+          parts.add(new Fragment(s.id, e.id));
+        }
         for (int i = 0; i < parts.size() - 1; i++) {
           addEpsilon(parts.get(i).accept, parts.get(i + 1).start);
         }
-        return new Fragment(parts.get(0).start, parts.get(parts.size() - 1).accept);
+        yield new Fragment(parts.get(0).start, parts.get(parts.size() - 1).accept);
       }
-    } else if (q instanceof RegexPattern.AtMost) {
-      RegexPattern.AtMost atMost = (RegexPattern.AtMost) q;
-      if (atMost.max() == 1) {
-        Fragment f = compile(quantified.element());
-        State start = newState();
-        State accept = newState();
-        addEpsilon(start.id, f.start);
-        addEpsilon(start.id, accept.id);
-        addEpsilon(f.accept, accept.id);
-        return new Fragment(start.id, accept.id);
-      } else {
-        State start = newState();
-        State current = start;
-        State accept = newState();
-        int max = Math.min(atMost.max(), 5);
-        for (int i = 0; i < max; i++) {
-          Fragment f = compile(quantified.element());
-          addEpsilon(current.id, f.start);
-          addEpsilon(current.id, accept.id);
-          addEpsilon(f.accept, accept.id);
-          current = states.get(f.accept);
-        }
-        return new Fragment(start.id, accept.id);
-      }
-    } else if (q instanceof RegexPattern.Limited) {
-      RegexPattern.Limited limited = (RegexPattern.Limited) q;
-      List<Fragment> parts = new ArrayList<>();
-      for (int i = 0; i < limited.min(); i++) {
-        parts.add(compile(quantified.element()));
-      }
-      int extra = Math.min(limited.max() - limited.min(), 5);
-      for (int i = 0; i < extra; i++) {
-        Fragment opt = compile(quantified.element());
-        State s = newState();
-        State e = newState();
-        addEpsilon(s.id, opt.start);
-        addEpsilon(s.id, e.id);
-        addEpsilon(opt.accept, e.id);
-        parts.add(new Fragment(s.id, e.id));
-      }
-      for (int i = 0; i < parts.size() - 1; i++) {
-        addEpsilon(parts.get(i).accept, parts.get(i + 1).start);
-      }
-      return new Fragment(parts.get(0).start, parts.get(parts.size() - 1).accept);
-    }
-
-    return compile(quantified.element());
+      default -> compile(quantified.element());
+    };
   }
 
   int countEpsilonPaths(int from, int to) {

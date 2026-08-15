@@ -1,10 +1,9 @@
 package com.google.mu.errorprone.regex;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
-import com.google.common.labs.regex.RegexPattern;
-import com.google.mu.util.graph.Walker;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -13,6 +12,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.util.graph.Walker;
 
 /**
  * Static analyzer for detecting Exponential Degree of Ambiguity (EDA) / Catastrophic Backtracking
@@ -28,7 +30,7 @@ public final class Redos {
    *     vulnerability
    */
   public static void checkRedosVulnerability(RegexPattern pattern) {
-    Objects.requireNonNull(pattern);
+    requireNonNull(pattern);
     Optional<RegexPattern> nullable = findNullableRepeatedElement(pattern);
     if (nullable.isPresent()) {
       String sample = sampleMatchingString(nullable.get());
@@ -83,11 +85,9 @@ public final class Redos {
    */
   public static Optional<String> suggestRedosRewrite(RegexPattern pattern) {
     Objects.requireNonNull(pattern);
-    if (pattern instanceof RegexPattern.Quantified) {
-      RegexPattern.Quantified q = (RegexPattern.Quantified) pattern;
+    if (pattern instanceof RegexPattern.Quantified q) {
       RegexPattern inner = unwrapGroup(q.element());
-      if (inner instanceof RegexPattern.Quantified) {
-        RegexPattern.Quantified innerQ = (RegexPattern.Quantified) inner;
+      if (inner instanceof RegexPattern.Quantified innerQ) {
         boolean canBeEmpty = innerQ.metadata().minSize() == 0 || q.metadata().minSize() == 0;
         String op = canBeEmpty ? "*" : "+";
         return Optional.of(innerQ.element().toString() + op);
@@ -105,14 +105,13 @@ public final class Redos {
    */
   public static Optional<String> suggestPolynomialRewrite(RegexPattern pattern) {
     Objects.requireNonNull(pattern);
-    if (pattern instanceof RegexPattern.Sequence) {
-      RegexPattern.Sequence seq = (RegexPattern.Sequence) pattern;
+    if (pattern instanceof RegexPattern.Sequence seq) {
       return findOverlappingQuantifiers(seq)
           .map(p -> {
-            RegexPattern rewrittenFirst =
-                new RegexPattern.Quantified(p.first.element(), p.first.quantifier().possessive());
+            RegexPattern rewrittenFirst = new RegexPattern.Quantified(
+                p.first().element(), p.first().quantifier().possessive());
             List<RegexPattern> rewritten = new ArrayList<>(seq.elements());
-            rewritten.set(p.firstIndex, rewrittenFirst);
+            rewritten.set(p.firstIndex(), rewrittenFirst);
             return new RegexPattern.Sequence(rewritten).toString();
           })
           .findFirst();
@@ -126,19 +125,13 @@ public final class Redos {
   }
 
   private static Stream<RegexPattern> childrenOf(RegexPattern pattern) {
-    if (pattern instanceof RegexPattern.Sequence) {
-      return ((RegexPattern.Sequence) pattern).elements().stream();
-    }
-    if (pattern instanceof RegexPattern.Alternation) {
-      return ((RegexPattern.Alternation) pattern).alternatives().stream();
-    }
-    if (pattern instanceof RegexPattern.Group) {
-      return Stream.of(((RegexPattern.Group) pattern).content());
-    }
-    if (pattern instanceof RegexPattern.Quantified) {
-      return Stream.of(((RegexPattern.Quantified) pattern).element());
-    }
-    return Stream.empty();
+    return switch (pattern) {
+      case RegexPattern.Sequence seq -> seq.elements().stream();
+      case RegexPattern.Alternation alt -> alt.alternatives().stream();
+      case RegexPattern.Group group -> Stream.of(group.content());
+      case RegexPattern.Quantified q -> Stream.of(q.element());
+      default -> Stream.empty();
+    };
   }
 
   private static Optional<String> findPolynomialDetail(RegexPattern pattern) {
@@ -148,23 +141,13 @@ public final class Redos {
         .map(RegexPattern.Sequence.class::cast)
         .flatMap(Redos::findOverlappingQuantifiers)
         .map(pair ->
-            "contains consecutive overlapping quantifiers on '" + pair.first + "' and '"
-                + pair.second + "'")
+            "contains consecutive overlapping quantifiers on '" + pair.first() + "' and '"
+                + pair.second() + "'")
         .findFirst();
   }
 
-  private static final class OverlappingQuantifierPair {
-    final int firstIndex;
-    final RegexPattern.Quantified first;
-    final RegexPattern.Quantified second;
-
-    OverlappingQuantifierPair(
-        int firstIndex, RegexPattern.Quantified first, RegexPattern.Quantified second) {
-      this.firstIndex = firstIndex;
-      this.first = first;
-      this.second = second;
-    }
-  }
+  private record OverlappingQuantifierPair(
+      int firstIndex, RegexPattern.Quantified first, RegexPattern.Quantified second) {}
 
   private static Stream<OverlappingQuantifierPair> findOverlappingQuantifiers(
       RegexPattern.Sequence seq) {
@@ -191,41 +174,27 @@ public final class Redos {
   }
 
   private static boolean isUnboundedQuantified(RegexPattern pattern) {
-    if (pattern instanceof RegexPattern.Quantified) {
-      RegexPattern.Quantified q = (RegexPattern.Quantified) pattern;
-      RegexPattern.Quantifier quantifier = q.quantifier();
-      if (quantifier.isPossessive()) {
-        return false;
-      }
-      return (quantifier instanceof RegexPattern.AtLeast
-              && ((RegexPattern.AtLeast) quantifier).min() >= 0)
-          || (quantifier instanceof RegexPattern.Limited
-              && ((RegexPattern.Limited) quantifier).max() > 5);
-    }
-    return false;
+    return pattern instanceof RegexPattern.Quantified q && !q.quantifier().isPossessive()
+        && switch (q.quantifier()) {
+          case RegexPattern.AtLeast atLeast -> atLeast.min() >= 0;
+          case RegexPattern.Limited limited -> limited.max() > 5;
+          default -> false;
+        };
   }
 
   private static CharRanges charRangesOf(RegexPattern pattern) {
-    if (pattern instanceof RegexPattern.Quantified) {
-      return charRangesOf(((RegexPattern.Quantified) pattern).element());
-    }
-    if (pattern instanceof RegexPattern.Group) {
-      return charRangesOf(((RegexPattern.Group) pattern).content());
-    }
-    if (pattern instanceof RegexPattern.CharacterSet) {
-      return CharRanges.from((RegexPattern.CharacterSet) pattern);
-    }
-    if (pattern instanceof RegexPattern.PredefinedCharClass) {
-      return CharRanges.from((RegexPattern.PredefinedCharClass) pattern);
-    }
-    if (pattern instanceof RegexPattern.PosixCharClass) {
-      return CharRanges.from((RegexPattern.PosixCharClass) pattern);
-    }
-    if (pattern instanceof RegexPattern.Literal) {
-      String val = ((RegexPattern.Literal) pattern).value();
-      return val.isEmpty() ? CharRanges.any() : CharRanges.of(val.charAt(0));
-    }
-    return CharRanges.any();
+    return switch (pattern) {
+      case RegexPattern.Quantified q -> charRangesOf(q.element());
+      case RegexPattern.Group group -> charRangesOf(group.content());
+      case RegexPattern.CharacterSet cs -> CharRanges.from(cs);
+      case RegexPattern.PredefinedCharClass pcc -> CharRanges.from(pcc);
+      case RegexPattern.PosixCharClass pcc -> CharRanges.from(pcc);
+      case RegexPattern.Literal lit -> {
+        String val = lit.value();
+        yield val.isEmpty() ? CharRanges.any() : CharRanges.of(val.charAt(0));
+      }
+      default -> CharRanges.any();
+    };
   }
 
   private static Optional<RegexPattern> findNullableRepeatedElement(RegexPattern pattern) {
@@ -237,20 +206,13 @@ public final class Redos {
   }
 
   private static boolean isUnboundedNullable(RegexPattern pattern) {
-    if (pattern instanceof RegexPattern.Quantified) {
-      RegexPattern.Quantified q = (RegexPattern.Quantified) pattern;
-      RegexPattern.Quantifier quantifier = q.quantifier();
-      if (!quantifier.isPossessive()) {
-        boolean isUnbounded =
-            (quantifier instanceof RegexPattern.AtLeast
-                    && ((RegexPattern.AtLeast) quantifier).min() >= 0)
-                || (quantifier instanceof RegexPattern.Limited
-                    && ((RegexPattern.Limited) quantifier).max() > 10);
-        return isUnbounded && q.element().metadata().minSize() == 0
-            && q.element().metadata().maxSize() > 0;
-      }
-    }
-    return false;
+    return pattern instanceof RegexPattern.Quantified q && !q.quantifier().isPossessive()
+        && q.element().metadata().minSize() == 0 && q.element().metadata().maxSize() > 0
+        && switch (q.quantifier()) {
+          case RegexPattern.AtLeast atLeast -> atLeast.min() >= 0;
+          case RegexPattern.Limited limited -> limited.max() > 10;
+          default -> false;
+        };
   }
 
   private static Optional<String> findStructuralDetail(RegexPattern pattern) {
@@ -264,27 +226,24 @@ public final class Redos {
 
   private static Stream<String> structuralDetailOf(RegexPattern.Quantified q) {
     RegexPattern inner = unwrapGroup(q.element());
-    if (inner instanceof RegexPattern.Quantified) {
-      return Stream.of("contains nested quantifiers on '" + inner + "'");
-    }
-    if (inner instanceof RegexPattern.Alternation) {
-      return Stream.of(
+    return switch (inner) {
+      case RegexPattern.Quantified quantified ->
+          Stream.of("contains nested quantifiers on '" + inner + "'");
+      case RegexPattern.Alternation alt -> Stream.of(
           findNestedQuantified(inner)
               .map(nq -> "contains nested quantifiers on '" + nq + "'")
               .findFirst()
               .orElse("contains overlapping alternation branches '" + inner + "'"));
-    }
-    if (inner instanceof RegexPattern.Sequence) {
-      return findNestedQuantified(inner)
+      case RegexPattern.Sequence seq -> findNestedQuantified(inner)
           .limit(1)
           .map(nq -> "contains nested quantifiers on '" + nq + "'");
-    }
-    return Stream.empty();
+      default -> Stream.empty();
+    };
   }
 
   private static RegexPattern unwrapGroup(RegexPattern pattern) {
-    while (pattern instanceof RegexPattern.Group) {
-      pattern = ((RegexPattern.Group) pattern).content();
+    while (pattern instanceof RegexPattern.Group group) {
+      pattern = group.content();
     }
     return pattern;
   }
@@ -297,49 +256,35 @@ public final class Redos {
   }
 
   private static String sampleMatchingString(RegexPattern pattern) {
-    if (pattern instanceof RegexPattern.Literal) {
-      String val = ((RegexPattern.Literal) pattern).value();
-      return val.isEmpty() ? "a" : val;
-    }
-    if (pattern instanceof RegexPattern.CharacterSet) {
-      CharRanges ranges = CharRanges.from((RegexPattern.CharacterSet) pattern);
-      if (!ranges.isEmpty()) {
-        return String.valueOf((char) ranges.ranges().get(0).start);
+    return switch (pattern) {
+      case RegexPattern.Literal lit -> lit.value().isEmpty() ? "a" : lit.value();
+      case RegexPattern.CharacterSet cs -> {
+        CharRanges ranges = CharRanges.from(cs);
+        yield ranges.isEmpty() ? "a" : String.valueOf((char) ranges.ranges().get(0).start());
       }
-      return "a";
-    }
-    if (pattern instanceof RegexPattern.PredefinedCharClass) {
-      CharRanges ranges = CharRanges.from((RegexPattern.PredefinedCharClass) pattern);
-      if (!ranges.isEmpty()) {
-        return String.valueOf((char) ranges.ranges().get(0).start);
+      case RegexPattern.PredefinedCharClass pcc -> {
+        CharRanges ranges = CharRanges.from(pcc);
+        yield ranges.isEmpty() ? "a" : String.valueOf((char) ranges.ranges().get(0).start());
       }
-      return "a";
-    }
-    if (pattern instanceof RegexPattern.PosixCharClass) {
-      CharRanges ranges = CharRanges.from((RegexPattern.PosixCharClass) pattern);
-      if (!ranges.isEmpty()) {
-        return String.valueOf((char) ranges.ranges().get(0).start);
+      case RegexPattern.PosixCharClass pcc -> {
+        CharRanges ranges = CharRanges.from(pcc);
+        yield ranges.isEmpty() ? "a" : String.valueOf((char) ranges.ranges().get(0).start());
       }
-      return "a";
-    }
-    if (pattern instanceof RegexPattern.Quantified) {
-      return sampleMatchingString(((RegexPattern.Quantified) pattern).element());
-    }
-    if (pattern instanceof RegexPattern.Group) {
-      return sampleMatchingString(((RegexPattern.Group) pattern).content());
-    }
-    if (pattern instanceof RegexPattern.Sequence) {
-      StringBuilder sb = new StringBuilder();
-      for (RegexPattern elem : ((RegexPattern.Sequence) pattern).elements()) {
-        sb.append(sampleMatchingString(elem));
+      case RegexPattern.Quantified q -> sampleMatchingString(q.element());
+      case RegexPattern.Group group -> sampleMatchingString(group.content());
+      case RegexPattern.Sequence seq -> {
+        StringBuilder sb = new StringBuilder();
+        for (RegexPattern elem : seq.elements()) {
+          sb.append(sampleMatchingString(elem));
+        }
+        yield sb.length() == 0 ? "a" : sb.toString();
       }
-      return sb.length() == 0 ? "a" : sb.toString();
-    }
-    if (pattern instanceof RegexPattern.Alternation) {
-      List<RegexPattern> alts = ((RegexPattern.Alternation) pattern).alternatives();
-      return alts.isEmpty() ? "a" : sampleMatchingString(alts.get(0));
-    }
-    return "a";
+      case RegexPattern.Alternation alt -> {
+        List<RegexPattern> alts = alt.alternatives();
+        yield alts.isEmpty() ? "a" : sampleMatchingString(alts.get(0));
+      }
+      default -> "a";
+    };
   }
 
   private static boolean hasExponentialAmbiguity(ProductGraph g) {
@@ -363,7 +308,7 @@ public final class Redos {
             for (int next : g.adj[node]) {
               if (sccSet.contains(next) && (next / g.tCount == next % g.tCount)) {
                 Nfa.CharTransition tip = g.nfa.charTransitions.get(next / g.tCount);
-                if (g.nfa.countEpsilonPaths(ti.target, tip.source) >= 2) {
+                if (g.nfa.countEpsilonPaths(ti.target(), tip.source()) >= 2) {
                   return true;
                 }
               }
@@ -400,7 +345,7 @@ public final class Redos {
       int u = i * g.tCount + i;
       if (g.active[u] && g.inCycle[u]) {
         Nfa.CharTransition ti = g.nfa.charTransitions.get(i);
-        cycles.add(new DiagonalCycle(u, ti.chars, g.sccMap[u]));
+        cycles.add(new DiagonalCycle(u, ti.chars(), g.sccMap[u]));
       }
     }
 
@@ -409,20 +354,20 @@ public final class Redos {
       for (int b = 0; b < cycles.size(); b++) {
         if (a != b) {
           DiagonalCycle cb = cycles.get(b);
-          if (ca.sccId != cb.sccId && ca.chars.intersects(cb.chars)) {
+          if (ca.sccId() != cb.sccId() && ca.chars().intersects(cb.chars())) {
             boolean reachable = Walker.inGraph((Integer u) -> {
               int row = u / g.tCount;
               int col = u % g.tCount;
               if (row == col) {
                 Nfa.CharTransition tu = g.nfa.charTransitions.get(row);
-                if (tu.chars.intersects(ca.chars)) {
+                if (tu.chars().intersects(ca.chars())) {
                   return g.adj[u].stream().filter(v -> g.active[v]);
                 }
               }
               return Stream.empty();
             })
-                .breadthFirstFrom(ca.state)
-                .anyMatch(v -> v == cb.state);
+                .breadthFirstFrom(ca.state())
+                .anyMatch(v -> v == cb.state());
             if (reachable) {
               return true;
             }
@@ -433,17 +378,7 @@ public final class Redos {
     return false;
   }
 
-  private static final class DiagonalCycle {
-    final int state;
-    final CharRanges chars;
-    final int sccId;
-
-    DiagonalCycle(int state, CharRanges chars, int sccId) {
-      this.state = state;
-      this.chars = chars;
-      this.sccId = sccId;
-    }
-  }
+  private record DiagonalCycle(int state, CharRanges chars, int sccId) {}
 
   private static final class ProductGraph {
     final Nfa nfa;
@@ -473,15 +408,15 @@ public final class Redos {
           int u = i * tCount + j;
           for (int ip = 0; ip < tCount; ip++) {
             Nfa.CharTransition tip = nfa.charTransitions.get(ip);
-            if (nfa.countEpsilonPaths(ti.target, tip.source) == 0) {
+            if (nfa.countEpsilonPaths(ti.target(), tip.source()) == 0) {
               continue;
             }
             for (int jp = 0; jp < tCount; jp++) {
               Nfa.CharTransition tjp = nfa.charTransitions.get(jp);
-              if (nfa.countEpsilonPaths(tj.target, tjp.source) == 0) {
+              if (nfa.countEpsilonPaths(tj.target(), tjp.source()) == 0) {
                 continue;
               }
-              if (!tip.chars.intersects(tjp.chars)) {
+              if (!tip.chars().intersects(tjp.chars())) {
                 continue;
               }
               int v = ip * tCount + jp;
@@ -495,15 +430,15 @@ public final class Redos {
       List<Integer> initialStartNodes = new ArrayList<>();
       for (int i = 0; i < tCount; i++) {
         Nfa.CharTransition ti = nfa.charTransitions.get(i);
-        if (nfa.countEpsilonPaths(nfa.startState, ti.source) == 0) {
+        if (nfa.countEpsilonPaths(nfa.startState, ti.source()) == 0) {
           continue;
         }
         for (int j = 0; j < tCount; j++) {
           Nfa.CharTransition tj = nfa.charTransitions.get(j);
-          if (nfa.countEpsilonPaths(nfa.startState, tj.source) == 0) {
+          if (nfa.countEpsilonPaths(nfa.startState, tj.source()) == 0) {
             continue;
           }
-          if (ti.chars.intersects(tj.chars)) {
+          if (ti.chars().intersects(tj.chars())) {
             initialStartNodes.add(i * tCount + j);
           }
         }
@@ -515,12 +450,12 @@ public final class Redos {
       List<Integer> initialAcceptNodes = new ArrayList<>();
       for (int i = 0; i < tCount; i++) {
         Nfa.CharTransition ti = nfa.charTransitions.get(i);
-        if (nfa.countEpsilonPaths(ti.target, nfa.acceptState) == 0) {
+        if (nfa.countEpsilonPaths(ti.target(), nfa.acceptState) == 0) {
           continue;
         }
         for (int j = 0; j < tCount; j++) {
           Nfa.CharTransition tj = nfa.charTransitions.get(j);
-          if (nfa.countEpsilonPaths(tj.target, nfa.acceptState) == 0) {
+          if (nfa.countEpsilonPaths(tj.target(), nfa.acceptState) == 0) {
             continue;
           }
           initialAcceptNodes.add(i * tCount + j);
