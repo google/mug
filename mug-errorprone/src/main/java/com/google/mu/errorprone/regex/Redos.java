@@ -3,8 +3,6 @@ package com.google.mu.errorprone.regex;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
-import com.google.common.labs.regex.RegexPattern;
-import com.google.mu.util.graph.Walker;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -13,6 +11,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.util.graph.Walker;
 
 /**
  * Static analyzer for detecting Exponential Degree of Ambiguity (EDA) / Catastrophic Backtracking
@@ -248,9 +249,9 @@ public final class Redos {
       case RegexPattern.PosixCharClass pcc -> CharRanges.from(pcc);
       case RegexPattern.Literal lit -> {
         String val = lit.value();
-        yield val.isEmpty() ? CharRanges.any() : CharRanges.of(val.charAt(0));
+        yield val.isEmpty() ? CharRanges.ANY : CharRanges.of(val.charAt(0));
       }
-      default -> CharRanges.any();
+      default -> CharRanges.ANY;
     };
   }
 

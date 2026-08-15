@@ -114,7 +114,7 @@ public final class RegexRedosFuzzTest {
 
   private static CharRanges generateRandomCharRanges(Random rng) {
     int numRanges = rng.nextInt(4);
-    CharRanges result = CharRanges.empty();
+    CharRanges result = CharRanges.EMPTY;
     for (int i = 0; i < numRanges; i++) {
       int c1 = rng.nextInt(0x7F);
       int c2 = rng.nextInt(0x7F);

@@ -11,13 +11,13 @@ import org.junit.runners.JUnit4;
 public final class CharRangesTest {
 
   @Test public void empty_containsNothing() {
-    CharRanges ranges = CharRanges.empty();
+    CharRanges ranges = CharRanges.EMPTY;
     assertThat(ranges.isEmpty()).isTrue();
     assertThat(ranges.contains('a')).isFalse();
   }
 
   @Test public void any_containsAllCodePoints() {
-    CharRanges ranges = CharRanges.any();
+    CharRanges ranges = CharRanges.ANY;
     assertThat(ranges.isEmpty()).isFalse();
     assertThat(ranges.contains('a')).isTrue();
     assertThat(ranges.contains(0)).isTrue();
@@ -134,5 +134,32 @@ public final class CharRangesTest {
     CharRanges ranges = CharRanges.from(noneOf);
     assertThat(ranges.contains('b')).isFalse();
     assertThat(ranges.contains('d')).isTrue();
+  }
+
+  @Test public void intersects_overlappingRanges_returnsTrue() {
+    CharRanges r1 = CharRanges.range('a', 'd');
+    CharRanges r2 = CharRanges.range('c', 'f');
+    assertThat(r1.intersects(r2)).isTrue();
+  }
+
+  @Test public void intersects_disjointRanges_returnsFalse() {
+    CharRanges r1 = CharRanges.range('a', 'c');
+    CharRanges r2 = CharRanges.range('d', 'f');
+    assertThat(r1.intersects(r2)).isFalse();
+  }
+
+  @Test public void intersects_withEmpty_returnsFalse() {
+    assertThat(CharRanges.EMPTY.intersects(CharRanges.ANY)).isFalse();
+    assertThat(CharRanges.ANY.intersects(CharRanges.EMPTY)).isFalse();
+  }
+
+  @Test public void from_predefined_returnsCachedInstance() {
+    assertThat(CharRanges.from(RegexPattern.PredefinedCharClass.DIGIT))
+        .isSameInstanceAs(CharRanges.from(RegexPattern.PredefinedCharClass.DIGIT));
+  }
+
+  @Test public void from_posix_returnsCachedInstance() {
+    assertThat(CharRanges.from(RegexPattern.PosixCharClass.ALNUM))
+        .isSameInstanceAs(CharRanges.from(RegexPattern.PosixCharClass.ALNUM));
   }
 }

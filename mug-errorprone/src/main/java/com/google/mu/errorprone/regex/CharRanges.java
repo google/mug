@@ -1,22 +1,21 @@
 package com.google.mu.errorprone.regex;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.Character.MAX_CODE_POINT;
 
-import com.google.common.labs.regex.RegexPattern;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import com.google.common.labs.regex.RegexPattern;
 
 /**
  * Immutable representation of a set of character code points, stored as a sorted list of disjoint,
  * inclusive intervals [start, end].
  */
 record CharRanges(List<Range> ranges) {
-  private static final int MAX_CODE_POINT = Character.MAX_CODE_POINT;
-
-  private static final CharRanges EMPTY = new CharRanges(Collections.<Range>emptyList());
-  private static final CharRanges ANY =
-      new CharRanges(Collections.singletonList(new Range(0, MAX_CODE_POINT)));
+  static final CharRanges EMPTY = new CharRanges(List.of());
+  static final CharRanges ANY = new CharRanges(List.of(new Range(0, MAX_CODE_POINT)));
 
   record Range(int start, int end) {
     Range {
@@ -30,14 +29,6 @@ record CharRanges(List<Range> ranges) {
     @Override public String toString() {
       return "[" + start + ", " + end + "]";
     }
-  }
-
-  static CharRanges empty() {
-    return EMPTY;
-  }
-
-  static CharRanges any() {
-    return ANY;
   }
 
   static CharRanges of(int codePoint) {
@@ -74,7 +65,24 @@ record CharRanges(List<Range> ranges) {
   }
 
   boolean intersects(CharRanges other) {
-    return !intersection(other).isEmpty();
+    if (this.isEmpty() || other.isEmpty()) {
+      return false;
+    }
+    int i = 0;
+    int j = 0;
+    while (i < this.ranges.size() && j < other.ranges.size()) {
+      Range a = this.ranges.get(i);
+      Range b = other.ranges.get(j);
+      if (Math.max(a.start(), b.start()) <= Math.min(a.end(), b.end())) {
+        return true;
+      }
+      if (a.end() < b.end()) {
+        i++;
+      } else {
+        j++;
+      }
+    }
+    return false;
   }
 
   CharRanges union(CharRanges other) {
@@ -154,7 +162,7 @@ record CharRanges(List<Range> ranges) {
       case RegexPattern.PosixCharClass pcc -> from(pcc);
       case RegexPattern.CharacterProperty.Negated neg -> from(neg.property()).complement();
       case RegexPattern.UnicodeProperty up -> fromUnicodeProperty(up.propertyName());
-      default -> any();
+      default -> ANY;
     };
   }
 
@@ -174,46 +182,70 @@ record CharRanges(List<Range> ranges) {
         }
         yield inner.complement();
       }
-      default -> any();
+      default -> ANY;
     };
+  }
+
+  private static final CharRanges ANY_CHAR =
+      ANY.intersection(of('\n').union(of('\r')).complement());
+  private static final CharRanges DIGIT = range('0', '9');
+  private static final CharRanges NON_DIGIT = DIGIT.complement();
+  private static final CharRanges WHITESPACE =
+      of(' ').union(of('\t')).union(of('\n')).union(of('\r')).union(of('\f')).union(of(0x0B));
+  private static final CharRanges NON_WHITESPACE = WHITESPACE.complement();
+  private static final CharRanges WORD =
+      range('a', 'z').union(range('A', 'Z')).union(range('0', '9')).union(of('_'));
+  private static final CharRanges NON_WORD = WORD.complement();
+
+  private static final CharRanges LOWER = range('a', 'z');
+  private static final CharRanges UPPER = range('A', 'Z');
+  private static final CharRanges ASCII = range(0, 0x7F);
+  private static final CharRanges ALPHA = LOWER.union(UPPER);
+  private static final CharRanges ALNUM = ALPHA.union(DIGIT);
+  private static final CharRanges PUNCT = punctRanges();
+  private static final CharRanges GRAPH = range(0x21, 0x7E);
+  private static final CharRanges PRINT = range(0x20, 0x7E);
+  private static final CharRanges BLANK = of(' ').union(of('\t'));
+  private static final CharRanges CNTRL = range(0, 0x1F).union(of(0x7F));
+  private static final CharRanges XDIGIT = DIGIT.union(range('a', 'f')).union(range('A', 'F'));
+  private static final CharRanges SPACE = WHITESPACE;
+
+  private static CharRanges punctRanges() {
+    CharRanges punct = EMPTY;
+    String chars = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+    for (int i = 0; i < chars.length(); i++) {
+      punct = punct.union(of(chars.charAt(i)));
+    }
+    return punct;
   }
 
   static CharRanges from(RegexPattern.PredefinedCharClass pcc) {
     return switch (pcc) {
-      case ANY_CHAR -> any().intersection(of('\n').union(of('\r')).complement());
-      case DIGIT -> range('0', '9');
-      case NON_DIGIT -> range('0', '9').complement();
-      case WHITESPACE ->
-          of(' ').union(of('\t')).union(of('\n')).union(of('\r')).union(of('\f')).union(of(0x0B));
-      case NON_WHITESPACE -> from(RegexPattern.PredefinedCharClass.WHITESPACE).complement();
-      case WORD -> range('a', 'z').union(range('A', 'Z')).union(range('0', '9')).union(of('_'));
-      case NON_WORD -> from(RegexPattern.PredefinedCharClass.WORD).complement();
+      case ANY_CHAR -> ANY_CHAR;
+      case DIGIT -> DIGIT;
+      case NON_DIGIT -> NON_DIGIT;
+      case WHITESPACE -> WHITESPACE;
+      case NON_WHITESPACE -> NON_WHITESPACE;
+      case WORD -> WORD;
+      case NON_WORD -> NON_WORD;
     };
   }
 
   static CharRanges from(RegexPattern.PosixCharClass pcc) {
     return switch (pcc) {
-      case LOWER -> range('a', 'z');
-      case UPPER -> range('A', 'Z');
-      case ASCII -> range(0, 0x7F);
-      case ALPHA -> range('a', 'z').union(range('A', 'Z'));
-      case DIGIT -> range('0', '9');
-      case ALNUM -> range('a', 'z').union(range('A', 'Z')).union(range('0', '9'));
-      case PUNCT -> {
-        CharRanges punct = EMPTY;
-        String chars = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
-        for (int i = 0; i < chars.length(); i++) {
-          punct = punct.union(of(chars.charAt(i)));
-        }
-        yield punct;
-      }
-      case GRAPH -> range(0x21, 0x7E);
-      case PRINT -> range(0x20, 0x7E);
-      case BLANK -> of(' ').union(of('\t'));
-      case CNTRL -> range(0, 0x1F).union(of(0x7F));
-      case XDIGIT -> range('0', '9').union(range('a', 'f')).union(range('A', 'F'));
-      case SPACE ->
-          of(' ').union(of('\t')).union(of('\n')).union(of('\r')).union(of('\f')).union(of(0x0B));
+      case LOWER -> LOWER;
+      case UPPER -> UPPER;
+      case ASCII -> ASCII;
+      case ALPHA -> ALPHA;
+      case DIGIT -> DIGIT;
+      case ALNUM -> ALNUM;
+      case PUNCT -> PUNCT;
+      case GRAPH -> GRAPH;
+      case PRINT -> PRINT;
+      case BLANK -> BLANK;
+      case CNTRL -> CNTRL;
+      case XDIGIT -> XDIGIT;
+      case SPACE -> SPACE;
     };
   }
 
@@ -224,7 +256,7 @@ record CharRanges(List<Range> ranges) {
     if ("L".equalsIgnoreCase(name) || "Letter".equalsIgnoreCase(name)) {
       return range('a', 'z').union(range('A', 'Z'));
     }
-    return any();
+    return ANY;
   }
 
   @Override public String toString() {
