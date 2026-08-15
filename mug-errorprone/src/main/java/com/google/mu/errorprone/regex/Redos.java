@@ -3,6 +3,8 @@ package com.google.mu.errorprone.regex;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
+import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.util.graph.Walker;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -11,9 +13,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-
-import com.google.common.labs.regex.RegexPattern;
-import com.google.mu.util.graph.Walker;
 
 /**
  * Static analyzer for detecting Exponential Degree of Ambiguity (EDA) / Catastrophic Backtracking
@@ -67,10 +66,9 @@ public final class Redos {
    *     consecutive overlapping quantifiers)
    */
   public static void checkPolynomialBacktracking(RegexPattern pattern) {
-    Optional<String> detail = findPolynomialDetail(pattern);
     Nfa nfa = Nfa.from(pattern);
-    if (detail.isPresent() || hasPolynomialAmbiguity(ProductGraph.from(nfa))) {
-      String desc = detail.orElse("contains overlapping consecutive cycles");
+    if (hasPolynomialAmbiguity(ProductGraph.from(nfa))) {
+      String desc = findPolynomialDetail(pattern).orElse("contains overlapping consecutive cycles");
       Optional<OverlappingQuantifierPair> pair =
           pattern instanceof RegexPattern.Sequence seq
               ? findOverlappingQuantifiers(seq).findFirst()

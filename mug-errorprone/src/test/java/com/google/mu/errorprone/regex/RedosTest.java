@@ -76,6 +76,18 @@ public final class RedosTest {
     Redos.checkRedosVulnerability(pattern);
   }
 
+  @Test public void
+      checkRedosVulnerability_disjointAlternationWithCommonPrefixAndDisjointClasses_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("(a[b-c]|a[d-e])*");
+    Redos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void
+      checkRedosVulnerability_disjointAlternationWithMultiCharCommonPrefix_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("(prefix_foo|prefix_bar)+");
+    Redos.checkRedosVulnerability(pattern);
+  }
+
   @Test public void checkRedosVulnerability_delimitedQuantifier_doesNotThrow() {
     RegexPattern pattern = RegexPattern.of("(a+b)+");
     Redos.checkRedosVulnerability(pattern);
@@ -284,6 +296,12 @@ public final class RedosTest {
 
   @Test public void checkPolynomialBacktracking_disjointCharacterClasses_doesNotThrow() {
     RegexPattern pattern = RegexPattern.of("[0-9]+[a-z]+");
+    Redos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_adjacentQuantifiersWithCommonPrefixAndDisjointSuffix_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("(ab)+(ac)+");
     Redos.checkPolynomialBacktracking(pattern);
   }
 
