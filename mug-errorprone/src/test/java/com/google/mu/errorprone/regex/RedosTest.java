@@ -193,7 +193,7 @@ public final class RedosTest {
         .isEqualTo(
             "Regular expression is vulnerable to polynomial backtracking (PDA): 'a+a+' contains"
                 + " consecutive overlapping quantifiers on 'a+' and 'a+' (attack payload:"
-                + " \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\") (suggested rewrite: 'a++a+')");
+                + " \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\") (suggested rewrite: 'a{2,}')");
   }
 
   @Test public void checkPolynomialBacktracking_digitFollowedByWordChar_throwsDetailedMessage() {
@@ -225,6 +225,19 @@ public final class RedosTest {
 
   @Test public void suggestRedosRewrite_unrecognizedPattern_returnsEmpty() {
     assertThat(Redos.suggestRedosRewrite(RegexPattern.of("(a|b)+"))).isEmpty();
+  }
+
+  @Test public void suggestPolynomialRewrite_consecutiveIdenticalPlusQuantifiers_mergesToRange() {
+    assertThat(Redos.suggestPolynomialRewrite(RegexPattern.of("a+a+"))).hasValue("a{2,}");
+  }
+
+  @Test public void suggestPolynomialRewrite_consecutiveIdenticalStarQuantifiers_mergesToStar() {
+    assertThat(Redos.suggestPolynomialRewrite(RegexPattern.of("a*a*"))).hasValue("a*");
+  }
+
+  @Test public void
+      suggestPolynomialRewrite_consecutiveIdenticalDigitPlusQuantifiers_mergesToRange() {
+    assertThat(Redos.suggestPolynomialRewrite(RegexPattern.of("\\d+\\d+"))).hasValue("\\d{2,}");
   }
 
   @Test public void suggestPolynomialRewrite_overlappingQuantifiers_suggestsPossessive() {
@@ -750,6 +763,12 @@ public final class RedosTest {
 
   @Test public void checkRedosVulnerability_possessiveInnerPositiveInteger_doesNotThrow() {
     RegexPattern pattern = RegexPattern.of("(0|[1-9][0-9]*+)+");
+    Redos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_largeRegexWithFiftyTransitions_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of(
+        "(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|0|1|2|3|4|5|6|7|8|9|A|B|C|D|E|F|G|H|I|J|K|L|M|N)+");
     Redos.checkRedosVulnerability(pattern);
   }
 }

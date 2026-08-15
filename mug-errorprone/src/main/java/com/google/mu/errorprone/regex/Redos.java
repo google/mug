@@ -1,6 +1,5 @@
 package com.google.mu.errorprone.regex;
 
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
@@ -30,7 +29,6 @@ public final class Redos {
    *     vulnerability
    */
   public static void checkRedosVulnerability(RegexPattern pattern) {
-    requireNonNull(pattern);
     Optional<RegexPattern> nullable = findNullableRepeatedElement(pattern);
     if (nullable.isPresent()) {
       String sample = sampleMatchingString(nullable.get());
@@ -63,7 +61,6 @@ public final class Redos {
    *     consecutive overlapping quantifiers)
    */
   public static void checkPolynomialBacktracking(RegexPattern pattern) {
-    Objects.requireNonNull(pattern);
     Optional<String> detail = findPolynomialDetail(pattern);
     Nfa nfa = Nfa.from(pattern);
     if (detail.isPresent() || hasPolynomialAmbiguity(ProductGraph.from(nfa))) {
@@ -108,6 +105,20 @@ public final class Redos {
     if (pattern instanceof RegexPattern.Sequence seq) {
       return findOverlappingQuantifiers(seq)
           .map(p -> {
+            if (p.secondIndex() == p.firstIndex() + 1
+                && p.first().element().equals(p.second().element())
+                && p.first().quantifier() instanceof RegexPattern.AtLeast q1
+                && p.second().quantifier() instanceof RegexPattern.AtLeast q2) {
+              int totalMin = q1.min() + q2.min();
+              RegexPattern merged = new RegexPattern.Quantified(
+                  p.first().element(), RegexPattern.Quantifier.atLeast(totalMin));
+              List<RegexPattern> rewritten = new ArrayList<>(seq.elements());
+              rewritten.set(p.firstIndex(), merged);
+              rewritten.remove(p.secondIndex());
+              return rewritten.size() == 1
+                  ? rewritten.get(0).toString()
+                  : new RegexPattern.Sequence(rewritten).toString();
+            }
             RegexPattern rewrittenFirst = new RegexPattern.Quantified(
                 p.first().element(), p.first().quantifier().possessive());
             List<RegexPattern> rewritten = new ArrayList<>(seq.elements());
@@ -147,7 +158,10 @@ public final class Redos {
   }
 
   private record OverlappingQuantifierPair(
-      int firstIndex, RegexPattern.Quantified first, RegexPattern.Quantified second) {}
+      int firstIndex,
+      int secondIndex,
+      RegexPattern.Quantified first,
+      RegexPattern.Quantified second) {}
 
   private static Stream<OverlappingQuantifierPair> findOverlappingQuantifiers(
       RegexPattern.Sequence seq) {
@@ -161,7 +175,7 @@ public final class Redos {
             if (charRangesOf(ei).intersects(charRangesOf(ej))) {
               return Stream.of(
                   new OverlappingQuantifierPair(
-                      i, (RegexPattern.Quantified) ei, (RegexPattern.Quantified) ej));
+                      i, j, (RegexPattern.Quantified) ei, (RegexPattern.Quantified) ej));
             }
           }
           if (ej.metadata().minSize() > 0) {
@@ -391,7 +405,40 @@ public final class Redos {
 
     static ProductGraph from(Nfa nfa) {
       int tCount = nfa.charTransitions.size();
+      int sCount = nfa.states.size();
       int vCount = tCount * tCount;
+
+      @SuppressWarnings("unchecked")
+      List<Integer>[] transitionsBySource = new List[sCount];
+      @SuppressWarnings("unchecked")
+      List<Integer>[] revEps = new List[sCount];
+      for (int s = 0; s < sCount; s++) {
+        transitionsBySource[s] = new ArrayList<>();
+        revEps[s] = new ArrayList<>();
+      }
+      for (int i = 0; i < tCount; i++) {
+        transitionsBySource[nfa.charTransitions.get(i).source()].add(i);
+      }
+      for (int s = 0; s < sCount; s++) {
+        for (int next : nfa.states.get(s).epsilonTransitions) {
+          revEps[next].add(s);
+        }
+      }
+
+      @SuppressWarnings("unchecked")
+      List<Integer>[] transitionsReachableFrom = new List[sCount];
+      for (int s = 0; s < sCount; s++) {
+        List<Integer> reachable = new ArrayList<>();
+        Walker.inGraph((Integer st) -> nfa.states.get(st).epsilonTransitions.stream())
+            .preOrderFrom(s)
+            .forEach(st -> reachable.addAll(transitionsBySource[st]));
+        transitionsReachableFrom[s] = reachable;
+      }
+
+      Set<Integer> canReachAcceptStates = Walker.inGraph((Integer st) -> revEps[st].stream())
+          .preOrderFrom(nfa.acceptState)
+          .collect(toSet());
+
       @SuppressWarnings("unchecked")
       List<Integer>[] adj = new List[vCount];
       @SuppressWarnings("unchecked")
@@ -403,41 +450,37 @@ public final class Redos {
 
       for (int i = 0; i < tCount; i++) {
         Nfa.CharTransition ti = nfa.charTransitions.get(i);
+        List<Integer> candI = transitionsReachableFrom[ti.target()];
+        if (candI.isEmpty()) {
+          continue;
+        }
         for (int j = 0; j < tCount; j++) {
           Nfa.CharTransition tj = nfa.charTransitions.get(j);
+          List<Integer> candJ = transitionsReachableFrom[tj.target()];
+          if (candJ.isEmpty()) {
+            continue;
+          }
           int u = i * tCount + j;
-          for (int ip = 0; ip < tCount; ip++) {
+          for (int ip : candI) {
             Nfa.CharTransition tip = nfa.charTransitions.get(ip);
-            if (nfa.countEpsilonPaths(ti.target(), tip.source()) == 0) {
-              continue;
-            }
-            for (int jp = 0; jp < tCount; jp++) {
+            for (int jp : candJ) {
               Nfa.CharTransition tjp = nfa.charTransitions.get(jp);
-              if (nfa.countEpsilonPaths(tj.target(), tjp.source()) == 0) {
-                continue;
+              if (tip.chars().intersects(tjp.chars())) {
+                int v = ip * tCount + jp;
+                adj[u].add(v);
+                revAdj[v].add(u);
               }
-              if (!tip.chars().intersects(tjp.chars())) {
-                continue;
-              }
-              int v = ip * tCount + jp;
-              adj[u].add(v);
-              revAdj[v].add(u);
             }
           }
         }
       }
 
       List<Integer> initialStartNodes = new ArrayList<>();
-      for (int i = 0; i < tCount; i++) {
+      List<Integer> startCandidates = transitionsReachableFrom[nfa.startState];
+      for (int i : startCandidates) {
         Nfa.CharTransition ti = nfa.charTransitions.get(i);
-        if (nfa.countEpsilonPaths(nfa.startState, ti.source()) == 0) {
-          continue;
-        }
-        for (int j = 0; j < tCount; j++) {
+        for (int j : startCandidates) {
           Nfa.CharTransition tj = nfa.charTransitions.get(j);
-          if (nfa.countEpsilonPaths(nfa.startState, tj.source()) == 0) {
-            continue;
-          }
           if (ti.chars().intersects(tj.chars())) {
             initialStartNodes.add(i * tCount + j);
           }
@@ -447,17 +490,15 @@ public final class Redos {
           .preOrderFrom(initialStartNodes)
           .collect(toSet());
 
-      List<Integer> initialAcceptNodes = new ArrayList<>();
+      List<Integer> acceptTransitions = new ArrayList<>();
       for (int i = 0; i < tCount; i++) {
-        Nfa.CharTransition ti = nfa.charTransitions.get(i);
-        if (nfa.countEpsilonPaths(ti.target(), nfa.acceptState) == 0) {
-          continue;
+        if (canReachAcceptStates.contains(nfa.charTransitions.get(i).target())) {
+          acceptTransitions.add(i);
         }
-        for (int j = 0; j < tCount; j++) {
-          Nfa.CharTransition tj = nfa.charTransitions.get(j);
-          if (nfa.countEpsilonPaths(tj.target(), nfa.acceptState) == 0) {
-            continue;
-          }
+      }
+      List<Integer> initialAcceptNodes = new ArrayList<>();
+      for (int i : acceptTransitions) {
+        for (int j : acceptTransitions) {
           initialAcceptNodes.add(i * tCount + j);
         }
       }
