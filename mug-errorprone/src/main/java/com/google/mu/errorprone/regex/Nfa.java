@@ -3,7 +3,6 @@ package com.google.mu.errorprone.regex;
 import com.google.common.labs.regex.RegexPattern;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Non-deterministic Finite Automaton (NFA) constructed from {@link RegexPattern} AST using
@@ -36,35 +35,6 @@ final class Nfa {
       this.chars = chars;
       this.target = target;
     }
-
-    public int id() {
-      return id;
-    }
-
-    public int source() {
-      return source;
-    }
-
-    public CharRanges chars() {
-      return chars;
-    }
-
-    public int target() {
-      return target;
-    }
-
-    @Override public boolean equals(Object obj) {
-      if (obj instanceof CharTransition) {
-        CharTransition other = (CharTransition) obj;
-        return this.id == other.id && this.source == other.source
-            && Objects.equals(this.chars, other.chars) && this.target == other.target;
-      }
-      return false;
-    }
-
-    @Override public int hashCode() {
-      return Objects.hash(id, source, chars, target);
-    }
   }
 
   private static final class Fragment {
@@ -74,14 +44,6 @@ final class Nfa {
     Fragment(int start, int accept) {
       this.start = start;
       this.accept = accept;
-    }
-
-    int start() {
-      return start;
-    }
-
-    int accept() {
-      return accept;
     }
   }
 
@@ -108,8 +70,8 @@ final class Nfa {
   public static Nfa from(RegexPattern pattern) {
     Nfa nfa = new Nfa();
     Fragment fragment = nfa.compile(pattern);
-    nfa.startState = fragment.start();
-    nfa.acceptState = fragment.accept();
+    nfa.startState = fragment.start;
+    nfa.acceptState = fragment.accept;
     return nfa;
   }
 
@@ -182,9 +144,9 @@ final class Nfa {
       fragments.add(compile(elem));
     }
     for (int i = 0; i < fragments.size() - 1; i++) {
-      addEpsilon(fragments.get(i).accept(), fragments.get(i + 1).start());
+      addEpsilon(fragments.get(i).accept, fragments.get(i + 1).start);
     }
-    return new Fragment(fragments.get(0).start(), fragments.get(fragments.size() - 1).accept());
+    return new Fragment(fragments.get(0).start, fragments.get(fragments.size() - 1).accept);
   }
 
   private Fragment compileAlternation(List<RegexPattern> alternatives) {
@@ -195,8 +157,8 @@ final class Nfa {
     State accept = newState();
     for (RegexPattern alt : alternatives) {
       Fragment f = compile(alt);
-      addEpsilon(start.id, f.start());
-      addEpsilon(f.accept(), accept.id);
+      addEpsilon(start.id, f.start);
+      addEpsilon(f.accept, accept.id);
     }
     return new Fragment(start.id, accept.id);
   }
@@ -213,18 +175,18 @@ final class Nfa {
         Fragment f = compile(quantified.element());
         State start = newState();
         State accept = newState();
-        addEpsilon(start.id, f.start());
+        addEpsilon(start.id, f.start);
         addEpsilon(start.id, accept.id);
-        addEpsilon(f.accept(), f.start());
-        addEpsilon(f.accept(), accept.id);
+        addEpsilon(f.accept, f.start);
+        addEpsilon(f.accept, accept.id);
         return new Fragment(start.id, accept.id);
       } else if (atLeast.min() == 1) {
         Fragment f = compile(quantified.element());
         State start = newState();
         State accept = newState();
-        addEpsilon(start.id, f.start());
-        addEpsilon(f.accept(), f.start());
-        addEpsilon(f.accept(), accept.id);
+        addEpsilon(start.id, f.start);
+        addEpsilon(f.accept, f.start);
+        addEpsilon(f.accept, accept.id);
         return new Fragment(start.id, accept.id);
       } else {
         List<Fragment> parts = new ArrayList<>();
@@ -235,9 +197,9 @@ final class Nfa {
             new RegexPattern.Quantified(quantified.element(), RegexPattern.Quantifier.atLeast(1)));
         parts.add(loopPart);
         for (int i = 0; i < parts.size() - 1; i++) {
-          addEpsilon(parts.get(i).accept(), parts.get(i + 1).start());
+          addEpsilon(parts.get(i).accept, parts.get(i + 1).start);
         }
-        return new Fragment(parts.get(0).start(), parts.get(parts.size() - 1).accept());
+        return new Fragment(parts.get(0).start, parts.get(parts.size() - 1).accept);
       }
     } else if (q instanceof RegexPattern.AtMost) {
       RegexPattern.AtMost atMost = (RegexPattern.AtMost) q;
@@ -245,9 +207,9 @@ final class Nfa {
         Fragment f = compile(quantified.element());
         State start = newState();
         State accept = newState();
-        addEpsilon(start.id, f.start());
+        addEpsilon(start.id, f.start);
         addEpsilon(start.id, accept.id);
-        addEpsilon(f.accept(), accept.id);
+        addEpsilon(f.accept, accept.id);
         return new Fragment(start.id, accept.id);
       } else {
         State start = newState();
@@ -256,10 +218,10 @@ final class Nfa {
         int max = Math.min(atMost.max(), 5);
         for (int i = 0; i < max; i++) {
           Fragment f = compile(quantified.element());
-          addEpsilon(current.id, f.start());
+          addEpsilon(current.id, f.start);
           addEpsilon(current.id, accept.id);
-          addEpsilon(f.accept(), accept.id);
-          current = states.get(f.accept());
+          addEpsilon(f.accept, accept.id);
+          current = states.get(f.accept);
         }
         return new Fragment(start.id, accept.id);
       }
@@ -274,15 +236,15 @@ final class Nfa {
         Fragment opt = compile(quantified.element());
         State s = newState();
         State e = newState();
-        addEpsilon(s.id, opt.start());
+        addEpsilon(s.id, opt.start);
         addEpsilon(s.id, e.id);
-        addEpsilon(opt.accept(), e.id);
+        addEpsilon(opt.accept, e.id);
         parts.add(new Fragment(s.id, e.id));
       }
       for (int i = 0; i < parts.size() - 1; i++) {
-        addEpsilon(parts.get(i).accept(), parts.get(i + 1).start());
+        addEpsilon(parts.get(i).accept, parts.get(i + 1).start);
       }
-      return new Fragment(parts.get(0).start(), parts.get(parts.size() - 1).accept());
+      return new Fragment(parts.get(0).start, parts.get(parts.size() - 1).accept);
     }
 
     return compile(quantified.element());

@@ -349,18 +349,7 @@ public final class Redos {
       return false;
     }
 
-    // Diagonal states: check if multiple distinct epsilon paths loop around
-    for (int i = 0; i < g.tCount; i++) {
-      int u = i * g.tCount + i;
-      if (g.active[u] && g.inCycle[u]) {
-        Nfa.CharTransition ti = g.nfa.charTransitions.get(i);
-        if (g.nfa.countEpsilonPaths(ti.target, ti.source) >= 2) {
-          return true;
-        }
-      }
-    }
-
-    // Off-diagonal and multi-transition states: check if in an EDA cycle
+    // Check if any SCC with a cycle has non-deterministic branching or multi-epsilon loopbacks
     for (List<Integer> scc : g.sccs) {
       if (scc.size() > 1 || (scc.size() == 1 && g.adj[scc.get(0)].contains(scc.get(0)))) {
         Set<Integer> sccSet = new HashSet<>(scc);
@@ -413,7 +402,7 @@ public final class Redos {
       int u = i * g.tCount + i;
       if (g.active[u] && g.inCycle[u]) {
         Nfa.CharTransition ti = g.nfa.charTransitions.get(i);
-        cycles.add(new DiagonalCycle(u, i, ti.chars, g.sccMap[u]));
+        cycles.add(new DiagonalCycle(u, ti.chars, g.sccMap[u]));
       }
     }
 
@@ -448,13 +437,11 @@ public final class Redos {
 
   private static final class DiagonalCycle {
     final int state;
-    final int transitionIndex;
     final CharRanges chars;
     final int sccId;
 
-    DiagonalCycle(int state, int transitionIndex, CharRanges chars, int sccId) {
+    DiagonalCycle(int state, CharRanges chars, int sccId) {
       this.state = state;
-      this.transitionIndex = transitionIndex;
       this.chars = chars;
       this.sccId = sccId;
     }
@@ -588,12 +575,6 @@ public final class Redos {
       this.sccs = sccs;
       this.sccMap = sccMap;
       this.inCycle = inCycle;
-    }
-
-    boolean canReach(int start, int target) {
-      return Walker.inGraph((Integer u) -> adj[u].stream().filter(v -> active[v]))
-          .breadthFirstFrom(start)
-          .anyMatch(v -> v == target);
     }
   }
 
