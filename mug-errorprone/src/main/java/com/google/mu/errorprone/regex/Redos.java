@@ -3,7 +3,6 @@ package com.google.mu.errorprone.regex;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
-import com.google.common.base.Strings;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.util.graph.Walker;
 import java.util.ArrayList;
@@ -121,10 +120,9 @@ public final class Redos {
     return Optional.empty();
   }
 
-  @SuppressWarnings("InlineMeInliner")
   private static String attackPayload(String sample) {
     int repetitions = Math.max(1, 30 / Math.max(1, sample.length()));
-    return Strings.repeat(sample, repetitions) + "!";
+    return sample.repeat(repetitions) + "!";
   }
 
   private static Stream<RegexPattern> childrenOf(RegexPattern pattern) {
