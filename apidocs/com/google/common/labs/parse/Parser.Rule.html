@@ -110,7 +110,7 @@ loadScripts(document, 'script');</script>
 
  <pre><code>
  var rule = new Parser.Rule&lt;Integer&gt;();
- Parser&lt;Integer&gt; num = Parser.single(CharPredicate.inRange('0', '9')).map(c -&gt; c - '0');
+ Parser&lt;Integer&gt; num = Parser.one(CharPredicate.inRange('0', '9')).map(c -&gt; c - '0');
  Parser&lt;Integer&gt; atomic = rule.between("(", ")").or(num);
  Parser&lt;Integer&gt; expr =
      atomic.atLeastOnceDelimitedBy("+")
