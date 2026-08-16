@@ -1,5 +1,7 @@
 package com.google.mu.errorprone.regex;
 
+import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.Assert.assertThrows;
@@ -10,6 +12,7 @@ import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.Test;
@@ -66,7 +69,7 @@ public final class ReDosTest {
         .contains(
             "contains nested quantifiers on '[a-z]+'\n"
                 + "  attack payload: \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\"");
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("Parsers.integer().repeatedly()");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void checkRedosVulnerability_safePattern_doesNotThrow() {
@@ -127,7 +130,8 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("([a-zA-Z0-9]+_?)+");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives())
+        .containsExactly("Parser.consecutive(\"[a-zA-Z0-9]\").atLeastOnceDelimitedBy(\"_\")");
   }
 
   @Test public void
@@ -143,7 +147,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("([a-z]+|[a-d]+)+");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("Parsers.integer().repeatedly()");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void checkRedosVulnerability_linearSequence_doesNotThrow() {
@@ -201,7 +205,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(a+|a+)+");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("Parsers.integer().repeatedly()");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void
@@ -501,7 +505,8 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(a+b*)+");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives())
+        .containsExactly("Parser.consecutive(\"a\").atLeastOnceDelimitedBy(\"b\")");
   }
 
   @Test public void
@@ -533,7 +538,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(b|a?b)*c");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("Parsers.integer().repeatedly()");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void
@@ -541,7 +546,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(a|aa?)*b");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("Parsers.integer().repeatedly()");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void
@@ -651,7 +656,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(a+|b+|c+)*c");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("Parsers.integer().repeatedly()");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void
@@ -750,7 +755,8 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(\\d+(X\\d+)?)+");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives())
+        .containsExactly("Parser.consecutive(\"[0-9]\").atLeastOnceDelimitedBy(\"X\")");
   }
 
   @Test public void
@@ -838,7 +844,7 @@ public final class ReDosTest {
         "^(?:\\s+(?:\"(?:[^\"\\\\]|\\\\\\\\|\\\\.)+\"|'(?:[^'\\\\]|\\\\\\\\|\\\\.)+'|\\((?:[^)\\\\]|\\\\\\\\|\\\\.)+\\)))?");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("Parsers.integer().repeatedly()");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void checkRedosVulnerability_codeqlTableRows_throwsIllegalArgumentException() {
@@ -854,7 +860,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("^([\\s\\[\\{\\(]|#.*)*$");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("Parsers.integer().repeatedly()");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void checkRedosVulnerability_codeqlPropertyAccess_throwsIllegalArgumentException() {
@@ -870,7 +876,7 @@ public final class ReDosTest {
         "^([a-zA-Z0-9])(([\\\\-.]|[_]+)?([a-zA-Z0-9]+))*(@){1}[a-z0-9]+[.]{1}(([a-z]{2,3})|([a-z]{2,3}[.]{1}[a-z]{2,3}))$");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("Parsers.integer().repeatedly()");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void
@@ -885,7 +891,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(([\\w#:.~>+()\\s-]+|\\*|\\[.*?\\])+)\\s*(,|$)");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("Parsers.integer().repeatedly()");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void checkRedosVulnerability_codeqlEscapedQuotes_throwsIllegalArgumentException() {
@@ -963,7 +969,8 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(0|[1-9][0-9]*)+");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("Parsers.integer().repeatedly()");
+    assertThat(thrown.getSuggestedAlternatives())
+        .containsExactly("Parsers.UNSIGNED_INTEGER.atLeastOnce()");
   }
 
   @Test public void checkRedosVulnerability_possessiveInnerPositiveInteger_doesNotThrow() {
@@ -1004,11 +1011,114 @@ public final class ReDosTest {
         .containsExactly("Substring.last(':').split(input)");
   }
 
+  @Test public void
+      checkRedosVulnerability_delimitedWordsOptionalDelimiter_suggestsAtLeastOnceDelimitedBy() {
+    RegexPattern pattern = RegexPattern.of("(\\w+,?)+");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getSuggestedAlternatives())
+        .contains("Parser.consecutive(\"[a-zA-Z0-9_]\").atLeastOnceDelimitedBy(\",\")");
+  }
+
+  @Test public void
+      checkRedosVulnerability_delimitedAlphaOptionalDelimiter_suggestsAtLeastOnceDelimitedBy() {
+    RegexPattern pattern = RegexPattern.of("([a-z]+,?)+");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getSuggestedAlternatives())
+        .contains("Parser.consecutive(\"[a-z]\").atLeastOnceDelimitedBy(\",\")");
+  }
+
+  @Test public void
+      checkRedosVulnerability_delimitedNegatedCharClass_suggestsAtLeastOnceDelimitedBy() {
+    RegexPattern pattern = RegexPattern.of("([^,]+,?)+");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getSuggestedAlternatives())
+        .contains("Parser.consecutive(\"[^,]\").atLeastOnceDelimitedBy(\",\")");
+  }
+
+  @Test public void
+      checkRedosVulnerability_delimitedKeyValuePairs_suggestsSequenceAtLeastOnceDelimitedBy() {
+    RegexPattern pattern = RegexPattern.of("(\\w+=\\w+\\s*)+");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getSuggestedAlternatives())
+        .contains(
+            "Parser.sequence(Parser.consecutive(\"[a-zA-Z0-9_]\").followedBy(\"=\"),"
+                + " Parser.consecutive(\"[a-zA-Z0-9_]\"), Map::entry).atLeastOnceDelimitedBy(\""
+                + " \")");
+  }
+
+  @Test public void
+      checkRedosVulnerability_delimitedSeparatedList_suggestsAtLeastOnceDelimitedBy() {
+    RegexPattern pattern = RegexPattern.of("([a-z]+(,[a-z]+)*)+");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getSuggestedAlternatives())
+        .contains("Parser.consecutive(\"[a-z]\").atLeastOnceDelimitedBy(\",\")");
+  }
+
+  @Test public void
+      checkRedosVulnerability_delimitedWithOptionalWhitespaceAroundDelimiter_suggestsDelimitedParserWithCaveat() {
+    RegexPattern pattern = RegexPattern.of("([a-z]+\\s*,?\\s*)+");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getSuggestedAlternatives())
+        .contains("Parser.consecutive(\"[a-z]\").atLeastOnceDelimitedBy(\",\")");
+    Suggestion.ParserSuggestion ps = thrown.getSuggestions().stream()
+        .filter(Suggestion.ParserSuggestion.class::isInstance)
+        .map(Suggestion.ParserSuggestion.class::cast)
+        .findFirst()
+        .orElseThrow();
+    assertThat(ps.caveats()).contains(
+            "Use parseSkipping(Character::isWhitespace, input) to skip surrounding whitespace"
+                + " during parsing");
+  }
+
+  @Test public void
+      checkRedosVulnerability_delimitedSeparatedListWithOptionalWhitespace_suggestsDelimitedParserWithCaveat() {
+    RegexPattern pattern = RegexPattern.of("([a-z]+(\\s*,\\s*[a-z]+)*)+");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getSuggestedAlternatives())
+        .contains("Parser.consecutive(\"[a-z]\").atLeastOnceDelimitedBy(\",\")");
+    Suggestion.ParserSuggestion ps = thrown.getSuggestions().stream()
+        .filter(Suggestion.ParserSuggestion.class::isInstance)
+        .map(Suggestion.ParserSuggestion.class::cast)
+        .findFirst()
+        .orElseThrow();
+    assertThat(ps.caveats()).contains(
+            "Use parseSkipping(Character::isWhitespace, input) to skip surrounding whitespace"
+                + " during parsing");
+  }
+
+  @Test public void
+      checkRedosVulnerability_delimitedKeyValuePairsWithOptionalWhitespace_suggestsDelimitedParserWithCaveat() {
+    RegexPattern pattern = RegexPattern.of("(\\w+\\s*=\\s*\\w+\\s*,?\\s*)+");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getSuggestedAlternatives())
+        .contains(
+            "Parser.sequence(Parser.consecutive(\"[a-zA-Z0-9_]\").followedBy(\"=\"),"
+                + " Parser.consecutive(\"[a-zA-Z0-9_]\"),"
+                + " Map::entry).atLeastOnceDelimitedBy(\",\")");
+    Suggestion.ParserSuggestion ps = thrown.getSuggestions().stream()
+        .filter(Suggestion.ParserSuggestion.class::isInstance)
+        .map(Suggestion.ParserSuggestion.class::cast)
+        .findFirst()
+        .orElseThrow();
+    assertThat(ps.caveats()).contains(
+            "Use parseSkipping(Character::isWhitespace, input) to skip surrounding whitespace"
+                + " during parsing");
+  }
+
   @Test public void checkRedosVulnerability_structuredNumberGrammar_suggestsParsers() {
     RegexPattern pattern = RegexPattern.of("(0|[1-9][0-9]*)+");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("Parsers.integer().repeatedly()");
+    assertThat(thrown.getSuggestedAlternatives())
+        .containsExactly("Parsers.UNSIGNED_INTEGER.atLeastOnce()");
   }
 
   @Test public void
@@ -1070,8 +1180,8 @@ public final class ReDosTest {
     Suggestion suggestion = thrown.getSuggestions().get(0);
     assertThat(suggestion).isInstanceOf(Suggestion.ParserSuggestion.class);
     Suggestion.ParserSuggestion ps = (Suggestion.ParserSuggestion) suggestion;
-    assertThat(ps.replacement()).isEqualTo("Parsers.integer().repeatedly()");
-    assertThat(ps.toString()).isEqualTo("Parsers.integer().repeatedly()");
+    assertThat(ps.replacement()).isEqualTo("Parsers.UNSIGNED_INTEGER.atLeastOnce()");
+    assertThat(ps.toString()).isEqualTo("Parsers.UNSIGNED_INTEGER.atLeastOnce()");
     assertThat(ps.isStrictlyEquivalent()).isFalse();
     assertThat(ps.caveats()).isNotEmpty();
   }
@@ -1186,5 +1296,43 @@ public final class ReDosTest {
     List<String> substringExtracted =
         Substring.last(':').split("a:b:c", (l, r) -> List.of(l, r)).orElseThrow();
     assertThat(substringExtracted).isEqualTo(regexExtracted);
+  }
+
+  @Test public void suggestedAlternative_delimitedWords_parsesCommaSeparatedTokens() {
+    assertThat(consecutive("[a-zA-Z0-9_]").atLeastOnceDelimitedBy(",").parse("foo,bar,baz"))
+        .containsExactly("foo", "bar", "baz")
+        .inOrder();
+  }
+
+  @Test public void suggestedAlternative_delimitedAlpha_parsesCommaSeparatedAlphaTokens() {
+    assertThat(consecutive("[a-z]").atLeastOnceDelimitedBy(",").parse("apple,banana,orange"))
+        .containsExactly("apple", "banana", "orange")
+        .inOrder();
+  }
+
+  @Test public void suggestedAlternative_delimitedNegatedCharClass_parsesDelimitedTokens() {
+    assertThat(consecutive("[^,]").atLeastOnceDelimitedBy(",").parse("hello,world"))
+        .containsExactly("hello", "world")
+        .inOrder();
+  }
+
+  @Test public void suggestedAlternative_delimitedKeyValuePairs_parsesSpaceSeparatedEntries() {
+    assertThat(
+            sequence(
+                    consecutive("[a-zA-Z0-9_]").followedBy("="),
+                    consecutive("[a-zA-Z0-9_]"),
+                    Map::entry)
+                .atLeastOnceDelimitedBy(" ")
+                .parse("k1=v1 k2=v2"))
+        .containsExactly(Map.entry("k1", "v1"), Map.entry("k2", "v2"))
+        .inOrder();
+  }
+
+  @Test public void suggestedAlternative_delimitedWithWhitespace_parseSkippingParsesTokens() {
+    assertThat(
+            consecutive("[a-z]").atLeastOnceDelimitedBy(",")
+                .parseSkipping(Character::isWhitespace, "apple , banana , orange"))
+        .containsExactly("apple", "banana", "orange")
+        .inOrder();
   }
 }
