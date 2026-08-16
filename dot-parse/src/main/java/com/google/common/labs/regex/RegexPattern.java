@@ -177,10 +177,13 @@ public sealed interface RegexPattern {
     }
 
     @Override public Metadata metadata() {
-      int minSize =
-          elements.stream().mapToInt(p -> p.metadata().minSize()).reduce(0, SafeMath::saturatedAdd);
-      int maxSize =
-          elements.stream().mapToInt(p -> p.metadata().maxSize()).reduce(0, SafeMath::saturatedAdd);
+      int minSize = 0;
+      int maxSize = 0;
+      for (RegexPattern element : elements) {
+        Metadata metadata = element.metadata();
+        minSize = SafeMath.saturatedAdd(minSize, metadata.minSize());
+        maxSize = SafeMath.saturatedAdd(maxSize, metadata.maxSize());
+      }
       return new Metadata(minSize, maxSize);
     }
 
@@ -197,9 +200,9 @@ public sealed interface RegexPattern {
     }
 
     @Override public Metadata metadata() {
-      int minSize = alternatives.stream().mapToInt(p -> p.metadata().minSize()).min().orElse(0);
-      int maxSize = alternatives.stream().mapToInt(p -> p.metadata().maxSize()).max().orElse(0);
-      return new Metadata(minSize, maxSize);
+      return new Metadata(
+          alternatives.stream().mapToInt(p -> p.metadata().minSize()).min().orElse(0),
+          alternatives.stream().mapToInt(p -> p.metadata().maxSize()).max().orElse(0));
     }
 
     @Override public String toString() {
@@ -211,7 +214,8 @@ public sealed interface RegexPattern {
   record Quantified(RegexPattern element, Quantifier quantifier) implements RegexPattern {
 
     @Override public Metadata metadata() {
-      int elementMin = element.metadata().minSize();
+      Metadata elementMetadata = element.metadata();
+      int elementMin = elementMetadata.minSize();
       int minSize =
           elementMin == 0
               ? 0
@@ -220,7 +224,7 @@ public sealed interface RegexPattern {
                 case AtMost atMost -> 0;
                 case Limited limited -> SafeMath.saturatedMultiply(elementMin, limited.min());
               };
-      int elementMax = element.metadata().maxSize();
+      int elementMax = elementMetadata.maxSize();
       int maxSize =
           elementMax == 0
               ? 0
