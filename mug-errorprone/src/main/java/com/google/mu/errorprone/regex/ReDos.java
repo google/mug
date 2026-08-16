@@ -3,13 +3,6 @@ package com.google.mu.errorprone.regex;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
-import com.google.common.graph.Graph;
-import com.google.common.graph.GraphBuilder;
-import com.google.common.graph.Graphs;
-import com.google.common.graph.MutableGraph;
-import com.google.common.labs.regex.RegexPattern;
-import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
-import com.google.mu.util.graph.Walker;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,9 +13,19 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import com.google.common.graph.Graph;
+import com.google.common.graph.GraphBuilder;
+import com.google.common.graph.Graphs;
+import com.google.common.graph.MutableGraph;
+import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
+import com.google.mu.util.graph.Walker;
+
 /**
- * Static analyzer for detecting Exponential Degree of Ambiguity (EDA) / Catastrophic Backtracking
+ * Utility to detect Exponential Degree of Ambiguity (EDA) / Catastrophic Backtracking
  * (ReDoS) and Polynomial Degree of Ambiguity (PDA) vulnerabilities in {@link RegexPattern} ASTs.
+ *
+ * @since 10.9
  */
 public final class ReDos {
 

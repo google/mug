@@ -1,8 +1,9 @@
 package com.google.mu.errorprone.regex;
 
-import com.google.common.labs.regex.RegexPattern;
 import java.util.List;
 import java.util.Objects;
+
+import com.google.common.labs.regex.RegexPattern;
 
 /**
  * Exception thrown when a regular expression is vulnerable to backtracking (ReDoS or PDA).
@@ -10,6 +11,8 @@ import java.util.Objects;
  * <p>In addition to a human-readable {@link #getMessage()}, this exception provides structured
  * access to the vulnerable {@link #getPattern()}, the {@link #getAttackPayload()}, and any {@link
  * #getSuggestions()}.
+ *
+ * @since 10.9
  */
 public final class VulnerableRegexException extends IllegalArgumentException {
   private final RegexPattern pattern;
