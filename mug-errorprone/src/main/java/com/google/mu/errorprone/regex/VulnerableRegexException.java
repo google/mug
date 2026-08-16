@@ -1,7 +1,8 @@
 package com.google.mu.errorprone.regex;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.List;
-import java.util.Objects;
 
 import com.google.common.labs.regex.RegexPattern;
 
@@ -22,8 +23,8 @@ public class VulnerableRegexException extends IllegalArgumentException {
   VulnerableRegexException(
       String message, RegexPattern pattern, String attackPayload, List<Suggestion> suggestions) {
     super(message);
-    this.pattern = Objects.requireNonNull(pattern, "pattern");
-    this.attackPayload = Objects.requireNonNull(attackPayload, "attackPayload");
+    this.pattern = requireNonNull(pattern, "pattern");
+    this.attackPayload = requireNonNull(attackPayload, "attackPayload");
     this.suggestions = List.copyOf(suggestions);
   }
 
@@ -74,7 +75,7 @@ public class VulnerableRegexException extends IllegalArgumentException {
     record RegexSuggestion(String replacement, boolean isStrictlyEquivalent, List<String> caveats)
         implements Suggestion {
       public RegexSuggestion {
-        Objects.requireNonNull(replacement, "replacement");
+        requireNonNull(replacement, "replacement");
         caveats = List.copyOf(caveats);
       }
 
@@ -83,7 +84,7 @@ public class VulnerableRegexException extends IllegalArgumentException {
       }
 
       public RegexSuggestion(String replacement, String caveat) {
-        this(replacement, false, List.of(Objects.requireNonNull(caveat, "caveat")));
+        this(replacement, false, List.of(requireNonNull(caveat, "caveat")));
       }
 
       @Override public String toString() {
@@ -95,12 +96,12 @@ public class VulnerableRegexException extends IllegalArgumentException {
     record StringFormatSuggestion(String format, boolean isStrictlyEquivalent, List<String> caveats)
         implements Suggestion {
       public StringFormatSuggestion {
-        Objects.requireNonNull(format, "format");
+        requireNonNull(format, "format");
         caveats = List.copyOf(caveats);
       }
 
       public StringFormatSuggestion(String format, String caveat) {
-        this(format, false, List.of(Objects.requireNonNull(caveat, "caveat")));
+        this(format, false, List.of(requireNonNull(caveat, "caveat")));
       }
 
       public StringFormatSuggestion(String format) {
@@ -120,12 +121,12 @@ public class VulnerableRegexException extends IllegalArgumentException {
     record ParserSuggestion(String replacement, boolean isStrictlyEquivalent, List<String> caveats)
         implements Suggestion {
       public ParserSuggestion {
-        Objects.requireNonNull(replacement, "replacement");
+        requireNonNull(replacement, "replacement");
         caveats = List.copyOf(caveats);
       }
 
       public ParserSuggestion(String replacement, String caveat) {
-        this(replacement, false, List.of(Objects.requireNonNull(caveat, "caveat")));
+        this(replacement, false, List.of(requireNonNull(caveat, "caveat")));
       }
 
       public ParserSuggestion(String replacement) {
@@ -142,12 +143,12 @@ public class VulnerableRegexException extends IllegalArgumentException {
         String replacement, boolean isStrictlyEquivalent, List<String> caveats)
         implements Suggestion {
       public SubstringSuggestion {
-        Objects.requireNonNull(replacement, "replacement");
+        requireNonNull(replacement, "replacement");
         caveats = List.copyOf(caveats);
       }
 
       public SubstringSuggestion(String replacement, String caveat) {
-        this(replacement, false, List.of(Objects.requireNonNull(caveat, "caveat")));
+        this(replacement, false, List.of(requireNonNull(caveat, "caveat")));
       }
 
       public SubstringSuggestion(String replacement) {

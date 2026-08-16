@@ -1,5 +1,6 @@
 package com.google.mu.errorprone.regex;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
@@ -8,7 +9,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -108,7 +108,7 @@ public final class ReDos {
    * pattern, ordered by preference (Regex -> StringFormat -> Substring -> Parser).
    */
   public static List<Suggestion> suggestRedosAlternatives(RegexPattern pattern) {
-    Objects.requireNonNull(pattern);
+    requireNonNull(pattern);
     List<Suggestion> suggestions = new ArrayList<>();
     suggestRedosRegexSuggestion(pattern).ifPresent(suggestions::add);
     suggestStringFormat(pattern).ifPresent(suggestions::add);
@@ -128,7 +128,7 @@ public final class ReDos {
    * vulnerable pattern, ordered by preference (Regex -> StringFormat -> Substring -> Parser).
    */
   public static List<Suggestion> suggestPolynomialAlternatives(RegexPattern pattern) {
-    Objects.requireNonNull(pattern);
+    requireNonNull(pattern);
     List<Suggestion> suggestions = new ArrayList<>();
     suggestPolynomialRegexSuggestion(pattern).ifPresent(suggestions::add);
     suggestStringFormat(pattern).ifPresent(suggestions::add);
@@ -246,7 +246,7 @@ public final class ReDos {
 
   private static Optional<Suggestion.RegexSuggestion> suggestRedosRegexSuggestion(
       RegexPattern pattern) {
-    Objects.requireNonNull(pattern);
+    requireNonNull(pattern);
     if (pattern instanceof RegexPattern.Quantified q) {
       RegexPattern inner = unwrapGroup(q.element());
       if (inner instanceof RegexPattern.Quantified innerQ) {
@@ -271,7 +271,7 @@ public final class ReDos {
 
   private static Optional<Suggestion.RegexSuggestion> suggestPolynomialRegexSuggestion(
       RegexPattern pattern) {
-    Objects.requireNonNull(pattern);
+    requireNonNull(pattern);
     if (pattern instanceof RegexPattern.Sequence seq) {
       return findOverlappingQuantifiers(seq)
           .map(p -> {
