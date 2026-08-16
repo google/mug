@@ -54,14 +54,11 @@ public final class ReDos {
     if (hasExponentialAmbiguity(nfa)) {
       String detail = findStructuralDetail(pattern)
           .orElse("contains ambiguous cycle across overlapping transitions");
-      Optional<RegexPattern.Quantified> culprit = findNestedQuantified(pattern).findFirst();
-      String payload =
-          culprit.isPresent()
-              ? attackPayloadForSubPattern(
-                  pattern,
-                  culprit.get(),
-                  sampleMatchingString(unwrapGroup(culprit.get().element())))
-              : attackPayload("", sampleMatchingString(pattern));
+      String payload = findNestedQuantified(pattern)
+          .findFirst()
+          .map(culprit -> attackPayloadForSubPattern(
+              pattern, culprit, sampleMatchingString(unwrapGroup(culprit.element()))))
+          .orElseGet(() -> attackPayload("", sampleMatchingString(pattern)));
       List<Suggestion> suggestions = suggestRedosAlternatives(pattern);
       String suggestionMsg = formatSuggestionMessage(suggestions);
       throw new VulnerableRegexException(
@@ -83,14 +80,12 @@ public final class ReDos {
     Nfa nfa = Nfa.from(pattern);
     if (hasPolynomialAmbiguity(nfa)) {
       String desc = findPolynomialDetail(pattern).orElse("contains overlapping consecutive cycles");
-      Optional<OverlappingQuantifierPair> pair =
-          pattern instanceof RegexPattern.Sequence seq
-              ? findOverlappingQuantifiers(seq).findFirst()
-              : Optional.empty();
-      String payload =
-          pair.isPresent()
-              ? attackPayloadForOverlappingPair((RegexPattern.Sequence) pattern, pair.get())
-              : attackPayload("", sampleMatchingString(pattern));
+      String payload = (pattern instanceof RegexPattern.Sequence seq
+              ? findOverlappingQuantifiers(seq)
+                  .findFirst()
+                  .map(pair -> attackPayloadForOverlappingPair(seq, pair))
+              : Optional.<String>empty())
+          .orElseGet(() -> attackPayload("", sampleMatchingString(pattern)));
       List<Suggestion> suggestions = suggestPolynomialAlternatives(pattern);
       String suggestionMsg = formatSuggestionMessage(suggestions);
       throw new VulnerableRegexException(
