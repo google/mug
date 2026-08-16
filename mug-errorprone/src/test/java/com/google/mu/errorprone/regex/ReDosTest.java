@@ -287,36 +287,44 @@ public final class ReDosTest {
   }
 
   @Test public void suggestRedosRewrite_nestedQuantifier_suggestsFlattened() {
-    assertThat(ReDos.suggestRedosRewrite(RegexPattern.of("(a+)+"))).hasValue("a+");
+    assertThat(new SuggestionSynthesizer(RegexPattern.of("(a+)+")).suggestRedosRewrite())
+        .hasValue("a+");
   }
 
   @Test public void suggestRedosRewrite_nullableRepeated_suggestsNonNullable() {
-    assertThat(ReDos.suggestRedosRewrite(RegexPattern.of("(a*)+"))).hasValue("a*");
+    assertThat(new SuggestionSynthesizer(RegexPattern.of("(a*)+")).suggestRedosRewrite())
+        .hasValue("a*");
   }
 
   @Test public void suggestRedosRewrite_unrecognizedPattern_returnsEmpty() {
-    assertThat(ReDos.suggestRedosRewrite(RegexPattern.of("(a|b)+"))).isEmpty();
+    assertThat(new SuggestionSynthesizer(RegexPattern.of("(a|b)+")).suggestRedosRewrite())
+        .isEmpty();
   }
 
   @Test public void suggestPolynomialRewrite_consecutiveIdenticalPlusQuantifiers_mergesToRange() {
-    assertThat(ReDos.suggestPolynomialRewrite(RegexPattern.of("a+a+"))).hasValue("a{2,}");
+    assertThat(new SuggestionSynthesizer(RegexPattern.of("a+a+")).suggestPolynomialRewrite())
+        .hasValue("a{2,}");
   }
 
   @Test public void suggestPolynomialRewrite_consecutiveIdenticalStarQuantifiers_mergesToStar() {
-    assertThat(ReDos.suggestPolynomialRewrite(RegexPattern.of("a*a*"))).hasValue("a*");
+    assertThat(new SuggestionSynthesizer(RegexPattern.of("a*a*")).suggestPolynomialRewrite())
+        .hasValue("a*");
   }
 
   @Test public void
       suggestPolynomialRewrite_consecutiveIdenticalDigitPlusQuantifiers_mergesToRange() {
-    assertThat(ReDos.suggestPolynomialRewrite(RegexPattern.of("\\d+\\d+"))).hasValue("\\d{2,}");
+    assertThat(new SuggestionSynthesizer(RegexPattern.of("\\d+\\d+")).suggestPolynomialRewrite())
+        .hasValue("\\d{2,}");
   }
 
   @Test public void suggestPolynomialRewrite_overlappingQuantifiers_suggestsPossessive() {
-    assertThat(ReDos.suggestPolynomialRewrite(RegexPattern.of("\\d+\\w+"))).hasValue("\\d++\\w+");
+    assertThat(new SuggestionSynthesizer(RegexPattern.of("\\d+\\w+")).suggestPolynomialRewrite())
+        .hasValue("\\d++\\w+");
   }
 
   @Test public void suggestPolynomialRewrite_disjointQuantifiers_returnsEmpty() {
-    assertThat(ReDos.suggestPolynomialRewrite(RegexPattern.of("a+b+"))).isEmpty();
+    assertThat(new SuggestionSynthesizer(RegexPattern.of("a+b+")).suggestPolynomialRewrite())
+        .isEmpty();
   }
 
   @Test public void checkPolynomialBacktracking_threeIdenticalQuantifiers_throwsDetailedMessage() {
@@ -369,12 +377,8 @@ public final class ReDosTest {
     assertThrows(NullPointerException.class, () -> ReDos.checkPolynomialBacktracking(null));
   }
 
-  @Test public void suggestRedosRewrite_nullPattern_throwsNullPointerException() {
-    assertThrows(NullPointerException.class, () -> ReDos.suggestRedosRewrite(null));
-  }
-
-  @Test public void suggestPolynomialRewrite_nullPattern_throwsNullPointerException() {
-    assertThrows(NullPointerException.class, () -> ReDos.suggestPolynomialRewrite(null));
+  @Test public void suggestionSynthesizer_nullPattern_throwsNullPointerException() {
+    assertThrows(NullPointerException.class, () -> new SuggestionSynthesizer(null));
   }
 
   // --- New Polynomial Backtracking (PDA) Cases ---

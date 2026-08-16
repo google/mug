@@ -6,7 +6,6 @@ import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
 import com.google.mu.util.StringFormat;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Utility to detect Exponential Degree of Ambiguity (EDA) / Catastrophic Backtracking (ReDoS) and
@@ -67,38 +66,6 @@ public final class ReDos {
           throw new VulnerableRegexException(
               message, pattern, finding.attackPayload(), suggestions);
         });
-  }
-
-  /**
-   * Returns a list of suggested alternatives or safe rewrites for an exponential ReDoS vulnerable
-   * pattern, ordered by preference (Regex -> StringFormat -> Substring -> Parser).
-   */
-  public static List<Suggestion> suggestRedosAlternatives(RegexPattern pattern) {
-    return new SuggestionSynthesizer(pattern).forRedos();
-  }
-
-  /**
-   * Returns a list of suggested alternatives or safe rewrites for a polynomial backtracking
-   * vulnerable pattern, ordered by preference (Regex -> StringFormat -> Substring -> Parser).
-   */
-  public static List<Suggestion> suggestPolynomialAlternatives(RegexPattern pattern) {
-    return new SuggestionSynthesizer(pattern).forPolynomial();
-  }
-
-  /**
-   * Suggests a safe rewrite for an exponential ReDoS vulnerable pattern if a high-confidence fix is
-   * known.
-   */
-  public static Optional<String> suggestRedosRewrite(RegexPattern pattern) {
-    return new SuggestionSynthesizer(pattern).suggestRedosRewrite();
-  }
-
-  /**
-   * Suggests a safe rewrite for a polynomial backtracking vulnerable pattern if a high-confidence
-   * fix is known (e.g. using possessive quantifier).
-   */
-  public static Optional<String> suggestPolynomialRewrite(RegexPattern pattern) {
-    return new SuggestionSynthesizer(pattern).suggestPolynomialRewrite();
   }
 
   private static String formatErrorMessage(
