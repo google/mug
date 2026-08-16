@@ -16,7 +16,7 @@ import java.util.Optional;
  * Synthesizes safe alternatives (Safe Regex, Substring, StringFormat, dot-parse Parser) for
  * vulnerable regexes.
  */
-final class ReDosSuggestions {
+final class SuggestionSynthesizer {
 
   static List<Suggestion> forRedos(RegexPattern pattern) {
     requireNonNull(pattern);
@@ -252,7 +252,7 @@ final class ReDosSuggestions {
         return true;
       }
       if (inner instanceof RegexPattern.CharacterSet.AnyOf cs) {
-        return cs.elements().stream().allMatch(ReDosSuggestions::isWhitespaceCharSetElement);
+        return cs.elements().stream().allMatch(SuggestionSynthesizer::isWhitespaceCharSetElement);
       }
       if (inner instanceof RegexPattern.Literal lit && lit.value().isBlank()) {
         return true;
@@ -461,5 +461,5 @@ final class ReDosSuggestions {
     return Optional.empty();
   }
 
-  private ReDosSuggestions() {}
+  private SuggestionSynthesizer() {}
 }

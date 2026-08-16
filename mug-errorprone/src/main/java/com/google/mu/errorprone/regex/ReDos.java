@@ -23,7 +23,7 @@ public final class ReDos {
   public static void checkRedosVulnerability(RegexPattern pattern) {
     VulnerabilityAnalyzer.detectExponentialBacktracking(pattern)
         .ifPresent(finding -> {
-          List<Suggestion> suggestions = ReDosSuggestions.forRedos(pattern);
+          List<Suggestion> suggestions = SuggestionSynthesizer.forRedos(pattern);
           String message = formatErrorMessage(
               "exponential backtracking (ReDoS)",
               pattern,
@@ -44,7 +44,7 @@ public final class ReDos {
   public static void checkPolynomialBacktracking(RegexPattern pattern) {
     VulnerabilityAnalyzer.detectPolynomialBacktracking(pattern)
         .ifPresent(finding -> {
-          List<Suggestion> suggestions = ReDosSuggestions.forPolynomial(pattern);
+          List<Suggestion> suggestions = SuggestionSynthesizer.forPolynomial(pattern);
           String message = formatErrorMessage(
               "polynomial backtracking (PDA)",
               pattern,
@@ -61,7 +61,7 @@ public final class ReDos {
    * pattern, ordered by preference (Regex -> StringFormat -> Substring -> Parser).
    */
   public static List<Suggestion> suggestRedosAlternatives(RegexPattern pattern) {
-    return ReDosSuggestions.forRedos(pattern);
+    return SuggestionSynthesizer.forRedos(pattern);
   }
 
   /**
@@ -69,7 +69,7 @@ public final class ReDos {
    * vulnerable pattern, ordered by preference (Regex -> StringFormat -> Substring -> Parser).
    */
   public static List<Suggestion> suggestPolynomialAlternatives(RegexPattern pattern) {
-    return ReDosSuggestions.forPolynomial(pattern);
+    return SuggestionSynthesizer.forPolynomial(pattern);
   }
 
   /**
@@ -77,7 +77,7 @@ public final class ReDos {
    * known.
    */
   public static Optional<String> suggestRedosRewrite(RegexPattern pattern) {
-    return ReDosSuggestions.suggestRedosRewrite(pattern);
+    return SuggestionSynthesizer.suggestRedosRewrite(pattern);
   }
 
   /**
@@ -85,7 +85,7 @@ public final class ReDos {
    * fix is known (e.g. using possessive quantifier).
    */
   public static Optional<String> suggestPolynomialRewrite(RegexPattern pattern) {
-    return ReDosSuggestions.suggestPolynomialRewrite(pattern);
+    return SuggestionSynthesizer.suggestPolynomialRewrite(pattern);
   }
 
   private static String formatErrorMessage(
