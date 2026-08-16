@@ -4,6 +4,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
 import com.google.mu.util.graph.Walker;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,13 +19,13 @@ import java.util.stream.Stream;
  * Static analyzer for detecting Exponential Degree of Ambiguity (EDA) / Catastrophic Backtracking
  * (ReDoS) and Polynomial Degree of Ambiguity (PDA) vulnerabilities in {@link RegexPattern} ASTs.
  */
-public final class Redos {
+public final class ReDos {
 
   /**
    * Checks whether the given {@link RegexPattern} is vulnerable to exponential backtracking
    * (ReDoS).
    *
-   * @throws IllegalArgumentException if the pattern contains an exponential backtracking
+   * @throws VulnerableRegexException if the pattern contains an exponential backtracking
    *     vulnerability
    */
   public static void checkRedosVulnerability(RegexPattern pattern) {
@@ -32,12 +33,15 @@ public final class Redos {
     if (nullable.isPresent()) {
       String payload =
           attackPayloadForSubPattern(pattern, nullable.get(), sampleMatchingString(nullable.get()));
-      String suggestion =
-          suggestRedosRewrite(pattern).map(s -> " (suggested rewrite: '" + s + "')").orElse("");
-      throw new IllegalArgumentException(
+      List<Suggestion> suggestions = suggestRedosAlternatives(pattern);
+      String suggestionMsg = formatSuggestionMessage(suggestions);
+      throw new VulnerableRegexException(
           "Regular expression is vulnerable to exponential backtracking (ReDoS): '" + pattern
               + "' contains unbounded repetition of nullable sub-pattern '" + nullable.get()
-              + "' (attack payload: \"" + payload + "\")" + suggestion);
+              + "' (attack payload: \"" + payload + "\")" + suggestionMsg,
+          pattern,
+          payload,
+          suggestions);
     }
     Nfa nfa = Nfa.from(pattern);
     if (hasExponentialAmbiguity(ProductGraph.from(nfa))) {
@@ -51,18 +55,21 @@ public final class Redos {
                   culprit.get(),
                   sampleMatchingString(unwrapGroup(culprit.get().element())))
               : attackPayload("", sampleMatchingString(pattern));
-      String suggestion =
-          suggestRedosRewrite(pattern).map(s -> " (suggested rewrite: '" + s + "')").orElse("");
-      throw new IllegalArgumentException(
+      List<Suggestion> suggestions = suggestRedosAlternatives(pattern);
+      String suggestionMsg = formatSuggestionMessage(suggestions);
+      throw new VulnerableRegexException(
           "Regular expression is vulnerable to exponential backtracking (ReDoS): '" + pattern + "' "
-              + detail + " (attack payload: \"" + payload + "\")" + suggestion);
+              + detail + " (attack payload: \"" + payload + "\")" + suggestionMsg,
+          pattern,
+          payload,
+          suggestions);
     }
   }
 
   /**
    * Checks whether the given {@link RegexPattern} is vulnerable to polynomial backtracking (PDA).
    *
-   * @throws IllegalArgumentException if the pattern contains polynomial degree of ambiguity (e.g.
+   * @throws VulnerableRegexException if the pattern contains polynomial degree of ambiguity (e.g.
    *     consecutive overlapping quantifiers)
    */
   public static void checkPolynomialBacktracking(RegexPattern pattern) {
@@ -77,13 +84,148 @@ public final class Redos {
           pair.isPresent()
               ? attackPayloadForOverlappingPair((RegexPattern.Sequence) pattern, pair.get())
               : attackPayload("", sampleMatchingString(pattern));
-      String suggestion = suggestPolynomialRewrite(pattern)
-          .map(s -> " (suggested rewrite: '" + s + "')")
-          .orElse("");
-      throw new IllegalArgumentException(
+      List<Suggestion> suggestions = suggestPolynomialAlternatives(pattern);
+      String suggestionMsg = formatSuggestionMessage(suggestions);
+      throw new VulnerableRegexException(
           "Regular expression is vulnerable to polynomial backtracking (PDA): '" + pattern + "' "
-              + desc + " (attack payload: \"" + payload + "\")" + suggestion);
+              + desc + " (attack payload: \"" + payload + "\")" + suggestionMsg,
+          pattern,
+          payload,
+          suggestions);
     }
+  }
+
+  /**
+   * Returns a list of suggested alternatives or safe rewrites for an exponential ReDoS vulnerable
+   * pattern, ordered by preference (Regex -> StringFormat -> Substring -> Parser).
+   */
+  public static List<Suggestion> suggestRedosAlternatives(RegexPattern pattern) {
+    Objects.requireNonNull(pattern);
+    List<Suggestion> suggestions = new ArrayList<>();
+    suggestRedosRegexSuggestion(pattern).ifPresent(suggestions::add);
+    suggestStringFormat(pattern).ifPresent(suggestions::add);
+    suggestSubstring(pattern).ifPresent(suggestions::add);
+    if (isStructuredGrammar(pattern)) {
+      suggestions.add(
+          new Suggestion.ParserSuggestion(
+              "Parsers.integer().repeatedly()",
+              "Parser combinators parse deterministically with prioritized choice and do not"
+                  + " backtrack non-deterministically across ambiguous boundaries"));
+    }
+    return List.copyOf(suggestions);
+  }
+
+  /**
+   * Returns a list of suggested alternatives or safe rewrites for a polynomial backtracking
+   * vulnerable pattern, ordered by preference (Regex -> StringFormat -> Substring -> Parser).
+   */
+  public static List<Suggestion> suggestPolynomialAlternatives(RegexPattern pattern) {
+    Objects.requireNonNull(pattern);
+    List<Suggestion> suggestions = new ArrayList<>();
+    suggestPolynomialRegexSuggestion(pattern).ifPresent(suggestions::add);
+    suggestStringFormat(pattern).ifPresent(suggestions::add);
+    suggestSubstring(pattern).ifPresent(suggestions::add);
+    return List.copyOf(suggestions);
+  }
+
+  private static Optional<Suggestion.SubstringSuggestion> suggestSubstring(RegexPattern pattern) {
+    if (pattern instanceof RegexPattern.Sequence seq) {
+      List<RegexPattern> elements = seq.elements();
+      if (elements.size() == 3) {
+        RegexPattern e0 = unwrapGroup(elements.get(0));
+        RegexPattern e1 = elements.get(1);
+        RegexPattern e2 = unwrapGroup(elements.get(2));
+        if (isWildcard(e0) && e1 instanceof RegexPattern.Literal lit && isWildcard(e2)) {
+          String delim = lit.value();
+          if (!delim.isEmpty()) {
+            String delimEscaped = delim.length() == 1 ? "'" + delim + "'" : "\"" + delim + "\"";
+            return Optional.of(
+                new Suggestion.SubstringSuggestion(
+                    "Substring.first(" + delimEscaped + ").split(input)",
+                    "Substring splits at the first occurrence of the delimiter"));
+          }
+        }
+      }
+      if (elements.size() == 5) {
+        RegexPattern e0 = unwrapGroup(elements.get(0));
+        RegexPattern e1 = elements.get(1);
+        RegexPattern e2 = unwrapGroup(elements.get(2));
+        RegexPattern e3 = elements.get(3);
+        RegexPattern e4 = unwrapGroup(elements.get(4));
+        if (isWildcard(e0) && e1 instanceof RegexPattern.Literal openLit && isWildcard(e2)
+            && e3 instanceof RegexPattern.Literal closeLit && isWildcard(e4)) {
+          String open = openLit.value();
+          String close = closeLit.value();
+          if (!open.isEmpty() && !close.isEmpty()) {
+            return Optional.of(
+                new Suggestion.SubstringSuggestion(
+                    "Substring.between(\"" + open + "\", \"" + close + "\").from(input)",
+                    "Substring.between extracts the first matching enclosed range"));
+          }
+        }
+      }
+    }
+    return Optional.empty();
+  }
+
+  private static String formatSuggestionMessage(List<Suggestion> suggestions) {
+    if (suggestions.isEmpty()) {
+      return "";
+    }
+    Suggestion first = suggestions.get(0);
+    if (first instanceof Suggestion.RegexSuggestion regex) {
+      return " (suggested rewrite: '" + regex.replacement() + "')";
+    }
+    return " (Consider using " + first.replacement() + ")";
+  }
+
+  private static Optional<Suggestion.StringFormatSuggestion> suggestStringFormat(
+      RegexPattern pattern) {
+    if (pattern instanceof RegexPattern.Sequence seq) {
+      List<RegexPattern> elements = seq.elements();
+      if (elements.size() == 3) {
+        RegexPattern e0 = unwrapGroup(elements.get(0));
+        RegexPattern e1 = elements.get(1);
+        RegexPattern e2 = unwrapGroup(elements.get(2));
+        if (isWildcard(e0) && e1 instanceof RegexPattern.Literal lit && isWildcard(e2)) {
+          String delim = lit.value();
+          if (!delim.isEmpty()) {
+            return Optional.of(
+                new Suggestion.StringFormatSuggestion(
+                    "{left}" + delim + "{right}",
+                    "StringFormat matches delimiters from left to right, whereas greedy '.*' in"
+                        + " regex matches the last occurrence"));
+          }
+        }
+      }
+    }
+    return Optional.empty();
+  }
+
+  private static boolean isWildcard(RegexPattern pattern) {
+    if (pattern instanceof RegexPattern.Quantified q) {
+      RegexPattern inner = unwrapGroup(q.element());
+      return inner instanceof RegexPattern.PredefinedCharClass pcc
+          && pcc == RegexPattern.PredefinedCharClass.ANY_CHAR;
+    }
+    return false;
+  }
+
+  private static boolean isStructuredGrammar(RegexPattern pattern) {
+    return Walker.inTree(ReDos::childrenOf)
+        .preOrderFrom(pattern)
+        .filter(RegexPattern.Quantified.class::isInstance)
+        .map(RegexPattern.Quantified.class::cast)
+        .anyMatch(q -> {
+          RegexPattern inner = unwrapGroup(q.element());
+          if (inner instanceof RegexPattern.Alternation alt) {
+            return alt.alternatives().stream()
+                .anyMatch(branch ->
+                    branch instanceof RegexPattern.Sequence
+                        || branch instanceof RegexPattern.Quantified);
+          }
+          return false;
+        });
   }
 
   /**
@@ -91,16 +233,21 @@ public final class Redos {
    * known.
    */
   public static Optional<String> suggestRedosRewrite(RegexPattern pattern) {
+    return suggestRedosRegexSuggestion(pattern).map(Suggestion.RegexSuggestion::replacement);
+  }
+
+  private static Optional<Suggestion.RegexSuggestion> suggestRedosRegexSuggestion(
+      RegexPattern pattern) {
     Objects.requireNonNull(pattern);
     if (pattern instanceof RegexPattern.Quantified q) {
       RegexPattern inner = unwrapGroup(q.element());
       if (inner instanceof RegexPattern.Quantified innerQ) {
         boolean canBeEmpty = innerQ.metadata().minSize() == 0 || q.metadata().minSize() == 0;
         String op = canBeEmpty ? "*" : "+";
-        return Optional.of(innerQ.element().toString() + op);
+        return Optional.of(new Suggestion.RegexSuggestion(innerQ.element().toString() + op));
       }
       if (inner.metadata().minSize() == 0 && inner.metadata().maxSize() > 0) {
-        return Optional.of(inner.toString() + "*");
+        return Optional.of(new Suggestion.RegexSuggestion(inner.toString() + "*"));
       }
     }
     return Optional.empty();
@@ -111,6 +258,11 @@ public final class Redos {
    * fix is known (e.g. using possessive quantifier).
    */
   public static Optional<String> suggestPolynomialRewrite(RegexPattern pattern) {
+    return suggestPolynomialRegexSuggestion(pattern).map(Suggestion.RegexSuggestion::replacement);
+  }
+
+  private static Optional<Suggestion.RegexSuggestion> suggestPolynomialRegexSuggestion(
+      RegexPattern pattern) {
     Objects.requireNonNull(pattern);
     if (pattern instanceof RegexPattern.Sequence seq) {
       return findOverlappingQuantifiers(seq)
@@ -125,15 +277,22 @@ public final class Redos {
               List<RegexPattern> rewritten = new ArrayList<>(seq.elements());
               rewritten.set(p.firstIndex(), merged);
               rewritten.remove(p.secondIndex());
-              return rewritten.size() == 1
-                  ? rewritten.get(0).toString()
-                  : new RegexPattern.Sequence(rewritten).toString();
+              String regex =
+                  rewritten.size() == 1
+                      ? rewritten.get(0).toString()
+                      : new RegexPattern.Sequence(rewritten).toString();
+              return new Suggestion.RegexSuggestion(regex);
             }
             RegexPattern rewrittenFirst = new RegexPattern.Quantified(
                 p.first().element(), p.first().quantifier().possessive());
             List<RegexPattern> rewritten = new ArrayList<>(seq.elements());
             rewritten.set(p.firstIndex(), rewrittenFirst);
-            return new RegexPattern.Sequence(rewritten).toString();
+            String regex = new RegexPattern.Sequence(rewritten).toString();
+            return new Suggestion.RegexSuggestion(
+                regex,
+                "Possessive quantifier '" + rewrittenFirst
+                    + "' prevents backtracking and may fail if subsequent tokens require"
+                    + " characters greedily consumed by '" + rewrittenFirst + "'");
           })
           .findFirst();
     }
@@ -172,7 +331,7 @@ public final class Redos {
 
   private static boolean containsNode(RegexPattern root, RegexPattern target) {
     return root.equals(target)
-        || Walker.inTree(Redos::childrenOf)
+        || Walker.inTree(ReDos::childrenOf)
             .preOrderFrom(root)
             .anyMatch(node -> node.equals(target));
   }
@@ -188,11 +347,11 @@ public final class Redos {
   }
 
   private static Optional<String> findPolynomialDetail(RegexPattern pattern) {
-    return Walker.inTree(Redos::childrenOf)
+    return Walker.inTree(ReDos::childrenOf)
         .preOrderFrom(pattern)
         .filter(RegexPattern.Sequence.class::isInstance)
         .map(RegexPattern.Sequence.class::cast)
-        .flatMap(Redos::findOverlappingQuantifiers)
+        .flatMap(ReDos::findOverlappingQuantifiers)
         .map(pair ->
             "contains consecutive overlapping quantifiers on '" + pair.first() + "' and '"
                 + pair.second() + "'")
@@ -254,9 +413,9 @@ public final class Redos {
   }
 
   private static Optional<RegexPattern> findNullableRepeatedElement(RegexPattern pattern) {
-    return Walker.inTree(Redos::childrenOf)
+    return Walker.inTree(ReDos::childrenOf)
         .preOrderFrom(pattern)
-        .filter(Redos::isUnboundedNullable)
+        .filter(ReDos::isUnboundedNullable)
         .map(p -> ((RegexPattern.Quantified) p).element())
         .findFirst();
   }
@@ -272,11 +431,11 @@ public final class Redos {
   }
 
   private static Optional<String> findStructuralDetail(RegexPattern pattern) {
-    return Walker.inTree(Redos::childrenOf)
+    return Walker.inTree(ReDos::childrenOf)
         .preOrderFrom(pattern)
         .filter(RegexPattern.Quantified.class::isInstance)
         .map(RegexPattern.Quantified.class::cast)
-        .flatMap(Redos::structuralDetailOf)
+        .flatMap(ReDos::structuralDetailOf)
         .findFirst();
   }
 
@@ -305,7 +464,7 @@ public final class Redos {
   }
 
   private static Stream<RegexPattern.Quantified> findNestedQuantified(RegexPattern pattern) {
-    return Walker.inTree(Redos::childrenOf)
+    return Walker.inTree(ReDos::childrenOf)
         .preOrderFrom(pattern)
         .filter(RegexPattern.Quantified.class::isInstance)
         .map(RegexPattern.Quantified.class::cast);
@@ -595,5 +754,5 @@ public final class Redos {
     }
   }
 
-  private Redos() {}
+  private ReDos() {}
 }

@@ -67,12 +67,12 @@ public final class RegexRedosFuzzTest {
       try {
         RegexPattern pattern = RegexPattern.of(regex);
         try {
-          Redos.checkRedosVulnerability(pattern);
+          ReDos.checkRedosVulnerability(pattern);
         } catch (IllegalArgumentException expectedIfVulnerable) {
           // Vulnerability detected as expected
         }
         try {
-          Redos.checkPolynomialBacktracking(pattern);
+          ReDos.checkPolynomialBacktracking(pattern);
         } catch (IllegalArgumentException expectedIfVulnerable) {
           // Vulnerability detected as expected
         }
@@ -91,7 +91,7 @@ public final class RegexRedosFuzzTest {
       try {
         RegexPattern ast = RegexPattern.of(regex);
         try {
-          Redos.checkRedosVulnerability(ast);
+          ReDos.checkRedosVulnerability(ast);
         } catch (IllegalArgumentException vulnerable) {
           continue;
         }
