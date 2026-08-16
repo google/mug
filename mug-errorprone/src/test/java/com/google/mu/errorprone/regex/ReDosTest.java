@@ -4,8 +4,14 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import com.google.common.labs.parse.Parsers;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
+import com.google.mu.util.StringFormat;
+import com.google.mu.util.Substring;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -1096,5 +1102,99 @@ public final class ReDosTest {
     assertThat(ss.isStrictlyEquivalent()).isFalse();
     assertThat(ss.caveats()).containsExactly("Splits at the first match");
     assertThat(ss.toString()).isEqualTo("Substring.first(':').split(input)");
+  }
+
+  @Test public void suggestedAlternative_nestedQuantifiersPlus_matchesEquivalentInput() {
+    Pattern original = Pattern.compile("(a+)+");
+    Pattern suggestion = Pattern.compile("a+");
+    assertThat(suggestion.matcher("aaaa").matches()).isEqualTo(original.matcher("aaaa").matches());
+  }
+
+  @Test public void suggestedAlternative_nestedQuantifiersPlus_rejectsNonMatchingInput() {
+    Pattern original = Pattern.compile("(a+)+");
+    Pattern suggestion = Pattern.compile("a+");
+    assertThat(suggestion.matcher("b").matches()).isEqualTo(original.matcher("b").matches());
+  }
+
+  @Test public void suggestedAlternative_possessiveQuantifier_matchesEquivalentDisjointTokens() {
+    Pattern original = Pattern.compile("\\d+\\w+");
+    Pattern suggestion = Pattern.compile("\\d++\\w+");
+    assertThat(suggestion.matcher("123abc").matches())
+        .isEqualTo(original.matcher("123abc").matches());
+  }
+
+  @Test public void suggestedAlternative_possessiveQuantifier_rejectsNonMatchingInput() {
+    Pattern original = Pattern.compile("\\d+\\w+");
+    Pattern suggestion = Pattern.compile("\\d++\\w+");
+    assertThat(suggestion.matcher("abc").matches()).isEqualTo(original.matcher("abc").matches());
+  }
+
+  @Test public void suggestedAlternative_mergedPlusQuantifiers_matchesEquivalentInput() {
+    Pattern original = Pattern.compile("a+a+");
+    Pattern suggestion = Pattern.compile("a{2,}");
+    assertThat(suggestion.matcher("aaaa").matches()).isEqualTo(original.matcher("aaaa").matches());
+  }
+
+  @Test public void suggestedAlternative_mergedPlusQuantifiers_rejectsUnderMinLengthInput() {
+    Pattern original = Pattern.compile("a+a+");
+    Pattern suggestion = Pattern.compile("a{2,}");
+    assertThat(suggestion.matcher("a").matches()).isEqualTo(original.matcher("a").matches());
+  }
+
+  @Test public void suggestedAlternative_mergedStarQuantifiers_matchesEquivalentInput() {
+    Pattern original = Pattern.compile("a*a*");
+    Pattern suggestion = Pattern.compile("a*");
+    assertThat(suggestion.matcher("aaaa").matches()).isEqualTo(original.matcher("aaaa").matches());
+  }
+
+  @Test public void suggestedAlternative_mergedStarQuantifiers_matchesEmptyInput() {
+    Pattern original = Pattern.compile("a*a*");
+    Pattern suggestion = Pattern.compile("a*");
+    assertThat(suggestion.matcher("").matches()).isEqualTo(original.matcher("").matches());
+  }
+
+  @Test public void suggestedAlternative_mergedDigitPlusQuantifiers_matchesEquivalentInput() {
+    Pattern original = Pattern.compile("\\d+\\d+");
+    Pattern suggestion = Pattern.compile("\\d{2,}");
+    assertThat(suggestion.matcher("12345").matches())
+        .isEqualTo(original.matcher("12345").matches());
+  }
+
+  @Test public void suggestedAlternative_mergedDigitPlusQuantifiers_rejectsSingleDigitInput() {
+    Pattern original = Pattern.compile("\\d+\\d+");
+    Pattern suggestion = Pattern.compile("\\d{2,}");
+    assertThat(suggestion.matcher("1").matches()).isEqualTo(original.matcher("1").matches());
+  }
+
+  @Test public void suggestedAlternative_stringFormat_extractsIdenticalKeyAndValue() {
+    Matcher matcher = Pattern.compile("^(.*?):(.*)$").matcher("user:123");
+    assertThat(matcher.matches()).isTrue();
+    List<String> regexExtracted = List.of(matcher.group(1), matcher.group(2));
+    List<String> formatExtracted =
+        new StringFormat("{left}:{right}").parse("user:123", (l, r) -> List.of(l, r)).orElseThrow();
+    assertThat(formatExtracted).isEqualTo(regexExtracted);
+  }
+
+  @Test public void suggestedAlternative_substringFirstSplit_extractsIdenticalKeyAndValue() {
+    Matcher matcher = Pattern.compile("^(.*?):(.*)$").matcher("user:123");
+    assertThat(matcher.matches()).isTrue();
+    List<String> regexExtracted = List.of(matcher.group(1), matcher.group(2));
+    List<String> substringExtracted =
+        Substring.first(':').split("user:123", (l, r) -> List.of(l, r)).orElseThrow();
+    assertThat(substringExtracted).isEqualTo(regexExtracted);
+  }
+
+  @Test public void suggestedAlternative_substringBetween_extractsIdenticalEnclosedContent() {
+    Matcher matcher = Pattern.compile(".*?\\[(.*?)\\].*").matcher("prefix[payload]suffix");
+    assertThat(matcher.matches()).isTrue();
+    String regexExtracted = matcher.group(1);
+    String substringExtracted =
+        Substring.between("[", "]").from("prefix[payload]suffix").orElseThrow();
+    assertThat(substringExtracted).isEqualTo(regexExtracted);
+  }
+
+  @Test public void suggestedAlternative_parsersIntegerRepeatedly_parsesMatchingDigits() {
+    assertThat(Pattern.compile("(0|[1-9][0-9]*)+").matcher("12345").matches()).isTrue();
+    assertThat(Parsers.UNSIGNED_INTEGER.atLeastOnce().parse("12345")).containsExactly("12345");
   }
 }
