@@ -14,7 +14,7 @@ import com.google.common.labs.regex.RegexPattern;
  *
  * @since 10.9
  */
-public final class VulnerableRegexException extends IllegalArgumentException {
+public class VulnerableRegexException extends IllegalArgumentException {
   private final RegexPattern pattern;
   private final String attackPayload;
   private final List<Suggestion> suggestions;
