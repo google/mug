@@ -140,7 +140,7 @@ public class VulnerableRegexException extends IllegalArgumentException {
 
       @ParametersMustMatchByName
       public SubstringSuggestion(String replacement, String... caveats) {
-        this(replacement, false, List.of(caveats));
+        this(replacement, caveats.length == 0, List.of(caveats));
       }
 
       @Override public String toString() {

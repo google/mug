@@ -96,8 +96,14 @@ public final class ReDos {
     requireNonNull(pattern);
     List<Suggestion> suggestions = new ArrayList<>();
     suggestRedosRegexSuggestion(pattern).ifPresent(suggestions::add);
-    suggestStringFormat(pattern).ifPresent(suggestions::add);
-    suggestSubstring(pattern).ifPresent(suggestions::add);
+    Optional<Suggestion.SubstringSuggestion> substring = suggestSubstring(pattern);
+    Optional<Suggestion.StringFormatSuggestion> stringFormat = suggestStringFormat(pattern);
+    if (substring.isPresent() && substring.get().caveats().isEmpty()) {
+      suggestions.add(substring.get());
+    } else {
+      stringFormat.ifPresent(suggestions::add);
+      substring.ifPresent(suggestions::add);
+    }
     if (isStructuredGrammar(pattern)) {
       suggestions.add(
           new Suggestion.ParserSuggestion(
@@ -116,8 +122,14 @@ public final class ReDos {
     requireNonNull(pattern);
     List<Suggestion> suggestions = new ArrayList<>();
     suggestPolynomialRegexSuggestion(pattern).ifPresent(suggestions::add);
-    suggestStringFormat(pattern).ifPresent(suggestions::add);
-    suggestSubstring(pattern).ifPresent(suggestions::add);
+    Optional<Suggestion.SubstringSuggestion> substring = suggestSubstring(pattern);
+    Optional<Suggestion.StringFormatSuggestion> stringFormat = suggestStringFormat(pattern);
+    if (substring.isPresent() && substring.get().caveats().isEmpty()) {
+      suggestions.add(substring.get());
+    } else {
+      stringFormat.ifPresent(suggestions::add);
+      substring.ifPresent(suggestions::add);
+    }
     return List.copyOf(suggestions);
   }
 
@@ -132,10 +144,8 @@ public final class ReDos {
           String delim = lit.value();
           if (!delim.isEmpty()) {
             String delimEscaped = delim.length() == 1 ? "'" + delim + "'" : "\"" + delim + "\"";
-            String replacement = "Substring.first(" + delimEscaped + ").split(input)";
-            return Optional.of(
-                new Suggestion.SubstringSuggestion(
-                    replacement, "Substring splits at the first occurrence of the delimiter"));
+            String replacement = "Substring.last(" + delimEscaped + ").split(input)";
+            return Optional.of(new Suggestion.SubstringSuggestion(replacement));
           }
         }
       }

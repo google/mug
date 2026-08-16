@@ -328,9 +328,7 @@ public final class ReDosTest {
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
     assertThat(thrown.getSuggestedAlternatives())
-        .containsExactly(
-            "new StringFormat(\"{left}a{right}\")", "Substring.first('a').split(input)")
-        .inOrder();
+        .containsExactly("Substring.last('a').split(input)");
   }
 
   @Test public void checkPolynomialBacktracking_disjointQuantifiers_doesNotThrow() {
@@ -446,9 +444,7 @@ public final class ReDosTest {
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
     assertThat(thrown.getSuggestedAlternatives())
-        .containsExactly(
-            "new StringFormat(\"{left}={right}\")", "Substring.first('=').split(input)")
-        .inOrder();
+        .containsExactly("Substring.last('=').split(input)");
   }
 
   @Test public void checkPolynomialBacktracking_exponentialNestedQuantifiers_doesNotThrow() {
@@ -1005,9 +1001,7 @@ public final class ReDosTest {
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
     assertThat(thrown.getSuggestedAlternatives())
-        .containsExactly(
-            "new StringFormat(\"{left}:{right}\")", "Substring.first(':').split(input)")
-        .inOrder();
+        .containsExactly("Substring.last(':').split(input)");
   }
 
   @Test public void checkRedosVulnerability_structuredNumberGrammar_suggestsParsers() {
@@ -1043,36 +1037,18 @@ public final class ReDosTest {
     assertThat(suggestion.toString()).isEqualTo("\\d++\\w+");
   }
 
-  @Test public void getSuggestions_stringFormatSuggestion_hasFormatAndReplacementAndCaveats() {
+  @Test public void getSuggestions_delimitedWildcards_suggestsSubstringLastWithoutCaveat() {
     RegexPattern pattern = RegexPattern.of(".*:.*");
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
-    Suggestion suggestion = thrown.getSuggestions().get(0);
-    assertThat(suggestion).isInstanceOf(Suggestion.StringFormatSuggestion.class);
-    Suggestion.StringFormatSuggestion sf = (Suggestion.StringFormatSuggestion) suggestion;
-    assertThat(sf.format()).isEqualTo("{left}:{right}");
-    assertThat(sf.replacement()).isEqualTo("new StringFormat(\"{left}:{right}\")");
-    assertThat(sf.toString()).isEqualTo("new StringFormat(\"{left}:{right}\")");
-    assertThat(sf.isStrictlyEquivalent()).isFalse();
-    assertThat(sf.caveats()).isNotEmpty();
-  }
-
-  @Test public void
-      checkPolynomialBacktracking_delimitedWildcards_suggestsStringFormatAndSubstringInOrder() {
-    RegexPattern pattern = RegexPattern.of(".*:.*");
-    VulnerableRegexException thrown = assertThrows(
-        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
-    assertThat(thrown.getSuggestions()).hasSize(2);
-    assertThat(thrown.getSuggestions().get(0))
-        .isInstanceOf(Suggestion.StringFormatSuggestion.class);
-    assertThat(thrown.getSuggestions().get(1)).isInstanceOf(Suggestion.SubstringSuggestion.class);
+    assertThat(thrown.getSuggestions()).hasSize(1);
+    assertThat(thrown.getSuggestions().get(0)).isInstanceOf(Suggestion.SubstringSuggestion.class);
     Suggestion.SubstringSuggestion ss =
-        (Suggestion.SubstringSuggestion) thrown.getSuggestions().get(1);
-    assertThat(ss.replacement()).isEqualTo("Substring.first(':').split(input)");
-    assertThat(ss.toString()).isEqualTo("Substring.first(':').split(input)");
-    assertThat(ss.isStrictlyEquivalent()).isFalse();
-    assertThat(ss.caveats()).containsExactly(
-            "Substring splits at the first occurrence of the delimiter");
+        (Suggestion.SubstringSuggestion) thrown.getSuggestions().get(0);
+    assertThat(ss.replacement()).isEqualTo("Substring.last(':').split(input)");
+    assertThat(ss.toString()).isEqualTo("Substring.last(':').split(input)");
+    assertThat(ss.isStrictlyEquivalent()).isTrue();
+    assertThat(ss.caveats()).isEmpty();
   }
 
   @Test public void
@@ -1101,12 +1077,12 @@ public final class ReDosTest {
   }
 
   @Test public void suggestion_substringSuggestion_instantiationAndAccessors() {
-    Suggestion.SubstringSuggestion ss = new Suggestion.SubstringSuggestion(
-        /* replacement= */ "Substring.first(':').split(input)", "Splits at the first match");
-    assertThat(ss.replacement()).isEqualTo("Substring.first(':').split(input)");
-    assertThat(ss.isStrictlyEquivalent()).isFalse();
-    assertThat(ss.caveats()).containsExactly("Splits at the first match");
-    assertThat(ss.toString()).isEqualTo("Substring.first(':').split(input)");
+    Suggestion.SubstringSuggestion ss =
+        new Suggestion.SubstringSuggestion(/* replacement= */ "Substring.last(':').split(input)");
+    assertThat(ss.replacement()).isEqualTo("Substring.last(':').split(input)");
+    assertThat(ss.isStrictlyEquivalent()).isTrue();
+    assertThat(ss.caveats()).isEmpty();
+    assertThat(ss.toString()).isEqualTo("Substring.last(':').split(input)");
   }
 
   @Test public void suggestedAlternative_nestedQuantifiersPlus_matchesEquivalentInput() {
@@ -1180,12 +1156,12 @@ public final class ReDosTest {
     assertThat(formatExtracted).isEqualTo(regexExtracted);
   }
 
-  @Test public void suggestedAlternative_substringFirstSplit_extractsIdenticalKeyAndValue() {
-    Matcher matcher = Pattern.compile("^(.*?):(.*)$").matcher("user:123");
+  @Test public void suggestedAlternative_substringLastSplit_extractsIdenticalKeyAndValue() {
+    Matcher matcher = Pattern.compile("^(.*):(.*)$").matcher("user:123");
     assertThat(matcher.matches()).isTrue();
     List<String> regexExtracted = List.of(matcher.group(1), matcher.group(2));
     List<String> substringExtracted =
-        Substring.first(':').split("user:123", (l, r) -> List.of(l, r)).orElseThrow();
+        Substring.last(':').split("user:123", (l, r) -> List.of(l, r)).orElseThrow();
     assertThat(substringExtracted).isEqualTo(regexExtracted);
   }
 
@@ -1201,5 +1177,14 @@ public final class ReDosTest {
   @Test public void suggestedAlternative_parsersIntegerRepeatedly_parsesMatchingDigits() {
     assertThat(Pattern.compile("(0|[1-9][0-9]*)+").matcher("12345").matches()).isTrue();
     assertThat(Parsers.UNSIGNED_INTEGER.atLeastOnce().parse("12345")).containsExactly("12345");
+  }
+
+  @Test public void suggestedAlternative_substringLastSplit_matchesGreedyRegexOnMultiDelimiters() {
+    Matcher matcher = Pattern.compile("^(.*):(.*)$").matcher("a:b:c");
+    assertThat(matcher.matches()).isTrue();
+    List<String> regexExtracted = List.of(matcher.group(1), matcher.group(2));
+    List<String> substringExtracted =
+        Substring.last(':').split("a:b:c", (l, r) -> List.of(l, r)).orElseThrow();
+    assertThat(substringExtracted).isEqualTo(regexExtracted);
   }
 }

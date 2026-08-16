@@ -148,11 +148,11 @@ public final class SuggestionTest {
   }
 
   @Test public void substringSuggestion_singleArgConstructor_returnsReplacement() {
-    SubstringSuggestion suggestion = new SubstringSuggestion("Substring.first(':').split(input)");
-    assertThat(suggestion.replacement()).isEqualTo("Substring.first(':').split(input)");
-    assertThat(suggestion.isStrictlyEquivalent()).isFalse();
+    SubstringSuggestion suggestion = new SubstringSuggestion("Substring.last(':').split(input)");
+    assertThat(suggestion.replacement()).isEqualTo("Substring.last(':').split(input)");
+    assertThat(suggestion.isStrictlyEquivalent()).isTrue();
     assertThat(suggestion.caveats()).isEmpty();
-    assertThat(suggestion.toString()).isEqualTo("Substring.first(':').split(input)");
+    assertThat(suggestion.toString()).isEqualTo("Substring.last(':').split(input)");
   }
 
   @Test public void substringSuggestion_twoArgsConstructor_hasCaveat() {
