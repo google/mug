@@ -1,8 +1,12 @@
 package com.google.mu.errorprone.regex;
 
+import static java.util.stream.Collectors.toSet;
+
 import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.util.graph.Walker;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Non-deterministic Finite Automaton (NFA) constructed from {@link RegexPattern} AST using
@@ -232,5 +236,20 @@ final class Nfa {
     }
     visited[current] = false;
     return count;
+  }
+
+  Set<Integer> epsilonClosure(int state) {
+    return Walker.inGraph((Integer s) -> states.get(s).epsilonTransitions.stream())
+        .preOrderFrom(state)
+        .collect(toSet());
+  }
+
+  List<CharTransition> reachableCharTransitions(int state) {
+    Set<Integer> closure = epsilonClosure(state);
+    return charTransitions.stream().filter(t -> closure.contains(t.source())).toList();
+  }
+
+  boolean canReachAccept(int state) {
+    return epsilonClosure(state).contains(acceptState);
   }
 }

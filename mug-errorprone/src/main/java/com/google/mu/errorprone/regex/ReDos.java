@@ -3,13 +3,18 @@ package com.google.mu.errorprone.regex;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
+import com.google.common.graph.Graph;
+import com.google.common.graph.GraphBuilder;
+import com.google.common.graph.Graphs;
+import com.google.common.graph.MutableGraph;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
 import com.google.mu.util.graph.Walker;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -44,7 +49,7 @@ public final class ReDos {
           suggestions);
     }
     Nfa nfa = Nfa.from(pattern);
-    if (hasExponentialAmbiguity(ProductGraph.from(nfa))) {
+    if (hasExponentialAmbiguity(nfa)) {
       String detail = findStructuralDetail(pattern)
           .orElse("contains ambiguous cycle across overlapping transitions");
       Optional<RegexPattern.Quantified> culprit = findNestedQuantified(pattern).findFirst();
@@ -74,7 +79,7 @@ public final class ReDos {
    */
   public static void checkPolynomialBacktracking(RegexPattern pattern) {
     Nfa nfa = Nfa.from(pattern);
-    if (hasPolynomialAmbiguity(ProductGraph.from(nfa))) {
+    if (hasPolynomialAmbiguity(nfa)) {
       String desc = findPolynomialDetail(pattern).orElse("contains overlapping consecutive cycles");
       Optional<OverlappingQuantifierPair> pair =
           pattern instanceof RegexPattern.Sequence seq
@@ -503,67 +508,73 @@ public final class ReDos {
     };
   }
 
-  private static boolean hasExponentialAmbiguity(ProductGraph g) {
-    if (g.tCount == 0) {
+  private static boolean hasExponentialAmbiguity(Nfa nfa) {
+    if (nfa.charTransitions.isEmpty()) {
       return false;
     }
-
-    // Check if any SCC with a cycle has non-deterministic branching or multi-epsilon loopbacks
-    for (List<Integer> scc : g.sccs) {
-      if (scc.size() > 1 || (scc.size() == 1 && g.adj[scc.get(0)].contains(scc.get(0)))) {
-        Set<Integer> sccSet = new HashSet<>(scc);
-        boolean hasOffDiagonal = false;
-        boolean hasDiagonal = false;
-        boolean hasBranching = false;
-        for (int node : scc) {
-          int row = node / g.tCount;
-          int col = node % g.tCount;
-          if (row == col) {
-            hasDiagonal = true;
-            Nfa.CharTransition ti = g.nfa.charTransitions.get(row);
-            for (int next : g.adj[node]) {
-              if (sccSet.contains(next) && (next / g.tCount == next % g.tCount)) {
-                Nfa.CharTransition tip = g.nfa.charTransitions.get(next / g.tCount);
-                if (g.nfa.countEpsilonPaths(ti.target(), tip.source()) >= 2) {
-                  return true;
-                }
-              }
-            }
-          } else {
-            hasOffDiagonal = true;
-          }
-          int branchCount = 0;
-          for (int next : g.adj[node]) {
-            if (sccSet.contains(next)) {
-              branchCount++;
-            }
-          }
-          if (branchCount >= 2) {
-            hasBranching = true;
-          }
-        }
-        if (hasOffDiagonal && (hasDiagonal || hasBranching)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
+    Graph<TransitionPair> graph = productGraph(nfa);
+    return Walker.inGraph((TransitionPair u) -> graph.successors(u).stream())
+        .stronglyConnectedComponentsFrom(graph.nodes())
+        .filter(scc -> scc.size() > 1 || graph.hasEdgeConnecting(scc.get(0), scc.get(0)))
+        .anyMatch(scc -> isAmbiguousScc(nfa, graph, new HashSet<>(scc)));
   }
 
-  private static boolean hasPolynomialAmbiguity(ProductGraph g) {
-    if (g.tCount < 2) {
-      return false;
-    }
-
-    List<DiagonalCycle> cycles = new ArrayList<>();
-    for (int i = 0; i < g.tCount; i++) {
-      int u = i * g.tCount + i;
-      if (g.active[u] && g.inCycle[u]) {
-        Nfa.CharTransition ti = g.nfa.charTransitions.get(i);
-        cycles.add(new DiagonalCycle(u, ti.chars(), g.sccMap[u]));
+  private static boolean isAmbiguousScc(
+      Nfa nfa, Graph<TransitionPair> graph, Set<TransitionPair> scc) {
+    boolean hasOffDiagonal = false;
+    boolean hasDiagonal = false;
+    boolean hasBranching = false;
+    for (TransitionPair node : scc) {
+      if (node.isDiagonal()) {
+        hasDiagonal = true;
+        Nfa.CharTransition ti = nfa.charTransitions.get(node.left());
+        for (TransitionPair next : graph.successors(node)) {
+          if (scc.contains(next) && next.isDiagonal()) {
+            Nfa.CharTransition tip = nfa.charTransitions.get(next.left());
+            if (nfa.countEpsilonPaths(ti.target(), tip.source()) >= 2) {
+              return true;
+            }
+          }
+        }
+      } else {
+        hasOffDiagonal = true;
+      }
+      if (graph.successors(node).stream().filter(scc::contains).count() >= 2) {
+        hasBranching = true;
       }
     }
+    return hasOffDiagonal && (hasDiagonal || hasBranching);
+  }
+
+  private static boolean hasPolynomialAmbiguity(Nfa nfa) {
+    if (nfa.charTransitions.size() < 2) {
+      return false;
+    }
+    Graph<TransitionPair> graph = productGraph(nfa);
+    List<List<TransitionPair>> sccs = Walker.inGraph(
+            (TransitionPair u) -> graph.successors(u).stream())
+        .stronglyConnectedComponentsFrom(graph.nodes())
+        .collect(toList());
+
+    Map<TransitionPair, Integer> sccMap = new HashMap<>();
+    Set<TransitionPair> inCycle = new HashSet<>();
+    for (int id = 0; id < sccs.size(); id++) {
+      List<TransitionPair> scc = sccs.get(id);
+      boolean isCycle =
+          scc.size() > 1 || (scc.size() == 1 && graph.hasEdgeConnecting(scc.get(0), scc.get(0)));
+      for (TransitionPair node : scc) {
+        sccMap.put(node, id);
+        if (isCycle) {
+          inCycle.add(node);
+        }
+      }
+    }
+
+    List<DiagonalCycle> cycles = nfa.charTransitions.stream()
+        .map(t -> new TransitionPair(t.id(), t.id()))
+        .filter(u -> graph.nodes().contains(u) && inCycle.contains(u))
+        .map(u -> new DiagonalCycle(u, nfa.charTransitions.get(u.left()).chars(), sccMap.get(u)))
+        .toList();
 
     for (int a = 0; a < cycles.size(); a++) {
       DiagonalCycle ca = cycles.get(a);
@@ -571,19 +582,15 @@ public final class ReDos {
         if (a != b) {
           DiagonalCycle cb = cycles.get(b);
           if (ca.sccId() != cb.sccId() && ca.chars().intersects(cb.chars())) {
-            boolean reachable = Walker.inGraph((Integer u) -> {
-              int row = u / g.tCount;
-              int col = u % g.tCount;
-              if (row == col) {
-                Nfa.CharTransition tu = g.nfa.charTransitions.get(row);
-                if (tu.chars().intersects(ca.chars())) {
-                  return g.adj[u].stream().filter(v -> g.active[v]);
-                }
+            boolean reachable = Walker.inGraph((TransitionPair u) -> {
+              if (u.isDiagonal()
+                  && nfa.charTransitions.get(u.left()).chars().intersects(ca.chars())) {
+                return graph.successors(u).stream();
               }
               return Stream.empty();
             })
                 .breadthFirstFrom(ca.state())
-                .anyMatch(v -> v == cb.state());
+                .anyMatch(cb.state()::equals);
             if (reachable) {
               return true;
             }
@@ -594,164 +601,70 @@ public final class ReDos {
     return false;
   }
 
-  private record DiagonalCycle(int state, CharRanges chars, int sccId) {}
+  private record DiagonalCycle(TransitionPair state, CharRanges chars, int sccId) {}
 
-  private static final class ProductGraph {
-    final Nfa nfa;
-    final int tCount;
-    final List<Integer>[] adj;
-    final boolean[] active;
-    final List<List<Integer>> sccs;
-    final int[] sccMap;
-    final boolean[] inCycle;
+  private record TransitionPair(int left, int right) {
+    boolean isDiagonal() {
+      return left == right;
+    }
+  }
 
-    static ProductGraph from(Nfa nfa) {
-      int tCount = nfa.charTransitions.size();
-      int sCount = nfa.states.size();
-      int vCount = tCount * tCount;
+  private static Graph<TransitionPair> productGraph(Nfa nfa) {
+    MutableGraph<TransitionPair> rawGraph = GraphBuilder.directed().allowsSelfLoops(true).build();
 
-      @SuppressWarnings("unchecked")
-      List<Integer>[] transitionsBySource = new List[sCount];
-      @SuppressWarnings("unchecked")
-      List<Integer>[] revEps = new List[sCount];
-      for (int s = 0; s < sCount; s++) {
-        transitionsBySource[s] = new ArrayList<>();
-        revEps[s] = new ArrayList<>();
-      }
-      for (int i = 0; i < tCount; i++) {
-        transitionsBySource[nfa.charTransitions.get(i).source()].add(i);
-      }
-      for (int s = 0; s < sCount; s++) {
-        for (int next : nfa.states.get(s).epsilonTransitions) {
-          revEps[next].add(s);
-        }
-      }
+    List<List<Nfa.CharTransition>> nextTransitions =
+        nfa.charTransitions.stream().map(t -> nfa.reachableCharTransitions(t.target())).toList();
 
-      @SuppressWarnings("unchecked")
-      List<Integer>[] transitionsReachableFrom = new List[sCount];
-      for (int s = 0; s < sCount; s++) {
-        List<Integer> reachable = new ArrayList<>();
-        Walker.inGraph((Integer st) -> nfa.states.get(st).epsilonTransitions.stream())
-            .preOrderFrom(s)
-            .forEach(st -> reachable.addAll(transitionsBySource[st]));
-        transitionsReachableFrom[s] = reachable;
-      }
-
-      Set<Integer> canReachAcceptStates = Walker.inGraph((Integer st) -> revEps[st].stream())
-          .preOrderFrom(nfa.acceptState)
-          .collect(toSet());
-
-      @SuppressWarnings("unchecked")
-      List<Integer>[] adj = new List[vCount];
-      @SuppressWarnings("unchecked")
-      List<Integer>[] revAdj = new List[vCount];
-      for (int i = 0; i < vCount; i++) {
-        adj[i] = new ArrayList<>();
-        revAdj[i] = new ArrayList<>();
-      }
-
-      for (int i = 0; i < tCount; i++) {
-        Nfa.CharTransition ti = nfa.charTransitions.get(i);
-        List<Integer> candI = transitionsReachableFrom[ti.target()];
-        if (candI.isEmpty()) {
-          continue;
-        }
-        for (int j = 0; j < tCount; j++) {
-          Nfa.CharTransition tj = nfa.charTransitions.get(j);
-          List<Integer> candJ = transitionsReachableFrom[tj.target()];
-          if (candJ.isEmpty()) {
-            continue;
-          }
-          int u = i * tCount + j;
-          for (int ip : candI) {
-            Nfa.CharTransition tip = nfa.charTransitions.get(ip);
-            for (int jp : candJ) {
-              Nfa.CharTransition tjp = nfa.charTransitions.get(jp);
-              if (tip.chars().intersects(tjp.chars())) {
-                int v = ip * tCount + jp;
-                adj[u].add(v);
-                revAdj[v].add(u);
-              }
+    for (int i = 0; i < nfa.charTransitions.size(); i++) {
+      List<Nfa.CharTransition> candI = nextTransitions.get(i);
+      for (int j = 0; j < nfa.charTransitions.size(); j++) {
+        List<Nfa.CharTransition> candJ = nextTransitions.get(j);
+        TransitionPair u = new TransitionPair(i, j);
+        for (Nfa.CharTransition tip : candI) {
+          for (Nfa.CharTransition tjp : candJ) {
+            if (tip.chars().intersects(tjp.chars())) {
+              rawGraph.putEdge(u, new TransitionPair(tip.id(), tjp.id()));
             }
           }
         }
       }
-
-      List<Integer> initialStartNodes = new ArrayList<>();
-      List<Integer> startCandidates = transitionsReachableFrom[nfa.startState];
-      for (int i : startCandidates) {
-        Nfa.CharTransition ti = nfa.charTransitions.get(i);
-        for (int j : startCandidates) {
-          Nfa.CharTransition tj = nfa.charTransitions.get(j);
-          if (ti.chars().intersects(tj.chars())) {
-            initialStartNodes.add(i * tCount + j);
-          }
-        }
-      }
-      Set<Integer> reachableFromStart = Walker.inGraph((Integer u) -> adj[u].stream())
-          .preOrderFrom(initialStartNodes)
-          .collect(toSet());
-
-      List<Integer> acceptTransitions = new ArrayList<>();
-      for (int i = 0; i < tCount; i++) {
-        if (canReachAcceptStates.contains(nfa.charTransitions.get(i).target())) {
-          acceptTransitions.add(i);
-        }
-      }
-      List<Integer> initialAcceptNodes = new ArrayList<>();
-      for (int i : acceptTransitions) {
-        for (int j : acceptTransitions) {
-          initialAcceptNodes.add(i * tCount + j);
-        }
-      }
-      Set<Integer> canReachAccept = Walker.inGraph((Integer u) -> revAdj[u].stream())
-          .preOrderFrom(initialAcceptNodes)
-          .collect(toSet());
-
-      boolean[] active = new boolean[vCount];
-      List<Integer> activeNodes = new ArrayList<>();
-      for (int i = 0; i < vCount; i++) {
-        active[i] = reachableFromStart.contains(i) && canReachAccept.contains(i);
-        if (active[i]) {
-          activeNodes.add(i);
-        }
-      }
-
-      List<List<Integer>> sccs = Walker.inGraph(
-              (Integer u) -> adj[u].stream().filter(v -> active[v]))
-          .stronglyConnectedComponentsFrom(activeNodes)
-          .collect(toList());
-      int[] sccMap = new int[vCount];
-      Arrays.fill(sccMap, -1);
-      boolean[] inCycle = new boolean[vCount];
-      for (int id = 0; id < sccs.size(); id++) {
-        List<Integer> scc = sccs.get(id);
-        boolean isCycle =
-            scc.size() > 1 || (scc.size() == 1 && adj[scc.get(0)].contains(scc.get(0)));
-        for (int node : scc) {
-          sccMap[node] = id;
-          inCycle[node] = isCycle;
-        }
-      }
-      return new ProductGraph(nfa, tCount, adj, active, sccs, sccMap, inCycle);
     }
 
-    private ProductGraph(
-        Nfa nfa,
-        int tCount,
-        List<Integer>[] adj,
-        boolean[] active,
-        List<List<Integer>> sccs,
-        int[] sccMap,
-        boolean[] inCycle) {
-      this.nfa = nfa;
-      this.tCount = tCount;
-      this.adj = adj;
-      this.active = active;
-      this.sccs = sccs;
-      this.sccMap = sccMap;
-      this.inCycle = inCycle;
+    List<Nfa.CharTransition> startTransitions = nfa.reachableCharTransitions(nfa.startState);
+    List<TransitionPair> startPairs = new ArrayList<>();
+    for (Nfa.CharTransition ti : startTransitions) {
+      for (Nfa.CharTransition tj : startTransitions) {
+        if (ti.chars().intersects(tj.chars())) {
+          TransitionPair node = new TransitionPair(ti.id(), tj.id());
+          startPairs.add(node);
+          rawGraph.addNode(node);
+        }
+      }
     }
+
+    List<Nfa.CharTransition> acceptTransitions =
+        nfa.charTransitions.stream().filter(t -> nfa.canReachAccept(t.target())).toList();
+    List<TransitionPair> acceptPairs = new ArrayList<>();
+    for (Nfa.CharTransition ti : acceptTransitions) {
+      for (Nfa.CharTransition tj : acceptTransitions) {
+        TransitionPair node = new TransitionPair(ti.id(), tj.id());
+        acceptPairs.add(node);
+        rawGraph.addNode(node);
+      }
+    }
+
+    Set<TransitionPair> canReachAccept = Walker.inGraph(
+            (TransitionPair u) -> rawGraph.predecessors(u).stream())
+        .preOrderFrom(acceptPairs)
+        .collect(toSet());
+
+    Set<TransitionPair> activeNodes = Walker.inGraph(
+            (TransitionPair u) -> rawGraph.successors(u).stream())
+        .preOrderFrom(startPairs)
+        .filter(canReachAccept::contains)
+        .collect(toSet());
+
+    return Graphs.inducedSubgraph(rawGraph, activeNodes);
   }
 
   private ReDos() {}
