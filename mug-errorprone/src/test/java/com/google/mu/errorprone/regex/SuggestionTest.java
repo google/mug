@@ -192,4 +192,28 @@ public final class SuggestionTest {
     SubstringSuggestion suggestion = new SubstringSuggestion("Substring.first(':')", "Caveat");
     assertThrows(UnsupportedOperationException.class, () -> suggestion.caveats().add("Another"));
   }
+
+  @Test public void regexSuggestion_multipleCaveats_varargs() {
+    Suggestion suggestion = new RegexSuggestion("a+", "Caveat 1", "Caveat 2");
+    assertThat(suggestion.replacement()).isEqualTo("a+");
+    assertThat(suggestion.isStrictlyEquivalent()).isFalse();
+    assertThat(suggestion.caveats()).containsExactly("Caveat 1", "Caveat 2").inOrder();
+  }
+
+  @Test public void stringFormatSuggestion_multipleCaveats_varargs() {
+    StringFormatSuggestion suggestion =
+        new StringFormatSuggestion("{left}:{right}", "Caveat 1", "Caveat 2");
+    assertThat(suggestion.caveats()).containsExactly("Caveat 1", "Caveat 2").inOrder();
+  }
+
+  @Test public void parserSuggestion_multipleCaveats_varargs() {
+    ParserSuggestion suggestion = new ParserSuggestion("Parsers.integer()", "Caveat 1", "Caveat 2");
+    assertThat(suggestion.caveats()).containsExactly("Caveat 1", "Caveat 2").inOrder();
+  }
+
+  @Test public void substringSuggestion_multipleCaveats_varargs() {
+    SubstringSuggestion suggestion =
+        new SubstringSuggestion("Substring.first(':')", "Caveat 1", "Caveat 2");
+    assertThat(suggestion.caveats()).containsExactly("Caveat 1", "Caveat 2").inOrder();
+  }
 }

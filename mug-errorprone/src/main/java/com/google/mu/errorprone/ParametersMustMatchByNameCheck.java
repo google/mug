@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import com.google.auto.service.AutoService;
-import com.google.common.collect.ImmutableList;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.LinkType;
 import com.google.errorprone.VisitorState;
@@ -32,15 +31,15 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Type;
 
 /**
- * Checks that call sites of {@code @ParametersMustMatchByName} methods must match the declared parameter
- * names.
+ * Checks that call sites of {@code @ParametersMustMatchByName} methods must match the declared
+ * parameter names.
  */
 @BugPattern(
     summary =
         "Checks that call sites of methods and constructors annotated by @ParametersMustMatchByName"
             + " do pass expected expressions for each corresponding parameter matching the"
             + " declared parameter name.",
-    link = "go/parameters-must-match-by-name",
+    link = "https://google.github.io/mug/apidocs/com/google/mu/annotations/ParametersMustMatchByName.html",
     linkType = LinkType.CUSTOM,
     severity = ERROR)
 @AutoService(BugChecker.class)
@@ -50,14 +49,13 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
   private static final String ANNOTATION_NAME =
       "com.google.mu.annotations.ParametersMustMatchByName";
 
-  @Override
-  public void checkConstructorCall(NewClassTree tree, VisitorState state) throws ErrorReport {
+  @Override public void checkConstructorCall(
+      NewClassTree tree, VisitorState state) throws ErrorReport {
     checkParameters(ASTHelpers.getSymbol(tree), tree.getIdentifier(), tree.getArguments(), state);
   }
 
-  @Override
-  public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
-      throws ErrorReport {
+  @Override public void checkMethodInvocation(
+      MethodInvocationTree tree, VisitorState state) throws ErrorReport {
     checkParameters(ASTHelpers.getSymbol(tree), tree.getMethodSelect(), tree.getArguments(), state);
   }
 
@@ -81,33 +79,29 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     }
     ClassSymbol currentClass = ASTHelpers.getSymbol(classTree);
     List<VarSymbol> params = method.getParameters();
-    ImmutableList<String> normalizedArgTexts = normalizeForComparison(argSources);
+    if (method.isVarArgs() && args.size() < params.size()) {
+      params = params.subList(0, params.size() - 1);  // no vararg at call site. Ignore varargs.
+    }
+    List<String> normalizedArgTexts = normalizeForComparison(argSources);
     // No need to check for varargs parameter name.
-    int argsToCheck = method.isVarArgs() ? params.size() - 1 : params.size();
+    int argsToCheck = method.isVarArgs() ? method.getParameters().size() - 1 : params.size();
     for (int i = 0; i < argsToCheck; i++) {
       VarSymbol param = params.get(i);
       ExpressionTree arg = args.get(i);
-      if (normalizedArgTexts
-          .get(i)
+      if (normalizedArgTexts.get(i)
           .contains(normalizeForComparison(param.getSimpleName().toString()))) {
         continue;
       }
       // Literal arg or for class-level annotation where the caller is also in the same class,
       // relax the rule except if there is explicit /* paramName */ or ambiguity.
       boolean trustable =
-          isTrustableLiteral(arg)
-              || arg instanceof LambdaExpressionTree
-              || arg instanceof MemberReferenceTree
-              || arg instanceof NewClassTree
-              || isClassLiteral(arg)
-              || isEnumConstant(arg)
-              || isThis(arg)
+          isTrustableLiteral(arg) || arg instanceof LambdaExpressionTree
+              || arg instanceof MemberReferenceTree || arg instanceof NewClassTree
+              || isClassLiteral(arg) || isEnumConstant(arg) || isThis(arg)
               || (!methodAnnotated && method.enclClass().equals(currentClass));
-      checkingOn(arg)
-          .require(
+      checkingOn(arg).require(
               trustable // trust if no other parameter has the same type
-                  && !hasArgComment(argSources.get(i))
-                  && isUniqueType(params, i, state),
+                  && !hasArgComment(argSources.get(i)) && isUniqueType(method, params, i, state),
               "argument expression must match parameter name `%s`",
               param);
     }
@@ -123,13 +117,13 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
   }
 
   private static boolean isTrustableLiteral(ExpressionTree tree) {
-    return tree instanceof LiteralTree
-        && tree.getKind() != Tree.Kind.BOOLEAN_LITERAL
+    return tree instanceof LiteralTree && tree.getKind() != Tree.Kind.BOOLEAN_LITERAL
         && tree.getKind() != Tree.Kind.NULL_LITERAL;
   }
 
   private static boolean isThis(ExpressionTree tree) {
-    return tree instanceof IdentifierTree && ((IdentifierTree) tree).getName().contentEquals("this");
+    return tree instanceof IdentifierTree
+        && ((IdentifierTree) tree).getName().contentEquals("this");
   }
 
   private static boolean isClassLiteral(ExpressionTree tree) {
@@ -142,11 +136,21 @@ public final class ParametersMustMatchByNameCheck extends AbstractBugChecker
     return symbol instanceof VarSymbol && symbol.isEnum();
   }
 
-  private static boolean isUniqueType(List<VarSymbol> params, int paramIndex, VisitorState state) {
+  private static boolean isUniqueType(
+      MethodSymbol method, List<VarSymbol> params, int paramIndex, VisitorState state) {
     Type type = params.get(paramIndex).type;
     return IntStream.range(0, params.size())
         .filter(i -> i != paramIndex)
-        .mapToObj(i -> params.get(i).type)
+        .mapToObj(i -> {
+          Type t = params.get(i).type;
+          if (method.isVarArgs() && i == params.size() - 1) {
+            Type elemType = state.getTypes().elemtype(t);
+            if (elemType != null) {
+              return elemType;
+            }
+          }
+          return t;
+        })
         .noneMatch(t -> ASTHelpers.isSameType(t, type, state));
   }
 }

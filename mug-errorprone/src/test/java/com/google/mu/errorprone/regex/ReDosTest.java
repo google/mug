@@ -1072,7 +1072,7 @@ public final class ReDosTest {
     assertThat(thrown.getSuggestions())
         .contains(
             new Suggestion.SubstringSuggestion(
-                "Substring.between(\"[\", \"]\").from(input)",
+                /* replacement= */ "Substring.between(\"[\", \"]\").from(input)",
                 "Substring.between extracts the first matching enclosed range"));
   }
 
@@ -1091,7 +1091,7 @@ public final class ReDosTest {
 
   @Test public void suggestion_substringSuggestion_instantiationAndAccessors() {
     Suggestion.SubstringSuggestion ss = new Suggestion.SubstringSuggestion(
-        "Substring.first(':').split(input)", "Splits at the first match");
+        /* replacement= */ "Substring.first(':').split(input)", "Splits at the first match");
     assertThat(ss.replacement()).isEqualTo("Substring.first(':').split(input)");
     assertThat(ss.isStrictlyEquivalent()).isFalse();
     assertThat(ss.caveats()).containsExactly("Splits at the first match");

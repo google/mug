@@ -115,7 +115,7 @@ public final class ReDos {
     if (isStructuredGrammar(pattern)) {
       suggestions.add(
           new Suggestion.ParserSuggestion(
-              "Parsers.integer().repeatedly()",
+              /* replacement= */ "Parsers.integer().repeatedly()",
               "Parser combinators parse deterministically with prioritized choice and do not"
                   + " backtrack non-deterministically across ambiguous boundaries"));
     }
@@ -146,10 +146,10 @@ public final class ReDos {
           String delim = lit.value();
           if (!delim.isEmpty()) {
             String delimEscaped = delim.length() == 1 ? "'" + delim + "'" : "\"" + delim + "\"";
+            String replacement = "Substring.first(" + delimEscaped + ").split(input)";
             return Optional.of(
                 new Suggestion.SubstringSuggestion(
-                    "Substring.first(" + delimEscaped + ").split(input)",
-                    "Substring splits at the first occurrence of the delimiter"));
+                    replacement, "Substring splits at the first occurrence of the delimiter"));
           }
         }
       }
@@ -164,10 +164,11 @@ public final class ReDos {
           String open = openLit.value();
           String close = closeLit.value();
           if (!open.isEmpty() && !close.isEmpty()) {
+            String replacement =
+                "Substring.between(\"" + open + "\", \"" + close + "\").from(input)";
             return Optional.of(
                 new Suggestion.SubstringSuggestion(
-                    "Substring.between(\"" + open + "\", \"" + close + "\").from(input)",
-                    "Substring.between extracts the first matching enclosed range"));
+                    replacement, "Substring.between extracts the first matching enclosed range"));
           }
         }
       }
@@ -197,9 +198,10 @@ public final class ReDos {
         if (isWildcard(e0) && e1 instanceof RegexPattern.Literal lit && isWildcard(e2)) {
           String delim = lit.value();
           if (!delim.isEmpty()) {
+            String format = "{left}" + delim + "{right}";
             return Optional.of(
                 new Suggestion.StringFormatSuggestion(
-                    "{left}" + delim + "{right}",
+                    format,
                     "StringFormat matches delimiters from left to right, whereas greedy '.*' in"
                         + " regex matches the last occurrence"));
           }
@@ -251,10 +253,12 @@ public final class ReDos {
       if (inner instanceof RegexPattern.Quantified innerQ) {
         boolean canBeEmpty = innerQ.metadata().minSize() == 0 || q.metadata().minSize() == 0;
         String op = canBeEmpty ? "*" : "+";
-        return Optional.of(new Suggestion.RegexSuggestion(innerQ.element().toString() + op));
+        String replacement = innerQ.element().toString() + op;
+        return Optional.of(new Suggestion.RegexSuggestion(replacement));
       }
       if (inner.metadata().minSize() == 0 && inner.metadata().maxSize() > 0) {
-        return Optional.of(new Suggestion.RegexSuggestion(inner.toString() + "*"));
+        String replacement = inner.toString() + "*";
+        return Optional.of(new Suggestion.RegexSuggestion(replacement));
       }
     }
     return Optional.empty();
@@ -284,19 +288,19 @@ public final class ReDos {
               List<RegexPattern> rewritten = new ArrayList<>(seq.elements());
               rewritten.set(p.firstIndex(), merged);
               rewritten.remove(p.secondIndex());
-              String regex =
+              String replacement =
                   rewritten.size() == 1
                       ? rewritten.get(0).toString()
                       : new RegexPattern.Sequence(rewritten).toString();
-              return new Suggestion.RegexSuggestion(regex);
+              return new Suggestion.RegexSuggestion(replacement);
             }
             RegexPattern rewrittenFirst = new RegexPattern.Quantified(
                 p.first().element(), p.first().quantifier().possessive());
             List<RegexPattern> rewritten = new ArrayList<>(seq.elements());
             rewritten.set(p.firstIndex(), rewrittenFirst);
-            String regex = new RegexPattern.Sequence(rewritten).toString();
+            String replacement = new RegexPattern.Sequence(rewritten).toString();
             return new Suggestion.RegexSuggestion(
-                regex,
+                replacement,
                 "Possessive quantifier '" + rewrittenFirst
                     + "' prevents backtracking and may fail if subsequent tokens require"
                     + " characters greedily consumed by '" + rewrittenFirst + "'");
