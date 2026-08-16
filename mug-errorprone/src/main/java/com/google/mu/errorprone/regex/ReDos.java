@@ -1,7 +1,10 @@
 package com.google.mu.errorprone.regex;
 
+import static java.util.stream.Collectors.joining;
+
 import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
+import com.google.mu.util.StringFormat;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,6 +15,14 @@ import java.util.Optional;
  * @since 10.9
  */
 public final class ReDos {
+  private static final StringFormat ERROR_MESSAGE = new StringFormat(
+      "Regular expression is vulnerable to {vulnerabilityType}: '{pattern}'"
+          + " {detail}{payload}{suggestion}{caveats}");
+  private static final StringFormat ATTACK_PAYLOAD =
+      new StringFormat("\n  attack payload: \"{payload}\"");
+  private static final StringFormat CONSIDER_SUGGESTION =
+      new StringFormat("\n  consider: {replacement}");
+  private static final StringFormat CAVEAT_LINE = new StringFormat("\n  caveat: {caveat}");
 
   /**
    * Checks whether the given {@link RegexPattern} is vulnerable to exponential backtracking
@@ -21,9 +32,10 @@ public final class ReDos {
    *     vulnerability
    */
   public static void checkRedosVulnerability(RegexPattern pattern) {
-    VulnerabilityAnalyzer.detectExponentialBacktracking(pattern)
+    new VulnerabilityAnalyzer(pattern)
+        .exponentialBacktracking()
         .ifPresent(finding -> {
-          List<Suggestion> suggestions = SuggestionSynthesizer.forRedos(pattern);
+          List<Suggestion> suggestions = new SuggestionSynthesizer(pattern).forRedos();
           String message = formatErrorMessage(
               "exponential backtracking (ReDoS)",
               pattern,
@@ -42,9 +54,10 @@ public final class ReDos {
    *     consecutive overlapping quantifiers)
    */
   public static void checkPolynomialBacktracking(RegexPattern pattern) {
-    VulnerabilityAnalyzer.detectPolynomialBacktracking(pattern)
+    new VulnerabilityAnalyzer(pattern)
+        .polynomialBacktracking()
         .ifPresent(finding -> {
-          List<Suggestion> suggestions = SuggestionSynthesizer.forPolynomial(pattern);
+          List<Suggestion> suggestions = new SuggestionSynthesizer(pattern).forPolynomial();
           String message = formatErrorMessage(
               "polynomial backtracking (PDA)",
               pattern,
@@ -61,7 +74,7 @@ public final class ReDos {
    * pattern, ordered by preference (Regex -> StringFormat -> Substring -> Parser).
    */
   public static List<Suggestion> suggestRedosAlternatives(RegexPattern pattern) {
-    return SuggestionSynthesizer.forRedos(pattern);
+    return new SuggestionSynthesizer(pattern).forRedos();
   }
 
   /**
@@ -69,7 +82,7 @@ public final class ReDos {
    * vulnerable pattern, ordered by preference (Regex -> StringFormat -> Substring -> Parser).
    */
   public static List<Suggestion> suggestPolynomialAlternatives(RegexPattern pattern) {
-    return SuggestionSynthesizer.forPolynomial(pattern);
+    return new SuggestionSynthesizer(pattern).forPolynomial();
   }
 
   /**
@@ -77,7 +90,7 @@ public final class ReDos {
    * known.
    */
   public static Optional<String> suggestRedosRewrite(RegexPattern pattern) {
-    return SuggestionSynthesizer.suggestRedosRewrite(pattern);
+    return new SuggestionSynthesizer(pattern).suggestRedosRewrite();
   }
 
   /**
@@ -85,7 +98,7 @@ public final class ReDos {
    * fix is known (e.g. using possessive quantifier).
    */
   public static Optional<String> suggestPolynomialRewrite(RegexPattern pattern) {
-    return SuggestionSynthesizer.suggestPolynomialRewrite(pattern);
+    return new SuggestionSynthesizer(pattern).suggestPolynomialRewrite();
   }
 
   private static String formatErrorMessage(
@@ -94,28 +107,20 @@ public final class ReDos {
       String detail,
       String payload,
       List<Suggestion> suggestions) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("Regular expression is vulnerable to ")
-        .append(vulnerabilityType)
-        .append(": '")
-        .append(pattern)
-        .append("' ")
-        .append(detail);
-    if (!payload.isEmpty()) {
-      sb.append("\n  attack payload: \"").append(payload).append("\"");
-    }
+    String payloadPart = payload.isEmpty() ? "" : ATTACK_PAYLOAD.format(payload);
+    String suggestionPart = "";
+    String caveatsPart = "";
     if (!suggestions.isEmpty()) {
       Suggestion first = suggestions.get(0);
       String replacement =
           first instanceof Suggestion.RegexSuggestion
               ? "'" + first.replacement() + "'"
               : first.replacement();
-      sb.append("\n  consider: ").append(replacement);
-      for (String caveat : first.caveats()) {
-        sb.append("\n  caveat: ").append(caveat);
-      }
+      suggestionPart = CONSIDER_SUGGESTION.format(replacement);
+      caveatsPart = first.caveats().stream().map(CAVEAT_LINE::format).collect(joining());
     }
-    return sb.toString();
+    return ERROR_MESSAGE.format(
+        vulnerabilityType, pattern, detail, payloadPart, suggestionPart, caveatsPart);
   }
 
   private ReDos() {}

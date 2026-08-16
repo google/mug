@@ -3,11 +3,10 @@ package com.google.mu.errorprone.regex;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Character.MAX_CODE_POINT;
 
+import com.google.common.labs.regex.RegexPattern;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import com.google.common.labs.regex.RegexPattern;
 
 /**
  * Immutable representation of a set of character code points, stored as a sorted list of disjoint,
