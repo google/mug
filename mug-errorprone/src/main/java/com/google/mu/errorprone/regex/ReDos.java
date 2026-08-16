@@ -41,14 +41,13 @@ public final class ReDos {
       String payload =
           attackPayloadForSubPattern(pattern, nullable.get(), sampleMatchingString(nullable.get()));
       List<Suggestion> suggestions = suggestRedosAlternatives(pattern);
-      String suggestionMsg = formatSuggestionMessage(suggestions);
-      throw new VulnerableRegexException(
-          "Regular expression is vulnerable to exponential backtracking (ReDoS): '" + pattern
-              + "' contains unbounded repetition of nullable sub-pattern '" + nullable.get()
-              + "' (attack payload: \"" + payload + "\")" + suggestionMsg,
+      String message = formatErrorMessage(
+          "exponential backtracking (ReDoS)",
           pattern,
+          "contains unbounded repetition of nullable sub-pattern '" + nullable.get() + "'",
           payload,
           suggestions);
+      throw new VulnerableRegexException(message, pattern, payload, suggestions);
     }
     Nfa nfa = Nfa.from(pattern);
     if (hasExponentialAmbiguity(nfa)) {
@@ -60,13 +59,9 @@ public final class ReDos {
               pattern, culprit, sampleMatchingString(unwrapGroup(culprit.element()))))
           .orElseGet(() -> attackPayload("", sampleMatchingString(pattern)));
       List<Suggestion> suggestions = suggestRedosAlternatives(pattern);
-      String suggestionMsg = formatSuggestionMessage(suggestions);
-      throw new VulnerableRegexException(
-          "Regular expression is vulnerable to exponential backtracking (ReDoS): '" + pattern + "' "
-              + detail + " (attack payload: \"" + payload + "\")" + suggestionMsg,
-          pattern,
-          payload,
-          suggestions);
+      String message = formatErrorMessage(
+          "exponential backtracking (ReDoS)", pattern, detail, payload, suggestions);
+      throw new VulnerableRegexException(message, pattern, payload, suggestions);
     }
   }
 
@@ -87,13 +82,9 @@ public final class ReDos {
               : Optional.<String>empty())
           .orElseGet(() -> attackPayload("", sampleMatchingString(pattern)));
       List<Suggestion> suggestions = suggestPolynomialAlternatives(pattern);
-      String suggestionMsg = formatSuggestionMessage(suggestions);
-      throw new VulnerableRegexException(
-          "Regular expression is vulnerable to polynomial backtracking (PDA): '" + pattern + "' "
-              + desc + " (attack payload: \"" + payload + "\")" + suggestionMsg,
-          pattern,
-          payload,
-          suggestions);
+      String message =
+          formatErrorMessage("polynomial backtracking (PDA)", pattern, desc, payload, suggestions);
+      throw new VulnerableRegexException(message, pattern, payload, suggestions);
     }
   }
 
@@ -171,15 +162,34 @@ public final class ReDos {
     return Optional.empty();
   }
 
-  private static String formatSuggestionMessage(List<Suggestion> suggestions) {
-    if (suggestions.isEmpty()) {
-      return "";
+  private static String formatErrorMessage(
+      String vulnerabilityType,
+      RegexPattern pattern,
+      String detail,
+      String payload,
+      List<Suggestion> suggestions) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("Regular expression is vulnerable to ")
+        .append(vulnerabilityType)
+        .append(": '")
+        .append(pattern)
+        .append("' ")
+        .append(detail);
+    if (!payload.isEmpty()) {
+      sb.append("\n  attack payload: \"").append(payload).append("\"");
     }
-    Suggestion first = suggestions.get(0);
-    if (first instanceof Suggestion.RegexSuggestion regex) {
-      return " (suggested rewrite: '" + regex.replacement() + "')";
+    if (!suggestions.isEmpty()) {
+      Suggestion first = suggestions.get(0);
+      String replacement =
+          first instanceof Suggestion.RegexSuggestion
+              ? "'" + first.replacement() + "'"
+              : first.replacement();
+      sb.append("\n  consider: ").append(replacement);
+      for (String caveat : first.caveats()) {
+        sb.append("\n  caveat: ").append(caveat);
+      }
     }
-    return " (Consider using " + first.replacement() + ")";
+    return sb.toString();
   }
 
   private static Optional<Suggestion.StringFormatSuggestion> suggestStringFormat(
