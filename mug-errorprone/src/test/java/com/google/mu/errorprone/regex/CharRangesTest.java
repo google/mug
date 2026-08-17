@@ -162,4 +162,34 @@ public final class CharRangesTest {
     assertThat(CharRanges.from(RegexPattern.PosixCharClass.ALNUM))
         .isSameInstanceAs(CharRanges.from(RegexPattern.PosixCharClass.ALNUM));
   }
+
+  @Test public void intersection_withEmpty_returnsEmpty() {
+    assertThat(CharRanges.range('a', 'z').intersection(CharRanges.EMPTY).isEmpty()).isTrue();
+  }
+
+  @Test public void intersection_emptyWithNonEmpty_returnsEmpty() {
+    assertThat(CharRanges.EMPTY.intersection(CharRanges.range('a', 'z')).isEmpty()).isTrue();
+  }
+
+  @Test public void from_unicodePropertyNd_containsDigit() {
+    CharRanges ranges = CharRanges.from((RegexPattern.CharacterSet) RegexPattern.of("[\\p{Nd}]"));
+    assertThat(ranges.contains('0')).isTrue();
+    assertThat(ranges.contains('9')).isTrue();
+    assertThat(ranges.contains('a')).isFalse();
+  }
+
+  @Test public void from_unicodePropertyL_containsAlpha() {
+    CharRanges ranges = CharRanges.from((RegexPattern.CharacterSet) RegexPattern.of("[\\p{L}]"));
+    assertThat(ranges.contains('a')).isTrue();
+    assertThat(ranges.contains('Z')).isTrue();
+    assertThat(ranges.contains('0')).isFalse();
+  }
+
+  @Test public void complement_rangeEndingAtMaxCodePoint_invertsCorrectly() {
+    CharRanges r = CharRanges.range(100, Character.MAX_CODE_POINT);
+    CharRanges comp = r.complement();
+    assertThat(comp.contains(99)).isTrue();
+    assertThat(comp.contains(100)).isFalse();
+    assertThat(comp.contains(Character.MAX_CODE_POINT)).isFalse();
+  }
 }

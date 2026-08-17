@@ -997,6 +997,44 @@ public final class ReDosTest {
     assertThat(thrown.getSuggestedAlternatives()).containsExactly("a+");
   }
 
+  @Test public void checkRedosVulnerability_exactQuantifierInPrefix_generatesFullPrefixInPayload() {
+    RegexPattern pattern = RegexPattern.of("x{3}(a+)+");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getAttackPayload()).isEqualTo("xxx" + "a".repeat(30) + "!");
+  }
+
+  @Test public void
+      checkRedosVulnerability_zeroMinQuantifierInPrefix_generatesMinimalPrefixInPayload() {
+    RegexPattern pattern = RegexPattern.of("x*y?(a+)+");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getAttackPayload()).isEqualTo("a".repeat(30) + "!");
+  }
+
+  @Test public void
+      checkRedosVulnerability_rangeQuantifierInPrefix_generatesMinRepetitionPrefixInPayload() {
+    RegexPattern pattern = RegexPattern.of("x{2,5}(a+)+");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getAttackPayload()).isEqualTo("xx" + "a".repeat(30) + "!");
+  }
+
+  @Test public void checkPolynomialBacktracking_nullableQuantifiedInPrefix_doesNotDivideByZero() {
+    RegexPattern pattern = RegexPattern.of("(a?){2}\\d+\\w+");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown.getAttackPayload()).isEqualTo("0".repeat(30) + "!");
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_nullableStarQuantifiedInPrefix_doesNotDivideByZero() {
+    RegexPattern pattern = RegexPattern.of("(a*){3}\\d+\\w+");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown.getAttackPayload()).isEqualTo("0".repeat(30) + "!");
+  }
+
   @Test public void
       checkPolynomialBacktracking_throwsVulnerableRegexExceptionWithStructuredDetails() {
     RegexPattern pattern = RegexPattern.of("\\d+\\w+");
@@ -1052,6 +1090,37 @@ public final class ReDosTest {
             "Parser.sequence(Parser.consecutive(\"[a-zA-Z0-9_]\").followedBy(\"=\"),"
                 + " Parser.consecutive(\"[a-zA-Z0-9_]\"), Map::entry).atLeastOnceDelimitedBy(\""
                 + " \")");
+  }
+
+  @Test public void
+      checkRedosVulnerability_starQuantifiedDelimitedWords_suggestsZeroOrMoreDelimitedBy() {
+    RegexPattern pattern = RegexPattern.of("(\\w+,?)*");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getSuggestedAlternatives())
+        .contains("Parser.consecutive(\"[a-zA-Z0-9_]\").zeroOrMoreDelimitedBy(\",\")");
+  }
+
+  @Test public void
+      checkRedosVulnerability_starQuantifiedKeyValuePairs_suggestsZeroOrMoreDelimitedBy() {
+    RegexPattern pattern = RegexPattern.of("(\\w+=\\w+\\s*)*");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getSuggestedAlternatives())
+        .contains(
+            "Parser.sequence(Parser.consecutive(\"[a-zA-Z0-9_]\").followedBy(\"=\"),"
+                + " Parser.consecutive(\"[a-zA-Z0-9_]\"), Map::entry).zeroOrMoreDelimitedBy(\""
+                + " \")");
+  }
+
+  @Test public void checkRedosVulnerability_exactCountQuantifier_detected() {
+    RegexPattern pattern = RegexPattern.of("((a+){3})+");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+  }
+
+  @Test public void checkRedosVulnerability_rangeQuantifierWithBound_detected() {
+    RegexPattern pattern = RegexPattern.of("(a{2,5})+");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
   }
 
   @Test public void

@@ -78,10 +78,7 @@ final class RegexPatternUtils {
       case RegexPattern.CharacterSet cs -> CharRanges.from(cs);
       case RegexPattern.PredefinedCharClass pcc -> CharRanges.from(pcc);
       case RegexPattern.PosixCharClass pcc -> CharRanges.from(pcc);
-      case RegexPattern.Literal lit -> {
-        String val = lit.value();
-        yield val.isEmpty() ? CharRanges.ANY : CharRanges.of(val.charAt(0));
-      }
+      case RegexPattern.Literal lit -> CharRanges.of(lit.value().charAt(0));
       default -> CharRanges.ANY;
     };
   }
