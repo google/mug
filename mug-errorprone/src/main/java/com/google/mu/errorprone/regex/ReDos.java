@@ -34,7 +34,8 @@ public final class ReDos {
     new VulnerabilityAnalyzer(pattern)
         .exponentialBacktracking()
         .ifPresent(finding -> {
-          List<Suggestion> suggestions = new SuggestionSynthesizer(pattern).forRedos();
+          List<Suggestion> suggestions =
+              new SuggestionSynthesizer(pattern, finding.culprit()).forRedos();
           String message = formatErrorMessage(
               "exponential backtracking (ReDoS)",
               pattern,
@@ -56,7 +57,8 @@ public final class ReDos {
     new VulnerabilityAnalyzer(pattern)
         .polynomialBacktracking()
         .ifPresent(finding -> {
-          List<Suggestion> suggestions = new SuggestionSynthesizer(pattern).forPolynomial();
+          List<Suggestion> suggestions =
+              new SuggestionSynthesizer(pattern, finding.culprit()).forPolynomial();
           String message = formatErrorMessage(
               "polynomial backtracking (PDA)",
               pattern,

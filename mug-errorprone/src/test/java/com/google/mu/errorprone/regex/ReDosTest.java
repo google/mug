@@ -110,6 +110,16 @@ public final class ReDosTest {
     ReDos.checkRedosVulnerability(pattern);
   }
 
+  @Test public void checkPolynomialBacktracking_dotSeparatedWords_safe() {
+    RegexPattern pattern = RegexPattern.of("^[a-zA-Z]([\\w]*\\.[a-zA-Z][\\w]*)+$");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_commentLines_safe() {
+    RegexPattern pattern = RegexPattern.of("(\n\\s*//.*)+\\s*$");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
   @Test public void checkRedosVulnerability_possessiveNestedQuantifier_doesNotThrow() {
     RegexPattern pattern = RegexPattern.of("(a++)++");
     ReDos.checkRedosVulnerability(pattern);
@@ -1217,6 +1227,15 @@ public final class ReDosTest {
     assertThat(ps.caveats()).contains(
             "Use parseSkipping(Character::isWhitespace, input) to skip surrounding whitespace"
                 + " during parsing");
+  }
+
+  @Test public void
+      checkRedosVulnerability_nestedKeyValuePairsInSequence_noParserSuggestionForSubExpression() {
+    RegexPattern pattern = RegexPattern.of(
+        "(?<tag>\\p{Alpha}+)(?:\\{\\s?(?<params>(?:\\p{Alpha}+=[\\w|\\.]+,?\\s?)+)?\\})?");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void checkRedosVulnerability_structuredNumberGrammar_suggestsParsers() {

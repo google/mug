@@ -18,10 +18,16 @@ import java.util.Optional;
  * vulnerable regexes.
  */
 final class SuggestionSynthesizer {
-  private final RegexPattern pattern;
+  private final RegexPattern rootPattern;
+  private final RegexPattern culprit;
+
+  SuggestionSynthesizer(RegexPattern rootPattern, RegexPattern culprit) {
+    this.rootPattern = requireNonNull(rootPattern);
+    this.culprit = requireNonNull(culprit);
+  }
 
   SuggestionSynthesizer(RegexPattern pattern) {
-    this.pattern = requireNonNull(pattern);
+    this(pattern, pattern);
   }
 
   List<Suggestion> forRedos() {
@@ -56,7 +62,7 @@ final class SuggestionSynthesizer {
   }
 
   private Optional<Suggestion.RegexSuggestion> suggestRedosRegexSuggestion() {
-    if (pattern instanceof RegexPattern.Quantified q) {
+    if (rootPattern instanceof RegexPattern.Quantified q) {
       RegexPattern inner = unwrapGroup(q.element());
       if (inner instanceof RegexPattern.Quantified innerQ) {
         boolean canBeEmpty = innerQ.metadata().minSize() == 0 || q.metadata().minSize() == 0;
@@ -72,7 +78,7 @@ final class SuggestionSynthesizer {
   }
 
   private Optional<Suggestion.RegexSuggestion> suggestPolynomialRegexSuggestion() {
-    if (pattern instanceof RegexPattern.Sequence seq) {
+    if (rootPattern instanceof RegexPattern.Sequence seq) {
       return findOverlappingQuantifiers(seq)
           .map(p -> {
             if (p.secondIndex() == p.firstIndex() + 1
@@ -107,15 +113,27 @@ final class SuggestionSynthesizer {
     return Optional.empty();
   }
 
+  private boolean isEntireRegexCulprit() {
+    return unwrapGroup(rootPattern).equals(unwrapGroup(culprit));
+  }
+
   private Optional<Suggestion.ParserSuggestion> suggestParser() {
-    if (isStructuredNumberGrammar()) {
+    if (!isEntireRegexCulprit()) {
+      return Optional.empty();
+    }
+    if (isStructuredNumberGrammar(rootPattern)) {
       return Optional.of(
           new Suggestion.ParserSuggestion(
               "Parsers.UNSIGNED_INTEGER.atLeastOnce()",
               "Parser combinators parse deterministically with prioritized choice and do not"
                   + " backtrack non-deterministically across ambiguous boundaries"));
     }
-    if (pattern instanceof RegexPattern.Quantified q) {
+    return suggestParserFromPattern(rootPattern);
+  }
+
+  private Optional<Suggestion.ParserSuggestion> suggestParserFromPattern(RegexPattern pattern) {
+    RegexPattern p = unwrapGroup(pattern);
+    if (p instanceof RegexPattern.Quantified q) {
       RegexPattern inner = unwrapGroup(q.element());
       if (inner instanceof RegexPattern.Sequence seq) {
         Optional<KeyValueExtraction> kv = extractKeyValue(seq.elements());
@@ -142,7 +160,8 @@ final class SuggestionSynthesizer {
                   : new RegexPattern.Sequence(delimElements);
           Optional<String> tokenParser = translateToParser(token);
           Optional<DelimiterExtraction> delimExt = extractDelimiter(delimPattern);
-          if (tokenParser.isPresent() && delimExt.isPresent()) {
+          if (tokenParser.isPresent() && delimExt.isPresent()
+              && !tokenParser.get().contains("\"" + delimExt.get().delimiter() + "\"")) {
             String combinator =
                 q.metadata().minSize() > 0 ? "atLeastOnceDelimitedBy" : "zeroOrMoreDelimitedBy";
             String replacement =
@@ -154,9 +173,8 @@ final class SuggestionSynthesizer {
         }
       }
     }
-    RegexPattern p =
-        pattern instanceof RegexPattern.Quantified q ? unwrapGroup(q.element()) : pattern;
-    if (p instanceof RegexPattern.Sequence seq && seq.elements().size() == 2) {
+    RegexPattern innerP = p instanceof RegexPattern.Quantified q ? unwrapGroup(q.element()) : p;
+    if (innerP instanceof RegexPattern.Sequence seq && seq.elements().size() == 2) {
       RegexPattern token1 = unwrapGroup(seq.elements().get(0));
       RegexPattern rest = unwrapGroup(seq.elements().get(1));
       if (rest instanceof RegexPattern.Quantified rq) {
@@ -171,7 +189,8 @@ final class SuggestionSynthesizer {
                   : new RegexPattern.Sequence(delimElements);
           Optional<String> t1 = translateToParser(token1);
           Optional<String> t2 = translateToParser(token2);
-          Optional<DelimiterExtraction> d = extractDelimiter(delimPattern);
+          Optional<DelimiterExtraction> d =
+              extractDelimiter(delimPattern).or(() -> extractLiteralDelimiter(delimPattern));
           return optionally(
               t1.isPresent() && t1.equals(t2) && d.isPresent(),
               () -> {
@@ -182,6 +201,14 @@ final class SuggestionSynthesizer {
               });
         }
       }
+    }
+    return Optional.empty();
+  }
+
+  private static Optional<DelimiterExtraction> extractLiteralDelimiter(RegexPattern p) {
+    p = unwrapGroup(p);
+    if (p instanceof RegexPattern.Literal lit && !lit.value().isEmpty()) {
+      return Optional.of(new DelimiterExtraction(lit.value(), lit.value().isBlank()));
     }
     return Optional.empty();
   }
@@ -246,11 +273,20 @@ final class SuggestionSynthesizer {
   private static Optional<DelimiterExtraction> extractDelimiter(RegexPattern p) {
     p = unwrapGroup(p);
     if (p instanceof RegexPattern.Quantified q && q.metadata().minSize() == 0) {
-      return extractDelimiter(q.element());
+      RegexPattern inner = unwrapGroup(q.element());
+      if (inner instanceof RegexPattern.Literal lit) {
+        return optionally(
+            !lit.value().isEmpty(),
+            () ->
+                lit.value().isBlank()
+                    ? new DelimiterExtraction(" ", true)
+                    : new DelimiterExtraction(lit.value(), false));
+      }
+      return extractDelimiter(inner);
     }
     if (p instanceof RegexPattern.Literal lit) {
       return optionally(
-          !lit.value().isEmpty(),
+          !lit.value().isEmpty() && (lit.value().isBlank() || isPunctuationDelimiter(lit.value())),
           () ->
               lit.value().isBlank()
                   ? new DelimiterExtraction(" ", true)
@@ -290,6 +326,10 @@ final class SuggestionSynthesizer {
       }
     }
     return Optional.empty();
+  }
+
+  private static boolean isPunctuationDelimiter(String s) {
+    return s.chars().allMatch(c -> ",;:|/\\ \t\r\n".indexOf(c) >= 0);
   }
 
   private static boolean isOptionalWhitespace(RegexPattern p) {
@@ -346,6 +386,17 @@ final class SuggestionSynthesizer {
       if (inner instanceof RegexPattern.CharacterSet.NoneOf cs) {
         return Optional.of("Parser.consecutive(\"" + cs + "\")");
       }
+      if (inner instanceof RegexPattern.PosixCharClass pcc) {
+        return switch (pcc) {
+          case ALPHA -> Optional.of("Parser.consecutive(\"[a-zA-Z]\")");
+          case ALNUM -> Optional.of("Parser.consecutive(\"[a-zA-Z0-9]\")");
+          case DIGIT -> Optional.of("Parser.consecutive(\"[0-9]\")");
+          case LOWER -> Optional.of("Parser.consecutive(\"[a-z]\")");
+          case UPPER -> Optional.of("Parser.consecutive(\"[A-Z]\")");
+          case SPACE, BLANK -> Optional.of("Parser.consecutive(\"[ \\t]\")");
+          default -> Optional.empty();
+        };
+      }
       if (inner instanceof RegexPattern.PredefinedCharClass pcc) {
         return switch (pcc) {
           case WORD -> Optional.of("Parser.consecutive(\"[a-zA-Z0-9_]\")");
@@ -363,7 +414,7 @@ final class SuggestionSynthesizer {
     return Optional.empty();
   }
 
-  private boolean isStructuredNumberGrammar() {
+  private static boolean isStructuredNumberGrammar(RegexPattern pattern) {
     return Walker.inTree(RegexPatternUtils::childrenOf)
         .preOrderFrom(pattern)
         .filter(RegexPattern.Alternation.class::isInstance)
@@ -382,7 +433,10 @@ final class SuggestionSynthesizer {
   }
 
   private Optional<Suggestion.SubstringSuggestion> suggestSubstring() {
-    if (pattern instanceof RegexPattern.Sequence seq) {
+    if (!isEntireRegexCulprit()) {
+      return Optional.empty();
+    }
+    if (rootPattern instanceof RegexPattern.Sequence seq) {
       List<RegexPattern> elements = seq.elements();
       if (elements.size() == 3) {
         RegexPattern e0 = unwrapGroup(elements.get(0));
@@ -424,7 +478,10 @@ final class SuggestionSynthesizer {
   }
 
   private Optional<Suggestion.StringFormatSuggestion> suggestStringFormat() {
-    if (pattern instanceof RegexPattern.Sequence seq) {
+    if (!isEntireRegexCulprit()) {
+      return Optional.empty();
+    }
+    if (rootPattern instanceof RegexPattern.Sequence seq) {
       List<RegexPattern> elements = seq.elements();
       if (elements.size() == 3) {
         RegexPattern e0 = unwrapGroup(elements.get(0));

@@ -1180,6 +1180,18 @@ public class EmailAddressTest {
   }
 
   @Test
+  public void testParseAddressList_withLeadingDelimiters() {
+    assertThat(parseAddressList(",a@b.com")).containsExactly(EmailAddress.of("a", "b.com"));
+    assertThat(parseAddressList(", a@b.com")).containsExactly(EmailAddress.of("a", "b.com"));
+    assertThat(parseAddressList("; a@b.com")).containsExactly(EmailAddress.of("a", "b.com"));
+    assertThat(parseAddressList(",; a@b.com, c@d.com"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+    assertThat(parseAddressList(", a@b.com , ")).containsExactly(EmailAddress.of("a", "b.com"));
+    assertThat(parseAddressList(";; a@b.com, c@d.com;"))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
+  }
+
+  @Test
   public void testParseAddressList_consecutiveDelimiters() {
     assertThat(parseAddressList("a@b.com,,c@d.com"))
         .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("c", "d.com"));
@@ -1463,6 +1475,31 @@ public class EmailAddressTest {
     assertThat(parsed).containsExactly(EmailAddress.of("attacker@evil.com", "trusted.com"));
     assertThat(invalid).containsExactly("attacker@evil.com@trusted.com");
   }
+
+  @Test
+  public void testParseAddressList_withConsumer_leadingDelimiters() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList(", a@b.com", invalid::add))
+        .containsExactly(EmailAddress.of("a", "b.com"));
+    assertThat(invalid).isEmpty();
+
+    invalid.clear();
+    assertThat(EmailAddress.parseAddressList(",~:", invalid::add)).isEmpty();
+    assertThat(invalid).containsExactly("~:");
+
+    invalid.clear();
+    assertThat(EmailAddress.parseAddressList(",, invalid1 ; ; a@b.com , ", invalid::add))
+        .containsExactly(EmailAddress.of("a", "b.com"));
+    assertThat(invalid).containsExactly("invalid1");
+  }
+
+  @Test
+  public void testParseAddressList_withConsumer_reproducer_b546971680() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList("~\\,,~:", invalid::add)).isEmpty();
+    assertThat(invalid).containsExactly("~\\", "~:").inOrder();
+  }
+
 
   @Test
   public void testEmailAddressParsing_rfc2047EncodedWord_withAt_accepted(@TestParameter ParseStrategy parser) {
