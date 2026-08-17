@@ -1,13 +1,13 @@
 package com.google.mu.errorprone.regex;
 
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 
 import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.util.graph.ShortestPath;
 import com.google.mu.util.graph.Walker;
-import java.util.ArrayDeque;
+import com.google.mu.util.stream.BiStream;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Deque;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -273,62 +273,30 @@ final class Nfa {
     if (from == to) {
       return "";
     }
-    int numStates = states.size();
-    int[] dist = new int[numStates];
-    Arrays.fill(dist, Integer.MAX_VALUE);
-    int[] prev = new int[numStates];
-    Arrays.fill(prev, -1);
-    char[] prevChar = new char[numStates];
+    record Step(int state, char charConsumed) {}
 
-    List<List<CharTransition>> outgoingChar = new ArrayList<>(numStates);
-    for (int i = 0; i < numStates; i++) {
-      outgoingChar.add(new ArrayList<>());
-    }
-    for (CharTransition t : charTransitions) {
-      outgoingChar.get(t.source()).add(t);
-    }
-
-    Deque<Integer> deque = new ArrayDeque<>();
-    dist[from] = 0;
-    deque.add(from);
-
-    while (!deque.isEmpty()) {
-      int u = deque.pollFirst();
-      if (u == to) {
-        break;
-      }
-      for (int v : states.get(u).epsilonTransitions) {
-        if (dist[u] < dist[v]) {
-          dist[v] = dist[u];
-          prev[v] = u;
-          prevChar[v] = 0;
-          deque.addFirst(v);
-        }
-      }
-      for (CharTransition t : outgoingChar.get(u)) {
-        int v = t.target();
-        if (dist[u] + 1 < dist[v]) {
-          dist[v] = dist[u] + 1;
-          prev[v] = u;
-          prevChar[v] = (char) t.chars().sampleChar();
-          deque.addLast(v);
-        }
-      }
-    }
-
-    if (dist[to] == Integer.MAX_VALUE) {
-      return "";
-    }
-
-    StringBuilder sb = new StringBuilder();
-    int curr = to;
-    while (curr != from && curr != -1) {
-      char c = prevChar[curr];
-      if (c != 0) {
-        sb.append(c);
-      }
-      curr = prev[curr];
-    }
-    return sb.reverse().toString();
+    return ShortestPath.shortestPathsFrom(
+            new Step(from, '\0'),
+            (Step step) -> {
+              BiStream.Builder<Step, Double> builder = BiStream.builder();
+              for (int next : states.get(step.state()).epsilonTransitions) {
+                builder.add(new Step(next, '\0'), 0.0);
+              }
+              for (CharTransition t : charTransitions) {
+                if (t.source() == step.state()) {
+                  builder.add(new Step(t.target(), (char) t.chars().sampleChar()), 1.0);
+                }
+              }
+              return builder.build();
+            })
+        .filter(path -> path.to().state() == to)
+        .findFirst()
+        .map(path -> path.stream()
+            .keys()
+            .map(Step::charConsumed)
+            .filter(c -> c != '\0')
+            .map(Object::toString)
+            .collect(joining()))
+        .orElse("");
   }
 }
