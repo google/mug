@@ -72,6 +72,36 @@ public final class ReDosTest {
     assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
+  @Test public void checkRedosVulnerability_boundedGroupWithNestedQuantifier_safe() {
+    RegexPattern pattern = RegexPattern.of("a(?:\\{\\s?b?\\})?c");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_nestedOptionalGroup_correctCulpritAndPayload() {
+    RegexPattern pattern = RegexPattern.of(
+        "(?<tag>\\p{Alpha}+)" + "(?:\\{\\s?(?<params>(?:\\p{Alpha}+=[\\w|\\.]+,?\\s?)+)?\\})?"
+            + "(?:\\.randomized\\((?<random>\\d\\.\\d)\\))?"
+            + "(?:\\.then\\((?<chain>(\\w|\\d|\\s|[,.(){}=])+)\\))?");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown).hasMessageThat().contains("contains nested quantifiers on '\\p{Alpha}+'");
+    assertThat(thrown).hasMessageThat()
+        .contains("attack payload: \"A{A=.A=.A=.A=.A=.A=.A=.A=.A=.A=.!\"");
+  }
+
+  @Test public void
+      checkRedosVulnerability_nestedOverlappingAlternationInGroup_correctCulpritAndPayload() {
+    RegexPattern pattern = RegexPattern.of(
+        "(?<tag>\\p{Alpha}+)" + "(?:\\.randomized\\((?<random>\\d\\.\\d)\\))?"
+            + "(?:\\.then\\((?<chain>(\\w|\\d|\\s|[,.(){}=])+)\\))?");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown).hasMessageThat()
+        .contains("contains overlapping alternation branches '\\w|\\d|\\s|[,.(){}=]'");
+    assertThat(thrown).hasMessageThat()
+        .contains("attack payload: \"A.then(000000000000000000000000000000!\"");
+  }
+
   @Test public void checkRedosVulnerability_safePattern_doesNotThrow() {
     RegexPattern pattern = RegexPattern.of("[a-zA-Z0-9]+");
     ReDos.checkRedosVulnerability(pattern);
