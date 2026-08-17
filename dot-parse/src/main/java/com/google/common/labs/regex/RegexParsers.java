@@ -68,7 +68,8 @@ final class RegexParsers {
         numberedBackreference(), namedBackreference(),
         consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
         consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
-        ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))));
+        ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))),
+        one('}').thenReturn(new Literal("}")), one(']').thenReturn(new Literal("]")));
     return atomic.followedByZeroOrMore(quantifier())
         .atLeastOnce(inSequence())
         .orElse(new RegexPattern.Literal(""))
