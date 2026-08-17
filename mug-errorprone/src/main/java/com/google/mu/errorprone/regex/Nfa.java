@@ -4,8 +4,14 @@ import static java.util.stream.Collectors.toSet;
 
 import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.util.graph.Walker;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.OptionalInt;
 import java.util.Set;
 
 /**
@@ -15,6 +21,7 @@ import java.util.Set;
 final class Nfa {
   final List<State> states = new ArrayList<>();
   final List<CharTransition> charTransitions = new ArrayList<>();
+  final Map<RegexPattern, Integer> nodeToStartState = new IdentityHashMap<>();
   int startState;
   int acceptState;
 
@@ -27,7 +34,7 @@ final class Nfa {
     }
   }
 
-  record CharTransition(int id, int source, CharRanges chars, int target) {}
+  record CharTransition(int id, int source, CharRanges chars, int target, RegexPattern astNode) {}
 
   private record Fragment(int start, int accept) {}
 
@@ -41,11 +48,11 @@ final class Nfa {
     states.get(from).epsilonTransitions.add(to);
   }
 
-  void addCharTransition(int from, CharRanges chars, int to) {
+  void addCharTransition(int from, CharRanges chars, int to, RegexPattern astNode) {
     if (chars.isEmpty()) {
       return;
     }
-    CharTransition t = new CharTransition(charTransitions.size(), from, chars, to);
+    CharTransition t = new CharTransition(charTransitions.size(), from, chars, to, astNode);
     charTransitions.add(t);
   }
 
@@ -57,20 +64,28 @@ final class Nfa {
     return nfa;
   }
 
+  OptionalInt startStateOf(RegexPattern node) {
+    Integer s = nodeToStartState.get(node);
+    return s == null ? OptionalInt.empty() : OptionalInt.of(s);
+  }
+
   private Fragment compile(RegexPattern pattern) {
-    return switch (pattern) {
-      case RegexPattern.Literal lit -> compileLiteral(lit.value());
-      case RegexPattern.CharacterSet cs -> compileCharRanges(CharRanges.from(cs));
-      case RegexPattern.PredefinedCharClass pcc -> compileCharRanges(CharRanges.from(pcc));
-      case RegexPattern.PosixCharClass pcc -> compileCharRanges(CharRanges.from(pcc));
-      case RegexPattern.CharacterProperty.Negated neg -> compileCharRanges(CharRanges.from(neg));
-      case RegexPattern.UnicodeProperty up -> compileCharRanges(CharRanges.from(up));
+    Fragment f = switch (pattern) {
+      case RegexPattern.Literal lit -> compileLiteral(lit);
+      case RegexPattern.CharacterSet cs -> compileCharRanges(CharRanges.from(cs), cs);
+      case RegexPattern.PredefinedCharClass pcc -> compileCharRanges(CharRanges.from(pcc), pcc);
+      case RegexPattern.PosixCharClass pcc -> compileCharRanges(CharRanges.from(pcc), pcc);
+      case RegexPattern.CharacterProperty.Negated neg ->
+          compileCharRanges(CharRanges.from(neg), neg);
+      case RegexPattern.UnicodeProperty up -> compileCharRanges(CharRanges.from(up), up);
       case RegexPattern.Sequence seq -> compileSequence(seq.elements());
       case RegexPattern.Alternation alt -> compileAlternation(alt.alternatives());
       case RegexPattern.Group group -> compile(group.content());
       case RegexPattern.Quantified q -> compileQuantified(q);
       default -> compileEmpty();
     };
+    nodeToStartState.put(pattern, f.start);
+    return f;
   }
 
   private Fragment compileEmpty() {
@@ -78,14 +93,15 @@ final class Nfa {
     return new Fragment(s.id, s.id);
   }
 
-  private Fragment compileCharRanges(CharRanges ranges) {
+  private Fragment compileCharRanges(CharRanges ranges, RegexPattern pattern) {
     State start = newState();
     State accept = newState();
-    addCharTransition(start.id, ranges, accept.id);
+    addCharTransition(start.id, ranges, accept.id, pattern);
     return new Fragment(start.id, accept.id);
   }
 
-  private Fragment compileLiteral(String s) {
+  private Fragment compileLiteral(RegexPattern.Literal lit) {
+    String s = lit.value();
     if (s.isEmpty()) {
       return compileEmpty();
     }
@@ -93,7 +109,7 @@ final class Nfa {
     State current = first;
     for (int i = 0; i < s.length(); i++) {
       State next = newState();
-      addCharTransition(current.id, CharRanges.of(s.charAt(i)), next.id);
+      addCharTransition(current.id, CharRanges.of(s.charAt(i)), next.id, lit);
       current = next;
     }
     return new Fragment(first.id, current.id);
@@ -251,5 +267,68 @@ final class Nfa {
 
   boolean canReachAccept(int state) {
     return epsilonClosure(state).contains(acceptState);
+  }
+
+  String shortestPathToString(int from, int to) {
+    if (from == to) {
+      return "";
+    }
+    int numStates = states.size();
+    int[] dist = new int[numStates];
+    Arrays.fill(dist, Integer.MAX_VALUE);
+    int[] prev = new int[numStates];
+    Arrays.fill(prev, -1);
+    char[] prevChar = new char[numStates];
+
+    List<List<CharTransition>> outgoingChar = new ArrayList<>(numStates);
+    for (int i = 0; i < numStates; i++) {
+      outgoingChar.add(new ArrayList<>());
+    }
+    for (CharTransition t : charTransitions) {
+      outgoingChar.get(t.source()).add(t);
+    }
+
+    Deque<Integer> deque = new ArrayDeque<>();
+    dist[from] = 0;
+    deque.add(from);
+
+    while (!deque.isEmpty()) {
+      int u = deque.pollFirst();
+      if (u == to) {
+        break;
+      }
+      for (int v : states.get(u).epsilonTransitions) {
+        if (dist[u] < dist[v]) {
+          dist[v] = dist[u];
+          prev[v] = u;
+          prevChar[v] = 0;
+          deque.addFirst(v);
+        }
+      }
+      for (CharTransition t : outgoingChar.get(u)) {
+        int v = t.target();
+        if (dist[u] + 1 < dist[v]) {
+          dist[v] = dist[u] + 1;
+          prev[v] = u;
+          prevChar[v] = (char) t.chars().sampleChar();
+          deque.addLast(v);
+        }
+      }
+    }
+
+    if (dist[to] == Integer.MAX_VALUE) {
+      return "";
+    }
+
+    StringBuilder sb = new StringBuilder();
+    int curr = to;
+    while (curr != from && curr != -1) {
+      char c = prevChar[curr];
+      if (c != 0) {
+        sb.append(c);
+      }
+      curr = prev[curr];
+    }
+    return sb.reverse().toString();
   }
 }

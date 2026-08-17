@@ -84,7 +84,7 @@ public final class ReDosTest {
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
     assertThat(thrown).hasMessageThat().contains("contains nested quantifiers on '\\p{Alpha}+'");
     assertThat(thrown).hasMessageThat()
-        .contains("attack payload: \"A{A=.A=.A=.A=.A=.A=.A=.A=.A=.A=.!\"");
+        .contains("attack payload: \"a{a=aa=aa=aa=aa=aa=aa=aa=aa=aa=a!\"");
   }
 
   @Test public void
@@ -97,7 +97,7 @@ public final class ReDosTest {
     assertThat(thrown).hasMessageThat()
         .contains("contains overlapping alternation branches '\\w|\\d|\\s|[,.(){}=]'");
     assertThat(thrown).hasMessageThat()
-        .contains("attack payload: \"A.then(000000000000000000000000000000!\"");
+        .contains("attack payload: \"a.then(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\"");
   }
 
   @Test public void checkRedosVulnerability_safePattern_doesNotThrow() {

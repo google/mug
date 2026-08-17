@@ -63,6 +63,20 @@ record CharRanges(List<Range> ranges) {
     return false;
   }
 
+  int sampleChar() {
+    if (contains('a')) return 'a';
+    if (contains('A')) return 'A';
+    if (contains('0')) return '0';
+    for (Range r : ranges) {
+      int start = Math.max(r.start(), 32);
+      int end = Math.min(r.end(), 126);
+      if (start <= end) {
+        return start;
+      }
+    }
+    return ranges.isEmpty() ? 'a' : ranges.get(0).start();
+  }
+
   boolean intersects(CharRanges other) {
     if (this.isEmpty() || other.isEmpty()) {
       return false;
