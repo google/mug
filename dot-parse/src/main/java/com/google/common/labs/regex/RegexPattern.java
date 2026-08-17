@@ -429,7 +429,14 @@ public sealed interface RegexPattern {
       }
 
       @Override public String toString() {
+        if (content instanceof Literal lit && lit.value().isEmpty() && hasModifierFlags()) {
+          return "(?" + formatFlags() + ")";
+        }
         return "(?" + formatFlags() + ":" + content + ")";
+      }
+
+      private boolean hasModifierFlags() {
+        return !enabledModifierFlags.isEmpty() || !disabledModifierFlags.isEmpty();
       }
 
       private String formatFlags() {

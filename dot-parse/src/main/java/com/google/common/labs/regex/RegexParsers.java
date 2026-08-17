@@ -71,7 +71,9 @@ final class RegexParsers {
         ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))));
     return atomic.followedByZeroOrMore(quantifier())
         .atLeastOnce(inSequence())
-        .atLeastOnceDelimitedBy("|", asAlternation());
+        .orElse(new RegexPattern.Literal(""))
+        .delimitedBy("|", asAlternation())
+        .notEmpty();
   }
 
   private static Parser<Backreference.Numbered> numberedBackreference() {
@@ -132,13 +134,20 @@ final class RegexParsers {
         modifier.zeroOrMore(),
         one('-').then(modifier.atLeastOnce()).orElse(List.of()),
         (enabled, disabled) -> {
-          Parser<RegexPattern> result = content.between(":", ")");
+          Parser<RegexPattern> withContent = content.between(":", ")");
           if (disabled.contains(ModifierFlag.COMMENTS)) {
-            result = literally(result);
+            withContent = literally(withContent);
           } else if (enabled.contains(ModifierFlag.COMMENTS)) {
-            result = result.skipping(FREE_SPACES).within();
+            withContent = withContent.skipping(FREE_SPACES).within();
           }
-          return result.map(c -> new Group.NonCapturing(c, enabled, disabled));
+          Parser<RegexPattern> nonCapturingGroup =
+              withContent.map(c -> new Group.NonCapturing(c, enabled, disabled));
+          if (enabled.isEmpty() && disabled.isEmpty()) {
+            return nonCapturingGroup;
+          }
+          Parser<RegexPattern> standaloneFlags =
+              one(')').thenReturn(new Group.NonCapturing(new Literal(""), enabled, disabled));
+          return anyOf(nonCapturingGroup, standaloneFlags);
         });
     return anyOf(
         named, content.between("(?=", ")").map(Lookaround.Lookahead::new),

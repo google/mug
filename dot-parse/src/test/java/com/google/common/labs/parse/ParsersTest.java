@@ -106,13 +106,7 @@ public class ParsersTest {
 
   @Test public void regex_alternationWithEmptyAlternative_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("foo|"));
-    assertThat(exception).hasMessageThat()
-        .isEqualTo(
-            """
-            at 1:5: expecting one of [one or more [^.[]{}()*+?^$|\\ #], whitespace or #, $, (, (?, (?!, (?<!, (?<=, (?=, ., [, [^, \\, \\A, \\B, \\D, \\P, \\S, \\W, \\Z, \\b, \\d, \\k<, \\p, \\s, \\w, \\z, ^], encountered:
-                foo|
-                    ^
-            """);
+    assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: foo|");
   }
 
   @Test public void regex_valid() {

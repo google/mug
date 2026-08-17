@@ -16,6 +16,7 @@ import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.AtLeast;
 import com.google.common.labs.regex.RegexPattern.AtMost;
 import com.google.common.labs.regex.RegexPattern.Backreference;
+import com.google.common.labs.regex.RegexPattern.CharRange;
 import com.google.common.labs.regex.RegexPattern.CharSetElement;
 import com.google.common.labs.regex.RegexPattern.CharacterSet;
 import com.google.common.labs.regex.RegexPattern.Group;
@@ -955,5 +956,62 @@ public final class RegexPatternTest {
                     sequence(sequence(new Literal("b"), new Literal("c")), new Literal("d")))
                 .collect(RegexPattern.inSequence()))
         .isEqualTo(new Literal("abcd"));
+  }
+
+  @Test public void parse_emptyAlternative() {
+    assertThat(RegexPattern.of("^//(?:javatests/|java/|)"))
+        .isEqualTo(
+            sequence(
+                Anchor.BEGINNING,
+                new Literal("//"),
+                new Group.NonCapturing(
+                    alternation(
+                        new Literal("javatests/"), new Literal("java/"), new Literal("")))));
+  }
+
+  @Test public void parse_standaloneModifierFlags() {
+    assertThat(RegexPattern.of("(?m)^interface\\s+[A-Za-z0-9_]+\\s*\\{[^}]*\\}\\s*"))
+        .isEqualTo(
+            sequence(
+                new Group.NonCapturing(new Literal(""), List.of(ModifierFlag.MULTILINE), List.of()),
+                Anchor.BEGINNING,
+                new Literal("interface"),
+                new Quantified(PredefinedCharClass.WHITESPACE, atLeast(1)),
+                new Quantified(
+                    anyOf(
+                        new CharRange('A', 'Z'),
+                        new CharRange('a', 'z'),
+                        new CharRange('0', '9'),
+                        new LiteralChar('_')),
+                    atLeast(1)),
+                new Quantified(PredefinedCharClass.WHITESPACE, repeated()),
+                new Literal("{"),
+                new Quantified(noneOf(new LiteralChar('}')), repeated()),
+                new Literal("}"),
+                new Quantified(PredefinedCharClass.WHITESPACE, repeated())));
+  }
+
+  @Test public void parse_standaloneModifierFlags_disabledOnly() {
+    assertThat(RegexPattern.of("(?-i)"))
+        .isEqualTo(
+            new Group.NonCapturing(
+                new Literal(""), List.of(), List.of(ModifierFlag.CASE_INSENSITIVE)));
+  }
+
+  @Test public void parse_standaloneModifierFlags_enabledAndDisabled() {
+    assertThat(RegexPattern.of("(?is-m)"))
+        .isEqualTo(
+            new Group.NonCapturing(
+                new Literal(""),
+                List.of(ModifierFlag.CASE_INSENSITIVE, ModifierFlag.DOTALL),
+                List.of(ModifierFlag.MULTILINE)));
+  }
+
+  @Test public void parse_standaloneModifierFlags_toString() {
+    assertThat(RegexPattern.of("(?m)").toString()).isEqualTo("(?m)");
+  }
+
+  @Test public void parse_standaloneModifierFlags_withDisabledFlags_toString() {
+    assertThat(RegexPattern.of("(?is-m)").toString()).isEqualTo("(?is-m)");
   }
 }
