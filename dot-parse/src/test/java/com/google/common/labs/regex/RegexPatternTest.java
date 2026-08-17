@@ -24,6 +24,7 @@ import com.google.common.labs.regex.RegexPattern.Group;
 import com.google.common.labs.regex.RegexPattern.Limited;
 import com.google.common.labs.regex.RegexPattern.Literal;
 import com.google.common.labs.regex.RegexPattern.LiteralChar;
+import com.google.common.labs.regex.RegexPattern.Lookaround;
 import com.google.common.labs.regex.RegexPattern.Metadata;
 import com.google.common.labs.regex.RegexPattern.ModifierFlag;
 import com.google.common.labs.regex.RegexPattern.PosixCharClass;
@@ -220,6 +221,10 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("foo}bar]")).isEqualTo(new Literal("foo}bar]"));
   }
 
+  @Test public void of_literal_escapedOpeningBraceWithUnescapedClosingBrace() {
+    assertThat(RegexPattern.of("\\{foo}")).isEqualTo(new Literal("{foo}"));
+  }
+
   @Test public void of_escapedLiteral() {
     assertThat(RegexPattern.of("\\a")).isEqualTo(new Literal("a"));
     assertThat(RegexPattern.of("\\\\")).isEqualTo(new Literal("\\"));
@@ -343,6 +348,40 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("(?P<name>a)")).isEqualTo(new Group.Named("name", new Literal("a")));
   }
 
+  @Test public void of_group_empty() {
+    assertThat(RegexPattern.of("()")).isEqualTo(new Group.Capturing(new Literal("")));
+  }
+
+  @Test public void of_group_nonCapturing_empty() {
+    assertThat(RegexPattern.of("(?:)")).isEqualTo(new Group.NonCapturing(new Literal("")));
+  }
+
+  @Test public void of_group_named_empty() {
+    assertThat(RegexPattern.of("(?<name>)")).isEqualTo(new Group.Named("name", new Literal("")));
+  }
+
+  @Test public void of_group_atomic_empty() {
+    assertThat(RegexPattern.of("(?>)")).isEqualTo(new Group.Atomic(new Literal("")));
+  }
+
+  @Test public void of_lookahead_empty() {
+    assertThat(RegexPattern.of("(?=)")).isEqualTo(new Lookaround.Lookahead(new Literal("")));
+  }
+
+  @Test public void of_lookbehind_empty() {
+    assertThat(RegexPattern.of("(?<=)")).isEqualTo(new Lookaround.Lookbehind(new Literal("")));
+  }
+
+  @Test public void of_negativeLookahead_empty() {
+    assertThat(RegexPattern.of("(?!)"))
+        .isEqualTo(new Lookaround.NegativeLookahead(new Literal("")));
+  }
+
+  @Test public void of_negativeLookbehind_empty() {
+    assertThat(RegexPattern.of("(?<!)"))
+        .isEqualTo(new Lookaround.NegativeLookbehind(new Literal("")));
+  }
+
   @Test public void of_group_atomic() {
     assertThat(RegexPattern.of("(?>a+)"))
         .isEqualTo(new Group.Atomic(new Quantified(new Literal("a"), atLeast(1))));
@@ -448,8 +487,17 @@ public final class RegexPatternTest {
                 noneOf(new LiteralChar('b'), new LiteralChar('c'))));
   }
 
+  @Test public void of_characterSet_intersection_negatedLhs() {
+    assertThat(RegexPattern.of("[^a-z&&d-f]"))
+        .isEqualTo(intersection(noneOf(new CharRange('a', 'z')), anyOf(new CharRange('d', 'f'))));
+  }
+
   @Test public void of_characterSet_intersection_toString() {
     assertThat(RegexPattern.of("[a-z&&[^bc]]").toString()).isEqualTo("[a-z&&[^bc]]");
+  }
+
+  @Test public void of_characterSet_intersection_negatedLhs_toString() {
+    assertThat(RegexPattern.of("[^a-z&&d-f]").toString()).isEqualTo("[^a-z&&d-f]");
   }
 
   @Test public void of_literalHyphen() {
@@ -616,10 +664,10 @@ public final class RegexPatternTest {
             """);
   }
 
-  @Test public void of_lookbehind_missingSubject() {
+  @Test public void of_group_invalidModifier_empty_throws() {
     Parser.ParseException e =
-        assertThrows(Parser.ParseException.class, () -> RegexPattern.of("(?<=)"));
-    assertThat(e).hasMessageThat().contains("at 1:5:");
+        assertThrows(Parser.ParseException.class, () -> RegexPattern.of("(?)"));
+    assertThat(e).hasMessageThat().contains("at 1:3:");
   }
 
   @Test public void of_failure() {

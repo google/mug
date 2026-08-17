@@ -602,6 +602,15 @@ public sealed interface RegexPattern {
       }
 
       @Override public String toString() {
+        if (operands.get(0) instanceof NoneOf noneOf) {
+          return "[^"
+              + noneOf.elements().stream().map(Object::toString).collect(joining())
+              + "&&"
+              + operands.subList(1, operands.size()).stream()
+                  .map(CharacterSet::elementString)
+                  .collect(joining("&&"))
+              + "]";
+        }
         return "[" + elementString() + "]";
       }
     }

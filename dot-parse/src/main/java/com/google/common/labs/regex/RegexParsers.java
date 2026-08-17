@@ -16,6 +16,7 @@ package com.google.common.labs.regex;
 
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.define;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
@@ -67,7 +68,7 @@ final class RegexParsers {
 
   static Parser<RegexPattern> pattern(Parser<RegexPattern> regex) {
     Parser<RegexPattern> atomic = anyOf(
-        charClass(), positiveCharacterProperty(), negativeCharacterProperty(),
+        define(RegexParsers::charClass), positiveCharacterProperty(), negativeCharacterProperty(),
         groupOrLookaround(regex), anyOf(PredefinedCharClass.values()), anyOf(Anchor.values()),
         numberedBackreference(), namedBackreference(), literally(quotedLiteral()),
         consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
@@ -126,11 +127,7 @@ final class RegexParsers {
         .map(name -> POSIX_CHAR_CLASSES.getOrDefault(name, new UnicodeProperty(name)));
   }
 
-  private static Parser<CharacterSet> charClass() {
-    return Parser.define(RegexParsers::charClassDefinition);
-  }
-
-  private static Parser<CharacterSet> charClassDefinition(Parser<CharacterSet> self) {
+  private static Parser<CharacterSet> charClass(Parser<CharacterSet> charClass) {
     Parser<Character> literalChar =
         anyOf(ESCAPED_CHAR, one("[^-&\\]]"), one('&').notFollowedBy("&"));
     Parser<Character> literalCharOrDash =
@@ -138,9 +135,10 @@ final class RegexParsers {
     Parser<CharRange> range = sequence(literalChar, one('-').then(literalChar), CharRange::new);
     var element = anyOf(
         positiveCharacterProperty(), negativeCharacterProperty(),
-        anyOf(PredefinedCharClass.values()), self, range, literalCharOrDash.map(LiteralChar::new));
+        anyOf(PredefinedCharClass.values()), charClass, range,
+        literalCharOrDash.map(LiteralChar::new));
     Parser<CharacterSet> unbracketedTerm =
-        anyOf(self, element.atLeastOnce().map(RegexPattern::anyOf));
+        anyOf(charClass, element.atLeastOnce().map(RegexPattern::anyOf));
     Parser<CharacterSet> positiveTerm = sequence(
         element.atLeastOnce().map(RegexPattern::anyOf),
         string("&&").then(unbracketedTerm).zeroOrMore(),
@@ -162,16 +160,17 @@ final class RegexParsers {
   }
 
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {
+    var groupContent = content.orElse(new Literal(""));
     Parser<Group.Named> named =
-        sequence(word().between(anyOf("?<", "?P<"), one('>')), content, Group.Named::new)
+        sequence(word().between(anyOf("?<", "?P<"), one('>')), groupContent, Group.Named::new)
             .between("(", ")");
-    Parser<Group.Atomic> atomic = content.between("(?>", ")").map(Group.Atomic::new);
+    Parser<Group.Atomic> atomic = groupContent.between("(?>", ")").map(Group.Atomic::new);
     Parser<ModifierFlag> modifier = anyOf(ModifierFlag.values());
     var modifierFlags = sequence(
         modifier.zeroOrMore(),
         one('-').then(modifier.atLeastOnce()).orElse(List.of()),
         (enabled, disabled) -> {
-          Parser<RegexPattern> withContent = content.between(":", ")");
+          Parser<RegexPattern> withContent = groupContent.between(":", ")");
           if (disabled.contains(ModifierFlag.COMMENTS)) {
             withContent = literally(withContent);
           } else if (enabled.contains(ModifierFlag.COMMENTS)) {
@@ -187,11 +186,11 @@ final class RegexParsers {
           return anyOf(nonCapturingGroup, standaloneFlags);
         });
     return anyOf(
-        named, atomic, content.between("(?=", ")").map(Lookaround.Lookahead::new),
-        content.between("(?!", ")").map(Lookaround.NegativeLookahead::new),
-        content.between("(?<=", ")").map(Lookaround.Lookbehind::new),
-        content.between("(?<!", ")").map(Lookaround.NegativeLookbehind::new),
+        named, atomic, groupContent.between("(?=", ")").map(Lookaround.Lookahead::new),
+        groupContent.between("(?!", ")").map(Lookaround.NegativeLookahead::new),
+        groupContent.between("(?<=", ")").map(Lookaround.Lookbehind::new),
+        groupContent.between("(?<!", ")").map(Lookaround.NegativeLookbehind::new),
         literally(string("(?").then(modifierFlags)).flatMap(identity()),
-        content.between("(", ")").map(Group.Capturing::new));
+        groupContent.between("(", ")").map(Group.Capturing::new));
   }
 }
