@@ -34,6 +34,7 @@ import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.stream;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 import com.google.common.labs.parse.Parser;
 import com.google.common.labs.regex.RegexPattern.Anchor;
@@ -143,7 +144,7 @@ final class RegexParsers {
         anyOf(PredefinedCharClass.values()), charClass, range,
         literalCharOrDash.map(LiteralChar::new));
     Parser<List<CharSetElement>> quotedInClass = quotedText().map(
-            s -> s.chars().mapToObj(c -> (CharSetElement) new LiteralChar((char) c)).toList());
+            s -> s.chars().mapToObj(c -> new LiteralChar((char) c)).collect(toUnmodifiableList()));
     Parser<CharSetElement> leadingBracket = anyOf(
         sequence(one(']'), one('-').then(literalChar), CharRange::new),
         one(']').map(LiteralChar::new));
