@@ -34,16 +34,14 @@ public final class ReDos {
     new VulnerabilityAnalyzer(pattern)
         .exponentialBacktracking()
         .ifPresent(finding -> {
-          List<Suggestion> suggestions =
-              new SuggestionSynthesizer(pattern, finding.culprit()).forRedos();
           String message = formatErrorMessage(
               "exponential backtracking (ReDoS)",
               pattern,
               finding.detail(),
               finding.attackPayload(),
-              suggestions);
+              finding.suggestions());
           throw new VulnerableRegexException(
-              message, pattern, finding.attackPayload(), suggestions);
+              message, pattern, finding.attackPayload(), finding.suggestions());
         });
   }
 
@@ -57,16 +55,14 @@ public final class ReDos {
     new VulnerabilityAnalyzer(pattern)
         .polynomialBacktracking()
         .ifPresent(finding -> {
-          List<Suggestion> suggestions =
-              new SuggestionSynthesizer(pattern, finding.culprit()).forPolynomial();
           String message = formatErrorMessage(
               "polynomial backtracking (PDA)",
               pattern,
               finding.detail(),
               finding.attackPayload(),
-              suggestions);
+              finding.suggestions());
           throw new VulnerableRegexException(
-              message, pattern, finding.attackPayload(), suggestions);
+              message, pattern, finding.attackPayload(), finding.suggestions());
         });
   }
 

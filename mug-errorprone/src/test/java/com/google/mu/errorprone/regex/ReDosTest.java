@@ -264,7 +264,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("^(a+)+$");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("^a+$");
   }
 
   @Test public void checkRedosVulnerability_repeatedGroupWithoutInnerQuantifier_doesNotThrow() {
@@ -316,7 +316,7 @@ public final class ReDosTest {
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
     assertThat(thrown).hasMessageThat()
         .contains("attack payload: \"prefix_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\"");
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("prefix_a+");
   }
 
   @Test public void
@@ -330,44 +330,40 @@ public final class ReDosTest {
   }
 
   @Test public void suggestRedosRewrite_nestedQuantifier_suggestsFlattened() {
-    assertThat(new SuggestionSynthesizer(RegexPattern.of("(a+)+")).suggestRedosRewrite())
-        .hasValue("a+");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(RegexPattern.of("(a+)+"))).hasValue("a+");
   }
 
   @Test public void suggestRedosRewrite_nullableRepeated_suggestsNonNullable() {
-    assertThat(new SuggestionSynthesizer(RegexPattern.of("(a*)+")).suggestRedosRewrite())
-        .hasValue("a*");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(RegexPattern.of("(a*)+"))).hasValue("a*");
   }
 
   @Test public void suggestRedosRewrite_unrecognizedPattern_returnsEmpty() {
-    assertThat(new SuggestionSynthesizer(RegexPattern.of("(a|b)+")).suggestRedosRewrite())
-        .isEmpty();
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(RegexPattern.of("(a|b)+"))).isEmpty();
   }
 
   @Test public void suggestPolynomialRewrite_consecutiveIdenticalPlusQuantifiers_mergesToRange() {
-    assertThat(new SuggestionSynthesizer(RegexPattern.of("a+a+")).suggestPolynomialRewrite())
+    assertThat(SuggestionSynthesizer.suggestPolynomialRewrite(RegexPattern.of("a+a+")))
         .hasValue("a{2,}");
   }
 
   @Test public void suggestPolynomialRewrite_consecutiveIdenticalStarQuantifiers_mergesToStar() {
-    assertThat(new SuggestionSynthesizer(RegexPattern.of("a*a*")).suggestPolynomialRewrite())
+    assertThat(SuggestionSynthesizer.suggestPolynomialRewrite(RegexPattern.of("a*a*")))
         .hasValue("a*");
   }
 
   @Test public void
       suggestPolynomialRewrite_consecutiveIdenticalDigitPlusQuantifiers_mergesToRange() {
-    assertThat(new SuggestionSynthesizer(RegexPattern.of("\\d+\\d+")).suggestPolynomialRewrite())
+    assertThat(SuggestionSynthesizer.suggestPolynomialRewrite(RegexPattern.of("\\d+\\d+")))
         .hasValue("\\d{2,}");
   }
 
   @Test public void suggestPolynomialRewrite_overlappingQuantifiers_suggestsPossessive() {
-    assertThat(new SuggestionSynthesizer(RegexPattern.of("\\d+\\w+")).suggestPolynomialRewrite())
+    assertThat(SuggestionSynthesizer.suggestPolynomialRewrite(RegexPattern.of("\\d+\\w+")))
         .hasValue("\\d++\\w+");
   }
 
   @Test public void suggestPolynomialRewrite_disjointQuantifiers_returnsEmpty() {
-    assertThat(new SuggestionSynthesizer(RegexPattern.of("a+b+")).suggestPolynomialRewrite())
-        .isEmpty();
+    assertThat(SuggestionSynthesizer.suggestPolynomialRewrite(RegexPattern.of("a+b+"))).isEmpty();
   }
 
   @Test public void checkPolynomialBacktracking_threeIdenticalQuantifiers_throwsDetailedMessage() {
@@ -421,7 +417,9 @@ public final class ReDosTest {
   }
 
   @Test public void suggestionSynthesizer_nullPattern_throwsNullPointerException() {
-    assertThrows(NullPointerException.class, () -> new SuggestionSynthesizer(null));
+    assertThrows(NullPointerException.class, () -> SuggestionSynthesizer.suggestRedosRewrite(null));
+    assertThrows(
+        NullPointerException.class, () -> SuggestionSynthesizer.suggestPolynomialRewrite(null));
   }
 
   // --- New Polynomial Backtracking (PDA) Cases ---
@@ -467,10 +465,40 @@ public final class ReDosTest {
 
   @Test public void
       checkPolynomialBacktracking_repeatedTrailingQuantifier_throwsIllegalArgumentException() {
-    RegexPattern pattern = RegexPattern.of("ab*b*");
+    RegexPattern pattern = RegexPattern.of("a(b*)(b*)");
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("a(b*)");
+  }
+
+  @Test public void checkPolynomialBacktracking_siblingOverlappingInSequence_suggestsMergedRegex() {
+    RegexPattern pattern = RegexPattern.of("^prefix(a+)(a+)suffix$");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("^prefix(a{2,})suffix$");
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_siblingOverlappingInGroup_suggestsPossessiveRegex() {
+    RegexPattern pattern = RegexPattern.of("prefix(\\d+\\w+)suffix");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("prefix(\\d++\\w+)suffix");
+  }
+
+  @Test public void checkRedosVulnerability_nestedQuantifiersInSequence_suggestsSplicedRegex() {
+    RegexPattern pattern = RegexPattern.of("^prefix(a+)+suffix$");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("^prefixa+suffix$");
+  }
+
+  @Test public void
+      checkRedosVulnerability_nestedQuantifiersInCapturingGroup_suggestsSplicedRegex() {
+    RegexPattern pattern = RegexPattern.of("^foo((a+)+)bar$");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("^foo(a+)bar$");
   }
 
   @Test public void
@@ -544,7 +572,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("^([a-zA-Z0-9]+)+$");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("^[a-zA-Z0-9]+$");
   }
 
   @Test public void
@@ -593,7 +621,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(a|aa?)*b");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("(?:a|(?:aa)?)*b");
   }
 
   @Test public void
@@ -695,7 +723,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(([\\d]+)*)\"");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("([\\d]*)\"");
   }
 
   @Test public void
@@ -711,7 +739,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(((a+a?)*)+b+)");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("((a+a?)*b+)");
   }
 
   @Test public void
@@ -719,7 +747,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(a+)+bbbb");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("a+bbbb");
   }
 
   @Test public void
@@ -727,14 +755,14 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(a+)+aaaaa$");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("a+aaaaa$");
   }
 
   @Test public void checkRedosVulnerability_nestedNewlines_throwsIllegalArgumentException() {
     RegexPattern pattern = RegexPattern.of("(\\n+)+\\n\\n$");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("n+nn$");
   }
 
   @Test public void
@@ -742,7 +770,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("([^X]+)*$");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("[^X]*$");
   }
 
   @Test public void
@@ -750,7 +778,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(([^X]b)+)*$");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("([^X]b)*$");
   }
 
   @Test public void
@@ -758,14 +786,14 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(([^X]b)+)*($|[^X]c)");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("([^X]b)*($|[^X]c)");
   }
 
   @Test public void checkRedosVulnerability_sequenceLoop_throwsIllegalArgumentException() {
     RegexPattern pattern = RegexPattern.of("((ab)+)*$");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("(ab)*$");
   }
 
   @Test public void
@@ -773,7 +801,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("([\\n\\s]+)*(.)");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("[n\\s]*(.)");
   }
 
   @Test public void checkRedosVulnerability_overlappingLinebreaks_throwsIllegalArgumentException() {
@@ -819,7 +847,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(([^X]b)+)*($|[^X]b)");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("([^X]b)*($|[^X]b)");
   }
 
   @Test public void
@@ -827,7 +855,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("((ab)+)*ababab");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("(ab)*ababab");
   }
 
   @Test public void
@@ -1235,7 +1263,12 @@ public final class ReDosTest {
         "(?<tag>\\p{Alpha}+)(?:\\{\\s?(?<params>(?:\\p{Alpha}+=[\\w|\\.]+,?\\s?)+)?\\})?");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(
+            thrown.getSuggestions().stream()
+                .anyMatch(Suggestion.ParserSuggestion.class::isInstance))
+        .isFalse();
+    assertThat(thrown.getSuggestedAlternatives())
+        .containsExactly("(?<tag>\\p{Alpha}+)(?:\\{\\s?(?:\\p{Alpha}+=[\\w|.]+,?\\s?)*\\})?");
   }
 
   @Test public void checkRedosVulnerability_structuredNumberGrammar_suggestsParsers() {

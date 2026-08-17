@@ -36,6 +36,18 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.truth.IterableSubject;
+import com.google.common.truth.MultimapSubject;
+import com.google.mu.util.BiOptional;
+import com.google.mu.util.Both;
+import com.google.mu.util.Substring;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -52,24 +64,10 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mockito.Mockito;
-
-import com.google.common.collect.ImmutableBiMap;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.truth.IterableSubject;
-import com.google.common.truth.MultimapSubject;
-import com.google.mu.util.BiOptional;
-import com.google.mu.util.Both;
-import com.google.mu.util.Substring;
 
 @RunWith(JUnit4.class)
 public class BiStreamTest {
@@ -141,7 +139,10 @@ public class BiStreamTest {
   }
 
   @Test public void testFromMap() {
-    assertKeyValues(BiStream.from(ImmutableMap.of("one", 1)))
+    assertKeyValues(
+            BiStream.from(
+                ImmutableMap.of(
+                    "one", 1)))
         .containsExactlyEntriesIn(ImmutableMultimap.of("one", 1))
         .inOrder();
   }
@@ -229,14 +230,20 @@ public class BiStreamTest {
   }
 
   @Test public void testGroupConsecutiveIf_withBiCollector() {
-    Map<String, Integer> prices =
-        ImmutableMap.of("day1", 10, "day2", 20, "day3", 10000, "day4", 9999);
-    Stream<Map<String, Integer>> result =
-        BiStream.from(prices)
-            .groupConsecutiveIf((d1, p1, d2, p2) -> Math.abs(p1 - p2) < 1000, Collectors::toMap);
-    assertThat(result)
-        .containsExactly(
-            ImmutableMap.of("day1", 10, "day2", 20), ImmutableMap.of("day3", 10000, "day4", 9999));
+    Map<String, Integer> prices = ImmutableMap.of(
+        "day1", 10,
+        "day2", 20,
+        "day3", 10000,
+        "day4", 9999);
+    Stream<Map<String, Integer>> result = BiStream.from(prices)
+        .groupConsecutiveIf((d1, p1, d2, p2) -> Math.abs(p1 - p2) < 1000, Collectors::toMap);
+    assertThat(result).containsExactly(
+            ImmutableMap.of(
+                "day1", 10,
+                "day2", 20),
+            ImmutableMap.of(
+                "day3", 10000,
+                "day4", 9999));
   }
 
   /**
@@ -247,14 +254,12 @@ public class BiStreamTest {
     // the current consecutive group even if the next element would otherwise be considered "equal".
     Substring.Suffix period = Substring.suffix('.');
     Stream<String> data = Stream.of("foo", "foo", "foo.", "foo.", "foo", "bar");
-    Stream<List<String>> groups = biStream(data)
-        .groupConsecutiveIf(
+    Stream<List<String>> groups = biStream(data).groupConsecutiveIf(
             (t1, t2) ->
-                !period.from(t1).isPresent()
-                    && period.removeFrom(t1).equals(period.removeFrom(t2)),
+                !period.from(t1).isPresent() && period.removeFrom(t1).equals(period.removeFrom(t2)),
             toList());
-    assertThat(groups)
-        .containsExactly(asList("foo", "foo", "foo."), asList("foo."), asList("foo"), asList("bar"))
+    assertThat(groups).containsExactly(
+            asList("foo", "foo", "foo."), asList("foo."), asList("foo"), asList("bar"))
         .inOrder();
   }
 
@@ -263,8 +268,8 @@ public class BiStreamTest {
     // Make sure nulls are grouped properly
     Stream<Integer> data = Stream.of(1, 3, 3, 2, 13, 15, 100);
     final int proximity = 10;
-    Stream<Integer> groupSizes = biStream(data)
-        .groupConsecutiveIf((d1, d2) -> Math.abs(d1 - d2) <= proximity, Integer::sum);
+    Stream<Integer> groupSizes =
+        biStream(data).groupConsecutiveIf((d1, d2) -> Math.abs(d1 - d2) <= proximity, Integer::sum);
     assertThat(groupSizes).containsExactly(1 + 3 + 3 + 2, 13 + 15, 100).inOrder();
   }
 
@@ -273,8 +278,7 @@ public class BiStreamTest {
     // Make sure nulls are grouped properly
     Stream<Integer> data = Stream.of(1, 3, 3, 2, 13, 15, 100, null, null);
     final int proximity = 10;
-    Stream<Long> groupSizes = biStream(data)
-        .groupConsecutiveIf(
+    Stream<Long> groupSizes = biStream(data).groupConsecutiveIf(
             (d1, d2) ->
                 d1 == null && d2 == null
                     || d1 != null && d2 != null && Math.abs(d1 - d2) <= proximity,
@@ -311,13 +315,11 @@ public class BiStreamTest {
   }
 
   @Test public void testZip_infiniteWithFinite() {
-    assertKeyValues(BiStream.zip(indexesFrom(1), Stream.of("one")))
-        .containsExactly(1, "one");
+    assertKeyValues(BiStream.zip(indexesFrom(1), Stream.of("one"))).containsExactly(1, "one");
   }
 
   @Test public void testZip_finiteWithInfinite() {
-    assertKeyValues(BiStream.zip(Stream.of("one"), indexesFrom(1)))
-        .containsExactly("one", 1);
+    assertKeyValues(BiStream.zip(Stream.of("one"), indexesFrom(1))).containsExactly("one", 1);
   }
 
   @Test public void testZip_infiniteWithInfinite() {
@@ -334,16 +336,16 @@ public class BiStreamTest {
   }
 
   @Test public void testZip_mapToObj_leftIsParallel() {
-    Stream<String> zipped =
-        BiStream.zip(asList(1, 2, 3).parallelStream(), Stream.of("one", "two", "three"))
-            .mapToObj(Joiner.on(':')::join);
+    Stream<String> zipped = BiStream.zip(
+            asList(1, 2, 3).parallelStream(), Stream.of("one", "two", "three"))
+        .mapToObj(Joiner.on(':')::join);
     assertThat(zipped).containsExactly("1:one", "2:two", "3:three").inOrder();
   }
 
   @Test public void testZip_mapToObj_rightIsParallel() {
-    Stream<String> zipped =
-        BiStream.zip(Stream.of(1, 2, 3), asList("one", "two", "three").parallelStream())
-            .mapToObj(Joiner.on(':')::join);
+    Stream<String> zipped = BiStream.zip(
+            Stream.of(1, 2, 3), asList("one", "two", "three").parallelStream())
+        .mapToObj(Joiner.on(':')::join);
     assertThat(zipped).containsExactly("1:one", "2:two", "3:three").inOrder();
   }
 
@@ -352,9 +354,8 @@ public class BiStreamTest {
     AtomicBoolean rightClosed = new AtomicBoolean();
     Stream<Integer> left = Stream.of(1, 2).onClose(() -> leftClosed.set(true));
     Stream<String> right = Stream.of("one", "two").onClose(() -> rightClosed.set(true));
-    try (Stream<String> zipped =
-        BiStream.zip(left, right)
-            .mapToObj((java.lang.Integer i, java.lang.String s) -> i + ":" + s)) {
+    try (Stream<String> zipped = BiStream.zip(left, right)
+        .mapToObj((java.lang.Integer i, java.lang.String s) -> i + ":" + s)) {
       assertThat(leftClosed.get()).isFalse();
       assertThat(rightClosed.get()).isFalse();
     }
@@ -394,9 +395,8 @@ public class BiStreamTest {
     AtomicBoolean rightClosed = new AtomicBoolean();
     Stream<Integer> left = Stream.of(1, 2).onClose(() -> leftClosed.set(true));
     Stream<Integer> right = Stream.of(10, 20).onClose(() -> rightClosed.set(true));
-    try (DoubleStream zipped =
-        BiStream.zip(left, right)
-            .mapToDouble((java.lang.Integer l, java.lang.Integer r) -> l + r)) {
+    try (DoubleStream zipped = BiStream.zip(left, right)
+        .mapToDouble((java.lang.Integer l, java.lang.Integer r) -> l + r)) {
       assertThat(leftClosed.get()).isFalse();
       assertThat(rightClosed.get()).isFalse();
     }
@@ -597,8 +597,7 @@ public class BiStreamTest {
   @Test public void testZip_skip_finiteWithInfinite() {
     assertKeyValues(BiStream.zip(Stream.of(1, 2, 4), Stream.iterate(10, i -> i * 2)).skip(1))
         .containsExactly(2, 20, 4, 40);
-    assertKeyValues(BiStream.zip(indexesFrom(1), Stream.of(10, 20)).skip(1))
-        .containsExactly(2, 20);
+    assertKeyValues(BiStream.zip(indexesFrom(1), Stream.of(10, 20)).skip(1)).containsExactly(2, 20);
   }
 
   @Test public void testZip_limit() {
@@ -619,8 +618,7 @@ public class BiStreamTest {
   }
 
   @Test public void testZip_collect() {
-    assertThat(BiStream.zip(asList(1, 2, 3, 4), asList("one", "two", "three"))
-            .collect(toMap()))
+    assertThat(BiStream.zip(asList(1, 2, 3, 4), asList("one", "two", "three")).collect(toMap()))
         .containsExactly(1, "one", 2, "two", 3, "three");
     assertThat(BiStream.zip(indexesFrom(1), Stream.of("one", "two")).collect(toMap()))
         .containsExactly(1, "one", 2, "two");
@@ -666,8 +664,7 @@ public class BiStreamTest {
 
   @Test public void testZip_forEach_leftAndRightSameSize() {
     Map<Object, Object> all = new LinkedHashMap<>();
-    BiStream.zip(indexesFrom(1).limit(3), indexesFrom(11).limit(3))
-        .forEach(all::put);
+    BiStream.zip(indexesFrom(1).limit(3), indexesFrom(11).limit(3)).forEach(all::put);
     assertThat(all).containsExactly(1, 11, 2, 12, 3, 13).inOrder();
   }
 
@@ -710,8 +707,7 @@ public class BiStreamTest {
 
   @Test public void testZip_forEachOrdered_leftAndRightSameSize() {
     Map<Object, Object> all = new LinkedHashMap<>();
-    BiStream.zip(indexesFrom(1).limit(3), indexesFrom(11).limit(3))
-        .forEachOrdered(all::put);
+    BiStream.zip(indexesFrom(1).limit(3), indexesFrom(11).limit(3)).forEachOrdered(all::put);
     assertThat(all).containsExactly(1, 11, 2, 12, 3, 13).inOrder();
   }
 
@@ -739,10 +735,11 @@ public class BiStreamTest {
   }
 
   @Test public void testToBiStreamFromSplit() {
-    assertThat(Stream.of("name=joe", "age=10")
-            .map(Substring.first('=')::split)
-            .collect(concatenating(BiOptional::stream))
-            .collect(toImmutableListMultimap()))
+    assertThat(
+            Stream.of("name=joe", "age=10")
+                .map(Substring.first('=')::split)
+                .collect(concatenating(BiOptional::stream))
+                .collect(toImmutableListMultimap()))
         .containsExactly("name", "joe", "age", "10")
         .inOrder();
   }
@@ -789,52 +786,46 @@ public class BiStreamTest {
   @Test public void testGroupingBy_withMapperAndReducer_empty() {
     Stream<String> inputs = Stream.empty();
     assertKeyValues(
-            inputs
-                .collect(BiStream.groupingBy(s -> s.charAt(0), String::length, Integer::sum)))
+            inputs.collect(BiStream.groupingBy(s -> s.charAt(0), String::length, Integer::sum)))
         .isEmpty();
   }
 
   @Test public void testGroupingBy_withMapperAndReducer_singleElement() {
     Stream<String> inputs = Stream.of("foo");
     assertKeyValues(
-            inputs
-                .collect(BiStream.groupingBy(s -> s.charAt(0), String::length, Integer::sum)))
+            inputs.collect(BiStream.groupingBy(s -> s.charAt(0), String::length, Integer::sum)))
         .containsExactly('f', 3);
   }
 
   @Test public void testGroupingBy_withMapperAndReducer_twoElementsSameGroup() {
     Stream<String> inputs = Stream.of("foo", "feed");
     assertKeyValues(
-            inputs
-                .collect(BiStream.groupingBy(s -> s.charAt(0), String::length, Integer::sum)))
+            inputs.collect(BiStream.groupingBy(s -> s.charAt(0), String::length, Integer::sum)))
         .containsExactly('f', 7);
   }
 
   @Test public void testGroupingBy_withMapperAndReducer_twoElementsDifferentGroups() {
     Stream<String> inputs = Stream.of("foo", "blah");
     assertKeyValues(
-            inputs
-                .collect(BiStream.groupingBy(s -> s.charAt(0), String::length, Integer::sum)))
+            inputs.collect(BiStream.groupingBy(s -> s.charAt(0), String::length, Integer::sum)))
         .containsExactly('f', 3, 'b', 4)
         .inOrder();
   }
 
   @Test public void testGroupingByEach_withCollector() {
-    Map<Character, Long> groups =
-        Stream.of("dog", "food", "fog")
-            .collect(groupingByEach(s -> charactersOf(s), Collectors.counting()))
-            .toMap();
+    Map<Character, Long> groups = Stream.of("dog", "food", "fog")
+        .collect(groupingByEach(s -> charactersOf(s), Collectors.counting()))
+        .toMap();
     assertThat(groups).containsExactly('d', 2L, 'o', 4L, 'g', 2L, 'f', 2L).inOrder();
   }
 
   @Test public void testGroupingByEach_withMapperAndReducer() {
     AtomicInteger index = new AtomicInteger();
-    Map<Character, String> groups =
-        Stream.of("dog", "food", "fog")
-            .collect(groupingByEach(s -> charactersOf(s), s -> index.incrementAndGet() + s, String::concat))
-            .toMap();
-    assertThat(groups)
-        .containsExactly(
+    Map<Character, String> groups = Stream.of("dog", "food", "fog")
+        .collect(
+            groupingByEach(s -> charactersOf(s), s -> index.incrementAndGet() + s, String::concat))
+        .toMap();
+    assertThat(groups).containsExactly(
             'd', "1dog2food",
             'o', "1dog2food2food3fog",
             'g', "1dog3fog",
@@ -844,12 +835,10 @@ public class BiStreamTest {
 
   @Test public void testGroupingByEach_withMapperAndCollector() {
     AtomicInteger index = new AtomicInteger();
-    Map<Character, List<String>> groups =
-        Stream.of("dog", "food", "fog")
-            .collect(groupingByEach(s -> charactersOf(s), s -> index.incrementAndGet() + s, toList()))
-            .toMap();
-    assertThat(groups)
-        .containsExactly(
+    Map<Character, List<String>> groups = Stream.of("dog", "food", "fog")
+        .collect(groupingByEach(s -> charactersOf(s), s -> index.incrementAndGet() + s, toList()))
+        .toMap();
+    assertThat(groups).containsExactly(
             'd', ImmutableList.of("1dog", "2food"),
             'o', ImmutableList.of("1dog", "2food", "2food", "3fog"),
             'g', ImmutableList.of("1dog", "3fog"),
@@ -858,22 +847,30 @@ public class BiStreamTest {
   }
 
   @Test public void testGroupingBy_withCollector() {
-    Map<String, Long> groups =
-        Stream.of(1, 1, 2, 3, 3)
-            .collect(BiStream.groupingBy(Object::toString, Collectors.counting()))
-            .toMap();
+    Map<String, Long> groups = Stream.of(1, 1, 2, 3, 3)
+        .collect(BiStream.groupingBy(Object::toString, Collectors.counting()))
+        .toMap();
     assertThat(groups).containsExactly("1", 2L, "2", 1L, "3", 2L).inOrder();
   }
 
   @Test public void testConcatMap() {
-    assertThat(BiStream.concat(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two")).toMap())
+    assertThat(
+            BiStream.concat(
+                    ImmutableMap.of(
+                        1, "one"),
+                    ImmutableMap.of(
+                        2, "two"))
+                .toMap())
         .containsExactly(1, "one", 2, "two")
         .inOrder();
     assertThat(
             BiStream.concat(
-                    ImmutableMap.of(1, "one"),
-                    ImmutableMap.of(2, "two"),
-                    ImmutableMap.of(3, "three"))
+                    ImmutableMap.of(
+                        1, "one"),
+                    ImmutableMap.of(
+                        2, "two"),
+                    ImmutableMap.of(
+                        3, "three"))
                 .toMap())
         .containsExactly(1, "one", 2, "two", 3, "three")
         .inOrder();
@@ -887,14 +884,17 @@ public class BiStreamTest {
   }
 
   @Test public void testConcatBiStream() {
-    assertThat(BiStream.concat(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two")).toMap())
+    assertThat(
+            BiStream.concat(
+                    ImmutableMap.of(
+                        1, "one"),
+                    ImmutableMap.of(
+                        2, "two"))
+                .toMap())
         .containsExactly(1, "one", 2, "two")
         .inOrder();
     assertThat(
-            BiStream.concat(
-                    BiStream.of(1, "one"),
-                    BiStream.of(2, "two"),
-                    BiStream.of(3, "three"))
+            BiStream.concat(BiStream.of(1, "one"), BiStream.of(2, "two"), BiStream.of(3, "three"))
                 .toMap())
         .containsExactly(1, "one", 2, "two", 3, "three")
         .inOrder();
@@ -929,7 +929,11 @@ public class BiStreamTest {
 
   @Test public void testFlattening() {
     assertThat(
-            Stream.of(ImmutableMap.of(1, "one"), ImmutableMap.of(2, "two"))
+            Stream.of(
+                    ImmutableMap.of(
+                        1, "one"),
+                    ImmutableMap.of(
+                        2, "two"))
                 .collect(concatenating(BiStream::from))
                 .toMap())
         .containsExactly(1, "one", 2, "two")
@@ -951,12 +955,8 @@ public class BiStreamTest {
   }
 
   @Test public void testCrossJoining_infiniteRight_thenLimit() {
-    assertKeyValues(Stream.empty().collect(crossJoining(indexesFrom(0))).limit(2))
-        .isEmpty();
-    assertKeyValues(
-            Stream.of("foo", "bar")
-                .collect(crossJoining(indexesFrom(0)))
-                .limit(4))
+    assertKeyValues(Stream.empty().collect(crossJoining(indexesFrom(0))).limit(2)).isEmpty();
+    assertKeyValues(Stream.of("foo", "bar").collect(crossJoining(indexesFrom(0))).limit(4))
         .containsExactly("foo", 0, "bar", 0, "foo", 1, "bar", 1)
         .inOrder();
   }
@@ -1039,8 +1039,7 @@ public class BiStreamTest {
   }
 
   @Test public void adjacentPairs_nullPadding() {
-    Stream<String> stream =
-        adjacentPairsFrom(null, 1, 2, 3, null).mapToObj(Joiner.on(':')::join);
+    Stream<String> stream = adjacentPairsFrom(null, 1, 2, 3, null).mapToObj(Joiner.on(':')::join);
     assertThat(stream).containsExactly("null:1", "1:2", "2:3", "3:null").inOrder();
   }
 
@@ -1052,9 +1051,7 @@ public class BiStreamTest {
 
   @Test public void testCollect_mutableReduction() {
     ImmutableMap<String, Integer> result = BiStream.of("one", 1, "two", 2)
-        .collect(
-            ImmutableMap.<String, Integer>builder(),
-            ImmutableMap.Builder::put)
+        .collect(ImmutableMap.<String, Integer>builder(), ImmutableMap.Builder::put)
         .build();
     assertThat(result).containsExactly("one", 1, "two", 2);
   }
@@ -1062,19 +1059,16 @@ public class BiStreamTest {
   @Test public void testCollect_concurrentMutableReduction() {
     BiStream<String, Integer> parallel =
         biStream(Object::toString, Stream.of(1, 2, 3, 4, 5).parallel());
-    Map<String, Integer> result = parallel
-        .collect(
-            ImmutableMap.<String, Integer>builder(),
-            ImmutableMap.Builder::put)
-        .build();
+    Map<String, Integer> result =
+        parallel.collect(ImmutableMap.<String, Integer>builder(), ImmutableMap.Builder::put)
+            .build();
     assertThat(result).containsExactly("1", 1, "2", 2, "3", 3, "4", 4, "5", 5).inOrder();
   }
 
   @Test public void testCollect_withFinisher() {
-    ImmutableBiMap<String, Integer> biMap = BiStream.of("one", 1)
-        .collect(toMap(), com.google.common.collect.ImmutableBiMap::copyOf);
-    assertThat(biMap)
-        .containsExactly("one", 1);
+    ImmutableBiMap<String, Integer> biMap =
+        BiStream.of("one", 1).collect(toMap(), com.google.common.collect.ImmutableBiMap::copyOf);
+    assertThat(biMap).containsExactly("one", 1);
   }
 
   @Test public void testPaginatedStream_singlePage() {
@@ -1105,6 +1099,91 @@ public class BiStreamTest {
     verify(service).getPage(0, 2);
     verify(service).getPage(2, 2);
     verifyNoMoreInteractions(service);
+  }
+
+  @Test public void testDistinctBy_nullClassifier_throwsNullPointerException() {
+    assertThrows(NullPointerException.class, () -> BiStream.of("a", 1).distinctBy(null));
+  }
+
+  @Test public void testDistinctBy_emptyStream() {
+    assertKeyValues(BiStream.empty().distinctBy((k, v) -> k)).isEmpty();
+  }
+
+  @Test public void testDistinctBy_singlePair() {
+    assertKeyValues(BiStream.of("a", 1).distinctBy((k, v) -> k)).containsExactly("a", 1);
+  }
+
+  @Test public void testDistinctBy_allDistinct() {
+    assertKeyValues(BiStream.of("a", 1, "b", 2, "c", 3).distinctBy((k, v) -> k))
+        .containsExactly("a", 1, "b", 2, "c", 3)
+        .inOrder();
+  }
+
+  @Test public void testDistinctBy_byKey_preservesFirstOccurrence() {
+    assertKeyValues(BiStream.of("a", 1, "b", 2, "a", 3).distinctBy((k, v) -> k))
+        .containsExactly("a", 1, "b", 2)
+        .inOrder();
+  }
+
+  @Test public void testDistinctBy_byValue_preservesFirstOccurrence() {
+    assertKeyValues(BiStream.of("a", 1, "b", 2, "c", 1).distinctBy((k, v) -> v))
+        .containsExactly("a", 1, "b", 2)
+        .inOrder();
+  }
+
+  @Test public void testDistinctBy_byKeyAndValueCombination() {
+    assertKeyValues(BiStream.of("a", 1, "a", 2, "b", 1, "a", 1).distinctBy((k, v) -> k + ":" + v))
+        .containsExactly("a", 1, "a", 2, "b", 1)
+        .inOrder();
+  }
+
+  @Test public void testDistinctBy_classifierReturnsNull_singlePair() {
+    assertKeyValues(BiStream.of("a", 1).distinctBy((k, v) -> null)).containsExactly("a", 1);
+  }
+
+  @Test public void testDistinctBy_classifierReturnsNull_multiplePairs_preservesFirstOccurrence() {
+    assertKeyValues(BiStream.of("a", 1, "b", 2, "c", 3).distinctBy((k, v) -> null))
+        .containsExactly("a", 1);
+  }
+
+  @Test public void testDistinctBy_classifierReturnsNull_interleavedWithNonNull() {
+    assertKeyValues(
+            BiStream.of("a", 1, "b", 2, "c", 1, "d", 3, "e", 1)
+                .distinctBy((k, v) -> v == 1 ? null : k))
+        .containsExactly("a", 1, "b", 2, "d", 3)
+        .inOrder();
+  }
+
+  @Test public void testDistinctBy_withNullKey() {
+    assertKeyValues(BiStream.of(null, 1, null, 2, "a", 3).distinctBy((k, v) -> k))
+        .containsExactly(null, 1, "a", 3)
+        .inOrder();
+  }
+
+  @Test public void testDistinctBy_withNullValue() {
+    assertKeyValues(BiStream.of("a", null, "b", null, "c", 1).distinctBy((k, v) -> v))
+        .containsExactly("a", null, "c", 1)
+        .inOrder();
+  }
+
+  @Test public void testDistinctBy_withNullKeyAndValue() {
+    assertKeyValues(BiStream.of(null, null, null, null).distinctBy((k, v) -> k))
+        .containsExactly(null, null);
+  }
+
+  @Test public void testDistinctBy_closesUnderlyingStream() {
+    AtomicBoolean closed = new AtomicBoolean();
+    Stream<String> stream = Stream.of("a", "b").onClose(() -> closed.set(true));
+    BiStream.from(stream, identity(), identity()).distinctBy((k, v) -> k).close();
+    assertThat(closed.get()).isTrue();
+  }
+
+  @Test public void testDistinctBy_lazyEvaluation() {
+    assertKeyValues(
+            BiStream.zip(indexesFrom(1), Stream.generate(() -> "value"))
+                .distinctBy((k, v) -> v)
+                .limit(1))
+        .containsExactly(1, "value");
   }
 
   private static class PaginationService<T> {
@@ -1156,10 +1235,11 @@ public class BiStreamTest {
     }
   }
 
-  static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
+  static <K, V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
     Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K, V>>() {
-      @Override public <E> Collector<E, ?, Multimap<K, V>> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
-        return BiStreamTest.toLinkedListMultimap(toKey,toValue);
+      @Override public <E> Collector<E, ?, Multimap<K, V>> collectorOf(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return BiStreamTest.toLinkedListMultimap(toKey, toValue);
       }
     });
     return assertThat(multimap);
@@ -1179,13 +1259,10 @@ public class BiStreamTest {
   private static IterableSubject assertSequential(Stream<?> stream) {
     assertThat(stream.isParallel()).isFalse();
     ConcurrentMap<Long, Object> threads = new ConcurrentHashMap<>();
-    List<?> list =
-        stream
-            .peek(
-                v -> {
-                  threads.put(Thread.currentThread().getId(), v);
-                })
-            .collect(toList());
+    List<?> list = stream.peek(v -> {
+      threads.put(Thread.currentThread().getId(), v);
+    })
+        .collect(toList());
     assertThat(threads).hasSize(1);
     return assertThat(list);
   }

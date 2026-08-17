@@ -42,10 +42,10 @@ final class RegexPatternUtils {
   static Stream<OverlappingQuantifierPair> findOverlappingQuantifiers(RegexPattern.Sequence seq) {
     List<RegexPattern> elements = seq.elements();
     for (int i = 0; i < elements.size(); i++) {
-      RegexPattern ei = elements.get(i);
+      RegexPattern ei = unwrapGroup(elements.get(i));
       if (isUnboundedQuantified(ei)) {
         for (int j = i + 1; j < elements.size(); j++) {
-          RegexPattern ej = elements.get(j);
+          RegexPattern ej = unwrapGroup(elements.get(j));
           if (isUnboundedQuantified(ej)) {
             if (charRangesOf(ei).intersects(charRangesOf(ej))) {
               return Stream.of(
@@ -63,6 +63,7 @@ final class RegexPatternUtils {
   }
 
   private static boolean isUnboundedQuantified(RegexPattern pattern) {
+    pattern = unwrapGroup(pattern);
     return pattern instanceof RegexPattern.Quantified q && !q.quantifier().isPossessive()
         && switch (q.quantifier()) {
           case RegexPattern.AtLeast atLeast -> atLeast.min() >= 0;

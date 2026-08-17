@@ -31,11 +31,13 @@ import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators.AbstractDoubleSpliterator;
 import java.util.Spliterators.AbstractIntSpliterator;
@@ -1522,6 +1524,69 @@ public abstract class BiStream<K, V> implements AutoCloseable {
    */
   public final BiStream<K, V> distinct() {
     return fromEntries(mapToEntry().distinct());
+  }
+
+  /**
+   * Returns a {@link BiStream} consisting of pairs that are distinct according to the key returned
+   * by {@code classifier} (using {@link Object#equals(Object)}).
+   *
+   * <p>For ordered streams, the selection of distinct pairs is stable: for pairs producing equal
+   * keys, the pair appearing <em>first in encounter order</em> is preserved (and subsequent pairs
+   * are discarded).
+   *
+   * <p>For example, to deduplicate by the stream key (preserving the first value encountered for
+   * each key):
+   *
+   * <pre>{@code
+   * userBiStream.distinctBy((userId, profile) -> userId);
+   * }</pre>
+   *
+   * <p>To deduplicate by a property of the value:
+   *
+   * <pre>{@code
+   * sessionBiStream.distinctBy((sessionId, device) -> device.getIpAddress());
+   * }</pre>
+   *
+   * @since 10.9
+   */
+  public final BiStream<K, V> distinctBy(BiFunction<? super K, ? super V, ?> classifier) {
+    requireNonNull(classifier);
+    return fromEntries(distinctBy(mapToEntry(), e -> classifier.apply(e.getKey(), e.getValue())));
+  }
+
+  private static <T> Stream<T> distinctBy(Stream<T> stream, Function<? super T, ?> classifier) {
+    final int characteristics = Spliterator.ORDERED | Spliterator.DISTINCT;
+
+    class DistinctSpliterator extends AbstractSpliterator<T> {
+      private final Spliterator<? extends T> from = stream.spliterator();
+      private final Set<Object> seen = new HashSet<>();
+      private final Temp<T> temp = new Temp<>();
+
+      DistinctSpliterator() {
+        super(Long.MAX_VALUE, characteristics);
+      }
+
+      @Override
+      public boolean tryAdvance(Consumer<? super T> action) {
+        while (from.tryAdvance(temp)) {
+          T element = temp.value;
+          temp.value = null;
+          if (seen.add(classifier.apply(element))) {
+            action.accept(element);
+            return true;
+          }
+        }
+        return false;
+      }
+
+      @Override
+      public Spliterator<T> trySplit() {
+        return null;
+      }
+    }
+
+    return StreamSupport.stream(DistinctSpliterator::new, characteristics, NOT_PARALLEL)
+        .onClose(stream::close);
   }
 
   /**

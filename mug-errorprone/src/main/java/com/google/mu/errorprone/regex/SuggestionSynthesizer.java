@@ -6,79 +6,64 @@ import static com.google.mu.errorprone.regex.RegexPatternUtils.unwrapGroup;
 import static com.google.mu.util.Optionals.optionally;
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.labs.regex.RegexPattern;
-import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
-import com.google.mu.util.graph.Walker;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+
+import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
+import com.google.mu.util.graph.Walker;
 
 /**
  * Synthesizes safe alternatives (Safe Regex, Substring, StringFormat, dot-parse Parser) for
  * vulnerable regexes.
  */
 final class SuggestionSynthesizer {
-  private final RegexPattern rootPattern;
-  private final RegexPattern culprit;
 
-  SuggestionSynthesizer(RegexPattern rootPattern, RegexPattern culprit) {
-    this.rootPattern = requireNonNull(rootPattern);
-    this.culprit = requireNonNull(culprit);
-  }
+  private SuggestionSynthesizer() {}
 
-  SuggestionSynthesizer(RegexPattern pattern) {
-    this(pattern, pattern);
-  }
-
-  List<Suggestion> forRedos() {
-    return suggestions(suggestRedosRegexSuggestion());
-  }
-
-  List<Suggestion> forPolynomial() {
-    return suggestions(suggestPolynomialRegexSuggestion());
-  }
-
-  Optional<String> suggestRedosRewrite() {
-    return suggestRedosRegexSuggestion().map(Suggestion.RegexSuggestion::replacement);
-  }
-
-  Optional<String> suggestPolynomialRewrite() {
-    return suggestPolynomialRegexSuggestion().map(Suggestion.RegexSuggestion::replacement);
-  }
-
-  private List<Suggestion> suggestions(Optional<Suggestion.RegexSuggestion> regexSuggestion) {
-    List<Suggestion> suggestions = new ArrayList<>();
-    regexSuggestion.ifPresent(suggestions::add);
-    Optional<Suggestion.SubstringSuggestion> substring = suggestSubstring();
-    Optional<Suggestion.StringFormatSuggestion> stringFormat = suggestStringFormat();
-    if (substring.isPresent() && substring.get().caveats().isEmpty()) {
-      suggestions.add(substring.get());
-    } else {
-      stringFormat.ifPresent(suggestions::add);
-      substring.ifPresent(suggestions::add);
-    }
-    suggestParser().ifPresent(suggestions::add);
-    return List.copyOf(suggestions);
-  }
-
-  private Optional<Suggestion.RegexSuggestion> suggestRedosRegexSuggestion() {
-    if (rootPattern instanceof RegexPattern.Quantified q) {
-      RegexPattern inner = unwrapGroup(q.element());
-      if (inner instanceof RegexPattern.Quantified innerQ) {
-        boolean canBeEmpty = innerQ.metadata().minSize() == 0 || q.metadata().minSize() == 0;
-        String op = canBeEmpty ? "*" : "+";
-        String replacement = innerQ.element().toString() + op;
-        return Optional.of(new Suggestion.RegexSuggestion(replacement));
-      }
-      return optionally(
-          inner.metadata().minSize() == 0 && inner.metadata().maxSize() > 0,
-          () -> new Suggestion.RegexSuggestion(inner.toString() + "*"));
+  static Optional<Suggestion.RegexSuggestion> rewriteRedosToSafeRegex(RegexPattern pattern) {
+    requireNonNull(pattern);
+    RegexPattern rewritten = transform(pattern, SuggestionSynthesizer::rewriteRedosNode);
+    if (!rewritten.equals(pattern)) {
+      return Optional.of(new Suggestion.RegexSuggestion(rewritten.toString()));
     }
     return Optional.empty();
   }
 
-  private Optional<Suggestion.RegexSuggestion> suggestPolynomialRegexSuggestion() {
-    if (rootPattern instanceof RegexPattern.Sequence seq) {
+  private static Optional<RegexPattern> rewriteRedosNode(RegexPattern node) {
+    if (node instanceof RegexPattern.Quantified q) {
+      RegexPattern inner = unwrapGroup(q.element());
+      if (inner instanceof RegexPattern.Quantified innerQ) {
+        boolean canBeEmpty = innerQ.metadata().minSize() == 0 || q.metadata().minSize() == 0;
+        RegexPattern.Quantifier op = RegexPattern.Quantifier.atLeast(canBeEmpty ? 0 : 1);
+        return Optional.of(new RegexPattern.Quantified(innerQ.element(), op));
+      }
+      if (inner.metadata().minSize() == 0 && inner.metadata().maxSize() > 0) {
+        return Optional.of(new RegexPattern.Quantified(inner, RegexPattern.Quantifier.atLeast(0)));
+      }
+    }
+    return Optional.empty();
+  }
+
+  static Optional<Suggestion.RegexSuggestion> rewritePolynomialToSafeRegex(RegexPattern pattern) {
+    requireNonNull(pattern);
+    List<String> caveats = new ArrayList<>();
+    RegexPattern rewritten = transform(pattern, node -> rewritePolynomialNode(node, caveats));
+    if (!rewritten.equals(pattern)) {
+      String caveat = caveats.isEmpty() ? null : caveats.get(0);
+      return Optional.of(
+          caveat == null
+              ? new Suggestion.RegexSuggestion(rewritten.toString())
+              : new Suggestion.RegexSuggestion(rewritten.toString(), caveat));
+    }
+    return Optional.empty();
+  }
+
+  private static Optional<RegexPattern> rewritePolynomialNode(
+      RegexPattern node, List<String> caveats) {
+    if (node instanceof RegexPattern.Sequence seq) {
       return findOverlappingQuantifiers(seq)
           .map(p -> {
             if (p.secondIndex() == p.firstIndex() + 1
@@ -88,52 +73,101 @@ final class SuggestionSynthesizer {
               int totalMin = q1.min() + q2.min();
               RegexPattern merged = new RegexPattern.Quantified(
                   p.first().element(), RegexPattern.Quantifier.atLeast(totalMin));
-              List<RegexPattern> rewritten = new ArrayList<>(seq.elements());
-              rewritten.set(p.firstIndex(), merged);
-              rewritten.remove(p.secondIndex());
-              String replacement =
-                  rewritten.size() == 1
-                      ? rewritten.get(0).toString()
-                      : new RegexPattern.Sequence(rewritten).toString();
-              return new Suggestion.RegexSuggestion(replacement);
+              RegexPattern preservedMerged =
+                  preserveGroup(seq.elements().get(p.firstIndex()), merged);
+              List<RegexPattern> newElements = new ArrayList<>(seq.elements());
+              newElements.set(p.firstIndex(), preservedMerged);
+              newElements.remove(p.secondIndex());
+              return newElements.size() == 1
+                  ? newElements.get(0)
+                  : new RegexPattern.Sequence(newElements);
             }
             RegexPattern rewrittenFirst = new RegexPattern.Quantified(
                 p.first().element(), p.first().quantifier().possessive());
-            List<RegexPattern> rewritten = new ArrayList<>(seq.elements());
-            rewritten.set(p.firstIndex(), rewrittenFirst);
-            String replacement = new RegexPattern.Sequence(rewritten).toString();
-            return new Suggestion.RegexSuggestion(
-                replacement,
+            RegexPattern preservedFirst =
+                preserveGroup(seq.elements().get(p.firstIndex()), rewrittenFirst);
+            List<RegexPattern> newElements = new ArrayList<>(seq.elements());
+            newElements.set(p.firstIndex(), preservedFirst);
+            caveats.add(
                 "Possessive quantifier '" + rewrittenFirst
                     + "' prevents backtracking and may fail if subsequent tokens require"
                     + " characters greedily consumed by '" + rewrittenFirst + "'");
+            return newElements.size() == 1
+                ? newElements.get(0)
+                : new RegexPattern.Sequence(newElements);
           })
           .findFirst();
     }
     return Optional.empty();
   }
 
-  private boolean isEntireRegexCulprit() {
-    return unwrapGroup(rootPattern).equals(unwrapGroup(culprit));
+  private static RegexPattern preserveGroup(RegexPattern original, RegexPattern rewritten) {
+    if (original instanceof RegexPattern.Group.Capturing) {
+      return new RegexPattern.Group.Capturing(rewritten);
+    }
+    if (original instanceof RegexPattern.Group.NonCapturing) {
+      return new RegexPattern.Group.NonCapturing(rewritten);
+    }
+    if (original instanceof RegexPattern.Group.Named g) {
+      return new RegexPattern.Group.Named(g.name(), rewritten);
+    }
+    return rewritten;
   }
 
-  private Optional<Suggestion.ParserSuggestion> suggestParser() {
-    if (!isEntireRegexCulprit()) {
-      return Optional.empty();
+  private static RegexPattern transform(
+      RegexPattern node, Function<RegexPattern, Optional<RegexPattern>> rule) {
+    Optional<RegexPattern> direct = rule.apply(node);
+    if (direct.isPresent()) {
+      return direct.get();
     }
-    if (isStructuredNumberGrammar(rootPattern)) {
+    return switch (node) {
+      case RegexPattern.Sequence seq -> {
+        List<RegexPattern> newElements =
+            seq.elements().stream().map(e -> transform(e, rule)).toList();
+        yield newElements.size() == 1 ? newElements.get(0) : new RegexPattern.Sequence(newElements);
+      }
+      case RegexPattern.Group.Capturing g ->
+          new RegexPattern.Group.Capturing(transform(g.content(), rule));
+      case RegexPattern.Group.NonCapturing g ->
+          new RegexPattern.Group.NonCapturing(transform(g.content(), rule));
+      case RegexPattern.Group.Atomic g ->
+          new RegexPattern.Group.Atomic(transform(g.content(), rule));
+      case RegexPattern.Group.Named g ->
+          new RegexPattern.Group.Named(g.name(), transform(g.content(), rule));
+      case RegexPattern.Quantified q ->
+          new RegexPattern.Quantified(transform(q.element(), rule), q.quantifier());
+      case RegexPattern.Alternation alt -> new RegexPattern.Alternation(
+          alt.alternatives().stream().map(a -> transform(a, rule)).toList());
+      case RegexPattern.Lookaround.Lookahead l ->
+          new RegexPattern.Lookaround.Lookahead(transform(l.target(), rule));
+      case RegexPattern.Lookaround.NegativeLookahead l ->
+          new RegexPattern.Lookaround.NegativeLookahead(transform(l.target(), rule));
+      case RegexPattern.Lookaround.Lookbehind l ->
+          new RegexPattern.Lookaround.Lookbehind(transform(l.target(), rule));
+      case RegexPattern.Lookaround.NegativeLookbehind l ->
+          new RegexPattern.Lookaround.NegativeLookbehind(transform(l.target(), rule));
+      default -> node;
+    };
+  }
+
+  static Optional<String> suggestRedosRewrite(RegexPattern pattern) {
+    return rewriteRedosToSafeRegex(pattern).map(Suggestion.RegexSuggestion::replacement);
+  }
+
+  static Optional<String> suggestPolynomialRewrite(RegexPattern pattern) {
+    return rewritePolynomialToSafeRegex(pattern).map(Suggestion.RegexSuggestion::replacement);
+  }
+
+  static Optional<Suggestion.ParserSuggestion> rewriteToParser(RegexPattern pattern) {
+    pattern = unwrapGroup(requireNonNull(pattern));
+    if (isStructuredNumberGrammar(pattern)) {
       return Optional.of(
           new Suggestion.ParserSuggestion(
               "Parsers.UNSIGNED_INTEGER.atLeastOnce()",
               "Parser combinators parse deterministically with prioritized choice and do not"
                   + " backtrack non-deterministically across ambiguous boundaries"));
     }
-    return suggestParserFromPattern(rootPattern);
-  }
-
-  private Optional<Suggestion.ParserSuggestion> suggestParserFromPattern(RegexPattern pattern) {
-    RegexPattern p = unwrapGroup(pattern);
-    if (p instanceof RegexPattern.Quantified q) {
+    if (pattern instanceof RegexPattern.Quantified q) {
       RegexPattern inner = unwrapGroup(q.element());
       if (inner instanceof RegexPattern.Sequence seq) {
         Optional<KeyValueExtraction> kv = extractKeyValue(seq.elements());
@@ -173,7 +207,8 @@ final class SuggestionSynthesizer {
         }
       }
     }
-    RegexPattern innerP = p instanceof RegexPattern.Quantified q ? unwrapGroup(q.element()) : p;
+    RegexPattern innerP =
+        pattern instanceof RegexPattern.Quantified q ? unwrapGroup(q.element()) : pattern;
     if (innerP instanceof RegexPattern.Sequence seq && seq.elements().size() == 2) {
       RegexPattern token1 = unwrapGroup(seq.elements().get(0));
       RegexPattern rest = unwrapGroup(seq.elements().get(1));
@@ -432,11 +467,9 @@ final class SuggestionSynthesizer {
         });
   }
 
-  private Optional<Suggestion.SubstringSuggestion> suggestSubstring() {
-    if (!isEntireRegexCulprit()) {
-      return Optional.empty();
-    }
-    if (rootPattern instanceof RegexPattern.Sequence seq) {
+  static Optional<Suggestion.SubstringSuggestion> rewriteToSubstring(RegexPattern pattern) {
+    pattern = unwrapGroup(requireNonNull(pattern));
+    if (pattern instanceof RegexPattern.Sequence seq) {
       List<RegexPattern> elements = seq.elements();
       if (elements.size() == 3) {
         RegexPattern e0 = unwrapGroup(elements.get(0));
@@ -477,11 +510,9 @@ final class SuggestionSynthesizer {
     return Optional.empty();
   }
 
-  private Optional<Suggestion.StringFormatSuggestion> suggestStringFormat() {
-    if (!isEntireRegexCulprit()) {
-      return Optional.empty();
-    }
-    if (rootPattern instanceof RegexPattern.Sequence seq) {
+  static Optional<Suggestion.StringFormatSuggestion> rewriteToStringFormat(RegexPattern pattern) {
+    pattern = unwrapGroup(requireNonNull(pattern));
+    if (pattern instanceof RegexPattern.Sequence seq) {
       List<RegexPattern> elements = seq.elements();
       if (elements.size() == 3) {
         RegexPattern e0 = unwrapGroup(elements.get(0));
