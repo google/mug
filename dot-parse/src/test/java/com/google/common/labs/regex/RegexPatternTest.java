@@ -376,6 +376,33 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("(?:)")).isEqualTo(new Group.NonCapturing(new Literal("")));
   }
 
+  @Test public void of_group_nonCapturing_withEnabledFlags_empty() {
+    assertThat(RegexPattern.of("(?i:)"))
+        .isEqualTo(
+            new Group.NonCapturing(
+                new Literal(""), List.of(ModifierFlag.CASE_INSENSITIVE), List.of()));
+  }
+
+  @Test public void of_group_nonCapturing_withDisabledFlags_empty() {
+    assertThat(RegexPattern.of("(?-i:)"))
+        .isEqualTo(
+            new Group.NonCapturing(
+                new Literal(""), List.of(), List.of(ModifierFlag.CASE_INSENSITIVE)));
+  }
+
+  @Test public void of_group_nonCapturing_withEnabledAndDisabledFlags_empty() {
+    assertThat(RegexPattern.of("(?i-m:)"))
+        .isEqualTo(
+            new Group.NonCapturing(
+                new Literal(""),
+                List.of(ModifierFlag.CASE_INSENSITIVE),
+                List.of(ModifierFlag.MULTILINE)));
+  }
+
+  @Test public void of_group_nonCapturing_withFlags_empty_toString() {
+    assertThat(RegexPattern.of("(?i:)").toString()).isEqualTo("(?i)");
+  }
+
   @Test public void of_group_named_empty() {
     assertThat(RegexPattern.of("(?<name>)")).isEqualTo(new Group.Named("name", new Literal("")));
   }
@@ -731,12 +758,6 @@ public final class RegexPatternTest {
                 (?:a|b
                       ^
             """);
-  }
-
-  @Test public void of_group_invalidModifier_empty_throws() {
-    Parser.ParseException e =
-        assertThrows(Parser.ParseException.class, () -> RegexPattern.of("(?)"));
-    assertThat(e).hasMessageThat().contains("at 1:3:");
   }
 
   @Test public void of_failure() {
@@ -1212,5 +1233,28 @@ public final class RegexPatternTest {
 
   @Test public void of_standaloneModifierFlags_withDisabledFlags_toString() {
     assertThat(RegexPattern.of("(?is-m)").toString()).isEqualTo("(?is-m)");
+  }
+
+  @Test public void of_standaloneModifierFlags_none() {
+    assertThat(RegexPattern.of("(?)\t"))
+        .isEqualTo(
+            sequence(
+                new Group.NonCapturing(new Literal(""), List.of(), List.of()), new Literal("\t")));
+  }
+
+  @Test public void of_standaloneModifierFlags_empty() {
+    assertThat(RegexPattern.of("(?).*/DCIM/original(~\\d+)?\\.jpg"))
+        .isEqualTo(
+            sequence(
+                new Group.NonCapturing(new Literal(""), List.of(), List.of()),
+                new Quantified(PredefinedCharClass.ANY_CHAR, repeated()),
+                new Literal("/DCIM/original"),
+                new Quantified(
+                    new Group.Capturing(
+                        sequence(
+                            new Literal("~"),
+                            new Quantified(PredefinedCharClass.DIGIT, atLeast(1)))),
+                    atMost(1)),
+                new Literal(".jpg")));
   }
 }

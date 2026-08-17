@@ -230,7 +230,6 @@ public sealed interface RegexPattern {
 
   /** Represents a regex pattern that is modified by a quantifier. */
   record Quantified(RegexPattern element, Quantifier quantifier) implements RegexPattern {
-
     @Override public Metadata metadata() {
       Metadata elementMetadata = element.metadata();
       int elementMin = elementMetadata.minSize();
@@ -499,7 +498,6 @@ public sealed interface RegexPattern {
 
   /** Represents a backreference to a capturing group. */
   sealed interface Backreference extends RegexPattern {
-
     @Override default Metadata metadata() {
       return new Metadata(/* minSize= */ 0, /* maxSize= */ Integer.MAX_VALUE);
     }
@@ -549,7 +547,6 @@ public sealed interface RegexPattern {
 
   /** Represents a custom character class, like {@code [a-z]} or {@code [^0-9]}. */
   sealed interface CharacterSet extends RegexPattern, CharSetElement {
-
     @Override default Metadata metadata() {
       return new Metadata(/* minSize= */ 1, /* maxSize= */ 2);
     }
@@ -745,7 +742,6 @@ public sealed interface RegexPattern {
    * (?<!...)}.
    */
   sealed interface Lookaround extends RegexPattern {
-
     @Override default Metadata metadata() {
       return new Metadata(/* minSize= */ 0, /* maxSize= */ 0);
     }

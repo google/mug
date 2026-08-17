@@ -191,9 +191,6 @@ final class RegexParsers {
           }
           Parser<RegexPattern> nonCapturingGroup =
               withContent.map(c -> new Group.NonCapturing(c, enabled, disabled));
-          if (enabled.isEmpty() && disabled.isEmpty()) {
-            return nonCapturingGroup;
-          }
           Parser<RegexPattern> standaloneFlags =
               one(')').thenReturn(new Group.NonCapturing(new Literal(""), enabled, disabled));
           return anyOf(nonCapturingGroup, standaloneFlags);
