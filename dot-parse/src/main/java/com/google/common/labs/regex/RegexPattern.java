@@ -606,7 +606,7 @@ public sealed interface RegexPattern {
           return "[^"
               + noneOf.elements().stream().map(Object::toString).collect(joining())
               + "&&"
-              + operands.subList(1, operands.size()).stream()
+              + operands.stream().skip(1)
                   .map(CharacterSet::elementString)
                   .collect(joining("&&"))
               + "]";
