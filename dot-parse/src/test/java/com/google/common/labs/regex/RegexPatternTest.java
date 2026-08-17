@@ -5,6 +5,7 @@ import static com.google.common.labs.regex.RegexPattern.Quantifier.atMost;
 import static com.google.common.labs.regex.RegexPattern.Quantifier.repeated;
 import static com.google.common.labs.regex.RegexPattern.alternation;
 import static com.google.common.labs.regex.RegexPattern.anyOf;
+import static com.google.common.labs.regex.RegexPattern.intersection;
 import static com.google.common.labs.regex.RegexPattern.noneOf;
 import static com.google.common.labs.regex.RegexPattern.sequence;
 import static com.google.common.truth.Truth.assertThat;
@@ -342,6 +343,31 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("(?P<name>a)")).isEqualTo(new Group.Named("name", new Literal("a")));
   }
 
+  @Test public void of_group_atomic() {
+    assertThat(RegexPattern.of("(?>a+)"))
+        .isEqualTo(new Group.Atomic(new Quantified(new Literal("a"), atLeast(1))));
+  }
+
+  @Test public void of_group_atomic_toString() {
+    assertThat(RegexPattern.of("(?>a+)").toString()).isEqualTo("(?>a+)");
+  }
+
+  @Test public void of_quotedLiteral() {
+    assertThat(RegexPattern.of("\\Q[a-z]*\\E")).isEqualTo(new Literal("[a-z]*"));
+  }
+
+  @Test public void of_quotedLiteral_withoutClosingE() {
+    assertThat(RegexPattern.of("\\Q[a-z]*")).isEqualTo(new Literal("[a-z]*"));
+  }
+
+  @Test public void of_quotedLiteral_withEscapes() {
+    assertThat(RegexPattern.of("\\Qa\\db\\E")).isEqualTo(new Literal("a\\db"));
+  }
+
+  @Test public void of_predefinedCharClass_linebreak() {
+    assertThat(RegexPattern.of("\\R")).isEqualTo(PredefinedCharClass.LINEBREAK);
+  }
+
   @Test public void of_group_nested() {
     assertThat(RegexPattern.of("((a))"))
         .isEqualTo(new Group.Capturing(new Group.Capturing(new Literal("a"))));
@@ -379,6 +405,51 @@ public final class RegexPatternTest {
             anyOf(
                 new RegexPattern.CharRange('a', 'b'), new RegexPattern.LiteralChar('-'),
                 new RegexPattern.LiteralChar('c')));
+  }
+
+  @Test public void of_characterSet_escapedSpecialChars() {
+    assertThat(RegexPattern.of("[\\[\\]\\-\\^\\&]"))
+        .isEqualTo(
+            anyOf(
+                new LiteralChar('['),
+                new LiteralChar(']'),
+                new LiteralChar('-'),
+                new LiteralChar('^'),
+                new LiteralChar('&')));
+  }
+
+  @Test public void of_characterSet_nested() {
+    assertThat(RegexPattern.of("[a-z[0-9]]"))
+        .isEqualTo(anyOf(new CharRange('a', 'z'), anyOf(new CharRange('0', '9'))));
+  }
+
+  @Test public void of_characterSet_nested_toString() {
+    assertThat(RegexPattern.of("[a-z[0-9]]").toString()).isEqualTo("[a-z[0-9]]");
+  }
+
+  @Test public void of_characterSet_intersection() {
+    assertThat(RegexPattern.of("[a-z&&[def]]"))
+        .isEqualTo(
+            intersection(
+                anyOf(new CharRange('a', 'z')),
+                anyOf(new LiteralChar('d'), new LiteralChar('e'), new LiteralChar('f'))));
+  }
+
+  @Test public void of_characterSet_intersection_unbracketedRhs() {
+    assertThat(RegexPattern.of("[a-z&&d-f]"))
+        .isEqualTo(intersection(anyOf(new CharRange('a', 'z')), anyOf(new CharRange('d', 'f'))));
+  }
+
+  @Test public void of_characterSet_intersection_negatedRhs() {
+    assertThat(RegexPattern.of("[a-z&&[^bc]]"))
+        .isEqualTo(
+            intersection(
+                anyOf(new CharRange('a', 'z')),
+                noneOf(new LiteralChar('b'), new LiteralChar('c'))));
+  }
+
+  @Test public void of_characterSet_intersection_toString() {
+    assertThat(RegexPattern.of("[a-z&&[^bc]]").toString()).isEqualTo("[a-z&&[^bc]]");
   }
 
   @Test public void of_literalHyphen() {

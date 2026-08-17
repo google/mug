@@ -110,6 +110,7 @@ final class Regexes {
             .flatMap(element -> charsOf(element).stream())
             .collect(toPrefixSet());
         case RegexPattern.CharacterSet.NoneOf noneOf -> EMPTY_PREFIX;
+        case RegexPattern.CharacterSet.Intersection intersection -> EMPTY_PREFIX;
         case RegexPattern.PredefinedCharClass predefined ->
             predefined == RegexPattern.PredefinedCharClass.DIGIT ? digitPrefixes : EMPTY_PREFIX;
         case RegexPattern.CharacterProperty characterProperty -> EMPTY_PREFIX;
@@ -133,6 +134,11 @@ final class Regexes {
         case RegexPattern.CharacterProperty characterProperty -> EMPTY_PREFIX;
         case RegexPattern.CharacterProperty.Negated negated -> EMPTY_PREFIX;
         case RegexPattern.PredefinedCharClass predefined -> EMPTY_PREFIX;
+        case RegexPattern.CharacterSet.AnyOf anyOf -> anyOf.elements().stream()
+            .flatMap(e -> charsOf(e).stream())
+            .collect(toUnmodifiableSet());
+        case RegexPattern.CharacterSet.NoneOf noneOf -> EMPTY_PREFIX;
+        case RegexPattern.CharacterSet.Intersection intersection -> EMPTY_PREFIX;
       };
     }
 

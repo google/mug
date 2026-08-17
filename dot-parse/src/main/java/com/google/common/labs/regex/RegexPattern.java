@@ -137,6 +137,24 @@ public sealed interface RegexPattern {
     return new CharacterSet.NoneOf(elements.stream().collect(toUnmodifiableList()));
   }
 
+  /** Returns a character set intersection of the given character sets. */
+  @SafeVarargs
+  static CharacterSet.Intersection intersection(CharacterSet... operands) {
+    return new CharacterSet.Intersection(Arrays.stream(operands).collect(toUnmodifiableList()));
+  }
+
+  /** Returns a character set intersection of the given character sets. */
+  static CharacterSet.Intersection intersection(Collection<? extends CharacterSet> operands) {
+    return new CharacterSet.Intersection(operands.stream().collect(toUnmodifiableList()));
+  }
+
+  /** A collector that collects the input {@code CharacterSet} as an intersection. */
+  static Collector<CharacterSet, ?, CharacterSet> asIntersection() {
+    return collectingAndThen(
+        toUnmodifiableList(),
+        list -> list.size() == 1 ? list.get(0) : new CharacterSet.Intersection(list));
+  }
+
   /**
    * Returns a pattern that matches {@code this} only if it is preceded by {@code prefix}.
    * Equivalent to {@code (?<=prefix)this}.
@@ -456,6 +474,13 @@ public sealed interface RegexPattern {
         return "(?<" + name + ">" + content + ")";
       }
     }
+
+    /** An atomic group, like {@code (?>a)}. */
+    record Atomic(RegexPattern content) implements Group {
+      @Override public String toString() {
+        return "(?>" + content + ")";
+      }
+    }
   }
 
   /** Represents a literal string to be matched. */
@@ -504,7 +529,8 @@ public sealed interface RegexPattern {
     WHITESPACE("\\s"),
     NON_WHITESPACE("\\S"),
     WORD("\\w"),
-    NON_WORD("\\W");
+    NON_WORD("\\W"),
+    LINEBREAK("\\R");
 
     private final String pattern;
 
@@ -522,10 +548,14 @@ public sealed interface RegexPattern {
   }
 
   /** Represents a custom character class, like {@code [a-z]} or {@code [^0-9]}. */
-  sealed interface CharacterSet extends RegexPattern {
+  sealed interface CharacterSet extends RegexPattern, CharSetElement {
 
     @Override default Metadata metadata() {
       return new Metadata(/* minSize= */ 1, /* maxSize= */ 2);
+    }
+
+    default String elementString() {
+      return toString();
     }
 
     /** A positive character class, like {@code [a-z]}. */
@@ -535,8 +565,12 @@ public sealed interface RegexPattern {
         checkArgument(elements.size() > 0, "elements cannot be empty");
       }
 
+      @Override public String elementString() {
+        return elements.stream().map(Object::toString).collect(joining());
+      }
+
       @Override public String toString() {
-        return "[" + elements.stream().map(Object::toString).collect(joining()) + "]";
+        return "[" + elementString() + "]";
       }
     }
 
@@ -547,8 +581,28 @@ public sealed interface RegexPattern {
         checkArgument(elements.size() > 0, "elements cannot be empty");
       }
 
+      @Override public String elementString() {
+        return "[^" + elements.stream().map(Object::toString).collect(joining()) + "]";
+      }
+
       @Override public String toString() {
         return "[^" + elements.stream().map(Object::toString).collect(joining()) + "]";
+      }
+    }
+
+    /** An intersection of character classes, like {@code [a-z&&[^bc]]}. */
+    record Intersection(List<CharacterSet> operands) implements CharacterSet {
+      public Intersection {
+        operands = List.copyOf(operands);
+        checkArgument(operands.size() > 0, "operands cannot be empty");
+      }
+
+      @Override public String elementString() {
+        return operands.stream().map(CharacterSet::elementString).collect(joining("&&"));
+      }
+
+      @Override public String toString() {
+        return "[" + elementString() + "]";
       }
     }
   }

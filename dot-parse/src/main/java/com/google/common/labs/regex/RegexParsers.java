@@ -24,12 +24,15 @@ import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.regex.RegexPattern.asAlternation;
 import static com.google.common.labs.regex.RegexPattern.inSequence;
+import static com.google.common.labs.regex.RegexPattern.intersection;
 import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
+import static com.google.mu.util.CharPredicate.isNot;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.stream;
 import static java.util.function.UnaryOperator.identity;
+import static java.util.stream.Collectors.joining;
 
 import com.google.common.labs.parse.Parser;
 import com.google.common.labs.regex.RegexPattern.Anchor;
@@ -46,6 +49,7 @@ import com.google.common.labs.regex.RegexPattern.PosixCharClass;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
 import com.google.common.labs.regex.RegexPattern.UnicodeProperty;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -65,7 +69,7 @@ final class RegexParsers {
     Parser<RegexPattern> atomic = anyOf(
         charClass(), positiveCharacterProperty(), negativeCharacterProperty(),
         groupOrLookaround(regex), anyOf(PredefinedCharClass.values()), anyOf(Anchor.values()),
-        numberedBackreference(), namedBackreference(),
+        numberedBackreference(), namedBackreference(), literally(quotedLiteral()),
         consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
         consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
         ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))),
@@ -75,6 +79,14 @@ final class RegexParsers {
         .orElse(new RegexPattern.Literal(""))
         .delimitedBy("|", asAlternation())
         .notEmpty();
+  }
+
+  private static Parser<Literal> quotedLiteral() {
+    var content = anyOf(
+            consecutive(isNot('\\'), "non-backslash"),
+            string("\\").then(one(isNot('E'), "char")).map(c -> "\\" + c))
+        .zeroOrMore(joining());
+    return string("\\Q").then(content).optionallyFollowedBy("\\E").map(Literal::new);
   }
 
   private static Parser<Backreference.Numbered> numberedBackreference() {
@@ -115,21 +127,45 @@ final class RegexParsers {
   }
 
   private static Parser<CharacterSet> charClass() {
-    Parser<Character> literalChar = anyOf(ESCAPED_CHAR, one("[^-]\\]"));
-    Parser<Character> literalCharOrDash = anyOf(ESCAPED_CHAR, one("[^\\]]"));
+    return Parser.define(RegexParsers::charClassDefinition);
+  }
+
+  private static Parser<CharacterSet> charClassDefinition(Parser<CharacterSet> self) {
+    Parser<Character> literalChar =
+        anyOf(ESCAPED_CHAR, one("[^-&\\]]"), one('&').notFollowedBy("&"));
+    Parser<Character> literalCharOrDash =
+        anyOf(ESCAPED_CHAR, one("[^&\\]]"), one('&').notFollowedBy("&"));
     Parser<CharRange> range = sequence(literalChar, one('-').then(literalChar), CharRange::new);
     var element = anyOf(
         positiveCharacterProperty(), negativeCharacterProperty(),
-        anyOf(PredefinedCharClass.values()), range, literalCharOrDash.map(LiteralChar::new));
+        anyOf(PredefinedCharClass.values()), self, range, literalCharOrDash.map(LiteralChar::new));
+    Parser<CharacterSet> unbracketedTerm =
+        anyOf(self, element.atLeastOnce().map(RegexPattern::anyOf));
+    Parser<CharacterSet> positiveTerm = sequence(
+        element.atLeastOnce().map(RegexPattern::anyOf),
+        string("&&").then(unbracketedTerm).zeroOrMore(),
+        (first, rest) -> rest.isEmpty() ? first : intersection(combine(first, rest)));
+    Parser<CharacterSet> negatedTerm = sequence(
+        element.atLeastOnce().map(RegexPattern::noneOf),
+        string("&&").then(unbracketedTerm).zeroOrMore(),
+        (first, rest) -> rest.isEmpty() ? first : intersection(combine(first, rest)));
     return anyOf(
-        literally(element.atLeastOnce()).immediatelyBetween("[^", "]").map(RegexPattern::noneOf),
-        literally(element.atLeastOnce()).immediatelyBetween("[", "]").map(RegexPattern::anyOf));
+        literally(negatedTerm).immediatelyBetween("[^", "]"),
+        literally(positiveTerm).immediatelyBetween("[", "]"));
+  }
+
+  private static List<CharacterSet> combine(CharacterSet first, List<CharacterSet> rest) {
+    List<CharacterSet> list = new ArrayList<>(rest.size() + 1);
+    list.add(first);
+    list.addAll(rest);
+    return list;
   }
 
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {
     Parser<Group.Named> named =
         sequence(word().between(anyOf("?<", "?P<"), one('>')), content, Group.Named::new)
             .between("(", ")");
+    Parser<Group.Atomic> atomic = content.between("(?>", ")").map(Group.Atomic::new);
     Parser<ModifierFlag> modifier = anyOf(ModifierFlag.values());
     var modifierFlags = sequence(
         modifier.zeroOrMore(),
@@ -151,7 +187,7 @@ final class RegexParsers {
           return anyOf(nonCapturingGroup, standaloneFlags);
         });
     return anyOf(
-        named, content.between("(?=", ")").map(Lookaround.Lookahead::new),
+        named, atomic, content.between("(?=", ")").map(Lookaround.Lookahead::new),
         content.between("(?!", ")").map(Lookaround.NegativeLookahead::new),
         content.between("(?<=", ")").map(Lookaround.Lookbehind::new),
         content.between("(?<!", ")").map(Lookaround.NegativeLookbehind::new),

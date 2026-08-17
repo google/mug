@@ -161,6 +161,7 @@ record CharRanges(List<Range> ranges) {
       case RegexPattern.PosixCharClass pcc -> from(pcc);
       case RegexPattern.CharacterProperty.Negated neg -> from(neg.property()).complement();
       case RegexPattern.UnicodeProperty up -> fromUnicodeProperty(up.propertyName());
+      case RegexPattern.CharacterSet cs -> from(cs);
       default -> ANY;
     };
   }
@@ -180,6 +181,13 @@ record CharRanges(List<Range> ranges) {
           inner = inner.union(from(e));
         }
         yield inner.complement();
+      }
+      case RegexPattern.CharacterSet.Intersection is -> {
+        CharRanges result = ANY;
+        for (RegexPattern.CharacterSet operand : is.operands()) {
+          result = result.intersection(from(operand));
+        }
+        yield result;
       }
       default -> ANY;
     };
@@ -218,6 +226,13 @@ record CharRanges(List<Range> ranges) {
     return punct;
   }
 
+  private static final CharRanges LINEBREAK = of('\r').union(of('\n'))
+      .union(of(0x0B))
+      .union(of(0x0C))
+      .union(of(0x85))
+      .union(of(0x2028))
+      .union(of(0x2029));
+
   static CharRanges from(RegexPattern.PredefinedCharClass pcc) {
     return switch (pcc) {
       case ANY_CHAR -> ANY_CHAR;
@@ -227,6 +242,7 @@ record CharRanges(List<Range> ranges) {
       case NON_WHITESPACE -> NON_WHITESPACE;
       case WORD -> WORD;
       case NON_WORD -> NON_WORD;
+      case LINEBREAK -> LINEBREAK;
     };
   }
 
