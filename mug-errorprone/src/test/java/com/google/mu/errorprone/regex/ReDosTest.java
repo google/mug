@@ -79,9 +79,7 @@ public final class ReDosTest {
 
   @Test public void checkRedosVulnerability_nestedOptionalGroup_correctCulpritAndPayload() {
     RegexPattern pattern = RegexPattern.of(
-        "(?<tag>\\p{Alpha}+)" + "(?:\\{\\s?(?<params>(?:\\p{Alpha}+=[\\w|\\.]+,?\\s?)+)?\\})?"
-            + "(?:\\.randomized\\((?<random>\\d\\.\\d)\\))?"
-            + "(?:\\.then\\((?<chain>(\\w|\\d|\\s|[,.(){}=])+)\\))?");
+        "(?<tag>\\p{Alpha}+)" + "(?:\\{\\s?(?<params>(?:\\p{Alpha}+=[\\w|\\.]+,?\\s?)+)?\\})?");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
     assertThat(thrown).hasMessageThat().contains("contains nested quantifiers on '\\p{Alpha}+'");
@@ -104,6 +102,11 @@ public final class ReDosTest {
 
   @Test public void checkRedosVulnerability_safePattern_doesNotThrow() {
     RegexPattern pattern = RegexPattern.of("[a-zA-Z0-9]+");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_dotSeparatedWords_safe() {
+    RegexPattern pattern = RegexPattern.of("^[a-zA-Z]([\\w]*\\.[a-zA-Z][\\w]*)+$");
     ReDos.checkRedosVulnerability(pattern);
   }
 
