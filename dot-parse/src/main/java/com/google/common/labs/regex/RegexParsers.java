@@ -65,8 +65,9 @@ final class RegexParsers {
       .collect(Collectors::toUnmodifiableMap);
   static final Parser<?> FREE_SPACES = anyOf(
       consecutive(Character::isWhitespace, "whitespace"), one('#').then(consecutive("[^\n]")));
+  static final Parser<RegexPattern> PARSER = define(RegexParsers::pattern);
 
-  static Parser<RegexPattern> pattern(Parser<RegexPattern> regex) {
+  private static Parser<RegexPattern> pattern(Parser<RegexPattern> regex) {
     Parser<RegexPattern> atomic = anyOf(
         define(RegexParsers::charClass), positiveCharacterProperty(), negativeCharacterProperty(),
         groupOrLookaround(regex), anyOf(PredefinedCharClass.values()), anyOf(Anchor.values()),

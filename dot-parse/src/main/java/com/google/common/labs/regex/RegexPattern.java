@@ -800,8 +800,7 @@ public sealed interface RegexPattern {
    * @since 10.8
    */
   static RegexPattern of(String regex) {
-    Parser<RegexPattern>.OrEmpty parser =
-        Parser.define(RegexParsers::pattern).orElse(new Literal(""));
+    Parser<RegexPattern>.OrEmpty parser = RegexParsers.PARSER.orElse(new Literal(""));
     return after(prefix("(?x)")).from(regex)
         .map(p -> parser.parseSkipping(RegexParsers.FREE_SPACES, p))
         .orElseGet(() -> parser.parse(regex));
