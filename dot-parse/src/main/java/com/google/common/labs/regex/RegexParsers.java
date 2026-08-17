@@ -33,7 +33,9 @@ import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.stream;
 import static java.util.function.UnaryOperator.identity;
+import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import com.google.common.labs.parse.Parser;
@@ -139,7 +141,7 @@ final class RegexParsers {
     Parser<Character> literalCharOrDash =
         anyOf(ESCAPED_CHAR, one("[^&\\]]"), one('&').notFollowedBy("&"));
     Parser<CharRange> range = sequence(literalChar, one('-').then(literalChar), CharRange::new);
-    var element = anyOf(
+    Parser<CharSetElement> element = anyOf(
         positiveCharacterProperty(), negativeCharacterProperty(),
         anyOf(PredefinedCharClass.values()), charClass, range,
         literalCharOrDash.map(LiteralChar::new));
@@ -151,13 +153,9 @@ final class RegexParsers {
     Parser<List<CharSetElement>> elements =
         sequence(
                 leadingBracket.optional(),
-                anyOf(quotedInClass, element.map(List::of)).zeroOrMore(),
-                (leading, rest) -> {
-                  List<CharSetElement> all = new ArrayList<>();
-                  leading.ifPresent(all::add);
-                  rest.forEach(all::addAll);
-                  return all;
-                })
+                anyOf(quotedInClass, element.map(List::of))
+                    .zeroOrMore(flatMapping(List::stream, toList())),
+                (leading, rest) -> leading.map(head -> prepend(head, rest)).orElse(rest))
             .notEmpty();
     Parser<CharacterSet> unbracketedTerm = anyOf(charClass, elements.map(CharacterSet.AnyOf::new));
     Parser<CharacterSet> positiveTerm = sequence(
