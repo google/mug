@@ -142,18 +142,18 @@ final class RegexParsers {
     Parser<CharacterSet> positiveTerm = sequence(
         element.atLeastOnce().map(RegexPattern::anyOf),
         string("&&").then(unbracketedTerm).zeroOrMore(),
-        (first, rest) -> rest.isEmpty() ? first : intersection(combine(first, rest)));
+        (first, rest) -> rest.isEmpty() ? first : intersection(prepend(first, rest)));
     Parser<CharacterSet> negatedTerm = sequence(
         element.atLeastOnce().map(RegexPattern::noneOf),
         string("&&").then(unbracketedTerm).zeroOrMore(),
-        (first, rest) -> rest.isEmpty() ? first : intersection(combine(first, rest)));
+        (first, rest) -> rest.isEmpty() ? first : intersection(prepend(first, rest)));
     return anyOf(
         literally(negatedTerm).immediatelyBetween("[^", "]"),
         literally(positiveTerm).immediatelyBetween("[", "]"));
   }
 
-  private static List<CharacterSet> combine(CharacterSet first, List<CharacterSet> rest) {
-    List<CharacterSet> list = new ArrayList<>(rest.size() + 1);
+  private static <T> List<T> prepend(T first, List<T> rest) {
+    List<T> list = new ArrayList<>(rest.size() + 1);
     list.add(first);
     list.addAll(rest);
     return list;
