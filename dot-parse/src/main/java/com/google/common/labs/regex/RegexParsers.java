@@ -39,6 +39,7 @@ import com.google.common.labs.parse.Parser;
 import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.Backreference;
 import com.google.common.labs.regex.RegexPattern.CharRange;
+import com.google.common.labs.regex.RegexPattern.CharSetElement;
 import com.google.common.labs.regex.RegexPattern.CharacterProperty;
 import com.google.common.labs.regex.RegexPattern.CharacterSet;
 import com.google.common.labs.regex.RegexPattern.Group;
@@ -74,8 +75,7 @@ final class RegexParsers {
         numberedBackreference(), namedBackreference(), literally(quotedLiteral()),
         consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
         consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
-        ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))),
-        one('}').thenReturn(new Literal("}")), one(']').thenReturn(new Literal("]")));
+        anyOf(ESCAPED_CHAR, one("[{}]]")).map(c -> new Literal(Character.toString(c))));
     return atomic.followedByZeroOrMore(quantifier())
         .atLeastOnce(inSequence())
         .orElse(new RegexPattern.Literal(""))
@@ -83,12 +83,16 @@ final class RegexParsers {
         .notEmpty();
   }
 
-  private static Parser<Literal> quotedLiteral() {
+  private static Parser<String> quotedText() {
     var content = anyOf(
             consecutive(isNot('\\'), "non-backslash"),
             string("\\").then(one(isNot('E'), "char")).map(c -> "\\" + c))
         .zeroOrMore(joining());
-    return string("\\Q").then(content).optionallyFollowedBy("\\E").map(Literal::new);
+    return string("\\Q").then(content).optionallyFollowedBy("\\E");
+  }
+
+  private static Parser<Literal> quotedLiteral() {
+    return quotedText().map(Literal::new);
   }
 
   private static Parser<Backreference.Numbered> numberedBackreference() {
@@ -138,26 +142,34 @@ final class RegexParsers {
         positiveCharacterProperty(), negativeCharacterProperty(),
         anyOf(PredefinedCharClass.values()), charClass, range,
         literalCharOrDash.map(LiteralChar::new));
-    Parser<CharacterSet> unbracketedTerm =
-        anyOf(charClass, element.atLeastOnce().map(RegexPattern::anyOf));
+    Parser<List<CharSetElement>> quotedInClass = quotedText().map(
+            s -> s.chars().mapToObj(c -> (CharSetElement) new LiteralChar((char) c)).toList());
+    Parser<CharSetElement> leadingBracket = anyOf(
+        sequence(one(']'), one('-').then(literalChar), CharRange::new),
+        one(']').map(LiteralChar::new));
+    Parser<List<CharSetElement>> elements =
+        sequence(
+                leadingBracket.optional(),
+                anyOf(quotedInClass, element.map(List::of)).zeroOrMore(),
+                (leading, rest) -> {
+                  List<CharSetElement> all = new ArrayList<>();
+                  leading.ifPresent(all::add);
+                  rest.forEach(all::addAll);
+                  return all;
+                })
+            .notEmpty();
+    Parser<CharacterSet> unbracketedTerm = anyOf(charClass, elements.map(CharacterSet.AnyOf::new));
     Parser<CharacterSet> positiveTerm = sequence(
-        element.atLeastOnce().map(RegexPattern::anyOf),
+        elements.map(CharacterSet.AnyOf::new),
         string("&&").then(unbracketedTerm).zeroOrMore(),
         (first, rest) -> rest.isEmpty() ? first : intersection(prepend(first, rest)));
     Parser<CharacterSet> negatedTerm = sequence(
-        element.atLeastOnce().map(RegexPattern::noneOf),
+        elements.map(CharacterSet.NoneOf::new),
         string("&&").then(unbracketedTerm).zeroOrMore(),
         (first, rest) -> rest.isEmpty() ? first : intersection(prepend(first, rest)));
     return anyOf(
         literally(negatedTerm).immediatelyBetween("[^", "]"),
         literally(positiveTerm).immediatelyBetween("[", "]"));
-  }
-
-  private static <T> List<T> prepend(T first, List<T> rest) {
-    List<T> list = new ArrayList<>(rest.size() + 1);
-    list.add(first);
-    list.addAll(rest);
-    return list;
   }
 
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {
@@ -193,5 +205,12 @@ final class RegexParsers {
         groupContent.between("(?<!", ")").map(Lookaround.NegativeLookbehind::new),
         literally(string("(?").then(modifierFlags)).flatMap(identity()),
         groupContent.between("(", ")").map(Group.Capturing::new));
+  }
+
+  private static <T> List<T> prepend(T first, List<T> rest) {
+    List<T> list = new ArrayList<>(rest.size() + 1);
+    list.add(first);
+    list.addAll(rest);
+    return list;
   }
 }

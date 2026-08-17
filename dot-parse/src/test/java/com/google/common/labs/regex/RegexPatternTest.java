@@ -209,12 +209,32 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("foo")).isEqualTo(new Literal("foo"));
   }
 
+  @Test public void of_literal_openingCurlyBrace() {
+    assertThat(RegexPattern.of("{")).isEqualTo(new Literal("{"));
+  }
+
   @Test public void of_literal_closingCurlyBrace() {
     assertThat(RegexPattern.of("}")).isEqualTo(new Literal("}"));
   }
 
   @Test public void of_literal_closingSquareBracket() {
     assertThat(RegexPattern.of("]")).isEqualTo(new Literal("]"));
+  }
+
+  @Test public void of_literal_curlyBracesNonQuantifier() {
+    assertThat(RegexPattern.of("(dev|prod){ENV}"))
+        .isEqualTo(
+            sequence(
+                new Group.Capturing(alternation(new Literal("dev"), new Literal("prod"))),
+                new Literal("{ENV}")));
+  }
+
+  @Test public void of_literal_withCurlyBraces() {
+    assertThat(RegexPattern.of("a{foo}b")).isEqualTo(new Literal("a{foo}b"));
+  }
+
+  @Test public void of_literal_loneOpeningBrace() {
+    assertThat(RegexPattern.of("a{b")).isEqualTo(new Literal("a{b"));
   }
 
   @Test public void of_literal_withClosingBracketsAndBraces() {
@@ -455,6 +475,55 @@ public final class RegexPatternTest {
                 new LiteralChar('-'),
                 new LiteralChar('^'),
                 new LiteralChar('&')));
+  }
+
+  @Test public void of_characterSet_leadingClosingBracket() {
+    assertThat(RegexPattern.of("[]]")).isEqualTo(anyOf(new LiteralChar(']')));
+  }
+
+  @Test public void of_characterSet_leadingClosingBracket_withOtherElements() {
+    assertThat(RegexPattern.of("[]a-z]"))
+        .isEqualTo(anyOf(new LiteralChar(']'), new CharRange('a', 'z')));
+  }
+
+  @Test public void of_characterSet_negated_leadingClosingBracket() {
+    assertThat(RegexPattern.of("[^]]")).isEqualTo(noneOf(new LiteralChar(']')));
+  }
+
+  @Test public void of_characterSet_negated_leadingClosingBracket_withOtherElements() {
+    assertThat(RegexPattern.of("[^]a-z]"))
+        .isEqualTo(noneOf(new LiteralChar(']'), new CharRange('a', 'z')));
+  }
+
+  @Test public void of_characterSet_leadingClosingBracket_range() {
+    assertThat(RegexPattern.of("[]-z]")).isEqualTo(anyOf(new CharRange(']', 'z')));
+  }
+
+  @Test public void of_characterSet_quotedLiteral() {
+    assertThat(RegexPattern.of("[\\Qabc\\E]"))
+        .isEqualTo(anyOf(new LiteralChar('a'), new LiteralChar('b'), new LiteralChar('c')));
+  }
+
+  @Test public void of_characterSet_quotedLiteral_withSpecialChars() {
+    assertThat(RegexPattern.of("[\\Q[]{}*+\\E]"))
+        .isEqualTo(
+            anyOf(
+                new LiteralChar('['),
+                new LiteralChar(']'),
+                new LiteralChar('{'),
+                new LiteralChar('}'),
+                new LiteralChar('*'),
+                new LiteralChar('+')));
+  }
+
+  @Test public void of_characterSet_quotedLiteral_example() {
+    assertThat(RegexPattern.of("[\\Q,:\\!~_?*()[]{}$%@><\\E]"))
+        .isEqualTo(
+            anyOf(
+                ",:\\!~_?*()[]{}$%@><"
+                    .chars()
+                    .mapToObj(c -> (CharSetElement) new LiteralChar((char) c))
+                    .toList()));
   }
 
   @Test public void of_characterSet_nested() {
