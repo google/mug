@@ -1728,4 +1728,9 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(\\p{Zl}|\\p{Zp}){6,}");
     ReDos.checkRedosVulnerability(pattern);
   }
+
+  @Test public void checkRedosVulnerability_alternationWithDelimitedSequences_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("(/user/[a-z]+|/admin/[a-z]+)+");
+    ReDos.checkRedosVulnerability(pattern);
+  }
 }
