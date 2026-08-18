@@ -79,19 +79,26 @@ final class CharRanges {
     };
   }
 
+  static ImmutableRangeSet<Integer> fromCharSetElement(RegexPattern.CharSetElement element) {
+    if (element == RegexPattern.PredefinedCharClass.ANY_CHAR) {
+      return of('.');
+    }
+    return from(element);
+  }
+
   static ImmutableRangeSet<Integer> from(RegexPattern.CharacterSet characterSet) {
     return switch (characterSet) {
       case RegexPattern.CharacterSet.AnyOf anyOf -> {
         RangeSet<Integer> tree = TreeRangeSet.create();
         for (RegexPattern.CharSetElement e : anyOf.elements()) {
-          tree.addAll(from(e));
+          tree.addAll(fromCharSetElement(e));
         }
         yield ImmutableRangeSet.copyOf(tree);
       }
       case RegexPattern.CharacterSet.NoneOf noneOf -> {
         RangeSet<Integer> tree = TreeRangeSet.create();
         for (RegexPattern.CharSetElement e : noneOf.elements()) {
-          tree.addAll(from(e));
+          tree.addAll(fromCharSetElement(e));
         }
         yield complement(tree);
       }
@@ -110,17 +117,29 @@ final class CharRanges {
       intersection(ANY, complement(union(of('\n'), of('\r'))));
   private static final ImmutableRangeSet<Integer> DIGIT = range('0', '9');
   private static final ImmutableRangeSet<Integer> NON_DIGIT = complement(DIGIT);
-  private static final ImmutableRangeSet<Integer> WHITESPACE = ImmutableRangeSet.<Integer>builder()
-      .add(closedOpen((int) '\t', (int) '\r' + 1))
-      .add(closedOpen((int) ' ', (int) ' ' + 1))
-      .build();
+  private static final ImmutableRangeSet<Integer> WHITESPACE = whitespaceRanges();
+
+  private static ImmutableRangeSet<Integer> whitespaceRanges() {
+    return ImmutableRangeSet.<Integer>builder()
+        .add(closedOpen((int) ' ', (int) ' ' + 1))
+        .add(closedOpen((int) '\t', (int) '\r' + 1))
+        .add(closedOpen(0x85, 0x85 + 1))
+        .add(closedOpen(0x2028, 0x2029 + 1))
+        .build();
+  }
+
   private static final ImmutableRangeSet<Integer> NON_WHITESPACE = complement(WHITESPACE);
-  private static final ImmutableRangeSet<Integer> WORD = ImmutableRangeSet.<Integer>builder()
-      .add(closedOpen((int) '0', (int) '9' + 1))
-      .add(closedOpen((int) 'A', (int) 'Z' + 1))
-      .add(closedOpen((int) '_', (int) '_' + 1))
-      .add(closedOpen((int) 'a', (int) 'z' + 1))
-      .build();
+  private static final ImmutableRangeSet<Integer> WORD = wordRanges();
+
+  private static ImmutableRangeSet<Integer> wordRanges() {
+    return ImmutableRangeSet.<Integer>builder()
+        .add(closedOpen((int) 'a', (int) 'z' + 1))
+        .add(closedOpen((int) 'A', (int) 'Z' + 1))
+        .add(closedOpen((int) '0', (int) '9' + 1))
+        .add(closedOpen((int) '_', (int) '_' + 1))
+        .build();
+  }
+
   private static final ImmutableRangeSet<Integer> NON_WORD = complement(WORD);
 
   private static final ImmutableRangeSet<Integer> LOWER = range('a', 'z');
@@ -151,6 +170,20 @@ final class CharRanges {
       .add(closedOpen(0x85, 0x85 + 1))
       .add(closedOpen(0x2028, 0x2029 + 1))
       .build();
+
+  private static final ImmutableRangeSet<Integer> UNICODE_ZS = ImmutableRangeSet.<Integer>builder()
+      .add(closedOpen(0x0020, 0x0020 + 1))
+      .add(closedOpen(0x00A0, 0x00A0 + 1))
+      .add(closedOpen(0x1680, 0x1680 + 1))
+      .add(closedOpen(0x2000, 0x200A + 1))
+      .add(closedOpen(0x202F, 0x202F + 1))
+      .add(closedOpen(0x205F, 0x205F + 1))
+      .add(closedOpen(0x3000, 0x3000 + 1))
+      .build();
+  private static final ImmutableRangeSet<Integer> UNICODE_ZL = range(0x2028, 0x2028);
+  private static final ImmutableRangeSet<Integer> UNICODE_ZP = range(0x2029, 0x2029);
+  private static final ImmutableRangeSet<Integer> UNICODE_Z =
+      union(UNICODE_ZS, union(UNICODE_ZL, UNICODE_ZP));
 
   private static ImmutableRangeSet<Integer> from(RegexPattern.PredefinedCharClass pcc) {
     return switch (pcc) {
@@ -189,6 +222,39 @@ final class CharRanges {
     }
     if ("L".equalsIgnoreCase(name) || "Letter".equalsIgnoreCase(name)) {
       return union(range('a', 'z'), range('A', 'Z'));
+    }
+    if ("Lu".equalsIgnoreCase(name)) {
+      return UPPER;
+    }
+    if ("Ll".equalsIgnoreCase(name)) {
+      return LOWER;
+    }
+    if ("Alpha".equalsIgnoreCase(name)) {
+      return ALPHA;
+    }
+    if ("Alnum".equalsIgnoreCase(name)) {
+      return ALNUM;
+    }
+    if ("ASCII".equalsIgnoreCase(name)) {
+      return ASCII;
+    }
+    if ("Punct".equalsIgnoreCase(name)) {
+      return PUNCT;
+    }
+    if ("Space".equalsIgnoreCase(name)) {
+      return SPACE;
+    }
+    if ("Zl".equalsIgnoreCase(name)) {
+      return UNICODE_ZL;
+    }
+    if ("Zp".equalsIgnoreCase(name)) {
+      return UNICODE_ZP;
+    }
+    if ("Zs".equalsIgnoreCase(name)) {
+      return UNICODE_ZS;
+    }
+    if ("Z".equalsIgnoreCase(name) || "Separator".equalsIgnoreCase(name)) {
+      return UNICODE_Z;
     }
     return ANY;
   }

@@ -11,15 +11,16 @@ import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
 import com.google.mu.util.StringFormat;
 import com.google.mu.util.Substring;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
-@RunWith(JUnit4.class)
+@RunWith(TestParameterInjector.class)
 public final class ReDosTest {
 
   @Test public void checkRedosVulnerability_nestedQuantifiers_throwsDetailedMessage() {
@@ -1509,5 +1510,182 @@ public final class ReDosTest {
     assertThrows(
         VulnerableRegexException.class,
         () -> ReDos.checkRedosVulnerability(RegexPattern.of("(a{2,})+")));
+  }
+
+  @Test public void checkRedosVulnerability_safePatterns_doesNotThrow(
+      @TestParameter({
+            "abc",
+            "a+",
+            "[a-z]+",
+            "\\d*",
+            "a{1,3}",
+            "(a{1,3}){1,3}",
+            "(a++)+",
+            "(a+)++",
+            "a++a++",
+            "a{1,5}a{1,5}",
+            "(foo|bar)+",
+            "(a|ab)+",
+            "(ab|ba)+",
+            "(0|[1-9][0-9]*+)+",
+            "((0|[1-9][0-9]*),)+",
+            "([^,]+,)+",
+            "([^,\\n]+[,\\n])+",
+            "(\\d+;)+",
+            "([a-z]+[0-9]+)+",
+            "\\d+,\\d+",
+            "[a-z]+:[0-9]+",
+            "([a-z]+:[0-9]+)+",
+            "([a-zA-Z]+/[0-9]+)+",
+            "^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\\.[a-zA-Z0-9_-]+)+$",
+            "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b",
+            "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)",
+            "(GET|POST|PUT|DELETE|HEAD|OPTIONS)",
+            "(true|false|null)",
+            "[+-]?\\d+(\\.\\d+)?([eE][+-]?\\d+)?",
+            "\"(\\\\.|[^\"\\\\])*\"",
+            "'(\\\\.|[^'\\\\])*'",
+            "^\\b_((?:__|[^_])+?)_\\b|^\\*((?:\\*\\*|[^*])+?)\\*(?!\\*)",
+            "((a|[^a])*)\"",
+            "((\\s|\\d)*)\"",
+            "\"((?:\\\\[\\x00-\\x7f]|[^\\x00-\\x08\\x0a-\\x1f\\x7f\"\\\\])*)\"",
+          })
+          String regex) {
+    RegexPattern pattern = RegexPattern.of(regex);
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void checkPolynomialBacktracking_safePatterns_doesNotThrow(
+      @TestParameter({
+            "abc",
+            "a+",
+            "[a-z]+",
+            "\\d*",
+            "a{1,3}",
+            "(a{1,3}){1,3}",
+            "(a++)+",
+            "(a+)++",
+            "a++a++",
+            "a{1,5}a{1,5}",
+            "(foo|bar)+",
+            "(a|ab)+",
+            "(ab|ba)+",
+            "(0|[1-9][0-9]*+)+",
+            "((0|[1-9][0-9]*),)+",
+            "([^,]+,)+",
+            "(\\d+;)+",
+            "([a-z]+[0-9]+)+",
+            "\\d+,\\d+",
+            "[a-z]+:[0-9]+",
+            "([a-z]+:[0-9]+)+",
+            "([a-zA-Z]+/[0-9]+)+",
+            "^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\\.[a-zA-Z0-9_-]+)+$",
+            "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)",
+            "(GET|POST|PUT|DELETE|HEAD|OPTIONS)",
+            "(true|false|null)",
+            "[+-]?\\d+(\\.\\d+)?([eE][+-]?\\d+)?",
+            "\"(\\\\.|[^\"\\\\])*\"",
+            "'(\\\\.|[^'\\\\])*'",
+          })
+          String regex) {
+    RegexPattern pattern = RegexPattern.of(regex);
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_exactBoundedQuantifierInAlternationLoop_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("(%[a-f0-9]{2}|[a-z0-9!#$&+.\\^_`|~\\-])+");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_exactHexInPercentEncoding_doesNotThrow() {
+    RegexPattern pattern =
+        RegexPattern.of("(?:%40|@)(([\\p{Ll}A-Za-z0-9_.~\\-] |%[A-Za-z0-9]{2})+)");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void
+      checkRedosVulnerability_possessiveOuterQuantifierWithNestedOverlappingAlternation_throwsVulnerableRegexException() {
+    RegexPattern pattern = RegexPattern.of("((\\s++)|(/\\*(.|\\s)*?\\*/)|(//.*$))++");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+  }
+
+  @Test public void checkPolynomialBacktracking_possessiveEnclosedQuantifier_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("^\\{\\s*+((?:[^}\\\\]|\\\\.)++)\\s*\\}\\s*+$");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkPolynomialBacktracking_possessiveWordAndSpace_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of(".*?from\\s++(\\w*+).*");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_unicodeSpaceCategoryAlternation_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("(\\p{Zl}|\\p{Zp}|\\p{Zs}){6,}");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void
+      checkRedosVulnerability_slashedPathSegmentsWithMandatoryDelimiter_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("^/?[a-zA-Z0-9\\-_.]+(/[a-zA-Z0-9\\-_.]+)*$");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_piperDepotPathSegments_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("//depot/google3(/[a-zA-Z0-9_.%\\-]+)+");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_javaPackageDottedIdentifier_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("^([a-z][a-z0-9_]+[.])+[A-Z][a-zA-Z0-9_$]+");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_dottedFieldIdentifier_doesNotThrow() {
+    RegexPattern pattern =
+        RegexPattern.of("\\$?[a-zA-Z_][a-zA-Z_0-9]*(?:[.]\\$?[a-zA-Z_][a-zA-Z_0-9]*)*");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_domainNameWithMandatoryDots_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of(
+        "^(?:[_a-z0-9](?:[_a-z0-9\\-]{0,61}[a-z0-9])?\\.)+(?:[a-z](?:[a-z0-9\\-]{0,61}[a-z0-9])?)?$");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_commaSeparatedNumbers_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("^\\d{1,5}(,\\d{1,5})*$");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_commaSeparatedHexList_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("^<cpu\\s+mask=\"(\\p{XDigit}+(,\\p{XDigit}+)*)\">");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void checkPolynomialBacktracking_boundedIpSegments_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("^(\\d{1,3}[.\\-]){3}\\d{1,3}$");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkPolynomialBacktracking_mandatoryLanguageTagSuffix_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("(\\w+)\\-(\\w*)\\-(\\w{2,3})");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_possessiveWhitespaceInSurroundingWildcards_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of(".*?a\\s++(\\w*+).*");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkPolynomialBacktracking_possessiveWildcardCut_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of(".*?\\s++.*");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_reluctantQuantifierBoundedBySubsequentLiteral_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("^\\{\\s*+((?:[^}\\\\]|\\\\.)+?)\\s*\\}\\s*+$");
+    ReDos.checkPolynomialBacktracking(pattern);
   }
 }

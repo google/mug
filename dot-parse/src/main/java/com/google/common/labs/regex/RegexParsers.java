@@ -142,11 +142,22 @@ final class RegexParsers {
         anyOf(ESCAPED_CHAR, one("[^&\\]]"), one('&').notFollowedBy("&"));
     Parser<CharRange> range = sequence(literalChar, one('-').then(literalChar), CharRange::new);
     Parser<CharSetElement> element = anyOf(
-        positiveCharacterProperty(), negativeCharacterProperty(),
-        anyOf(PredefinedCharClass.values()), charClass, range,
+        positiveCharacterProperty(),
+        negativeCharacterProperty(),
+        anyOf(
+            PredefinedCharClass.DIGIT,
+            PredefinedCharClass.NON_DIGIT,
+            PredefinedCharClass.WHITESPACE,
+            PredefinedCharClass.NON_WHITESPACE,
+            PredefinedCharClass.WORD,
+            PredefinedCharClass.NON_WORD,
+            PredefinedCharClass.LINEBREAK),
+        charClass,
+        range,
         literalCharOrDash.map(LiteralChar::new));
-    Parser<List<CharSetElement>> quotedInClass = quotedText().map(
-            s -> s.chars().mapToObj(c -> new LiteralChar((char) c)).collect(toUnmodifiableList()));
+    Parser<List<CharSetElement>> quotedInClass =
+        quotedText().map(s ->
+                s.chars().mapToObj(c -> new LiteralChar((char) c)).collect(toUnmodifiableList()));
     Parser<CharSetElement> leadingBracket = anyOf(
         sequence(one(']'), one('-').then(literalChar), CharRange::new),
         one(']').map(LiteralChar::new));

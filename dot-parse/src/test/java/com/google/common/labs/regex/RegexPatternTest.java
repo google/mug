@@ -1257,4 +1257,13 @@ public final class RegexPatternTest {
                     atMost(1)),
                 new Literal(".jpg")));
   }
+
+  @Test public void of_dotInCharacterSet_parsedAsLiteralChar() {
+    assertThat(RegexPattern.of("[.]")).isEqualTo(anyOf(new LiteralChar('.')));
+  }
+
+  @Test public void of_dotInCharacterSetWithOtherChars_parsedAsLiteralChar() {
+    assertThat(RegexPattern.of("[a-z.]"))
+        .isEqualTo(anyOf(new CharRange('a', 'z'), new LiteralChar('.')));
+  }
 }

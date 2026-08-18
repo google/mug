@@ -34,7 +34,7 @@ final class RegexPatternUtils {
     List<RegexPattern> elements = seq.elements();
     for (int i = 0; i < elements.size(); i++) {
       RegexPattern ei = unwrapGroup(elements.get(i));
-      if (isUnboundedQuantified(ei)) {
+      if (isUnboundedQuantified(ei) && !isReluctantBoundedBySubsequentLiteral(elements, i)) {
         for (int j = i + 1; j < elements.size(); j++) {
           RegexPattern ej = unwrapGroup(elements.get(j));
           if (isUnboundedQuantified(ej)) {
@@ -53,6 +53,43 @@ final class RegexPatternUtils {
     return Stream.empty();
   }
 
+  static boolean isReluctantBoundedBySubsequentLiteral(
+      List<RegexPattern> elements, int reluctantIndex) {
+    RegexPattern reluctant = unwrapGroup(elements.get(reluctantIndex));
+    if (!(reluctant instanceof RegexPattern.Quantified q) || !q.quantifier().isReluctant()) {
+      return false;
+    }
+    ImmutableRangeSet<Integer> reluctantEntryChars = firstCharRangesOf(q.element());
+    for (int k = reluctantIndex + 1; k < elements.size(); k++) {
+      RegexPattern next = unwrapGroup(elements.get(k));
+      if (next instanceof RegexPattern.Literal || next instanceof RegexPattern.CharacterSet) {
+        ImmutableRangeSet<Integer> nextChars = charRangesOf(next);
+        if (!nextChars.isEmpty() && !CharRanges.intersects(reluctantEntryChars, nextChars)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  static ImmutableRangeSet<Integer> firstCharRangesOf(RegexPattern pattern) {
+    return switch (pattern) {
+      case RegexPattern.Sequence seq ->
+          seq.elements().isEmpty() ? CharRanges.EMPTY : firstCharRangesOf(seq.elements().get(0));
+      case RegexPattern.Alternation alt -> alt.alternatives().stream()
+          .map(RegexPatternUtils::firstCharRangesOf)
+          .reduce(CharRanges.EMPTY, CharRanges::union);
+      case RegexPattern.Quantified q -> firstCharRangesOf(q.element());
+      case RegexPattern.Group group -> firstCharRangesOf(group.content());
+      case RegexPattern.CharacterSet cs -> CharRanges.from(cs);
+      case RegexPattern.PredefinedCharClass pcc -> CharRanges.from(pcc);
+      case RegexPattern.PosixCharClass pcc -> CharRanges.from(pcc);
+      case RegexPattern.Literal lit ->
+          lit.value().isEmpty() ? CharRanges.EMPTY : CharRanges.of(lit.value().charAt(0));
+      default -> CharRanges.EMPTY;
+    };
+  }
+
   private static boolean isUnboundedQuantified(RegexPattern pattern) {
     pattern = unwrapGroup(pattern);
     return pattern instanceof RegexPattern.Quantified q && !q.quantifier().isPossessive()
@@ -63,15 +100,22 @@ final class RegexPatternUtils {
         };
   }
 
-  private static ImmutableRangeSet<Integer> charRangesOf(RegexPattern pattern) {
+  static ImmutableRangeSet<Integer> charRangesOf(RegexPattern pattern) {
     return switch (pattern) {
+      case RegexPattern.Sequence seq -> seq.elements().stream()
+          .map(RegexPatternUtils::charRangesOf)
+          .reduce(CharRanges.EMPTY, CharRanges::union);
+      case RegexPattern.Alternation alt -> alt.alternatives().stream()
+          .map(RegexPatternUtils::charRangesOf)
+          .reduce(CharRanges.EMPTY, CharRanges::union);
       case RegexPattern.Quantified q -> charRangesOf(q.element());
       case RegexPattern.Group group -> charRangesOf(group.content());
       case RegexPattern.CharacterSet cs -> CharRanges.from(cs);
       case RegexPattern.PredefinedCharClass pcc -> CharRanges.from(pcc);
       case RegexPattern.PosixCharClass pcc -> CharRanges.from(pcc);
-      case RegexPattern.Literal lit -> CharRanges.of(lit.value().charAt(0));
-      default -> CharRanges.ANY;
+      case RegexPattern.Literal lit ->
+          lit.value().chars().mapToObj(CharRanges::of).reduce(CharRanges.EMPTY, CharRanges::union);
+      default -> CharRanges.EMPTY;
     };
   }
 

@@ -233,4 +233,84 @@ public final class CharRangesTest {
     assertThat(comp.contains(100)).isFalse();
     assertThat(comp.contains(Character.MAX_CODE_POINT)).isFalse();
   }
+
+  @Test public void from_dotInCharacterSet_treatedAsLiteralDot() {
+    ImmutableRangeSet<Integer> ranges =
+        CharRanges.from((RegexPattern.CharacterSet) RegexPattern.of("[.]"));
+    assertThat(ranges.contains((int) '.')).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+    assertThat(ranges.contains((int) '/')).isFalse();
+  }
+
+  @Test public void from_unicodePropertyZs_containsSpaceAndNonBreakingSpace() {
+    ImmutableRangeSet<Integer> ranges =
+        CharRanges.from((RegexPattern.CharacterSet) RegexPattern.of("[\\p{Zs}]"));
+    assertThat(ranges.contains((int) ' ')).isTrue();
+    assertThat(ranges.contains(0x00A0)).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+  }
+
+  @Test public void from_unicodePropertyZl_containsLineSeparator() {
+    ImmutableRangeSet<Integer> ranges =
+        CharRanges.from((RegexPattern.CharacterSet) RegexPattern.of("[\\p{Zl}]"));
+    assertThat(ranges.contains(0x2028)).isTrue();
+    assertThat(ranges.contains(0x2029)).isFalse();
+  }
+
+  @Test public void from_unicodePropertyZp_containsParagraphSeparator() {
+    ImmutableRangeSet<Integer> ranges =
+        CharRanges.from((RegexPattern.CharacterSet) RegexPattern.of("[\\p{Zp}]"));
+    assertThat(ranges.contains(0x2029)).isTrue();
+    assertThat(ranges.contains(0x2028)).isFalse();
+  }
+
+  @Test public void from_unicodePropertyLu_containsUppercase() {
+    ImmutableRangeSet<Integer> ranges =
+        CharRanges.from((RegexPattern.CharacterSet) RegexPattern.of("[\\p{Lu}]"));
+    assertThat(ranges.contains((int) 'A')).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+  }
+
+  @Test public void from_unicodePropertyLl_containsLowercase() {
+    ImmutableRangeSet<Integer> ranges =
+        CharRanges.from((RegexPattern.CharacterSet) RegexPattern.of("[\\p{Ll}]"));
+    assertThat(ranges.contains((int) 'a')).isTrue();
+    assertThat(ranges.contains((int) 'A')).isFalse();
+  }
+
+  @Test public void from_unicodePropertyAlpha_containsAlpha() {
+    ImmutableRangeSet<Integer> ranges =
+        CharRanges.from((RegexPattern.CharacterSet) RegexPattern.of("[\\p{Alpha}]"));
+    assertThat(ranges.contains((int) 'a')).isTrue();
+    assertThat(ranges.contains((int) '0')).isFalse();
+  }
+
+  @Test public void from_unicodePropertyAlnum_containsAlphanumeric() {
+    ImmutableRangeSet<Integer> ranges =
+        CharRanges.from((RegexPattern.CharacterSet) RegexPattern.of("[\\p{Alnum}]"));
+    assertThat(ranges.contains((int) 'a')).isTrue();
+    assertThat(ranges.contains((int) '0')).isTrue();
+    assertThat(ranges.contains((int) '!')).isFalse();
+  }
+
+  @Test public void from_unicodePropertyAscii_containsAscii() {
+    ImmutableRangeSet<Integer> ranges =
+        CharRanges.from((RegexPattern.CharacterSet) RegexPattern.of("[\\p{ASCII}]"));
+    assertThat(ranges.contains((int) 'a')).isTrue();
+    assertThat(ranges.contains(0x00FF)).isFalse();
+  }
+
+  @Test public void from_unicodePropertyPunct_containsPunctuation() {
+    ImmutableRangeSet<Integer> ranges =
+        CharRanges.from((RegexPattern.CharacterSet) RegexPattern.of("[\\p{Punct}]"));
+    assertThat(ranges.contains((int) '!')).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+  }
+
+  @Test public void from_unicodePropertySpace_containsWhitespace() {
+    ImmutableRangeSet<Integer> ranges =
+        CharRanges.from((RegexPattern.CharacterSet) RegexPattern.of("[\\p{Space}]"));
+    assertThat(ranges.contains((int) ' ')).isTrue();
+    assertThat(ranges.contains((int) 'a')).isFalse();
+  }
 }
