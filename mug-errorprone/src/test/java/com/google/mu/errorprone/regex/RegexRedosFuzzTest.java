@@ -98,7 +98,7 @@ public final class RegexRedosFuzzTest {
         }
         final Pattern compiled = Pattern.compile(regex);
         safeTestedCount++;
-        final String input = repeat("a", 40) + "!";
+        final String input = "a".repeat(40) + "!";
         Future<Boolean> future = executor.submit(new Callable<Boolean>() {
           @Override public Boolean call() {
             return compiled.matcher(input).matches();
@@ -224,13 +224,5 @@ public final class RegexRedosFuzzTest {
       default:
         return "+";
     }
-  }
-
-  private static String repeat(String s, int count) {
-    StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < count; i++) {
-      sb.append(s);
-    }
-    return sb.toString();
   }
 }
