@@ -8,7 +8,9 @@ import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.util.graph.ShortestPath;
 import com.google.mu.util.graph.Walker;
 import com.google.mu.util.stream.BiStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +25,7 @@ final class Nfa {
   final List<State> states = new ArrayList<>();
   final List<CharTransition> charTransitions = new ArrayList<>();
   private final Map<RegexPattern, Integer> nodeToStartState = new IdentityHashMap<>();
-  private final java.util.ArrayDeque<RegexPattern.Quantified> quantifierStack =
-      new java.util.ArrayDeque<>();
+  private final Deque<RegexPattern.Quantified> quantifierStack = new ArrayDeque<>();
   int startState;
   int acceptState;
 
