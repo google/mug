@@ -16,6 +16,7 @@ package com.google.common.labs.regex;
 
 import static com.google.common.labs.regex.InternalUtils.checkArgument;
 import static com.google.mu.util.Substring.after;
+import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.prefix;
 import static com.google.mu.util.stream.MoreStreams.mergeConsecutive;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -26,6 +27,8 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import com.google.common.labs.parse.Parser;
 import com.google.mu.annotations.ParametersMustMatchByName;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -481,26 +484,23 @@ public sealed interface RegexPattern {
 
   /** Represents a literal string to be matched. */
   record Literal(String value) implements RegexPattern {
+    private static final Substring.RepeatingPattern ESCAPED_CHARS =
+        all(CharPredicate.anyOf(".[]{}()*+-?^$|\\\n\r\t\f"));
 
     @Override public Metadata metadata() {
       return new Metadata(/* minSize= */ value.length(), /* maxSize= */ value.length());
     }
 
     @Override public String toString() {
-      StringBuilder sb = new StringBuilder();
-      for (int i = 0; i < value.length(); i++) {
-        char c = value.charAt(i);
-        switch (c) {
-          case '\n' -> sb.append("\\n");
-          case '\r' -> sb.append("\\r");
-          case '\t' -> sb.append("\\t");
-          case '\f' -> sb.append("\\f");
-          case '.', '[', ']', '{', '}', '(', ')', '*', '+', '-', '?', '^', '$', '|', '\\' ->
-              sb.append('\\').append(c);
-          default -> sb.append(c);
-        }
-      }
-      return sb.toString();
+      return ESCAPED_CHARS.replaceAllFrom(
+          value,
+          m -> switch (m.toString()) {
+            case "\n" -> "\\n";
+            case "\r" -> "\\r";
+            case "\t" -> "\\t";
+            case "\f" -> "\\f";
+            default -> "\\" + m;
+          });
     }
   }
 
