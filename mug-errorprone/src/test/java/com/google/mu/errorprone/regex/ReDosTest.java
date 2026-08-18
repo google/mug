@@ -366,13 +366,121 @@ public final class ReDosTest {
     assertThat(SuggestionSynthesizer.suggestRedosRewrite(RegexPattern.of("(a|b)+"))).isEmpty();
   }
 
-  @Test public void suggestRedosRewrite_backreferenceRepeated_returnsEmpty() {
-    assertThat(SuggestionSynthesizer.suggestRedosRewrite(RegexPattern.of("(.+)\\1+"))).isEmpty();
+  @Test public void suggestRedosRewrite_preservesModifierFlagsInNonCapturingGroup() {
+    RegexPattern pattern = RegexPattern.of("(?i:(a+)+)");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).hasValue("(?i:(a+))");
   }
 
-  @Test public void suggestRedosRewrite_multipleBackreferencesRepeated_returnsEmpty() {
-    assertThat(SuggestionSynthesizer.suggestRedosRewrite(RegexPattern.of("^.*(\\d)\\1+(\\d)\\2+$")))
-        .isEmpty();
+  @Test public void suggestRedosRewrite_preservesStandaloneModifierFlags() {
+    RegexPattern pattern = RegexPattern.of("(?i)^(a+)+$");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).hasValue("(?i)^(a+)$");
+  }
+
+  @Test public void suggestRedosRewrite_preservesNamedCapturingGroups() {
+    RegexPattern pattern = RegexPattern.of("(?<suffix>(.*))?");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).hasValue("(?<suffix>(.*))");
+  }
+
+  @Test public void suggestRedosRewrite_preservesNumberedCapturingGroups() {
+    RegexPattern pattern = RegexPattern.of("\\$\\{(\\w+)+\\}");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).hasValue("\\$\\{(\\w+)\\}");
+  }
+
+  @Test public void suggestRedosRewrite_backreferenceRepeated_doesNotSuggestUnsafeStar() {
+    RegexPattern pattern = RegexPattern.of("(.+)\\1+");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).isEmpty();
+  }
+
+  @Test public void suggestRedosRewrite_nonCapturingWithoutFlags_flattensCleanly() {
+    RegexPattern pattern = RegexPattern.of("(?:a+)+");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).hasValue("a+");
+  }
+
+  @Test public void suggestRedosRewrite_bazelVersion_preservesNamedGroup() {
+    RegexPattern pattern = RegexPattern.of("(?<release>(?:\\d+\\.)*\\d+)(?<suffix>(.*))?");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern))
+        .hasValue("(?<release>(?:\\d+\\.)*\\d+)(?<suffix>(.*))");
+  }
+
+  @Test public void suggestRedosRewrite_baseCtsPipeline_preservesNamedGroup() {
+    RegexPattern pattern = RegexPattern.of("(?<className>[^#]+)+#[^#]+");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern))
+        .hasValue("(?<className>[^#]+)#[^#]+");
+  }
+
+  @Test public void suggestRedosRewrite_f1DataExtractor_preservesNamedGroup() {
+    RegexPattern pattern = RegexPattern.of(
+        "^\\s*SELECT\\s+.*\\s+FROM\\s+(?<tableName>[a-zA-Z_]+)\\s+WHERE\\s+.*\\s+LIMIT\\s+(?<rowCount>\\d+)*\\s*$");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern))
+        .hasValue(
+            "^\\s*SELECT\\s+.*\\s+FROM\\s+(?<tableName>[a-zA-Z_]+)\\s+WHERE\\s+.*\\s+LIMIT\\s+(?<rowCount>\\d*)\\s*$");
+  }
+
+  @Test public void suggestRedosRewrite_firestoreEmulator_preservesNamedGroup() {
+    RegexPattern pattern = RegexPattern.of(
+        "^project_id=(?<project>[a-zA-Z0-9\\-]*?)(?:&database_id=(?<database>[a-z0-9().\\-]+)*)?$");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern))
+        .hasValue(
+            "^project_id=(?<project>[a-zA-Z0-9\\-]*?)(?:&database_id=(?<database>[a-z0-9().\\-]*))?$");
+  }
+
+  @Test public void suggestRedosRewrite_reflectionUtils_preservesNumberedGroups() {
+    RegexPattern pattern = RegexPattern.of("^([^[\\\\]]+)((\\[\\])+)+$");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern))
+        .hasValue("^([^[\\\\]]+)((\\[\\])+)$");
+  }
+
+  @Test public void suggestRedosRewrite_textStyleSheetParser_preservesGroup() {
+    RegexPattern pattern = RegexPattern.of("^\\s*@def([^;]+)*;");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).hasValue("^\\s*@def([^;]*);");
+  }
+
+  @Test public void suggestRedosRewrite_location_preservesAllGroups() {
+    RegexPattern pattern = RegexPattern.of("(\\w?)*\\d(.*)");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).hasValue("(\\w*)\\d(.*)");
+  }
+
+  @Test public void suggestRedosRewrite_nixleAlertHandler_preservesCaseInsensitiveFlag() {
+    RegexPattern pattern = RegexPattern.of("(?i)^(\\s*|\\.|none|[#]+)+$");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern))
+        .hasValue("(?i)^((?:\\s*|\\.|none|[#]+)*)$");
+  }
+
+  @Test public void suggestRedosRewrite_sqlServerLimitHandler_preservesInlineFlagsAndGroups() {
+    RegexPattern pattern = RegexPattern.of(
+        "(?![^[]*(\\]))\\S+\\s*(\\s(?i)as\\s)\\s*(\\S+)*\\s*$|(?![^[]*(\\]))\\s+(\\S+)$");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern))
+        .hasValue("(?![^[]*(\\]))\\S+\\s*(\\s(?i)as\\s)\\s*(\\S*)\\s*$|(?![^[]*(\\]))\\s+(\\S+)$");
+  }
+
+  @Test public void suggestRedosRewrite_legacyDataTransformer_preservesStructure() {
+    RegexPattern pattern = RegexPattern.of("#(X+) (X+(?:(?:\\-X)+)*)");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).hasValue("#(X+) (X+(?:\\-X)*)");
+  }
+
+  @Test public void suggestRedosRewrite_repeatMatcher_greedy_rejectsUnsafeStarRewrite() {
+    RegexPattern pattern = RegexPattern.of("(.+)\\1+");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).isEmpty();
+  }
+
+  @Test public void suggestRedosRewrite_repeatMatcher_reluctant_rejectsUnsafeStarRewrite() {
+    RegexPattern pattern = RegexPattern.of("(.+?)\\1+");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).isEmpty();
+  }
+
+  @Test public void suggestRedosRewrite_repeatMatcher_anchoredReluctant_rejectsUnsafeStarRewrite() {
+    RegexPattern pattern = RegexPattern.of("^(.+?)\\1+$");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).isEmpty();
+  }
+
+  @Test public void suggestRedosRewrite_phoneNumberUtils_boundedDigits_rejectsUnsafeStarRewrite() {
+    RegexPattern pattern = RegexPattern.of("^.*(\\d{2,})\\1+$");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).isEmpty();
+  }
+
+  @Test public void suggestRedosRewrite_phoneNumberUtils_multipleGroups_rejectsUnsafeStarRewrite() {
+    RegexPattern pattern = RegexPattern.of("^.*(\\d)\\1+(\\d)\\2+$");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).isEmpty();
   }
 
   @Test public void suggestPolynomialRewrite_consecutiveIdenticalPlusQuantifiers_mergesToRange() {
@@ -655,7 +763,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(a|aa?)*b");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("((?:a|(?:aa)?)*)b");
   }
 
   @Test public void
