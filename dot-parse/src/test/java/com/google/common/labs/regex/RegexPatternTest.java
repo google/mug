@@ -1266,4 +1266,22 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("[a-z.]"))
         .isEqualTo(anyOf(new CharRange('a', 'z'), new LiteralChar('.')));
   }
+
+  @Test public void of_dotInNegatedCharacterSet_parsedAsLiteralChar() {
+    assertThat(RegexPattern.of("[^.]")).isEqualTo(noneOf(new LiteralChar('.')));
+  }
+
+  @Test public void of_dotInsideCharacterSetRange_parsedAsLiteralChar() {
+    assertThat(RegexPattern.of("[.-0]")).isEqualTo(anyOf(new CharRange('.', '0')));
+  }
+
+  @Test public void of_escapedDotInCharacterSet_parsedAsLiteralChar() {
+    assertThat(RegexPattern.of("[\\.]")).isEqualTo(anyOf(new LiteralChar('.')));
+  }
+
+  @Test public void of_predefinedCharClassInCharacterSet(
+      @TestParameter({"\\d", "\\D", "\\s", "\\S", "\\w", "\\W", "\\R"}) String pattern) {
+    assertThat(RegexPattern.of("[" + pattern + "]"))
+        .isEqualTo(anyOf((CharSetElement) RegexPattern.of(pattern)));
+  }
 }
