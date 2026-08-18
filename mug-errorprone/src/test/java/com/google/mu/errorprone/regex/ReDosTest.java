@@ -366,6 +366,15 @@ public final class ReDosTest {
     assertThat(SuggestionSynthesizer.suggestRedosRewrite(RegexPattern.of("(a|b)+"))).isEmpty();
   }
 
+  @Test public void suggestRedosRewrite_backreferenceRepeated_returnsEmpty() {
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(RegexPattern.of("(.+)\\1+"))).isEmpty();
+  }
+
+  @Test public void suggestRedosRewrite_multipleBackreferencesRepeated_returnsEmpty() {
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(RegexPattern.of("^.*(\\d)\\1+(\\d)\\2+$")))
+        .isEmpty();
+  }
+
   @Test public void suggestPolynomialRewrite_consecutiveIdenticalPlusQuantifiers_mergesToRange() {
     assertThat(SuggestionSynthesizer.suggestPolynomialRewrite(RegexPattern.of("a+a+")))
         .hasValue("a{2,}");
@@ -646,7 +655,7 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(a|aa?)*b");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown.getSuggestedAlternatives()).containsExactly("((?:a|(?:aa)?)*)b");
+    assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
 
   @Test public void
@@ -784,6 +793,13 @@ public final class ReDosTest {
   }
 
   @Test public void checkRedosVulnerability_nestedNewlines_throwsIllegalArgumentException() {
+    RegexPattern pattern = RegexPattern.of("(n+)+nn$");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("(n+)nn$");
+  }
+
+  @Test public void checkRedosVulnerability_nestedEscapedNewlines_throwsIllegalArgumentException() {
     RegexPattern pattern = RegexPattern.of("(\\n+)+\\n\\n$");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
@@ -823,6 +839,14 @@ public final class ReDosTest {
 
   @Test public void
       checkRedosVulnerability_whitespaceAndDotStarLoop_throwsIllegalArgumentException() {
+    RegexPattern pattern = RegexPattern.of("([n\\s]+)*(.)");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getSuggestedAlternatives()).containsExactly("([n\\s]*)(.)");
+  }
+
+  @Test public void
+      checkRedosVulnerability_escapedNewlineAndWhitespaceLoop_throwsIllegalArgumentException() {
     RegexPattern pattern = RegexPattern.of("([\\n\\s]+)*(.)");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));

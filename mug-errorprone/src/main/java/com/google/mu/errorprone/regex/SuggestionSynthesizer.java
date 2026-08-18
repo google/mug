@@ -67,13 +67,6 @@ final class SuggestionSynthesizer {
             innerQ.element(), RegexPattern.Quantifier.atLeast(canBeEmpty ? 0 : 1));
         return Optional.of(preserveOuterGroups(q.element(), simplified));
       }
-      return optionally(
-          inner.metadata().minSize() == 0 && inner.metadata().maxSize() > 0,
-          () -> {
-            RegexPattern simplified =
-                new RegexPattern.Quantified(inner, RegexPattern.Quantifier.atLeast(0));
-            return preserveOuterGroups(q.element(), simplified);
-          });
     }
     return Optional.empty();
   }
