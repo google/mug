@@ -18,6 +18,7 @@ import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
 import static com.google.common.labs.parse.Parser.define;
 import static com.google.common.labs.parse.Parser.digits;
+import static com.google.common.labs.parse.Parser.hexDigits;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
@@ -61,8 +62,22 @@ import java.util.stream.Collectors;
 
 /** Parsers for {@link RegexPattern}. */
 final class RegexParsers {
-  private static final Parser<Character> ESCAPED_CHAR =
-      literally(string("\\").then(one(ANY, "escaped char")));
+  private static final Parser<Character> UNICODE_ESCAPE =
+      string("\\u").then(hexDigits(4)).map(hex -> (char) Integer.parseInt(hex, 16));
+  private static final Parser<Character> HEX_ESCAPE =
+      string("\\x").then(hexDigits(2)).map(hex -> (char) Integer.parseInt(hex, 16));
+  private static final Parser<Character> CONTROL_ESCAPE = anyOf(
+      string("\\n").thenReturn('\n'),
+      string("\\r").thenReturn('\r'),
+      string("\\t").thenReturn('\t'),
+      string("\\f").thenReturn('\f'));
+  private static final Parser<Character> ESCAPED_CHAR = literally(
+      anyOf(
+          CONTROL_ESCAPE, UNICODE_ESCAPE, HEX_ESCAPE, string("\\").then(one(ANY, "escaped char"))));
+  private static final PredefinedCharClass[] PREDEFINED_IN_CHAR_CLASS = stream(
+          PredefinedCharClass.values())
+      .filter(p -> p != PredefinedCharClass.ANY_CHAR)
+      .toArray(PredefinedCharClass[]::new);
   private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES = stream(
           PosixCharClass.values())
       .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
@@ -144,14 +159,7 @@ final class RegexParsers {
     Parser<CharSetElement> element = anyOf(
         positiveCharacterProperty(),
         negativeCharacterProperty(),
-        anyOf(
-            PredefinedCharClass.DIGIT,
-            PredefinedCharClass.NON_DIGIT,
-            PredefinedCharClass.WHITESPACE,
-            PredefinedCharClass.NON_WHITESPACE,
-            PredefinedCharClass.WORD,
-            PredefinedCharClass.NON_WORD,
-            PredefinedCharClass.LINEBREAK),
+        anyOf(PREDEFINED_IN_CHAR_CLASS),
         charClass,
         range,
         literalCharOrDash.map(LiteralChar::new));

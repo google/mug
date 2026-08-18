@@ -1284,4 +1284,36 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("[" + pattern + "]"))
         .isEqualTo(anyOf((CharSetElement) RegexPattern.of(pattern)));
   }
+
+  @Test public void of_controlEscapes_newline() {
+    assertThat(RegexPattern.of("\\n").toString()).isEqualTo("\\n");
+  }
+
+  @Test public void of_controlEscapes_return() {
+    assertThat(RegexPattern.of("\\r").toString()).isEqualTo("\\r");
+  }
+
+  @Test public void of_controlEscapes_tab() {
+    assertThat(RegexPattern.of("\\t").toString()).isEqualTo("\\t");
+  }
+
+  @Test public void of_unicodeEscape() {
+    assertThat(RegexPattern.of("\\uFEFF")).isEqualTo(new Literal("\uFEFF"));
+  }
+
+  @Test public void of_hexEscape() {
+    assertThat(RegexPattern.of("\\x41")).isEqualTo(new Literal("A"));
+  }
+
+  @Test public void of_escapedInCharacterSet_newlineAndReturn() {
+    assertThat(RegexPattern.of("[^\\r\\n]").toString()).isEqualTo("[^\\r\\n]");
+  }
+
+  @Test public void of_horizontalWhitespace() {
+    assertThat(RegexPattern.of("\\h")).isEqualTo(PredefinedCharClass.HORIZONTAL_WHITESPACE);
+  }
+
+  @Test public void of_verticalWhitespace() {
+    assertThat(RegexPattern.of("\\v")).isEqualTo(PredefinedCharClass.VERTICAL_WHITESPACE);
+  }
 }

@@ -186,6 +186,32 @@ final class CharRanges {
   private static final ImmutableRangeSet<Integer> UNICODE_Z =
       union(UNICODE_ZS, union(UNICODE_ZL, UNICODE_ZP));
 
+  private static final ImmutableRangeSet<Integer> HORIZONTAL_WHITESPACE =
+      ImmutableRangeSet.<Integer>builder()
+          .add(closedOpen((int) '\t', (int) '\t' + 1))
+          .add(closedOpen(0xA0, 0xA0 + 1))
+          .add(closedOpen(0x1680, 0x1680 + 1))
+          .add(closedOpen(0x180E, 0x180E + 1))
+          .add(closedOpen(0x2000, 0x200A + 1))
+          .add(closedOpen(0x202F, 0x202F + 1))
+          .add(closedOpen(0x205F, 0x205F + 1))
+          .add(closedOpen(0x3000, 0x3000 + 1))
+          .build();
+  private static final ImmutableRangeSet<Integer> NON_HORIZONTAL_WHITESPACE =
+      complement(HORIZONTAL_WHITESPACE);
+
+  private static final ImmutableRangeSet<Integer> VERTICAL_WHITESPACE =
+      ImmutableRangeSet.<Integer>builder()
+          .add(closedOpen((int) '\n', (int) '\n' + 1))
+          .add(closedOpen(0x0B, 0x0B + 1))
+          .add(closedOpen((int) '\f', (int) '\f' + 1))
+          .add(closedOpen((int) '\r', (int) '\r' + 1))
+          .add(closedOpen(0x85, 0x85 + 1))
+          .add(closedOpen(0x2028, 0x2029 + 1))
+          .build();
+  private static final ImmutableRangeSet<Integer> NON_VERTICAL_WHITESPACE =
+      complement(VERTICAL_WHITESPACE);
+
   private static ImmutableRangeSet<Integer> from(RegexPattern.PredefinedCharClass pcc) {
     return switch (pcc) {
       case ANY_CHAR -> ANY_CHAR;
@@ -195,6 +221,10 @@ final class CharRanges {
       case NON_WHITESPACE -> NON_WHITESPACE;
       case WORD -> WORD;
       case NON_WORD -> NON_WORD;
+      case HORIZONTAL_WHITESPACE -> HORIZONTAL_WHITESPACE;
+      case NON_HORIZONTAL_WHITESPACE -> NON_HORIZONTAL_WHITESPACE;
+      case VERTICAL_WHITESPACE -> VERTICAL_WHITESPACE;
+      case NON_VERTICAL_WHITESPACE -> NON_VERTICAL_WHITESPACE;
       case LINEBREAK -> LINEBREAK;
     };
   }

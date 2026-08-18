@@ -5,14 +5,13 @@ import static com.google.mu.errorprone.regex.RegexPatternUtils.unwrapGroup;
 import static com.google.mu.util.Optionals.optionally;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
+import com.google.mu.util.graph.Walker;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-
-import com.google.common.labs.regex.RegexPattern;
-import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
-import com.google.mu.util.graph.Walker;
 
 /**
  * Synthesizes safe alternatives (Safe Regex, Substring, StringFormat, dot-parse Parser) for
@@ -26,7 +25,37 @@ final class SuggestionSynthesizer {
     requireNonNull(pattern);
     RegexPattern rewritten = transform(pattern, SuggestionSynthesizer::rewriteRedosNode);
     return optionally(
-        !rewritten.equals(pattern), () -> new Suggestion.RegexSuggestion(rewritten.toString()));
+        !rewritten.equals(pattern) && preservesCaptureGroups(pattern, rewritten),
+        () -> new Suggestion.RegexSuggestion(rewritten.toString()));
+  }
+
+  private static boolean preservesCaptureGroups(RegexPattern original, RegexPattern rewritten) {
+    List<String> originalNamed = getNamedGroupNames(original);
+    List<String> rewrittenNamed = getNamedGroupNames(rewritten);
+    return originalNamed.equals(rewrittenNamed)
+        && countCapturingGroups(original) == countCapturingGroups(rewritten);
+  }
+
+  private static List<String> getNamedGroupNames(RegexPattern pattern) {
+    List<String> names = new ArrayList<>();
+    Walker.inTree(RegexPatternUtils::childrenOf)
+        .preOrderFrom(pattern)
+        .forEach(node -> {
+          if (node instanceof RegexPattern.Group.Named named) {
+            names.add(named.name());
+          }
+        });
+    return names;
+  }
+
+  private static int countCapturingGroups(RegexPattern pattern) {
+    return (int)
+        Walker.inTree(RegexPatternUtils::childrenOf)
+            .preOrderFrom(pattern)
+            .filter(node ->
+                node instanceof RegexPattern.Group.Capturing
+                    || node instanceof RegexPattern.Group.Named)
+            .count();
   }
 
   private static Optional<RegexPattern> rewriteRedosNode(RegexPattern node) {
@@ -34,15 +63,41 @@ final class SuggestionSynthesizer {
       RegexPattern inner = unwrapGroup(q.element());
       if (inner instanceof RegexPattern.Quantified innerQ) {
         boolean canBeEmpty = innerQ.metadata().minSize() == 0 || q.metadata().minSize() == 0;
-        return Optional.of(
-            new RegexPattern.Quantified(
-                innerQ.element(), RegexPattern.Quantifier.atLeast(canBeEmpty ? 0 : 1)));
+        RegexPattern simplified = new RegexPattern.Quantified(
+            innerQ.element(), RegexPattern.Quantifier.atLeast(canBeEmpty ? 0 : 1));
+        return Optional.of(preserveOuterGroups(q.element(), simplified));
       }
       return optionally(
           inner.metadata().minSize() == 0 && inner.metadata().maxSize() > 0,
-          () -> new RegexPattern.Quantified(inner, RegexPattern.Quantifier.atLeast(0)));
+          () -> {
+            RegexPattern simplified =
+                new RegexPattern.Quantified(inner, RegexPattern.Quantifier.atLeast(0));
+            return preserveOuterGroups(q.element(), simplified);
+          });
     }
     return Optional.empty();
+  }
+
+  private static RegexPattern preserveOuterGroups(RegexPattern original, RegexPattern rewritten) {
+    if (original instanceof RegexPattern.Group.Capturing g) {
+      return new RegexPattern.Group.Capturing(preserveOuterGroups(g.content(), rewritten));
+    }
+    if (original instanceof RegexPattern.Group.Named g) {
+      return new RegexPattern.Group.Named(g.name(), preserveOuterGroups(g.content(), rewritten));
+    }
+    if (original instanceof RegexPattern.Group.NonCapturing g) {
+      if (g.enabledModifierFlags().isEmpty() && g.disabledModifierFlags().isEmpty()) {
+        return preserveOuterGroups(g.content(), rewritten);
+      }
+      return new RegexPattern.Group.NonCapturing(
+          preserveOuterGroups(g.content(), rewritten),
+          g.enabledModifierFlags(),
+          g.disabledModifierFlags());
+    }
+    if (original instanceof RegexPattern.Group.Atomic g) {
+      return new RegexPattern.Group.Atomic(preserveOuterGroups(g.content(), rewritten));
+    }
+    return rewritten;
   }
 
   static Optional<Suggestion.RegexSuggestion> rewritePolynomialToSafeRegex(RegexPattern pattern) {
@@ -101,8 +156,9 @@ final class SuggestionSynthesizer {
     if (original instanceof RegexPattern.Group.Capturing) {
       return new RegexPattern.Group.Capturing(rewritten);
     }
-    if (original instanceof RegexPattern.Group.NonCapturing) {
-      return new RegexPattern.Group.NonCapturing(rewritten);
+    if (original instanceof RegexPattern.Group.NonCapturing g) {
+      return new RegexPattern.Group.NonCapturing(
+          rewritten, g.enabledModifierFlags(), g.disabledModifierFlags());
     }
     if (original instanceof RegexPattern.Group.Named g) {
       return new RegexPattern.Group.Named(g.name(), rewritten);
@@ -124,8 +180,8 @@ final class SuggestionSynthesizer {
       }
       case RegexPattern.Group.Capturing g ->
           new RegexPattern.Group.Capturing(transform(g.content(), rule));
-      case RegexPattern.Group.NonCapturing g ->
-          new RegexPattern.Group.NonCapturing(transform(g.content(), rule));
+      case RegexPattern.Group.NonCapturing g -> new RegexPattern.Group.NonCapturing(
+          transform(g.content(), rule), g.enabledModifierFlags(), g.disabledModifierFlags());
       case RegexPattern.Group.Atomic g ->
           new RegexPattern.Group.Atomic(transform(g.content(), rule));
       case RegexPattern.Group.Named g ->
