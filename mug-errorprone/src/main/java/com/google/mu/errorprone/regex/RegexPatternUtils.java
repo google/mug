@@ -62,8 +62,8 @@ final class RegexPatternUtils {
     ImmutableRangeSet<Integer> reluctantEntryChars = firstCharRangesOf(q.element());
     for (int k = reluctantIndex + 1; k < elements.size(); k++) {
       RegexPattern next = unwrapGroup(elements.get(k));
-      if (next instanceof RegexPattern.Literal || next instanceof RegexPattern.CharacterSet) {
-        ImmutableRangeSet<Integer> nextChars = charRangesOf(next);
+      if (next.metadata().minSize() > 0) {
+        ImmutableRangeSet<Integer> nextChars = firstCharRangesOf(next);
         if (!nextChars.isEmpty() && !CharRanges.intersects(reluctantEntryChars, nextChars)) {
           return true;
         }
@@ -74,8 +74,16 @@ final class RegexPatternUtils {
 
   static ImmutableRangeSet<Integer> firstCharRangesOf(RegexPattern pattern) {
     return switch (pattern) {
-      case RegexPattern.Sequence seq ->
-          seq.elements().isEmpty() ? CharRanges.EMPTY : firstCharRangesOf(seq.elements().get(0));
+      case RegexPattern.Sequence seq -> {
+        ImmutableRangeSet<Integer> res = CharRanges.EMPTY;
+        for (RegexPattern elem : seq.elements()) {
+          res = CharRanges.union(res, firstCharRangesOf(elem));
+          if (elem.metadata().minSize() > 0) {
+            break;
+          }
+        }
+        yield res;
+      }
       case RegexPattern.Alternation alt -> alt.alternatives().stream()
           .map(RegexPatternUtils::firstCharRangesOf)
           .reduce(CharRanges.EMPTY, CharRanges::union);

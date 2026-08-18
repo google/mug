@@ -313,4 +313,11 @@ public final class CharRangesTest {
     assertThat(ranges.contains((int) ' ')).isTrue();
     assertThat(ranges.contains((int) 'a')).isFalse();
   }
+
+  @Test public void firstCharRangesOf_nullableFirstElement_includesSecondElement() {
+    ImmutableRangeSet<Integer> ranges =
+        RegexPatternUtils.firstCharRangesOf(RegexPattern.of("\\s?foo"));
+    assertThat(ranges.contains((int) ' ')).isTrue();
+    assertThat(ranges.contains((int) 'f')).isTrue();
+  }
 }

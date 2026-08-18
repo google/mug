@@ -1690,6 +1690,12 @@ public final class ReDosTest {
   }
 
   @Test public void
+      checkPolynomialBacktracking_reluctantQuantifierBoundedByPredefinedClass_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("^\\b((?:\\D|\\\\.)+?)\\d+\\b");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void
       checkRedosVulnerability_dotInCharacterClassDoesNotOverlapDisjointBranch_doesNotThrow() {
     RegexPattern pattern = RegexPattern.of("([0-9.]|a)+");
     ReDos.checkRedosVulnerability(pattern);
