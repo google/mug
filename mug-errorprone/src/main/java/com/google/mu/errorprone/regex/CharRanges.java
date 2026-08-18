@@ -3,6 +3,7 @@ package com.google.mu.errorprone.regex;
 import static com.google.common.collect.Range.closedOpen;
 import static java.lang.Character.MAX_CODE_POINT;
 
+import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
@@ -217,46 +218,22 @@ final class CharRanges {
   }
 
   private static ImmutableRangeSet<Integer> fromUnicodeProperty(String name) {
-    if ("Nd".equalsIgnoreCase(name) || "Digit".equalsIgnoreCase(name)) {
-      return range('0', '9');
-    }
-    if ("L".equalsIgnoreCase(name) || "Letter".equalsIgnoreCase(name)) {
-      return union(range('a', 'z'), range('A', 'Z'));
-    }
-    if ("Lu".equalsIgnoreCase(name)) {
-      return UPPER;
-    }
-    if ("Ll".equalsIgnoreCase(name)) {
-      return LOWER;
-    }
-    if ("Alpha".equalsIgnoreCase(name)) {
-      return ALPHA;
-    }
-    if ("Alnum".equalsIgnoreCase(name)) {
-      return ALNUM;
-    }
-    if ("ASCII".equalsIgnoreCase(name)) {
-      return ASCII;
-    }
-    if ("Punct".equalsIgnoreCase(name)) {
-      return PUNCT;
-    }
-    if ("Space".equalsIgnoreCase(name)) {
-      return SPACE;
-    }
-    if ("Zl".equalsIgnoreCase(name)) {
-      return UNICODE_ZL;
-    }
-    if ("Zp".equalsIgnoreCase(name)) {
-      return UNICODE_ZP;
-    }
-    if ("Zs".equalsIgnoreCase(name)) {
-      return UNICODE_ZS;
-    }
-    if ("Z".equalsIgnoreCase(name) || "Separator".equalsIgnoreCase(name)) {
-      return UNICODE_Z;
-    }
-    return ANY;
+    return switch (Ascii.toLowerCase(name)) {
+      case "nd", "digit" -> range('0', '9');
+      case "l", "letter" -> union(range('a', 'z'), range('A', 'Z'));
+      case "lu" -> UPPER;
+      case "ll" -> LOWER;
+      case "alpha" -> ALPHA;
+      case "alnum" -> ALNUM;
+      case "ascii" -> ASCII;
+      case "punct" -> PUNCT;
+      case "space" -> SPACE;
+      case "zl" -> UNICODE_ZL;
+      case "zp" -> UNICODE_ZP;
+      case "zs" -> UNICODE_ZS;
+      case "z", "separator" -> UNICODE_Z;
+      default -> ANY;
+    };
   }
 
   private CharRanges() {}

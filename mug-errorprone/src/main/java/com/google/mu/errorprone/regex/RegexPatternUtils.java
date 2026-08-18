@@ -34,7 +34,9 @@ final class RegexPatternUtils {
     List<RegexPattern> elements = seq.elements();
     for (int i = 0; i < elements.size(); i++) {
       RegexPattern ei = unwrapGroup(elements.get(i));
-      if (isUnboundedQuantified(ei) && !isReluctantBoundedBySubsequentLiteral(elements, i)) {
+      if (isUnboundedQuantified(ei)
+          && !isReluctantBoundedBy(
+              (RegexPattern.Quantified) ei, elements.subList(i + 1, elements.size()))) {
         for (int j = i + 1; j < elements.size(); j++) {
           RegexPattern ej = unwrapGroup(elements.get(j));
           if (isUnboundedQuantified(ej)) {
@@ -53,23 +55,15 @@ final class RegexPatternUtils {
     return Stream.empty();
   }
 
-  static boolean isReluctantBoundedBySubsequentLiteral(
-      List<RegexPattern> elements, int reluctantIndex) {
-    RegexPattern reluctant = unwrapGroup(elements.get(reluctantIndex));
-    if (!(reluctant instanceof RegexPattern.Quantified q) || !q.quantifier().isReluctant()) {
-      return false;
-    }
-    ImmutableRangeSet<Integer> reluctantEntryChars = firstCharRangesOf(q.element());
-    for (int k = reluctantIndex + 1; k < elements.size(); k++) {
-      RegexPattern next = unwrapGroup(elements.get(k));
-      if (next.metadata().minSize() > 0) {
-        ImmutableRangeSet<Integer> nextChars = firstCharRangesOf(next);
-        if (!nextChars.isEmpty() && !CharRanges.intersects(reluctantEntryChars, nextChars)) {
-          return true;
-        }
-      }
-    }
-    return false;
+  static boolean isReluctantBoundedBy(RegexPattern.Quantified q, List<RegexPattern> subsequent) {
+    return q.quantifier().isReluctant()
+        && subsequent.stream()
+            .map(RegexPatternUtils::unwrapGroup)
+            .filter(next -> next.metadata().minSize() > 0)
+            .map(RegexPatternUtils::firstCharRangesOf)
+            .filter(nextChars -> !nextChars.isEmpty())
+            .anyMatch(
+                nextChars -> !CharRanges.intersects(firstCharRangesOf(q.element()), nextChars));
   }
 
   static ImmutableRangeSet<Integer> firstCharRangesOf(RegexPattern pattern) {
@@ -99,8 +93,8 @@ final class RegexPatternUtils {
   }
 
   private static boolean isUnboundedQuantified(RegexPattern pattern) {
-    pattern = unwrapGroup(pattern);
-    return pattern instanceof RegexPattern.Quantified q && !q.quantifier().isPossessive()
+    return unwrapGroup(pattern) instanceof RegexPattern.Quantified q
+        && !q.quantifier().isPossessive()
         && switch (q.quantifier()) {
           case RegexPattern.AtLeast atLeast -> true;
           case RegexPattern.Limited limited -> limited.max() > 5;
