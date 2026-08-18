@@ -1688,4 +1688,38 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("^\\{\\s*+((?:[^}\\\\]|\\\\.)+?)\\s*\\}\\s*+$");
     ReDos.checkPolynomialBacktracking(pattern);
   }
+
+  @Test public void
+      checkRedosVulnerability_dotInCharacterClassDoesNotOverlapDisjointBranch_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("([0-9.]|a)+");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_possessiveIntermediateTokenOverlappingWithSurroundingCycles_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of(".*?a\\s++(\\s*+).*");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_multiCharacterDisjointLiteralIntermediateWord_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of(".*?FPS=.*");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_standaloneAtLeastWithMinTwo_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("a{2,}");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_disjointUnicodeCaseCategories_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("(\\p{Lu}|\\p{Ll})+");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void
+      checkRedosVulnerability_disjointUnicodeLineAndParagraphSeparators_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("(\\p{Zl}|\\p{Zp}){6,}");
+    ReDos.checkRedosVulnerability(pattern);
+  }
 }
