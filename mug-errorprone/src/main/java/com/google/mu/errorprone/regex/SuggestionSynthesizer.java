@@ -5,13 +5,14 @@ import static com.google.mu.errorprone.regex.RegexPatternUtils.unwrapGroup;
 import static com.google.mu.util.Optionals.optionally;
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.labs.regex.RegexPattern;
-import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
-import com.google.mu.util.graph.Walker;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+
+import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
+import com.google.mu.util.graph.Walker;
 
 /**
  * Synthesizes safe alternatives (Safe Regex, Substring, StringFormat, dot-parse Parser) for
@@ -24,10 +25,8 @@ final class SuggestionSynthesizer {
   static Optional<Suggestion.RegexSuggestion> rewriteRedosToSafeRegex(RegexPattern pattern) {
     requireNonNull(pattern);
     RegexPattern rewritten = transform(pattern, SuggestionSynthesizer::rewriteRedosNode);
-    if (!rewritten.equals(pattern)) {
-      return Optional.of(new Suggestion.RegexSuggestion(rewritten.toString()));
-    }
-    return Optional.empty();
+    return optionally(
+        !rewritten.equals(pattern), () -> new Suggestion.RegexSuggestion(rewritten.toString()));
   }
 
   private static Optional<RegexPattern> rewriteRedosNode(RegexPattern node) {
@@ -35,12 +34,13 @@ final class SuggestionSynthesizer {
       RegexPattern inner = unwrapGroup(q.element());
       if (inner instanceof RegexPattern.Quantified innerQ) {
         boolean canBeEmpty = innerQ.metadata().minSize() == 0 || q.metadata().minSize() == 0;
-        RegexPattern.Quantifier op = RegexPattern.Quantifier.atLeast(canBeEmpty ? 0 : 1);
-        return Optional.of(new RegexPattern.Quantified(innerQ.element(), op));
+        return Optional.of(
+            new RegexPattern.Quantified(
+                innerQ.element(), RegexPattern.Quantifier.atLeast(canBeEmpty ? 0 : 1)));
       }
-      if (inner.metadata().minSize() == 0 && inner.metadata().maxSize() > 0) {
-        return Optional.of(new RegexPattern.Quantified(inner, RegexPattern.Quantifier.atLeast(0)));
-      }
+      return optionally(
+          inner.metadata().minSize() == 0 && inner.metadata().maxSize() > 0,
+          () -> new RegexPattern.Quantified(inner, RegexPattern.Quantifier.atLeast(0)));
     }
     return Optional.empty();
   }
@@ -49,14 +49,12 @@ final class SuggestionSynthesizer {
     requireNonNull(pattern);
     List<String> caveats = new ArrayList<>();
     RegexPattern rewritten = transform(pattern, node -> rewritePolynomialNode(node, caveats));
-    if (!rewritten.equals(pattern)) {
-      String caveat = caveats.isEmpty() ? null : caveats.get(0);
-      return Optional.of(
-          caveat == null
-              ? new Suggestion.RegexSuggestion(rewritten.toString())
-              : new Suggestion.RegexSuggestion(rewritten.toString(), caveat));
-    }
-    return Optional.empty();
+    return optionally(
+        !rewritten.equals(pattern),
+        () ->
+            caveats.isEmpty()
+                ? new Suggestion.RegexSuggestion(rewritten.toString())
+                : new Suggestion.RegexSuggestion(rewritten.toString(), caveats.get(0)));
   }
 
   private static Optional<RegexPattern> rewritePolynomialNode(
@@ -240,8 +238,10 @@ final class SuggestionSynthesizer {
 
   private static Optional<DelimiterExtraction> extractLiteralDelimiter(RegexPattern p) {
     p = unwrapGroup(p);
-    if (p instanceof RegexPattern.Literal lit && !lit.value().isEmpty()) {
-      return Optional.of(new DelimiterExtraction(lit.value(), lit.value().isBlank()));
+    if (p instanceof RegexPattern.Literal lit) {
+      return optionally(
+          !lit.value().isEmpty(),
+          () -> new DelimiterExtraction(lit.value(), lit.value().isBlank()));
     }
     return Optional.empty();
   }
