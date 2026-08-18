@@ -3,6 +3,7 @@ package com.google.mu.errorprone.regex;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 
+import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.util.graph.ShortestPath;
 import com.google.mu.util.graph.Walker;
@@ -21,7 +22,7 @@ import java.util.Set;
 final class Nfa {
   final List<State> states = new ArrayList<>();
   final List<CharTransition> charTransitions = new ArrayList<>();
-  final Map<RegexPattern, Integer> nodeToStartState = new IdentityHashMap<>();
+  private final Map<RegexPattern, Integer> nodeToStartState = new IdentityHashMap<>();
   int startState;
   int acceptState;
 
@@ -34,7 +35,8 @@ final class Nfa {
     }
   }
 
-  record CharTransition(int id, int source, CharRanges chars, int target, RegexPattern astNode) {}
+  record CharTransition(
+      int id, int source, ImmutableRangeSet<Integer> chars, int target, RegexPattern astNode) {}
 
   private record Fragment(int start, int accept) {}
 
@@ -48,7 +50,8 @@ final class Nfa {
     states.get(from).epsilonTransitions.add(to);
   }
 
-  void addCharTransition(int from, CharRanges chars, int to, RegexPattern astNode) {
+  private void addCharTransition(
+      int from, ImmutableRangeSet<Integer> chars, int to, RegexPattern astNode) {
     if (chars.isEmpty()) {
       return;
     }
@@ -93,7 +96,7 @@ final class Nfa {
     return new Fragment(s.id, s.id);
   }
 
-  private Fragment compileCharRanges(CharRanges ranges, RegexPattern pattern) {
+  private Fragment compileCharRanges(ImmutableRangeSet<Integer> ranges, RegexPattern pattern) {
     State start = newState();
     State accept = newState();
     addCharTransition(start.id, ranges, accept.id, pattern);
@@ -102,9 +105,6 @@ final class Nfa {
 
   private Fragment compileLiteral(RegexPattern.Literal lit) {
     String s = lit.value();
-    if (s.isEmpty()) {
-      return compileEmpty();
-    }
     State first = newState();
     State current = first;
     for (int i = 0; i < s.length(); i++) {
@@ -116,9 +116,6 @@ final class Nfa {
   }
 
   private Fragment compileSequence(List<RegexPattern> elements) {
-    if (elements.isEmpty()) {
-      return compileEmpty();
-    }
     List<Fragment> fragments = new ArrayList<>();
     for (RegexPattern elem : elements) {
       fragments.add(compile(elem));
@@ -130,9 +127,6 @@ final class Nfa {
   }
 
   private Fragment compileAlternation(List<RegexPattern> alternatives) {
-    if (alternatives.isEmpty()) {
-      return compileEmpty();
-    }
     State start = newState();
     State accept = newState();
     for (RegexPattern alt : alternatives) {
@@ -254,7 +248,7 @@ final class Nfa {
     return count;
   }
 
-  Set<Integer> epsilonClosure(int state) {
+  private Set<Integer> epsilonClosure(int state) {
     return Walker.inGraph((Integer s) -> states.get(s).epsilonTransitions.stream())
         .preOrderFrom(state)
         .collect(toSet());
@@ -284,7 +278,7 @@ final class Nfa {
               }
               for (CharTransition t : charTransitions) {
                 if (t.source() == step.state()) {
-                  builder.add(new Step(t.target(), (char) t.chars().sampleChar()), 1.0);
+                  builder.add(new Step(t.target(), (char) CharRanges.sampleChar(t.chars())), 1.0);
                 }
               }
               return builder.build();

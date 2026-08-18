@@ -1,7 +1,7 @@
 package com.google.mu.errorprone.regex;
 
+import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.labs.regex.RegexPattern;
-import com.google.mu.util.graph.Walker;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -24,15 +24,6 @@ final class RegexPatternUtils {
     };
   }
 
-  static boolean isWildcard(RegexPattern pattern) {
-    if (pattern instanceof RegexPattern.Quantified q) {
-      RegexPattern inner = unwrapGroup(q.element());
-      return inner instanceof RegexPattern.PredefinedCharClass pcc
-          && pcc == RegexPattern.PredefinedCharClass.ANY_CHAR;
-    }
-    return false;
-  }
-
   record OverlappingQuantifierPair(
       int firstIndex,
       int secondIndex,
@@ -47,7 +38,7 @@ final class RegexPatternUtils {
         for (int j = i + 1; j < elements.size(); j++) {
           RegexPattern ej = unwrapGroup(elements.get(j));
           if (isUnboundedQuantified(ej)) {
-            if (charRangesOf(ei).intersects(charRangesOf(ej))) {
+            if (CharRanges.intersects(charRangesOf(ei), charRangesOf(ej))) {
               return Stream.of(
                   new OverlappingQuantifierPair(
                       i, j, (RegexPattern.Quantified) ei, (RegexPattern.Quantified) ej));
@@ -66,13 +57,13 @@ final class RegexPatternUtils {
     pattern = unwrapGroup(pattern);
     return pattern instanceof RegexPattern.Quantified q && !q.quantifier().isPossessive()
         && switch (q.quantifier()) {
-          case RegexPattern.AtLeast atLeast -> atLeast.min() >= 0;
+          case RegexPattern.AtLeast atLeast -> true;
           case RegexPattern.Limited limited -> limited.max() > 5;
           default -> false;
         };
   }
 
-  private static CharRanges charRangesOf(RegexPattern pattern) {
+  private static ImmutableRangeSet<Integer> charRangesOf(RegexPattern pattern) {
     return switch (pattern) {
       case RegexPattern.Quantified q -> charRangesOf(q.element());
       case RegexPattern.Group group -> charRangesOf(group.content());
@@ -82,13 +73,6 @@ final class RegexPatternUtils {
       case RegexPattern.Literal lit -> CharRanges.of(lit.value().charAt(0));
       default -> CharRanges.ANY;
     };
-  }
-
-  static boolean containsNode(RegexPattern root, RegexPattern target) {
-    return root.equals(target)
-        || Walker.inTree(RegexPatternUtils::childrenOf)
-            .preOrderFrom(root)
-            .anyMatch(node -> node.equals(target));
   }
 
   private RegexPatternUtils() {}

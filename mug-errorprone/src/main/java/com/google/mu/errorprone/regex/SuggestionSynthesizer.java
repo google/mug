@@ -1,19 +1,17 @@
 package com.google.mu.errorprone.regex;
 
 import static com.google.mu.errorprone.regex.RegexPatternUtils.findOverlappingQuantifiers;
-import static com.google.mu.errorprone.regex.RegexPatternUtils.isWildcard;
 import static com.google.mu.errorprone.regex.RegexPatternUtils.unwrapGroup;
 import static com.google.mu.util.Optionals.optionally;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
+import com.google.mu.util.graph.Walker;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-
-import com.google.common.labs.regex.RegexPattern;
-import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
-import com.google.mu.util.graph.Walker;
 
 /**
  * Synthesizes safe alternatives (Safe Regex, Substring, StringFormat, dot-parse Parser) for
@@ -369,33 +367,27 @@ final class SuggestionSynthesizer {
 
   private static boolean isOptionalWhitespace(RegexPattern p) {
     p = unwrapGroup(p);
-    if (p instanceof RegexPattern.Quantified q && q.metadata().minSize() == 0) {
-      RegexPattern inner = unwrapGroup(q.element());
-      if (inner instanceof RegexPattern.PredefinedCharClass pcc
-          && pcc == RegexPattern.PredefinedCharClass.WHITESPACE) {
-        return true;
-      }
-      if (inner instanceof RegexPattern.CharacterSet.AnyOf cs) {
-        return cs.elements().stream().allMatch(SuggestionSynthesizer::isWhitespaceCharSetElement);
-      }
-      if (inner instanceof RegexPattern.Literal lit && lit.value().isBlank()) {
-        return true;
-      }
-    }
-    return false;
+    return p instanceof RegexPattern.Quantified q
+        && q.metadata().minSize() == 0
+        && switch (unwrapGroup(q.element())) {
+          case RegexPattern.PredefinedCharClass pcc ->
+              pcc == RegexPattern.PredefinedCharClass.WHITESPACE;
+          case RegexPattern.CharacterSet.AnyOf cs ->
+              cs.elements().stream().allMatch(SuggestionSynthesizer::isWhitespaceCharSetElement);
+          case RegexPattern.Literal lit -> lit.value().isBlank();
+          default -> false;
+        };
   }
 
   private static boolean isWhitespaceCharSetElement(RegexPattern.CharSetElement elem) {
-    if (elem instanceof RegexPattern.PredefinedCharClass pcc) {
-      return pcc == RegexPattern.PredefinedCharClass.WHITESPACE;
-    }
-    if (elem instanceof RegexPattern.LiteralChar lc) {
-      return Character.isWhitespace(lc.value());
-    }
-    if (elem instanceof RegexPattern.CharRange range) {
-      return Character.isWhitespace(range.start()) && Character.isWhitespace(range.end());
-    }
-    return false;
+    return switch (elem) {
+      case RegexPattern.PredefinedCharClass pcc ->
+          pcc == RegexPattern.PredefinedCharClass.WHITESPACE;
+      case RegexPattern.LiteralChar lc -> Character.isWhitespace(lc.value());
+      case RegexPattern.CharRange range ->
+          Character.isWhitespace(range.start()) && Character.isWhitespace(range.end());
+      default -> false;
+    };
   }
 
   private static List<String> parserCaveats(boolean hasWhitespace) {
@@ -530,5 +522,10 @@ final class SuggestionSynthesizer {
       }
     }
     return Optional.empty();
+  }
+
+  private static boolean isWildcard(RegexPattern pattern) {
+    return pattern instanceof RegexPattern.Quantified q
+        && unwrapGroup(q.element()) == RegexPattern.PredefinedCharClass.ANY_CHAR;
   }
 }

@@ -1493,4 +1493,21 @@ public final class ReDosTest {
         .containsExactly("apple", "banana", "orange")
         .inOrder();
   }
+
+  @Test public void suggestPolynomialRewrite_boundedRepetitionUnderThreshold_returnsEmpty() {
+    assertThat(SuggestionSynthesizer.suggestPolynomialRewrite(RegexPattern.of("a{1,5}a{1,5}")))
+        .isEmpty();
+  }
+
+  @Test public void suggestPolynomialRewrite_boundedRepetitionOverThreshold_suggestsPossessive() {
+    assertThat(SuggestionSynthesizer.suggestPolynomialRewrite(RegexPattern.of("a{1,6}a{1,6}")))
+        .hasValue("a{1,6}+a{1,6}");
+  }
+
+  @Test public void
+      checkRedosVulnerability_nestedAtLeastWithMinTwo_throwsVulnerableRegexException() {
+    assertThrows(
+        VulnerableRegexException.class,
+        () -> ReDos.checkRedosVulnerability(RegexPattern.of("(a{2,})+")));
+  }
 }

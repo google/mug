@@ -2,6 +2,7 @@ package com.google.mu.errorprone.regex;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.labs.regex.RegexPattern;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,12 +41,12 @@ public final class RegexRedosFuzzTest {
   @Test public void fuzz_randomCharRanges_algebraicPropertiesHold() {
     Random rng = new Random(SEED);
     for (int i = 0; i < FUZZ_ITERATIONS; i++) {
-      CharRanges a = generateRandomCharRanges(rng);
-      CharRanges b = generateRandomCharRanges(rng);
+      ImmutableRangeSet<Integer> a = generateRandomCharRanges(rng);
+      ImmutableRangeSet<Integer> b = generateRandomCharRanges(rng);
 
-      CharRanges union = a.union(b);
-      CharRanges intersection = a.intersection(b);
-      CharRanges complement = a.complement();
+      ImmutableRangeSet<Integer> union = CharRanges.union(a, b);
+      ImmutableRangeSet<Integer> intersection = CharRanges.intersection(a, b);
+      ImmutableRangeSet<Integer> complement = CharRanges.complement(a);
 
       for (int k = 0; k < 50; k++) {
         int cp = rng.nextInt(0x7F);
@@ -56,7 +57,7 @@ public final class RegexRedosFuzzTest {
         assertThat(intersection.contains(cp)).isEqualTo(inA && inB);
         assertThat(complement.contains(cp)).isEqualTo(!inA);
       }
-      assertThat(a.intersection(complement).isEmpty()).isTrue();
+      assertThat(CharRanges.intersection(a, complement).isEmpty()).isTrue();
     }
   }
 
@@ -112,15 +113,15 @@ public final class RegexRedosFuzzTest {
     assertThat(safeTestedCount).isGreaterThan(10);
   }
 
-  private static CharRanges generateRandomCharRanges(Random rng) {
+  private static ImmutableRangeSet<Integer> generateRandomCharRanges(Random rng) {
     int numRanges = rng.nextInt(4);
-    CharRanges result = CharRanges.EMPTY;
+    ImmutableRangeSet<Integer> result = CharRanges.EMPTY;
     for (int i = 0; i < numRanges; i++) {
       int c1 = rng.nextInt(0x7F);
       int c2 = rng.nextInt(0x7F);
       int start = Math.min(c1, c2);
       int end = Math.max(c1, c2);
-      result = result.union(CharRanges.range(start, end));
+      result = CharRanges.union(result, CharRanges.range(start, end));
     }
     return result;
   }
