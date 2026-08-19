@@ -3,6 +3,7 @@ package com.google.mu.errorprone.regex;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
 import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion.ParserSuggestion;
 import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion.RegexSuggestion;
@@ -215,5 +216,23 @@ public final class SuggestionTest {
     SubstringSuggestion suggestion =
         new SubstringSuggestion("Substring.first(':')", "Caveat 1", "Caveat 2");
     assertThat(suggestion.caveats()).containsExactly("Caveat 1", "Caveat 2").inOrder();
+  }
+
+  @Test public void preservesCaptureGroups_matchingNamedAndNumbered_returnsTrue() {
+    RegexPattern original = RegexPattern.of("(?<foo>a+)(\\d+)");
+    RegexPattern rewritten = RegexPattern.of("(?<foo>a*)(\\d*)");
+    assertThat(SuggestionSynthesizer.preservesCaptureGroups(original, rewritten)).isTrue();
+  }
+
+  @Test public void preservesCaptureGroups_differentNamedGroupNames_returnsFalse() {
+    RegexPattern original = RegexPattern.of("(?<foo>a+)");
+    RegexPattern rewritten = RegexPattern.of("(?<bar>a+)");
+    assertThat(SuggestionSynthesizer.preservesCaptureGroups(original, rewritten)).isFalse();
+  }
+
+  @Test public void preservesCaptureGroups_differentCapturingGroupCount_returnsFalse() {
+    RegexPattern original = RegexPattern.of("(a+)(b+)");
+    RegexPattern rewritten = RegexPattern.of("(a+)b+");
+    assertThat(SuggestionSynthesizer.preservesCaptureGroups(original, rewritten)).isFalse();
   }
 }

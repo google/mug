@@ -147,13 +147,16 @@ final class Nfa {
     return new Fragment(start.id, accept.id);
   }
 
+  private static final int MAX_UNROLL = 5;
+
   private Fragment compileQuantified(RegexPattern.Quantified quantified) {
     quantifierStack.addLast(quantified);
     try {
       RegexPattern.Quantifier q = quantified.quantifier();
       return switch (q) {
         case RegexPattern.AtLeast atLeast -> {
-          if (atLeast.min() == 0) {
+          int min = Math.min(atLeast.min(), MAX_UNROLL);
+          if (min == 0) {
             Fragment f = compile(quantified.element());
             State start = newState();
             State accept = newState();
@@ -162,7 +165,7 @@ final class Nfa {
             addEpsilon(f.accept, f.start);
             addEpsilon(f.accept, accept.id);
             yield new Fragment(start.id, accept.id);
-          } else if (atLeast.min() == 1) {
+          } else if (min == 1) {
             Fragment f = compile(quantified.element());
             State start = newState();
             State accept = newState();
@@ -172,7 +175,7 @@ final class Nfa {
             yield new Fragment(start.id, accept.id);
           } else {
             List<Fragment> parts = new ArrayList<>();
-            for (int i = 0; i < atLeast.min() - 1; i++) {
+            for (int i = 0; i < min - 1; i++) {
               parts.add(compile(quantified.element()));
             }
             Fragment f = compile(quantified.element());
@@ -201,7 +204,7 @@ final class Nfa {
             State start = newState();
             State current = start;
             State accept = newState();
-            int max = atMost.max();
+            int max = Math.min(atMost.max(), MAX_UNROLL);
             for (int i = 0; i < max; i++) {
               Fragment f = compile(quantified.element());
               addEpsilon(current.id, f.start);
@@ -214,10 +217,11 @@ final class Nfa {
         }
         case RegexPattern.Limited limited -> {
           List<Fragment> parts = new ArrayList<>();
-          for (int i = 0; i < limited.min(); i++) {
+          int min = Math.min(limited.min(), MAX_UNROLL);
+          for (int i = 0; i < min; i++) {
             parts.add(compile(quantified.element()));
           }
-          int extra = limited.max() - limited.min();
+          int extra = Math.min(limited.max() - limited.min(), MAX_UNROLL);
           for (int i = 0; i < extra; i++) {
             Fragment opt = compile(quantified.element());
             State s = newState();

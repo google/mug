@@ -381,6 +381,12 @@ public final class ReDosTest {
     assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).hasValue("(?<suffix>(.*))");
   }
 
+  @Test public void
+      suggestRedosRewrite_nestedNonCapturingWithModifierFlags_preservesModifierFlags() {
+    RegexPattern pattern = RegexPattern.of("((?i:a+))+");
+    assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).hasValue("((?i:a+))");
+  }
+
   @Test public void suggestRedosRewrite_preservesNumberedCapturingGroups() {
     RegexPattern pattern = RegexPattern.of("\\$\\{(\\w+)+\\}");
     assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern)).hasValue("\\$\\{(\\w+)\\}");
@@ -1888,6 +1894,12 @@ public final class ReDosTest {
 
   @Test public void checkRedosVulnerability_alternationWithDelimitedSequences_doesNotThrow() {
     RegexPattern pattern = RegexPattern.of("(/user/[a-z]+|/admin/[a-z]+)+");
+    ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test(timeout = 5000) public void
+      checkRedosVulnerability_veryLargeRepetitionBound_completesWithoutTimeoutOrOom() {
+    RegexPattern pattern = RegexPattern.of("(a|b){1,100000}");
     ReDos.checkRedosVulnerability(pattern);
   }
 }

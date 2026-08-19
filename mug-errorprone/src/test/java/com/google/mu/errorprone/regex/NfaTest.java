@@ -51,4 +51,19 @@ public final class NfaTest {
     Nfa nfa = Nfa.from(RegexPattern.of("a{1,5}"));
     assertThat(nfa.charTransitions).hasSize(5);
   }
+
+  @Test public void compileQuantified_veryLargeMax_capsUnrollingToPreventOom() {
+    Nfa nfa = Nfa.from(RegexPattern.of("a{1,10000}"));
+    assertThat(nfa.charTransitions.size()).isAtMost(10);
+  }
+
+  @Test public void compileQuantified_veryLargeAtLeastMin_capsUnrollingToPreventOom() {
+    Nfa nfa = Nfa.from(RegexPattern.of("a{10000,}"));
+    assertThat(nfa.charTransitions.size()).isAtMost(10);
+  }
+
+  @Test public void compileQuantified_veryLargeAtMostMax_capsUnrollingToPreventOom() {
+    Nfa nfa = Nfa.from(RegexPattern.of("a{0,10000}"));
+    assertThat(nfa.charTransitions.size()).isAtMost(10);
+  }
 }

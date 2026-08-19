@@ -327,4 +327,25 @@ public final class CharRangesTest {
     assertThat(anyChar.contains(0x2028)).isFalse();
     assertThat(anyChar.contains(0x2029)).isFalse();
   }
+
+  @Test public void from_whitespace_containsUnicodeWhitespaceAndLinebreaks() {
+    ImmutableRangeSet<Integer> ws = CharRanges.from(RegexPattern.PredefinedCharClass.WHITESPACE);
+    assertThat(ws.contains((int) ' ')).isTrue();
+    assertThat(ws.contains((int) '\t')).isTrue();
+    assertThat(ws.contains((int) '\n')).isTrue();
+    assertThat(ws.contains((int) '\r')).isTrue();
+    assertThat(ws.contains(0x85)).isTrue();
+    assertThat(ws.contains(0x2028)).isTrue();
+    assertThat(ws.contains(0x2029)).isTrue();
+  }
+
+  @Test public void from_linebreak_containsAllJavaLinebreakCharacters() {
+    ImmutableRangeSet<Integer> lb = CharRanges.from(RegexPattern.PredefinedCharClass.LINEBREAK);
+    assertThat(lb.contains((int) '\n')).isTrue();
+    assertThat(lb.contains((int) '\r')).isTrue();
+    assertThat(lb.contains(0x85)).isTrue();
+    assertThat(lb.contains(0x2028)).isTrue();
+    assertThat(lb.contains(0x2029)).isTrue();
+    assertThat(lb.contains((int) ' ')).isFalse();
+  }
 }

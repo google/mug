@@ -29,7 +29,7 @@ final class SuggestionSynthesizer {
         () -> new Suggestion.RegexSuggestion(rewritten.toString()));
   }
 
-  private static boolean preservesCaptureGroups(RegexPattern original, RegexPattern rewritten) {
+  static boolean preservesCaptureGroups(RegexPattern original, RegexPattern rewritten) {
     List<String> originalNamed = getNamedGroupNames(original);
     List<String> rewrittenNamed = getNamedGroupNames(rewritten);
     return originalNamed.equals(rewrittenNamed)
