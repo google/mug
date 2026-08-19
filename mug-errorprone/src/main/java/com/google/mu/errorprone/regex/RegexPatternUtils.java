@@ -39,6 +39,9 @@ final class RegexPatternUtils {
               (RegexPattern.Quantified) ei, elements.subList(i + 1, elements.size()))) {
         for (int j = i + 1; j < elements.size(); j++) {
           RegexPattern ej = unwrapGroup(elements.get(j));
+          if (ej instanceof RegexPattern.Anchor) {
+            break;
+          }
           if (isUnboundedQuantified(ej)) {
             if (CharRanges.intersects(charRangesOf(ei), charRangesOf(ej))) {
               return Stream.of(

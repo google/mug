@@ -11,11 +11,13 @@ import com.google.mu.util.stream.BiStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Non-deterministic Finite Automaton (NFA) constructed from {@link RegexPattern} AST using
@@ -24,6 +26,7 @@ import java.util.Set;
 final class Nfa {
   final List<State> states = new ArrayList<>();
   final List<CharTransition> charTransitions = new ArrayList<>();
+  final Set<Integer> anchorStates = new HashSet<>();
   private final Map<RegexPattern, Integer> nodeToStartState = new IdentityHashMap<>();
   private final Deque<RegexPattern.Quantified> quantifierStack = new ArrayDeque<>();
   int startState;
@@ -94,10 +97,17 @@ final class Nfa {
       case RegexPattern.Alternation alt -> compileAlternation(alt.alternatives());
       case RegexPattern.Group group -> compile(group.content());
       case RegexPattern.Quantified q -> compileQuantified(q);
+      case RegexPattern.Anchor anchor -> compileAnchor();
       default -> compileEmpty();
     };
     nodeToStartState.put(pattern, f.start);
     return f;
+  }
+
+  private Fragment compileAnchor() {
+    State s = newState();
+    anchorStates.add(s.id);
+    return new Fragment(s.id, s.id);
   }
 
   private Fragment compileEmpty() {
@@ -276,6 +286,40 @@ final class Nfa {
 
   List<CharTransition> reachableCharTransitions(int state) {
     Set<Integer> closure = epsilonClosure(state);
+    return charTransitions.stream().filter(t -> closure.contains(t.source())).toList();
+  }
+
+  Set<Integer> epsilonClosureWithoutAnchors(int state) {
+    return Walker.inGraph((Integer s) ->
+            anchorStates.contains(s) && s != state
+                ? Stream.<Integer>empty()
+                : states.get(s).epsilonTransitions.stream())
+        .preOrderFrom(state)
+        .collect(toSet());
+  }
+
+  boolean canReachWithoutAnchors(int fromState, int toState) {
+    return Walker.inGraph((Integer s) -> {
+      if (anchorStates.contains(s) && s != fromState) {
+        return Stream.<Integer>empty();
+      }
+      Stream.Builder<Integer> builder = Stream.builder();
+      for (int next : states.get(s).epsilonTransitions) {
+        builder.add(next);
+      }
+      for (CharTransition t : charTransitions) {
+        if (t.source() == s) {
+          builder.add(t.target());
+        }
+      }
+      return builder.build();
+    })
+        .preOrderFrom(fromState)
+        .anyMatch(s -> s == toState);
+  }
+
+  List<CharTransition> reachableCharTransitionsWithoutAnchors(int state) {
+    Set<Integer> closure = epsilonClosureWithoutAnchors(state);
     return charTransitions.stream().filter(t -> closure.contains(t.source())).toList();
   }
 

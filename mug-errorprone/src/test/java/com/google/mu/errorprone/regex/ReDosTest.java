@@ -85,7 +85,7 @@ public final class ReDosTest {
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
     assertThat(thrown).hasMessageThat().contains("contains nested quantifiers on /\\p{Alpha}+/");
     assertThat(thrown).hasMessageThat()
-        .contains("attack payload: \"a{a=aa=aa=aa=aa=aa=aa=aa=aa=aa=a!\"");
+        .contains("attack payload: \"a{a=a, a=a, a=a, a=a, a=a, a=a, !\"");
   }
 
   @Test public void
@@ -1901,5 +1901,42 @@ public final class ReDosTest {
       checkRedosVulnerability_veryLargeRepetitionBound_completesWithoutTimeoutOrOom() {
     RegexPattern pattern = RegexPattern.of("(a|b){1,100000}");
     ReDos.checkRedosVulnerability(pattern);
+  }
+
+  @Test public void
+      checkRedosVulnerability_expressionParserAlternationWithoutOuterLoop_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of(
+        "\\s*(not in|in|!=|<=|>=|=|<|>|\\(|\\)|,|or|and|\"(?:[^\"\\\\]|\\\\.)*\"|\\S+)\\s*");
+    ReDos.checkRedosVulnerability(pattern);
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkPolynomialBacktracking_quantifiersSeparatedByAnchor_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("(?ims)\\A\\s*#StandardSQL\\s*$.*");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_overlappingAmbiguousNumberPrefix_samplesAmbiguousDigitForPayload() {
+    RegexPattern pattern = RegexPattern.of("^(9*\\d)(\\d+)$");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown.getAttackPayload()).isEqualTo("999999999999999999999999999999!");
+  }
+
+  @Test public void
+      checkRedosVulnerability_nestedQuantifierWithOptionalDelimiter_samplesCompoundPumpPayload() {
+    RegexPattern pattern = RegexPattern.of(
+        "(?<!\\\\)\\{\\$(?<config>[\\-_a-z0-9]+)(?:\\.(?<var>(\\.?[\\-_$a-z0-9]+)*))?\\}");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getAttackPayload()).startsWith("{$a..a");
+  }
+
+  @Test public void checkPolynomialBacktracking_enclosingLiterals_payloadDoesNotMatchFindEarly() {
+    RegexPattern pattern = RegexPattern.of(".*contains\\(.*\\).*");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown.getAttackPayload()).isEqualTo("contains(contains(contains(!");
   }
 }
