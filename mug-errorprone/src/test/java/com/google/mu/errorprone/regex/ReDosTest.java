@@ -1940,13 +1940,34 @@ public final class ReDosTest {
     assertThat(thrown.getAttackPayload()).isEqualTo("contains(contains(contains(!");
   }
 
-  @Test public void
-      checkPolynomialBacktracking_unanchoredWildcardWithLiteral_generatesNonMatchingPayloadForFind() {
+  @Test public void checkPolynomialBacktracking_terminalUnanchoredWildcardProjects_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("projects/([^/]+).*");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkPolynomialBacktracking_terminalUnanchoredWildcardBuganizer_doesNotThrow() {
     RegexPattern pattern = RegexPattern.of(".*buganizer_id: (\\d+).*");
-    VulnerableRegexException thrown = assertThrows(
-        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
-    assertThat(Pattern.compile(pattern.toString()).matcher(thrown.getAttackPayload()).find())
-        .isFalse();
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkPolynomialBacktracking_terminalUnanchoredWildcardAy_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of(".*ay=(\\d+).*");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkPolynomialBacktracking_terminalUnanchoredWildcardDash_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of(".*\\-(\\d+).*");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkPolynomialBacktracking_trailingWildcardWithDelimiter_throws() {
+    RegexPattern pattern = RegexPattern.of("projects/([^/]+).*;");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+  }
+
+  @Test public void checkPolynomialBacktracking_trailingWildcardWithEndAnchor_throws() {
+    RegexPattern pattern = RegexPattern.of("projects/([^/]+).*$");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
   }
 
   @Test public void checkPolynomialBacktracking_multiTokenDelimiters_generatesScaffoldedPayload() {

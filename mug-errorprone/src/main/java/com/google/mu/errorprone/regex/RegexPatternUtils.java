@@ -2,6 +2,7 @@ package com.google.mu.errorprone.regex;
 
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.util.graph.Walker;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -44,6 +45,10 @@ final class RegexPatternUtils {
           }
           if (isUnboundedQuantified(ej)) {
             if (CharRanges.intersects(charRangesOf(ei), charRangesOf(ej))) {
+              if (isTerminalUnconstrainedWildcard(
+                  ei, ej, elements.subList(j + 1, elements.size()))) {
+                continue;
+              }
               return Stream.of(
                   new OverlappingQuantifierPair(
                       i, j, (RegexPattern.Quantified) ei, (RegexPattern.Quantified) ej));
@@ -56,6 +61,27 @@ final class RegexPatternUtils {
       }
     }
     return Stream.empty();
+  }
+
+  static boolean isTerminalUnconstrainedWildcard(
+      RegexPattern ei, RegexPattern ej, List<RegexPattern> subsequent) {
+    if (unwrapGroup(ej) instanceof RegexPattern.Quantified qj && isUnboundedQuantified(qj)) {
+      ImmutableRangeSet<Integer> charsJ = charRangesOf(qj.element());
+      if (charsJ.equals(CharRanges.ANY) || charsJ.equals(CharRanges.ANY_CHAR)) {
+        ImmutableRangeSet<Integer> charsI = charRangesOf(ei);
+        boolean eiIsAny = charsI.equals(CharRanges.ANY) || charsI.equals(CharRanges.ANY_CHAR);
+        if (!eiIsAny) {
+          return subsequent.stream().noneMatch(RegexPatternUtils::hasAnchorOrConstraint);
+        }
+      }
+    }
+    return false;
+  }
+
+  static boolean hasAnchorOrConstraint(RegexPattern pattern) {
+    return Walker.inTree(RegexPatternUtils::childrenOf)
+        .preOrderFrom(pattern)
+        .anyMatch(node -> node instanceof RegexPattern.Anchor || node.metadata().minSize() > 0);
   }
 
   static boolean isReluctantBoundedBy(RegexPattern.Quantified q, List<RegexPattern> subsequent) {

@@ -170,7 +170,7 @@ final class CharRanges {
       .add(closedOpen(0x2028, 0x2029 + 1))
       .build();
 
-  private static final ImmutableRangeSet<Integer> ANY_CHAR = complement(LINEBREAK);
+  static final ImmutableRangeSet<Integer> ANY_CHAR = complement(LINEBREAK);
 
   private static final ImmutableRangeSet<Integer> UNICODE_ZS = ImmutableRangeSet.<Integer>builder()
       .add(closedOpen(0x0020, 0x0020 + 1))
