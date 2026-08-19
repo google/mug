@@ -1939,4 +1939,43 @@ public final class ReDosTest {
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
     assertThat(thrown.getAttackPayload()).isEqualTo("contains(contains(contains(!");
   }
+
+  @Test public void
+      checkPolynomialBacktracking_unanchoredWildcardWithLiteral_generatesNonMatchingPayloadForFind() {
+    RegexPattern pattern = RegexPattern.of(".*buganizer_id: (\\d+).*");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(Pattern.compile(pattern.toString()).matcher(thrown.getAttackPayload()).find())
+        .isFalse();
+  }
+
+  @Test public void checkPolynomialBacktracking_multiTokenDelimiters_generatesScaffoldedPayload() {
+    RegexPattern pattern =
+        RegexPattern.of("CREATE QUEUE (.*?) \\((.*?)\\) PRIMARY KEY \\((.*?)\\)(.*?);");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown.getAttackPayload()).startsWith("CREATE QUEUE ");
+    assertThat(thrown.getAttackPayload()).contains("PRIMARY KEY (");
+    assertThat(thrown.getAttackPayload()).endsWith("!");
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_functionCallWithObjectLiteral_generatesScaffoldedPayload() {
+    RegexPattern pattern = RegexPattern.of("gtag\\('(config|event|set)',.*\\{(.+)\\}\\);");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown.getAttackPayload()).startsWith("gtag('config',");
+    assertThat(thrown.getAttackPayload()).contains("{");
+    assertThat(thrown.getAttackPayload()).endsWith("!");
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_numericMantissaWithPrefix_generatesPrefixedDigitPayload() {
+    RegexPattern pattern =
+        RegexPattern.of("^Eccentricity:\\s*(\\-\\d+\\.?\\d+(E[+\\-]\\d+)?)\\s*$");
+    VulnerableRegexException thrown = assertThrows(
+        VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+    assertThat(thrown.getAttackPayload()).startsWith("Eccentricity:");
+    assertThat(thrown.getAttackPayload()).contains("000000000000000000000000000000!");
+  }
 }

@@ -289,15 +289,6 @@ final class Nfa {
     return charTransitions.stream().filter(t -> closure.contains(t.source())).toList();
   }
 
-  Set<Integer> epsilonClosureWithoutAnchors(int state) {
-    return Walker.inGraph((Integer s) ->
-            anchorStates.contains(s) && s != state
-                ? Stream.<Integer>empty()
-                : states.get(s).epsilonTransitions.stream())
-        .preOrderFrom(state)
-        .collect(toSet());
-  }
-
   boolean canReachWithoutAnchors(int fromState, int toState) {
     return Walker.inGraph((Integer s) -> {
       if (anchorStates.contains(s) && s != fromState) {
@@ -316,11 +307,6 @@ final class Nfa {
     })
         .preOrderFrom(fromState)
         .anyMatch(s -> s == toState);
-  }
-
-  List<CharTransition> reachableCharTransitionsWithoutAnchors(int state) {
-    Set<Integer> closure = epsilonClosureWithoutAnchors(state);
-    return charTransitions.stream().filter(t -> closure.contains(t.source())).toList();
   }
 
   boolean canReachAccept(int state) {
