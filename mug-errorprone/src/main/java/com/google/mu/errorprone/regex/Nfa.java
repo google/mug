@@ -116,9 +116,10 @@ final class Nfa {
     String s = lit.value();
     State first = newState();
     State current = first;
-    for (int i = 0; i < s.length(); i++) {
+    int[] codePoints = s.codePoints().toArray();
+    for (int cp : codePoints) {
       State next = newState();
-      addCharTransition(current.id, CharRanges.of(s.charAt(i)), next.id, lit);
+      addCharTransition(current.id, CharRanges.of(cp), next.id, lit);
       current = next;
     }
     return new Fragment(first.id, current.id);
@@ -150,10 +151,6 @@ final class Nfa {
     quantifierStack.addLast(quantified);
     try {
       RegexPattern.Quantifier q = quantified.quantifier();
-      if (q.isPossessive()) {
-        return compile(quantified.element());
-      }
-
       return switch (q) {
         case RegexPattern.AtLeast atLeast -> {
           if (atLeast.min() == 0) {
@@ -204,7 +201,7 @@ final class Nfa {
             State start = newState();
             State current = start;
             State accept = newState();
-            int max = Math.min(atMost.max(), 5);
+            int max = atMost.max();
             for (int i = 0; i < max; i++) {
               Fragment f = compile(quantified.element());
               addEpsilon(current.id, f.start);
@@ -220,7 +217,7 @@ final class Nfa {
           for (int i = 0; i < limited.min(); i++) {
             parts.add(compile(quantified.element()));
           }
-          int extra = Math.min(limited.max() - limited.min(), 1);
+          int extra = limited.max() - limited.min();
           for (int i = 0; i < extra; i++) {
             Fragment opt = compile(quantified.element());
             State s = newState();

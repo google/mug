@@ -114,8 +114,6 @@ final class CharRanges {
     };
   }
 
-  private static final ImmutableRangeSet<Integer> ANY_CHAR =
-      intersection(ANY, complement(union(of('\n'), of('\r'))));
   private static final ImmutableRangeSet<Integer> DIGIT = range('0', '9');
   private static final ImmutableRangeSet<Integer> NON_DIGIT = complement(DIGIT);
   private static final ImmutableRangeSet<Integer> WHITESPACE = whitespaceRanges();
@@ -171,6 +169,8 @@ final class CharRanges {
       .add(closedOpen(0x85, 0x85 + 1))
       .add(closedOpen(0x2028, 0x2029 + 1))
       .build();
+
+  private static final ImmutableRangeSet<Integer> ANY_CHAR = complement(LINEBREAK);
 
   private static final ImmutableRangeSet<Integer> UNICODE_ZS = ImmutableRangeSet.<Integer>builder()
       .add(closedOpen(0x0020, 0x0020 + 1))

@@ -320,4 +320,11 @@ public final class CharRangesTest {
     assertThat(ranges.contains((int) ' ')).isTrue();
     assertThat(ranges.contains((int) 'f')).isTrue();
   }
+
+  @Test public void from_anyChar_excludesUnicodeLinebreakCharacters() {
+    ImmutableRangeSet<Integer> anyChar = CharRanges.from(RegexPattern.PredefinedCharClass.ANY_CHAR);
+    assertThat(anyChar.contains(0x85)).isFalse();
+    assertThat(anyChar.contains(0x2028)).isFalse();
+    assertThat(anyChar.contains(0x2029)).isFalse();
+  }
 }
