@@ -29,10 +29,10 @@ public final class ReDosTest {
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
-            "Regular expression is vulnerable to exponential backtracking (ReDoS): '(a+)+' contains"
-                + " nested quantifiers on 'a+'\n"
+            "Regular expression is vulnerable to exponential backtracking (ReDoS): /(a+)+/ contains"
+                + " nested quantifiers on /a+/\n"
                 + "  attack payload: \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\"\n"
-                + "  consider: '(a+)'");
+                + "  consider: /(a+)/");
     assertThat(thrown.getSuggestedAlternatives()).containsExactly("(a+)");
   }
 
@@ -42,8 +42,8 @@ public final class ReDosTest {
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
-            "Regular expression is vulnerable to exponential backtracking (ReDoS): '(a|a)+'"
-                + " contains overlapping alternation branches 'a|a'\n"
+            "Regular expression is vulnerable to exponential backtracking (ReDoS): /(a|a)+/"
+                + " contains overlapping alternation branches /a|a/\n"
                 + "  attack payload: \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\"");
     assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
@@ -54,10 +54,10 @@ public final class ReDosTest {
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
-            "Regular expression is vulnerable to exponential backtracking (ReDoS): '(a?)*' contains"
-                + " unbounded repetition of nullable sub-pattern '(a?)'\n"
+            "Regular expression is vulnerable to exponential backtracking (ReDoS): /(a?)*/ contains"
+                + " unbounded repetition of nullable sub-pattern /(a?)/\n"
                 + "  attack payload: \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\"\n"
-                + "  consider: '(a*)'");
+                + "  consider: /(a*)/");
     assertThat(thrown.getSuggestedAlternatives()).containsExactly("(a*)");
   }
 
@@ -68,7 +68,7 @@ public final class ReDosTest {
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
     assertThat(thrown).hasMessageThat()
         .contains(
-            "contains nested quantifiers on '[a-z]+'\n"
+            "contains nested quantifiers on /[a-z]+/\n"
                 + "  attack payload: \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\"");
     assertThat(thrown.getSuggestedAlternatives()).isEmpty();
   }
@@ -83,7 +83,7 @@ public final class ReDosTest {
         "(?<tag>\\p{Alpha}+)" + "(?:\\{\\s?(?<params>(?:\\p{Alpha}+=[\\w|\\.]+,?\\s?)+)?\\})?");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown).hasMessageThat().contains("contains nested quantifiers on '\\p{Alpha}+'");
+    assertThat(thrown).hasMessageThat().contains("contains nested quantifiers on /\\p{Alpha}+/");
     assertThat(thrown).hasMessageThat()
         .contains("attack payload: \"a{a=aa=aa=aa=aa=aa=aa=aa=aa=aa=a!\"");
   }
@@ -96,7 +96,7 @@ public final class ReDosTest {
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
     assertThat(thrown).hasMessageThat()
-        .contains("contains overlapping alternation branches '\\w|\\d|\\s|[,.(){}=]'");
+        .contains("contains overlapping alternation branches /\\w|\\d|\\s|[,.(){}=]/");
     assertThat(thrown).hasMessageThat()
         .contains("attack payload: \"a.then(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\"");
   }
@@ -280,10 +280,10 @@ public final class ReDosTest {
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
     assertThat(thrown).hasMessageThat()
         .isEqualTo(
-            "Regular expression is vulnerable to polynomial backtracking (PDA): 'a+a+' contains"
-                + " consecutive overlapping quantifiers on 'a+' and 'a+'\n"
+            "Regular expression is vulnerable to polynomial backtracking (PDA): /a+a+/ contains"
+                + " consecutive overlapping quantifiers on /a+/ and /a+/\n"
                 + "  attack payload: \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\"\n"
-                + "  consider: 'a{2,}'");
+                + "  consider: /a{2,}/");
     assertThat(thrown.getSuggestedAlternatives()).containsExactly("a{2,}");
   }
 
@@ -292,10 +292,10 @@ public final class ReDosTest {
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
     assertThat(thrown).hasMessageThat()
-        .contains("contains consecutive overlapping quantifiers on '\\d+' and '\\w+'");
-    assertThat(thrown).hasMessageThat().contains("consider: '\\d++\\w+'");
+        .contains("contains consecutive overlapping quantifiers on /\\d+/ and /\\w+/");
+    assertThat(thrown).hasMessageThat().contains("consider: /\\d++\\w+/");
     assertThat(thrown).hasMessageThat()
-        .contains("caveat: Possessive quantifier '\\d++' prevents backtracking");
+        .contains("caveat: Possessive quantifier /\\d++/ prevents backtracking");
     assertThat(thrown.getSuggestedAlternatives()).containsExactly("\\d++\\w+");
   }
 
@@ -305,8 +305,8 @@ public final class ReDosTest {
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
     assertThat(thrown).hasMessageThat()
-        .contains("contains consecutive overlapping quantifiers on '[0-9]+' and '[0-9a-z]+'");
-    assertThat(thrown).hasMessageThat().contains("consider: '[0-9]++[0-9a-z]+'");
+        .contains("contains consecutive overlapping quantifiers on /[0-9]+/ and /[0-9a-z]+/");
+    assertThat(thrown).hasMessageThat().contains("consider: /[0-9]++[0-9a-z]+/");
     assertThat(thrown.getSuggestedAlternatives()).containsExactly("[0-9]++[0-9a-z]+");
   }
 

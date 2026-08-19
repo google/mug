@@ -15,7 +15,7 @@ import java.util.List;
  */
 public final class ReDos {
   private static final StringFormat ERROR_MESSAGE = new StringFormat(
-      "Regular expression is vulnerable to {vulnerabilityType}: '{pattern}'"
+      "Regular expression is vulnerable to {vulnerabilityType}: /{pattern}/"
           + " {detail}{payload}{suggestion}{caveats}");
   private static final StringFormat ATTACK_PAYLOAD =
       new StringFormat("\n  attack payload: \"{payload}\"");
@@ -79,7 +79,7 @@ public final class ReDos {
       Suggestion first = suggestions.get(0);
       String replacement =
           first instanceof Suggestion.RegexSuggestion
-              ? "'" + first.replacement() + "'"
+              ? "/" + first.replacement() + "/"
               : first.replacement();
       suggestionPart = CONSIDER_SUGGESTION.format(replacement);
       caveatsPart = first.caveats().stream().map(CAVEAT_LINE::format).collect(joining());

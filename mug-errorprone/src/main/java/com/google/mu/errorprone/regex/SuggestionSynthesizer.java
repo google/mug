@@ -138,9 +138,9 @@ final class SuggestionSynthesizer {
             List<RegexPattern> newElements = new ArrayList<>(seq.elements());
             newElements.set(p.firstIndex(), preservedFirst);
             caveats.add(
-                "Possessive quantifier '" + rewrittenFirst
-                    + "' prevents backtracking and may fail if subsequent tokens require"
-                    + " characters greedily consumed by '" + rewrittenFirst + "'");
+                "Possessive quantifier /" + rewrittenFirst
+                    + "/ prevents backtracking and may fail if subsequent tokens require"
+                    + " characters greedily consumed by /" + rewrittenFirst + "/");
             return newElements.size() == 1
                 ? newElements.get(0)
                 : new RegexPattern.Sequence(newElements);
