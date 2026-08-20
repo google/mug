@@ -1999,4 +1999,74 @@ public final class ReDosTest {
     assertThat(thrown.getAttackPayload()).startsWith("Eccentricity:");
     assertThat(thrown.getAttackPayload()).contains("000000000000000000000000000000!");
   }
+
+  @Test public void checkPolynomialBacktracking_multilineAnchorSeparatedQuantifiers_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("(?m)^\\s*([a-zA-Z0-9_]+)\\s*$");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void
+      checkRedosVulnerability_nestedQuantifierWithRepeatedDotDelimiter_samplesDotCompoundPumpPayload() {
+    RegexPattern pattern = RegexPattern.of(
+        "(?<!\\\\)\\{\\$(?<config>[\\-_a-z0-9]+)(?:\\.(?<var>(\\.*[\\-_$a-z0-9]+)*))?\\}");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown.getAttackPayload()).contains(".a");
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_terminalUnanchoredWildcardNonWhitespaceGroup_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("([\\S]+).*");
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkPolynomialBacktracking_anchoredInfixNonWhitespace_throws() {
+    RegexPattern pattern = RegexPattern.of("^.*\\S.*$");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+  }
+
+  @Test public void checkPolynomialBacktracking_startAnchoredInfixNonWhitespace_throws() {
+    RegexPattern pattern = RegexPattern.of("^.*\\S.*");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+  }
+
+  @Test public void checkPolynomialBacktracking_anchoredInfixColon_throws() {
+    RegexPattern pattern = RegexPattern.of("^.*:.*$");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+  }
+
+  @Test public void checkPolynomialBacktracking_startAnchoredInfixColon_throws() {
+    RegexPattern pattern = RegexPattern.of("^.*:.*");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+  }
+
+  @Test public void checkPolynomialBacktracking_multipleInterveningLiterals_throws() {
+    RegexPattern pattern = RegexPattern.of(".*a.*b.*");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+  }
+
+  @Test public void checkPolynomialBacktracking_anchoredMultipleInterveningLiterals_throws() {
+    RegexPattern pattern = RegexPattern.of("^.*a.*b.*$");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+  }
+
+  @Test public void checkPolynomialBacktracking_posixStartAnchoredInfixColon_throws() {
+    RegexPattern pattern = RegexPattern.of("\\A.*:.*");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+  }
+
+  @Test public void checkPolynomialBacktracking_endAnchoredBuganizer_throws() {
+    RegexPattern pattern = RegexPattern.of(".*buganizer_id: (\\d+).*$");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+  }
+
+  @Test public void
+      checkRedosVulnerability_tagWithNestedQuantifiedKeyValueParams_throwsAndGeneratesPayload() {
+    RegexPattern pattern = RegexPattern.of(
+        "(?<tag>\\p{Alpha}+)(?:\\{\\s?(?<params>(?:\\p{Alpha}+=[\\w|\\.]+,?\\s?)+)?\\})?");
+    VulnerableRegexException thrown =
+        assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+    assertThat(thrown).hasMessageThat().contains("contains nested quantifiers on /\\p{Alpha}+/");
+    assertThat(thrown.getAttackPayload()).contains("a{a=a, a=a, a=a, a=a, a=a, a=a, !");
+  }
 }
