@@ -21,6 +21,7 @@ final class RegexPatternUtils {
       case RegexPattern.Alternation alt -> alt.alternatives().stream();
       case RegexPattern.Group group -> Stream.of(group.content());
       case RegexPattern.Quantified q -> Stream.of(q.element());
+      case RegexPattern.Lookaround lookaround -> Stream.of(lookaround.target());
       default -> Stream.empty();
     };
   }
@@ -121,7 +122,7 @@ final class RegexPatternUtils {
     };
   }
 
-  private static boolean isUnboundedQuantified(RegexPattern pattern) {
+  static boolean isUnboundedQuantified(RegexPattern pattern) {
     return unwrapGroup(pattern) instanceof RegexPattern.Quantified q
         && !q.quantifier().isPossessive()
         && switch (q.quantifier()) {
@@ -147,6 +148,30 @@ final class RegexPatternUtils {
       case RegexPattern.Literal lit ->
           lit.value().chars().mapToObj(CharRanges::of).reduce(CharRanges.EMPTY, CharRanges::union);
       default -> CharRanges.EMPTY;
+    };
+  }
+
+  static List<RegexPattern.Group> capturingGroupsIn(RegexPattern root) {
+    return Walker.inTree(RegexPatternUtils::childrenOf)
+        .preOrderFrom(root)
+        .filter(
+            p -> p instanceof RegexPattern.Group.Capturing || p instanceof RegexPattern.Group.Named)
+        .map(RegexPattern.Group.class::cast)
+        .toList();
+  }
+
+  static boolean referencesGroup(
+      RegexPattern.Backreference backref,
+      RegexPattern.Group group,
+      List<RegexPattern.Group> allGroups) {
+    return switch (backref) {
+      case RegexPattern.Backreference.Numbered num -> {
+        int index = num.groupNumber() - 1;
+        yield index >= 0 && index < allGroups.size() && allGroups.get(index).equals(group);
+      }
+      case RegexPattern.Backreference.Named named ->
+          group instanceof RegexPattern.Group.Named namedGroup
+              && namedGroup.name().equals(named.groupName());
     };
   }
 

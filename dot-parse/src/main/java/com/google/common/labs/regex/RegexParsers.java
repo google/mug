@@ -177,15 +177,15 @@ final class RegexParsers {
                     .zeroOrMore(flatMapping(List::stream, toList())),
                 (leading, rest) -> leading.map(head -> prepend(head, rest)).orElse(rest))
             .notEmpty();
-    Parser<CharacterSet> unbracketedTerm =
+    Parser<CharacterSet> characterSet =
         anyOf(charClass, elements.map(CharacterSet.AnyOf::new)).as("character set");
     Parser<CharacterSet> positiveTerm = sequence(
         elements.map(CharacterSet.AnyOf::new),
-        string("&&").then(unbracketedTerm).zeroOrMore(),
+        string("&&").then(characterSet).zeroOrMore(),
         (first, rest) -> rest.isEmpty() ? first : intersection(prepend(first, rest)));
     Parser<CharacterSet> negatedTerm = sequence(
         elements.map(CharacterSet.NoneOf::new),
-        string("&&").then(unbracketedTerm).zeroOrMore(),
+        string("&&").then(characterSet).zeroOrMore(),
         (first, rest) -> rest.isEmpty() ? first : intersection(prepend(first, rest)));
     return anyOf(
         literally(negatedTerm).immediatelyBetween("[^", "]"),

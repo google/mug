@@ -2069,4 +2069,65 @@ public final class ReDosTest {
     assertThat(thrown).hasMessageThat().contains("contains nested quantifiers on /\\p{Alpha}+/");
     assertThat(thrown.getAttackPayload()).contains("a{a=a, a=a, a=a, a=a, a=a, a=a, !");
   }
+
+  @Test public void checkRedosVulnerability_nestedQuantifiersInsidePositiveLookahead_detected() {
+    RegexPattern pattern = RegexPattern.of("(?=(a+)+)x");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+  }
+
+  @Test public void checkRedosVulnerability_nestedQuantifiersInsideNegativeLookahead_detected() {
+    RegexPattern pattern = RegexPattern.of("(?!(a+)+)x");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+  }
+
+  @Test public void checkRedosVulnerability_nestedQuantifiersInsideLookbehind_detected() {
+    RegexPattern pattern = RegexPattern.of("(?<=(a+)+)x");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+  }
+
+  @Test public void checkRedosVulnerability_nestedQuantifiersInsideNegativeLookbehind_detected() {
+    RegexPattern pattern = RegexPattern.of("(?<!(a+)+)x");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+  }
+
+  @Test public void checkPolynomialBacktracking_overlappingQuantifiersInsideLookahead_detected() {
+    RegexPattern pattern = RegexPattern.of("(?=\\d+\\w+)x");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+  }
+
+  @Test public void
+      checkRedosVulnerability_nestedQuantifierEnclosingCapturingGroupAndBackreference_detected() {
+    RegexPattern pattern = RegexPattern.of("((a+)\\1)+");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+  }
+
+  @Test public void
+      checkRedosVulnerability_unboundedRepeatedCapturingGroupFollowedByBackreference_detected() {
+    RegexPattern pattern = RegexPattern.of("([a-z]+)*\\1");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_variableLengthCapturingGroupFollowedByQuantifiedBackreference_detected() {
+    RegexPattern pattern = RegexPattern.of("(\\w+)\\1+");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+  }
+
+  @Test public void
+      checkPolynomialBacktracking_namedCapturingGroupFollowedByQuantifiedBackreference_detected() {
+    RegexPattern pattern = RegexPattern.of("(?<word>\\w+)\\k<word>+");
+    assertThrows(VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
+  }
+
+  @Test public void checkRedosVulnerability_safeLookahead_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("(?=foo)bar");
+    ReDos.checkRedosVulnerability(pattern);
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
+
+  @Test public void checkRedosVulnerability_safeBackreference_doesNotThrow() {
+    RegexPattern pattern = RegexPattern.of("([a-z]+)=\\1");
+    ReDos.checkRedosVulnerability(pattern);
+    ReDos.checkPolynomialBacktracking(pattern);
+  }
 }

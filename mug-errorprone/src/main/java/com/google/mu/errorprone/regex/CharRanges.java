@@ -186,7 +186,7 @@ final class CharRanges {
   private static final ImmutableRangeSet<Integer> UNICODE_Z =
       union(UNICODE_ZS, union(UNICODE_ZL, UNICODE_ZP));
 
-  private static final ImmutableRangeSet<Integer> HORIZONTAL_WHITESPACE =
+  private static final ImmutableRangeSet<Integer> H_WHITESPACE =
       ImmutableRangeSet.<Integer>builder()
           .add(closedOpen((int) '\t', (int) '\t' + 1))
           .add(closedOpen(0xA0, 0xA0 + 1))
@@ -197,10 +197,9 @@ final class CharRanges {
           .add(closedOpen(0x205F, 0x205F + 1))
           .add(closedOpen(0x3000, 0x3000 + 1))
           .build();
-  private static final ImmutableRangeSet<Integer> NON_HORIZONTAL_WHITESPACE =
-      complement(HORIZONTAL_WHITESPACE);
+  private static final ImmutableRangeSet<Integer> NON_H_WHITESPACE = complement(H_WHITESPACE);
 
-  private static final ImmutableRangeSet<Integer> VERTICAL_WHITESPACE =
+  private static final ImmutableRangeSet<Integer> V_WHITESPACE =
       ImmutableRangeSet.<Integer>builder()
           .add(closedOpen((int) '\n', (int) '\n' + 1))
           .add(closedOpen(0x0B, 0x0B + 1))
@@ -209,8 +208,7 @@ final class CharRanges {
           .add(closedOpen(0x85, 0x85 + 1))
           .add(closedOpen(0x2028, 0x2029 + 1))
           .build();
-  private static final ImmutableRangeSet<Integer> NON_VERTICAL_WHITESPACE =
-      complement(VERTICAL_WHITESPACE);
+  private static final ImmutableRangeSet<Integer> NON_V_WHITESPACE = complement(V_WHITESPACE);
 
   private static ImmutableRangeSet<Integer> from(RegexPattern.PredefinedCharClass pcc) {
     return switch (pcc) {
@@ -221,10 +219,10 @@ final class CharRanges {
       case NON_WHITESPACE -> NON_WHITESPACE;
       case WORD -> WORD;
       case NON_WORD -> NON_WORD;
-      case HORIZONTAL_WHITESPACE -> HORIZONTAL_WHITESPACE;
-      case NON_HORIZONTAL_WHITESPACE -> NON_HORIZONTAL_WHITESPACE;
-      case VERTICAL_WHITESPACE -> VERTICAL_WHITESPACE;
-      case NON_VERTICAL_WHITESPACE -> NON_VERTICAL_WHITESPACE;
+      case HORIZONTAL_WHITESPACE -> H_WHITESPACE;
+      case NON_HORIZONTAL_WHITESPACE -> NON_H_WHITESPACE;
+      case VERTICAL_WHITESPACE -> V_WHITESPACE;
+      case NON_VERTICAL_WHITESPACE -> NON_V_WHITESPACE;
       case LINEBREAK -> LINEBREAK;
     };
   }
