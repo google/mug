@@ -456,7 +456,8 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of(
         "(?![^[]*(\\]))\\S+\\s*(\\s(?i)as\\s)\\s*(\\S+)*\\s*$|(?![^[]*(\\]))\\s+(\\S+)$");
     assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern))
-        .hasValue("(?![^[]*(\\]))\\S+\\s*(\\s(?i)as\\s)\\s*(\\S*)\\s*$|(?![^[]*(\\]))\\s+(\\S+)$");
+        .hasValue(
+            "(?![^\\[]*(\\]))\\S+\\s*(\\s(?i)as\\s)\\s*(\\S*)\\s*$|(?![^\\[]*(\\]))\\s+(\\S+)$");
   }
 
   @Test public void suggestRedosRewrite_legacyDataTransformer_preservesStructure() {

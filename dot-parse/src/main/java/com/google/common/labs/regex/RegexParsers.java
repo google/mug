@@ -24,17 +24,8 @@ import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
-import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.DIGIT;
-import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.HORIZONTAL_WHITESPACE;
-import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.LINEBREAK;
-import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.NON_DIGIT;
-import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.NON_HORIZONTAL_WHITESPACE;
-import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.NON_VERTICAL_WHITESPACE;
-import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.NON_WHITESPACE;
-import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.NON_WORD;
-import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.VERTICAL_WHITESPACE;
-import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.WHITESPACE;
-import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.WORD;
+import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
+import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.ANY_CHAR;
 import static com.google.common.labs.regex.RegexPattern.asAlternation;
 import static com.google.common.labs.regex.RegexPattern.inSequence;
 import static com.google.common.labs.regex.RegexPattern.intersection;
@@ -51,7 +42,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import com.google.common.labs.parse.Parser;
-import com.google.common.labs.parse.Parsers;
 import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.Backreference;
 import com.google.common.labs.regex.RegexPattern.CharRange;
@@ -74,29 +64,25 @@ import java.util.stream.Collectors;
 
 /** Parsers for {@link RegexPattern}. */
 final class RegexParsers {
-  private static final Parser<Character> UNICODE_ESCAPE = string("\\u").then(Parsers.BMP_CODE_UNIT);
   private static final Parser<Integer> CODE_POINT =
       anyOf(consecutive("[0-9a-fA-F]").between("{", "}"), hexDigits(2))
           .map(hex -> Integer.parseInt(hex, 16))
           .suchThat(codePoint -> codePoint <= Character.MAX_CODE_POINT, "code point");
-  private static final Parser<Character> CONTROL_ESCAPE = anyOf(
-      string("\\n").thenReturn('\n'),
-      string("\\r").thenReturn('\r'),
-      string("\\t").thenReturn('\t'),
-      string("\\f").thenReturn('\f'),
-      string("\\a").thenReturn('\u0007'),
-      string("\\e").thenReturn('\u001B'));
-  private static final Parser<Character> OCTAL_ESCAPE = string("\\0").then(
-          anyOf(
-                  sequence(one("[0-3]"), one("[0-7]").optional(), one("[0-7]").optional()),
-                  sequence(one("[4-7]"), one("[0-7]").optional()))
-              .source()
-              .map(digits -> (char) Integer.parseInt(digits, 8)));
+  private static final Parser<Integer> OCTAL = anyOf(
+          sequence(one("[0-3]"), one("[0-7]").optional(), one("[0-7]").optional()),
+          sequence(one("[4-7]"), one("[0-7]").optional()))
+      .source()
+      .map(digits -> Integer.parseInt(digits, 8));
   private static final Parser<String> ESCAPED = literally(
       anyOf(
-          CONTROL_ESCAPE.map(String::valueOf),
-          UNICODE_ESCAPE.map(String::valueOf),
-          OCTAL_ESCAPE.map(String::valueOf),
+          string("\\n").thenReturn("\n"),
+          string("\\r").thenReturn("\r"),
+          string("\\t").thenReturn("\t"),
+          string("\\f").thenReturn("\f"),
+          string("\\a").thenReturn("\u0007"),
+          string("\\e").thenReturn("\u001B"),
+          string("\\u").then(BMP_CODE_UNIT).map(String::valueOf),
+          string("\\0").then(OCTAL).map(Character::toString),
           string("\\c").then(one(ANY, "control char")).map(c -> Character.toString(c ^ 64)),
           string("\\x").then(CODE_POINT).map(Character::toString),
           string("\\").then(one(ANY, "escaped char")).map(String::valueOf)));
@@ -174,10 +160,10 @@ final class RegexParsers {
   }
 
   private static Parser<CharacterSet> charClass(Parser<CharacterSet> charClass) {
-    Parser<Character> literalChar = anyOf(
-        ESCAPED.suchThat(s -> s.length() == 1, "BMP char").map(s -> s.charAt(0)),
-        one("[^-&\\]]"),
-        one('&').notFollowedBy("&"));
+    Parser<Integer> literalChar = anyOf(
+        ESCAPED.map(s -> s.codePointAt(0)),
+        one("[^-&\\]]").map(c -> (int) c),
+        one('&').notFollowedBy("&").map(c -> (int) c));
     Parser<LiteralChar> literalCharOrDash = anyOf(
         ESCAPED.map(s -> new LiteralChar(s.codePointAt(0))),
         one("[^&\\]]").map(LiteralChar::new),
@@ -186,25 +172,14 @@ final class RegexParsers {
     Parser<CharSetElement> element = anyOf(
         positiveCharacterProperty(),
         negativeCharacterProperty(),
-        anyOf(
-            DIGIT,
-            NON_DIGIT,
-            WHITESPACE,
-            NON_WHITESPACE,
-            WORD,
-            NON_WORD,
-            HORIZONTAL_WHITESPACE,
-            NON_HORIZONTAL_WHITESPACE,
-            VERTICAL_WHITESPACE,
-            NON_VERTICAL_WHITESPACE,
-            LINEBREAK),
+        anyOf(PredefinedCharClass.values()).suchThat(v -> v != ANY_CHAR, "predefined char class"),
         charClass,
         range,
         literalCharOrDash);
     Parser<List<CharSetElement>> quotedInClass = quotedText().map(
             s -> s.codePoints().mapToObj(LiteralChar::new).collect(toUnmodifiableList()));
     Parser<CharSetElement> leadingBracket = anyOf(
-        sequence(one(']'), one('-').then(literalChar), CharRange::new),
+        sequence(one(']').map(c -> (int) c), one('-').then(literalChar), CharRange::new),
         one(']').map(LiteralChar::new));
     Parser<List<CharSetElement>> elements =
         sequence(

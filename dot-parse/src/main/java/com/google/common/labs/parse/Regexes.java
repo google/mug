@@ -16,7 +16,6 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Utils.checkArgument;
-import static com.google.mu.util.CharPredicate.ASCII;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
@@ -126,7 +125,7 @@ final class Regexes {
         case RegexPattern.LiteralChar literalChar ->
             forLiteral.prefixesOf(Character.toString(literalChar.codePoint()));
         case RegexPattern.CharRange range ->
-            ASCII.test(range.end()) && range.end() - range.start() < 30
+            range.end() < 128 && range.end() - range.start() < 30
                 ? IntStream.rangeClosed(range.start(), range.end())
                     .mapToObj(i -> forLiteral.prefixesOf((char) i))
                     .flatMap(Set::stream)

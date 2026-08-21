@@ -1135,9 +1135,44 @@ public final class RegexPatternTest {
     assertThat(new LiteralChar('-').toString()).isEqualTo("\\-");
   }
 
+  @Test public void literalCharToString_openingBracket() {
+    assertThat(new LiteralChar('[').toString()).isEqualTo("\\[");
+  }
+
   @Test public void characterSetToString_withLiteralHyphen() {
     assertThat(anyOf(new LiteralChar('a'), new LiteralChar('-'), new LiteralChar('z')).toString())
         .isEqualTo("[a\\-z]");
+  }
+
+  @Test public void characterSetToString_withLiteralOpeningBracket() {
+    assertThat(anyOf(new LiteralChar('[')).toString()).isEqualTo("[\\[]");
+  }
+
+  @Test public void charRange_negativeStartCodePoint_throws() {
+    assertThrows(IllegalArgumentException.class, () -> new CharRange(-1, 'z'));
+  }
+
+  @Test public void charRange_negativeEndCodePoint_throws() {
+    assertThrows(IllegalArgumentException.class, () -> new CharRange('a', -1));
+  }
+
+  @Test public void charRange_startCodePointTooLarge_throws() {
+    assertThrows(
+        IllegalArgumentException.class, () -> new CharRange(Character.MAX_CODE_POINT + 1, 'z'));
+  }
+
+  @Test public void charRange_endCodePointTooLarge_throws() {
+    assertThrows(
+        IllegalArgumentException.class, () -> new CharRange('a', Character.MAX_CODE_POINT + 1));
+  }
+
+  @Test public void of_charRange_supplementaryCodePoints() {
+    assertThat(RegexPattern.of("[\\x{1F600}-\\x{1F64F}]"))
+        .isEqualTo(anyOf(new CharRange(0x1F600, 0x1F64F)));
+  }
+
+  @Test public void charRangeToString_supplementaryCodePoints() {
+    assertThat(new CharRange(0x1F600, 0x1F64F).toString()).isEqualTo("\uD83D\uDE00-\uD83D\uDE4F");
   }
 
   @Test public void quantifiedMultiCharLiteralToString() {

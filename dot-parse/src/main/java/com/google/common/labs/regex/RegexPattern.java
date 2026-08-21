@@ -641,14 +641,23 @@ public sealed interface RegexPattern {
         case '\t' -> "\\t";
         case '\f' -> "\\f";
         // Characters that are special inside character classes.
-        case ']', '\\', '^', '&', '-' -> "\\" + (char) codePoint;
+        case '[', ']', '\\', '^', '&', '-' -> "\\" + (char) codePoint;
         default -> Character.toString(codePoint);
       };
     }
   }
 
   /** Represents a range of characters within a character class, e.g., 'a-z'. */
-  record CharRange(char start, char end) implements CharSetElement {
+  record CharRange(int start, int end) implements CharSetElement {
+    public CharRange {
+      checkArgument(Character.isValidCodePoint(start), "not a valid start code point: %s", start);
+      checkArgument(Character.isValidCodePoint(end), "not a valid end code point: %s", end);
+    }
+
+    public CharRange(char start, char end) {
+      this((int) start, (int) end);
+    }
+
     @Override public String toString() {
       return new LiteralChar(start) + "-" + new LiteralChar(end);
     }
