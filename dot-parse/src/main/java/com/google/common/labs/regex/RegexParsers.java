@@ -67,7 +67,7 @@ final class RegexParsers {
   private static final Parser<Integer> CODE_POINT =
       anyOf(consecutive("[0-9a-fA-F]").between("{", "}"), hexDigits(2))
           .map(hex -> Integer.parseInt(hex, 16))
-          .suchThat(codePoint -> codePoint <= Character.MAX_CODE_POINT, "code point");
+          .suchThat(Character::isValidCodePoint, "code point");
   private static final Parser<Integer> OCTAL = anyOf(
           sequence(one("[0-3]"), one("[0-7]").optional(), one("[0-7]").optional()),
           sequence(one("[4-7]"), one("[0-7]").optional()))

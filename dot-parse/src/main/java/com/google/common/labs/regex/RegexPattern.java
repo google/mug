@@ -630,10 +630,6 @@ public sealed interface RegexPattern {
       checkArgument(Character.isValidCodePoint(codePoint), "not a valid code point: %s", codePoint);
     }
 
-    public LiteralChar(char value) {
-      this((int) value);
-    }
-
     @Override public String toString() {
       return switch (codePoint) {
         case '\n' -> "\\n";
