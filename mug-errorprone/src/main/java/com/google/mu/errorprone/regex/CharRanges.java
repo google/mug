@@ -69,12 +69,7 @@ final class CharRanges {
 
   static ImmutableRangeSet<Integer> from(RegexPattern.CharSetElement element) {
     return switch (element) {
-      case RegexPattern.LiteralChar lc -> of(lc.value());
-      case RegexPattern.Literal lit -> {
-        RangeSet<Integer> set = TreeRangeSet.create();
-        lit.value().codePoints().forEach(cp -> set.add(Range.singleton(cp)));
-        yield ImmutableRangeSet.copyOf(set);
-      }
+      case RegexPattern.LiteralChar lc -> of(lc.codePoint());
       case RegexPattern.CharRange cr -> cr.start() > cr.end() ? EMPTY : range(cr.start(), cr.end());
       case RegexPattern.PredefinedCharClass pcc -> from(pcc);
       case RegexPattern.PosixCharClass pcc -> from(pcc);

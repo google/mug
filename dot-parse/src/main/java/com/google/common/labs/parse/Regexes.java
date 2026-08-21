@@ -123,8 +123,8 @@ final class Regexes {
 
     private Set<String> charsOf(RegexPattern.CharSetElement element) {
       return switch (element) {
-        case RegexPattern.LiteralChar literalChar -> forLiteral.prefixesOf(literalChar.value());
-        case RegexPattern.Literal literal -> forLiteral.prefixesOf(literal.value());
+        case RegexPattern.LiteralChar literalChar ->
+            forLiteral.prefixesOf(Character.toString(literalChar.codePoint()));
         case RegexPattern.CharRange range ->
             ASCII.test(range.end()) && range.end() - range.start() < 30
                 ? IntStream.rangeClosed(range.start(), range.end())

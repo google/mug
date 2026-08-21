@@ -109,7 +109,7 @@ public final class ParsersRegexCheckTest {
             "import com.google.common.labs.parse.Parser;",
             "class Test {",
             "  private static final Parser<String> PARSER = Parsers.regex(",
-            "      // BUG: Diagnostic contains: expecting <4 hex digits>",
+            "      // BUG: Diagnostic contains: Illegal Unicode escape sequence",
             "      \"\\\\u123z\");",
             "}")
         .doTest();

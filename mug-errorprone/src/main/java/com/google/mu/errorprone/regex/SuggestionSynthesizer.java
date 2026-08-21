@@ -437,8 +437,7 @@ final class SuggestionSynthesizer {
     return switch (elem) {
       case RegexPattern.PredefinedCharClass pcc ->
           pcc == RegexPattern.PredefinedCharClass.WHITESPACE;
-      case RegexPattern.Literal lit -> lit.value().codePoints().allMatch(Character::isWhitespace);
-      case RegexPattern.LiteralChar lc -> Character.isWhitespace(lc.value());
+      case RegexPattern.LiteralChar lc -> Character.isWhitespace(lc.codePoint());
       case RegexPattern.CharRange range ->
           Character.isWhitespace(range.start()) && Character.isWhitespace(range.end());
       default -> false;

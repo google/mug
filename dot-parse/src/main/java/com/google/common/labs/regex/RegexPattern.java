@@ -483,7 +483,7 @@ public sealed interface RegexPattern {
   }
 
   /** Represents a literal string to be matched. */
-  record Literal(String value) implements RegexPattern, CharSetElement {
+  record Literal(String value) implements RegexPattern {
     private static final Substring.RepeatingPattern ESCAPED_CHARS =
         all(CharPredicate.anyOf(".[]{}()*+-?^$|\\\n\r\t\f"));
 
@@ -624,17 +624,25 @@ public sealed interface RegexPattern {
   /** Base interface for elements within a {@link CharacterSet}. */
   sealed interface CharSetElement {}
 
-  /** Represents a single literal character within a character class. */
-  record LiteralChar(char value) implements CharSetElement {
+  /** Represents a single literal character or code point within a character class. */
+  record LiteralChar(int codePoint) implements CharSetElement {
+    public LiteralChar {
+      checkArgument(Character.isValidCodePoint(codePoint), "not a valid code point: %s", codePoint);
+    }
+
+    public LiteralChar(char value) {
+      this((int) value);
+    }
+
     @Override public String toString() {
-      return switch (value) {
+      return switch (codePoint) {
         case '\n' -> "\\n";
         case '\r' -> "\\r";
         case '\t' -> "\\t";
         case '\f' -> "\\f";
         // Characters that are special inside character classes.
-        case ']', '\\', '^', '&', '-' -> "\\" + value;
-        default -> String.valueOf(value);
+        case ']', '\\', '^', '&', '-' -> "\\" + (char) codePoint;
+        default -> Character.toString(codePoint);
       };
     }
   }

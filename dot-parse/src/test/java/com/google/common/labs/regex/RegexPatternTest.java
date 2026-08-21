@@ -258,27 +258,55 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("\\{\\}")).isEqualTo(new Literal("{}"));
   }
 
+  @Test public void of_escapedLiteral_bell() {
+    assertThat(RegexPattern.of("\\a")).isEqualTo(new Literal("\u0007"));
+  }
+
+  @Test public void of_escapedLiteral_escape() {
+    assertThat(RegexPattern.of("\\e")).isEqualTo(new Literal("\u001B"));
+  }
+
+  @Test public void of_escapedLiteral_octal() {
+    assertThat(RegexPattern.of("\\0101")).isEqualTo(new Literal("A"));
+  }
+
+  @Test public void of_escapedLiteral_octalTwoDigits() {
+    assertThat(RegexPattern.of("\\077")).isEqualTo(new Literal("?"));
+  }
+
+  @Test public void of_escapedLiteral_octalOneDigit() {
+    assertThat(RegexPattern.of("\\07")).isEqualTo(new Literal("\u0007"));
+  }
+
+  @Test public void of_escapedLiteral_octalZero() {
+    assertThat(RegexPattern.of("\\00")).isEqualTo(new Literal("\u0000"));
+  }
+
+  @Test public void of_escapedLiteral_control() {
+    assertThat(RegexPattern.of("\\cA")).isEqualTo(new Literal("\u0001"));
+  }
+
   @Test public void of_charClass_withSurrogatePairHexCodePoint() {
     assertThat(RegexPattern.of("[\\x{1f600}]"))
-        .isEqualTo(new CharacterSet.AnyOf(List.of(new Literal("\uD83D\uDE00"))));
+        .isEqualTo(new CharacterSet.AnyOf(List.of(new LiteralChar(0x1F600))));
   }
 
-  @Test public void of_backreference() {
-    assertThat(RegexPattern.of("(a)\\1"))
-        .isEqualTo(sequence(new Group.Capturing(new Literal("a")), new Backreference.Numbered(1)));
-    assertThat(RegexPattern.of("(?<foo>a)\\k<foo>"))
-        .isEqualTo(
-            sequence(new Group.Named("foo", new Literal("a")), new Backreference.Named("foo")));
+  @Test public void of_charClass_withBellAndEscape() {
+    assertThat(RegexPattern.of("[\\a\\e]"))
+        .isEqualTo(anyOf(new LiteralChar('\u0007'), new LiteralChar('\u001B')));
   }
 
-  @Test public void backreferenceToString() {
-    assertThat(new Backreference.Numbered(1).toString()).isEqualTo("\\1");
-    assertThat(new Backreference.Named("foo").toString()).isEqualTo("\\k<foo>");
+  @Test public void of_charClass_withOctal() {
+    assertThat(RegexPattern.of("[\\0101]")).isEqualTo(anyOf(new LiteralChar('A')));
+  }
+
+  @Test public void of_charClass_withControl() {
+    assertThat(RegexPattern.of("[\\cA]")).isEqualTo(anyOf(new LiteralChar('\u0001')));
   }
 
   @Test public void of_escapedLiteralMixedWithPredefinedCharClasses() {
-    assertThat(RegexPattern.of("\\a\\d\\w"))
-        .isEqualTo(sequence(new Literal("a"), PredefinedCharClass.DIGIT, PredefinedCharClass.WORD));
+    assertThat(RegexPattern.of("\\j\\d\\w"))
+        .isEqualTo(sequence(new Literal("j"), PredefinedCharClass.DIGIT, PredefinedCharClass.WORD));
   }
 
   @Test public void of_predefinedCharClass(@TestParameter PredefinedCharClass predefinedCharClass) {
@@ -1086,6 +1114,21 @@ public final class RegexPatternTest {
     Metadata metadata = new Metadata(minSize, maxSize);
     assertThat(metadata.minSize()).isEqualTo(5);
     assertThat(metadata.maxSize()).isEqualTo(5);
+  }
+
+  @Test public void literalChar_negativeCodePoint_throws() {
+    assertThrows(IllegalArgumentException.class, () -> new LiteralChar(-1));
+  }
+
+  @Test public void literalChar_codePointTooLarge_throws() {
+    assertThrows(
+        IllegalArgumentException.class, () -> new LiteralChar(Character.MAX_CODE_POINT + 1));
+  }
+
+  @Test public void literalChar_supplementaryCodePoint() {
+    LiteralChar lc = new LiteralChar(0x1F600);
+    assertThat(lc.codePoint()).isEqualTo(0x1F600);
+    assertThat(lc.toString()).isEqualTo("\uD83D\uDE00");
   }
 
   @Test public void literalCharToString_hyphen() {
