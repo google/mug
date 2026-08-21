@@ -88,7 +88,8 @@ final class RegexParsers {
 
   private static Parser<RegexPattern> pattern(Parser<RegexPattern> regex) {
     Parser<RegexPattern> atomic = anyOf(
-        define(RegexParsers::charClass), positiveCharacterProperty(), negativeCharacterProperty(),
+        define(RegexParsers::charClass),
+        positiveCharacterProperty(), negativeCharacterProperty(),
         groupOrLookaround(regex), anyOf(PredefinedCharClass.values()), anyOf(Anchor.values()),
         numberedBackreference(), namedBackreference(), literally(quotedLiteral()),
         consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
@@ -98,7 +99,8 @@ final class RegexParsers {
         .atLeastOnce(inSequence())
         .orElse(new RegexPattern.Literal(""))
         .delimitedBy("|", asAlternation())
-        .notEmpty();
+        .notEmpty()
+        .as("regex pattern");
   }
 
   private static Parser<String> quotedText() {
@@ -176,7 +178,8 @@ final class RegexParsers {
                     .zeroOrMore(flatMapping(List::stream, toList())),
                 (leading, rest) -> leading.map(head -> prepend(head, rest)).orElse(rest))
             .notEmpty();
-    Parser<CharacterSet> unbracketedTerm = anyOf(charClass, elements.map(CharacterSet.AnyOf::new));
+    Parser<CharacterSet> unbracketedTerm =
+        anyOf(charClass, elements.map(CharacterSet.AnyOf::new)).as("character set");
     Parser<CharacterSet> positiveTerm = sequence(
         elements.map(CharacterSet.AnyOf::new),
         string("&&").then(unbracketedTerm).zeroOrMore(),
@@ -196,7 +199,7 @@ final class RegexParsers {
         sequence(word().between(anyOf("?<", "?P<"), one('>')), groupContent, Group.Named::new)
             .between("(", ")");
     Parser<Group.Atomic> atomic = groupContent.between("(?>", ")").map(Group.Atomic::new);
-    Parser<ModifierFlag> modifier = anyOf(ModifierFlag.values());
+    Parser<ModifierFlag> modifier = anyOf(ModifierFlag.values()).as("modifier flag");
     var modifierFlags = sequence(
         modifier.zeroOrMore(),
         one('-').then(modifier.atLeastOnce()).orElse(List.of()),
