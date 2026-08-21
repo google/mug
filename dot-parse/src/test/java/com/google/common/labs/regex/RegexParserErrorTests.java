@@ -683,4 +683,16 @@ public final class RegexParserErrorTests {
                   ^
             """);
   }
+
+  @Test public void hexEscape_codePointTooBig() {
+    IllegalArgumentException e =
+        assertThrows(IllegalArgumentException.class, () -> RegexPattern.of("\\x{110000}"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting <code point>, encountered:
+                \\x{110000}
+                  ^
+            """);
+  }
 }

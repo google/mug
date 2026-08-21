@@ -483,7 +483,7 @@ public sealed interface RegexPattern {
   }
 
   /** Represents a literal string to be matched. */
-  record Literal(String value) implements RegexPattern {
+  record Literal(String value) implements RegexPattern, CharSetElement {
     private static final Substring.RepeatingPattern ESCAPED_CHARS =
         all(CharPredicate.anyOf(".[]{}()*+-?^$|\\\n\r\t\f"));
 

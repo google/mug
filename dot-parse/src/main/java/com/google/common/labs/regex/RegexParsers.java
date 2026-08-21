@@ -30,6 +30,7 @@ import static com.google.common.labs.regex.RegexPattern.intersection;
 import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.isNot;
+import static com.google.mu.util.CharPredicate.noneOf;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.stream;
@@ -40,6 +41,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import com.google.common.labs.parse.Parser;
+import com.google.common.labs.parse.Parsers;
 import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.Backreference;
 import com.google.common.labs.regex.RegexPattern.CharRange;
@@ -55,6 +57,8 @@ import com.google.common.labs.regex.RegexPattern.PosixCharClass;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
 import com.google.common.labs.regex.RegexPattern.UnicodeProperty;
+import com.google.mu.util.CharPredicate;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -62,18 +66,22 @@ import java.util.stream.Collectors;
 
 /** Parsers for {@link RegexPattern}. */
 final class RegexParsers {
-  private static final Parser<Character> UNICODE_ESCAPE =
-      string("\\u").then(hexDigits(4)).map(hex -> (char) Integer.parseInt(hex, 16));
-  private static final Parser<Character> HEX_ESCAPE =
-      string("\\x").then(hexDigits(2)).map(hex -> (char) Integer.parseInt(hex, 16));
+  private static final Parser<Character> UNICODE_ESCAPE = string("\\u").then(Parsers.BMP_CODE_UNIT);
+  private static final Parser<Integer> CODE_POINT =
+      anyOf(consecutive("[0-9a-fA-F]").between("{", "}"), hexDigits(2))
+          .map(hex -> Integer.parseInt(hex, 16))
+          .suchThat(codePoint -> codePoint <= Character.MAX_CODE_POINT, "code point");
   private static final Parser<Character> CONTROL_ESCAPE = anyOf(
       string("\\n").thenReturn('\n'),
       string("\\r").thenReturn('\r'),
       string("\\t").thenReturn('\t'),
       string("\\f").thenReturn('\f'));
-  private static final Parser<Character> ESCAPED_CHAR = literally(
+  private static final Parser<String> ESCAPED = literally(
       anyOf(
-          CONTROL_ESCAPE, UNICODE_ESCAPE, HEX_ESCAPE, string("\\").then(one(ANY, "escaped char"))));
+          CONTROL_ESCAPE.map(String::valueOf),
+          UNICODE_ESCAPE.map(String::valueOf),
+          string("\\x").then(CODE_POINT).map(Character::toString),
+          string("\\").then(one(ANY, "escaped char")).map(String::valueOf)));
   private static final PredefinedCharClass[] PREDEFINED_IN_CHAR_CLASS = stream(
           PredefinedCharClass.values())
       .filter(p -> p != PredefinedCharClass.ANY_CHAR)
@@ -93,7 +101,7 @@ final class RegexParsers {
         numberedBackreference(), namedBackreference(), literally(quotedLiteral()),
         consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
         consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
-        anyOf(ESCAPED_CHAR, one("[{}]]")).map(c -> new Literal(Character.toString(c))));
+        anyOf(ESCAPED, one("[{}]]").map(String::valueOf)).map(Literal::new));
     return atomic.followedByZeroOrMore(quantifier())
         .atLeastOnce(inSequence())
         .orElse(new RegexPattern.Literal(""))
@@ -152,10 +160,14 @@ final class RegexParsers {
   }
 
   private static Parser<CharacterSet> charClass(Parser<CharacterSet> charClass) {
-    Parser<Character> literalChar =
-        anyOf(ESCAPED_CHAR, one("[^-&\\]]"), one('&').notFollowedBy("&"));
-    Parser<Character> literalCharOrDash =
-        anyOf(ESCAPED_CHAR, one("[^&\\]]"), one('&').notFollowedBy("&"));
+    Parser<Character> literalChar = anyOf(
+        ESCAPED.suchThat(s -> s.length() == 1, "BMP char").map(s -> s.charAt(0)),
+        one("[^-&\\]]"),
+        one('&').notFollowedBy("&"));
+    Parser<Character> literalCharOrDash = anyOf(
+        ESCAPED.suchThat(s -> s.length() == 1, "BMP char").map(s -> s.charAt(0)),
+        one("[^&\\]]"),
+        one('&').notFollowedBy("&"));
     Parser<CharRange> range = sequence(literalChar, one('-').then(literalChar), CharRange::new);
     Parser<CharSetElement> element = anyOf(
         positiveCharacterProperty(),
@@ -163,6 +175,7 @@ final class RegexParsers {
         anyOf(PREDEFINED_IN_CHAR_CLASS),
         charClass,
         range,
+        ESCAPED.suchThat(s -> s.length() > 1, "supplementary code point").map(Literal::new),
         literalCharOrDash.map(LiteralChar::new));
     Parser<List<CharSetElement>> quotedInClass =
         quotedText().map(s ->

@@ -246,9 +246,21 @@ public final class RegexPatternTest {
   }
 
   @Test public void of_escapedLiteral() {
-    assertThat(RegexPattern.of("\\a")).isEqualTo(new Literal("a"));
+    assertThat(RegexPattern.of("\\ ")).isEqualTo(new Literal(" "));
+    assertThat(RegexPattern.of("\\n")).isEqualTo(new Literal("\n"));
+    assertThat(RegexPattern.of("\\t")).isEqualTo(new Literal("\t"));
+    assertThat(RegexPattern.of("\\r")).isEqualTo(new Literal("\r"));
+    assertThat(RegexPattern.of("\\f")).isEqualTo(new Literal("\f"));
+    assertThat(RegexPattern.of("\\u2122")).isEqualTo(new Literal("\u2122"));
+    assertThat(RegexPattern.of("\\x41")).isEqualTo(new Literal("A"));
+    assertThat(RegexPattern.of("\\x{41}")).isEqualTo(new Literal("A"));
     assertThat(RegexPattern.of("\\\\")).isEqualTo(new Literal("\\"));
     assertThat(RegexPattern.of("\\{\\}")).isEqualTo(new Literal("{}"));
+  }
+
+  @Test public void of_charClass_withSurrogatePairHexCodePoint() {
+    assertThat(RegexPattern.of("[\\x{1f600}]"))
+        .isEqualTo(new CharacterSet.AnyOf(List.of(new Literal("\uD83D\uDE00"))));
   }
 
   @Test public void of_backreference() {
