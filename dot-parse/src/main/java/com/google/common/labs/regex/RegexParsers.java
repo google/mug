@@ -88,8 +88,7 @@ final class RegexParsers {
 
   private static Parser<RegexPattern> pattern(Parser<RegexPattern> regex) {
     Parser<RegexPattern> atomic = anyOf(
-        define(RegexParsers::charClass),
-        positiveCharacterProperty(), negativeCharacterProperty(),
+        define(RegexParsers::charClass), positiveCharacterProperty(), negativeCharacterProperty(),
         groupOrLookaround(regex), anyOf(PredefinedCharClass.values()), anyOf(Anchor.values()),
         numberedBackreference(), namedBackreference(), literally(quotedLiteral()),
         consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
@@ -100,7 +99,7 @@ final class RegexParsers {
         .orElse(new RegexPattern.Literal(""))
         .delimitedBy("|", asAlternation())
         .notEmpty()
-        .as("regex pattern");
+        .as("subpattern");
   }
 
   private static Parser<String> quotedText() {

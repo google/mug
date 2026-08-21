@@ -170,7 +170,7 @@ public final class RegexParserErrorTests {
     assertThat(e).hasMessageThat()
         .isEqualTo(
             """
-            at 1:2: expecting one of [regex pattern, )], encountered:
+            at 1:2: expecting one of [subpattern, )], encountered:
                 (
                  ^
             """);
@@ -656,7 +656,7 @@ public final class RegexParserErrorTests {
     assertThat(e).hasMessageThat()
         .isEqualTo(
             """
-            at 1:2: expecting one of [regex pattern, )], encountered:
+            at 1:2: expecting one of [subpattern, )], encountered:
                 (+)
                  ^
             """);
@@ -667,7 +667,7 @@ public final class RegexParserErrorTests {
     assertThat(e).hasMessageThat()
         .isEqualTo(
             """
-            at 1:2: expecting one of [regex pattern, )], encountered:
+            at 1:2: expecting one of [subpattern, )], encountered:
                 (*)
                  ^
             """);
