@@ -1406,4 +1406,125 @@ public final class RegexPatternTest {
   @Test public void of_verticalWhitespace() {
     assertThat(RegexPattern.of("\\v")).isEqualTo(PredefinedCharClass.VERTICAL_WHITESPACE);
   }
+
+  @Test public void anchor_previousMatchEnd_toString() {
+    assertThat(Anchor.PREVIOUS_MATCH_END.toString()).isEqualTo("\\G");
+  }
+
+  @Test public void anchor_previousMatchEnd_metadata() {
+    assertThat(Anchor.PREVIOUS_MATCH_END.metadata())
+        .isEqualTo(new Metadata(/* minSize= */ 0, /* maxSize= */ 0));
+  }
+
+  @Test public void anchor_graphemeClusterBoundary_toString() {
+    assertThat(Anchor.GRAPHEME_CLUSTER_BOUNDARY.toString()).isEqualTo("\\b{g}");
+  }
+
+  @Test public void anchor_graphemeClusterBoundary_metadata() {
+    assertThat(Anchor.GRAPHEME_CLUSTER_BOUNDARY.metadata())
+        .isEqualTo(new Metadata(/* minSize= */ 0, /* maxSize= */ 0));
+  }
+
+  @Test public void predefinedCharClass_extendedGraphemeCluster_toString() {
+    assertThat(PredefinedCharClass.EXTENDED_GRAPHEME_CLUSTER.toString()).isEqualTo("\\X");
+  }
+
+  @Test public void predefinedCharClass_extendedGraphemeCluster_metadata() {
+    assertThat(PredefinedCharClass.EXTENDED_GRAPHEME_CLUSTER.metadata())
+        .isEqualTo(new Metadata(/* minSize= */ 1, /* maxSize= */ Integer.MAX_VALUE));
+  }
+
+  @Test public void modifierFlag_canonicalEquivalence_toString() {
+    assertThat(ModifierFlag.CANONICAL_EQUIVALENCE.toString()).isEqualTo("c");
+  }
+
+  @Test public void group_nonCapturing_withCanonicalEquivalence_toString() {
+    Group.NonCapturing group = new Group.NonCapturing(
+        new Literal("a"), List.of(ModifierFlag.CANONICAL_EQUIVALENCE), List.of());
+    assertThat(group.toString()).isEqualTo("(?c:a)");
+  }
+
+  @Test public void of_anchor_previousMatchEnd() {
+    assertThat(RegexPattern.of("\\G")).isEqualTo(Anchor.PREVIOUS_MATCH_END);
+  }
+
+  @Test public void of_anchor_previousMatchEnd_inSequence() {
+    assertThat(RegexPattern.of("\\Gabc"))
+        .isEqualTo(sequence(Anchor.PREVIOUS_MATCH_END, new Literal("abc")));
+  }
+
+  @Test public void of_anchor_graphemeClusterBoundary() {
+    assertThat(RegexPattern.of("\\b{g}")).isEqualTo(Anchor.GRAPHEME_CLUSTER_BOUNDARY);
+  }
+
+  @Test public void of_anchor_graphemeClusterBoundary_inSequence() {
+    assertThat(RegexPattern.of("\\b{g}abc"))
+        .isEqualTo(sequence(Anchor.GRAPHEME_CLUSTER_BOUNDARY, new Literal("abc")));
+  }
+
+  @Test public void of_predefinedCharClass_extendedGraphemeCluster() {
+    assertThat(RegexPattern.of("\\X")).isEqualTo(PredefinedCharClass.EXTENDED_GRAPHEME_CLUSTER);
+  }
+
+  @Test public void of_predefinedCharClass_extendedGraphemeCluster_inSequence() {
+    assertThat(RegexPattern.of("a\\Xb"))
+        .isEqualTo(
+            sequence(
+                new Literal("a"), PredefinedCharClass.EXTENDED_GRAPHEME_CLUSTER, new Literal("b")));
+  }
+
+  @Test public void of_escapedLiteral_namedUnicodeCharacter() {
+    assertThat(RegexPattern.of("\\N{LATIN CAPITAL LETTER A}")).isEqualTo(new Literal("A"));
+  }
+
+  @Test public void of_escapedLiteral_namedUnicodeCharacter_supplementaryCodePoint() {
+    assertThat(RegexPattern.of("\\N{WHITE SMILING FACE}")).isEqualTo(new Literal("\u263A"));
+  }
+
+  @Test public void of_escapedLiteral_namedUnicodeCharacter_inSequence() {
+    assertThat(RegexPattern.of("pre\\N{LATIN CAPITAL LETTER A}post"))
+        .isEqualTo(new Literal("preApost"));
+  }
+
+  @Test public void of_charClass_withNamedUnicodeCharacter() {
+    assertThat(RegexPattern.of("[\\N{LATIN CAPITAL LETTER A}]"))
+        .isEqualTo(anyOf(new LiteralChar('A')));
+  }
+
+  @Test public void of_charClass_withNamedUnicodeCharacter_range() {
+    assertThat(RegexPattern.of("[\\N{LATIN CAPITAL LETTER A}-\\N{LATIN CAPITAL LETTER Z}]"))
+        .isEqualTo(anyOf(new CharRange('A', 'Z')));
+  }
+
+  @Test public void of_group_nonCapturing_withCanonicalEquivalence() {
+    assertThat(RegexPattern.of("(?c:a)"))
+        .isEqualTo(
+            new Group.NonCapturing(
+                new Literal("a"), List.of(ModifierFlag.CANONICAL_EQUIVALENCE), List.of()));
+  }
+
+  @Test public void of_group_nonCapturing_withDisabledCanonicalEquivalence() {
+    assertThat(RegexPattern.of("(?-c:a)"))
+        .isEqualTo(
+            new Group.NonCapturing(
+                new Literal("a"), List.of(), List.of(ModifierFlag.CANONICAL_EQUIVALENCE)));
+  }
+
+  @Test public void of_standaloneModifierFlags_canonicalEquivalence() {
+    assertThat(RegexPattern.of("(?c)"))
+        .isEqualTo(
+            new Group.NonCapturing(
+                new Literal(""), List.of(ModifierFlag.CANONICAL_EQUIVALENCE), List.of()));
+  }
+
+  @Test public void of_standaloneModifierFlags_disabledCanonicalEquivalence() {
+    assertThat(RegexPattern.of("(?-c)"))
+        .isEqualTo(
+            new Group.NonCapturing(
+                new Literal(""), List.of(), List.of(ModifierFlag.CANONICAL_EQUIVALENCE)));
+  }
+
+  @Test public void of_charClass_withExtendedGraphemeCluster() {
+    assertThat(RegexPattern.of("[\\X]")).isEqualTo(anyOf(new LiteralChar('X')));
+  }
 }

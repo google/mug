@@ -26,6 +26,7 @@ import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
 import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.ANY_CHAR;
+import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.EXTENDED_GRAPHEME_CLUSTER;
 import static com.google.common.labs.regex.RegexPattern.asAlternation;
 import static com.google.common.labs.regex.RegexPattern.inSequence;
 import static com.google.common.labs.regex.RegexPattern.intersection;
@@ -60,6 +61,7 @@ import com.google.common.labs.regex.RegexPattern.UnicodeProperty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /** Parsers for {@link RegexPattern}. */
@@ -85,7 +87,12 @@ final class RegexParsers {
           string("\\0").then(OCTAL).map(Character::toString),
           string("\\c").then(one(ANY, "control char")).map(c -> Character.toString(c ^ 64)),
           string("\\x").then(CODE_POINT).map(Character::toString),
-          string("\\").then(one(ANY, "escaped char")).map(String::valueOf)));
+          string("\\N").then(consecutive("[^}\r\n]").between("{", "}"))
+              .map(Character::codePointOf)
+              .map(Character::toString),
+          string("\\").then(one(isNot('x'), "escaped char")).map(String::valueOf)));
+  private static final Set<PredefinedCharClass> DISALLOWED_IN_CHAR_CLASS =
+      Set.of(ANY_CHAR, EXTENDED_GRAPHEME_CLUSTER);
   private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES = stream(
           PosixCharClass.values())
       .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
@@ -172,7 +179,8 @@ final class RegexParsers {
     Parser<CharSetElement> element = anyOf(
         positiveCharacterProperty(),
         negativeCharacterProperty(),
-        anyOf(PredefinedCharClass.values()).suchThat(v -> v != ANY_CHAR, "predefined char class"),
+        anyOf(PredefinedCharClass.values())
+            .suchThat(v -> !DISALLOWED_IN_CHAR_CLASS.contains(v), "predefined char class"),
         charClass,
         range,
         literalCharOrDash);

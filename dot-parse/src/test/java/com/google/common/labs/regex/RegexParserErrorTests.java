@@ -685,8 +685,7 @@ public final class RegexParserErrorTests {
   }
 
   @Test public void hexEscape_codePointTooBig() {
-    IllegalArgumentException e =
-        assertThrows(IllegalArgumentException.class, () -> RegexPattern.of("\\x{110000}"));
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\x{110000}"));
     assertThat(e).hasMessageThat()
         .isEqualTo(
             """
@@ -694,5 +693,33 @@ public final class RegexParserErrorTests {
                 \\x{110000}
                   ^
             """);
+  }
+
+  @Test public void namedUnicodeCharacter_unclosed() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\N{abc"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:7: expecting <}>, encountered:
+                \\N{abc
+                      ^
+            """);
+  }
+
+  @Test public void namedUnicodeCharacter_emptyName() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\N{}"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <character name>, encountered:
+                \\N{}
+                   ^
+            """);
+  }
+
+  @Test public void namedUnicodeCharacter_unknownName() {
+    IllegalArgumentException e =
+        assertThrows(IllegalArgumentException.class, () -> RegexPattern.of("\\N{UNKNOWN_NAME}"));
+    assertThat(e).hasMessageThat().contains("UNKNOWN_NAME");
   }
 }

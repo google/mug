@@ -224,6 +224,7 @@ final class CharRanges {
       case VERTICAL_WHITESPACE -> V_WHITESPACE;
       case NON_VERTICAL_WHITESPACE -> NON_V_WHITESPACE;
       case LINEBREAK -> LINEBREAK;
+      case EXTENDED_GRAPHEME_CLUSTER -> ANY;
     };
   }
 

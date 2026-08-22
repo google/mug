@@ -403,7 +403,8 @@ public sealed interface RegexPattern {
     DOTALL("s"),
     UNICODE_CASE("u"),
     COMMENTS("x"),
-    UNICODE_CHARACTER_CLASS("U");
+    UNICODE_CHARACTER_CLASS("U"),
+    CANONICAL_EQUIVALENCE("c");
 
     private final String shortName;
 
@@ -540,7 +541,8 @@ public sealed interface RegexPattern {
     NON_HORIZONTAL_WHITESPACE("\\H"),
     VERTICAL_WHITESPACE("\\v"),
     NON_VERTICAL_WHITESPACE("\\V"),
-    LINEBREAK("\\R");
+    LINEBREAK("\\R"),
+    EXTENDED_GRAPHEME_CLUSTER("\\X");
 
     private final String pattern;
 
@@ -549,7 +551,9 @@ public sealed interface RegexPattern {
     }
 
     @Override public Metadata metadata() {
-      return new Metadata(/* minSize= */ 1, /* maxSize= */ 2);
+      return this == EXTENDED_GRAPHEME_CLUSTER
+          ? new Metadata(/* minSize= */ 1, /* maxSize= */ Integer.MAX_VALUE)
+          : new Metadata(/* minSize= */ 1, /* maxSize= */ 2);
     }
 
     @Override public String toString() {
@@ -740,6 +744,8 @@ public sealed interface RegexPattern {
     DOC_BEGINNING("\\A"),
     DOC_END("\\Z"),
     DOC_ABSOLUTE_END("\\z"),
+    PREVIOUS_MATCH_END("\\G"),
+    GRAPHEME_CLUSTER_BOUNDARY("\\b{g}"),
     WORD_BOUNDARY("\\b"),
     NON_WORD_BOUNDARY("\\B");
 
