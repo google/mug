@@ -34,6 +34,7 @@ import static com.google.common.labs.regex.RegexPattern.intersection;
 import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.isNot;
+import static com.google.mu.util.CharPredicate.noneOf;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.stream;
@@ -89,10 +90,11 @@ final class RegexParsers {
           string("\\c").then(one(ANY, "control char"))
               .map(c -> Character.toString(Character.toUpperCase(c) ^ 64)),
           string("\\x").then(CODE_POINT).map(Character::toString),
-          string("\\N").then(consecutive("[^}\r\n]").between("{", "}"))
+          string("\\N")
+              .then(consecutive("[^}\r\n]").as("character name").between("{", "}"))
               .map(Character::codePointOf)
               .map(Character::toString),
-          string("\\").then(one(isNot('x'), "escaped char")).map(String::valueOf)));
+          string("\\").then(one(noneOf("0123456789xNu"), "escaped char")).map(String::valueOf)));
   private static final Set<PredefinedCharClass> DISALLOWED_IN_CHAR_CLASS =
       Set.of(ANY_CHAR, EXTENDED_GRAPHEME_CLUSTER, LINEBREAK);
   private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES = stream(

@@ -9,7 +9,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public final class RegexParserErrorTests {
+public final class RegexParserErrorTest {
 
   @Test public void characterClass_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[abc"));
@@ -787,5 +787,49 @@ public final class RegexParserErrorTests {
     IllegalArgumentException e =
         assertThrows(IllegalArgumentException.class, () -> RegexPattern.of("\\N{UNKNOWN_NAME}"));
     assertThat(e).hasMessageThat().contains("UNKNOWN_NAME");
+  }
+
+  @Test public void unicodeEscape_invalidHex() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\u123z"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting <4 hex digits>, encountered:
+                \\u123z
+                  ^
+            """);
+  }
+
+  @Test public void unicodeEscape_incomplete() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\u"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting <4 hex digits>, encountered:
+                \\u
+                  ^
+            """);
+  }
+
+  @Test public void octalEscape_invalidDigit() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\08"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting one of [[0-3], [4-7]], encountered:
+                \\08
+                  ^
+            """);
+  }
+
+  @Test public void octalEscape_incomplete() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\0"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting one of [[0-3], [4-7]], encountered:
+                \\0
+                  ^
+            """);
   }
 }
