@@ -561,6 +561,72 @@ public final class RegexParserErrorTests {
             """);
   }
 
+  @Test public void group_inlineComment_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?#comment)"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting one of [), :], encountered:
+                (?#comment)
+                  ^
+            """);
+  }
+
+  @Test public void group_branchReset_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?|(a)|(b))"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting one of [), :], encountered:
+                (?|(a)|(b))
+                  ^
+            """);
+  }
+
+  @Test public void group_conditional_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?(1)a|b)"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting one of [), :], encountered:
+                (?(1)a|b)
+                  ^
+            """);
+  }
+
+  @Test public void group_recursivePattern_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?R)"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting one of [), :], encountered:
+                (?R)
+                  ^
+            """);
+  }
+
+  @Test public void group_pythonNamedBackreference_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?P=name)"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting one of [), :], encountered:
+                (?P=name)
+                  ^
+            """);
+  }
+
+  @Test public void group_quoteNamedGroup_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?'name'abc)"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting one of [), :], encountered:
+                (?'name'abc)
+                  ^
+            """);
+  }
+
   @Test public void group_questionOnly_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?"));
     assertThat(e).hasMessageThat()
