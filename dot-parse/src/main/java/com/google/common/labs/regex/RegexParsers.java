@@ -27,6 +27,7 @@ import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
 import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.ANY_CHAR;
 import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.EXTENDED_GRAPHEME_CLUSTER;
+import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.LINEBREAK;
 import static com.google.common.labs.regex.RegexPattern.asAlternation;
 import static com.google.common.labs.regex.RegexPattern.inSequence;
 import static com.google.common.labs.regex.RegexPattern.intersection;
@@ -85,14 +86,15 @@ final class RegexParsers {
           string("\\e").thenReturn("\u001B"),
           string("\\u").then(BMP_CODE_UNIT).map(String::valueOf),
           string("\\0").then(OCTAL).map(Character::toString),
-          string("\\c").then(one(ANY, "control char")).map(c -> Character.toString(c ^ 64)),
+          string("\\c").then(one(ANY, "control char"))
+              .map(c -> Character.toString(Character.toUpperCase(c) ^ 64)),
           string("\\x").then(CODE_POINT).map(Character::toString),
           string("\\N").then(consecutive("[^}\r\n]").between("{", "}"))
               .map(Character::codePointOf)
               .map(Character::toString),
           string("\\").then(one(isNot('x'), "escaped char")).map(String::valueOf)));
   private static final Set<PredefinedCharClass> DISALLOWED_IN_CHAR_CLASS =
-      Set.of(ANY_CHAR, EXTENDED_GRAPHEME_CLUSTER);
+      Set.of(ANY_CHAR, EXTENDED_GRAPHEME_CLUSTER, LINEBREAK);
   private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES = stream(
           PosixCharClass.values())
       .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
@@ -135,7 +137,7 @@ final class RegexParsers {
   }
 
   private static Parser<Backreference.Named> namedBackreference() {
-    return string("\\k<").then(word()).followedBy(">").map(Backreference.Named::new);
+    return word().between("\\k<", ">").map(Backreference.Named::new);
   }
 
   private static Parser<Quantifier> quantifier() {
@@ -162,8 +164,11 @@ final class RegexParsers {
   }
 
   private static Parser<CharacterProperty> characterPropertySuffix() {
-    return word().between("{", "}")
-        .map(name -> POSIX_CHAR_CLASSES.getOrDefault(name, new UnicodeProperty(name)));
+    Parser<String> propertyName = anyOf(
+        consecutive("[^}\r\n]").between("{", "}"),
+        one(Character::isLetter, "category").map(String::valueOf));
+    return propertyName.map(
+        name -> POSIX_CHAR_CLASSES.getOrDefault(name, new UnicodeProperty(name)));
   }
 
   private static Parser<CharacterSet> charClass(Parser<CharacterSet> charClass) {

@@ -1370,7 +1370,7 @@ public final class RegexPatternTest {
   }
 
   @Test public void of_predefinedCharClassInCharacterSet(
-      @TestParameter({"\\d", "\\D", "\\s", "\\S", "\\w", "\\W", "\\R"}) String pattern) {
+      @TestParameter({"\\d", "\\D", "\\s", "\\S", "\\w", "\\W"}) String pattern) {
     assertThat(RegexPattern.of("[" + pattern + "]"))
         .isEqualTo(anyOf((CharSetElement) RegexPattern.of(pattern)));
   }
@@ -1526,5 +1526,76 @@ public final class RegexPatternTest {
 
   @Test public void of_charClass_withExtendedGraphemeCluster() {
     assertThat(RegexPattern.of("[\\X]")).isEqualTo(anyOf(new LiteralChar('X')));
+  }
+
+  @Test public void anchor_nonGraphemeClusterBoundary_toString() {
+    assertThat(Anchor.NON_GRAPHEME_CLUSTER_BOUNDARY.toString()).isEqualTo("\\B{g}");
+  }
+
+  @Test public void anchor_nonGraphemeClusterBoundary_metadata() {
+    assertThat(Anchor.NON_GRAPHEME_CLUSTER_BOUNDARY.metadata())
+        .isEqualTo(new Metadata(/* minSize= */ 0, /* maxSize= */ 0));
+  }
+
+  @Test public void of_anchor_nonGraphemeClusterBoundary() {
+    assertThat(RegexPattern.of("\\B{g}")).isEqualTo(Anchor.NON_GRAPHEME_CLUSTER_BOUNDARY);
+  }
+
+  @Test public void of_anchor_nonGraphemeClusterBoundary_inSequence() {
+    assertThat(RegexPattern.of("\\B{g}abc"))
+        .isEqualTo(sequence(Anchor.NON_GRAPHEME_CLUSTER_BOUNDARY, new Literal("abc")));
+  }
+
+  @Test public void of_unicodeProperty_singleLetterUnbraced_letter() {
+    assertThat(RegexPattern.of("\\pL")).isEqualTo(new UnicodeProperty("L"));
+  }
+
+  @Test public void of_unicodeProperty_singleLetterUnbraced_number() {
+    assertThat(RegexPattern.of("\\pN")).isEqualTo(new UnicodeProperty("N"));
+  }
+
+  @Test public void of_negatedUnicodeProperty_singleLetterUnbraced() {
+    assertThat(RegexPattern.of("\\PL")).isEqualTo(new UnicodeProperty("L").negated());
+  }
+
+  @Test public void of_charClass_withSingleLetterUnbracedUnicodeProperty() {
+    assertThat(RegexPattern.of("[\\pL]")).isEqualTo(anyOf(new UnicodeProperty("L")));
+  }
+
+  @Test public void of_charClass_withNegatedSingleLetterUnbracedUnicodeProperty() {
+    assertThat(RegexPattern.of("[\\PL]")).isEqualTo(anyOf(new UnicodeProperty("L").negated()));
+  }
+
+  @Test public void of_unicodeProperty_withScriptAssignment() {
+    assertThat(RegexPattern.of("\\p{sc=Latin}")).isEqualTo(new UnicodeProperty("sc=Latin"));
+  }
+
+  @Test public void of_unicodeProperty_withBlockAssignment() {
+    assertThat(RegexPattern.of("\\p{blk=Greek}")).isEqualTo(new UnicodeProperty("blk=Greek"));
+  }
+
+  @Test public void of_unicodeProperty_withGeneralCategoryAssignment() {
+    assertThat(RegexPattern.of("\\p{gc=Lu}")).isEqualTo(new UnicodeProperty("gc=Lu"));
+  }
+
+  @Test public void of_charClass_withPropertyValueAssignment() {
+    assertThat(RegexPattern.of("[\\p{sc=Latin}]"))
+        .isEqualTo(anyOf(new UnicodeProperty("sc=Latin")));
+  }
+
+  @Test public void of_escapedLiteral_controlLowercase() {
+    assertThat(RegexPattern.of("\\ca")).isEqualTo(new Literal("\u0001"));
+  }
+
+  @Test public void of_escapedLiteral_controlLowercase_z() {
+    assertThat(RegexPattern.of("\\cz")).isEqualTo(new Literal("\u001A"));
+  }
+
+  @Test public void of_charClass_withControlLowercase() {
+    assertThat(RegexPattern.of("[\\ca]")).isEqualTo(anyOf(new LiteralChar('\u0001')));
+  }
+
+  @Test public void of_charClass_withLinebreak() {
+    assertThat(RegexPattern.of("[\\R]")).isEqualTo(anyOf(new LiteralChar('R')));
   }
 }

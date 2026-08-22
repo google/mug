@@ -84,6 +84,12 @@ final class CharRanges {
     if (element == RegexPattern.PredefinedCharClass.ANY_CHAR) {
       return of('.');
     }
+    if (element == RegexPattern.PredefinedCharClass.EXTENDED_GRAPHEME_CLUSTER) {
+      return of('X');
+    }
+    if (element == RegexPattern.PredefinedCharClass.LINEBREAK) {
+      return of('R');
+    }
     return from(element);
   }
 
