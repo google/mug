@@ -876,4 +876,202 @@ public final class RegexParserErrorTest {
                   ^
             """);
   }
+
+  @Test public void characterClass_unicodeEscape_invalidHex() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\u123z]"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <4 hex digits>, encountered:
+                [\\u123z]
+                   ^
+            """);
+  }
+
+  @Test public void characterClass_unicodeEscape_incomplete() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\u]"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <4 hex digits>, encountered:
+                [\\u]
+                   ^
+            """);
+  }
+
+  @Test public void characterClass_octalEscape_invalidDigit() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\08]"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting one of [[0-3], [4-7]], encountered:
+                [\\08]
+                   ^
+            """);
+  }
+
+  @Test public void characterClass_octalEscape_incomplete() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\0]"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting one of [[0-3], [4-7]], encountered:
+                [\\0]
+                   ^
+            """);
+  }
+
+  @Test public void characterClass_property_unclosed() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\p{foo]"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:9: expecting <}>, encountered:
+                [\\p{foo]
+                        ^
+            """);
+  }
+
+  @Test public void characterClass_negatedProperty_unclosed() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\P{foo]"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:9: expecting <}>, encountered:
+                [\\P{foo]
+                        ^
+            """);
+  }
+
+  @Test public void characterClass_namedUnicodeCharacter_emptyName() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\N{}]"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:5: expecting <character name>, encountered:
+                [\\N{}]
+                    ^
+            """);
+  }
+
+  @Test public void characterClass_namedUnicodeCharacter_unclosed() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\N{abc]"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:9: expecting <}>, encountered:
+                [\\N{abc]
+                        ^
+            """);
+  }
+
+  @Test public void characterClass_hexEscape_codePointTooBig() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\x{110000}]"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <code point>, encountered:
+                [\\x{110000}]
+                   ^
+            """);
+  }
+
+  @Test public void characterClass_hexEscape_invalidHex() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\xzz]"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <2 hex digits>, encountered:
+                [\\xzz]
+                   ^
+            """);
+  }
+
+  @Test public void property_empty() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\p{}"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <property name>, encountered:
+                \\p{}
+                   ^
+            """);
+  }
+
+  @Test public void negatedProperty_empty() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\P{}"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting <property name>, encountered:
+                \\P{}
+                   ^
+            """);
+  }
+
+  @Test public void characterClass_property_empty() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\p{}]"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:5: expecting <property name>, encountered:
+                [\\p{}]
+                    ^
+            """);
+  }
+
+  @Test public void characterClass_negatedProperty_empty() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\P{}]"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:5: expecting <property name>, encountered:
+                [\\P{}]
+                    ^
+            """);
+  }
+
+  @Test public void property_unbraced_nonAscii_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\p\u03B1"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting one of [category, {], encountered:
+                \\p\u03B1
+                  ^
+            """);
+  }
+
+  @Test public void characterClass_property_unbraced_nonAscii_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\p\u03B1]"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting one of [category, {], encountered:
+                [\\p\u03B1]
+                   ^
+            """);
+  }
+
+  @Test public void negatedProperty_unbraced_nonAscii_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\P\u03B1"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting one of [category, {], encountered:
+                \\P\u03B1
+                  ^
+            """);
+  }
+
+  @Test public void characterClass_negatedProperty_unbraced_nonAscii_rejected() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\P\u03B1]"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:4: expecting one of [category, {], encountered:
+                [\\P\u03B1]
+                   ^
+            """);
+  }
 }

@@ -90,11 +90,11 @@ final class RegexParsers {
           string("\\c").then(one(ANY, "control char"))
               .map(c -> Character.toString(Character.toUpperCase(c) ^ 64)),
           string("\\x").then(CODE_POINT).map(Character::toString),
-          string("\\N")
-              .then(consecutive("[^}\r\n]").as("character name").between("{", "}"))
+          string("\\N").then(consecutive("[^}\r\n]").as("character name").between("{", "}"))
               .map(Character::codePointOf)
               .map(Character::toString),
-          string("\\").then(one(noneOf("0123456789xNuckpP"), "escaped char")).map(String::valueOf)));
+          string("\\").then(one(noneOf("0123456789xNuckpP"), "escaped char"))
+              .map(String::valueOf)));
   private static final Set<PredefinedCharClass> DISALLOWED_IN_CHAR_CLASS =
       Set.of(ANY_CHAR, EXTENDED_GRAPHEME_CLUSTER, LINEBREAK);
   private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES = stream(
@@ -157,20 +157,19 @@ final class RegexParsers {
         .optionallyFollowedBy("+", Quantifier::possessive);
   }
 
+  private static Parser<CharacterProperty> characterPropertySuffix() {
+    Parser<String> name = anyOf(
+        consecutive("[^}\r\n]").as("property name").between("{", "}"),
+        one("[a-zA-Z]").as("category").map(String::valueOf));
+    return name.map(n -> POSIX_CHAR_CLASSES.getOrDefault(n, new UnicodeProperty(n)));
+  }
+
   private static Parser<CharacterProperty> positiveCharacterProperty() {
     return string("\\p").then(characterPropertySuffix());
   }
 
   private static Parser<CharacterProperty.Negated> negativeCharacterProperty() {
     return string("\\P").then(characterPropertySuffix()).map(CharacterProperty::negated);
-  }
-
-  private static Parser<CharacterProperty> characterPropertySuffix() {
-    Parser<String> propertyName = anyOf(
-        consecutive("[^}\r\n]").between("{", "}"),
-        one(Character::isLetter, "category").map(String::valueOf));
-    return propertyName.map(
-        name -> POSIX_CHAR_CLASSES.getOrDefault(name, new UnicodeProperty(name)));
   }
 
   private static Parser<CharacterSet> charClass(Parser<CharacterSet> charClass) {
