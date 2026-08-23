@@ -832,4 +832,48 @@ public final class RegexParserErrorTest {
                   ^
             """);
   }
+
+  @Test public void property_unclosed() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\p{foo"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:7: expecting <}>, encountered:
+                \\p{foo
+                      ^
+            """);
+  }
+
+  @Test public void negatedProperty_unclosed() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\P{foo"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:7: expecting <}>, encountered:
+                \\P{foo
+                      ^
+            """);
+  }
+
+  @Test public void namedBackreference_unclosed() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\k<foo"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:7: expecting <>>, encountered:
+                \\k<foo
+                      ^
+            """);
+  }
+
+  @Test public void controlEscape_incomplete() {
+    ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\c"));
+    assertThat(e).hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:3: expecting <control char>, encountered:
+                \\c
+                  ^
+            """);
+  }
 }

@@ -94,7 +94,7 @@ final class RegexParsers {
               .then(consecutive("[^}\r\n]").as("character name").between("{", "}"))
               .map(Character::codePointOf)
               .map(Character::toString),
-          string("\\").then(one(noneOf("0123456789xNu"), "escaped char")).map(String::valueOf)));
+          string("\\").then(one(noneOf("0123456789xNuckpP"), "escaped char")).map(String::valueOf)));
   private static final Set<PredefinedCharClass> DISALLOWED_IN_CHAR_CLASS =
       Set.of(ANY_CHAR, EXTENDED_GRAPHEME_CLUSTER, LINEBREAK);
   private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES = stream(
