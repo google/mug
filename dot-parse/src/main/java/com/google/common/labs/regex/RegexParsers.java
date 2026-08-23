@@ -87,20 +87,23 @@ final class RegexParsers {
           string("\\e").thenReturn("\u001B"),
           string("\\u").then(BMP_CODE_UNIT).map(String::valueOf),
           string("\\0").then(OCTAL).map(Character::toString),
-          string("\\c").then(one(ANY, "control char"))
+          string("\\c")
+              .then(one(ANY, "control char"))
               .map(c -> Character.toString(Character.toUpperCase(c) ^ 64)),
           string("\\x").then(CODE_POINT).map(Character::toString),
-          string("\\N").then(consecutive("[^}\r\n]").as("character name").between("{", "}"))
+          string("\\N")
+              .then(consecutive("[^}\r\n]").as("character name").between("{", "}"))
               .map(Character::codePointOf)
               .map(Character::toString),
-          string("\\").then(one(noneOf("0123456789xNuckpP"), "escaped char"))
+          string("\\")
+              .then(one(noneOf("0123456789xNuckpP"), "escaped char"))
               .map(String::valueOf)));
   private static final Set<PredefinedCharClass> DISALLOWED_IN_CHAR_CLASS =
       Set.of(ANY_CHAR, EXTENDED_GRAPHEME_CLUSTER, LINEBREAK);
-  private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES = stream(
-          PosixCharClass.values())
-      .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
-      .collect(Collectors::toUnmodifiableMap);
+  private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES =
+      stream(PosixCharClass.values())
+          .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
+          .collect(Collectors::toUnmodifiableMap);
   static final Parser<?> FREE_SPACES = anyOf(
       consecutive(Character::isWhitespace, "whitespace"), one('#').then(consecutive("[^\n]")));
   static final Parser<RegexPattern> PARSER = define(RegexParsers::pattern);
@@ -113,7 +116,8 @@ final class RegexParsers {
         consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
         consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
         anyOf(ESCAPED, one("[{}]]").map(String::valueOf)).map(Literal::new));
-    return atomic.followedByZeroOrMore(quantifier())
+    return atomic
+        .followedByZeroOrMore(quantifier())
         .atLeastOnce(inSequence())
         .orElse(new RegexPattern.Literal(""))
         .delimitedBy("|", asAlternation())
@@ -134,7 +138,8 @@ final class RegexParsers {
   }
 
   private static Parser<Backreference.Numbered> numberedBackreference() {
-    return string("\\").then(sequence(one("[1-9]"), digits().optional()).source())
+    return string("\\")
+        .then(sequence(one("[1-9]"), digits().optional()).source())
         .map(s -> new Backreference.Numbered(Integer.parseInt(s)));
   }
 
@@ -190,8 +195,8 @@ final class RegexParsers {
         charClass,
         range,
         literalCharOrDash);
-    Parser<List<CharSetElement>> quotedInClass = quotedText().map(
-            s -> s.codePoints().mapToObj(LiteralChar::new).collect(toUnmodifiableList()));
+    Parser<List<CharSetElement>> quotedInClass = quotedText()
+        .map(s -> s.codePoints().mapToObj(LiteralChar::new).collect(toUnmodifiableList()));
     Parser<CharSetElement> leadingBracket = anyOf(
         sequence(one(']').map(c -> (int) c), one('-').then(literalChar), CharRange::new),
         one(']').map(LiteralChar::new));
