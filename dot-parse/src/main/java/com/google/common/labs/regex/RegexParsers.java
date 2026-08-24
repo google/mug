@@ -104,14 +104,14 @@ final class RegexParsers {
       stream(PosixCharClass.values())
           .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
           .collect(Collectors::toUnmodifiableMap);
-  static final Parser<?> FREE_SPACES = anyOf(
-      consecutive(Character::isWhitespace, "whitespace"), one('#').then(consecutive("[^\n]")));
   private static final Parser<Anchor> ANCHOR = stream(Anchor.values())
       .sorted(comparing((Anchor a) -> a.tokens().size())
           .reversed()
           .thenComparing(Anchor::name))
       .map(anchor -> tokenSequence(anchor.tokens()).thenReturn(anchor))
       .collect(Parser.or());
+  static final Parser<?> FREE_SPACES = anyOf(
+      consecutive(Character::isWhitespace, "whitespace"), one('#').then(consecutive("[^\n]")));
   static final Parser<RegexPattern> PARSER = define(RegexParsers::pattern);
 
   private static Parser<RegexPattern> pattern(Parser<RegexPattern> regex) {
