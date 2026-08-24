@@ -91,8 +91,7 @@ final class RegexParsers {
               .then(one(ANY, "control char"))
               .map(c -> Character.toString(Character.toUpperCase(c) ^ 64)),
           string("\\x").then(CODE_POINT).map(Character::toString),
-          string("\\N")
-              .then(consecutive("[^}\r\n]").as("character name").between("{", "}"))
+          consecutive("[^}\r\n]").as("character name").between("\\N{", "}")
               .map(Character::codePointOf)
               .map(Character::toString),
           string("\\")
