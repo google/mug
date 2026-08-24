@@ -75,8 +75,8 @@ final class RegexParsers {
           .map(hex -> Integer.parseInt(hex, 16))
           .suchThat(Character::isValidCodePoint, "code point");
   private static final Parser<Integer> OCTAL = anyOf(
-          sequence(one("[0-3]"), one("[0-7]").optional(), one("[0-7]").optional()),
-          sequence(one("[4-7]"), one("[0-7]").optional()))
+          literally(one("[0-3]"), one("[0-7]").optional(), one("[0-7]").optional()),
+          literally(one("[4-7]"), one("[0-7]").optional()))
       .source()
       .map(digits -> Integer.parseInt(digits, 8));
   private static final Parser<String> ESCAPED = anyOf(
