@@ -61,6 +61,7 @@ import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
 import com.google.common.labs.regex.RegexPattern.UnicodeProperty;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -77,26 +78,25 @@ final class RegexParsers {
           sequence(one("[4-7]"), one("[0-7]").optional()))
       .source()
       .map(digits -> Integer.parseInt(digits, 8));
-  private static final Parser<String> ESCAPED = literally(
-      anyOf(
-          string("\\n").thenReturn("\n"),
-          string("\\r").thenReturn("\r"),
-          string("\\t").thenReturn("\t"),
-          string("\\f").thenReturn("\f"),
-          string("\\a").thenReturn("\u0007"),
-          string("\\e").thenReturn("\u001B"),
-          string("\\u").then(BMP_CODE_UNIT).map(String::valueOf),
-          string("\\0").then(OCTAL).map(Character::toString),
-          string("\\c")
-              .then(one(ANY, "control char"))
-              .map(c -> Character.toString(Character.toUpperCase(c) ^ 64)),
-          string("\\x").then(CODE_POINT).map(Character::toString),
-          consecutive("[^}\r\n]").as("character name").between("\\N{", "}")
-              .map(Character::codePointOf)
-              .map(Character::toString),
-          string("\\")
-              .then(one(noneOf("0123456789xNuckpP"), "escaped char"))
-              .map(String::valueOf)));
+  private static final Parser<String> ESCAPED = anyOf(
+      string("\\n").thenReturn("\n"),
+      string("\\r").thenReturn("\r"),
+      string("\\t").thenReturn("\t"),
+      string("\\f").thenReturn("\f"),
+      string("\\a").thenReturn("\u0007"),
+      string("\\e").thenReturn("\u001B"),
+      string("\\u").then(BMP_CODE_UNIT).map(String::valueOf),
+      string("\\0").then(OCTAL).map(Character::toString),
+      string("\\c")
+          .then(one(ANY, "control char"))
+          .map(c -> Character.toString(Character.toUpperCase(c) ^ 64)),
+      string("\\x").then(CODE_POINT).map(Character::toString),
+      string("\\N")
+          .then(consecutive("[^}\r\n]").as("character name").between("{", "}"))
+          .map(Character::codePointOf)
+          .map(Character::toString),
+      literally(string("\\").then(one(noneOf("0123456789xNuckpP"), "escaped char")))
+          .map(String::valueOf));
   private static final Set<PredefinedCharClass> DISALLOWED_IN_CHAR_CLASS =
       Set.of(ANY_CHAR, EXTENDED_GRAPHEME_CLUSTER, LINEBREAK);
   private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES =
@@ -105,12 +105,19 @@ final class RegexParsers {
           .collect(Collectors::toUnmodifiableMap);
   static final Parser<?> FREE_SPACES = anyOf(
       consecutive(Character::isWhitespace, "whitespace"), one('#').then(consecutive("[^\n]")));
+  private static final Parser<Anchor> ANCHOR = stream(Anchor.values())
+      .sorted(
+          Comparator.<Anchor, Integer>comparing(a -> a.tokens().size())
+              .reversed()
+              .thenComparing(Anchor::name))
+      .map(anchor -> tokenSequence(anchor.tokens()).thenReturn(anchor))
+      .collect(Parser.or());
   static final Parser<RegexPattern> PARSER = define(RegexParsers::pattern);
 
   private static Parser<RegexPattern> pattern(Parser<RegexPattern> regex) {
     Parser<RegexPattern> atomic = anyOf(
         define(RegexParsers::charClass), positiveCharacterProperty(), negativeCharacterProperty(),
-        groupOrLookaround(regex), anyOf(PredefinedCharClass.values()), anyOf(Anchor.values()),
+        groupOrLookaround(regex), anyOf(PredefinedCharClass.values()), ANCHOR,
         numberedBackreference(), namedBackreference(), literally(quotedLiteral()),
         consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
         consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
@@ -143,7 +150,7 @@ final class RegexParsers {
   }
 
   private static Parser<Backreference.Named> namedBackreference() {
-    return word().between("\\k<", ">").map(Backreference.Named::new);
+    return string("\\k").then(word().between("<", ">")).map(Backreference.Named::new);
   }
 
   private static Parser<Quantifier> quantifier() {
@@ -216,9 +223,7 @@ final class RegexParsers {
         elements.map(CharacterSet.NoneOf::new),
         string("&&").then(characterSet).zeroOrMore(),
         (first, rest) -> rest.isEmpty() ? first : intersection(prepend(first, rest)));
-    return anyOf(
-        literally(negatedTerm).immediatelyBetween("[^", "]"),
-        literally(positiveTerm).immediatelyBetween("[", "]"));
+    return anyOf(negatedTerm.between("[^", "]"), positiveTerm.between("[", "]"));
   }
 
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {
@@ -258,5 +263,9 @@ final class RegexParsers {
     list.add(first);
     list.addAll(rest);
     return list;
+  }
+
+  private static Parser<?> tokenSequence(List<String> tokens) {
+    return tokens.stream().map(Parser::string).reduce(Parser::then).orElseThrow();
   }
 }

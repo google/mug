@@ -791,7 +791,8 @@ public final class RegexPatternTest {
   @Test public void of_group_missingRightParen() {
     Parser.ParseException e =
         assertThrows(Parser.ParseException.class, () -> RegexPattern.of("(?:a|b"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:7: expecting <)>, encountered:
@@ -822,17 +823,127 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("(?x)a#comment b")).isEqualTo(new Literal("a"));
   }
 
-  @Test public void of_freeSpacingMode_spaceInCharClassIsLiteral() {
-    assertThat(RegexPattern.of("(?x) [ ] a"))
+  @Test public void of_freeSpacingMode_escapedSpaceInCharClass_singleChar() {
+    assertThat(RegexPattern.of("(?x) [\\ ] a"))
         .isEqualTo(sequence(anyOf(new RegexPattern.LiteralChar(' ')), new Literal("a")));
-    assertThat(RegexPattern.of("(?x) [a ]"))
+  }
+
+  @Test public void of_freeSpacingMode_escapedSpaceInCharClass_multipleChars() {
+    assertThat(RegexPattern.of("(?x) [a\\ ]"))
         .isEqualTo(anyOf(new RegexPattern.LiteralChar('a'), new RegexPattern.LiteralChar(' ')));
-    assertThat(RegexPattern.of("(?x) [^ ] a"))
+  }
+
+  @Test public void of_freeSpacingMode_escapedSpaceInCharClass_negated() {
+    assertThat(RegexPattern.of("(?x) [^\\ ] a"))
         .isEqualTo(sequence(noneOf(new RegexPattern.LiteralChar(' ')), new Literal("a")));
+  }
+
+  @Test public void of_freeSpacingMode_spaceInCharClass_ignored() {
+    assertThat(RegexPattern.of("(?x) [a ]")).isEqualTo(anyOf(new LiteralChar('a')));
   }
 
   @Test public void of_freeSpacingMode_escapedSpaceIsLiteral() {
     assertThat(RegexPattern.of("(?x) a\\ b")).isEqualTo(new Literal("a b"));
+  }
+
+  @Test public void of_freeSpacingMode_namedUnicodeCharacter_spaceAfterN() {
+    assertThat(RegexPattern.of("(?x)\\N {LATIN CAPITAL LETTER A}")).isEqualTo(new Literal("A"));
+  }
+
+  @Test public void of_freeSpacingMode_namedUnicodeCharacter_commentAfterN() {
+    assertThat(RegexPattern.of("(?x)\\N # comment\n {LATIN CAPITAL LETTER A}"))
+        .isEqualTo(new Literal("A"));
+  }
+
+  @Test public void of_freeSpacingMode_namedUnicodeCharacter_inCharClass_spaceAfterN() {
+    assertThat(RegexPattern.of("(?x)[\\N {LATIN CAPITAL LETTER A}]"))
+        .isEqualTo(anyOf(new LiteralChar('A')));
+  }
+
+  @Test public void of_freeSpacingMode_hexCodePoint_spaceAfterX() {
+    assertThat(RegexPattern.of("(?x)\\x {41}")).isEqualTo(new Literal("A"));
+  }
+
+  @Test public void of_freeSpacingMode_hexCodePoint_spaceInsideBraces() {
+    assertThat(RegexPattern.of("(?x)\\x{ 41 }")).isEqualTo(new Literal("A"));
+  }
+
+  @Test public void of_freeSpacingMode_hexCodePoint_commentAfterX() {
+    assertThat(RegexPattern.of("(?x)\\x # comment\n {41}")).isEqualTo(new Literal("A"));
+  }
+
+  @Test public void of_freeSpacingMode_hexCodePoint_commentInsideBraces() {
+    assertThat(RegexPattern.of("(?x)\\x{ # comment\n 41}")).isEqualTo(new Literal("A"));
+  }
+
+  @Test public void of_freeSpacingMode_hexCodePoint_inCharClass_spaceAfterX() {
+    assertThat(RegexPattern.of("(?x)[\\x {41}]")).isEqualTo(anyOf(new LiteralChar('A')));
+  }
+
+  @Test public void of_freeSpacingMode_unicodeEscape_spaceAfterU() {
+    assertThat(RegexPattern.of("(?x)\\u 0041")).isEqualTo(new Literal("A"));
+  }
+
+  @Test public void of_freeSpacingMode_unicodeEscape_commentAfterU() {
+    assertThat(RegexPattern.of("(?x)\\u # comment\n 0041")).isEqualTo(new Literal("A"));
+  }
+
+  @Test public void of_freeSpacingMode_unicodeEscape_inCharClass_spaceAfterU() {
+    assertThat(RegexPattern.of("(?x)[\\u 0041]")).isEqualTo(anyOf(new LiteralChar('A')));
+  }
+
+  @Test public void of_freeSpacingMode_octalEscape_spaceAfterZero() {
+    assertThat(RegexPattern.of("(?x)\\0 101")).isEqualTo(new Literal("A"));
+  }
+
+  @Test public void of_freeSpacingMode_octalEscape_commentAfterZero() {
+    assertThat(RegexPattern.of("(?x)\\0 # comment\n 101")).isEqualTo(new Literal("A"));
+  }
+
+  @Test public void of_freeSpacingMode_octalEscape_inCharClass_spaceAfterZero() {
+    assertThat(RegexPattern.of("(?x)[\\0 101]")).isEqualTo(anyOf(new LiteralChar('A')));
+  }
+
+  @Test public void of_freeSpacingMode_controlEscape_spaceAfterC() {
+    assertThat(RegexPattern.of("(?x)\\c A")).isEqualTo(new Literal("\u0001"));
+  }
+
+  @Test public void of_freeSpacingMode_controlEscape_commentAfterC() {
+    assertThat(RegexPattern.of("(?x)\\c # comment\n A")).isEqualTo(new Literal("\u0001"));
+  }
+
+  @Test public void of_freeSpacingMode_controlEscape_inCharClass_spaceAfterC() {
+    assertThat(RegexPattern.of("(?x)[\\c A]")).isEqualTo(anyOf(new LiteralChar('\u0001')));
+  }
+
+  @Test public void of_freeSpacingMode_charClass_withProperty_spaceAfterP() {
+    assertThat(RegexPattern.of("(?x)[\\p {L}]")).isEqualTo(anyOf(new UnicodeProperty("L")));
+  }
+
+  @Test public void of_freeSpacingMode_charClass_withProperty_commentInsideBraces() {
+    assertThat(RegexPattern.of("(?x)[\\p{ # comment\n L}]"))
+        .isEqualTo(anyOf(new UnicodeProperty("L")));
+  }
+
+  @Test public void of_freeSpacingMode_namedBackreference_spaceAfterK() {
+    assertThat(RegexPattern.of("(?x)(?<foo>a)\\k <foo>"))
+        .isEqualTo(
+            sequence(new Group.Named("foo", new Literal("a")), new Backreference.Named("foo")));
+  }
+
+  @Test public void of_freeSpacingMode_namedBackreference_commentAfterK() {
+    assertThat(RegexPattern.of("(?x)(?<foo>a)\\k # comment\n <foo>"))
+        .isEqualTo(
+            sequence(new Group.Named("foo", new Literal("a")), new Backreference.Named("foo")));
+  }
+
+  @Test public void of_freeSpacingMode_anchor_graphemeClusterBoundary_spaceAfterB() {
+    assertThat(RegexPattern.of("(?x)\\b {g}")).isEqualTo(Anchor.GRAPHEME_CLUSTER_BOUNDARY);
+  }
+
+  @Test public void of_freeSpacingMode_anchor_graphemeClusterBoundary_commentAfterB() {
+    assertThat(RegexPattern.of("(?x)\\b # comment\n {g}"))
+        .isEqualTo(Anchor.GRAPHEME_CLUSTER_BOUNDARY);
   }
 
   @Test public void of_nestedFreeSpacingMode_enabled() {

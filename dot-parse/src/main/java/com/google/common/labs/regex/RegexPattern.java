@@ -745,15 +745,20 @@ public sealed interface RegexPattern {
     DOC_END("\\Z"),
     DOC_ABSOLUTE_END("\\z"),
     PREVIOUS_MATCH_END("\\G"),
-    GRAPHEME_CLUSTER_BOUNDARY("\\b{g}"),
-    NON_GRAPHEME_CLUSTER_BOUNDARY("\\B{g}"),
+    GRAPHEME_CLUSTER_BOUNDARY("\\b", "{g}"),
+    NON_GRAPHEME_CLUSTER_BOUNDARY("\\B", "{g}"),
     WORD_BOUNDARY("\\b"),
     NON_WORD_BOUNDARY("\\B");
 
-    private final String pattern;
+    @SuppressWarnings("ImmutableEnumChecker")
+    private final List<String> tokens;
 
-    Anchor(String pattern) {
-      this.pattern = pattern;
+    Anchor(String... tokens) {
+      this.tokens = List.of(tokens);
+    }
+
+    List<String> tokens() {
+      return tokens;
     }
 
     @Override public Metadata metadata() {
@@ -761,7 +766,7 @@ public sealed interface RegexPattern {
     }
 
     @Override public String toString() {
-      return pattern;
+      return String.join("", tokens);
     }
   }
 
@@ -825,7 +830,8 @@ public sealed interface RegexPattern {
    */
   static RegexPattern of(String regex) {
     Parser<RegexPattern>.OrEmpty parser = RegexParsers.PARSER.orElse(new Literal(""));
-    return after(prefix("(?x)")).from(regex)
+    return after(prefix("(?x)"))
+        .from(regex)
         .map(p -> parser.parseSkipping(RegexParsers.FREE_SPACES, p))
         .orElseGet(() -> parser.parse(regex));
   }
