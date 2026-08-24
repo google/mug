@@ -746,7 +746,6 @@ public sealed interface RegexPattern {
     DOC_ABSOLUTE_END("\\z"),
     PREVIOUS_MATCH_END("\\G"),
     GRAPHEME_CLUSTER_BOUNDARY("\\b", "{g}"),
-    NON_GRAPHEME_CLUSTER_BOUNDARY("\\B", "{g}"),
     WORD_BOUNDARY("\\b"),
     NON_WORD_BOUNDARY("\\B");
 

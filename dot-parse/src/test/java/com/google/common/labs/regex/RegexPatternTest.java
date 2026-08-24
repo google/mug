@@ -1704,24 +1704,6 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("[\\X]")).isEqualTo(anyOf(new LiteralChar('X')));
   }
 
-  @Test public void anchor_nonGraphemeClusterBoundary_toString() {
-    assertThat(Anchor.NON_GRAPHEME_CLUSTER_BOUNDARY.toString()).isEqualTo("\\B{g}");
-  }
-
-  @Test public void anchor_nonGraphemeClusterBoundary_metadata() {
-    assertThat(Anchor.NON_GRAPHEME_CLUSTER_BOUNDARY.metadata())
-        .isEqualTo(new Metadata(/* minSize= */ 0, /* maxSize= */ 0));
-  }
-
-  @Test public void of_anchor_nonGraphemeClusterBoundary() {
-    assertThat(RegexPattern.of("\\B{g}")).isEqualTo(Anchor.NON_GRAPHEME_CLUSTER_BOUNDARY);
-  }
-
-  @Test public void of_anchor_nonGraphemeClusterBoundary_inSequence() {
-    assertThat(RegexPattern.of("\\B{g}abc"))
-        .isEqualTo(sequence(Anchor.NON_GRAPHEME_CLUSTER_BOUNDARY, new Literal("abc")));
-  }
-
   @Test public void of_unicodeProperty_singleLetterUnbraced_letter() {
     assertThat(RegexPattern.of("\\pL")).isEqualTo(new UnicodeProperty("L"));
   }
