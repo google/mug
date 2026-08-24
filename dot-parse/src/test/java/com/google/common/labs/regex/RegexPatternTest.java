@@ -946,6 +946,71 @@ public final class RegexPatternTest {
         .isEqualTo(Anchor.GRAPHEME_CLUSTER_BOUNDARY);
   }
 
+  @Test public void of_freeSpacingMode_numberedBackreference_followedBySpaceAndDigit() {
+    assertThat(RegexPattern.of("(?x)(a)\\1 2"))
+        .isEqualTo(
+            sequence(
+                new Group.Capturing(new Literal("a")),
+                new Backreference.Numbered(1),
+                new Literal("2")));
+  }
+
+  @Test public void of_freeSpacingMode_lookahead_spaceAfterParen() {
+    assertThat(RegexPattern.of("(?x)( ?= a )a"))
+        .isEqualTo(sequence(new Lookaround.Lookahead(new Literal("a")), new Literal("a")));
+  }
+
+  @Test public void of_freeSpacingMode_negativeLookahead_spaceAfterParen() {
+    assertThat(RegexPattern.of("(?x)( ?! a )a"))
+        .isEqualTo(sequence(new Lookaround.NegativeLookahead(new Literal("a")), new Literal("a")));
+  }
+
+  @Test public void of_freeSpacingMode_lookbehind_spaceAfterParen() {
+    assertThat(RegexPattern.of("(?x)a( ?<= a )"))
+        .isEqualTo(sequence(new Literal("a"), new Lookaround.Lookbehind(new Literal("a"))));
+  }
+
+  @Test public void of_freeSpacingMode_negativeLookbehind_spaceAfterParen() {
+    assertThat(RegexPattern.of("(?x)a( ?<! a )"))
+        .isEqualTo(sequence(new Literal("a"), new Lookaround.NegativeLookbehind(new Literal("a"))));
+  }
+
+  @Test public void of_freeSpacingMode_atomicGroup_spaceAfterParen() {
+    assertThat(RegexPattern.of("(?x)( ?> a )")).isEqualTo(new Group.Atomic(new Literal("a")));
+  }
+
+  @Test public void of_freeSpacingMode_namedGroup_spaceAfterParen() {
+    assertThat(RegexPattern.of("(?x)( ?<foo> a )"))
+        .isEqualTo(new Group.Named("foo", new Literal("a")));
+  }
+
+  @Test public void of_freeSpacingMode_modifierGroup_spaceAfterParen() {
+    assertThat(RegexPattern.of("(?x)( ?i: a )"))
+        .isEqualTo(
+            new Group.NonCapturing(
+                new Literal("a"), List.of(ModifierFlag.CASE_INSENSITIVE), List.of()));
+  }
+
+  @Test public void of_freeSpacingMode_quantifier_exact_spacesInsideBraces() {
+    assertThat(RegexPattern.of("(?x)a{ 2 }"))
+        .isEqualTo(new Quantified(new Literal("a"), repeated(2, 2)));
+  }
+
+  @Test public void of_freeSpacingMode_quantifier_range_spacesInsideBraces() {
+    assertThat(RegexPattern.of("(?x)a{ 2 , 3 }"))
+        .isEqualTo(new Quantified(new Literal("a"), repeated(2, 3)));
+  }
+
+  @Test public void of_freeSpacingMode_quantifier_atLeast_spacesInsideBraces() {
+    assertThat(RegexPattern.of("(?x)a{ 2 , }"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atLeast(2)));
+  }
+
+  @Test public void of_freeSpacingMode_quantifier_atMost_spacesInsideBraces() {
+    assertThat(RegexPattern.of("(?x)a{ , 3 }"))
+        .isEqualTo(new Quantified(new Literal("a"), Quantifier.atMost(3)));
+  }
+
   @Test public void of_nestedFreeSpacingMode_enabled() {
     assertThat(RegexPattern.of("a(?x: b c )d"))
         .isEqualTo(

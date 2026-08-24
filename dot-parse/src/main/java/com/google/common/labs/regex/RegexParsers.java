@@ -144,9 +144,10 @@ final class RegexParsers {
   }
 
   private static Parser<Backreference.Numbered> numberedBackreference() {
-    return string("\\")
-        .then(sequence(one("[1-9]"), digits().optional()).source())
-        .map(s -> new Backreference.Numbered(Integer.parseInt(s)));
+    return literally(
+        string("\\")
+            .then(sequence(one("[1-9]"), digits().optional()).source())
+            .map(s -> new Backreference.Numbered(Integer.parseInt(s))));
   }
 
   private static Parser<Backreference.Named> namedBackreference() {
@@ -228,10 +229,6 @@ final class RegexParsers {
 
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {
     var groupContent = content.orElse(new Literal(""));
-    Parser<Group.Named> named =
-        sequence(word().between(anyOf("?<", "?P<"), one('>')), groupContent, Group.Named::new)
-            .between("(", ")");
-    Parser<Group.Atomic> atomic = groupContent.between("(?>", ")").map(Group.Atomic::new);
     Parser<ModifierFlag> modifier = anyOf(ModifierFlag.values()).as("modifier flag");
     var modifierFlags = sequence(
         modifier.zeroOrMore(),
@@ -249,13 +246,26 @@ final class RegexParsers {
               one(')').thenReturn(new Group.NonCapturing(new Literal(""), enabled, disabled));
           return anyOf(nonCapturingGroup, standaloneFlags);
         });
-    return anyOf(
-        named, atomic, groupContent.between("(?=", ")").map(Lookaround.Lookahead::new),
-        groupContent.between("(?!", ")").map(Lookaround.NegativeLookahead::new),
-        groupContent.between("(?<=", ")").map(Lookaround.Lookbehind::new),
-        groupContent.between("(?<!", ")").map(Lookaround.NegativeLookbehind::new),
-        literally(string("(?").then(modifierFlags)).flatMap(identity()),
-        groupContent.between("(", ")").map(Group.Capturing::new));
+    return one('(')
+        .then(
+            anyOf(
+                string("?=").then(groupContent).map(Lookaround.Lookahead::new).followedBy(")"),
+                string("?!")
+                    .then(groupContent)
+                    .map(Lookaround.NegativeLookahead::new)
+                    .followedBy(")"),
+                string("?<=").then(groupContent).map(Lookaround.Lookbehind::new).followedBy(")"),
+                string("?<!")
+                    .then(groupContent)
+                    .map(Lookaround.NegativeLookbehind::new)
+                    .followedBy(")"),
+                string("?>").then(groupContent).map(Group.Atomic::new).followedBy(")"),
+                sequence(
+                        word().between(anyOf("?<", "?P<"), one('>')), groupContent,
+                        Group.Named::new)
+                    .followedBy(")"),
+                literally(one('?').then(modifierFlags)).flatMap(identity()),
+                groupContent.map(Group.Capturing::new).followedBy(")")));
   }
 
   private static <T> List<T> prepend(T first, List<T> rest) {

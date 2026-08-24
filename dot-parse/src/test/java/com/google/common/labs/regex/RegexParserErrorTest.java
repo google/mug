@@ -13,7 +13,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:5: expecting <]>, encountered:
@@ -24,7 +25,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_negated_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[^abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:6: expecting <]>, encountered:
@@ -35,7 +37,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_range_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[a-z"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:5: expecting <]>, encountered:
@@ -46,7 +49,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_range_trailingHyphen_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[a-"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <]>, encountered:
@@ -57,7 +61,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_empty_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting <]>, encountered:
@@ -68,7 +73,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_leadingClosingBracket_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[]abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:6: expecting <]>, encountered:
@@ -79,7 +85,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_leadingClosingBracket_range_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[]-z"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:5: expecting <]>, encountered:
@@ -90,7 +97,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_nested_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[a-z[0-9]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:10: expecting <]>, encountered:
@@ -101,7 +109,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_intersection_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[a-z&&def"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:10: expecting <]>, encountered:
@@ -112,7 +121,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_intersection_nested_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[a-z&&[0-9]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:12: expecting <]>, encountered:
@@ -123,7 +133,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_intersection_nested_negated_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[a-z&&[^0-9]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:13: expecting <]>, encountered:
@@ -134,7 +145,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_intersection_missingRightHandSide() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[a-z&&"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:7: expecting <character set>, encountered:
@@ -145,7 +157,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_negated_intersection_missingRightHandSide() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[^a-z&&"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:8: expecting <character set>, encountered:
@@ -156,7 +169,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_capturing_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:5: expecting <)>, encountered:
@@ -167,10 +181,11 @@ public final class RegexParserErrorTest {
 
   @Test public void group_capturing_empty_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("("));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
-            at 1:2: expecting one of [subpattern, )], encountered:
+            at 1:2: expecting one of [subpattern, ), ?, ?!, ?<, ?<!, ?<=, ?=, ?>, ?P<], encountered:
                 (
                  ^
             """);
@@ -178,7 +193,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_capturing_nested_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("((abc)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:7: expecting <)>, encountered:
@@ -189,7 +205,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_capturing_unclosedInnerGroup() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(a(b)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:6: expecting <)>, encountered:
@@ -200,7 +217,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_nonCapturing_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?:abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:7: expecting <)>, encountered:
@@ -211,7 +229,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_nonCapturing_unclosedInnerGroup() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?:(a)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:7: expecting <)>, encountered:
@@ -222,7 +241,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_named_missingClosingAngleBracket() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?<nameabc)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:11: expecting <>>, encountered:
@@ -233,7 +253,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_named_missingName() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?<>abc)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <word>, encountered:
@@ -244,7 +265,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_named_pythonSyntax_missingClosingAngleBracket() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?P<nameabc)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:12: expecting <>>, encountered:
@@ -255,7 +277,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_named_pythonSyntax_missingName() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?P<>abc)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:5: expecting <word>, encountered:
@@ -266,7 +289,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_named_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?<name>abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:12: expecting <)>, encountered:
@@ -277,7 +301,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_named_unclosedInnerGroup() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?<name>(a)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:12: expecting <)>, encountered:
@@ -288,7 +313,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_atomic_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?>abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:7: expecting <)>, encountered:
@@ -299,7 +325,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_atomic_unclosedInnerGroup() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?>(a)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:7: expecting <)>, encountered:
@@ -310,7 +337,8 @@ public final class RegexParserErrorTest {
 
   @Test public void lookahead_positive_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?=abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:7: expecting <)>, encountered:
@@ -321,7 +349,8 @@ public final class RegexParserErrorTest {
 
   @Test public void lookahead_positive_unclosedInnerGroup() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?=(a)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:7: expecting <)>, encountered:
@@ -332,7 +361,8 @@ public final class RegexParserErrorTest {
 
   @Test public void lookahead_negative_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?!abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:7: expecting <)>, encountered:
@@ -343,7 +373,8 @@ public final class RegexParserErrorTest {
 
   @Test public void lookahead_negative_unclosedInnerGroup() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?!(a)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:7: expecting <)>, encountered:
@@ -354,7 +385,8 @@ public final class RegexParserErrorTest {
 
   @Test public void lookbehind_positive_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?<=abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:8: expecting <)>, encountered:
@@ -365,7 +397,8 @@ public final class RegexParserErrorTest {
 
   @Test public void lookbehind_positive_unclosedInnerGroup() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?<=(a)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:8: expecting <)>, encountered:
@@ -376,7 +409,8 @@ public final class RegexParserErrorTest {
 
   @Test public void lookbehind_negative_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?<!abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:8: expecting <)>, encountered:
@@ -387,7 +421,8 @@ public final class RegexParserErrorTest {
 
   @Test public void lookbehind_negative_unclosedInnerGroup() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?<!(a)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:8: expecting <)>, encountered:
@@ -398,7 +433,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_modifierFlags_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?i:abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:8: expecting <)>, encountered:
@@ -409,7 +445,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_modifierFlags_disabledFlags_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?-i:abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:9: expecting <)>, encountered:
@@ -420,7 +457,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_modifierFlags_bothFlags_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?is-m:abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:11: expecting <)>, encountered:
@@ -431,7 +469,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_modifierFlags_standalone_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?i"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting one of [), :], encountered:
@@ -442,7 +481,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_modifierFlags_unknownFlag() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?z:abc)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting one of [), :], encountered:
@@ -453,7 +493,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_modifierFlags_standalone_unknownFlag() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?z)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting one of [), :], encountered:
@@ -464,7 +505,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_modifierFlags_missingColon() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?iabc)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting one of [), :], encountered:
@@ -475,7 +517,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_modifierFlags_disabled_missingFlags() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?-:abc)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <modifier flag>, encountered:
@@ -486,7 +529,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_modifierFlags_disabled_standalone_missingFlags() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?-)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <modifier flag>, encountered:
@@ -497,7 +541,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_modifierFlags_enabledThenEmptyDisabled() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?i-:abc)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:5: expecting <modifier flag>, encountered:
@@ -508,7 +553,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_modifierFlags_enabledThenEmptyDisabled_standalone() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?i-)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:5: expecting <modifier flag>, encountered:
@@ -519,7 +565,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_modifierFlags_doubleHyphen() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?i--m:a)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:5: expecting <modifier flag>, encountered:
@@ -530,7 +577,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_modifierFlags_standalone_doubleHyphen() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?i--)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:5: expecting <modifier flag>, encountered:
@@ -541,7 +589,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_modifierFlags_hyphenFirst_thenDoubleHyphen() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?--i:a)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <modifier flag>, encountered:
@@ -552,7 +601,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_unknownConstruct() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?*abc)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting one of [), :], encountered:
@@ -563,7 +613,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_inlineComment_rejected() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?#comment)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting one of [), :], encountered:
@@ -574,7 +625,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_branchReset_rejected() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?|(a)|(b))"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting one of [), :], encountered:
@@ -585,7 +637,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_conditional_rejected() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?(1)a|b)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting one of [), :], encountered:
@@ -596,7 +649,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_recursivePattern_rejected() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?R)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting one of [), :], encountered:
@@ -607,7 +661,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_pythonNamedBackreference_rejected() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?P=name)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting one of [), :], encountered:
@@ -618,7 +673,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_quoteNamedGroup_rejected() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?'name'abc)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting one of [), :], encountered:
@@ -629,7 +685,8 @@ public final class RegexParserErrorTest {
 
   @Test public void group_questionOnly_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting one of [), :], encountered:
@@ -640,7 +697,8 @@ public final class RegexParserErrorTest {
 
   @Test public void escape_trailingBackslash() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:2: expecting <escaped char>, encountered:
@@ -651,7 +709,8 @@ public final class RegexParserErrorTest {
 
   @Test public void freeSpacingMode_unclosedGroup() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?x) (abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:6: expecting <)>, encountered:
@@ -662,7 +721,8 @@ public final class RegexParserErrorTest {
 
   @Test public void freeSpacingMode_unclosedCharacterClass() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(?x) [abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:6: expecting <]>, encountered:
@@ -674,7 +734,8 @@ public final class RegexParserErrorTest {
   @Test public void freeSpacingMode_unclosedGroupAfterComment() {
     ParseException e =
         assertThrows(ParseException.class, () -> RegexPattern.of("(?x) a # comment\n (b"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 2:4: expecting <)>, encountered:
@@ -686,7 +747,8 @@ public final class RegexParserErrorTest {
 
   @Test public void quantifier_danglingPlusAtStart() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("+"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <EOF>, encountered:
@@ -697,7 +759,8 @@ public final class RegexParserErrorTest {
 
   @Test public void quantifier_danglingStarAtStart() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("*"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <EOF>, encountered:
@@ -708,7 +771,8 @@ public final class RegexParserErrorTest {
 
   @Test public void quantifier_danglingQuestionAtStart() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("?"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <EOF>, encountered:
@@ -719,10 +783,11 @@ public final class RegexParserErrorTest {
 
   @Test public void quantifier_danglingPlusInGroup() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(+)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
-            at 1:2: expecting one of [subpattern, )], encountered:
+            at 1:2: expecting one of [subpattern, ), ?, ?!, ?<, ?<!, ?<=, ?=, ?>, ?P<], encountered:
                 (+)
                  ^
             """);
@@ -730,10 +795,11 @@ public final class RegexParserErrorTest {
 
   @Test public void quantifier_danglingStarInGroup() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("(*)"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
-            at 1:2: expecting one of [subpattern, )], encountered:
+            at 1:2: expecting one of [subpattern, ), ?, ?!, ?<, ?<!, ?<=, ?=, ?>, ?P<], encountered:
                 (*)
                  ^
             """);
@@ -741,7 +807,8 @@ public final class RegexParserErrorTest {
 
   @Test public void quantifier_danglingPlusAfterPipe() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("a|+"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting <EOF>, encountered:
@@ -752,7 +819,8 @@ public final class RegexParserErrorTest {
 
   @Test public void hexEscape_codePointTooBig() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\x{110000}"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting <code point>, encountered:
@@ -763,7 +831,8 @@ public final class RegexParserErrorTest {
 
   @Test public void namedUnicodeCharacter_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\N{abc"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:7: expecting <}>, encountered:
@@ -774,7 +843,8 @@ public final class RegexParserErrorTest {
 
   @Test public void namedUnicodeCharacter_emptyName() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\N{}"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <character name>, encountered:
@@ -791,7 +861,8 @@ public final class RegexParserErrorTest {
 
   @Test public void unicodeEscape_invalidHex() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\u123z"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting <4 hex digits>, encountered:
@@ -802,7 +873,8 @@ public final class RegexParserErrorTest {
 
   @Test public void unicodeEscape_incomplete() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\u"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting <4 hex digits>, encountered:
@@ -813,7 +885,8 @@ public final class RegexParserErrorTest {
 
   @Test public void octalEscape_invalidDigit() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\08"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting one of [[0-3], [4-7]], encountered:
@@ -824,7 +897,8 @@ public final class RegexParserErrorTest {
 
   @Test public void octalEscape_incomplete() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\0"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting one of [[0-3], [4-7]], encountered:
@@ -835,7 +909,8 @@ public final class RegexParserErrorTest {
 
   @Test public void property_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\p{foo"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:7: expecting <}>, encountered:
@@ -846,7 +921,8 @@ public final class RegexParserErrorTest {
 
   @Test public void negatedProperty_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\P{foo"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:7: expecting <}>, encountered:
@@ -857,7 +933,8 @@ public final class RegexParserErrorTest {
 
   @Test public void namedBackreference_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\k<foo"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:7: expecting <>>, encountered:
@@ -868,7 +945,8 @@ public final class RegexParserErrorTest {
 
   @Test public void controlEscape_incomplete() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\c"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting <control char>, encountered:
@@ -879,7 +957,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_unicodeEscape_invalidHex() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\u123z]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <4 hex digits>, encountered:
@@ -890,7 +969,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_unicodeEscape_incomplete() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\u]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <4 hex digits>, encountered:
@@ -901,7 +981,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_octalEscape_invalidDigit() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\08]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting one of [[0-3], [4-7]], encountered:
@@ -912,7 +993,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_octalEscape_incomplete() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\0]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting one of [[0-3], [4-7]], encountered:
@@ -923,7 +1005,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_property_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\p{foo]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:9: expecting <}>, encountered:
@@ -934,7 +1017,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_negatedProperty_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\P{foo]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:9: expecting <}>, encountered:
@@ -945,7 +1029,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_namedUnicodeCharacter_emptyName() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\N{}]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:5: expecting <character name>, encountered:
@@ -956,7 +1041,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_namedUnicodeCharacter_unclosed() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\N{abc]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:9: expecting <}>, encountered:
@@ -967,7 +1053,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_hexEscape_codePointTooBig() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\x{110000}]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <code point>, encountered:
@@ -978,7 +1065,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_hexEscape_invalidHex() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\xzz]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <2 hex digits>, encountered:
@@ -989,7 +1077,8 @@ public final class RegexParserErrorTest {
 
   @Test public void property_empty() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\p{}"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <property name>, encountered:
@@ -1000,7 +1089,8 @@ public final class RegexParserErrorTest {
 
   @Test public void negatedProperty_empty() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\P{}"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <property name>, encountered:
@@ -1011,7 +1101,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_property_empty() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\p{}]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:5: expecting <property name>, encountered:
@@ -1022,7 +1113,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_negatedProperty_empty() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\P{}]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:5: expecting <property name>, encountered:
@@ -1033,7 +1125,8 @@ public final class RegexParserErrorTest {
 
   @Test public void property_unbraced_nonAscii_rejected() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\p\u03B1"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting one of [category, {], encountered:
@@ -1044,7 +1137,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_property_unbraced_nonAscii_rejected() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\p\u03B1]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting one of [category, {], encountered:
@@ -1055,7 +1149,8 @@ public final class RegexParserErrorTest {
 
   @Test public void negatedProperty_unbraced_nonAscii_rejected() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("\\P\u03B1"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting one of [category, {], encountered:
@@ -1066,7 +1161,8 @@ public final class RegexParserErrorTest {
 
   @Test public void characterClass_negatedProperty_unbraced_nonAscii_rejected() {
     ParseException e = assertThrows(ParseException.class, () -> RegexPattern.of("[\\P\u03B1]"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting one of [category, {], encountered:
