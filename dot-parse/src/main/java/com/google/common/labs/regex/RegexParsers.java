@@ -38,6 +38,7 @@ import static com.google.mu.util.CharPredicate.noneOf;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.stream;
+import static java.util.Comparator.comparing;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.joining;
@@ -106,10 +107,9 @@ final class RegexParsers {
   static final Parser<?> FREE_SPACES = anyOf(
       consecutive(Character::isWhitespace, "whitespace"), one('#').then(consecutive("[^\n]")));
   private static final Parser<Anchor> ANCHOR = stream(Anchor.values())
-      .sorted(
-          Comparator.comparing((Anchor a) -> a.tokens().size())
-              .reversed()
-              .thenComparing(Anchor::name))
+      .sorted(comparing((Anchor a) -> a.tokens().size())
+          .reversed()
+          .thenComparing(Anchor::name))
       .map(anchor -> tokenSequence(anchor.tokens()).thenReturn(anchor))
       .collect(Parser.or());
   static final Parser<RegexPattern> PARSER = define(RegexParsers::pattern);
