@@ -107,7 +107,7 @@ final class RegexParsers {
       consecutive(Character::isWhitespace, "whitespace"), one('#').then(consecutive("[^\n]")));
   private static final Parser<Anchor> ANCHOR = stream(Anchor.values())
       .sorted(
-          Comparator.<Anchor, Integer>comparing(a -> a.tokens().size())
+          Comparator.comparing((Anchor a) -> a.tokens().size())
               .reversed()
               .thenComparing(Anchor::name))
       .map(anchor -> tokenSequence(anchor.tokens()).thenReturn(anchor))
