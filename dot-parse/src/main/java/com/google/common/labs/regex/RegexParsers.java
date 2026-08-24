@@ -38,7 +38,7 @@ import static com.google.mu.util.CharPredicate.noneOf;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.stream;
-import static java.util.Comparator.comparing;
+import static java.util.Comparator.comparingInt;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.joining;
@@ -105,7 +105,7 @@ final class RegexParsers {
           .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
           .collect(Collectors::toUnmodifiableMap);
   private static final Parser<Anchor> ANCHOR = stream(Anchor.values())
-      .sorted(comparing((Anchor a) -> a.tokens().size())
+      .sorted(comparingInt((Anchor a) -> a.tokens().size())
           .reversed()
           .thenComparing(Anchor::name))
       .map(anchor -> tokenSequence(anchor.tokens()).thenReturn(anchor))
