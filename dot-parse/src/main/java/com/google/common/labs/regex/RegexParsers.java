@@ -25,12 +25,12 @@ import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
 import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
-import static com.google.common.labs.regex.RegexPattern.asAlternation;
-import static com.google.common.labs.regex.RegexPattern.inSequence;
-import static com.google.common.labs.regex.RegexPattern.intersection;
 import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.ANY_CHAR;
 import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.EXTENDED_GRAPHEME_CLUSTER;
 import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.LINEBREAK;
+import static com.google.common.labs.regex.RegexPattern.asAlternation;
+import static com.google.common.labs.regex.RegexPattern.inSequence;
+import static com.google.common.labs.regex.RegexPattern.intersection;
 import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
 import static com.google.mu.util.CharPredicate.isNot;
@@ -44,12 +44,6 @@ import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.google.common.labs.parse.Parser;
 import com.google.common.labs.regex.RegexPattern.Anchor;
@@ -67,6 +61,11 @@ import com.google.common.labs.regex.RegexPattern.PosixCharClass;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
 import com.google.common.labs.regex.RegexPattern.UnicodeProperty;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /** Parsers for {@link RegexPattern}. */
 final class RegexParsers {
@@ -105,9 +104,7 @@ final class RegexParsers {
           .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
           .collect(Collectors::toUnmodifiableMap);
   private static final Parser<Anchor> ANCHOR = stream(Anchor.values())
-      .sorted(comparingInt((Anchor a) -> a.tokens().size())
-          .reversed()
-          .thenComparing(Anchor::name))
+      .sorted(comparingInt((Anchor a) -> a.tokens().size()).reversed().thenComparing(Anchor::name))
       .map(anchor -> tokenSequence(anchor.tokens()).thenReturn(anchor))
       .collect(Parser.or());
   static final Parser<?> FREE_SPACES = anyOf(
@@ -249,17 +246,11 @@ final class RegexParsers {
     return one('(')
         .then(
             anyOf(
-                string("?=").then(groupContent).map(Lookaround.Lookahead::new).followedBy(")"),
-                string("?!")
-                    .then(groupContent)
-                    .map(Lookaround.NegativeLookahead::new)
-                    .followedBy(")"),
-                string("?<=").then(groupContent).map(Lookaround.Lookbehind::new).followedBy(")"),
-                string("?<!")
-                    .then(groupContent)
-                    .map(Lookaround.NegativeLookbehind::new)
-                    .followedBy(")"),
-                string("?>").then(groupContent).map(Group.Atomic::new).followedBy(")"),
+                groupContent.between("?=", ")").map(Lookaround.Lookahead::new),
+                groupContent.between("?!", ")").map(Lookaround.NegativeLookahead::new),
+                groupContent.between("?<=", ")").map(Lookaround.Lookbehind::new),
+                groupContent.between("?<!", ")").map(Lookaround.NegativeLookbehind::new),
+                groupContent.between("?>", ")").map(Group.Atomic::new),
                 sequence(
                         word().between(anyOf("?<", "?P<"), one('>')), groupContent,
                         Group.Named::new)
