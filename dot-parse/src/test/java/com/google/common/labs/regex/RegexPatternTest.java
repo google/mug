@@ -1021,6 +1021,25 @@ public final class RegexPatternTest {
                 new Literal("d")));
   }
 
+  @Test public void of_freeSpacingMode_quotedLiteral_withSpacesAfterQ() {
+    assertThat(RegexPattern.of("(?x) \\Q  foo")).isEqualTo(new Literal("  foo"));
+  }
+
+  @Test public void of_freeSpacingMode_quotedLiteral_withClosingE_andSpacesAfterQ() {
+    assertThat(RegexPattern.of("(?x) \\Q  foo\\E")).isEqualTo(new Literal("  foo"));
+  }
+
+  @Test public void of_freeSpacingMode_quotedLiteral_inCharClass_withSpacesAfterQ() {
+    assertThat(RegexPattern.of("(?x)[\\Q  foo\\E]"))
+        .isEqualTo(
+            anyOf(
+                new LiteralChar(' '),
+                new LiteralChar(' '),
+                new LiteralChar('f'),
+                new LiteralChar('o'),
+                new LiteralChar('o')));
+  }
+
   @Test public void of_nestedFreeSpacingMode_disabled() {
     assertThat(RegexPattern.of("(?x)a(?-x: b c )d"))
         .isEqualTo(
