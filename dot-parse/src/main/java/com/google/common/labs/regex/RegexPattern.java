@@ -25,17 +25,17 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
-import com.google.common.labs.parse.Parser;
-import com.google.mu.annotations.ParametersMustMatchByName;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
+
+import com.google.common.labs.parse.Parser;
+import com.google.mu.annotations.ParametersMustMatchByName;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
 
 /**
  * Defines the Abstract Syntax Tree (AST) for a regular expression.
@@ -75,7 +75,7 @@ public sealed interface RegexPattern {
   /** Returns a {@link Sequence} of the given elements. */
   @SafeVarargs
   static Sequence sequence(RegexPattern... elements) {
-    return new Sequence(Arrays.stream(elements).collect(toUnmodifiableList()));
+    return new Sequence(List.of(elements));
   }
 
   /**
@@ -106,7 +106,7 @@ public sealed interface RegexPattern {
   /** Returns an {@link Alternation} of the given alternatives. */
   @SafeVarargs
   static Alternation alternation(RegexPattern... alternatives) {
-    return new Alternation(Arrays.stream(alternatives).collect(toUnmodifiableList()));
+    return new Alternation(List.of(alternatives));
   }
 
   /** A collector that collects the input {@code RegexPattern} as an alternation. */
@@ -118,34 +118,34 @@ public sealed interface RegexPattern {
   /** Returns a {@link CharacterSet} of the given elements. */
   @SafeVarargs
   static CharacterSet.AnyOf anyOf(CharSetElement... elements) {
-    return new CharacterSet.AnyOf(Arrays.stream(elements).collect(toUnmodifiableList()));
+    return new CharacterSet.AnyOf(List.of(elements));
   }
 
   /** Returns a {@link CharacterSet} of the given elements. */
   static CharacterSet.AnyOf anyOf(Collection<? extends CharSetElement> elements) {
-    return new CharacterSet.AnyOf(elements.stream().collect(toUnmodifiableList()));
+    return new CharacterSet.AnyOf(List.copyOf(elements));
   }
 
   /** Returns a negated {@link CharacterSet} of the given elements. */
   @SafeVarargs
   static CharacterSet.NoneOf noneOf(CharSetElement... elements) {
-    return new CharacterSet.NoneOf(Arrays.stream(elements).collect(toUnmodifiableList()));
+    return new CharacterSet.NoneOf(List.of(elements));
   }
 
   /** Returns a negated {@link CharacterSet} of the given elements. */
   static CharacterSet.NoneOf noneOf(Collection<? extends CharSetElement> elements) {
-    return new CharacterSet.NoneOf(elements.stream().collect(toUnmodifiableList()));
+    return new CharacterSet.NoneOf(List.copyOf(elements));
   }
 
   /** Returns a character set intersection of the given character sets. */
   @SafeVarargs
   static CharacterSet.Intersection intersection(CharacterSet... operands) {
-    return new CharacterSet.Intersection(Arrays.stream(operands).collect(toUnmodifiableList()));
+    return new CharacterSet.Intersection(List.of(operands));
   }
 
   /** Returns a character set intersection of the given character sets. */
   static CharacterSet.Intersection intersection(Collection<? extends CharacterSet> operands) {
-    return new CharacterSet.Intersection(operands.stream().collect(toUnmodifiableList()));
+    return new CharacterSet.Intersection(List.copyOf(operands));
   }
 
   /** A collector that collects the input {@code CharacterSet} as an intersection. */
@@ -268,6 +268,8 @@ public sealed interface RegexPattern {
     boolean isPossessive();
     Quantifier reluctant();
     Quantifier possessive();
+    int min();
+    int max();
 
     @Override default Quantified apply(RegexPattern pattern) {
       return new Quantified(pattern, this);
@@ -319,6 +321,10 @@ public sealed interface RegexPattern {
       return new AtLeast(min, false, true);
     }
 
+    @Override public int max() {
+      return Integer.MAX_VALUE;
+    }
+
     @Override public String toString() {
       StringBuilder builder =
           new StringBuilder((min == 0) ? "*" : (min == 1) ? "+" : "{" + min + ",}");
@@ -348,6 +354,10 @@ public sealed interface RegexPattern {
 
     @Override public AtMost possessive() {
       return new AtMost(max, false, true);
+    }
+
+    @Override public int min() {
+      return 0;
     }
 
     @Override public String toString() {

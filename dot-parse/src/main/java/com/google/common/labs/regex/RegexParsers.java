@@ -156,12 +156,15 @@ final class RegexParsers {
     Parser<Quantifier> question = one('?').thenReturn(Quantifier.atMost(1));
     Parser<Quantifier> star = one('*').thenReturn(Quantifier.repeated());
     Parser<Quantifier> plus = one('+').thenReturn(Quantifier.atLeast(1));
-    Parser<Quantifier> exact = number.between("{", "}").map(Quantifier::repeated);
-    Parser<Quantifier> atLeast = number.followedBy(",").between("{", "}").map(Quantifier::atLeast);
-    Parser<Quantifier> atMost = one(',').then(number).between("{", "}").map(Quantifier::atMost);
-    Parser<Quantifier> range =
-        sequence(number, one(',').then(number), Quantifier::repeated).between("{", "}");
-    return anyOf(question, star, plus, exact, atLeast, atMost, range)
+    Parser<Quantifier> range = anyOf(
+            number
+                .map(Quantifier::repeated)
+                .optionallyFollowedBy(
+                    one(',').then(number.orElse(Integer.MAX_VALUE)),
+                    (q, max) -> Quantifier.repeated(q.min(), max)),
+            one(',').then(number).map(Quantifier::atMost))
+        .between("{", "}");
+    return anyOf(question, star, plus, range)
         .optionallyFollowedBy("?", Quantifier::reluctant)
         .optionallyFollowedBy("+", Quantifier::possessive);
   }
@@ -186,10 +189,8 @@ final class RegexParsers {
         ESCAPED.map(s -> s.codePointAt(0)),
         one("[^-&\\]]").map(c -> (int) c),
         one('&').notFollowedBy("&").map(c -> (int) c));
-    Parser<LiteralChar> literalCharOrDash = anyOf(
-        ESCAPED.map(s -> new LiteralChar(s.codePointAt(0))),
-        one("[^&\\]]").map(LiteralChar::new),
-        one('&').notFollowedBy("&").map(LiteralChar::new));
+    Parser<LiteralChar> literalCharOrDash =
+        anyOf(literalChar.map(LiteralChar::new), one('-').map(LiteralChar::new));
     Parser<CharRange> range = sequence(literalChar, one('-').then(literalChar), CharRange::new);
     Parser<CharSetElement> element = anyOf(
         positiveCharacterProperty(),
