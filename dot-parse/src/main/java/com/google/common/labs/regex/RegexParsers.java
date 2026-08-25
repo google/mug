@@ -114,10 +114,8 @@ final class RegexParsers {
     Parser<RegexPattern> atomic = anyOf(
         define(RegexParsers::charClass), positiveCharacterProperty(), negativeCharacterProperty(),
         groupOrLookaround(regex), anyOf(PredefinedCharClass.values()), ANCHOR,
-        literally(
-            string("\\")
-                .then(sequence(one("[1-9]"), digits().optional()).source())
-                .map(s -> new Backreference.Numbered(Integer.parseInt(s)))),
+        literally(string("\\").then(sequence(one("[1-9]"), digits().optional()).source()))
+            .map(s -> new Backreference.Numbered(Integer.parseInt(s))),
         string("\\k").then(word().between("<", ">")).map(Backreference.Named::new),
         quotedText().map(Literal::new), consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
         consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
