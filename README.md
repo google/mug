@@ -7,7 +7,7 @@ A small Java 8+ string processing and streams library ([javadoc](http://google.g
 
 - ✅ [`Substring`](https://github.com/google/mug/wiki/Substring-Explained) – simple and composable substring extraction & manipulation  
   → `Substring.between("(", ")").from("call(foo)") → "foo"`
-- ✅ [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained) – compile-time-safe bidirectional parsing/formatting  
+- ✅ [`StringFormat`](https://github.com/google/mug/wiki/StringFormat-Explained) – _compile-time-safe_ bidirectional parsing/formatting  
   → `new StringFormat("/home/{user}/{date}").parse(filePath, (user, date) -> ...)`
 - ✅ [`Parser`](https://google.github.io/mug/apidocs/com/google/common/labs/parse/Parser.html) – everyday string parsing easier, faster and beyond regex  
     ```java
