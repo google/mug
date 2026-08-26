@@ -104,7 +104,7 @@ final class RegexParsers {
           .collect(Collectors::toUnmodifiableMap);
   private static final Parser<Anchor> ANCHOR = stream(Anchor.values())
       .sorted(comparingInt((Anchor a) -> a.tokens().size()).reversed().thenComparing(Anchor::name))
-      .map(anchor -> tokenSequence(anchor.tokens()).thenReturn(anchor))
+      .map(RegexParsers::anchor)
       .collect(Parser.or());
   static final Parser<?> FREE_SPACES = anyOf(
       consecutive(Character::isWhitespace, "whitespace"), one('#').then(consecutive("[^\n]")));
@@ -250,7 +250,10 @@ final class RegexParsers {
     return list;
   }
 
-  private static Parser<?> tokenSequence(List<String> tokens) {
-    return tokens.stream().map(Parser::string).reduce(Parser::then).orElseThrow();
+  private static Parser<Anchor> anchor(Anchor anchor) {
+    return anchor.tokens().stream()
+        .map(Parser::string).reduce(Parser::then)
+        .orElseThrow()
+        .thenReturn(anchor);
   }
 }
