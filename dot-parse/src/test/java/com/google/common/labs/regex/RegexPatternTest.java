@@ -464,6 +464,18 @@ public final class RegexPatternTest {
         .isEqualTo(new Lookaround.NegativeLookahead(new Literal("")));
   }
 
+  @Test
+  public void of_negativeLookahead_withNestedClassAndEscapedBracket() {
+    assertThat(RegexPattern.of("(?![^[]*(\\]))"))
+        .isEqualTo(
+            new Lookaround.NegativeLookahead(
+                RegexPattern.sequence(
+                    new Quantified(
+                        new CharacterSet.NoneOf(List.of(new LiteralChar('['))),
+                        Quantifier.repeated()),
+                    new Group.Capturing(new Literal("]")))));
+  }
+
   @Test public void of_negativeLookbehind_empty() {
     assertThat(RegexPattern.of("(?<!)"))
         .isEqualTo(new Lookaround.NegativeLookbehind(new Literal("")));
@@ -576,6 +588,12 @@ public final class RegexPatternTest {
 
   @Test public void of_characterSet_leadingClosingBracket_range() {
     assertThat(RegexPattern.of("[]-z]")).isEqualTo(anyOf(new CharRange(']', 'z')));
+  }
+
+  @Test public void of_sqlServerLimitHandler() {
+    String pattern =
+        "(?![^[]*(\\]))\\S+\\s*(\\s(?i)as\\s)\\s*(\\S+)*\\s*$|(?![^[]*(\\]))\\s+(\\S+)$";
+    assertThat(RegexPattern.of(pattern)).isNotNull();
   }
 
   @Test public void of_characterSet_quotedLiteral() {

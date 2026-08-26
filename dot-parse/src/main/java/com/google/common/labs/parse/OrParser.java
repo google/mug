@@ -34,6 +34,8 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** Implements {@link Parser#anyOf}. */
@@ -100,6 +102,13 @@ final class OrParser<T> extends Parser<T> {
       }
     }
     return unmodifiableSet(new LinkedHashSet<>(result));
+  }
+
+  @Override public <R> Parser<R> map(Function<? super T, ? extends R> mapper) {
+    if (pruneTree == null) {
+      return new OrParser<R>(parsers.stream().map(p -> p.<R>map(mapper)).toList(), null);
+    }
+    return super.map(mapper);
   }
 
   @Override Parser<?> ignoreReturn() {

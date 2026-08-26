@@ -124,7 +124,7 @@ public sealed interface RegexPattern {
   /** Returns a {@link CharacterSet} of the given elements. */
   @SafeVarargs
   static CharacterSet.AnyOf anyOf(CharSetElement... elements) {
-    return new CharacterSet.AnyOf(List.of(elements));
+    return anyOf(List.of(elements));
   }
 
   /** Returns a {@link CharacterSet} of the given elements. */
@@ -135,7 +135,7 @@ public sealed interface RegexPattern {
   /** Returns a negated {@link CharacterSet} of the given elements. */
   @SafeVarargs
   static CharacterSet.NoneOf noneOf(CharSetElement... elements) {
-    return new CharacterSet.NoneOf(List.of(elements));
+    return noneOf(List.of(elements));
   }
 
   /** Returns a negated {@link CharacterSet} of the given elements. */
@@ -146,7 +146,7 @@ public sealed interface RegexPattern {
   /** Returns a character set intersection of the given character sets. */
   @SafeVarargs
   static CharacterSet.Intersection intersection(CharacterSet... operands) {
-    return new CharacterSet.Intersection(List.of(operands));
+    return intersection(List.of(operands));
   }
 
   /** Returns a character set intersection of the given character sets. */

@@ -43,7 +43,6 @@ import static java.util.Comparator.comparingInt;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 import com.google.common.labs.parse.Parser;
 import com.google.common.labs.regex.RegexPattern.Anchor;
@@ -169,22 +168,22 @@ final class RegexParsers {
 
   private static Parser<CharacterSet> charClass(Parser<CharacterSet> charClass) {
     Parser<Integer> literalChar = anyOf(
-        one("[^-&\\]]").map(c -> (int) c),
+        one("[^-&\\][]").map(c -> (int) c),
         ESCAPED.map(s -> s.codePointAt(0)),
         one('&').notFollowedBy("&").map(c -> (int) c));
     Parser<CharSetElement> element = anyOf(
-        positiveCharacterProperty(),
-        negativeCharacterProperty(),
         anyOf(PredefinedCharClass.values())
             .suchThat(v -> !DISALLOWED_IN_CHAR_CLASS.contains(v), "predefined char class"),
-        charClass,
         sequence(
             literalChar, one('-').then(literalChar).orElse(null),
             (c1, c2) -> c2 == null ? new LiteralChar(c1) : new CharRange(c1, c2)),
-        one('-').map(LiteralChar::new));
-    Parser<List<CharSetElement>> quotedInClass = quotedText()
-        .map(s -> s.codePoints().mapToObj(LiteralChar::new).collect(toUnmodifiableList()));
-    Parser<List<CharSetElement>> elements =
+        charClass,
+        one("[-[]").map(LiteralChar::new),
+        positiveCharacterProperty(),
+        negativeCharacterProperty());
+    Parser<List<LiteralChar>> quotedInClass =
+        quotedText().map(s -> s.codePoints().mapToObj(LiteralChar::new).toList());
+    var elements =
         sequence(
                 one(']')
                     .<CharSetElement>map(LiteralChar::new)
@@ -196,10 +195,10 @@ final class RegexParsers {
                 (leading, rest) -> leading == null ? rest : prepend(leading, rest))
             .notEmpty();
     Parser<CharacterSet> characterSet =
-        anyOf(charClass, elements.map(CharacterSet.AnyOf::new)).as("character set");
+        anyOf(elements.map(RegexParsers::toCharacterSet), charClass).as("character set");
     return anyOf(
-        intersected(elements.map(CharacterSet.NoneOf::new), characterSet).between("[^", "]"),
-        intersected(elements.map(CharacterSet.AnyOf::new), characterSet).between("[", "]"));
+        intersected(elements.map(RegexPattern::noneOf), characterSet).between("[^", "]"),
+        intersected(elements.map(RegexPattern::anyOf), characterSet).between("[", "]"));
   }
 
   private static Parser<CharacterSet> intersected(
@@ -207,6 +206,12 @@ final class RegexParsers {
     return sequence(
         primary, string("&&").then(secondary).zeroOrMore(),
         (first, rest) -> rest.isEmpty() ? first : intersection(prepend(first, rest)));
+  }
+
+  private static CharacterSet toCharacterSet(List<? extends CharSetElement> elements) {
+    return elements.size() == 1 && elements.get(0) instanceof CharacterSet cset
+        ? cset
+        : RegexPattern.anyOf(elements);
   }
 
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {
@@ -252,7 +257,7 @@ final class RegexParsers {
         .thenReturn(anchor);
   }
 
-  private static <T> List<T> prepend(T first, List<T> rest) {
+  private static <T> List<T> prepend(T first, List<? extends T> rest) {
     List<T> list = new ArrayList<>(rest.size() + 1);
     list.add(first);
     list.addAll(rest);
