@@ -197,15 +197,16 @@ final class RegexParsers {
             .notEmpty();
     Parser<CharacterSet> characterSet =
         anyOf(charClass, elements.map(CharacterSet.AnyOf::new)).as("character set");
-    Parser<CharacterSet> positiveTerm = sequence(
-        elements.map(CharacterSet.AnyOf::new),
-        string("&&").then(characterSet).zeroOrMore(),
+    return anyOf(
+        intersected(elements.map(CharacterSet.NoneOf::new), characterSet).between("[^", "]"),
+        intersected(elements.map(CharacterSet.AnyOf::new), characterSet).between("[", "]"));
+  }
+
+  private static Parser<CharacterSet> intersected(
+      Parser<CharacterSet> primary, Parser<CharacterSet> secondary) {
+    return sequence(
+        primary, string("&&").then(secondary).zeroOrMore(),
         (first, rest) -> rest.isEmpty() ? first : intersection(prepend(first, rest)));
-    Parser<CharacterSet> negatedTerm = sequence(
-        elements.map(CharacterSet.NoneOf::new),
-        string("&&").then(characterSet).zeroOrMore(),
-        (first, rest) -> rest.isEmpty() ? first : intersection(prepend(first, rest)));
-    return anyOf(negatedTerm.between("[^", "]"), positiveTerm.between("[", "]"));
   }
 
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {
@@ -243,17 +244,18 @@ final class RegexParsers {
                 groupContent.map(Group.Capturing::new).followedBy(")")));
   }
 
+  private static Parser<Anchor> anchor(Anchor anchor) {
+    return anchor.tokens().stream()
+        .map(Parser::string)
+        .reduce(Parser::then)
+        .orElseThrow()
+        .thenReturn(anchor);
+  }
+
   private static <T> List<T> prepend(T first, List<T> rest) {
     List<T> list = new ArrayList<>(rest.size() + 1);
     list.add(first);
     list.addAll(rest);
     return list;
-  }
-
-  private static Parser<Anchor> anchor(Anchor anchor) {
-    return anchor.tokens().stream()
-        .map(Parser::string).reduce(Parser::then)
-        .orElseThrow()
-        .thenReturn(anchor);
   }
 }
