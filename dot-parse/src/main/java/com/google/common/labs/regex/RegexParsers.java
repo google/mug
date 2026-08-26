@@ -179,9 +179,8 @@ final class RegexParsers {
         charClass,
         sequence(
             literalChar,
-            one('-').then(literalChar).optional(),
-            (c1, b) ->
-                b.<CharSetElement>map(c2 -> new CharRange(c1, c2)).orElse(new LiteralChar(c1))),
+            one('-').then(literalChar).orElse(null),
+            (c1, c2) -> c2 == null ? new LiteralChar(c1) : new CharRange(c1, c2)),
         one('-').map(LiteralChar::new));
     Parser<List<CharSetElement>> quotedInClass = quotedText()
         .map(s -> s.codePoints().mapToObj(LiteralChar::new).collect(toUnmodifiableList()));
