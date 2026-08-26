@@ -486,6 +486,18 @@ public final class RegexPatternTest {
     assertThat(RegexPattern.of("\\Q[a-z]*")).isEqualTo(new Literal("[a-z]*"));
   }
 
+  @Test public void of_quotedLiteral_empty() {
+    assertThat(RegexPattern.of("\\Q\\E")).isEqualTo(new Literal(""));
+  }
+
+  @Test public void of_quotedLiteral_emptyWithoutClosingE() {
+    assertThat(RegexPattern.of("\\Q")).isEqualTo(new Literal(""));
+  }
+
+  @Test public void of_quotedLiteral_trailingEmptyWithoutClosingE() {
+    assertThat(RegexPattern.of("a\\Q")).isEqualTo(new Literal("a"));
+  }
+
   @Test public void of_quotedLiteral_withEscapes() {
     assertThat(RegexPattern.of("\\Qa\\db\\E")).isEqualTo(new Literal("a\\db"));
   }
@@ -1027,6 +1039,14 @@ public final class RegexPatternTest {
 
   @Test public void of_freeSpacingMode_quotedLiteral_withClosingE_andSpacesAfterQ() {
     assertThat(RegexPattern.of("(?x) \\Q  foo\\E")).isEqualTo(new Literal("  foo"));
+  }
+
+  @Test public void of_freeSpacingMode_quotedLiteral_empty() {
+    assertThat(RegexPattern.of("(?x) \\Q\\E")).isEqualTo(new Literal(""));
+  }
+
+  @Test public void of_freeSpacingMode_quotedLiteral_emptyWithoutClosingE() {
+    assertThat(RegexPattern.of("(?x) \\Q")).isEqualTo(new Literal(""));
   }
 
   @Test public void of_freeSpacingMode_quotedLiteral_inCharClass_withSpacesAfterQ() {

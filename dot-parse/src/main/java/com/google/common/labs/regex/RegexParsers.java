@@ -25,6 +25,7 @@ import static com.google.common.labs.parse.Parser.quotedBy;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
+import static com.google.common.labs.parse.Parser.zeroOrMore;
 import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
 import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.ANY_CHAR;
 import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.EXTENDED_GRAPHEME_CLUSTER;
@@ -130,7 +131,7 @@ final class RegexParsers {
   }
 
   private static Parser<String> quotedText() {
-    return anyOf(quotedBy("\\Q", "\\E"), literally(string("\\Q").then(consecutive(ANY, "quoted"))));
+    return anyOf(quotedBy("\\Q", "\\E"), literally(string("\\Q").then(zeroOrMore(ANY, "quoted"))));
   }
 
   private static Parser<Quantifier> quantifier() {
