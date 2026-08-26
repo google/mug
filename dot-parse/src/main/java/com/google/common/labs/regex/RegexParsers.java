@@ -181,7 +181,7 @@ final class RegexParsers {
         positiveCharacterProperty(),
         negativeCharacterProperty(),
         charClass);
-    Parser<List<LiteralChar>> quotedInClass =
+    Parser<List<LiteralChar>> quotedChars =
         quotedText().map(s -> s.codePoints().mapToObj(LiteralChar::new).toList());
     var elements =
         sequence(
@@ -190,7 +190,7 @@ final class RegexParsers {
                     .optionallyFollowedBy(
                         one('-').then(literalChar), (unused, to) -> new CharRange(']', to))
                     .orElse(null),
-                anyOf(quotedInClass, element.map(List::of))
+                anyOf(quotedChars, element.map(List::of))
                     .zeroOrMore(flatMapping(List::stream, toList())),
                 (leading, rest) -> leading == null ? rest : prepend(leading, rest))
             .notEmpty();
