@@ -177,10 +177,10 @@ final class RegexParsers {
         sequence(
             literalChar, one('-').then(literalChar).orElse(null),
             (c1, c2) -> c2 == null ? new LiteralChar(c1) : new CharRange(c1, c2)),
-        charClass,
-        one("[-[]").map(LiteralChar::new),
+        one('-').map(LiteralChar::new),
         positiveCharacterProperty(),
-        negativeCharacterProperty());
+        negativeCharacterProperty(),
+        charClass);
     Parser<List<LiteralChar>> quotedInClass =
         quotedText().map(s -> s.codePoints().mapToObj(LiteralChar::new).toList());
     var elements =

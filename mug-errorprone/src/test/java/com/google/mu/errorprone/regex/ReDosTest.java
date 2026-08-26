@@ -27,7 +27,8 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(a+)+");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             "Regular expression is vulnerable to exponential backtracking (ReDoS): /(a+)+/ contains"
                 + " nested quantifiers on /a+/\n"
@@ -40,7 +41,8 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(a|a)+");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             "Regular expression is vulnerable to exponential backtracking (ReDoS): /(a|a)+/"
                 + " contains overlapping alternation branches /a|a/\n"
@@ -52,7 +54,8 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("(a?)*");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             "Regular expression is vulnerable to exponential backtracking (ReDoS): /(a?)*/ contains"
                 + " unbounded repetition of nullable sub-pattern /(a?)/\n"
@@ -66,7 +69,8 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("([a-z]+|[0-9]+)+");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .contains(
             "contains nested quantifiers on /[a-z]+/\n"
                 + "  attack payload: \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\"");
@@ -84,7 +88,8 @@ public final class ReDosTest {
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
     assertThat(thrown).hasMessageThat().contains("contains nested quantifiers on /\\p{Alpha}+/");
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .contains("attack payload: \"a{a=a, a=a, a=a, a=a, a=a, a=a, !\"");
   }
 
@@ -95,9 +100,11 @@ public final class ReDosTest {
             + "(?:\\.then\\((?<chain>(\\w|\\d|\\s|[,.(){}=])+)\\))?");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .contains("contains overlapping alternation branches /\\w|\\d|\\s|[,.(){}=]/");
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .contains("attack payload: \"a.then(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\"");
   }
 
@@ -278,7 +285,8 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("a+a+");
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             "Regular expression is vulnerable to polynomial backtracking (PDA): /a+a+/ contains"
                 + " consecutive overlapping quantifiers on /a+/ and /a+/\n"
@@ -291,10 +299,12 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("\\d+\\w+");
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .contains("contains consecutive overlapping quantifiers on /\\d+/ and /\\w+/");
     assertThat(thrown).hasMessageThat().contains("consider: /\\d++\\w+/");
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .contains("caveat: Possessive quantifier /\\d++/ prevents backtracking");
     assertThat(thrown.getSuggestedAlternatives()).containsExactly("\\d++\\w+");
   }
@@ -304,7 +314,8 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("[0-9]+[0-9a-z]+");
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .contains("contains consecutive overlapping quantifiers on /[0-9]+/ and /[0-9a-z]+/");
     assertThat(thrown).hasMessageThat().contains("consider: /[0-9]++[0-9a-z]+/");
     assertThat(thrown.getSuggestedAlternatives()).containsExactly("[0-9]++[0-9a-z]+");
@@ -315,7 +326,8 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("prefix_(a+)+");
     VulnerableRegexException thrown =
         assertThrows(VulnerableRegexException.class, () -> ReDos.checkRedosVulnerability(pattern));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .contains("attack payload: \"prefix_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!\"");
     assertThat(thrown.getSuggestedAlternatives()).containsExactly("prefix_(a+)");
   }
@@ -325,7 +337,8 @@ public final class ReDosTest {
     RegexPattern pattern = RegexPattern.of("prefix_\\d+\\w+");
     VulnerableRegexException thrown = assertThrows(
         VulnerableRegexException.class, () -> ReDos.checkPolynomialBacktracking(pattern));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .contains("attack payload: \"prefix_000000000000000000000000000000!\"");
     assertThat(thrown.getSuggestedAlternatives()).containsExactly("prefix_\\d++\\w+");
   }
@@ -454,7 +467,7 @@ public final class ReDosTest {
 
   @Test public void suggestRedosRewrite_sqlServerLimitHandler_preservesInlineFlagsAndGroups() {
     RegexPattern pattern = RegexPattern.of(
-        "(?![^[]*(\\]))\\S+\\s*(\\s(?i)as\\s)\\s*(\\S+)*\\s*$|(?![^[]*(\\]))\\s+(\\S+)$");
+        "(?![^\\[]*(\\]))\\S+\\s*(\\s(?i)as\\s)\\s*(\\S+)*\\s*$|(?![^\\[]*(\\]))\\s+(\\S+)$");
     assertThat(SuggestionSynthesizer.suggestRedosRewrite(pattern))
         .hasValue(
             "(?![^\\[]*(\\]))\\S+\\s*(\\s(?i)as\\s)\\s*(\\S*)\\s*$|(?![^\\[]*(\\]))\\s+(\\S+)$");
@@ -1379,7 +1392,8 @@ public final class ReDosTest {
         .map(Suggestion.ParserSuggestion.class::cast)
         .findFirst()
         .orElseThrow();
-    assertThat(ps.caveats()).contains(
+    assertThat(ps.caveats())
+        .contains(
             "Use parseSkipping(Character::isWhitespace, input) to skip surrounding whitespace"
                 + " during parsing");
   }
@@ -1396,7 +1410,8 @@ public final class ReDosTest {
         .map(Suggestion.ParserSuggestion.class::cast)
         .findFirst()
         .orElseThrow();
-    assertThat(ps.caveats()).contains(
+    assertThat(ps.caveats())
+        .contains(
             "Use parseSkipping(Character::isWhitespace, input) to skip surrounding whitespace"
                 + " during parsing");
   }
@@ -1416,7 +1431,8 @@ public final class ReDosTest {
         .map(Suggestion.ParserSuggestion.class::cast)
         .findFirst()
         .orElseThrow();
-    assertThat(ps.caveats()).contains(
+    assertThat(ps.caveats())
+        .contains(
             "Use parseSkipping(Character::isWhitespace, input) to skip surrounding whitespace"
                 + " during parsing");
   }
@@ -1653,7 +1669,8 @@ public final class ReDosTest {
 
   @Test public void suggestedAlternative_delimitedWithWhitespace_parseSkippingParsesTokens() {
     assertThat(
-            consecutive("[a-z]").atLeastOnceDelimitedBy(",")
+            consecutive("[a-z]")
+                .atLeastOnceDelimitedBy(",")
                 .parseSkipping(Character::isWhitespace, "apple , banana , orange"))
         .containsExactly("apple", "banana", "orange")
         .inOrder();
