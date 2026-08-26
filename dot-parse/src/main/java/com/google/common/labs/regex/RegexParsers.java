@@ -178,8 +178,7 @@ final class RegexParsers {
             .suchThat(v -> !DISALLOWED_IN_CHAR_CLASS.contains(v), "predefined char class"),
         charClass,
         sequence(
-            literalChar,
-            one('-').then(literalChar).orElse(null),
+            literalChar, one('-').then(literalChar).orElse(null),
             (c1, c2) -> c2 == null ? new LiteralChar(c1) : new CharRange(c1, c2)),
         one('-').map(LiteralChar::new));
     Parser<List<CharSetElement>> quotedInClass = quotedText()
