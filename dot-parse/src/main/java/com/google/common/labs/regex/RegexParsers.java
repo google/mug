@@ -171,17 +171,17 @@ final class RegexParsers {
         ESCAPED.map(s -> s.codePointAt(0)),
         one("[^-&\\]]").map(c -> (int) c),
         one('&').notFollowedBy("&").map(c -> (int) c));
-    Parser<LiteralChar> literalCharOrDash =
-        anyOf(literalChar.map(LiteralChar::new), one('-').map(LiteralChar::new));
-    Parser<CharRange> range = sequence(literalChar, one('-').then(literalChar), CharRange::new);
     Parser<CharSetElement> element = anyOf(
         positiveCharacterProperty(),
         negativeCharacterProperty(),
         anyOf(PredefinedCharClass.values())
             .suchThat(v -> !DISALLOWED_IN_CHAR_CLASS.contains(v), "predefined char class"),
         charClass,
-        range,
-        literalCharOrDash);
+        one('-').map(LiteralChar::new),
+        sequence(
+            literalChar, one('-').then(literalChar).optional(),
+            (c1, b) ->
+                b.<CharSetElement>map(c2 -> new CharRange(c1, c2)).orElse(new LiteralChar(c1))));
     Parser<List<CharSetElement>> quotedInClass = quotedText()
         .map(s -> s.codePoints().mapToObj(LiteralChar::new).collect(toUnmodifiableList()));
     Parser<List<CharSetElement>> elements =
