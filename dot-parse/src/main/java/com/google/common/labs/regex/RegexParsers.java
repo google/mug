@@ -191,10 +191,10 @@ final class RegexParsers {
                     .<CharSetElement>map(LiteralChar::new)
                     .optionallyFollowedBy(
                         one('-').then(literalChar), (unused, to) -> new CharRange(']', to))
-                    .optional(),
+                    .orElse(null),
                 anyOf(quotedInClass, element.map(List::of))
                     .zeroOrMore(flatMapping(List::stream, toList())),
-                (leading, rest) -> leading.map(head -> prepend(head, rest)).orElse(rest))
+                (leading, rest) -> leading == null ? rest : prepend(leading, rest))
             .notEmpty();
     Parser<CharacterSet> characterSet =
         anyOf(charClass, elements.map(CharacterSet.AnyOf::new)).as("character set");
