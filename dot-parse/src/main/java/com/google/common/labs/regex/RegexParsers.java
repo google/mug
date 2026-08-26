@@ -177,11 +177,12 @@ final class RegexParsers {
         anyOf(PredefinedCharClass.values())
             .suchThat(v -> !DISALLOWED_IN_CHAR_CLASS.contains(v), "predefined char class"),
         charClass,
-        one('-').map(LiteralChar::new),
         sequence(
-            literalChar, one('-').then(literalChar).optional(),
+            literalChar,
+            one('-').then(literalChar).optional(),
             (c1, b) ->
-                b.<CharSetElement>map(c2 -> new CharRange(c1, c2)).orElse(new LiteralChar(c1))));
+                b.<CharSetElement>map(c2 -> new CharRange(c1, c2)).orElse(new LiteralChar(c1))),
+        one('-').map(LiteralChar::new));
     Parser<List<CharSetElement>> quotedInClass = quotedText()
         .map(s -> s.codePoints().mapToObj(LiteralChar::new).collect(toUnmodifiableList()));
     Parser<List<CharSetElement>> elements =
