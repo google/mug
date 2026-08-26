@@ -86,6 +86,9 @@ public sealed interface RegexPattern {
     return collectingAndThen(
         toList(),
         list -> {
+          if (list.size() == 1) {
+            return list.get(0);
+          }
           // First flatten the nested Sequence elements
           var flattened = list.stream().flatMap(RegexPattern::flattenSequences);
           // Then merge adjacent literals
@@ -268,7 +271,9 @@ public sealed interface RegexPattern {
     boolean isPossessive();
     Quantifier reluctant();
     Quantifier possessive();
+    /** @since 10.9 */
     int min();
+    /** @since 10.9 */
     int max();
 
     @Override default Quantified apply(RegexPattern pattern) {
