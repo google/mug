@@ -168,8 +168,8 @@ final class RegexParsers {
 
   private static Parser<CharacterSet> charClass(Parser<CharacterSet> charClass) {
     Parser<Integer> literalChar = anyOf(
-        ESCAPED.map(s -> s.codePointAt(0)),
         one("[^-&\\]]").map(c -> (int) c),
+        ESCAPED.map(s -> s.codePointAt(0)),
         one('&').notFollowedBy("&").map(c -> (int) c));
     Parser<CharSetElement> element = anyOf(
         positiveCharacterProperty(),
