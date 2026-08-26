@@ -18,24 +18,22 @@ import static com.google.common.labs.regex.InternalUtils.checkArgument;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.prefix;
-import static com.google.mu.util.stream.MoreStreams.mergeConsecutive;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
+import com.google.common.labs.parse.Parser;
+import com.google.mu.annotations.ParametersMustMatchByName;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Substring;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
-
-import com.google.common.labs.parse.Parser;
-import com.google.mu.annotations.ParametersMustMatchByName;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Substring;
 
 /**
  * Defines the Abstract Syntax Tree (AST) for a regular expression.
@@ -83,27 +81,32 @@ public sealed interface RegexPattern {
    * flattened and adjacent literals are concatenated as a single literal.
    */
   static Collector<RegexPattern, ?, RegexPattern> inSequence() {
-    return collectingAndThen(
-        toList(),
-        list -> {
-          if (list.size() == 1) {
-            return list.get(0);
-          }
-          // First flatten the nested Sequence elements
-          var flattened = list.stream().flatMap(RegexPattern::flattenSequences);
-          // Then merge adjacent literals
-          List<RegexPattern> segments = mergeConsecutive(
-                  flattened, Literal.class, (a, b) -> new Literal(a.value() + b.value()))
-              .collect(toUnmodifiableList());
-          // Wrap in sequence if needed.
-          return segments.size() == 1 ? segments.get(0) : new Sequence(segments);
-        });
-  }
+    class Builder {
+      private final List<RegexPattern> elements = new ArrayList<>();
+      private RegexPattern top;
 
-  private static Stream<RegexPattern> flattenSequences(RegexPattern pattern) {
-    return pattern instanceof Sequence seq
-        ? seq.elements().stream().flatMap(RegexPattern::flattenSequences)
-        : Stream.of(pattern);
+      void add(RegexPattern pattern) {
+        if (pattern instanceof Literal literal && top instanceof Literal prev) {
+          top = new Literal(prev.value() + literal.value());
+          elements.set(elements.size() - 1, top);
+        } else if (pattern instanceof Sequence seq) {
+          seq.elements().forEach(this::add);
+        } else {
+          top = pattern;
+          elements.add(pattern);
+        }
+      }
+
+      Builder addAll(Builder that) {
+        that.elements.forEach(this::add);
+        return this;
+      }
+
+      RegexPattern build() {
+        return elements.size() == 1 ? elements.get(0) : new Sequence(elements);
+      }
+    }
+    return Collector.of(Builder::new, Builder::add, Builder::addAll, Builder::build);
   }
 
   /** Returns an {@link Alternation} of the given alternatives. */
@@ -271,9 +274,15 @@ public sealed interface RegexPattern {
     boolean isPossessive();
     Quantifier reluctant();
     Quantifier possessive();
-    /** @since 10.9 */
+
+    /**
+     * @since 10.9
+     */
     int min();
-    /** @since 10.9 */
+
+    /**
+     * @since 10.9
+     */
     int max();
 
     @Override default Quantified apply(RegexPattern pattern) {
