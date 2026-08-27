@@ -35,15 +35,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** Implements {@link Parser#anyOf}. */
 final class OrParser<T> extends Parser<T> {
+  private static final PrefixPruneTree<?> UNKNOWN = new PrefixPruneTree<>(List.of(), null);
   private final List<Parser<T>> parsers;
-  private final PrefixPruneTree<Parser<T>> pruneTree;
+  @LazyInit private volatile PrefixPruneTree<Parser<T>> prefixPruneTree;
   @LazyInit private Set<String> expectedSymbols;
 
+  @SuppressWarnings("unchecked") // sentinel
   OrParser(List<? extends Parser<? extends T>> candidates) {
     checkArgument(candidates.size() > 0, "parsers cannot be empty");
     this.parsers = candidates.stream()
@@ -54,12 +55,9 @@ final class OrParser<T> extends Parser<T> {
                 : Stream.of(requireNonNull(p)))
         .map(Parser::<T>covariant)
         .toList();
-    this.pruneTree = makePruneTreeIfUseful(parsers);
-  }
-
-  private OrParser(List<Parser<T>> parsers, PrefixPruneTree<Parser<T>> pruneTree) {
-    this.parsers = parsers;
-    this.pruneTree = pruneTree;
+    this.prefixPruneTree = parsers.size() < 2
+        ? null
+        : (PrefixPruneTree<Parser<T>>) (PrefixPruneTree<?>) UNKNOWN;
   }
 
   @Override MatchResult<T> skipAndMatch(
@@ -67,8 +65,9 @@ final class OrParser<T> extends Parser<T> {
     // All top-level parsers allow input to apply pre-skipping.
     start = Parser.skipIfAny(skip, input, start);
     List<Parser<T>> candidates = parsers;
-    if (pruneTree != null) {
-      candidates = pruneTree.pruneByPrefix(input, start);
+    var prefixTree = getPrefixTree();
+    if (prefixTree != null) {
+      candidates = prefixTree.pruneByPrefix(input, start);
       if (candidates.isEmpty()) {
         return context.expectingInternal(this, start);
       }
@@ -105,17 +104,11 @@ final class OrParser<T> extends Parser<T> {
   }
 
   @Override public <R> Parser<R> map(Function<? super T, ? extends R> mapper) {
-    if (pruneTree == null) {
-      return new OrParser<R>(parsers.stream().map(p -> p.<R>map(mapper)).toList(), null);
-    }
-    return super.map(mapper);
+    return new OrParser<>(parsers.stream().map(p -> p.<R>map(mapper)).toList());
   }
 
   @Override Parser<?> ignoreReturn() {
-    if (pruneTree == null) {
-      return new OrParser<>(parsers.stream().map(p -> covariant(p.ignoreReturn())).toList(), null);
-    }
-    return super.ignoreReturn();
+    return new OrParser<>(parsers.stream().map(p -> covariant(p.ignoreReturn())).toList());
   }
 
   @Override BitSet computeBlocklist() {
@@ -126,10 +119,15 @@ final class OrParser<T> extends Parser<T> {
     return result;
   }
 
-  private static <T> PrefixPruneTree<Parser<T>> makePruneTreeIfUseful(List<Parser<T>> parsers) {
-    if (parsers.size() < 3) {
-      return null;
+  private PrefixPruneTree<Parser<T>> getPrefixTree() {
+    PrefixPruneTree<Parser<T>> result = this.prefixPruneTree;
+    if (result == UNKNOWN) {
+      this.prefixPruneTree = result = makePruneTreeIfUseful(parsers);
     }
+    return result;
+  }
+
+  private static <T> PrefixPruneTree<Parser<T>> makePruneTreeIfUseful(List<Parser<T>> parsers) {
     var builder = new PrefixPruneTree.Builder<Parser<T>>();
     for (Parser<T> parser : parsers) {
       for (String prefix : parser.getPrefixes()) {

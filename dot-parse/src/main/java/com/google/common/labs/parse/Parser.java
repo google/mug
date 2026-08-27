@@ -524,7 +524,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     checkArgument(!Character.isSurrogate(after), "quoteChar cannot be a surrogate character");
     var escape = string("\\").then(allowZeroWidth(escaped));
     String quote = Character.toString(after);
-    var slow = anyOf(consecutive(isNot(after).and(isNot('\\')), "quoted chars"), escape)
+    var slow = either(consecutive(isNot(after).and(isNot('\\')), "quoted chars"), escape)
         .zeroOrMore(joining())
         .followedBy(quote);
     return string(before).then(new Parser<>() {
@@ -698,7 +698,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public static <A, B, R> Parser<R>.OrEmpty sequence(
       Parser<A>.OrEmpty left, Parser<B>.OrEmpty right,
       BiFunction<? super A, ? super B, ? extends R> combiner) {
-    return anyOf(
+    return either(
         sequence(left.notEmpty(), right, combiner),
         right.notEmpty().map(v2 -> combiner.apply(left.computeDefaultValue(), v2)))
     .new OrEmpty(() -> combiner.apply(left.computeDefaultValue(), right.computeDefaultValue()));
@@ -714,7 +714,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public static <A, B, R> Parser<R> sequence(
       Parser<A>.OrEmpty left, Parser<B> right,
       BiFunction<? super A, ? super B, ? extends R> combiner) {
-    return anyOf(
+    return either(
         sequence(left.notEmpty(), right, combiner),
         right.map(v2 -> combiner.apply(left.computeDefaultValue(), v2)));
   }
@@ -835,13 +835,17 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public static Parser<?> sequence(
       Parser<?>.OrEmpty first, Parser<?> second, Production<?>... more) {
     Parser<?> tail = sequence(second, more);
-    return anyOf(sequence(first.notEmpty(), tail), tail);
+    return either(sequence(first.notEmpty(), tail), tail);
   }
 
   /** Matches if any of the given {@code parsers} match. */
   @SafeVarargs
   public static <T> Parser<T> anyOf(Parser<? extends T>... parsers) {
     return stream(parsers).collect(or());
+  }
+
+  private static <T> Parser<T> either(Parser<? extends T> a, Parser<? extends T> b) {
+    return new OrParser<>(asList(a, b));
   }
 
   /**
@@ -1547,7 +1551,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   @Deprecated
   public final Parser<T> followedByOrEof(Parser<?> suffix) {
-    return followedBy(anyOf(suffix.ignoreReturn(), UNSAFE_EOF));
+    return followedBy(either(suffix.ignoreReturn(), UNSAFE_EOF));
   }
 
   private Parser<T> followedByInOrder(Production<?>... suffixes) {

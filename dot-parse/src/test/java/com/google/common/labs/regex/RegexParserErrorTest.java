@@ -1069,7 +1069,7 @@ public final class RegexParserErrorTest {
         .hasMessageThat()
         .isEqualTo(
             """
-            at 1:4: expecting <2 hex digits>, encountered:
+            at 1:4: expecting one of [2 hex digits, {], encountered:
                 [\\xzz]
                    ^
             """);

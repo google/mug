@@ -233,20 +233,17 @@ final class RegexParsers {
               one(')').thenReturn(new Group.NonCapturing(new Literal(""), enabled, disabled));
           return anyOf(nonCapturingGroup, standaloneFlags);
         });
-    return one('(')
-        .then(
-            anyOf(
-                groupContent.between("?=", ")").map(Lookaround.Lookahead::new),
-                groupContent.between("?!", ")").map(Lookaround.NegativeLookahead::new),
-                groupContent.between("?<=", ")").map(Lookaround.Lookbehind::new),
-                groupContent.between("?<!", ")").map(Lookaround.NegativeLookbehind::new),
-                groupContent.between("?>", ")").map(Group.Atomic::new),
-                sequence(
-                        word().between(anyOf("?<", "?P<"), one('>')), groupContent,
-                        Group.Named::new)
-                    .followedBy(")"),
-                literally(one('?').then(modifierFlags)).flatMap(identity()),
-                groupContent.map(Group.Capturing::new).followedBy(")")));
+    return one('(').then( // spaces allowed after (, under free spacing mode
+        anyOf(
+            groupContent.between("?=", ")").map(Lookaround.Lookahead::new),
+            groupContent.between("?!", ")").map(Lookaround.NegativeLookahead::new),
+            groupContent.between("?<=", ")").map(Lookaround.Lookbehind::new),
+            groupContent.between("?<!", ")").map(Lookaround.NegativeLookbehind::new),
+            groupContent.between("?>", ")").map(Group.Atomic::new),
+            sequence(word().between(anyOf("?<", "?P<"), one('>')), groupContent, Group.Named::new)
+                .followedBy(")"),
+            literally(one('?').then(modifierFlags)).flatMap(identity()),
+            groupContent.map(Group.Capturing::new).followedBy(")")));
   }
 
   private static Parser<Anchor> anchor(Anchor anchor) {

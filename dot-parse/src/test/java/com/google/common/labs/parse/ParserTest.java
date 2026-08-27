@@ -7678,7 +7678,7 @@ public class ParserTest {
     assertThat(joined2).isEmpty();
   }
 
-  @Test public void returnElision_anyOf_threeCandidates_noElision() {
+  @Test public void returnElision_anyOf_threeCandidates_withElision() {
     List<String> joined1 = new ArrayList<>();
     List<String> joined2 = new ArrayList<>();
     List<String> joined3 = new ArrayList<>();
@@ -7689,7 +7689,7 @@ public class ParserTest {
         .thenReturn("ok");
 
     assertThat(parser.parse("aaa")).isEqualTo("ok");
-    assertThat(joined1).containsExactly("a,a,a");
+    assertThat(joined1).isEmpty();
     assertThat(joined2).isEmpty();
     assertThat(joined3).isEmpty();
   }
