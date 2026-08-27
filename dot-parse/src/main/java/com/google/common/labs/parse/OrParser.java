@@ -34,7 +34,6 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 /** Implements {@link Parser#anyOf}. */
@@ -55,9 +54,8 @@ final class OrParser<T> extends Parser<T> {
                 : Stream.of(requireNonNull(p)))
         .map(Parser::<T>covariant)
         .toList();
-    this.prefixPruneTree = parsers.size() < 2
-        ? null
-        : (PrefixPruneTree<Parser<T>>) (PrefixPruneTree<?>) UNKNOWN;
+    this.prefixPruneTree =
+        parsers.size() < 2 ? null : (PrefixPruneTree<Parser<T>>) (PrefixPruneTree<?>) UNKNOWN;
   }
 
   @Override MatchResult<T> skipAndMatch(
@@ -103,10 +101,6 @@ final class OrParser<T> extends Parser<T> {
     return unmodifiableSet(new LinkedHashSet<>(result));
   }
 
-  @Override public <R> Parser<R> map(Function<? super T, ? extends R> mapper) {
-    return new OrParser<>(parsers.stream().map(p -> p.<R>map(mapper)).toList());
-  }
-
   @Override Parser<?> ignoreReturn() {
     return new OrParser<>(parsers.stream().map(p -> covariant(p.ignoreReturn())).toList());
   }
@@ -119,6 +113,7 @@ final class OrParser<T> extends Parser<T> {
     return result;
   }
 
+  @SuppressWarnings("ReferenceEquality")
   private PrefixPruneTree<Parser<T>> getPrefixTree() {
     PrefixPruneTree<Parser<T>> result = this.prefixPruneTree;
     if (result == UNKNOWN) {

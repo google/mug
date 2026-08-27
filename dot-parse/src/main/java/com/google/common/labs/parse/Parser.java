@@ -1353,7 +1353,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /** If this parser matches, returns the result of applying the given function to the match. */
-  @Override public <R> Parser<R> map(Function<? super T, ? extends R> f) {
+  @Override public final <R> Parser<R> map(Function<? super T, ? extends R> f) {
     requireNonNull(f);
     return new SamePrefix<>() {
       @Override MatchResult<R> skipAndMatch(
