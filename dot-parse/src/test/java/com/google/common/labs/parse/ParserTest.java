@@ -8539,6 +8539,37 @@ public class ParserTest {
     assertThat(thrown).hasMessageThat().contains("custom failure in branch");
   }
 
+  @Test public void fail_anyOf_mapThrows_doesNotBacktrackToSiblingBranch() {
+    Parser<String> parser = anyOf(
+            string("foo").thenReturn("first"),
+            string("foo").thenReturn("second"))
+        .map(s -> {
+          if ("first".equals(s)) {
+            throw Parser.fail("first choice rejected");
+          }
+          return s;
+        });
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("foo"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("first choice rejected");
+  }
+
+  @Test public void fail_nestedAnyOf_mapThrows_doesNotBacktrackToSiblingBranch() {
+    Parser<String> nested = anyOf(
+            string("foo").thenReturn("first"),
+            string("foo").thenReturn("second"))
+        .map(s -> {
+          if ("first".equals(s)) {
+            throw Parser.fail("first choice rejected");
+          }
+          return s;
+        });
+    Parser<String> parser = anyOf(nested, string("other"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("foo"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("first choice rejected");
+  }
+
   @Test public void fail_insideSequenceWithAs_failureAtFirstStep_preservesFailMessage() {
     Parser<?> parser = sequence(
         string("foo").map(s -> {
