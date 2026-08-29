@@ -20,11 +20,7 @@ final class CharRanges {
       ImmutableRangeSet.of(closedOpen(0, MAX_CODE_POINT + 1));
 
   static ImmutableRangeSet<Integer> of(int codePoint) {
-    return ImmutableRangeSet.of(closedOpen(codePoint, codePoint + 1));
-  }
-
-  static ImmutableRangeSet<Integer> range(int start, int end) {
-    return ImmutableRangeSet.of(closedOpen(start, end + 1));
+    return ImmutableRangeSet.of(only(codePoint));
   }
 
   static boolean intersects(RangeSet<Integer> a, RangeSet<Integer> b) {
@@ -48,11 +44,6 @@ final class CharRanges {
     return ImmutableRangeSet.copyOf(tree);
   }
 
-  static ImmutableRangeSet<Integer> complement(RangeSet<Integer> ranges) {
-    return ImmutableRangeSet.copyOf(
-        ranges.complement().subRangeSet(closedOpen(0, MAX_CODE_POINT + 1)));
-  }
-
   static int sampleChar(RangeSet<Integer> ranges) {
     if (ranges.contains((int) 'a')) {
       return 'a';
@@ -70,7 +61,8 @@ final class CharRanges {
   static ImmutableRangeSet<Integer> from(RegexPattern.CharSetElement element) {
     return switch (element) {
       case RegexPattern.LiteralChar lc -> of(lc.codePoint());
-      case RegexPattern.CharRange cr -> cr.start() > cr.end() ? EMPTY : range(cr.start(), cr.end());
+      case RegexPattern.CharRange cr ->
+          cr.start() > cr.end() ? EMPTY : ImmutableRangeSet.of(range(cr.start(), cr.end()));
       case RegexPattern.PredefinedCharClass pcc -> from(pcc);
       case RegexPattern.PosixCharClass pcc -> from(pcc);
       case RegexPattern.CharacterProperty.Negated neg -> complement(from(neg.property()));
@@ -80,7 +72,8 @@ final class CharRanges {
     };
   }
 
-  static ImmutableRangeSet<Integer> fromCharSetElement(RegexPattern.CharSetElement element) {
+  private static ImmutableRangeSet<Integer> fromCharSetElement(
+      RegexPattern.CharSetElement element) {
     if (element == RegexPattern.PredefinedCharClass.ANY_CHAR) {
       return of('.');
     }
@@ -120,103 +113,7 @@ final class CharRanges {
     };
   }
 
-  private static final ImmutableRangeSet<Integer> DIGIT = range('0', '9');
-  private static final ImmutableRangeSet<Integer> NON_DIGIT = complement(DIGIT);
-  private static final ImmutableRangeSet<Integer> WHITESPACE = whitespaceRanges();
-
-  private static ImmutableRangeSet<Integer> whitespaceRanges() {
-    return ImmutableRangeSet.<Integer>builder()
-        .add(closedOpen((int) ' ', (int) ' ' + 1))
-        .add(closedOpen((int) '\t', (int) '\r' + 1))
-        .add(closedOpen(0x85, 0x85 + 1))
-        .add(closedOpen(0x2028, 0x2029 + 1))
-        .build();
-  }
-
-  private static final ImmutableRangeSet<Integer> NON_WHITESPACE = complement(WHITESPACE);
-  private static final ImmutableRangeSet<Integer> WORD = wordRanges();
-
-  private static ImmutableRangeSet<Integer> wordRanges() {
-    return ImmutableRangeSet.<Integer>builder()
-        .add(closedOpen((int) 'a', (int) 'z' + 1))
-        .add(closedOpen((int) 'A', (int) 'Z' + 1))
-        .add(closedOpen((int) '0', (int) '9' + 1))
-        .add(closedOpen((int) '_', (int) '_' + 1))
-        .build();
-  }
-
-  private static final ImmutableRangeSet<Integer> NON_WORD = complement(WORD);
-
-  private static final ImmutableRangeSet<Integer> LOWER = range('a', 'z');
-  private static final ImmutableRangeSet<Integer> UPPER = range('A', 'Z');
-  private static final ImmutableRangeSet<Integer> ASCII = range(0, 0x7F);
-  private static final ImmutableRangeSet<Integer> ALPHA = union(LOWER, UPPER);
-  private static final ImmutableRangeSet<Integer> ALNUM = union(ALPHA, DIGIT);
-  private static final ImmutableRangeSet<Integer> PUNCT = punctRanges();
-  private static final ImmutableRangeSet<Integer> GRAPH = range(0x21, 0x7E);
-  private static final ImmutableRangeSet<Integer> PRINT = range(0x20, 0x7E);
-  private static final ImmutableRangeSet<Integer> BLANK = union(of(' '), of('\t'));
-  private static final ImmutableRangeSet<Integer> CNTRL = union(range(0, 0x1F), of(0x7F));
-  private static final ImmutableRangeSet<Integer> XDIGIT =
-      union(DIGIT, union(range('a', 'f'), range('A', 'F')));
-  private static final ImmutableRangeSet<Integer> SPACE = WHITESPACE;
-
-  private static ImmutableRangeSet<Integer> punctRanges() {
-    return ImmutableRangeSet.<Integer>builder()
-        .add(closedOpen(0x21, 0x2F + 1))
-        .add(closedOpen(0x3A, 0x40 + 1))
-        .add(closedOpen(0x5B, 0x60 + 1))
-        .add(closedOpen(0x7B, 0x7E + 1))
-        .build();
-  }
-
-  private static final ImmutableRangeSet<Integer> LINEBREAK = ImmutableRangeSet.<Integer>builder()
-      .add(closedOpen((int) '\n', (int) '\r' + 1))
-      .add(closedOpen(0x85, 0x85 + 1))
-      .add(closedOpen(0x2028, 0x2029 + 1))
-      .build();
-
-  static final ImmutableRangeSet<Integer> ANY_CHAR = complement(LINEBREAK);
-
-  private static final ImmutableRangeSet<Integer> UNICODE_ZS = ImmutableRangeSet.<Integer>builder()
-      .add(closedOpen(0x0020, 0x0020 + 1))
-      .add(closedOpen(0x00A0, 0x00A0 + 1))
-      .add(closedOpen(0x1680, 0x1680 + 1))
-      .add(closedOpen(0x2000, 0x200A + 1))
-      .add(closedOpen(0x202F, 0x202F + 1))
-      .add(closedOpen(0x205F, 0x205F + 1))
-      .add(closedOpen(0x3000, 0x3000 + 1))
-      .build();
-  private static final ImmutableRangeSet<Integer> UNICODE_ZL = range(0x2028, 0x2028);
-  private static final ImmutableRangeSet<Integer> UNICODE_ZP = range(0x2029, 0x2029);
-  private static final ImmutableRangeSet<Integer> UNICODE_Z =
-      union(UNICODE_ZS, union(UNICODE_ZL, UNICODE_ZP));
-
-  private static final ImmutableRangeSet<Integer> H_WHITESPACE =
-      ImmutableRangeSet.<Integer>builder()
-          .add(closedOpen((int) '\t', (int) '\t' + 1))
-          .add(closedOpen(0xA0, 0xA0 + 1))
-          .add(closedOpen(0x1680, 0x1680 + 1))
-          .add(closedOpen(0x180E, 0x180E + 1))
-          .add(closedOpen(0x2000, 0x200A + 1))
-          .add(closedOpen(0x202F, 0x202F + 1))
-          .add(closedOpen(0x205F, 0x205F + 1))
-          .add(closedOpen(0x3000, 0x3000 + 1))
-          .build();
-  private static final ImmutableRangeSet<Integer> NON_H_WHITESPACE = complement(H_WHITESPACE);
-
-  private static final ImmutableRangeSet<Integer> V_WHITESPACE =
-      ImmutableRangeSet.<Integer>builder()
-          .add(closedOpen((int) '\n', (int) '\n' + 1))
-          .add(closedOpen(0x0B, 0x0B + 1))
-          .add(closedOpen((int) '\f', (int) '\f' + 1))
-          .add(closedOpen((int) '\r', (int) '\r' + 1))
-          .add(closedOpen(0x85, 0x85 + 1))
-          .add(closedOpen(0x2028, 0x2029 + 1))
-          .build();
-  private static final ImmutableRangeSet<Integer> NON_V_WHITESPACE = complement(V_WHITESPACE);
-
-  private static ImmutableRangeSet<Integer> from(RegexPattern.PredefinedCharClass pcc) {
+  static ImmutableRangeSet<Integer> from(RegexPattern.PredefinedCharClass pcc) {
     return switch (pcc) {
       case ANY_CHAR -> ANY_CHAR;
       case DIGIT -> DIGIT;
@@ -234,7 +131,7 @@ final class CharRanges {
     };
   }
 
-  private static ImmutableRangeSet<Integer> from(RegexPattern.PosixCharClass pcc) {
+  static ImmutableRangeSet<Integer> from(RegexPattern.PosixCharClass pcc) {
     return switch (pcc) {
       case LOWER -> LOWER;
       case UPPER -> UPPER;
@@ -252,10 +149,120 @@ final class CharRanges {
     };
   }
 
+  private static ImmutableRangeSet<Integer> complement(RangeSet<Integer> ranges) {
+    return ImmutableRangeSet.copyOf(
+        ranges.complement().subRangeSet(closedOpen(0, MAX_CODE_POINT + 1)));
+  }
+
+  private static Range<Integer> only(int c) {
+    return range(c, c);
+  }
+
+  private static Range<Integer> range(int start, int end) {
+    return closedOpen(start, end + 1);
+  }
+
+  private static final ImmutableRangeSet<Integer> DIGIT = ImmutableRangeSet.of(range('0', '9'));
+  private static final ImmutableRangeSet<Integer> NON_DIGIT = complement(DIGIT);
+  private static final ImmutableRangeSet<Integer> WHITESPACE = whitespaceRanges();
+
+  private static ImmutableRangeSet<Integer> whitespaceRanges() {
+    return ImmutableRangeSet.<Integer>builder()
+        .add(only(' '))
+        .add(range('\t', '\r'))
+        .add(only(0x85))
+        .add(range(0x2028, 0x2029))
+        .build();
+  }
+
+  private static final ImmutableRangeSet<Integer> NON_WHITESPACE = complement(WHITESPACE);
+  private static final ImmutableRangeSet<Integer> WORD = wordRanges();
+
+  private static ImmutableRangeSet<Integer> wordRanges() {
+    return ImmutableRangeSet.<Integer>builder()
+        .add(range('a', 'z'))
+        .add(range('A', 'Z'))
+        .add(range('0', '9'))
+        .add(only('_'))
+        .build();
+  }
+
+  private static final ImmutableRangeSet<Integer> NON_WORD = complement(WORD);
+
+  private static final ImmutableRangeSet<Integer> LOWER = ImmutableRangeSet.of(range('a', 'z'));
+  private static final ImmutableRangeSet<Integer> UPPER = ImmutableRangeSet.of(range('A', 'Z'));
+  private static final ImmutableRangeSet<Integer> ASCII = ImmutableRangeSet.of(range(0, 0x7F));
+  private static final ImmutableRangeSet<Integer> ALPHA = union(LOWER, UPPER);
+  private static final ImmutableRangeSet<Integer> ALNUM = union(ALPHA, DIGIT);
+  private static final ImmutableRangeSet<Integer> PUNCT = punctRanges();
+  private static final ImmutableRangeSet<Integer> GRAPH = ImmutableRangeSet.of(range(0x21, 0x7E));
+  private static final ImmutableRangeSet<Integer> PRINT = ImmutableRangeSet.of(range(0x20, 0x7E));
+  private static final ImmutableRangeSet<Integer> BLANK = union(of(' '), of('\t'));
+  private static final ImmutableRangeSet<Integer> CNTRL =
+      union(ImmutableRangeSet.of(range(0, 0x1F)), of(0x7F));
+  private static final ImmutableRangeSet<Integer> XDIGIT = union(
+      DIGIT, union(ImmutableRangeSet.of(range('a', 'f')), ImmutableRangeSet.of(range('A', 'F'))));
+  private static final ImmutableRangeSet<Integer> SPACE = WHITESPACE;
+
+  private static ImmutableRangeSet<Integer> punctRanges() {
+    return ImmutableRangeSet.<Integer>builder()
+        .add(range(0x21, 0x2F))
+        .add(range(0x3A, 0x40))
+        .add(range(0x5B, 0x60))
+        .add(range(0x7B, 0x7E))
+        .build();
+  }
+
+  private static final ImmutableRangeSet<Integer> LINEBREAK = ImmutableRangeSet.<Integer>builder()
+      .add(range('\n', '\r'))
+      .add(only(0x85))
+      .add(range(0x2028, 0x2029))
+      .build();
+
+  static final ImmutableRangeSet<Integer> ANY_CHAR = complement(LINEBREAK);
+
+  private static final ImmutableRangeSet<Integer> UNICODE_ZS = ImmutableRangeSet.<Integer>builder()
+      .add(only(0x0020))
+      .add(only(0x00A0))
+      .add(only(0x1680))
+      .add(range(0x2000, 0x200A))
+      .add(only(0x202F))
+      .add(only(0x205F))
+      .add(only(0x3000))
+      .build();
+  private static final ImmutableRangeSet<Integer> UNICODE_ZL = of(0x2028);
+  private static final ImmutableRangeSet<Integer> UNICODE_ZP = of(0x2029);
+  private static final ImmutableRangeSet<Integer> UNICODE_Z =
+      union(UNICODE_ZS, union(UNICODE_ZL, UNICODE_ZP));
+
+  private static final ImmutableRangeSet<Integer> H_WHITESPACE =
+      ImmutableRangeSet.<Integer>builder()
+          .add(only('\t'))
+          .add(only(0xA0))
+          .add(only(0x1680))
+          .add(only(0x180E))
+          .add(range(0x2000, 0x200A))
+          .add(only(0x202F))
+          .add(only(0x205F))
+          .add(only(0x3000))
+          .build();
+  private static final ImmutableRangeSet<Integer> NON_H_WHITESPACE = complement(H_WHITESPACE);
+
+  private static final ImmutableRangeSet<Integer> V_WHITESPACE =
+      ImmutableRangeSet.<Integer>builder()
+          .add(only('\n'))
+          .add(only(0x0B))
+          .add(only('\f'))
+          .add(only('\r'))
+          .add(only(0x85))
+          .add(range(0x2028, 0x2029))
+          .build();
+  private static final ImmutableRangeSet<Integer> NON_V_WHITESPACE = complement(V_WHITESPACE);
+
   private static ImmutableRangeSet<Integer> fromUnicodeProperty(String name) {
     return switch (Ascii.toLowerCase(name)) {
-      case "nd", "digit" -> range('0', '9');
-      case "l", "letter" -> union(range('a', 'z'), range('A', 'Z'));
+      case "nd", "digit" -> DIGIT;
+      case "l", "letter" -> ALPHA;
       case "lu" -> UPPER;
       case "ll" -> LOWER;
       case "alpha" -> ALPHA;

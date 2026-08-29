@@ -46,7 +46,6 @@ public final class RegexRedosFuzzTest {
 
       ImmutableRangeSet<Integer> union = CharRanges.union(a, b);
       ImmutableRangeSet<Integer> intersection = CharRanges.intersection(a, b);
-      ImmutableRangeSet<Integer> complement = CharRanges.complement(a);
 
       for (int k = 0; k < 50; k++) {
         int cp = rng.nextInt(0x7F);
@@ -55,9 +54,7 @@ public final class RegexRedosFuzzTest {
 
         assertThat(union.contains(cp)).isEqualTo(inA || inB);
         assertThat(intersection.contains(cp)).isEqualTo(inA && inB);
-        assertThat(complement.contains(cp)).isEqualTo(!inA);
       }
-      assertThat(CharRanges.intersection(a, complement).isEmpty()).isTrue();
     }
   }
 
@@ -121,7 +118,7 @@ public final class RegexRedosFuzzTest {
       int c2 = rng.nextInt(0x7F);
       int start = Math.min(c1, c2);
       int end = Math.max(c1, c2);
-      result = CharRanges.union(result, CharRanges.range(start, end));
+      result = CharRanges.union(result, CharRanges.from(new RegexPattern.CharRange(start, end)));
     }
     return result;
   }

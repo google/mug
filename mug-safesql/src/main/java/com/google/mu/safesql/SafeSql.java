@@ -17,10 +17,10 @@ package com.google.mu.safesql;
 import static com.google.mu.safesql.SafeSqlUtils.checkArgument;
 import static com.google.mu.safesql.SafeSqlUtils.skippingEmpty;
 import static com.google.mu.util.CharPredicate.is;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.Substring.all;
 import static com.google.mu.util.Substring.first;
 import static com.google.mu.util.Substring.word;
-import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.stream.BiStream.biStream;
 import static com.google.mu.util.stream.MoreStreams.indexesFrom;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
@@ -31,6 +31,20 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toCollection;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.errorprone.annotations.CompileTimeConstant;
+import com.google.errorprone.annotations.MustBeClosed;
+import com.google.errorprone.annotations.ThreadSafe;
+import com.google.mu.annotations.TemplateFormatMethod;
+import com.google.mu.annotations.TemplateString;
+import com.google.mu.util.BiOptional;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.Optionals;
+import com.google.mu.util.StringFormat;
+import com.google.mu.util.StringFormat.Template;
+import com.google.mu.util.Substring;
+import com.google.mu.util.stream.BiStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -52,34 +66,20 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
 import javax.sql.DataSource;
-
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.errorprone.annotations.CheckReturnValue;
-import com.google.errorprone.annotations.CompileTimeConstant;
-import com.google.errorprone.annotations.MustBeClosed;
-import com.google.errorprone.annotations.ThreadSafe;
-import com.google.mu.annotations.TemplateFormatMethod;
-import com.google.mu.annotations.TemplateString;
-import com.google.mu.util.BiOptional;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.Optionals;
-import com.google.mu.util.StringFormat;
-import com.google.mu.util.StringFormat.Template;
-import com.google.mu.util.Substring;
-import com.google.mu.util.stream.BiStream;
 
 /**
  * An injection-safe <em>dynamic SQL</em>, constructed using compile-time enforced templates.
  *
  * <p>This class is intended to work with JDBC {@link Connection} API with parameters set through
- * the {@link PreparedStatement#setObject(int, Object) setObject()} method.
- * The main use case though, is to be able to compose subqueries and leaf-level parameters with an
- * intuitive templating API.
+ * the {@link PreparedStatement#setObject(int, Object) setObject()} method. The main use case
+ * though, is to be able to compose subqueries and leaf-level parameters with an intuitive
+ * templating API.
  *
- * <p>The syntax to create a SQL with JDBC parameters, and potentially with dynamic SQL arguments (such
- * as column names) is as simple and intuitive as the following example: <pre>{@code
+ * <p>The syntax to create a SQL with JDBC parameters, and potentially with dynamic SQL arguments
+ * (such as column names) is as simple and intuitive as the following example:
+ *
+ * <pre>{@code
  * List<String> groupColumns = ...;
  * SafeSql sql = SafeSql.of(
  *     """
@@ -96,50 +96,56 @@ import com.google.mu.util.stream.BiStream;
  * (used by databases like BigQuery, Databricks) or double quotes (used by databases like Oracle,
  * Microsoft SQL Server or PostgreSQL). These are validated and interpreted as identifiers.
  *
- * <p>In the above example, placeholder {@code sku} will be passed as JDBC parameter,
- * whereas the backtick-quoted {@code groupColumns} string list will be validated and then
- * used as identifiers.
+ * <p>In the above example, placeholder {@code sku} will be passed as JDBC parameter, whereas the
+ * backtick-quoted {@code groupColumns} string list will be validated and then used as identifiers.
  *
- * <p>Except the placeholders, everything outside the curly braces are strictly WYSIWYG
- * (what you see is what you get), so you can copy paste them between the Java code and your SQL
- * console for quick testing and debugging.
+ * <p>Except the placeholders, everything outside the curly braces are strictly WYSIWYG (what you
+ * see is what you get), so you can copy paste them between the Java code and your SQL console for
+ * quick testing and debugging.
  *
- * <dl><dt><STRONG>The {@code IN} Operator</STRONG></dt></dl>
+ * <dl>
+ *   <dt><STRONG>The {@code IN} Operator</STRONG>
+ * </dl>
  *
  * A common dynamic SQL use case is to use the {@code IN} SQL operator:
  *
  * <pre>{@code
- *   SafeSql sql = SafeSql.of(
- *       """
- *       SELECT id FROM Users
- *       WHERE firstName = {first_name} AND lastName IN ({last_names})
- *       """,
- *       firstName, lastNamesList);
- *   List<Long> ids = sql.query(dataSource, Long.class);
+ * SafeSql sql = SafeSql.of(
+ *     """
+ *     SELECT id FROM Users
+ *     WHERE firstName = {first_name} AND lastName IN ({last_names})
+ *     """,
+ *     firstName, lastNamesList);
+ * List<Long> ids = sql.query(dataSource, Long.class);
  * }</pre>
  *
- * In the above example if {@code firstName} is "Emma" and {@code lastNamesList} is
- * {@code ["Watson", "Lin"]}, the generated SQL will be: <pre>{@code
- *   SELECT id FROM Employees
- *   WHERE firstName = ? AND lastName IN (?, ?)
+ * In the above example if {@code firstName} is "Emma" and {@code lastNamesList} is {@code
+ * ["Watson", "Lin"]}, the generated SQL will be:
+ *
+ * <pre>{@code
+ * SELECT id FROM Employees
+ * WHERE firstName = ? AND lastName IN (?, ?)
  * }</pre>
  *
- * And the parameters will be set as: <pre>{@code
- *   statement.setObject(1, "Emma");
- *   statement.setObject(2, "Watson");
- *   statement.setObject(3, "Lin");
+ * And the parameters will be set as:
+ *
+ * <pre>{@code
+ * statement.setObject(1, "Emma");
+ * statement.setObject(2, "Watson");
+ * statement.setObject(3, "Lin");
  * }</pre>
  *
- * <dl><dt><STRONG>Compile-time Protection</STRONG></dt></dl>
+ * <dl>
+ *   <dt><STRONG>Compile-time Protection</STRONG>
+ * </dl>
  *
- * <p>The templating engine uses compile-time checks to guard against accidental use of
- * untrusted strings in the SQL, ensuring that they can only be sent as parameters of
- * PreparedStatement: try to use a dynamically generated String as the SQL template and
- * you'll get a compilation error.
+ * <p>The templating engine uses compile-time checks to guard against accidental use of untrusted
+ * strings in the SQL, ensuring that they can only be sent as parameters of PreparedStatement: try
+ * to use a dynamically generated String as the SQL template and you'll get a compilation error.
  *
- * <p>In addition, the same set of compile-time guardrails from the {@link StringFormat} class
- * are in effect to make sure that you don't pass {@code lastName} in the place of
- * {@code first_name}, for example.
+ * <p>In addition, the same set of compile-time guardrails from the {@link StringFormat} class are
+ * in effect to make sure that you don't pass {@code lastName} in the place of {@code first_name},
+ * for example.
  *
  * <p>To enable the compile-time plugin, copy the {@code <annotationProcessorPaths>} in the
  * "maven-compiler-plugin" section from the following pom.xml file snippet:
@@ -160,7 +166,7 @@ import com.google.mu.util.stream.BiStream;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>10.8.1</version>
+ *               <version>10.9</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>
@@ -170,7 +176,9 @@ import com.google.mu.util.stream.BiStream;
  * </build>
  * }</pre>
  *
- * <dl><dt><STRONG>Conditional Subqueries</STRONG></dt></dl>
+ * <dl>
+ *   <dt><STRONG>Conditional Subqueries</STRONG>
+ * </dl>
  *
  * SafeSql's template syntax is designed to avoid control flows that could obfuscate SQL. Instead,
  * complex control flow such as {@code if-else}, nested {@code if}, loops etc. should be performed
@@ -180,77 +188,79 @@ import com.google.mu.util.stream.BiStream;
  * enabled) can use the guard operator {@code ->} inside template placeholders:
  *
  * <pre>{@code
- *   SafeSql sql = SafeSql.of(
- *       "SELECT {shows_email -> email,} name FROM Users", showsEmail());
+ * SafeSql sql = SafeSql.of(
+ *     "SELECT {shows_email -> email,} name FROM Users", showsEmail());
  * }</pre>
  *
  * The query text after the {@code ->} operator is the conditional subquery that's only included if
  * {@code showEmail()} returns true. The subquery can include arbitrary characters except curly
  * braces, so you can also have multi-line conditional subqueries.
  *
- * <p>The {@code ->} guard operator can also be used for {@link Optional} parameters such that
- * the right-hand-side SQL will only render if the optional value is present.
+ * <p>The {@code ->} guard operator can also be used for {@link Optional} parameters such that the
+ * right-hand-side SQL will only render if the optional value is present.
  *
- * <p>For example, the following code builds SQL to query the Users table with flexible
- * number of columns and a flexible WHERE clause depending on the {@code UserCriteria}
- * object's state:
+ * <p>For example, the following code builds SQL to query the Users table with flexible number of
+ * columns and a flexible WHERE clause depending on the {@code UserCriteria} object's state:
  *
  * <pre>{@code
- *   class UserCriteria {
- *     Optional<String> userId();
- *     Optional<String> firstName();
- *     List<String> aliases();
- *     ...
- *   }
+ * class UserCriteria {
+ *   Optional<String> userId();
+ *   Optional<String> firstName();
+ *   List<String> aliases();
+ *   ...
+ * }
  *
- *   SafeSql usersQuery(UserCriteria criteria, @CompileTimeConstant String... columns) {
- *     return SafeSql.of(
- *         """
- *         SELECT `{columns}`
- *         FROM Users
- *         WHERE 1 = 1
- *             {user_id? -> AND id = user_id?}
- *             {first_name? -> AND firstName LIKE '%first_name?%'}
- *             {aliases? -> AND name IN (aliases?)}
- *         """,
- *         asList(columns),
- *         criteria.userId()),
- *         criteria.firstName(),
- *         criteria.aliases());
- *   }
+ * SafeSql usersQuery(UserCriteria criteria, @CompileTimeConstant String... columns) {
+ *   return SafeSql.of(
+ *       """
+ *       SELECT `{columns}`
+ *       FROM Users
+ *       WHERE 1 = 1
+ *           {user_id? -> AND id = user_id?}
+ *           {first_name? -> AND firstName LIKE '%first_name?%'}
+ *           {aliases? -> AND name IN (aliases?)}
+ *       """,
+ *       asList(columns),
+ *       criteria.userId()),
+ *       criteria.firstName(),
+ *       criteria.aliases());
+ * }
  *
- *   List<User> users = usersQuery(userCriteria, "email", "lastName")
- *       .query(dataSource, User.class);
+ * List<User> users = usersQuery(userCriteria, "email", "lastName")
+ *     .query(dataSource, User.class);
  * }</pre>
  *
- * <p>The special "{foo? -> ...}" guard syntax informs the template engine that the
- * right hand side query snippet is only rendered if the {@code Optional} parameter corresponding
- * to the "foo?" placeholder is present, or the {@code Collection} paameter corresponding to it
- * isn't empty, in which case the value of the Optional or Collection will be used in
- * the right hand side snippet as if it were a regular template argument.
+ * <p>The special "{foo? -> ...}" guard syntax informs the template engine that the right hand side
+ * query snippet is only rendered if the {@code Optional} parameter corresponding to the "foo?"
+ * placeholder is present, or the {@code Collection} paameter corresponding to it isn't empty, in
+ * which case the value of the Optional or Collection will be used in the right hand side snippet as
+ * if it were a regular template argument.
  *
- * <p>If {@code UserCriteria} has specified {@code firstName()} but {@code userId()} is
- * unspecified (empty), the resulting SQL will look like:
+ * <p>If {@code UserCriteria} has specified {@code firstName()} but {@code userId()} is unspecified
+ * (empty), the resulting SQL will look like:
  *
  * <pre>{@code
- *   SELECT `email`, `lastName` FROM Users WHERE firstName LIKE ?
+ * SELECT `email`, `lastName` FROM Users WHERE firstName LIKE ?
  * }</pre>
  *
  * <p>And when you call {@code usersQuery.prepareStatement(connection)} or one of the similar
- * convenience methods, {@code statement.setObject(1, "%" + criteria.firstName().get() + "%")}
- * will be called to populate the PreparedStatement.
+ * convenience methods, {@code statement.setObject(1, "%" + criteria.firstName().get() + "%")} will
+ * be called to populate the PreparedStatement.
  *
- * <dl><dt><STRONG>Complex Dynamic Subqueries</STRONG></dt></dl>
+ * <dl>
+ *   <dt><STRONG>Complex Dynamic Subqueries</STRONG>
+ * </dl>
  *
- * By composing SafeSql objects that encapsulate subqueries, you can parameterize by
- * arbitrary sub-queries that are computed dynamically.
+ * By composing SafeSql objects that encapsulate subqueries, you can parameterize by arbitrary
+ * sub-queries that are computed dynamically.
  *
- * <p>Imagine if you need to translate a user-facing structured search expression like
- * {@code location:US AND name:jing OR status:active} into SQL. And you already have the search
- * expression parser that turns the search expression into an AST (abstract syntax tree).
- * The following code uses SafeSql template to turn it into SQL where clause that can be used to
- * query the database for the results: <pre>{@code
+ * <p>Imagine if you need to translate a user-facing structured search expression like {@code
+ * location:US AND name:jing OR status:active} into SQL. And you already have the search expression
+ * parser that turns the search expression into an AST (abstract syntax tree). The following code
+ * uses SafeSql template to turn it into SQL where clause that can be used to query the database for
+ * the results:
  *
+ * <pre>{@code
  * // The AST
  * interface Expression permits AndExpression, OrExpression, HasExpression {}
  *
@@ -273,26 +283,30 @@ import com.google.mu.util.stream.BiStream;
  * SafeSql query = SafeSql.of("SELECT * FROM Foos WHERE {filter}", toSqlFilter(expression));
  * }</pre>
  *
- * <dl><dt><STRONG>Parameterize by Column Names or Table Names</STRONG></dt></dl>
+ * <dl>
+ *   <dt><STRONG>Parameterize by Column Names or Table Names</STRONG>
+ * </dl>
  *
- * Sometimes you may wish to parameterize by table names, column names etc.
- * for which JDBC parameterization has no support.
+ * Sometimes you may wish to parameterize by table names, column names etc. for which JDBC
+ * parameterization has no support.
  *
- * <p>If the identifiers are compile-time string literals, you can wrap them using
- * {@code SafeSql.of(COLUMN_NAME)}, which can then be composed as subqueries.
- * But what if the identifier string is loaded from a resource file, or is specified by a
- * request field?
+ * <p>If the identifiers are compile-time string literals, you can wrap them using {@code
+ * SafeSql.of(COLUMN_NAME)}, which can then be composed as subqueries. But what if the identifier
+ * string is loaded from a resource file, or is specified by a request field?
  *
- * <p>Passing the string directly as a template parameter will only generate the JDBC
- * <code>'?'</code> parameter in its place, which won't work (PreparedStatement can't parameterize
+ * <p>Passing the string directly as a template parameter will only generate the JDBC <code>'?'
+ * </code> parameter in its place, which won't work (PreparedStatement can't parameterize
  * identifiers); {@code SafeSql.of(theString)} will fail to compile because such strings are
  * inherently dynamic and untrusted.
  *
  * <p>The safe way to parameterize dynamic strings as <em>identifiers</em> is to backtick-quote
  * their placeholders in the SQL template (if you use Oracle, PostgreSQL that use double quotes for
- * identifier, use double quotes instead). For example: <pre>{@code
- *   SafeSql.of("SELECT `{columns}` FROM Users", request.getColumns())
+ * identifier, use double quotes instead). For example:
+ *
+ * <pre>{@code
+ * SafeSql.of("SELECT `{columns}` FROM Users", request.getColumns())
  * }</pre>
+ *
  * The backticks tell SafeSql that the string is supposed to be an identifier (or a list of
  * identifiers). SafeSql will sanity-check the string(s) to ensure injection safety.
  *
@@ -300,106 +314,120 @@ import com.google.mu.util.stream.BiStream;
  * SQL will be:
  *
  * <pre>{@code
- *   SELECT `id`, `age` FROM Users
+ * SELECT `id`, `age` FROM Users
  * }</pre>
  *
  * <p>That is, each individual string will be backtick-quoted and then joined by ", ".
  *
- * <dl><dt><STRONG>The {@code LIKE} Operator</STRONG></dt></dl>
+ * <dl>
+ *   <dt><STRONG>The {@code LIKE} Operator</STRONG>
+ * </dl>
  *
  * <p>Note that with straight JDBC API, if you try to use the LIKE operator to match a user-provided
- * substring, i.e. using {@code LIKE '%foo%'} to search for "foo", this seemingly intuitive
- * syntax is actually incorect: <pre>{@code
- *   String searchTerm = ...;
- *   PreparedStatement statement =
- *       connection.prepareStatement("SELECT id FROM Users WHERE firstName LIKE '%?%'");
- *   statement.setString(1, searchTerm);
+ * substring, i.e. using {@code LIKE '%foo%'} to search for "foo", this seemingly intuitive syntax
+ * is actually incorect:
+ *
+ * <pre>{@code
+ * String searchTerm = ...;
+ * PreparedStatement statement =
+ *     connection.prepareStatement("SELECT id FROM Users WHERE firstName LIKE '%?%'");
+ * statement.setString(1, searchTerm);
  * }</pre>
  *
  * JDBC PreparedStatement considers the quoted question mark as a literal so the {@code setString()}
- * call will fail. You'll need to use the following workaround: <pre>{@code
- *   PreparedStatement statement =
- *       connection.prepareStatement("SELECT id FROM Users WHERE firstName LIKE ?");
- *   statement.setString(1, "%" + searchTerm + "%");
+ * call will fail. You'll need to use the following workaround:
+ *
+ * <pre>{@code
+ * PreparedStatement statement =
+ *     connection.prepareStatement("SELECT id FROM Users WHERE firstName LIKE ?");
+ * statement.setString(1, "%" + searchTerm + "%");
  * }</pre>
  *
  * And even then, if the {@code searchTerm} includes special characters like '%' or backslash ('\'),
- * they'll be interepreted as wildcards and escape characters, opening it up to a form of minor
- * SQL injection despite already using the parameterized SQL.
+ * they'll be interepreted as wildcards and escape characters, opening it up to a form of minor SQL
+ * injection despite already using the parameterized SQL.
  *
  * <p>The SafeSql template protects you from this caveat. The most intuitive syntax does exactly
- * what you'd expect (and it escapes special characters too): <pre>{@code
- *   String searchTerm = ...;
- *   SafeSql sql = SafeSql.of(
- *       "SELECT id FROM Users WHERE firstName LIKE '%{search_term}%'", searchTerm);
- *   List<Long> ids = sql.query(dataSource, Long.class);
- * }</pre>
- *
- * <p><strong>Automatic Escaping: No Need for ESCAPE Clause</strong></p>
- *
- * <p>This means you <em>do not</em> need to (and in fact, must not) write SQL
- * using {@code ESCAPE} clauses after {@code LIKE '%{foo}%'}. Any such attempt, as in:
+ * what you'd expect (and it escapes special characters too):
  *
  * <pre>{@code
- *   SELECT name FROM Users WHERE name LIKE '%{term}%' ESCAPE '\'
+ * String searchTerm = ...;
+ * SafeSql sql = SafeSql.of(
+ *     "SELECT id FROM Users WHERE firstName LIKE '%{search_term}%'", searchTerm);
+ * List<Long> ids = sql.query(dataSource, Long.class);
  * }</pre>
  *
- * <p>...will be rejected, because SafeSql already performs all necessary escaping internally
- * and automatically uses {@code ESCAPE '^'}. In other words, LIKE <em>just works</em>.
+ * <p><strong>Automatic Escaping: No Need for ESCAPE Clause</strong>
  *
- * <p>This eliminates the need for developers to deal with brittle double-escaping
- * (like {@code '\\'}), or any cross-dialect compatibility issues.
- * The template is also more readable.
- *
- * <p>If you find yourself wanting to use {@code ESCAPE}, consider whether you are
- * manually escaping strings that could instead be safely passed as-is to SafeSql's
- * template system.
- *
- * <p>That said, this only applies when template placeholder is used in the LIKE string.
- * You can use any valid SQL ESCAPE syntax if placeholder isn't used in the LIKE expression.
- *
- * <dl><dt><STRONG>Quote String Placeholders</STRONG></dt></dl>
- *
- * Even when you don't use the {@code LIKE} operator or the percent sign (%), it may still be
- * more readable to quote the string placeholders just so the SQL template explicitly tells readers
- * that the parameter is a string. The following template works with or without the quotes around
- * the <code>{id}</code> placeholder:
+ * <p>This means you <em>do not</em> need to (and in fact, must not) write SQL using {@code ESCAPE}
+ * clauses after {@code LIKE '%{foo}%'}. Any such attempt, as in:
  *
  * <pre>{@code
- *   // Reads more clearly that the {id} is a string
- *   SafeSql sql = SafeSql.of("SELECT * FROM Users WHERE id = '{id}'", userId);
+ * SELECT name FROM Users WHERE name LIKE '%{term}%' ESCAPE '\'
  * }</pre>
  *
- * <dl><dt><STRONG>Enforce Identical Parameter</STRONG></dt></dl>
+ * <p>...will be rejected, because SafeSql already performs all necessary escaping internally and
+ * automatically uses {@code ESCAPE '^'}. In other words, LIKE <em>just works</em>.
  *
- * <p>The compile-time check tries to be helpful and checks that if you use the
- * same parameter name more than once in the template, the same value must be used for it.
+ * <p>This eliminates the need for developers to deal with brittle double-escaping (like {@code
+ * '\\'}), or any cross-dialect compatibility issues. The template is also more readable.
  *
- * <p>So for example, if you are trying to generate a SQL that looks like: <pre>{@code
- *   SELECT u.firstName, p.profileId
- *   FROM (SELECT firstName FROM Users WHERE id = 'foo') u,
- *        (SELECT profileId FROM Profiles WHERE userId = 'foo') p
+ * <p>If you find yourself wanting to use {@code ESCAPE}, consider whether you are manually escaping
+ * strings that could instead be safely passed as-is to SafeSql's template system.
+ *
+ * <p>That said, this only applies when template placeholder is used in the LIKE string. You can use
+ * any valid SQL ESCAPE syntax if placeholder isn't used in the LIKE expression.
+ *
+ * <dl>
+ *   <dt><STRONG>Quote String Placeholders</STRONG>
+ * </dl>
+ *
+ * Even when you don't use the {@code LIKE} operator or the percent sign (%), it may still be more
+ * readable to quote the string placeholders just so the SQL template explicitly tells readers that
+ * the parameter is a string. The following template works with or without the quotes around the
+ * <code>{id}</code> placeholder:
+ *
+ * <pre>{@code
+ * // Reads more clearly that the {id} is a string
+ * SafeSql sql = SafeSql.of("SELECT * FROM Users WHERE id = '{id}'", userId);
+ * }</pre>
+ *
+ * <dl>
+ *   <dt><STRONG>Enforce Identical Parameter</STRONG>
+ * </dl>
+ *
+ * <p>The compile-time check tries to be helpful and checks that if you use the same parameter name
+ * more than once in the template, the same value must be used for it.
+ *
+ * <p>So for example, if you are trying to generate a SQL that looks like:
+ *
+ * <pre>{@code
+ * SELECT u.firstName, p.profileId
+ * FROM (SELECT firstName FROM Users WHERE id = 'foo') u,
+ *      (SELECT profileId FROM Profiles WHERE userId = 'foo') p
  * }</pre>
  *
  * It'll be important to use the same user id for both subqueries. And you can use the following
- * template to make sure of it at compile time: <pre>{@code
- *   SafeSql sql = SafeSql.of(
- *       """
- *       SELECT u.firstName, p.profileId
- *       FROM (SELECT firstName FROM Users WHERE id = '{user_id}') u,
- *            (SELECT profileId FROM Profiles WHERE userId = '{user_id}') p
- *       """,
- *       userId, userId);
+ * template to make sure of it at compile time:
+ *
+ * <pre>{@code
+ * SafeSql sql = SafeSql.of(
+ *     """
+ *     SELECT u.firstName, p.profileId
+ *     FROM (SELECT firstName FROM Users WHERE id = '{user_id}') u,
+ *          (SELECT profileId FROM Profiles WHERE userId = '{user_id}') p
+ *     """,
+ *     userId, userId);
  * }</pre>
  *
  * If someone mistakenly passes in inconsistent ids, they'll get a compilation error.
  *
- * <hr width = "100%" size = "2"></hr>
+ * <p><hr width = "100%" size = "2"></hr>
  *
- * <p><em>For Spring users:</em> you can delegate to {@code JdbcTemplate} by calling
- * {@link #toString} to get the SQL string and {@link #args} to get the JDBC arguments.
+ * <p><em>For Spring users:</em> you can delegate to {@code JdbcTemplate} by calling {@link
+ * #toString} to get the SQL string and {@link #args} to get the JDBC arguments.
  *
- * <hr width = "100%" size = "2"></hr>
+ * <p><hr width = "100%" size = "2"></hr>
  *
  * <p>Immutable if the template parameters you pass to it are immutable.
  *
@@ -448,20 +476,20 @@ public final class SafeSql {
    *     .query(dataSource, Long.class);
    * }</pre>
    *
-   * <p>Note that if you plan to create a {@link PreparedStatement} and use it multiple times
-   * with different sets of parameters, it's more efficient to use {@link #prepareToQuery
+   * <p>Note that if you plan to create a {@link PreparedStatement} and use it multiple times with
+   * different sets of parameters, it's more efficient to use {@link #prepareToQuery
    * prepareToQuery()} or {@link #prepareToUpdate prepareToUpdate()}, which will reuse the same
    * PreparedStatement for multiple calls. The returned {@link Template}s are protected at
    * compile-time against incorrect varargs.
    *
    * @param template the sql template
    * @param params The template parameters. Parameters that are themselves {@link SafeSql} are
-   * considered trusted subqueries and are appended directly. Other types are passed through JDBC
-   * {@link PreparedStatement#setObject}, with one exception: when the corresponding placeholder
-   * is quoted by backticks like {@code `{columns}`}, its string parameter value
-   * (or {@code Iterable<String>} parameter value) are directly appended (quotes, backticks,
-   * backslash and other special characters are disallowed).
-   * This makes it easy to parameterize by table names, column names etc.
+   *     considered trusted subqueries and are appended directly. Other types are passed through
+   *     JDBC {@link PreparedStatement#setObject}, with one exception: when the corresponding
+   *     placeholder is quoted by backticks like {@code `{columns}`}, its string parameter value (or
+   *     {@code Iterable<String>} parameter value) are directly appended (quotes, backticks,
+   *     backslash and other special characters are disallowed). This makes it easy to parameterize
+   *     by table names, column names etc.
    */
   @SuppressWarnings("StringFormatArgsCheck") // protected by @TemplateFormatMethod
   @TemplateFormatMethod
@@ -473,8 +501,9 @@ public final class SafeSql {
    * Wraps non-negative {@code number} as a literal SQL snippet in a SafeSql object.
    *
    * <p>For example, the following SQL Server query allows parameterization by the TOP n number:
+   *
    * <pre>{@code
-   *   SafeSql.of("SELECT TOP {page_size} UserId FROM Users", nonNegativeLiteral(pageSize))
+   * SafeSql.of("SELECT TOP {page_size} UserId FROM Users", nonNegativeLiteral(pageSize))
    * }</pre>
    *
    * <p>Needed because the SQL Server JDBC driver doesn't support parameterizing the TOP number
@@ -502,9 +531,9 @@ public final class SafeSql {
    *     SafeSql.optionally("WHERE {filter}", getOptionalWhereClause()));
    * }</pre>
    *
-   * @deprecated Use {@code SafeSql.of("{foo? -> OR foo?}", optionalFoo)} instead of
-   *             {@code optionally("or {foo}", optionalFoo)} because the former allows
-   *             you to reference {@code foo?} multiple times in the right hand side snippet.
+   * @deprecated Use {@code SafeSql.of("{foo? -> OR foo?}", optionalFoo)} instead of {@code
+   *     optionally("or {foo}", optionalFoo)} because the former allows you to reference {@code
+   *     foo?} multiple times in the right hand side snippet.
    */
   @TemplateFormatMethod
   @Deprecated
@@ -549,8 +578,8 @@ public final class SafeSql {
   }
 
   /**
-   * Returns a {@link Template} of {@link SafeSql} based on the {@code template} string.
-   * Useful for creating a constant to be reused with different parameters.
+   * Returns a {@link Template} of {@link SafeSql} based on the {@code template} string. Useful for
+   * creating a constant to be reused with different parameters.
    *
    * <p>For example:
    *
@@ -576,9 +605,9 @@ public final class SafeSql {
   }
 
   /**
-   * A collector that joins boolean query snippet using {@code AND} operator. The
-   * AND'ed sub-queries will be enclosed in pairs of parenthesis to avoid
-   * ambiguity. If the input is empty, the result will be "(1 = 1)".
+   * A collector that joins boolean query snippet using {@code AND} operator. The AND'ed sub-queries
+   * will be enclosed in pairs of parenthesis to avoid ambiguity. If the input is empty, the result
+   * will be "(1 = 1)".
    *
    * <p>Empty SafeSql elements are ignored and not joined.
    */
@@ -589,9 +618,9 @@ public final class SafeSql {
   }
 
   /**
-   * A collector that joins boolean query snippet using {@code OR} operator. The
-   * OR'ed sub-queries will be enclosed in pairs of parenthesis to avoid
-   * ambiguity. If the input is empty, the result will be "(1 = 0)".
+   * A collector that joins boolean query snippet using {@code OR} operator. The OR'ed sub-queries
+   * will be enclosed in pairs of parenthesis to avoid ambiguity. If the input is empty, the result
+   * will be "(1 = 0)".
    *
    * <p>Empty SafeSql elements are ignored and not joined.
    */
@@ -665,35 +694,42 @@ public final class SafeSql {
   }
 
   /**
-   * Executes the encapsulated SQL as a query against {@code dataSource.getConnection()}.
-   * The {@link ResultSet} will be consumed, transformed to a list of {@code T} and then closed before returning.
+   * Executes the encapsulated SQL as a query against {@code dataSource.getConnection()}. The {@link
+   * ResultSet} will be consumed, transformed to a list of {@code T} and then closed before
+   * returning.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * List<User> users = SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name)
    *     .query(dataSource, User.class);
    *
    * record User(long id, String name) {...}
    * }</pre>
    *
-   * <p>The class of {@code resultType} must define a non-private constructor that accepts
-   * the same number of parameters as returned by the query. The parameter order doesn't
-   * matter but the parameter <em>names</em> and types must match.
+   * <p>The class of {@code resultType} must define a non-private constructor that accepts the same
+   * number of parameters as returned by the query. The parameter order doesn't matter but the
+   * parameter <em>names</em> and types must match.
    *
-   * <p>Note that if you've enabled the {@code -parameters} javac flag, the above example code
-   * will just work. If you can't enable {@code -parameters}, consider explicitly annotating
-   * the constructor parameters as in:
+   * <p>Note that if you've enabled the {@code -parameters} javac flag, the above example code will
+   * just work. If you can't enable {@code -parameters}, consider explicitly annotating the
+   * constructor parameters as in:
    *
    * <pre>{@code
    * record User(@SqlName("id") long id, @SqlName("name") String name) {...}
    * }</pre>
    *
-   * <p>Alternatively, if your query only selects one column, you could also use this method
-   * to read the results: <pre>{@code
+   * <p>Alternatively, if your query only selects one column, you could also use this method to read
+   * the results:
+   *
+   * <pre>{@code
    * List<String> names = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name)
    *     .query(dataSource, String.class);
    * }</pre>
    *
-   * <p>You can also map the result rows to Java Beans, for example: <pre>{@code
+   * <p>You can also map the result rows to Java Beans, for example:
+   *
+   * <pre>{@code
    * List<UserBean> users =
    *     SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name)
    *         .query(dataSource, UserBean.class);
@@ -705,19 +741,20 @@ public final class SafeSql {
    * }</pre>
    *
    * <p>The rules of mapping query columns to Java Bean properties are:
+   *
    * <ul>
-   * <li>Case doesn't matter. {@code job_id} will match {@code jobId} or {@code JOB_ID}.
-   * <li>The column names can be a superset, or a subset of the bean property names.
-   *     This allows you to use "select *" in the query (when performance isn't a concern),
-   *     or use a generic Java bean that may have more properties than some individual queries.
-   * <li>If a bean property is of primitive type, and the corresponding query column value
-   *     is null, the property will be left as is.
-   * <li>If you can't make a bean property match a query column, consider annotating the setter
-   *     method with the {@code @SqlName} annotation to customize the column name.
-   * <li>Exception will be thrown if a column doesn't map to a settable property, and the columns
-   *     aren't a superset. For example, you may have renamed a property but forgot to rename the
-   *     corresponding query column. In such case, failing loudly and clearly is safer than letting
-   *     the program silently run with corrupted state.
+   *   <li>Case doesn't matter. {@code job_id} will match {@code jobId} or {@code JOB_ID}.
+   *   <li>The column names can be a superset, or a subset of the bean property names. This allows
+   *       you to use "select *" in the query (when performance isn't a concern), or use a generic
+   *       Java bean that may have more properties than some individual queries.
+   *   <li>If a bean property is of primitive type, and the corresponding query column value is
+   *       null, the property will be left as is.
+   *   <li>If you can't make a bean property match a query column, consider annotating the setter
+   *       method with the {@code @SqlName} annotation to customize the column name.
+   *   <li>Exception will be thrown if a column doesn't map to a settable property, and the columns
+   *       aren't a superset. For example, you may have renamed a property but forgot to rename the
+   *       corresponding query column. In such case, failing loudly and clearly is safer than
+   *       letting the program silently run with corrupted state.
    * </ul>
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
@@ -731,21 +768,23 @@ public final class SafeSql {
    * Similar to {@link #query(DataSource, Class)}, but uses an existing connection.
    *
    * <p>It's usually more convenient to use the {@code DataSource} overload because you won't have
-   * to manage the JDBC resources. Use this method if you need to reuse a connection
-   * (mostly for multi-statement transactions).
+   * to manage the JDBC resources. Use this method if you need to reuse a connection (mostly for
+   * multi-statement transactions).
    *
    * @since 8.7
    */
-  public <T> List<T> query(Connection connection, Class<? extends T> resultType)
-      throws SQLException {
+  public <T> List<T> query(
+      Connection connection, Class<? extends T> resultType) throws SQLException {
     return query(connection, stmt -> {}, resultType);
   }
 
   /**
-   * Executes the encapsulated SQL as a query against {@code dataSource.getConnection()}.
-   * The {@link ResultSet} will be consumed, transformed by {@code rowMapper} and then closed before returning.
+   * Executes the encapsulated SQL as a query against {@code dataSource.getConnection()}. The {@link
+   * ResultSet} will be consumed, transformed by {@code rowMapper} and then closed before returning.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * List<Long> ids = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name)
    *     .query(dataSource, row -> row.getLong("id"));
    * }</pre>
@@ -762,43 +801,41 @@ public final class SafeSql {
   }
 
   /**
-   * Similar to {@link #query(DataSource, Class)}, but with {@code settings}
-   * (can be set via lambda like {@code stmt -> stmt.setMaxRows(100)})
-   * to allow customization.
+   * Similar to {@link #query(DataSource, Class)}, but with {@code settings} (can be set via lambda
+   * like {@code stmt -> stmt.setMaxRows(100)}) to allow customization.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.0
    */
   public <T> List<T> query(
-      DataSource dataSource,
-      StatementSettings settings,
-      Class<? extends T> resultType) {
+      DataSource dataSource, StatementSettings settings, Class<? extends T> resultType) {
     return query(dataSource, settings, ResultMapper.toResultOf(resultType)::from);
   }
 
   /**
-   * Similar to {@link #query(DataSource, StatementSettings, Class)}, but uses an existing connection.
+   * Similar to {@link #query(DataSource, StatementSettings, Class)}, but uses an existing
+   * connection.
    *
    * <p>It's usually more convenient to use the {@code DataSource} overload because you won't have
-   * to manage the JDBC resources. Use this method if you need to reuse a connection
-   * (mostly for multi-statement transactions).
+   * to manage the JDBC resources. Use this method if you need to reuse a connection (mostly for
+   * multi-statement transactions).
    *
    * @since 9.0
    */
   public <T> List<T> query(
-      Connection connection,
-      StatementSettings settings,
-      Class<? extends T> resultType) throws SQLException {
+      Connection connection, StatementSettings settings, Class<? extends T> resultType)
+      throws SQLException {
     return query(connection, settings, ResultMapper.toResultOf(resultType)::from);
   }
 
   /**
-   * Executes the encapsulated SQL as a query against {@code dataSource.getConnection()},
-   * using {@code settings} (can be set via lambda like {@code stmt -> stmt.setMaxRows(100)}).
-   * The {@link ResultSet} will be consumed, transformed by {@code rowMapper} and then closed
-   * before returning.
+   * Executes the encapsulated SQL as a query against {@code dataSource.getConnection()}, using
+   * {@code settings} (can be set via lambda like {@code stmt -> stmt.setMaxRows(100)}). The {@link
+   * ResultSet} will be consumed, transformed by {@code rowMapper} and then closed before returning.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * List<Long> ids = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name)
    *     .query(dataSource, stmt -> stmt.setMaxRows(100000), row -> row.getLong("id"));
    * }</pre>
@@ -821,13 +858,16 @@ public final class SafeSql {
   }
 
   /**
-   * Similar to {@link #query(DataSource, StatementSettings, SqlFunction)}, but uses an existing connection.
+   * Similar to {@link #query(DataSource, StatementSettings, SqlFunction)}, but uses an existing
+   * connection.
    *
    * <p>It's usually more convenient to use the {@code DataSource} overload because you won't have
-   * to manage the JDBC resources. Use this method if you need to reuse a connection
-   * (mostly for multi-statement transactions).
+   * to manage the JDBC resources. Use this method if you need to reuse a connection (mostly for
+   * multi-statement transactions).
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * List<Long> ids = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name)
    *     .query(connection, stmt -> stmt.setMaxRows(100000), row -> row.getLong("id"));
    * }</pre>
@@ -840,7 +880,8 @@ public final class SafeSql {
   public <T> List<T> query(
       Connection connection,
       StatementSettings settings,
-      SqlFunction<? super ResultSet, ? extends T> rowMapper) throws SQLException {
+      SqlFunction<? super ResultSet, ? extends T> rowMapper)
+      throws SQLException {
     requireNonNull(rowMapper);
     if (paramValues.isEmpty()) {
       try (Statement stmt = connection.createStatement()) {
@@ -862,10 +903,12 @@ public final class SafeSql {
    * Similar to {@link #query(DataSource, SqlFunction)}, but uses an existing connection.
    *
    * <p>It's usually more convenient to use the {@code DataSource} overload because you won't have
-   * to manage the JDBC resources. Use this method if you need to reuse a connection
-   * (mostly for multi-statement transactions).
+   * to manage the JDBC resources. Use this method if you need to reuse a connection (mostly for
+   * multi-statement transactions).
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * List<Long> ids = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name)
    *     .query(connection, row -> row.getLong("id"));
    * }</pre>
@@ -880,18 +923,20 @@ public final class SafeSql {
   }
 
   /**
-   * Similar to {@link #query(DataSource, Class)}, but only fetches one row if the query
-   * result includes at least one rows, or else returns {@code Optional.empty()}.
+   * Similar to {@link #query(DataSource, Class)}, but only fetches one row if the query result
+   * includes at least one rows, or else returns {@code Optional.empty()}.
    *
-   * <p>Suitable for queries that search by the primary key, for example: <pre>{@code
+   * <p>Suitable for queries that search by the primary key, for example:
+   *
+   * <pre>{@code
    * Optional<User> user =
    *     SafeSql.of("select id, name from Users where id = {id}", userId)
    *         .queryForOne(dataSource, User.class);
    * }</pre>
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
-   * @throws NullPointerException if the first column value is null, and {@code resultType}
-   *   isn't a record or Java Bean.
+   * @throws NullPointerException if the first column value is null, and {@code resultType} isn't a
+   *     record or Java Bean.
    * @since 9.2
    */
   public <T> Optional<T> queryForOne(DataSource dataSource, Class<? extends T> resultType) {
@@ -899,21 +944,23 @@ public final class SafeSql {
   }
 
   /**
-   * Similar to {@link #query(Connection, Class)}, but only fetches one row if the query
-   * result includes at least one rows, or else returns {@code Optional.empty()}.
+   * Similar to {@link #query(Connection, Class)}, but only fetches one row if the query result
+   * includes at least one rows, or else returns {@code Optional.empty()}.
    *
-   * <p>Suitable for queries that search by the primary key, for example: <pre>{@code
+   * <p>Suitable for queries that search by the primary key, for example:
+   *
+   * <pre>{@code
    * Optional<User> user =
    *     SafeSql.of("select id, name from Users where id = {id}", userId)
    *         .queryForOne(connection, User.class);
    * }</pre>
    *
-   * @throws NullPointerException if the first column value is null, and {@code resultType}
-   *   isn't a record or Java Bean.
+   * @throws NullPointerException if the first column value is null, and {@code resultType} isn't a
+   *     record or Java Bean.
    * @since 9.2
    */
-  public <T> Optional<T> queryForOne(Connection connection, Class<? extends T> resultType)
-      throws SQLException {
+  public <T> Optional<T> queryForOne(
+      Connection connection, Class<? extends T> resultType) throws SQLException {
     return queryForOne(connection, ResultMapper.toResultOf(resultType)::from);
   }
 
@@ -948,30 +995,40 @@ public final class SafeSql {
   public <T> Optional<T> queryForOne(
       Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper)
       throws SQLException {
-    try (Stream<T> stream =
-        queryLazily(connection, stmt -> { stmt.setMaxRows(1); stmt.setFetchSize(1); }, rowMapper)) {
-      return stream.peek(r -> {
-        if (r == null) {
-          throw new NullPointerException(
-              "Null result not supported. Consider using a record or Java Bean with a nullable property " +
-              "as the result type, or using queryLazily() or query() that support nulls.");
-        }
-      }).findFirst();
+    try (Stream<T> stream = queryLazily(
+        connection,
+        stmt -> {
+          stmt.setMaxRows(1);
+          stmt.setFetchSize(1);
+        },
+        rowMapper)) {
+      return stream
+          .peek(r -> {
+            if (r == null) {
+              throw new NullPointerException(
+                  "Null result not supported. Consider using a record or Java Bean with a nullable"
+                      + " property as the result type, or using queryLazily() or query() that"
+                      + " support nulls.");
+            }
+          })
+          .findFirst();
     } catch (UncheckedSqlException e) {
       throw e.asChecked();
     }
   }
 
   /**
-   * Executes the encapsulated SQL as a query against {@code connection},
-   * and then fetches the results lazily in a stream.
+   * Executes the encapsulated SQL as a query against {@code connection}, and then fetches the
+   * results lazily in a stream.
    *
    * <p>Each result row is transformed into {@code resultType}.
    *
    * <p>The caller must close it using try-with-resources idiom, which will close the associated
    * {@link Statement} and {@link ResultSet}.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * SafeSql sql = SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name);
    * try (Stream<User> users = sql.queryLazily(connection, User.class)) {
    *   return users.findFirst();
@@ -980,27 +1037,30 @@ public final class SafeSql {
    * record User(long id, String name) {...}
    * }</pre>
    *
-   * <p>The class of {@code resultType} must define a non-private constructor that accepts
-   * the same number of parameters as returned by the query. The parameter order doesn't
-   * matter but the parameter <em>names</em> and types must match.
+   * <p>The class of {@code resultType} must define a non-private constructor that accepts the same
+   * number of parameters as returned by the query. The parameter order doesn't matter but the
+   * parameter <em>names</em> and types must match.
    *
-   * <p>Note that if you've enabled the {@code -parameters} javac flag, the above example code
-   * will just work. If you can't enable {@code -parameters}, consider explicitly annotating
-   * the constructor parameters as in:
+   * <p>Note that if you've enabled the {@code -parameters} javac flag, the above example code will
+   * just work. If you can't enable {@code -parameters}, consider explicitly annotating the
+   * constructor parameters as in:
    *
    * <pre>{@code
    * record User(@SqlName("id") long id, @SqlName("name") String name) {...}
    * }</pre>
    *
-   * <p>Alternatively, if your query only selects one column, you could also use this method
-   * to read the results: <pre>{@code
+   * <p>Alternatively, if your query only selects one column, you could also use this method to read
+   * the results:
+   *
+   * <pre>{@code
    * SafeSql sql = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name);
    * try (Stream<Long> ids = sql.queryLazily(dataSource, Long.class)) {
    *   return ids.findFirst();
    * }
    * }</pre>
    *
-   * <p>You can also map the result rows to Java Beans, similar to {@link #query(Connection, Class)}.
+   * <p>You can also map the result rows to Java Beans, similar to {@link #query(Connection,
+   * Class)}.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.2
@@ -1011,14 +1071,16 @@ public final class SafeSql {
   }
 
   /**
-   * Executes the encapsulated SQL as a query against {@code connection},
-   * and then fetches the results lazily in a stream.
+   * Executes the encapsulated SQL as a query against {@code connection}, and then fetches the
+   * results lazily in a stream.
    *
-   * <p>The returned {@code Stream} includes results transformed by {@code rowMapper}.
-   * The caller must close it using try-with-resources idiom, which will close the associated
-   * {@link Connection}, {@link Statement} and {@link ResultSet}.
+   * <p>The returned {@code Stream} includes results transformed by {@code rowMapper}. The caller
+   * must close it using try-with-resources idiom, which will close the associated {@link
+   * Connection}, {@link Statement} and {@link ResultSet}.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * SafeSql sql = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name);
    * try (Stream<String> names = sql.queryLazily(dataSource, row -> row.getString("name"))) {
    *   return names.findFirst();
@@ -1031,19 +1093,22 @@ public final class SafeSql {
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.2
    */
-  @MustBeClosed public <T> Stream<T> queryLazily(
+  @MustBeClosed
+  public <T> Stream<T> queryLazily(
       DataSource dataSource, SqlFunction<? super ResultSet, ? extends T> rowMapper) {
     return queryLazily(dataSource, stmt -> {}, rowMapper);
   }
 
   /**
-   * Executes the encapsulated SQL as a query against {@code connection}, with {@code settings}
-   * (can be set via lambda like {@code stmt -> stmt.setFetchSize(100)}), and then fetches the
-   * results lazily in a stream.
+   * Executes the encapsulated SQL as a query against {@code connection}, with {@code settings} (can
+   * be set via lambda like {@code stmt -> stmt.setFetchSize(100)}), and then fetches the results
+   * lazily in a stream.
    *
    * <p>Each result row is transformed into {@code resultType}.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * SafeSql sql = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name);
    * try (Stream<String> names = sql.queryLazily(
    *     dataSource, stmt -> stmt.setFetchSize(100), String.class)) {
@@ -1057,23 +1122,24 @@ public final class SafeSql {
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.2
    */
-  @MustBeClosed public <T> Stream<T> queryLazily(
-      DataSource dataSource,
-      StatementSettings settings,
-      Class<? extends T> resultType) {
+  @MustBeClosed
+  public <T> Stream<T> queryLazily(
+      DataSource dataSource, StatementSettings settings, Class<? extends T> resultType) {
     return queryLazily(dataSource, settings, ResultMapper.toResultOf(resultType)::from);
   }
 
   /**
-   * Executes the encapsulated SQL as a query against {@code dataSource}, with {@code settings}
-   * (can be set via lambda like {@code stmt -> stmt.setFetchSize(100)}, and then fetches the
-   * results lazily in a stream.
+   * Executes the encapsulated SQL as a query against {@code dataSource}, with {@code settings} (can
+   * be set via lambda like {@code stmt -> stmt.setFetchSize(100)}, and then fetches the results
+   * lazily in a stream.
    *
-   * <p>The returned {@code Stream} includes results transformed by {@code rowMapper}.
-   * The caller must close it using try-with-resources idiom, which will close the associated
-   * {@link Connection}, {@link Statement} and {@link ResultSet}.
+   * <p>The returned {@code Stream} includes results transformed by {@code rowMapper}. The caller
+   * must close it using try-with-resources idiom, which will close the associated {@link
+   * Connection}, {@link Statement} and {@link ResultSet}.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * SafeSql sql = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name);
    * try (Stream<String> names = sql.queryLazily(
    *     dataSource, stmt -> stmt.setFetchSize(100), row -> row.getString("name"))) {
@@ -1088,7 +1154,8 @@ public final class SafeSql {
    * @since 9.2
    */
   @SuppressWarnings("MustBeClosedChecker")
-  @MustBeClosed public <T> Stream<T> queryLazily(
+  @MustBeClosed
+  public <T> Stream<T> queryLazily(
       DataSource dataSource,
       StatementSettings settings,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) {
@@ -1101,15 +1168,17 @@ public final class SafeSql {
   }
 
   /**
-   * Executes the encapsulated SQL as a query against {@code connection},
-   * and then fetches the results lazily in a stream.
+   * Executes the encapsulated SQL as a query against {@code connection}, and then fetches the
+   * results lazily in a stream.
    *
    * <p>Each result row is transformed into {@code resultType}.
    *
    * <p>The caller must close it using try-with-resources idiom, which will close the associated
    * {@link Statement} and {@link ResultSet}.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * SafeSql sql = SafeSql.of("SELECT id, name FROM Users WHERE name LIKE '%{name}%'", name);
    * try (Stream<User> users = sql.queryLazily(connection, User.class)) {
    *   return users.findFirst();
@@ -1118,45 +1187,50 @@ public final class SafeSql {
    * record User(long id, String name) {...}
    * }</pre>
    *
-   * <p>The class of {@code resultType} must define a non-private constructor that accepts
-   * the same number of parameters as returned by the query. The parameter order doesn't
-   * matter but the parameter <em>names</em> and types must match.
+   * <p>The class of {@code resultType} must define a non-private constructor that accepts the same
+   * number of parameters as returned by the query. The parameter order doesn't matter but the
+   * parameter <em>names</em> and types must match.
    *
-   * <p>Note that if you've enabled the {@code -parameters} javac flag, the above example code
-   * will just work. If you can't enable {@code -parameters}, consider explicitly annotating
-   * the constructor parameters as in:
+   * <p>Note that if you've enabled the {@code -parameters} javac flag, the above example code will
+   * just work. If you can't enable {@code -parameters}, consider explicitly annotating the
+   * constructor parameters as in:
    *
    * <pre>{@code
    * record User(@SqlName("id") long id, @SqlName("name") String name) {...}
    * }</pre>
    *
-   * <p>Alternatively, if your query only selects one column, you could also use this method
-   * to read the results: <pre>{@code
+   * <p>Alternatively, if your query only selects one column, you could also use this method to read
+   * the results:
+   *
+   * <pre>{@code
    * SafeSql sql = SafeSql.of("SELECT id FROM Users WHERE name LIKE '%{name}%'", name);
    * try (Stream<Long> ids = sql.queryLazily(connection, Long.class)) {
    *   return ids.findFirst();
    * }
    * }</pre>
    *
-   * <p>You can also map the result rows to Java Beans, similar to {@link #query(Connection, Class)}.
+   * <p>You can also map the result rows to Java Beans, similar to {@link #query(Connection,
+   * Class)}.
    *
    * @since 8.7
    */
   @MustBeClosed
-  public <T> Stream<T> queryLazily(Connection connection, Class<? extends T> resultType)
-      throws SQLException {
+  public <T> Stream<T> queryLazily(
+      Connection connection, Class<? extends T> resultType) throws SQLException {
     return queryLazily(connection, stmt -> {}, resultType);
   }
 
   /**
-   * Executes the encapsulated SQL as a query against {@code connection},
-   * and then fetches the results lazily in a stream.
+   * Executes the encapsulated SQL as a query against {@code connection}, and then fetches the
+   * results lazily in a stream.
    *
-   * <p>The returned {@code Stream} includes results transformed by {@code rowMapper}.
-   * The caller must close it using try-with-resources idiom, which will close the associated
-   * {@link Statement} and {@link ResultSet}.
+   * <p>The returned {@code Stream} includes results transformed by {@code rowMapper}. The caller
+   * must close it using try-with-resources idiom, which will close the associated {@link Statement}
+   * and {@link ResultSet}.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * SafeSql sql = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name);
    * try (Stream<String> names = sql.queryLazily(connection, row -> row.getString("name"))) {
    *   return names.findFirst();
@@ -1168,20 +1242,23 @@ public final class SafeSql {
    *
    * @since 8.4
    */
-  @MustBeClosed public <T> Stream<T> queryLazily(
+  @MustBeClosed
+  public <T> Stream<T> queryLazily(
       Connection connection, SqlFunction<? super ResultSet, ? extends T> rowMapper)
       throws SQLException {
     return queryLazily(connection, stmt -> {}, rowMapper);
   }
 
   /**
-   * Executes the encapsulated SQL as a query against {@code connection}, with {@code settings}
-   * (can be set via lambda like {@code stmt -> stmt.setFetchSize(100)}), and then fetches the
-   * results lazily in a stream.
+   * Executes the encapsulated SQL as a query against {@code connection}, with {@code settings} (can
+   * be set via lambda like {@code stmt -> stmt.setFetchSize(100)}), and then fetches the results
+   * lazily in a stream.
    *
    * <p>Each result row is transformed into {@code resultType}.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * SafeSql sql = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name);
    * try (Stream<String> names = sql.queryLazily(
    *     connection, stmt -> stmt.setFetchSize(100), String.class)) {
@@ -1194,23 +1271,25 @@ public final class SafeSql {
    *
    * @since 9.0
    */
-  @MustBeClosed public <T> Stream<T> queryLazily(
-      Connection connection,
-      StatementSettings settings,
-      Class<? extends T> resultType) throws SQLException {
+  @MustBeClosed
+  public <T> Stream<T> queryLazily(
+      Connection connection, StatementSettings settings, Class<? extends T> resultType)
+      throws SQLException {
     return queryLazily(connection, settings, ResultMapper.toResultOf(resultType)::from);
   }
 
   /**
-   * Executes the encapsulated SQL as a query against {@code connection}, with {@code settings}
-   * (can be set via lambda like {@code stmt -> stmt.setFetchSize(100)}, and then fetches the
-   * results lazily in a stream.
+   * Executes the encapsulated SQL as a query against {@code connection}, with {@code settings} (can
+   * be set via lambda like {@code stmt -> stmt.setFetchSize(100)}, and then fetches the results
+   * lazily in a stream.
    *
-   * <p>The returned {@code Stream} includes results transformed by {@code rowMapper}.
-   * The caller must close it using try-with-resources idiom, which will close the associated
-   * {@link Statement} and {@link ResultSet}.
+   * <p>The returned {@code Stream} includes results transformed by {@code rowMapper}. The caller
+   * must close it using try-with-resources idiom, which will close the associated {@link Statement}
+   * and {@link ResultSet}.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * SafeSql sql = SafeSql.of("SELECT name FROM Users WHERE name LIKE '%{name}%'", name);
    * try (Stream<String> names = sql.queryLazily(
    *     connection, stmt -> stmt.setFetchSize(100), row -> row.getString("name"))) {
@@ -1224,22 +1303,27 @@ public final class SafeSql {
    * @since 9.0
    */
   @SuppressWarnings("MustBeClosedChecker")
-  @MustBeClosed public <T> Stream<T> queryLazily(
+  @MustBeClosed
+  public <T> Stream<T> queryLazily(
       Connection connection,
       StatementSettings settings,
-      SqlFunction<? super ResultSet, ? extends T> rowMapper) throws SQLException {
+      SqlFunction<? super ResultSet, ? extends T> rowMapper)
+      throws SQLException {
     requireNonNull(rowMapper);
     if (paramValues.isEmpty()) {
       return lazy(connection::createStatement, settings, stmt -> stmt.executeQuery(sql), rowMapper);
     }
-    return lazy(() -> prepareStatement(connection), settings, PreparedStatement::executeQuery, rowMapper);
+    return lazy(
+        () -> prepareStatement(connection), settings, PreparedStatement::executeQuery, rowMapper);
   }
 
-  @MustBeClosed private static <S extends Statement, T> Stream<T> lazy(
+  @MustBeClosed
+  private static <S extends Statement, T> Stream<T> lazy(
       SqlSupplier<? extends S> createStatement,
       StatementSettings settings,
       SqlFunction<? super S, ResultSet> execute,
-      SqlFunction<? super ResultSet, ? extends T> rowMapper) throws SQLException {
+      SqlFunction<? super ResultSet, ? extends T> rowMapper)
+      throws SQLException {
     try (JdbcScope scope = new JdbcScope()) {
       S stmt = scope.statement(createStatement);
       settings.apply(stmt);
@@ -1251,7 +1335,8 @@ public final class SafeSql {
             } catch (SQLException e) {
               throw new UncheckedSqlException(e);
             }
-          }).map(AtomicReference::get));
+          })
+              .map(AtomicReference::get));
     }
   }
 
@@ -1259,7 +1344,9 @@ public final class SafeSql {
    * Executes the encapsulated DML (create, update, delete statements) against {@code dataSource}
    * and returns the number of affected rows.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * SafeSql.of("INSERT INTO Users(id, name) VALUES({id}, '{name}')", id, name)
    *     .update(dataSource);
    * }</pre>
@@ -1269,20 +1356,20 @@ public final class SafeSql {
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.2
    */
-  @CanIgnoreReturnValue public int update(DataSource dataSource) {
+  @CanIgnoreReturnValue
+  public int update(DataSource dataSource) {
     return update(dataSource, stmt -> {});
   }
 
   /**
-   * Similar to {@link #update(DataSource)}, but with {@code settings}
-   * (can be set via lambda like {@code stmt -> stmt.setQueryTimeout(100)})
-   * to allow customization.
+   * Similar to {@link #update(DataSource)}, but with {@code settings} (can be set via lambda like
+   * {@code stmt -> stmt.setQueryTimeout(100)}) to allow customization.
    *
    * @throws UncheckedSqlException wraps {@link SQLException} if failed
    * @since 9.2
    */
-  @CanIgnoreReturnValue public int update(
-      DataSource dataSource, StatementSettings settings) {
+  @CanIgnoreReturnValue
+  public int update(DataSource dataSource, StatementSettings settings) {
     try (Connection connection = dataSource.getConnection()) {
       return update(connection, settings);
     } catch (SQLException e) {
@@ -1294,26 +1381,28 @@ public final class SafeSql {
    * Executes the encapsulated DML (create, update, delete statements) against {@code connection}
    * and returns the number of affected rows.
    *
-   * <p>For example: <pre>{@code
+   * <p>For example:
+   *
+   * <pre>{@code
    * SafeSql.of("INSERT INTO Users(id, name) VALUES({id}, '{name}')", id, name)
    *     .update(connection);
    * }</pre>
    *
    * <p>Internally it delegates to {@link PreparedStatement#executeUpdate}.
    */
-  @CanIgnoreReturnValue public int update(Connection connection) throws SQLException {
+  @CanIgnoreReturnValue
+  public int update(Connection connection) throws SQLException {
     return update(connection, stmt -> {});
   }
 
   /**
-   * Similar to {@link #update(Connection)}, but with {@code settings}
-   * (can be set via lambda like {@code stmt -> stmt.setQueryTimeout(100)})
-   * to allow customization.
+   * Similar to {@link #update(Connection)}, but with {@code settings} (can be set via lambda like
+   * {@code stmt -> stmt.setQueryTimeout(100)}) to allow customization.
    *
    * @since 9.0
    */
-  @CanIgnoreReturnValue public int update(
-      Connection connection, StatementSettings settings) throws SQLException {
+  @CanIgnoreReturnValue
+  public int update(Connection connection, StatementSettings settings) throws SQLException {
     if (paramValues.isEmpty()) {
       try (Statement stmt = connection.createStatement()) {
         settings.apply(stmt);
@@ -1332,35 +1421,37 @@ public final class SafeSql {
    * <p>It's often more convenient to use {@link #query} or {@link #update} unless you need to
    * directly operate on the PreparedStatement.
    */
-  @MustBeClosed public PreparedStatement prepareStatement(Connection connection)
-      throws SQLException {
+  @MustBeClosed
+  public PreparedStatement prepareStatement(Connection connection) throws SQLException {
     return setParameters(connection.prepareStatement(sql));
   }
 
   /**
-   * Returns a query template that will reuse the same cached {@code PreparedStatement}
-   * for repeated calls of {@link Template#with} using different parameters.
+   * Returns a query template that will reuse the same cached {@code PreparedStatement} for repeated
+   * calls of {@link Template#with} using different parameters.
    *
-   * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
-   * without having to re-create the statement for each call. For example in: <pre>{@code
-   *   try (var connection = ...) {
-   *     var queryByName = SafeSql.prepareToQuery(
-   *         connection, "SELECT id, name FROM Users WHERE name LIKE '%{name}%'",
-   *         User.class);
-   *     for (String name : names) {
-   *       for (User user : queryByName.with(name))) {
-   *         ...
-   *       }
+   * <p>Allows callers to take advantage of the performance benefit of PreparedStatement without
+   * having to re-create the statement for each call. For example in:
+   *
+   * <pre>{@code
+   * try (var connection = ...) {
+   *   var queryByName = SafeSql.prepareToQuery(
+   *       connection, "SELECT id, name FROM Users WHERE name LIKE '%{name}%'",
+   *       User.class);
+   *   for (String name : names) {
+   *     for (User user : queryByName.with(name))) {
+   *       ...
    *     }
    *   }
+   * }
    *
-   *   record User(long id, String name) {...}
+   * record User(long id, String name) {...}
    * }</pre>
    *
-   * Each time {@code queryByName.with(name)} is called, it executes the same query template
-   * against the connection, but with a different {@code name} parameter. Internally it reuses the
-   * cached PreparedStatement object and just calls {@link PreparedStatement#setObject(int, Object)}
-   * with the new set of parameters before calling {@link PreparedStatement#executeQuery}.
+   * Each time {@code queryByName.with(name)} is called, it executes the same query template against
+   * the connection, but with a different {@code name} parameter. Internally it reuses the cached
+   * PreparedStatement object and just calls {@link PreparedStatement#setObject(int, Object)} with
+   * the new set of parameters before calling {@link PreparedStatement#executeQuery}.
    *
    * <p>The template arguments follow the same rules as discussed in {@link #of(String, Object...)}
    * and receives the same compile-time protection against mismatch or out-of-order human mistakes.
@@ -1368,8 +1459,8 @@ public final class SafeSql {
    * <p>The returned Template is <em>not</em> thread safe.
    *
    * <p>The caller is expected to close the {@code connection} after done, which will close the
-   * cached PreparedStatement. The {@link ResultSet} objects are guaranteed to be closed after each use
-   * before the PreparedStatement is closed.
+   * cached PreparedStatement. The {@link ResultSet} objects are guaranteed to be closed after each
+   * use before the PreparedStatement is closed.
    *
    * @since 8.7
    */
@@ -1379,27 +1470,29 @@ public final class SafeSql {
   }
 
   /**
-   * Returns a query template that will reuse the same cached {@code PreparedStatement}
-   * for repeated calls of {@link Template#with} using different parameters.
+   * Returns a query template that will reuse the same cached {@code PreparedStatement} for repeated
+   * calls of {@link Template#with} using different parameters.
    *
-   * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
-   * without having to re-create the statement for each call. For example in: <pre>{@code
-   *   try (var connection = ...) {
-   *     var queryByName = SafeSql.prepareToQuery(
-   *         connection, "SELECT id FROM Users WHERE name LIKE '%{name}%'",
-   *         row -> row.getLong("id"));
-   *     for (String name : names) {
-   *       for (long id : queryByName.with(name))) {
-   *         ...
-   *       }
+   * <p>Allows callers to take advantage of the performance benefit of PreparedStatement without
+   * having to re-create the statement for each call. For example in:
+   *
+   * <pre>{@code
+   * try (var connection = ...) {
+   *   var queryByName = SafeSql.prepareToQuery(
+   *       connection, "SELECT id FROM Users WHERE name LIKE '%{name}%'",
+   *       row -> row.getLong("id"));
+   *   for (String name : names) {
+   *     for (long id : queryByName.with(name))) {
+   *       ...
    *     }
    *   }
+   * }
    * }</pre>
    *
-   * Each time {@code queryByName.with(name)} is called, it executes the same query template
-   * against the connection, but with a different {@code name} parameter. Internally it reuses the
-   * cached PreparedStatement object and just calls {@link PreparedStatement#setObject(int, Object)}
-   * with the new set of parameters before calling {@link PreparedStatement#executeQuery}.
+   * Each time {@code queryByName.with(name)} is called, it executes the same query template against
+   * the connection, but with a different {@code name} parameter. Internally it reuses the cached
+   * PreparedStatement object and just calls {@link PreparedStatement#setObject(int, Object)} with
+   * the new set of parameters before calling {@link PreparedStatement#executeQuery}.
    *
    * <p>The template arguments follow the same rules as discussed in {@link #of(String, Object...)}
    * and receives the same compile-time protection against mismatch or out-of-order human mistakes.
@@ -1407,38 +1500,41 @@ public final class SafeSql {
    * <p>The returned Template is <em>not</em> thread safe.
    *
    * <p>The caller is expected to close the {@code connection} after done, which will close the
-   * cached PreparedStatement. The {@link ResultSet} objects are guaranteed to be closed after each use
-   * before the PreparedStatement is closed.
+   * cached PreparedStatement. The {@link ResultSet} objects are guaranteed to be closed after each
+   * use before the PreparedStatement is closed.
    */
   public static <T> Template<List<T>> prepareToQuery(
       Connection connection, @CompileTimeConstant String template,
       SqlFunction<? super ResultSet, ? extends T> rowMapper) {
     requireNonNull(rowMapper);
-    return prepare(connection, template, stmt -> {
-      try (ResultSet resultSet = stmt.executeQuery()) {
-        return mapResults(resultSet, rowMapper);
-      }
-    });
+    return prepare(
+        connection, template,
+        stmt -> {
+          try (ResultSet resultSet = stmt.executeQuery()) {
+            return mapResults(resultSet, rowMapper);
+          }
+        });
   }
 
   /**
    * Returns a DML (create, update, delete) template that will reuse the same cached {@code
    * PreparedStatement} for repeated calls of {@link Template#with} using different parameters.
    *
-   * <p>Allows callers to take advantage of the performance benefit of PreparedStatement
-   * without having to re-create the statement for each call. For example in: <pre>{@code
-   *   try (var connection = ...) {
-   *     var insertUser = SafeSql.prepareToUpdate(
-   *         connection, "INSERT INTO Users(id, name) VALUES({id}, '{name}')");
-   *     int totalRowsAffected = insertUser.with(1, "Tom") + insertUser.with(2, "Emma");
-   *   }
+   * <p>Allows callers to take advantage of the performance benefit of PreparedStatement without
+   * having to re-create the statement for each call. For example in:
+   *
+   * <pre>{@code
+   * try (var connection = ...) {
+   *   var insertUser = SafeSql.prepareToUpdate(
+   *       connection, "INSERT INTO Users(id, name) VALUES({id}, '{name}')");
+   *   int totalRowsAffected = insertUser.with(1, "Tom") + insertUser.with(2, "Emma");
+   * }
    * }</pre>
    *
-   * Each time {@code insertUser.with(...)} is called, it executes the same DML template
-   * against the connection, but with different {@code id} and {@code name} parameters.
-   * Internally it reuses the cached PreparedStatement object and just calls {@link
-   * PreparedStatement#setObject(int, Object)} with the new set of parameters before calling
-   * {@link PreparedStatement#executeUpdate}.
+   * Each time {@code insertUser.with(...)} is called, it executes the same DML template against the
+   * connection, but with different {@code id} and {@code name} parameters. Internally it reuses the
+   * cached PreparedStatement object and just calls {@link PreparedStatement#setObject(int, Object)}
+   * with the new set of parameters before calling {@link PreparedStatement#executeUpdate}.
    *
    * <p>The template arguments follow the same rules as discussed in {@link #of(String, Object...)}
    * and receives the same compile-time protection against mismatch or out-of-order human mistakes.
@@ -1459,24 +1555,26 @@ public final class SafeSql {
    * PreparedStatement} for repeated calls of {@link Template#with} to add {@link
    * PreparedStatement#addBatch batches}
    *
-   * <p>The caller typically uses {@link Template#with with(...)} in a loop.
-   * After all batches have been added, call {@code executeBatch()}, {@code executeLargeBatch()} or
-   * friends on the returned {@code PreparedStatement} instance(s).
+   * <p>The caller typically uses {@link Template#with with(...)} in a loop. After all batches have
+   * been added, call {@code executeBatch()}, {@code executeLargeBatch()} or friends on the returned
+   * {@code PreparedStatement} instance(s).
    *
    * <p>Note that if you pass in different subquery or identifier parameters, a distinct
-   * PreparedStatement object will be returned, each holding a separate batch of commands.
-   * You can store them in a {@code Set<PreparedStatement>} and call {@code executeBatch()}
-   * on all of them. For example in: <pre>{@code
-   *   try (var connection = ...) {
-   *     var insertUser = SafeSql.prepareToBatch(
-   *         connection, "INSERT INTO Users(id, name) VALUES({user_id}, '{user_name}')");
-   *     Set<Statement> batches = users.stream()
-   *         .map(user -> insertUser.with(user.id(), user.name()))
-   *         .collect(toUnmodifiableSet());
-   *     for (Statement batch : batches) {  // 0 or 1 batch in `batches`
-   *       batch.executeBatch();
-   *     }
+   * PreparedStatement object will be returned, each holding a separate batch of commands. You can
+   * store them in a {@code Set<PreparedStatement>} and call {@code executeBatch()} on all of them.
+   * For example in:
+   *
+   * <pre>{@code
+   * try (var connection = ...) {
+   *   var insertUser = SafeSql.prepareToBatch(
+   *       connection, "INSERT INTO Users(id, name) VALUES({user_id}, '{user_name}')");
+   *   Set<Statement> batches = users.stream()
+   *       .map(user -> insertUser.with(user.id(), user.name()))
+   *       .collect(toUnmodifiableSet());
+   *   for (Statement batch : batches) {  // 0 or 1 batch in `batches`
+   *     batch.executeBatch();
    *   }
+   * }
    * }</pre>
    *
    * <p>The template arguments follow the same rules as discussed in {@link #of(String, Object...)}
@@ -1492,10 +1590,12 @@ public final class SafeSql {
    */
   public static Template<PreparedStatement> prepareToBatch(
       Connection connection, @CompileTimeConstant String template) {
-    return prepare(connection, template, stmt -> {
-      stmt.addBatch();
-      return stmt;
-    });
+    return prepare(
+        connection, template,
+        stmt -> {
+          stmt.addBatch();
+          return stmt;
+        });
   }
 
   /**
@@ -1512,8 +1612,8 @@ public final class SafeSql {
   }
 
   /**
-   * Returns a copy of the JDBC arguments. If you need to call Spring JdbcTemplate, consider
-   * {@code jdbcTemplate.query(safeSql.toString(), safeSql.args())}.
+   * Returns a copy of the JDBC arguments. If you need to call Spring JdbcTemplate, consider {@code
+   * jdbcTemplate.query(safeSql.toString(), safeSql.args())}.
    *
    * @since 9.6
    */
@@ -1555,214 +1655,212 @@ public final class SafeSql {
   private static Template<SafeSql> unsafeTemplate(String template) {
     TemplatePlaceholdersContext context = new TemplatePlaceholdersContext(template);
     SqlTextOutline outline = new SqlTextOutline(template);
-    return StringFormat.template(template, (fragments, placeholders) -> {
-      TemplateFragmentScanner scanner = new TemplateFragmentScanner(fragments);
-      Builder builder = new Builder();
-      class Liker {
-        BiOptional<String, String> like(Substring.Match placeholder) {
-          return biStream(allowedAffixes())
-              .mapValuesIfPresent(prefix -> suffixIfLikedStartingWith(prefix, placeholder))
-              .findFirst();
-        }
+    return StringFormat.template(
+        template,
+        (fragments, placeholders) -> {
+          TemplateFragmentScanner scanner = new TemplateFragmentScanner(fragments);
+          Builder builder = new Builder();
+          class Liker {
+            BiOptional<String, String> like(Substring.Match placeholder) {
+              return biStream(allowedAffixes())
+                  .mapValuesIfPresent(prefix -> suffixIfLikedStartingWith(prefix, placeholder))
+                  .findFirst();
+            }
 
-        private Optional<String> suffixIfLikedStartingWith(
-            String prefix, Substring.Match placeholder) {
-          String left = "'" + prefix;
-          return Optionals.optionally(
-              context.lookbehind("LIKE " + left, placeholder),
-              () -> {
-                context.rejectEscapeAfter(placeholder);
-                return biStream(allowedAffixes())
-                    .mapKeysIfPresent(
-                        suffix -> scanner.nextFragmentIfQuoted(left, placeholder, suffix + "'"))
-                    .findFirst()
-                    .peek((fragment, suffix) -> builder.appendSql(fragment))
-                    .map((fragment, suffix) -> suffix)
-                    .orElseThrow(
-                        () -> new IllegalArgumentException(
+            private Optional<String> suffixIfLikedStartingWith(
+                String prefix, Substring.Match placeholder) {
+              String left = "'" + prefix;
+              return Optionals.optionally(
+                  context.lookbehind("LIKE " + left, placeholder),
+                  () -> {
+                    context.rejectEscapeAfter(placeholder);
+                    return biStream(allowedAffixes())
+                        .mapKeysIfPresent(
+                            suffix -> scanner.nextFragmentIfQuoted(left, placeholder, suffix + "'"))
+                        .findFirst()
+                        .peek((fragment, suffix) -> builder.appendSql(fragment))
+                        .map((fragment, suffix) -> suffix)
+                        .orElseThrow(() -> new IllegalArgumentException(
                             "unsupported wildcard in LIKE " + left + placeholder));
-              });
-        }
+                  });
+            }
 
-        private Stream<String> allowedAffixes() {
-          return Stream.of("%", "_", "");
-        }
-      }
-      placeholders.forEach((placeholder, value) -> {
-        checkMisuse(placeholder, value);
-        class SanityChecker {
-          SafeSql subqueryOrParameter(CharSequence name, Object param) {
-            checkArgument(param != null, "%s must not be null", name);
-            if (param instanceof SafeSql) {
-              validateSubqueryPlaceholder(placeholder);
-              return (SafeSql) param;
+            private Stream<String> allowedAffixes() {
+              return Stream.of("%", "_", "");
             }
-            String enclosedBy = outline.getEnclosedBy(placeholder);
-            checkArgument(
-                enclosedBy.isEmpty(),
-                "Placeholder %s cannot be a JDBC parameter when enclosed by %s",
-                placeholder, enclosedBy);
-            return PARAM.with(param);
           }
-        }
-        String paramName = placeholder.skip(1, 1).toString().trim();
-        Substring.Match conditional = first("->").in(paramName).orElse(null);
-        if (conditional != null) {
-          checkArgument(
-              !placeholder.isImmediatelyBetween("`", "`"),
-              "boolean placeholder {%s->} shouldn't be backtick quoted",
-              conditional.before());
-          checkArgument(
-              !placeholder.isImmediatelyBetween("\"", "\""),
-              "boolean placeholder {%s->} shouldn't be double quoted",
-              conditional.before());
-          if (OPTIONAL_PARAMETER.in(conditional.before()).isPresent()) {
-            if (value == null) {
-              // {foo? -> foo?} is a common pattern for guards by nullable parameter
-              String rhsIgnored = validateOptionalOperatorRhs(conditional);
-              builder.appendSql(scanner.nextFragment());
-              return;
+          placeholders.forEach((placeholder, value) -> {
+            checkMisuse(placeholder, value);
+            class SanityChecker {
+              SafeSql subqueryOrParameter(CharSequence name, Object param) {
+                checkArgument(param != null, "%s must not be null", name);
+                if (param instanceof SafeSql) {
+                  validateSubqueryPlaceholder(placeholder);
+                  return (SafeSql) param;
+                }
+                String enclosedBy = outline.getEnclosedBy(placeholder);
+                checkArgument(
+                    enclosedBy.isEmpty(),
+                    "Placeholder %s cannot be a JDBC parameter when enclosed by %s",
+                    placeholder, enclosedBy);
+                return PARAM.with(param);
+              }
             }
-            if (value instanceof Boolean) {  // e.g. {enable_foo? -> , foo}
+            String paramName = placeholder.skip(1, 1).toString().trim();
+            Substring.Match conditional = first("->").in(paramName).orElse(null);
+            if (conditional != null) {
+              checkArgument(
+                  !placeholder.isImmediatelyBetween("`", "`"),
+                  "boolean placeholder {%s->} shouldn't be backtick quoted", conditional.before());
+              checkArgument(
+                  !placeholder.isImmediatelyBetween("\"", "\""),
+                  "boolean placeholder {%s->} shouldn't be double quoted", conditional.before());
+              if (OPTIONAL_PARAMETER.in(conditional.before()).isPresent()) {
+                if (value == null) {
+                  // {foo? -> foo?} is a common pattern for guards by nullable parameter
+                  String rhsIgnored = validateOptionalOperatorRhs(conditional);
+                  builder.appendSql(scanner.nextFragment());
+                  return;
+                }
+                if (value instanceof Boolean) { // e.g. {enable_foo? -> , foo}
+                  builder.appendSql(scanner.nextFragment());
+                  if ((Boolean) value) {
+                    builder.appendSql(conditional.after().trim());
+                  }
+                  return;
+                }
+                if (value instanceof Number || value.getClass().isArray()
+                    || PACKAGES_ALLOWING_NULLABLE_ARGS.contains(
+                        value.getClass().getPackageName())) {
+                  String rhs = validateOptionalOperatorRhs(conditional);
+                  builder.appendSql(scanner.nextFragment()).addSubQuery(innerSubquery(rhs, value));
+                  return;
+                }
+              }
+              checkArgument(
+                  value != null,
+                  "boolean placeholder {%s->} cannot be used with a null value",
+                  conditional.before());
+              if (value instanceof Optional) {
+                String rhs = validateOptionalOperatorRhs(conditional);
+                builder.appendSql(scanner.nextFragment());
+                ((Optional<?>) value)
+                    .map(present -> innerSubquery(rhs, present))
+                    .ifPresent(builder::addSubQuery);
+                return;
+              }
+              if (value instanceof Collection) {
+                String rhs = validateOptionalOperatorRhs(conditional);
+                builder.appendSql(scanner.nextFragment());
+                Collection<?> collectionValue = ((Collection<?>) value);
+                if (!collectionValue.isEmpty()) {
+                  builder.addSubQuery(innerSubquery(rhs, collectionValue));
+                }
+                return;
+              }
+              checkArgument(
+                  value instanceof Boolean,
+                  "conditional placeholder {%s->} can only be used with a boolean, Optional or"
+                      + " Collection value; %s encountered.",
+                  conditional.before(), value.getClass().getName());
               builder.appendSql(scanner.nextFragment());
               if ((Boolean) value) {
                 builder.appendSql(conditional.after().trim());
               }
               return;
             }
-            if (value instanceof Number
-                || value.getClass().isArray()
-                || PACKAGES_ALLOWING_NULLABLE_ARGS.contains(value.getClass().getPackageName())) {
-              String rhs = validateOptionalOperatorRhs(conditional);
-              builder.appendSql(scanner.nextFragment()).addSubQuery(innerSubquery(rhs, value));
-              return;
+            rejectQuestionMark(paramName);
+            checkArgument(
+                !(value instanceof Optional),
+                "%s: optional parameter not supported. "
+                    + "Consider using the {%s? -> ...} syntax, or SafeSql.when()?",
+                paramName, paramName);
+            if (value instanceof Iterable) {
+              Iterator<?> elements = ((Iterable<?>) value).iterator();
+              checkArgument(
+                  elements.hasNext(),
+                  "%s cannot be empty list. To guard against empty list, consider using {%s? -> }"
+                      + " syntax.",
+                  placeholder, paramName);
+              if (placeholder.isImmediatelyBetween("'", "'")
+                  && context.lookaround("IN ('", placeholder, "')")
+                  && scanner
+                      .nextFragmentIfQuoted("'", placeholder, "'")
+                      .map(builder::appendSql)
+                      .isPresent()) {
+                builder.addSubQuery(
+                    eachPlaceholderValue(placeholder, elements)
+                        .mapToObj(SafeSql::mustBeString)
+                        .map(PARAM::with)
+                        .collect(joining(", ")));
+                return;
+              }
+              builder.appendSql(scanner.nextFragment());
+              if (placeholder.isImmediatelyBetween("`", "`")) {
+                builder.appendSql(
+                    eachPlaceholderValue(placeholder, elements)
+                        .mapToObj(SafeSql::mustBeIdentifier)
+                        .collect(Collectors.joining("`, `")));
+              } else if (placeholder.isImmediatelyBetween("\"", "\"")) {
+                builder.appendSql(
+                    eachPlaceholderValue(placeholder, elements)
+                        .mapToObj(SafeSql::mustBeIdentifier)
+                        .collect(Collectors.joining("\", \"")));
+              } else {
+                builder.addSubQuery(
+                    eachPlaceholderValue(placeholder, elements)
+                        .mapToObj(new SanityChecker()::subqueryOrParameter)
+                        .collect(joining(", ")));
+              }
+            } else if (value instanceof SafeSql) {
+              builder.appendSql(scanner.nextFragment()).addSubQuery((SafeSql) value);
+              validateSubqueryPlaceholder(placeholder);
+            } else if (scanner
+                .nextFragmentIfQuoted("`", placeholder, "`")
+                .map(builder::appendSql)
+                .isPresent()) {
+              String identifier = mustBeIdentifier("`" + placeholder + "`", value);
+              checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
+              builder.appendSql("`" + identifier + "`");
+            } else if (scanner
+                .nextFragmentIfQuoted("\"", placeholder, "\"")
+                .map(builder::appendSql)
+                .isPresent()) {
+              String identifier = mustBeIdentifier("\"" + placeholder + "\"", value);
+              checkArgument(identifier.length() > 0, "\"%s\" cannot be empty", placeholder);
+              builder.appendSql("\"" + identifier + "\"");
+            } else if (scanner
+                .nextFragmentIfQuoted("'", placeholder, "'")
+                .map(builder::appendSql)
+                .isPresent()) {
+              builder.addParameter(mustBeString("'" + placeholder + "'", value));
+            } else if (new Liker()
+                .like(placeholder)
+                .map((prefix, suffix) -> builder.addParameter(
+                    prefix + escapeLikeWildcards(mustBeString(placeholder, value)) + suffix))
+                .isPresent()) {
+              builder.appendSql(" ESCAPE '^'");
+            } else {
+              checkMissingPlaceholderQuotes(placeholder);
+              builder.appendSql(scanner.nextFragment()).addParameter(value);
             }
-          }
-          checkArgument(
-              value != null,
-              "boolean placeholder {%s->} cannot be used with a null value",
-              conditional.before());
-          if (value instanceof Optional) {
-            String rhs = validateOptionalOperatorRhs(conditional);
-            builder.appendSql(scanner.nextFragment());
-            ((Optional<?>) value)
-                .map(present -> innerSubquery(rhs, present))
-                .ifPresent(builder::addSubQuery);
-            return;
-          }
-          if (value instanceof Collection) {
-            String rhs = validateOptionalOperatorRhs(conditional);
-            builder.appendSql(scanner.nextFragment());
-            Collection<?> collectionValue = ((Collection<?>) value);
-            if (!collectionValue.isEmpty()) {
-              builder.addSubQuery(innerSubquery(rhs, collectionValue));
-            }
-            return;
-          }
-          checkArgument(
-              value instanceof Boolean,
-              "conditional placeholder {%s->} can only be used with a boolean, Optional or Collection value; %s encountered.",
-              conditional.before(),
-              value.getClass().getName());
-          builder.appendSql(scanner.nextFragment());
-          if ((Boolean) value) {
-            builder.appendSql(conditional.after().trim());
-          }
-          return;
-        }
-        rejectQuestionMark(paramName);
-        checkArgument(
-            !(value instanceof Optional),
-            "%s: optional parameter not supported. " +
-            "Consider using the {%s? -> ...} syntax, or SafeSql.when()?",
-            paramName, paramName);
-        if (value instanceof Iterable) {
-          Iterator<?> elements = ((Iterable<?>) value).iterator();
-          checkArgument(
-              elements.hasNext(),
-              "%s cannot be empty list. To guard against empty list, consider using {%s? -> } syntax.",
-              placeholder, paramName);
-          if (placeholder.isImmediatelyBetween("'", "'")
-              && context.lookaround("IN ('", placeholder, "')")
-              && scanner.nextFragmentIfQuoted("'", placeholder, "'")
-                  .map(builder::appendSql)
-                  .isPresent()) {
-            builder.addSubQuery(
-                eachPlaceholderValue(placeholder, elements)
-                    .mapToObj(SafeSql::mustBeString)
-                    .map(PARAM::with)
-                    .collect(joining(", ")));
-            return;
-          }
-          builder.appendSql(scanner.nextFragment());
-          if (placeholder.isImmediatelyBetween("`", "`")) {
-            builder.appendSql(
-                eachPlaceholderValue(placeholder, elements)
-                    .mapToObj(SafeSql::mustBeIdentifier)
-                    .collect(Collectors.joining("`, `")));
-          } else if (placeholder.isImmediatelyBetween("\"", "\"")) {
-            builder.appendSql(
-                eachPlaceholderValue(placeholder, elements)
-                    .mapToObj(SafeSql::mustBeIdentifier)
-                    .collect(Collectors.joining("\", \"")));
-          } else {
-            builder.addSubQuery(
-                eachPlaceholderValue(placeholder, elements)
-                .mapToObj(new SanityChecker()::subqueryOrParameter)
-                    .collect(joining(", ")));
-          }
-        } else if (value instanceof SafeSql) {
-          builder.appendSql(scanner.nextFragment()).addSubQuery((SafeSql) value);
-          validateSubqueryPlaceholder(placeholder);
-        } else if (
-            scanner.nextFragmentIfQuoted("`", placeholder, "`")
-                .map(builder::appendSql)
-                .isPresent()) {
-          String identifier = mustBeIdentifier("`" + placeholder + "`", value);
-          checkArgument(identifier.length() > 0, "`%s` cannot be empty", placeholder);
-          builder.appendSql("`" + identifier + "`");
-        } else if (
-            scanner.nextFragmentIfQuoted("\"", placeholder, "\"")
-                .map(builder::appendSql)
-                .isPresent()) {
-          String identifier = mustBeIdentifier("\"" + placeholder + "\"", value);
-          checkArgument(identifier.length() > 0, "\"%s\" cannot be empty", placeholder);
-          builder.appendSql("\"" + identifier + "\"");
-        } else if (
-            scanner.nextFragmentIfQuoted("'", placeholder, "'")
-                .map(builder::appendSql)
-                .isPresent()) {
-          builder.addParameter(mustBeString("'" + placeholder + "'", value));
-        } else if (
-            new Liker().like(placeholder)
-                .map((prefix, suffix) ->
-                    builder.addParameter(
-                        prefix + escapeLikeWildcards(mustBeString(placeholder, value)) + suffix))
-                .isPresent()) {
-          builder.appendSql(" ESCAPE '^'");
-        } else {
-          checkMissingPlaceholderQuotes(placeholder);
-          builder.appendSql(scanner.nextFragment()).addParameter(value);
-        }
-      });
-      return builder.appendSql(scanner.nextFragment()).build();
-    });
+          });
+          return builder.appendSql(scanner.nextFragment()).build();
+        });
   }
 
   private static String validateOptionalOperatorRhs(Substring.Match operator) {
     String name = operator.before().trim();
     checkArgument(
         name.length() > 0 && OPTIONAL_PARAMETER.from(name).orElse("").equals(name),
-        "optional placeholder {%s->} must be an identifier followed by '?'",
-        name);
+        "optional placeholder {%s->} must be an identifier followed by '?'", name);
     String rhs = operator.after().trim();
     Set<String> referencedNames =
         OPTIONAL_PARAMETER.repeatedly().from(rhs).collect(toCollection(LinkedHashSet::new));
     checkArgument(
         referencedNames.remove(name),
         "optional parameter %s must be referenced at least once to the" + " right of {%s->}",
-        name,
-        name);
+        name, name);
     checkArgument(
         referencedNames.isEmpty(), "Unexpected optional placeholders: %s", referencedNames);
     return rhs;
@@ -1770,11 +1868,10 @@ public final class SafeSql {
 
   @SuppressWarnings("StringFormatArgsCheck")
   private static SafeSql innerSubquery(String optionalTemplate, Object arg) {
-    Template<SafeSql> innerTemplate =
-        unsafeTemplate(
-            OPTIONAL_PARAMETER
-                .repeatedly()
-                .replaceAllFrom(optionalTemplate, p -> "{" + p.skip(0, 1) + "}"));
+    Template<SafeSql> innerTemplate = unsafeTemplate(
+        OPTIONAL_PARAMETER
+            .repeatedly()
+            .replaceAllFrom(optionalTemplate, p -> "{" + p.skip(0, 1) + "}"));
     Object[] innerArgs =
         OPTIONAL_PARAMETER.repeatedly().match(optionalTemplate).map(m -> arg).toArray();
     return innerTemplate.with(innerArgs);
@@ -1787,7 +1884,8 @@ public final class SafeSql {
         "%s: don't mix in SafeQuery with SafeSql.", placeholder);
   }
 
-  @CanIgnoreReturnValue private static String rejectQuestionMark(String sql) {
+  @CanIgnoreReturnValue
+  private static String rejectQuestionMark(String sql) {
     checkArgument(sql.indexOf('?') < 0, "please use named {placeholder} without '?'");
     return sql;
   }
@@ -1829,8 +1927,7 @@ public final class SafeSql {
   private static String mustBeString(CharSequence name, Object element) {
     checkArgument(element != null, "%s expected to be String, but is null", name);
     checkArgument(
-        element instanceof String,
-        "%s expected to be String, but is %s", name, element.getClass());
+        element instanceof String, "%s expected to be String, but is %s", name, element.getClass());
     return (String) element;
   }
 
@@ -1841,7 +1938,9 @@ public final class SafeSql {
   }
 
   private static String escapeLikeWildcards(String s) {
-    return first(c -> c == '^' || c == '%' || c == '_').repeatedly().replaceAllFrom(s, c -> "^" + c);
+    return first(c -> c == '^' || c == '%' || c == '_')
+        .repeatedly()
+        .replaceAllFrom(s, c -> "^" + c);
   }
 
   private static <T> Template<T> prepare(
@@ -1852,16 +1951,18 @@ public final class SafeSql {
     return new Template<T>() {
       private final ConcurrentMap<String, PreparedStatement> cached = new ConcurrentHashMap<>();
 
-      @SuppressWarnings("StringFormatArgsCheck")  // The returned is also a Template<>
+      @SuppressWarnings("StringFormatArgsCheck") // The returned is also a Template<>
       @Override public T with(Object... params) {
         SafeSql sql = sqlTemplate.with(params);
-        PreparedStatement stmt = cached.computeIfAbsent(sql.toString(), s -> {
-          try {
-            return connection.prepareStatement(s);
-          } catch (SQLException e) {
-            throw new UncheckedSqlException(e);
-          }
-        });
+        PreparedStatement stmt = cached.computeIfAbsent(
+            sql.toString(),
+            s -> {
+              try {
+                return connection.prepareStatement(s);
+              } catch (SQLException e) {
+                throw new UncheckedSqlException(e);
+              }
+            });
         try {
           return action.apply(sql.setParameters(stmt));
         } catch (SQLException e) {
@@ -1886,7 +1987,8 @@ public final class SafeSql {
 
   private static String checkIdentifier(CharSequence placeholder, String name) {
     // Make sure the backquoted string doesn't contain some special chars that may cause trouble.
-    CharPredicate illegal = c -> Character.isISOControl(c) || "'\"`()[]{}\\~!@$^*,/?;".indexOf(c) >= 0;
+    CharPredicate illegal =
+        c -> Character.isISOControl(c) || "'\"`()[]{}\\~!@$^*,/?;".indexOf(c) >= 0;
     checkArgument(
         illegal.matchesNoneOf(name),
         "placeholder value for `%s` (%s) contains illegal character", placeholder, name);
@@ -1910,24 +2012,28 @@ public final class SafeSql {
     private final StringBuilder queryText = new StringBuilder();
     private final List<Object> paramValues = new ArrayList<>();
 
-    @CanIgnoreReturnValue Builder appendSql(String snippet) {
+    @CanIgnoreReturnValue
+    Builder appendSql(String snippet) {
       safeAppend(rejectQuestionMark(snippet));
       return this;
     }
 
-    @CanIgnoreReturnValue Builder addParameter(Object value) {
+    @CanIgnoreReturnValue
+    Builder addParameter(Object value) {
       safeAppend("?");
       paramValues.add(value);
       return this;
     }
 
-    @CanIgnoreReturnValue Builder addSubQuery(SafeSql subQuery) {
+    @CanIgnoreReturnValue
+    Builder addSubQuery(SafeSql subQuery) {
       safeAppend(subQuery.sql);
       paramValues.addAll(subQuery.paramValues);
       return this;
     }
 
-    @CanIgnoreReturnValue Builder delimit(String delim) {
+    @CanIgnoreReturnValue
+    Builder delimit(String delim) {
       if (queryText.length() > 0) {
         safeAppend(delim);
       }
