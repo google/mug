@@ -455,6 +455,8 @@ loadScripts(document, 'script');</script>
  <p>The <code>pattern</code> string is validated at compile-time by the <code>mug-errorprone</code>
  (v10.9+) compiler plugin.
 
+ <p>If you need to extract values from capturing groups in the matched regex, use <a href="#regex(java.lang.String,java.util.function.Function)"><code>regex(String, Function)</code></a> or other group-mapping overloads (such as <a href="#regex(java.lang.String,java.util.function.BiFunction)"><code>regex(String, BiFunction)</code></a>) instead.
+
  <p>NOTE that this method internally compiles the <code>pattern</code> so you should almost always
  pre-create and reuse the returned <code>Parser</code> object instead of calling <code>
  regex(pattern)</code> in the inner loop or on-the-fly.</div>
@@ -477,10 +479,17 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a leaf-level parser that matches the given <code>pattern</code> and transforms the captured
  group value using <code>mapper</code>.
 
+ <p>For example, to extract the area code from a phone number:
+
+ <pre><code>
+ Parser&lt;Integer&gt; areaCode = regex("\\((\\d{3})\\) \\d{3}-\\d{4}", Integer::parseInt);
+ </code></pre>
+
  <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
  <code>mapper</code>. If you only need the top-level match, use <a href="#regex(java.lang.String)"><code>regex(String)</code></a>; if you need
  both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. <code>
- "((foo)(bar))"</code>).
+ "((foo)(bar))"</code>). Alternatively, calling <a href="Parser.html#source()"><code>.source()</code></a> on the returned
+ parser returns the full matched substring.
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
@@ -505,10 +514,19 @@ loadScripts(document, 'script');</script>
 <div class="block">Returns a leaf-level parser that matches the given <code>pattern</code> and transforms the 2
  captured group values using <code>mapper</code>.
 
+ <p>For example, to extract the area code and optional extension from a phone number:
+
+ <pre><code>
+ Parser&lt;PhoneNumber&gt; phoneNumber = regex(
+     "\\((\\d{3})\\) \\d{3}-\\d{4}(?: x(\\d+))?",
+     (areaCode, extension) -&gt; new PhoneNumber(areaCode, extension));
+ </code></pre>
+
  <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
  <code>mapper</code>. If you only need the top-level match, use <a href="#regex(java.lang.String)"><code>regex(String)</code></a>; if you need
  both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. <code>
- "((foo)(bar))"</code>).
+ "((foo)(bar))"</code>). Alternatively, calling <a href="Parser.html#source()"><code>.source()</code></a> on the returned
+ parser returns the full matched substring.
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
@@ -536,7 +554,8 @@ loadScripts(document, 'script');</script>
  <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
  <code>mapper</code>. If you only need the top-level match, use <a href="#regex(java.lang.String)"><code>regex(String)</code></a>; if you need
  both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. <code>
- "((foo)(bar))"</code>).
+ "((foo)(bar))"</code>). Alternatively, calling <a href="Parser.html#source()"><code>.source()</code></a> on the returned
+ parser returns the full matched substring.
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
@@ -564,7 +583,8 @@ loadScripts(document, 'script');</script>
  <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
  <code>mapper</code>. If you only need the top-level match, use <a href="#regex(java.lang.String)"><code>regex(String)</code></a>; if you need
  both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. <code>
- "((foo)(bar))"</code>).
+ "((foo)(bar))"</code>). Alternatively, calling <a href="Parser.html#source()"><code>.source()</code></a> on the returned
+ parser returns the full matched substring.
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
@@ -592,7 +612,8 @@ loadScripts(document, 'script');</script>
  <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
  <code>mapper</code>. If you only need the top-level match, use <a href="#regex(java.lang.String)"><code>regex(String)</code></a>; if you need
  both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. <code>
- "((foo)(bar))"</code>).
+ "((foo)(bar))"</code>). Alternatively, calling <a href="Parser.html#source()"><code>.source()</code></a> on the returned
+ parser returns the full matched substring.
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
@@ -620,7 +641,8 @@ loadScripts(document, 'script');</script>
  <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
  <code>mapper</code>. If you only need the top-level match, use <a href="#regex(java.lang.String)"><code>regex(String)</code></a>; if you need
  both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. <code>
- "((foo)(bar))"</code>).
+ "((foo)(bar))"</code>). Alternatively, calling <a href="Parser.html#source()"><code>.source()</code></a> on the returned
+ parser returns the full matched substring.
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
@@ -648,7 +670,8 @@ loadScripts(document, 'script');</script>
  <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
  <code>mapper</code>. If you only need the top-level match, use <a href="#regex(java.lang.String)"><code>regex(String)</code></a>; if you need
  both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. <code>
- "((foo)(bar))"</code>).
+ "((foo)(bar))"</code>). Alternatively, calling <a href="Parser.html#source()"><code>.source()</code></a> on the returned
+ parser returns the full matched substring.
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
@@ -676,7 +699,8 @@ loadScripts(document, 'script');</script>
  <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
  <code>mapper</code>. If you only need the top-level match, use <a href="#regex(java.lang.String)"><code>regex(String)</code></a>; if you need
  both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. <code>
- "((foo)(bar))"</code>).
+ "((foo)(bar))"</code>). Alternatively, calling <a href="Parser.html#source()"><code>.source()</code></a> on the returned
+ parser returns the full matched substring.
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
