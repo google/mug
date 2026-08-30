@@ -1397,9 +1397,31 @@ public class ParsersTest {
         .isEqualTo("backreferences are not allowed in regex parser: \\1");
   }
 
+  @Test public void regex_withFunction_emptyPattern_throwsIllegalArgumentException() {
+    var ex = assertThrows(IllegalArgumentException.class, () -> regex("", s -> s));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '' has 0 capturing group(s), but 1 expected");
+  }
+
+  @Test public void regex_withFunction_emptyGroup_throwsIllegalArgumentException() {
+    var ex = assertThrows(IllegalArgumentException.class, () -> regex("()", s -> s));
+    assertThat(ex).hasMessageThat().isEqualTo("regex must not match empty string: ()");
+  }
+
   @Test public void regex_withFunction_matchesEmpty_throwsIllegalArgumentException() {
     var ex = assertThrows(IllegalArgumentException.class, () -> regex("(\\d*)", s -> s));
     assertThat(ex).hasMessageThat().isEqualTo("regex must not match empty string: (\\d*)");
+  }
+
+  @Test public void regex_withFunction_zeroWidthAlternation_throwsIllegalArgumentException() {
+    var ex = assertThrows(IllegalArgumentException.class, () -> regex("(a|)", s -> s));
+    assertThat(ex).hasMessageThat().isEqualTo("regex must not match empty string: (a|)");
+  }
+
+  @Test public void regex_withFunction_zeroWidthOptionalGroup_throwsIllegalArgumentException() {
+    var ex = assertThrows(IllegalArgumentException.class, () -> regex("(a)?", s -> s));
+    assertThat(ex).hasMessageThat().isEqualTo("regex must not match empty string: (a)?");
   }
 
   @Test public void regex_withFunction_nullMapper_throwsNullPointerException() {
