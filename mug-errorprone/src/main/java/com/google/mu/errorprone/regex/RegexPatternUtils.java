@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /** Common AST utilities for traversing and inspecting {@link RegexPattern} trees. */
-final class RegexPatternUtils {
+public final class RegexPatternUtils {
   static RegexPattern unwrapGroup(RegexPattern pattern) {
     while (pattern instanceof RegexPattern.Group group) {
       pattern = group.content();
@@ -151,7 +151,7 @@ final class RegexPatternUtils {
     };
   }
 
-  static List<RegexPattern.Group> capturingGroupsIn(RegexPattern root) {
+  public static List<RegexPattern.Group> capturingGroupsIn(RegexPattern root) {
     return Walker.inTree(RegexPatternUtils::childrenOf)
         .preOrderFrom(root)
         .filter(
