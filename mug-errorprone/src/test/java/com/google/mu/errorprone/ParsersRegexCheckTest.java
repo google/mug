@@ -295,4 +295,32 @@ public final class ParsersRegexCheckTest {
             "}")
         .doTest();
   }
+
+  @Test public void properUsage_withNamedGroup() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<Integer> PARSER =",
+            "      Parsers.regex(\"id:(?<id>\\\\d+)\", s -> Integer.parseInt(s));",
+            "}")
+        .doTest();
+  }
+
+  @Test public void cardinalityMismatch_withNamedGroup() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER = Parsers.regex(",
+            "      // BUG: Diagnostic contains: has 2 capturing group(s), but 1 expected",
+            "      \"(?<k>\\\\w+)=(?<v>\\\\d+)\",",
+            "      s -> s);",
+            "}")
+        .doTest();
+  }
 }

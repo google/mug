@@ -1329,6 +1329,21 @@ public class ParsersTest {
     assertThat(parser).fromString("abc").parsesTo("ABC");
   }
 
+  @Test public void regex_withFunction_namedGroup_parsesToMappedValue() {
+    Parser<Integer> parser = regex("id:(?<id>\\d+)", s -> Integer.parseInt(s));
+    assertThat(parser).fromString("id:123").parsesTo(123);
+  }
+
+  @Test public void
+      regex_withFunction_namedGroup_cardinalityMismatch_throwsIllegalArgumentException() {
+    var ex =
+        assertThrows(IllegalArgumentException.class, () -> regex("(?<k>\\w+)=(?<v>\\d+)", s -> s));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo(
+            "regex pattern '(?<k>\\w+)=(?<v>\\d+)' has 2 capturing group(s), but 1 expected");
+  }
+
   @Test public void regex_withFunction_source_returnsEntireMatchedSubstring() {
     Parser<String> parser = regex("id:(\\d+)", s -> Integer.parseInt(s)).source();
     assertThat(parser).fromString("id:123").parsesTo("id:123");
@@ -1376,6 +1391,16 @@ public class ParsersTest {
   @Test public void regex_withBiFunction_twoGroups_boundedOnReader() {
     Parser<List<String>> parser = regex("(\\w{1,3})=(\\d{1,3})", (k, v) -> List.of(k, v));
     assertThat(parser).fromStringOrReader("k=123").parsesTo(List.of("k", "123"));
+  }
+
+  @Test public void regex_withBiFunction_multipleNamedGroups_parsesToMappedValues() {
+    Parser<List<String>> parser = regex("(?<key>\\w+)=(?<value>\\d+)", (k, v) -> List.of(k, v));
+    assertThat(parser).fromString("k=123").parsesTo(List.of("k", "123"));
+  }
+
+  @Test public void regex_withBiFunction_mixedNamedAndNumberedGroups_orderedByIndex() {
+    Parser<List<String>> parser = regex("(?<key>\\w+)=(\\d+)", (k, v) -> List.of(k, v));
+    assertThat(parser).fromString("k=123").parsesTo(List.of("k", "123"));
   }
 
   @Test public void
