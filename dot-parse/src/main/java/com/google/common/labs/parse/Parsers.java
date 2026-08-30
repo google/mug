@@ -442,6 +442,10 @@ public final class Parsers {
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
    * pass {@code null} to the {@code mapper} if that group was not matched.
    *
+   * <p>If named capturing groups (such as {@code "(?<name>...)"}) are used, their names are checked
+   * at compile time against lambda parameter names (or method reference parameters) with
+   * mug-errorprone 11.0+.
+   *
    * @throws IllegalArgumentException if the regex does not have exactly 1 capturing group or is
    *     invalid / contains forbidden features.
    * @since 11.0
@@ -460,7 +464,7 @@ public final class Parsers {
    *
    * <pre>{@code
    * Parser<PhoneNumber> phoneNumber = regex(
-   *     "\\((\\d{3})\\) \\d{3}-\\d{4}(?: x(\\d+))?",
+   *     "\\((?<areaCode>\\d{3})\\) \\d{3}-\\d{4}(?: x(?<extension>\\d+))?",
    *     (areaCode, extension) -> new PhoneNumber(areaCode, extension));
    * }</pre>
    *
@@ -473,6 +477,16 @@ public final class Parsers {
    * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
    * pass {@code null} to the {@code mapper} if that group was not matched.
+   *
+   * <p>If named capturing groups (such as {@code "(?<name>...)"}) are used, their names are checked
+   * at compile time against lambda parameter names (or method reference parameters) with
+   * mug-errorprone 11.0+. For example, the following will fail compilation:
+   *
+   * <pre>{@code
+   * Parser<PhoneNumber> phoneNumber = regex(
+   *     "\\((?<areaCode>\\d{3})\\) \\d{3}-\\d{4}(?: x(?<extension>\\d+))?",
+   *     (extension, areaCode) -> ...); // Compile error: parameters out of order
+   * }</pre>
    *
    * @throws IllegalArgumentException if the regex does not have exactly 2 capturing groups or is
    *     invalid / contains forbidden features.
@@ -502,6 +516,10 @@ public final class Parsers {
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
    * pass {@code null} to the {@code mapper} if that group was not matched.
    *
+   * <p>If named capturing groups (such as {@code "(?<name>...)"}) are used, their names are checked
+   * at compile time against lambda parameter names (or method reference parameters) with
+   * mug-errorprone 11.0+.
+   *
    * @throws IllegalArgumentException if the regex does not have exactly 3 capturing groups or is
    *     invalid / contains forbidden features.
    * @since 11.0
@@ -528,6 +546,10 @@ public final class Parsers {
    * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
    * pass {@code null} to the {@code mapper} if that group was not matched.
+   *
+   * <p>If named capturing groups (such as {@code "(?<name>...)"}) are used, their names are checked
+   * at compile time against lambda parameter names (or method reference parameters) with
+   * mug-errorprone 11.0+.
    *
    * @throws IllegalArgumentException if the regex does not have exactly 4 capturing groups or is
    *     invalid / contains forbidden features.
@@ -556,6 +578,10 @@ public final class Parsers {
    * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
    * pass {@code null} to the {@code mapper} if that group was not matched.
+   *
+   * <p>If named capturing groups (such as {@code "(?<name>...)"}) are used, their names are checked
+   * at compile time against lambda parameter names (or method reference parameters) with
+   * mug-errorprone 11.0+.
    *
    * @throws IllegalArgumentException if the regex does not have exactly 5 capturing groups or is
    *     invalid / contains forbidden features.
@@ -588,6 +614,10 @@ public final class Parsers {
    * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
    * pass {@code null} to the {@code mapper} if that group was not matched.
+   *
+   * <p>If named capturing groups (such as {@code "(?<name>...)"}) are used, their names are checked
+   * at compile time against lambda parameter names (or method reference parameters) with
+   * mug-errorprone 11.0+.
    *
    * @throws IllegalArgumentException if the regex does not have exactly 6 capturing groups or is
    *     invalid / contains forbidden features.
@@ -622,6 +652,10 @@ public final class Parsers {
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
    * pass {@code null} to the {@code mapper} if that group was not matched.
    *
+   * <p>If named capturing groups (such as {@code "(?<name>...)"}) are used, their names are checked
+   * at compile time against lambda parameter names (or method reference parameters) with
+   * mug-errorprone 11.0+.
+   *
    * @throws IllegalArgumentException if the regex does not have exactly 7 capturing groups or is
    *     invalid / contains forbidden features.
    * @since 11.0
@@ -655,6 +689,10 @@ public final class Parsers {
    * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
    * pass {@code null} to the {@code mapper} if that group was not matched.
+   *
+   * <p>If named capturing groups (such as {@code "(?<name>...)"}) are used, their names are checked
+   * at compile time against lambda parameter names (or method reference parameters) with
+   * mug-errorprone 11.0+.
    *
    * @throws IllegalArgumentException if the regex does not have exactly 8 capturing groups or is
    *     invalid / contains forbidden features.

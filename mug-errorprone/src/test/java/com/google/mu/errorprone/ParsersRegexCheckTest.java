@@ -296,6 +296,49 @@ public final class ParsersRegexCheckTest {
         .doTest();
   }
 
+  @Test public void cardinalityMismatch_onlyNonCapturingGroups() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER = Parsers.regex(",
+            "      // BUG: Diagnostic contains: has 0 capturing group(s), but 1 expected",
+            "      \"(?:abc)(?:def)\",",
+            "      s -> s);",
+            "}")
+        .doTest();
+  }
+
+  @Test public void properUsage_withNonCapturingAndNamedGroup() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<Integer> PARSER =",
+            "      Parsers.regex(\"(?:prefix:)(?<id>\\\\d+)\", id -> Integer.parseInt(id));",
+            "}")
+        .doTest();
+  }
+
+  @Test public void nameMismatch_withNonCapturingAndNamedGroup() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER =",
+            "      // BUG: Diagnostic contains: Lambda variable `foo` doesn't look to be for named"
+                + " group",
+            "      Parsers.regex(\"(?:prefix:)(?<bar>\\\\d+)\", foo -> foo);",
+            "}")
+        .doTest();
+  }
+
   @Test public void properUsage_withNamedGroup() {
     helper
         .addSourceLines(
@@ -304,7 +347,137 @@ public final class ParsersRegexCheckTest {
             "import com.google.common.labs.parse.Parser;",
             "class Test {",
             "  private static final Parser<Integer> PARSER =",
-            "      Parsers.regex(\"id:(?<id>\\\\d+)\", s -> Integer.parseInt(s));",
+            "      Parsers.regex(\"id:(?<id>\\\\d+)\", id -> Integer.parseInt(id));",
+            "}")
+        .doTest();
+  }
+
+  @Test public void properUsage_withNamedGroup_caseDifference() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<Integer> PARSER =",
+            "      Parsers.regex(\"id:(?<jobId>\\\\d+)\", job_id -> Integer.parseInt(job_id));",
+            "}")
+        .doTest();
+  }
+
+  @Test public void namedGroup_nameMismatch_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER =",
+            "      // BUG: Diagnostic contains: Lambda variable `foo` doesn't look to be for named"
+                + " group",
+            "      Parsers.regex(\"id:(?<bar>\\\\d+)\", foo -> foo);",
+            "}")
+        .doTest();
+  }
+
+  @Test public void namedGroups_outOfOrder_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "import java.util.List;",
+            "class Test {",
+            "  private static final Parser<List<String>> PARSER =",
+            "      // BUG: Diagnostic contains: lambda variables [bar, foo] appear to be in"
+                + " inconsistent order with the capturing groups",
+            "      Parsers.regex(\"(?<foo>\\\\w+)=(?<bar>\\\\d+)\", (bar, foo) -> List.of(foo,"
+                + " bar));",
+            "}")
+        .doTest();
+  }
+
+  @Test public void methodRef_namedGroup_nameMismatch_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  void test() {",
+            "    Parser<String> parser =",
+            "        // BUG: Diagnostic contains: Method parameter `x` of referenced method"
+                + " `this::combine` doesn't look to be for named group",
+            "        Parsers.regex(\"(?<foo>\\\\w+)-(?<bar>\\\\w+)-(?<baz>\\\\w+)\","
+                + " this::combine);",
+            "  }",
+            "  public String combine(String x, String bar, String baz) {",
+            "    return x + bar + baz;",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test public void namedAndNumberedGroups_namedMatches_numberedIgnored() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "import java.util.List;",
+            "class Test {",
+            "  private static final Parser<List<String>> PARSER =",
+            "      Parsers.regex(\"(?<key>\\\\w+)=(\\\\d+)\", (key, value) -> List.of(key,"
+                + " value));",
+            "}")
+        .doTest();
+  }
+
+  @Test public void partiallyNamedGroups_namedMatches_success() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "import java.util.List;",
+            "class Test {",
+            "  private static final Parser<List<String>> PARSER =",
+            "      Parsers.regex(\"(\\\\w+)-(?<id>\\\\d+)-(\\\\w+)\", (prefix, id, suffix) ->"
+                + " List.of(prefix, id, suffix));",
+            "}")
+        .doTest();
+  }
+
+  @Test public void partiallyNamedGroups_namedMismatch_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "import java.util.List;",
+            "class Test {",
+            "  private static final Parser<List<String>> PARSER =",
+            "      // BUG: Diagnostic contains: Lambda variable `foo` doesn't look to be for named"
+                + " group",
+            "      Parsers.regex(\"(\\\\w+)-(?<id>\\\\d+)-(\\\\w+)\", (prefix, foo, suffix) ->"
+                + " List.of(prefix, foo, suffix));",
+            "}")
+        .doTest();
+  }
+
+  @Test public void partiallyNamedGroups_namedOutOfOrder_fails() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "import java.util.List;",
+            "class Test {",
+            "  private static final Parser<List<String>> PARSER =",
+            "      // BUG: Diagnostic contains: lambda variables [second, first] appear to be in"
+                + " inconsistent order with the capturing groups",
+            "      Parsers.regex(\"(\\\\w+)-(?<first>\\\\w+)-(?<second>\\\\w+)\", (x, second,"
+                + " first) -> List.of(x, first, second));",
             "}")
         .doTest();
   }
