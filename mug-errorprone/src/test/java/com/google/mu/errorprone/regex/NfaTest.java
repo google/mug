@@ -36,9 +36,34 @@ public final class NfaTest {
     assertThat(nfa.countEpsilonPaths(s1.id, s5.id)).isEqualTo(2);
   }
 
-  @Test public void compileQuantified_possessive_doesNotAddBacktrackingLoopback() {
+  @Test public void compileLiteral_supplementaryUnicode_createsSingleCodePointTransition() {
+    Nfa nfa = Nfa.from(RegexPattern.of("😀"));
+    assertThat(nfa.charTransitions).hasSize(1);
+  }
+
+  @Test public void compileQuantified_possessive_createsLoopTransitions() {
     Nfa possessive = Nfa.from(RegexPattern.of("a++"));
     Nfa greedy = Nfa.from(RegexPattern.of("a+"));
-    assertThat(possessive.states.size()).isLessThan(greedy.states.size());
+    assertThat(possessive.states.size()).isEqualTo(greedy.states.size());
+  }
+
+  @Test public void compileQuantified_boundedRepetition_unrollsAllTransitionsWithoutClamping() {
+    Nfa nfa = Nfa.from(RegexPattern.of("a{1,5}"));
+    assertThat(nfa.charTransitions).hasSize(5);
+  }
+
+  @Test public void compileQuantified_veryLargeMax_capsUnrollingToPreventOom() {
+    Nfa nfa = Nfa.from(RegexPattern.of("a{1,10000}"));
+    assertThat(nfa.charTransitions.size()).isAtMost(10);
+  }
+
+  @Test public void compileQuantified_veryLargeAtLeastMin_capsUnrollingToPreventOom() {
+    Nfa nfa = Nfa.from(RegexPattern.of("a{10000,}"));
+    assertThat(nfa.charTransitions.size()).isAtMost(10);
+  }
+
+  @Test public void compileQuantified_veryLargeAtMostMax_capsUnrollingToPreventOom() {
+    Nfa nfa = Nfa.from(RegexPattern.of("a{0,10000}"));
+    assertThat(nfa.charTransitions.size()).isAtMost(10);
   }
 }

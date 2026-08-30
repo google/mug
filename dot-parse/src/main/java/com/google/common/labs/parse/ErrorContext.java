@@ -28,7 +28,7 @@ class ErrorContext {
   }
 
   final <V> MatchResult.Failure<V> errorAt(int at, long frontier, ParseError error) {
-    return failAt(at, frontier | (1L << 32), "{name}", error.getMessage());
+    return failAt(at, frontier | (1L << 32), "{name}\n{snippet}", error.getMessage());
   }
 
   static final class ErrorTracker extends ErrorContext {

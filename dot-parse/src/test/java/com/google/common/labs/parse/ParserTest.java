@@ -7678,7 +7678,7 @@ public class ParserTest {
     assertThat(joined2).isEmpty();
   }
 
-  @Test public void returnElision_anyOf_threeCandidates_noElision() {
+  @Test public void returnElision_anyOf_threeCandidates_withElision() {
     List<String> joined1 = new ArrayList<>();
     List<String> joined2 = new ArrayList<>();
     List<String> joined3 = new ArrayList<>();
@@ -7689,7 +7689,7 @@ public class ParserTest {
         .thenReturn("ok");
 
     assertThat(parser.parse("aaa")).isEqualTo("ok");
-    assertThat(joined1).containsExactly("a,a,a");
+    assertThat(joined1).isEmpty();
     assertThat(joined2).isEmpty();
     assertThat(joined3).isEmpty();
   }
@@ -8537,6 +8537,37 @@ public class ParserTest {
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("foo"));
     assertThat(thrown).hasMessageThat().contains("1:1");
     assertThat(thrown).hasMessageThat().contains("custom failure in branch");
+  }
+
+  @Test public void fail_anyOf_mapThrows_doesNotBacktrackToSiblingBranch() {
+    Parser<String> parser = anyOf(
+            string("foo").thenReturn("first"),
+            string("foo").thenReturn("second"))
+        .map(s -> {
+          if ("first".equals(s)) {
+            throw Parser.fail("first choice rejected");
+          }
+          return s;
+        });
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("foo"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("first choice rejected");
+  }
+
+  @Test public void fail_nestedAnyOf_mapThrows_doesNotBacktrackToSiblingBranch() {
+    Parser<String> nested = anyOf(
+            string("foo").thenReturn("first"),
+            string("foo").thenReturn("second"))
+        .map(s -> {
+          if ("first".equals(s)) {
+            throw Parser.fail("first choice rejected");
+          }
+          return s;
+        });
+    Parser<String> parser = anyOf(nested, string("other"));
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("foo"));
+    assertThat(thrown).hasMessageThat().contains("1:1");
+    assertThat(thrown).hasMessageThat().contains("first choice rejected");
   }
 
   @Test public void fail_insideSequenceWithAs_failureAtFirstStep_preservesFailMessage() {

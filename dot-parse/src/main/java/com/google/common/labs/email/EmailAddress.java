@@ -93,7 +93,7 @@ import java.util.function.Consumer;
  *   <li><b>Folding White Space (FWS):</b> Supports optional whitespace between the display name and
  *       the angle-bracketed address.
  *   <li><b>Address-List:</b> Supports semicolon as separators; allows real-world variations like
- *       trailing commas, two-commas-in-a-row etc.
+ *       leading or trailing commas, two-commas-in-a-row etc.
  * </ul>
  *
  * <h3>Strict Email Address Validation</h3>
@@ -261,9 +261,12 @@ public final class EmailAddress {
       consecutive("[^,;]").map(String::trim));
 
   private static final Parser<?> ADDRESS_LIST_DELIMITER = one("[,;]").atLeastOnce(counting());
+  private static final Parser<List<EmailAddress>>.OrEmpty ADDRESS_LIST =
+      PARSER.zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
+          .between(ADDRESS_LIST_DELIMITER.optional(), ADDRESS_LIST_DELIMITER.optional());
   private static final Parser<List<Object>>.OrEmpty ADDRESS_OR_JUNK_LIST =
       ADDRESS_OR_JUNK.zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
-          .optionallyFollowedBy(ADDRESS_LIST_DELIMITER);
+          .between(ADDRESS_LIST_DELIMITER.optional(), ADDRESS_LIST_DELIMITER.optional());
 
   private final String localPart;
   private final String domain;
@@ -437,7 +440,7 @@ public final class EmailAddress {
    * EmailAddress}.
    *
    * <p>Both comma ({@code ,}) and semicolon ({@code ;}) are supported as delimiters, with
-   * whitespaces ignored. Trailing delimiters are allowed.
+   * whitespaces ignored. Leading and trailing delimiters are allowed.
    *
    * <p>Empty input will result in an empty list being returned.
    *
@@ -447,9 +450,7 @@ public final class EmailAddress {
    * @throws Parser.ParseException if {@code addressList} is invalid
    */
   public static List<EmailAddress> parseAddressList(String addressList) {
-    return PARSER.zeroOrMoreDelimitedBy(ADDRESS_LIST_DELIMITER, toUnmodifiableList())
-        .optionallyFollowedBy(ADDRESS_LIST_DELIMITER)
-        .parseSkipping(SAFE_WHITESPACE, addressList);
+    return ADDRESS_LIST.parseSkipping(SAFE_WHITESPACE, addressList);
   }
 
   /**
@@ -463,7 +464,7 @@ public final class EmailAddress {
    * }</pre>
    *
    * <p>Both comma ({@code ,}) and semicolon ({@code ;}) are supported as delimiters, with
-   * whitespaces ignored. Trailing delimiters are allowed.
+   * whitespaces ignored. Leading and trailing delimiters are allowed.
    *
    * <p>Empty input will result in an empty list being returned.
    *

@@ -1,20 +1,17 @@
 package com.google.mu.errorprone;
 
+import com.google.errorprone.CompilationTestHelper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import com.google.errorprone.CompilationTestHelper;
 
 @RunWith(JUnit4.class)
 public final class ParametersMustMatchByNameCheckTest {
   private final CompilationTestHelper helper =
       CompilationTestHelper.newInstance(ParametersMustMatchByNameCheck.class, getClass());
 
-  @Test
-  public void onMethod_argsInWrongOrder_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_argsInWrongOrder_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "",
@@ -32,10 +29,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_parametersMatchExactly() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_parametersMatchExactly() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "",
@@ -50,10 +45,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_parametersMatchByComment() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_parametersMatchByComment() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "",
@@ -68,10 +61,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_parametersMatch_ignoreCommonPrefixes() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_parametersMatch_ignoreCommonPrefixes() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "",
@@ -91,10 +82,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_varargs_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_varargs_succeeds() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -107,10 +96,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_regularArgsFollowedByVarargs_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_regularArgsFollowedByVarargs_succeeds() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -123,10 +110,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_regularArgsFollowedByVarargs_regularArgWrong_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_regularArgsFollowedByVarargs_regularArgWrong_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -142,26 +127,67 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_regularLiteralArgsFollowedByVarargs_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_varargsCollidesWithType_unnamedLiteral_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
             "  @ParametersMustMatchByName",
-            "  void test(String message, int n, int... nums) {}",
-            "  void callSite(String message, int a, int b) {",
+            "  void test(String message, String... tags) {}",
+            "  void callSite() {",
+            "    test(",
+            "        // BUG: Diagnostic contains: must match",
+            "        \"hello\",",
+            "        \"tag1\");",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test public void onMethod_varargsCollidesWithType_namedByComment_succeeds() {
+    helper.addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(String message, String... tags) {}",
+            "  void callSite() {",
+            "    test(/* message= */ \"hello\", \"tag1\");",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test public void onMethod_varargsCollidesWithType_singleArgUnnamedLiteral_succeeds() {
+    helper.addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(String message, String... tags) {}",
+            "  void callSite() {",
+            "    test(\"hello\");",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test public void onMethod_regularLiteralArgsFollowedByVarargs_succeeds() {
+    helper.addSourceLines(
+            "Test.java",
+            "import com.google.mu.annotations.ParametersMustMatchByName;",
+            "class Test {",
+            "  @ParametersMustMatchByName",
+            "  void test(String message, int n, double... nums) {}",
+            "  void callSite(String message, double a, double b) {",
             "    test(\"foo\", 0, a, b);",
             "  }",
             "}")
         .doTest();
   }
 
-  @Test
-  public void onMethod_withVarargs_twoLiteralsOfSameType_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_withVarargs_twoLiteralsOfSameType_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -177,10 +203,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_zeroArgsAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_zeroArgsAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -193,10 +217,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_literalOnOneArgAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_literalOnOneArgAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "",
@@ -211,10 +233,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_literalOnOneArg_incorrectComment_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_literalOnOneArg_incorrectComment_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -229,10 +249,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_literalOnOneArg_incorrectTrailingComment_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_literalOnOneArg_incorrectTrailingComment_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -247,10 +265,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_literalOnTwoArgsOfSameType_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_literalOnTwoArgsOfSameType_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -266,10 +282,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_literalOnTwoArgsOfDifferentTypes_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_literalOnTwoArgsOfDifferentTypes_succeeds() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -282,10 +296,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_enumConstantOnOneArgAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_enumConstantOnOneArgAllowed() {
+    helper.addSourceLines(
             "Mode.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "enum Mode {",
@@ -299,10 +311,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_enumConstantOnTwoArgsOfSameType_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_enumConstantOnTwoArgsOfSameType_fails() {
+    helper.addSourceLines(
             "Mode.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "enum Mode {",
@@ -319,10 +329,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_classLiteralOnOneArgAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_classLiteralOnOneArgAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -335,10 +343,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_classLiteralOnTwoArgsOfSameType_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_classLiteralOnTwoArgsOfSameType_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -354,10 +360,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_booleanLiteral_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_booleanLiteral_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -372,10 +376,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_booleanLiteralWithTwoArgs_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_booleanLiteralWithTwoArgs_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -391,10 +393,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_booleanLiteralWithComment_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_booleanLiteralWithComment_succeeds() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -407,10 +407,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_nullLiteral_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_nullLiteral_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -425,10 +423,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_nullLiteralWithTwoArgs_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_nullLiteralWithTwoArgs_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -444,10 +440,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_nullLiteralWithComment_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_nullLiteralWithComment_succeeds() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -460,10 +454,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_oneNullAndOneLiteralWithUniqueTypes_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_oneNullAndOneLiteralWithUniqueTypes_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -479,10 +471,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_lambdaOnOneArgAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_lambdaOnOneArgAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -495,10 +485,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_lambdaOnTwoArgsOfSameType_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_lambdaOnTwoArgsOfSameType_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -514,10 +502,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_methodReferenceOnOneArgAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_methodReferenceOnOneArgAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -530,10 +516,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_methodReferenceOnTwoArgsOfSameType_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_methodReferenceOnTwoArgsOfSameType_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -550,10 +534,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_constructorCallOnOneArgAllowed() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_constructorCallOnOneArgAllowed() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -568,10 +550,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_constructorCallOnTwoArgsOfSameType_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_constructorCallOnTwoArgsOfSameType_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -593,10 +573,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_genericParametersMatch_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_genericParametersMatch_succeeds() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -609,10 +587,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_genericParametersDoNotMatch_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_genericParametersDoNotMatch_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -628,10 +604,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_parameterizedTypesMatch_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_parameterizedTypesMatch_succeeds() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "import java.util.List;",
@@ -645,10 +619,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_parameterizedTypesDoNotMatch_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_parameterizedTypesDoNotMatch_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "import java.util.List;",
@@ -665,10 +637,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onConstructor_argsInWrongOrder_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onConstructor_argsInWrongOrder_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "",
@@ -686,10 +656,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onConstructor_parametersMatchExactly() {
-    helper
-        .addSourceLines(
+  @Test public void onConstructor_parametersMatchExactly() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "",
@@ -704,10 +672,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onConstructor_crossCompilationUnit_argsInWrongOrder_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onConstructor_crossCompilationUnit_argsInWrongOrder_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -727,10 +693,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onConstructor_crossCompilationUnit_parametersMatchExactly() {
-    helper
-        .addSourceLines(
+  @Test public void onConstructor_crossCompilationUnit_parametersMatchExactly() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -747,10 +711,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onRecordConstructor_argsInWrongOrder_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onRecordConstructor_argsInWrongOrder_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "",
@@ -767,10 +729,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onRecordConstructor_parametersMatchExactly() {
-    helper
-        .addSourceLines(
+  @Test public void onRecordConstructor_parametersMatchExactly() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "",
@@ -785,10 +745,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onRecordCanonicalConstructor_argsInWrongOrder_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onRecordCanonicalConstructor_argsInWrongOrder_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -804,10 +762,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onRecordCanonicalConstructor_parametersMatchExactly() {
-    helper
-        .addSourceLines(
+  @Test public void onRecordCanonicalConstructor_parametersMatchExactly() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -821,10 +777,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onRecordCanonicalConstructor_sameClass_parametersWithDistinctTypes_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onRecordCanonicalConstructor_sameClass_parametersWithDistinctTypes_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -840,10 +794,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onSameClass_parametersWithDistinctTypes_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void onSameClass_parametersWithDistinctTypes_succeeds() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -857,10 +809,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onSameClass_parametersWithSameTypes_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onSameClass_parametersWithSameTypes_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -877,10 +827,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onSameClassWithinLambda_parametersWithDistinctTypes_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void onSameClassWithinLambda_parametersWithDistinctTypes_succeeds() {
+    helper.addSourceLines(
             "Test.java",
             "import java.util.function.Supplier;",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
@@ -896,10 +844,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_matchByTrailingComment() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_matchByTrailingComment() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -913,10 +859,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_matchByTrailingComment_afterMultilineArgument() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_matchByTrailingComment_afterMultilineArgument() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -931,10 +875,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_matchByTrailingComment_mixedWithSingleLineComment() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_matchByTrailingComment_mixedWithSingleLineComment() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -949,10 +891,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_matchByTrailingComment_mixedWithBlockComment() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_matchByTrailingComment_mixedWithBlockComment() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -966,10 +906,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_commentAfterArgLineDoesntCount() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_commentAfterArgLineDoesntCount() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -985,10 +923,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_trailingCommentOnSingleLine_ignored() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_trailingCommentOnSingleLine_ignored() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -1002,10 +938,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onEnclosingClass_argsInWrongOrder_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onEnclosingClass_argsInWrongOrder_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "@ParametersMustMatchByName",
@@ -1023,10 +957,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onEnclosingClass_argsInCorrectOrder_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void onEnclosingClass_argsInCorrectOrder_succeeds() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "@ParametersMustMatchByName",
@@ -1041,10 +973,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onPackage_argsInWrongOrder_fails() {
-    helper
-        .addSourceLines(
+  @Test public void onPackage_argsInWrongOrder_fails() {
+    helper.addSourceLines(
             "package-info.java",
             "@com.google.mu.annotations.ParametersMustMatchByName",
             "package com.mypackage;")
@@ -1063,10 +993,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onPackage_argsInCorrectOrder_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void onPackage_argsInCorrectOrder_succeeds() {
+    helper.addSourceLines(
             "package-info.java",
             "@com.google.mu.annotations.ParametersMustMatchByName",
             "package com.mypackage;")
@@ -1082,10 +1010,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onUnannotatedMethod_argsInWrongOrder_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void onUnannotatedMethod_argsInWrongOrder_succeeds() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -1097,10 +1023,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void innerClassConstructor_wrongArgOrder_fails() {
-    helper
-        .addSourceLines(
+  @Test public void innerClassConstructor_wrongArgOrder_fails() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -1118,10 +1042,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void innerClassConstructor_correctArgOrder_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void innerClassConstructor_correctArgOrder_succeeds() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -1136,10 +1058,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void innerClassConstructor_annotatedConstructor_correctArgOrder_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void innerClassConstructor_annotatedConstructor_correctArgOrder_succeeds() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test {",
@@ -1153,10 +1073,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void thisArgumentWithUniqueType_succeeds() {
-    helper
-        .addSourceLines(
+  @Test public void thisArgumentWithUniqueType_succeeds() {
+    helper.addSourceLines(
             "Test.java",
             "import com.google.mu.annotations.ParametersMustMatchByName;",
             "class Test implements Runnable {",
@@ -1169,10 +1087,8 @@ public final class ParametersMustMatchByNameCheckTest {
         .doTest();
   }
 
-  @Test
-  public void onMethod_multilineArgWithCommentOnFirstLineOfArg() {
-    helper
-        .addSourceLines(
+  @Test public void onMethod_multilineArgWithCommentOnFirstLineOfArg() {
+    helper.addSourceLines(
             "Test.java",
             "import static java.util.Arrays.asList;",
             "import com.google.mu.annotations.ParametersMustMatchByName;",

@@ -23,6 +23,7 @@ import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
+import static com.google.common.labs.parse.Utils.checkArgument;
 import static com.google.mu.util.stream.BiStream.adjacentPairsFrom;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -31,12 +32,19 @@ import static java.util.stream.Collectors.counting;
 import com.google.common.labs.parse.Regexes.PrefixAnalyzer;
 import com.google.common.labs.regex.RegexPattern;
 import com.google.errorprone.annotations.CompileTimeConstant;
+import com.google.mu.function.MapFrom3;
+import com.google.mu.function.MapFrom4;
+import com.google.mu.function.MapFrom5;
+import com.google.mu.function.MapFrom6;
+import com.google.mu.function.MapFrom7;
+import com.google.mu.function.MapFrom8;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -408,6 +416,284 @@ public final class Parsers {
    */
   public static Parser<String> regex(@CompileTimeConstant String pattern) {
     return regex(Regexes.strict(pattern), Pattern.compile(pattern), "=~/" + pattern + "/").source();
+  }
+
+  /**
+   * Returns a leaf-level parser that matches the given {@code pattern} and transforms the captured
+   * group value using {@code mapper}.
+   *
+   * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
+   * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
+   * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
+   * "((foo)(bar))"}).
+   *
+   * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
+   * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
+   * pass {@code null} to the {@code mapper} if that group was not matched.
+   *
+   * @throws IllegalArgumentException if the regex does not have exactly 1 capturing group or is
+   *     invalid / contains forbidden features.
+   * @since 11.0
+   */
+  public static <T> Parser<T> regex(
+      @CompileTimeConstant String pattern, Function<? super String, ? extends T> mapper) {
+    requireNonNull(mapper);
+    return regex(pattern, /* expectedGroups= */ 1, matcher -> mapper.apply(matcher.group(1)));
+  }
+
+  /**
+   * Returns a leaf-level parser that matches the given {@code pattern} and transforms the 2
+   * captured group values using {@code mapper}.
+   *
+   * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
+   * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
+   * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
+   * "((foo)(bar))"}).
+   *
+   * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
+   * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
+   * pass {@code null} to the {@code mapper} if that group was not matched.
+   *
+   * @throws IllegalArgumentException if the regex does not have exactly 2 capturing groups or is
+   *     invalid / contains forbidden features.
+   * @since 11.0
+   */
+  public static <T> Parser<T> regex(
+      @CompileTimeConstant String pattern,
+      BiFunction<? super String, ? super String, ? extends T> mapper) {
+    requireNonNull(mapper);
+    return regex(
+        pattern,
+        /* expectedGroups= */ 2,
+        matcher -> mapper.apply(matcher.group(1), matcher.group(2)));
+  }
+
+  /**
+   * Returns a leaf-level parser that matches the given {@code pattern} and transforms the 3
+   * captured group values using {@code mapper}.
+   *
+   * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
+   * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
+   * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
+   * "((foo)(bar))"}).
+   *
+   * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
+   * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
+   * pass {@code null} to the {@code mapper} if that group was not matched.
+   *
+   * @throws IllegalArgumentException if the regex does not have exactly 3 capturing groups or is
+   *     invalid / contains forbidden features.
+   * @since 11.0
+   */
+  public static <T> Parser<T> regex(
+      @CompileTimeConstant String pattern, MapFrom3<? super String, ? extends T> mapper) {
+    requireNonNull(mapper);
+    return regex(
+        pattern,
+        /* expectedGroups= */ 3,
+        matcher -> mapper.map(matcher.group(1), matcher.group(2), matcher.group(3)));
+  }
+
+  /**
+   * Returns a leaf-level parser that matches the given {@code pattern} and transforms the 4
+   * captured group values using {@code mapper}.
+   *
+   * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
+   * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
+   * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
+   * "((foo)(bar))"}).
+   *
+   * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
+   * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
+   * pass {@code null} to the {@code mapper} if that group was not matched.
+   *
+   * @throws IllegalArgumentException if the regex does not have exactly 4 capturing groups or is
+   *     invalid / contains forbidden features.
+   * @since 11.0
+   */
+  public static <T> Parser<T> regex(
+      @CompileTimeConstant String pattern, MapFrom4<? super String, ? extends T> mapper) {
+    requireNonNull(mapper);
+    return regex(
+        pattern,
+        /* expectedGroups= */ 4,
+        matcher ->
+            mapper.map(matcher.group(1), matcher.group(2), matcher.group(3), matcher.group(4)));
+  }
+
+  /**
+   * Returns a leaf-level parser that matches the given {@code pattern} and transforms the 5
+   * captured group values using {@code mapper}.
+   *
+   * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
+   * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
+   * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
+   * "((foo)(bar))"}).
+   *
+   * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
+   * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
+   * pass {@code null} to the {@code mapper} if that group was not matched.
+   *
+   * @throws IllegalArgumentException if the regex does not have exactly 5 capturing groups or is
+   *     invalid / contains forbidden features.
+   * @since 11.0
+   */
+  public static <T> Parser<T> regex(
+      @CompileTimeConstant String pattern, MapFrom5<? super String, ? extends T> mapper) {
+    requireNonNull(mapper);
+    return regex(
+        pattern,
+        /* expectedGroups= */ 5,
+        matcher -> mapper.map(
+            matcher.group(1),
+            matcher.group(2),
+            matcher.group(3),
+            matcher.group(4),
+            matcher.group(5)));
+  }
+
+  /**
+   * Returns a leaf-level parser that matches the given {@code pattern} and transforms the 6
+   * captured group values using {@code mapper}.
+   *
+   * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
+   * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
+   * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
+   * "((foo)(bar))"}).
+   *
+   * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
+   * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
+   * pass {@code null} to the {@code mapper} if that group was not matched.
+   *
+   * @throws IllegalArgumentException if the regex does not have exactly 6 capturing groups or is
+   *     invalid / contains forbidden features.
+   * @since 11.0
+   */
+  public static <T> Parser<T> regex(
+      @CompileTimeConstant String pattern, MapFrom6<? super String, ? extends T> mapper) {
+    requireNonNull(mapper);
+    return regex(
+        pattern,
+        /* expectedGroups= */ 6,
+        matcher -> mapper.map(
+            matcher.group(1),
+            matcher.group(2),
+            matcher.group(3),
+            matcher.group(4),
+            matcher.group(5),
+            matcher.group(6)));
+  }
+
+  /**
+   * Returns a leaf-level parser that matches the given {@code pattern} and transforms the 7
+   * captured group values using {@code mapper}.
+   *
+   * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
+   * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
+   * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
+   * "((foo)(bar))"}).
+   *
+   * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
+   * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
+   * pass {@code null} to the {@code mapper} if that group was not matched.
+   *
+   * @throws IllegalArgumentException if the regex does not have exactly 7 capturing groups or is
+   *     invalid / contains forbidden features.
+   * @since 11.0
+   */
+  public static <T> Parser<T> regex(
+      @CompileTimeConstant String pattern, MapFrom7<? super String, ? extends T> mapper) {
+    requireNonNull(mapper);
+    return regex(
+        pattern,
+        /* expectedGroups= */ 7,
+        matcher -> mapper.map(
+            matcher.group(1),
+            matcher.group(2),
+            matcher.group(3),
+            matcher.group(4),
+            matcher.group(5),
+            matcher.group(6),
+            matcher.group(7)));
+  }
+
+  /**
+   * Returns a leaf-level parser that matches the given {@code pattern} and transforms the 8
+   * captured group values using {@code mapper}.
+   *
+   * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
+   * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
+   * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
+   * "((foo)(bar))"}).
+   *
+   * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
+   * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
+   * pass {@code null} to the {@code mapper} if that group was not matched.
+   *
+   * @throws IllegalArgumentException if the regex does not have exactly 8 capturing groups or is
+   *     invalid / contains forbidden features.
+   * @since 11.0
+   */
+  public static <T> Parser<T> regex(
+      @CompileTimeConstant String pattern, MapFrom8<? super String, ? extends T> mapper) {
+    requireNonNull(mapper);
+    return regex(
+        pattern,
+        /* expectedGroups= */ 8,
+        matcher -> mapper.map(
+            matcher.group(1),
+            matcher.group(2),
+            matcher.group(3),
+            matcher.group(4),
+            matcher.group(5),
+            matcher.group(6),
+            matcher.group(7),
+            matcher.group(8)));
+  }
+
+  private static <T> Parser<T> regex(
+      String pattern, int expectedGroups, Function<? super Matcher, ? extends T> mapper) {
+    Pattern jdkPattern = Pattern.compile(pattern);
+    int groupCount = jdkPattern.matcher("").groupCount();
+    checkArgument(
+        groupCount == expectedGroups,
+        "regex pattern '%s' has %s capturing group(s), but %s expected",
+        jdkPattern.pattern(), groupCount, expectedGroups);
+    return regex(
+        Regexes.strict(pattern),
+        jdkPattern,
+        "=~/" + pattern + "/",
+        mapper);
+  }
+
+  private static <T> Parser<T> regex(
+      RegexPattern ast, Pattern jdkPattern, String name,
+      Function<? super Matcher, ? extends T> mapper) {
+    RegexPattern.Metadata metadata = ast.metadata();
+    return new Parser<T>() {
+      @Override MatchResult<T> skipAndMatch(
+          Skipper skip, CharInput input, int start, ErrorContext context) {
+        start = Parser.skipIfAny(skip, input, start);
+        Matcher matcher = input.matcher(jdkPattern, metadata, start);
+        if (!matcher.lookingAt()) {
+          return context.expecting(name, start);
+        }
+        int end = input.matchEnd(matcher);
+        return new MatchResult.Success<>(start, end, mapper.apply(matcher));
+      }
+
+      @Override Set<String> computePrefixes() {
+        return new PrefixAnalyzer().prefixesOf(ast);
+      }
+
+      @Override Set<String> getExpectedSymbols() {
+        return Set.of(name);
+      }
+
+      @Override public Parser<T> as(String logicalName) {
+        return regex(ast, jdkPattern, logicalName, mapper);
+      }
+    };
   }
 
   private static Parser<Void> regex(RegexPattern ast, Pattern jdkPattern, String name) {

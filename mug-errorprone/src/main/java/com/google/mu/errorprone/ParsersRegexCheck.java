@@ -29,6 +29,10 @@ import com.google.errorprone.util.ASTHelpers;
 import com.google.mu.errorprone.regex.ReDos;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Type;
+import java.util.List;
+import java.util.regex.Pattern;
 
 /** Validates the regular expression literal string passed to {@code Parsers.regex()}. */
 @BugPattern(
@@ -45,18 +49,39 @@ public final class ParsersRegexCheck extends AbstractBugChecker
 
   @Override public void checkMethodInvocation(
       MethodInvocationTree tree, VisitorState state) throws ErrorReport {
-    if (MATCHER.matches(tree, state) && tree.getArguments().size() == 1) {
-      validateRegex(tree.getArguments().get(0));
+    if (!MATCHER.matches(tree, state)) {
+      return;
+    }
+    List<? extends ExpressionTree> args = tree.getArguments();
+    if (args.size() == 1) {
+      validateRegex(args.get(0));
+    } else if (args.size() == 2) {
+      String pattern = validateRegex(args.get(0));
+      if (pattern != null) {
+        MethodSymbol symbol = ASTHelpers.getSymbol(tree);
+        Type mapperType = symbol.getParameters().get(1).type;
+        int expectedGroups =
+            state.getTypes().findDescriptorType(mapperType).getParameterTypes().size();
+        int actualGroups = Pattern.compile(pattern).matcher("").groupCount();
+        checkingOn(args.get(0))
+            .require(
+                actualGroups == expectedGroups,
+                "regex pattern '%s' has %s capturing group(s), but %s expected",
+                pattern,
+                actualGroups,
+                expectedGroups);
+      }
     }
   }
 
   @SuppressWarnings("CompileTimeConstant")
-  private void validateRegex(ExpressionTree expression) throws ErrorReport {
+  private String validateRegex(ExpressionTree expression) throws ErrorReport {
     String pattern = ASTHelpers.constValue(expression, String.class);
     checkingOn(expression).require(pattern != null, "compile-time string constant expected");
     try {
       Parsers.regex(pattern);
       ReDos.checkRedosVulnerability(RegexPattern.of(pattern));
+      return pattern;
     } catch (IllegalArgumentException e) {
       throw checkingOn(expression).report(e.getMessage());
     }

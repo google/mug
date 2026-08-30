@@ -16,25 +16,39 @@ package com.google.common.labs.regex;
 
 import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.consecutive;
+import static com.google.common.labs.parse.Parser.define;
 import static com.google.common.labs.parse.Parser.digits;
+import static com.google.common.labs.parse.Parser.hexDigits;
 import static com.google.common.labs.parse.Parser.literally;
 import static com.google.common.labs.parse.Parser.one;
+import static com.google.common.labs.parse.Parser.quotedBy;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
 import static com.google.common.labs.parse.Parser.word;
+import static com.google.common.labs.parse.Parser.zeroOrMore;
+import static com.google.common.labs.parse.Parsers.BMP_CODE_UNIT;
+import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.ANY_CHAR;
+import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.EXTENDED_GRAPHEME_CLUSTER;
+import static com.google.common.labs.regex.RegexPattern.PredefinedCharClass.LINEBREAK;
 import static com.google.common.labs.regex.RegexPattern.asAlternation;
 import static com.google.common.labs.regex.RegexPattern.inSequence;
+import static com.google.common.labs.regex.RegexPattern.intersection;
 import static com.google.mu.util.CharPredicate.ANY;
 import static com.google.mu.util.CharPredicate.is;
+import static com.google.mu.util.CharPredicate.noneOf;
 import static com.google.mu.util.stream.BiStream.groupingByEach;
 import static com.google.mu.util.stream.MoreCollectors.onlyElement;
 import static java.util.Arrays.stream;
+import static java.util.Comparator.comparingInt;
 import static java.util.function.UnaryOperator.identity;
+import static java.util.stream.Collectors.flatMapping;
+import static java.util.stream.Collectors.toList;
 
 import com.google.common.labs.parse.Parser;
 import com.google.common.labs.regex.RegexPattern.Anchor;
 import com.google.common.labs.regex.RegexPattern.Backreference;
 import com.google.common.labs.regex.RegexPattern.CharRange;
+import com.google.common.labs.regex.RegexPattern.CharSetElement;
 import com.google.common.labs.regex.RegexPattern.CharacterProperty;
 import com.google.common.labs.regex.RegexPattern.CharacterSet;
 import com.google.common.labs.regex.RegexPattern.Group;
@@ -46,41 +60,77 @@ import com.google.common.labs.regex.RegexPattern.PosixCharClass;
 import com.google.common.labs.regex.RegexPattern.PredefinedCharClass;
 import com.google.common.labs.regex.RegexPattern.Quantifier;
 import com.google.common.labs.regex.RegexPattern.UnicodeProperty;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /** Parsers for {@link RegexPattern}. */
 final class RegexParsers {
-  private static final Parser<Character> ESCAPED_CHAR =
-      literally(string("\\").then(one(ANY, "escaped char")));
-  private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES = stream(
-          PosixCharClass.values())
-      .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
-      .collect(Collectors::toUnmodifiableMap);
+  private static final Parser<Integer> CODE_POINT =
+      anyOf(consecutive("[0-9a-fA-F]").between("{", "}"), hexDigits(2))
+          .map(hex -> Integer.parseInt(hex, 16))
+          .suchThat(Character::isValidCodePoint, "code point");
+  private static final Parser<Integer> OCTAL = anyOf(
+          literally(one("[0-3]"), one("[0-7]").optional(), one("[0-7]").optional()),
+          literally(one("[4-7]"), one("[0-7]").optional()))
+      .source()
+      .map(digits -> Integer.parseInt(digits, 8));
+  private static final Parser<String> ESCAPED = anyOf(
+      string("\\n").thenReturn("\n"),
+      string("\\r").thenReturn("\r"),
+      string("\\t").thenReturn("\t"),
+      string("\\f").thenReturn("\f"),
+      string("\\a").thenReturn("\u0007"),
+      string("\\e").thenReturn("\u001B"),
+      string("\\u").then(BMP_CODE_UNIT).map(String::valueOf),
+      string("\\0").then(OCTAL).map(Character::toString),
+      string("\\c")
+          .then(one(ANY, "control char"))
+          .map(c -> Character.toString(Character.toUpperCase(c) ^ 64)),
+      string("\\x").then(CODE_POINT).map(Character::toString),
+      string("\\N")
+          .then(consecutive("[^}\r\n]").as("character name").between("{", "}"))
+          .map(Character::codePointOf)
+          .map(Character::toString),
+      literally(string("\\").then(one(noneOf("0123456789xNuckpP"), "escaped char")))
+          .map(String::valueOf));
+  private static final Set<PredefinedCharClass> DISALLOWED_IN_CHAR_CLASS =
+      Set.of(ANY_CHAR, EXTENDED_GRAPHEME_CLUSTER, LINEBREAK);
+  private static final Map<String, CharacterProperty> POSIX_CHAR_CLASSES =
+      stream(PosixCharClass.values())
+          .collect(groupingByEach(charClass -> charClass.names().stream(), onlyElement(identity())))
+          .collect(Collectors::toUnmodifiableMap);
+  private static final Parser<Anchor> ANCHOR = stream(Anchor.values())
+      .sorted(comparingInt((Anchor a) -> a.tokens().size()).reversed().thenComparing(Anchor::name))
+      .map(RegexParsers::anchor)
+      .collect(Parser.or());
   static final Parser<?> FREE_SPACES = anyOf(
       consecutive(Character::isWhitespace, "whitespace"), one('#').then(consecutive("[^\n]")));
+  static final Parser<RegexPattern> PARSER = define(RegexParsers::pattern);
 
-  static Parser<RegexPattern> pattern(Parser<RegexPattern> regex) {
+  private static Parser<RegexPattern> pattern(Parser<RegexPattern> regex) {
     Parser<RegexPattern> atomic = anyOf(
-        charClass(), positiveCharacterProperty(), negativeCharacterProperty(),
-        groupOrLookaround(regex), anyOf(PredefinedCharClass.values()), anyOf(Anchor.values()),
-        numberedBackreference(), namedBackreference(),
-        consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
+        define(RegexParsers::charClass), positiveCharacterProperty(), negativeCharacterProperty(),
+        groupOrLookaround(regex), anyOf(PredefinedCharClass.values()), ANCHOR,
+        literally(string("\\").then(sequence(one("[1-9]"), digits().optional()).source()))
+            .map(s -> new Backreference.Numbered(Integer.parseInt(s))),
+        string("\\k").then(word().between("<", ">")).map(Backreference.Named::new),
+        quotedText().map(Literal::new), consecutive("[^.[]{}()*+?^$|\\ #]").map(Literal::new),
         consecutive(is('#').or(Character::isWhitespace), "whitespace or #").map(Literal::new),
-        ESCAPED_CHAR.map(c -> new Literal(Character.toString(c))));
-    return atomic.followedByZeroOrMore(quantifier())
+        anyOf(ESCAPED, one("[{}]]").map(String::valueOf)).map(Literal::new));
+    return atomic
+        .followedByZeroOrMore(quantifier())
         .atLeastOnce(inSequence())
-        .atLeastOnceDelimitedBy("|", asAlternation());
+        .orElse(new RegexPattern.Literal(""))
+        .delimitedBy("|", asAlternation())
+        .notEmpty()
+        .as("subpattern");
   }
 
-  private static Parser<Backreference.Numbered> numberedBackreference() {
-    return string("\\").then(sequence(one("[1-9]"), digits().optional()).source())
-        .map(s -> new Backreference.Numbered(Integer.parseInt(s)));
-  }
-
-  private static Parser<Backreference.Named> namedBackreference() {
-    return string("\\k<").then(word()).followedBy(">").map(Backreference.Named::new);
+  private static Parser<String> quotedText() {
+    return anyOf(quotedBy("\\Q", "\\E"), literally(string("\\Q").then(zeroOrMore(ANY, "quoted"))));
   }
 
   private static Parser<Quantifier> quantifier() {
@@ -88,14 +138,24 @@ final class RegexParsers {
     Parser<Quantifier> question = one('?').thenReturn(Quantifier.atMost(1));
     Parser<Quantifier> star = one('*').thenReturn(Quantifier.repeated());
     Parser<Quantifier> plus = one('+').thenReturn(Quantifier.atLeast(1));
-    Parser<Quantifier> exact = number.between("{", "}").map(Quantifier::repeated);
-    Parser<Quantifier> atLeast = number.followedBy(",").between("{", "}").map(Quantifier::atLeast);
-    Parser<Quantifier> atMost = one(',').then(number).between("{", "}").map(Quantifier::atMost);
-    Parser<Quantifier> range =
-        sequence(number, one(',').then(number), Quantifier::repeated).between("{", "}");
-    return anyOf(question, star, plus, exact, atLeast, atMost, range)
+    Parser<Quantifier> range = anyOf(
+            number
+                .map(Quantifier::repeated)
+                .optionallyFollowedBy(
+                    one(',').then(number.orElse(Integer.MAX_VALUE)),
+                    (q, max) -> Quantifier.repeated(q.min(), max)),
+            one(',').then(number).map(Quantifier::atMost))
+        .between("{", "}");
+    return anyOf(question, star, plus, range)
         .optionallyFollowedBy("?", Quantifier::reluctant)
         .optionallyFollowedBy("+", Quantifier::possessive);
+  }
+
+  private static Parser<CharacterProperty> characterPropertySuffix() {
+    Parser<String> name = anyOf(
+        consecutive("[^}\r\n]").as("property name").between("{", "}"),
+        one("[a-zA-Z]").as("category").map(String::valueOf));
+    return name.map(n -> POSIX_CHAR_CLASSES.getOrDefault(n, new UnicodeProperty(n)));
   }
 
   private static Parser<CharacterProperty> positiveCharacterProperty() {
@@ -106,46 +166,98 @@ final class RegexParsers {
     return string("\\P").then(characterPropertySuffix()).map(CharacterProperty::negated);
   }
 
-  private static Parser<CharacterProperty> characterPropertySuffix() {
-    return word().between("{", "}")
-        .map(name -> POSIX_CHAR_CLASSES.getOrDefault(name, new UnicodeProperty(name)));
+  private static Parser<CharacterSet> charClass(Parser<CharacterSet> charClass) {
+    Parser<Integer> literalChar = anyOf(
+        one("[^-&\\][]").map(c -> (int) c),
+        ESCAPED.map(s -> s.codePointAt(0)),
+        one('&').notFollowedBy("&").map(c -> (int) c));
+    Parser<CharSetElement> element = anyOf(
+        anyOf(PredefinedCharClass.values())
+            .suchThat(v -> !DISALLOWED_IN_CHAR_CLASS.contains(v), "predefined char class"),
+        sequence(
+            literalChar, one('-').then(literalChar).orElse(null),
+            (c1, c2) -> c2 == null ? new LiteralChar(c1) : new CharRange(c1, c2)),
+        one('-').map(LiteralChar::new),
+        positiveCharacterProperty(),
+        negativeCharacterProperty(),
+        charClass);
+    Parser<List<LiteralChar>> quotedChars =
+        quotedText().map(s -> s.codePoints().mapToObj(LiteralChar::new).toList());
+    var elements =
+        sequence(
+                one(']')
+                    .<CharSetElement>map(LiteralChar::new)
+                    .optionallyFollowedBy(
+                        one('-').then(literalChar), (unused, to) -> new CharRange(']', to))
+                    .orElse(null),
+                anyOf(quotedChars, element.map(List::of))
+                    .zeroOrMore(flatMapping(List::stream, toList())),
+                (leading, rest) -> leading == null ? rest : prepend(leading, rest))
+            .notEmpty();
+    Parser<CharacterSet> characterSet =
+        anyOf(elements.map(RegexParsers::toCharacterSet), charClass).as("character set");
+    return anyOf(
+        intersected(elements.map(RegexPattern::noneOf), characterSet).between("[^", "]"),
+        intersected(elements.map(RegexPattern::anyOf), characterSet).between("[", "]"));
   }
 
-  private static Parser<CharacterSet> charClass() {
-    Parser<Character> literalChar = anyOf(ESCAPED_CHAR, one("[^-]\\]"));
-    Parser<Character> literalCharOrDash = anyOf(ESCAPED_CHAR, one("[^\\]]"));
-    Parser<CharRange> range = sequence(literalChar, one('-').then(literalChar), CharRange::new);
-    var element = anyOf(
-        positiveCharacterProperty(), negativeCharacterProperty(),
-        anyOf(PredefinedCharClass.values()), range, literalCharOrDash.map(LiteralChar::new));
-    return anyOf(
-        literally(element.atLeastOnce()).immediatelyBetween("[^", "]").map(RegexPattern::noneOf),
-        literally(element.atLeastOnce()).immediatelyBetween("[", "]").map(RegexPattern::anyOf));
+  private static Parser<CharacterSet> intersected(
+      Parser<CharacterSet> primary, Parser<CharacterSet> secondary) {
+    return sequence(
+        primary, string("&&").then(secondary).zeroOrMore(),
+        (first, rest) -> rest.isEmpty() ? first : intersection(prepend(first, rest)));
+  }
+
+  private static CharacterSet toCharacterSet(List<? extends CharSetElement> elements) {
+    return elements.size() == 1 && elements.get(0) instanceof CharacterSet cset
+        ? cset
+        : RegexPattern.anyOf(elements);
   }
 
   private static Parser<RegexPattern> groupOrLookaround(Parser<RegexPattern> content) {
-    Parser<Group.Named> named =
-        sequence(word().between(anyOf("?<", "?P<"), one('>')), content, Group.Named::new)
-            .between("(", ")");
-    Parser<ModifierFlag> modifier = anyOf(ModifierFlag.values());
+    var groupContent = content.orElse(new Literal(""));
+    Parser<ModifierFlag> modifier = anyOf(ModifierFlag.values()).as("modifier flag");
     var modifierFlags = sequence(
         modifier.zeroOrMore(),
         one('-').then(modifier.atLeastOnce()).orElse(List.of()),
         (enabled, disabled) -> {
-          Parser<RegexPattern> result = content.between(":", ")");
+          Parser<RegexPattern> withContent = groupContent.between(":", ")");
           if (disabled.contains(ModifierFlag.COMMENTS)) {
-            result = literally(result);
+            withContent = literally(withContent);
           } else if (enabled.contains(ModifierFlag.COMMENTS)) {
-            result = result.skipping(FREE_SPACES).within();
+            withContent = withContent.skipping(FREE_SPACES).within();
           }
-          return result.map(c -> new Group.NonCapturing(c, enabled, disabled));
+          Parser<RegexPattern> nonCapturingGroup =
+              withContent.map(c -> new Group.NonCapturing(c, enabled, disabled));
+          Parser<RegexPattern> standaloneFlags =
+              one(')').thenReturn(new Group.NonCapturing(new Literal(""), enabled, disabled));
+          return anyOf(nonCapturingGroup, standaloneFlags);
         });
-    return anyOf(
-        named, content.between("(?=", ")").map(Lookaround.Lookahead::new),
-        content.between("(?!", ")").map(Lookaround.NegativeLookahead::new),
-        content.between("(?<=", ")").map(Lookaround.Lookbehind::new),
-        content.between("(?<!", ")").map(Lookaround.NegativeLookbehind::new),
-        literally(string("(?").then(modifierFlags)).flatMap(identity()),
-        content.between("(", ")").map(Group.Capturing::new));
+    return one('(').then( // spaces allowed after (, under free spacing mode
+        anyOf(
+            groupContent.between("?=", ")").map(Lookaround.Lookahead::new),
+            groupContent.between("?!", ")").map(Lookaround.NegativeLookahead::new),
+            groupContent.between("?<=", ")").map(Lookaround.Lookbehind::new),
+            groupContent.between("?<!", ")").map(Lookaround.NegativeLookbehind::new),
+            groupContent.between("?>", ")").map(Group.Atomic::new),
+            sequence(word().between(anyOf("?<", "?P<"), one('>')), groupContent, Group.Named::new)
+                .followedBy(")"),
+            literally(one('?').then(modifierFlags)).flatMap(identity()),
+            groupContent.map(Group.Capturing::new).followedBy(")")));
+  }
+
+  private static Parser<Anchor> anchor(Anchor anchor) {
+    return anchor.tokens().stream()
+        .map(Parser::string)
+        .reduce(Parser::then)
+        .orElseThrow()
+        .thenReturn(anchor);
+  }
+
+  private static <T> List<T> prepend(T first, List<? extends T> rest) {
+    List<T> list = new ArrayList<>(rest.size() + 1);
+    list.add(first);
+    list.addAll(rest);
+    return list;
   }
 }

@@ -16,7 +16,6 @@
 package com.google.common.labs.parse;
 
 import static com.google.common.labs.parse.Utils.checkArgument;
-import static com.google.mu.util.CharPredicate.ASCII;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
@@ -110,6 +109,7 @@ final class Regexes {
             .flatMap(element -> charsOf(element).stream())
             .collect(toPrefixSet());
         case RegexPattern.CharacterSet.NoneOf noneOf -> EMPTY_PREFIX;
+        case RegexPattern.CharacterSet.Intersection intersection -> EMPTY_PREFIX;
         case RegexPattern.PredefinedCharClass predefined ->
             predefined == RegexPattern.PredefinedCharClass.DIGIT ? digitPrefixes : EMPTY_PREFIX;
         case RegexPattern.CharacterProperty characterProperty -> EMPTY_PREFIX;
@@ -122,9 +122,10 @@ final class Regexes {
 
     private Set<String> charsOf(RegexPattern.CharSetElement element) {
       return switch (element) {
-        case RegexPattern.LiteralChar literalChar -> forLiteral.prefixesOf(literalChar.value());
+        case RegexPattern.LiteralChar literalChar ->
+            forLiteral.prefixesOf(Character.toString(literalChar.codePoint()));
         case RegexPattern.CharRange range ->
-            ASCII.test(range.end()) && range.end() - range.start() < 30
+            range.end() < 128 && range.end() - range.start() < 30
                 ? IntStream.rangeClosed(range.start(), range.end())
                     .mapToObj(i -> forLiteral.prefixesOf((char) i))
                     .flatMap(Set::stream)
@@ -133,6 +134,11 @@ final class Regexes {
         case RegexPattern.CharacterProperty characterProperty -> EMPTY_PREFIX;
         case RegexPattern.CharacterProperty.Negated negated -> EMPTY_PREFIX;
         case RegexPattern.PredefinedCharClass predefined -> EMPTY_PREFIX;
+        case RegexPattern.CharacterSet.AnyOf anyOf -> anyOf.elements().stream()
+            .flatMap(e -> charsOf(e).stream())
+            .collect(toUnmodifiableSet());
+        case RegexPattern.CharacterSet.NoneOf noneOf -> EMPTY_PREFIX;
+        case RegexPattern.CharacterSet.Intersection intersection -> EMPTY_PREFIX;
       };
     }
 

@@ -17,7 +17,10 @@ import com.google.common.collect.Range;
 import com.google.common.labs.parse.Parser.ParseException;
 import java.io.StringReader;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,31 +58,36 @@ public class ParsersTest {
 
   @Test public void regex_anchorWordBoundary_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("\\ba"));
-    assertThat(exception).hasMessageThat()
+    assertThat(exception)
+        .hasMessageThat()
         .isEqualTo("anchors are not allowed in regex parser: \\b");
   }
 
   @Test public void regex_lookaheadPositive_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a(?=b)"));
-    assertThat(exception).hasMessageThat()
+    assertThat(exception)
+        .hasMessageThat()
         .isEqualTo("lookarounds are not allowed in regex parser: (?=b)");
   }
 
   @Test public void regex_lookaheadNegative_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a(?!b)"));
-    assertThat(exception).hasMessageThat()
+    assertThat(exception)
+        .hasMessageThat()
         .isEqualTo("lookarounds are not allowed in regex parser: (?!b)");
   }
 
   @Test public void regex_backreferenceNumeric_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("(a)\\1"));
-    assertThat(exception).hasMessageThat()
+    assertThat(exception)
+        .hasMessageThat()
         .isEqualTo("backreferences are not allowed in regex parser: \\1");
   }
 
   @Test public void regex_backreferenceNamed_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("(?<foo>a)\\k<foo>"));
-    assertThat(exception).hasMessageThat()
+    assertThat(exception)
+        .hasMessageThat()
         .isEqualTo("backreferences are not allowed in regex parser: \\k<foo>");
   }
 
@@ -90,7 +98,8 @@ public class ParsersTest {
 
   @Test public void regex_sequenceOfOptionalPatterns_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("a*foo?(c+)*"));
-    assertThat(exception).hasMessageThat()
+    assertThat(exception)
+        .hasMessageThat()
         .isEqualTo("regex must not match empty string: a*foo?(c+)*");
   }
 
@@ -106,13 +115,7 @@ public class ParsersTest {
 
   @Test public void regex_alternationWithEmptyAlternative_throws() {
     var exception = assertThrows(IllegalArgumentException.class, () -> regex("foo|"));
-    assertThat(exception).hasMessageThat()
-        .isEqualTo(
-            """
-            at 1:5: expecting one of [one or more [^.[]{}()*+?^$|\\ #], whitespace or #, $, (, (?, (?!, (?<!, (?<=, (?=, ., [, [^, \\, \\A, \\B, \\D, \\P, \\S, \\W, \\Z, \\b, \\d, \\k<, \\p, \\s, \\w, \\z, ^], encountered:
-                foo|
-                    ^
-            """);
+    assertThat(exception).hasMessageThat().isEqualTo("regex must not match empty string: foo|");
   }
 
   @Test public void regex_valid() {
@@ -448,7 +451,8 @@ public class ParsersTest {
 
   @Test public void duration_emptyStringThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse(""));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <integer>, encountered:
@@ -459,7 +463,8 @@ public class ParsersTest {
 
   @Test public void duration_whitespaceThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1s 2m"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting <EOF>, encountered:
@@ -476,7 +481,8 @@ public class ParsersTest {
   @Test public void duration_skippingWhitespace_spaceBetweenDigitsAndUnitThrows() {
     ParseException e = assertThrows(
         ParseException.class, () -> Parsers.DURATION.parseSkipping(Character::isWhitespace, "1 s"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:2: expecting one of [d, h, m, ms, ns, s, us, w], encountered:
@@ -489,7 +495,8 @@ public class ParsersTest {
     ParseException e = assertThrows(
         ParseException.class,
         () -> Parsers.DURATION.parseSkipping(Character::isWhitespace, "1s 2m"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <EOF>, encountered:
@@ -506,13 +513,21 @@ public class ParsersTest {
 
   @Test public void duration_fractionalNotLastSegmentThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1.5h2m"));
-    assertThat(e).hasMessageThat()
-        .isEqualTo("at 1:1: Only the last duration segment is allowed to be fractional: 1.5h");
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: Only the last duration segment is allowed to be fractional: 1.5h
+
+                1.5h2m
+                ^
+            """);
   }
 
   @Test public void duration_negativeThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("-1s"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <integer>, encountered:
@@ -523,7 +538,8 @@ public class ParsersTest {
 
   @Test public void duration_lettersOnlyThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("foo"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <integer>, encountered:
@@ -534,7 +550,8 @@ public class ParsersTest {
 
   @Test public void duration_invalidUnitThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1ss"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: unexpected `duration unit char`:
@@ -546,8 +563,15 @@ public class ParsersTest {
   @Test public void duration_overflowLongThrows() {
     ParseException e = assertThrows(
         ParseException.class, () -> Parsers.DURATION.parse("999999999999999999999999999s"));
-    assertThat(e).hasMessageThat()
-        .isEqualTo("at 1:1: For input string: \"999999999999999999999999999\"");
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: For input string: "999999999999999999999999999"
+
+                999999999999999999999999999s
+                ^
+            """);
   }
 
   @Test public void duration_overflowDurationThrows() {
@@ -559,25 +583,55 @@ public class ParsersTest {
   @Test public void duration_overflowAccumulationThrows() {
     ParseException e = assertThrows(
         ParseException.class, () -> Parsers.DURATION.parse("9223372036854775800s10000ms"));
-    assertThat(e).hasMessageThat().isEqualTo("at 1:1: duration out of range");
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: duration out of range
+
+                9223372036854775800s10000ms
+                ^
+            """);
   }
 
   @Test public void duration_overflowFractionalThrows() {
     ParseException e = assertThrows(
         ParseException.class, () -> Parsers.DURATION.parse("100000000000000000000.5s"));
-    assertThat(e).hasMessageThat().isEqualTo("at 1:1: duration out of range: 1.0E20s");
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: duration out of range: 1.0E20s
+
+                100000000000000000000.5s
+                ^
+            """);
   }
 
   @Test public void duration_unorderedSegmentsThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1s2m"));
-    assertThat(e).hasMessageThat()
-        .isEqualTo("at 1:1: Duration units must be specified in order: 1s2m");
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: Duration units must be specified in order: 1s2m
+
+                1s2m
+                ^
+            """);
   }
 
   @Test public void duration_duplicateUnitsThrows() {
     ParseException e = assertThrows(ParseException.class, () -> Parsers.DURATION.parse("1s2s"));
-    assertThat(e).hasMessageThat()
-        .isEqualTo("at 1:1: Duration units must be specified in order: 1s2s");
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo(
+            """
+            at 1:1: Duration units must be specified in order: 1s2s
+
+                1s2s
+                ^
+            """);
   }
 
   @Test public void bmpCodeUnit_validHexUpper() {
@@ -598,7 +652,8 @@ public class ParsersTest {
 
   @Test public void bmpCodeUnit_tooShortThrows() {
     ParseException e = assertThrows(ParseException.class, () -> BMP_CODE_UNIT.parse("FFF"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <4 hex digits>, encountered:
@@ -609,7 +664,8 @@ public class ParsersTest {
 
   @Test public void bmpCodeUnit_tooLongThrows() {
     ParseException e = assertThrows(ParseException.class, () -> BMP_CODE_UNIT.parse("FFFFF"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:5: expecting <EOF>, encountered:
@@ -620,7 +676,8 @@ public class ParsersTest {
 
   @Test public void bmpCodeUnit_nonHexThrows() {
     ParseException e = assertThrows(ParseException.class, () -> BMP_CODE_UNIT.parse("FGHI"));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <4 hex digits>, encountered:
@@ -631,7 +688,8 @@ public class ParsersTest {
 
   @Test public void bmpCodeUnit_emptyStringThrows() {
     ParseException e = assertThrows(ParseException.class, () -> BMP_CODE_UNIT.parse(""));
-    assertThat(e).hasMessageThat()
+    assertThat(e)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <4 hex digits>, encountered:
@@ -649,7 +707,8 @@ public class ParsersTest {
 
   @Test public void mapWithIndex_bmpCodeUnit() {
     assertThat(
-            BMP_CODE_UNIT.mapWithIndex((c, begin, end) -> begin + "-" + end + ": " + (int) c)
+            BMP_CODE_UNIT
+                .mapWithIndex((c, begin, end) -> begin + "-" + end + ": " + (int) c)
                 .parse("0000"))
         .isEqualTo("0-4: 0");
   }
@@ -685,7 +744,8 @@ public class ParsersTest {
   @Test public void unsignedDecimal_rejectsMinusSign() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("-1"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <integer>, encountered:
@@ -697,7 +757,8 @@ public class ParsersTest {
   @Test public void unsignedDecimal_rejectsPlusSign() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("+1"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <integer>, encountered:
@@ -709,7 +770,8 @@ public class ParsersTest {
   @Test public void unsignedDecimal_rejectsLeadingDot() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse(".5"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <integer>, encountered:
@@ -721,7 +783,8 @@ public class ParsersTest {
   @Test public void unsignedDecimal_rejectsTrailingDot() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("123."));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:5: expecting <one or more [0-9]>, encountered:
@@ -733,7 +796,8 @@ public class ParsersTest {
   @Test public void unsignedDecimal_rejectsOnlyDot() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("."));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <integer>, encountered:
@@ -745,7 +809,8 @@ public class ParsersTest {
   @Test public void unsignedDecimal_rejectsRedundantLeadingZeroInteger() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("05"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <integer>, encountered:
@@ -757,7 +822,8 @@ public class ParsersTest {
   @Test public void unsignedDecimal_rejectsRedundantLeadingZeroFloat() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("00.5"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <integer>, encountered:
@@ -769,7 +835,8 @@ public class ParsersTest {
   @Test public void unsignedDecimal_rejectsMultipleDots() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("1.2.3"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <EOF>, encountered:
@@ -781,7 +848,8 @@ public class ParsersTest {
   @Test public void unsignedDecimal_rejectsDotsInARow() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("1..2"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting <one or more [0-9]>, encountered:
@@ -793,7 +861,8 @@ public class ParsersTest {
   @Test public void unsignedDecimal_rejectsScientificNotation() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("1.2e3"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <EOF>, encountered:
@@ -805,7 +874,8 @@ public class ParsersTest {
   @Test public void unsignedDecimal_rejectsAlphabetic() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse("a"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <integer>, encountered:
@@ -817,7 +887,8 @@ public class ParsersTest {
   @Test public void unsignedDecimal_rejectsEmptyString() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> Parsers.UNSIGNED_DECIMAL.parse(""));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <integer>, encountered:
@@ -845,7 +916,8 @@ public class ParsersTest {
     ParseException thrown = assertThrows(
         ParseException.class,
         () -> Parsers.UNSIGNED_DECIMAL.parseSkipping(Character::isWhitespace, "0 . 1"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting <EOF>, encountered:
@@ -874,7 +946,8 @@ public class ParsersTest {
 
   @Test public void unsignedInteger_rejectsAlphabetic() {
     ParseException thrown = assertThrows(ParseException.class, () -> UNSIGNED_INTEGER.parse("foo"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <integer>, encountered:
@@ -885,7 +958,8 @@ public class ParsersTest {
 
   @Test public void unsignedInteger_rejectsRedundantLeadingZeroInteger() {
     ParseException thrown = assertThrows(ParseException.class, () -> UNSIGNED_INTEGER.parse("00"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <integer>, encountered:
@@ -896,7 +970,8 @@ public class ParsersTest {
 
   @Test public void unsignedInteger_rejectsRedundantLeadingZeroWithDigits() {
     ParseException thrown = assertThrows(ParseException.class, () -> UNSIGNED_INTEGER.parse("001"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <integer>, encountered:
@@ -907,7 +982,8 @@ public class ParsersTest {
 
   @Test public void unsignedInteger_rejectsEmptyString() {
     ParseException thrown = assertThrows(ParseException.class, () -> UNSIGNED_INTEGER.parse(""));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <integer>, encountered:
@@ -924,7 +1000,8 @@ public class ParsersTest {
   @Test public void unsignedInteger_parseSkipping_internalWhitespaceThrows() {
     ParseException thrown = assertThrows(
         ParseException.class, () -> UNSIGNED_INTEGER.parseSkipping(Character::isWhitespace, "1 2"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting <EOF>, encountered:
@@ -985,7 +1062,8 @@ public class ParsersTest {
 
   @Test public void signedDouble_emptyThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse(""));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting one of [integer, -], encountered:
@@ -996,7 +1074,8 @@ public class ParsersTest {
 
   @Test public void signedDouble_leadingPlusThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("+123"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting one of [integer, -], encountered:
@@ -1007,7 +1086,8 @@ public class ParsersTest {
 
   @Test public void signedDouble_leadingZeroThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("05"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting one of [integer, -], encountered:
@@ -1018,7 +1098,8 @@ public class ParsersTest {
 
   @Test public void signedDouble_leadingZeroFloatThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("00.5"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting one of [integer, -], encountered:
@@ -1029,7 +1110,8 @@ public class ParsersTest {
 
   @Test public void signedDouble_missingIntegerThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse(".5"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting one of [integer, -], encountered:
@@ -1040,7 +1122,8 @@ public class ParsersTest {
 
   @Test public void signedDouble_missingFractionThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("5."));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting <one or more [0-9]>, encountered:
@@ -1051,7 +1134,8 @@ public class ParsersTest {
 
   @Test public void signedDouble_emptyExponentThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("1e"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:3: expecting <digits>, encountered:
@@ -1062,7 +1146,8 @@ public class ParsersTest {
 
   @Test public void signedDouble_emptyExponentSignThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("1e+"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <digits>, encountered:
@@ -1073,7 +1158,8 @@ public class ParsersTest {
 
   @Test public void signedDouble_fractionalExponentThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("1e4.5"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <EOF>, encountered:
@@ -1084,7 +1170,8 @@ public class ParsersTest {
 
   @Test public void signedDouble_suffixThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("1e4f"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:4: expecting <EOF>, encountered:
@@ -1095,7 +1182,8 @@ public class ParsersTest {
 
   @Test public void signedDouble_nanThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("NaN"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting one of [integer, -], encountered:
@@ -1107,7 +1195,8 @@ public class ParsersTest {
   @Test public void signedDouble_infinityThrows() {
     ParseException thrown =
         assertThrows(ParseException.class, () -> SIGNED_DOUBLE.parse("Infinity"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting one of [integer, -], encountered:
@@ -1150,7 +1239,8 @@ public class ParsersTest {
 
   @Test public void codePoint_tooLargeThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse("00110000"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <code point>, encountered:
@@ -1161,7 +1251,8 @@ public class ParsersTest {
 
   @Test public void codePoint_negativeWrappedThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse("FFFFFFFF"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <code point>, encountered:
@@ -1172,7 +1263,8 @@ public class ParsersTest {
 
   @Test public void codePoint_invalidHexThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse("0001G600"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <8 hex digits>, encountered:
@@ -1183,7 +1275,8 @@ public class ParsersTest {
 
   @Test public void codePoint_emptyThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse(""));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <8 hex digits>, encountered:
@@ -1194,7 +1287,8 @@ public class ParsersTest {
 
   @Test public void codePoint_insufficientDigitsThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse("000041"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:1: expecting <8 hex digits>, encountered:
@@ -1205,12 +1299,221 @@ public class ParsersTest {
 
   @Test public void codePoint_excessiveDigitsThrows() {
     ParseException thrown = assertThrows(ParseException.class, () -> CODE_POINT.parse("000000412"));
-    assertThat(thrown).hasMessageThat()
+    assertThat(thrown)
+        .hasMessageThat()
         .isEqualTo(
             """
             at 1:9: expecting <EOF>, encountered:
                 000000412
                         ^
             """);
+  }
+
+  @Test public void regex_withFunction_oneGroup_parsesToMappedValue() {
+    Parser<Integer> parser = regex("id:(\\d+)", s -> Integer.parseInt(s));
+    assertThat(parser).fromString("id:123").parsesTo(123);
+  }
+
+  @Test public void regex_withFunction_oneGroup_boundedOnReader() {
+    Parser<Integer> parser = regex("id:(\\d{3})", s -> Integer.parseInt(s));
+    assertThat(parser).fromStringOrReader("id:123").parsesTo(123);
+  }
+
+  @Test public void regex_withFunction_oneGroup_mismatch_failsToParse() {
+    Parser<Integer> parser = regex("id:(\\d+)", s -> Integer.parseInt(s));
+    assertThat(parser).fromString("id:abc").failsToParse();
+  }
+
+  @Test public void regex_withFunction_oneGroup_enclosingEntirePattern() {
+    Parser<String> parser = regex("([a-z]+)", s -> s.toUpperCase(Locale.ROOT));
+    assertThat(parser).fromString("abc").parsesTo("ABC");
+  }
+
+  @Test public void regex_withFunction_nonCapturingGroup_ignoredInCardinalityAndMapping() {
+    Parser<Integer> parser = regex("(?:prefix:)(\\d+)", s -> Integer.parseInt(s));
+    assertThat(parser).fromString("prefix:123").parsesTo(123);
+  }
+
+  @Test public void regex_withFunction_onlyNonCapturingGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(IllegalArgumentException.class, () -> regex("(?:abc)(?:def)", s -> s));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(?:abc)(?:def)' has 0 capturing group(s), but 1 expected");
+  }
+
+  @Test public void regex_withFunction_zeroGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class, () -> regex("[a-z]+", s -> s.toUpperCase(Locale.ROOT)));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '[a-z]+' has 0 capturing group(s), but 1 expected");
+  }
+
+  @Test public void regex_withFunction_twoGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class,
+        () -> regex("(\\w+)=(\\d+)", s -> s.toUpperCase(Locale.ROOT)));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(\\w+)=(\\d+)' has 2 capturing group(s), but 1 expected");
+  }
+
+  @Test public void regex_withFunction_nullMapper_throwsNullPointerException() {
+    assertThrows(
+        NullPointerException.class, () -> regex("(\\d+)", (Function<String, Integer>) null));
+  }
+
+  @Test public void regex_withBiFunction_twoGroups_parsesToMappedValue() {
+    Parser<List<String>> parser = regex("(\\w+)=(\\d+)", (k, v) -> List.of(k, v));
+    assertThat(parser).fromString("k=123").parsesTo(List.of("k", "123"));
+  }
+
+  @Test public void regex_withBiFunction_twoGroups_boundedOnReader() {
+    Parser<List<String>> parser = regex("(\\w{1,3})=(\\d{1,3})", (k, v) -> List.of(k, v));
+    assertThat(parser).fromStringOrReader("k=123").parsesTo(List.of("k", "123"));
+  }
+
+  @Test public void
+      regex_withBiFunction_multipleNonCapturingGroups_ignoredInCardinalityAndMapping() {
+    Parser<List<String>> parser =
+        regex("(?:foo|bar)-(\\w+)-(?:baz)-(\\d+)", (w, d) -> List.of(w, d));
+    assertThat(parser).fromString("foo-item-baz-42").parsesTo(List.of("item", "42"));
+  }
+
+  @Test public void regex_withBiFunction_oneGroup_throwsIllegalArgumentException() {
+    var ex = assertThrows(IllegalArgumentException.class, () -> regex("(\\d+)", (a, b) -> a + b));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(\\d+)' has 1 capturing group(s), but 2 expected");
+  }
+
+  @Test public void regex_withBiFunction_threeGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class, () -> regex("(\\d+)-(\\d+)-(\\d+)", (a, b) -> a + b));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(\\d+)-(\\d+)-(\\d+)' has 3 capturing group(s), but 2 expected");
+  }
+
+  @Test public void regex_withBiFunction_optionalGroup_unmatchedEvaluatesToNull() {
+    Parser<List<String>> parser = regex("([a-z]+)(?:-(\\d+))?", (a, b) -> Arrays.asList(a, b));
+    assertThat(parser).fromString("foo").parsesTo(Arrays.asList("foo", null));
+  }
+
+  @Test public void regex_withBiFunction_optionalGroup_matchedEvaluatesToValue() {
+    Parser<List<String>> parser = regex("([a-z]+)(?:-(\\d+))?", (a, b) -> Arrays.asList(a, b));
+    assertThat(parser).fromString("foo-123").parsesTo(List.of("foo", "123"));
+  }
+
+  @Test public void regex_withBiFunction_alternationGroups_firstBranchMatched() {
+    Parser<List<String>> parser = regex("(\\d+)|([a-z]+)", (a, b) -> Arrays.asList(a, b));
+    assertThat(parser).fromString("123").parsesTo(Arrays.asList("123", null));
+  }
+
+  @Test public void regex_withBiFunction_alternationGroups_secondBranchMatched() {
+    Parser<List<String>> parser = regex("(\\d+)|([a-z]+)", (a, b) -> Arrays.asList(a, b));
+    assertThat(parser).fromString("abc").parsesTo(Arrays.asList(null, "abc"));
+  }
+
+  @Test public void regex_withMapFrom3_threeGroups_parsesToMappedValue() {
+    Parser<List<String>> parser =
+        regex("(\\d{4})-(\\d{2})-(\\d{2})", (y, m, d) -> List.of(y, m, d));
+    assertThat(parser).fromStringOrReader("2026-08-30").parsesTo(List.of("2026", "08", "30"));
+  }
+
+  @Test public void regex_withMapFrom3_nestedGroups_orderedByOpeningParenthesis() {
+    Parser<List<String>> parser = regex("((a)(b))", (g1, g2, g3) -> List.of(g1, g2, g3));
+    assertThat(parser).fromStringOrReader("ab").parsesTo(List.of("ab", "a", "b"));
+  }
+
+  @Test public void regex_withMapFrom3_twoGroups_throwsIllegalArgumentException() {
+    var ex =
+        assertThrows(IllegalArgumentException.class, () -> regex("(\\d+)-(\\d+)", (a, b, c) -> a));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(\\d+)-(\\d+)' has 2 capturing group(s), but 3 expected");
+  }
+
+  @Test public void regex_withMapFrom4_fourGroups_parsesToMappedValue() {
+    Parser<List<String>> parser =
+        regex("(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)", (a, b, c, d) -> List.of(a, b, c, d));
+    assertThat(parser).fromString("127.0.0.1").parsesTo(List.of("127", "0", "0", "1"));
+  }
+
+  @Test public void regex_withMapFrom4_threeGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class, () -> regex("(\\d+)-(\\d+)-(\\d+)", (a, b, c, d) -> a));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(\\d+)-(\\d+)-(\\d+)' has 3 capturing group(s), but 4 expected");
+  }
+
+  @Test public void regex_withMapFrom5_fiveGroups_parsesToMappedValue() {
+    Parser<List<String>> parser =
+        regex("(a)(b)(c)(d)(e)", (a, b, c, d, e) -> List.of(a, b, c, d, e));
+    assertThat(parser).fromStringOrReader("abcde").parsesTo(List.of("a", "b", "c", "d", "e"));
+  }
+
+  @Test public void regex_withMapFrom5_fourGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class, () -> regex("(a)(b)(c)(d)", (a, b, c, d, e) -> a));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(a)(b)(c)(d)' has 4 capturing group(s), but 5 expected");
+  }
+
+  @Test public void regex_withMapFrom6_sixGroups_parsesToMappedValue() {
+    Parser<List<String>> parser =
+        regex("(a)(b)(c)(d)(e)(f)", (a, b, c, d, e, f) -> List.of(a, b, c, d, e, f));
+    assertThat(parser).fromStringOrReader("abcdef").parsesTo(List.of("a", "b", "c", "d", "e", "f"));
+  }
+
+  @Test public void regex_withMapFrom6_fiveGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class, () -> regex("(a)(b)(c)(d)(e)", (a, b, c, d, e, f) -> a));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(a)(b)(c)(d)(e)' has 5 capturing group(s), but 6 expected");
+  }
+
+  @Test public void regex_withMapFrom7_sevenGroups_parsesToMappedValue() {
+    Parser<List<String>> parser =
+        regex("(a)(b)(c)(d)(e)(f)(g)", (a, b, c, d, e, f, g) -> List.of(a, b, c, d, e, f, g));
+    assertThat(parser)
+        .fromStringOrReader("abcdefg")
+        .parsesTo(List.of("a", "b", "c", "d", "e", "f", "g"));
+  }
+
+  @Test public void regex_withMapFrom7_sixGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class,
+        () -> regex("(a)(b)(c)(d)(e)(f)", (a, b, c, d, e, f, g) -> a));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(a)(b)(c)(d)(e)(f)' has 6 capturing group(s), but 7 expected");
+  }
+
+  @Test public void regex_withMapFrom8_eightGroups_parsesToMappedValue() {
+    Parser<List<String>> parser = regex(
+        "(a)(b)(c)(d)(e)(f)(g)(h)", (a, b, c, d, e, f, g, h) -> List.of(a, b, c, d, e, f, g, h));
+    assertThat(parser)
+        .fromStringOrReader("abcdefgh")
+        .parsesTo(List.of("a", "b", "c", "d", "e", "f", "g", "h"));
+  }
+
+  @Test public void regex_withMapFrom8_sevenGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class,
+        () -> regex("(a)(b)(c)(d)(e)(f)(g)", (a, b, c, d, e, f, g, h) -> a));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo(
+            "regex pattern '(a)(b)(c)(d)(e)(f)(g)' has 7 capturing group(s), but 8 expected");
+  }
+
+  @Test public void regex_withFunction_parseFailure_reportsErrorPosition() {
+    Parser<Integer> parser = regex("id:(\\d+)", (Function<String, Integer>) Integer::parseInt);
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("id:abc"));
+    assertThat(thrown).hasMessageThat().contains("at 1:1: expecting <=~/id:(\\d+)/>");
   }
 }

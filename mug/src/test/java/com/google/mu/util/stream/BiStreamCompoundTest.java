@@ -18,14 +18,12 @@ import static com.google.mu.util.stream.BiStreamTest.assertKeyValues;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 
+import com.google.common.collect.ImmutableMultimap;
 import java.util.Comparator;
 import java.util.function.Function;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import com.google.common.collect.ImmutableMultimap;
 
 @RunWith(JUnit4.class)
 public class BiStreamCompoundTest {
@@ -72,6 +70,22 @@ public class BiStreamCompoundTest {
                 .mapKeys(Function.identity())
                 .sorted(comparing(Object::toString), naturalOrder()))
         .containsExactlyEntriesIn(ImmutableMultimap.of("a", 11, "a", 22, "b", 10))
+        .inOrder();
+  }
+
+  @Test public void testMappedValuesAndDistinctBy() {
+    assertKeyValues(
+            BiStream.of("a", 1, "b", 2, "c", 1).mapValues(v -> v * 10).distinctBy((k, v) -> v))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("a", 10, "b", 20))
+        .inOrder();
+  }
+
+  @Test public void testMappedKeysAndDistinctBy() {
+    assertKeyValues(
+            BiStream.of("apple", 1, "apricot", 2, "banana", 3)
+                .mapKeys(s -> s.substring(0, 1))
+                .distinctBy((k, v) -> k))
+        .containsExactlyEntriesIn(ImmutableMultimap.of("a", 1, "b", 3))
         .inOrder();
   }
 }

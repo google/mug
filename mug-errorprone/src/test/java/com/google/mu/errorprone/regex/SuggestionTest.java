@@ -3,6 +3,7 @@ package com.google.mu.errorprone.regex;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import com.google.common.labs.regex.RegexPattern;
 import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion;
 import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion.ParserSuggestion;
 import com.google.mu.errorprone.regex.VulnerableRegexException.Suggestion.RegexSuggestion;
@@ -148,11 +149,11 @@ public final class SuggestionTest {
   }
 
   @Test public void substringSuggestion_singleArgConstructor_returnsReplacement() {
-    SubstringSuggestion suggestion = new SubstringSuggestion("Substring.first(':').split(input)");
-    assertThat(suggestion.replacement()).isEqualTo("Substring.first(':').split(input)");
-    assertThat(suggestion.isStrictlyEquivalent()).isFalse();
+    SubstringSuggestion suggestion = new SubstringSuggestion("Substring.last(':').split(input)");
+    assertThat(suggestion.replacement()).isEqualTo("Substring.last(':').split(input)");
+    assertThat(suggestion.isStrictlyEquivalent()).isTrue();
     assertThat(suggestion.caveats()).isEmpty();
-    assertThat(suggestion.toString()).isEqualTo("Substring.first(':').split(input)");
+    assertThat(suggestion.toString()).isEqualTo("Substring.last(':').split(input)");
   }
 
   @Test public void substringSuggestion_twoArgsConstructor_hasCaveat() {
@@ -191,5 +192,47 @@ public final class SuggestionTest {
   @Test public void substringSuggestion_caveatsListIsUnmodifiable() {
     SubstringSuggestion suggestion = new SubstringSuggestion("Substring.first(':')", "Caveat");
     assertThrows(UnsupportedOperationException.class, () -> suggestion.caveats().add("Another"));
+  }
+
+  @Test public void regexSuggestion_multipleCaveats_varargs() {
+    Suggestion suggestion = new RegexSuggestion("a+", "Caveat 1", "Caveat 2");
+    assertThat(suggestion.replacement()).isEqualTo("a+");
+    assertThat(suggestion.isStrictlyEquivalent()).isFalse();
+    assertThat(suggestion.caveats()).containsExactly("Caveat 1", "Caveat 2").inOrder();
+  }
+
+  @Test public void stringFormatSuggestion_multipleCaveats_varargs() {
+    StringFormatSuggestion suggestion =
+        new StringFormatSuggestion("{left}:{right}", "Caveat 1", "Caveat 2");
+    assertThat(suggestion.caveats()).containsExactly("Caveat 1", "Caveat 2").inOrder();
+  }
+
+  @Test public void parserSuggestion_multipleCaveats_varargs() {
+    ParserSuggestion suggestion = new ParserSuggestion("Parsers.integer()", "Caveat 1", "Caveat 2");
+    assertThat(suggestion.caveats()).containsExactly("Caveat 1", "Caveat 2").inOrder();
+  }
+
+  @Test public void substringSuggestion_multipleCaveats_varargs() {
+    SubstringSuggestion suggestion =
+        new SubstringSuggestion("Substring.first(':')", "Caveat 1", "Caveat 2");
+    assertThat(suggestion.caveats()).containsExactly("Caveat 1", "Caveat 2").inOrder();
+  }
+
+  @Test public void preservesCaptureGroups_matchingNamedAndNumbered_returnsTrue() {
+    RegexPattern original = RegexPattern.of("(?<foo>a+)(\\d+)");
+    RegexPattern rewritten = RegexPattern.of("(?<foo>a*)(\\d*)");
+    assertThat(SuggestionSynthesizer.preservesCaptureGroups(original, rewritten)).isTrue();
+  }
+
+  @Test public void preservesCaptureGroups_differentNamedGroupNames_returnsFalse() {
+    RegexPattern original = RegexPattern.of("(?<foo>a+)");
+    RegexPattern rewritten = RegexPattern.of("(?<bar>a+)");
+    assertThat(SuggestionSynthesizer.preservesCaptureGroups(original, rewritten)).isFalse();
+  }
+
+  @Test public void preservesCaptureGroups_differentCapturingGroupCount_returnsFalse() {
+    RegexPattern original = RegexPattern.of("(a+)(b+)");
+    RegexPattern rewritten = RegexPattern.of("(a+)b+");
+    assertThat(SuggestionSynthesizer.preservesCaptureGroups(original, rewritten)).isFalse();
   }
 }

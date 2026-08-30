@@ -17,6 +17,9 @@ package com.google.mu.util.stream;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.truth.MultimapSubject;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -26,14 +29,9 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.truth.MultimapSubject;
 
 /**
  * Tests to ensure {@link BiStream#from(Stream, Function, Function)} maintains the invariant that
@@ -97,6 +95,33 @@ public final class BiStreamFunctionEvaluationTest {
         .inOrder();
     assertThat(evaluatedKeys).containsExactly(1, 2, 3).inOrder();
     assertThat(evaluatedValues).containsExactly(1, 2, 3).inOrder();
+  }
+
+  @Test public void testDistinctBy_bothFunctionsCalledOnce() {
+    assertKeyValues(
+            biStream(Stream.of(1, 2, 3), Object::toString, i -> i * 10).distinctBy((k, v) -> k))
+        .containsExactly("1", 10, "2", 20, "3", 30)
+        .inOrder();
+    assertThat(evaluatedKeys).containsExactly(1, 2, 3).inOrder();
+    assertThat(evaluatedValues).containsExactly(1, 2, 3).inOrder();
+  }
+
+  @Test public void testDistinctBy_classifierReturningNull_bothFunctionsCalledOnce() {
+    assertKeyValues(
+            biStream(Stream.of(1, 2, 3), Object::toString, i -> i * 10).distinctBy((k, v) -> null))
+        .containsExactly("1", 10);
+    assertThat(evaluatedKeys).containsExactly(1, 2, 3).inOrder();
+    assertThat(evaluatedValues).containsExactly(1, 2, 3).inOrder();
+  }
+
+  @Test public void testDistinctBy_shortCircuits_whenDownstreamStops() {
+    assertKeyValues(
+            biStream(Stream.of(1, 2, 3), Object::toString, i -> i * 10)
+                .distinctBy((k, v) -> k)
+                .limit(1))
+        .containsExactly("1", 10);
+    assertThat(evaluatedKeys).containsExactly(1);
+    assertThat(evaluatedValues).containsExactly(1);
   }
 
   @Test public void testSortedByKeys_bothFunctionsCalledOnce() {
@@ -366,10 +391,11 @@ public final class BiStreamFunctionEvaluationTest {
     };
   }
 
-  private static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
+  private static <K, V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
     Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K, V>>() {
-      @Override public <E> Collector<E, ?, Multimap<K, V>> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
-        return BiStreamFunctionEvaluationTest.toLinkedListMultimap(toKey,toValue);
+      @Override public <E> Collector<E, ?, Multimap<K, V>> collectorOf(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return BiStreamFunctionEvaluationTest.toLinkedListMultimap(toKey, toValue);
       }
     });
     return assertThat(multimap);

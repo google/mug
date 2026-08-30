@@ -2,9 +2,9 @@ package com.google.mu.errorprone.regex;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.List;
-
 import com.google.common.labs.regex.RegexPattern;
+import com.google.mu.annotations.ParametersMustMatchByName;
+import java.util.List;
 
 /**
  * Exception thrown when a regular expression is vulnerable to backtracking (ReDoS or PDA).
@@ -79,12 +79,9 @@ public class VulnerableRegexException extends IllegalArgumentException {
         caveats = List.copyOf(caveats);
       }
 
-      public RegexSuggestion(String replacement) {
-        this(replacement, true, List.of());
-      }
-
-      public RegexSuggestion(String replacement, String caveat) {
-        this(replacement, false, List.of(requireNonNull(caveat, "caveat")));
+      @ParametersMustMatchByName
+      public RegexSuggestion(String replacement, String... caveats) {
+        this(replacement, caveats.length == 0, List.of(caveats));
       }
 
       @Override public String toString() {
@@ -100,12 +97,9 @@ public class VulnerableRegexException extends IllegalArgumentException {
         caveats = List.copyOf(caveats);
       }
 
-      public StringFormatSuggestion(String format, String caveat) {
-        this(format, false, List.of(requireNonNull(caveat, "caveat")));
-      }
-
-      public StringFormatSuggestion(String format) {
-        this(format, false, List.of());
+      @ParametersMustMatchByName
+      public StringFormatSuggestion(String format, String... caveats) {
+        this(format, false, List.of(caveats));
       }
 
       @Override public String replacement() {
@@ -125,12 +119,9 @@ public class VulnerableRegexException extends IllegalArgumentException {
         caveats = List.copyOf(caveats);
       }
 
-      public ParserSuggestion(String replacement, String caveat) {
-        this(replacement, false, List.of(requireNonNull(caveat, "caveat")));
-      }
-
-      public ParserSuggestion(String replacement) {
-        this(replacement, false, List.of());
+      @ParametersMustMatchByName
+      public ParserSuggestion(String replacement, String... caveats) {
+        this(replacement, false, List.of(caveats));
       }
 
       @Override public String toString() {
@@ -147,12 +138,9 @@ public class VulnerableRegexException extends IllegalArgumentException {
         caveats = List.copyOf(caveats);
       }
 
-      public SubstringSuggestion(String replacement, String caveat) {
-        this(replacement, false, List.of(requireNonNull(caveat, "caveat")));
-      }
-
-      public SubstringSuggestion(String replacement) {
-        this(replacement, false, List.of());
+      @ParametersMustMatchByName
+      public SubstringSuggestion(String replacement, String... caveats) {
+        this(replacement, caveats.length == 0, List.of(caveats));
       }
 
       @Override public String toString() {
