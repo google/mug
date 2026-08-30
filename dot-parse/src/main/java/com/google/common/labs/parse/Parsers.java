@@ -407,6 +407,10 @@ public final class Parsers {
    * <p>The {@code pattern} string is validated at compile-time by the {@code mug-errorprone}
    * (v10.9+) compiler plugin.
    *
+   * <p>If you need to extract values from capturing groups in the matched regex, use {@link
+   * #regex(String, Function)} or other group-mapping overloads (such as {@link #regex(String,
+   * BiFunction)}) instead.
+   *
    * <p>NOTE that this method internally compiles the {@code pattern} so you should almost always
    * pre-create and reuse the returned {@code Parser} object instead of calling {@code
    * regex(pattern)} in the inner loop or on-the-fly.
@@ -422,10 +426,17 @@ public final class Parsers {
    * Returns a leaf-level parser that matches the given {@code pattern} and transforms the captured
    * group value using {@code mapper}.
    *
+   * <p>For example, to extract the area code from a phone number:
+   *
+   * <pre>{@code
+   * Parser<Integer> areaCode = regex("\\((\\d{3})\\) \\d{3}-\\d{4}", Integer::parseInt);
+   * }</pre>
+   *
    * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
    * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
    * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
-   * "((foo)(bar))"}).
+   * "((foo)(bar))"}). Alternatively, calling {@link Parser#source() .source()} on the returned
+   * parser returns the full matched substring.
    *
    * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
@@ -445,10 +456,19 @@ public final class Parsers {
    * Returns a leaf-level parser that matches the given {@code pattern} and transforms the 2
    * captured group values using {@code mapper}.
    *
+   * <p>For example, to extract the area code and optional extension from a phone number:
+   *
+   * <pre>{@code
+   * Parser<PhoneNumber> phoneNumber = regex(
+   *     "\\((\\d{3})\\) \\d{3}-\\d{4}(?: x(\\d+))?",
+   *     (areaCode, extension) -> new PhoneNumber(areaCode, extension));
+   * }</pre>
+   *
    * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
    * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
    * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
-   * "((foo)(bar))"}).
+   * "((foo)(bar))"}). Alternatively, calling {@link Parser#source() .source()} on the returned
+   * parser returns the full matched substring.
    *
    * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
@@ -475,7 +495,8 @@ public final class Parsers {
    * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
    * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
    * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
-   * "((foo)(bar))"}).
+   * "((foo)(bar))"}). Alternatively, calling {@link Parser#source() .source()} on the returned
+   * parser returns the full matched substring.
    *
    * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
@@ -501,7 +522,8 @@ public final class Parsers {
    * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
    * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
    * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
-   * "((foo)(bar))"}).
+   * "((foo)(bar))"}). Alternatively, calling {@link Parser#source() .source()} on the returned
+   * parser returns the full matched substring.
    *
    * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
@@ -528,7 +550,8 @@ public final class Parsers {
    * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
    * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
    * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
-   * "((foo)(bar))"}).
+   * "((foo)(bar))"}). Alternatively, calling {@link Parser#source() .source()} on the returned
+   * parser returns the full matched substring.
    *
    * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
@@ -559,7 +582,8 @@ public final class Parsers {
    * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
    * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
    * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
-   * "((foo)(bar))"}).
+   * "((foo)(bar))"}). Alternatively, calling {@link Parser#source() .source()} on the returned
+   * parser returns the full matched substring.
    *
    * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
@@ -591,7 +615,8 @@ public final class Parsers {
    * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
    * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
    * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
-   * "((foo)(bar))"}).
+   * "((foo)(bar))"}). Alternatively, calling {@link Parser#source() .source()} on the returned
+   * parser returns the full matched substring.
    *
    * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
@@ -624,7 +649,8 @@ public final class Parsers {
    * <p>Capturing groups start from group 1; group 0 (the top-level full match) is not passed to the
    * {@code mapper}. If you only need the top-level match, use {@link #regex(String)}; if you need
    * both the entire match and nested groups, wrap the entire pattern in parentheses (e.g. {@code
-   * "((foo)(bar))"}).
+   * "((foo)(bar))"}). Alternatively, calling {@link Parser#source() .source()} on the returned
+   * parser returns the full matched substring.
    *
    * <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
    * groups (such as {@code (?:-(\d+))?}) and alternations (such as {@code (\d+)|([a-z]+)}) will
@@ -659,11 +685,7 @@ public final class Parsers {
         groupCount == expectedGroups,
         "regex pattern '%s' has %s capturing group(s), but %s expected",
         jdkPattern.pattern(), groupCount, expectedGroups);
-    return regex(
-        Regexes.strict(pattern),
-        jdkPattern,
-        "=~/" + pattern + "/",
-        mapper);
+    return regex(Regexes.strict(pattern), jdkPattern, "=~/" + pattern + "/", mapper);
   }
 
   private static <T> Parser<T> regex(

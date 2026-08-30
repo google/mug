@@ -1329,6 +1329,11 @@ public class ParsersTest {
     assertThat(parser).fromString("abc").parsesTo("ABC");
   }
 
+  @Test public void regex_withFunction_source_returnsEntireMatchedSubstring() {
+    Parser<String> parser = regex("id:(\\d+)", s -> Integer.parseInt(s)).source();
+    assertThat(parser).fromString("id:123").parsesTo("id:123");
+  }
+
   @Test public void regex_withFunction_nonCapturingGroup_ignoredInCardinalityAndMapping() {
     Parser<Integer> parser = regex("(?:prefix:)(\\d+)", s -> Integer.parseInt(s));
     assertThat(parser).fromString("prefix:123").parsesTo(123);
