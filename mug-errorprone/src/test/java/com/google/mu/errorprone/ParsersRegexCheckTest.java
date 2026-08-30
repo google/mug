@@ -268,6 +268,66 @@ public final class ParsersRegexCheckTest {
         .doTest();
   }
 
+  @Test public void withFunction_anchor_failsCompilation() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER = Parsers.regex(",
+            "      // BUG: Diagnostic contains: anchors are not allowed in regex parser: ^",
+            "      \"^(\\\\d+)\",",
+            "      s -> s);",
+            "}")
+        .doTest();
+  }
+
+  @Test public void withFunction_lookaround_failsCompilation() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER = Parsers.regex(",
+            "      // BUG: Diagnostic contains: lookarounds are not allowed in regex parser",
+            "      \"(?=\\\\d)(\\\\w+)\",",
+            "      s -> s);",
+            "}")
+        .doTest();
+  }
+
+  @Test public void withFunction_backreference_failsCompilation() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER = Parsers.regex(",
+            "      // BUG: Diagnostic contains: backreferences are not allowed in regex parser",
+            "      \"(\\\\w+)-\\\\1\",",
+            "      s -> s);",
+            "}")
+        .doTest();
+  }
+
+  @Test public void withFunction_matchesEmpty_failsCompilation() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER = Parsers.regex(",
+            "      // BUG: Diagnostic contains: regex must not match empty string",
+            "      \"(\\\\d*)\",",
+            "      s -> s);",
+            "}")
+        .doTest();
+  }
+
   @Test public void properUsage_withNonCapturingGroup() {
     helper
         .addSourceLines(
