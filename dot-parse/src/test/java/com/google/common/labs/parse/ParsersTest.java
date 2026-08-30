@@ -17,7 +17,10 @@ import com.google.common.collect.Range;
 import com.google.common.labs.parse.Parser.ParseException;
 import java.io.StringReader;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1304,5 +1307,213 @@ public class ParsersTest {
                 000000412
                         ^
             """);
+  }
+
+  @Test public void regex_withFunction_oneGroup_parsesToMappedValue() {
+    Parser<Integer> parser = regex("id:(\\d+)", s -> Integer.parseInt(s));
+    assertThat(parser).fromString("id:123").parsesTo(123);
+  }
+
+  @Test public void regex_withFunction_oneGroup_boundedOnReader() {
+    Parser<Integer> parser = regex("id:(\\d{3})", s -> Integer.parseInt(s));
+    assertThat(parser).fromStringOrReader("id:123").parsesTo(123);
+  }
+
+  @Test public void regex_withFunction_oneGroup_mismatch_failsToParse() {
+    Parser<Integer> parser = regex("id:(\\d+)", s -> Integer.parseInt(s));
+    assertThat(parser).fromString("id:abc").failsToParse();
+  }
+
+  @Test public void regex_withFunction_oneGroup_enclosingEntirePattern() {
+    Parser<String> parser = regex("([a-z]+)", s -> s.toUpperCase(Locale.ROOT));
+    assertThat(parser).fromString("abc").parsesTo("ABC");
+  }
+
+  @Test public void regex_withFunction_nonCapturingGroup_ignoredInCardinalityAndMapping() {
+    Parser<Integer> parser = regex("(?:prefix:)(\\d+)", s -> Integer.parseInt(s));
+    assertThat(parser).fromString("prefix:123").parsesTo(123);
+  }
+
+  @Test public void regex_withFunction_onlyNonCapturingGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(IllegalArgumentException.class, () -> regex("(?:abc)(?:def)", s -> s));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(?:abc)(?:def)' has 0 capturing group(s), but 1 expected");
+  }
+
+  @Test public void regex_withFunction_zeroGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class, () -> regex("[a-z]+", s -> s.toUpperCase(Locale.ROOT)));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '[a-z]+' has 0 capturing group(s), but 1 expected");
+  }
+
+  @Test public void regex_withFunction_twoGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class,
+        () -> regex("(\\w+)=(\\d+)", s -> s.toUpperCase(Locale.ROOT)));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(\\w+)=(\\d+)' has 2 capturing group(s), but 1 expected");
+  }
+
+  @Test public void regex_withFunction_nullMapper_throwsNullPointerException() {
+    assertThrows(
+        NullPointerException.class, () -> regex("(\\d+)", (Function<String, Integer>) null));
+  }
+
+  @Test public void regex_withBiFunction_twoGroups_parsesToMappedValue() {
+    Parser<List<String>> parser = regex("(\\w+)=(\\d+)", (k, v) -> List.of(k, v));
+    assertThat(parser).fromString("k=123").parsesTo(List.of("k", "123"));
+  }
+
+  @Test public void regex_withBiFunction_twoGroups_boundedOnReader() {
+    Parser<List<String>> parser = regex("(\\w{1,3})=(\\d{1,3})", (k, v) -> List.of(k, v));
+    assertThat(parser).fromStringOrReader("k=123").parsesTo(List.of("k", "123"));
+  }
+
+  @Test public void
+      regex_withBiFunction_multipleNonCapturingGroups_ignoredInCardinalityAndMapping() {
+    Parser<List<String>> parser =
+        regex("(?:foo|bar)-(\\w+)-(?:baz)-(\\d+)", (w, d) -> List.of(w, d));
+    assertThat(parser).fromString("foo-item-baz-42").parsesTo(List.of("item", "42"));
+  }
+
+  @Test public void regex_withBiFunction_oneGroup_throwsIllegalArgumentException() {
+    var ex = assertThrows(IllegalArgumentException.class, () -> regex("(\\d+)", (a, b) -> a + b));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(\\d+)' has 1 capturing group(s), but 2 expected");
+  }
+
+  @Test public void regex_withBiFunction_threeGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class, () -> regex("(\\d+)-(\\d+)-(\\d+)", (a, b) -> a + b));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(\\d+)-(\\d+)-(\\d+)' has 3 capturing group(s), but 2 expected");
+  }
+
+  @Test public void regex_withBiFunction_optionalGroup_unmatchedEvaluatesToNull() {
+    Parser<List<String>> parser = regex("([a-z]+)(?:-(\\d+))?", (a, b) -> Arrays.asList(a, b));
+    assertThat(parser).fromString("foo").parsesTo(Arrays.asList("foo", null));
+  }
+
+  @Test public void regex_withBiFunction_optionalGroup_matchedEvaluatesToValue() {
+    Parser<List<String>> parser = regex("([a-z]+)(?:-(\\d+))?", (a, b) -> Arrays.asList(a, b));
+    assertThat(parser).fromString("foo-123").parsesTo(List.of("foo", "123"));
+  }
+
+  @Test public void regex_withBiFunction_alternationGroups_firstBranchMatched() {
+    Parser<List<String>> parser = regex("(\\d+)|([a-z]+)", (a, b) -> Arrays.asList(a, b));
+    assertThat(parser).fromString("123").parsesTo(Arrays.asList("123", null));
+  }
+
+  @Test public void regex_withBiFunction_alternationGroups_secondBranchMatched() {
+    Parser<List<String>> parser = regex("(\\d+)|([a-z]+)", (a, b) -> Arrays.asList(a, b));
+    assertThat(parser).fromString("abc").parsesTo(Arrays.asList(null, "abc"));
+  }
+
+  @Test public void regex_withMapFrom3_threeGroups_parsesToMappedValue() {
+    Parser<List<String>> parser =
+        regex("(\\d{4})-(\\d{2})-(\\d{2})", (y, m, d) -> List.of(y, m, d));
+    assertThat(parser).fromStringOrReader("2026-08-30").parsesTo(List.of("2026", "08", "30"));
+  }
+
+  @Test public void regex_withMapFrom3_nestedGroups_orderedByOpeningParenthesis() {
+    Parser<List<String>> parser = regex("((a)(b))", (g1, g2, g3) -> List.of(g1, g2, g3));
+    assertThat(parser).fromStringOrReader("ab").parsesTo(List.of("ab", "a", "b"));
+  }
+
+  @Test public void regex_withMapFrom3_twoGroups_throwsIllegalArgumentException() {
+    var ex =
+        assertThrows(IllegalArgumentException.class, () -> regex("(\\d+)-(\\d+)", (a, b, c) -> a));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(\\d+)-(\\d+)' has 2 capturing group(s), but 3 expected");
+  }
+
+  @Test public void regex_withMapFrom4_fourGroups_parsesToMappedValue() {
+    Parser<List<String>> parser =
+        regex("(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)", (a, b, c, d) -> List.of(a, b, c, d));
+    assertThat(parser).fromString("127.0.0.1").parsesTo(List.of("127", "0", "0", "1"));
+  }
+
+  @Test public void regex_withMapFrom4_threeGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class, () -> regex("(\\d+)-(\\d+)-(\\d+)", (a, b, c, d) -> a));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(\\d+)-(\\d+)-(\\d+)' has 3 capturing group(s), but 4 expected");
+  }
+
+  @Test public void regex_withMapFrom5_fiveGroups_parsesToMappedValue() {
+    Parser<List<String>> parser =
+        regex("(a)(b)(c)(d)(e)", (a, b, c, d, e) -> List.of(a, b, c, d, e));
+    assertThat(parser).fromStringOrReader("abcde").parsesTo(List.of("a", "b", "c", "d", "e"));
+  }
+
+  @Test public void regex_withMapFrom5_fourGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class, () -> regex("(a)(b)(c)(d)", (a, b, c, d, e) -> a));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(a)(b)(c)(d)' has 4 capturing group(s), but 5 expected");
+  }
+
+  @Test public void regex_withMapFrom6_sixGroups_parsesToMappedValue() {
+    Parser<List<String>> parser =
+        regex("(a)(b)(c)(d)(e)(f)", (a, b, c, d, e, f) -> List.of(a, b, c, d, e, f));
+    assertThat(parser).fromStringOrReader("abcdef").parsesTo(List.of("a", "b", "c", "d", "e", "f"));
+  }
+
+  @Test public void regex_withMapFrom6_fiveGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class, () -> regex("(a)(b)(c)(d)(e)", (a, b, c, d, e, f) -> a));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(a)(b)(c)(d)(e)' has 5 capturing group(s), but 6 expected");
+  }
+
+  @Test public void regex_withMapFrom7_sevenGroups_parsesToMappedValue() {
+    Parser<List<String>> parser =
+        regex("(a)(b)(c)(d)(e)(f)(g)", (a, b, c, d, e, f, g) -> List.of(a, b, c, d, e, f, g));
+    assertThat(parser)
+        .fromStringOrReader("abcdefg")
+        .parsesTo(List.of("a", "b", "c", "d", "e", "f", "g"));
+  }
+
+  @Test public void regex_withMapFrom7_sixGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class,
+        () -> regex("(a)(b)(c)(d)(e)(f)", (a, b, c, d, e, f, g) -> a));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo("regex pattern '(a)(b)(c)(d)(e)(f)' has 6 capturing group(s), but 7 expected");
+  }
+
+  @Test public void regex_withMapFrom8_eightGroups_parsesToMappedValue() {
+    Parser<List<String>> parser = regex(
+        "(a)(b)(c)(d)(e)(f)(g)(h)", (a, b, c, d, e, f, g, h) -> List.of(a, b, c, d, e, f, g, h));
+    assertThat(parser)
+        .fromStringOrReader("abcdefgh")
+        .parsesTo(List.of("a", "b", "c", "d", "e", "f", "g", "h"));
+  }
+
+  @Test public void regex_withMapFrom8_sevenGroups_throwsIllegalArgumentException() {
+    var ex = assertThrows(
+        IllegalArgumentException.class,
+        () -> regex("(a)(b)(c)(d)(e)(f)(g)", (a, b, c, d, e, f, g, h) -> a));
+    assertThat(ex)
+        .hasMessageThat()
+        .isEqualTo(
+            "regex pattern '(a)(b)(c)(d)(e)(f)(g)' has 7 capturing group(s), but 8 expected");
+  }
+
+  @Test public void regex_withFunction_parseFailure_reportsErrorPosition() {
+    Parser<Integer> parser = regex("id:(\\d+)", (Function<String, Integer>) Integer::parseInt);
+    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("id:abc"));
+    assertThat(thrown).hasMessageThat().contains("at 1:1: expecting <=~/id:(\\d+)/>");
   }
 }

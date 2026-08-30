@@ -38,11 +38,19 @@ abstract class CharInput {
   /** Returns the index of {@code str} starting from {@code fromIndex}, or -1 if not found. */
   abstract int indexOf(String str, int fromIndex);
 
+  /** Returns a {@link Matcher} for the given regex pattern starting from {@code start} index. */
+  abstract Matcher matcher(Pattern pattern, RegexPattern.Metadata metadata, int start);
+
   /**
    * Matches the given regex pattern starting from {@code start} index and returns the ending index
-   * (exclusive). Returns -1 if no match is found.
+   * (exclusive). Returns {@code start} if no match is found.
    */
   abstract int match(Pattern pattern, RegexPattern.Metadata metadata, int start);
+
+  /** Translates the end index of the given {@code matcher} to the logical index in the input. */
+  int matchEnd(Matcher matcher) {
+    return matcher.end();
+  }
 
   final boolean startsWith(CharPredicate predicate, int index) {
     return isInRange(index) && predicate.test(charAt(index));
@@ -85,9 +93,14 @@ abstract class CharInput {
         return text.indexOf(str, fromIndex);
       }
 
-      @Override int match(Pattern pattern, RegexPattern.Metadata metadata, int start) {
+      @Override Matcher matcher(Pattern pattern, RegexPattern.Metadata metadata, int start) {
         Matcher matcher = pattern.matcher(text);
         matcher.region(start, text.length());
+        return matcher;
+      }
+
+      @Override int match(Pattern pattern, RegexPattern.Metadata metadata, int start) {
+        Matcher matcher = matcher(pattern, metadata, start);
         return matcher.lookingAt() ? matcher.end() : start;
       }
 
@@ -164,7 +177,7 @@ abstract class CharInput {
         }
       }
 
-      @Override int match(Pattern pattern, RegexPattern.Metadata metadata, int start) {
+      @Override Matcher matcher(Pattern pattern, RegexPattern.Metadata metadata, int start) {
         long requiredCharCount = (long) start + metadata.maxSize();
         if (requiredCharCount >= Integer.MAX_VALUE) {
           throw new UnsupportedOperationException(
@@ -174,7 +187,16 @@ abstract class CharInput {
         ensureCharCount((int) requiredCharCount);
         Matcher matcher = pattern.matcher(chars);
         matcher.region(toPhysicalIndex(start), chars.length());
+        return matcher;
+      }
+
+      @Override int match(Pattern pattern, RegexPattern.Metadata metadata, int start) {
+        Matcher matcher = matcher(pattern, metadata, start);
         return matcher.lookingAt() ? toLogicalIndex(matcher.end()) : start;
+      }
+
+      @Override int matchEnd(Matcher matcher) {
+        return toLogicalIndex(matcher.end());
       }
 
       @Override boolean startsWith(String prefix, int index) {

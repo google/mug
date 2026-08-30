@@ -25,7 +25,8 @@ public final class ParsersRegexCheckTest {
       CompilationTestHelper.newInstance(ParsersRegexCheck.class, getClass());
 
   @Test public void properUsage() {
-    helper.addSourceLines(
+    helper
+        .addSourceLines(
             "Test.java",
             "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;",
@@ -36,7 +37,8 @@ public final class ParsersRegexCheckTest {
   }
 
   @Test public void notCompileTimeConstant() {
-    helper.addSourceLines(
+    helper
+        .addSourceLines(
             "Test.java",
             "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;",
@@ -51,7 +53,8 @@ public final class ParsersRegexCheckTest {
   }
 
   @Test public void emptyMatchNotAllowed() {
-    helper.addSourceLines(
+    helper
+        .addSourceLines(
             "Test.java",
             "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;",
@@ -64,7 +67,8 @@ public final class ParsersRegexCheckTest {
   }
 
   @Test public void anchorsNotAllowed() {
-    helper.addSourceLines(
+    helper
+        .addSourceLines(
             "Test.java",
             "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;",
@@ -77,7 +81,8 @@ public final class ParsersRegexCheckTest {
   }
 
   @Test public void lookaroundsNotAllowed() {
-    helper.addSourceLines(
+    helper
+        .addSourceLines(
             "Test.java",
             "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;",
@@ -90,7 +95,8 @@ public final class ParsersRegexCheckTest {
   }
 
   @Test public void backreferencesNotAllowed() {
-    helper.addSourceLines(
+    helper
+        .addSourceLines(
             "Test.java",
             "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;",
@@ -103,7 +109,8 @@ public final class ParsersRegexCheckTest {
   }
 
   @Test public void invalidJdkRegexSyntax() {
-    helper.addSourceLines(
+    helper
+        .addSourceLines(
             "Test.java",
             "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;",
@@ -116,7 +123,8 @@ public final class ParsersRegexCheckTest {
   }
 
   @Test public void constantRegex_valid() {
-    helper.addSourceLines(
+    helper
+        .addSourceLines(
             "Test.java",
             "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;",
@@ -128,7 +136,8 @@ public final class ParsersRegexCheckTest {
   }
 
   @Test public void constantRegex_invalid() {
-    helper.addSourceLines(
+    helper
+        .addSourceLines(
             "Test.java",
             "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;",
@@ -142,7 +151,8 @@ public final class ParsersRegexCheckTest {
   }
 
   @Test public void parsersRegex_redosVulnerable_fails() {
-    helper.addSourceLines(
+    helper
+        .addSourceLines(
             "Test.java",
             "import com.google.common.labs.parse.Parsers;",
             "import com.google.common.labs.parse.Parser;",
@@ -150,6 +160,138 @@ public final class ParsersRegexCheckTest {
             "  private static final Parser<String> PARSER = Parsers.regex(",
             "      // BUG: Diagnostic contains: vulnerable to exponential backtracking (ReDoS)",
             "      \"(a+)+\");",
+            "}")
+        .doTest();
+  }
+
+  @Test public void properUsage_withFunction() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<Integer> PARSER = Parsers.regex(\"id:(\\\\d+)\", s ->"
+                + " Integer.parseInt(s));",
+            "}")
+        .doTest();
+  }
+
+  @Test public void properUsage_withBiFunction() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "import java.util.List;",
+            "class Test {",
+            "  private static final Parser<List<String>> PARSER ="
+                + " Parsers.regex(\"(\\\\w+)=(\\\\d+)\", (k, v) -> List.of(k, v));",
+            "}")
+        .doTest();
+  }
+
+  @Test public void cardinalityMismatch_zeroGroups_expectedOne() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER = Parsers.regex(",
+            "      // BUG: Diagnostic contains: has 0 capturing group(s), but 1 expected",
+            "      \"[a-z]+\",",
+            "      s -> s);",
+            "}")
+        .doTest();
+  }
+
+  @Test public void cardinalityMismatch_oneGroup_expectedTwo() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER = Parsers.regex(",
+            "      // BUG: Diagnostic contains: has 1 capturing group(s), but 2 expected",
+            "      \"(\\\\d+)\",",
+            "      (a, b) -> a + b);",
+            "}")
+        .doTest();
+  }
+
+  @Test public void cardinalityMismatch_threeGroups_expectedTwo() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER = Parsers.regex(",
+            "      // BUG: Diagnostic contains: has 3 capturing group(s), but 2 expected",
+            "      \"(\\\\d+)-(\\\\d+)-(\\\\d+)\",",
+            "      (a, b) -> a + b);",
+            "}")
+        .doTest();
+  }
+
+  @Test public void withFunction_notCompileTimeConstant() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private Parser<String> myParser(String pattern) {",
+            "    return Parsers.regex(",
+            "        // BUG: Diagnostic contains: compile-time string constant expected",
+            "        pattern,",
+            "        s -> s);",
+            "  }",
+            "}")
+        .doTest();
+  }
+
+  @Test public void withFunction_redosVulnerable() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER = Parsers.regex(",
+            "      // BUG: Diagnostic contains: vulnerable to exponential backtracking (ReDoS)",
+            "      \"((a+)+)\",",
+            "      s -> s);",
+            "}")
+        .doTest();
+  }
+
+  @Test public void properUsage_withNonCapturingGroup() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<Integer> PARSER =",
+            "      Parsers.regex(\"(?:prefix:)(\\\\d+)\", s -> Integer.parseInt(s));",
+            "}")
+        .doTest();
+  }
+
+  @Test public void cardinalityMismatch_withNonCapturingGroup() {
+    helper
+        .addSourceLines(
+            "Test.java",
+            "import com.google.common.labs.parse.Parsers;",
+            "import com.google.common.labs.parse.Parser;",
+            "class Test {",
+            "  private static final Parser<String> PARSER = Parsers.regex(",
+            "      // BUG: Diagnostic contains: has 1 capturing group(s), but 2 expected",
+            "      \"(?:prefix:)(\\\\d+)\",",
+            "      (a, b) -> a + b);",
             "}")
         .doTest();
   }
