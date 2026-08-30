@@ -493,7 +493,11 @@ loadScripts(document, 'script');</script>
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
- pass <code>null</code> to the <code>mapper</code> if that group was not matched.</div>
+ pass <code>null</code> to the <code>mapper</code> if that group was not matched.
+
+ <p>If named capturing groups (such as <code>"(?&lt;name&gt;...)"</code>) are used, their names are checked
+ at compile time against lambda parameter names (or method reference parameters) with
+ mug-errorprone 11.0+.</div>
 <dl class="notes">
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the regex does not have exactly 1 capturing group or is
@@ -518,7 +522,7 @@ loadScripts(document, 'script');</script>
 
  <pre><code>
  Parser&lt;PhoneNumber&gt; phoneNumber = regex(
-     "\\((\\d{3})\\) \\d{3}-\\d{4}(?: x(\\d+))?",
+     "\\((?&lt;areaCode&gt;\\d{3})\\) \\d{3}-\\d{4}(?: x(?&lt;extension&gt;\\d+))?",
      (areaCode, extension) -&gt; new PhoneNumber(areaCode, extension));
  </code></pre>
 
@@ -530,7 +534,17 @@ loadScripts(document, 'script');</script>
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
- pass <code>null</code> to the <code>mapper</code> if that group was not matched.</div>
+ pass <code>null</code> to the <code>mapper</code> if that group was not matched.
+
+ <p>If named capturing groups (such as <code>"(?&lt;name&gt;...)"</code>) are used, their names are checked
+ at compile time against lambda parameter names (or method reference parameters) with
+ mug-errorprone 11.0+. For example, the following will fail compilation:
+
+ <pre><code>
+ Parser&lt;PhoneNumber&gt; phoneNumber = regex(
+     "\\((?&lt;areaCode&gt;\\d{3})\\) \\d{3}-\\d{4}(?: x(?&lt;extension&gt;\\d+))?",
+     (extension, areaCode) -&gt; ...); // Compile error: parameters out of order
+ </code></pre></div>
 <dl class="notes">
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the regex does not have exactly 2 capturing groups or is
@@ -559,7 +573,11 @@ loadScripts(document, 'script');</script>
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
- pass <code>null</code> to the <code>mapper</code> if that group was not matched.</div>
+ pass <code>null</code> to the <code>mapper</code> if that group was not matched.
+
+ <p>If named capturing groups (such as <code>"(?&lt;name&gt;...)"</code>) are used, their names are checked
+ at compile time against lambda parameter names (or method reference parameters) with
+ mug-errorprone 11.0+.</div>
 <dl class="notes">
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the regex does not have exactly 3 capturing groups or is
@@ -588,7 +606,11 @@ loadScripts(document, 'script');</script>
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
- pass <code>null</code> to the <code>mapper</code> if that group was not matched.</div>
+ pass <code>null</code> to the <code>mapper</code> if that group was not matched.
+
+ <p>If named capturing groups (such as <code>"(?&lt;name&gt;...)"</code>) are used, their names are checked
+ at compile time against lambda parameter names (or method reference parameters) with
+ mug-errorprone 11.0+.</div>
 <dl class="notes">
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the regex does not have exactly 4 capturing groups or is
@@ -617,7 +639,11 @@ loadScripts(document, 'script');</script>
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
- pass <code>null</code> to the <code>mapper</code> if that group was not matched.</div>
+ pass <code>null</code> to the <code>mapper</code> if that group was not matched.
+
+ <p>If named capturing groups (such as <code>"(?&lt;name&gt;...)"</code>) are used, their names are checked
+ at compile time against lambda parameter names (or method reference parameters) with
+ mug-errorprone 11.0+.</div>
 <dl class="notes">
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the regex does not have exactly 5 capturing groups or is
@@ -646,7 +672,11 @@ loadScripts(document, 'script');</script>
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
- pass <code>null</code> to the <code>mapper</code> if that group was not matched.</div>
+ pass <code>null</code> to the <code>mapper</code> if that group was not matched.
+
+ <p>If named capturing groups (such as <code>"(?&lt;name&gt;...)"</code>) are used, their names are checked
+ at compile time against lambda parameter names (or method reference parameters) with
+ mug-errorprone 11.0+.</div>
 <dl class="notes">
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the regex does not have exactly 6 capturing groups or is
@@ -675,7 +705,11 @@ loadScripts(document, 'script');</script>
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
- pass <code>null</code> to the <code>mapper</code> if that group was not matched.</div>
+ pass <code>null</code> to the <code>mapper</code> if that group was not matched.
+
+ <p>If named capturing groups (such as <code>"(?&lt;name&gt;...)"</code>) are used, their names are checked
+ at compile time against lambda parameter names (or method reference parameters) with
+ mug-errorprone 11.0+.</div>
 <dl class="notes">
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the regex does not have exactly 7 capturing groups or is
@@ -704,7 +738,11 @@ loadScripts(document, 'script');</script>
 
  <p>Nested capturing groups are fully supported (ordered by opening parenthesis). Optional
  groups (such as <code>(?:-(\d+))?</code>) and alternations (such as <code>(\d+)|([a-z]+)</code>) will
- pass <code>null</code> to the <code>mapper</code> if that group was not matched.</div>
+ pass <code>null</code> to the <code>mapper</code> if that group was not matched.
+
+ <p>If named capturing groups (such as <code>"(?&lt;name&gt;...)"</code>) are used, their names are checked
+ at compile time against lambda parameter names (or method reference parameters) with
+ mug-errorprone 11.0+.</div>
 <dl class="notes">
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the regex does not have exactly 8 capturing groups or is
