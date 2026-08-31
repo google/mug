@@ -198,10 +198,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   private static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
     requireNonNull(matcher);
+    Skipper skipper = Skipper.from(matcher);
     return new Scanner(name) {
       @Override int scan(CharInput input, int index) {
-        while (input.startsWith(matcher, index)) index++;
-        return index;
+        return skipper.skip(input, index);
       }
 
       @Override public Parser<Void> as(String logicalName) {
@@ -1820,10 +1820,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final Lexical skipping(CharPredicate charsToSkip) {
     requireNonNull(charsToSkip);
-    return new Lexical((input, index) -> {
-      while (input.startsWith(charsToSkip, index)) index++;
-      return index;
-    });
+    return new Lexical(Skipper.from(charsToSkip));
   }
 
   /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
@@ -2658,10 +2655,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       case Parser<T> parser -> parser;
       case Parser<T>.OrEmpty orEmpty -> orEmpty.unsafeZeroWidthParser;
     };
-  }
-
-  interface Skipper {
-    int skip(CharInput input, int index);
   }
 
   /** A derived parser, with {@code this} being the left-most rule. */

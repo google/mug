@@ -8964,4 +8964,31 @@ public class ParserTest {
     assertThat(thrown).hasMessageThat().contains("1:1");
     assertThat(thrown).hasMessageThat().contains("expecting <year>");
   }
+
+  @Test public void consecutive_longRun_fromString() {
+    String longDigits = "1234567890".repeat(50);
+    assertThat(consecutive("[0-9]").parse(longDigits)).isEqualTo(longDigits);
+  }
+
+  @Test public void consecutive_longRun_fromReader() {
+    String longDigits = "1234567890".repeat(50);
+    assertThat(consecutive("[0-9]").parseToStream(new StringReader(longDigits)))
+        .containsExactly(longDigits);
+  }
+
+  @Test public void consecutive_longRun_stopsAtNonMatch() {
+    String longDigits = "1234567890".repeat(50);
+    assertThat(consecutive("[0-9]").followedBy("abc").parse(longDigits + "abc")).isEqualTo(longDigits);
+  }
+
+  @Test public void skipping_longRun_fromString() {
+    String whitespace = "    \t\n  \r\n  ".repeat(20);
+    assertThat(string("target").skipping(whitespace()).parse(whitespace + "target")).isEqualTo("target");
+  }
+
+  @Test public void skipping_longRun_fromReader() {
+    String whitespace = "    \t\n  \r\n  ".repeat(20);
+    assertThat(string("target").skipping(whitespace()).parseToStream(new StringReader(whitespace + "target")))
+        .containsExactly("target");
+  }
 }

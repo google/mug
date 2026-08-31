@@ -67,6 +67,8 @@ public final class Parsers {
    *     (sign, num) -> sign * num);
    * }</pre>
    */
+  private static final Skipper DECIMAL_SKIPPER = Skipper.from(CharacterSet.DECIMAL);
+
   public static final Parser<String> UNSIGNED_INTEGER =
       new Scanner("integer") {
         @Override int scan(CharInput input, final int from) {
@@ -74,8 +76,7 @@ public final class Parsers {
           char c = input.charAt(from);
           int index = from + 1;
           if (c >= '1' && c <= '9') {
-            while (input.startsWith(CharacterSet.DECIMAL, index)) index++;
-            return index;
+            return DECIMAL_SKIPPER.skip(input, index);
           }
           if (c == '0') {
             return input.startsWith(CharacterSet.DECIMAL, index) ? from : index;

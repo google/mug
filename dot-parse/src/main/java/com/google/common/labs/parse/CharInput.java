@@ -76,6 +76,17 @@ abstract class CharInput {
   void markCheckpoint(int checkpointIndex) {}
 
   /**
+   * Skips consecutive characters starting from {@code fromIndex} matching the 128-bit ASCII masks
+   * {@code low64} and {@code high64} and returns the ending index (first non-matching index or
+   * EOF).
+   */
+  abstract int skipWhile(long low64, long high64, CharPredicate fallback, int fromIndex);
+
+  final int skipWhile(Skipper skipper, int fromIndex) {
+    return skipper.skip(this, fromIndex);
+  }
+
+  /**
    * Returns the source position of the character at {@code at}. It's assumed that the index {@code
    * at} has been read.
    */
@@ -111,6 +122,10 @@ abstract class CharInput {
       @Override boolean startsWithCaseInsensitive(String prefix, int index) {
         // shorter.regionMatches(..., longer, ...) appears to be faster, according to benchmark.
         return prefix.regionMatches(/* ignoreCase= */ true, 0, text, index, prefix.length());
+      }
+
+      @Override int skipWhile(long low64, long high64, CharPredicate fallback, int fromIndex) {
+        return scanWhile(text, low64, high64, fallback, fromIndex, text.length());
       }
 
       @Override boolean isEof(int index) {
@@ -229,6 +244,28 @@ abstract class CharInput {
         return true;
       }
 
+      @Override int skipWhile(long low64, long high64, CharPredicate fallback, int fromIndex) {
+        checkArgument(fromIndex >= garbageCharCount, "fromIndex < %s", garbageCharCount);
+        for (int i = fromIndex; ; ) {
+          ensureCharCount(i + 4);
+          int p = toPhysicalIndex(i);
+          int limit = chars.length();
+          if (p >= limit) {
+            return i;
+          }
+          int matched = scanWhile(chars, low64, high64, fallback, p, limit);
+          i = toLogicalIndex(matched);
+          if (matched < limit) {
+            return i;
+          }
+          int prevLen = chars.length();
+          ensureCharCount(i + 1);
+          if (chars.length() == prevLen) {
+            return i;
+          }
+        }
+      }
+
       @Override boolean isEof(int index) {
         ensureCharCount(index + 1);
         return toPhysicalIndex(index) >= chars.length();
@@ -281,5 +318,40 @@ abstract class CharInput {
         }
       }
     };
+  }
+
+  private static int scanWhile(
+      CharSequence cs, long low64, long high64, CharPredicate fallback, int fromIndex,
+      int toIndex) {
+    int i = fromIndex;
+    while (i + 4 <= toIndex) {
+      char c0 = cs.charAt(i);
+      char c1 = cs.charAt(i + 1);
+      char c2 = cs.charAt(i + 2);
+      char c3 = cs.charAt(i + 3);
+      if (((c0 | c1 | c2 | c3) & ~0x7F) == 0) {
+        long m0 = (c0 < 64) ? (low64 >>> c0) : (high64 >>> (c0 - 64));
+        long m1 = (c1 < 64) ? (low64 >>> c1) : (high64 >>> (c1 - 64));
+        long m2 = (c2 < 64) ? (low64 >>> c2) : (high64 >>> (c2 - 64));
+        long m3 = (c3 < 64) ? (low64 >>> c3) : (high64 >>> (c3 - 64));
+        if (((m0 & m1 & m2 & m3) & 1L) != 0) {
+          i += 4;
+          continue;
+        }
+        if ((m0 & 1L) == 0) return i;
+        if ((m1 & 1L) == 0) return i + 1;
+        if ((m2 & 1L) == 0) return i + 2;
+        return i + 3;
+      }
+      if (!fallback.test(c0)) return i;
+      if (!fallback.test(c1)) return i + 1;
+      if (!fallback.test(c2)) return i + 2;
+      if (!fallback.test(c3)) return i + 3;
+      i += 4;
+    }
+    while (i < toIndex && fallback.test(cs.charAt(i))) {
+      i++;
+    }
+    return i;
   }
 }
