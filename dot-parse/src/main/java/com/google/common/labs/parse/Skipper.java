@@ -14,6 +14,25 @@ interface Skipper {
    */
   int skip(CharInput input, int start);
 
+  static Skipper precomputed(CharPredicate predicate, long low64, long high64) {
+    return (input, start) -> input.skipWhile(low64, high64, predicate, start);
+  }
+
+  /**
+   * Returns a {@link Skipper} for {@code predicate} used in character skipping (e.g. whitespace),
+   * pre-computing only the low 64 ASCII bits to minimize per-parse setup overhead.
+   */
+  static Skipper forLower64Ascii(CharPredicate predicate) {
+    requireNonNull(predicate);
+    long low = 0L;
+    for (int i = 0; i < 64; i++) {
+      if (predicate.test((char) i)) {
+        low |= (1L << i);
+      }
+    }
+    return precomputed(predicate, low, 0);
+  }
+
   /**
    * Returns a {@link Skipper} for {@code predicate}, pre-computing ASCII bitmasks to optimize
    * scanning.
@@ -30,8 +49,6 @@ interface Skipper {
         high |= (1L << i);
       }
     }
-    long low64 = low;
-    long high64 = high;
-    return (input, start) -> input.skipWhile(low64, high64, predicate, start);
+    return precomputed(predicate, low, high);
   }
 }

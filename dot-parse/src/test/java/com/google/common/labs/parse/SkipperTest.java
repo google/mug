@@ -307,4 +307,26 @@ public class SkipperTest {
     input.markCheckpoint(4); // Compact "xxxx"
     assertThat(Skipper.from(HIGH_64).skip(input, 4)).isEqualTo(10);
   }
+
+  // --- forLower64Ascii Specific Tests ---
+
+  @Test public void forLower64Ascii_nullPredicate_throws() {
+    assertThrows(NullPointerException.class, () -> Skipper.forLower64Ascii(null));
+  }
+
+  @Test public void forLower64Ascii_low64_matches() {
+    CharInput input = CharInput.from("01234567abc");
+    assertThat(Skipper.forLower64Ascii(LOW_64).skip(input, 0)).isEqualTo(8);
+  }
+
+  @Test public void forLower64Ascii_high64_matchesViaFallback() {
+    CharInput input = CharInput.from("abcdefgh123");
+    assertThat(Skipper.forLower64Ascii(HIGH_64).skip(input, 0)).isEqualTo(8);
+  }
+
+  @Test public void forLower64Ascii_mixed_matches() {
+    CharInput input = CharInput.from("01ab01ab!@#");
+    assertThat(Skipper.forLower64Ascii(range('0', '9').or(range('a', 'z'))).skip(input, 0))
+        .isEqualTo(8);
+  }
 }

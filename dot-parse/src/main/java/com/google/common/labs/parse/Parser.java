@@ -193,19 +193,17 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Matches one or more consecutive characters as specified by {@code matcher}. */
   public static Parser<String> consecutive(CharPredicate matcher, String name) {
-    return skipConsecutive(matcher, name).source();
+    return skipConsecutive(matcher, Skipper.from(matcher), name).source();
   }
 
-  private static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
-    requireNonNull(matcher);
-    Skipper skipper = Skipper.from(matcher);
+  private static Parser<Void> skipConsecutive(CharPredicate matcher, Skipper skipper, String name) {
     return new Scanner(name) {
       @Override int scan(CharInput input, int index) {
         return skipper.skip(input, index);
       }
 
       @Override public Parser<Void> as(String logicalName) {
-        return skipConsecutive(matcher, logicalName);
+        return skipConsecutive(matcher, skipper, logicalName);
       }
 
       @Override Set<String> computePrefixes() {
@@ -1820,7 +1818,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final Lexical skipping(CharPredicate charsToSkip) {
     requireNonNull(charsToSkip);
-    return new Lexical(Skipper.from(charsToSkip));
+    return new Lexical(Skipper.forLower64Ascii(charsToSkip));
   }
 
   /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */

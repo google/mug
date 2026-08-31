@@ -324,16 +324,29 @@ abstract class CharInput {
       CharSequence cs, long low64, long high64, CharPredicate fallback, int fromIndex,
       int toIndex) {
     int i = fromIndex;
-    while (i + 4 <= toIndex) {
+    int limit = toIndex - 4;
+    int asciiMask = (high64 == 0L) ? ~0x3F : ~0x7F;
+    while (i <= limit) {
       char c0 = cs.charAt(i);
       char c1 = cs.charAt(i + 1);
       char c2 = cs.charAt(i + 2);
       char c3 = cs.charAt(i + 3);
-      if (((c0 | c1 | c2 | c3) & ~0x7F) == 0) {
-        long m0 = (c0 < 64) ? (low64 >>> c0) : (high64 >>> (c0 - 64));
-        long m1 = (c1 < 64) ? (low64 >>> c1) : (high64 >>> (c1 - 64));
-        long m2 = (c2 < 64) ? (low64 >>> c2) : (high64 >>> (c2 - 64));
-        long m3 = (c3 < 64) ? (low64 >>> c3) : (high64 >>> (c3 - 64));
+      if (((c0 | c1 | c2 | c3) & asciiMask) == 0) {
+        long m0;
+        long m1;
+        long m2;
+        long m3;
+        if (high64 == 0L) {
+          m0 = low64 >>> c0;
+          m1 = low64 >>> c1;
+          m2 = low64 >>> c2;
+          m3 = low64 >>> c3;
+        } else {
+          m0 = (c0 < 64) ? (low64 >>> c0) : (high64 >>> c0);
+          m1 = (c1 < 64) ? (low64 >>> c1) : (high64 >>> c1);
+          m2 = (c2 < 64) ? (low64 >>> c2) : (high64 >>> c2);
+          m3 = (c3 < 64) ? (low64 >>> c3) : (high64 >>> c3);
+        }
         if (((m0 & m1 & m2 & m3) & 1L) != 0) {
           i += 4;
           continue;
