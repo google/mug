@@ -1,6 +1,6 @@
 # Mug *dot parse*
 
-Low-boilerplate, idiomatic Java parser combinator, aimed to replace regex and your everyday one-off parsing tasks.
+Low-boilerplate, fast, idiomatic Java parser combinator, aimed to replace regex and your everyday one-off parsing tasks.
 
 ### How is dot-parse different from the other 27 parser combinators created in the past 15 years?
 
