@@ -4702,6 +4702,47 @@ public class ParserTest {
         IndexOutOfBoundsException.class, () -> string("a").skipping(whitespace()).parse("a", 2));
   }
 
+  @Test public void skipping_alpha_parse() {
+    assertThat(digits().skipping(charsIn("[a-zA-Z]")).parse("abc123def")).isEqualTo("123");
+  }
+
+  @Test public void skipping_alpha_matches() {
+    assertThat(digits().skipping(charsIn("[a-zA-Z]")).matches("abc123def")).isTrue();
+  }
+
+  @Test public void skipping_alpha_parseToStream() {
+    assertThat(digits().skipping(charsIn("[a-zA-Z]")).parseToStream("abc123def456ghi"))
+        .containsExactly("123", "456");
+  }
+
+  @Test public void skipping_alphaCharPredicate_parse() {
+    assertThat(digits().skipping(CharPredicate.ALPHA).parse("abc123def")).isEqualTo("123");
+  }
+
+  @Test public void skipping_alpha_longerThanFourChars() {
+    assertThat(digits().skipping(charsIn("[a-zA-Z]")).parse("abcdefgh123ijklmnop")).isEqualTo("123");
+  }
+
+  @Test public void skipping_alpha_onlyLetters_matchesFalse() {
+    assertThat(digits().skipping(charsIn("[a-zA-Z]")).matches("abcdefgh")).isFalse();
+  }
+
+  @Test public void skipping_alpha_sequence_interleaved() {
+    assertThat(
+            sequence(digits(), digits(), (a, b) -> a + "," + b)
+                .skipping(charsIn("[a-zA-Z]"))
+                .parse("abc123def456ghi"))
+        .isEqualTo("123,456");
+  }
+
+  @Test public void skipping_alpha_withReader() {
+    assertThat(
+            digits()
+                .skipping(charsIn("[a-zA-Z]"))
+                .parseToStream(new StringReader("abc123def456ghi")))
+        .containsExactly("123", "456");
+  }
+
   @Test public void skipping_aroundIdentifier() {
     Parser<String> parser = string("foo");
     assertThat(parser.parseSkipping(whitespace(), "foo")).isEqualTo("foo");
