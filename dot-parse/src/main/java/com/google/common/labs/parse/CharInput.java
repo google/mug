@@ -347,11 +347,9 @@ abstract class CharInput {
     int offset = (low64 == 0L && high64 != 0L) ? 64 : 0;
 
     // asciiMask:
-    //    - Single 64-character partition (Lower-64 or Higher-64): mask ~0x3F verifies that bits >=
-    // 6
-    //      are all zero after XOR offset, ensuring the character lies strictly in the 64-char
-    // window.
-    //    - 128-bit mixed mode: mask ~0x7F verifies that bits >= 7 are all zero (validating 7-bit
+    //   - Single 64-character partition (Lower-64 or Higher-64): mask ~0x3F verifies that bits >= 6
+    //     are all zero after XOR offset, ensuring the character lies strictly in the 64-char window.
+    //   - 128-bit mixed mode: mask ~0x7F verifies that bits >= 7 are all zero (validating 7-bit
     // ASCII).
     int asciiMask = (low64 != 0L && high64 != 0L) ? ~0x7F : ~0x3F;
 
