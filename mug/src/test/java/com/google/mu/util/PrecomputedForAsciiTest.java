@@ -26,7 +26,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class PrecomputedCharPredicateTest {
+public class PrecomputedForAsciiTest {
 
   @Test public void precomputeForAscii_none() {
     CharPredicate predicate = CharPredicate.NONE.precomputeForAscii();
