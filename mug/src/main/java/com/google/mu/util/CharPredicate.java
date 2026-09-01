@@ -27,50 +27,51 @@ import java.util.Arrays;
 public interface CharPredicate {
 
   /** Equivalent to the {@code [a-zA-Z]} character class. */
-  static CharPredicate ALPHA =  new CharPredicate() {
-    @Override public boolean test(char c) {
-      return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-    }
+  CharPredicate ALPHA =
+      new CharPredicate() {
+        @Override public boolean test(char c) {
+          return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+        }
 
-    @Override public CharPredicate precomputeForAscii() {
-      return this;
-    }
-
-    @Override public String toString() {
-      return "ALPHA";
-    }
-  };
+        @Override public String toString() {
+          return "ALPHA";
+        }
+      }.precomputeForAscii();
 
   /** Equivalent to the {@code [a-zA-Z0-9_]} character class. */
-  static CharPredicate WORD = new CharPredicate() {
-    @Override public boolean test(char c) {
-      return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
-    }
+  CharPredicate WORD =
+      new CharPredicate() {
+        @Override public boolean test(char c) {
+          return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+              || c == '_';
+        }
 
-    @Override public String toString() {
-      return "WORD";
-    }
-  };
+        @Override public String toString() {
+          return "WORD";
+        }
+      }.precomputeForAscii();
 
   /** Corresponds to the ASCII characters. */
-  static CharPredicate ASCII = new CharPredicate() {
-    @Override public boolean test(char c) {
-      return c <= '\u007f';
-    }
+  CharPredicate ASCII =
+      new CharPredicate() {
+        @Override public boolean test(char c) {
+          return c <= '\u007f';
+        }
 
-    @Override public CharPredicate precomputeForAscii() {
-      return this;
-    }
-
-    @Override public String toString() {
-      return "ASCII";
-    }
-  };
+        @Override public String toString() {
+          return "ASCII";
+        }
+      }.precomputeForAscii();
 
   /** Corresponds to all characters. */
-  static CharPredicate ANY = new CharPredicate() {
+  CharPredicate ANY = new CharPredicate() {
     @Override public boolean test(char c) {
       return true;
+    }
+
+    @Override public int skipLeading(CharSequence s, int begin, int end) {
+      requireNonNull(s);
+      return end;
     }
 
     @Override public CharPredicate precomputeForAscii() {
@@ -83,9 +84,14 @@ public interface CharPredicate {
   };
 
   /** Corresponds to no characters. */
-  static CharPredicate NONE = new CharPredicate() {
+  CharPredicate NONE = new CharPredicate() {
     @Override public boolean test(char c) {
       return false;
+    }
+
+    @Override public int skipLeading(CharSequence s, int begin, int end) {
+      requireNonNull(s);
+      return begin;
     }
 
     @Override public CharPredicate precomputeForAscii() {
@@ -102,7 +108,7 @@ public interface CharPredicate {
    *
    * @since 10.6
    */
-  static CharPredicate WHITESPACE = new CharPredicate() {
+  CharPredicate WHITESPACE = new CharPredicate() {
     @Override public boolean test(char c) {
       return Character.isWhitespace(c);
     }
@@ -119,14 +125,10 @@ public interface CharPredicate {
         return c == ch;
       }
 
-      @Override public CharPredicate precomputeForAscii() {
-        return this;
-      }
-
       @Override public String toString() {
         return "'" + ch + "'";
       }
-    };
+    }.precomputeForAscii();
   }
 
   /** Returns a CharPredicate that matches except {@code ch}. */
@@ -141,22 +143,21 @@ public interface CharPredicate {
         return c >= from && c <= to;
       }
 
-      @Override public CharPredicate precomputeForAscii() {
-        return this;
-      }
-
       @Override public String toString() {
         return "['" + from + "', '" + to + "']";
       }
-    };
+    }.precomputeForAscii();
   }
 
   /** Returns a CharPredicate that matches any of {@code chars}. */
   static CharPredicate anyOf(String chars) {
     switch (chars.length()) {
-      case 2: return is(chars.charAt(0)).or(chars.charAt(1));
-      case 1: return is(chars.charAt(0));
-      case 0: return NONE;
+      case 2:
+        return is(chars.charAt(0)).or(chars.charAt(1));
+      case 1:
+        return is(chars.charAt(0));
+      case 0:
+        return NONE;
     }
     char[] array = chars.toCharArray();
     Arrays.sort(array);
@@ -198,8 +199,8 @@ public interface CharPredicate {
   }
 
   /**
-   * Returns a {@link CharPredicate} that evaluates true if either this evaluates to true,
-   * or the character is equal to any of {@code chars}.
+   * Returns a {@link CharPredicate} that evaluates true if either this evaluates to true, or the
+   * character is equal to any of {@code chars}.
    *
    * @since 9.9.4
    */
@@ -323,8 +324,24 @@ public interface CharPredicate {
   }
 
   /**
-   * Returns an equivalent {@link CharPredicate} but pre-computes the results for all ASCII characters.
-   * Useful if the CharPredicate is used in a hot path.
+   * Returns the index in the range of {@code [begin, end]}, pointing to either {@code end} or the
+   * index of the first character that does not match this predicate.
+   *
+   * @since 10.0
+   * @hidden
+   */
+  default int skipLeading(CharSequence s, int begin, int end) {
+    requireNonNull(s);
+    int i = begin;
+    while (i < end && test(s.charAt(i))) {
+      i++;
+    }
+    return i;
+  }
+
+  /**
+   * Returns an equivalent {@link CharPredicate} but pre-computes the results for all ASCII
+   * characters. Useful if the CharPredicate is used in a hot path.
    *
    * <p>This method is more efficient for ASCII chars than Guava {@link
    * com.google.common.base.CharMatcher#precomputed CharMatcher.precomputed()}, and is far cheaper
@@ -350,6 +367,66 @@ public interface CharPredicate {
           return ((high64 >>> (c - 64)) & 1L) != 0;
         }
         return base.test(c); // Fallback for non-ASCII
+      }
+
+      @Override public int skipLeading(CharSequence s, int begin, int end) {
+        requireNonNull(s);
+        int i = begin;
+        int limit = end - 4;
+
+        int offset = (low64 == 0L && high64 != 0L) ? 64 : 0;
+        int asciiMask = (low64 != 0L && high64 != 0L) ? ~0x7F : ~0x3F;
+
+        while (i <= limit) {
+          char c0 = s.charAt(i);
+          char c1 = s.charAt(i + 1);
+          char c2 = s.charAt(i + 2);
+          char c3 = s.charAt(i + 3);
+
+          if ((((c0 ^ offset) | (c1 ^ offset) | (c2 ^ offset) | (c3 ^ offset)) & asciiMask) == 0) {
+            long m0;
+            long m1;
+            long m2;
+            long m3;
+            if (high64 == 0L) {
+              m0 = low64 >>> c0;
+              m1 = low64 >>> c1;
+              m2 = low64 >>> c2;
+              m3 = low64 >>> c3;
+            } else if (low64 == 0L) {
+              m0 = high64 >>> c0;
+              m1 = high64 >>> c1;
+              m2 = high64 >>> c2;
+              m3 = high64 >>> c3;
+            } else {
+              m0 = (c0 < 64) ? (low64 >>> c0) : (high64 >>> c0);
+              m1 = (c1 < 64) ? (low64 >>> c1) : (high64 >>> c1);
+              m2 = (c2 < 64) ? (low64 >>> c2) : (high64 >>> c2);
+              m3 = (c3 < 64) ? (low64 >>> c3) : (high64 >>> c3);
+            }
+
+            if (((m0 & m1 & m2 & m3) & 1L) != 0) {
+              i += 4;
+              continue;
+            }
+
+            if ((m0 & 1L) == 0) return i;
+            if ((m1 & 1L) == 0) return i + 1;
+            if ((m2 & 1L) == 0) return i + 2;
+            return i + 3;
+          }
+
+          if (!base.test(c0)) return i;
+          if (!base.test(c1)) return i + 1;
+          if (!base.test(c2)) return i + 2;
+          if (!base.test(c3)) return i + 3;
+          i += 4;
+        }
+
+        while (i < end && base.test(s.charAt(i))) {
+          i++;
+        }
+        return i;
       }
 
       @Override public CharPredicate precomputeForAscii() {

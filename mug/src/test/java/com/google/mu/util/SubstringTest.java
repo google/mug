@@ -4,6 +4,7 @@ import static com.google.common.collect.ImmutableListMultimap.toImmutableListMul
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.mu.util.Substring.BEGINNING;
+import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static com.google.mu.util.Substring.END;
 import static com.google.mu.util.Substring.after;
 import static com.google.mu.util.Substring.all;
@@ -18,21 +19,8 @@ import static com.google.mu.util.Substring.spanningInOrder;
 import static com.google.mu.util.Substring.suffix;
 import static com.google.mu.util.Substring.trailing;
 import static com.google.mu.util.Substring.upToIncluding;
-import static com.google.mu.util.Substring.BoundStyle.INCLUSIVE;
 import static java.util.Collections.nCopies;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.util.Map;
-import java.util.Optional;
-import java.util.Spliterator;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collector;
-import java.util.stream.Stream;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.CharMatcher;
@@ -49,6 +37,16 @@ import com.google.mu.util.stream.BiCollector;
 import com.google.mu.util.stream.BiStream;
 import com.google.mu.util.stream.Joiner;
 import com.google.mu.util.stream.MoreCollectors;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Spliterator;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class SubstringTest {
@@ -164,10 +162,8 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("at")).isEqualTo("atfoobar");
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
-    assertThat(prefix("foo").repeatedly().from("foofoobar"))
-        .containsExactly("foo", "foo");
-    assertThat(prefix("foo").repeatedly().from("foofoo"))
-        .containsExactly("foo", "foo");
+    assertThat(prefix("foo").repeatedly().from("foofoobar")).containsExactly("foo", "foo");
+    assertThat(prefix("foo").repeatedly().from("foofoo")).containsExactly("foo", "foo");
   }
 
   @Test public void prefix_emptyPrefix() {
@@ -742,10 +738,8 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("car")).isEqualTo("carfoobar");
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
-    assertThat(first("foo").repeatedly().from("foofoobar"))
-        .containsExactly("foo", "foo");
-    assertThat(first("foo").repeatedly().from("foobarfoo"))
-        .containsExactly("foo", "foo");
+    assertThat(first("foo").repeatedly().from("foofoobar")).containsExactly("foo", "foo");
+    assertThat(first("foo").repeatedly().from("foobarfoo")).containsExactly("foo", "foo");
   }
 
   @Test public void firstSnippet_matchesSuffix() {
@@ -803,10 +797,8 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("car")).isEqualTo("foocarbarbaz");
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
-    assertThat(first("bar").repeatedly().from("foobarbarbaz"))
-        .containsExactly("bar", "bar");
-    assertThat(first("bar").repeatedly().from("foobarcarbarbaz"))
-        .containsExactly("bar", "bar");
+    assertThat(first("bar").repeatedly().from("foobarbarbaz")).containsExactly("bar", "bar");
+    assertThat(first("bar").repeatedly().from("foobarcarbarbaz")).containsExactly("bar", "bar");
   }
 
   @Test public void regex_toString() {
@@ -830,8 +822,7 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("bar")).isEqualTo("bar");
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
-    assertThat(first(Pattern.compile(".*oo")).repeatedly().from("foo"))
-        .containsExactly("foo");
+    assertThat(first(Pattern.compile(".*oo")).repeatedly().from("foo")).containsExactly("foo");
   }
 
   @Test public void regex_matchesPrefix() {
@@ -845,8 +836,7 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("car")).isEqualTo("carbar");
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
-    assertThat(first(Pattern.compile(".*oo")).repeatedly().from("foobar"))
-        .containsExactly("foo");
+    assertThat(first(Pattern.compile(".*oo")).repeatedly().from("foobar")).containsExactly("foo");
   }
 
   @Test public void regex_matchesPrefixFollowedBySamePattern() {
@@ -875,8 +865,7 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("car")).isEqualTo("carbar");
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("foo");
-    assertThat(first(Pattern.compile("^.oo")).repeatedly().from("foobar"))
-        .containsExactly("foo");
+    assertThat(first(Pattern.compile("^.oo")).repeatedly().from("foobar")).containsExactly("foo");
   }
 
   @Test public void regex_matchesPrefixFollowedBySamePattern_withStartingAnchor() {
@@ -910,8 +899,7 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("car")).isEqualTo("foocar");
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
-    assertThat(first(Pattern.compile("b.*")).repeatedly().from("foobar"))
-        .containsExactly("bar");
+    assertThat(first(Pattern.compile("b.*")).repeatedly().from("foobar")).containsExactly("bar");
   }
 
   @Test public void regex_matchesSuffixWithEndingAnchor() {
@@ -925,8 +913,7 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("car")).isEqualTo("foocar");
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
-    assertThat(first(Pattern.compile("b.*$")).repeatedly().from("foobar"))
-        .containsExactly("bar");
+    assertThat(first(Pattern.compile("b.*$")).repeatedly().from("foobar")).containsExactly("bar");
   }
 
   @Test public void regex_doesNotMatchPostfixDueToEndingAnchor() {
@@ -945,8 +932,7 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("car")).isEqualTo("foocarbaz");
     assertThat(match.get().length()).isEqualTo(3);
     assertThat(match.get().toString()).isEqualTo("bar");
-    assertThat(first(Pattern.compile(".ar")).repeatedly().from("foobarbaz"))
-        .containsExactly("bar");
+    assertThat(first(Pattern.compile(".ar")).repeatedly().from("foobarbaz")).containsExactly("bar");
     assertThat(first(Pattern.compile(".ar")).repeatedly().from("foobarzbarbaz"))
         .containsExactly("bar", "bar");
     assertThat(first(Pattern.compile(".ar")).repeatedly().from("foobarbazbar"))
@@ -964,12 +950,9 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("bar")).isEqualTo("barfoo");
     assertThat(match.get().length()).isEqualTo(0);
     assertThat(match.get().toString()).isEmpty();
-    assertThat(first(Pattern.compile("")).repeatedly().from("foo"))
-        .contains("");
-    assertThat(first(Pattern.compile("^")).repeatedly().from("foo"))
-        .containsExactly("");
-    assertThat(first(Pattern.compile("$")).repeatedly().from("foo"))
-        .containsExactly("");
+    assertThat(first(Pattern.compile("")).repeatedly().from("foo")).contains("");
+    assertThat(first(Pattern.compile("^")).repeatedly().from("foo")).containsExactly("");
+    assertThat(first(Pattern.compile("$")).repeatedly().from("foo")).containsExactly("");
   }
 
   @Test public void regex_matchesFirstOccurrence() {
@@ -1026,7 +1009,9 @@ public class SubstringTest {
     assertThat(first(Pattern.compile("f(o.)(ba.)"), 1).repeatedly().from("foobarbaz"))
         .containsExactly("oo");
     assertThat(
-            first(Pattern.compile("f(o.)(ba.);"), 1).repeatedly().match("foobar; foibaz;")
+            first(Pattern.compile("f(o.)(ba.);"), 1)
+                .repeatedly()
+                .match("foobar; foibaz;")
                 .map(Object::toString))
         .containsExactly("oo", "oi");
   }
@@ -1040,8 +1025,7 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("car")).isEqualTo("car");
     assertThat(match.get().length()).isEqualTo(9);
     assertThat(match.get().toString()).isEqualTo("foobarbaz");
-    assertThat(
-            first(Pattern.compile("f(o.)(ba.).*"), 0).repeatedly().from("foobarbaz"))
+    assertThat(first(Pattern.compile("f(o.)(ba.).*"), 0).repeatedly().from("foobarbaz"))
         .containsExactly("foobarbaz");
   }
 
@@ -1069,10 +1053,8 @@ public class SubstringTest {
 
   @Test public void regexGroup_optionalGroupNotParticipating_repeatedly() {
     // repeatedly() stops when first match has non-participating group
-    assertThat(first(Pattern.compile("(a)?(b)"), 1).repeatedly().from("b"))
-        .isEmpty();
-    assertThat(first(Pattern.compile("(a)?(b)"), 1).repeatedly().from("bb"))
-        .isEmpty();
+    assertThat(first(Pattern.compile("(a)?(b)"), 1).repeatedly().from("b")).isEmpty();
+    assertThat(first(Pattern.compile("(a)?(b)"), 1).repeatedly().from("bb")).isEmpty();
   }
 
   @Test public void regexGroup_decimalNumberOptional() {
@@ -1091,14 +1073,11 @@ public class SubstringTest {
     // Only group 3 participates
     assertThat(first(Pattern.compile("(a)?(b)?(c)"), 1).from("c")).isEmpty();
     assertThat(first(Pattern.compile("(a)?(b)?(c)"), 2).from("c")).isEmpty();
-    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 3).in("c").map(Match::index))
-        .hasValue(0);
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 3).in("c").map(Match::index)).hasValue(0);
     // Groups 1 and 3 participate, group 2 doesn't
-    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 1).in("ac").map(Match::index))
-        .hasValue(0);
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 1).in("ac").map(Match::index)).hasValue(0);
     assertThat(first(Pattern.compile("(a)?(b)?(c)"), 2).from("ac")).isEmpty();
-    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 3).in("ac").map(Match::index))
-        .hasValue(1);
+    assertThat(first(Pattern.compile("(a)?(b)?(c)"), 3).in("ac").map(Match::index)).hasValue(1);
   }
 
   @Test public void regexGroup_nestedOptionalGroups() {
@@ -1116,12 +1095,12 @@ public class SubstringTest {
   }
 
   @Test public void regexGroup_secondMatchHasOptionalGroup() {
-    assertThat(first(Pattern.compile("(a)?b|c"), 1).in("bab").map(Match::index))
-        .hasValue(1);
+    assertThat(first(Pattern.compile("(a)?b|c"), 1).in("bab").map(Match::index)).hasValue(1);
   }
 
   @Test public void all_regexGroup_secondAndFourthMatchHasOptionalGroup() {
-    assertThat(first(Pattern.compile("(a)?(b|c)"), 1).repeatedly().match("babcac").map(Match::index))
+    assertThat(
+            first(Pattern.compile("(a)?(b|c)"), 1).repeatedly().match("babcac").map(Match::index))
         .containsExactly(1, 4)
         .inOrder();
   }
@@ -1148,8 +1127,7 @@ public class SubstringTest {
     // Pattern with * quantifier that can match zero times
     // a*b* - both can match zero times (but still participate)
     // When pattern matches but group is empty, it should still return a match
-    assertThat(first(Pattern.compile("((a)?)"), 2).repeatedly().from("c"))
-        .isEmpty();
+    assertThat(first(Pattern.compile("((a)?)"), 2).repeatedly().from("c")).isEmpty();
   }
 
   @Test public void all_regex_multipleOccurrences() {
@@ -1159,9 +1137,7 @@ public class SubstringTest {
   }
 
   @Test public void all_regex_oneOccurrence() {
-    assertThat(all(Pattern.compile("\\w+")).from("<foo..>"))
-        .containsExactly("foo")
-        .inOrder();
+    assertThat(all(Pattern.compile("\\w+")).from("<foo..>")).containsExactly("foo").inOrder();
   }
 
   @Test public void all_regex_noOccurrence() {
@@ -1169,12 +1145,8 @@ public class SubstringTest {
   }
 
   @Test public void all_regex_withAnchors() {
-    assertThat(all(Pattern.compile("^\\w+")).from("foo.bar/baz"))
-        .containsExactly("foo")
-        .inOrder();
-    assertThat(all(Pattern.compile("\\w+$")).from("foo.bar/baz"))
-        .containsExactly("baz")
-        .inOrder();
+    assertThat(all(Pattern.compile("^\\w+")).from("foo.bar/baz")).containsExactly("foo").inOrder();
+    assertThat(all(Pattern.compile("\\w+$")).from("foo.bar/baz")).containsExactly("baz").inOrder();
     assertThat(all(Pattern.compile("\\b\\w+\\b")).from("foo.bar/baz"))
         .containsExactly("foo", "bar", "baz")
         .inOrder();
@@ -1373,24 +1345,19 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("coo")).isEqualTo("foocooarbarbaz");
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("b");
-    assertThat(first('b').repeatedly().from("foobarbarbaz"))
-        .containsExactly("b", "b", "b");
+    assertThat(first('b').repeatedly().from("foobarbarbaz")).containsExactly("b", "b", "b");
   }
 
-  @Test
-  public void firstCharMatcher_toString() {
-    assertThat(first(CharPredicate.ASCII).toString())
-        .isEqualTo("first(ASCII)");
+  @Test public void firstCharMatcher_toString() {
+    assertThat(first(CharPredicate.ASCII).toString()).isEqualTo("first(ASCII)");
   }
 
-  @Test
-  public void firstCharMatcher_noMatch() {
+  @Test public void firstCharMatcher_noMatch() {
     assertThat(first(CharPredicate.ANY).in("")).isEmpty();
     assertThat(first(CharPredicate.ANY).repeatedly().match("")).isEmpty();
   }
 
-  @Test
-  public void firstCharMatcher_matchesFullString() {
+  @Test public void firstCharMatcher_matchesFullString() {
     Optional<Substring.Match> match = first(CharPredicate.ANY).in("f");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
@@ -1404,8 +1371,7 @@ public class SubstringTest {
     assertThat(first(CharPredicate.ANY).repeatedly().from("f")).containsExactly("f");
   }
 
-  @Test
-  public void firstCharMatcher_matchesPrefix() {
+  @Test public void firstCharMatcher_matchesPrefix() {
     Optional<Substring.Match> match = first(CharPredicate.is('f')).in("foobar");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
@@ -1419,8 +1385,7 @@ public class SubstringTest {
     assertThat(first(CharPredicate.ANY).repeatedly().from("foo")).containsExactly("f", "o", "o");
   }
 
-  @Test
-  public void firstCharMatcher_matchesSuffix() {
+  @Test public void firstCharMatcher_matchesSuffix() {
     Optional<Substring.Match> match = first(CharPredicate.is('r')).in("foobar");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("fooba");
@@ -1434,8 +1399,7 @@ public class SubstringTest {
     assertThat(first(CharPredicate.is('r')).repeatedly().from("bar")).containsExactly("r");
   }
 
-  @Test
-  public void firstCharMatcher_matchesFirstOccurrence() {
+  @Test public void firstCharMatcher_matchesFirstOccurrence() {
     Optional<Substring.Match> match = first(CharPredicate.is('b')).in("foobarbarbaz");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEqualTo("foo");
@@ -1521,20 +1485,16 @@ public class SubstringTest {
     assertThat(last("b").repeatedly().from("farbarbaz")).containsExactly("b");
   }
 
-  @Test
-  public void lastCharMatcher_toString() {
-    assertThat(last(CharPredicate.ASCII).toString())
-        .isEqualTo("last(ASCII)");
+  @Test public void lastCharMatcher_toString() {
+    assertThat(last(CharPredicate.ASCII).toString()).isEqualTo("last(ASCII)");
   }
 
-  @Test
-  public void lastCharMatcher_noMatch() {
+  @Test public void lastCharMatcher_noMatch() {
     assertThat(last(CharPredicate.ANY).in("")).isEmpty();
     assertThat(last(CharPredicate.ANY).repeatedly().match("")).isEmpty();
   }
 
-  @Test
-  public void lastCharMatcher_matchesFullString() {
+  @Test public void lastCharMatcher_matchesFullString() {
     Optional<Substring.Match> match = last(CharPredicate.ANY).in("f");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
@@ -1548,8 +1508,7 @@ public class SubstringTest {
     assertThat(last(CharPredicate.ANY).repeatedly().from("bar")).contains("r");
   }
 
-  @Test
-  public void lastCharMatcher_matchesPrefix() {
+  @Test public void lastCharMatcher_matchesPrefix() {
     Optional<Substring.Match> match = last(CharPredicate.is('f')).in("foobar");
     assertThat(match).isPresent();
     assertThat(match.get().before()).isEmpty();
@@ -1638,34 +1597,39 @@ public class SubstringTest {
   }
 
   @Test public void replaceAllFrom_threeMatches() {
-    assertThat(first("x").repeatedly().replaceAllFrom("fox x bxr", m -> "yy")).isEqualTo("foyy yy byyr");
-    assertThat(first("x").repeatedly().replaceAllFrom("xaxbxxcx", m -> "yy")).isEqualTo("yyayybyyyycyy");
+    assertThat(first("x").repeatedly().replaceAllFrom("fox x bxr", m -> "yy"))
+        .isEqualTo("foyy yy byyr");
+    assertThat(first("x").repeatedly().replaceAllFrom("xaxbxxcx", m -> "yy"))
+        .isEqualTo("yyayybyyyycyy");
   }
 
   @Test public void replaceAllFrom_placeholderSubstitution() {
     Substring.Pattern placeholder = Substring.between(before(first('{')), after(first('}')));
-    ImmutableMap<String, String> dictionary = ImmutableMap.of("{key}", "foo", "{value}", "bar");
+    ImmutableMap<String, String> dictionary = ImmutableMap.of(
+        "{key}", "foo",
+        "{value}", "bar");
     assertThat(
-            placeholder.repeatedly().replaceAllFrom("/{key}:{value}/", match -> dictionary.get(match.toString())))
+            placeholder
+                .repeatedly()
+                .replaceAllFrom("/{key}:{value}/", match -> dictionary.get(match.toString())))
         .isEqualTo("/foo:bar/");
   }
 
   @Test public void replaceAllFrom_replacementFunctionReturnsNull() {
     Substring.Pattern placeholder = Substring.between(before(first('{')), after(first('}')));
-    NullPointerException thrown =
-        assertThrows(
-            NullPointerException.class,
-            () -> placeholder.repeatedly().replaceAllFrom("{unknown}", match -> null));
+    NullPointerException thrown = assertThrows(
+        NullPointerException.class,
+        () -> placeholder.repeatedly().replaceAllFrom("{unknown}", match -> null));
     assertThat(thrown).hasMessageThat().contains("{unknown}");
   }
 
   @Test public void replaceAllFrom_replacementFunctionReturnsNonEmpty() {
-    assertThat(Substring.first("var").repeatedly().replaceAllFrom("var=x", m -> "v")).isEqualTo("v=x");
+    assertThat(Substring.first("var").repeatedly().replaceAllFrom("var=x", m -> "v"))
+        .isEqualTo("v=x");
   }
 
   @Test public void delimit() {
-    assertThat(first(',').repeatedly().split("foo").map(Match::toString))
-        .containsExactly("foo");
+    assertThat(first(',').repeatedly().split("foo").map(Match::toString)).containsExactly("foo");
     assertThat(first(',').repeatedly().split("foo, bar").map(Match::toString))
         .containsExactly("foo", " bar");
     assertThat(first(',').repeatedly().split("foo,").map(Match::toString))
@@ -1699,12 +1663,16 @@ public class SubstringTest {
   }
 
   @Test public void repeatedly_split_ordered() {
-    assertThat(first(',').repeatedly().split("a,b").spliterator().characteristics() & Spliterator.ORDERED)
+    assertThat(
+            first(',').repeatedly().split("a,b").spliterator().characteristics()
+                & Spliterator.ORDERED)
         .isEqualTo(Spliterator.ORDERED);
   }
 
   @Test public void repeatedly_split_nonNull() {
-    assertThat(first(',').repeatedly().split("a,b").spliterator().characteristics() & Spliterator.NONNULL)
+    assertThat(
+            first(',').repeatedly().split("a,b").spliterator().characteristics()
+                & Spliterator.NONNULL)
         .isEqualTo(Spliterator.NONNULL);
   }
 
@@ -1728,10 +1696,8 @@ public class SubstringTest {
   }
 
   @Test public void repeatedly_splitKeyValuesAround_empty() {
-    assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), ""))
-        .isEmpty();
-    assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), ",,"))
-        .isEmpty();
+    assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), "")).isEmpty();
+    assertKeyValues(first(',').repeatedly().splitKeyValuesAround(first('='), ",,")).isEmpty();
   }
 
   @Test public void repeatedly_splitKeyValuesAround() {
@@ -1771,8 +1737,7 @@ public class SubstringTest {
   }
 
   @Test public void repeatedly_splitThenTrimKeyValuesAround_empty() {
-    assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), ""))
-        .isEmpty();
+    assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), "")).isEmpty();
     assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), " "))
         .isEmpty();
     assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), ", ,"))
@@ -1780,7 +1745,8 @@ public class SubstringTest {
   }
 
   @Test public void repeatedly_splitThenTrimKeyValuesAround() {
-    assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), "k1 = v1, k2=v2"))
+    assertKeyValues(
+            first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), "k1 = v1, k2=v2"))
         .containsExactly("k1", "v1", "k2", "v2")
         .inOrder();
     assertKeyValues(first(',').repeatedly().splitThenTrimKeyValuesAround(first('='), "k1=v1,,"))
@@ -1816,14 +1782,14 @@ public class SubstringTest {
   }
 
   @Test public void repeatedly_alternationFrom_empty() {
-    assertKeyValues(first(',').repeatedly().alternationFrom(""))
-        .isEmpty();
+    assertKeyValues(first(',').repeatedly().alternationFrom("")).isEmpty();
   }
 
   @Test public void repeatedly_alternationFrom() {
     Substring.Pattern bulletNumber = consecutive(CharPredicate.range('0', '9'))
         .separatedBy(CharPredicate.WORD.not(), CharPredicate.is(':'));
-    Map<Integer, String> bulleted = bulletNumber.repeatedly()
+    Map<Integer, String> bulleted = bulletNumber
+        .repeatedly()
         .alternationFrom("1: go home;2: feed 2 cats 3: sleep tight.")
         .mapKeys(n -> Integer.parseInt(n))
         .mapValues(withColon -> prefix(":").removeFrom(withColon.toString()).trim())
@@ -1832,13 +1798,16 @@ public class SubstringTest {
   }
 
   @Test public void repeatedly_splitThenTrim_distinct() {
-    assertThat(first(',').repeatedly().splitThenTrim("b, a,c,a,c,b,d").map(Match::toString).distinct())
+    assertThat(
+            first(',').repeatedly().splitThenTrim("b, a,c,a,c,b,d").map(Match::toString).distinct())
         .containsExactly("b", "a", "c", "d")
         .inOrder();
   }
 
   @Test public void repeatedly_splitThenTrim_ordered() {
-    assertThat(first(',').repeatedly().splitThenTrim("a,b").spliterator().characteristics() & Spliterator.ORDERED)
+    assertThat(
+            first(',').repeatedly().splitThenTrim("a,b").spliterator().characteristics()
+                & Spliterator.ORDERED)
         .isEqualTo(Spliterator.ORDERED);
   }
 
@@ -1849,44 +1818,38 @@ public class SubstringTest {
     assertThat(match.toString()).isEmpty();
   }
 
-  @Test
-  public void split_cannotSplit() {
+  @Test public void split_cannotSplit() {
     assertThat(first('=').split("foo:bar")).isEqualTo(BiOptional.empty());
     assertThat(first('=').split("foo:bar", (k, v) -> k + v)).isEmpty();
   }
 
-  @Test
-  public void split_canSplit() {
+  @Test public void split_canSplit() {
     assertThat(first('=').split(" foo=bar").map((String k, String v) -> k)).hasValue(" foo");
     assertThat(first('=').split("foo=bar ").map((String k, String v) -> v)).hasValue("bar ");
     assertThat(first('=').split(" foo=bar", (k, v) -> k)).hasValue(" foo");
     assertThat(first('=').split("foo=bar ", (k, v) -> v)).hasValue("bar ");
   }
 
-  @Test
-  public void split_beginning() {
+  @Test public void split_beginning() {
     assertThat(BEGINNING.split(" foo").map((String k, String v) -> k)).hasValue("");
     assertThat(BEGINNING.split(" foo").map((String k, String v) -> v)).hasValue(" foo");
     assertThat(BEGINNING.split(" foo", (k, v) -> k)).hasValue("");
     assertThat(BEGINNING.split(" foo", (k, v) -> v)).hasValue(" foo");
   }
 
-  @Test
-  public void split_end() {
+  @Test public void split_end() {
     assertThat(END.split(" foo").map((String k, String v) -> k)).hasValue(" foo");
     assertThat(END.split(" foo").map((String k, String v) -> v)).hasValue("");
     assertThat(END.split(" foo", (k, v) -> k)).hasValue(" foo");
     assertThat(END.split(" foo", (k, v) -> v)).hasValue("");
   }
 
-  @Test
-  public void splitThenTrim_cannotSplit() {
+  @Test public void splitThenTrim_cannotSplit() {
     assertThat(first('=').splitThenTrim("foo:bar")).isEqualTo(BiOptional.empty());
     assertThat(first('=').splitThenTrim("foo:bar", (k, v) -> k + v)).isEmpty();
   }
 
-  @Test
-  public void splitThenTrim_canSplit() {
+  @Test public void splitThenTrim_canSplit() {
     assertThat(first('=').splitThenTrim(" foo =bar").map((String k, String v) -> k))
         .hasValue("foo");
     assertThat(first('=').splitThenTrim("foo = bar ").map((String k, String v) -> v))
@@ -1895,16 +1858,14 @@ public class SubstringTest {
     assertThat(first('=').splitThenTrim("foo = bar ", (k, v) -> v)).hasValue("bar");
   }
 
-  @Test
-  public void splitThenTrim_beginning() {
+  @Test public void splitThenTrim_beginning() {
     assertThat(BEGINNING.splitThenTrim(" foo").map((String k, String v) -> k)).hasValue("");
     assertThat(BEGINNING.splitThenTrim(" foo").map((String k, String v) -> v)).hasValue("foo");
     assertThat(BEGINNING.splitThenTrim(" foo", (k, v) -> k)).hasValue("");
     assertThat(BEGINNING.splitThenTrim(" foo", (k, v) -> v)).hasValue("foo");
   }
 
-  @Test
-  public void splitThenTrim_end() {
+  @Test public void splitThenTrim_end() {
     assertThat(END.splitThenTrim(" foo ").map((String k, String v) -> k)).hasValue("foo");
     assertThat(END.splitThenTrim(" foo").map((String k, String v) -> v)).hasValue("");
     assertThat(END.splitThenTrim(" foo ", (k, v) -> k)).hasValue("foo");
@@ -1916,8 +1877,10 @@ public class SubstringTest {
   }
 
   @Test public void splitThenTrim_intoTwoParts_canSplit() {
-    assertThat(first('=').splitThenTrim(" foo =bar").map((String k, String v) -> k)).hasValue("foo");
-    assertThat(first('=').splitThenTrim("foo = bar ").map((String k, String v) -> v)).hasValue("bar");
+    assertThat(first('=').splitThenTrim(" foo =bar").map((String k, String v) -> k))
+        .hasValue("foo");
+    assertThat(first('=').splitThenTrim("foo = bar ").map((String k, String v) -> v))
+        .hasValue("bar");
   }
 
   @Test public void matchAsCharSequence() {
@@ -2019,54 +1982,46 @@ public class SubstringTest {
     assertThrows(IndexOutOfBoundsException.class, () -> match.subSequence(0, 3));
   }
 
-  @Test
-  public void matchLimit_negative() {
+  @Test public void matchLimit_negative() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThrows(IllegalArgumentException.class, () -> match.limit(-1));
     assertThrows(IllegalArgumentException.class, () -> match.limit(Integer.MIN_VALUE));
   }
 
-  @Test
-  public void matchLimit_zero() {
+  @Test public void matchLimit_zero() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThat(match.limit(0).toString()).isEmpty();
   }
 
-  @Test
-  public void matchLimit_smallerThanLength() {
+  @Test public void matchLimit_smallerThanLength() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThat(match.limit(1).toString()).isEqualTo("f");
   }
 
-  @Test
-  public void matchLimit_equalToLength() {
+  @Test public void matchLimit_equalToLength() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThat(match.limit(3)).isSameInstanceAs(match);
   }
 
-  @Test
-  public void matchLimit_greaterThanLength() {
+  @Test public void matchLimit_greaterThanLength() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThat(match.limit(4)).isSameInstanceAs(match);
     assertThat(match.limit(5)).isSameInstanceAs(match);
     assertThat(match.limit(Integer.MAX_VALUE)).isSameInstanceAs(match);
   }
 
-  @Test
-  public void limit_negative() {
+  @Test public void limit_negative() {
     Substring.Pattern pattern = first("foo");
     assertThrows(IllegalArgumentException.class, () -> pattern.limit(-1));
     assertThrows(IllegalArgumentException.class, () -> pattern.limit(Integer.MIN_VALUE));
   }
 
-  @Test
-  public void limit_noMatch() {
+  @Test public void limit_noMatch() {
     Substring.Pattern pattern = first("foo");
     assertThat(pattern.limit(1).from("fur")).isEmpty();
   }
 
-  @Test
-  public void limit_smallerThanSize() {
+  @Test public void limit_smallerThanSize() {
     assertThat(first("foo").limit(1).from("my food")).hasValue("f");
     assertThat(first("foo").limit(1).repeatedly().from("my food")).containsExactly("f");
     assertThat(first("foo").limit(1).repeatedly().from("my ffoof")).containsExactly("f");
@@ -2074,16 +2029,14 @@ public class SubstringTest {
     assertThat(first("fff").limit(2).repeatedly().from("ffffff")).containsExactly("ff", "ff");
   }
 
-  @Test
-  public void limit_equalToSize() {
+  @Test public void limit_equalToSize() {
     assertThat(first("foo").limit(3).from("my food")).hasValue("foo");
     assertThat(first("foo").limit(3).repeatedly().from("my food")).containsExactly("foo");
     assertThat(first("foo").limit(3).repeatedly().from("my ffoof")).containsExactly("foo");
     assertThat(first("fff").limit(3).repeatedly().from("fffff")).containsExactly("fff");
   }
 
-  @Test
-  public void limit_greaterThanSize() {
+  @Test public void limit_greaterThanSize() {
     assertThat(first("foo").limit(Integer.MAX_VALUE).from("my food")).hasValue("foo");
     assertThat(first("foo").limit(Integer.MAX_VALUE).repeatedly().from("my food"))
         .containsExactly("foo");
@@ -2093,64 +2046,54 @@ public class SubstringTest {
         .containsExactly("fff", "fff");
   }
 
-  @Test
-  public void limit_toString() {
+  @Test public void limit_toString() {
     assertThat(first("foo").limit(2).toString()).isEqualTo("first('foo').limit(2)");
   }
 
-  @Test
-  public void matchExpand_zeroExpansion() {
+  @Test public void matchExpand_zeroExpansion() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThat(match.expand(0, 0).toString()).isEqualTo("foo");
   }
 
-  @Test
-  public void matchExpand_negativeExpansionDisallowed() {
+  @Test public void matchExpand_negativeExpansionDisallowed() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThrows(AssertionError.class, () -> match.expand(-1, 0));
     assertThrows(AssertionError.class, () -> match.expand(0, -1));
   }
 
-  @Test
-  public void matchExpand_expandingBeyondScopeDisallowed() {
+  @Test public void matchExpand_expandingBeyondScopeDisallowed() {
     Substring.Match match = first("bar").in(" foo bar ").get();
     assertThrows(AssertionError.class, () -> match.expand(6, 0));
     assertThrows(AssertionError.class, () -> match.expand(0, 2));
   }
 
-  @Test
-  public void matchExpand_expandingToLeft() {
+  @Test public void matchExpand_expandingToLeft() {
     Substring.Match match = first("bar").in(" foo bar ").get();
     assertThat(match.expand(2, 0).toString()).isEqualTo("o bar");
   }
 
-  @Test
-  public void matchExpand_expandingToRight() {
+  @Test public void matchExpand_expandingToRight() {
     Substring.Match match = first("foo").in(" foo bar ").get();
     assertThat(match.expand(0, 3).toString()).isEqualTo("foo ba");
   }
 
-  @Test
-  public void matchExpand_expandingBothDirections() {
+  @Test public void matchExpand_expandingBothDirections() {
     Substring.Match match = first("foo").in(" foo bar ").get();
     assertThat(match.expand(1, 2).toString()).isEqualTo(" foo b");
   }
 
-  @Test
-  public void skipFromBeginning_negative() {
+  @Test public void skipFromBeginning_negative() {
     Substring.Pattern pattern = first("foo");
     assertThrows(IllegalArgumentException.class, () -> pattern.skip(-1, 1));
     assertThrows(IllegalArgumentException.class, () -> pattern.skip(Integer.MIN_VALUE, 1));
   }
 
-  @Test
-  public void skipFromBeginning_noMatch() {
+  @Test public void skipFromBeginning_noMatch() {
     Substring.Pattern pattern = first("foo");
     assertThat(pattern.skip(1, 0).from("fur")).isEmpty();
   }
 
-  @Test
-  public void skipFromBeginning_smallerThanSize() {
+  @Test public void skipFromBeginning_smallerThanSize() {
     assertThat(first("foo").skip(1, 0).from("my food")).hasValue("oo");
     assertThat(first("foo").skip(1, 0).repeatedly().from("my food")).containsExactly("oo");
     assertThat(first("foo").skip(1, 0).repeatedly().from("my ffoof")).containsExactly("oo");
@@ -2158,16 +2101,14 @@ public class SubstringTest {
     assertThat(first("fff").skip(2, 0).repeatedly().from("ffffff")).containsExactly("f", "f");
   }
 
-  @Test
-  public void skipFromBeginning_equalToSize() {
+  @Test public void skipFromBeginning_equalToSize() {
     assertThat(first("foo").skip(3, 0).from("my food")).hasValue("");
     assertThat(first("foo").skip(3, 0).repeatedly().from("my food")).containsExactly("");
     assertThat(first("foo").skip(3, 0).repeatedly().from("my ffoof")).containsExactly("");
     assertThat(first("fff").skip(3, 0).repeatedly().from("fffff")).containsExactly("");
   }
 
-  @Test
-  public void skipFromBeginning_greaterThanSize() {
+  @Test public void skipFromBeginning_greaterThanSize() {
     assertThat(first("foo").skip(Integer.MAX_VALUE, 0).from("my food")).hasValue("");
     assertThat(first("foo").skip(Integer.MAX_VALUE, 0).repeatedly().from("my food"))
         .containsExactly("");
@@ -2177,38 +2118,32 @@ public class SubstringTest {
         .containsExactly("", "");
   }
 
-  @Test
-  public void skip_backtrackFromNextChar() {
+  @Test public void skip_backtrackFromNextChar() {
     Substring.Pattern pattern = Substring.first("ttl").skip(2, 0).immediatelyBetween("t", "o");
     assertThat(pattern.from("tttlo")).hasValue("l");
     assertThat(pattern.repeatedly().from("(tttlo)")).containsExactly("l");
   }
 
-  @Test
-  public void skip_toString() {
+  @Test public void skip_toString() {
     assertThat(first("foo").skip(2, 3).toString()).isEqualTo("first('foo').skip(2, 3)");
   }
 
-  @Test
-  public void matchSkipFromBeginning_zero() {
+  @Test public void matchSkipFromBeginning_zero() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThat(match.skip(0, 0).toString()).isEqualTo("foo");
   }
 
-  @Test
-  public void matchSkipFromBeginning_smallerThanLength() {
+  @Test public void matchSkipFromBeginning_smallerThanLength() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThat(match.skip(1, 0).toString()).isEqualTo("oo");
   }
 
-  @Test
-  public void matchSkipFromBeginning_equalToLength() {
+  @Test public void matchSkipFromBeginning_equalToLength() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThat(match.skip(3, 0).toString()).isEmpty();
   }
 
-  @Test
-  public void matchSkipFromBeginning_greaterThanLength() {
+  @Test public void matchSkipFromBeginning_greaterThanLength() {
     Substring.Match match = first("foo").in(" foo bar").get();
 
     Substring.Match shrinked = match.skip(4, 0);
@@ -2224,33 +2159,28 @@ public class SubstringTest {
     assertThat(shrinked.index()).isEqualTo(4);
   }
 
-  @Test
-  public void matchSkipFromEnd_negative() {
+  @Test public void matchSkipFromEnd_negative() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThrows(IllegalArgumentException.class, () -> match.skip(1, -1));
     assertThrows(IllegalArgumentException.class, () -> match.skip(1, Integer.MIN_VALUE));
   }
 
-  @Test
-  public void matchSkipFromEnd_zero() {
+  @Test public void matchSkipFromEnd_zero() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThat(match.skip(0, 0).toString()).isEqualTo("foo");
   }
 
-  @Test
-  public void matchSkipFromEnd_smallerThanLength() {
+  @Test public void matchSkipFromEnd_smallerThanLength() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThat(match.skip(0, 1).toString()).isEqualTo("fo");
   }
 
-  @Test
-  public void matchSkipFromEnd_equalToLength() {
+  @Test public void matchSkipFromEnd_equalToLength() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThat(match.skip(0, 3).toString()).isEmpty();
   }
 
-  @Test
-  public void matchSkipFromEnd_greaterThanLength() {
+  @Test public void matchSkipFromEnd_greaterThanLength() {
     Substring.Match match = first("foo").in(" foo bar").get();
 
     Substring.Match shrinked = match.skip(0, 4);
@@ -2266,21 +2196,18 @@ public class SubstringTest {
     assertThat(shrinked.index()).isEqualTo(1);
   }
 
-  @Test
-  public void matchSkipFromBothEnds_smallerThanLength() {
+  @Test public void matchSkipFromBothEnds_smallerThanLength() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThat(match.skip(1, 1).toString()).isEqualTo("o");
   }
 
-  @Test
-  public void matchSkipFromBothEnds_equalToLength() {
+  @Test public void matchSkipFromBothEnds_equalToLength() {
     Substring.Match match = first("foo").in(" foo bar").get();
     assertThat(match.skip(1, 2).toString()).isEmpty();
     assertThat(match.skip(2, 1).toString()).isEmpty();
   }
 
-  @Test
-  public void matchSkipFromBothEnds_greaterThanLength() {
+  @Test public void matchSkipFromBothEnds_greaterThanLength() {
     Substring.Match match = first("foo").in(" foo bar").get();
 
     Substring.Match shrinked = match.skip(2, 2);
@@ -2292,21 +2219,18 @@ public class SubstringTest {
     assertThat(shrinked.index()).isEqualTo(4);
   }
 
-  @Test
-  public void skipFromEnd_negative() {
+  @Test public void skipFromEnd_negative() {
     Substring.Pattern pattern = first("foo");
     assertThrows(IllegalArgumentException.class, () -> pattern.skip(1, -1));
     assertThrows(IllegalArgumentException.class, () -> pattern.skip(1, Integer.MIN_VALUE));
   }
 
-  @Test
-  public void skipFromEnd_noMatch() {
+  @Test public void skipFromEnd_noMatch() {
     Substring.Pattern pattern = first("foo");
     assertThat(pattern.skip(0, 1).from("fur")).isEmpty();
   }
 
-  @Test
-  public void skipFromEnd_smallerThanSize() {
+  @Test public void skipFromEnd_smallerThanSize() {
     assertThat(first("foo").skip(0, 1).from("my food")).hasValue("fo");
     assertThat(first("foo").skip(0, 1).repeatedly().from("my food")).containsExactly("fo");
     assertThat(first("foo").skip(0, 1).repeatedly().from("my ffoof")).containsExactly("fo");
@@ -2314,16 +2238,14 @@ public class SubstringTest {
     assertThat(first("fff").skip(0, 2).repeatedly().from("ffffff")).containsExactly("f", "f");
   }
 
-  @Test
-  public void skipFromEnd_equalToSize() {
+  @Test public void skipFromEnd_equalToSize() {
     assertThat(first("foo").skip(0, 3).from("my food")).hasValue("");
     assertThat(first("foo").skip(0, 3).repeatedly().from("my food")).containsExactly("");
     assertThat(first("foo").skip(0, 3).repeatedly().from("my ffoof")).containsExactly("");
     assertThat(first("fff").skip(0, 3).repeatedly().from("fffff")).containsExactly("");
   }
 
-  @Test
-  public void skipFromEnd_greaterThanSize() {
+  @Test public void skipFromEnd_greaterThanSize() {
     assertThat(first("foo").skip(0, Integer.MAX_VALUE).from("my food")).hasValue("");
     assertThat(first("foo").skip(0, Integer.MAX_VALUE).repeatedly().from("my food"))
         .containsExactly("");
@@ -2333,8 +2255,7 @@ public class SubstringTest {
         .containsExactly("", "");
   }
 
-  @Test
-  public void skipFromEnd_toString() {
+  @Test public void skipFromEnd_toString() {
     assertThat(first("foo").skip(0, 2).toString()).isEqualTo("first('foo').skip(0, 2)");
   }
 
@@ -2353,8 +2274,7 @@ public class SubstringTest {
     assertThat(match.get().replaceWith("coo")).isEqualTo("cooar");
     assertThat(match.get().length()).isEqualTo(1);
     assertThat(match.get().toString()).isEqualTo("b");
-    assertThat(first('b').or(first("foo")).repeatedly().from("barfoo"))
-        .containsExactly("b", "foo");
+    assertThat(first('b').or(first("foo")).repeatedly().from("barfoo")).containsExactly("b", "foo");
   }
 
   @Test public void or_secondMatcherMatches() {
@@ -2400,7 +2320,9 @@ public class SubstringTest {
 
   @Test public void upToIncluding_delimitedByRegexGroup() {
     assertThat(
-            Substring.upToIncluding(first(Pattern.compile("(/.)/"))).repeatedly().match("foo/1/bar/2/")
+            Substring.upToIncluding(first(Pattern.compile("(/.)/")))
+                .repeatedly()
+                .match("foo/1/bar/2/")
                 .map(Object::toString))
         .containsExactly("foo/1/", "bar/2/");
   }
@@ -2421,8 +2343,7 @@ public class SubstringTest {
 
   @Test public void toEnd_matchInTheMiddle() {
     assertThat(first("//").toEnd().removeFrom("foo // bar")).isEqualTo("foo ");
-    assertThat(first("//").toEnd().repeatedly().from("foo // bar //"))
-        .containsExactly("// bar //");
+    assertThat(first("//").toEnd().repeatedly().from("foo // bar //")).containsExactly("// bar //");
   }
 
   @Test public void before_toString() {
@@ -2436,8 +2357,7 @@ public class SubstringTest {
 
   @Test public void before_matchAtPrefix() {
     assertThat(Substring.before(first("//")).removeFrom("//foo")).isEqualTo("//foo");
-    assertThat(Substring.before(first("//")).repeatedly().from("//foo"))
-        .containsExactly("");
+    assertThat(Substring.before(first("//")).repeatedly().from("//foo")).containsExactly("");
     assertThat(Substring.before(first("//")).repeatedly().from("//foo//"))
         .containsExactly("", "foo");
   }
@@ -2450,21 +2370,24 @@ public class SubstringTest {
 
   @Test public void before_repeatedly_split() {
     assertThat(Substring.before(first("/")).repeatedly().from("a/b/cd"))
-        .containsExactly("a", "b").inOrder();
-    assertThat(Substring.before(first("/")).repeatedly().split("a/b/cd").map(Substring.Match::toString))
+        .containsExactly("a", "b")
+        .inOrder();
+    assertThat(
+            Substring.before(first("/"))
+                .repeatedly()
+                .split("a/b/cd")
+                .map(Substring.Match::toString))
         .containsExactly("", "/", "/cd");
   }
 
-  @Test
-  public void before_limit() {
+  @Test public void before_limit() {
     assertThat(Substring.before(first("//")).limit(4).removeFrom("http://foo")).isEqualTo("://foo");
     assertThat(Substring.before(first("/")).limit(4).repeatedly().from("http://foo/barbara/"))
         .containsExactly("http", "", "foo", "barb");
   }
 
   @Test public void repeatedly_split_noMatch() {
-    assertThat(first("://").repeatedly().split("abc").map(Match::toString))
-        .containsExactly("abc");
+    assertThat(first("://").repeatedly().split("abc").map(Match::toString)).containsExactly("abc");
   }
 
   @Test public void repeatedly_split_match() {
@@ -2478,9 +2401,7 @@ public class SubstringTest {
 
   @Test public void repeatedly_split_byBetweenPattern() {
     Substring.Pattern comment = Substring.between("/*", INCLUSIVE, "*/", INCLUSIVE);
-    assertThat(comment.repeatedly().split("a").map(Match::toString))
-        .containsExactly("a")
-        .inOrder();
+    assertThat(comment.repeatedly().split("a").map(Match::toString)).containsExactly("a").inOrder();
     assertThat(comment.repeatedly().split("a/*comment*/").map(Match::toString))
         .containsExactly("a", "")
         .inOrder();
@@ -2506,14 +2427,12 @@ public class SubstringTest {
 
   @Test public void after_matchAtSuffix() {
     assertThat(Substring.after(last('.')).removeFrom("foo.")).isEqualTo("foo.");
-    assertThat(Substring.after(last('.')).repeatedly().from("foo."))
-        .containsExactly("");
+    assertThat(Substring.after(last('.')).repeatedly().from("foo.")).containsExactly("");
   }
 
   @Test public void after_matchInTheMiddle() {
     assertThat(Substring.after(last('.')).removeFrom("foo. bar")).isEqualTo("foo.");
-    assertThat(Substring.after(last('.')).repeatedly().from("foo. bar"))
-        .containsExactly(" bar");
+    assertThat(Substring.after(last('.')).repeatedly().from("foo. bar")).containsExactly(" bar");
   }
 
   @Test public void between_toString() {
@@ -2532,11 +2451,9 @@ public class SubstringTest {
     assertThat(match.before()).isEqualTo("foo<");
     assertThat(match.after()).isEqualTo(">baz");
     assertThat(match.length()).isEqualTo(3);
-    assertThat(
-            Substring.between(last('<'), last('>')).repeatedly().from("foo<bar>baz"))
+    assertThat(Substring.between(last('<'), last('>')).repeatedly().from("foo<bar>baz"))
         .containsExactly("bar");
-    assertThat(
-            Substring.between('/', '/').repeatedly().from("/foo/bar/"))
+    assertThat(Substring.between('/', '/').repeatedly().from("/foo/bar/"))
         .containsExactly("foo", "bar");
   }
 
@@ -2558,15 +2475,20 @@ public class SubstringTest {
     assertThat(match.after()).isEqualTo("-baz");
     assertThat(match.length()).isEqualTo(3);
     assertThat(
-            Substring.between(delimiter, delimiter).repeatedly().match("-foo-bar-baz-")
+            Substring.between(delimiter, delimiter)
+                .repeatedly()
+                .match("-foo-bar-baz-")
                 .map(Object::toString))
         .containsExactly("foo", "bar", "baz")
         .inOrder();
     assertThat(
-            Substring.between(delimiter, delimiter).repeatedly().match("-foo-bar-baz-", 1)
+            Substring.between(delimiter, delimiter)
+                .repeatedly()
+                .match("-foo-bar-baz-", 1)
                 .map(Object::toString))
         .containsExactly("bar", "baz")
-        .inOrder();;
+        .inOrder();
+    ;
   }
 
   @Test public void between_matchedFully() {
@@ -2585,8 +2507,7 @@ public class SubstringTest {
     assertThat(match.before()).isEmpty();
     assertThat(match.after()).isEqualTo(".");
     assertThat(match.length()).isEqualTo(3);
-    assertThat(Substring.between(first(""), last('.')).repeatedly().from("foo."))
-        .contains("foo");
+    assertThat(Substring.between(first(""), last('.')).repeatedly().from("foo.")).contains("foo");
   }
 
   @Test public void between_innerMatchesEmpty() {
@@ -2606,15 +2527,21 @@ public class SubstringTest {
     assertThat(match.after()).isEqualTo(">");
     assertThat(match.length()).isEqualTo(3);
     assertThat(
-            Substring.between(last('<'), last('>')).repeatedly().match("<foo><bar> <baz>")
+            Substring.between(last('<'), last('>'))
+                .repeatedly()
+                .match("<foo><bar> <baz>")
                 .map(Object::toString))
         .containsExactly("baz");
     assertThat(
-            Substring.between(last('<'), last('>')).repeatedly().match("<foo><bar> <baz>", 11)
+            Substring.between(last('<'), last('>'))
+                .repeatedly()
+                .match("<foo><bar> <baz>", 11)
                 .map(Object::toString))
         .containsExactly("baz");
     assertThat(
-            Substring.between(last('<'), last('>')).repeatedly().match("<foo><bar> <baz>", 12)
+            Substring.between(last('<'), last('>'))
+                .repeatedly()
+                .match("<foo><bar> <baz>", 12)
                 .map(Object::toString))
         .isEmpty();
   }
@@ -2627,7 +2554,9 @@ public class SubstringTest {
     assertThat(match.after()).isEqualTo("end");
     assertThat(match.length()).isEqualTo(5);
     assertThat(
-            Substring.between(before(last('<')), after(last('>'))).repeatedly().match("begin<foo>end")
+            Substring.between(before(last('<')), after(last('>')))
+                .repeatedly()
+                .match("begin<foo>end")
                 .map(Object::toString))
         .containsExactly("<foo>");
   }
@@ -2640,15 +2569,21 @@ public class SubstringTest {
     assertThat(match.after()).isEqualTo("end");
     assertThat(match.length()).isEqualTo(5);
     assertThat(
-            Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE).repeatedly().match("begin<foo>end")
+            Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE)
+                .repeatedly()
+                .match("begin<foo>end")
                 .map(Object::toString))
         .containsExactly("<foo>");
     assertThat(
-            Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE).repeatedly().match("begin<foo>end", 5)
+            Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE)
+                .repeatedly()
+                .match("begin<foo>end", 5)
                 .map(Object::toString))
         .containsExactly("<foo>");
     assertThat(
-            Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE).repeatedly().match("begin<foo>end", 6)
+            Substring.between(last('<'), INCLUSIVE, last('>'), INCLUSIVE)
+                .repeatedly()
+                .match("begin<foo>end", 6)
                 .map(Object::toString))
         .isEmpty();
   }
@@ -2679,8 +2614,7 @@ public class SubstringTest {
     assertThat(match.before()).isEqualTo("><");
     assertThat(match.after()).isEqualTo(">");
     assertThat(match.length()).isEqualTo(3);
-    assertThat(Substring.between('<', '>').repeatedly().from("><foo>"))
-        .containsExactly("foo");
+    assertThat(Substring.between('<', '>').repeatedly().from("><foo>")).containsExactly("foo");
   }
 
   @Test public void between_matchesNone() {
@@ -2697,7 +2631,9 @@ public class SubstringTest {
     assertThat(match.after()).isEqualTo("foo-");
     assertThat(match.length()).isEqualTo(0);
     assertThat(
-            Substring.between(first("-"), before(first("-"))).repeatedly().match("-foo-")
+            Substring.between(first("-"), before(first("-")))
+                .repeatedly()
+                .match("-foo-")
                 .map(Object::toString))
         .containsExactly("");
   }
@@ -2710,7 +2646,9 @@ public class SubstringTest {
     assertThat(match.after()).isEqualTo("foo-");
     assertThat(match.length()).isEqualTo(0);
     assertThat(
-            Substring.between(first("-"), upToIncluding(first("-"))).repeatedly().match("-foo-")
+            Substring.between(first("-"), upToIncluding(first("-")))
+                .repeatedly()
+                .match("-foo-")
                 .map(Object::toString))
         .containsExactly("");
   }
@@ -2723,20 +2661,22 @@ public class SubstringTest {
     assertThat(match.after()).isEqualTo("foo-");
     assertThat(match.length()).isEqualTo(0);
     assertThat(
-            Substring.between(first("-"), first(Pattern.compile(".*-")))
-                .repeatedly().from("-foo-"))
+            Substring.between(first("-"), first(Pattern.compile(".*-"))).repeatedly().from("-foo-"))
         .containsExactly("");
   }
 
   @Test public void between_closeOverlapsWithOpen() {
     assertThat(Substring.between(first("abc"), last("cde")).in("abcde")).isEmpty();
     assertThat(Substring.between(first("abc"), last("cde")).repeatedly().match("abcde")).isEmpty();
-    assertThat(Substring.between(first("abc"), last("cde")).repeatedly().match("abcde", 1)).isEmpty();
+    assertThat(Substring.between(first("abc"), last("cde")).repeatedly().match("abcde", 1))
+        .isEmpty();
     assertThat(Substring.between(first("abc"), last('c')).in("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), last('c')).repeatedly().match("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), suffix("cde")).in("abcde")).isEmpty();
-    assertThat(Substring.between(first("abc"), suffix("cde")).repeatedly().match("abcde")).isEmpty();
-    assertThat(Substring.between(first("abc"), suffix("cde")).repeatedly().match("abcde", 2)).isEmpty();
+    assertThat(Substring.between(first("abc"), suffix("cde")).repeatedly().match("abcde"))
+        .isEmpty();
+    assertThat(Substring.between(first("abc"), suffix("cde")).repeatedly().match("abcde", 2))
+        .isEmpty();
     assertThat(Substring.between(first("abc"), suffix('c')).in("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), suffix('c')).repeatedly().match("abc")).isEmpty();
     assertThat(Substring.between(first("abc"), prefix("a")).in("abc")).isEmpty();
@@ -2758,7 +2698,9 @@ public class SubstringTest {
     assertThat(match.after()).isEqualTo("foo-");
     assertThat(match.length()).isEqualTo(0);
     assertThat(
-            Substring.between(first("-"), Substring.between(first(""), first('-'))).repeatedly().match("-foo-")
+            Substring.between(first("-"), Substring.between(first(""), first('-')))
+                .repeatedly()
+                .match("-foo-")
                 .map(Object::toString))
         .containsExactly("");
   }
@@ -2769,8 +2711,7 @@ public class SubstringTest {
     assertThat(match.before()).isEmpty();
     assertThat(match.after()).isEqualTo(", bar");
     assertThat(match.length()).isEqualTo(3);
-    assertThat(
-            Substring.between(first(""), first(", ")).repeatedly().from("foo, bar"))
+    assertThat(Substring.between(first(""), first(", ")).repeatedly().from("foo, bar"))
         .contains("foo");
   }
 
@@ -2801,19 +2742,24 @@ public class SubstringTest {
     assertThat(match.after()).isEqualTo("-baz-duh");
     assertThat(match.length()).isEqualTo(3);
     assertThat(
-            Substring.between("-", "-").repeatedly().match("foo-bar-baz-duh")
+            Substring.between("-", "-").repeatedly().match("foo-bar-baz-duh").map(Object::toString))
+        .containsExactly("bar", "baz");
+    assertThat(
+            Substring.between("-", "-")
+                .repeatedly()
+                .match("foo-bar-baz-duh", 1)
                 .map(Object::toString))
         .containsExactly("bar", "baz");
     assertThat(
-            Substring.between("-", "-").repeatedly().match("foo-bar-baz-duh", 1)
+            Substring.between("-", "-")
+                .repeatedly()
+                .match("foo-bar-baz-duh", 3)
                 .map(Object::toString))
         .containsExactly("bar", "baz");
     assertThat(
-            Substring.between("-", "-").repeatedly().match("foo-bar-baz-duh", 3)
-                .map(Object::toString))
-        .containsExactly("bar", "baz");
-    assertThat(
-            Substring.between("-", "-").repeatedly().match("foo-bar-baz-duh", 4)
+            Substring.between("-", "-")
+                .repeatedly()
+                .match("foo-bar-baz-duh", 4)
                 .map(Object::toString))
         .containsExactly("baz");
   }
@@ -2825,13 +2771,11 @@ public class SubstringTest {
     assertThat(match.after()).isEqualTo(">");
     assertThat(match.length()).isEqualTo(3);
     assertThat(
-            Substring.between("<", ">").repeatedly().match(">foo<bar>h<baz>")
-                .map(Object::toString))
+            Substring.between("<", ">").repeatedly().match(">foo<bar>h<baz>").map(Object::toString))
         .containsExactly("bar", "baz");
   }
 
-  @Test
-  public void between_withLimit() {
+  @Test public void between_withLimit() {
     assertThat(
             Substring.between(first("//").limit(1), first("//").limit(1))
                 .repeatedly()
@@ -2841,8 +2785,7 @@ public class SubstringTest {
   }
 
   @Test public void then_toString() {
-    assertThat(first("(").then(first("<")).toString())
-        .isEqualTo("first('(').then(first('<'))");
+    assertThat(first("(").then(first("<")).toString()).isEqualTo("first('(').then(first('<'))");
   }
 
   @Test public void then_match() {
@@ -2852,13 +2795,16 @@ public class SubstringTest {
             before(first('/')).then(prefix("")).repeatedly().match("foo/bar/").map(Match::before))
         .containsExactly("foo", "foo/bar");
     assertThat(
-            before(first('/')).then(prefix("")).repeatedly().match("foo/bar/", 1).map(Match::before))
+            before(first('/'))
+                .then(prefix(""))
+                .repeatedly()
+                .match("foo/bar/", 1)
+                .map(Match::before))
         .containsExactly("foo", "foo/bar");
   }
 
   @Test public void then_firstPatternDoesNotMatch() {
-    assertThat(first("GET").then(prefix(" ")).split("GE http").map(Joiner.on(':')::join))
-        .isEmpty();
+    assertThat(first("GET").then(prefix(" ")).split("GE http").map(Joiner.on(':')::join)).isEmpty();
   }
 
   @Test public void then_secondPatternDoesNotMatch() {
@@ -2867,22 +2813,21 @@ public class SubstringTest {
   }
 
   @Test public void peek_toString() {
-    assertThat(first("(").peek(first("<")).toString())
-        .isEqualTo("first('(').peek(first('<'))");
+    assertThat(first("(").peek(first("<")).toString()).isEqualTo("first('(').peek(first('<'))");
   }
 
-  @Test
-  public void peek_empty() {
+  @Test public void peek_empty() {
     assertThat(prefix("http").peek(prefix("")).from("http")).hasValue("http");
     assertThat(prefix("http").peek(prefix("")).from("https")).hasValue("http");
   }
 
-  @Test
-  public void peek_match() {
+  @Test public void peek_match() {
     assertThat(prefix("http").peek(prefix(":")).from("http://")).hasValue("http");
-    assertThat(prefix("http").peek(prefix(":")).repeatedly().from("http://")).containsExactly("http");
+    assertThat(prefix("http").peek(prefix(":")).repeatedly().from("http://"))
+        .containsExactly("http");
     assertThat(before(first('/')).peek(prefix("/")).repeatedly().from("foo/bar/"))
-        .containsExactly("foo", "bar").inOrder();
+        .containsExactly("foo", "bar")
+        .inOrder();
   }
 
   @Test public void peek_firstPatternDoesNotMatch() {
@@ -2917,12 +2862,13 @@ public class SubstringTest {
 
   @Test public void iterateIn_example() {
     String text = "{x:1}, {y:2}, {z:3}";
-    ImmutableListMultimap<String, String> dictionary =
-        Substring.between('{', '}').repeatedly().match(text)
-            .map(Object::toString)
-            .map(Substring.first(':')::in)
-            .map(Optional::get)
-            .collect(toImmutableListMultimap(Substring.Match::before, Substring.Match::after));
+    ImmutableListMultimap<String, String> dictionary = Substring.between('{', '}')
+        .repeatedly()
+        .match(text)
+        .map(Object::toString)
+        .map(Substring.first(':')::in)
+        .map(Optional::get)
+        .collect(toImmutableListMultimap(Substring.Match::before, Substring.Match::after));
     assertThat(dictionary).containsExactly("x", "1", "y", "2", "z", "3").inOrder();
   }
 
@@ -2994,66 +2940,57 @@ public class SubstringTest {
     assertThat(spanningInOrder("o", "bar", "car").in("foo bar cat")).isEmpty();
   }
 
-  @Test
-  public void firstOccurrence_noPattern() {
+  @Test public void firstOccurrence_noPattern() {
     Substring.Pattern pattern = Stream.<Substring.Pattern>empty().collect(firstOccurrence());
     assertThat(pattern.from("string")).isEmpty();
     assertThat(pattern.repeatedly().from("string")).isEmpty();
   }
 
-  @Test
-  public void firstOccurrence_emptyPattern() {
+  @Test public void firstOccurrence_emptyPattern() {
     Substring.Pattern pattern = Stream.of(first("")).collect(firstOccurrence());
     assertThat(pattern.from("")).hasValue("");
     assertThat(pattern.repeatedly().from("").limit(100)).containsExactly("");
     assertThat(pattern.repeatedly().from("ab").limit(100)).containsExactly("", "", "");
   }
 
-  @Test
-  public void firstOccurrence_singlePattern_noMatch() {
+  @Test public void firstOccurrence_singlePattern_noMatch() {
     Substring.Pattern pattern = Stream.of(first("foo")).collect(firstOccurrence());
     assertThat(pattern.from("string")).isEmpty();
     assertThat(pattern.repeatedly().from("string")).isEmpty();
   }
 
-  @Test
-  public void firstOccurrence_singlePattern_match() {
+  @Test public void firstOccurrence_singlePattern_match() {
     Substring.Pattern pattern = Stream.of(Substring.word()).collect(firstOccurrence());
     assertThat(pattern.from("foo bar")).hasValue("foo");
     assertThat(pattern.repeatedly().from("foo bar")).containsExactly("foo", "bar").inOrder();
   }
 
-  @Test
-  public void firstOccurrence_twoPatterns_noneMatch() {
+  @Test public void firstOccurrence_twoPatterns_noneMatch() {
     Substring.Pattern pattern = Stream.of(first("foo"), first("bar")).collect(firstOccurrence());
     assertThat(pattern.from("what")).isEmpty();
     assertThat(pattern.repeatedly().from("what")).isEmpty();
   }
 
-  @Test
-  public void firstOccurrence_twoPatterns_firstMatches() {
+  @Test public void firstOccurrence_twoPatterns_firstMatches() {
     Substring.Pattern pattern = Stream.of(first("foo"), first("bar")).collect(firstOccurrence());
     assertThat(pattern.from("foo bar")).hasValue("foo");
     assertThat(pattern.repeatedly().from("foo bar")).containsExactly("foo", "bar").inOrder();
   }
 
-  @Test
-  public void firstOccurrence_twoPatterns_secondMatches() {
+  @Test public void firstOccurrence_twoPatterns_secondMatches() {
     Substring.Pattern pattern = Stream.of(first("foo"), first("bar")).collect(firstOccurrence());
     assertThat(pattern.from("bar foo")).hasValue("bar");
     assertThat(pattern.repeatedly().from("bar foo")).containsExactly("bar", "foo").inOrder();
   }
 
-  @Test
-  public void firstOccurrence_threePatterns_noneMatch() {
+  @Test public void firstOccurrence_threePatterns_noneMatch() {
     Substring.Pattern pattern =
         Stream.of(first("foo"), first("bar"), first("zoo")).collect(firstOccurrence());
     assertThat(pattern.from("what")).isEmpty();
     assertThat(pattern.repeatedly().from("what")).isEmpty();
   }
 
-  @Test
-  public void firstOccurrence_threePatterns_firstMatches() {
+  @Test public void firstOccurrence_threePatterns_firstMatches() {
     Substring.Pattern pattern =
         Stream.of(first("foo"), first("bar"), first("zoo")).collect(firstOccurrence());
     assertThat(pattern.from("foo zoo bar")).hasValue("foo");
@@ -3062,8 +2999,7 @@ public class SubstringTest {
         .inOrder();
   }
 
-  @Test
-  public void firstOccurrence_threePatterns_secondMatches() {
+  @Test public void firstOccurrence_threePatterns_secondMatches() {
     Substring.Pattern pattern =
         Stream.of(first("foo"), first("bar"), first("zoo")).collect(firstOccurrence());
     assertThat(pattern.from("bar zoo foo")).hasValue("bar");
@@ -3072,8 +3008,7 @@ public class SubstringTest {
         .inOrder();
   }
 
-  @Test
-  public void firstOccurrence_threePatterns_thirdMatches() {
+  @Test public void firstOccurrence_threePatterns_thirdMatches() {
     Substring.Pattern pattern =
         Stream.of(first("foo"), first("bar"), first("zoo")).collect(firstOccurrence());
     assertThat(pattern.from("zoo bar foo")).hasValue("zoo");
@@ -3084,15 +3019,15 @@ public class SubstringTest {
 
   @Test public void firstOccurrence_splitKeyValues_withFixedSetOfKeys_noReservedDelimiter() {
     String input = "playlist id:foo bar artist: another name a: my name:age";
-    Substring.Pattern delim =
-        Stream.of("a", "artist", "playlist id", "foo bar")
-            .map(k -> first(" " + k + ":"))
-            .collect(firstOccurrence())
-            .limit(1);
-    ImmutableMap<String, String> keyValues =
-        delim.repeatedly()
-            .splitThenTrim(input)
-            .collect(MoreCollectors.mapping(
+    Substring.Pattern delim = Stream.of("a", "artist", "playlist id", "foo bar")
+        .map(k -> first(" " + k + ":"))
+        .collect(firstOccurrence())
+        .limit(1);
+    ImmutableMap<String, String> keyValues = delim
+        .repeatedly()
+        .splitThenTrim(input)
+        .collect(
+            MoreCollectors.mapping(
                 seg -> first(':')
                     .splitThenTrim(seg)
                     .orElseThrow(() -> new IllegalArgumentException("Bad seg: '" + seg + "'")),
@@ -3102,12 +3037,10 @@ public class SubstringTest {
         .inOrder();
   }
 
-  @Test
-  public void firstOccurrence_overlappingCandidatePatterns() {
-    Substring.Pattern pattern =
-        Stream.of("oop", "foo", "op", "pool", "load", "oad")
-            .map(Substring::first)
-            .collect(firstOccurrence());
+  @Test public void firstOccurrence_overlappingCandidatePatterns() {
+    Substring.Pattern pattern = Stream.of("oop", "foo", "op", "pool", "load", "oad")
+        .map(Substring::first)
+        .collect(firstOccurrence());
     assertThat(pattern.repeatedly().from("foopooload"))
         .containsExactly("foo", "pool", "oad")
         .inOrder();
@@ -3116,8 +3049,7 @@ public class SubstringTest {
         .inOrder();
   }
 
-  @Test
-  public void firstOccurrence_beforePatternRepetitionIndexRespected() {
+  @Test public void firstOccurrence_beforePatternRepetitionIndexRespected() {
     Substring.Pattern pattern =
         Stream.of(first("foo"), before(first("/")), first('/'), first("zoo"))
             .collect(firstOccurrence());
@@ -3126,88 +3058,62 @@ public class SubstringTest {
         .inOrder();
   }
 
-  @Test
-  public void firstOccurrence_beforePatternRepetition() {
-    Substring.Pattern pattern =
-        Stream.of(before(first("//")))
-            .collect(firstOccurrence());
+  @Test public void firstOccurrence_beforePatternRepetition() {
+    Substring.Pattern pattern = Stream.of(before(first("//"))).collect(firstOccurrence());
     assertThat(pattern.repeatedly().from("foo//bar//baz//zoo"))
         .containsExactly("foo", "bar", "baz")
         .inOrder();
   }
 
-  @Test
-  public void firstOccurrence_limitPatternInterleavedWithLimitPattern() {
+  @Test public void firstOccurrence_limitPatternInterleavedWithLimitPattern() {
     Substring.Pattern pattern =
-        Stream.of(first("koook").limit(3), first("ok").limit(1))
-            .collect(firstOccurrence());
+        Stream.of(first("koook").limit(3), first("ok").limit(1)).collect(firstOccurrence());
     assertThat(pattern.repeatedly().from("okoookoook"))
         .containsExactly("o", "koo", "o", "o")
         .inOrder();
-    assertThat(pattern.repeatedly().from("koookoooko"))
-        .containsExactly("koo", "o", "o")
-        .inOrder();
+    assertThat(pattern.repeatedly().from("koookoooko")).containsExactly("koo", "o", "o").inOrder();
   }
 
-  @Test
-  public void firstOccurrence_zeroLimitPatternInterleavedWithZeroLimitPattern() {
+  @Test public void firstOccurrence_zeroLimitPatternInterleavedWithZeroLimitPattern() {
     Substring.Pattern pattern =
-        Stream.of(first("kook").limit(0), first("ok").limit(0))
-            .collect(firstOccurrence());
-    assertThat(pattern.repeatedly().from("okookook"))
-        .containsExactly("", "", "", "")
-        .inOrder();
-    assertThat(pattern.repeatedly().from("kookooko"))
-        .containsExactly("", "", "")
-        .inOrder();
+        Stream.of(first("kook").limit(0), first("ok").limit(0)).collect(firstOccurrence());
+    assertThat(pattern.repeatedly().from("okookook")).containsExactly("", "", "", "").inOrder();
+    assertThat(pattern.repeatedly().from("kookooko")).containsExactly("", "", "").inOrder();
   }
 
-  @Test
-  public void firstOccurrenceThenLimit_interleaved() {
+  @Test public void firstOccurrenceThenLimit_interleaved() {
     Substring.Pattern pattern =
-        Stream.of(first("koook"), first("ok"))
-            .collect(firstOccurrence())
-            .limit(3);
-    assertThat(pattern.repeatedly().from("koookoook"))
-        .containsExactly("koo", "ok")
-        .inOrder();
+        Stream.of(first("koook"), first("ok")).collect(firstOccurrence()).limit(3);
+    assertThat(pattern.repeatedly().from("koookoook")).containsExactly("koo", "ok").inOrder();
   }
 
-  @Test
-  public void firstOccurrence_beforePatternInterleavedWithBeforePattern() {
+  @Test public void firstOccurrence_beforePatternInterleavedWithBeforePattern() {
     Substring.Pattern pattern =
-        Stream.of(before(first("/")), before(first("//")))
-            .collect(firstOccurrence());
+        Stream.of(before(first("/")), before(first("//"))).collect(firstOccurrence());
     assertThat(pattern.repeatedly().from("foo//bar//baz//zoo"))
         .containsExactly("foo", "", "", "bar", "", "", "baz", "", "")
         .inOrder();
   }
 
-  @Test
-  public void firstOccurrence_beforePatternInterleavedWithFirst() {
+  @Test public void firstOccurrence_beforePatternInterleavedWithFirst() {
     Substring.Pattern pattern =
-        Stream.of(before(first("//")), first("//"))
-            .collect(firstOccurrence());
+        Stream.of(before(first("//")), first("//")).collect(firstOccurrence());
     assertThat(pattern.repeatedly().from("foo//bar//baz//zoo"))
         .containsExactly("foo", "//", "bar", "//", "baz", "//")
         .inOrder();
   }
 
-  @Test
-  public void firstOccurrence_breaksTieByCandidatePatternOrder() {
-    Substring.Pattern pattern =
-        Stream.of("foo", "food", "dog", "f", "fo", "d", "do")
-            .map(Substring::first)
-            .collect(firstOccurrence());
+  @Test public void firstOccurrence_breaksTieByCandidatePatternOrder() {
+    Substring.Pattern pattern = Stream.of("foo", "food", "dog", "f", "fo", "d", "do")
+        .map(Substring::first)
+        .collect(firstOccurrence());
     assertThat(pattern.repeatedly().from("foodog")).containsExactly("foo", "dog").inOrder();
     assertThat(pattern.repeatedly().from(repeat("foodog", 10)).distinct())
         .containsExactly("foo", "dog");
   }
 
-  @Test
-  public void firstOccurrence_word() {
-    Substring.Pattern pattern =
-        Stream.of("food", "dog", "f", "fo", "d", "do")
+  @Test public void firstOccurrence_word() {
+    Substring.Pattern pattern = Stream.of("food", "dog", "f", "fo", "d", "do")
         .map(Substring::word)
         .collect(firstOccurrence());
     assertThat(pattern.from("foodog")).isEmpty();
@@ -3217,10 +3123,8 @@ public class SubstringTest {
         .inOrder();
   }
 
-  @Test
-  public void firstOccurrence_separatedBy() {
-    Substring.Pattern pattern =
-        Stream.of("food", "dog", "f", "fo", "d", "do")
+  @Test public void firstOccurrence_separatedBy() {
+    Substring.Pattern pattern = Stream.of("food", "dog", "f", "fo", "d", "do")
         .map(Substring::first)
         .collect(firstOccurrence())
         .separatedBy(Character::isWhitespace);
@@ -3231,99 +3135,86 @@ public class SubstringTest {
         .inOrder();
   }
 
-  @Test
-  public void firstOccurrence_separatedBy_tieBrokenByBoundary() {
-    Substring.Pattern pattern =
-        Stream.of("foo", "food")
-            .map(Substring::first)
-            .collect(firstOccurrence())
-            .separatedBy(Character::isWhitespace);
+  @Test public void firstOccurrence_separatedBy_tieBrokenByBoundary() {
+    Substring.Pattern pattern = Stream.of("foo", "food")
+        .map(Substring::first)
+        .collect(firstOccurrence())
+        .separatedBy(Character::isWhitespace);
     assertThat(pattern.from("food")).hasValue("food");
     assertThat(pattern.repeatedly().from("food")).containsExactly("food");
   }
 
-  @Test
-  public void firstOccurrence_between_tieBrokenByBoundary() {
-    Substring.Pattern pattern =
-        Stream.of("foo", "food")
-            .map(Substring::first)
-            .collect(firstOccurrence())
-            .immediatelyBetween("(", ")");
+  @Test public void firstOccurrence_between_tieBrokenByBoundary() {
+    Substring.Pattern pattern = Stream.of("foo", "food")
+        .map(Substring::first)
+        .collect(firstOccurrence())
+        .immediatelyBetween("(", ")");
     assertThat(pattern.from("(food)")).hasValue("food");
     assertThat(pattern.repeatedly().from("(food)")).containsExactly("food");
   }
 
-  @Test
-  public void firstOccurrence_notBetween_tieBrokenByBoundary() {
-    Substring.Pattern pattern =
-        Stream.of("food", "foo")
-            .map(Substring::first)
-            .collect(firstOccurrence())
-            .notImmediatelyBetween("(", ")");
+  @Test public void firstOccurrence_notBetween_tieBrokenByBoundary() {
+    Substring.Pattern pattern = Stream.of("food", "foo")
+        .map(Substring::first)
+        .collect(firstOccurrence())
+        .notImmediatelyBetween("(", ")");
     assertThat(pattern.from("(food)")).hasValue("foo");
     assertThat(pattern.repeatedly().from("(food)")).containsExactly("foo");
   }
 
-  @Test
-  public void firstOccurrence_peek_alternativeBackTrackingNotTriggeredByPeek() {
+  @Test public void firstOccurrence_peek_alternativeBackTrackingNotTriggeredByPeek() {
     Substring.Pattern pattern =
         Stream.of("foo", "ood").map(Substring::first).collect(firstOccurrence()).peek(prefix(" "));
     assertThat(pattern.from("food ")).isEmpty();
     assertThat(pattern.repeatedly().from("food ")).isEmpty();
   }
 
-  @Test
-  public void peekThenFirstOccurrence_alternativeBackTrackingTriggeredByPeek() {
-    Substring.Pattern pattern =
-        Stream.of("foo", "ood").map(Substring::first).map(p -> p.peek(prefix(" "))).collect(firstOccurrence());
+  @Test public void peekThenFirstOccurrence_alternativeBackTrackingTriggeredByPeek() {
+    Substring.Pattern pattern = Stream.of("foo", "ood")
+        .map(Substring::first)
+        .map(p -> p.peek(prefix(" ")))
+        .collect(firstOccurrence());
     assertThat(pattern.from("food ")).hasValue("ood");
     assertThat(pattern.repeatedly().from("food ")).containsExactly("ood");
   }
 
-  @Test
-  public void or_separatedBy_alternativeBackTrackingTriggeredByBoundaryMismatch() {
+  @Test public void or_separatedBy_alternativeBackTrackingTriggeredByBoundaryMismatch() {
     Substring.Pattern pattern = first("foo").or(first("food")).separatedBy(Character::isWhitespace);
     assertThat(pattern.from("food")).hasValue("food");
     assertThat(pattern.repeatedly().from("food")).containsExactly("food");
   }
 
-  @Test
-  public void or_between_alternativeBackTrackingTriggeredByBoundaryMismatch() {
+  @Test public void or_between_alternativeBackTrackingTriggeredByBoundaryMismatch() {
     Substring.Pattern pattern = first("foo").or(first("food")).immediatelyBetween("(", ")");
     assertThat(pattern.from("(food)")).hasValue("food");
     assertThat(pattern.repeatedly().from("(food)")).containsExactly("food");
   }
 
-  @Test
-  public void or_notBetween_alternativeBackTrackingTriggeredByBoundaryMismatch() {
+  @Test public void or_notBetween_alternativeBackTrackingTriggeredByBoundaryMismatch() {
     Substring.Pattern pattern = first("foo").or(first("(foo)")).notImmediatelyBetween("(", ")");
     assertThat(pattern.from("(foo)")).hasValue("(foo)");
     assertThat(pattern.repeatedly().from("(foo)")).containsExactly("(foo)");
   }
 
-  @Test
-  public void or_peek_alternativeBackTrackingTriggeredByPeek() {
+  @Test public void or_peek_alternativeBackTrackingTriggeredByPeek() {
     Substring.Pattern pattern = first("foo").or(first("food")).peek(prefix(" "));
     assertThat(pattern.from("food ")).hasValue("food");
     assertThat(pattern.repeatedly().from("food ")).containsExactly("food");
   }
 
-  @Test
-  public void or_limitThenPeek_alternativeBackTrackingTriggeredByPeek() {
+  @Test public void or_limitThenPeek_alternativeBackTrackingTriggeredByPeek() {
     Substring.Pattern pattern = first("foo").or(first("food")).limit(4).peek(prefix(" "));
     assertThat(pattern.from("food ")).hasValue("food");
     assertThat(pattern.repeatedly().from("food ")).containsExactly("food");
   }
 
-  @Test
-  public void leading_noMatch() {
+  @Test public void leading_noMatch() {
     assertThat(leading(ALPHA).from(" foo")).isEmpty();
     assertThat(leading(ALPHA).from("")).isEmpty();
     assertThat(leading(ALPHA).repeatedly().from(" foo")).isEmpty();
   }
 
-  @Test
-  public void leading_match() {
+  @Test public void leading_match() {
     assertThat(leading(ALPHA).from("System.out")).hasValue("System");
     assertThat(leading(ALPHA).removeFrom("System.out")).isEqualTo(".out");
     assertThat(
@@ -3334,50 +3225,52 @@ public class SubstringTest {
         .hasValue("http");
   }
 
-  @Test
-  public void leading_match_repeatedly() {
+  @Test public void leading_match_repeatedly() {
     assertThat(leading(ALPHA).repeatedly().removeAllFrom("System.out")).isEqualTo(".out");
     assertThat(leading(ALPHA).repeatedly().from("System.out")).containsExactly("System");
     assertThat(leading(ALPHA).repeatedly().from("out")).containsExactly("out");
   }
 
-  @Test
-  public void trailing_noMatch() {
+  @Test public void leading_longRun() {
+    String letters = "abcdefghijklmnopqrstuvwxyz".repeat(4);
+    assertThat(leading(CharPredicate.range('a', 'z')).from(letters + "123")).hasValue(letters);
+  }
+
+  @Test public void leading_allMatch() {
+    assertThat(leading(CharPredicate.range('a', 'z')).from("abcdefgh")).hasValue("abcdefgh");
+  }
+
+  @Test public void trailing_noMatch() {
     assertThat(trailing(DIGIT).from("123.")).isEmpty();
     assertThat(trailing(DIGIT).from("")).isEmpty();
     assertThat(trailing(DIGIT).repeatedly().from("123.")).isEmpty();
   }
 
-  @Test
-  public void trailing_match() {
+  @Test public void trailing_match() {
     assertThat(trailing(DIGIT).from("12>11")).hasValue("11");
     assertThat(trailing(DIGIT).removeFrom("12>11")).isEqualTo("12>");
   }
 
-  @Test
-  public void trailing_match_repeatedly() {
+  @Test public void trailing_match_repeatedly() {
     assertThat(trailing(DIGIT).repeatedly().removeAllFrom("12>11")).isEqualTo("12>");
     assertThat(trailing(DIGIT).repeatedly().from("12>11")).containsExactly("11");
     assertThat(trailing(DIGIT).repeatedly().from("11")).containsExactly("11");
   }
 
-  @Test
-  public void consecutive_noMatch() {
+  @Test public void consecutive_noMatch() {
     assertThat(consecutive(ALPHA).from(" ")).isEmpty();
     assertThat(consecutive(ALPHA).from("")).isEmpty();
     assertThat(consecutive(ALPHA).from(".")).isEmpty();
     assertThat(consecutive(ALPHA).repeatedly().from(".")).isEmpty();
   }
 
-  @Test
-  public void consecutive_match() {
+  @Test public void consecutive_match() {
     assertThat(consecutive(ALPHA).from(" foo.")).hasValue("foo");
     assertThat(consecutive(ALPHA).removeFrom(" foo.")).isEqualTo(" .");
     assertThat(consecutive(ALPHA).repeatedly().removeAllFrom(" foo.")).isEqualTo(" .");
   }
 
-  @Test
-  public void consecutive_match_repeatedly() {
+  @Test public void consecutive_match_repeatedly() {
     assertThat(consecutive(ALPHA).repeatedly().from(" foo.")).containsExactly("foo");
     assertThat(consecutive(ALPHA).repeatedly().from("(System.out)"))
         .containsExactly("System", "out")
@@ -3386,40 +3279,34 @@ public class SubstringTest {
         .isEqualTo("(system.out)");
   }
 
-  @Test
-  public void word_notFound() {
+  @Test public void word_notFound() {
     assertThat(Substring.word("cat").from("dog")).isEmpty();
     assertThat(Substring.word("cat").from("")).isEmpty();
   }
 
-  @Test
-  public void word_onlyWord() {
+  @Test public void word_onlyWord() {
     assertThat(Substring.word("word").from("word")).hasValue("word");
     assertThat(Substring.word("word").repeatedly().from("word")).containsExactly("word");
   }
 
-  @Test
-  public void word_partialWord() {
+  @Test public void word_partialWord() {
     assertThat(Substring.word("cat").from("catchie")).isEmpty();
     assertThat(Substring.word("cat").repeatedly().from("catchie")).isEmpty();
     assertThat(Substring.word("cat").from("bobcat")).isEmpty();
     assertThat(Substring.word("cat").repeatedly().from("bobcat")).isEmpty();
   }
 
-  @Test
-  public void word_startedByWord() {
+  @Test public void word_startedByWord() {
     assertThat(Substring.word("cat").from("cat loves dog")).hasValue("cat");
     assertThat(Substring.word("cat").repeatedly().from("cat loves dog")).containsExactly("cat");
   }
 
-  @Test
-  public void word_endedByWord() {
+  @Test public void word_endedByWord() {
     assertThat(Substring.word("word").from("hello word")).hasValue("word");
     assertThat(Substring.word("word").repeatedly().from("hello word")).containsExactly("word");
   }
 
-  @Test
-  public void word_multipleWords() {
+  @Test public void word_multipleWords() {
     assertThat(Substring.word("cat").from("bobcat is not a cat, or is it a cat?")).hasValue("cat");
     assertThat(Substring.word("cat").in("bobcat is not a cat, or is it a cat?").get().before())
         .isEqualTo("bobcat is not a ");
@@ -3427,29 +3314,25 @@ public class SubstringTest {
         .containsExactly("cat", "cat");
   }
 
-  @Test
-  public void word_emptyWord() {
+  @Test public void word_emptyWord() {
     assertThat(Substring.word("").repeatedly().from("a.b")).isEmpty();
     assertThat(Substring.word("").from("a.b")).isEmpty();
     assertThat(Substring.word("").repeatedly().from("ab..cd,,ef,")).containsExactly("", "", "");
   }
 
-  @Test
-  public void word_noMatch() {
+  @Test public void word_noMatch() {
     assertThat(Substring.word().from("")).isEmpty();
     assertThat(Substring.word().repeatedly().from("")).isEmpty();
     assertThat(Substring.word().from("./> ")).isEmpty();
     assertThat(Substring.word().repeatedly().from("./> ")).isEmpty();
   }
 
-  @Test
-  public void word_matches() {
+  @Test public void word_matches() {
     assertThat(Substring.word().from("hello world")).hasValue("hello");
     assertThat(Substring.word().repeatedly().from("hello world")).containsExactly("hello", "world");
   }
 
-  @Test
-  public void separatedBy_first() {
+  @Test public void separatedBy_first() {
     CharPredicate left = CharPredicate.range('a', 'z').not();
     CharPredicate right = CharPredicate.range('a', 'z').or('-').not();
     Substring.Pattern petRock = Substring.first("pet-rock").separatedBy(left, right);
@@ -3460,8 +3343,7 @@ public class SubstringTest {
     assertThat(petRock.from("muppet-rock")).isEmpty();
   }
 
-  @Test
-  public void separatedBy_skipEscape() {
+  @Test public void separatedBy_skipEscape() {
     CharPredicate escape = CharPredicate.is('\\');
     Substring.Pattern unescaped = Substring.first("aaa").separatedBy(escape.not());
     assertThat(unescaped.from("\\aaaa")).hasValue("aaa");
@@ -3469,8 +3351,7 @@ public class SubstringTest {
     assertThat(unescaped.in("\\aaaa").get().before()).isEqualTo("\\a");
   }
 
-  @Test
-  public void separatedBy_before() {
+  @Test public void separatedBy_before() {
     CharPredicate boundary = CharPredicate.range('a', 'z').not();
     Substring.Pattern dir = Substring.before(first("//")).separatedBy(boundary);
     assertThat(dir.from("foo//bar//zoo")).hasValue("foo");
@@ -3638,12 +3519,12 @@ public class SubstringTest {
   @Test public void between_repetitionStartsFromLookahead() {
     Substring.Pattern pattern = Substring.first("bar").immediatelyBetween("of", "o");
     assertThat(pattern.from("ofbarofbaro")).hasValue("bar");
-    assertThat(pattern.repeatedly().from("ofbarofbaro"))
-        .containsExactly("bar", "bar");
+    assertThat(pattern.repeatedly().from("ofbarofbaro")).containsExactly("bar", "bar");
   }
 
   @Test public void between_thenBacktracks() {
-    Substring.Pattern pattern = Substring.first(':').then(Substring.word()).immediatelyBetween("(", ")");
+    Substring.Pattern pattern =
+        Substring.first(':').then(Substring.word()).immediatelyBetween("(", ")");
     assertThat(pattern.from(": (foo)")).hasValue("foo");
     assertThat(pattern.from(": foo (bar)")).hasValue("bar");
     assertThat(pattern.repeatedly().from(": foo (bar) : or (zoo)")).containsExactly("bar", "zoo");
@@ -3762,27 +3643,21 @@ public class SubstringTest {
     Substring.Pattern pattern = Substring.word().notImmediatelyBetween("<-", "->");
     assertThat(pattern.from("<-foo-->")).hasValue("foo");
     assertThat(pattern.repeatedly().from("<-foo-->")).containsExactly("foo");
-    assertThat(pattern.repeatedly().from("<-foo--> bar"))
-        .containsExactly("foo", "bar")
-        .inOrder();
+    assertThat(pattern.repeatedly().from("<-foo--> bar")).containsExactly("foo", "bar").inOrder();
   }
 
   @Test public void notBetween_lookbehindAbsent() {
     Substring.Pattern pattern = Substring.word().notImmediatelyBetween("<-", "->");
     assertThat(pattern.from("<--foo->")).hasValue("foo");
     assertThat(pattern.repeatedly().from("<--foo->")).containsExactly("foo");
-    assertThat(pattern.repeatedly().from("<--foo-> bar->"))
-        .containsExactly("foo", "bar")
-        .inOrder();
+    assertThat(pattern.repeatedly().from("<--foo-> bar->")).containsExactly("foo", "bar").inOrder();
   }
 
   @Test public void notBetween_bothLookbehindAndLookaheadPresent() {
     Substring.Pattern pattern = Substring.word().notImmediatelyBetween("<-", "->");
     assertThat(pattern.from("<-foo-->")).hasValue("foo");
     assertThat(pattern.repeatedly().from("<-foo-->")).containsExactly("foo");
-    assertThat(pattern.repeatedly().from("<-foo--> bar"))
-        .containsExactly("foo", "bar")
-        .inOrder();
+    assertThat(pattern.repeatedly().from("<-foo--> bar")).containsExactly("foo", "bar").inOrder();
   }
 
   @Test public void notBetween_neitherLookbehindNorLookaheadPresent() {
@@ -3807,45 +3682,41 @@ public class SubstringTest {
   }
 
   @Test public void notBetween_thenBacktracks() {
-    Substring.Pattern pattern = Substring.first(':').then(Substring.word()).notImmediatelyBetween("((", "))");
+    Substring.Pattern pattern =
+        Substring.first(':').then(Substring.word()).notImmediatelyBetween("((", "))");
     assertThat(pattern.from(": foo")).hasValue("foo");
     assertThat(pattern.from(": ((foo)) [bar]")).hasValue("bar");
     assertThat(pattern.repeatedly().from(": ((foo)) bar : <zoo>")).containsExactly("bar", "zoo");
     assertThat(pattern.repeatedly().from(": ((foo)) bar :(zoo)")).containsExactly("bar", "zoo");
   }
 
-  @Test
-  public void regex_followedBy_lookaheadAbsent() {
+  @Test public void regex_followedBy_lookaheadAbsent() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).followedBy("...");
     assertThat(pattern.from("foo")).isEmpty();
     assertThat(pattern.repeatedly().from("foo")).isEmpty();
     assertThat(pattern.repeatedly().from("foo..")).isEmpty();
   }
 
-  @Test
-  public void regex_followedBy_found() {
+  @Test public void regex_followedBy_found() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).followedBy("...");
     assertThat(pattern.from("foo...")).hasValue("foo");
     assertThat(pattern.repeatedly().from("foo...")).containsExactly("foo");
     assertThat(pattern.repeatedly().from("foo...bar zoo...")).containsExactly("foo", "zoo");
   }
 
-  @Test
-  public void regex_followedBy_backtracking() {
+  @Test public void regex_followedBy_backtracking() {
     Substring.Pattern pattern = Substring.first(Pattern.compile("--")).followedBy("->");
     assertThat(pattern.from("<---->")).hasValue("--");
   }
 
-  @Test
-  public void regex_notFollowedBy_lookaheadAbsent() {
+  @Test public void regex_notFollowedBy_lookaheadAbsent() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).notFollowedBy("...");
     assertThat(pattern.from("foo...")).hasValue("fo");
     assertThat(pattern.repeatedly().from("foo...")).containsExactly("fo");
     assertThat(pattern.repeatedly().from("foo....bar")).containsExactly("fo", "bar");
   }
 
-  @Test
-  public void regex_notFollowedBy_found() {
+  @Test public void regex_notFollowedBy_found() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).notFollowedBy("...");
     assertThat(pattern.from("foo")).hasValue("foo");
     assertThat(pattern.repeatedly().from("foo.")).containsExactly("foo");
@@ -3853,52 +3724,45 @@ public class SubstringTest {
     assertThat(pattern.repeatedly().from("foo.barfoo..")).containsExactly("foo", "barfoo");
   }
 
-  @Test
-  public void regex_notFollowedBy_backtracking() {
+  @Test public void regex_notFollowedBy_backtracking() {
     Substring.Pattern pattern = Substring.first(Pattern.compile("--")).notFollowedBy("->");
     assertThat(pattern.from("<---->--")).hasValue("--");
   }
 
-  @Test
-  public void regex_precededBy_patternNotFound() {
+  @Test public void regex_precededBy_patternNotFound() {
     Substring.Pattern pattern = first(Pattern.compile("foo")).precededBy("...");
     assertThat(pattern.from("...bar")).isEmpty();
     assertThat(pattern.repeatedly().from("...bar")).isEmpty();
   }
 
-  @Test
-  public void regex_precededBy_lookbehindAbsent() {
+  @Test public void regex_precededBy_lookbehindAbsent() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).precededBy("...");
     assertThat(pattern.from("..foo")).isEmpty();
     assertThat(pattern.repeatedly().from("foo")).isEmpty();
     assertThat(pattern.repeatedly().from("..foo")).isEmpty();
   }
 
-  @Test
-  public void regex_precededBy_found() {
+  @Test public void regex_precededBy_found() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).precededBy("...");
     assertThat(pattern.from("...foo")).hasValue("foo");
     assertThat(pattern.repeatedly().from("...foo")).containsExactly("foo");
     assertThat(pattern.repeatedly().from("bar...foo bar...foo")).containsExactly("foo", "foo");
   }
 
-  @Test
-  public void regex_notPrecededBy_patternNotFound() {
+  @Test public void regex_notPrecededBy_patternNotFound() {
     Substring.Pattern pattern = first(Pattern.compile("foo")).notPrecededBy("...");
     assertThat(pattern.from("bar")).isEmpty();
     assertThat(pattern.repeatedly().from("bar")).isEmpty();
   }
 
-  @Test
-  public void regex_notPrecededBy_lookbehindAbsent() {
+  @Test public void regex_notPrecededBy_lookbehindAbsent() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).notPrecededBy("...");
     assertThat(pattern.from("...f")).isEmpty();
     assertThat(pattern.repeatedly().from("....f")).isEmpty();
     assertThat(pattern.repeatedly().from("...f")).isEmpty();
   }
 
-  @Test
-  public void regex_notPrecededBy_found() {
+  @Test public void regex_notPrecededBy_found() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).notPrecededBy("...");
     assertThat(pattern.from("..foo")).hasValue("foo");
     assertThat(pattern.repeatedly().from("..foo")).containsExactly("foo");
@@ -3907,8 +3771,7 @@ public class SubstringTest {
         .inOrder();
   }
 
-  @Test
-  public void regex_between_lookbehindAbsent() {
+  @Test public void regex_between_lookbehindAbsent() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).immediatelyBetween("<-", "->");
     assertThat(pattern.from("<!-foo->")).isEmpty();
     assertThat(pattern.repeatedly().from("<!-foo->")).isEmpty();
@@ -3916,8 +3779,7 @@ public class SubstringTest {
     assertThat(pattern.repeatedly().from("foo->")).isEmpty();
   }
 
-  @Test
-  public void regex_between_lookaheadAbsent() {
+  @Test public void regex_between_lookaheadAbsent() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).immediatelyBetween("<-", "->");
     assertThat(pattern.from("<-foo>>")).isEmpty();
     assertThat(pattern.repeatedly().from("<-foo>>")).isEmpty();
@@ -3926,50 +3788,43 @@ public class SubstringTest {
     assertThat(pattern.repeatedly().from("foo")).isEmpty();
   }
 
-  @Test
-  public void regex_between_found() {
+  @Test public void regex_between_found() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).immediatelyBetween("<-", "->");
     assertThat(pattern.from("<-foo->")).hasValue("foo");
     assertThat(pattern.repeatedly().from("<-foo->")).containsExactly("foo");
     assertThat(pattern.repeatedly().from("<-foo-> <-bar->")).containsExactly("foo", "bar");
   }
 
-  @Test
-  public void regex_between_reluctance() {
+  @Test public void regex_between_reluctance() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).immediatelyBetween("a", "b");
     assertThat(pattern.from("afoob")).hasValue("foo");
   }
 
-  @Test
-  public void regex_between_empty() {
+  @Test public void regex_between_empty() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).precededBy("");
     assertThat(pattern.from("<-foo->")).hasValue("foo");
     assertThat(pattern.repeatedly().from("<-foo-> <-bar->")).containsExactly("foo", "bar");
   }
 
-  @Test
-  public void regex_notBetween_lookbehindAbsent() {
+  @Test public void regex_notBetween_lookbehindAbsent() {
     Substring.Pattern pattern = first(Pattern.compile("foo")).notImmediatelyBetween("<-", "->");
     assertThat(pattern.from("<-foo->")).isEmpty();
     assertThat(pattern.repeatedly().from("<-foo->")).isEmpty();
   }
 
-  @Test
-  public void regex_notBetween_lookaheadAbsent() {
+  @Test public void regex_notBetween_lookaheadAbsent() {
     Substring.Pattern pattern = first(Pattern.compile("foo")).notImmediatelyBetween("<-", "->");
     assertThat(pattern.from("<-foo->")).isEmpty();
     assertThat(pattern.repeatedly().from("<-foo->")).isEmpty();
   }
 
-  @Test
-  public void regex_notBetween_bothLookbehindAndLookaheadPresent() {
+  @Test public void regex_notBetween_bothLookbehindAndLookaheadPresent() {
     Substring.Pattern pattern = first(Pattern.compile("foo")).notImmediatelyBetween("<-", "->");
     assertThat(pattern.from("<-foo->")).isEmpty();
     assertThat(pattern.repeatedly().from("<-foo->")).isEmpty();
   }
 
-  @Test
-  public void regex_notBetween_neitherLookbehindNorLookaheadPresent() {
+  @Test public void regex_notBetween_neitherLookbehindNorLookaheadPresent() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).notImmediatelyBetween("<-", "->");
     assertThat(pattern.from("<<foo>>")).hasValue("foo");
     assertThat(pattern.from("foo")).hasValue("foo");
@@ -3978,26 +3833,21 @@ public class SubstringTest {
     assertThat(pattern.repeatedly().from("<<foo>> bar")).containsExactly("foo", "bar");
   }
 
-  @Test
-  public void regex_notBetween_empty() {
+  @Test public void regex_notBetween_empty() {
     Substring.Pattern pattern = first(Pattern.compile("\\w+")).notPrecededBy("");
     assertThat(pattern.from("<foo>")).isEmpty();
     assertThat(pattern.from("")).isEmpty();
     assertThat(pattern.from("foo")).isEmpty();
   }
 
-  @Test
-  public void splitBeforeDelimiter() {
-    assertThat(
-            Substring.first(".").skip(0, 1).repeatedly().split("a.b.c.de").map(Object::toString))
+  @Test public void splitBeforeDelimiter() {
+    assertThat(Substring.first(".").skip(0, 1).repeatedly().split("a.b.c.de").map(Object::toString))
         .containsExactly("a", ".b", ".c", ".de")
         .inOrder();
   }
 
-  @Test
-  public void splitAfterDelimiter() {
-    assertThat(
-            Substring.first(".").skip(1, 0).repeatedly().split("a.b.c.de").map(Object::toString))
+  @Test public void splitAfterDelimiter() {
+    assertThat(Substring.first(".").skip(1, 0).repeatedly().split("a.b.c.de").map(Object::toString))
         .containsExactly("a.", "b.", "c.", "de")
         .inOrder();
   }
@@ -4013,22 +3863,27 @@ public class SubstringTest {
   }
 
   @Test public void testRegexTopLevelGroups_twoGroups() {
-    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)")).from("fffcde"))
+    assertThat(
+            Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)")).from("fffcde"))
         .containsExactly("fff", "cde");
   }
 
   @Test public void testRegexTopLevelGroups_repeatingGroup() {
-    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("((f){2,3})")).from("fffcde"))
+    assertThat(
+            Substring.topLevelGroups(java.util.regex.Pattern.compile("((f){2,3})")).from("fffcde"))
         .containsExactly("fff");
   }
 
   @Test public void testRegexTopLevelGroups_nestedGroup() {
-    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("((ab)(cd)+)ef")).from("abcdcdef"))
+    assertThat(
+            Substring.topLevelGroups(java.util.regex.Pattern.compile("((ab)(cd)+)ef"))
+                .from("abcdcdef"))
         .containsExactly("abcdcd");
   }
 
   @Test public void testRegexTopLevelGroups_noMatch() {
-    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("((ab)(cd)+)ef")).from("cdef"))
+    assertThat(
+            Substring.topLevelGroups(java.util.regex.Pattern.compile("((ab)(cd)+)ef")).from("cdef"))
         .isEmpty();
   }
 
@@ -4052,11 +3907,10 @@ public class SubstringTest {
     // The first group is "fff" at index 3-6 in the original input
     // before() should be "abc" (text before index 3)
     // after() should be "cde123" (text after index 6, including the second group)
-    Substring.Match match =
-        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
-            .match("abcfffcde123", 3)
-            .findFirst()
-            .get();
+    Substring.Match match = Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+        .match("abcfffcde123", 3)
+        .findFirst()
+        .get();
     assertThat(match.before()).isEqualTo("abc");
     assertThat(match.after()).isEqualTo("cde123");
     assertThat(match.toString()).isEqualTo("fff");
@@ -4083,81 +3937,73 @@ public class SubstringTest {
   @Test public void testRegexTopLevelGroups_remove_withFromIndex() {
     // Test that remove() correctly removes the first group match from the ORIGINAL input
     String input = "abcfffcde123";
-    Substring.Match match =
-        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
-            .match(input, 3)
-            .findFirst()
-            .get();
+    Substring.Match match = Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+        .match(input, 3)
+        .findFirst()
+        .get();
     // Should remove "fff" (first group) from the original, leaving "abccde123"
     assertThat(match.remove()).isEqualTo("abccde123");
 
     // Test with match at the beginning
     String input2 = "fffcde123";
-    Substring.Match match2 =
-        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
-            .match(input2, 0)
-            .findFirst()
-            .get();
+    Substring.Match match2 = Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+        .match(input2, 0)
+        .findFirst()
+        .get();
     assertThat(match2.remove()).isEqualTo("cde123");
 
     // Test with match at the end
     String input3 = "123fffcde";
-    Substring.Match match3 =
-        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
-            .match(input3, 3)
-            .findFirst()
-            .get();
+    Substring.Match match3 = Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+        .match(input3, 3)
+        .findFirst()
+        .get();
     assertThat(match3.remove()).isEqualTo("123cde");
 
     // Test with match in the middle only
     String input4 = "xxxfffcdeyyy";
-    Substring.Match match4 =
-        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
-            .match(input4, 3)
-            .findFirst()
-            .get();
+    Substring.Match match4 = Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+        .match(input4, 3)
+        .findFirst()
+        .get();
     assertThat(match4.remove()).isEqualTo("xxxcdeyyy");
   }
 
   @Test public void testRegexTopLevelGroups_fullString_withFromIndex() {
     // Test that fullString() returns the ORIGINAL input, not the substring
     String input = "abcfffcde123";
-    Substring.Match match =
-        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
-            .match(input, 3)
-            .findFirst()
-            .get();
+    Substring.Match match = Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+        .match(input, 3)
+        .findFirst()
+        .get();
     assertThat(match.fullString()).isEqualTo(input);
 
     // Even when matching from middle of string, fullString() returns original
     String input2 = "start-fffcde-end";
-    Substring.Match match2 =
-        Substring.topLevelGroups(java.util.regex.Pattern.compile("(fff)(cde)"))
-            .match(input2, 6)
-            .findFirst()
-            .get();
+    Substring.Match match2 = Substring.topLevelGroups(java.util.regex.Pattern.compile("(fff)(cde)"))
+        .match(input2, 6)
+        .findFirst()
+        .get();
     assertThat(match2.fullString()).isEqualTo(input2);
   }
 
   @Test public void testRegexTopLevelGroups_index_withFromIndex() {
     // Test that index() and length() are absolute positions in ORIGINAL input
     String input = "abcfffcde123";
-    Substring.Match match =
-        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
-            .match(input, 3)
-            .findFirst()
-            .get();
+    Substring.Match match = Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+        .match(input, 3)
+        .findFirst()
+        .get();
     // First group "fff" starts at index 3 and has length 3
     assertThat(match.index()).isEqualTo(3);
     assertThat(match.length()).isEqualTo(3);
 
     // Test with match at different positions
     String input2 = "xfffcde";
-    Substring.Match match2 =
-        Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
-            .match(input2, 1)
-            .findFirst()
-            .get();
+    Substring.Match match2 = Substring.topLevelGroups(java.util.regex.Pattern.compile("(f+)(cde)"))
+        .match(input2, 1)
+        .findFirst()
+        .get();
     assertThat(match2.index()).isEqualTo(1);
     assertThat(match2.length()).isEqualTo(3);
 
@@ -4205,10 +4051,14 @@ public class SubstringTest {
   @Test public void testRegexTopLevelGroups_trailingOptionalGroup() {
     // Pattern: (\d+)(\.\d+)? - optional decimal part
     // "42" - no decimal part
-    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(\\d+)(\\.\\d+)?")).from("42"))
+    assertThat(
+            Substring.topLevelGroups(java.util.regex.Pattern.compile("(\\d+)(\\.\\d+)?"))
+                .from("42"))
         .containsExactly("42");
     // "42.99" - has decimal part
-    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(\\d+)(\\.\\d+)?")).from("42.99"))
+    assertThat(
+            Substring.topLevelGroups(java.util.regex.Pattern.compile("(\\d+)(\\.\\d+)?"))
+                .from("42.99"))
         .containsExactly("42", ".99");
   }
 
@@ -4218,7 +4068,8 @@ public class SubstringTest {
     assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a+)(b)?(c+)")).from("ac"))
         .containsExactly("a", "c");
     // "abc" - all groups participate
-    assertThat(Substring.topLevelGroups(java.util.regex.Pattern.compile("(a+)(b)?(c+)")).from("abc"))
+    assertThat(
+            Substring.topLevelGroups(java.util.regex.Pattern.compile("(a+)(b)?(c+)")).from("abc"))
         .containsExactly("a", "b", "c");
   }
 
@@ -4235,8 +4086,7 @@ public class SubstringTest {
         .containsExactly("a", "b");
   }
 
-  @Test
-  public void match_contentEquals_false() {
+  @Test public void match_contentEquals_false() {
     Substring.Match match = first("bar").in("foobarbaz").get();
     assertThat(match.contentEquals("barb")).isFalse();
     assertThat(match.contentEquals("obar")).isFalse();
@@ -4244,14 +4094,12 @@ public class SubstringTest {
     assertThat(match.contentEquals("ar")).isFalse();
   }
 
-  @Test
-  public void match_contentEquals_true() {
+  @Test public void match_contentEquals_true() {
     Substring.Match match = first("bar").in("foobarbaz").get();
     assertThat(match.contentEquals("bar")).isTrue();
   }
 
-  @Test
-  public void match_startsWith_false() {
+  @Test public void match_startsWith_false() {
     Substring.Match match = first("bar").in("foobarbaz").get();
     assertThat(match.startsWith("barb")).isFalse();
     assertThat(match.startsWith("barbaz")).isFalse();
@@ -4259,8 +4107,7 @@ public class SubstringTest {
     assertThat(match.startsWith("arb")).isFalse();
   }
 
-  @Test
-  public void match_startsWith_true() {
+  @Test public void match_startsWith_true() {
     Substring.Match match = first("bar").in("foobarbaz").get();
     assertThat(match.startsWith("")).isTrue();
     assertThat(match.startsWith("b")).isTrue();
@@ -4268,8 +4115,7 @@ public class SubstringTest {
     assertThat(match.startsWith("bar")).isTrue();
   }
 
-  @Test
-  public void match_endsWith_false() {
+  @Test public void match_endsWith_false() {
     Substring.Match match = first("bar").in("foobarbaz").get();
     assertThat(match.endsWith("obar")).isFalse();
     assertThat(match.endsWith("rb")).isFalse();
@@ -4277,8 +4123,7 @@ public class SubstringTest {
     assertThat(match.endsWith("baz")).isFalse();
   }
 
-  @Test
-  public void match_endsWith_true() {
+  @Test public void match_endsWith_true() {
     Substring.Match match = first("bar").in("foobarbaz").get();
     assertThat(match.endsWith("bar")).isTrue();
     assertThat(match.endsWith("ar")).isTrue();
@@ -4427,10 +4272,11 @@ public class SubstringTest {
         .setDefault(Substring.Pattern.class, prefix("foo"));
   }
 
-  private static<K,V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
+  private static <K, V> MultimapSubject assertKeyValues(BiStream<K, V> stream) {
     Multimap<?, ?> multimap = stream.collect(new BiCollector<K, V, Multimap<K, V>>() {
-      @Override public <E> Collector<E, ?, Multimap<K, V>> collectorOf(Function<E, K> toKey, Function<E, V> toValue) {
-        return SubstringTest.toLinkedListMultimap(toKey,toValue);
+      @Override public <E> Collector<E, ?, Multimap<K, V>> collectorOf(
+          Function<E, K> toKey, Function<E, V> toValue) {
+        return SubstringTest.toLinkedListMultimap(toKey, toValue);
       }
     });
     return assertThat(multimap);

@@ -193,17 +193,17 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Matches one or more consecutive characters as specified by {@code matcher}. */
   public static Parser<String> consecutive(CharPredicate matcher, String name) {
-    return skipConsecutive(matcher, Skipper.from(matcher), name).source();
+    return skipConsecutive(matcher.precomputeForAscii(), name).source();
   }
 
-  private static Parser<Void> skipConsecutive(CharPredicate matcher, Skipper skipper, String name) {
+  private static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
     return new Scanner(name) {
       @Override int scan(CharInput input, int index) {
-        return skipper.skip(input, index);
+        return input.skipWhile(matcher, index);
       }
 
       @Override public Parser<Void> as(String logicalName) {
-        return skipConsecutive(matcher, skipper, logicalName);
+        return skipConsecutive(matcher, logicalName);
       }
 
       @Override Set<String> computePrefixes() {
@@ -1817,8 +1817,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * }</pre>
    */
   public final Lexical skipping(CharPredicate charsToSkip) {
-    requireNonNull(charsToSkip);
-    return new Lexical(Skipper.forLower64Ascii(charsToSkip));
+    CharPredicate precomputed = charsToSkip.precomputeForAscii();
+    return new Lexical((input, start) -> input.skipWhile(precomputed, start));
   }
 
   /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
@@ -2715,6 +2715,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   interface ElidableFunction<F, T> extends Function<F, T> {}
 
   private interface ElidableBiFunction<A, B, R> extends BiFunction<A, B, R> {}
+
+  /** Strategy interface to skip input characters. */
+  interface Skipper {
+    int skip(CharInput input, int start);
+  }
 
   Parser() {}
 }

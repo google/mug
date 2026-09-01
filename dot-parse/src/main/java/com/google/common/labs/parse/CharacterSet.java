@@ -96,6 +96,10 @@ public final class CharacterSet implements CharPredicate {
     return predicate.test(ch);
   }
 
+  @Override public int skipLeading(CharSequence s, int begin, int end) {
+    return predicate.skipLeading(s, begin, end);
+  }
+
   /**
    * No-op because a {@code CharacterSet} is already pre-computed for ASCII.
    *

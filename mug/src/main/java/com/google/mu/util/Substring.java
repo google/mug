@@ -15,7 +15,6 @@
 package com.google.mu.util;
 
 import static com.google.mu.util.InternalCollectors.toImmutableList;
-import static java.util.stream.Stream.concat;
 import static com.google.mu.util.stream.MoreStreams.whileNotNull;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -24,6 +23,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.regex.Pattern.compile;
 import static java.util.regex.Pattern.quote;
 import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Stream.concat;
 
 import java.util.Comparator;
 import java.util.Iterator;
@@ -118,6 +118,7 @@ import com.google.mu.util.stream.MoreStreams;
  * }</pre>
  *
  * <h2>From Apache StringUtils to Substring</h2>
+ *
  * <table border="1" cellpadding="6" cellspacing="0">
  * <thead><tr><th>StringUtils Style</th><th>Substring Style</th></tr></thead>
  *
@@ -376,10 +377,12 @@ public final class Substring {
       requireNonNull(s);
       return null;
     }
+
     @Override public String toString() {
       return "NONE";
     }
   };
+
   /**
    * {@code Pattern} that matches the empty substring at the beginning of the input string.
    * Typically used to represent an optional delimiter. For example, the following pattern matches
@@ -389,16 +392,15 @@ public final class Substring {
    * static final Substring.Pattern VALUE = Substring.after(first('=').or(BEGINNING));
    * </pre>
    */
-  public static final Pattern BEGINNING =
-      new Pattern() {
-        @Override Match match(String str, int fromIndex) {
-          return Match.nonBacktrackable(str, fromIndex, 0);
-        }
+  public static final Pattern BEGINNING = new Pattern() {
+    @Override Match match(String str, int fromIndex) {
+      return Match.nonBacktrackable(str, fromIndex, 0);
+    }
 
-        @Override public String toString() {
-          return "BEGINNING";
-        }
-      };
+    @Override public String toString() {
+      return "BEGINNING";
+    }
+  };
 
   /**
    * {@code Pattern} that matches the empty substring at the end of the input string. Typically used
@@ -410,16 +412,15 @@ public final class Substring {
    *     Substring.between(substring("id="), substring("\n").or(END));
    * </pre>
    */
-  public static final Pattern END =
-      new Pattern() {
-        @Override Match match(String str, int fromIndex) {
-          return Match.suffix(str, 0);
-        }
+  public static final Pattern END = new Pattern() {
+    @Override Match match(String str, int fromIndex) {
+      return Match.suffix(str, 0);
+    }
 
-        @Override public String toString() {
-          return "END";
-        }
-      };
+    @Override public String toString() {
+      return "END";
+    }
+  };
 
   /**
    * Returns a {@code Prefix} pattern that matches strings starting with {@code prefix}.
@@ -617,13 +618,11 @@ public final class Substring {
    * @since 6.0
    */
   public static Pattern leading(CharPredicate matcher) {
-    requireNonNull(matcher);
+    CharPredicate precomputed = matcher.precomputeForAscii();
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
-        int len = 0;
-        for (int i = fromIndex; i < input.length(); i++, len++) {
-          if (!matcher.test(input.charAt(i))) break;
-        }
+        int end = precomputed.skipLeading(input, fromIndex, input.length());
+        int len = end - fromIndex;
         return len == 0 ? null : Match.nonBacktrackable(input, fromIndex, len);
       }
 
@@ -685,16 +684,14 @@ public final class Substring {
    * @since 6.0
    */
   public static Pattern consecutive(CharPredicate matcher) {
-    requireNonNull(matcher);
+    CharPredicate precomputed = matcher.precomputeForAscii();
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
         int end = input.length();
         for (int i = fromIndex; i < end; i++) {
-          if (matcher.test(input.charAt(i))) {
-            int len = 1;
-            for (int j = i + 1; j < end; j++, len++) {
-              if (!matcher.test(input.charAt(j))) break;
-            }
+          if (precomputed.test(input.charAt(i))) {
+            int j = precomputed.skipLeading(input, i + 1, end);
+            int len = j - i;
             return Match.backtrackable(len, input, i, len);
           }
         }
@@ -731,8 +728,8 @@ public final class Substring {
   }
 
   /**
-   * Returns a {@link RepeatingPattern} for all characters that match {@code matcher} in
-   * the input string. It's equivalent to {@code first(matcher).repeatedly()}.
+   * Returns a {@link RepeatingPattern} for all characters that match {@code matcher} in the input
+   * string. It's equivalent to {@code first(matcher).repeatedly()}.
    *
    * @since 8.6
    */
@@ -741,8 +738,8 @@ public final class Substring {
   }
 
   /**
-   * Returns a {@link RepeatingPattern} for all occurrences of {@code pattern} in
-   * the input string. It's equivalent to {@code first(pattern).repeatedly()}.
+   * Returns a {@link RepeatingPattern} for all occurrences of {@code pattern} in the input string.
+   * It's equivalent to {@code first(pattern).repeatedly()}.
    *
    * @since 9.9.5
    */
@@ -751,20 +748,20 @@ public final class Substring {
   }
 
   /**
-   * Returns a repeating pattern representing all the top-level groups from {@code regexPattern}.
-   * If {@code regexPattern} has no capture group, the entire pattern is considered the only group.
+   * Returns a repeating pattern representing all the top-level groups from {@code regexPattern}. If
+   * {@code regexPattern} has no capture group, the entire pattern is considered the only group.
    *
-   * <p>For example, {@code topLevelGroups(compile("(g+)(o+)")).from("ggooo")} will return
-   * {@code ["gg", "ooo"]}.
+   * <p>For example, {@code topLevelGroups(compile("(g+)(o+)")).from("ggooo")} will return {@code
+   * ["gg", "ooo"]}.
    *
    * <p>Nested capture groups are not taken into account. For example: {@code
-   * topLevelGroups(compile("((foo)+(bar)*)(zoo)")).from("foofoobarzoo")} will return
-   * {@code ["foofoobar", "zoo"]}.
+   * topLevelGroups(compile("((foo)+(bar)*)(zoo)")).from("foofoobarzoo")} will return {@code
+   * ["foofoobar", "zoo"]}.
    *
    * <p>Note that the top-level groups are statically determined by the {@code regexPattern}.
    * Particularly, quantifiers on a capture group do not increase or decrease the number of captured
-   * groups. That is, when matching {@code "(foo)+"} against {@code "foofoofoo"}, there will only
-   * be one top-level group, with {@code "foo"} as the value.
+   * groups. That is, when matching {@code "(foo)+"} against {@code "foofoofoo"}, there will only be
+   * one top-level group, with {@code "foo"} as the value.
    *
    * @since 5.3
    */
@@ -838,7 +835,7 @@ public final class Substring {
             // If the group is optional and didn't participate in the match, don't include.
             return Match.backtrackable(1, input, start, matcher.end(group) - start);
           }
-          if (i >= matcher.end()) break;  // guard against infinite loop
+          if (i >= matcher.end()) break; // guard against infinite loop
         }
         return null;
       }
@@ -942,28 +939,27 @@ public final class Substring {
                   occurrences.add(new Occurrence(candidate, match, i));
                 }
               }
-              return MoreStreams.whileNotNull(
-                  () -> {
-                    final Occurrence occurrence = occurrences.poll();
-                    if (occurrence == null) return null;
-                    final Match match = occurrence.match;
+              return MoreStreams.whileNotNull(() -> {
+                final Occurrence occurrence = occurrences.poll();
+                if (occurrence == null) return null;
+                final Match match = occurrence.match;
 
-                    // For allOccurrencesOf([before(first('/')), first('/')]) against input = "foo/bar",
-                    // before(first('/')) will match the first occurrence of "foo".
-                    // In the next iteration, we want to start *after* the '/' for the repetition
-                    // of before(first('/')), yet start from the '/' for the other unmatched first('/').
-                    // The expected result is [foo, /].
-                    if (match.repetitionStartIndex <= input.length()) {
-                      occurrence.enqueueNextOccurrence(input, match.repetitionStartIndex, occurrences);
-                    }
-                    for (final int waterMark = match.endIndex; ;) {
-                      Occurrence nextInLine = occurrences.peek();
-                      if (nextInLine == null || nextInLine.match.index() >= waterMark) {
-                        return match;
-                      }
-                      occurrences.remove().enqueueNextOccurrence(input, waterMark, occurrences);
-                    }
-                  });
+                // For allOccurrencesOf([before(first('/')), first('/')]) against input = "foo/bar",
+                // before(first('/')) will match the first occurrence of "foo".
+                // In the next iteration, we want to start *after* the '/' for the repetition
+                // of before(first('/')), yet start from the '/' for the other unmatched first('/').
+                // The expected result is [foo, /].
+                if (match.repetitionStartIndex <= input.length()) {
+                  occurrence.enqueueNextOccurrence(input, match.repetitionStartIndex, occurrences);
+                }
+                for (final int waterMark = match.endIndex; ; ) {
+                  Occurrence nextInLine = occurrences.peek();
+                  if (nextInLine == null || nextInLine.match.index() >= waterMark) {
+                    return match;
+                  }
+                  occurrences.remove().enqueueNextOccurrence(input, waterMark, occurrences);
+                }
+              });
             }
 
             // separatedBy() moves one char at a time when boundary mismatches.
@@ -988,7 +984,8 @@ public final class Substring {
             //     ['foo', 'food'].separatedBy(whitespace()).collect(firstOccurrence()).
             //     firstOccurrence().repeatedly() is in the driving seat and will attempt 'food'
             //     from the first char.
-            @Override public Pattern separatedBy(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
+            @Override public Pattern separatedBy(
+                CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
               requireNonNull(boundaryBefore);
               requireNonNull(boundaryAfter);
               return candidates.stream()
@@ -1044,9 +1041,7 @@ public final class Substring {
     return new Last() {
       @Override Match match(String input, int fromIndex, int endIndex) {
         int index = str.isEmpty() ? endIndex : input.lastIndexOf(str, endIndex - 1);
-        return index >= fromIndex
-            ? Match.nonBacktrackable(input, index, str.length())
-            : null;
+        return index >= fromIndex ? Match.nonBacktrackable(input, index, str.length()) : null;
       }
 
       @Override public String toString() {
@@ -1089,7 +1084,8 @@ public final class Substring {
             // only one iteration, which is "http:". If the next scan starts before //, we'd get
             // an empty string match.
             //
-            // For before(first('/')).separatedBy(), if boundary doesn't match, it's not loggically correct
+            // For before(first('/')).separatedBy(), if boundary doesn't match, it's not loggically
+            // correct
             // to try the second '/'.
             : new Match(
                 input,
@@ -1178,12 +1174,13 @@ public final class Substring {
   }
 
   /**
-   * Similar to {@link #between(String, String)} but allows to use alternative bound styles
-   * to include or exclude the delimiters at both ends.
+   * Similar to {@link #between(String, String)} but allows to use alternative bound styles to
+   * include or exclude the delimiters at both ends.
    *
    * @since 7.2
    */
-  public static Pattern between(String open, BoundStyle openBound, String close, BoundStyle closeBound) {
+  public static Pattern between(
+      String open, BoundStyle openBound, String close, BoundStyle closeBound) {
     return between(first(open), openBound, first(close), closeBound);
   }
 
@@ -1201,12 +1198,13 @@ public final class Substring {
   }
 
   /**
-   * Similar to {@link #between(char, char)} but allows to use alternative bound styles
-   * to include or exclude the delimiters at both ends.
+   * Similar to {@link #between(char, char)} but allows to use alternative bound styles to include
+   * or exclude the delimiters at both ends.
    *
    * @since 7.2
    */
-  public static Pattern between(char open, BoundStyle openBound, char close, BoundStyle closeBound) {
+  public static Pattern between(
+      char open, BoundStyle openBound, char close, BoundStyle closeBound) {
     return between(first(open), openBound, first(close), closeBound);
   }
 
@@ -1225,12 +1223,13 @@ public final class Substring {
   }
 
   /**
-   * Similar to {@link #between(Pattern, Pattern)} but allows to use alternative bound styles
-   * to include or exclude the delimiters at both ends.
+   * Similar to {@link #between(Pattern, Pattern)} but allows to use alternative bound styles to
+   * include or exclude the delimiters at both ends.
    *
    * @since 7.2
    */
-  public static Pattern between(Pattern open, BoundStyle openBound, Pattern close, BoundStyle closeBound) {
+  public static Pattern between(
+      Pattern open, BoundStyle openBound, Pattern close, BoundStyle closeBound) {
     requireNonNull(open);
     requireNonNull(openBound);
     requireNonNull(close);
@@ -1242,14 +1241,15 @@ public final class Substring {
         Match right = close.match(input, left.endIndex);
         if (right == null) return null;
         int startIndex = openBound == BoundStyle.INCLUSIVE ? left.startIndex : left.endIndex;
-        int len = (closeBound == BoundStyle.INCLUSIVE ? right.endIndex : right.startIndex) - startIndex;
+        int len =
+            (closeBound == BoundStyle.INCLUSIVE ? right.endIndex : right.startIndex) - startIndex;
         // Include the closing delimiter in the next iteration. This allows delimiters in
         // patterns like "/foo/bar/baz/" to be treated more intuitively.
         return Match.backtrackable(
-            /*backtrackingOffset=*/ left.backtrackIndex - startIndex,
+            /* backtrackingOffset= */ left.backtrackIndex - startIndex,
             input,
             startIndex,
-            /*length=*/ len);
+            /* length= */ len);
       }
 
       @Override public String toString() {
@@ -1320,8 +1320,8 @@ public final class Substring {
     }
 
     /**
-     * Returns a new string with the substring matched by {@code this} replaced by
-     * the return value of {@code replacementFunction}.
+     * Returns a new string with the substring matched by {@code this} replaced by the return value
+     * of {@code replacementFunction}.
      *
      * <p>For example, you can replace a single template placeholder using:
      *
@@ -1390,8 +1390,7 @@ public final class Substring {
 
         // Allow between() to trigger backtracking.
         @Override Pattern lookaround(String lookbehind, String lookahead) {
-          return base.lookaround(lookbehind, lookahead)
-              .or(that.lookaround(lookbehind, lookahead));
+          return base.lookaround(lookbehind, lookahead).or(that.lookaround(lookbehind, lookahead));
         }
 
         // Allow notImmediatelyBetween() to trigger backtracking.
@@ -1419,8 +1418,8 @@ public final class Substring {
     }
 
     /**
-     * Returns a {@code Pattern} that's equivalent to this pattern except it only matches at
-     * most {@code maxChars}.
+     * Returns a {@code Pattern} that's equivalent to this pattern except it only matches at most
+     * {@code maxChars}.
      *
      * @since 6.1
      */
@@ -1447,8 +1446,8 @@ public final class Substring {
 
     /**
      * Returns a {@code Pattern} that's equivalent to this pattern except it will skip up to {@code
-     * fromBeginnings} characters from the beginning of the match and up to {@code fromEnd} characters
-     * from the end of the match.
+     * fromBeginnings} characters from the beginning of the match and up to {@code fromEnd}
+     * characters from the end of the match.
      *
      * <p>If the match includes fewer characters, an empty match is returned.
      *
@@ -1477,11 +1476,10 @@ public final class Substring {
       };
     }
 
-
     /**
-     * Similar to regex lookahead, returns a pattern that matches the {@code following}
-     * pattern after it has matched this pattern. For example {@code first('/').then(first('/'))}
-     * finds the second '/' character.
+     * Similar to regex lookahead, returns a pattern that matches the {@code following} pattern
+     * after it has matched this pattern. For example {@code first('/').then(first('/'))} finds the
+     * second '/' character.
      *
      * <p>This method is soft-deprecated. It's prone to misuse. You should usually use other methods
      * to achieve similar effects.
@@ -1509,7 +1507,8 @@ public final class Substring {
               : next;
         }
 
-        @Override public Pattern separatedBy(CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
+        @Override public Pattern separatedBy(
+            CharPredicate boundaryBefore, CharPredicate boundaryAfter) {
           return base.then(following.separatedBy(boundaryBefore, boundaryAfter));
         }
 
@@ -1528,22 +1527,22 @@ public final class Substring {
     }
 
     /**
-     * Return a {@code Pattern} equivalent to this {@code Pattern}, except it will fail to match
-     * if the {@code following} pattern can't find a match in the substring after the current match.
+     * Return a {@code Pattern} equivalent to this {@code Pattern}, except it will fail to match if
+     * the {@code following} pattern can't find a match in the substring after the current match.
      *
-     * <p>Useful in asserting that the current match is followed by the expected pattern. For example:
-     * {@code SCHEME_NAME.peek(prefix(':'))} returns the URI scheme name.
+     * <p>Useful in asserting that the current match is followed by the expected pattern. For
+     * example: {@code SCHEME_NAME.peek(prefix(':'))} returns the URI scheme name.
      *
      * <p>Note that unlike regex lookahead, no backtracking is attempted. So {@code
-     * first("foo").peek("bar")} will match "bafoobar" but won't match "foofoobar" because
-     * the first "foo" isn't followed by "bar".
+     * first("foo").peek("bar")} will match "bafoobar" but won't match "foofoobar" because the first
+     * "foo" isn't followed by "bar".
      *
      * <p>If look-ahead is needed, you can use {@link #followedBy} as in {@code
      * first("foo").followedBy("bar")}.
      *
      * <p>If you are trying to define a boundary around or after your pattern similar to regex
-     * anchor {@code '\b'}, consider using {@link #separatedBy} if the boundary can be detected by
-     * a character.
+     * anchor {@code '\b'}, consider using {@link #separatedBy} if the boundary can be detected by a
+     * character.
      *
      * <p>This method is soft-deprecated. It's prone to misuse. You should usually use other methods
      * to achieve similar effects.
@@ -1567,14 +1566,14 @@ public final class Substring {
     }
 
     /**
-     * Returns an otherwise equivalent {@code Pattern}, except it only matches if it's next
-     * to the beginning of the string, the end of the string, or the {@code separator} character(s).
+     * Returns an otherwise equivalent {@code Pattern}, except it only matches if it's next to the
+     * beginning of the string, the end of the string, or the {@code separator} character(s).
      *
      * <p>Useful if you are trying to find a word with custom boundaries. To search for words
      * composed of regex {@code \w} character class, consider using {@link Substring#word} instead.
      *
-     * <p>For lookahead and lookbehind assertions, consider using {@link #immediatelyBetween} or {@link
-     * #followedBy} instead.
+     * <p>For lookahead and lookbehind assertions, consider using {@link #immediatelyBetween} or
+     * {@link #followedBy} instead.
      *
      * @since 6.2
      */
@@ -1583,11 +1582,11 @@ public final class Substring {
     }
 
     /**
-     * Returns an otherwise equivalent {@code Pattern}, except it requires the
-     * beginning of the match must either be the beginning of the string, or be separated from the rest
-     * of the string by the {@code separatorBefore} character; and the end of the match must either
-     * be the end of the string, or be separated from the rest of the string by the {@code
-     * separatorAfter} character.
+     * Returns an otherwise equivalent {@code Pattern}, except it requires the beginning of the
+     * match must either be the beginning of the string, or be separated from the rest of the string
+     * by the {@code separatorBefore} character; and the end of the match must either be the end of
+     * the string, or be separated from the rest of the string by the {@code separatorAfter}
+     * character.
      *
      * <p>Useful if you are trying to find a word with custom boundaries. To search for words
      * composed of regex {@code \w} character class, consider using {@link Substring#word} instead.
@@ -1635,20 +1634,19 @@ public final class Substring {
      * after} string.
      *
      * <p>Similar to regex lookarounds, the returned pattern will backtrack until the lookaround is
-     * satisfied. That is, {@code word().immediatelyBetween("(", ")")} will find the "bar" substring inside the
-     * parenthesis from "foo (bar)".
+     * satisfied. That is, {@code word().immediatelyBetween("(", ")")} will find the "bar" substring
+     * inside the parenthesis from "foo (bar)".
      *
      * <p>If you need lookahead only, use {@link #followedBy} instead; for lookbehind only, pass an
-     * empty string as the {@code lookahead} string, as in: {@code word().immediatelyBetween(":", "")}.
+     * empty string as the {@code lookahead} string, as in: {@code word().immediatelyBetween(":",
+     * "")}.
      *
      * @since 6.2
      */
     public final Pattern immediatelyBetween(String lookbehind, String lookahead) {
       requireNonNull(lookbehind);
       requireNonNull(lookahead);
-      return lookbehind.isEmpty() && lookahead.isEmpty()
-          ? this
-          : lookaround(lookbehind, lookahead);
+      return lookbehind.isEmpty() && lookahead.isEmpty() ? this : lookaround(lookbehind, lookahead);
     }
 
     /**
@@ -1670,7 +1668,8 @@ public final class Substring {
         String lookahead,
         BoundStyle lookaheadBound) {
       Pattern withLookaround = lookaround(lookbehind, lookahead);
-      int behind = requireNonNull(lookbehindBound) == BoundStyle.INCLUSIVE ? lookbehind.length() : 0;
+      int behind =
+          requireNonNull(lookbehindBound) == BoundStyle.INCLUSIVE ? lookbehind.length() : 0;
       int ahead = requireNonNull(lookaheadBound) == BoundStyle.INCLUSIVE ? lookahead.length() : 0;
       if (behind == 0 && ahead == 0) return withLookaround;
       Pattern original = this;
@@ -1681,28 +1680,20 @@ public final class Substring {
         }
 
         @Override public String toString() {
-          return original
-              + ".immediatelyBetween('"
-              + lookbehind
-              + "', "
-              + lookbehindBound
-              + ", '"
-              + lookahead
-              + "', "
-              + lookaheadBound
-              + ")";
+          return original + ".immediatelyBetween('" + lookbehind + "', " + lookbehindBound + ", '"
+              + lookahead + "', " + lookaheadBound + ")";
         }
       };
     }
 
     /**
      * Returns an otherwise equivalent pattern except it requires the matched substring <em>not</em>
-     * be immediately preceded by the {@code lookbehind} string and immediately followed by the {@code
-     * after} string.
+     * be immediately preceded by the {@code lookbehind} string and immediately followed by the
+     * {@code after} string.
      *
      * <p>Similar to regex negative lookarounds, the returned pattern will backtrack until the
-     * negative lookaround is satisfied. That is, {@code word().notImmediatelyBetween("(", ")")} will find the
-     * "bar" substring from "(foo) bar".
+     * negative lookaround is satisfied. That is, {@code word().notImmediatelyBetween("(", ")")}
+     * will find the "bar" substring from "(foo) bar".
      *
      * <p>If you need negative lookahead only, use {@link #notFollowedBy} instead; for negative
      * lookbehind only, pass an empty string as the {@code lookahead} string, as in: {@code
@@ -1731,11 +1722,12 @@ public final class Substring {
      * Returns an otherwise equivalent pattern except it requires the matched substring be
      * immediately followed by the {@code lookahead} string.
      *
-     * <p>Similar to regex negative lookahead, the returned pattern will backtrack until the lookahead is
-     * satisfied. That is, {@code word().followedBy(":")} will find the "Joe" substring from "To
-     * Joe:".
+     * <p>Similar to regex negative lookahead, the returned pattern will backtrack until the
+     * lookahead is satisfied. That is, {@code word().followedBy(":")} will find the "Joe" substring
+     * from "To Joe:".
      *
-     * <p>If you need lookbehind, or both lookahead and lookbehind, use {@link #immediatelyBetween} instead.
+     * <p>If you need lookbehind, or both lookahead and lookbehind, use {@link #immediatelyBetween}
+     * instead.
      *
      * @since 6.2
      */
@@ -1785,12 +1777,12 @@ public final class Substring {
     }
 
     /**
-     * Returns an otherwise equivalent pattern except it requires the matched substring <em>not</em> be
-     * immediately preceded by the {@code lookbehind} string.
+     * Returns an otherwise equivalent pattern except it requires the matched substring <em>not</em>
+     * be immediately preceded by the {@code lookbehind} string.
      *
      * <p>Similar to regex negative lookbehind, the returned pattern will backtrack until the
-     * negative lookbehind is satisfied. For example, {@code word().notPrecededBy("(")} will find the
-     * "bar" substring from "(foo+bar)".
+     * negative lookbehind is satisfied. For example, {@code word().notPrecededBy("(")} will find
+     * the "bar" substring from "(foo+bar)".
      *
      * @since 6.2
      */
@@ -1799,8 +1791,8 @@ public final class Substring {
     }
 
     /**
-     * Matches this pattern and then matches {@code following}.
-     * The result matches from the beginning of this pattern to the end of {@code following}.
+     * Matches this pattern and then matches {@code following}. The result matches from the
+     * beginning of this pattern to the end of {@code following}.
      */
     final Pattern extendTo(Pattern following) {
       requireNonNull(following);
@@ -1838,10 +1830,11 @@ public final class Substring {
      * <p>If {@code this} pattern isn't found in {@code string} or if the {@code mapper} function
      * returns null, {@code Optional.empty()} is returned.
      *
-     * <p>If you need to trim the key-value pairs, use {@link
-     * #splitThenTrim(CharSequence, BiFunction) splitThenTrim()}.
+     * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim(CharSequence,
+     * BiFunction) splitThenTrim()}.
      *
-     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #repeatedly}.
+     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link
+     * #repeatedly}.
      *
      * @since 9.4
      */
@@ -1864,7 +1857,8 @@ public final class Substring {
      *
      * <p>If you need to trim the key-value pairs, use {@link #splitThenTrim(CharSequence)}.
      *
-     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #repeatedly}.
+     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link
+     * #repeatedly}.
      *
      * @since 5.0
      */
@@ -1884,7 +1878,8 @@ public final class Substring {
      * <p>If {@code this} pattern isn't found in {@code string} or if the {@code mapper} function
      * returns null, {@code Optional.empty()} is returned.
      *
-     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #repeatedly}.
+     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link
+     * #repeatedly}.
      *
      * @since 9.4
      */
@@ -1933,7 +1928,8 @@ public final class Substring {
      *             ImmutableListMultimap::toImmutableListMultimap));
      * }</pre>
      *
-     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link #repeatedly}.
+     * <p>To split a string into multiple substrings delimited by a delimiter, use {@link
+     * #repeatedly}.
      *
      * @since 5.0
      */
@@ -1971,26 +1967,25 @@ public final class Substring {
 
     /** Applies this pattern repeatedly against {@code input} and returns all iterations. */
     Stream<Match> iterate(String input, int fromIndex) {
-      return MoreStreams.whileNotNull(
-          new Supplier<Match>() {
-            private final int end = input.length();
-            private int nextIndex = fromIndex;
+      return MoreStreams.whileNotNull(new Supplier<Match>() {
+        private final int end = input.length();
+        private int nextIndex = fromIndex;
 
-            @Override public Match get() {
-              if (nextIndex > end) return null;
-              Match match = match(input, nextIndex);
-              if (match == null) return null;
-              if (match.endIndex == end) { // We've consumed the entire string.
-                nextIndex = Integer.MAX_VALUE;
-              } else if (match.repetitionStartIndex > nextIndex) {
-                nextIndex = match.repetitionStartIndex;
-              } else {
-                throw new IllegalStateException(
-                    "Infinite loop detected at " + match.repetitionStartIndex);
-              }
-              return match;
-            }
-          });
+        @Override public Match get() {
+          if (nextIndex > end) return null;
+          Match match = match(input, nextIndex);
+          if (match == null) return null;
+          if (match.endIndex == end) { // We've consumed the entire string.
+            nextIndex = Integer.MAX_VALUE;
+          } else if (match.repetitionStartIndex > nextIndex) {
+            nextIndex = match.repetitionStartIndex;
+          } else {
+            throw new IllegalStateException(
+                "Infinite loop detected at " + match.repetitionStartIndex);
+          }
+          return match;
+        }
+      });
     }
 
     private Match match(String string) {
@@ -2069,8 +2064,8 @@ public final class Substring {
      *
      * <p>An empty stream is returned if this pattern has no matches in the {@code input} string.
      *
-     * @throws IndexOutOfBoundsException if {@code fromIndex} is negative or greater than
-     *     {@code input.length()}
+     * @throws IndexOutOfBoundsException if {@code fromIndex} is negative or greater than {@code
+     *     input.length()}
      * @since 8.2
      */
     public abstract Stream<Match> match(String input, int fromIndex);
@@ -2140,9 +2135,7 @@ public final class Substring {
         if (replacement == null) {
           throw new NullPointerException("No replacement is returned for " + match);
         }
-        builder
-            .append(string, index, match.startIndex)
-            .append(replacement);
+        builder.append(string, index, match.startIndex).append(replacement);
         index = match.endIndex;
       } while (matches.hasNext());
 
@@ -2160,26 +2153,25 @@ public final class Substring {
      * com.google.common.base.CharMatcher.trimFrom()} and {@link Pattern#splitThenTrim} etc.
      */
     public Stream<Match> split(String string) {
-      return MoreStreams.whileNotNull(
-          new Supplier<Match>() {
-            int next = 0;
-            Iterator<Match> it = match(string).iterator();
+      return MoreStreams.whileNotNull(new Supplier<Match>() {
+        int next = 0;
+        Iterator<Match> it = match(string).iterator();
 
-            @Override public Match get() {
-              if (it.hasNext()) {
-                Match delim = it.next();
-                Match result = Match.nonBacktrackable(string, next, delim.index() - next);
-                next = delim.endIndex;
-                return result;
-              }
-              if (next >= 0) {
-                Match result = Match.nonBacktrackable(string, next, string.length() - next);
-                next = -1;
-                return result;
-              }
-              return null;
-            }
-          });
+        @Override public Match get() {
+          if (it.hasNext()) {
+            Match delim = it.next();
+            Match result = Match.nonBacktrackable(string, next, delim.index() - next);
+            next = delim.endIndex;
+            return result;
+          }
+          if (next >= 0) {
+            Match result = Match.nonBacktrackable(string, next, string.length() - next);
+            next = -1;
+            return result;
+          }
+          return null;
+        }
+      });
     }
 
     /**
@@ -2218,54 +2210,52 @@ public final class Substring {
      */
     public Stream<Match> cut(String string) {
       Iterator<Match> delimiters = match(string).iterator();
-      return whileNotNull(
-          new Supplier<Match>() {
-            Match delimiter = null;
-            int next = 0;
+      return whileNotNull(new Supplier<Match>() {
+        Match delimiter = null;
+        int next = 0;
 
-            @Override public Match get() {
-              if (next == -1) return null;
-              if (delimiter == null) { // Should return the substring before the next delimiter.
-                if (delimiters.hasNext()) {
-                  delimiter = delimiters.next();
-                  Match result = Match.nonBacktrackable(string, next, delimiter.index() - next);
-                  next = delimiter.endIndex;
-                  return result;
-                }
-                Match result = Match.nonBacktrackable(string, next, string.length() - next);
-                next = -1;
-                return result;
-              }
-              // should return delimiter
-              Match result = delimiter;
-              delimiter = null;
+        @Override public Match get() {
+          if (next == -1) return null;
+          if (delimiter == null) { // Should return the substring before the next delimiter.
+            if (delimiters.hasNext()) {
+              delimiter = delimiters.next();
+              Match result = Match.nonBacktrackable(string, next, delimiter.index() - next);
+              next = delimiter.endIndex;
               return result;
             }
-          });
+            Match result = Match.nonBacktrackable(string, next, string.length() - next);
+            next = -1;
+            return result;
+          }
+          // should return delimiter
+          Match result = delimiter;
+          delimiter = null;
+          return result;
+        }
+      });
     }
 
     /**
      * Returns a {@link BiStream} of key value pairs from {@code input}.
      *
-     * <p>The key-value pairs are delimited by this repeating pattern.
-     * with the key and value separated by {@code keyValueSeparator}.
+     * <p>The key-value pairs are delimited by this repeating pattern. with the key and value
+     * separated by {@code keyValueSeparator}.
      *
-     * <p>Empty parts (including leading and trailing separator) are ignored.
-     * Although whitespaces are not trimmed. For example:
+     * <p>Empty parts (including leading and trailing separator) are ignored. Although whitespaces
+     * are not trimmed. For example:
      *
      * <pre>{@code
      * all(',').splitKeyValuesAround(first('='), "k1=v1,,k2=v2,")
      * }</pre>
-     * will result in a {@code BiStream} equivalent to {@code [(k1, v1), (k2, v2)]},
-     * but {@code "k1=v1, ,k2=v2"} will fail to be split due to the whitespace after the first
-     * {@code ','}.
      *
-     * <p>Non-empty parts where {@code keyValueSeparator} is absent will result in
-     * {@link IllegalArgumentException}.
+     * will result in a {@code BiStream} equivalent to {@code [(k1, v1), (k2, v2)]}, but {@code
+     * "k1=v1, ,k2=v2"} will fail to be split due to the whitespace after the first {@code ','}.
+     *
+     * <p>Non-empty parts where {@code keyValueSeparator} is absent will result in {@link
+     * IllegalArgumentException}.
      *
      * <p>For alternative splitting strategies, like, if you want to reject instead of ignoring
-     * empty parts. consider to use {@link #split} and {@link Pattern#split} directly,
-     * such as:
+     * empty parts. consider to use {@link #split} and {@link Pattern#split} directly, such as:
      *
      * <pre>{@code
      * all(',')
@@ -2297,15 +2287,15 @@ public final class Substring {
               .filter(m -> m.length() > 0)
               .map(m -> keyValueSeparator
                   .split(m)
-                  .orElseThrow(
-                      () -> new IllegalArgumentException("Cannot split key values from '" + m + "'"))));
+                  .orElseThrow(() ->
+                      new IllegalArgumentException("Cannot split key values from '" + m + "'"))));
     }
 
     /**
      * Returns a {@link BiStream} of key value pairs from {@code input}.
      *
-     * <p>The key-value pairs are delimited by this repeating pattern.
-     * with the key and value separated by {@code keyValueSeparator}.
+     * <p>The key-value pairs are delimited by this repeating pattern. with the key and value
+     * separated by {@code keyValueSeparator}.
      *
      * <p>All keys and values are trimmed, with empty parts (including leading and trailing
      * separator) ignored. For example:
@@ -2313,14 +2303,15 @@ public final class Substring {
      * <pre>{@code
      * all(',').splitThenTrimKeyValuesAround(first('='), "k1 = v1, , k2=v2,")
      * }</pre>
+     *
      * will result in a {@code BiStream} equivalent to {@code [(k1, v1), (k2, v2)]}.
      *
-     * <p>Non-empty parts where {@code keyValueSeparator} is absent will result in
-     * {@link IllegalArgumentException}.
+     * <p>Non-empty parts where {@code keyValueSeparator} is absent will result in {@link
+     * IllegalArgumentException}.
      *
      * <p>For alternative splitting strategies, like, if you want to reject instead of ignoring
-     * empty parts. consider to use {@link #split} and {@link Pattern#splitThenTrim} directly,
-     * such as:
+     * empty parts. consider to use {@link #split} and {@link Pattern#splitThenTrim} directly, such
+     * as:
      *
      * <pre>{@code
      * all(',')
@@ -2352,16 +2343,16 @@ public final class Substring {
               .filter(m -> m.length() > 0)
               .map(m -> keyValueSeparator
                   .splitThenTrim(m)
-                  .orElseThrow(
-                      () -> new IllegalArgumentException("Cannot split key values from '" + m + "'"))));
+                  .orElseThrow(() ->
+                      new IllegalArgumentException("Cannot split key values from '" + m + "'"))));
     }
 
     /**
      * Returns the alternation of this pattern from the {@code input} string, with the matched
      * substring alternated with the trailing substring before the next match.
      *
-     * <p>For example: to find bulleted items (strings prefixed by {@code 1:}, {@code 2:},
-     * {@code 456:} etc.), you can:
+     * <p>For example: to find bulleted items (strings prefixed by {@code 1:}, {@code 2:}, {@code
+     * 456:} etc.), you can:
      *
      * <pre>{@code
      * Substring.Pattern bulletNumber = consecutive(CharPredicate.range('0', '9'))
@@ -2494,12 +2485,16 @@ public final class Substring {
       return present;
     }
 
-    /** @since 5.7 */
+    /**
+     * @since 5.7
+     */
     @Override public char charAt(int index) {
       return prefix.charAt(index);
     }
 
-    /** @since 5.7 */
+    /**
+     * @since 5.7
+     */
     @Override public String subSequence(int start, int end) {
       return prefix.substring(start, end);
     }
@@ -2643,12 +2638,16 @@ public final class Substring {
       return present;
     }
 
-    /** @since 5.7 */
+    /**
+     * @since 5.7
+     */
     @Override public char charAt(int index) {
       return suffix.charAt(index);
     }
 
-    /** @since 5.7 */
+    /**
+     * @since 5.7
+     */
     @Override public String subSequence(int start, int end) {
       return suffix.substring(start, end);
     }
@@ -2662,12 +2661,16 @@ public final class Substring {
       return suffix.length();
     }
 
-    /** @since 5.7 */
+    /**
+     * @since 5.7
+     */
     @Override public int hashCode() {
       return suffix.hashCode();
     }
 
-    /** @since 5.7 */
+    /**
+     * @since 5.7
+     */
     @Override public boolean equals(Object obj) {
       return obj instanceof Suffix && suffix.equals(((Suffix) obj).suffix);
     }
@@ -2702,9 +2705,9 @@ public final class Substring {
     private final int endIndex;
 
     /**
-     * While {@code endIndex} demarcates the matched substring, {@code repetitionStartIndex} points to
-     * the starting point to scan for the succeeding {@link Pattern#iterateIn iteration} of the same
-     * pattern. It's by default equal to {@code endIndex}, but for {@link Substring#before} and
+     * While {@code endIndex} demarcates the matched substring, {@code repetitionStartIndex} points
+     * to the starting point to scan for the succeeding {@link Pattern#iterateIn iteration} of the
+     * same pattern. It's by default equal to {@code endIndex}, but for {@link Substring#before} and
      * {@link Substring#upToIncluding}, {@code repetitionStartIndex} starts after the delimiters.
      */
     private final int repetitionStartIndex;
@@ -2714,7 +2717,8 @@ public final class Substring {
 
     private String toString;
 
-    private Match(String context, int startIndex, int length, int backtrackIndex, int repetitionStartIndex) {
+    private Match(
+        String context, int startIndex, int length, int backtrackIndex, int repetitionStartIndex) {
       this.context = context;
       this.startIndex = startIndex;
       this.endIndex = startIndex + length;
@@ -2723,7 +2727,8 @@ public final class Substring {
       assert startIndex >= 0 : "Invalid index: " + startIndex;
       assert length >= 0 : "Invalid length: " + length;
       assert endIndex <= context.length() : "Invalid endIndex: " + endIndex;
-      assert repetitionStartIndex >= endIndex : "Invalid repetitionStartIndex: " + repetitionStartIndex;
+      assert repetitionStartIndex >= endIndex
+          : "Invalid repetitionStartIndex: " + repetitionStartIndex;
     }
 
     static Match suffix(String context, int length) {
@@ -2784,7 +2789,7 @@ public final class Substring {
     public String remove() {
       // Minimize string concatenation.
       if (endIndex == context.length()) return before();
-      return startIndex == 0  ? after() : before() + after();
+      return startIndex == 0 ? after() : before() + after();
     }
 
     /**
@@ -2829,8 +2834,8 @@ public final class Substring {
 
     /**
      * Returns a new instance that's otherwise equivalent except with {@code fromBeginning}
-     * characters skipped from the beginning and {@code fromEnd} characters skipped from the end.
-     * If there are fewer characters, an empty match is returned.
+     * characters skipped from the beginning and {@code fromEnd} characters skipped from the end. If
+     * there are fewer characters, an empty match is returned.
      *
      * <p>For example, {@code first("hello").in("say hello").get().skip(2, 1)} returns "ll".
      *
@@ -2887,18 +2892,16 @@ public final class Substring {
      * Returns true if the match is immediately followed by the {@code lookahead} string. Note that
      * {@code isFollowedBy("")} is always true.
      */
-
     public boolean isFollowedBy(String lookahead) {
       return context.startsWith(lookahead, endIndex);
     }
 
     /**
-     * Returns true if the match is immediately followed by a character that matches the
-     * {@code lookahead} predicate.
+     * Returns true if the match is immediately followed by a character that matches the {@code
+     * lookahead} predicate.
      *
      * @since 9.0
      */
-
     public boolean isFollowedBy(CharPredicate lookahead) {
       requireNonNull(lookahead);
       return context.length() > endIndex && lookahead.test(context.charAt(endIndex));
@@ -2944,6 +2947,7 @@ public final class Substring {
 
     /**
      * {@inheritDoc}
+     *
      * @since 4.6
      */
     @Override public char charAt(int i) {
@@ -2960,9 +2964,9 @@ public final class Substring {
     /**
      * Returns a {@link CharSequence} instance which is a sub-range of this {@code Match}.
      *
-     * <p>For example, if this {@code Match} points to the range of {@code "wood"} from
-     * the {@code "Holywood"} string, calling {@code subSequence(1, 3)} will point to the
-     * range of {@code "oo"} from the original string.
+     * <p>For example, if this {@code Match} points to the range of {@code "wood"} from the {@code
+     * "Holywood"} string, calling {@code subSequence(1, 3)} will point to the range of {@code "oo"}
+     * from the original string.
      *
      * <p>Can be used to further reduce the matched range manually.
      *
@@ -3037,9 +3041,7 @@ public final class Substring {
     }
 
     private Match toEnd() {
-      return endIndex == context.length()
-          ? this
-          : suffix(context, context.length() - startIndex);
+      return endIndex == context.length() ? this : suffix(context, context.length() - startIndex);
     }
 
     private int backtrackFrom(int fromIndex) {
@@ -3070,7 +3072,8 @@ public final class Substring {
       return match(input, fromIndex, input.length());
     }
 
-    @Override public Pattern separatedBy(CharPredicate separatorBefore, CharPredicate separatorAfter) {
+    @Override public Pattern separatedBy(
+        CharPredicate separatorBefore, CharPredicate separatorAfter) {
       requireNonNull(separatorBefore);
       requireNonNull(separatorAfter);
       return look(match -> match.isSeparatedBy(separatorBefore, separatorAfter));
@@ -3103,7 +3106,8 @@ public final class Substring {
 
   private static int checkNumChars(int maxChars) {
     if (maxChars < 0) {
-      throw new IllegalArgumentException("Number of characters (" + maxChars + ") cannot be negative.");
+      throw new IllegalArgumentException(
+          "Number of characters (" + maxChars + ") cannot be negative.");
     }
     return maxChars;
   }

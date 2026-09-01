@@ -76,15 +76,10 @@ abstract class CharInput {
   void markCheckpoint(int checkpointIndex) {}
 
   /**
-   * Skips consecutive characters starting from {@code fromIndex} matching the 128-bit ASCII masks
-   * {@code low64} and {@code high64} and returns the ending index (first non-matching index or
-   * EOF).
+   * Skips consecutive characters starting from {@code fromIndex} matching {@code condition} and
+   * returns the ending index (first non-matching index or EOF).
    */
-  abstract int skipWhile(CharPredicate condition, long low64, long high64, int from);
-
-  final int skipWhile(Skipper skipper, int fromIndex) {
-    return skipper.skip(this, fromIndex);
-  }
+  abstract int skipWhile(CharPredicate condition, int from);
 
   /**
    * Returns the source position of the character at {@code at}. It's assumed that the index {@code
@@ -124,8 +119,8 @@ abstract class CharInput {
         return prefix.regionMatches(/* ignoreCase= */ true, 0, text, index, prefix.length());
       }
 
-      @Override int skipWhile(CharPredicate condition, long low64, long high64, int from) {
-        return scanWhile(text, from, text.length(), condition, low64, high64);
+      @Override int skipWhile(CharPredicate condition, int from) {
+        return condition.skipLeading(text, from, text.length());
       }
 
       @Override boolean isEof(int index) {
@@ -244,7 +239,7 @@ abstract class CharInput {
         return true;
       }
 
-      @Override int skipWhile(CharPredicate condition, long low64, long high64, int from) {
+      @Override int skipWhile(CharPredicate condition, int from) {
         checkArgument(from >= garbageCharCount, "fromIndex < %s", garbageCharCount);
         for (int i = from; ; ) {
           ensureCharCount(i + 4);
@@ -253,7 +248,7 @@ abstract class CharInput {
           if (p >= limit) {
             return i;
           }
-          int matched = scanWhile(chars, p, limit, condition, low64, high64);
+          int matched = condition.skipLeading(chars, p, limit);
           i = toLogicalIndex(matched);
           if (matched < limit) {
             return i;
@@ -318,102 +313,5 @@ abstract class CharInput {
         }
       }
     };
-  }
-
-  /**
-   * Scans {@code cs} in 4-character chunks using SWAR (SIMD Within A Register) bitmask evaluation.
-   *
-   * <p>Optimizes scanning into three specialized modes:
-   *
-   * <ul>
-   *   <li><b>Lower-64 mode</b> ({@code high64 == 0L}): for matchers in ASCII 0..63 (e.g.
-   *       whitespace, digits). Evaluates via direct {@code low64 >>> c} shifts (0 cmov).
-   *   <li><b>Higher-64 mode</b> ({@code low64 == 0L}): for matchers in ASCII 64..127 (e.g. {@code
-   *       [a-z]}, {@code [A-Z]}, {@code [a-zA-Z]}). Translates range via XOR and shifts {@code
-   *       high64 >>> c} directly (0 cmov).
-   *   <li><b>128-bit mixed mode</b> ({@code low64 != 0 && high64 != 0}): for matchers spanning both
-   *       halves (e.g. {@code [a-zA-Z0-9_]}). Evaluates via branchless {@code cmov} selection.
-   * </ul>
-   */
-  private static int scanWhile(
-      CharSequence source, int from, int to, CharPredicate fallback, long low64, long high64) {
-    int i = from;
-    int limit = to - 4;
-
-    // Determine the active SWAR partition parameters:
-    // offset: For Higher-64 matchers (e.g. [a-z], [a-zA-Z]), all matching chars have bit 6 set
-    //    (codepoints 64..127). XORing with 64 flips bit 6, mapping the [64..127] range to [0..63].
-    //    For Lower-64 and 128-bit mixed modes, offset is 0.
-    int offset = (low64 == 0L && high64 != 0L) ? 64 : 0;
-
-    // asciiMask:
-    //   - Single 64-character partition (Lower-64 or Higher-64): mask ~0x3F verifies that bits >= 6
-    //     are all zero after XOR offset, ensuring the character lies strictly in the 64-char window.
-    //   - 128-bit mixed mode: mask ~0x7F verifies that bits >= 7 are all zero (validating 7-bit
-    // ASCII).
-    int asciiMask = (low64 != 0L && high64 != 0L) ? ~0x7F : ~0x3F;
-
-    while (i <= limit) {
-      char c0 = source.charAt(i);
-      char c1 = source.charAt(i + 1);
-      char c2 = source.charAt(i + 2);
-      char c3 = source.charAt(i + 3);
-
-      // Fast check: verify in bitwise ops that all 4 characters belong to the active partition
-      // without any non-ASCII or out-of-partition characters.
-      if ((((c0 ^ offset) | (c1 ^ offset) | (c2 ^ offset) | (c3 ^ offset)) & asciiMask) == 0) {
-        long m0;
-        long m1;
-        long m2;
-        long m3;
-        if (high64 == 0L) {
-          // Lower-64 mode: direct shift into low64 (0 cmov).
-          m0 = low64 >>> c0;
-          m1 = low64 >>> c1;
-          m2 = low64 >>> c2;
-          m3 = low64 >>> c3;
-        } else if (low64 == 0L) {
-          // Higher-64 mode: direct shift into high64 (0 cmov).
-          // Per JLS §15.19, (high64 >>> c) automatically masks shift amount to (c & 63) == (c -
-          // 64).
-          m0 = high64 >>> c0;
-          m1 = high64 >>> c1;
-          m2 = high64 >>> c2;
-          m3 = high64 >>> c3;
-        } else {
-          // 128-bit mixed mode: branchless ternary lowered to cmov.
-          m0 = (c0 < 64) ? (low64 >>> c0) : (high64 >>> c0);
-          m1 = (c1 < 64) ? (low64 >>> c1) : (high64 >>> c1);
-          m2 = (c2 < 64) ? (low64 >>> c2) : (high64 >>> c2);
-          m3 = (c3 < 64) ? (low64 >>> c3) : (high64 >>> c3);
-        }
-
-        // Fast path: bit 0 represents the match flag (mask >>> c & 1L).
-        // If bit 0 is set for all 4 chars, all 4 matched; advance by 4 with 0 branches.
-        if (((m0 & m1 & m2 & m3) & 1L) != 0) {
-          i += 4;
-          continue;
-        }
-
-        // Mismatch encountered within this 4-char chunk; return the earliest non-matching index.
-        if ((m0 & 1L) == 0) return i;
-        if ((m1 & 1L) == 0) return i + 1;
-        if ((m2 & 1L) == 0) return i + 2;
-        return i + 3;
-      }
-
-      // Non-ASCII or out-of-partition fallback: test characters sequentially via fallback.
-      if (!fallback.test(c0)) return i;
-      if (!fallback.test(c1)) return i + 1;
-      if (!fallback.test(c2)) return i + 2;
-      if (!fallback.test(c3)) return i + 3;
-      i += 4;
-    }
-
-    // Process remaining trailing characters (< 4).
-    while (i < to && fallback.test(source.charAt(i))) {
-      i++;
-    }
-    return i;
   }
 }
