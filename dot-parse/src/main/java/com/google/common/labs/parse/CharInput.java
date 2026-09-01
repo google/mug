@@ -80,7 +80,7 @@ abstract class CharInput {
    * {@code low64} and {@code high64} and returns the ending index (first non-matching index or
    * EOF).
    */
-  abstract int skipWhile(long low64, long high64, CharPredicate fallback, int fromIndex);
+  abstract int skipWhile(CharPredicate condition, long low64, long high64, int from);
 
   final int skipWhile(Skipper skipper, int fromIndex) {
     return skipper.skip(this, fromIndex);
@@ -124,8 +124,8 @@ abstract class CharInput {
         return prefix.regionMatches(/* ignoreCase= */ true, 0, text, index, prefix.length());
       }
 
-      @Override int skipWhile(long low64, long high64, CharPredicate fallback, int fromIndex) {
-        return scanWhile(text, low64, high64, fallback, fromIndex, text.length());
+      @Override int skipWhile(CharPredicate condition, long low64, long high64, int from) {
+        return scanWhile(text, from, text.length(), condition, low64, high64);
       }
 
       @Override boolean isEof(int index) {
@@ -244,16 +244,16 @@ abstract class CharInput {
         return true;
       }
 
-      @Override int skipWhile(long low64, long high64, CharPredicate fallback, int fromIndex) {
-        checkArgument(fromIndex >= garbageCharCount, "fromIndex < %s", garbageCharCount);
-        for (int i = fromIndex; ; ) {
+      @Override int skipWhile(CharPredicate condition, long low64, long high64, int from) {
+        checkArgument(from >= garbageCharCount, "fromIndex < %s", garbageCharCount);
+        for (int i = from; ; ) {
           ensureCharCount(i + 4);
           int p = toPhysicalIndex(i);
           int limit = chars.length();
           if (p >= limit) {
             return i;
           }
-          int matched = scanWhile(chars, low64, high64, fallback, p, limit);
+          int matched = scanWhile(chars, p, limit, condition, low64, high64);
           i = toLogicalIndex(matched);
           if (matched < limit) {
             return i;
@@ -336,10 +336,9 @@ abstract class CharInput {
    * </ul>
    */
   private static int scanWhile(
-      CharSequence cs, long low64, long high64, CharPredicate fallback, int fromIndex,
-      int toIndex) {
-    int i = fromIndex;
-    int limit = toIndex - 4;
+      CharSequence source, int from, int to, CharPredicate fallback, long low64, long high64) {
+    int i = from;
+    int limit = to - 4;
 
     // Determine the active SWAR partition parameters:
     // offset: For Higher-64 matchers (e.g. [a-z], [a-zA-Z]), all matching chars have bit 6 set
@@ -357,10 +356,10 @@ abstract class CharInput {
     int asciiMask = (low64 != 0L && high64 != 0L) ? ~0x7F : ~0x3F;
 
     while (i <= limit) {
-      char c0 = cs.charAt(i);
-      char c1 = cs.charAt(i + 1);
-      char c2 = cs.charAt(i + 2);
-      char c3 = cs.charAt(i + 3);
+      char c0 = source.charAt(i);
+      char c1 = source.charAt(i + 1);
+      char c2 = source.charAt(i + 2);
+      char c3 = source.charAt(i + 3);
 
       // Fast check: verify in bitwise ops that all 4 characters belong to the active partition
       // without any non-ASCII or out-of-partition characters.
@@ -414,7 +413,7 @@ abstract class CharInput {
     }
 
     // Process remaining trailing characters (< 4).
-    while (i < toIndex && fallback.test(cs.charAt(i))) {
+    while (i < to && fallback.test(source.charAt(i))) {
       i++;
     }
     return i;

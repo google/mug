@@ -15,7 +15,7 @@ interface Skipper {
   int skip(CharInput input, int start);
 
   static Skipper precomputed(CharPredicate predicate, long low64, long high64) {
-    return (input, start) -> input.skipWhile(low64, high64, predicate, start);
+    return (input, start) -> input.skipWhile(predicate, low64, high64, start);
   }
 
   /**

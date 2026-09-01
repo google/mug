@@ -521,122 +521,122 @@ public final class CharInputTest {
 
   @Test public void fromString_skipWhileLow64_emptyInput() {
     CharInput input = CharInput.from("");
-    assertThat(input.skipWhile(1L << '0', 0L, range('0', '0'), 0)).isEqualTo(0);
+    assertThat(input.skipWhile(range('0', '0'), 1L << '0', 0L, 0)).isEqualTo(0);
   }
 
   @Test public void fromString_skipWhileLow64_noMatch() {
     CharInput input = CharInput.from("abc");
-    assertThat(input.skipWhile(1L << '0', 0L, range('0', '0'), 0)).isEqualTo(0);
+    assertThat(input.skipWhile(range('0', '0'), 1L << '0', 0L, 0)).isEqualTo(0);
   }
 
   @Test public void fromString_skipWhileLow64_allMatch() {
     CharInput input = CharInput.from("00000000");
-    assertThat(input.skipWhile(1L << '0', 0L, range('0', '0'), 0)).isEqualTo(8);
+    assertThat(input.skipWhile(range('0', '0'), 1L << '0', 0L, 0)).isEqualTo(8);
   }
 
   @Test public void fromString_skipWhileLow64_partialMatch() {
     CharInput input = CharInput.from("0000abc");
-    assertThat(input.skipWhile(1L << '0', 0L, range('0', '0'), 0)).isEqualTo(4);
+    assertThat(input.skipWhile(range('0', '0'), 1L << '0', 0L, 0)).isEqualTo(4);
   }
 
   @Test public void fromString_skipWhileLow64_transitionToHighAscii() {
     CharInput input = CharInput.from("0000xyz");
-    assertThat(input.skipWhile(1L << '0', 0L, range('0', '0'), 0)).isEqualTo(4);
+    assertThat(input.skipWhile(range('0', '0'), 1L << '0', 0L, 0)).isEqualTo(4);
   }
 
   @Test public void fromString_skipWhileLow64_transitionToNonAscii() {
     CharInput input = CharInput.from("0000\u00E9");
-    assertThat(input.skipWhile(1L << '0', 0L, range('0', '0'), 0)).isEqualTo(4);
+    assertThat(input.skipWhile(range('0', '0'), 1L << '0', 0L, 0)).isEqualTo(4);
   }
 
   @Test public void fromReader_skipWhileLow64_emptyInput() {
     CharInput input = CharInput.from(new StringReader(""));
-    assertThat(input.skipWhile(1L << '0', 0L, range('0', '0'), 0)).isEqualTo(0);
+    assertThat(input.skipWhile(range('0', '0'), 1L << '0', 0L, 0)).isEqualTo(0);
   }
 
   @Test public void fromReader_skipWhileLow64_noMatch() {
     CharInput input = CharInput.from(new StringReader("abc"));
-    assertThat(input.skipWhile(1L << '0', 0L, range('0', '0'), 0)).isEqualTo(0);
+    assertThat(input.skipWhile(range('0', '0'), 1L << '0', 0L, 0)).isEqualTo(0);
   }
 
   @Test public void fromReader_skipWhileLow64_allMatch() {
     CharInput input = CharInput.from(new StringReader("00000000"));
-    assertThat(input.skipWhile(1L << '0', 0L, range('0', '0'), 0)).isEqualTo(8);
+    assertThat(input.skipWhile(range('0', '0'), 1L << '0', 0L, 0)).isEqualTo(8);
   }
 
   @Test public void fromReader_skipWhileLow64_partialMatch() {
     CharInput input = CharInput.from(new StringReader("0000abc"));
-    assertThat(input.skipWhile(1L << '0', 0L, range('0', '0'), 0)).isEqualTo(4);
+    assertThat(input.skipWhile(range('0', '0'), 1L << '0', 0L, 0)).isEqualTo(4);
   }
 
   @Test public void fromReader_skipWhileLow64_acrossBufferBoundary() {
     String text = "0".repeat(9000) + "a";
     CharInput input = CharInput.from(new StringReader(text));
-    assertThat(input.skipWhile(1L << '0', 0L, range('0', '0'), 0)).isEqualTo(9000);
+    assertThat(input.skipWhile(range('0', '0'), 1L << '0', 0L, 0)).isEqualTo(9000);
   }
 
   @Test public void fromReader_skipWhileLow64_afterCompaction() {
     CharInput input = CharInput.from(new StringReader("xxxx000000y"), 10, 4);
     input.charAt(4); // Advance read
     input.markCheckpoint(4); // Compact "xxxx"
-    assertThat(input.skipWhile(1L << '0', 0L, range('0', '0'), 4)).isEqualTo(10);
+    assertThat(input.skipWhile(range('0', '0'), 1L << '0', 0L, 4)).isEqualTo(10);
   }
 
   @Test public void fromString_skipWhileHigh64_emptyInput() {
     CharInput input = CharInput.from("");
-    assertThat(input.skipWhile(0L, 1L << ('a' - 64), range('a', 'a'), 0)).isEqualTo(0);
+    assertThat(input.skipWhile(range('a', 'a'), 0L, 1L << ('a' - 64), 0)).isEqualTo(0);
   }
 
   @Test public void fromString_skipWhileHigh64_noMatch() {
     CharInput input = CharInput.from("0123");
-    assertThat(input.skipWhile(0L, 1L << ('a' - 64), range('a', 'a'), 0)).isEqualTo(0);
+    assertThat(input.skipWhile(range('a', 'a'), 0L, 1L << ('a' - 64), 0)).isEqualTo(0);
   }
 
   @Test public void fromString_skipWhileHigh64_allMatch() {
     CharInput input = CharInput.from("aaaaaaaa");
-    assertThat(input.skipWhile(0L, 1L << ('a' - 64), range('a', 'a'), 0)).isEqualTo(8);
+    assertThat(input.skipWhile(range('a', 'a'), 0L, 1L << ('a' - 64), 0)).isEqualTo(8);
   }
 
   @Test public void fromString_skipWhileHigh64_partialMatch() {
     CharInput input = CharInput.from("aaaa123");
-    assertThat(input.skipWhile(0L, 1L << ('a' - 64), range('a', 'a'), 0)).isEqualTo(4);
+    assertThat(input.skipWhile(range('a', 'a'), 0L, 1L << ('a' - 64), 0)).isEqualTo(4);
   }
 
   @Test public void fromString_skipWhileHigh64_transitionToNonAscii() {
     CharInput input = CharInput.from("aaaa\u00E9");
-    assertThat(input.skipWhile(0L, 1L << ('a' - 64), range('a', 'a'), 0)).isEqualTo(4);
+    assertThat(input.skipWhile(range('a', 'a'), 0L, 1L << ('a' - 64), 0)).isEqualTo(4);
   }
 
   @Test public void fromReader_skipWhileHigh64_emptyInput() {
     CharInput input = CharInput.from(new StringReader(""));
-    assertThat(input.skipWhile(0L, 1L << ('a' - 64), range('a', 'a'), 0)).isEqualTo(0);
+    assertThat(input.skipWhile(range('a', 'a'), 0L, 1L << ('a' - 64), 0)).isEqualTo(0);
   }
 
   @Test public void fromReader_skipWhileHigh64_noMatch() {
     CharInput input = CharInput.from(new StringReader("0123"));
-    assertThat(input.skipWhile(0L, 1L << ('a' - 64), range('a', 'a'), 0)).isEqualTo(0);
+    assertThat(input.skipWhile(range('a', 'a'), 0L, 1L << ('a' - 64), 0)).isEqualTo(0);
   }
 
   @Test public void fromReader_skipWhileHigh64_allMatch() {
     CharInput input = CharInput.from(new StringReader("aaaaaaaa"));
-    assertThat(input.skipWhile(0L, 1L << ('a' - 64), range('a', 'a'), 0)).isEqualTo(8);
+    assertThat(input.skipWhile(range('a', 'a'), 0L, 1L << ('a' - 64), 0)).isEqualTo(8);
   }
 
   @Test public void fromReader_skipWhileHigh64_partialMatch() {
     CharInput input = CharInput.from(new StringReader("aaaa123"));
-    assertThat(input.skipWhile(0L, 1L << ('a' - 64), range('a', 'a'), 0)).isEqualTo(4);
+    assertThat(input.skipWhile(range('a', 'a'), 0L, 1L << ('a' - 64), 0)).isEqualTo(4);
   }
 
   @Test public void fromReader_skipWhileHigh64_acrossBufferBoundary() {
     String text = "a".repeat(9000) + "0";
     CharInput input = CharInput.from(new StringReader(text));
-    assertThat(input.skipWhile(0L, 1L << ('a' - 64), range('a', 'a'), 0)).isEqualTo(9000);
+    assertThat(input.skipWhile(range('a', 'a'), 0L, 1L << ('a' - 64), 0)).isEqualTo(9000);
   }
 
   @Test public void fromReader_skipWhileHigh64_afterCompaction() {
     CharInput input = CharInput.from(new StringReader("xxxxaaaaaay"), 10, 4);
     input.charAt(4); // Advance read
     input.markCheckpoint(4); // Compact "xxxx"
-    assertThat(input.skipWhile(0L, 1L << ('a' - 64), range('a', 'a'), 4)).isEqualTo(10);
+    assertThat(input.skipWhile(range('a', 'a'), 0L, 1L << ('a' - 64), 4)).isEqualTo(10);
   }
 }
