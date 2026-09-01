@@ -209,17 +209,17 @@ public class CharacterSetTest {
 
   @Test public void skipLeading_allMatch() {
     CharacterSet set = charsIn("[0-9]");
-    assertThat(set.skipLeading("0123456789abc", 0, 13)).isEqualTo(10);
+    assertThat(set.skipLeading("0123456789abc", 0)).isEqualTo(10);
   }
 
   @Test public void skipLeading_withOffset() {
     CharacterSet set = charsIn("[a-z]");
-    assertThat(set.skipLeading("123abcdef456", 3, 12)).isEqualTo(9);
+    assertThat(set.skipLeading("123abcdef456", 3)).isEqualTo(9);
   }
 
   @Test public void skipLeading_negativeSet() {
     CharacterSet set = charsIn("[^0-9]");
-    assertThat(set.skipLeading("abcdef123", 0, 9)).isEqualTo(6);
+    assertThat(set.skipLeading("abcdef123", 0)).isEqualTo(6);
   }
 
   @Test public void precomputeForAscii_returnsSelf() {

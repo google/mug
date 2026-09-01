@@ -1414,6 +1414,16 @@ public class SubstringTest {
         .containsExactly("b", "b", "b");
   }
 
+  @Test public void firstCharMatcher_longNonMatchingRun() {
+    String letters = "abcdefghijklmnopqrstuvwxyz".repeat(4);
+    assertThat(first(CharPredicate.is('1')).from(letters + "123")).hasValue("1");
+  }
+
+  @Test public void firstCharMatcher_noMatchInLongRun() {
+    String letters = "abcdefghijklmnopqrstuvwxyz".repeat(4);
+    assertThat(first(CharPredicate.is('1')).from(letters)).isEmpty();
+  }
+
   @Test public void lastChar_noMatch() {
     assertThat(last('f').in("bar")).isEmpty();
     assertThat(last('f').in("")).isEmpty();
@@ -3277,6 +3287,12 @@ public class SubstringTest {
         .inOrder();
     assertThat(consecutive(ALPHA).repeatedly().replaceAllFrom("(System.out)", Ascii::toLowerCase))
         .isEqualTo("(system.out)");
+  }
+
+  @Test public void consecutive_longNonMatchingLeadingRun() {
+    String nonDigits = "abcdefghijklmnopqrstuvwxyz".repeat(4);
+    assertThat(consecutive(CharPredicate.range('0', '9')).from(nonDigits + "123456"))
+        .hasValue("123456");
   }
 
   @Test public void word_notFound() {

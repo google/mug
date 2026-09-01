@@ -69,9 +69,8 @@ public interface CharPredicate {
       return true;
     }
 
-    @Override public int skipLeading(CharSequence s, int begin, int end) {
-      requireNonNull(s);
-      return end;
+    @Override public int skipLeading(CharSequence s, int fromIndex) {
+      return s.length();
     }
 
     @Override public CharPredicate precomputeForAscii() {
@@ -89,9 +88,9 @@ public interface CharPredicate {
       return false;
     }
 
-    @Override public int skipLeading(CharSequence s, int begin, int end) {
+    @Override public int skipLeading(CharSequence s, int fromIndex) {
       requireNonNull(s);
-      return begin;
+      return fromIndex;
     }
 
     @Override public CharPredicate precomputeForAscii() {
@@ -254,11 +253,6 @@ public interface CharPredicate {
         return me;
       }
 
-      @Override public CharPredicate precomputeForAscii() {
-        CharPredicate precomputed = me.precomputeForAscii();
-        return precomputed == me ? this : precomputed.not();
-      }
-
       @Override public String toString() {
         return "not (" + me + ")";
       }
@@ -281,12 +275,7 @@ public interface CharPredicate {
    * @since 7.0
    */
   default boolean matchesAllOf(CharSequence sequence) {
-    for (int i = sequence.length() - 1; i >= 0; i--) {
-      if (!test(sequence.charAt(i))) {
-        return false;
-      }
-    }
-    return true;
+    return skipLeading(sequence, 0) == sequence.length();
   }
 
   /**
@@ -296,12 +285,7 @@ public interface CharPredicate {
    * @since 7.0
    */
   default boolean matchesNoneOf(CharSequence sequence) {
-    for (int i = sequence.length() - 1; i >= 0; i--) {
-      if (test(sequence.charAt(i))) {
-        return false;
-      }
-    }
-    return true;
+    return not().skipLeading(sequence, 0) == sequence.length();
   }
 
   /**
@@ -324,15 +308,15 @@ public interface CharPredicate {
   }
 
   /**
-   * Returns the index in the range of {@code [begin, end]}, pointing to either {@code end} or the
-   * index of the first character that does not match this predicate.
+   * Returns the index in the range of {@code [fromIndex, s.length()]}, pointing to either {@code
+   * s.length()} or the index of the first character that does not match this predicate.
    *
    * @since 10.0
    * @hidden
    */
-  default int skipLeading(CharSequence s, int begin, int end) {
-    requireNonNull(s);
-    int i = begin;
+  default int skipLeading(CharSequence s, int fromIndex) {
+    int end = s.length();
+    int i = fromIndex;
     while (i < end && test(s.charAt(i))) {
       i++;
     }
@@ -369,9 +353,9 @@ public interface CharPredicate {
         return base.test(c); // Fallback for non-ASCII
       }
 
-      @Override public int skipLeading(CharSequence s, int begin, int end) {
-        requireNonNull(s);
-        int i = begin;
+      @Override public int skipLeading(CharSequence s, int fromIndex) {
+        int end = s.length();
+        int i = fromIndex;
         int limit = end - 4;
 
         int offset = (low64 == 0L && high64 != 0L) ? 64 : 0;

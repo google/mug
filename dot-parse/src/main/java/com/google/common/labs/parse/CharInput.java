@@ -120,7 +120,7 @@ abstract class CharInput {
       }
 
       @Override int skipWhile(CharPredicate condition, int from) {
-        return condition.skipLeading(text, from, text.length());
+        return condition.skipLeading(text, from);
       }
 
       @Override boolean isEof(int index) {
@@ -244,13 +244,12 @@ abstract class CharInput {
         for (int i = from; ; ) {
           ensureCharCount(i + 4);
           int p = toPhysicalIndex(i);
-          int limit = chars.length();
-          if (p >= limit) {
+          if (p >= chars.length()) {
             return i;
           }
-          int matched = condition.skipLeading(chars, p, limit);
+          int matched = condition.skipLeading(chars, p);
           i = toLogicalIndex(matched);
-          if (matched < limit) {
+          if (matched < chars.length()) {
             return i;
           }
           int prevLen = chars.length();

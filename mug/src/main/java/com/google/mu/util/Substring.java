@@ -25,6 +25,8 @@ import static java.util.regex.Pattern.quote;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Stream.concat;
 
+import com.google.mu.util.stream.BiStream;
+import com.google.mu.util.stream.MoreStreams;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Objects;
@@ -38,9 +40,6 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
-
-import com.google.mu.util.stream.BiStream;
-import com.google.mu.util.stream.MoreStreams;
 
 /**
  * Utilities for creating patterns that attempt to match a substring in an input string. The matched
@@ -521,15 +520,11 @@ public final class Substring {
    * @since 6.0
    */
   public static Pattern first(CharPredicate charMatcher) {
-    requireNonNull(charMatcher);
+    CharPredicate nonMatching = charMatcher.not().precomputeForAscii();
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
-        for (int i = fromIndex; i < input.length(); i++) {
-          if (charMatcher.test(input.charAt(i))) {
-            return Match.backtrackable(1, input, i, 1);
-          }
-        }
-        return null;
+        int i = nonMatching.skipLeading(input, fromIndex);
+        return i == input.length() ? null : Match.backtrackable(1, input, i, 1);
       }
 
       @Override public String toString() {
@@ -621,7 +616,7 @@ public final class Substring {
     CharPredicate precomputed = matcher.precomputeForAscii();
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
-        int end = precomputed.skipLeading(input, fromIndex, input.length());
+        int end = precomputed.skipLeading(input, fromIndex);
         int len = end - fromIndex;
         return len == 0 ? null : Match.nonBacktrackable(input, fromIndex, len);
       }
@@ -684,18 +679,17 @@ public final class Substring {
    * @since 6.0
    */
   public static Pattern consecutive(CharPredicate matcher) {
-    CharPredicate precomputed = matcher.precomputeForAscii();
+    CharPredicate matching = matcher.precomputeForAscii();
+    CharPredicate nonMatching = matcher.not().precomputeForAscii();
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
-        int end = input.length();
-        for (int i = fromIndex; i < end; i++) {
-          if (precomputed.test(input.charAt(i))) {
-            int j = precomputed.skipLeading(input, i + 1, end);
-            int len = j - i;
-            return Match.backtrackable(len, input, i, len);
-          }
+        int i = nonMatching.skipLeading(input, fromIndex);
+        if (i == input.length()) {
+          return null;
         }
-        return null;
+        int j = matching.skipLeading(input, i + 1);
+        int len = j - i;
+        return Match.backtrackable(len, input, i, len);
       }
 
       @Override public String toString() {

@@ -290,196 +290,235 @@ public class CharPredicateTest {
     CharPredicate rangeAZ = CharPredicate.range('A', 'Z');
     assertThat(rangeAZ.precomputeForAscii()).isSameInstanceAs(rangeAZ);
 
-    CharPredicate notA = isA.not();
+    CharPredicate notA = isA.not().precomputeForAscii();
     assertThat(notA.precomputeForAscii()).isSameInstanceAs(notA);
   }
 
   @Test public void skipLeading_emptyCharSequence() {
-    assertThat(CharPredicate.is('a').skipLeading("", 0, 0)).isEqualTo(0);
+    assertThat(CharPredicate.is('a').skipLeading("", 0)).isEqualTo(0);
   }
 
   @Test public void skipLeading_allMatch() {
-    assertThat(CharPredicate.is('a').skipLeading("aaaa", 0, 4)).isEqualTo(4);
+    assertThat(CharPredicate.is('a').skipLeading("aaaa", 0)).isEqualTo(4);
   }
 
   @Test public void skipLeading_partialMatch() {
-    assertThat(CharPredicate.is('a').skipLeading("aaba", 0, 4)).isEqualTo(2);
+    assertThat(CharPredicate.is('a').skipLeading("aaba", 0)).isEqualTo(2);
   }
 
   @Test public void skipLeading_noMatch() {
-    assertThat(CharPredicate.is('a').skipLeading("baaa", 0, 4)).isEqualTo(0);
+    assertThat(CharPredicate.is('a').skipLeading("baaa", 0)).isEqualTo(0);
   }
 
   @Test public void skipLeading_withOffsetBegin() {
-    assertThat(CharPredicate.is('a').skipLeading("xxaay", 2, 5)).isEqualTo(4);
+    assertThat(CharPredicate.is('a').skipLeading("xxaay", 2)).isEqualTo(4);
   }
 
   @Test public void skipLeading_precomputed_lower64() {
-    assertThat(
-            CharPredicate.range('0', '9').precomputeForAscii().skipLeading("1234567890abc", 0, 13))
+    assertThat(CharPredicate.range('0', '9').precomputeForAscii().skipLeading("1234567890abc", 0))
         .isEqualTo(10);
   }
 
   @Test public void skipLeading_precomputed_higher64() {
-    assertThat(CharPredicate.range('a', 'z').precomputeForAscii().skipLeading("abcdefgh123", 0, 11))
+    assertThat(CharPredicate.range('a', 'z').precomputeForAscii().skipLeading("abcdefgh123", 0))
         .isEqualTo(8);
   }
 
   @Test public void skipLeading_precomputed_128bitMixed() {
-    assertThat(CharPredicate.WORD.precomputeForAscii().skipLeading("user_name_123!done", 0, 18))
+    assertThat(CharPredicate.WORD.precomputeForAscii().skipLeading("user_name_123!done", 0))
         .isEqualTo(13);
   }
 
   @Test public void skipLeading_precomputed_nonAsciiFallback() {
     CharPredicate nonAsciiOrA = CharPredicate.is('a').or(c -> c > 127);
-    assertThat(nonAsciiOrA.precomputeForAscii().skipLeading("a\u00E9\u00FCb", 0, 4)).isEqualTo(3);
+    assertThat(nonAsciiOrA.precomputeForAscii().skipLeading("a\u00E9\u00FCb", 0)).isEqualTo(3);
   }
 
   @Test public void skipLeading_precomputed_chunkBoundaryMismatch() {
     CharPredicate letters = CharPredicate.range('a', 'z').precomputeForAscii();
-    assertThat(letters.skipLeading("0bcdefgh", 0, 8)).isEqualTo(0);
-    assertThat(letters.skipLeading("a0cdefgh", 0, 8)).isEqualTo(1);
-    assertThat(letters.skipLeading("ab0defgh", 0, 8)).isEqualTo(2);
-    assertThat(letters.skipLeading("abc0efgh", 0, 8)).isEqualTo(3);
-    assertThat(letters.skipLeading("abcd0fgh", 0, 8)).isEqualTo(4);
-    assertThat(letters.skipLeading("abcde0gh", 0, 8)).isEqualTo(5);
-    assertThat(letters.skipLeading("abcdef0h", 0, 8)).isEqualTo(6);
-    assertThat(letters.skipLeading("abcdefg0", 0, 8)).isEqualTo(7);
+    assertThat(letters.skipLeading("0bcdefgh", 0)).isEqualTo(0);
+    assertThat(letters.skipLeading("a0cdefgh", 0)).isEqualTo(1);
+    assertThat(letters.skipLeading("ab0defgh", 0)).isEqualTo(2);
+    assertThat(letters.skipLeading("abc0efgh", 0)).isEqualTo(3);
+    assertThat(letters.skipLeading("abcd0fgh", 0)).isEqualTo(4);
+    assertThat(letters.skipLeading("abcde0gh", 0)).isEqualTo(5);
+    assertThat(letters.skipLeading("abcdef0h", 0)).isEqualTo(6);
+    assertThat(letters.skipLeading("abcdefg0", 0)).isEqualTo(7);
   }
 
   @Test public void skipLeading_lower64_allMatch() {
-    assertThat(CharPredicate.range('0', '9').skipLeading("01234567", 0, 8)).isEqualTo(8);
+    assertThat(CharPredicate.range('0', '9').skipLeading("01234567", 0)).isEqualTo(8);
   }
 
   @Test public void skipLeading_lower64_longRun() {
     String digits = "0123456789".repeat(20);
-    assertThat(CharPredicate.range('0', '9').skipLeading(digits + "xyz", 0, digits.length() + 3))
-        .isEqualTo(200);
+    assertThat(CharPredicate.range('0', '9').skipLeading(digits + "xyz", 0)).isEqualTo(200);
   }
 
   @Test public void skipLeading_lower64_fromOffset() {
-    assertThat(CharPredicate.range('0', '9').skipLeading("xx12345yy", 2, 9)).isEqualTo(7);
+    assertThat(CharPredicate.range('0', '9').skipLeading("xx12345yy", 2)).isEqualTo(7);
   }
 
   @Test public void skipLeading_higher64_allMatch() {
-    assertThat(CharPredicate.range('a', 'z').skipLeading("abcdefgh", 0, 8)).isEqualTo(8);
+    assertThat(CharPredicate.range('a', 'z').skipLeading("abcdefgh", 0)).isEqualTo(8);
   }
 
   @Test public void skipLeading_higher64_longRun() {
     String letters = "abcdefghijklmnopqrstuvwxyz".repeat(10);
-    assertThat(CharPredicate.range('a', 'z').skipLeading(letters + "123", 0, letters.length() + 3))
-        .isEqualTo(260);
+    assertThat(CharPredicate.range('a', 'z').skipLeading(letters + "123", 0)).isEqualTo(260);
   }
 
   @Test public void skipLeading_higher64_fromOffset() {
-    assertThat(CharPredicate.range('a', 'z').skipLeading("12abcdef34", 2, 10)).isEqualTo(8);
+    assertThat(CharPredicate.range('a', 'z').skipLeading("12abcdef34", 2)).isEqualTo(8);
   }
 
   @Test public void skipLeading_128bit_allMatch() {
-    assertThat(CharPredicate.WORD.skipLeading("a0_b1_c2_d3_e4_f5", 0, 17)).isEqualTo(17);
+    assertThat(CharPredicate.WORD.skipLeading("a0_b1_c2_d3_e4_f5", 0)).isEqualTo(17);
   }
 
   @Test public void skipLeading_128bit_longRun() {
     String words = "a0_b1_c2_d3_e4_".repeat(20);
-    assertThat(CharPredicate.WORD.skipLeading(words + "   ", 0, words.length() + 3)).isEqualTo(300);
+    assertThat(CharPredicate.WORD.skipLeading(words + "   ", 0)).isEqualTo(300);
   }
 
   @Test public void skipLeading_128bit_fromOffset() {
-    assertThat(CharPredicate.WORD.skipLeading("   a0_b1_c2   ", 3, 14)).isEqualTo(11);
+    assertThat(CharPredicate.WORD.skipLeading("   a0_b1_c2   ", 3)).isEqualTo(11);
   }
 
   @Test public void skipLeading_nonAscii_allMatch() {
     CharPredicate nonAscii = CharPredicate.is('\u00E9').or('\u00E8');
-    assertThat(nonAscii.skipLeading("\u00E9\u00E8\u00E9\u00E8\u00E9\u00E8\u00E9\u00E8", 0, 8))
+    assertThat(nonAscii.skipLeading("\u00E9\u00E8\u00E9\u00E8\u00E9\u00E8\u00E9\u00E8", 0))
         .isEqualTo(8);
   }
 
   @Test public void skipLeading_nonAscii_longRun() {
     CharPredicate nonAscii = CharPredicate.is('\u00E9').or('\u00E8');
     String unicodeRun = "\u00E9\u00E8".repeat(50);
-    assertThat(nonAscii.skipLeading(unicodeRun + "end", 0, unicodeRun.length() + 3)).isEqualTo(100);
+    assertThat(nonAscii.skipLeading(unicodeRun + "end", 0)).isEqualTo(100);
   }
 
   @Test public void skipLeading_nonAscii_fromOffset() {
     CharPredicate nonAscii = CharPredicate.is('\u00E9').or('\u00E8');
-    assertThat(nonAscii.skipLeading("xx\u00E9\u00E8\u00E9\u00E8yy", 2, 8)).isEqualTo(6);
+    assertThat(nonAscii.skipLeading("xx\u00E9\u00E8\u00E9\u00E8yy", 2)).isEqualTo(6);
   }
 
   @Test public void skipLeading_mixedAsciiAndNonAscii() {
     CharPredicate mixed = CharPredicate.range('a', 'z').or('\u00E9');
-    assertThat(mixed.skipLeading("abc\u00E9def\u00E9123", 0, 11)).isEqualTo(8);
+    assertThat(mixed.skipLeading("abc\u00E9def\u00E9123", 0)).isEqualTo(8);
   }
 
   @Test public void default_skipLeading_emptyCharSequence() {
     CharPredicate isA = c -> c == 'a';
-    assertThat(isA.skipLeading("", 0, 0)).isEqualTo(0);
+    assertThat(isA.skipLeading("", 0)).isEqualTo(0);
   }
 
   @Test public void default_skipLeading_allMatch() {
     CharPredicate isA = c -> c == 'a';
-    assertThat(isA.skipLeading("aaaa", 0, 4)).isEqualTo(4);
+    assertThat(isA.skipLeading("aaaa", 0)).isEqualTo(4);
   }
 
   @Test public void default_skipLeading_partialMatch() {
     CharPredicate isA = c -> c == 'a';
-    assertThat(isA.skipLeading("aaba", 0, 4)).isEqualTo(2);
+    assertThat(isA.skipLeading("aaba", 0)).isEqualTo(2);
   }
 
   @Test public void default_skipLeading_noMatch() {
     CharPredicate isA = c -> c == 'a';
-    assertThat(isA.skipLeading("baaa", 0, 4)).isEqualTo(0);
+    assertThat(isA.skipLeading("baaa", 0)).isEqualTo(0);
   }
 
   @Test public void default_skipLeading_fromOffset() {
     CharPredicate isA = c -> c == 'a';
-    assertThat(isA.skipLeading("xxaay", 2, 5)).isEqualTo(4);
+    assertThat(isA.skipLeading("xxaay", 2)).isEqualTo(4);
   }
 
   @Test public void any_skipLeading_allMatch() {
-    assertThat(CharPredicate.ANY.skipLeading("hello world", 0, 11)).isEqualTo(11);
+    assertThat(CharPredicate.ANY.skipLeading("hello world", 0)).isEqualTo(11);
   }
 
   @Test public void any_skipLeading_fromOffset() {
-    assertThat(CharPredicate.ANY.skipLeading("hello world", 3, 8)).isEqualTo(8);
+    assertThat(CharPredicate.ANY.skipLeading("hello world", 3)).isEqualTo(11);
   }
 
   @Test public void any_skipLeading_empty() {
-    assertThat(CharPredicate.ANY.skipLeading("", 0, 0)).isEqualTo(0);
+    assertThat(CharPredicate.ANY.skipLeading("", 0)).isEqualTo(0);
   }
 
   @Test public void none_skipLeading_returnsBegin() {
-    assertThat(CharPredicate.NONE.skipLeading("hello world", 0, 11)).isEqualTo(0);
+    assertThat(CharPredicate.NONE.skipLeading("hello world", 0)).isEqualTo(0);
   }
 
   @Test public void none_skipLeading_fromOffset() {
-    assertThat(CharPredicate.NONE.skipLeading("hello world", 3, 8)).isEqualTo(3);
+    assertThat(CharPredicate.NONE.skipLeading("hello world", 3)).isEqualTo(3);
   }
 
   @Test public void none_skipLeading_empty() {
-    assertThat(CharPredicate.NONE.skipLeading("", 0, 0)).isEqualTo(0);
+    assertThat(CharPredicate.NONE.skipLeading("", 0)).isEqualTo(0);
   }
 
   @Test public void ascii_skipLeading_asciiOnly() {
-    assertThat(CharPredicate.ASCII.skipLeading("abc123XYZ!@#", 0, 12)).isEqualTo(12);
+    assertThat(CharPredicate.ASCII.skipLeading("abc123XYZ!@#", 0)).isEqualTo(12);
   }
 
   @Test public void ascii_skipLeading_stopsAtNonAscii() {
-    assertThat(CharPredicate.ASCII.skipLeading("abc\u00E9def", 0, 7)).isEqualTo(3);
+    assertThat(CharPredicate.ASCII.skipLeading("abc\u00E9def", 0)).isEqualTo(3);
   }
 
   @Test public void alpha_skipLeading_matchesAlpha() {
-    assertThat(CharPredicate.ALPHA.skipLeading("HelloWorld123", 0, 13)).isEqualTo(10);
+    assertThat(CharPredicate.ALPHA.skipLeading("HelloWorld123", 0)).isEqualTo(10);
   }
 
   @Test public void whitespace_skipLeading_matchesWhitespace() {
-    assertThat(CharPredicate.WHITESPACE.skipLeading("  \t\n  abc", 0, 9)).isEqualTo(6);
+    assertThat(CharPredicate.WHITESPACE.skipLeading("  \t\n  abc", 0)).isEqualTo(6);
   }
 
   @Test public void anyOf_skipLeading_matchesChars() {
-    assertThat(CharPredicate.anyOf("abc").skipLeading("cbabacdef", 0, 9)).isEqualTo(6);
+    assertThat(CharPredicate.anyOf("abc").skipLeading("cbabacdef", 0)).isEqualTo(6);
   }
 
   @Test public void noneOf_skipLeading_matchesNonChars() {
-    assertThat(CharPredicate.noneOf("abc").skipLeading("xyz123abc", 0, 9)).isEqualTo(6);
+    assertThat(CharPredicate.noneOf("abc").skipLeading("xyz123abc", 0)).isEqualTo(6);
+  }
+
+  @Test public void matchesAllOf_empty_isTrue() {
+    assertThat(CharPredicate.range('0', '9').matchesAllOf("")).isTrue();
+  }
+
+  @Test public void matchesAllOf_allMatch_isTrue() {
+    assertThat(CharPredicate.range('0', '9').matchesAllOf("1234567890")).isTrue();
+  }
+
+  @Test public void matchesAllOf_mismatchAtStart_isFalse() {
+    assertThat(CharPredicate.range('0', '9').matchesAllOf("x1234567890")).isFalse();
+  }
+
+  @Test public void matchesAllOf_mismatchAtEnd_isFalse() {
+    assertThat(CharPredicate.range('0', '9').matchesAllOf("1234567890x")).isFalse();
+  }
+
+  @Test public void matchesAllOf_longRun_isTrue() {
+    String digits = "0123456789".repeat(10);
+    assertThat(CharPredicate.range('0', '9').matchesAllOf(digits)).isTrue();
+  }
+
+  @Test public void matchesNoneOf_empty_isTrue() {
+    assertThat(CharPredicate.range('0', '9').matchesNoneOf("")).isTrue();
+  }
+
+  @Test public void matchesNoneOf_noneMatch_isTrue() {
+    assertThat(CharPredicate.range('0', '9').matchesNoneOf("abcdefgh")).isTrue();
+  }
+
+  @Test public void matchesNoneOf_matchAtStart_isFalse() {
+    assertThat(CharPredicate.range('0', '9').matchesNoneOf("1abcdefgh")).isFalse();
+  }
+
+  @Test public void matchesNoneOf_matchAtEnd_isFalse() {
+    assertThat(CharPredicate.range('0', '9').matchesNoneOf("abcdefgh1")).isFalse();
+  }
+
+  @Test public void matchesNoneOf_longRun_isTrue() {
+    String letters = "abcdefghijklmnopqrstuvwxyz".repeat(10);
+    assertThat(CharPredicate.range('0', '9').matchesNoneOf(letters)).isTrue();
   }
 }
