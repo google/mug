@@ -27,41 +27,37 @@ import java.util.Arrays;
 public interface CharPredicate {
 
   /** Equivalent to the {@code [a-zA-Z]} character class. */
-  CharPredicate ALPHA =
-      new CharPredicate() {
-        @Override public boolean test(char c) {
-          return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-        }
+  CharPredicate ALPHA = new CharPredicate() {
+    @Override public boolean test(char c) {
+      return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+    }
 
-        @Override public String toString() {
-          return "ALPHA";
-        }
-      }.precomputeForAscii();
+    @Override public String toString() {
+      return "ALPHA";
+    }
+  };
 
   /** Equivalent to the {@code [a-zA-Z0-9_]} character class. */
-  CharPredicate WORD =
-      new CharPredicate() {
-        @Override public boolean test(char c) {
-          return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
-              || c == '_';
-        }
+  CharPredicate WORD = new CharPredicate() {
+    @Override public boolean test(char c) {
+      return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
+    }
 
-        @Override public String toString() {
-          return "WORD";
-        }
-      }.precomputeForAscii();
+    @Override public String toString() {
+      return "WORD";
+    }
+  };
 
   /** Corresponds to the ASCII characters. */
-  CharPredicate ASCII =
-      new CharPredicate() {
-        @Override public boolean test(char c) {
-          return c <= '\u007f';
-        }
+  CharPredicate ASCII = new CharPredicate() {
+    @Override public boolean test(char c) {
+      return c <= '\u007f';
+    }
 
-        @Override public String toString() {
-          return "ASCII";
-        }
-      }.precomputeForAscii();
+    @Override public String toString() {
+      return "ASCII";
+    }
+  };
 
   /** Corresponds to all characters. */
   CharPredicate ANY = new CharPredicate() {
@@ -127,7 +123,7 @@ public interface CharPredicate {
       @Override public String toString() {
         return "'" + ch + "'";
       }
-    }.precomputeForAscii();
+    };
   }
 
   /** Returns a CharPredicate that matches except {@code ch}. */
@@ -145,7 +141,7 @@ public interface CharPredicate {
       @Override public String toString() {
         return "['" + from + "', '" + to + "']";
       }
-    }.precomputeForAscii();
+    };
   }
 
   /** Returns a CharPredicate that matches any of {@code chars}. */

@@ -76,51 +76,58 @@ public class PrecomputedCharPredicateTest {
   @Test public void precomputeForAscii_idempotent_specialCases() {
     assertThat(CharPredicate.ANY.precomputeForAscii()).isSameInstanceAs(CharPredicate.ANY);
     assertThat(CharPredicate.NONE.precomputeForAscii()).isSameInstanceAs(CharPredicate.NONE);
-    assertThat(CharPredicate.ASCII.precomputeForAscii()).isSameInstanceAs(CharPredicate.ASCII);
-    assertThat(CharPredicate.ALPHA.precomputeForAscii()).isSameInstanceAs(CharPredicate.ALPHA);
 
     CharPredicate isA = CharPredicate.is('a');
-    assertThat(isA.precomputeForAscii()).isSameInstanceAs(isA);
+    CharPredicate precomputedA = isA.precomputeForAscii();
+    assertThat(precomputedA).isNotSameInstanceAs(isA);
+    assertThat(precomputedA.precomputeForAscii()).isSameInstanceAs(precomputedA);
 
     CharPredicate rangeAZ = CharPredicate.range('A', 'Z');
-    assertThat(rangeAZ.precomputeForAscii()).isSameInstanceAs(rangeAZ);
+    CharPredicate precomputedRange = rangeAZ.precomputeForAscii();
+    assertThat(precomputedRange).isNotSameInstanceAs(rangeAZ);
+    assertThat(precomputedRange.precomputeForAscii()).isSameInstanceAs(precomputedRange);
 
-    CharPredicate notA = isA.not();
-    assertThat(notA.precomputeForAscii()).isSameInstanceAs(notA);
+    CharPredicate precomputedAlpha = CharPredicate.ALPHA.precomputeForAscii();
+    assertThat(precomputedAlpha).isNotSameInstanceAs(CharPredicate.ALPHA);
+    assertThat(precomputedAlpha.precomputeForAscii()).isSameInstanceAs(precomputedAlpha);
+
+    CharPredicate precomputedAscii = CharPredicate.ASCII.precomputeForAscii();
+    assertThat(precomputedAscii).isNotSameInstanceAs(CharPredicate.ASCII);
+    assertThat(precomputedAscii.precomputeForAscii()).isSameInstanceAs(precomputedAscii);
   }
 
   @Test public void precomputed_not_not_isSameInstance() {
-    CharPredicate digits = CharPredicate.range('0', '9');
+    CharPredicate digits = PrecomputedCharPredicate.of(c -> c >= '0' && c <= '9');
     assertThat(digits.not().not()).isSameInstanceAs(digits);
   }
 
   @Test public void precomputed_not_skipLeading_negatedRange() {
-    CharPredicate digits = CharPredicate.range('0', '9');
+    CharPredicate digits = PrecomputedCharPredicate.of(c -> c >= '0' && c <= '9');
     assertThat(digits.not().skipLeading("abcdefgh123", 0)).isEqualTo(8);
   }
 
   @Test public void precomputed_not_skipLeading_longRun() {
-    CharPredicate notDigits = CharPredicate.range('0', '9').not();
+    CharPredicate notDigits = PrecomputedCharPredicate.of(c -> c >= '0' && c <= '9').not();
     String letters = "abcdefghijklmnopqrstuvwxyz".repeat(4);
     assertThat(notDigits.skipLeading(letters + "123", 0)).isEqualTo(letters.length());
   }
 
   @Test public void precomputed_not_skipLeading_doesNotInvokeTestForAscii() {
-    CharPredicate isA = CharPredicate.is('a');
+    CharPredicate isA = PrecomputedCharPredicate.of(c -> c == 'a');
     CharPredicate precomputed = spy(isA);
     assertThat(precomputed.not().skipLeading("bcde", 0)).isEqualTo(4);
     verify(precomputed, never()).test(anyChar());
   }
 
   @Test public void precomputed_matchesNoneOf_doesNotInvokeTestForAscii() {
-    CharPredicate isA = CharPredicate.is('a');
+    CharPredicate isA = PrecomputedCharPredicate.of(c -> c == 'a');
     CharPredicate precomputed = spy(isA);
     assertThat(precomputed.matchesNoneOf("bcde")).isTrue();
     verify(precomputed, never()).test(anyChar());
   }
 
   @Test public void precomputed_not_matchesAllOf_doesNotInvokeTestForAscii() {
-    CharPredicate isA = CharPredicate.is('a');
+    CharPredicate isA = PrecomputedCharPredicate.of(c -> c == 'a');
     CharPredicate precomputed = spy(isA);
     assertThat(precomputed.not().matchesAllOf("bcde")).isTrue();
     verify(precomputed, never()).test(anyChar());
@@ -159,63 +166,72 @@ public class PrecomputedCharPredicateTest {
   }
 
   @Test public void skipLeading_lower64_allMatch() {
-    assertThat(CharPredicate.range('0', '9').skipLeading("01234567", 0)).isEqualTo(8);
+    assertThat(CharPredicate.range('0', '9').precomputeForAscii().skipLeading("01234567", 0))
+        .isEqualTo(8);
   }
 
   @Test public void skipLeading_lower64_longRun() {
     String digits = "0123456789".repeat(20);
-    assertThat(CharPredicate.range('0', '9').skipLeading(digits + "xyz", 0)).isEqualTo(200);
+    assertThat(CharPredicate.range('0', '9').precomputeForAscii().skipLeading(digits + "xyz", 0))
+        .isEqualTo(200);
   }
 
   @Test public void skipLeading_lower64_fromOffset() {
-    assertThat(CharPredicate.range('0', '9').skipLeading("xx12345yy", 2)).isEqualTo(7);
+    assertThat(CharPredicate.range('0', '9').precomputeForAscii().skipLeading("xx12345yy", 2))
+        .isEqualTo(7);
   }
 
   @Test public void skipLeading_higher64_allMatch() {
-    assertThat(CharPredicate.range('a', 'z').skipLeading("abcdefgh", 0)).isEqualTo(8);
+    assertThat(CharPredicate.range('a', 'z').precomputeForAscii().skipLeading("abcdefgh", 0))
+        .isEqualTo(8);
   }
 
   @Test public void skipLeading_higher64_longRun() {
     String letters = "abcdefghijklmnopqrstuvwxyz".repeat(10);
-    assertThat(CharPredicate.range('a', 'z').skipLeading(letters + "123", 0)).isEqualTo(260);
+    assertThat(CharPredicate.range('a', 'z').precomputeForAscii().skipLeading(letters + "123", 0))
+        .isEqualTo(260);
   }
 
   @Test public void skipLeading_higher64_fromOffset() {
-    assertThat(CharPredicate.range('a', 'z').skipLeading("12abcdef34", 2)).isEqualTo(8);
+    assertThat(CharPredicate.range('a', 'z').precomputeForAscii().skipLeading("12abcdef34", 2))
+        .isEqualTo(8);
   }
 
   @Test public void skipLeading_128bit_allMatch() {
-    assertThat(CharPredicate.WORD.skipLeading("a0_b1_c2_d3_e4_f5", 0)).isEqualTo(17);
+    assertThat(CharPredicate.WORD.precomputeForAscii().skipLeading("a0_b1_c2_d3_e4_f5", 0))
+        .isEqualTo(17);
   }
 
   @Test public void skipLeading_128bit_longRun() {
     String words = "a0_b1_c2_d3_e4_".repeat(20);
-    assertThat(CharPredicate.WORD.skipLeading(words + "   ", 0)).isEqualTo(300);
+    assertThat(CharPredicate.WORD.precomputeForAscii().skipLeading(words + "   ", 0))
+        .isEqualTo(300);
   }
 
   @Test public void skipLeading_128bit_fromOffset() {
-    assertThat(CharPredicate.WORD.skipLeading("   a0_b1_c2   ", 3)).isEqualTo(11);
+    assertThat(CharPredicate.WORD.precomputeForAscii().skipLeading("   a0_b1_c2   ", 3))
+        .isEqualTo(11);
   }
 
   @Test public void skipLeading_nonAscii_allMatch() {
-    CharPredicate nonAscii = CharPredicate.is('\u00E9').or('\u00E8');
+    CharPredicate nonAscii = CharPredicate.is('\u00E9').or('\u00E8').precomputeForAscii();
     assertThat(nonAscii.skipLeading("\u00E9\u00E8\u00E9\u00E8\u00E9\u00E8\u00E9\u00E8", 0))
         .isEqualTo(8);
   }
 
   @Test public void skipLeading_nonAscii_longRun() {
-    CharPredicate nonAscii = CharPredicate.is('\u00E9').or('\u00E8');
+    CharPredicate nonAscii = CharPredicate.is('\u00E9').or('\u00E8').precomputeForAscii();
     String unicodeRun = "\u00E9\u00E8".repeat(50);
     assertThat(nonAscii.skipLeading(unicodeRun + "end", 0)).isEqualTo(100);
   }
 
   @Test public void skipLeading_nonAscii_fromOffset() {
-    CharPredicate nonAscii = CharPredicate.is('\u00E9').or('\u00E8');
+    CharPredicate nonAscii = CharPredicate.is('\u00E9').or('\u00E8').precomputeForAscii();
     assertThat(nonAscii.skipLeading("xx\u00E9\u00E8\u00E9\u00E8yy", 2)).isEqualTo(6);
   }
 
   @Test public void skipLeading_mixedAsciiAndNonAscii() {
-    CharPredicate mixed = CharPredicate.range('a', 'z').or('\u00E9');
+    CharPredicate mixed = CharPredicate.range('a', 'z').or('\u00E9').precomputeForAscii();
     assertThat(mixed.skipLeading("abc\u00E9def\u00E9123", 0)).isEqualTo(8);
   }
 }
