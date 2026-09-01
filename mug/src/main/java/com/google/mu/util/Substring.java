@@ -520,7 +520,7 @@ public final class Substring {
    * @since 6.0
    */
   public static Pattern first(CharPredicate charMatcher) {
-    CharPredicate nonMatching = charMatcher.not().precomputeForAscii();
+    CharPredicate nonMatching = charMatcher.precomputeForAscii().not();
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
         int i = nonMatching.skipLeading(input, fromIndex);
@@ -680,7 +680,7 @@ public final class Substring {
    */
   public static Pattern consecutive(CharPredicate matcher) {
     CharPredicate matching = matcher.precomputeForAscii();
-    CharPredicate nonMatching = matcher.not().precomputeForAscii();
+    CharPredicate nonMatching = matching.not();
     return new Pattern() {
       @Override Match match(String input, int fromIndex) {
         int i = nonMatching.skipLeading(input, fromIndex);
