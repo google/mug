@@ -106,7 +106,7 @@ public final class CharacterSet implements CharPredicate {
    * @since 9.9.4
    */
   @Override public CharacterSet precomputeForAscii() {
-    return new CharacterSet(string, predicate.precomputeForAscii());
+    return this;
   }
 
   @Override public CharacterSet not() {

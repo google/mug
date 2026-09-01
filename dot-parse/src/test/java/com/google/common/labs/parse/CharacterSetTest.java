@@ -221,4 +221,9 @@ public class CharacterSetTest {
     CharacterSet set = charsIn("[^0-9]");
     assertThat(set.skipLeading("abcdef123", 0, 9)).isEqualTo(6);
   }
+
+  @Test public void precomputeForAscii_returnsSelf() {
+    CharacterSet set = charsIn("[a-z]");
+    assertThat(set.precomputeForAscii()).isSameInstanceAs(set);
+  }
 }
