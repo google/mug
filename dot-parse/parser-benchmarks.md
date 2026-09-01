@@ -90,7 +90,7 @@ To evaluate continuous data ingestion performance, we benchmarked incremental re
 | :--- | :---: |
 | **Jackson Databind** (Streaming) | 0.033 |
 | **Gson** (Streaming) | 0.031 |
-| **`dot-parse`** (`parseToStream`) | **0.015** |
+| **`dot-parse`** (`parseToStream`) | **0.016** |
 | **JavaCC** (Parser Generator) | 0.010 |
 
 ---
@@ -105,7 +105,7 @@ Throughput was measured in **operations per millisecond** (higher is better), wi
 
 | Parser Engine | Throughput (ops/ms) | Relative Performance (vs. `fastparse`) | Notes / Optimizations |
 | :--- | :---: | :---: | :--- |
-| [**`dot-parse`**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/CssParser.java) | **0.465 ± 0.028** | **2.67x** 🚀 ☕ | 128-bit SWAR bitmask skipper and radix prefix matching. |
+| [**`dot-parse`**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/dotparse/CssParser.java) | **0.487 ± 0.010** | **2.80x** 🚀 ☕ | 128-bit SWAR bitmask skipper and radix prefix matching. |
 | [**`cats-parse`**](../mug-benchmarks/src/test/scala/com/google/mu/benchmarks/parsers/catsparse/CatsParseCssParser.scala) | 0.191 ± 0.038 | 1.10x | Optimized via left-factoring numeric/identifier choices. |
 | [**`fastparse`**](../mug-benchmarks/src/test/scala/com/google/mu/benchmarks/parsers/fastparse/FastparseCssParser.scala) | 0.174 ± 0.040 | 1.00x (Baseline) | Official fastparse benchmark implementation (Scala macro-based). |
 | [**`parboiled` (v1)**](../mug-benchmarks/src/test/java/com/google/mu/benchmarks/parsers/parboiled/ParboiledCssParser.java) | 0.100 ± 0.008 | 0.57x | Classic PEG combinators with ASM bytecode generation. |
@@ -122,15 +122,15 @@ Throughput was measured in **operations per millisecond** (higher is better). Al
 
 | Benchmark Scenario | `dot-parse` | `jparsec` | `fastparse` | `cats-parse` | `taker` | `parsecj` | `parboiled` | `antlr4` | `scalaParser` | `petitparser` | `better-parse` | **Winner(s)** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **IPv4 Address** | **11,450** ☕ | 8,554 | **23,955** 🚀 | 12,802 | 4,567 | 12,336 | 891 | 1,841 | 3,395 | 6,622 | 1,879 | **`fast`** 🚀<br>Java: **`dot`** ☕ |
-| **String (Simple)** | **46,048** 🚀 ☕ | 5,485 | 21,521 | 12,678 | 25,592 | 4,740 | 559 | 5,335 | 3,797 | 2,862 | 5,025 | **`dot`** 🚀 ☕ |
-| **String (Escaped)** | 4,168 | 3,948 | 10,491 | 3,535 | **20,759** 🚀 ☕ | 2,646 | 473 | 2,175 | 3,195 | 2,209 | 1,255 | **`taker`** 🚀 ☕ |
-| **120 Programming Keywords (CS)** | **28.88** 🚀 ☕ | 0.77 | 0.46 | 0.71 | 0.52 | 0.19 | 14.97 | 6.47 | 0.10 | 0.81 | — | **`dot`** 🚀 ☕ |
-| **120 Programming Keywords (CI)** | **18.17** 🚀 ☕ | 0.82 | 0.43 | 0.73 | 0.50 | 0.07 | 0.43 | 5.16 | 0.07 | 0.59 | — | **`dot`** 🚀 ☕ |
-| **Calculator (Math)** | **669** ☕ | 347 | **1,056** 🚀 | 431 | 395 | 198 | 104 | 320 | 186 | 344 | 227 | **`fastparse`** 🚀<br>Java: **`dot`** ☕ |
-| **Nested Comments** | **12,276** 🚀 ☕ | 2,201 | 5,005 | 2,035 | 660 | 600 | 380 | 1,034 | 246 | 1,016 | 1,285 | **`dot`** 🚀 ☕ |
-| **US Phone (Single)** | **15,274** 🚀 ☕ | 9,008 | 6,784 | 12,541 | 13,701 | 9,093 | 4,121 | 5,925 | 3,234 | 6,271 | 9,693 | **`dot`** 🚀 ☕ |
-| **US Phone (1,000-List)** | **11.97** 🚀 ☕ | 8.79 | 8.97 | 11.27 | 8.36 | 1.82 | 3.71 | 7.98 | 2.79 | 5.30 | 5.35 | **`dot`** 🚀 ☕ |
+| **IPv4 Address** | **11,294** ☕ | 8,554 | **23,955** 🚀 | 12,802 | 4,567 | 12,336 | 891 | 1,841 | 3,395 | 6,622 | 1,879 | **`fast`** 🚀<br>Java: **`dot`** ☕ |
+| **String (Simple)** | **46,382** 🚀 ☕ | 5,485 | 21,521 | 12,678 | 25,592 | 4,740 | 559 | 5,335 | 3,797 | 2,862 | 5,025 | **`dot`** 🚀 ☕ |
+| **String (Escaped)** | 4,136 | 3,948 | 10,491 | 3,535 | **20,759** 🚀 ☕ | 2,646 | 473 | 2,175 | 3,195 | 2,209 | 1,255 | **`taker`** 🚀 ☕ |
+| **120 Programming Keywords (CS)** | **28.75** 🚀 ☕ | 0.77 | 0.46 | 0.71 | 0.52 | 0.19 | 14.97 | 6.47 | 0.10 | 0.81 | — | **`dot`** 🚀 ☕ |
+| **120 Programming Keywords (CI)** | **18.75** 🚀 ☕ | 0.82 | 0.43 | 0.73 | 0.50 | 0.07 | 0.43 | 5.16 | 0.07 | 0.59 | — | **`dot`** 🚀 ☕ |
+| **Calculator (Math)** | **660** ☕ | 347 | **1,056** 🚀 | 431 | 395 | 198 | 104 | 320 | 186 | 344 | 227 | **`fastparse`** 🚀<br>Java: **`dot`** ☕ |
+| **Nested Comments** | **11,010** 🚀 ☕ | 2,201 | 5,005 | 2,035 | 660 | 600 | 380 | 1,034 | 246 | 1,016 | 1,285 | **`dot`** 🚀 ☕ |
+| **US Phone (Single)** | **15,308** 🚀 ☕ | 9,008 | 6,784 | 12,541 | 13,701 | 9,093 | 4,121 | 5,925 | 3,234 | 6,271 | 9,693 | **`dot`** 🚀 ☕ |
+| **US Phone (1,000-List)** | **11.02** 🚀 ☕ | 8.79 | 8.97 | 11.27 | 8.36 | 1.82 | 3.71 | 7.98 | 2.79 | 5.30 | 5.35 | **`dot`** 🚀 ☕ |
 
 ---
 
