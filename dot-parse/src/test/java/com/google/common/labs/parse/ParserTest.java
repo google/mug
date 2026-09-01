@@ -8991,4 +8991,156 @@ public class ParserTest {
     assertThat(string("target").skipping(whitespace()).parseToStream(new StringReader(whitespace + "target")))
         .containsExactly("target");
   }
+
+  @Test public void consecutive_low64_parse() {
+    assertThat(consecutive(CharPredicate.range('0', '9'), "digits").parse("0123456789"))
+        .isEqualTo("0123456789");
+  }
+
+  @Test public void consecutive_low64_parseToStream() {
+    assertThat(
+            consecutive(CharPredicate.range('0', '9'), "digits")
+                .parseToStream(new StringReader("0123456789")))
+        .containsExactly("0123456789");
+  }
+
+  @Test public void consecutive_low64_stopsAtNonMatch() {
+    assertThat(
+            consecutive(CharPredicate.range('0', '9'), "digits")
+                .followedBy("abc")
+                .parse("12345abc"))
+        .isEqualTo("12345");
+  }
+
+  @Test public void consecutive_low64_failure() {
+    ParseException e =
+        assertThrows(
+            ParseException.class,
+            () -> consecutive(CharPredicate.range('0', '9'), "digits").parse("abc"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <digits>");
+  }
+
+  @Test public void consecutive_high64_parse() {
+    assertThat(consecutive(CharPredicate.range('a', 'z'), "letters").parse("abcdefghijklmnopqrstuvwxyz"))
+        .isEqualTo("abcdefghijklmnopqrstuvwxyz");
+  }
+
+  @Test public void consecutive_high64_parseToStream() {
+    assertThat(
+            consecutive(CharPredicate.range('a', 'z'), "letters")
+                .parseToStream(new StringReader("abcdefghijklmnopqrstuvwxyz")))
+        .containsExactly("abcdefghijklmnopqrstuvwxyz");
+  }
+
+  @Test public void consecutive_high64_stopsAtNonMatch() {
+    assertThat(
+            consecutive(CharPredicate.range('a', 'z'), "letters")
+                .followedBy("123")
+                .parse("abcdef123"))
+        .isEqualTo("abcdef");
+  }
+
+  @Test public void consecutive_high64_failure() {
+    ParseException e =
+        assertThrows(
+            ParseException.class,
+            () -> consecutive(CharPredicate.range('a', 'z'), "letters").parse("123"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <letters>");
+  }
+
+  @Test public void consecutive_128bit_parse() {
+    CharPredicate word =
+        CharPredicate.range('a', 'z').or(CharPredicate.range('0', '9')).or(is('_'));
+    assertThat(consecutive(word, "word").parse("a0_b1_c2_d3_e4_f5"))
+        .isEqualTo("a0_b1_c2_d3_e4_f5");
+  }
+
+  @Test public void consecutive_128bit_parseToStream() {
+    CharPredicate word =
+        CharPredicate.range('a', 'z').or(CharPredicate.range('0', '9')).or(is('_'));
+    assertThat(consecutive(word, "word").parseToStream(new StringReader("a0_b1_c2_d3_e4_f5")))
+        .containsExactly("a0_b1_c2_d3_e4_f5");
+  }
+
+  @Test public void consecutive_128bit_stopsAtNonMatch() {
+    CharPredicate word =
+        CharPredicate.range('a', 'z').or(CharPredicate.range('0', '9')).or(is('_'));
+    assertThat(consecutive(word, "word").followedBy("!@#").parse("a0_b1_c2!@#"))
+        .isEqualTo("a0_b1_c2");
+  }
+
+  @Test public void consecutive_128bit_failure() {
+    CharPredicate word =
+        CharPredicate.range('a', 'z').or(CharPredicate.range('0', '9')).or(is('_'));
+    ParseException e =
+        assertThrows(ParseException.class, () -> consecutive(word, "word").parse("!@#"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <word>");
+  }
+
+  @Test public void consecutive_nonAscii_parse() {
+    CharPredicate nonAscii = is('\u00E9').or(is('\u00E8'));
+    assertThat(consecutive(nonAscii, "accents").parse("\u00E9\u00E8\u00E9\u00E8\u00E9\u00E8"))
+        .isEqualTo("\u00E9\u00E8\u00E9\u00E8\u00E9\u00E8");
+  }
+
+  @Test public void consecutive_nonAscii_parseToStream() {
+    CharPredicate nonAscii = is('\u00E9').or(is('\u00E8'));
+    assertThat(
+            consecutive(nonAscii, "accents")
+                .parseToStream(new StringReader("\u00E9\u00E8\u00E9\u00E8\u00E9\u00E8")))
+        .containsExactly("\u00E9\u00E8\u00E9\u00E8\u00E9\u00E8");
+  }
+
+  @Test public void consecutive_nonAscii_stopsAtNonMatch() {
+    CharPredicate nonAscii = is('\u00E9').or(is('\u00E8'));
+    assertThat(
+            consecutive(nonAscii, "accents")
+                .followedBy("end")
+                .parse("\u00E9\u00E8\u00E9\u00E8end"))
+        .isEqualTo("\u00E9\u00E8\u00E9\u00E8");
+  }
+
+  @Test public void consecutive_nonAscii_failure() {
+    CharPredicate nonAscii = is('\u00E9').or(is('\u00E8'));
+    ParseException e =
+        assertThrows(
+            ParseException.class, () -> consecutive(nonAscii, "accents").parse("abc"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <accents>");
+  }
+
+  @Test public void consecutive_asciiAndNonAscii_parse() {
+    CharPredicate mixed = CharPredicate.range('a', 'z').or(is('\u00E9'));
+    assertThat(consecutive(mixed, "mixed").parse("abc\u00E9def\u00E9xyz"))
+        .isEqualTo("abc\u00E9def\u00E9xyz");
+  }
+
+  @Test public void consecutive_asciiAndNonAscii_parseToStream() {
+    CharPredicate mixed = CharPredicate.range('a', 'z').or(is('\u00E9'));
+    assertThat(
+            consecutive(mixed, "mixed")
+                .parseToStream(new StringReader("abc\u00E9def\u00E9xyz")))
+        .containsExactly("abc\u00E9def\u00E9xyz");
+  }
+
+  @Test public void consecutive_asciiAndNonAscii_stopsAtNonMatch() {
+    CharPredicate mixed = CharPredicate.range('a', 'z').or(is('\u00E9'));
+    assertThat(
+            consecutive(mixed, "mixed")
+                .followedBy("123")
+                .parse("abc\u00E9def123"))
+        .isEqualTo("abc\u00E9def");
+  }
+
+  @Test public void consecutive_asciiAndNonAscii_failure() {
+    CharPredicate mixed = CharPredicate.range('a', 'z').or(is('\u00E9'));
+    ParseException e =
+        assertThrows(
+            ParseException.class, () -> consecutive(mixed, "mixed").parse("123"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <mixed>");
+  }
 }

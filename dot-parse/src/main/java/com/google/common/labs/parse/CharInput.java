@@ -320,48 +320,73 @@ abstract class CharInput {
     };
   }
 
+  /**
+   * Scans {@code cs} in 4-character chunks using SWAR (SIMD Within A Register) bitmask evaluation.
+   */
   private static int scanWhile(
       CharSequence cs, long low64, long high64, CharPredicate fallback, int fromIndex,
       int toIndex) {
     int i = fromIndex;
     int limit = toIndex - 4;
+
+    // If high64 == 0 (lower-64 mode), mask ~0x3F verifies that the upper 10 bits of each char
+    // are zero (i.e. char < 64).
+    // Otherwise (128-bit mode), mask ~0x7F verifies that the upper 9 bits are zero (char < 128).
     int asciiMask = (high64 == 0L) ? ~0x3F : ~0x7F;
+
     while (i <= limit) {
       char c0 = cs.charAt(i);
       char c1 = cs.charAt(i + 1);
       char c2 = cs.charAt(i + 2);
       char c3 = cs.charAt(i + 3);
+
+      // Fast check: verify in 4 bitwise ops (3 ORs + 1 AND) that all 4 characters belong to the
+      // accelerated ASCII partition without any non-ASCII or unaccelerated characters.
       if (((c0 | c1 | c2 | c3) & asciiMask) == 0) {
         long m0;
         long m1;
         long m2;
         long m3;
         if (high64 == 0L) {
+          // All 4 characters are in ASCII 0..63: direct shift into low64 (0 cmov).
           m0 = low64 >>> c0;
           m1 = low64 >>> c1;
           m2 = low64 >>> c2;
           m3 = low64 >>> c3;
         } else {
+          // 128-bit mode (ASCII 0..127): branchless ternary lowered to cmov.
+          // For c >= 64, Java's 'high64 >>> c' automatically masks shift amount to (c & 63) == (c -
+          // 64)
+          // per JLS §15.19, providing direct lookup without explicit subtraction.
           m0 = (c0 < 64) ? (low64 >>> c0) : (high64 >>> c0);
           m1 = (c1 < 64) ? (low64 >>> c1) : (high64 >>> c1);
           m2 = (c2 < 64) ? (low64 >>> c2) : (high64 >>> c2);
           m3 = (c3 < 64) ? (low64 >>> c3) : (high64 >>> c3);
         }
+
+        // Fast path: bit 0 represents the match flag (mask >>> c & 1L).
+        // If bit 0 is set for all 4 chars, all 4 matched; advance by 4 with 0 branches.
         if (((m0 & m1 & m2 & m3) & 1L) != 0) {
           i += 4;
           continue;
         }
+
+        // Mismatch encountered within this 4-char chunk; return the earliest non-matching index.
         if ((m0 & 1L) == 0) return i;
         if ((m1 & 1L) == 0) return i + 1;
         if ((m2 & 1L) == 0) return i + 2;
         return i + 3;
       }
+
+      // Non-ASCII or out-of-partition fallback: test characters sequentially via fallback.
       if (!fallback.test(c0)) return i;
       if (!fallback.test(c1)) return i + 1;
       if (!fallback.test(c2)) return i + 2;
       if (!fallback.test(c3)) return i + 3;
       i += 4;
     }
+
+    // Process remaining trailing characters (< 4).
     while (i < toIndex && fallback.test(cs.charAt(i))) {
       i++;
     }
