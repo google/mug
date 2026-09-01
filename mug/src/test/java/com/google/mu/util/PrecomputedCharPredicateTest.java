@@ -97,37 +97,37 @@ public class PrecomputedCharPredicateTest {
   }
 
   @Test public void precomputed_not_not_isSameInstance() {
-    CharPredicate digits = PrecomputedCharPredicate.of(c -> c >= '0' && c <= '9');
+    CharPredicate digits = PrecomputedForAscii.of(c -> c >= '0' && c <= '9');
     assertThat(digits.not().not()).isSameInstanceAs(digits);
   }
 
   @Test public void precomputed_not_skipLeading_negatedRange() {
-    CharPredicate digits = PrecomputedCharPredicate.of(c -> c >= '0' && c <= '9');
+    CharPredicate digits = PrecomputedForAscii.of(c -> c >= '0' && c <= '9');
     assertThat(digits.not().skipLeading("abcdefgh123", 0)).isEqualTo(8);
   }
 
   @Test public void precomputed_not_skipLeading_longRun() {
-    CharPredicate notDigits = PrecomputedCharPredicate.of(c -> c >= '0' && c <= '9').not();
+    CharPredicate notDigits = PrecomputedForAscii.of(c -> c >= '0' && c <= '9').not();
     String letters = "abcdefghijklmnopqrstuvwxyz".repeat(4);
     assertThat(notDigits.skipLeading(letters + "123", 0)).isEqualTo(letters.length());
   }
 
   @Test public void precomputed_not_skipLeading_doesNotInvokeTestForAscii() {
-    CharPredicate isA = PrecomputedCharPredicate.of(c -> c == 'a');
+    CharPredicate isA = PrecomputedForAscii.of(c -> c == 'a');
     CharPredicate precomputed = spy(isA);
     assertThat(precomputed.not().skipLeading("bcde", 0)).isEqualTo(4);
     verify(precomputed, never()).test(anyChar());
   }
 
   @Test public void precomputed_matchesNoneOf_doesNotInvokeTestForAscii() {
-    CharPredicate isA = PrecomputedCharPredicate.of(c -> c == 'a');
+    CharPredicate isA = PrecomputedForAscii.of(c -> c == 'a');
     CharPredicate precomputed = spy(isA);
     assertThat(precomputed.matchesNoneOf("bcde")).isTrue();
     verify(precomputed, never()).test(anyChar());
   }
 
   @Test public void precomputed_not_matchesAllOf_doesNotInvokeTestForAscii() {
-    CharPredicate isA = PrecomputedCharPredicate.of(c -> c == 'a');
+    CharPredicate isA = PrecomputedForAscii.of(c -> c == 'a');
     CharPredicate precomputed = spy(isA);
     assertThat(precomputed.not().matchesAllOf("bcde")).isTrue();
     verify(precomputed, never()).test(anyChar());

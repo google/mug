@@ -333,6 +333,6 @@ public interface CharPredicate {
    * @since 9.9.4
    */
   default CharPredicate precomputeForAscii() {
-    return PrecomputedCharPredicate.of(this);
+    return PrecomputedForAscii.of(this);
   }
 }

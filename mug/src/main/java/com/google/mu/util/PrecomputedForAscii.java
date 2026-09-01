@@ -14,20 +14,20 @@
  *****************************************************************************/
 package com.google.mu.util;
 
-class PrecomputedCharPredicate implements CharPredicate {
+class PrecomputedForAscii implements CharPredicate {
   private final CharPredicate base;
   private final long low64;
   private final long high64;
   private final int offset;
   private final int asciiMask;
 
-  static PrecomputedCharPredicate of(CharPredicate base) {
+  static PrecomputedForAscii of(CharPredicate base) {
     long low64 = computeMask(base, 0);
     long high64 = computeMask(base, 64);
-    return new PrecomputedCharPredicate(base, low64, high64);
+    return new PrecomputedForAscii(base, low64, high64);
   }
 
-  private PrecomputedCharPredicate(CharPredicate base, long low64, long high64) {
+  private PrecomputedForAscii(CharPredicate base, long low64, long high64) {
     this.base = base;
     this.low64 = low64;
     this.high64 = high64;
@@ -103,8 +103,8 @@ class PrecomputedCharPredicate implements CharPredicate {
   }
 
   @Override public CharPredicate not() {
-    PrecomputedCharPredicate precomputed = this;
-    return new PrecomputedCharPredicate(base.not(), ~low64, ~high64) {
+    PrecomputedForAscii precomputed = this;
+    return new PrecomputedForAscii(base.not(), ~low64, ~high64) {
       @Override public CharPredicate not() {
         return precomputed;
       }
