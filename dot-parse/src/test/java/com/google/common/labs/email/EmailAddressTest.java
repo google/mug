@@ -725,6 +725,35 @@ public class EmailAddressTest {
     parser.assertParsesTo("e\u0301mile@example.com", EmailAddress.of("e\u0301mile", "example.com"));
   }
 
+  @Test public void testEmailAddress_localPartNormalizedToNfc() {
+    EmailAddress nfd = EmailAddress.of("e\u0301mile@example.com");
+    EmailAddress nfc = EmailAddress.of("émile@example.com");
+    assertThat(nfd).isEqualTo(nfc);
+    assertThat(nfd.localPart()).isEqualTo("émile");
+  }
+
+  @Test public void testEmailAddressParsing_invalid_leadingCombiningMark(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("\u0301user@example.com"));
+  }
+
+  @Test public void testEmailAddressOf_invalid_leadingCombiningMark() {
+    assertThrows(
+        IllegalArgumentException.class, () -> EmailAddress.of("\u0301user", "example.com"));
+  }
+
+  @Test public void testEmailAddressParsing_invalid_invisibleCombiningGraphemeJoiner(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isEqualTo(ParseStrategy.COMBINATOR);
+    assertThrows(IllegalArgumentException.class, () -> parser.parse("adm\u034Fin@example.com"));
+  }
+
+  @Test public void testEmailAddressOf_invalid_invisibleCombiningGraphemeJoiner() {
+    assertThrows(
+        IllegalArgumentException.class, () -> EmailAddress.of("adm\u034Fin", "example.com"));
+  }
+
   @Test public void testEmailAddressParsing_i18n_rtlDomainPart(
       @TestParameter ParseStrategy parser) {
     assume().that(parser).isNotEqualTo(ParseStrategy.REGEX);
@@ -1223,6 +1252,61 @@ public class EmailAddressTest {
         .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("e", "f.com"))
         .inOrder();
     assertThat(invalid).containsExactly("c@d . com").inOrder();
+  }
+
+  @Test public void testParseAddressList_withConsumer_leadingCombiningMark() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList("a@b.com, \u0301c@d.com, e@f.com", invalid::add))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("e", "f.com"))
+        .inOrder();
+    assertThat(invalid).containsExactly("\u0301c@d.com");
+  }
+
+  @Test public void testParseAddressList_withConsumer_quotedLeadingCombiningMark() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(EmailAddress.parseAddressList("a@b.com, \"\u0301c\"@d.com, e@f.com", invalid::add))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("e", "f.com"))
+        .inOrder();
+    assertThat(invalid).containsExactly("\"\u0301c\"@d.com");
+  }
+
+  @Test public void testParseAddressList_withConsumer_bracketedLeadingCombiningMark() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(
+            EmailAddress.parseAddressList(
+                "a@b.com, User <\u0301c@example.com>, e@f.com", invalid::add))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("e", "f.com"))
+        .inOrder();
+    assertThat(invalid).containsExactly("User <\u0301c@example.com>");
+  }
+
+  @Test public void testParseAddressList_withConsumer_invisibleCombiningGraphemeJoiner() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(
+            EmailAddress.parseAddressList(
+                "a@b.com, adm\u034Fin@example.com, e@f.com", invalid::add))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("e", "f.com"))
+        .inOrder();
+    assertThat(invalid).containsExactly("adm\u034Fin@example.com");
+  }
+
+  @Test public void testParseAddressList_withConsumer_quotedInvisibleCombiningGraphemeJoiner() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(
+            EmailAddress.parseAddressList(
+                "a@b.com, \"adm\u034Fin\"@example.com, e@f.com", invalid::add))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("e", "f.com"))
+        .inOrder();
+    assertThat(invalid).containsExactly("\"adm\u034Fin\"@example.com");
+  }
+
+  @Test public void testParseAddressList_withConsumer_invisibleCombiningGraphemeJoinerInDomain() {
+    List<String> invalid = new ArrayList<>();
+    assertThat(
+            EmailAddress.parseAddressList("a@b.com, user@adm\u034Fin.com, e@f.com", invalid::add))
+        .containsExactly(EmailAddress.of("a", "b.com"), EmailAddress.of("e", "f.com"))
+        .inOrder();
+    assertThat(invalid).containsExactly("user@adm\u034Fin.com");
   }
 
   @Test public void testParseAddressList_withConsumer_allInvalid() {
