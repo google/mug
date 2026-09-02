@@ -39,8 +39,7 @@ class PrecomputedForAscii implements CharPredicate {
 
   @Override public boolean test(char c) {
     if (c < 128) {
-      long mask = (c < 64) ? low64 : high64;
-      return ((mask >>> c) & 1L) != 0;
+      return ((mask(c) & 1L) != 0);
     }
     return base.test(c);
   }
@@ -79,10 +78,10 @@ class PrecomputedForAscii implements CharPredicate {
           m2 = high64 >>> c2;
           m3 = high64 >>> c3;
         } else {
-          m0 = (c0 < 64) ? (low64 >>> c0) : (high64 >>> c0);
-          m1 = (c1 < 64) ? (low64 >>> c1) : (high64 >>> c1);
-          m2 = (c2 < 64) ? (low64 >>> c2) : (high64 >>> c2);
-          m3 = (c3 < 64) ? (low64 >>> c3) : (high64 >>> c3);
+          m0 = mask(c0);
+          m1 = mask(c1);
+          m2 = mask(c2);
+          m3 = mask(c3);
         }
 
         // Bitwise AND of all 4 shifted values checks if bit 0 is 1 for all 4 characters.
@@ -133,6 +132,10 @@ class PrecomputedForAscii implements CharPredicate {
 
   @Override public String toString() {
     return base.toString();
+  }
+
+  private long mask(char c) {
+    return (c < 64 ? low64 : high64) >>> c;
   }
 
   private static long computeMask(CharPredicate base, int offset) {
