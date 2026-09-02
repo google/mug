@@ -736,6 +736,12 @@ public class EmailAddressTest {
     parser.assertParsesTo("test@bücher.de", EmailAddress.of("test", "bücher.de"));
   }
 
+  @Test public void testEmailAddressParsing_i18n_domainPartWithDiacritics(
+      @TestParameter ParseStrategy parser) {
+    assume().that(parser).isNoneOf(ParseStrategy.REGEX, ParseStrategy.JAKARTA);
+    parser.assertParsesTo("संपर्क@डाटामेल.भारत", EmailAddress.of("संपर्क", "डाटामेल.भारत"));
+  }
+
   @Test public void testEmailAddressParsing_i18n_displayName(@TestParameter ParseStrategy parser) {
     assume().that(parser).isNoneOf(ParseStrategy.REGEX, ParseStrategy.JMAIL);
     parser.assertParsesTo(

@@ -213,9 +213,9 @@ public final class EmailAddress {
   // and line/paragraph separators (U+2028-2029 that can trigger MTA header injections).
   // javaLetterOrDigit() strictly limits the character class to printable classified letters and
   // digits, successfully neutralizing these injection vectors.
-  private static final CharPredicate LETTER_OR_DIGIT = Character::isLetterOrDigit;
-  private static final CharPredicate ATEXT =
-      LETTER_OR_DIGIT.or(EmailAddress::isCombiningMark).or("!#$%&'*+-/=?^_`{|}~");
+  private static final CharPredicate WORD_CHAR =
+      c -> Character.isLetterOrDigit(c) || isCombiningMark(c);
+  private static final CharPredicate ATEXT = WORD_CHAR.or("!#$%&'*+-/=?^_`{|}~");
   private static final CharPredicate ATEXT_OR_DOT = ATEXT.or('.').precomputeForAscii();
 
   private static final Parser<String> QUOTED = quotedByWithEscapes('"', '"', chars(1))
@@ -227,7 +227,7 @@ public final class EmailAddress {
       .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
   private static final Parser<String> ASCII_DOMAIN_NAME = consecutive("[a-z0-9.-]");
   private static final Parser<String> I18N_DOMAIN_NAME =
-      consecutive(LETTER_OR_DIGIT.or(anyOf(".-")).precomputeForAscii(), "domain");
+      consecutive(WORD_CHAR.or(anyOf(".-")).precomputeForAscii(), "domain");
   private static final Parser<String> DOMAIN =
       I18N_DOMAIN_NAME.suchThat(d -> isValidDomain(d) && hasValidTopLevelDomain(d), "valid domain");
   private static final Parser<AddrSpecAlike> ADDR_SPEC_ALIKE =
