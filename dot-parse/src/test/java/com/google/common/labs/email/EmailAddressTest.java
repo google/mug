@@ -1545,10 +1545,9 @@ public class EmailAddressTest {
 
   @Test
   public void testJMailValidation_acceptsEncodedWordPhishing_bad() {
-    // Proves JMail fails to reject RFC 2047 display name address injection,
-    // accepting a display name containing an unquoted '@' character.
+    // Proves JMail rejects RFC 2047 display name address injection
     assertThat(JMail.tryParse("=?UTF-8?Q?Administrator_=3Cadmin@example.com=3E?= <attacker@evil.com>").isPresent())
-        .isTrue();
+        .isFalse();
   }
 
   @Test
