@@ -38,10 +38,7 @@ class PrecomputedForAscii implements CharPredicate {
   }
 
   @Override public boolean test(char c) {
-    if (c < 128) {
-      return ((mask(c) & 1L) != 0);
-    }
-    return base.test(c);
+    return c < 128 ? (mask(c) & 1L) != 0 : base.test(c);
   }
 
   @Override public int skipLeading(CharSequence s, int fromIndex) {
