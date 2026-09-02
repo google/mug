@@ -360,7 +360,7 @@ public interface CharPredicate {
    * Returns the index in the range of {@code [fromIndex, s.length()]}, pointing to either {@code
    * s.length()} or the index of the first character that does not match this predicate.
    *
-   * @since 10.0
+   * @since 11.0
    * @hidden
    */
   default int skipLeading(CharSequence s, int fromIndex) {

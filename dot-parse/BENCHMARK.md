@@ -178,12 +178,12 @@ Throughput was measured in **operations per second** (higher is better):
 
 | Scenario | `dot-parse` Throughput (ops/s) | Reference Baselines (ops/s) |
 | :--- | :---: | :---: |
-| **Single Plain Address (`user@host.com`)** | **6,321,713 ± 5,301,369** | *JMail*: 2,387,365 / *Jakarta*: 14,018,205 |
-| **Single Bracketed Address (`<user@host.com>`)** | **5,725,907 ± 2,595,967** | — |
-| **Bracketed with Display Name (`"User" <user@host.com>`)** | **3,557,306 ± 1,202,105** | — |
-| **Valid Address List** | **986,517 ± 70,919** | — |
-| **Valid Address List (with streaming consumer)** | **898,545 ± 404,219** | — |
-| **Mixed Address List** | **448,256 ± 185,979** | — |
+| **Single Plain Address (`user@host.com`)** | **6,770,743 ± 126,282** | *JMail (2.2.1)*: 11,249,380 / *Jakarta*: 14,798,664 |
+| **Single Bracketed Address (`<user@host.com>`)** | **5,732,352 ± 56,649** | — |
+| **Bracketed with Display Name (`"User" <user@host.com>`)** | **3,594,687 ± 90,061** | — |
+| **Valid Address List** | **948,052 ± 20,112** | — |
+| **Valid Address List (with streaming consumer)** | **899,385 ± 15,396** | — |
+| **Mixed Address List** | **444,802 ± 7,105** | — |
 
 ## StringIn vs. Keywords: Trie-Based Optimizations
 
