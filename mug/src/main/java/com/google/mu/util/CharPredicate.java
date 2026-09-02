@@ -108,10 +108,14 @@ public interface CharPredicate {
       return Character.isWhitespace(c);
     }
 
+    @Override public CharPredicate precomputeForAscii() {
+      return this; // JDK isWhitespace is extremely fast
+    }
+
     @Override public String toString() {
       return "WHITESPACE";
     }
-  }.precomputeForAscii();
+  };
 
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
   static CharPredicate is(char ch) {
