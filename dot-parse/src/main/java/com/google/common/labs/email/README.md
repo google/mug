@@ -9,37 +9,37 @@ combinators. It serves as a lightweight and secure alternative to
 
 ## 1. Feature & API Design Comparison
 
-| Feature / Property    | `EmailAddress` (Combinator)                                                               | `InternetAddress` (Jakarta Mail)                    | JMail                                                 | Apache `EmailValidator`                      |
-| :-------------------- | :---------------------------------------------------------------------------------------- | :-------------------------------------------------- | :---------------------------------------------------- | :------------------------------------------- |
-| **Domain Mutability**  | **Immutable Record** (Thread-safe)                                                        | **Mutable POJO** (Exposes setters)                  | **Immutable Value Object** (Thread-safe)              | N/A                                          |
-| **Footprint & Deps**   | **Lightweight** (Zero external dependencies; built on `dot-parse`)                         | **Standard API** (Part of Jakarta Mail API)         | **Lightweight** (Minor standalone deps)               | **Lightweight** (Part of commons-validator)  |
-| **Value Extraction**   | **Canonical** (Quotes stripped, escapes unescaped; decodable via `unicodeDisplayName()`) | **Mixed** (Canonical personal name; raw local part) | **Literal / Raw** (Quotes and backslashes preserved)  | N/A |
+| Feature / Property    | `EmailAddress` (Combinator)                                                              | `InternetAddress` (Jakarta Mail)                    | JMail                                                                     | Apache `EmailValidator`                     |
+|:----------------------|:-----------------------------------------------------------------------------------------|:----------------------------------------------------|:--------------------------------------------------------------------------|:--------------------------------------------|
+| **Domain Mutability** | **Immutable Record** (Thread-safe)                                                       | **Mutable POJO** (Exposes setters)                  | **Immutable Value Object** (Thread-safe)                                  | N/A                                         |
+| **Footprint & Deps**  | **Lightweight** (Zero external dependencies; built on `dot-parse`)                       | **Standard API** (Part of Jakarta Mail API)         | **Lightweight** (Zero external dependencies)                              | **Lightweight** (Part of commons-validator) |
+| **Value Extraction**  | **Canonical** (Quotes stripped, escapes unescaped; decodable via `unicodeDisplayName()`) | **Mixed** (Canonical personal name; raw local part) | **Customizable** (Quotes and backslashes preserved, canonical on request) | N/A                                         |
 
 ---
 
 ## 2. RFC Compliance
 
-| RFC Feature / Section                      | `EmailAddress`                                                                                | `InternetAddress` (Jakarta Mail)                                                                                                                  | JMail                                                             | Apache `EmailValidator`                       |
-| :----------------------------------------- | :-------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------- | :-------------------------------------------- |
-| **`local-part@domain`**                    | **Supported**                                                                                 | **Supported**                                                                                                                                     | **Supported**                                                     | **Supported**                                 |
-| **Quoted Local Parts**                     | **Canonical** (Strips quotes; re-escapes on output)                                            | **Supported (Raw)** (Preserves quotes)                                                                                                            | **Supported (Raw)** (Preserves quotes)                            | **Supported**                                 |
-| **Folding White Space** (FWS)              | **Full Support** (Supports standard FWS with CR/LF)                                           | **Full Support** (Supports standard FWS with CR/LF)                                                                                               | ⚠️ **Partial Support** (Fails on FWS directly after angle bracket) | 🚫 **Not Supported** (Rejects FWS completely)  |
-| **Unquoted Display Names**                 | Allows `:`, `@`, `[`, `]`, `(`, `)`, and `,` (but not both `,` and `@`) while rejecting others (`<>;\"`) | Allows `@` and `.` but rejects `,` and `:`                                                                                                        | Allows `@` and `.` but rejects `,` and `:`                                                        | 🚫 **Not Supported** (Rejects display names)  |
-| **Group Addresses** (RFC 822)              | 🚫 **Omitted**                                                                                | **Supported** (Parses groups as `isGroup()`)                                                                                                      | 🚫 **Omitted**                                                     | 🚫 **Not Supported** (Rejects group syntax)   |
-| **RFC 2047 Encoded Words in Local Part**   | 🚫 **Rejected Defensively** (Rejects `=?`...`?=` inside local-part/domain to prevent spoofing) | 🚫 **Omitted** (Preserved raw; downstream spoofing)                                                                                                | 🚫 **Omitted** (Preserved raw; downstream spoofing)               | 🚫 **Not Supported** (Rejects encoded words)  |
-| **RFC 2047 Encoded Words in Display Name** | **Supported** (Opt-in via `unicodeDisplayName()`)                                             | **Supported** (Decodes automatically)                                                                                                             | 🚫 **Omitted** (Preserved raw)                                    | 🚫 **Not Supported** (Rejects display names)  |
-| **Comments & Domain Literals**             | 🚫 **Omitted** (Obsolete comments/IP domains skipped)                                         | **Supported** (Supports full legacy features)                                                                                                     | 🚫 **Omitted** (Obsolete comments/IP domains skipped)             | ⚠️ **Partial Support** (Supports IP literals)  |
+| RFC Feature / Section                      | `EmailAddress`                                                                                           | `InternetAddress` (Jakarta Mail)                    | JMail                                                                                          | Apache `EmailValidator`                       |
+|:-------------------------------------------|:---------------------------------------------------------------------------------------------------------|:----------------------------------------------------|:-----------------------------------------------------------------------------------------------|:----------------------------------------------|
+| **`local-part@domain`**                    | **Supported**                                                                                            | **Supported**                                       | **Supported**                                                                                  | **Supported**                                 |
+| **Quoted Local Parts**                     | **Canonical** (Strips quotes; re-escapes on output)                                                      | **Supported (Raw)** (Preserves quotes)              | **Supported** (Preserves or strips quotes based on configuration)                              | **Supported**                                 |
+| **Folding White Space** (FWS)              | **Full Support** (Supports standard FWS with CR/LF)                                                      | **Full Support** (Supports standard FWS with CR/LF) | **Full Support** (Supports standard FWS with CR/LF)                                            | 🚫 **Not Supported** (Rejects FWS completely) |
+| **Unquoted Display Names**                 | Allows `:`, `@`, `[`, `]`, `(`, `)`, and `,` (but not both `,` and `@`) while rejecting others (`<>;\"`) | Allows `@` and `.` but rejects `,` and `:`          | Allows `@` and `.` but rejects `,` and `:`                                                     | 🚫 **Not Supported** (Rejects display names)  |
+| **Group Addresses** (RFC 822)              | 🚫 **Omitted**                                                                                           | **Supported** (Parses groups as `isGroup()`)        | 🚫 **Omitted**                                                                                 | 🚫 **Not Supported** (Rejects group syntax)   |
+| **RFC 2047 Encoded Words in Local Part**   | 🚫 **Rejected Defensively** (Rejects `=?`...`?=` inside local-part/domain to prevent spoofing)           | 🚫 **Omitted** (Preserved raw; downstream spoofing) | 🚫 **Rejected Defensively** (Rejects `=?`...`?=` inside local-part/domain to prevent spoofing) | 🚫 **Not Supported** (Rejects encoded words)  |
+| **RFC 2047 Encoded Words in Display Name** | **Supported** (Opt-in via `unicodeDisplayName()`)                                                        | **Supported** (Decodes automatically)               | 🚫 **Omitted** (Preserved raw)                                                                 | 🚫 **Not Supported** (Rejects display names)  |
+| **Comments & Domain Literals**             | 🚫 **Omitted** (Obsolete comments/IP domains skipped)                                                    | **Supported** (Supports full legacy features)       | **Supported** (Supports full legacy features)                                                  | ⚠️ **Partial Support** (Supports IP literals) |
 
 ---
 
 ## 3. Security & Validation Profiles
 
-| Input Vector / Behavior               | `EmailAddress` (Combinator)                    | `InternetAddress` (Jakarta Mail)                             | JMail                                                                                            | Apache `EmailValidator`              |
-| :------------------------------------ | :--------------------------------------------- | :----------------------------------------------------------- | :----------------------------------------------------------------------------------------------- | :----------------------------------- |
-| **Trailing Unconsumed Input**         | **Rejected** (EOF-enforced)                    | **Permissive** (Discards trailing parts like `<a@b>c@d`)      | **Rejected** (EOF-enforced)                                                                      | **Rejected** (EOF-enforced)          |
-| **Unquoted Specials in Display Name** | Allows `:`, `@`, `[`, `]`, `(`, `)`, and `,` (but not both `,` and `@`) | **Permissive** (Allows unquoted `@` and `<`)                  | **Permissive** (Allows unquoted `@`)                                                             | ⚠️ N/A (Rejects display names)       |
-| **RFC 822 Group Addresses**           | **Rejected** (Throws exception)                | **Permissive** (Accepted as group)                            | **Rejected** (Throws exception)                                                                  | **Rejected** (Throws exception)      |
-| **CRLF / SMTP Command Injection**      | **Permissive** (Allows folding CR/LF newlines) | **Permissive** (Allows folding CR/LF newlines)                | ⚠️ **Partial Support** (Allows folding in whitespace; rejects inside local-part/domain)          | **Rejected** (Newlines forbidden)    |
+| Input Vector / Behavior               | `EmailAddress` (Combinator)                                             | `InternetAddress` (Jakarta Mail)                         | JMail                                          | Apache `EmailValidator`           |
+|:--------------------------------------|:------------------------------------------------------------------------|:---------------------------------------------------------|:-----------------------------------------------|:----------------------------------|
+| **Trailing Unconsumed Input**         | **Rejected** (EOF-enforced)                                             | **Permissive** (Discards trailing parts like `<a@b>c@d`) | **Rejected** (EOF-enforced)                    | **Rejected** (EOF-enforced)       |
+| **Unquoted Specials in Display Name** | Allows `:`, `@`, `[`, `]`, `(`, `)`, and `,` (but not both `,` and `@`) | **Permissive** (Allows unquoted `@` and `<`)             | **Permissive** (Allows unquoted `@`)           | ⚠️ N/A (Rejects display names)    |
+| **RFC 822 Group Addresses**           | **Rejected** (Throws exception)                                         | **Permissive** (Accepted as group)                       | **Rejected** (Throws exception)                | **Rejected** (Throws exception)   |
+| **CRLF / SMTP Command Injection**     | **Permissive** (Allows folding CR/LF newlines)                          | **Permissive** (Allows folding CR/LF newlines)           | **Permissive** (Allows folding CR/LF newlines) | **Rejected** (Newlines forbidden) |
 
 
 ---
@@ -104,7 +104,8 @@ combinators. It serves as a lightweight and secure alternative to
   `new InternetAddress(address, strict)`. However, even its "strict" mode
   remains highly vulnerable to parsing differentials and spoofing attacks.
 
-* **JMail**: Strictly validates single email strings. No list parsing.
+* **JMail**: Strictly validates single email strings, resulting in a fully
+  validated `Email` object that has built-in canonical formats and data accessors.
 
 
 ### C. Features Omitted or Handled Differently in `EmailAddress`
@@ -117,7 +118,7 @@ To maintain compatibility with modern MTAs and guarantee safety,
    Omitted by both `EmailAddress` and JMail to enforce a secure
    single-recipient mailbox paradigm.
 2. **Nested Parenthetical Comments** (e.g., `john(comment)@example.com`):
-   Supported by Jakarta Mail. Omitted by both `EmailAddress` and JMail
+   Supported by Jakarta Mail and JMail. Omitted by `EmailAddress`
    because comments are obsolete and increase downstream parsing complexity.
 3. **Domain IP Literals** (e.g., `user@[192.168.1.1]`): Supported by both
    Jakarta Mail and JMail. Omitted by `EmailAddress` to align with modern
@@ -130,7 +131,8 @@ To maintain compatibility with modern MTAs and guarantee safety,
    encodings (like `UTF-8` and `ISO-8859-1`) while strictly defending against
    null-byte injection. Additionally, to prevent downstream mailer hijacking
    exploits, `EmailAddress` strictly **rejects** encoded-words inside the
-   address portion (`local-part` and `domain`).
+   address portion (`local-part` and `domain`). JMail also strictly rejects
+   encoded-words inside the address portion.
 
 ### D. Composability & Extensibility
 
