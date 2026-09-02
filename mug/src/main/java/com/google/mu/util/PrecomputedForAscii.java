@@ -38,11 +38,9 @@ class PrecomputedForAscii implements CharPredicate {
   }
 
   @Override public boolean test(char c) {
-    if (c < 64) {
-      return ((low64 >>> c) & 1L) != 0;
-    }
     if (c < 128) {
-      return ((high64 >>> (c - 64)) & 1L) != 0;
+      long mask = (c < 64) ? low64 : high64;
+      return ((mask >>> c) & 1L) != 0;
     }
     return base.test(c);
   }

@@ -54,6 +54,10 @@ public interface CharPredicate {
       return c <= '\u007f';
     }
 
+    @Override public CharPredicate precomputeForAscii() {
+      return this;
+    }
+
     @Override public String toString() {
       return "ASCII";
     }
@@ -63,6 +67,10 @@ public interface CharPredicate {
   CharPredicate ANY = new CharPredicate() {
     @Override public boolean test(char c) {
       return true;
+    }
+
+    @Override public CharPredicate not() {
+      return NONE;
     }
 
     @Override public int skipLeading(CharSequence s, int fromIndex) {
@@ -82,6 +90,10 @@ public interface CharPredicate {
   CharPredicate NONE = new CharPredicate() {
     @Override public boolean test(char c) {
       return false;
+    }
+
+    @Override public CharPredicate not() {
+      return ANY;
     }
 
     @Override public int skipLeading(CharSequence s, int fromIndex) {
@@ -124,6 +136,14 @@ public interface CharPredicate {
         return c == ch;
       }
 
+      @Override public CharPredicate not() {
+        return isNot(ch);
+      }
+
+      @Override public CharPredicate precomputeForAscii() {
+        return this;
+      }
+
       @Override public String toString() {
         return "'" + ch + "'";
       }
@@ -132,14 +152,43 @@ public interface CharPredicate {
 
   /** Returns a CharPredicate that matches except {@code ch}. */
   static CharPredicate isNot(char ch) {
-    return is(ch).not();
+    return new CharPredicate() {
+      @Override public boolean test(char c) {
+        return c != ch;
+      }
+
+      @Override public CharPredicate not() {
+        return is(ch);
+      }
+
+      @Override public CharPredicate precomputeForAscii() {
+        return this;
+      }
+
+      @Override public String toString() {
+        return "not ('" + ch + "')";
+      }
+    };
   }
 
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
   static CharPredicate range(char from, char to) {
+    if (from == to) {
+      return is(from);
+    }
+    if (from > to) {
+      return NONE;
+    }
+    if (from <= 0 && to >= '\uFFFF') {
+      return ANY;
+    }
     return new CharPredicate() {
       @Override public boolean test(char c) {
         return c >= from && c <= to;
+      }
+
+      @Override public CharPredicate precomputeForAscii() {
+        return this;
       }
 
       @Override public String toString() {

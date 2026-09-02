@@ -78,22 +78,19 @@ public class PrecomputedForAsciiTest {
     assertThat(CharPredicate.NONE.precomputeForAscii()).isSameInstanceAs(CharPredicate.NONE);
 
     CharPredicate isA = CharPredicate.is('a');
-    CharPredicate precomputedA = isA.precomputeForAscii();
-    assertThat(precomputedA).isNotSameInstanceAs(isA);
-    assertThat(precomputedA.precomputeForAscii()).isSameInstanceAs(precomputedA);
+    assertThat(isA.precomputeForAscii()).isSameInstanceAs(isA);
+
+    CharPredicate notA = CharPredicate.isNot('a');
+    assertThat(notA.precomputeForAscii()).isSameInstanceAs(notA);
 
     CharPredicate rangeAZ = CharPredicate.range('A', 'Z');
-    CharPredicate precomputedRange = rangeAZ.precomputeForAscii();
-    assertThat(precomputedRange).isNotSameInstanceAs(rangeAZ);
-    assertThat(precomputedRange.precomputeForAscii()).isSameInstanceAs(precomputedRange);
+    assertThat(rangeAZ.precomputeForAscii()).isSameInstanceAs(rangeAZ);
 
     CharPredicate precomputedAlpha = CharPredicate.ALPHA.precomputeForAscii();
     assertThat(precomputedAlpha).isNotSameInstanceAs(CharPredicate.ALPHA);
     assertThat(precomputedAlpha.precomputeForAscii()).isSameInstanceAs(precomputedAlpha);
 
-    CharPredicate precomputedAscii = CharPredicate.ASCII.precomputeForAscii();
-    assertThat(precomputedAscii).isNotSameInstanceAs(CharPredicate.ASCII);
-    assertThat(precomputedAscii.precomputeForAscii()).isSameInstanceAs(precomputedAscii);
+    assertThat(CharPredicate.ASCII.precomputeForAscii()).isSameInstanceAs(CharPredicate.ASCII);
   }
 
   @Test public void precomputed_not_not_isSameInstance() {

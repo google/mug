@@ -16,6 +16,8 @@ package com.google.mu.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.mu.util.CharPredicate.anyOf;
+import static com.google.mu.util.CharPredicate.is;
+import static com.google.mu.util.CharPredicate.isNot;
 
 import com.google.common.testing.NullPointerTester;
 import org.junit.Test;
@@ -127,7 +129,7 @@ public class CharPredicateTest {
     assertThat(CharPredicate.noneOf("ab").toString()).isEqualTo("not ('a' | 'b')");
     assertThat(CharPredicate.noneOf("a").toString()).isEqualTo("not ('a')");
     assertThat(CharPredicate.noneOf("abc").toString()).isEqualTo("not (anyOf('abc'))");
-    assertThat(CharPredicate.noneOf("").toString()).isEqualTo("not (NONE)");
+    assertThat(CharPredicate.noneOf("").toString()).isEqualTo("ANY");
   }
 
   @Test public void testMatchesAnyOf() {
@@ -230,6 +232,41 @@ public class CharPredicateTest {
       assertThat(predicate.test((char) i)).isTrue();
     }
     assertThat(predicate.test('π')).isTrue();
+  }
+
+  @Test public void is_precomputeForAscii_returnsSelf() {
+    CharPredicate isA = is('a');
+    assertThat(isA.precomputeForAscii()).isSameInstanceAs(isA);
+  }
+
+  @Test public void isNot_precomputeForAscii_returnsSelf() {
+    CharPredicate notA = isNot('a');
+    assertThat(notA.precomputeForAscii()).isSameInstanceAs(notA);
+  }
+
+  @Test public void ascii_precomputeForAscii_returnsSelf() {
+    assertThat(CharPredicate.ASCII.precomputeForAscii()).isSameInstanceAs(CharPredicate.ASCII);
+  }
+
+  @Test public void range_precomputeForAscii_returnsSelf() {
+    CharPredicate digits = CharPredicate.range('0', '9');
+    assertThat(digits.precomputeForAscii()).isSameInstanceAs(digits);
+  }
+
+  @Test public void range_fromEqualsTo_returnsIs() {
+    assertThat(CharPredicate.range('a', 'a').toString()).isEqualTo("'a'");
+  }
+
+  @Test public void range_fromGreaterThanTo_returnsNone() {
+    assertThat(CharPredicate.range('b', 'a')).isSameInstanceAs(CharPredicate.NONE);
+  }
+
+  @Test public void any_not_returnsNone() {
+    assertThat(CharPredicate.ANY.not()).isSameInstanceAs(CharPredicate.NONE);
+  }
+
+  @Test public void none_not_returnsAny() {
+    assertThat(CharPredicate.NONE.not()).isSameInstanceAs(CharPredicate.ANY);
   }
 
   @Test public void default_skipLeading_emptyCharSequence() {
