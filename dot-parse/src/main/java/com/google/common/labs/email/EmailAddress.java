@@ -214,7 +214,8 @@ public final class EmailAddress {
   // javaLetterOrDigit() strictly limits the character class to printable classified letters and
   // digits, successfully neutralizing these injection vectors.
   private static final CharPredicate LETTER_OR_DIGIT = Character::isLetterOrDigit;
-  private static final CharPredicate ATEXT = LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~");
+  private static final CharPredicate ATEXT =
+      LETTER_OR_DIGIT.or(EmailAddress::isCombiningMark).or("!#$%&'*+-/=?^_`{|}~");
   private static final CharPredicate ATEXT_OR_DOT = ATEXT.or('.').precomputeForAscii();
 
   private static final Parser<String> QUOTED = quotedByWithEscapes('"', '"', chars(1))
@@ -570,6 +571,11 @@ public final class EmailAddress {
 
   private static boolean hasWeirdHyphen(String s) {
     return s.startsWith("-") || s.endsWith("-") || s.contains(".-") || s.contains("-.");
+  }
+
+  private static boolean isCombiningMark(char c) {
+    int type = Character.getType(c);
+    return type == Character.NON_SPACING_MARK || type == Character.COMBINING_SPACING_MARK;
   }
 
   private static String checkLocalPart(String localPart) {

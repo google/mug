@@ -133,6 +133,36 @@ To maintain compatibility with modern MTAs and guarantee safety,
    exploits, `EmailAddress` strictly **rejects** encoded-words inside the
    address portion (`local-part` and `domain`). JMail also strictly rejects
    encoded-words inside the address portion.
+5. **Backslash-Escaped Characters in Unquoted Local-Parts** (e.g.,
+   `mymail\@hello@hotmail.com`, `Fred\ Bloggs@test.org`):
+   Defined in RFC 5322 under obsolete syntax (`obs-local-part`). Omitted by
+   `EmailAddress` to prevent parser differentials, multi-`@` routing confusion
+   (e.g., CVE-2015-0886), and shell argument injection.
+6. **Dot-Separated Mixed Quoted/Unquoted Local-Parts** (e.g.,
+   `"first"."last"@test.org`, `very."@".unusual@test.org`):
+   Defined in RFC 5322 under `obs-local-part`. Omitted by `EmailAddress` because
+   mixing quoted and unquoted tokens compromises the canonical string
+   representation and introduces quote-smuggling risks in downstream SQL, LDAP,
+   or shell contexts. Modern enterprise MTAs (Google Workspace, Microsoft 365,
+   AWS SES) reject mixed-quoted local-parts.
+7. **Unquoted Whitespace Around Delimiters** (e.g., `first.last @test.org`):
+   Allowed under obsolete RFC 822/5322 folding whitespace (`FWS`) syntax.
+   Omitted by `EmailAddress` because whitespace adjacent to `@` or `.` causes
+   token desynchronization, header injection, and SMTP parameter smuggling
+   across proxies.
+8. **Dotless / Unqualified Domains** (e.g., `admin@mailserver1`):
+   Omitted by `EmailAddress` (which enforces `checkArgument(domain.contains("."))`)
+   in compliance with ICANN SAC 053, which bans dotless domains in public TLDs to
+   mitigate intranet hostname probing, SSRF, and search-list hijacking.
+9. **Emoji / Symbol Domains** (e.g., `xyz@🚀.kz`):
+   Omitted by `EmailAddress`. Under IDNA2008 (RFC 5892), all emojis and symbols
+   are classified as `DISALLOWED` due to visual spoofing and IDN homograph
+   attack surfaces.
+10. **Escaped ASCII Null in Quoted Strings** (e.g., `"a\0"@b.com`):
+    Historically permitted under RFC 5322 obsolete quoted-pairs (`obs-qp`).
+    Strictly rejected by `EmailAddress` across all contexts (unquoted, quoted,
+    and display names) to prevent null-byte truncation attacks against C-based
+    MTAs and POSIX system calls.
 
 ### D. Composability & Extensibility
 
