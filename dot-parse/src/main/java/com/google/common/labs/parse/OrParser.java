@@ -101,8 +101,8 @@ final class OrParser<T> extends Parser<T> {
     return unmodifiableSet(new LinkedHashSet<>(result));
   }
 
-  @Override Parser<?> ignoreReturn() {
-    List<Parser<?>> elided = parsers.stream().<Parser<?>>map(Parser::elide).toList();
+  @Override Parser<?> doIgnoreReturn() {
+    List<Parser<?>> elided = parsers.stream().<Parser<?>>map(Parser::ignoreReturn).toList();
     return elided.equals(parsers) ? this : new OrParser<>(elided);
   }
 
