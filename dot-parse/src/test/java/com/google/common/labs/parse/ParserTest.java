@@ -7020,9 +7020,9 @@ public class ParserTest {
         .isEqualTo("0-3: foo");
   }
 
-  @Test public void mapWithIndex_ignoreReturn() {
+  @Test public void mapWithIndex_elide() {
     assertThat(
-            string("foo").ignoreReturn().mapWithIndex(ParserTest::toStringWithIndex).parse("foo"))
+            string("foo").elide().mapWithIndex(ParserTest::toStringWithIndex).parse("foo"))
         .isEqualTo("0-3: foo");
   }
 
@@ -8512,6 +8512,66 @@ public class ParserTest {
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a!"));
     assertThat(thrown).hasMessageThat().contains("1:2");
     assertThat(thrown).hasMessageThat().contains("expecting one of [semicolon, EOF]");
+  }
+
+  @Test public void elide_orParser_cachesResult() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    assertThat(parser.elide()).isSameInstanceAs(parser.elide());
+  }
+
+  @Test public void elide_orParser_unchangedChildren_returnsThis() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    assertThat(parser.elide()).isSameInstanceAs(parser);
+  }
+
+  @Test public void elide_orParser_changedChildren_returnsNewInstance() {
+    Parser<?> parser = anyOf(string("a").thenReturn(1), string("b"));
+    assertThat(parser.elide()).isNotSameInstanceAs(parser);
+  }
+
+  @Test public void elide_orParser_idempotent() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    assertThat(parser.elide().elide()).isSameInstanceAs(parser.elide());
+  }
+
+  @Test public void elide_orParser_matchesFirstCandidate() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    assertThat(parser.elide().matches("a")).isTrue();
+  }
+
+  @Test public void elide_orParser_matchesSecondCandidate() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    assertThat(parser.elide().matches("b")).isTrue();
+  }
+
+  @Test public void elide_orParser_failsOnMismatch() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    assertThat(parser.elide().matches("c")).isFalse();
+  }
+
+  @Test public void elide_defaultParser_returnsThis() {
+    Parser<String> parser = string("a");
+    assertThat(parser.elide()).isSameInstanceAs(parser);
+  }
+
+  @Test public void elide_thenReturn_returnsUnderlyingParser() {
+    Parser<String> a = string("a");
+    Parser<?> parser = a.thenReturn("foo");
+    assertThat(parser.elide()).isSameInstanceAs(a);
+  }
+
+  @Test public void matches_orParser_reusesCachedElide() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    Parser<?> elided = parser.elide();
+    assertThat(parser.matches("a")).isTrue();
+    assertThat(parser.elide()).isSameInstanceAs(elided);
+  }
+
+  @Test public void isPrefixOf_orParser_reusesCachedElide() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    Parser<?> elided = parser.elide();
+    assertThat(parser.isPrefixOf("a")).isTrue();
+    assertThat(parser.elide()).isSameInstanceAs(elided);
   }
 
   @Test public void fail_as_preservesMapFailMessage() {

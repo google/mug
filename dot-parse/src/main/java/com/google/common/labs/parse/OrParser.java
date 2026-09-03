@@ -102,7 +102,8 @@ final class OrParser<T> extends Parser<T> {
   }
 
   @Override Parser<?> ignoreReturn() {
-    return new OrParser<>(parsers.stream().map(p -> covariant(p.ignoreReturn())).toList());
+    List<Parser<?>> elided = parsers.stream().<Parser<?>>map(Parser::elide).toList();
+    return elided.equals(parsers) ? this : new OrParser<>(elided);
   }
 
   @Override BitSet computeBlocklist() {

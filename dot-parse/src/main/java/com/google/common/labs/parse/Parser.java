@@ -808,7 +808,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.1
    */
   public static Parser<?> sequence(Parser<?> first, Production<?>... more) {
-    return first.ignoreReturn().followedByInOrder(more);
+    return first.elide().followedByInOrder(more);
   }
 
   /**
@@ -968,7 +968,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       @Override Parser<?> ignoreReturn() {
-        return left().ignoreReturn().as(logicalName);
+        return left().elide().as(logicalName);
       }
 
       @Override Set<String> getExpectedSymbols() {
@@ -1273,8 +1273,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
       @Override Parser<?> ignoreReturn() {
         @SuppressWarnings("unchecked") // return value is unused
-        Parser<Object> elided = (Parser<Object>) left().ignoreReturn();
-        return elided.andZeroOrMore(extra.ignoreReturn(), toNull());
+        Parser<Object> elided = (Parser<Object>) left().elide();
+        return elided.andZeroOrMore(extra.elide(), toNull());
       }
     };
   }
@@ -1301,7 +1301,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       @Override Parser<?> ignoreReturn() {
-        return Parser.this.ignoreReturn().afterDelimiter(delimiter);
+        return Parser.this.elide().afterDelimiter(delimiter);
       }
     };
   }
@@ -1360,7 +1360,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       @Override Parser<?> ignoreReturn() {
-        return f instanceof ElidableFunction ? left().ignoreReturn() : this;
+        return f instanceof ElidableFunction ? left().elide() : this;
       }
     };
   }
@@ -1418,11 +1418,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** If this parser matches, returns the given result. */
   public <R> Parser<R> thenReturn(R result) {
-    return ignoreReturn().elidableMap(unused -> result);
+    return elide().elidableMap(unused -> result);
   }
 
   @Override public final <S> Parser<S> then(Parser<S> suffix) {
-    return ignoreReturn().and(suffix, (a, b) -> b);
+    return elide().and(suffix, (a, b) -> b);
   }
 
   /**
@@ -1432,7 +1432,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 10.0
    */
   @Override public final <R> Parser<R> then(Parser<R>.OrEmpty suffix) {
-    return ignoreReturn().and(suffix, (a, b) -> b);
+    return elide().and(suffix, (a, b) -> b);
   }
 
   /**
@@ -1464,7 +1464,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   @Override public Parser<T> followedBy(Parser<?> suffix) {
-    return and(suffix.ignoreReturn(), (a, b) -> a);
+    return and(suffix.elide(), (a, b) -> a);
   }
 
   @Override public final <S> Parser<T> followedBy(Parser<S>.OrEmpty suffix) {
@@ -1549,13 +1549,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   @Deprecated
   public final Parser<T> followedByOrEof(Parser<?> suffix) {
-    return followedBy(either(suffix.ignoreReturn(), UNSAFE_EOF));
+    return followedBy(either(suffix.elide(), UNSAFE_EOF));
   }
 
   private Parser<T> followedByInOrder(Production<?>... suffixes) {
     Parser<?>[] followers = stream(suffixes)
         .map(Parser::allowZeroWidth)
-        .map(Parser::ignoreReturn)
+        .map(Parser::elide)
         .toArray(Parser<?>[]::new);
     return new SamePrefix<T>() {
       @Override MatchResult<T> skipAndMatch(
@@ -1625,7 +1625,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /** A form of negative lookahead such that the match is rejected if followed by {@code suffix}. */
   public final Parser<T> notFollowedBy(Parser<?> suffix, String name) {
     requireNonNull(name);
-    Parser<?> elidedSuffix = suffix.ignoreReturn();
+    Parser<?> elidedSuffix = suffix.elide();
     return new SamePrefix<>() {
       @Override MatchResult<T> skipAndMatch(
           Skipper skip, CharInput input, int start, ErrorContext context) {
@@ -1643,7 +1643,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       @Override Parser<?> ignoreReturn() {
-        return left().ignoreReturn().notFollowedBy(elidedSuffix, name);
+        return left().elide().notFollowedBy(elidedSuffix, name);
       }
     };
   }
@@ -1677,7 +1677,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       @Override Parser<?> ignoreReturn() {
-        return left().ignoreReturn().notImmediatelyFollowedBy(predicate, name);
+        return left().elide().notImmediatelyFollowedBy(predicate, name);
       }
     };
   }
@@ -1719,7 +1719,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   /** Returns a parser that matches {@code this} pattern and returns the matched string. */
   @Override public final Parser<String> source() {
     @SuppressWarnings("unchecked") // original return value no longer needed
-    Parser<Object> elided = (Parser<Object>) ignoreReturn();
+    Parser<Object> elided = (Parser<Object>) elide();
     return elided.new SamePrefix<String>() {
       @Override MatchResult<String> skipAndMatch(
           Skipper skip, CharInput input, int start, ErrorContext context) {
@@ -1744,8 +1744,19 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
+  @LazyInit private volatile Parser<?> elidedParser;
+
   Parser<?> ignoreReturn() {
     return this;
+  }
+
+  final Parser<?> elide() {
+    Parser<?> result = elidedParser;
+    if (result == null) {
+      elidedParser = result = ignoreReturn();
+      result.elidedParser = result;
+    }
+    return result;
   }
 
   /**
@@ -1763,7 +1774,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       @Override Parser<?> ignoreReturn() {
-        return literally(left().ignoreReturn());
+        return literally(left().elide());
       }
     };
   }
@@ -1823,7 +1834,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
   public final Lexical skipping(Parser<?> skip) {
-    Parser<?> elided = skip.ignoreReturn();
+    Parser<?> elided = skip.elide();
     return new Lexical((input, index) -> {
       while (elided.tryParse(input, index, ErrorContext.MINIMAL)
           instanceof MatchResult.Success<?> success) {
@@ -1894,7 +1905,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    */
   public final boolean isPrefixOf(String input) {
     CharInput charInput = CharInput.from(input);
-    return ignoreReturn().tryParse(charInput, 0, ErrorContext.MINIMAL)
+    return elide().tryParse(charInput, 0, ErrorContext.MINIMAL)
         instanceof MatchResult.Success;
   }
 
@@ -1909,7 +1920,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * @since 9.9.1
    */
   @Override public final boolean matches(String input) {
-    return ignoreReturn().tryParse(CharInput.from(input), 0, ErrorContext.MINIMAL)
+    return elide().tryParse(CharInput.from(input), 0, ErrorContext.MINIMAL)
             instanceof MatchResult.Success<?> success
         && success.tail() == input.length();
   }
@@ -2059,7 +2070,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       }
 
       @Override Parser<?> ignoreReturn() {
-        return OrEmpty.this.ignoreReturn().unsafeZeroWidthParser;
+        return OrEmpty.this.elide().unsafeZeroWidthParser;
       }
     };
 
@@ -2128,7 +2139,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     }
 
     @Override public <S> Parser<S> then(Parser<S> suffix) {
-      return this.ignoreReturn().and(suffix, (a, b) -> b);
+      return this.elide().and(suffix, (a, b) -> b);
     }
 
     /**
@@ -2136,11 +2147,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      * suffix}.
      */
     @Override public <S> Parser<S>.OrEmpty then(Parser<S>.OrEmpty suffix) {
-      return this.ignoreReturn().and(suffix, (a, b) -> b);
+      return this.elide().and(suffix, (a, b) -> b);
     }
 
     @Override public Parser<T> followedBy(Parser<?> suffix) {
-      return this.and(suffix.ignoreReturn(), (a, b) -> a);
+      return this.and(suffix.elide(), (a, b) -> a);
     }
 
     /**
@@ -2148,7 +2159,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
      */
     @SuppressWarnings("unchecked") // to make Eclipse compiler happy
     @Override public <S> OrEmpty followedBy(Parser<S>.OrEmpty suffix) {
-      return this.and((Parser<Object>.OrEmpty) suffix.ignoreReturn(), (a, b) -> a);
+      return this.and((Parser<Object>.OrEmpty) suffix.elide(), (a, b) -> a);
     }
 
     /**
@@ -2257,8 +2268,15 @@ public abstract non-sealed class Parser<T> implements Production<T> {
       return defaultSupplier.get();
     }
 
-    private Parser<?>.OrEmpty ignoreReturn() {
-      return notEmpty().ignoreReturn().new OrEmpty(() -> null);
+    @LazyInit private volatile Parser<?>.OrEmpty elided;
+
+    Parser<?>.OrEmpty elide() {
+      Parser<?>.OrEmpty result = elided;
+      if (result == null) {
+        elided = result = notEmpty().elide().new OrEmpty(() -> null);
+        result.elided = result;
+      }
+      return result;
     }
 
     private <B, R> Parser<R> and(
@@ -2412,7 +2430,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         }
 
         @Override Parser<?> ignoreReturn() {
-          return Lexical.this.ignoreReturn().within();
+          return Lexical.this.elide().within();
         }
       };
     }
@@ -2433,15 +2451,22 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         }
 
         @Override Parser<?> ignoreReturn() {
-          return Lexical.this.ignoreReturn().forTokens();
+          return Lexical.this.elide().forTokens();
         }
       };
     }
 
-    private Parser<?>.Lexical ignoreReturn() {
-      @SuppressWarnings("unchecked") // return value isn't needed
-      Parser<Object> elided = (Parser<Object>) Parser.this.ignoreReturn();
-      return elided.new Lexical(toSkip);
+    @LazyInit private volatile Parser<?>.Lexical elided;
+
+    Parser<?>.Lexical elide() {
+      Parser<?>.Lexical result = elided;
+      if (result == null) {
+        @SuppressWarnings("unchecked") // return value isn't needed
+        Parser<Object> elidedParser = (Parser<Object>) Parser.this.elide();
+        elided = result = elidedParser.new Lexical(toSkip);
+        result.elided = result;
+      }
+      return result;
     }
   }
 
