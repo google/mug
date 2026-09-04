@@ -57,10 +57,8 @@ import java.util.stream.IntStream;
  * time.
  *
  * @since 9.4
- * @deprecated Use the {@code Parser} overloads that directly take a {@code characterClass} string
- *     parameter, such as {@link Parser#consecutive(String)}.
  */
-public final class CharacterSet implements CharPredicate {
+final class CharacterSet implements CharPredicate {
   private static final Parser<CharPredicate> CHARACTER_SET_PARSER = makeCharacterSetParser();
   private static final Parser<Set<Character>> ASCII_SET_PARSER = makeAsciiSetParser();
 
@@ -82,7 +80,7 @@ public final class CharacterSet implements CharPredicate {
    * @param characterSet A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
    * @throws IllegalArgumentException if {@code characterSet} is malformed
    */
-  public static CharacterSet charsIn(String characterSet) {
+  static CharacterSet charsIn(String characterSet) {
     return new CharacterSet(characterSet, compileCharacterSet(characterSet));
   }
 
@@ -92,7 +90,7 @@ public final class CharacterSet implements CharPredicate {
   }
 
   /** Returns true if this set contains the character {@code ch}. */
-  public boolean contains(char ch) {
+  boolean contains(char ch) {
     return predicate.test(ch);
   }
 

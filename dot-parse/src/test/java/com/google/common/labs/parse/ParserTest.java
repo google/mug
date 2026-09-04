@@ -1035,38 +1035,6 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.parseToStream("456บาท").toList());
   }
 
-  @Test public void followedByOrEof_suffixMatches() {
-    Parser<String> parser = string("foo").followedByOrEof(string("bar"));
-    assertThat(parser.parse("foobar")).isEqualTo("foo");
-    assertThat(parser.matches("foobar")).isTrue();
-  }
-
-  @Test public void followedByOrEof_eofMatches() {
-    Parser<String> parser = string("foo").followedByOrEof(string("bar"));
-    assertThat(parser.parse("foo")).isEqualTo("foo");
-    assertThat(parser.matches("foo")).isTrue();
-  }
-
-  @Test public void followedByOrEof_neitherMatches() {
-    Parser<String> parser = string("foo").followedByOrEof(string("bar"));
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("foobaz"));
-    assertThat(parser.matches("foobaz")).isFalse();
-    assertThat(e).hasMessageThat()
-        .isEqualTo(
-            """
-            at 1:4: expecting one of [bar, EOF], encountered:
-                foobaz
-                   ^
-            """);
-  }
-
-  @Test public void followedByOrEof_mainParserFails() {
-    Parser<String> parser = string("foo").followedByOrEof(string("bar"));
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("fobar"));
-    assertThat(parser.matches("fobar")).isFalse();
-    assertThat(e).hasMessageThat().contains("expecting <foo>");
-  }
-
   @Test public void optionallyFollowedBy_suffixCannotBeEmpty() {
     assertThrows(IllegalArgumentException.class, () -> string("123").optionallyFollowedBy(""));
   }
@@ -4668,22 +4636,6 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.parse("10++a"));
   }
 
-  @SuppressWarnings("deprecation")
-  @Test public void deprecated_withPostfixes_success() {
-    Parser<Integer> number = digits().map(Integer::parseInt);
-    Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
-    Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
-    Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
-    Parser<Integer> parser = number.withPostfixes(op);
-    assertThat(parser.parse("10++--++")).isEqualTo(11);
-
-    Parser<Integer> parser2 = number.withPostfixes(string("++").map(s -> 1), (a, b) -> a + b);
-    assertThat(parser2.parse("10++")).isEqualTo(11);
-
-    Parser<Integer> parser3 = number.withPostfixes("++", i -> i + 1);
-    assertThat(parser3.parse("10++")).isEqualTo(11);
-  }
-
   @Test public void parse_fromIndex() {
     assertThat(string("bar").parse("foobar", 3)).isEqualTo("bar");
     assertThat(string("bar").source().parse("foobar", 3)).isEqualTo("bar");
@@ -6660,13 +6612,6 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.parse("ac"));
   }
 
-  @Test public void ignoreReturn_followedByOrEof() {
-    Parser<String> parser = string("a").followedByOrEof(string("b")).thenReturn("ok");
-    assertThat(parser.parse("ab")).isEqualTo("ok");
-    assertThat(parser.parse("a")).isEqualTo("ok");
-    assertThrows(ParseException.class, () -> parser.parse("ac"));
-  }
-
   @Test public void ignoreReturn_sequence() {
     Parser<String> parser = sequence(string("a"), string("b"), string("c")).thenReturn("ok");
     assertThat(parser.parse("abc")).isEqualTo("ok");
@@ -8495,23 +8440,6 @@ public class ParserTest {
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("(body]"));
     assertThat(thrown).hasMessageThat().contains("1:6");
     assertThat(thrown).hasMessageThat().contains("expecting <close paren>");
-  }
-
-  @Test public void ignoreReturn_as_followedByOrEof_successWithEof() {
-    Parser<String> parser = string("a").as("letter a").followedByOrEof(string(";").as("semicolon"));
-    assertThat(parser.parse("a")).isEqualTo("a");
-  }
-
-  @Test public void ignoreReturn_as_followedByOrEof_successWithSuffix() {
-    Parser<String> parser = string("a").as("letter a").followedByOrEof(string(";").as("semicolon"));
-    assertThat(parser.parse("a;")).isEqualTo("a");
-  }
-
-  @Test public void ignoreReturn_as_followedByOrEof_failure() {
-    Parser<String> parser = string("a").as("letter a").followedByOrEof(string(";").as("semicolon"));
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a!"));
-    assertThat(thrown).hasMessageThat().contains("1:2");
-    assertThat(thrown).hasMessageThat().contains("expecting one of [semicolon, EOF]");
   }
 
   @Test public void ignoreReturn_orParser_cachesResult() {

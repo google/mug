@@ -16,10 +16,11 @@ package com.google.mu.errorprone;
 
 import static com.google.errorprone.BugPattern.SeverityLevel.ERROR;
 import static com.google.errorprone.matchers.Matchers.anyMethod;
-import static com.google.errorprone.matchers.Matchers.staticMethod;
+
+import javax.lang.model.element.Modifier;
 
 import com.google.auto.service.AutoService;
-import com.google.common.labs.parse.CharacterSet;
+import com.google.common.labs.parse.Parser;
 import com.google.errorprone.BugPattern;
 import com.google.errorprone.BugPattern.LinkType;
 import com.google.errorprone.VisitorState;
@@ -30,8 +31,6 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.code.Type;
-import javax.lang.model.element.Modifier;
 
 /**
  * Validates the character set literal string passed to {@code Parser.anyCharIn()}
@@ -46,20 +45,11 @@ import javax.lang.model.element.Modifier;
 @SuppressWarnings("restriction")
 public final class CharacterSetLiteralCheck extends AbstractBugChecker
     implements AbstractBugChecker.MethodInvocationCheck {
-  private static final Matcher<ExpressionTree> MATCHER =
-      staticMethod().onClass("com.google.common.labs.parse.CharacterSet").named("charsIn");
   private static final Matcher<ExpressionTree> PARSER_METHOD_MATCHER =
       anyMethod().onClass("com.google.common.labs.parse.Parser");
 
   @Override public void checkMethodInvocation(MethodInvocationTree tree, VisitorState state)
       throws ErrorReport {
-    if (MATCHER.matches(tree, state)) {
-      if (!tree.getArguments().isEmpty()) {
-        validateCharacterSet(tree.getArguments().get(0));
-      }
-      return;
-    }
-
     if (PARSER_METHOD_MATCHER.matches(tree, state)) {
       MethodSymbol methodSymbol = ASTHelpers.getSymbol(tree);
       if (methodSymbol != null && methodSymbol.getModifiers().contains(Modifier.PUBLIC)) {
@@ -82,7 +72,7 @@ public final class CharacterSetLiteralCheck extends AbstractBugChecker
     checkingOn(characterSetArg)
         .require(exampleString != null, "compile-time string constant expected");
     try {
-      CharacterSet.charsIn(exampleString);
+      Parser.one(exampleString);
     } catch (IllegalArgumentException e) {
       throw checkingOn(characterSetArg).report(e.getMessage());
     }

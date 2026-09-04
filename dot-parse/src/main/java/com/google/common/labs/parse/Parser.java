@@ -117,17 +117,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Matches a character in {@code characterSet}.
-   *
-   * @deprecated Use {@link #one(String)} instead
-   * @since 9.9.9
-   */
-  @Deprecated
-  public static Parser<Character> one(CharacterSet characterSet) {
-    return one(characterSet, characterSet.toString());
-  }
-
-  /**
    * Matches a character in {@code characterClass}.
    *
    * <p>For example: {@code one("[a-z]")} is equivalent to {@code one(range('a', 'z'))}.
@@ -214,17 +203,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return blockedCommonAsciiChars(matcher);
       }
     };
-  }
-
-  /**
-   * Matches one or more consecutive characters contained in {@code characterSet}.
-   *
-   * @deprecated Use {@link #consecutive(String)} instead
-   * @since 9.4
-   */
-  @Deprecated
-  public static Parser<String> consecutive(CharacterSet characterSet) {
-    return consecutive(characterSet, "one or more " + characterSet);
   }
 
   /**
@@ -640,14 +618,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         }
       }
     });
-  }
-
-  /**
-   * @deprecated use {@link Parsers#BMP_CODE_UNIT} instead.
-   */
-  @Deprecated
-  public static Parser<Integer> bmpCodeUnit() {
-    return Parsers.BMP_CODE_UNIT.elidableMap(c -> (int) c);
   }
 
   /**
@@ -1082,17 +1052,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * For example: {@code zeroOrMore(charsIn("[a-zA-Z0-9_-]"))}.
-   *
-   * @deprecated Use {@link #zeroOrMore(String)} instead.
-   * @since 9.9.9
-   */
-  @Deprecated
-  public static Parser<String>.OrEmpty zeroOrMore(CharacterSet characterSet) {
-    return zeroOrMore(characterSet, characterSet.toString());
-  }
-
-  /**
    * Starts a fluent chain for matching consecutive characters in the {@code characterClass} zero or
    * more times. If no such character is found, empty string is the result.
    *
@@ -1307,40 +1266,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * @deprecated Use {@link Parsers.Suffix#withPrefixes(Parser, Parser) withPrefixes(prefix,
-   *     suffix)} instead
-   */
-  @Deprecated
-  public final Parser<T> withPrefixes(Parser<? extends UnaryOperator<T>> operator) {
-    return Suffix.withPrefixes(operator, this);
-  }
-
-  /**
-   * @deprecated Use {@link #followedByZeroOrMore(Parser)} instead.
-   */
-  @Deprecated
-  public final Parser<T> withPostfixes(Parser<? extends UnaryOperator<T>> operator) {
-    return followedByZeroOrMore(operator);
-  }
-
-  /**
-   * @deprecated Use {@link #followedByZeroOrMore(Parser, BiFunction)} instead.
-   */
-  @Deprecated
-  public final <S> Parser<T> withPostfixes(
-      Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
-    return followedByZeroOrMore(operator, postfixFunction);
-  }
-
-  /**
-   * @deprecated Use {@link #followedByZeroOrMore(String, UnaryOperator)} instead.
-   */
-  @Deprecated
-  public final Parser<T> withPostfixes(String operator, UnaryOperator<T> postfixFunction) {
-    return followedByZeroOrMore(operator, postfixFunction);
-  }
-
-  /**
    * Returns a parser that matches {@code this} pattern enclosed between {@code prefix} and {@code
    * suffix}, both allowed to be empty.
    *
@@ -1537,19 +1462,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public final Parser<T> followedByZeroOrMore(
       Parser<? extends Function<? super T, ? extends T>> suffix) {
     return sequence(this, suffix.zeroOrMore(), Suffix::applyOperators);
-  }
-
-  /**
-   * Specifies that the matched pattern must be either followed by {@code suffix} or EOF. No other
-   * suffixes allowed.
-   *
-   * @since 9.4
-   * @deprecated Use {@code notImmediatelyFollowedBy(noneOf("\r\n"))} instead of {@code
-   *     followedByOrEof(one("[\r\n]"))}.
-   */
-  @Deprecated
-  public final Parser<T> followedByOrEof(Parser<?> suffix) {
-    return followedBy(either(suffix.ignoreReturn(), UNSAFE_EOF));
   }
 
   private Parser<T> followedByInOrder(Production<?>... suffixes) {

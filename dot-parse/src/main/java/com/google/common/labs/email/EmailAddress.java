@@ -34,17 +34,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-import com.google.common.labs.parse.Parser;
-import com.google.errorprone.annotations.CheckReturnValue;
-import com.google.errorprone.annotations.FormatMethod;
-import com.google.errorprone.annotations.FormatString;
-import com.google.errorprone.annotations.Immutable;
-import com.google.errorprone.annotations.InlineMe;
-import com.google.errorprone.annotations.concurrent.LazyInit;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.StringFormat;
-import com.google.mu.util.Substring;
-import com.google.mu.util.stream.Joiner;
 import java.net.IDN;
 import java.text.Normalizer;
 import java.util.ArrayList;
@@ -53,6 +42,17 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+
+import com.google.common.labs.parse.Parser;
+import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
+import com.google.errorprone.annotations.Immutable;
+import com.google.errorprone.annotations.concurrent.LazyInit;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.StringFormat;
+import com.google.mu.util.Substring;
+import com.google.mu.util.stream.Joiner;
 
 /**
  * Represents a strictly validated email address according to RFC 5322, designed as a modern,
@@ -424,17 +424,6 @@ public final class EmailAddress {
                 ? WITH_QUOTED_DISPLAY_NAME.format(escape(name), address())
                 : WITH_UNQUOTED_DISPLAY_NAME.format(name, address()))
         .orElseGet(this::address);
-  }
-
-  /**
-   * @deprecated Use {@link #of(String)} instead
-   */
-  @Deprecated
-  @InlineMe(
-      replacement = "EmailAddress.of(address)",
-      imports = "com.google.common.labs.email.EmailAddress")
-  public static EmailAddress parse(String address) {
-    return of(address);
   }
 
   /**
