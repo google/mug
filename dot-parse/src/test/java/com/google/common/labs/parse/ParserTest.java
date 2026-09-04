@@ -8462,6 +8462,11 @@ public class ParserTest {
     assertThat(parser.ignoreReturn().ignoreReturn()).isSameInstanceAs(parser.ignoreReturn());
   }
 
+  @Test public void ignoreReturn_orParser_changedChildren_idempotent() {
+    Parser<?> parser = anyOf(string("a").thenReturn(1), string("b"));
+    assertThat(parser.ignoreReturn().ignoreReturn()).isSameInstanceAs(parser.ignoreReturn());
+  }
+
   @Test public void ignoreReturn_orParser_matchesFirstCandidate() {
     Parser<String> parser = anyOf(string("a"), string("b"));
     assertThat(parser.ignoreReturn().matches("a")).isTrue();
