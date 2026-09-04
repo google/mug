@@ -117,17 +117,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * Matches a character in {@code characterSet}.
-   *
-   * @deprecated Use {@link #one(String)} instead
-   * @since 9.9.9
-   */
-  @Deprecated
-  public static Parser<Character> one(CharacterSet characterSet) {
-    return one(characterSet, characterSet.toString());
-  }
-
-  /**
    * Matches a character in {@code characterClass}.
    *
    * <p>For example: {@code one("[a-z]")} is equivalent to {@code one(range('a', 'z'))}.
@@ -193,15 +182,13 @@ public abstract non-sealed class Parser<T> implements Production<T> {
 
   /** Matches one or more consecutive characters as specified by {@code matcher}. */
   public static Parser<String> consecutive(CharPredicate matcher, String name) {
-    return skipConsecutive(matcher, name).source();
+    return skipConsecutive(matcher.precomputeForAscii(), name).source();
   }
 
   private static Parser<Void> skipConsecutive(CharPredicate matcher, String name) {
-    requireNonNull(matcher);
     return new Scanner(name) {
       @Override int scan(CharInput input, int index) {
-        while (input.startsWith(matcher, index)) index++;
-        return index;
+        return input.skipWhile(matcher, index);
       }
 
       @Override public Parser<Void> as(String logicalName) {
@@ -216,17 +203,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return blockedCommonAsciiChars(matcher);
       }
     };
-  }
-
-  /**
-   * Matches one or more consecutive characters contained in {@code characterSet}.
-   *
-   * @deprecated Use {@link #consecutive(String)} instead
-   * @since 9.4
-   */
-  @Deprecated
-  public static Parser<String> consecutive(CharacterSet characterSet) {
-    return consecutive(characterSet, "one or more " + characterSet);
   }
 
   /**
@@ -645,14 +621,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   }
 
   /**
-   * @deprecated use {@link Parsers#BMP_CODE_UNIT} instead.
-   */
-  @Deprecated
-  public static Parser<Integer> bmpCodeUnit() {
-    return Parsers.BMP_CODE_UNIT.elidableMap(c -> (int) c);
-  }
-
-  /**
    * Sequentially matches {@code left} then {@code right}, and then combines the results using the
    * {@code combiner} function.
    */
@@ -673,7 +641,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         };
       }
 
-      @Override Parser<?> ignoreReturn() {
+      @Override Parser<?> doIgnoreReturn() {
         return combiner instanceof ElidableBiFunction ? sequence(left, right) : this;
       }
     };
@@ -969,7 +937,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return left().as(alias);
       }
 
-      @Override Parser<?> ignoreReturn() {
+      @Override Parser<?> doIgnoreReturn() {
         return left().ignoreReturn().as(logicalName);
       }
 
@@ -1081,17 +1049,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   public final <A, R> Parser<R> atLeastOnceDelimitedBy(
       Parser<?> delimiter, Collector<? super T, A, ? extends R> collector) {
     return this.andZeroOrMore(delimiter.then(this), collector);
-  }
-
-  /**
-   * For example: {@code zeroOrMore(charsIn("[a-zA-Z0-9_-]"))}.
-   *
-   * @deprecated Use {@link #zeroOrMore(String)} instead.
-   * @since 9.9.9
-   */
-  @Deprecated
-  public static Parser<String>.OrEmpty zeroOrMore(CharacterSet characterSet) {
-    return zeroOrMore(characterSet, characterSet.toString());
   }
 
   /**
@@ -1273,7 +1230,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         }
       }
 
-      @Override Parser<?> ignoreReturn() {
+      @Override Parser<?> doIgnoreReturn() {
         @SuppressWarnings("unchecked") // return value is unused
         Parser<Object> elided = (Parser<Object>) left().ignoreReturn();
         return elided.andZeroOrMore(extra.ignoreReturn(), toNull());
@@ -1302,44 +1259,10 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return Set.of(delimiter);
       }
 
-      @Override Parser<?> ignoreReturn() {
+      @Override Parser<?> doIgnoreReturn() {
         return Parser.this.ignoreReturn().afterDelimiter(delimiter);
       }
     };
-  }
-
-  /**
-   * @deprecated Use {@link Parsers.Suffix#withPrefixes(Parser, Parser) withPrefixes(prefix,
-   *     suffix)} instead
-   */
-  @Deprecated
-  public final Parser<T> withPrefixes(Parser<? extends UnaryOperator<T>> operator) {
-    return Suffix.withPrefixes(operator, this);
-  }
-
-  /**
-   * @deprecated Use {@link #followedByZeroOrMore(Parser)} instead.
-   */
-  @Deprecated
-  public final Parser<T> withPostfixes(Parser<? extends UnaryOperator<T>> operator) {
-    return followedByZeroOrMore(operator);
-  }
-
-  /**
-   * @deprecated Use {@link #followedByZeroOrMore(Parser, BiFunction)} instead.
-   */
-  @Deprecated
-  public final <S> Parser<T> withPostfixes(
-      Parser<S> operator, BiFunction<? super T, ? super S, ? extends T> postfixFunction) {
-    return followedByZeroOrMore(operator, postfixFunction);
-  }
-
-  /**
-   * @deprecated Use {@link #followedByZeroOrMore(String, UnaryOperator)} instead.
-   */
-  @Deprecated
-  public final Parser<T> withPostfixes(String operator, UnaryOperator<T> postfixFunction) {
-    return followedByZeroOrMore(operator, postfixFunction);
   }
 
   /**
@@ -1361,7 +1284,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return left().skipAndMatch(skip, input, start, context).map(f, context);
       }
 
-      @Override Parser<?> ignoreReturn() {
+      @Override Parser<?> doIgnoreReturn() {
         return f instanceof ElidableFunction ? left().ignoreReturn() : this;
       }
     };
@@ -1541,19 +1464,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     return sequence(this, suffix.zeroOrMore(), Suffix::applyOperators);
   }
 
-  /**
-   * Specifies that the matched pattern must be either followed by {@code suffix} or EOF. No other
-   * suffixes allowed.
-   *
-   * @since 9.4
-   * @deprecated Use {@code notImmediatelyFollowedBy(noneOf("\r\n"))} instead of {@code
-   *     followedByOrEof(one("[\r\n]"))}.
-   */
-  @Deprecated
-  public final Parser<T> followedByOrEof(Parser<?> suffix) {
-    return followedBy(either(suffix.ignoreReturn(), UNSAFE_EOF));
-  }
-
   private Parser<T> followedByInOrder(Production<?>... suffixes) {
     Parser<?>[] followers = stream(suffixes)
         .map(Parser::allowZeroWidth)
@@ -1644,7 +1554,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         };
       }
 
-      @Override Parser<?> ignoreReturn() {
+      @Override Parser<?> doIgnoreReturn() {
         return left().ignoreReturn().notFollowedBy(elidedSuffix, name);
       }
     };
@@ -1678,7 +1588,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
             : result;
       }
 
-      @Override Parser<?> ignoreReturn() {
+      @Override Parser<?> doIgnoreReturn() {
         return left().ignoreReturn().notImmediatelyFollowedBy(predicate, name);
       }
     };
@@ -1740,14 +1650,26 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return left().as(logicalName).source();
       }
 
-      @Override Parser<?> ignoreReturn() {
+      @Override Parser<?> doIgnoreReturn() {
         return elided;
       }
     };
   }
 
-  Parser<?> ignoreReturn() {
+  @LazyInit private volatile Parser<?> elidedParser;
+
+  Parser<?> doIgnoreReturn() {
     return this;
+  }
+
+  final Parser<?> ignoreReturn() {
+    Parser<?> result = elidedParser;
+    if (result == null) {
+      result = doIgnoreReturn();
+      result.elidedParser = result;
+      elidedParser = result;
+    }
+    return result;
   }
 
   /**
@@ -1764,7 +1686,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         return left().skipAndMatch(null, input, start, context);
       }
 
-      @Override Parser<?> ignoreReturn() {
+      @Override Parser<?> doIgnoreReturn() {
         return literally(left().ignoreReturn());
       }
     };
@@ -1819,11 +1741,8 @@ public abstract non-sealed class Parser<T> implements Production<T> {
    * }</pre>
    */
   public final Lexical skipping(CharPredicate charsToSkip) {
-    requireNonNull(charsToSkip);
-    return new Lexical((input, index) -> {
-      while (input.startsWith(charsToSkip, index)) index++;
-      return index;
-    });
+    CharPredicate precomputed = charsToSkip.precomputeForAscii();
+    return new Lexical((input, start) -> input.skipWhile(precomputed, start));
   }
 
   /** Starts a fluent chain for parsing inputs while skipping patterns matched by {@code skip}. */
@@ -2063,7 +1982,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
         };
       }
 
-      @Override Parser<?> ignoreReturn() {
+      @Override Parser<?> doIgnoreReturn() {
         return OrEmpty.this.ignoreReturn().unsafeZeroWidthParser;
       }
     };
@@ -2416,7 +2335,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           return left().skipAndMatch(toSkip, input, start, context);
         }
 
-        @Override Parser<?> ignoreReturn() {
+        @Override Parser<?> doIgnoreReturn() {
           return Lexical.this.ignoreReturn().within();
         }
       };
@@ -2437,7 +2356,7 @@ public abstract non-sealed class Parser<T> implements Production<T> {
           };
         }
 
-        @Override Parser<?> ignoreReturn() {
+        @Override Parser<?> doIgnoreReturn() {
           return Lexical.this.ignoreReturn().forTokens();
         }
       };
@@ -2660,10 +2579,6 @@ public abstract non-sealed class Parser<T> implements Production<T> {
     };
   }
 
-  interface Skipper {
-    int skip(CharInput input, int index);
-  }
-
   /** A derived parser, with {@code this} being the left-most rule. */
   private abstract class SamePrefix<R> extends Parser<R> {
     @Override Set<String> computePrefixes() {
@@ -2724,6 +2639,11 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   interface ElidableFunction<F, T> extends Function<F, T> {}
 
   private interface ElidableBiFunction<A, B, R> extends BiFunction<A, B, R> {}
+
+  /** Strategy interface to skip input characters. */
+  interface Skipper {
+    int skip(CharInput input, int start);
+  }
 
   Parser() {}
 }

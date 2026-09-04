@@ -125,7 +125,7 @@ import java.util.stream.Collectors;
  *             <path>
  *               <groupId>com.google.mug</groupId>
  *               <artifactId>mug-errorprone</artifactId>
- *               <version>10.9</version>
+ *               <version>11.0</version>
  *             </path>
  *           </annotationProcessorPaths>
  *         </configuration>

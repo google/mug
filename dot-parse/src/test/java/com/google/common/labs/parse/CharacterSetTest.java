@@ -13,8 +13,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class CharacterSetTest {
 
-  @Test
-  public void test_positiveCharSet_parseSuccess() {
+  @Test public void test_positiveCharSet_parseSuccess() {
     CharacterSet set = charsIn("[a-fA-F-_]");
     assertThat(set.matchesAllOf("abcfED-_")).isTrue();
     assertThat(set.matchesNoneOf("gzZ")).isTrue();
@@ -22,30 +21,26 @@ public class CharacterSetTest {
         .containsExactly("a", "b", "c", "d", "e", "f", "A", "B", "C", "D", "E", "F", "-", "_");
   }
 
-  @Test
-  public void test_negativeCharSet_parseSuccess() {
+  @Test public void test_negativeCharSet_parseSuccess() {
     CharacterSet set = charsIn("[^\"{}]");
     assertThat(set.matchesAllOf("zzZ")).isTrue();
     assertThat(set.matchesNoneOf("\"{}")).isTrue();
     assertThat(set.getAsciiPrefixes()).containsExactly("");
   }
 
-  @Test
-  public void test_emptyCharSet() {
+  @Test public void test_emptyCharSet() {
     CharacterSet set = charsIn("[]");
     assertThat(set.matchesNoneOf("ab123")).isTrue();
     assertThat(set.getAsciiPrefixes()).isEmpty();
   }
 
-  @Test
-  public void test_emptyNegativeCharSet_parseSucceeds() {
+  @Test public void test_emptyNegativeCharSet_parseSucceeds() {
     CharacterSet set = charsIn("[^]");
     assertThat(set.matchesAllOf("ab123")).isTrue();
     assertThat(set.getAsciiPrefixes()).containsExactly("");
   }
 
-  @Test
-  @SuppressWarnings("CharacterSetLiteralCheck")
+  @Test @SuppressWarnings("CharacterSetLiteralCheck")
   public void test_backslashAllowed() {
     CharacterSet set = charsIn("[\\]");
     assertThat(set.contains('\\')).isTrue();
@@ -54,8 +49,7 @@ public class CharacterSetTest {
     assertThat(set.getAsciiPrefixes()).containsExactly("\\");
   }
 
-  @Test
-  @SuppressWarnings("CharacterSetLiteralCheck")
+  @Test @SuppressWarnings("CharacterSetLiteralCheck")
   public void test_negativeCharSetWithBackslash() {
     CharacterSet set = charsIn("[^\\]");
     assertThat(set.contains('\\')).isFalse();
@@ -64,8 +58,7 @@ public class CharacterSetTest {
     assertThat(set.getAsciiPrefixes()).containsExactly("");
   }
 
-  @Test
-  @SuppressWarnings("CharacterSetLiteralCheck")
+  @Test @SuppressWarnings("CharacterSetLiteralCheck")
   public void test_rangeWithBackslash() {
     CharacterSet set = charsIn("[\\]-a]");
     assertThat(set.contains('\\')).isTrue();
@@ -79,16 +72,14 @@ public class CharacterSetTest {
     assertThat(set.getAsciiPrefixes()).containsExactly("\\", "]", "^", "_", "`", "a");
   }
 
-  @Test
-  @SuppressWarnings("CharacterSetLiteralCheck")
+  @Test @SuppressWarnings("CharacterSetLiteralCheck")
   public void test_invalidRangeWithBackslash_throws() {
     IllegalArgumentException e =
         assertThrows(IllegalArgumentException.class, () -> charsIn("[a-\\]"));
     assertThat(e).hasMessageThat().contains("[a-\\]");
   }
 
-  @Test
-  @SuppressWarnings("CharacterSetLiteralCheck")
+  @Test @SuppressWarnings("CharacterSetLiteralCheck")
   public void test_rightBracketAsFirstChar_parseSuccess() {
     CharacterSet set1 = charsIn("[]]");
     assertThat(set1.contains(']')).isTrue();
@@ -103,16 +94,14 @@ public class CharacterSetTest {
     assertThat(set2.getAsciiPrefixes()).containsExactly("");
   }
 
-  @Test
-  @SuppressWarnings("CharacterSetLiteralCheck")
+  @Test @SuppressWarnings("CharacterSetLiteralCheck")
   public void test_missingBrackets_throws() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> charsIn("a-z"));
     assertThat(thrown).hasMessageThat().contains("Use [a-z] instead.");
   }
 
-  @Test
-  public void not_positiveSet() {
+  @Test public void not_positiveSet() {
     CharacterSet positive = charsIn("[ab]");
     assertThat(positive.not().contains('a')).isFalse();
     assertThat(positive.not().contains('b')).isFalse();
@@ -122,8 +111,7 @@ public class CharacterSetTest {
     assertThat(positive.not().getAsciiPrefixes()).containsExactly("");
   }
 
-  @Test
-  public void not_negativeSet() {
+  @Test public void not_negativeSet() {
     CharacterSet negative = charsIn("[^ab]");
     assertThat(negative.not().contains('a')).isTrue();
     assertThat(negative.not().contains('b')).isTrue();
@@ -133,8 +121,7 @@ public class CharacterSetTest {
     assertThat(negative.not().getAsciiPrefixes()).containsExactly("a", "b");
   }
 
-  @Test
-  public void not_rangeSet() {
+  @Test public void not_rangeSet() {
     CharacterSet range = charsIn("[a-c]");
     assertThat(range.not().contains('a')).isFalse();
     assertThat(range.not().contains('b')).isFalse();
@@ -145,8 +132,7 @@ public class CharacterSetTest {
     assertThat(range.not().getAsciiPrefixes()).containsExactly("");
   }
 
-  @Test
-  public void not_negatedRangeSet() {
+  @Test public void not_negatedRangeSet() {
     CharacterSet negatedRange = charsIn("[^a-c]");
     assertThat(negatedRange.not().contains('a')).isTrue();
     assertThat(negatedRange.not().contains('b')).isTrue();
@@ -157,8 +143,7 @@ public class CharacterSetTest {
     assertThat(negatedRange.not().getAsciiPrefixes()).containsExactly("a", "b", "c");
   }
 
-  @Test
-  public void not_emptySet() {
+  @Test public void not_emptySet() {
     CharacterSet empty = charsIn("[]");
     assertThat(empty.not().contains('a')).isTrue();
     assertThat(empty.not().toString()).isEqualTo("[^]");
@@ -166,8 +151,7 @@ public class CharacterSetTest {
     assertThat(empty.not().getAsciiPrefixes()).containsExactly("");
   }
 
-  @Test
-  public void not_fullSet() {
+  @Test public void not_fullSet() {
     CharacterSet full = charsIn("[^]");
     assertThat(full.not().contains('a')).isFalse();
     assertThat(full.not().toString()).isEqualTo("[]");
@@ -175,8 +159,7 @@ public class CharacterSetTest {
     assertThat(full.not().getAsciiPrefixes()).isEmpty();
   }
 
-  @Test
-  @SuppressWarnings("CharacterSetLiteralCheck")
+  @Test @SuppressWarnings("CharacterSetLiteralCheck")
   public void testEquals() {
     new EqualsTester()
         .addEqualityGroup(charsIn("[]"), charsIn("[]"))
@@ -187,47 +170,60 @@ public class CharacterSetTest {
         .testEquals();
   }
 
-  @Test
-  public void getAsciiPrefixes_nonAscii() {
+  @Test public void getAsciiPrefixes_nonAscii() {
     CharacterSet set = charsIn("[á]");
     assertThat(set.getAsciiPrefixes()).containsExactly("");
   }
 
-  @Test
-  public void getAsciiPrefixes_nonAsciiRange() {
+  @Test public void getAsciiPrefixes_nonAsciiRange() {
     CharacterSet set = charsIn("[a-á]");
     assertThat(set.getAsciiPrefixes()).containsExactly("");
   }
 
-  @Test
-  @SuppressWarnings("CharacterSetLiteralCheck")
+  @Test @SuppressWarnings("CharacterSetLiteralCheck")
   public void invalidRange_throws() {
     IllegalArgumentException e =
         assertThrows(IllegalArgumentException.class, () -> charsIn("[1-0]"));
     assertThat(e).hasMessageThat().contains("[1-0]");
   }
 
-  @Test
-  public void toString_escapesInvisibleCharacters() {
+  @Test public void toString_escapesInvisibleCharacters() {
     CharacterSet set = charsIn("[\r\n\t\f\b]");
     assertThat(set.toString()).isEqualTo("[\\r\\n\\t\\f\\b]");
   }
 
-  @Test
-  public void toString_escapesUnicodeControlCharacters() {
+  @Test public void toString_escapesUnicodeControlCharacters() {
     CharacterSet set = charsIn("[\u0000\u001F\u007F]");
     assertThat(set.toString()).isEqualTo("[\\u0000\\u001F\\u007F]");
   }
 
-  @Test
-  public void toString_mixedControlAndRegularCharacters() {
+  @Test public void toString_mixedControlAndRegularCharacters() {
     CharacterSet set = charsIn("[a-z\r\n\t\f\b0-9\u0000\u001F\u007F]");
     assertThat(set.toString()).isEqualTo("[a-z\\r\\n\\t\\f\\b0-9\\u0000\\u001F\\u007F]");
   }
 
-  @Test
-  public void toString_regularCharactersOnly() {
+  @Test public void toString_regularCharactersOnly() {
     CharacterSet set = charsIn("[a-zA-Z0-9-_]");
     assertThat(set.toString()).isEqualTo("[a-zA-Z0-9-_]");
+  }
+
+  @Test public void skipLeading_allMatch() {
+    CharacterSet set = charsIn("[0-9]");
+    assertThat(set.skipLeading("0123456789abc", 0)).isEqualTo(10);
+  }
+
+  @Test public void skipLeading_withOffset() {
+    CharacterSet set = charsIn("[a-z]");
+    assertThat(set.skipLeading("123abcdef456", 3)).isEqualTo(9);
+  }
+
+  @Test public void skipLeading_negativeSet() {
+    CharacterSet set = charsIn("[^0-9]");
+    assertThat(set.skipLeading("abcdef123", 0)).isEqualTo(6);
+  }
+
+  @Test public void precomputeForAscii_returnsSelf() {
+    CharacterSet set = charsIn("[a-z]");
+    assertThat(set.precomputeForAscii()).isSameInstanceAs(set);
   }
 }

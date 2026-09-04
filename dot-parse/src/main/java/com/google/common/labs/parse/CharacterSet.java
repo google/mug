@@ -57,10 +57,8 @@ import java.util.stream.IntStream;
  * time.
  *
  * @since 9.4
- * @deprecated Use the {@code Parser} overloads that directly take a {@code characterClass} string
- *     parameter, such as {@link Parser#consecutive(String)}.
  */
-public final class CharacterSet implements CharPredicate {
+final class CharacterSet implements CharPredicate {
   private static final Parser<CharPredicate> CHARACTER_SET_PARSER = makeCharacterSetParser();
   private static final Parser<Set<Character>> ASCII_SET_PARSER = makeAsciiSetParser();
 
@@ -82,7 +80,7 @@ public final class CharacterSet implements CharPredicate {
    * @param characterSet A regex-like character set string (e.g. {@code "[a-zA-Z0-9-_]"}).
    * @throws IllegalArgumentException if {@code characterSet} is malformed
    */
-  public static CharacterSet charsIn(String characterSet) {
+  static CharacterSet charsIn(String characterSet) {
     return new CharacterSet(characterSet, compileCharacterSet(characterSet));
   }
 
@@ -92,8 +90,12 @@ public final class CharacterSet implements CharPredicate {
   }
 
   /** Returns true if this set contains the character {@code ch}. */
-  public boolean contains(char ch) {
+  boolean contains(char ch) {
     return predicate.test(ch);
+  }
+
+  @Override public int skipLeading(CharSequence s, int fromIndex) {
+    return predicate.skipLeading(s, fromIndex);
   }
 
   /**
@@ -102,12 +104,13 @@ public final class CharacterSet implements CharPredicate {
    * @since 9.9.4
    */
   @Override public CharacterSet precomputeForAscii() {
-    return new CharacterSet(string, predicate.precomputeForAscii());
+    return this;
   }
 
   @Override public CharacterSet not() {
     return new CharacterSet(
-        after(prefix("[")).in(string)
+        after(prefix("["))
+            .in(string)
             .map(m -> m.startsWith("^") ? "[" + m.skip(1, 0) : "[^" + m)
             .orElse(string),
         predicate.not());
@@ -127,7 +130,9 @@ public final class CharacterSet implements CharPredicate {
     if (needsEscaping.matchesNoneOf(string)) {
       return string;
     }
-    return string.chars().mapToObj(c -> switch (c) {
+    return string
+        .chars()
+        .mapToObj(c -> switch (c) {
           case '\r' -> "\\r";
           case '\n' -> "\\n";
           case '\t' -> "\\t";
@@ -144,7 +149,8 @@ public final class CharacterSet implements CharPredicate {
     Set<String> result = asciiPrefixes;
     if (result == null) {
       asciiPrefixes =
-          result = candidateCharsIfAscii().map(
+          result = candidateCharsIfAscii()
+              .map(
                   chars -> chars.stream().map(Object::toString).collect(toCollection(TreeSet::new)))
               .map(Collections::unmodifiableSet)
               .orElse(Set.of(""));
@@ -178,7 +184,7 @@ public final class CharacterSet implements CharPredicate {
           checkArgument(c1 <= c2, "invalid range [%s-%s]", c1, c2);
           return CharPredicate.range(c1, c2);
         });
-    Parser<CharPredicate>.OrEmpty positiveSet = anyOf(range, validChar.map(CharPredicate::is))
+    var positiveSet = anyOf(range, validChar.map(CharPredicate::is))
         .zeroOrMore(reducing(CharPredicate.NONE, CharPredicate::or));
     Parser<CharPredicate> negativeSet = string("^").then(positiveSet).map(CharPredicate::not);
     return negativeSet.or(positiveSet).between("[", "]");

@@ -76,6 +76,12 @@ abstract class CharInput {
   void markCheckpoint(int checkpointIndex) {}
 
   /**
+   * Skips consecutive characters starting from {@code fromIndex} matching {@code condition} and
+   * returns the ending index (first non-matching index or EOF).
+   */
+  abstract int skipWhile(CharPredicate condition, int from);
+
+  /**
    * Returns the source position of the character at {@code at}. It's assumed that the index {@code
    * at} has been read.
    */
@@ -111,6 +117,10 @@ abstract class CharInput {
       @Override boolean startsWithCaseInsensitive(String prefix, int index) {
         // shorter.regionMatches(..., longer, ...) appears to be faster, according to benchmark.
         return prefix.regionMatches(/* ignoreCase= */ true, 0, text, index, prefix.length());
+      }
+
+      @Override int skipWhile(CharPredicate condition, int from) {
+        return condition.skipLeading(text, from);
       }
 
       @Override boolean isEof(int index) {
@@ -227,6 +237,27 @@ abstract class CharInput {
           }
         }
         return true;
+      }
+
+      @Override int skipWhile(CharPredicate condition, int from) {
+        checkArgument(from >= garbageCharCount, "fromIndex < %s", garbageCharCount);
+        for (int i = from; ; ) {
+          ensureCharCount(i + 4);
+          int p = toPhysicalIndex(i);
+          if (p >= chars.length()) {
+            return i;
+          }
+          int matched = condition.skipLeading(chars, p);
+          i = toLogicalIndex(matched);
+          if (matched < chars.length()) {
+            return i;
+          }
+          int prevLen = chars.length();
+          ensureCharCount(i + 1);
+          if (chars.length() == prevLen) {
+            return i;
+          }
+        }
       }
 
       @Override boolean isEof(int index) {

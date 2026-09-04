@@ -1,37 +1,34 @@
 package com.google.mu.errorprone;
 
+import com.google.errorprone.CompilationTestHelper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-
-import com.google.errorprone.CompilationTestHelper;
 
 @RunWith(JUnit4.class)
 public final class CharacterSetLiteralCheckTest {
   private final CompilationTestHelper helper =
       CompilationTestHelper.newInstance(CharacterSetLiteralCheck.class, getClass());
 
-  @Test
-  public void properUsage() {
+  @Test public void properUsage() {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.common.labs.parse.CharacterSet;",
+            "import com.google.common.labs.parse.Parser;",
             "class Test {",
-            "  private static final CharacterSet CHARS = CharacterSet.charsIn(\"[a-zA-Z-_0-9]\");",
+            "  private static final Parser<?> CHARS = Parser.one(\"[a-zA-Z-_0-9]\");",
             "}")
         .doTest();
   }
 
-  @Test
-  public void notCompileTimeConstant() {
+  @Test public void notCompileTimeConstant() {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.common.labs.parse.CharacterSet;",
+            "import com.google.common.labs.parse.Parser;",
             "class Test {",
-            "  private CharacterSet CHARS(String charSet) {",
-            "    return CharacterSet.charsIn(",
+            "  private Parser<?> chars(String charSet) {",
+            "    return Parser.one(",
             "        // BUG: Diagnostic contains: compile-time string constant",
             "        charSet);",
             "  }",
@@ -39,35 +36,32 @@ public final class CharacterSetLiteralCheckTest {
         .doTest();
   }
 
-  @Test
-  public void missingSquareBrackets() {
+  @Test public void missingSquareBrackets() {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.common.labs.parse.CharacterSet;",
+            "import com.google.common.labs.parse.Parser;",
             "class Test {",
-            "  private static final CharacterSet CHARS = CharacterSet.charsIn(",
+            "  private static final Parser<String>.OrEmpty CHARS = Parser.zeroOrMore(",
             "      // BUG: Diagnostic contains: Use [a-zA-Z] instead",
             "      \"a-zA-Z\");",
             "}")
         .doTest();
   }
 
-  @Test
-  public void allowsBackslash() {
+  @Test public void allowsBackslash() {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.common.labs.parse.CharacterSet;",
+            "import com.google.common.labs.parse.Parser;",
             "class Test {",
-            "  private static final CharacterSet CHARS = CharacterSet.charsIn(",
+            "  private static final Parser<?> CHARS = Parser.one(",
             "      \"[\\\\n]\");",
             "}")
         .doTest();
   }
 
-  @Test
-  public void parserParameterCheck_properUsage() {
+  @Test public void parserParameterCheck_properUsage() {
     helper
         .addSourceLines(
             "Test.java",
@@ -81,8 +75,7 @@ public final class CharacterSetLiteralCheckTest {
         .doTest();
   }
 
-  @Test
-  public void parserParameterCheck_invalidUsage() {
+  @Test public void parserParameterCheck_invalidUsage() {
     helper
         .addSourceLines(
             "Test.java",
@@ -98,8 +91,7 @@ public final class CharacterSetLiteralCheckTest {
         .doTest();
   }
 
-  @Test
-  public void parserParameterCheck_nonConstant() {
+  @Test public void parserParameterCheck_nonConstant() {
     helper
         .addSourceLines(
             "Test.java",
@@ -115,8 +107,7 @@ public final class CharacterSetLiteralCheckTest {
         .doTest();
   }
 
-  @Test
-  public void parserParameterCheck_nonPublicMethod() {
+  @Test public void parserParameterCheck_nonPublicMethod() {
     helper
         .addSourceLines(
             "Test.java",
@@ -130,27 +121,25 @@ public final class CharacterSetLiteralCheckTest {
         .doTest();
   }
 
-  @Test
-  public void allowsRightBracketAsFirstChar() {
+  @Test public void allowsRightBracketAsFirstChar() {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.common.labs.parse.CharacterSet;",
+            "import com.google.common.labs.parse.Parser;",
             "class Test {",
-            "  private static final CharacterSet CHARS1 = CharacterSet.charsIn(\"[]]\");",
-            "  private static final CharacterSet CHARS2 = CharacterSet.charsIn(\"[^]]\");",
+            "  private static final Parser<?> CHARS1 = Parser.one(\"[]]\");",
+            "  private static final Parser<?> CHARS2 = Parser.one(\"[^]]\");",
             "}")
         .doTest();
   }
 
-  @Test
-  public void canUseRightBracketIfNotFirstChar() {
+  @Test public void canUseRightBracketIfNotFirstChar() {
     helper
         .addSourceLines(
             "Test.java",
-            "import com.google.common.labs.parse.CharacterSet;",
+            "import com.google.common.labs.parse.Parser;",
             "class Test {",
-            "  private static final CharacterSet CHARS = CharacterSet.charsIn(",
+            "  private static final Parser<?> CHARS = Parser.one(",
             "      \"[a-z]]\");",
             "}")
         .doTest();

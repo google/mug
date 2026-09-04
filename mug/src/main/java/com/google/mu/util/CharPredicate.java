@@ -27,13 +27,9 @@ import java.util.Arrays;
 public interface CharPredicate {
 
   /** Equivalent to the {@code [a-zA-Z]} character class. */
-  static CharPredicate ALPHA =  new CharPredicate() {
+  CharPredicate ALPHA = new CharPredicate() {
     @Override public boolean test(char c) {
       return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-    }
-
-    @Override public CharPredicate precomputeForAscii() {
-      return this;
     }
 
     @Override public String toString() {
@@ -42,7 +38,7 @@ public interface CharPredicate {
   };
 
   /** Equivalent to the {@code [a-zA-Z0-9_]} character class. */
-  static CharPredicate WORD = new CharPredicate() {
+  CharPredicate WORD = new CharPredicate() {
     @Override public boolean test(char c) {
       return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
     }
@@ -53,7 +49,7 @@ public interface CharPredicate {
   };
 
   /** Corresponds to the ASCII characters. */
-  static CharPredicate ASCII = new CharPredicate() {
+  CharPredicate ASCII = new CharPredicate() {
     @Override public boolean test(char c) {
       return c <= '\u007f';
     }
@@ -68,9 +64,17 @@ public interface CharPredicate {
   };
 
   /** Corresponds to all characters. */
-  static CharPredicate ANY = new CharPredicate() {
+  CharPredicate ANY = new CharPredicate() {
     @Override public boolean test(char c) {
       return true;
+    }
+
+    @Override public CharPredicate not() {
+      return NONE;
+    }
+
+    @Override public int skipLeading(CharSequence s, int fromIndex) {
+      return s.length();
     }
 
     @Override public CharPredicate precomputeForAscii() {
@@ -83,9 +87,18 @@ public interface CharPredicate {
   };
 
   /** Corresponds to no characters. */
-  static CharPredicate NONE = new CharPredicate() {
+  CharPredicate NONE = new CharPredicate() {
     @Override public boolean test(char c) {
       return false;
+    }
+
+    @Override public CharPredicate not() {
+      return ANY;
+    }
+
+    @Override public int skipLeading(CharSequence s, int fromIndex) {
+      requireNonNull(s);
+      return fromIndex;
     }
 
     @Override public CharPredicate precomputeForAscii() {
@@ -102,9 +115,13 @@ public interface CharPredicate {
    *
    * @since 10.6
    */
-  static CharPredicate WHITESPACE = new CharPredicate() {
+  CharPredicate WHITESPACE = new CharPredicate() {
     @Override public boolean test(char c) {
       return Character.isWhitespace(c);
+    }
+
+    @Override public CharPredicate precomputeForAscii() {
+      return this; // JDK isWhitespace is extremely fast
     }
 
     @Override public String toString() {
@@ -119,6 +136,10 @@ public interface CharPredicate {
         return c == ch;
       }
 
+      @Override public CharPredicate not() {
+        return isNot(ch);
+      }
+
       @Override public CharPredicate precomputeForAscii() {
         return this;
       }
@@ -131,11 +152,36 @@ public interface CharPredicate {
 
   /** Returns a CharPredicate that matches except {@code ch}. */
   static CharPredicate isNot(char ch) {
-    return is(ch).not();
+    return new CharPredicate() {
+      @Override public boolean test(char c) {
+        return c != ch;
+      }
+
+      @Override public CharPredicate not() {
+        return is(ch);
+      }
+
+      @Override public CharPredicate precomputeForAscii() {
+        return this;
+      }
+
+      @Override public String toString() {
+        return "not ('" + ch + "')";
+      }
+    };
   }
 
   /** Returns a CharPredicate for the range of characters: {@code [from, to]}. */
   static CharPredicate range(char from, char to) {
+    if (from == to) {
+      return is(from);
+    }
+    if (from > to) {
+      return NONE;
+    }
+    if (from <= 0 && to >= '\uFFFF') {
+      return ANY;
+    }
     return new CharPredicate() {
       @Override public boolean test(char c) {
         return c >= from && c <= to;
@@ -154,9 +200,12 @@ public interface CharPredicate {
   /** Returns a CharPredicate that matches any of {@code chars}. */
   static CharPredicate anyOf(String chars) {
     switch (chars.length()) {
-      case 2: return is(chars.charAt(0)).or(chars.charAt(1));
-      case 1: return is(chars.charAt(0));
-      case 0: return NONE;
+      case 2:
+        return is(chars.charAt(0)).or(chars.charAt(1));
+      case 1:
+        return is(chars.charAt(0));
+      case 0:
+        return NONE;
     }
     char[] array = chars.toCharArray();
     Arrays.sort(array);
@@ -198,8 +247,8 @@ public interface CharPredicate {
   }
 
   /**
-   * Returns a {@link CharPredicate} that evaluates true if either this evaluates to true,
-   * or the character is equal to any of {@code chars}.
+   * Returns a {@link CharPredicate} that evaluates true if either this evaluates to true, or the
+   * character is equal to any of {@code chars}.
    *
    * @since 9.9.4
    */
@@ -253,11 +302,6 @@ public interface CharPredicate {
         return me;
       }
 
-      @Override public CharPredicate precomputeForAscii() {
-        CharPredicate precomputed = me.precomputeForAscii();
-        return precomputed == me ? this : precomputed.not();
-      }
-
       @Override public String toString() {
         return "not (" + me + ")";
       }
@@ -280,12 +324,7 @@ public interface CharPredicate {
    * @since 7.0
    */
   default boolean matchesAllOf(CharSequence sequence) {
-    for (int i = sequence.length() - 1; i >= 0; i--) {
-      if (!test(sequence.charAt(i))) {
-        return false;
-      }
-    }
-    return true;
+    return skipLeading(sequence, 0) == sequence.length();
   }
 
   /**
@@ -295,12 +334,7 @@ public interface CharPredicate {
    * @since 7.0
    */
   default boolean matchesNoneOf(CharSequence sequence) {
-    for (int i = sequence.length() - 1; i >= 0; i--) {
-      if (test(sequence.charAt(i))) {
-        return false;
-      }
-    }
-    return true;
+    return not().skipLeading(sequence, 0) == sequence.length();
   }
 
   /**
@@ -323,8 +357,24 @@ public interface CharPredicate {
   }
 
   /**
-   * Returns an equivalent {@link CharPredicate} but pre-computes the results for all ASCII characters.
-   * Useful if the CharPredicate is used in a hot path.
+   * Returns the index in the range of {@code [fromIndex, s.length()]}, pointing to either {@code
+   * s.length()} or the index of the first character that does not match this predicate.
+   *
+   * @since 11.0
+   * @hidden
+   */
+  default int skipLeading(CharSequence s, int fromIndex) {
+    int end = s.length();
+    int i = fromIndex;
+    while (i < end && test(s.charAt(i))) {
+      i++;
+    }
+    return i;
+  }
+
+  /**
+   * Returns an equivalent {@link CharPredicate} but pre-computes the results for all ASCII
+   * characters. Useful if the CharPredicate is used in a hot path.
    *
    * <p>This method is more efficient for ASCII chars than Guava {@link
    * com.google.common.base.CharMatcher#precomputed CharMatcher.precomputed()}, and is far cheaper
@@ -336,39 +386,6 @@ public interface CharPredicate {
    * @since 9.9.4
    */
   default CharPredicate precomputeForAscii() {
-    CharPredicate base = this;
-
-    return new CharPredicate() {
-      private final long low64 = computeMask(0); // ASCII 0-63
-      private final long high64 = computeMask(64); // ASCII 64-127
-
-      @Override public boolean test(char c) {
-        if (c < 64) {
-          return ((low64 >>> c) & 1L) != 0;
-        }
-        if (c < 128) {
-          return ((high64 >>> (c - 64)) & 1L) != 0;
-        }
-        return base.test(c); // Fallback for non-ASCII
-      }
-
-      @Override public CharPredicate precomputeForAscii() {
-        return this;
-      }
-
-      @Override public String toString() {
-        return base.toString();
-      }
-
-      private long computeMask(int offset) {
-        long mask = 0L;
-        for (int i = 0; i < 64; i++) {
-          if (base.test((char) (offset + i))) {
-            mask |= (1L << i);
-          }
-        }
-        return mask;
-      }
-    };
+    return PrecomputedForAscii.of(this);
   }
 }

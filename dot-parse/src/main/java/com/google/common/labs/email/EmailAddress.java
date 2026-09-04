@@ -34,24 +34,25 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-import com.google.common.labs.parse.Parser;
-import com.google.errorprone.annotations.CheckReturnValue;
-import com.google.errorprone.annotations.FormatMethod;
-import com.google.errorprone.annotations.FormatString;
-import com.google.errorprone.annotations.Immutable;
-import com.google.errorprone.annotations.InlineMe;
-import com.google.errorprone.annotations.concurrent.LazyInit;
-import com.google.mu.util.CharPredicate;
-import com.google.mu.util.StringFormat;
-import com.google.mu.util.Substring;
-import com.google.mu.util.stream.Joiner;
 import java.net.IDN;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+
+import com.google.common.labs.parse.Parser;
+import com.google.errorprone.annotations.CheckReturnValue;
+import com.google.errorprone.annotations.FormatMethod;
+import com.google.errorprone.annotations.FormatString;
+import com.google.errorprone.annotations.Immutable;
+import com.google.errorprone.annotations.concurrent.LazyInit;
+import com.google.mu.util.CharPredicate;
+import com.google.mu.util.StringFormat;
+import com.google.mu.util.Substring;
+import com.google.mu.util.stream.Joiner;
 
 /**
  * Represents a strictly validated email address according to RFC 5322, designed as a modern,
@@ -191,7 +192,7 @@ public final class EmailAddress {
   private static final CharPredicate NON_DIGIT = range('0', '9').not();
   private static final CharPredicate INLINE_WHITESPACE = anyOf(" \t");
   private static final CharPredicate DANGEROUS_WHITESPACE =
-      anyOf("\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069");
+      anyOf("\u034F\u2028\u2029\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069");
   private static final CharPredicate DANGEROUS =
       DANGEROUS_WHITESPACE.or(Character::isISOControl).precomputeForAscii();
   private static final CharPredicate SAFE_WHITESPACE =
@@ -213,8 +214,9 @@ public final class EmailAddress {
   // and line/paragraph separators (U+2028-2029 that can trigger MTA header injections).
   // javaLetterOrDigit() strictly limits the character class to printable classified letters and
   // digits, successfully neutralizing these injection vectors.
-  private static final CharPredicate LETTER_OR_DIGIT = Character::isLetterOrDigit;
-  private static final CharPredicate ATEXT = LETTER_OR_DIGIT.or("!#$%&'*+-/=?^_`{|}~");
+  private static final CharPredicate WORD_CHAR =
+      c -> Character.isLetterOrDigit(c) || isCombiningMark(c);
+  private static final CharPredicate ATEXT = WORD_CHAR.or("!#$%&'*+-/=?^_`{|}~");
   private static final CharPredicate ATEXT_OR_DOT = ATEXT.or('.').precomputeForAscii();
 
   private static final Parser<String> QUOTED = quotedByWithEscapes('"', '"', chars(1))
@@ -226,7 +228,7 @@ public final class EmailAddress {
       .suchThat(local -> !ENCODED_WORD.matches(local), "no encoded words");
   private static final Parser<String> ASCII_DOMAIN_NAME = consecutive("[a-z0-9.-]");
   private static final Parser<String> I18N_DOMAIN_NAME =
-      consecutive(LETTER_OR_DIGIT.or(anyOf(".-")).precomputeForAscii(), "domain");
+      consecutive(WORD_CHAR.or(anyOf(".-")).precomputeForAscii(), "domain");
   private static final Parser<String> DOMAIN =
       I18N_DOMAIN_NAME.suchThat(d -> isValidDomain(d) && hasValidTopLevelDomain(d), "valid domain");
   private static final Parser<AddrSpecAlike> ADDR_SPEC_ALIKE =
@@ -276,12 +278,12 @@ public final class EmailAddress {
   @LazyInit private Optional<String> unicodeDisplayName;
 
   private EmailAddress(String localPart, String domain, Optional<String> displayName) {
-    checkArgument(
-        localPart.length() + domain.length() + 1 <= 254,
-        "<%s@%s> must be <= 254 chars", localPart, domain);
-    this.localPart = localPart;
+    this.localPart = normalizeLocalPart(localPart);
     this.domain = domain;
     this.displayName = displayName.filter(n -> !n.isBlank());
+    checkArgument(
+        this.localPart.length() + this.domain.length() + 1 <= 254,
+        "<%s@%s> must be <= 254 chars", this.localPart, this.domain);
   }
 
   /** Returns an otherwise equivalent {@link EmailAddress} but with {@code displayName}. */
@@ -314,7 +316,7 @@ public final class EmailAddress {
 
   /** For example: {@code EmailAddress.of("user", "mycompany.com")}. */
   public static EmailAddress of(String localPart, String domain) {
-    return new EmailAddress(checkLocalPart(localPart), toAsciiDomain(domain), Optional.empty());
+    return new EmailAddress(normalizeLocalPart(localPart), toAsciiDomain(domain), Optional.empty());
   }
 
   /**
@@ -422,17 +424,6 @@ public final class EmailAddress {
                 ? WITH_QUOTED_DISPLAY_NAME.format(escape(name), address())
                 : WITH_UNQUOTED_DISPLAY_NAME.format(name, address()))
         .orElseGet(this::address);
-  }
-
-  /**
-   * @deprecated Use {@link #of(String)} instead
-   */
-  @Deprecated
-  @InlineMe(
-      replacement = "EmailAddress.of(address)",
-      imports = "com.google.common.labs.email.EmailAddress")
-  public static EmailAddress parse(String address) {
-    return of(address);
   }
 
   /**
@@ -572,14 +563,24 @@ public final class EmailAddress {
     return s.startsWith("-") || s.endsWith("-") || s.contains(".-") || s.contains("-.");
   }
 
-  private static String checkLocalPart(String localPart) {
+  private static boolean isCombiningMark(char c) {
+    int type = Character.getType(c);
+    return (type == Character.NON_SPACING_MARK || type == Character.COMBINING_SPACING_MARK)
+        && c != '\u034F';
+  }
+
+  private static String normalizeLocalPart(String localPart) {
     checkArgument(!localPart.isEmpty(), "local-part cannot be empty");
+    String normalized = Normalizer.normalize(localPart, Normalizer.Form.NFC);
     checkArgument(
-        !ENCODED_WORD.matches(localPart), "local-part doesn't allow encoded word (%s)", localPart);
+        !isCombiningMark(normalized.charAt(0)),
+        "local-part cannot start with a combining mark (%s)", normalized);
     checkArgument(
-        DANGEROUS.matchesNoneOf(localPart),
+        !ENCODED_WORD.matches(normalized), "local-part doesn't allow encoded word (%s)", normalized);
+    checkArgument(
+        DANGEROUS.matchesNoneOf(normalized),
         "local-part must not contain control or formatting characters");
-    return localPart;
+    return normalized;
   }
 
   private static String checkDisplayName(String displayName) {

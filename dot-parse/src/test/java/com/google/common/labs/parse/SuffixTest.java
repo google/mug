@@ -4,7 +4,7 @@ import static com.google.common.labs.parse.Parser.anyOf;
 import static com.google.common.labs.parse.Parser.digits;
 import static com.google.common.labs.parse.Parser.sequence;
 import static com.google.common.labs.parse.Parser.string;
-import static com.google.common.labs.parse.Suffix.suffix;
+import static com.google.common.labs.parse.Parsers.Suffix.suffix;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.Assert.assertThrows;
@@ -210,7 +210,6 @@ public class SuffixTest {
     assertThat(parser.parse("---10")).isEqualTo(-10);
     assertThat(parser.parseToStream("---10")).containsExactly(-10);
   }
-
 
   @Test public void testNulls() {
     new NullPointerTester()

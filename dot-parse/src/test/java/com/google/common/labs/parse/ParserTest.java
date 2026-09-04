@@ -1035,38 +1035,6 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.parseToStream("456บาท").toList());
   }
 
-  @Test public void followedByOrEof_suffixMatches() {
-    Parser<String> parser = string("foo").followedByOrEof(string("bar"));
-    assertThat(parser.parse("foobar")).isEqualTo("foo");
-    assertThat(parser.matches("foobar")).isTrue();
-  }
-
-  @Test public void followedByOrEof_eofMatches() {
-    Parser<String> parser = string("foo").followedByOrEof(string("bar"));
-    assertThat(parser.parse("foo")).isEqualTo("foo");
-    assertThat(parser.matches("foo")).isTrue();
-  }
-
-  @Test public void followedByOrEof_neitherMatches() {
-    Parser<String> parser = string("foo").followedByOrEof(string("bar"));
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("foobaz"));
-    assertThat(parser.matches("foobaz")).isFalse();
-    assertThat(e).hasMessageThat()
-        .isEqualTo(
-            """
-            at 1:4: expecting one of [bar, EOF], encountered:
-                foobaz
-                   ^
-            """);
-  }
-
-  @Test public void followedByOrEof_mainParserFails() {
-    Parser<String> parser = string("foo").followedByOrEof(string("bar"));
-    ParseException e = assertThrows(ParseException.class, () -> parser.parse("fobar"));
-    assertThat(parser.matches("fobar")).isFalse();
-    assertThat(e).hasMessageThat().contains("expecting <foo>");
-  }
-
   @Test public void optionallyFollowedBy_suffixCannotBeEmpty() {
     assertThrows(IllegalArgumentException.class, () -> string("123").optionallyFollowedBy(""));
   }
@@ -4668,22 +4636,6 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.parse("10++a"));
   }
 
-  @SuppressWarnings("deprecation")
-  @Test public void deprecated_withPostfixes_success() {
-    Parser<Integer> number = digits().map(Integer::parseInt);
-    Parser<UnaryOperator<Integer>> inc = string("++").thenReturn(i -> i + 1);
-    Parser<UnaryOperator<Integer>> dec = string("--").thenReturn(i -> i - 1);
-    Parser<UnaryOperator<Integer>> op = anyOf(inc, dec);
-    Parser<Integer> parser = number.withPostfixes(op);
-    assertThat(parser.parse("10++--++")).isEqualTo(11);
-
-    Parser<Integer> parser2 = number.withPostfixes(string("++").map(s -> 1), (a, b) -> a + b);
-    assertThat(parser2.parse("10++")).isEqualTo(11);
-
-    Parser<Integer> parser3 = number.withPostfixes("++", i -> i + 1);
-    assertThat(parser3.parse("10++")).isEqualTo(11);
-  }
-
   @Test public void parse_fromIndex() {
     assertThat(string("bar").parse("foobar", 3)).isEqualTo("bar");
     assertThat(string("bar").source().parse("foobar", 3)).isEqualTo("bar");
@@ -4700,6 +4652,47 @@ public class ParserTest {
     assertThrows(IndexOutOfBoundsException.class, () -> string("a").parse("a", 2));
     assertThrows(
         IndexOutOfBoundsException.class, () -> string("a").skipping(whitespace()).parse("a", 2));
+  }
+
+  @Test public void skipping_alpha_parse() {
+    assertThat(digits().skipping(charsIn("[a-zA-Z]")).parse("abc123def")).isEqualTo("123");
+  }
+
+  @Test public void skipping_alpha_matches() {
+    assertThat(digits().skipping(charsIn("[a-zA-Z]")).matches("abc123def")).isTrue();
+  }
+
+  @Test public void skipping_alpha_parseToStream() {
+    assertThat(digits().skipping(charsIn("[a-zA-Z]")).parseToStream("abc123def456ghi"))
+        .containsExactly("123", "456");
+  }
+
+  @Test public void skipping_alphaCharPredicate_parse() {
+    assertThat(digits().skipping(CharPredicate.ALPHA).parse("abc123def")).isEqualTo("123");
+  }
+
+  @Test public void skipping_alpha_longerThanFourChars() {
+    assertThat(digits().skipping(charsIn("[a-zA-Z]")).parse("abcdefgh123ijklmnop")).isEqualTo("123");
+  }
+
+  @Test public void skipping_alpha_onlyLetters_matchesFalse() {
+    assertThat(digits().skipping(charsIn("[a-zA-Z]")).matches("abcdefgh")).isFalse();
+  }
+
+  @Test public void skipping_alpha_sequence_interleaved() {
+    assertThat(
+            sequence(digits(), digits(), (a, b) -> a + "," + b)
+                .skipping(charsIn("[a-zA-Z]"))
+                .parse("abc123def456ghi"))
+        .isEqualTo("123,456");
+  }
+
+  @Test public void skipping_alpha_withReader() {
+    assertThat(
+            digits()
+                .skipping(charsIn("[a-zA-Z]"))
+                .parseToStream(new StringReader("abc123def456ghi")))
+        .containsExactly("123", "456");
   }
 
   @Test public void skipping_aroundIdentifier() {
@@ -6619,13 +6612,6 @@ public class ParserTest {
     assertThrows(ParseException.class, () -> parser.parse("ac"));
   }
 
-  @Test public void ignoreReturn_followedByOrEof() {
-    Parser<String> parser = string("a").followedByOrEof(string("b")).thenReturn("ok");
-    assertThat(parser.parse("ab")).isEqualTo("ok");
-    assertThat(parser.parse("a")).isEqualTo("ok");
-    assertThrows(ParseException.class, () -> parser.parse("ac"));
-  }
-
   @Test public void ignoreReturn_sequence() {
     Parser<String> parser = sequence(string("a"), string("b"), string("c")).thenReturn("ok");
     assertThat(parser.parse("abc")).isEqualTo("ok");
@@ -8456,21 +8442,69 @@ public class ParserTest {
     assertThat(thrown).hasMessageThat().contains("expecting <close paren>");
   }
 
-  @Test public void ignoreReturn_as_followedByOrEof_successWithEof() {
-    Parser<String> parser = string("a").as("letter a").followedByOrEof(string(";").as("semicolon"));
-    assertThat(parser.parse("a")).isEqualTo("a");
+  @Test public void ignoreReturn_orParser_cachesResult() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    assertThat(parser.ignoreReturn()).isSameInstanceAs(parser.ignoreReturn());
   }
 
-  @Test public void ignoreReturn_as_followedByOrEof_successWithSuffix() {
-    Parser<String> parser = string("a").as("letter a").followedByOrEof(string(";").as("semicolon"));
-    assertThat(parser.parse("a;")).isEqualTo("a");
+  @Test public void ignoreReturn_orParser_unchangedChildren_returnsThis() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    assertThat(parser.ignoreReturn()).isSameInstanceAs(parser);
   }
 
-  @Test public void ignoreReturn_as_followedByOrEof_failure() {
-    Parser<String> parser = string("a").as("letter a").followedByOrEof(string(";").as("semicolon"));
-    ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("a!"));
-    assertThat(thrown).hasMessageThat().contains("1:2");
-    assertThat(thrown).hasMessageThat().contains("expecting one of [semicolon, EOF]");
+  @Test public void ignoreReturn_orParser_changedChildren_returnsNewInstance() {
+    Parser<?> parser = anyOf(string("a").thenReturn(1), string("b"));
+    assertThat(parser.ignoreReturn()).isNotSameInstanceAs(parser);
+  }
+
+  @Test public void ignoreReturn_orParser_idempotent() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    assertThat(parser.ignoreReturn().ignoreReturn()).isSameInstanceAs(parser.ignoreReturn());
+  }
+
+  @Test public void ignoreReturn_orParser_changedChildren_idempotent() {
+    Parser<?> parser = anyOf(string("a").thenReturn(1), string("b"));
+    assertThat(parser.ignoreReturn().ignoreReturn()).isSameInstanceAs(parser.ignoreReturn());
+  }
+
+  @Test public void ignoreReturn_orParser_matchesFirstCandidate() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    assertThat(parser.ignoreReturn().matches("a")).isTrue();
+  }
+
+  @Test public void ignoreReturn_orParser_matchesSecondCandidate() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    assertThat(parser.ignoreReturn().matches("b")).isTrue();
+  }
+
+  @Test public void ignoreReturn_orParser_failsOnMismatch() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    assertThat(parser.ignoreReturn().matches("c")).isFalse();
+  }
+
+  @Test public void ignoreReturn_defaultParser_returnsThis() {
+    Parser<String> parser = string("a");
+    assertThat(parser.ignoreReturn()).isSameInstanceAs(parser);
+  }
+
+  @Test public void ignoreReturn_thenReturn_returnsUnderlyingParser() {
+    Parser<String> a = string("a");
+    Parser<?> parser = a.thenReturn("foo");
+    assertThat(parser.ignoreReturn()).isSameInstanceAs(a);
+  }
+
+  @Test public void matches_orParser_reusesCachedIgnoreReturn() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    Parser<?> elided = parser.ignoreReturn();
+    assertThat(parser.matches("a")).isTrue();
+    assertThat(parser.ignoreReturn()).isSameInstanceAs(elided);
+  }
+
+  @Test public void isPrefixOf_orParser_reusesCachedIgnoreReturn() {
+    Parser<String> parser = anyOf(string("a"), string("b"));
+    Parser<?> elided = parser.ignoreReturn();
+    assertThat(parser.isPrefixOf("a")).isTrue();
+    assertThat(parser.ignoreReturn()).isSameInstanceAs(elided);
   }
 
   @Test public void fail_as_preservesMapFailMessage() {
@@ -8963,5 +8997,184 @@ public class ParserTest {
     ParseException thrown = assertThrows(ParseException.class, () -> parser.parse("12"));
     assertThat(thrown).hasMessageThat().contains("1:1");
     assertThat(thrown).hasMessageThat().contains("expecting <year>");
+  }
+
+  @Test public void consecutive_longRun_fromString() {
+    String longDigits = "1234567890".repeat(50);
+    assertThat(consecutive("[0-9]").parse(longDigits)).isEqualTo(longDigits);
+  }
+
+  @Test public void consecutive_longRun_fromReader() {
+    String longDigits = "1234567890".repeat(50);
+    assertThat(consecutive("[0-9]").parseToStream(new StringReader(longDigits)))
+        .containsExactly(longDigits);
+  }
+
+  @Test public void consecutive_longRun_stopsAtNonMatch() {
+    String longDigits = "1234567890".repeat(50);
+    assertThat(consecutive("[0-9]").followedBy("abc").parse(longDigits + "abc")).isEqualTo(longDigits);
+  }
+
+  @Test public void skipping_longRun_fromString() {
+    String whitespace = "    \t\n  \r\n  ".repeat(20);
+    assertThat(string("target").skipping(whitespace()).parse(whitespace + "target")).isEqualTo("target");
+  }
+
+  @Test public void skipping_longRun_fromReader() {
+    String whitespace = "    \t\n  \r\n  ".repeat(20);
+    assertThat(string("target").skipping(whitespace()).parseToStream(new StringReader(whitespace + "target")))
+        .containsExactly("target");
+  }
+
+  @Test public void consecutive_low64_parse() {
+    assertThat(consecutive(CharPredicate.range('0', '9'), "digits").parse("0123456789"))
+        .isEqualTo("0123456789");
+  }
+
+  @Test public void consecutive_low64_parseToStream() {
+    assertThat(
+            consecutive(CharPredicate.range('0', '9'), "digits")
+                .parseToStream(new StringReader("0123456789")))
+        .containsExactly("0123456789");
+  }
+
+  @Test public void consecutive_low64_stopsAtNonMatch() {
+    assertThat(
+            consecutive(CharPredicate.range('0', '9'), "digits")
+                .followedBy("abc")
+                .parse("12345abc"))
+        .isEqualTo("12345");
+  }
+
+  @Test public void consecutive_low64_failure() {
+    ParseException e =
+        assertThrows(
+            ParseException.class,
+            () -> consecutive(CharPredicate.range('0', '9'), "digits").parse("abc"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <digits>");
+  }
+
+  @Test public void consecutive_high64_parse() {
+    assertThat(consecutive(CharPredicate.range('a', 'z'), "letters").parse("abcdefghijklmnopqrstuvwxyz"))
+        .isEqualTo("abcdefghijklmnopqrstuvwxyz");
+  }
+
+  @Test public void consecutive_high64_parseToStream() {
+    assertThat(
+            consecutive(CharPredicate.range('a', 'z'), "letters")
+                .parseToStream(new StringReader("abcdefghijklmnopqrstuvwxyz")))
+        .containsExactly("abcdefghijklmnopqrstuvwxyz");
+  }
+
+  @Test public void consecutive_high64_stopsAtNonMatch() {
+    assertThat(
+            consecutive(CharPredicate.range('a', 'z'), "letters")
+                .followedBy("123")
+                .parse("abcdef123"))
+        .isEqualTo("abcdef");
+  }
+
+  @Test public void consecutive_high64_failure() {
+    ParseException e =
+        assertThrows(
+            ParseException.class,
+            () -> consecutive(CharPredicate.range('a', 'z'), "letters").parse("123"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <letters>");
+  }
+
+  @Test public void consecutive_128bit_parse() {
+    CharPredicate word =
+        CharPredicate.range('a', 'z').or(CharPredicate.range('0', '9')).or(is('_'));
+    assertThat(consecutive(word, "word").parse("a0_b1_c2_d3_e4_f5"))
+        .isEqualTo("a0_b1_c2_d3_e4_f5");
+  }
+
+  @Test public void consecutive_128bit_parseToStream() {
+    CharPredicate word =
+        CharPredicate.range('a', 'z').or(CharPredicate.range('0', '9')).or(is('_'));
+    assertThat(consecutive(word, "word").parseToStream(new StringReader("a0_b1_c2_d3_e4_f5")))
+        .containsExactly("a0_b1_c2_d3_e4_f5");
+  }
+
+  @Test public void consecutive_128bit_stopsAtNonMatch() {
+    CharPredicate word =
+        CharPredicate.range('a', 'z').or(CharPredicate.range('0', '9')).or(is('_'));
+    assertThat(consecutive(word, "word").followedBy("!@#").parse("a0_b1_c2!@#"))
+        .isEqualTo("a0_b1_c2");
+  }
+
+  @Test public void consecutive_128bit_failure() {
+    CharPredicate word =
+        CharPredicate.range('a', 'z').or(CharPredicate.range('0', '9')).or(is('_'));
+    ParseException e =
+        assertThrows(ParseException.class, () -> consecutive(word, "word").parse("!@#"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <word>");
+  }
+
+  @Test public void consecutive_nonAscii_parse() {
+    CharPredicate nonAscii = is('\u00E9').or(is('\u00E8'));
+    assertThat(consecutive(nonAscii, "accents").parse("\u00E9\u00E8\u00E9\u00E8\u00E9\u00E8"))
+        .isEqualTo("\u00E9\u00E8\u00E9\u00E8\u00E9\u00E8");
+  }
+
+  @Test public void consecutive_nonAscii_parseToStream() {
+    CharPredicate nonAscii = is('\u00E9').or(is('\u00E8'));
+    assertThat(
+            consecutive(nonAscii, "accents")
+                .parseToStream(new StringReader("\u00E9\u00E8\u00E9\u00E8\u00E9\u00E8")))
+        .containsExactly("\u00E9\u00E8\u00E9\u00E8\u00E9\u00E8");
+  }
+
+  @Test public void consecutive_nonAscii_stopsAtNonMatch() {
+    CharPredicate nonAscii = is('\u00E9').or(is('\u00E8'));
+    assertThat(
+            consecutive(nonAscii, "accents")
+                .followedBy("end")
+                .parse("\u00E9\u00E8\u00E9\u00E8end"))
+        .isEqualTo("\u00E9\u00E8\u00E9\u00E8");
+  }
+
+  @Test public void consecutive_nonAscii_failure() {
+    CharPredicate nonAscii = is('\u00E9').or(is('\u00E8'));
+    ParseException e =
+        assertThrows(
+            ParseException.class, () -> consecutive(nonAscii, "accents").parse("abc"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <accents>");
+  }
+
+  @Test public void consecutive_asciiAndNonAscii_parse() {
+    CharPredicate mixed = CharPredicate.range('a', 'z').or(is('\u00E9'));
+    assertThat(consecutive(mixed, "mixed").parse("abc\u00E9def\u00E9xyz"))
+        .isEqualTo("abc\u00E9def\u00E9xyz");
+  }
+
+  @Test public void consecutive_asciiAndNonAscii_parseToStream() {
+    CharPredicate mixed = CharPredicate.range('a', 'z').or(is('\u00E9'));
+    assertThat(
+            consecutive(mixed, "mixed")
+                .parseToStream(new StringReader("abc\u00E9def\u00E9xyz")))
+        .containsExactly("abc\u00E9def\u00E9xyz");
+  }
+
+  @Test public void consecutive_asciiAndNonAscii_stopsAtNonMatch() {
+    CharPredicate mixed = CharPredicate.range('a', 'z').or(is('\u00E9'));
+    assertThat(
+            consecutive(mixed, "mixed")
+                .followedBy("123")
+                .parse("abc\u00E9def123"))
+        .isEqualTo("abc\u00E9def");
+  }
+
+  @Test public void consecutive_asciiAndNonAscii_failure() {
+    CharPredicate mixed = CharPredicate.range('a', 'z').or(is('\u00E9'));
+    ParseException e =
+        assertThrows(
+            ParseException.class, () -> consecutive(mixed, "mixed").parse("123"));
+    assertThat(e).hasMessageThat().contains("1:1");
+    assertThat(e).hasMessageThat().contains("expecting <mixed>");
   }
 }
