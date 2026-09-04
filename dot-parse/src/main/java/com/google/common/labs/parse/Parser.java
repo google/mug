@@ -1665,8 +1665,9 @@ public abstract non-sealed class Parser<T> implements Production<T> {
   final Parser<?> ignoreReturn() {
     Parser<?> result = elidedParser;
     if (result == null) {
-      elidedParser = result = doIgnoreReturn();
+      result = doIgnoreReturn();
       result.elidedParser = result;
+      elidedParser = result;
     }
     return result;
   }
